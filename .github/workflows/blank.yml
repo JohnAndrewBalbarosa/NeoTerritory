@@ -1,0 +1,22 @@
+# .github/workflows/auto-defaults.yml
+name: Auto defaults for new issues
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  set-defaults:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add default label and project
+        uses: actions-ecosystem/action-add-labels@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          labels: 'triage'
+
+      - name: Add issue to project
+        uses: actions/add-to-project@v0.5.0
+        with:
+          project-url: https://github.com/orgs/YOUR-ORG/projects/1
+          github-token: ${{ secrets.GITHUB_TOKEN }}
