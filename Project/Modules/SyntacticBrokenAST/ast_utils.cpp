@@ -1,4 +1,5 @@
 #include "ast_utils.hpp"
+#include "virtual_node.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -41,7 +42,14 @@ void print_tree(ASTNode* node, int depth) {
         return;
     }
     std::string indent(depth * 2, ' ');
-    std::cout << indent << "ASTNode@" << node << " (" << node->line << ':' << node->column << ")\n";
+    
+    // Check if this is a VirtualNode and print dirty bit instead of coordinates
+    if (auto* vnode = dynamic_cast<VirtualNode*>(node)) {
+        std::cout << indent << "VirtualNode@" << node << " [dirty=" << (vnode->dirty ? "yes" : "no") << "]\n";
+    } else {
+        std::cout << indent << "ASTNode@" << node << " (" << node->line << ':' << node->column << ")\n";
+    }
+    
     for (ASTNode* child : node->children) {
         print_tree(child, depth + 1);
     }
