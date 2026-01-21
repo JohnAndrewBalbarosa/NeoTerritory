@@ -13,6 +13,8 @@ struct VirtualNode : ASTNode {
         if (target) {
             wrapper_line = target->line;
             wrapper_column = target->column;
+            line = target->line;
+            column = target->column;
         }
     }
 };
