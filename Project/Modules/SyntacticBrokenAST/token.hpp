@@ -9,6 +9,7 @@ enum class TokenType {
     Keyword,
     IntegerLiteral,
     StringLiteral,
+    CharacterLiteral,
     Operator,
     Delimiter,
     Error,

@@ -28,61 +28,63 @@ std::string read_source(int argc, char* argv[]) {
         buffer << file.rdbuf();
         return buffer.str();
     }
-    std::ostringstream buffer;
-    buffer << std::cin.rdbuf();
-    return buffer.str();
-}
-
-bool is_return_type(const std::string& lexeme) {
-    static const std::unordered_set<std::string> return_types = {
-        "void",
-        "int",
-        "double",
-        "float",
-        "char",
-        "bool",
-    };
-    return return_types.count(lexeme) > 0;
+    // Only try to read from stdin if it's available
+    if (std::cin.rdbuf()->in_avail() > 0 || !std::cin.eof()) {
+        std::ostringstream buffer;
+        buffer << std::cin.rdbuf();
+        return buffer.str();
+    }
+    return {};
 }
 
 ASTNode* build_function_graph(const std::vector<Token>& tokens) {
-    ASTNode* root = new ASTNode;
-    root->line = 1;
-    root->column = 1;
+    // First pass: look for 'main' function
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        const Token& token = tokens[i];
+        if (token.type == TokenType::Identifier && token.lexeme == "main" && i + 1 < tokens.size()) {
+            const Token& next = tokens[i + 1];
+            if (next.lexeme == "(") {
+                FunctionNode* function = new FunctionNode;
+                function->name = "main";
+                function->line = token.line;
+                function->column = token.column;
 
-    bool found_function = false;
-    for (size_t i = 0; i + 2 < tokens.size(); ++i) {
-        const Token& keyword = tokens[i];
-        const Token& identifier = tokens[i + 1];
-        const Token& delimiter = tokens[i + 2];
+                VirtualNode* entry_wrapper = wrap_node(function, true);
+                VirtualNode* exit_wrapper = wrap_node(function, false);
 
-        if (keyword.type == TokenType::Keyword && is_return_type(keyword.lexeme) &&
-            identifier.type == TokenType::Identifier && delimiter.lexeme == "(") {
-            FunctionNode* function = new FunctionNode;
-            function->name = identifier.lexeme;
-            function->line = identifier.line;
-            function->column = identifier.column;
-
-            VirtualNode* entry_wrapper = wrap_node(function, true);
-            VirtualNode* exit_wrapper = wrap_node(function, false);
-
-            entry_wrapper->addChild(function);
-            function->addChild(exit_wrapper);
-            root->addChild(entry_wrapper);
-
-            found_function = true;
-            i += 2;
+                entry_wrapper->addChild(function);
+                function->addChild(exit_wrapper);
+                return entry_wrapper;
+            }
         }
     }
 
-    if (!found_function) {
-        ASTNode* placeholder = new ASTNode;
-        placeholder->line = 1;
-        placeholder->column = 1;
-        root->addChild(placeholder);
+    // Second pass: if no main found, look for any function
+    for (size_t i = 0; i < tokens.size(); ++i) {
+        const Token& token = tokens[i];
+        if (token.type == TokenType::Identifier && i + 1 < tokens.size()) {
+            const Token& next = tokens[i + 1];
+            if (next.lexeme == "(") {
+                FunctionNode* function = new FunctionNode;
+                function->name = token.lexeme;
+                function->line = token.line;
+                function->column = token.column;
+
+                VirtualNode* entry_wrapper = wrap_node(function, true);
+                VirtualNode* exit_wrapper = wrap_node(function, false);
+
+                entry_wrapper->addChild(function);
+                function->addChild(exit_wrapper);
+                return entry_wrapper;
+            }
+        }
     }
 
-    return root;
+    // No function found
+    ASTNode* placeholder = new ASTNode;
+    placeholder->line = 1;
+    placeholder->column = 1;
+    return placeholder;
 }
 
 void describe_virtual_nodes(ASTNode* root) {
@@ -119,7 +121,7 @@ int main(int argc, char* argv[]) {
     print_tree(root);
     std::cout << "Semantic height: " << semantic_height(root)
               << " | Physical height: " << physical_height(root) << '\n';
-    describe_virtual_nodes(root);
+        describe_virtual_nodes(root);
 
     return 0;
 }
