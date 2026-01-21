@@ -70,6 +70,31 @@ Token Lexer::scanToken() {
         return stringLiteral();
     }
 
+    if (c == '\'') {
+        // Handle character literal
+        bool terminated = false;
+        while (!isAtEnd()) {
+            char ch = advance();
+            if (ch == '\n') {
+                line_ += 1;
+                column_ = 1;
+            }
+            if (ch == '\'') {
+                terminated = true;
+                break;
+            }
+            if (ch == '\\') {
+                advance();
+                continue;
+            }
+        }
+        if (!terminated) {
+            return makeError("Unterminated character literal", source_.substr(start_, current_ - start_));
+        }
+        std::string lex = source_.substr(start_, current_ - start_);
+        return makeToken(TokenType::CharacterLiteral, lex);
+    }
+
     if (c == '/') {
         if (match('/')) {
             while (!isAtEnd() && peek() != '\n') {
@@ -99,6 +124,11 @@ Token Lexer::scanToken() {
         case '=':
         case '<':
         case '>':
+            return makeToken(TokenType::Operator, std::string(1, c));
+        case ':':
+            if (match(':')) {
+                return makeToken(TokenType::Operator, "::");
+            }
             return makeToken(TokenType::Operator, std::string(1, c));
         case '(':
         case ')':
