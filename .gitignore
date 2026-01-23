@@ -1,0 +1,93 @@
+# IDE and Editor specific files
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+
+# JetBrains IDEs (CLion, IntelliJ, etc.)
+.idea/
+*.iml
+*.iws
+cmake-build-*/
+
+# Vim
+*.swp
+*.swo
+*~
+.*.swp
+.*.swo
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Atom
+.atom/
+
+# Eclipse
+.project
+.cproject
+.settings/
+
+# CMake build directories (artifacts only)
+build/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+_deps/
+
+# Generated Makefiles (Linux/Mac)
+Makefile
+
+# Keep CMake configuration files
+!CMakeLists.txt
+!*.cmake
+
+# Compiled Object files
+*.o
+*.obj
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+# OS specific
+.DS_Store
+Thumbs.db
+Desktop.ini
