@@ -4,31 +4,22 @@ project(NeoTerritory)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Include directories
-include_directories(
-    ${CMAKE_SOURCE_DIR}/Project/Modules/Header
+file(GLOB_RECURSE ALL_MODULE_SOURCES CONFIGURE_DEPENDS 
+    "Project/Modules/Source/*.cpp"
+    "Project/Modules/Header/*.hpp"
+    "Project/Modules/Header/*.h"
 )
 
-# Source files from Back system
-set(BACK_SYSTEM_SOURCES
-    Project/Layer/Back\ system/syntacticBrokenAST.cpp
+set(BACK_SYSTEM_SOURCES "Project/Layer/Back system/syntacticBrokenAST.cpp")
+
+add_executable(NeoTerritory 
+    ${BACK_SYSTEM_SOURCES} 
+    ${ALL_MODULE_SOURCES}
 )
 
-# Source files from Modules
-file(GLOB_RECURSE MODULE_SOURCES
-    Project/Modules/Source/**/*.cpp
+file(GLOB_RECURSE HEADER_DIRS
+     LIST_DIRECTORIES true
+     "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/*"
 )
 
-# Header files from Modules
-file(GLOB_RECURSE MODULE_HEADERS
-    PROJECT_Modules/Header/**/*.hpp
-)
-
-# Combine all sources
-set(ALL_SOURCES
-    ${BACK_SYSTEM_SOURCES}
-    ${MODULE_SOURCES}
-)
-
-# Create executable or library
-add_executable(NeoTerritory ${ALL_SOURCES} ${MODULE_HEADERS})
+target_include_directories(NeoTerritory PRIVATE ${HEADER_DIRS})
