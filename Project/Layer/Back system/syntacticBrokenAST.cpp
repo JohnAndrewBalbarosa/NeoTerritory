@@ -3,6 +3,7 @@
 #include "virtual_node.hpp"
 #include "ast_utils.hpp"
 #include "transform.hpp"
+#include "lexer_utils.hpp"
 
 #include <fstream>
 #include <iostream>
@@ -120,164 +121,6 @@ namespace
 
 } // namespace
 
-std::pair<std::string, size_t> strip_preprocessor_directives(const std::string &source)
-{
-    std::ostringstream result;
-    size_t skipped_lines = 0;
-
-    size_t i = 0;
-    while (i < source.size())
-    {
-        // Check if we're at the start of a line
-        size_t line_start = i;
-
-        // Skip leading spaces/tabs
-        while (i < source.size() && (source[i] == ' ' || source[i] == '\t'))
-        {
-            ++i;
-        }
-
-        // If first non-space character is #, skip entire line (preprocessor directive)
-        if (i < source.size() && source[i] == '#')
-        {
-            // Skip until newline or end
-            while (i < source.size() && source[i] != '\n')
-            {
-                ++i;
-            }
-            // Skip the newline too
-            if (i < source.size() && source[i] == '\n')
-            {
-                ++skipped_lines;
-                ++i;
-            }
-            continue; // Start checking next line
-        }
-
-        // Check for "using namespace" declaration
-        if (i < source.size() && source[i] == 'u')
-        {
-            // Check if this is "using namespace"
-            if (i + 15 < source.size() &&
-                source.substr(i, 6) == "using " &&
-                source.substr(i + 6, 9) == "namespace")
-            {
-                // Skip until semicolon or newline
-                while (i < source.size() && source[i] != ';' && source[i] != '\n')
-                {
-                    ++i;
-                }
-                // Skip the semicolon or newline
-                if (i < source.size())
-                {
-                    if (source[i] == '\n')
-                    {
-                        ++skipped_lines;
-                    }
-                    ++i;
-                }
-                continue;
-            }
-        }
-
-        // Track if we have actual code content on this line (not just whitespace)
-        bool has_code = false;
-        size_t content_start = i;
-        
-        // Not a preprocessor line or using namespace - add everything from line_start to current position
-        for (size_t j = line_start; j < i; ++j)
-        {
-            result << source[j];
-        }
-
-        // Add rest of line, but handle comments carefully
-        while (i < source.size())
-        {
-            // Check for single-line comment
-            if (i + 1 < source.size() && source[i] == '/' && source[i + 1] == '/')
-            {
-                // Skip until newline
-                while (i < source.size() && source[i] != '\n')
-                {
-                    ++i;
-                }
-                if (i < source.size() && source[i] == '\n')
-                {
-                    // If this was a comment-only line (no code before it), skip the newline
-                    if (!has_code)
-                    {
-                        ++skipped_lines;
-                    }
-                    else
-                    {
-                        // Inline comment - preserve the newline
-                        result << '\n';
-                    }
-                    ++i;
-                }
-                break;
-            }
-
-            // Check for multi-line comment
-            if (i + 1 < source.size() && source[i] == '/' && source[i + 1] == '*')
-            {
-                bool comment_had_code_before = has_code;
-                // Skip until */
-                i += 2;
-                while (i + 1 < source.size() && !(source[i] == '*' && source[i + 1] == '/'))
-                {
-                    if (source[i] == '\n')
-                    {
-                        ++skipped_lines;
-                    }
-                    ++i;
-                }
-                if (i + 1 < source.size())
-                {
-                    i += 2; // Skip */
-                }
-                
-                // Check if there's more content after the comment on this line
-                size_t peek = i;
-                bool has_content_after = false;
-                while (peek < source.size() && source[peek] != '\n')
-                {
-                    if (source[peek] != ' ' && source[peek] != '\t')
-                    {
-                        has_content_after = true;
-                        break;
-                    }
-                    peek++;
-                }
-                
-                // If this was an inline comment or there's content after, mark as having code
-                if (comment_had_code_before || has_content_after)
-                {
-                    has_code = true;
-                }
-                
-                continue;
-            }
-
-            // Regular character - mark that we have code if it's not whitespace
-            if (source[i] != ' ' && source[i] != '\t' && source[i] != '\n')
-            {
-                has_code = true;
-            }
-            
-            result << source[i];
-            if (source[i] == '\n')
-            {
-                ++i;
-                break;
-            }
-            ++i;
-        }
-    }
-
-    return {result.str(), skipped_lines};
-}
-
 int main(int argc, char *argv[])
 {
     std::string source = read_source(argc, argv);
@@ -289,6 +132,12 @@ int main(int argc, char *argv[])
 
     // Clean preprocessor directives
     auto [cleaned_source, skipped_lines] = strip_preprocessor_directives(source);
+
+    std::cout << "Skipped lines: " << skipped_lines << '\n';
+    std::cout << "Starting line for lexer: " << (skipped_lines + 1) << '\n';
+    std::cout << "=== Cleaned Source ===\n";
+    std::cout << cleaned_source;
+    std::cout << "=== End Cleaned Source ===\n\n";
 
     Lexer lexer(std::move(cleaned_source), skipped_lines + 1);
     std::vector<Token> tokens = lexer.scan();
