@@ -6,14 +6,14 @@
 #include <sstream>
 #include <utility>
 
-Lexer::Lexer(std::string source)
-    : source_(std::move(source)), length_(source_.size()) {}
+Lexer::Lexer(std::string source, size_t startLine)
+    : source_(std::move(source)), length_(source_.size()), line_(startLine), startLine_(startLine) {}
 
 std::vector<Token> Lexer::scan() {
     std::vector<Token> tokens;
         while (!isAtEnd()) {
         start_ = current_;
-         startLine_ = line_;
+        startLine_ = line_;
         startColumn_ = column_;
         Token tok = scanToken();
         if (tok.type != TokenType::Error && tok.type != TokenType::EndOfFile && tok.lexeme.empty()) {
@@ -40,23 +40,13 @@ Token Lexer::scanToken() {
         return Token{TokenType::Delimiter, "", "", startLine_, startColumn_};
     }
 
-    if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
-        while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') {
-            advance();
-        }
-        std::string lex = source_.substr(start_, current_ - start_);
-        if (keywords_.count(lex)) {
-            return makeToken(TokenType::Keyword, lex);
-        }
-        return makeToken(TokenType::Identifier, lex);
-     }
-
+    // Check for numeric literals FIRST (must be digits only)
     if (std::isdigit(static_cast<unsigned char>(c))) {
         while (std::isdigit(static_cast<unsigned char>(peek()))) {
             advance();
         }
-        if (std::isalpha(static_cast<unsigned char>(peek()))) {
-            while (std::isalnum(static_cast<unsigned char>(peek()))) {
+        if (std::isalpha(static_cast<unsigned char>(peek())) || peek() == '_') {
+            while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') {
                 advance();
             }
             std::string bad = source_.substr(start_, current_ - start_);
@@ -66,8 +56,9 @@ Token Lexer::scanToken() {
         return makeToken(TokenType::IntegerLiteral, lex);
     }
 
+
     if (c == '"') {
-        return stringLiteral();
+        return stringLiteral(); 
     }
 
     if (c == '\'') {
@@ -141,10 +132,29 @@ Token Lexer::scanToken() {
         case '.':
             return makeToken(TokenType::Delimiter, std::string(1, c));
         case '#':
-            return makeToken(TokenType::Preprocessor, std::string(1,c));
-        default:
+        case '@':
+        case '$':
+        case '~':
+        case '`':
+        case '?':
+        case '\\':
             return makeError("Unrecognized character", std::string(1, c));
     }
+    
+    if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
+        while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') {
+            advance();
+        }
+        std::string lex = source_.substr(start_, current_ - start_);
+        if (keywords_.count(lex)) {
+            return makeToken(TokenType::Keyword, lex);
+        }
+        return makeToken(TokenType::Identifier, lex);
+    }
+    
+    // Truly unrecognized character
+    return makeError("Unrecognized character", std::string(1, c));
+
 }
 
 Token Lexer::stringLiteral() {
@@ -220,7 +230,7 @@ const std::unordered_set<std::string> Lexer::keywords_ {
     "if", "else", "for", "while", "return", "int", "double", "float", "char",
     "bool", "void", "class", "struct", "public", "private", "protected",
     "virtual", "override", "const", "static", "using", "namespace", "new",
-    "delete", "true", "false", "include", "define", "ifdef", "ifndef", "endif"
+    "delete", "true", "false"
 };
 
 std::string readAllStdin() {
