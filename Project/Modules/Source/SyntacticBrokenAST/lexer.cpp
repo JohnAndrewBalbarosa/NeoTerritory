@@ -11,9 +11,9 @@ Lexer::Lexer(std::string source)
 
 std::vector<Token> Lexer::scan() {
     std::vector<Token> tokens;
-    while (!isAtEnd()) {
+        while (!isAtEnd()) {
         start_ = current_;
-        startLine_ = line_;
+         startLine_ = line_;
         startColumn_ = column_;
         Token tok = scanToken();
         if (tok.type != TokenType::Error && tok.type != TokenType::EndOfFile && tok.lexeme.empty()) {
@@ -49,7 +49,7 @@ Token Lexer::scanToken() {
             return makeToken(TokenType::Keyword, lex);
         }
         return makeToken(TokenType::Identifier, lex);
-    }
+     }
 
     if (std::isdigit(static_cast<unsigned char>(c))) {
         while (std::isdigit(static_cast<unsigned char>(peek()))) {
@@ -220,7 +220,7 @@ const std::unordered_set<std::string> Lexer::keywords_ {
     "if", "else", "for", "while", "return", "int", "double", "float", "char",
     "bool", "void", "class", "struct", "public", "private", "protected",
     "virtual", "override", "const", "static", "using", "namespace", "new",
-    "delete", "true", "false"
+    "delete", "true", "false", "include", "define", "ifdef", "ifndef", "endif"
 };
 
 std::string readAllStdin() {
