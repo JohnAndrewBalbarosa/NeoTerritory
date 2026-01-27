@@ -17,10 +17,13 @@ file(GLOB_RECURSE ALL_MODULE_SOURCES CONFIGURE_DEPENDS
     "Project/Modules/Header/*.h"
 )
 
-set(BACK_SYSTEM_SOURCES "Project/Layer/Back system/syntacticBrokenAST.cpp")
+file(GLOB_RECURSE LAYER_SOURCES CONFIGURE_DEPENDS
+    "Project/Layer/**/*.cpp"
+)
 
 add_executable(NeoTerritory 
-    ${BACK_SYSTEM_SOURCES} 
+    "Project/main.cpp"
+    ${LAYER_SOURCES}
     ${ALL_MODULE_SOURCES}
 )
 

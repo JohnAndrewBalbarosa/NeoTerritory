@@ -1,34 +1,95 @@
-#include <fstream>
-#include <iostream>
+#include "lexer_utils.hpp"
 #include <sstream>
-#include <string>
 
-// Minimal duplicate of the read_source logic from syntacticBrokenAST.cpp.
-std::string read_source(int argc, char* argv[]) {
-    if (argc > 1) {
-        std::ifstream file(argv[1]);
-        if (!file) {
-            std::cerr << "Failed to open " << argv[1] << '\n';
-            return {};
+std::string strip_preprocessor_directives(const std::string& source)
+{
+    std::ostringstream out;
+    size_t i = 0;
+    const size_t n = source.size();
+
+    while (i < n)
+    {
+        // 1. Copy leading whitespace
+        while (i < n && (source[i] == ' ' || source[i] == '\t')) {
+            out << source[i++];
         }
-        std::ostringstream buffer;
-        buffer << file.rdbuf();
-        return buffer.str();
-    }
-    std::ostringstream buffer;
-    buffer << std::cin.rdbuf();
-    return buffer.str();
-}
 
-int main(int argc, char* argv[]) {
-    std::string source = read_source(argc, argv);
-    if (source.empty()) {
-        std::cout << "No source provided or file could not be read.\n";
-        return 1;
+        // 2. Blank line → preserve newline
+        if (i < n && source[i] == '\n') {
+            out << '\n';
+            ++i;
+            continue;
+        }
+
+        // 3. Preprocessor directive (#...)
+        if (i < n && source[i] == '#') {
+            // Skip until newline but PRESERVE it
+            while (i < n && source[i] != '\n')
+                ++i;
+
+            if (i < n && source[i] == '\n') {
+                out << '\n';
+                ++i;
+            }
+            continue;
+        }
+
+        // 4. using namespace ...
+        if (i + 14 < n &&
+            source.compare(i, 6, "using ") == 0 &&
+            source.compare(i + 6, 9, "namespace") == 0)
+        {
+            while (i < n && source[i] != '\n')
+                ++i;
+
+            if (i < n && source[i] == '\n') {
+                out << '\n';
+                ++i;
+            }
+            continue;
+        }
+
+        // 5. Process rest of the line
+        while (i < n)
+        {
+            char c = source[i];
+
+            // Single-line comment
+            if (i + 1 < n && c == '/' && source[i + 1] == '/') {
+                // Skip comment but preserve newline
+                while (i < n && source[i] != '\n')
+                    ++i;
+
+                if (i < n && source[i] == '\n') {
+                    out << '\n';
+                    ++i;
+                }
+                break;
+            }
+
+            // Multi-line comment
+            if (i + 1 < n && c == '/' && source[i + 1] == '*') {
+                i += 2;
+                while (i + 1 < n) {
+                    if (source[i] == '\n')
+                        out << '\n';   // 🔥 preserve every newline
+                    if (source[i] == '*' && source[i + 1] == '/') {
+                        i += 2;
+                        break;
+                    }
+                    ++i;
+                }
+                continue;
+            }
+
+            // Normal character
+            out << c;
+            ++i;
+
+            if (c == '\n')
+                break;
+        }
     }
 
-    std::cout << "=== Read Source Content ===\n";
-    std::cout << source << "\n";
-    std::cout << "=== End ===\n";
-    return 0;
+    return out.str();
 }
