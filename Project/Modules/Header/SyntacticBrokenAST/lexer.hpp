@@ -9,7 +9,7 @@
 
 class Lexer {
    public:
-    explicit Lexer(std::string source);
+    explicit Lexer(std::string source, size_t startLine = 1);
     std::vector<Token> scan();
 
    private:
