@@ -1,6 +1,7 @@
 #pragma once
 
 #include "token.hpp"
+#include "ast.hpp"
 
 #include <cstddef>
 #include <string>
@@ -28,11 +29,19 @@ class Lexer {
      */
     std::vector<Token> scan();
 
+    /**
+     * @brief Gets detected function calls from scanning
+     * @return Vector of ASTNode pointers representing function calls
+     */
+    std::vector<ASTNode*> get_detected_function_calls() const;
+
    private:
     // Scanning methods
     Token scanToken();
     Token stringLiteral();
+    Token characterLiteral();
     Token blockComment();
+    void detect_and_store_function_call(size_t identifier_pos);
     
     // Character processing utilities
     bool match(char expected);
@@ -56,6 +65,8 @@ class Lexer {
     size_t start_{0};           // Start of current token
     size_t startLine_{1};       // Line where current token starts
     size_t startColumn_{1};     // Column where current token starts
+    std::vector<Token> tokens_; // Collected tokens
+    std::vector<ASTNode*> detected_calls_; // Detected function calls
 };
 
 /**

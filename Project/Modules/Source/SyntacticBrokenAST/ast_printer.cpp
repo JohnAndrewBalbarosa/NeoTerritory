@@ -28,9 +28,12 @@ void print_ast_analysis(ASTNode* root)
                       << " dirty=" << (wrapper->dirty ? "yes" : "no");
             if (wrapper->target) {
                 if (auto* call = dynamic_cast<FunctionCallNode*>(wrapper->target)) {
-                    std::cout << " -> FunctionCall '" << call->name << "' (args: " << call->arguments.size() << ")";
+                    std::cout << " -> FunctionCall '" << call->name << "' @" 
+                              << call->line << ":" << call->column
+                              << " (args: " << call->arguments.size() << ")";
                 } else if (auto* decl = dynamic_cast<FunctionDeclNode*>(wrapper->target)) {
-                    std::cout << " -> FunctionDecl '" << decl->name << "'";
+                    std::cout << " -> FunctionDecl '" << decl->name << "' @"
+                              << decl->line << ":" << decl->column;
                 } else {
                     std::cout << " -> target@" << wrapper->target;
                 }

@@ -8,7 +8,7 @@ struct VirtualNode : ASTNode {
     size_t wrapper_line {0};
     size_t wrapper_column {0};
 
-    explicit VirtualNode(ASTNode* target_node = nullptr, bool is_dirty = true)
+    explicit VirtualNode(ASTNode* target_node = nullptr, bool is_dirty = false)
         : target(target_node), dirty(is_dirty) {
         if (target) {
             wrapper_line = target->line;

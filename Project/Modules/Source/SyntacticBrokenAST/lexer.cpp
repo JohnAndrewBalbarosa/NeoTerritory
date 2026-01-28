@@ -1,21 +1,11 @@
 #include "lexer.hpp"
+#include "lexer_utils.hpp"
+#include "function_call_detector.hpp"
 
 #include <cctype>
 #include <iostream>
 #include <sstream>
 #include <utility>
-
-namespace {
-    
-    inline bool is_identifier_start(char c) {
-        return std::isalpha(static_cast<unsigned char>(c)) || c == '_';
-    }
-    
-    inline bool is_identifier_continue(char c) {
-        return std::isalnum(static_cast<unsigned char>(c)) || c == '_';
-    }
-    
-} // anonymous namespace
 
 Lexer::Lexer(std::string source, size_t startLine)
     : source_(std::move(source)), 
@@ -25,7 +15,6 @@ Lexer::Lexer(std::string source, size_t startLine)
 {}
 
 std::vector<Token> Lexer::scan() {
-    std::vector<Token> tokens;
     
     while (!isAtEnd()) {
         start_ = current_;
@@ -40,18 +29,33 @@ std::vector<Token> Lexer::scan() {
             continue;
         }
         
-        tokens.push_back(std::move(tok));
+        tokens_.push_back(std::move(tok));
         
-        if (tokens.back().type == TokenType::Error) {
+        if (tokens_.back().type == TokenType::Error) {
             break;
+        }
+
+        if (tokens_.back().type == TokenType::Identifier) {
+             detect_and_store_function_call(tokens_.size() - 1);
         }
     }
     
-    if (tokens.empty() || tokens.back().type != TokenType::Error) {
-        tokens.push_back({TokenType::EndOfFile, "", "", line_, column_});
+    if (tokens_.empty() || tokens_.back().type != TokenType::Error) {
+        tokens_.push_back({TokenType::EndOfFile, "", "", line_, column_});
     }
     
-    return tokens;
+    return tokens_;
+}
+
+void Lexer::detect_and_store_function_call(size_t identifier_pos) {
+    ASTNode* call = FunctionCallDetector::detect_function_call(tokens_, identifier_pos);
+    if (call) {
+        detected_calls_.push_back(call);
+    }
+}
+
+std::vector<ASTNode*> Lexer::get_detected_function_calls() const {
+    return detected_calls_;
 }
 
 Token Lexer::scanToken() {
@@ -85,28 +89,7 @@ Token Lexer::scanToken() {
     }
 
     if (c == '\'') {
-        bool terminated = false;
-        while (!isAtEnd()) {
-            char ch = advance();
-            if (ch == '\n') {
-                line_ += 1;
-                column_ = 1;
-            }
-            if (ch == '\'') {
-                terminated = true;
-                break;
-            }
-            if (ch == '\\') {
-                advance();
-                continue;
-            }
-        }
-        if (!terminated) {
-            return makeError("Unterminated character literal", 
-                           source_.substr(start_, current_ - start_));
-        }
-        std::string lex = source_.substr(start_, current_ - start_);
-        return makeToken(TokenType::CharacterLiteral, lex);
+        return characterLiteral();
     }
 
     if (c == '/') {
@@ -140,6 +123,8 @@ Token Lexer::scanToken() {
         case '<':
         case '>':
         case ':':
+        case '&':
+        case '|':
             return makeToken(TokenType::Operator, std::string(1, c));
         
         case '(':
@@ -208,6 +193,31 @@ Token Lexer::stringLiteral() {
     }
     std::string lex = source_.substr(start_, current_ - start_);
     return makeToken(TokenType::StringLiteral, lex);
+}
+
+Token Lexer::characterLiteral() {
+    bool terminated = false;
+    while (!isAtEnd()) {
+        char ch = advance();
+        if (ch == '\n') {
+            line_ += 1;
+            column_ = 1;
+        }
+        if (ch == '\'') {
+            terminated = true;
+            break;
+        }
+        if (ch == '\\') {
+            advance();
+            continue;
+        }
+    }
+    if (!terminated) {
+        return makeError("Unterminated character literal", 
+                       source_.substr(start_, current_ - start_));
+    }
+    std::string lex = source_.substr(start_, current_ - start_);
+    return makeToken(TokenType::CharacterLiteral, lex);
 }
 
 Token Lexer::blockComment() {

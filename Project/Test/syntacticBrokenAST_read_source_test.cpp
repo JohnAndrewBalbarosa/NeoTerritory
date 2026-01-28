@@ -93,3 +93,8 @@ std::string strip_preprocessor_directives(const std::string& source)
 
     return out.str();
 }
+
+int main(){
+
+    return 0;
+}
