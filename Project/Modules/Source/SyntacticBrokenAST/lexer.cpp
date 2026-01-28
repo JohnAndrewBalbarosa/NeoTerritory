@@ -1,37 +1,66 @@
 #include "lexer.hpp"
+#include "lexer_utils.hpp"
+#include "function_call_detector.hpp"
 
 #include <cctype>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <utility>
 
-Lexer::Lexer(std::string source)
-    : source_(std::move(source)), length_(source_.size()) {}
+Lexer::Lexer(std::string source, size_t startLine)
+    : source_(std::move(source)), 
+      length_(source_.size()), 
+      line_(startLine), 
+      startLine_(startLine) 
+{}
 
 std::vector<Token> Lexer::scan() {
-    std::vector<Token> tokens;
+    
     while (!isAtEnd()) {
         start_ = current_;
         startLine_ = line_;
         startColumn_ = column_;
+        
         Token tok = scanToken();
-        if (tok.type != TokenType::Error && tok.type != TokenType::EndOfFile && tok.lexeme.empty()) {
+        
+        if (tok.type != TokenType::Error && 
+            tok.type != TokenType::EndOfFile && 
+            tok.lexeme.empty()) {
             continue;
         }
-        tokens.push_back(std::move(tok));
-        if (tokens.back().type == TokenType::Error) {
+        
+        tokens_.push_back(std::move(tok));
+        
+        if (tokens_.back().type == TokenType::Error) {
             break;
         }
+
+        if (tokens_.back().type == TokenType::Identifier) {
+             detect_and_store_function_call(tokens_.size() - 1);
+        }
     }
-    if (tokens.empty() || tokens.back().type != TokenType::Error) {
-        tokens.push_back({TokenType::EndOfFile, "", "", line_, column_});
+    
+    if (tokens_.empty() || tokens_.back().type != TokenType::Error) {
+        tokens_.push_back({TokenType::EndOfFile, "", "", line_, column_});
     }
-    return tokens;
+    
+    return tokens_;
+}
+
+void Lexer::detect_and_store_function_call(size_t identifier_pos) {
+    ASTNode* call = FunctionCallDetector::detect_function_call(tokens_, identifier_pos);
+    if (call) {
+        detected_calls_.push_back(call);
+    }
+}
+
+std::vector<ASTNode*> Lexer::get_detected_function_calls() const {
+    return detected_calls_;
 }
 
 Token Lexer::scanToken() {
     char c = advance();
+    
     if (std::isspace(static_cast<unsigned char>(c))) {
         if (c == '\n') {
             line_ += 1;
@@ -40,23 +69,12 @@ Token Lexer::scanToken() {
         return Token{TokenType::Delimiter, "", "", startLine_, startColumn_};
     }
 
-    if (std::isalpha(static_cast<unsigned char>(c)) || c == '_') {
-        while (std::isalnum(static_cast<unsigned char>(peek())) || peek() == '_') {
-            advance();
-        }
-        std::string lex = source_.substr(start_, current_ - start_);
-        if (keywords_.count(lex)) {
-            return makeToken(TokenType::Keyword, lex);
-        }
-        return makeToken(TokenType::Identifier, lex);
-    }
-
     if (std::isdigit(static_cast<unsigned char>(c))) {
         while (std::isdigit(static_cast<unsigned char>(peek()))) {
             advance();
         }
-        if (std::isalpha(static_cast<unsigned char>(peek()))) {
-            while (std::isalnum(static_cast<unsigned char>(peek()))) {
+        if (is_identifier_continue(peek())) {
+            while (is_identifier_continue(peek())) {
                 advance();
             }
             std::string bad = source_.substr(start_, current_ - start_);
@@ -67,32 +85,11 @@ Token Lexer::scanToken() {
     }
 
     if (c == '"') {
-        return stringLiteral();
+        return stringLiteral(); 
     }
 
     if (c == '\'') {
-        // Handle character literal
-        bool terminated = false;
-        while (!isAtEnd()) {
-            char ch = advance();
-            if (ch == '\n') {
-                line_ += 1;
-                column_ = 1;
-            }
-            if (ch == '\'') {
-                terminated = true;
-                break;
-            }
-            if (ch == '\\') {
-                advance();
-                continue;
-            }
-        }
-        if (!terminated) {
-            return makeError("Unterminated character literal", source_.substr(start_, current_ - start_));
-        }
-        std::string lex = source_.substr(start_, current_ - start_);
-        return makeToken(TokenType::CharacterLiteral, lex);
+        return characterLiteral();
     }
 
     if (c == '/') {
@@ -114,6 +111,7 @@ Token Lexer::scanToken() {
     if (c == '>' && match('=')) return makeToken(TokenType::Operator, ">=");
     if (c == '&' && match('&')) return makeToken(TokenType::Operator, "&&");
     if (c == '|' && match('|')) return makeToken(TokenType::Operator, "||");
+    if (c == ':' && match(':')) return makeToken(TokenType::Operator, "::");
 
     switch (c) {
         case '+':
@@ -124,12 +122,11 @@ Token Lexer::scanToken() {
         case '=':
         case '<':
         case '>':
-            return makeToken(TokenType::Operator, std::string(1, c));
         case ':':
-            if (match(':')) {
-                return makeToken(TokenType::Operator, "::");
-            }
+        case '&':
+        case '|':
             return makeToken(TokenType::Operator, std::string(1, c));
+        
         case '(':
         case ')':
         case '{':
@@ -140,12 +137,37 @@ Token Lexer::scanToken() {
         case ',':
         case '.':
             return makeToken(TokenType::Delimiter, std::string(1, c));
+        
         case '#':
-            return makeToken(TokenType::Preprocessor, std::string(1,c));
-        default:
+        case '@':
+        case '$':
+        case '~':
+        case '`':
+        case '?':
+        case '\\':
             return makeError("Unrecognized character", std::string(1, c));
     }
+    // === Identifiers and Keywords ===
+    if (is_identifier_start(c)) {
+        while (is_identifier_continue(peek())) {
+            advance();
+        }
+        std::string lex = source_.substr(start_, current_ - start_);
+        
+        // Check if it's a keyword
+        if (keywords_.count(lex)) {
+            return makeToken(TokenType::Keyword, lex);
+        }
+        return makeToken(TokenType::Identifier, lex);
+    }
+    
+    // === Unrecognized Character ===
+    return makeError("Unrecognized character", std::string(1, c));
 }
+
+// ============================================================================
+// Literal Scanning Helpers
+// ============================================================================
 
 Token Lexer::stringLiteral() {
     bool terminated = false;
@@ -160,16 +182,42 @@ Token Lexer::stringLiteral() {
             break;
         }
         if (c == '\\') {
-            advance();
+            advance(); // Skip escaped character
             continue;
         }
     }
 
     if (!terminated) {
-        return makeError("Unterminated string literal", source_.substr(start_, current_ - start_));
+        return makeError("Unterminated string literal", 
+                       source_.substr(start_, current_ - start_));
     }
     std::string lex = source_.substr(start_, current_ - start_);
     return makeToken(TokenType::StringLiteral, lex);
+}
+
+Token Lexer::characterLiteral() {
+    bool terminated = false;
+    while (!isAtEnd()) {
+        char ch = advance();
+        if (ch == '\n') {
+            line_ += 1;
+            column_ = 1;
+        }
+        if (ch == '\'') {
+            terminated = true;
+            break;
+        }
+        if (ch == '\\') {
+            advance();
+            continue;
+        }
+    }
+    if (!terminated) {
+        return makeError("Unterminated character literal", 
+                       source_.substr(start_, current_ - start_));
+    }
+    std::string lex = source_.substr(start_, current_ - start_);
+    return makeToken(TokenType::CharacterLiteral, lex);
 }
 
 Token Lexer::blockComment() {
@@ -183,7 +231,8 @@ Token Lexer::blockComment() {
             return Token{TokenType::Delimiter, "", "", startLine_, startColumn_};
         }
     }
-    return makeError("Unterminated block comment", source_.substr(start_, current_ - start_));
+    return makeError("Unterminated block comment", 
+                   source_.substr(start_, current_ - start_));
 }
 
 bool Lexer::match(char expected) {
@@ -206,7 +255,9 @@ char Lexer::advance() {
     return c;
 }
 
-bool Lexer::isAtEnd() const { return current_ >= length_; }
+bool Lexer::isAtEnd() const { 
+    return current_ >= length_; 
+}
 
 Token Lexer::makeToken(TokenType type, const std::string& lexeme) const {
     return Token{type, lexeme, "", startLine_, startColumn_};
@@ -216,11 +267,14 @@ Token Lexer::makeError(const std::string& message, const std::string& lexeme) co
     return Token{TokenType::Error, lexeme, message, startLine_, startColumn_};
 }
 
-const std::unordered_set<std::string> Lexer::keywords_ {
-    "if", "else", "for", "while", "return", "int", "double", "float", "char",
-    "bool", "void", "class", "struct", "public", "private", "protected",
-    "virtual", "override", "const", "static", "using", "namespace", "new",
-    "delete", "true", "false"
+const std::unordered_set<std::string> Lexer::keywords_{
+    "if", "else", "for", "while", "return",
+    "int", "double", "float", "char", "bool", "void",
+    "class", "struct", "public", "private", "protected",
+    "virtual", "override", "const", "static",
+    "using", "namespace",
+    "new", "delete",
+    "true", "false"
 };
 
 std::string readAllStdin() {
