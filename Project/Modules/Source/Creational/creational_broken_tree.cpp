@@ -1,5 +1,6 @@
 #include "creational_broken_tree.hpp"
-#include "Logic/creational_logic_scaffold.hpp"
+#include "Factory/factory_pattern_logic.hpp"
+#include "Singleton/singleton_pattern_logic.hpp"
 #include "tree_html_renderer.hpp"
 
 #include <functional>
@@ -8,7 +9,26 @@
 
 CreationalTreeNode build_creational_broken_tree(const ParseTreeNode& root)
 {
-    return build_creational_class_scaffold(root);
+    CreationalTreeNode out{"CreationalPatternsRoot", "factory + singleton", {}};
+
+    CreationalTreeNode factory_tree = build_factory_pattern_tree(root);
+    if (!factory_tree.children.empty())
+    {
+        out.children.push_back(std::move(factory_tree));
+    }
+
+    CreationalTreeNode singleton_tree = build_singleton_pattern_tree(root);
+    if (!singleton_tree.children.empty())
+    {
+        out.children.push_back(std::move(singleton_tree));
+    }
+
+    if (out.children.empty())
+    {
+        out.label = "NoFactoryOrSingletonPatternFound";
+    }
+
+    return out;
 }
 
 ParseTreeNode creational_tree_to_parse_tree_node(const CreationalTreeNode& root)
@@ -31,7 +51,7 @@ std::string creational_tree_to_html(const CreationalTreeNode& root)
     return render_tree_html(
         parse_root,
         "Creational Broken Tree",
-        "No creational (factory) pattern found in this source.");
+        "No creational (factory/singleton) pattern found in this source.");
 }
 
 std::string creational_tree_to_text(const CreationalTreeNode& root)
