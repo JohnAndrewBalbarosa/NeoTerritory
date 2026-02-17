@@ -56,6 +56,12 @@ std::vector<std::string> tokenize_cpp(const std::string& source)
             ++i;
             continue;
         }
+        if (c == '-' && i + 1 < source.size() && source[i + 1] == '>')
+        {
+            tokens.emplace_back("->");
+            ++i;
+            continue;
+        }
 
         tokens.emplace_back(1, c);
     }
@@ -111,13 +117,22 @@ std::string detect_statement_kind(const std::vector<std::string>& statement_toke
     if (first_token == "struct") return cfg.node_struct_decl;
     if (first_token == "namespace") return cfg.node_namespace_decl;
     bool has_assignment = false;
+    bool has_member_arrow = false;
     for (const std::string& token : statement_tokens)
     {
         if (token == cfg.token_assignment)
         {
             has_assignment = true;
-            break;
         }
+        if (token == cfg.token_member_arrow)
+        {
+            has_member_arrow = true;
+        }
+    }
+
+    if (has_assignment && has_member_arrow)
+    {
+        return cfg.node_member_assignment;
     }
 
     if (has_assignment || is_type_keyword(first_token))

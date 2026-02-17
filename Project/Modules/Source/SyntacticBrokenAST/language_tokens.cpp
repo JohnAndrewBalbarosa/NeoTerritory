@@ -20,12 +20,14 @@ LanguageTokenConfig build_cpp_tokens()
     cfg.node_conditional_statement = "ConditionalStatement";
     cfg.node_loop_statement = "LoopStatement";
     cfg.node_assignment_or_decl = "AssignmentOrVarDecl";
+    cfg.node_member_assignment = "MemberAssignment";
 
     cfg.token_open_brace = "{";
     cfg.token_close_brace = "}";
     cfg.token_statement_end = ";";
     cfg.token_assignment = "=";
     cfg.token_scope_operator = "::";
+    cfg.token_member_arrow = "->";
 
     cfg.class_keywords = {"class", "struct"};
     cfg.conditional_keywords = {"if", "switch", "else"};
@@ -37,6 +39,8 @@ LanguageTokenConfig build_cpp_tokens()
         "auto", "bool", "char", "double", "float", "int", "long", "short",
         "signed", "size_t", "std", "string", "unsigned", "void"
     };
+    cfg.allocator_keywords = {"new"};
+    cfg.allocator_template_functions = {"make_unique", "make_shared", "allocate_shared"};
 
     return cfg;
 }

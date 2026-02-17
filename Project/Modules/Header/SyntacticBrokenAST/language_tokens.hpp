@@ -22,6 +22,7 @@ struct LanguageTokenConfig
     std::string node_conditional_statement;
     std::string node_loop_statement;
     std::string node_assignment_or_decl;
+    std::string node_member_assignment;
 
     // Punctuation tokens
     std::string token_open_brace;
@@ -29,6 +30,7 @@ struct LanguageTokenConfig
     std::string token_statement_end;
     std::string token_assignment;
     std::string token_scope_operator;
+    std::string token_member_arrow;
 
     // Keyword groups
     std::unordered_set<std::string> class_keywords;
@@ -36,6 +38,8 @@ struct LanguageTokenConfig
     std::unordered_set<std::string> loop_keywords;
     std::unordered_set<std::string> function_exclusion_keywords;
     std::unordered_set<std::string> primitive_type_keywords;
+    std::unordered_set<std::string> allocator_keywords;
+    std::unordered_set<std::string> allocator_template_functions;
 };
 
 const LanguageTokenConfig& language_tokens(LanguageId language_id);
