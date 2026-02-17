@@ -27,9 +27,8 @@ add_executable(NeoTerritory
     ${ALL_MODULE_SOURCES}
 )
 
-file(GLOB_RECURSE HEADER_DIRS
-     LIST_DIRECTORIES true
-     "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/*"
+target_include_directories(NeoTerritory PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/SyntacticBrokenAST"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/Creational"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/Behavioural"
 )
-
-target_include_directories(NeoTerritory PRIVATE ${HEADER_DIRS})
