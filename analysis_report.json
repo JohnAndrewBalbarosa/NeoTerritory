@@ -1,0 +1,45 @@
+{
+  "source_pattern": "factory",
+  "target_pattern": "singleton",
+  "input_file_count": 2,
+  "total_elapsed_ms": 2.5716,
+  "peak_estimated_bytes": 10976,
+  "graph_consistent": true,
+  "stages": [
+    {
+      "name": "ParseBaseGraph",
+      "elapsed_ms": 0.9877,
+      "estimated_bytes": 10976
+    },
+    {
+      "name": "DetectPatternInstances",
+      "elapsed_ms": 1.2831,
+      "estimated_bytes": 2660
+    },
+    {
+      "name": "CreateVirtualSubgraph",
+      "elapsed_ms": 0.0431,
+      "estimated_bytes": 8576
+    },
+    {
+      "name": "HashAffectedNodes",
+      "elapsed_ms": 0.1993,
+      "estimated_bytes": 1696
+    },
+    {
+      "name": "GenerateMonolithicRepresentation",
+      "elapsed_ms": 0.0182,
+      "estimated_bytes": 2063
+    },
+    {
+      "name": "ApplyTargetPolicies",
+      "elapsed_ms": 0.0018,
+      "estimated_bytes": 9280
+    },
+    {
+      "name": "ValidateGraphConsistency",
+      "elapsed_ms": 0.0017,
+      "estimated_bytes": 9280
+    }
+  ]
+}

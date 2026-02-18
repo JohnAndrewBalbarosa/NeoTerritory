@@ -1,5 +1,10 @@
 #include "source_reader.hpp"
+#include "algorithm_pipeline.hpp"
+#include "cli_arguments.hpp"
+#include "codebase_output_writer.hpp"
 #include "parse_tree.hpp"
+#include "parse_tree_code_generator.hpp"
+#include "parse_tree_symbols.hpp"
 #include "creational_broken_tree.hpp"
 #include "behavioural_broken_tree.hpp"
 
@@ -7,84 +12,128 @@
 #include <iostream>
 #include <string>
 
+namespace
+{
+bool write_text_file(const std::string& path, const std::string& content)
+{
+    std::ofstream out(path);
+    if (!out)
+    {
+        return false;
+    }
+    out << content;
+    return true;
+}
+} // namespace
+
 int run_syntactic_broken_ast(int argc, char* argv[])
 {
-    std::string source = read_source(argc, argv);
-    if (source.empty())
+    CliArguments cli;
+    std::string cli_error;
+    if (!parse_cli_arguments(argc, argv, cli, cli_error))
     {
-        std::cout << "No source provided.\n";
+        std::cerr << cli_error << '\n';
         return 1;
     }
 
-    const ParseTreeNode tree = build_cpp_parse_tree(source);
+    const std::string source = read_source_files(cli.input_files);
+    if (source.empty())
+    {
+        std::cerr << "No source provided.\n";
+        return 1;
+    }
+
+    const PipelineArtifacts artifacts =
+        run_normalize_and_rewrite_pipeline(source, cli.source_pattern, cli.target_pattern, cli.input_files.size());
+    const ParseTreeNode& tree = artifacts.base_tree;
 
     std::cout << "\n=== C++ Parse Tree ===\n";
     std::cout << parse_tree_to_text(tree);
 
-    std::string parse_tree_output_path = "parse_tree.html";
-    if (argc > 2 && argv[2] != nullptr && std::string(argv[2]).size() > 0)
+    const std::string parse_tree_output_path = "parse_tree.html";
+    if (!write_text_file(parse_tree_output_path, parse_tree_to_html(tree)))
     {
-        parse_tree_output_path = argv[2];
+        std::cerr << "Failed to write " << parse_tree_output_path << '\n';
+        return 1;
     }
 
-    {
-        const std::string html = parse_tree_to_html(tree);
-        std::ofstream out(parse_tree_output_path);
-        if (!out)
-        {
-            std::cerr << "Failed to write " << parse_tree_output_path << '\n';
-            return 1;
-        }
-        out << html;
-    }
-
-    const CreationalTreeNode creational_tree = build_creational_broken_tree(tree);
+    const CreationalTreeNode& creational_tree = artifacts.creational_tree;
 
     std::cout << "\n=== Creational Broken Tree ===\n";
     std::cout << creational_tree_to_text(creational_tree);
 
-    std::string creational_output_path = "creational_parse_tree.html";
-    if (argc > 3 && argv[3] != nullptr && std::string(argv[3]).size() > 0)
+    const std::string creational_output_path = "creational_parse_tree.html";
+    if (!write_text_file(creational_output_path, creational_tree_to_html(creational_tree)))
     {
-        creational_output_path = argv[3];
+        std::cerr << "Failed to write " << creational_output_path << '\n';
+        return 1;
     }
 
-    {
-        const std::string creational_html = creational_tree_to_html(creational_tree);
-        std::ofstream out(creational_output_path);
-        if (!out)
-        {
-            std::cerr << "Failed to write " << creational_output_path << '\n';
-            return 1;
-        }
-        out << creational_html;
-    }
-
-    const ParseTreeNode behavioural_tree = build_behavioural_broken_tree(tree);
+    const ParseTreeNode& behavioural_tree = artifacts.behavioural_tree;
 
     std::cout << "\n=== Behavioural Broken Tree ===\n";
     std::cout << parse_tree_to_text(behavioural_tree);
 
-    std::string behavioural_output_path = "behavioural_broken_ast.html";
-    if (argc > 4 && argv[4] != nullptr && std::string(argv[4]).size() > 0)
+    const std::string behavioural_output_path = "behavioural_broken_ast.html";
+    if (!write_text_file(behavioural_output_path, behavioural_broken_tree_to_html(behavioural_tree)))
     {
-        behavioural_output_path = argv[4];
-    }
-
-    {
-        const std::string behavioural_html = behavioural_broken_tree_to_html(behavioural_tree);
-        std::ofstream out(behavioural_output_path);
-        if (!out)
-        {
-            std::cerr << "Failed to write " << behavioural_output_path << '\n';
-            return 1;
-        }
-        out << behavioural_html;
+        std::cerr << "Failed to write " << behavioural_output_path << '\n';
+        return 1;
     }
 
     std::cout << "\nHTML parse tree generated: " << parse_tree_output_path << '\n';
     std::cout << "Creational HTML generated: " << creational_output_path << '\n';
     std::cout << "Behavioural HTML generated: " << behavioural_output_path << '\n';
+
+    const std::string base_code = generate_base_code_from_source(source);
+    const std::string target_code =
+        generate_target_code_from_source(source, cli.source_pattern, cli.target_pattern);
+
+    std::cout << "\n=== Generated Base Code ===\n";
+    std::cout << base_code << '\n';
+
+    CodebaseOutputPaths code_paths;
+    if (!write_codebase_outputs(base_code, target_code, cli.target_pattern, code_paths))
+    {
+        std::cerr << "Failed to write generated base/target code outputs.\n";
+        return 1;
+    }
+
+    std::cout << "Generated base code cpp: " << code_paths.base_cpp_path << '\n';
+    std::cout << "Generated target code cpp: " << code_paths.target_cpp_path << '\n';
+    std::cout << "Generated base code html: " << code_paths.base_html_path << '\n';
+    std::cout << "Generated target code html: " << code_paths.target_html_path << '\n';
+
+    std::cout << "\n=== Performance Report ===\n";
+    std::cout << "Source pattern: " << artifacts.report.source_pattern << '\n';
+    std::cout << "Target pattern: " << artifacts.report.target_pattern << '\n';
+    std::cout << "Input files: " << artifacts.report.input_file_count << '\n';
+    std::cout << "Total elapsed (ms): " << artifacts.report.total_elapsed_ms << '\n';
+    std::cout << "Peak estimated memory (bytes): " << artifacts.report.peak_estimated_bytes << '\n';
+    std::cout << "Graph consistent: " << (artifacts.report.graph_consistent ? "true" : "false") << '\n';
+    for (const StageMetric& s : artifacts.report.stages)
+    {
+        std::cout << " - " << s.name
+                  << " | elapsed_ms=" << s.elapsed_ms
+                  << " | estimated_bytes=" << s.estimated_bytes << '\n';
+    }
+
+    std::cout << "\n=== Class Usage Hashes ===\n";
+    for (const ParseSymbolUsage& usage : getClassUsageTable())
+    {
+        std::cout << " - class=" << usage.name
+                  << " | node_index=" << usage.node_index
+                  << " | hash=" << usage.hash_value
+                  << " | node_kind=" << usage.node_kind << '\n';
+    }
+
+    const std::string report_output_path = "analysis_report.json";
+    if (!write_text_file(report_output_path, pipeline_report_to_json(artifacts.report)))
+    {
+        std::cerr << "Failed to write " << report_output_path << '\n';
+        return 1;
+    }
+    std::cout << "Performance JSON report generated: " << report_output_path << '\n';
 
     return 0;
 }
