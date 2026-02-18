@@ -11,6 +11,7 @@ namespace
 {
 std::vector<ParseSymbol> g_class_symbols;
 std::vector<ParseSymbol> g_function_symbols;
+std::vector<ParseSymbolUsage> g_class_usages;
 std::unordered_map<std::string, size_t> g_class_index;
 std::unordered_map<std::string, size_t> g_function_index;
 
@@ -212,6 +213,45 @@ void collect_symbols_dfs(const ParseTreeNode& node)
     }
 }
 
+void collect_class_usages_dfs(const ParseTreeNode& node, size_t& node_index)
+{
+    ++node_index;
+
+    const bool declaration_node =
+        (node.kind == "ClassDecl" || node.kind == "StructDecl" || is_class_block(node));
+
+    const std::vector<std::string> words = split_words(node.value);
+    for (const std::string& word : words)
+    {
+        if (g_class_index.find(word) == g_class_index.end())
+        {
+            continue;
+        }
+
+        if (declaration_node)
+        {
+            const std::string declared_name = class_name_from_signature(node.value);
+            if (declared_name == word)
+            {
+                continue;
+            }
+        }
+
+        ParseSymbolUsage usage;
+        usage.name = word;
+        usage.node_kind = node.kind;
+        usage.node_value = node.value;
+        usage.node_index = node_index;
+        usage.hash_value = std::hash<std::string>{}(word + ":" + std::to_string(node_index));
+        g_class_usages.push_back(std::move(usage));
+    }
+
+    for (const ParseTreeNode& child : node.children)
+    {
+        collect_class_usages_dfs(child, node_index);
+    }
+}
+
 std::string extract_return_candidate_name(const std::string& return_expression)
 {
     std::string expr = trim(return_expression);
@@ -242,10 +282,14 @@ void rebuild_parse_tree_symbol_tables(const ParseTreeNode& root)
 {
     g_class_symbols.clear();
     g_function_symbols.clear();
+    g_class_usages.clear();
     g_class_index.clear();
     g_function_index.clear();
 
     collect_symbols_dfs(root);
+
+    size_t node_index = 0;
+    collect_class_usages_dfs(root, node_index);
 }
 
 const std::vector<ParseSymbol>& getClassSymbolTable()
@@ -256,6 +300,11 @@ const std::vector<ParseSymbol>& getClassSymbolTable()
 const std::vector<ParseSymbol>& getFunctionSymbolTable()
 {
     return g_function_symbols;
+}
+
+const std::vector<ParseSymbolUsage>& getClassUsageTable()
+{
+    return g_class_usages;
 }
 
 const ParseSymbol* getClassByName(const std::string& name)
@@ -278,6 +327,19 @@ const ParseSymbol* getFunctionByName(const std::string& name)
     }
 
     return &g_function_symbols[it->second];
+}
+
+std::vector<ParseSymbolUsage> getClassUsagesByName(const std::string& name)
+{
+    std::vector<ParseSymbolUsage> out;
+    for (const ParseSymbolUsage& usage : g_class_usages)
+    {
+        if (usage.name == name)
+        {
+            out.push_back(usage);
+        }
+    }
+    return out;
 }
 
 bool returnTargetsKnownClass(const std::string& return_expression)

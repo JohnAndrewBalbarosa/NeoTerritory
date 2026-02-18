@@ -162,10 +162,25 @@ std::string extract_type_in_angle_brackets(const std::string& expr)
     return trim(expr.substr(l + 1, r - l - 1));
 }
 
+std::string remove_spaces(const std::string& input)
+{
+    std::string out;
+    out.reserve(input.size());
+    for (char c : input)
+    {
+        if (!std::isspace(static_cast<unsigned char>(c)))
+        {
+            out.push_back(c);
+        }
+    }
+    return out;
+}
+
 bool is_factory_allocator_return(const std::string& return_expr, std::string& out_matched_class)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
     const std::string lowered = to_lower(trim(return_expr));
+    const std::string lowered_no_space = remove_spaces(lowered);
 
     if (starts_with(lowered, "new "))
     {
@@ -180,7 +195,7 @@ bool is_factory_allocator_return(const std::string& return_expr, std::string& ou
 
     for (const std::string& allocator : cfg.allocator_template_functions)
     {
-        if (lowered.find(allocator + "<") != std::string::npos)
+        if (lowered_no_space.find(allocator + "<") != std::string::npos)
         {
             const std::string class_candidate = extract_type_in_angle_brackets(return_expr);
             if (!class_candidate.empty() && getClassByName(class_candidate) != nullptr)

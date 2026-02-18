@@ -1,29 +1,34 @@
 #include "source_reader.hpp"
-#include <fstream>
-#include <sstream>
-#include <iostream>
 
-std::string read_source(int argc, char* argv[])
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+std::string read_source_files(const std::vector<std::string>& files)
 {
-    if (argc > 1)
+    if (files.empty())
     {
-        std::ifstream file(argv[1]);
+        return {};
+    }
+
+    std::ostringstream merged;
+    for (size_t i = 0; i < files.size(); ++i)
+    {
+        const std::string& path = files[i];
+        std::ifstream file(path);
         if (!file)
         {
-            std::cerr << "Failed to open " << argv[1] << '\n';
+            std::cerr << "Failed to open " << path << '\n';
             return {};
         }
-        std::ostringstream buffer;
-        buffer << file.rdbuf();
-        return buffer.str();
+
+        merged << "\n// === FILE: " << path << " ===\n";
+        merged << file.rdbuf();
+        if (i + 1 < files.size())
+        {
+            merged << '\n';
+        }
     }
-    
-    if (std::cin.rdbuf()->in_avail() > 0 || !std::cin.eof())
-    {
-        std::ostringstream buffer;
-        buffer << std::cin.rdbuf();
-        return buffer.str();
-    }
-    
-    return {};
+
+    return merged.str();
 }
