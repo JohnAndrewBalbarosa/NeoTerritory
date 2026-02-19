@@ -119,11 +119,21 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     }
 
     std::cout << "\n=== Class Usage Hashes ===\n";
+    for (const ParseSymbol& cls : getClassSymbolTable())
+    {
+        std::cout << " - class_def=" << cls.name
+                  << " | class_name_hash=" << cls.hash_value
+                  << " | definition_node_index=" << cls.definition_node_index << '\n';
+    }
     for (const ParseSymbolUsage& usage : getClassUsageTable())
     {
         std::cout << " - class=" << usage.name
+                  << " | type=" << usage.type_string
                   << " | node_index=" << usage.node_index
+                  << " | class_name_hash=" << usage.class_name_hash
                   << " | hash=" << usage.hash_value
+                  << " | hash_collision=" << (usage.hash_collision ? "true" : "false")
+                  << " | refactor_candidate=" << (usage.refactor_candidate ? "true" : "false")
                   << " | node_kind=" << usage.node_kind << '\n';
     }
 

@@ -171,6 +171,25 @@ std::string pipeline_report_to_json(const PipelineReport& report)
     out << "  \"total_elapsed_ms\": " << report.total_elapsed_ms << ",\n";
     out << "  \"peak_estimated_bytes\": " << report.peak_estimated_bytes << ",\n";
     out << "  \"graph_consistent\": " << (report.graph_consistent ? "true" : "false") << ",\n";
+    out << "  \"class_registry\": [\n";
+
+    const std::vector<ParseSymbol>& class_symbols = getClassSymbolTable();
+    for (size_t i = 0; i < class_symbols.size(); ++i)
+    {
+        const ParseSymbol& s = class_symbols[i];
+        out << "    {\n";
+        out << "      \"name\": \"" << json_escape(s.name) << "\",\n";
+        out << "      \"hash\": " << s.hash_value << ",\n";
+        out << "      \"definition_node_index\": " << s.definition_node_index << "\n";
+        out << "    }";
+        if (i + 1 < class_symbols.size())
+        {
+            out << ",";
+        }
+        out << "\n";
+    }
+
+    out << "  ],\n";
     out << "  \"class_usages\": [\n";
 
     const std::vector<ParseSymbolUsage>& class_usages = getClassUsageTable();
@@ -179,9 +198,13 @@ std::string pipeline_report_to_json(const PipelineReport& report)
         const ParseSymbolUsage& u = class_usages[i];
         out << "    {\n";
         out << "      \"name\": \"" << json_escape(u.name) << "\",\n";
+        out << "      \"type_string\": \"" << json_escape(u.type_string) << "\",\n";
         out << "      \"node_kind\": \"" << json_escape(u.node_kind) << "\",\n";
         out << "      \"node_value\": \"" << json_escape(u.node_value) << "\",\n";
         out << "      \"node_index\": " << u.node_index << ",\n";
+        out << "      \"class_name_hash\": " << u.class_name_hash << ",\n";
+        out << "      \"hash_collision\": " << (u.hash_collision ? "true" : "false") << ",\n";
+        out << "      \"refactor_candidate\": " << (u.refactor_candidate ? "true" : "false") << ",\n";
         out << "      \"hash\": " << u.hash_value << "\n";
         out << "    }";
         if (i + 1 < class_usages.size())

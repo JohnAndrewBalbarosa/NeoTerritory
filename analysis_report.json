@@ -2,44 +2,96 @@
   "source_pattern": "factory",
   "target_pattern": "singleton",
   "input_file_count": 2,
-  "total_elapsed_ms": 2.5716,
-  "peak_estimated_bytes": 10976,
+  "total_elapsed_ms": 5.598,
+  "peak_estimated_bytes": 11072,
   "graph_consistent": true,
+  "class_usages": [
+    {
+      "name": "AppConfig",
+      "type_string": "AppConfig",
+      "node_kind": "Statement",
+      "node_value": "static AppConfig instance",
+      "node_index": 23,
+      "target_def_hash": 7911655363053219853,
+      "refactor_candidate": false,
+      "hash": 3798225841886473295
+    },
+    {
+      "name": "ReportFactory",
+      "type_string": "ReportFactory",
+      "node_kind": "Statement",
+      "node_value": "ReportFactory factory",
+      "node_index": 27,
+      "target_def_hash": 10709288884147927117,
+      "refactor_candidate": true,
+      "hash": 17274260906591254546
+    },
+    {
+      "name": "Report",
+      "type_string": "Report",
+      "node_kind": "AssignmentOrVarDecl",
+      "node_value": "std :: unique_ptr < Report > report = factory . create ( 1 )",
+      "node_index": 28,
+      "target_def_hash": 6663072897653030005,
+      "refactor_candidate": false,
+      "hash": 287693202301274824
+    },
+    {
+      "name": "AppConfig",
+      "type_string": "AppConfig",
+      "node_kind": "AssignmentOrVarDecl",
+      "node_value": "AppConfig cfg = AppConfig :: get ( )",
+      "node_index": 29,
+      "target_def_hash": 7911655363053219853,
+      "refactor_candidate": false,
+      "hash": 17656587692624898808
+    },
+    {
+      "name": "FleetVehicle",
+      "type_string": "FleetVehicle",
+      "node_kind": "Statement",
+      "node_value": "FleetVehicle vehicle",
+      "node_index": 39,
+      "target_def_hash": 6578929020877048662,
+      "refactor_candidate": false,
+      "hash": 7405021479542141808
+    }
+  ],
   "stages": [
     {
       "name": "ParseBaseGraph",
-      "elapsed_ms": 0.9877,
-      "estimated_bytes": 10976
+      "elapsed_ms": 2.0573,
+      "estimated_bytes": 11072
     },
     {
       "name": "DetectPatternInstances",
-      "elapsed_ms": 1.2831,
-      "estimated_bytes": 2660
+      "elapsed_ms": 2.3063,
+      "estimated_bytes": 3741
     },
     {
       "name": "CreateVirtualSubgraph",
-      "elapsed_ms": 0.0431,
-      "estimated_bytes": 8576
+      "elapsed_ms": 0.3524,
+      "estimated_bytes": 8672
     },
     {
       "name": "HashAffectedNodes",
-      "elapsed_ms": 0.1993,
+      "elapsed_ms": 0.7582,
       "estimated_bytes": 1696
     },
     {
       "name": "GenerateMonolithicRepresentation",
-      "elapsed_ms": 0.0182,
-      "estimated_bytes": 2063
+      "elapsed_ms": 0.0668,
+      "estimated_bytes": 2159
     },
     {
       "name": "ApplyTargetPolicies",
-      "elapsed_ms": 0.0018,
-      "estimated_bytes": 9280
+      "elapsed_ms": 0.0032,
+      "estimated_bytes": 9376
     },
     {
       "name": "ValidateGraphConsistency",
-      "elapsed_ms": 0.0017,
-      "estimated_bytes": 9280
+      "elapsed_ms": 0.0029,
+      "estimated_bytes": 9376
     }
   ]
 }
