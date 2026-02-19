@@ -12,15 +12,20 @@ struct ParseSymbol
     std::string name;
     std::string signature;
     size_t hash_value;
+    size_t definition_node_index;
 };
 
 struct ParseSymbolUsage
 {
     std::string name;
+    std::string type_string;
     std::string node_kind;
     std::string node_value;
     size_t node_index;
+    size_t class_name_hash;
     size_t hash_value;
+    bool refactor_candidate;
+    bool hash_collision;
 };
 
 /**
@@ -47,6 +52,7 @@ const std::vector<ParseSymbolUsage>& getClassUsageTable();
  * @brief Lookup class symbol by exact name.
  */
 const ParseSymbol* getClassByName(const std::string& name);
+const ParseSymbol* getClassByHash(size_t hash_value);
 
 /**
  * @brief Lookup function symbol by exact name.

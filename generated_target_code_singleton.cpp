@@ -2,7 +2,7 @@
 // source_pattern: factory
 // target_pattern: singleton
 
-// === FILE: Project/Test/Input/factory_to_singleton_source.cpp ===
+// === FILE: C:\Users\Drew\Downloads\NeoTerritory/Project/Test/Input/factory_to_singleton_source.cpp ===
 // Sample input for CLI analysis:
 // source_pattern=factory target_pattern=singleton
 
@@ -73,7 +73,7 @@ int main() {
 }
 
 
-// === FILE: Project/Test/Input/domain_models_source.cpp ===
+// === FILE: C:\Users\Drew\Downloads\NeoTerritory/Project/Test/Input/domain_models_source.cpp ===
 // Additional non-pattern context classes.
 // These should not be treated as creational pattern targets.
 
