@@ -44,7 +44,12 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     }
 
     const PipelineArtifacts artifacts =
-        run_normalize_and_rewrite_pipeline(source, cli.source_pattern, cli.target_pattern, cli.input_files.size());
+        run_normalize_and_rewrite_pipeline(
+            source,
+            cli.source_pattern,
+            cli.target_pattern,
+            cli.input_files.size(),
+            cli.input_files);
     const ParseTreeNode& tree = artifacts.base_tree;
 
     std::cout << "\n=== C++ Parse Tree ===\n";
@@ -135,6 +140,19 @@ int run_syntactic_broken_ast(int argc, char* argv[])
                   << " | hash_collision=" << (usage.hash_collision ? "true" : "false")
                   << " | refactor_candidate=" << (usage.refactor_candidate ? "true" : "false")
                   << " | node_kind=" << usage.node_kind << '\n';
+    }
+
+    std::cout << "\n=== Line Hash Traces ===\n";
+    for (const LineHashTrace& trace : get_line_hash_traces())
+    {
+        std::cout << " - line=" << trace.line_number
+                  << " | class=" << trace.class_name
+                  << " | class_hash=" << trace.class_name_hash
+                  << " | hit_token_index=" << trace.hit_token_index
+                  << " | outgoing_hash=" << trace.outgoing_hash
+                  << " | dirty_tokens=" << trace.dirty_token_count
+                  << " | collision=" << (trace.hash_collision ? "true" : "false")
+                  << '\n';
     }
 
     const std::string report_output_path = "analysis_report.json";

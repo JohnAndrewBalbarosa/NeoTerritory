@@ -1,17 +1,27 @@
 #include "parse_tree.hpp"
+#include "lexical_structure_hooks.hpp"
 #include "parse_tree_symbols.hpp"
 #include "language_tokens.hpp"
 #include "tree_html_renderer.hpp"
 
 #include <cctype>
 #include <functional>
+#include <unordered_map>
 #include <sstream>
 #include <string>
 #include <vector>
 
 namespace
 {
-std::vector<std::string> tokenize_cpp(const std::string& source)
+ParseTreeBuildContext g_build_context;
+std::vector<LineHashTrace> g_line_hash_traces;
+
+size_t hash_combine_token(size_t seed, const std::string& token)
+{
+    return std::hash<std::string>{}(std::to_string(seed) + "|" + token);
+}
+
+std::vector<std::string> tokenize_text(const std::string& source)
 {
     std::vector<std::string> tokens;
     std::string current;
@@ -89,6 +99,28 @@ std::string join_tokens(const std::vector<std::string>& tokens, size_t start, si
     return out.str();
 }
 
+std::vector<std::string> split_lines(const std::string& source)
+{
+    std::vector<std::string> lines;
+    std::string current;
+
+    for (char c : source)
+    {
+        if (c == '\n')
+        {
+            lines.push_back(current);
+            current.clear();
+        }
+        else if (c != '\r')
+        {
+            current.push_back(c);
+        }
+    }
+    lines.push_back(current);
+
+    return lines;
+}
+
 bool is_type_keyword(const std::string& token)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
@@ -152,16 +184,125 @@ void append_node_at_path(ParseTreeNode& root, const std::vector<size_t>& path, P
     }
     target->children.push_back(std::move(node));
 }
+
+void register_classes_in_line(
+    const std::vector<std::string>& line_tokens,
+    std::unordered_map<size_t, std::vector<std::string>>& class_hash_registry)
+{
+    const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
+    for (size_t i = 0; i + 1 < line_tokens.size(); ++i)
+    {
+        const std::string kw = lowercase_ascii(line_tokens[i]);
+        if (cfg.class_keywords.find(kw) == cfg.class_keywords.end())
+        {
+            continue;
+        }
+
+        const std::string class_name = line_tokens[i + 1];
+        const size_t class_hash = std::hash<std::string>{}(class_name);
+
+        class_hash_registry[class_hash].push_back(class_name);
+        on_class_scanned_structural_hook(class_name, line_tokens, g_build_context);
+    }
+}
+
+bool token_hits_registered_class(
+    const std::string& token,
+    const std::unordered_map<size_t, std::vector<std::string>>& class_hash_registry,
+    size_t& out_class_hash,
+    bool& out_collision)
+{
+    out_class_hash = std::hash<std::string>{}(token);
+    const auto hit = class_hash_registry.find(out_class_hash);
+    if (hit == class_hash_registry.end())
+    {
+        return false;
+    }
+
+    bool exact_name_match = false;
+    for (const std::string& name : hit->second)
+    {
+        if (name == token)
+        {
+            exact_name_match = true;
+            break;
+        }
+    }
+
+    out_collision = !exact_name_match || hit->second.size() > 1;
+    return exact_name_match;
+}
+
+void collect_line_hash_trace(
+    size_t line_number,
+    const std::vector<std::string>& line_tokens,
+    size_t hit_token_index,
+    size_t class_hash,
+    bool hash_collision)
+{
+    if (line_tokens.empty() || hit_token_index >= line_tokens.size())
+    {
+        return;
+    }
+
+    std::vector<bool> dirty(line_tokens.size(), false);
+    for (size_t i = 0; i < line_tokens.size(); ++i)
+    {
+        dirty[i] = true;
+    }
+
+    size_t current_hash = class_hash;
+    std::vector<size_t> chain;
+
+    for (size_t i = hit_token_index; i > 0; --i)
+    {
+        current_hash = hash_combine_token(current_hash, line_tokens[i - 1]);
+        chain.push_back(current_hash);
+    }
+    for (size_t i = hit_token_index + 1; i < line_tokens.size(); ++i)
+    {
+        current_hash = hash_combine_token(current_hash, line_tokens[i]);
+        chain.push_back(current_hash);
+    }
+
+    LineHashTrace trace;
+    trace.line_number = line_number;
+    trace.class_name = line_tokens[hit_token_index];
+    trace.class_name_hash = class_hash;
+    trace.hit_token_index = hit_token_index;
+    trace.outgoing_hash = current_hash;
+    trace.hash_collision = hash_collision;
+    trace.dirty_token_count = line_tokens.size();
+    trace.hash_chain = std::move(chain);
+    g_line_hash_traces.push_back(std::move(trace));
+}
 } // namespace
+
+void set_parse_tree_build_context(const ParseTreeBuildContext& context)
+{
+    g_build_context = context;
+}
+
+const ParseTreeBuildContext& get_parse_tree_build_context()
+{
+    return g_build_context;
+}
+
+const std::vector<LineHashTrace>& get_line_hash_traces()
+{
+    return g_line_hash_traces;
+}
 
 ParseTreeNode build_cpp_parse_tree(const std::string& source)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
     ParseTreeNode root{cfg.node_translation_unit, "", {}};
-    const std::vector<std::string> tokens = tokenize_cpp(source);
+    const std::vector<std::string> lines = split_lines(source);
+    g_line_hash_traces.clear();
 
     std::vector<size_t> context_path;
     std::vector<std::string> statement_tokens;
+    std::unordered_map<size_t, std::vector<std::string>> class_hash_registry;
 
     auto flush_statement = [&]() {
         if (statement_tokens.empty())
@@ -176,44 +317,60 @@ ParseTreeNode build_cpp_parse_tree(const std::string& source)
         statement_tokens.clear();
     };
 
-    for (const std::string& token : tokens)
+    for (size_t line_idx = 0; line_idx < lines.size(); ++line_idx)
     {
-        if (token == cfg.token_open_brace)
-        {
-            ParseTreeNode block;
-            block.kind = cfg.node_block;
-            block.value = join_tokens(statement_tokens, 0, statement_tokens.size());
+        const std::vector<std::string> line_tokens = tokenize_text(lines[line_idx]);
+        register_classes_in_line(line_tokens, class_hash_registry);
 
-            ParseTreeNode* target = &root;
-            for (size_t idx : context_path)
+        for (size_t token_idx = 0; token_idx < line_tokens.size(); ++token_idx)
+        {
+            size_t class_hash = 0;
+            bool hash_collision = false;
+            if (token_hits_registered_class(line_tokens[token_idx], class_hash_registry, class_hash, hash_collision))
             {
-                target = &target->children[idx];
+                collect_line_hash_trace(line_idx + 1, line_tokens, token_idx, class_hash, hash_collision);
+            }
+        }
+
+        for (const std::string& token : line_tokens)
+        {
+            if (token == cfg.token_open_brace)
+            {
+                ParseTreeNode block;
+                block.kind = cfg.node_block;
+                block.value = join_tokens(statement_tokens, 0, statement_tokens.size());
+
+                ParseTreeNode* target = &root;
+                for (size_t idx : context_path)
+                {
+                    target = &target->children[idx];
+                }
+
+                target->children.push_back(std::move(block));
+                const size_t new_index = target->children.size() - 1;
+                context_path.push_back(new_index);
+                statement_tokens.clear();
+                continue;
             }
 
-            target->children.push_back(std::move(block));
-            const size_t new_index = target->children.size() - 1;
-            context_path.push_back(new_index);
-            statement_tokens.clear();
-            continue;
-        }
-
-        if (token == cfg.token_close_brace)
-        {
-            flush_statement();
-            if (!context_path.empty())
+            if (token == cfg.token_close_brace)
             {
-                context_path.pop_back();
+                flush_statement();
+                if (!context_path.empty())
+                {
+                    context_path.pop_back();
+                }
+                continue;
             }
-            continue;
-        }
 
-        if (token == cfg.token_statement_end)
-        {
-            flush_statement();
-            continue;
-        }
+            if (token == cfg.token_statement_end)
+            {
+                flush_statement();
+                continue;
+            }
 
-        statement_tokens.push_back(token);
+            statement_tokens.push_back(token);
+        }
     }
 
     flush_statement();

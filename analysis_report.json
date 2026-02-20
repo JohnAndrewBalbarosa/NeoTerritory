@@ -2,9 +2,51 @@
   "source_pattern": "factory",
   "target_pattern": "singleton",
   "input_file_count": 2,
-  "total_elapsed_ms": 5.598,
-  "peak_estimated_bytes": 11072,
+  "total_elapsed_ms": 5.9578,
+  "peak_estimated_bytes": 11200,
   "graph_consistent": true,
+  "class_registry": [
+    {
+      "name": "Vehicle",
+      "hash": 9349198373617211829,
+      "definition_node_index": 5
+    },
+    {
+      "name": "Report",
+      "hash": 6663072897653030005,
+      "definition_node_index": 8
+    },
+    {
+      "name": "CsvReport",
+      "hash": 17788972963298004266,
+      "definition_node_index": 10
+    },
+    {
+      "name": "JsonReport",
+      "hash": 15411385462115155293,
+      "definition_node_index": 13
+    },
+    {
+      "name": "ReportFactory",
+      "hash": 10709288884147927117,
+      "definition_node_index": 16
+    },
+    {
+      "name": "AppConfig",
+      "hash": 7911655363053219853,
+      "definition_node_index": 21
+    },
+    {
+      "name": "FleetVehicle",
+      "hash": 6578929020877048662,
+      "definition_node_index": 35
+    },
+    {
+      "name": "Trip",
+      "hash": 17092548126077540805,
+      "definition_node_index": 37
+    }
+  ],
   "class_usages": [
     {
       "name": "AppConfig",
@@ -12,9 +54,10 @@
       "node_kind": "Statement",
       "node_value": "static AppConfig instance",
       "node_index": 23,
-      "target_def_hash": 7911655363053219853,
+      "class_name_hash": 7911655363053219853,
+      "hash_collision": false,
       "refactor_candidate": false,
-      "hash": 3798225841886473295
+      "hash": 7911655363053219853
     },
     {
       "name": "ReportFactory",
@@ -22,9 +65,10 @@
       "node_kind": "Statement",
       "node_value": "ReportFactory factory",
       "node_index": 27,
-      "target_def_hash": 10709288884147927117,
+      "class_name_hash": 10709288884147927117,
+      "hash_collision": false,
       "refactor_candidate": true,
-      "hash": 17274260906591254546
+      "hash": 10709288884147927117
     },
     {
       "name": "Report",
@@ -32,9 +76,10 @@
       "node_kind": "AssignmentOrVarDecl",
       "node_value": "std :: unique_ptr < Report > report = factory . create ( 1 )",
       "node_index": 28,
-      "target_def_hash": 6663072897653030005,
+      "class_name_hash": 6663072897653030005,
+      "hash_collision": false,
       "refactor_candidate": false,
-      "hash": 287693202301274824
+      "hash": 6663072897653030005
     },
     {
       "name": "AppConfig",
@@ -42,9 +87,21 @@
       "node_kind": "AssignmentOrVarDecl",
       "node_value": "AppConfig cfg = AppConfig :: get ( )",
       "node_index": 29,
-      "target_def_hash": 7911655363053219853,
+      "class_name_hash": 7911655363053219853,
+      "hash_collision": false,
       "refactor_candidate": false,
-      "hash": 17656587692624898808
+      "hash": 7911655363053219853
+    },
+    {
+      "name": "AppConfig",
+      "type_string": "AppConfig",
+      "node_kind": "AssignmentOrVarDecl",
+      "node_value": "AppConfig cfg = AppConfig :: get ( )",
+      "node_index": 29,
+      "class_name_hash": 7911655363053219853,
+      "hash_collision": false,
+      "refactor_candidate": false,
+      "hash": 7911655363053219853
     },
     {
       "name": "FleetVehicle",
@@ -52,45 +109,291 @@
       "node_kind": "Statement",
       "node_value": "FleetVehicle vehicle",
       "node_index": 39,
-      "target_def_hash": 6578929020877048662,
+      "class_name_hash": 6578929020877048662,
+      "hash_collision": false,
       "refactor_candidate": false,
-      "hash": 7405021479542141808
+      "hash": 6578929020877048662
+    }
+  ],
+  "line_hash_traces": [
+    {
+      "line_number": 9,
+      "class_name": "Person",
+      "class_name_hash": 12509464965605143713,
+      "hit_token_index": 1,
+      "outgoing_hash": 18120045626079443495,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 11,
+      "class_name": "Person",
+      "class_name_hash": 12509464965605143713,
+      "hit_token_index": 1,
+      "outgoing_hash": 4093435262919777343,
+      "dirty_token_count": 20,
+      "hash_collision": false
+    },
+    {
+      "line_number": 15,
+      "class_name": "Vehicle",
+      "class_name_hash": 9349198373617211829,
+      "hit_token_index": 1,
+      "outgoing_hash": 14317945426084905793,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 17,
+      "class_name": "Vehicle",
+      "class_name_hash": 9349198373617211829,
+      "hit_token_index": 1,
+      "outgoing_hash": 16012938254413410268,
+      "dirty_token_count": 20,
+      "hash_collision": false
+    },
+    {
+      "line_number": 21,
+      "class_name": "Report",
+      "class_name_hash": 6663072897653030005,
+      "hit_token_index": 1,
+      "outgoing_hash": 1879289439428052002,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 26,
+      "class_name": "CsvReport",
+      "class_name_hash": 17788972963298004266,
+      "hit_token_index": 1,
+      "outgoing_hash": 1448103114876847883,
+      "dirty_token_count": 6,
+      "hash_collision": false
+    },
+    {
+      "line_number": 26,
+      "class_name": "Report",
+      "class_name_hash": 6663072897653030005,
+      "hit_token_index": 4,
+      "outgoing_hash": 15355014947992624422,
+      "dirty_token_count": 6,
+      "hash_collision": false
+    },
+    {
+      "line_number": 28,
+      "class_name": "CsvReport",
+      "class_name_hash": 17788972963298004266,
+      "hit_token_index": 0,
+      "outgoing_hash": 3292512515386419411,
+      "dirty_token_count": 11,
+      "hash_collision": false
+    },
+    {
+      "line_number": 31,
+      "class_name": "JsonReport",
+      "class_name_hash": 15411385462115155293,
+      "hit_token_index": 1,
+      "outgoing_hash": 14023209964870211089,
+      "dirty_token_count": 6,
+      "hash_collision": false
+    },
+    {
+      "line_number": 31,
+      "class_name": "Report",
+      "class_name_hash": 6663072897653030005,
+      "hit_token_index": 4,
+      "outgoing_hash": 7299934612586762428,
+      "dirty_token_count": 6,
+      "hash_collision": false
+    },
+    {
+      "line_number": 33,
+      "class_name": "JsonReport",
+      "class_name_hash": 15411385462115155293,
+      "hit_token_index": 0,
+      "outgoing_hash": 9338148681812945158,
+      "dirty_token_count": 11,
+      "hash_collision": false
+    },
+    {
+      "line_number": 36,
+      "class_name": "ReportFactory",
+      "class_name_hash": 10709288884147927117,
+      "hit_token_index": 1,
+      "outgoing_hash": 13663854797490085170,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 38,
+      "class_name": "Report",
+      "class_name_hash": 6663072897653030005,
+      "hit_token_index": 4,
+      "outgoing_hash": 16628409368673539933,
+      "dirty_token_count": 12,
+      "hash_collision": false
+    },
+    {
+      "line_number": 40,
+      "class_name": "CsvReport",
+      "class_name_hash": 17788972963298004266,
+      "hit_token_index": 5,
+      "outgoing_hash": 10672420394615560266,
+      "dirty_token_count": 10,
+      "hash_collision": false
+    },
+    {
+      "line_number": 42,
+      "class_name": "JsonReport",
+      "class_name_hash": 15411385462115155293,
+      "hit_token_index": 5,
+      "outgoing_hash": 18016110108600444683,
+      "dirty_token_count": 10,
+      "hash_collision": false
+    },
+    {
+      "line_number": 46,
+      "class_name": "AppConfig",
+      "class_name_hash": 7911655363053219853,
+      "hit_token_index": 1,
+      "outgoing_hash": 232875367296240131,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 48,
+      "class_name": "AppConfig",
+      "class_name_hash": 7911655363053219853,
+      "hit_token_index": 1,
+      "outgoing_hash": 8519843701718097859,
+      "dirty_token_count": 6,
+      "hash_collision": false
+    },
+    {
+      "line_number": 49,
+      "class_name": "AppConfig",
+      "class_name_hash": 7911655363053219853,
+      "hit_token_index": 1,
+      "outgoing_hash": 8090645026913203375,
+      "dirty_token_count": 4,
+      "hash_collision": false
+    },
+    {
+      "line_number": 57,
+      "class_name": "ReportFactory",
+      "class_name_hash": 10709288884147927117,
+      "hit_token_index": 0,
+      "outgoing_hash": 1013196692836452615,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 58,
+      "class_name": "Report",
+      "class_name_hash": 6663072897653030005,
+      "hit_token_index": 4,
+      "outgoing_hash": 5894618208384106521,
+      "dirty_token_count": 15,
+      "hash_collision": false
+    },
+    {
+      "line_number": 60,
+      "class_name": "AppConfig",
+      "class_name_hash": 7911655363053219853,
+      "hit_token_index": 0,
+      "outgoing_hash": 7029844886105584618,
+      "dirty_token_count": 9,
+      "hash_collision": false
+    },
+    {
+      "line_number": 60,
+      "class_name": "AppConfig",
+      "class_name_hash": 7911655363053219853,
+      "hit_token_index": 3,
+      "outgoing_hash": 653499879104774760,
+      "dirty_token_count": 9,
+      "hash_collision": false
+    },
+    {
+      "line_number": 74,
+      "class_name": "Driver",
+      "class_name_hash": 6701334225289874121,
+      "hit_token_index": 1,
+      "outgoing_hash": 8245857287676093806,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 79,
+      "class_name": "FleetVehicle",
+      "class_name_hash": 6578929020877048662,
+      "hit_token_index": 1,
+      "outgoing_hash": 17509492640280954013,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 84,
+      "class_name": "Trip",
+      "class_name_hash": 17092548126077540805,
+      "hit_token_index": 1,
+      "outgoing_hash": 3634989748808961211,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 86,
+      "class_name": "Driver",
+      "class_name_hash": 6701334225289874121,
+      "hit_token_index": 0,
+      "outgoing_hash": 11793718712480264881,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    },
+    {
+      "line_number": 87,
+      "class_name": "FleetVehicle",
+      "class_name_hash": 6578929020877048662,
+      "hit_token_index": 0,
+      "outgoing_hash": 10111121747120827238,
+      "dirty_token_count": 3,
+      "hash_collision": false
     }
   ],
   "stages": [
     {
       "name": "ParseBaseGraph",
-      "elapsed_ms": 2.0573,
-      "estimated_bytes": 11072
+      "elapsed_ms": 4.1763,
+      "estimated_bytes": 11200
     },
     {
       "name": "DetectPatternInstances",
-      "elapsed_ms": 2.3063,
+      "elapsed_ms": 1.2168,
       "estimated_bytes": 3741
     },
     {
       "name": "CreateVirtualSubgraph",
-      "elapsed_ms": 0.3524,
+      "elapsed_ms": 0.0494,
       "estimated_bytes": 8672
     },
     {
       "name": "HashAffectedNodes",
-      "elapsed_ms": 0.7582,
-      "estimated_bytes": 1696
+      "elapsed_ms": 0.4525,
+      "estimated_bytes": 1824
     },
     {
       "name": "GenerateMonolithicRepresentation",
-      "elapsed_ms": 0.0668,
+      "elapsed_ms": 0.0397,
       "estimated_bytes": 2159
     },
     {
       "name": "ApplyTargetPolicies",
-      "elapsed_ms": 0.0032,
+      "elapsed_ms": 0.0018,
       "estimated_bytes": 9376
     },
     {
       "name": "ValidateGraphConsistency",
-      "elapsed_ms": 0.0029,
+      "elapsed_ms": 0.0017,
       "estimated_bytes": 9376
     }
   ]
