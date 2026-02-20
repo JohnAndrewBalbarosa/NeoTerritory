@@ -11,6 +11,29 @@ struct ParseTreeNode
     std::vector<ParseTreeNode> children;
 };
 
+struct ParseTreeBuildContext
+{
+    std::string source_pattern;
+    std::string target_pattern;
+    std::vector<std::string> input_files;
+};
+
+struct LineHashTrace
+{
+    size_t line_number;
+    std::string class_name;
+    size_t class_name_hash;
+    size_t hit_token_index;
+    size_t outgoing_hash;
+    size_t dirty_token_count;
+    bool hash_collision;
+    std::vector<size_t> hash_chain;
+};
+
+void set_parse_tree_build_context(const ParseTreeBuildContext& context);
+const ParseTreeBuildContext& get_parse_tree_build_context();
+const std::vector<LineHashTrace>& get_line_hash_traces();
+
 /**
  * @brief Parse C++ source code into a lightweight hierarchical parse tree.
  */

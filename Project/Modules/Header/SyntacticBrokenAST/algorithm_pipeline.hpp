@@ -41,7 +41,8 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     const std::string& source,
     const std::string& source_pattern,
     const std::string& target_pattern,
-    size_t input_file_count);
+    size_t input_file_count,
+    const std::vector<std::string>& input_files);
 std::string pipeline_report_to_json(const PipelineReport& report);
 
 #endif // ALGORITHM_PIPELINE_HPP

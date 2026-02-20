@@ -83,7 +83,8 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     const std::string& source,
     const std::string& source_pattern,
     const std::string& target_pattern,
-    size_t input_file_count)
+    size_t input_file_count,
+    const std::vector<std::string>& input_files)
 {
     PipelineArtifacts artifacts;
     artifacts.report.source_pattern = source_pattern;
@@ -110,6 +111,11 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 
     // 1) Input parse -> base graph
     run_stage("ParseBaseGraph", [&]() {
+        ParseTreeBuildContext context;
+        context.source_pattern = source_pattern;
+        context.target_pattern = target_pattern;
+        context.input_files = input_files;
+        set_parse_tree_build_context(context);
         artifacts.base_tree = build_cpp_parse_tree(source);
         return estimate_parse_tree_bytes(artifacts.base_tree) + estimate_symbol_table_bytes();
     });
@@ -208,6 +214,29 @@ std::string pipeline_report_to_json(const PipelineReport& report)
         out << "      \"hash\": " << u.hash_value << "\n";
         out << "    }";
         if (i + 1 < class_usages.size())
+        {
+            out << ",";
+        }
+        out << "\n";
+    }
+
+    out << "  ],\n";
+    out << "  \"line_hash_traces\": [\n";
+
+    const std::vector<LineHashTrace>& traces = get_line_hash_traces();
+    for (size_t i = 0; i < traces.size(); ++i)
+    {
+        const LineHashTrace& t = traces[i];
+        out << "    {\n";
+        out << "      \"line_number\": " << t.line_number << ",\n";
+        out << "      \"class_name\": \"" << json_escape(t.class_name) << "\",\n";
+        out << "      \"class_name_hash\": " << t.class_name_hash << ",\n";
+        out << "      \"hit_token_index\": " << t.hit_token_index << ",\n";
+        out << "      \"outgoing_hash\": " << t.outgoing_hash << ",\n";
+        out << "      \"dirty_token_count\": " << t.dirty_token_count << ",\n";
+        out << "      \"hash_collision\": " << (t.hash_collision ? "true" : "false") << "\n";
+        out << "    }";
+        if (i + 1 < traces.size())
         {
             out << ",";
         }
