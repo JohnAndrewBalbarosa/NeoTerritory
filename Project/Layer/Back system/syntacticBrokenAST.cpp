@@ -2,6 +2,7 @@
 #include "algorithm_pipeline.hpp"
 #include "cli_arguments.hpp"
 #include "codebase_output_writer.hpp"
+#include "lexical_structure_hooks.hpp"
 #include "parse_tree.hpp"
 #include "parse_tree_code_generator.hpp"
 #include "parse_tree_symbols.hpp"
@@ -36,8 +37,8 @@ int run_syntactic_broken_ast(int argc, char* argv[])
         return 1;
     }
 
-    const std::string source = read_source_files(cli.input_files);
-    if (source.empty())
+    const std::vector<SourceFileUnit> source_files = read_source_file_units(cli.input_files);
+    if (source_files.empty())
     {
         std::cerr << "No source provided.\n";
         return 1;
@@ -45,15 +46,19 @@ int run_syntactic_broken_ast(int argc, char* argv[])
 
     const PipelineArtifacts artifacts =
         run_normalize_and_rewrite_pipeline(
-            source,
+            source_files,
             cli.source_pattern,
             cli.target_pattern,
             cli.input_files.size(),
             cli.input_files);
     const ParseTreeNode& tree = artifacts.base_tree;
+    const ParseTreeNode& shadow_tree = artifacts.virtual_tree;
 
     std::cout << "\n=== C++ Parse Tree ===\n";
     std::cout << parse_tree_to_text(tree);
+
+    std::cout << "\n=== Shadow AST (Virtual Tree) ===\n";
+    std::cout << parse_tree_to_text(shadow_tree);
 
     const std::string parse_tree_output_path = "parse_tree.html";
     if (!write_text_file(parse_tree_output_path, parse_tree_to_html(tree)))
@@ -90,9 +95,10 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     std::cout << "Creational HTML generated: " << creational_output_path << '\n';
     std::cout << "Behavioural HTML generated: " << behavioural_output_path << '\n';
 
-    const std::string base_code = generate_base_code_from_source(source);
+    const std::string merged_source = join_source_file_units(source_files);
+    const std::string base_code = generate_base_code_from_source(merged_source);
     const std::string target_code =
-        generate_target_code_from_source(source, cli.source_pattern, cli.target_pattern);
+        generate_target_code_from_source(merged_source, cli.source_pattern, cli.target_pattern);
 
     std::cout << "\n=== Generated Base Code ===\n";
     std::cout << base_code << '\n';
@@ -124,10 +130,20 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     }
 
     std::cout << "\n=== Class Usage Hashes ===\n";
+    std::cout << "Crucial classes selected by strategy:\n";
+    for (const CrucialClassInfo& info : get_crucial_class_registry())
+    {
+        std::cout << " - class=" << info.name
+                  << " | class_name_hash=" << info.class_name_hash
+                  << " | strategy=" << info.strategy_name << '\n';
+    }
+
     for (const ParseSymbol& cls : getClassSymbolTable())
     {
         std::cout << " - class_def=" << cls.name
-                  << " | class_name_hash=" << cls.hash_value
+                  << " | class_name_hash=" << cls.name_hash
+                  << " | contextual_hash=" << cls.contextual_hash
+                  << " | scoped_hash=" << cls.hash_value
                   << " | definition_node_index=" << cls.definition_node_index << '\n';
     }
     for (const ParseSymbolUsage& usage : getClassUsageTable())
@@ -135,8 +151,9 @@ int run_syntactic_broken_ast(int argc, char* argv[])
         std::cout << " - class=" << usage.name
                   << " | type=" << usage.type_string
                   << " | node_index=" << usage.node_index
+                  << " | node_contextual_hash=" << usage.node_contextual_hash
                   << " | class_name_hash=" << usage.class_name_hash
-                  << " | hash=" << usage.hash_value
+                  << " | scoped_usage_hash=" << usage.hash_value
                   << " | hash_collision=" << (usage.hash_collision ? "true" : "false")
                   << " | refactor_candidate=" << (usage.refactor_candidate ? "true" : "false")
                   << " | node_kind=" << usage.node_kind << '\n';

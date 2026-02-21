@@ -21,7 +21,8 @@ ParseTreeNode build_creational_symbol_test_tree(const ParseTreeNode& parse_root)
         ParseTreeNode child;
         child.kind = "ClassSymbol";
         child.value = cls.name +
-            " | hash_ok=" + (cls.hash_value == expected_hash ? std::string("true") : std::string("false")) +
+            " | name_hash_ok=" + (cls.name_hash == expected_hash ? std::string("true") : std::string("false")) +
+            " | contextual_hash=" + std::to_string(cls.contextual_hash) +
             " | lookup_ok=" + ((lookup != nullptr) ? std::string("true") : std::string("false"));
 
         root.children.push_back(std::move(child));
