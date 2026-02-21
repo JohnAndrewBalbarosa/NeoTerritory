@@ -28,10 +28,12 @@ std::string escape_html(const std::string& input)
 void write_node_html(std::ostringstream& out, const ParseTreeNode& node)
 {
     out << "<li><span class=\"kind\">" << escape_html(node.kind) << "</span>";
-    if (!node.value.empty())
+    const std::string& display_value = node.annotated_value.empty() ? node.value : node.annotated_value;
+    if (!display_value.empty())
     {
-        out << " <span class=\"value\">" << escape_html(node.value) << "</span>";
+        out << " <span class=\"value\">" << escape_html(display_value) << "</span>";
     }
+    out << " <span class=\"meta\">ctx=" << node.contextual_hash << "</span>";
 
     if (!node.children.empty())
     {
@@ -68,6 +70,7 @@ std::string render_tree_html(
     out << "    li { margin: 0.35rem 0; }\n";
     out << "    .kind { font-weight: 700; color: #0f172a; }\n";
     out << "    .value { color: #334155; }\n";
+    out << "    .meta { color: #64748b; font-size: 0.85em; }\n";
     out << "  </style>\n";
     out << "</head>\n";
     out << "<body>\n";

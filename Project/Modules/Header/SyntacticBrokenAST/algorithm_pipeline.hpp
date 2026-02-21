@@ -4,6 +4,7 @@
 #include "behavioural_broken_tree.hpp"
 #include "creational_broken_tree.hpp"
 #include "parse_tree.hpp"
+#include "source_reader.hpp"
 
 #include <cstddef>
 #include <string>
@@ -38,7 +39,7 @@ struct PipelineArtifacts
 };
 
 PipelineArtifacts run_normalize_and_rewrite_pipeline(
-    const std::string& source,
+    const std::vector<SourceFileUnit>& source_files,
     const std::string& source_pattern,
     const std::string& target_pattern,
     size_t input_file_count,

@@ -21,7 +21,8 @@ ParseTreeNode build_behavioural_symbol_test_tree(const ParseTreeNode& parse_root
         ParseTreeNode child;
         child.kind = "FunctionSymbol";
         child.value = fn.name +
-            " | hash_ok=" + (fn.hash_value == expected_hash ? std::string("true") : std::string("false")) +
+            " | name_hash_ok=" + (fn.name_hash == expected_hash ? std::string("true") : std::string("false")) +
+            " | contextual_hash=" + std::to_string(fn.contextual_hash) +
             " | lookup_ok=" + ((lookup != nullptr) ? std::string("true") : std::string("false"));
 
         root.children.push_back(std::move(child));

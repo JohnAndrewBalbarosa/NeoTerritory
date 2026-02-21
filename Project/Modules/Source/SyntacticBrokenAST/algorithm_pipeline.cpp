@@ -80,7 +80,7 @@ std::string json_escape(const std::string& input)
 } // namespace
 
 PipelineArtifacts run_normalize_and_rewrite_pipeline(
-    const std::string& source,
+    const std::vector<SourceFileUnit>& source_files,
     const std::string& source_pattern,
     const std::string& target_pattern,
     size_t input_file_count,
@@ -116,8 +116,12 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
         context.target_pattern = target_pattern;
         context.input_files = input_files;
         set_parse_tree_build_context(context);
-        artifacts.base_tree = build_cpp_parse_tree(source);
-        return estimate_parse_tree_bytes(artifacts.base_tree) + estimate_symbol_table_bytes();
+        const ParseTreeBundle trees = build_cpp_parse_trees(source_files);
+        artifacts.base_tree = trees.main_tree;
+        artifacts.virtual_tree = trees.shadow_tree;
+        return estimate_parse_tree_bytes(artifacts.base_tree) +
+               estimate_parse_tree_bytes(artifacts.virtual_tree) +
+               estimate_symbol_table_bytes();
     });
 
     // 2) Detect patterns
@@ -130,7 +134,7 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 
     // 3) Create virtual subgraph
     run_stage("CreateVirtualSubgraph", [&]() {
-        artifacts.virtual_tree = artifacts.base_tree;
+        // Shadow AST is built during lexical parsing to preserve scope-local usage context.
         return estimate_parse_tree_bytes(artifacts.virtual_tree);
     });
 
@@ -185,6 +189,8 @@ std::string pipeline_report_to_json(const PipelineReport& report)
         const ParseSymbol& s = class_symbols[i];
         out << "    {\n";
         out << "      \"name\": \"" << json_escape(s.name) << "\",\n";
+        out << "      \"name_hash\": " << s.name_hash << ",\n";
+        out << "      \"contextual_hash\": " << s.contextual_hash << ",\n";
         out << "      \"hash\": " << s.hash_value << ",\n";
         out << "      \"definition_node_index\": " << s.definition_node_index << "\n";
         out << "    }";
@@ -208,6 +214,7 @@ std::string pipeline_report_to_json(const PipelineReport& report)
         out << "      \"node_kind\": \"" << json_escape(u.node_kind) << "\",\n";
         out << "      \"node_value\": \"" << json_escape(u.node_value) << "\",\n";
         out << "      \"node_index\": " << u.node_index << ",\n";
+        out << "      \"node_contextual_hash\": " << u.node_contextual_hash << ",\n";
         out << "      \"class_name_hash\": " << u.class_name_hash << ",\n";
         out << "      \"hash_collision\": " << (u.hash_collision ? "true" : "false") << ",\n";
         out << "      \"refactor_candidate\": " << (u.refactor_candidate ? "true" : "false") << ",\n";

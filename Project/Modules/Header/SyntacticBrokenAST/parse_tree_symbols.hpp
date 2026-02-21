@@ -11,7 +11,9 @@ struct ParseSymbol
 {
     std::string name;
     std::string signature;
+    size_t name_hash;
     size_t hash_value;
+    size_t contextual_hash;
     size_t definition_node_index;
 };
 
@@ -22,6 +24,7 @@ struct ParseSymbolUsage
     std::string node_kind;
     std::string node_value;
     size_t node_index;
+    size_t node_contextual_hash;
     size_t class_name_hash;
     size_t hash_value;
     bool refactor_candidate;
