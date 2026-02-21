@@ -45,6 +45,7 @@ cmake-build-*/
 .cproject
 .settings/
 
+
 # CMake build directories (artifacts only)
 build/
 cmake-build-*/
@@ -55,6 +56,9 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps/
+
+# Test results output (not tracked)
+Project/TestResults/
 
 # Generated Makefiles (Linux/Mac)
 Makefile

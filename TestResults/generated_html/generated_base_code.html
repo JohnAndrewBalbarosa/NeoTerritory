@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generated Base Code</title>
+  <style>body{font-family:Consolas,monospace;margin:24px;background:#f8fbff;color:#1f2937;}pre{white-space:pre-wrap;border:1px solid #d1d5db;padding:12px;background:#fff;}</style>
+</head>
+<body>
+  <h1>Generated Base Code</h1>
+  <pre>// Generated base code
+
+// === FILE: C:\Users\Drew\Downloads\NeoTerritory/Project/Test/Input/factory_to_singleton_source.cpp ===
+// Sample input for CLI analysis:
+// source_pattern=factory target_pattern=singleton
+
+#include &lt;memory&gt;
+#include &lt;string&gt;
+
+class Person {
+public:
+    explicit Person(std::string n) : name(std::move(n)) {}
+    std::string name;
+};
+
+class Vehicle {
+public:
+    explicit Vehicle(std::string b) : brand(std::move(b)) {}
+    std::string brand;
+};
+
+class Report {
+public:
+    std::string format;
+};
+
+class CsvReport : public Report {
+public:
+    CsvReport() { format = &quot;csv&quot;; }
+};
+
+class JsonReport : public Report {
+public:
+    JsonReport() { format = &quot;json&quot;; }
+};
+
+class ReportFactory {
+public:
+    std::unique_ptr&lt;Report&gt; create(int kind) {
+        if (kind == 0) {
+            return std::make_unique&lt;CsvReport&gt;();
+        }
+        return std::make_unique&lt;JsonReport&gt;();
+    }
+};
+
+class AppConfig {
+public:
+    static AppConfig get() {
+        static AppConfig instance;
+        return instance;
+    }
+
+    bool debug = true;
+};
+
+int main() {
+    ReportFactory factory;
+    std::unique_ptr&lt;Report&gt; report = factory.create(1);
+
+    AppConfig cfg = AppConfig::get();
+    if (cfg.debug &amp;&amp; report) {
+        return 0;
+    }
+    return 1;
+}
+
+
+// === FILE: C:\Users\Drew\Downloads\NeoTerritory/Project/Test/Input/domain_models_source.cpp ===
+// Additional non-pattern context classes.
+// These should not be treated as creational pattern targets.
+
+#include &lt;string&gt;
+
+class Driver {
+public:
+    std::string license_id;
+};
+
+class FleetVehicle {
+public:
+    std::string plate_number;
+};
+
+class Trip {
+public:
+    Driver driver;
+    FleetVehicle vehicle;
+};
+
+</pre>
+</body>
+</html>
