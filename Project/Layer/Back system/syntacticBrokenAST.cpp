@@ -9,15 +9,30 @@
 #include "creational_broken_tree.hpp"
 #include "behavioural_broken_tree.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <string>
 
 namespace
 {
+const std::string k_test_results_dir = "TestResults";
+const std::string k_generated_html_dir = k_test_results_dir + "/generated_html";
+
 bool write_text_file(const std::string& path, const std::string& content)
 {
-    std::ofstream out(path);
+    const std::filesystem::path out_path(path);
+    if (out_path.has_parent_path())
+    {
+        std::error_code ec;
+        std::filesystem::create_directories(out_path.parent_path(), ec);
+        if (ec && !std::filesystem::exists(out_path.parent_path()))
+        {
+            return false;
+        }
+    }
+
+    std::ofstream out(out_path);
     if (!out)
     {
         return false;
@@ -60,7 +75,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     std::cout << "\n=== Shadow AST (Virtual Tree) ===\n";
     std::cout << parse_tree_to_text(shadow_tree);
 
-    const std::string parse_tree_output_path = "parse_tree.html";
+    const std::string parse_tree_output_path = k_generated_html_dir + "/parse_tree.html";
     if (!write_text_file(parse_tree_output_path, parse_tree_to_html(tree)))
     {
         std::cerr << "Failed to write " << parse_tree_output_path << '\n';
@@ -72,7 +87,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     std::cout << "\n=== Creational Broken Tree ===\n";
     std::cout << creational_tree_to_text(creational_tree);
 
-    const std::string creational_output_path = "creational_parse_tree.html";
+    const std::string creational_output_path = k_generated_html_dir + "/creational_parse_tree.html";
     if (!write_text_file(creational_output_path, creational_tree_to_html(creational_tree)))
     {
         std::cerr << "Failed to write " << creational_output_path << '\n';
@@ -84,7 +99,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     std::cout << "\n=== Behavioural Broken Tree ===\n";
     std::cout << parse_tree_to_text(behavioural_tree);
 
-    const std::string behavioural_output_path = "behavioural_broken_ast.html";
+    const std::string behavioural_output_path = k_generated_html_dir + "/behavioural_broken_ast.html";
     if (!write_text_file(behavioural_output_path, behavioural_broken_tree_to_html(behavioural_tree)))
     {
         std::cerr << "Failed to write " << behavioural_output_path << '\n';
@@ -172,7 +187,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
                   << '\n';
     }
 
-    const std::string report_output_path = "analysis_report.json";
+    const std::string report_output_path = k_test_results_dir + "/analysis_report.json";
     if (!write_text_file(report_output_path, pipeline_report_to_json(artifacts.report)))
     {
         std::cerr << "Failed to write " << report_output_path << '\n';

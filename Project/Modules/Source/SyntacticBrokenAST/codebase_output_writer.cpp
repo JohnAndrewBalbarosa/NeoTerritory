@@ -1,11 +1,16 @@
 #include "codebase_output_writer.hpp"
 
+#include <filesystem>
 #include <fstream>
 #include <cctype>
 #include <string>
 
 namespace
 {
+const std::string k_test_results_dir = "TestResults";
+const std::string k_generated_code_dir = k_test_results_dir + "/generated_code";
+const std::string k_generated_html_dir = k_test_results_dir + "/generated_html";
+
 std::string escape_html(const std::string& input)
 {
     std::string out;
@@ -77,10 +82,24 @@ bool write_codebase_outputs(
 {
     const std::string safe_target_pattern = sanitize_component(target_pattern);
 
-    out_paths.base_cpp_path = "generated_base_code.cpp";
-    out_paths.target_cpp_path = "generated_target_code_" + safe_target_pattern + ".cpp";
-    out_paths.base_html_path = "generated_base_code.html";
-    out_paths.target_html_path = "generated_target_code_" + safe_target_pattern + ".html";
+    std::error_code ec;
+    std::filesystem::create_directories(k_generated_code_dir, ec);
+    if (ec && !std::filesystem::exists(k_generated_code_dir))
+    {
+        return false;
+    }
+
+    ec.clear();
+    std::filesystem::create_directories(k_generated_html_dir, ec);
+    if (ec && !std::filesystem::exists(k_generated_html_dir))
+    {
+        return false;
+    }
+
+    out_paths.base_cpp_path = k_generated_code_dir + "/generated_base_code.cpp";
+    out_paths.target_cpp_path = k_generated_code_dir + "/generated_target_code_" + safe_target_pattern + ".cpp";
+    out_paths.base_html_path = k_generated_html_dir + "/generated_base_code.html";
+    out_paths.target_html_path = k_generated_html_dir + "/generated_target_code_" + safe_target_pattern + ".html";
 
     std::ofstream base_cpp(out_paths.base_cpp_path);
     std::ofstream target_cpp(out_paths.target_cpp_path);

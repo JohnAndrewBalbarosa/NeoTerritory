@@ -1,9 +1,15 @@
+
 cmake_minimum_required(VERSION 3.10)
 
-# Set compilers before project() command
 if(WIN32 AND NOT DEFINED CMAKE_CXX_COMPILER)
     set(CMAKE_C_COMPILER "C:/msys64/ucrt64/bin/gcc.exe")
     set(CMAKE_CXX_COMPILER "C:/msys64/ucrt64/bin/g++.exe")
+elseif(APPLE AND NOT DEFINED CMAKE_CXX_COMPILER)
+    set(CMAKE_C_COMPILER "/usr/bin/clang")
+    set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+elseif(UNIX AND NOT APPLE AND NOT DEFINED CMAKE_CXX_COMPILER)
+    set(CMAKE_C_COMPILER "/usr/bin/gcc")
+    set(CMAKE_CXX_COMPILER "/usr/bin/g++")
 endif()
 
 project(NeoTerritory)
