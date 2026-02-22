@@ -9,7 +9,7 @@ This document defines **research-oriented** baseline and best-performance specif
 | **Hardware** |  |  |
 | CPU | 64-bit dual-core | 64-bit quad-core or higher |
 | RAM | 8 GB | 16 GB or higher |
-| Storage | 20 GB free (SSD preferred) | 50 GB+ free (SSD/NVMe) |
+| Storage | 5 GB free (SSD preferred) [9] | 20 GB+ free (SSD/NVMe) [9][10] |
 | **Software** |  |  |
 | Build System | CMake 3.10+ [1] | Latest stable CMake |
 | Compiler | GCC/G++ or Clang with C++17 support [1][2][3] | Latest stable GCC/Clang |
@@ -18,6 +18,7 @@ This document defines **research-oriented** baseline and best-performance specif
 
 Notes:
 - The project is a **C++ research codebase**; requirements prioritize deterministic builds and repeatable experiments.
+- 5 GB minimum aligns with Git hosting guidance that repositories should ideally be under 1 GB and strongly recommended under 5 GB; 20 GB+ provides room for build artifacts, containers, and datasets if the research workflow expands. [9][10]
 
 ## Table 2. Containerization and Local Kubernetes (Minikube) Requirements
 
@@ -66,3 +67,9 @@ https://minikube.sigs.k8s.io/docs/start/
 
 [8] Kubernetes kubeadm minimum requirements:  
 https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/
+
+[9] GitHub guidance on large repositories (recommends <1 GB, strongly recommends <5 GB):  
+https://docs.github.com/enterprise-cloud@latest/repositories/working-with-files/managing-large-files/about-large-files-on-github
+
+[10] GitHub Enterprise Server repository limits (10 GB on-disk size guidance):  
+https://docs.github.com/en/enterprise-server@3.15/repositories/creating-and-managing-repositories/repository-limits
