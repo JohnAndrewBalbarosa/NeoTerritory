@@ -2,7 +2,7 @@
 
 This document defines **research-oriented** baseline and best-performance specifications for the NeoTerritory C++ project, including its current local Kubernetes simulation using Minikube and the planned migration to a full Kubernetes server environment. Values are tuned for reproducible research and pipeline stability rather than consumer-grade minimums.
 
-## Table 1. Research Development Environment Requirements
+## Table 1. Research Development Hardware Requirements
 
 | Specifications | Minimum Requirements | Best Performance |
 |---|---|---|
@@ -10,6 +10,11 @@ This document defines **research-oriented** baseline and best-performance specif
 | CPU | 64-bit dual-core | 64-bit quad-core or higher |
 | RAM | 8 GB | 16 GB or higher |
 | Storage | 5 GB free (SSD preferred) [9] | 20 GB+ free (SSD/NVMe) [9][10] |
+
+## Table 2. Research Development Software Requirements
+
+| Specifications | Minimum Requirements | Best Performance |
+|---|---|---|
 | **Software** |  |  |
 | Build System | CMake 3.10+ [1] | Latest stable CMake |
 | Compiler | GCC/G++ or Clang with C++17 support [1][2][3] | Latest stable GCC/Clang |
@@ -20,7 +25,7 @@ Notes:
 - The project is a **C++ research codebase**; requirements prioritize deterministic builds and repeatable experiments.
 - 5 GB minimum aligns with Git hosting guidance that repositories should ideally be under 1 GB and strongly recommended under 5 GB; 20 GB+ provides room for build artifacts, containers, and datasets if the research workflow expands. [9][10]
 
-## Table 2. Containerization and Local Kubernetes (Minikube) Requirements
+## Table 3. Containerization and Local Kubernetes (Minikube) Requirements
 
 | Specifications | Minimum Requirements | Best Performance |
 |---|---|---|
@@ -30,7 +35,7 @@ Notes:
 | RAM (Minikube) | 2 GB minimum [7] | 8 GB+ for multi-service workflows |
 | Disk (Minikube) | 20 GB free [7] | 50 GB+ for datasets and images |
 
-## Table 3. Target Kubernetes Server Baseline (Post-Minukube Migration)
+## Table 4. Target Kubernetes Server Baseline (Post-Minukube Migration)
 
 | Specifications | Minimum Requirements | Best Performance |
 |---|---|---|
