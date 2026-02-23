@@ -16,7 +16,7 @@ docker build --network=host -t neoterritory:latest -f Infrastructure/session-orc
 
 echo "📦 Deploying 1-Hour Session Pod to Kubernetes..."
 # I-de-deploy niya lahat ng YAML files sa loob ng k8s folder
-kubectl apply -f Infrastructure/session-orchestration/k8s/
+kubectl apply -f Infrastructure/session-orchestration/k8s/templates/
 
 echo "✅ Deployment Triggered! Checking Pod status..."
 kubectl get pods
