@@ -109,10 +109,6 @@ Contrast that with libstdc++'s explicit FNV path:
 - `_Fnv_hash_bytes` is documented as FNV-based and stable across releases.
 - `std::hash<std::string>` in your current path does **not** use that stable FNV path directly; it uses `_Hash_bytes`.
 
-Suggested one-line RRL statement:
-
-"This work uses libstdc++'s implementation-defined `std::hash<std::string>` (via `_Hash_impl` and `_Hash_bytes`) as a seeded non-cryptographic byte-mixing hash for symbol-table indexing, prioritizing runtime speed and practical collision dispersion over cryptographic guarantees."
-
 ## Phase A (Implemented)
 
 ### A1. CLI and Context Entry
