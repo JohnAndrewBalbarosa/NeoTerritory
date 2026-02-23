@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: neoterritory-session-{{user_id}}
+  labels:
+    app: neoterritory-session
+    user_id: "{{user_id}}"
+spec:
+  type: ClusterIP
+  selector:
+    app: neoterritory-session
+    user_id: "{{user_id}}"
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8080
+      protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neoterritory-session-{{user_id}}
+  labels:
+    app: neoterritory-session
+    user_id: "{{user_id}}"
+spec:
+  rules:
+    - host: api.neoterritory.com
+      http:
+        paths:
+          - path: /session/{{user_id}}
+            pathType: Prefix
+            backend:
+              service:
+                name: neoterritory-session-{{user_id}}
+                port:
+                  number: 80

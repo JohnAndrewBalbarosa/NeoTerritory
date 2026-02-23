@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: neoterritory-session-{{user_id}}
+  labels:
+    app: neoterritory-session
+    user_id: "{{user_id}}"
+spec:
+  restartPolicy: Never
+  activeDeadlineSeconds: 3600
+  containers:
+    - name: neoterritory
+      image: "{{image}}"
+      imagePullPolicy: IfNotPresent
+      resources:
+        requests:
+          cpu: "1"
+          memory: "2Gi"
+        limits:
+          cpu: "2"
+          memory: "4Gi"
