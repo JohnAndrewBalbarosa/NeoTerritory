@@ -11,6 +11,9 @@ struct ParseSymbol
 {
     std::string name;
     std::string signature;
+    std::string file_path;
+    std::string owner_scope;
+    std::string function_key;
     size_t name_hash;
     size_t hash_value;
     size_t contextual_hash;
@@ -61,6 +64,8 @@ const ParseSymbol* getClassByHash(size_t hash_value);
  * @brief Lookup function symbol by exact name.
  */
 const ParseSymbol* getFunctionByName(const std::string& name);
+const ParseSymbol* getFunctionByKey(const std::string& function_key);
+std::vector<const ParseSymbol*> getFunctionsByName(const std::string& name);
 
 /**
  * @brief Get all class usages for a class name.

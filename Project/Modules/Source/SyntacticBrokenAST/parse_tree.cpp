@@ -19,6 +19,19 @@ namespace
 ParseTreeBuildContext g_build_context;
 std::vector<LineHashTrace> g_line_hash_traces;
 
+struct RegisteredClassSymbol
+{
+    std::string class_name;
+    std::string file_path;
+    size_t class_name_hash = 0;
+    size_t contextual_hash = 0;
+};
+
+using ClassHashRegistry = std::unordered_map<size_t, std::vector<RegisteredClassSymbol>>;
+
+const char* const k_file_class_bucket_kind = "ClassDeclarations";
+const char* const k_file_global_function_bucket_kind = "GlobalFunctionDeclarations";
+
 size_t hash_combine_token(size_t seed, const std::string& token)
 {
     return std::hash<std::string>{}(std::to_string(seed) + "|" + token);
@@ -35,6 +48,20 @@ size_t derive_child_context_hash(
         "|" + kind +
         "|" + value +
         "|" + std::to_string(sibling_index));
+}
+
+size_t hash_class_name_with_file(const std::string& file_path, const std::string& class_name)
+{
+    return std::hash<std::string>{}(file_path + "|" + class_name);
+}
+
+void rehash_subtree(ParseTreeNode& node, size_t parent_hash, size_t sibling_index)
+{
+    node.contextual_hash = derive_child_context_hash(parent_hash, node.kind, node.value, sibling_index);
+    for (size_t i = 0; i < node.children.size(); ++i)
+    {
+        rehash_subtree(node.children[i], node.contextual_hash, i);
+    }
 }
 
 void add_unique_hash(std::vector<size_t>& hashes, size_t hash_value)
@@ -272,8 +299,9 @@ size_t append_node_at_path(ParseTreeNode& root, const std::vector<size_t>& path,
 }
 
 void register_classes_in_line(
+    const std::string& file_path,
     const std::vector<std::string>& line_tokens,
-    std::unordered_map<size_t, std::vector<std::string>>& class_hash_registry)
+    ClassHashRegistry& class_hash_registry)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
     for (size_t i = 0; i + 1 < line_tokens.size(); ++i)
@@ -287,16 +315,36 @@ void register_classes_in_line(
         const std::string class_name = line_tokens[i + 1];
         const size_t class_hash = std::hash<std::string>{}(class_name);
 
-        class_hash_registry[class_hash].push_back(class_name);
+        bool already_registered = false;
+        std::vector<RegisteredClassSymbol>& bucket = class_hash_registry[class_hash];
+        for (const RegisteredClassSymbol& item : bucket)
+        {
+            if (item.class_name == class_name && item.file_path == file_path)
+            {
+                already_registered = true;
+                break;
+            }
+        }
+
+        if (!already_registered)
+        {
+            RegisteredClassSymbol symbol;
+            symbol.class_name = class_name;
+            symbol.file_path = file_path;
+            symbol.class_name_hash = class_hash;
+            symbol.contextual_hash = hash_class_name_with_file(file_path, class_name);
+            bucket.push_back(std::move(symbol));
+        }
         on_class_scanned_structural_hook(class_name, line_tokens, g_build_context);
     }
 }
 
 bool token_hits_registered_class(
     const std::string& token,
-    const std::unordered_map<size_t, std::vector<std::string>>& class_hash_registry,
+    const ClassHashRegistry& class_hash_registry,
     size_t& out_class_hash,
-    bool& out_collision)
+    bool& out_collision,
+    size_t* out_matched_context_hash)
 {
     out_class_hash = std::hash<std::string>{}(token);
     const auto hit = class_hash_registry.find(out_class_hash);
@@ -305,25 +353,36 @@ bool token_hits_registered_class(
         return false;
     }
 
-    bool exact_name_match = false;
-    for (const std::string& name : hit->second)
+    size_t exact_name_matches = 0;
+    size_t matched_context_hash = 0;
+    for (const RegisteredClassSymbol& symbol : hit->second)
     {
-        if (name == token)
+        if (symbol.class_name == token)
         {
-            exact_name_match = true;
-            break;
+            ++exact_name_matches;
+            if (matched_context_hash == 0)
+            {
+                matched_context_hash = symbol.contextual_hash;
+            }
         }
     }
 
-    out_collision = !exact_name_match || hit->second.size() > 1;
-    return exact_name_match;
+    if (out_matched_context_hash != nullptr)
+    {
+        *out_matched_context_hash = matched_context_hash;
+    }
+
+    out_collision = exact_name_matches != 1 || hit->second.size() > exact_name_matches;
+    return exact_name_matches > 0;
 }
 
 void collect_line_hash_trace(
+    const std::string& file_path,
     size_t line_number,
     const std::vector<std::string>& line_tokens,
     size_t hit_token_index,
     size_t class_hash,
+    size_t matched_class_context_hash,
     bool hash_collision,
     size_t scope_hash)
 {
@@ -347,9 +406,11 @@ void collect_line_hash_trace(
     }
 
     LineHashTrace trace;
+    trace.file_path = file_path;
     trace.line_number = line_number;
     trace.class_name = line_tokens[hit_token_index];
     trace.class_name_hash = class_hash;
+    trace.matched_class_contextual_hash = matched_class_context_hash;
     trace.hit_token_index = hit_token_index;
     trace.outgoing_hash = current_hash;
     trace.hash_collision = hash_collision;
@@ -399,6 +460,155 @@ std::string include_target_from_line(const std::string& line)
     return t[2];
 }
 
+bool is_class_or_struct_signature(const std::string& signature)
+{
+    const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
+    const std::vector<std::string> words = tokenize_text(signature);
+    if (words.size() < 2)
+    {
+        return false;
+    }
+
+    return cfg.class_keywords.find(lowercase_ascii(words.front())) != cfg.class_keywords.end();
+}
+
+bool is_function_signature(const std::string& signature)
+{
+    const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
+    const std::vector<std::string> words = tokenize_text(signature);
+    if (words.empty())
+    {
+        return false;
+    }
+
+    bool has_open_paren = false;
+    bool has_close_paren = false;
+    for (const std::string& token : words)
+    {
+        if (token == "(")
+        {
+            has_open_paren = true;
+        }
+        else if (token == ")")
+        {
+            has_close_paren = true;
+        }
+    }
+
+    if (!has_open_paren || !has_close_paren)
+    {
+        return false;
+    }
+
+    const std::string first = lowercase_ascii(words.front());
+    if (cfg.function_exclusion_keywords.find(first) != cfg.function_exclusion_keywords.end())
+    {
+        return false;
+    }
+
+    if (is_class_or_struct_signature(signature))
+    {
+        return false;
+    }
+
+    return true;
+}
+
+bool is_class_declaration_node(const ParseTreeNode& node)
+{
+    if (node.kind == "ClassDecl" || node.kind == "StructDecl")
+    {
+        return true;
+    }
+
+    return node.kind == "Block" && is_class_or_struct_signature(node.value);
+}
+
+bool is_global_function_declaration_node(const ParseTreeNode& node)
+{
+    return node.kind == "Block" && is_function_signature(node.value);
+}
+
+void bucketize_file_node_for_traversal(ParseTreeNode& file_node)
+{
+    std::vector<ParseTreeNode> classes;
+    std::vector<ParseTreeNode> global_functions;
+    std::vector<ParseTreeNode> passthrough;
+    classes.reserve(file_node.children.size());
+    global_functions.reserve(file_node.children.size());
+    passthrough.reserve(file_node.children.size());
+
+    for (ParseTreeNode& child : file_node.children)
+    {
+        if (is_class_declaration_node(child))
+        {
+            classes.push_back(std::move(child));
+        }
+        else if (is_global_function_declaration_node(child))
+        {
+            global_functions.push_back(std::move(child));
+        }
+        else
+        {
+            passthrough.push_back(std::move(child));
+        }
+    }
+
+    file_node.children.clear();
+    file_node.children.reserve(
+        passthrough.size() +
+        (classes.empty() ? 0U : 1U) +
+        (global_functions.empty() ? 0U : 1U));
+
+    for (ParseTreeNode& child : passthrough)
+    {
+        file_node.children.push_back(std::move(child));
+    }
+
+    if (!classes.empty())
+    {
+        ParseTreeNode class_bucket;
+        class_bucket.kind = k_file_class_bucket_kind;
+        class_bucket.value = "class/struct declarations";
+        class_bucket.children = std::move(classes);
+        file_node.children.push_back(std::move(class_bucket));
+    }
+
+    if (!global_functions.empty())
+    {
+        ParseTreeNode fn_bucket;
+        fn_bucket.kind = k_file_global_function_bucket_kind;
+        fn_bucket.value = "global function declarations";
+        fn_bucket.children = std::move(global_functions);
+        file_node.children.push_back(std::move(fn_bucket));
+    }
+
+    for (size_t i = 0; i < file_node.children.size(); ++i)
+    {
+        rehash_subtree(file_node.children[i], file_node.contextual_hash, i);
+    }
+}
+
+bool line_contains_any_tracked_token(
+    const std::string& line_value,
+    const std::unordered_set<std::string>& tracked_class_names,
+    const std::unordered_set<std::string>& tracked_function_names)
+{
+    const std::vector<std::string> words = tokenize_text(line_value);
+    for (const std::string& token : words)
+    {
+        if (tracked_class_names.find(token) != tracked_class_names.end())
+        {
+            return true;
+        }
+        if (tracked_function_names.find(token) != tracked_function_names.end())
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 void clear_statement_buffers(
     std::vector<std::string>& statement_tokens,
     std::vector<std::string>& tracked_statement_tokens,
@@ -412,7 +622,7 @@ void clear_statement_buffers(
 void parse_file_content_into_node(
     const SourceFileUnit& file,
     ParseTreeNode& file_node,
-    std::unordered_map<size_t, std::vector<std::string>>& class_hash_registry)
+    ClassHashRegistry& class_hash_registry)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
     const std::vector<std::string> lines = split_lines(file.content);
@@ -464,7 +674,7 @@ void parse_file_content_into_node(
             append_node_at_path(file_node, {}, std::move(include_node));
         }
 
-        register_classes_in_line(line_tokens, class_hash_registry);
+        register_classes_in_line(file.path, line_tokens, class_hash_registry);
 
         const ParseTreeNode* current_scope_node = node_at_path(file_node, context_path);
         const size_t current_scope_hash =
@@ -474,13 +684,21 @@ void parse_file_content_into_node(
         {
             size_t class_hash = 0;
             bool hash_collision = false;
-            if (token_hits_registered_class(line_tokens[token_idx], class_hash_registry, class_hash, hash_collision))
+            size_t matched_class_context_hash = 0;
+            if (token_hits_registered_class(
+                    line_tokens[token_idx],
+                    class_hash_registry,
+                    class_hash,
+                    hash_collision,
+                    &matched_class_context_hash))
             {
                 collect_line_hash_trace(
+                    file.path,
                     line_idx + 1,
                     line_tokens,
                     token_idx,
                     class_hash,
+                    matched_class_context_hash,
                     hash_collision,
                     current_scope_hash);
             }
@@ -634,7 +852,11 @@ void resolve_include_dependencies(
     }
 }
 
-bool append_shadow_subtree_if_relevant(const ParseTreeNode& source, ParseTreeNode& out_shadow_node)
+bool append_shadow_subtree_if_relevant(
+    const ParseTreeNode& source,
+    const std::unordered_set<std::string>& tracked_class_names,
+    const std::unordered_set<std::string>& tracked_function_names,
+    ParseTreeNode& out_shadow_node)
 {
     std::vector<ParseTreeNode> kept_children;
     kept_children.reserve(source.children.size());
@@ -642,13 +864,22 @@ bool append_shadow_subtree_if_relevant(const ParseTreeNode& source, ParseTreeNod
     for (const ParseTreeNode& child : source.children)
     {
         ParseTreeNode shadow_child;
-        if (append_shadow_subtree_if_relevant(child, shadow_child))
+        if (append_shadow_subtree_if_relevant(child, tracked_class_names, tracked_function_names, shadow_child))
         {
             kept_children.push_back(std::move(shadow_child));
         }
     }
 
-    const bool self_relevant = !source.propagated_usage_hashes.empty();
+    const bool tracked_value =
+        line_contains_any_tracked_token(source.value, tracked_class_names, tracked_function_names) ||
+        line_contains_any_tracked_token(source.annotated_value, tracked_class_names, tracked_function_names);
+    const bool self_relevant = !source.propagated_usage_hashes.empty() || tracked_value;
+
+    if (source.kind == k_file_global_function_bucket_kind && kept_children.empty())
+    {
+        return false;
+    }
+
     if (!self_relevant && kept_children.empty())
     {
         return false;
@@ -709,7 +940,7 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
     g_line_hash_traces.clear();
     reset_structural_analysis_state();
 
-    std::unordered_map<size_t, std::vector<std::string>> class_hash_registry;
+    ClassHashRegistry class_hash_registry;
     std::unordered_map<std::string, std::string> class_def_file;
     std::unordered_map<std::string, std::string> basename_to_path;
 
@@ -727,12 +958,13 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
             main_file_node.kind,
             main_file_node.value,
             bundle.main_tree.children.size());
+        const size_t file_context_hash = main_file_node.contextual_hash;
         bundle.main_tree.children.push_back(std::move(main_file_node));
 
         ParseTreeNode shadow_file_node;
         shadow_file_node.kind = "FileUnit";
         shadow_file_node.value = file.path;
-        shadow_file_node.contextual_hash = main_file_node.contextual_hash;
+        shadow_file_node.contextual_hash = file_context_hash;
         bundle.shadow_tree.children.push_back(std::move(shadow_file_node));
 
         basename_to_path[file_basename(file.path)] = file.path;
@@ -761,6 +993,25 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
         {
             append_node_at_path(file_node, {}, std::move(dep));
         }
+
+        bucketize_file_node_for_traversal(file_node);
+    }
+
+    rebuild_parse_tree_symbol_tables(bundle.main_tree);
+
+    std::unordered_set<std::string> tracked_class_names;
+    for (const CrucialClassInfo& class_info : get_crucial_class_registry())
+    {
+        tracked_class_names.insert(class_info.name);
+    }
+
+    std::unordered_set<std::string> tracked_function_names;
+    for (const ParseSymbol& function_symbol : getFunctionSymbolTable())
+    {
+        if (tracked_class_names.find(function_symbol.owner_scope) != tracked_class_names.end())
+        {
+            tracked_function_names.insert(function_symbol.name);
+        }
     }
 
     for (size_t i = 0; i < bundle.main_tree.children.size() && i < bundle.shadow_tree.children.size(); ++i)
@@ -771,14 +1022,19 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
         for (const ParseTreeNode& child : bundle.main_tree.children[i].children)
         {
             ParseTreeNode filtered;
-            if (append_shadow_subtree_if_relevant(child, filtered))
+            if (append_shadow_subtree_if_relevant(
+                    child,
+                    tracked_class_names,
+                    tracked_function_names,
+                    filtered))
             {
                 shadow_file.children.push_back(std::move(filtered));
             }
         }
+
+        bucketize_file_node_for_traversal(shadow_file);
     }
 
-    rebuild_parse_tree_symbol_tables(bundle.main_tree);
     return bundle;
 }
 

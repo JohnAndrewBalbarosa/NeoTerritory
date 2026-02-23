@@ -189,6 +189,7 @@ std::string pipeline_report_to_json(const PipelineReport& report)
         const ParseSymbol& s = class_symbols[i];
         out << "    {\n";
         out << "      \"name\": \"" << json_escape(s.name) << "\",\n";
+        out << "      \"file_path\": \"" << json_escape(s.file_path) << "\",\n";
         out << "      \"name_hash\": " << s.name_hash << ",\n";
         out << "      \"contextual_hash\": " << s.contextual_hash << ",\n";
         out << "      \"hash\": " << s.hash_value << ",\n";
@@ -235,9 +236,11 @@ std::string pipeline_report_to_json(const PipelineReport& report)
     {
         const LineHashTrace& t = traces[i];
         out << "    {\n";
+        out << "      \"file_path\": \"" << json_escape(t.file_path) << "\",\n";
         out << "      \"line_number\": " << t.line_number << ",\n";
         out << "      \"class_name\": \"" << json_escape(t.class_name) << "\",\n";
         out << "      \"class_name_hash\": " << t.class_name_hash << ",\n";
+        out << "      \"matched_class_contextual_hash\": " << t.matched_class_contextual_hash << ",\n";
         out << "      \"hit_token_index\": " << t.hit_token_index << ",\n";
         out << "      \"outgoing_hash\": " << t.outgoing_hash << ",\n";
         out << "      \"dirty_token_count\": " << t.dirty_token_count << ",\n";
