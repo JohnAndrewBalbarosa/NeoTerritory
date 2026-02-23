@@ -156,6 +156,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     for (const ParseSymbol& cls : getClassSymbolTable())
     {
         std::cout << " - class_def=" << cls.name
+                  << " | file=" << cls.file_path
                   << " | class_name_hash=" << cls.name_hash
                   << " | contextual_hash=" << cls.contextual_hash
                   << " | scoped_hash=" << cls.hash_value
@@ -178,8 +179,10 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     for (const LineHashTrace& trace : get_line_hash_traces())
     {
         std::cout << " - line=" << trace.line_number
+                  << " | file=" << trace.file_path
                   << " | class=" << trace.class_name
                   << " | class_hash=" << trace.class_name_hash
+                  << " | matched_class_ctx_hash=" << trace.matched_class_contextual_hash
                   << " | hit_token_index=" << trace.hit_token_index
                   << " | outgoing_hash=" << trace.outgoing_hash
                   << " | dirty_tokens=" << trace.dirty_token_count

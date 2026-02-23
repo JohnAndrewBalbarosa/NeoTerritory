@@ -26,9 +26,11 @@ struct ParseTreeBuildContext
 
 struct LineHashTrace
 {
+    std::string file_path;
     size_t line_number;
     std::string class_name;
     size_t class_name_hash;
+    size_t matched_class_contextual_hash;
     size_t hit_token_index;
     size_t outgoing_hash;
     size_t dirty_token_count;
