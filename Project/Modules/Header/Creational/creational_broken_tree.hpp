@@ -15,7 +15,7 @@ struct CreationalTreeNode
 
 /**
  * @brief Build a simplified creational traversal tree from the base C++ parse tree.
- * Pattern focus: Class -> Function -> Control Block (if/switch/else-if) -> Return target.
+ * Pattern focus: Factory, Singleton, Builder.
  */
 CreationalTreeNode build_creational_broken_tree(const ParseTreeNode& root);
 ParseTreeNode creational_tree_to_parse_tree_node(const CreationalTreeNode& root);
