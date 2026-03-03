@@ -4,6 +4,7 @@
 
 #include <cctype>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace
@@ -122,20 +123,64 @@ std::string function_name(const std::string& sig)
 
 bool has_builder_assignments(const ParseTreeNode& fn)
 {
-    for (const ParseTreeNode& n : fn.children)
+    std::vector<const ParseTreeNode*> stack{&fn};
+    while (!stack.empty())
     {
-        if (n.kind == "AssignmentOrVarDecl" || n.kind == "MemberAssignment")
+        const ParseTreeNode* node = stack.back();
+        stack.pop_back();
+
+        if (node->kind == "AssignmentOrVarDecl" || node->kind == "MemberAssignment")
         {
             return true;
         }
+
+        for (const ParseTreeNode& child : node->children)
+        {
+            stack.push_back(&child);
+        }
     }
+
     return false;
+}
+
+bool returns_self_type(const std::string& signature, const std::string& class_name_value)
+{
+    if (class_name_value.empty())
+    {
+        return false;
+    }
+
+    const std::string t = trim(signature);
+    const size_t open = t.find('(');
+    if (open == std::string::npos)
+    {
+        return false;
+    }
+
+    const std::vector<std::string> words = split_words(t.substr(0, open));
+    if (words.size() < 2)
+    {
+        return false;
+    }
+
+    return words[words.size() - 2] == class_name_value;
+}
+
+bool is_build_step_method(const std::string& fn_name)
+{
+    const std::string lowered = lower(fn_name);
+    return lowered == "build" ||
+           lowered == "create" ||
+           lowered == "make" ||
+           lowered == "result" ||
+           lowered == "getresult" ||
+           starts_with(lowered, "build");
 }
 } // namespace
 
-CreationalTreeNode build_builder_pattern_tree(const ParseTreeNode& parse_root)
+std::vector<BuilderStructureCheckResult> check_builder_pattern_structure(const ParseTreeNode& parse_root)
 {
-    CreationalTreeNode root{"BuilderPatternRoot", "class with multiple assignment-oriented methods", {}};
+    std::vector<BuilderStructureCheckResult> results;
 
     std::vector<const ParseTreeNode*> stack{&parse_root};
     while (!stack.empty())
@@ -145,27 +190,40 @@ CreationalTreeNode build_builder_pattern_tree(const ParseTreeNode& parse_root)
 
         if (is_class_block(*node))
         {
-            CreationalTreeNode cls{"ClassNode", class_name(node->value), {}};
+            BuilderStructureCheckResult check;
+            check.class_name = class_name(node->value);
+            if (check.class_name.empty())
+            {
+                continue;
+            }
 
-            int qualifying_fn_count = 0;
             for (const ParseTreeNode& fn : node->children)
             {
                 if (!is_function_block(fn))
                 {
                     continue;
                 }
-                if (!has_builder_assignments(fn))
-                {
-                    continue;
-                }
 
-                ++qualifying_fn_count;
-                cls.children.push_back(CreationalTreeNode{"BuilderMethod", function_name(fn.value), {}});
+                BuilderMethodStructureCheck method;
+                method.method_name = function_name(fn.value);
+                method.mutates_state = has_builder_assignments(fn);
+                method.returns_self_type = returns_self_type(fn.value, check.class_name);
+                method.build_step = is_build_step_method(method.method_name);
+
+                if (method.mutates_state && method.returns_self_type)
+                {
+                    ++check.mutating_chainable_method_count;
+                }
+                check.has_build_step = check.has_build_step || method.build_step;
+                check.methods.push_back(std::move(method));
             }
 
-            if (qualifying_fn_count >= 2)
+            if (!check.methods.empty())
             {
-                root.children.push_back(std::move(cls));
+                check.conforms =
+                    check.mutating_chainable_method_count >= 2 &&
+                    check.has_build_step;
+                results.push_back(std::move(check));
             }
         }
 
@@ -173,6 +231,50 @@ CreationalTreeNode build_builder_pattern_tree(const ParseTreeNode& parse_root)
         {
             stack.push_back(&child);
         }
+    }
+
+    return results;
+}
+
+CreationalTreeNode build_builder_pattern_tree(const ParseTreeNode& parse_root)
+{
+    CreationalTreeNode root{
+        "BuilderPatternRoot",
+        ">=2 mutating self-return methods + >=1 build step",
+        {}};
+
+    const std::vector<BuilderStructureCheckResult> checks = check_builder_pattern_structure(parse_root);
+    for (const BuilderStructureCheckResult& check : checks)
+    {
+        if (!check.conforms)
+        {
+            continue;
+        }
+
+        CreationalTreeNode cls{
+            "ClassNode",
+            check.class_name +
+                " | mutating_chainable=" + std::to_string(check.mutating_chainable_method_count) +
+                " | has_build_step=" + (check.has_build_step ? "true" : "false"),
+            {}};
+
+        for (const BuilderMethodStructureCheck& method : check.methods)
+        {
+            if (method.build_step)
+            {
+                cls.children.push_back(
+                    CreationalTreeNode{"BuildStepMethod", method.method_name, {}});
+                continue;
+            }
+
+            if (method.mutates_state && method.returns_self_type)
+            {
+                cls.children.push_back(
+                    CreationalTreeNode{"BuilderMethod", method.method_name, {}});
+            }
+        }
+
+        root.children.push_back(std::move(cls));
     }
 
     return root;

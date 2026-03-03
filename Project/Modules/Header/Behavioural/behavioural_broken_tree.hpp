@@ -6,7 +6,8 @@
 #include <string>
 
 /**
- * @brief Build behavioural broken tree: root node with function-symbol siblings.
+ * @brief Build behavioural broken tree:
+ * function scaffold + behavioural structure-check candidates.
  */
 ParseTreeNode build_behavioural_broken_tree(const ParseTreeNode& parse_root);
 std::string behavioural_broken_tree_to_html(const ParseTreeNode& root);
