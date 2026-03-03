@@ -6,10 +6,10 @@
 
 std::vector<DependencySymbolNode> collect_dependency_class_nodes(const ParseTreeNode& root)
 {
-    rebuild_parse_tree_symbol_tables(root);
+    const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(root);
 
     std::vector<DependencySymbolNode> out;
-    const std::vector<ParseSymbol>& classes = getClassSymbolTable();
+    const std::vector<ParseSymbol>& classes = class_symbol_table(tables);
     out.reserve(classes.size());
 
     for (const ParseSymbol& cls : classes)
@@ -26,10 +26,10 @@ std::vector<DependencySymbolNode> collect_dependency_class_nodes(const ParseTree
 
 std::vector<DependencySymbolNode> collect_dependency_function_nodes(const ParseTreeNode& root)
 {
-    rebuild_parse_tree_symbol_tables(root);
+    const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(root);
 
     std::vector<DependencySymbolNode> out;
-    const std::vector<ParseSymbol>& functions = getFunctionSymbolTable();
+    const std::vector<ParseSymbol>& functions = function_symbol_table(tables);
     out.reserve(functions.size());
 
     for (const ParseSymbol& fn : functions)

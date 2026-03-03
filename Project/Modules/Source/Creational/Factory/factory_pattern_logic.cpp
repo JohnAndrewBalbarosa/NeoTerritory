@@ -176,7 +176,10 @@ std::string remove_spaces(const std::string& input)
     return out;
 }
 
-bool is_factory_allocator_return(const std::string& return_expr, std::string& out_matched_class)
+bool is_factory_allocator_return(
+    const ParseTreeSymbolTables& tables,
+    const std::string& return_expr,
+    std::string& out_matched_class)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
     const std::string lowered = to_lower(trim(return_expr));
@@ -185,7 +188,7 @@ bool is_factory_allocator_return(const std::string& return_expr, std::string& ou
     if (starts_with(lowered, "new "))
     {
         const std::vector<std::string> words = split_words(return_expr.substr(4));
-        if (!words.empty() && getClassByName(words.front()) != nullptr)
+        if (!words.empty() && find_class_by_name(tables, words.front()) != nullptr)
         {
             out_matched_class = words.front();
             return true;
@@ -198,7 +201,7 @@ bool is_factory_allocator_return(const std::string& return_expr, std::string& ou
         if (lowered_no_space.find(allocator + "<") != std::string::npos)
         {
             const std::string class_candidate = extract_type_in_angle_brackets(return_expr);
-            if (!class_candidate.empty() && getClassByName(class_candidate) != nullptr)
+            if (!class_candidate.empty() && find_class_by_name(tables, class_candidate) != nullptr)
             {
                 out_matched_class = class_candidate;
                 return true;
@@ -212,7 +215,7 @@ bool is_factory_allocator_return(const std::string& return_expr, std::string& ou
 
 CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
 {
-    rebuild_parse_tree_symbol_tables(parse_root);
+    const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(parse_root);
 
     CreationalTreeNode root{"FactoryPatternRoot", "class/function/conditional/allocator-return", {}};
 
@@ -263,7 +266,7 @@ CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
 
                     const std::string expr = extract_return_expr(inner.value);
                     std::string matched_class;
-                    if (is_factory_allocator_return(expr, matched_class))
+                    if (is_factory_allocator_return(tables, expr, matched_class))
                     {
                         cond_node.children.push_back(
                             CreationalTreeNode{"AllocatorReturn", expr + " | class=" + matched_class, {}});

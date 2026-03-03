@@ -4,7 +4,6 @@
 
 #include <functional>
 #include <string>
-#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -112,14 +111,24 @@ const IStructuralAnalyzer& select_analyzer(const std::string& source_pattern)
     return null_analyzer;
 }
 
-std::unordered_map<std::string, size_t> g_crucial_class_hash_by_name;
-std::vector<CrucialClassInfo> g_crucial_class_registry;
+bool contains_class(const StructuralAnalysisState& state, const std::string& class_name)
+{
+    for (const CrucialClassInfo& info : state.crucial_classes)
+    {
+        if (info.name == class_name)
+        {
+            return true;
+        }
+    }
+    return false;
+}
 } // namespace
 
 void on_class_scanned_structural_hook(
     const std::string& class_name,
     const std::vector<std::string>& declaration_tokens,
-    const ParseTreeBuildContext& context)
+    const ParseTreeBuildContext& context,
+    StructuralAnalysisState& state)
 {
     const IStructuralAnalyzer& analyzer = select_analyzer(context.source_pattern);
     if (!analyzer.is_crucial_class(class_name, declaration_tokens))
@@ -127,43 +136,48 @@ void on_class_scanned_structural_hook(
         return;
     }
 
-    if (g_crucial_class_hash_by_name.find(class_name) != g_crucial_class_hash_by_name.end())
+    if (contains_class(state, class_name))
     {
         return;
     }
 
     const size_t class_name_hash = std::hash<std::string>{}(class_name);
-    g_crucial_class_hash_by_name[class_name] = class_name_hash;
 
     CrucialClassInfo info;
     info.name = class_name;
     info.class_name_hash = class_name_hash;
     info.strategy_name = analyzer.strategy_name();
-    g_crucial_class_registry.push_back(std::move(info));
+    state.crucial_classes.push_back(std::move(info));
 }
 
-void reset_structural_analysis_state()
+void reset_structural_analysis_state(StructuralAnalysisState& state)
 {
-    g_crucial_class_hash_by_name.clear();
-    g_crucial_class_registry.clear();
+    state.crucial_classes.clear();
 }
 
-bool is_crucial_class_name(const std::string& class_name, size_t* out_class_name_hash)
+bool is_crucial_class_name(
+    const StructuralAnalysisState& state,
+    const std::string& class_name,
+    size_t* out_class_name_hash)
 {
-    const auto it = g_crucial_class_hash_by_name.find(class_name);
-    if (it == g_crucial_class_hash_by_name.end())
+    for (const CrucialClassInfo& info : state.crucial_classes)
     {
-        return false;
+        if (info.name != class_name)
+        {
+            continue;
+        }
+
+        if (out_class_name_hash != nullptr)
+        {
+            *out_class_name_hash = info.class_name_hash;
+        }
+        return true;
     }
 
-    if (out_class_name_hash != nullptr)
-    {
-        *out_class_name_hash = it->second;
-    }
-    return true;
+    return false;
 }
 
-const std::vector<CrucialClassInfo>& get_crucial_class_registry()
+const std::vector<CrucialClassInfo>& get_crucial_class_registry(const StructuralAnalysisState& state)
 {
-    return g_crucial_class_registry;
+    return state.crucial_classes;
 }

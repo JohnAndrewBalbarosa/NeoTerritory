@@ -7,6 +7,42 @@ This folder is intentionally decoupled from the C++ source tree and contains onl
 - `docker/Dockerfile`
 - `k8s/templates/user-session-pod.yaml`
 - `k8s/templates/user-routing.yaml`
+- `installer.config.json`
+- `bootstrap_and_deploy.ps1`
+
+## Windows Automation (PowerShell)
+
+Use the bootstrap script to install dependencies, start Kubernetes, build the image, deploy templates, and prepare runtime I/O layout.
+
+From repo root:
+
+```powershell
+.\setup.ps1
+```
+
+Direct call with config override:
+
+```powershell
+.\Infrastructure\session-orchestration\bootstrap_and_deploy.ps1 -ConfigPath .\Infrastructure\session-orchestration\installer.config.json
+```
+
+Common overrides:
+
+```powershell
+.\setup.ps1 -UserId student42 -Image neoterritory:v1
+```
+
+Skip selected phases when tools are already installed:
+
+```powershell
+.\setup.ps1 -SkipDependencyInstall -SkipDockerStart
+```
+
+Legacy WSL-only tool install (previous behavior):
+
+```powershell
+.\setup.ps1 -LegacyWslToolsInstall
+```
 
 ## Template Variables
 

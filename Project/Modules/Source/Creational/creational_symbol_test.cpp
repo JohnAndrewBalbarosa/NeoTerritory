@@ -8,14 +8,14 @@
 
 ParseTreeNode build_creational_symbol_test_tree(const ParseTreeNode& parse_root)
 {
-    rebuild_parse_tree_symbol_tables(parse_root);
+    const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(parse_root);
 
     ParseTreeNode root{"CreationalSymbolTestRoot", "class symbols as siblings", {}};
 
-    const std::vector<ParseSymbol>& classes = getClassSymbolTable();
+    const std::vector<ParseSymbol>& classes = class_symbol_table(tables);
     for (const ParseSymbol& cls : classes)
     {
-        const ParseSymbol* lookup = getClassByName(cls.name);
+        const ParseSymbol* lookup = find_class_by_name(tables, cls.name);
         const size_t expected_hash = std::hash<std::string>{}(cls.name);
 
         ParseTreeNode child;

@@ -1,6 +1,8 @@
 #ifndef PARSE_TREE_HPP
 #define PARSE_TREE_HPP
 
+#include "analysis_context.hpp"
+#include "lexical_structure_hooks.hpp"
 #include "source_reader.hpp"
 
 #include <cstddef>
@@ -15,13 +17,6 @@ struct ParseTreeNode
     size_t contextual_hash = 0;
     std::vector<size_t> propagated_usage_hashes;
     std::string annotated_value;
-};
-
-struct ParseTreeBuildContext
-{
-    std::string source_pattern;
-    std::string target_pattern;
-    std::vector<std::string> input_files;
 };
 
 struct LineHashTrace
@@ -42,18 +37,22 @@ struct ParseTreeBundle
 {
     ParseTreeNode main_tree;
     ParseTreeNode shadow_tree;
+    std::vector<LineHashTrace> line_hash_traces;
+    std::vector<CrucialClassInfo> crucial_classes;
 };
-
-void set_parse_tree_build_context(const ParseTreeBuildContext& context);
-const ParseTreeBuildContext& get_parse_tree_build_context();
-const std::vector<LineHashTrace>& get_line_hash_traces();
 
 /**
  * @brief Parse C++ source code into a lightweight hierarchical parse tree.
  */
-ParseTreeNode build_cpp_parse_tree(const std::string& source);
-ParseTreeNode build_cpp_parse_tree(const std::vector<SourceFileUnit>& files);
-ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files);
+ParseTreeNode build_cpp_parse_tree(
+    const std::string& source,
+    const ParseTreeBuildContext& context = ParseTreeBuildContext{});
+ParseTreeNode build_cpp_parse_tree(
+    const std::vector<SourceFileUnit>& files,
+    const ParseTreeBuildContext& context = ParseTreeBuildContext{});
+ParseTreeBundle build_cpp_parse_trees(
+    const std::vector<SourceFileUnit>& files,
+    const ParseTreeBuildContext& context);
 
 /**
  * @brief Render parse tree as indented text for terminal output.

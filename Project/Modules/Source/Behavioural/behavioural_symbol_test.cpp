@@ -8,14 +8,14 @@
 
 ParseTreeNode build_behavioural_symbol_test_tree(const ParseTreeNode& parse_root)
 {
-    rebuild_parse_tree_symbol_tables(parse_root);
+    const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(parse_root);
 
     ParseTreeNode root{"BehaviouralSymbolTestRoot", "function symbols as siblings", {}};
 
-    const std::vector<ParseSymbol>& functions = getFunctionSymbolTable();
+    const std::vector<ParseSymbol>& functions = function_symbol_table(tables);
     for (const ParseSymbol& fn : functions)
     {
-        const ParseSymbol* lookup = getFunctionByName(fn.name);
+        const ParseSymbol* lookup = find_function_by_name(tables, fn.name);
         const size_t expected_hash = std::hash<std::string>{}(fn.name);
 
         ParseTreeNode child;

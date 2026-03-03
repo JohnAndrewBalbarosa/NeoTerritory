@@ -4,6 +4,7 @@
 #include "behavioural_broken_tree.hpp"
 #include "creational_broken_tree.hpp"
 #include "parse_tree.hpp"
+#include "parse_tree_symbols.hpp"
 #include "source_reader.hpp"
 
 #include <cstddef>
@@ -34,6 +35,9 @@ struct PipelineArtifacts
     ParseTreeNode behavioural_tree;
     CreationalTreeNode creational_tree;
     ParseTreeNode virtual_tree;
+    std::vector<LineHashTrace> line_hash_traces;
+    std::vector<CrucialClassInfo> crucial_classes;
+    ParseTreeSymbolTables symbol_tables;
     std::string monolithic_representation;
     PipelineReport report;
 };
@@ -44,6 +48,9 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     const std::string& target_pattern,
     size_t input_file_count,
     const std::vector<std::string>& input_files);
-std::string pipeline_report_to_json(const PipelineReport& report);
+std::string pipeline_report_to_json(
+    const PipelineReport& report,
+    const ParseTreeSymbolTables& symbol_tables,
+    const std::vector<LineHashTrace>& line_hash_traces);
 
 #endif // ALGORITHM_PIPELINE_HPP

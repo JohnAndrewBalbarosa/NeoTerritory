@@ -37,12 +37,12 @@ size_t estimate_creational_tree_bytes(const CreationalTreeNode& node)
     return total;
 }
 
-size_t estimate_symbol_table_bytes()
+size_t estimate_symbol_table_bytes(const ParseTreeSymbolTables& tables)
 {
     size_t total = 0;
 
-    const std::vector<ParseSymbol>& classes = getClassSymbolTable();
-    const std::vector<ParseSymbol>& functions = getFunctionSymbolTable();
+    const std::vector<ParseSymbol>& classes = class_symbol_table(tables);
+    const std::vector<ParseSymbol>& functions = function_symbol_table(tables);
 
     total += classes.capacity() * sizeof(ParseSymbol);
     total += functions.capacity() * sizeof(ParseSymbol);
@@ -115,13 +115,13 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
         context.source_pattern = source_pattern;
         context.target_pattern = target_pattern;
         context.input_files = input_files;
-        set_parse_tree_build_context(context);
-        const ParseTreeBundle trees = build_cpp_parse_trees(source_files);
+        const ParseTreeBundle trees = build_cpp_parse_trees(source_files, context);
         artifacts.base_tree = trees.main_tree;
         artifacts.virtual_tree = trees.shadow_tree;
+        artifacts.line_hash_traces = trees.line_hash_traces;
+        artifacts.crucial_classes = trees.crucial_classes;
         return estimate_parse_tree_bytes(artifacts.base_tree) +
-               estimate_parse_tree_bytes(artifacts.virtual_tree) +
-               estimate_symbol_table_bytes();
+               estimate_parse_tree_bytes(artifacts.virtual_tree);
     });
 
     // 2) Detect patterns
@@ -140,8 +140,14 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 
     // 4) Hash affected nodes (symbol tables)
     run_stage("HashAffectedNodes", [&]() {
-        rebuild_parse_tree_symbol_tables(artifacts.base_tree);
-        return estimate_symbol_table_bytes();
+        ParseTreeSymbolBuildOptions symbol_options;
+        for (const CrucialClassInfo& class_info : artifacts.crucial_classes)
+        {
+            symbol_options.refactor_candidate_class_names.insert(class_info.name);
+        }
+
+        artifacts.symbol_tables = build_parse_tree_symbol_tables(artifacts.base_tree, symbol_options);
+        return estimate_symbol_table_bytes(artifacts.symbol_tables);
     });
 
     // 5) Generate monolithic representation
@@ -171,7 +177,10 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     return artifacts;
 }
 
-std::string pipeline_report_to_json(const PipelineReport& report)
+std::string pipeline_report_to_json(
+    const PipelineReport& report,
+    const ParseTreeSymbolTables& symbol_tables,
+    const std::vector<LineHashTrace>& line_hash_traces)
 {
     std::ostringstream out;
     out << "{\n";
@@ -183,7 +192,7 @@ std::string pipeline_report_to_json(const PipelineReport& report)
     out << "  \"graph_consistent\": " << (report.graph_consistent ? "true" : "false") << ",\n";
     out << "  \"class_registry\": [\n";
 
-    const std::vector<ParseSymbol>& class_symbols = getClassSymbolTable();
+    const std::vector<ParseSymbol>& class_symbols = class_symbol_table(symbol_tables);
     for (size_t i = 0; i < class_symbols.size(); ++i)
     {
         const ParseSymbol& s = class_symbols[i];
@@ -205,7 +214,7 @@ std::string pipeline_report_to_json(const PipelineReport& report)
     out << "  ],\n";
     out << "  \"class_usages\": [\n";
 
-    const std::vector<ParseSymbolUsage>& class_usages = getClassUsageTable();
+    const std::vector<ParseSymbolUsage>& class_usages = class_usage_table(symbol_tables);
     for (size_t i = 0; i < class_usages.size(); ++i)
     {
         const ParseSymbolUsage& u = class_usages[i];
@@ -231,10 +240,9 @@ std::string pipeline_report_to_json(const PipelineReport& report)
     out << "  ],\n";
     out << "  \"line_hash_traces\": [\n";
 
-    const std::vector<LineHashTrace>& traces = get_line_hash_traces();
-    for (size_t i = 0; i < traces.size(); ++i)
+    for (size_t i = 0; i < line_hash_traces.size(); ++i)
     {
-        const LineHashTrace& t = traces[i];
+        const LineHashTrace& t = line_hash_traces[i];
         out << "    {\n";
         out << "      \"file_path\": \"" << json_escape(t.file_path) << "\",\n";
         out << "      \"line_number\": " << t.line_number << ",\n";
@@ -246,7 +254,7 @@ std::string pipeline_report_to_json(const PipelineReport& report)
         out << "      \"dirty_token_count\": " << t.dirty_token_count << ",\n";
         out << "      \"hash_collision\": " << (t.hash_collision ? "true" : "false") << "\n";
         out << "    }";
-        if (i + 1 < traces.size())
+        if (i + 1 < line_hash_traces.size())
         {
             out << ",";
         }

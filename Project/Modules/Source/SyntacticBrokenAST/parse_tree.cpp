@@ -16,9 +16,6 @@
 
 namespace
 {
-ParseTreeBuildContext g_build_context;
-std::vector<LineHashTrace> g_line_hash_traces;
-
 struct RegisteredClassSymbol
 {
     std::string class_name;
@@ -301,6 +298,8 @@ size_t append_node_at_path(ParseTreeNode& root, const std::vector<size_t>& path,
 void register_classes_in_line(
     const std::string& file_path,
     const std::vector<std::string>& line_tokens,
+    const ParseTreeBuildContext& context,
+    StructuralAnalysisState& structural_state,
     ClassHashRegistry& class_hash_registry)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
@@ -335,7 +334,7 @@ void register_classes_in_line(
             symbol.contextual_hash = hash_class_name_with_file(file_path, class_name);
             bucket.push_back(std::move(symbol));
         }
-        on_class_scanned_structural_hook(class_name, line_tokens, g_build_context);
+        on_class_scanned_structural_hook(class_name, line_tokens, context, structural_state);
     }
 }
 
@@ -384,7 +383,8 @@ void collect_line_hash_trace(
     size_t class_hash,
     size_t matched_class_context_hash,
     bool hash_collision,
-    size_t scope_hash)
+    size_t scope_hash,
+    std::vector<LineHashTrace>& line_hash_traces)
 {
     if (line_tokens.empty() || hit_token_index >= line_tokens.size())
     {
@@ -416,7 +416,7 @@ void collect_line_hash_trace(
     trace.hash_collision = hash_collision;
     trace.dirty_token_count = line_tokens.size();
     trace.hash_chain = std::move(chain);
-    g_line_hash_traces.push_back(std::move(trace));
+    line_hash_traces.push_back(std::move(trace));
 }
 
 std::string file_basename(const std::string& path)
@@ -622,6 +622,9 @@ void clear_statement_buffers(
 void parse_file_content_into_node(
     const SourceFileUnit& file,
     ParseTreeNode& file_node,
+    const ParseTreeBuildContext& context,
+    StructuralAnalysisState& structural_state,
+    std::vector<LineHashTrace>& line_hash_traces,
     ClassHashRegistry& class_hash_registry)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
@@ -674,7 +677,7 @@ void parse_file_content_into_node(
             append_node_at_path(file_node, {}, std::move(include_node));
         }
 
-        register_classes_in_line(file.path, line_tokens, class_hash_registry);
+        register_classes_in_line(file.path, line_tokens, context, structural_state, class_hash_registry);
 
         const ParseTreeNode* current_scope_node = node_at_path(file_node, context_path);
         const size_t current_scope_hash =
@@ -700,7 +703,8 @@ void parse_file_content_into_node(
                     class_hash,
                     matched_class_context_hash,
                     hash_collision,
-                    current_scope_hash);
+                    current_scope_hash,
+                    line_hash_traces);
             }
         }
 
@@ -758,7 +762,7 @@ void parse_file_content_into_node(
             mark_statement_with_scope_hashes();
 
             size_t crucial_class_hash = 0;
-            if (is_crucial_class_name(token, &crucial_class_hash))
+            if (is_crucial_class_name(structural_state, token, &crucial_class_hash))
             {
                 ParseTreeNode* scope_node = node_at_path(file_node, context_path);
                 const size_t scope_hash =
@@ -895,36 +899,20 @@ bool append_shadow_subtree_if_relevant(
 }
 } // namespace
 
-void set_parse_tree_build_context(const ParseTreeBuildContext& context)
-{
-    g_build_context = context;
-    reset_structural_analysis_state();
-}
-
-const ParseTreeBuildContext& get_parse_tree_build_context()
-{
-    return g_build_context;
-}
-
-const std::vector<LineHashTrace>& get_line_hash_traces()
-{
-    return g_line_hash_traces;
-}
-
-ParseTreeNode build_cpp_parse_tree(const std::string& source)
+ParseTreeNode build_cpp_parse_tree(const std::string& source, const ParseTreeBuildContext& context)
 {
     std::vector<SourceFileUnit> single_file;
     single_file.push_back(SourceFileUnit{"<memory>", source});
-    return build_cpp_parse_tree(single_file);
+    return build_cpp_parse_tree(single_file, context);
 }
 
-ParseTreeNode build_cpp_parse_tree(const std::vector<SourceFileUnit>& files)
+ParseTreeNode build_cpp_parse_tree(const std::vector<SourceFileUnit>& files, const ParseTreeBuildContext& context)
 {
-    ParseTreeBundle bundle = build_cpp_parse_trees(files);
+    ParseTreeBundle bundle = build_cpp_parse_trees(files, context);
     return bundle.main_tree;
 }
 
-ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
+ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, const ParseTreeBuildContext& context)
 {
     const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
 
@@ -937,8 +925,9 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
     bundle.shadow_tree.value = "Root";
     bundle.shadow_tree.contextual_hash = bundle.main_tree.contextual_hash;
 
-    g_line_hash_traces.clear();
-    reset_structural_analysis_state();
+    bundle.line_hash_traces.clear();
+    StructuralAnalysisState structural_state;
+    reset_structural_analysis_state(structural_state);
 
     ClassHashRegistry class_hash_registry;
     std::unordered_map<std::string, std::string> class_def_file;
@@ -972,7 +961,13 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
 
     for (size_t i = 0; i < files.size(); ++i)
     {
-        parse_file_content_into_node(files[i], bundle.main_tree.children[i], class_hash_registry);
+        parse_file_content_into_node(
+            files[i],
+            bundle.main_tree.children[i],
+            context,
+            structural_state,
+            bundle.line_hash_traces,
+            class_hash_registry);
         collect_class_definitions_by_file(bundle.main_tree.children[i], files[i].path, class_def_file);
     }
 
@@ -997,16 +992,22 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files)
         bucketize_file_node_for_traversal(file_node);
     }
 
-    rebuild_parse_tree_symbol_tables(bundle.main_tree);
-
     std::unordered_set<std::string> tracked_class_names;
-    for (const CrucialClassInfo& class_info : get_crucial_class_registry())
+    bundle.crucial_classes = get_crucial_class_registry(structural_state);
+    for (const CrucialClassInfo& class_info : bundle.crucial_classes)
     {
         tracked_class_names.insert(class_info.name);
     }
 
+    ParseTreeSymbolBuildOptions symbol_options;
+    for (const CrucialClassInfo& class_info : bundle.crucial_classes)
+    {
+        symbol_options.refactor_candidate_class_names.insert(class_info.name);
+    }
+    const ParseTreeSymbolTables symbols = build_parse_tree_symbol_tables(bundle.main_tree, symbol_options);
+
     std::unordered_set<std::string> tracked_function_names;
-    for (const ParseSymbol& function_symbol : getFunctionSymbolTable())
+    for (const ParseSymbol& function_symbol : function_symbol_table(symbols))
     {
         if (tracked_class_names.find(function_symbol.owner_scope) != tracked_class_names.end())
         {
