@@ -15,6 +15,8 @@ bool write_codebase_outputs(
     const std::string& base_code,
     const std::string& target_code,
     const std::string& target_pattern,
+    const std::string& generated_code_dir,
+    const std::string& generated_html_dir,
     CodebaseOutputPaths& out_paths);
 
 #endif // CODEBASE_OUTPUT_WRITER_HPP

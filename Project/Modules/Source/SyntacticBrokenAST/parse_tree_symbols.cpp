@@ -1,7 +1,6 @@
 #include "parse_tree_symbols.hpp"
 
 #include "language_tokens.hpp"
-#include "lexical_structure_hooks.hpp"
 
 #include <cctype>
 #include <functional>
@@ -12,16 +11,6 @@
 
 namespace
 {
-std::vector<ParseSymbol> g_class_symbols;
-std::vector<ParseSymbol> g_function_symbols;
-std::vector<ParseSymbolUsage> g_class_usages;
-std::unordered_map<std::string, std::vector<size_t>> g_class_name_index;
-std::unordered_map<size_t, std::vector<size_t>> g_class_name_hash_index;
-std::unordered_map<size_t, std::vector<size_t>> g_class_symbol_hash_index;
-std::unordered_map<size_t, size_t> g_class_context_hash_index;
-std::unordered_map<std::string, std::vector<size_t>> g_function_name_index;
-std::unordered_map<std::string, size_t> g_function_key_index;
-
 std::string trim(const std::string& input)
 {
     size_t start = 0;
@@ -206,178 +195,11 @@ bool is_function_block(const ParseTreeNode& node)
     return true;
 }
 
-void add_class_symbol(
-    const std::string& signature,
-    const std::string& file_path,
-    size_t definition_node_index,
-    size_t node_contextual_hash)
-{
-    const std::string name = class_name_from_signature(signature);
-    if (name.empty())
-    {
-        return;
-    }
-
-    if (g_class_context_hash_index.find(node_contextual_hash) != g_class_context_hash_index.end())
-    {
-        return;
-    }
-
-    ParseSymbol s;
-    s.name = name;
-    s.signature = signature;
-    s.file_path = file_path;
-    s.owner_scope = "class";
-    s.function_key.clear();
-    s.name_hash = std::hash<std::string>{}(name);
-    s.contextual_hash = node_contextual_hash;
-    s.hash_value = std::hash<std::string>{}(file_path + "|" + name);
-    s.definition_node_index = definition_node_index;
-
-    g_class_name_index[name].push_back(g_class_symbols.size());
-    g_class_name_hash_index[s.name_hash].push_back(g_class_symbols.size());
-    g_class_symbol_hash_index[s.hash_value].push_back(g_class_symbols.size());
-    g_class_context_hash_index[s.contextual_hash] = g_class_symbols.size();
-    g_class_symbols.push_back(std::move(s));
-}
-
-void add_function_symbol(
-    const std::string& signature,
-    const std::string& file_path,
-    const std::string& owner_scope,
-    size_t node_contextual_hash,
-    size_t definition_node_index)
-{
-    const std::string name = function_name_from_signature(signature);
-    if (name.empty() || is_main_function_name(name))
-    {
-        return;
-    }
-
-    const std::string function_key = build_function_key(file_path, owner_scope, name, signature);
-    if (g_function_key_index.find(function_key) != g_function_key_index.end())
-    {
-        return;
-    }
-
-    ParseSymbol s;
-    s.name = name;
-    s.signature = signature;
-    s.file_path = file_path;
-    s.owner_scope = owner_scope.empty() ? "global" : owner_scope;
-    s.function_key = function_key;
-    s.name_hash = std::hash<std::string>{}(name);
-    s.contextual_hash = node_contextual_hash;
-    s.hash_value = std::hash<std::string>{}(function_key);
-    s.definition_node_index = definition_node_index;
-
-    const size_t symbol_index = g_function_symbols.size();
-    g_function_symbols.push_back(std::move(s));
-    g_function_name_index[name].push_back(symbol_index);
-    g_function_key_index[function_key] = symbol_index;
-}
-
-void collect_symbols_dfs(
-    const ParseTreeNode& node,
-    const std::string& current_file,
-    const std::string& current_class_scope,
-    size_t& node_index)
-{
-    ++node_index;
-
-    std::string file_scope = current_file;
-    if (node.kind == "FileUnit")
-    {
-        file_scope = node.value;
-    }
-
-    std::string class_scope = current_class_scope;
-    if (node.kind == "ClassDecl" || node.kind == "StructDecl" || is_class_block(node))
-    {
-        add_class_symbol(node.value, file_scope, node_index, node.contextual_hash);
-        const std::string class_name = class_name_from_signature(node.value);
-        if (!class_name.empty())
-        {
-            class_scope = class_name;
-        }
-    }
-
-    if (is_function_block(node))
-    {
-        add_function_symbol(node.value, file_scope, class_scope, node.contextual_hash, node_index);
-    }
-
-    for (const ParseTreeNode& child : node.children)
-    {
-        collect_symbols_dfs(child, file_scope, class_scope, node_index);
-    }
-}
-
 bool is_candidate_usage_node(const ParseTreeNode& node)
 {
     return !node.value.empty() &&
            node.kind != "IncludeDependency" &&
            node.kind != "SymbolDependency";
-}
-
-void collect_class_usages_dfs(const ParseTreeNode& node, const std::string& current_file, size_t& node_index)
-{
-    ++node_index;
-
-    std::string file_scope = current_file;
-    if (node.kind == "FileUnit")
-    {
-        file_scope = node.value;
-    }
-
-    const bool declaration_node =
-        (node.kind == "ClassDecl" || node.kind == "StructDecl" || is_class_block(node));
-
-    if (is_candidate_usage_node(node))
-    {
-        const std::vector<std::string> words = split_words(node.value);
-        for (const std::string& word : words)
-        {
-            const size_t class_name_hash = std::hash<std::string>{}(word);
-            const auto hit = g_class_name_hash_index.find(class_name_hash);
-            if (hit != g_class_name_hash_index.end())
-            {
-                size_t exact_name_matches = 0;
-                bool exact_name_match = false;
-                for (size_t class_idx : hit->second)
-                {
-                    if (class_idx < g_class_symbols.size() && g_class_symbols[class_idx].name == word)
-                    {
-                        ++exact_name_matches;
-                        exact_name_match = true;
-                    }
-                }
-
-                const bool hash_collision = !exact_name_match || hit->second.size() > exact_name_matches;
-                if (!(declaration_node && class_name_from_signature(node.value) == word))
-                {
-                    ParseSymbolUsage usage;
-                    usage.name = word;
-                    usage.type_string = word;
-                    usage.node_kind = node.kind;
-                    usage.node_value = node.value;
-                    usage.node_index = node_index;
-                    usage.node_contextual_hash = node.contextual_hash;
-                    usage.class_name_hash = class_name_hash;
-                    usage.hash_value =
-                        std::hash<std::string>{}(file_scope + "|" + std::to_string(node.contextual_hash) + "|" + word);
-                    usage.refactor_candidate = is_crucial_class_name(word);
-                    usage.hash_collision = hash_collision;
-                    g_class_usages.push_back(std::move(usage));
-                }
-            }
-        }
-    }
-
-    for (const ParseTreeNode& child : node.children)
-    {
-        collect_class_usages_dfs(child, file_scope, node_index);
-    }
 }
 
 std::string extract_return_candidate_name(const std::string& return_expression)
@@ -404,124 +226,287 @@ std::string extract_return_candidate_name(const std::string& return_expression)
 
     return words.front();
 }
-} // namespace
 
-void rebuild_parse_tree_symbol_tables(const ParseTreeNode& root)
+struct SymbolTableBuilder
 {
-    g_class_symbols.clear();
-    g_function_symbols.clear();
-    g_class_usages.clear();
-    g_class_name_index.clear();
-    g_class_name_hash_index.clear();
-    g_class_symbol_hash_index.clear();
-    g_class_context_hash_index.clear();
-    g_function_name_index.clear();
-    g_function_key_index.clear();
-
-    size_t definition_node_index = 0;
-    collect_symbols_dfs(root, "", "", definition_node_index);
-
-    size_t usage_node_index = 0;
-    collect_class_usages_dfs(root, "", usage_node_index);
-}
-
-const std::vector<ParseSymbol>& getClassSymbolTable()
-{
-    return g_class_symbols;
-}
-
-const std::vector<ParseSymbol>& getFunctionSymbolTable()
-{
-    return g_function_symbols;
-}
-
-const std::vector<ParseSymbolUsage>& getClassUsageTable()
-{
-    return g_class_usages;
-}
-
-const ParseSymbol* getClassByName(const std::string& name)
-{
-    const auto it = g_class_name_index.find(name);
-    if (it == g_class_name_index.end() || it->second.empty())
+    explicit SymbolTableBuilder(ParseTreeSymbolBuildOptions opts)
+        : options(std::move(opts))
     {
-        return nullptr;
     }
 
-    return &g_class_symbols[it->second.front()];
-}
+    ParseTreeSymbolBuildOptions options;
+    ParseTreeSymbolTables tables;
 
-const ParseSymbol* getClassByHash(size_t hash_value)
-{
-    const auto context_it = g_class_context_hash_index.find(hash_value);
-    if (context_it != g_class_context_hash_index.end())
+    std::unordered_map<std::string, std::vector<size_t>> class_name_index;
+    std::unordered_map<size_t, std::vector<size_t>> class_name_hash_index;
+    std::unordered_map<size_t, std::vector<size_t>> class_symbol_hash_index;
+    std::unordered_map<size_t, size_t> class_context_hash_index;
+    std::unordered_map<std::string, std::vector<size_t>> function_name_index;
+    std::unordered_map<std::string, size_t> function_key_index;
+
+    void add_class_symbol(
+        const std::string& signature,
+        const std::string& file_path,
+        size_t definition_node_index,
+        size_t node_contextual_hash)
     {
-        return &g_class_symbols[context_it->second];
-    }
-
-    const auto name_hash_it = g_class_name_hash_index.find(hash_value);
-    const auto symbol_hash_it = g_class_symbol_hash_index.find(hash_value);
-    if (symbol_hash_it != g_class_symbol_hash_index.end() && !symbol_hash_it->second.empty())
-    {
-        return &g_class_symbols[symbol_hash_it->second.front()];
-    }
-
-    if (name_hash_it == g_class_name_hash_index.end() || name_hash_it->second.empty())
-    {
-        return nullptr;
-    }
-
-    return &g_class_symbols[name_hash_it->second.front()];
-}
-
-const ParseSymbol* getFunctionByName(const std::string& name)
-{
-    const auto it = g_function_name_index.find(name);
-    if (it == g_function_name_index.end() || it->second.empty())
-    {
-        return nullptr;
-    }
-
-    return &g_function_symbols[it->second.front()];
-}
-
-const ParseSymbol* getFunctionByKey(const std::string& function_key)
-{
-    const auto it = g_function_key_index.find(function_key);
-    if (it == g_function_key_index.end())
-    {
-        return nullptr;
-    }
-
-    return &g_function_symbols[it->second];
-}
-
-std::vector<const ParseSymbol*> getFunctionsByName(const std::string& name)
-{
-    std::vector<const ParseSymbol*> out;
-
-    const auto it = g_function_name_index.find(name);
-    if (it == g_function_name_index.end())
-    {
-        return out;
-    }
-
-    out.reserve(it->second.size());
-    for (size_t symbol_index : it->second)
-    {
-        if (symbol_index < g_function_symbols.size())
+        const std::string name = class_name_from_signature(signature);
+        if (name.empty())
         {
-            out.push_back(&g_function_symbols[symbol_index]);
+            return;
+        }
+
+        if (class_context_hash_index.find(node_contextual_hash) != class_context_hash_index.end())
+        {
+            return;
+        }
+
+        ParseSymbol s;
+        s.name = name;
+        s.signature = signature;
+        s.file_path = file_path;
+        s.owner_scope = "class";
+        s.function_key.clear();
+        s.name_hash = std::hash<std::string>{}(name);
+        s.contextual_hash = node_contextual_hash;
+        s.hash_value = std::hash<std::string>{}(file_path + "|" + name);
+        s.definition_node_index = definition_node_index;
+
+        class_name_index[name].push_back(tables.class_symbols.size());
+        class_name_hash_index[s.name_hash].push_back(tables.class_symbols.size());
+        class_symbol_hash_index[s.hash_value].push_back(tables.class_symbols.size());
+        class_context_hash_index[s.contextual_hash] = tables.class_symbols.size();
+        tables.class_symbols.push_back(std::move(s));
+    }
+
+    void add_function_symbol(
+        const std::string& signature,
+        const std::string& file_path,
+        const std::string& owner_scope,
+        size_t node_contextual_hash,
+        size_t definition_node_index)
+    {
+        const std::string name = function_name_from_signature(signature);
+        if (name.empty() || is_main_function_name(name))
+        {
+            return;
+        }
+
+        const std::string function_key = build_function_key(file_path, owner_scope, name, signature);
+        if (function_key_index.find(function_key) != function_key_index.end())
+        {
+            return;
+        }
+
+        ParseSymbol s;
+        s.name = name;
+        s.signature = signature;
+        s.file_path = file_path;
+        s.owner_scope = owner_scope.empty() ? "global" : owner_scope;
+        s.function_key = function_key;
+        s.name_hash = std::hash<std::string>{}(name);
+        s.contextual_hash = node_contextual_hash;
+        s.hash_value = std::hash<std::string>{}(function_key);
+        s.definition_node_index = definition_node_index;
+
+        const size_t symbol_index = tables.function_symbols.size();
+        tables.function_symbols.push_back(std::move(s));
+        function_name_index[name].push_back(symbol_index);
+        function_key_index[function_key] = symbol_index;
+    }
+
+    void collect_symbols_dfs(
+        const ParseTreeNode& node,
+        const std::string& current_file,
+        const std::string& current_class_scope,
+        size_t& node_index)
+    {
+        ++node_index;
+
+        std::string file_scope = current_file;
+        if (node.kind == "FileUnit")
+        {
+            file_scope = node.value;
+        }
+
+        std::string class_scope = current_class_scope;
+        if (node.kind == "ClassDecl" || node.kind == "StructDecl" || is_class_block(node))
+        {
+            add_class_symbol(node.value, file_scope, node_index, node.contextual_hash);
+            const std::string class_name = class_name_from_signature(node.value);
+            if (!class_name.empty())
+            {
+                class_scope = class_name;
+            }
+        }
+
+        if (is_function_block(node))
+        {
+            add_function_symbol(node.value, file_scope, class_scope, node.contextual_hash, node_index);
+        }
+
+        for (const ParseTreeNode& child : node.children)
+        {
+            collect_symbols_dfs(child, file_scope, class_scope, node_index);
         }
     }
 
+    void collect_class_usages_dfs(const ParseTreeNode& node, const std::string& current_file, size_t& node_index)
+    {
+        ++node_index;
+
+        std::string file_scope = current_file;
+        if (node.kind == "FileUnit")
+        {
+            file_scope = node.value;
+        }
+
+        const bool declaration_node =
+            (node.kind == "ClassDecl" || node.kind == "StructDecl" || is_class_block(node));
+
+        if (is_candidate_usage_node(node))
+        {
+            const std::vector<std::string> words = split_words(node.value);
+            for (const std::string& word : words)
+            {
+                const size_t class_name_hash = std::hash<std::string>{}(word);
+                const auto hit = class_name_hash_index.find(class_name_hash);
+                if (hit != class_name_hash_index.end())
+                {
+                    size_t exact_name_matches = 0;
+                    bool exact_name_match = false;
+                    for (size_t class_idx : hit->second)
+                    {
+                        if (class_idx < tables.class_symbols.size() && tables.class_symbols[class_idx].name == word)
+                        {
+                            ++exact_name_matches;
+                            exact_name_match = true;
+                        }
+                    }
+
+                    const bool hash_collision = !exact_name_match || hit->second.size() > exact_name_matches;
+                    if (!(declaration_node && class_name_from_signature(node.value) == word))
+                    {
+                        ParseSymbolUsage usage;
+                        usage.name = word;
+                        usage.type_string = word;
+                        usage.node_kind = node.kind;
+                        usage.node_value = node.value;
+                        usage.node_index = node_index;
+                        usage.node_contextual_hash = node.contextual_hash;
+                        usage.class_name_hash = class_name_hash;
+                        usage.hash_value =
+                            std::hash<std::string>{}(file_scope + "|" + std::to_string(node.contextual_hash) + "|" + word);
+                        usage.refactor_candidate =
+                            options.refactor_candidate_class_names.find(word) != options.refactor_candidate_class_names.end();
+                        usage.hash_collision = hash_collision;
+                        tables.class_usages.push_back(std::move(usage));
+                    }
+                }
+            }
+        }
+
+        for (const ParseTreeNode& child : node.children)
+        {
+            collect_class_usages_dfs(child, file_scope, node_index);
+        }
+    }
+};
+} // namespace
+
+ParseTreeSymbolTables build_parse_tree_symbol_tables(const ParseTreeNode& root, const ParseTreeSymbolBuildOptions& options)
+{
+    SymbolTableBuilder builder(options);
+
+    size_t definition_node_index = 0;
+    builder.collect_symbols_dfs(root, "", "", definition_node_index);
+
+    size_t usage_node_index = 0;
+    builder.collect_class_usages_dfs(root, "", usage_node_index);
+
+    return builder.tables;
+}
+
+const std::vector<ParseSymbol>& class_symbol_table(const ParseTreeSymbolTables& tables)
+{
+    return tables.class_symbols;
+}
+
+const std::vector<ParseSymbol>& function_symbol_table(const ParseTreeSymbolTables& tables)
+{
+    return tables.function_symbols;
+}
+
+const std::vector<ParseSymbolUsage>& class_usage_table(const ParseTreeSymbolTables& tables)
+{
+    return tables.class_usages;
+}
+
+const ParseSymbol* find_class_by_name(const ParseTreeSymbolTables& tables, const std::string& name)
+{
+    for (const ParseSymbol& symbol : tables.class_symbols)
+    {
+        if (symbol.name == name)
+        {
+            return &symbol;
+        }
+    }
+    return nullptr;
+}
+
+const ParseSymbol* find_class_by_hash(const ParseTreeSymbolTables& tables, size_t hash_value)
+{
+    for (const ParseSymbol& symbol : tables.class_symbols)
+    {
+        if (symbol.contextual_hash == hash_value || symbol.hash_value == hash_value || symbol.name_hash == hash_value)
+        {
+            return &symbol;
+        }
+    }
+    return nullptr;
+}
+
+const ParseSymbol* find_function_by_name(const ParseTreeSymbolTables& tables, const std::string& name)
+{
+    for (const ParseSymbol& symbol : tables.function_symbols)
+    {
+        if (symbol.name == name)
+        {
+            return &symbol;
+        }
+    }
+    return nullptr;
+}
+
+const ParseSymbol* find_function_by_key(const ParseTreeSymbolTables& tables, const std::string& function_key)
+{
+    for (const ParseSymbol& symbol : tables.function_symbols)
+    {
+        if (symbol.function_key == function_key)
+        {
+            return &symbol;
+        }
+    }
+    return nullptr;
+}
+
+std::vector<const ParseSymbol*> find_functions_by_name(const ParseTreeSymbolTables& tables, const std::string& name)
+{
+    std::vector<const ParseSymbol*> out;
+    for (const ParseSymbol& symbol : tables.function_symbols)
+    {
+        if (symbol.name == name)
+        {
+            out.push_back(&symbol);
+        }
+    }
     return out;
 }
 
-std::vector<ParseSymbolUsage> getClassUsagesByName(const std::string& name)
+std::vector<ParseSymbolUsage> find_class_usages_by_name(const ParseTreeSymbolTables& tables, const std::string& name)
 {
     std::vector<ParseSymbolUsage> out;
-    for (const ParseSymbolUsage& usage : g_class_usages)
+    for (const ParseSymbolUsage& usage : tables.class_usages)
     {
         if (usage.name == name)
         {
@@ -531,7 +516,7 @@ std::vector<ParseSymbolUsage> getClassUsagesByName(const std::string& name)
     return out;
 }
 
-bool returnTargetsKnownClass(const std::string& return_expression)
+bool return_targets_known_class(const ParseTreeSymbolTables& tables, const std::string& return_expression)
 {
     const std::string candidate = extract_return_candidate_name(return_expression);
     if (candidate.empty())
@@ -539,5 +524,5 @@ bool returnTargetsKnownClass(const std::string& return_expression)
         return false;
     }
 
-    return getClassByName(candidate) != nullptr;
+    return find_class_by_name(tables, candidate) != nullptr;
 }

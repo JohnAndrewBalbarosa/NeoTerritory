@@ -1,5 +1,4 @@
 #include "parse_tree_code_generator.hpp"
-#include "Factory/factory_pattern_logic.hpp"
 #include "language_tokens.hpp"
 #include "parse_tree.hpp"
 
@@ -41,30 +40,6 @@ size_t find_matching_brace(const std::string& text, size_t open_pos)
     }
 
     return std::string::npos;
-}
-
-std::vector<std::string> extract_factory_class_names(const std::string& source)
-{
-    std::vector<std::string> names;
-    std::unordered_set<std::string> seen;
-
-    const ParseTreeNode parse_root = build_cpp_parse_tree(source);
-    const CreationalTreeNode factory_tree = build_factory_pattern_tree(parse_root);
-
-    for (const CreationalTreeNode& class_node : factory_tree.children)
-    {
-        if (class_node.kind != "ClassNode")
-        {
-            continue;
-        }
-        const std::string& name = class_node.label;
-        if (seen.insert(name).second)
-        {
-            names.push_back(name);
-        }
-    }
-
-    return names;
 }
 
 void inject_singleton_accessor(std::string& source, const std::string& class_name)
@@ -118,7 +93,7 @@ void inject_singleton_accessor(std::string& source, const std::string& class_nam
     source.replace(open_brace + 1, close_brace - open_brace - 1, class_body);
 }
 
-void rewrite_factory_instantiations(std::string& source, const std::string& class_name)
+void rewrite_class_instantiations_to_singleton_references(std::string& source, const std::string& class_name)
 {
     const std::regex pointer_decl(
         "\\b" + class_name + R"(\s*\*\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*new\s+)" + class_name + R"(\s*\([^;{}]*\)\s*;)");
@@ -136,16 +111,103 @@ void rewrite_factory_instantiations(std::string& source, const std::string& clas
     source = std::regex_replace(source, bad_singleton_line, "static " + class_name + " singleton_instance;");
 }
 
-std::string transform_factory_to_singleton(const std::string& source)
+std::vector<std::string> extract_crucial_class_names(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern)
+{
+    ParseTreeBuildContext context;
+    context.source_pattern = source_pattern;
+    context.target_pattern = target_pattern;
+
+    std::vector<SourceFileUnit> files;
+    files.push_back(SourceFileUnit{"<memory>", source});
+
+    const ParseTreeBundle bundle = build_cpp_parse_trees(files, context);
+
+    std::vector<std::string> names;
+    std::unordered_set<std::string> seen;
+    for (const CrucialClassInfo& info : bundle.crucial_classes)
+    {
+        if (info.name.empty())
+        {
+            continue;
+        }
+        if (seen.insert(info.name).second)
+        {
+            names.push_back(info.name);
+        }
+    }
+
+    return names;
+}
+
+std::string transform_to_singleton_by_class_references(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern)
 {
     std::string out = source;
-    const std::vector<std::string> factory_classes = extract_factory_class_names(out);
-    for (const std::string& name : factory_classes)
+    const std::vector<std::string> crucial_classes =
+        extract_crucial_class_names(out, source_pattern, target_pattern);
+
+    for (const std::string& class_name : crucial_classes)
     {
-        inject_singleton_accessor(out, name);
-        rewrite_factory_instantiations(out, name);
+        inject_singleton_accessor(out, class_name);
+        rewrite_class_instantiations_to_singleton_references(out, class_name);
     }
+
     return out;
+}
+
+using TransformFn = std::string (*)(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern);
+
+struct TransformRule
+{
+    const char* source_pattern;
+    const char* target_pattern;
+    TransformFn transform;
+};
+
+bool pattern_matches(const std::string& normalized_input, const char* expected_pattern)
+{
+    const std::string expected = lower(expected_pattern == nullptr ? "" : expected_pattern);
+    return expected == "*" || expected == normalized_input;
+}
+
+const std::vector<TransformRule>& transform_rules()
+{
+    static const std::vector<TransformRule> rules = {
+        {"*", "singleton", &transform_to_singleton_by_class_references},
+    };
+    return rules;
+}
+
+std::string transform_using_registered_rule(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern)
+{
+    const std::string normalized_source = lower(source_pattern);
+    const std::string normalized_target = lower(target_pattern);
+
+    for (const TransformRule& rule : transform_rules())
+    {
+        if (!pattern_matches(normalized_source, rule.source_pattern))
+        {
+            continue;
+        }
+        if (!pattern_matches(normalized_target, rule.target_pattern))
+        {
+            continue;
+        }
+        return rule.transform(source, source_pattern, target_pattern);
+    }
+
+    return source;
 }
 } // namespace
 
@@ -162,11 +224,7 @@ std::string generate_target_code_from_source(
     const std::string& source_pattern,
     const std::string& target_pattern)
 {
-    std::string transformed = source;
-    if (lower(source_pattern) == "factory" && lower(target_pattern) == "singleton")
-    {
-        transformed = transform_factory_to_singleton(source);
-    }
+    const std::string transformed = transform_using_registered_rule(source, source_pattern, target_pattern);
 
     std::ostringstream out;
     out << "// Generated target code\n";

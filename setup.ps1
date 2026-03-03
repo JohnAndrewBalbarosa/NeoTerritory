@@ -1,22 +1,57 @@
-# === FILE: setup-k8s.ps1 ===
-Write-Host "Sinisimulan ang pag-setup ng Kubernetes at Minikube sa loob ng WSL2..." -ForegroundColor Cyan
+param(
+    [string]$ConfigPath = "",
+    [string]$UserId = "",
+    [string]$Image = "",
+    [string]$RuntimeRoot = "",
+    [switch]$SkipDependencyInstall,
+    [switch]$SkipDockerStart,
+    [switch]$SkipClusterStart,
+    [switch]$SkipImageBuild,
+    [switch]$SkipDeploy,
+    [switch]$SkipRuntimeLayout,
+    [switch]$LegacyWslToolsInstall
+)
 
-# 1. I-download ang Minikube sa loob ng WSL
-Write-Host "Dinadownload ang Minikube..."
-wsl bash -c "curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64"
+Set-StrictMode -Version Latest
+$ErrorActionPreference = "Stop"
 
-# 2. I-install ang Minikube (gamit ang root user para walang password prompt)
-Write-Host "Ini-install ang Minikube..."
-wsl -u root bash -c "install minikube-linux-amd64 /usr/local/bin/minikube"
-wsl bash -c "rm minikube-linux-amd64" # Cleanup
+if ($LegacyWslToolsInstall)
+{
+    Write-Host "[NeoTerritory][Legacy] Installing Minikube + kubectl in WSL..." -ForegroundColor Yellow
 
-# 3. I-download ang Kubectl sa loob ng WSL
-Write-Host "Dinadownload ang Kubectl..."
-wsl bash -c "curl -LO 'https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl'"
+    wsl bash -c "curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64"
+    wsl -u root bash -c "install minikube-linux-amd64 /usr/local/bin/minikube"
+    wsl bash -c "rm minikube-linux-amd64"
 
-# 4. I-install ang Kubectl
-Write-Host "Ini-install ang Kubectl..."
-wsl -u root bash -c "install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl"
-wsl bash -c "rm kubectl" # Cleanup
+    wsl bash -c "curl -LO 'https://dl.k8s.io/release/\$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl'"
+    wsl -u root bash -c "install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl"
+    wsl bash -c "rm kubectl"
 
-Write-Host "Success! Naka-install na ang Minikube at Kubectl sa WSL mo." -ForegroundColor Green
+    Write-Host "[NeoTerritory][Legacy] WSL tool installation complete." -ForegroundColor Green
+    exit 0
+}
+
+$bootstrapScript = Join-Path $PSScriptRoot "Infrastructure\session-orchestration\bootstrap_and_deploy.ps1"
+if (-not (Test-Path $bootstrapScript))
+{
+    throw ("Bootstrap script not found: {0}" -f $bootstrapScript)
+}
+
+$paramsForBootstrap = @{}
+if (-not [string]::IsNullOrWhiteSpace($ConfigPath)) { $paramsForBootstrap.ConfigPath = $ConfigPath }
+if (-not [string]::IsNullOrWhiteSpace($UserId)) { $paramsForBootstrap.UserId = $UserId }
+if (-not [string]::IsNullOrWhiteSpace($Image)) { $paramsForBootstrap.Image = $Image }
+if (-not [string]::IsNullOrWhiteSpace($RuntimeRoot)) { $paramsForBootstrap.RuntimeRoot = $RuntimeRoot }
+if ($SkipDependencyInstall) { $paramsForBootstrap.SkipDependencyInstall = $true }
+if ($SkipDockerStart) { $paramsForBootstrap.SkipDockerStart = $true }
+if ($SkipClusterStart) { $paramsForBootstrap.SkipClusterStart = $true }
+if ($SkipImageBuild) { $paramsForBootstrap.SkipImageBuild = $true }
+if ($SkipDeploy) { $paramsForBootstrap.SkipDeploy = $true }
+if ($SkipRuntimeLayout) { $paramsForBootstrap.SkipRuntimeLayout = $true }
+
+& $bootstrapScript @paramsForBootstrap
+if (Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue)
+{
+    exit $global:LASTEXITCODE
+}
+exit 0

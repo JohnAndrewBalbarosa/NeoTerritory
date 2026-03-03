@@ -5,6 +5,7 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 struct ParseSymbol
@@ -34,47 +35,61 @@ struct ParseSymbolUsage
     bool hash_collision;
 };
 
-/**
- * @brief Rebuild global class/function symbol tables from a parse tree.
- */
-void rebuild_parse_tree_symbol_tables(const ParseTreeNode& root);
+struct ParseTreeSymbolBuildOptions
+{
+    std::unordered_set<std::string> refactor_candidate_class_names;
+};
+
+struct ParseTreeSymbolTables
+{
+    std::vector<ParseSymbol> class_symbols;
+    std::vector<ParseSymbol> function_symbols;
+    std::vector<ParseSymbolUsage> class_usages;
+};
 
 /**
- * @brief Traverseable global class symbol table.
+ * @brief Build class/function symbol tables from a parse tree.
  */
-const std::vector<ParseSymbol>& getClassSymbolTable();
+ParseTreeSymbolTables build_parse_tree_symbol_tables(
+    const ParseTreeNode& root,
+    const ParseTreeSymbolBuildOptions& options = ParseTreeSymbolBuildOptions{});
 
 /**
- * @brief Traverseable global function symbol table.
+ * @brief Traverseable class symbol table.
  */
-const std::vector<ParseSymbol>& getFunctionSymbolTable();
+const std::vector<ParseSymbol>& class_symbol_table(const ParseTreeSymbolTables& tables);
+
+/**
+ * @brief Traverseable function symbol table.
+ */
+const std::vector<ParseSymbol>& function_symbol_table(const ParseTreeSymbolTables& tables);
 
 /**
  * @brief Traverseable class usage symbol table.
  */
-const std::vector<ParseSymbolUsage>& getClassUsageTable();
+const std::vector<ParseSymbolUsage>& class_usage_table(const ParseTreeSymbolTables& tables);
 
 /**
  * @brief Lookup class symbol by exact name.
  */
-const ParseSymbol* getClassByName(const std::string& name);
-const ParseSymbol* getClassByHash(size_t hash_value);
+const ParseSymbol* find_class_by_name(const ParseTreeSymbolTables& tables, const std::string& name);
+const ParseSymbol* find_class_by_hash(const ParseTreeSymbolTables& tables, size_t hash_value);
 
 /**
  * @brief Lookup function symbol by exact name.
  */
-const ParseSymbol* getFunctionByName(const std::string& name);
-const ParseSymbol* getFunctionByKey(const std::string& function_key);
-std::vector<const ParseSymbol*> getFunctionsByName(const std::string& name);
+const ParseSymbol* find_function_by_name(const ParseTreeSymbolTables& tables, const std::string& name);
+const ParseSymbol* find_function_by_key(const ParseTreeSymbolTables& tables, const std::string& function_key);
+std::vector<const ParseSymbol*> find_functions_by_name(const ParseTreeSymbolTables& tables, const std::string& name);
 
 /**
  * @brief Get all class usages for a class name.
  */
-std::vector<ParseSymbolUsage> getClassUsagesByName(const std::string& name);
+std::vector<ParseSymbolUsage> find_class_usages_by_name(const ParseTreeSymbolTables& tables, const std::string& name);
 
 /**
  * @brief Check whether `return [new] Name(...)` references a known class symbol.
  */
-bool returnTargetsKnownClass(const std::string& return_expression);
+bool return_targets_known_class(const ParseTreeSymbolTables& tables, const std::string& return_expression);
 
 #endif // PARSE_TREE_SYMBOLS_HPP

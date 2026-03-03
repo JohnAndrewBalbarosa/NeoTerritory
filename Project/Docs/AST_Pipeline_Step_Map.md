@@ -116,13 +116,29 @@ Contrast that with libstdc++'s explicit FNV path:
 - CLI accepts:
   - `argv[1]`: source design pattern
   - `argv[2]`: target design pattern
-  - `argv[3..]`: one or more file paths
-- Parse context is initialized from CLI before parsing.
+- Folder-only ingestion is enforced:
+  - extra CLI file arguments are rejected with guidance
+  - source files are discovered from executable-local `Input` directory
+    (for example: `.../out/build/x64-Debug/Input`)
+- Parse context is initialized in the pipeline from CLI pattern args plus resolved input file list.
+- On validation failures (invalid args, invalid inputs, write failures), the runner exits non-zero with diagnostic guidance.
 
 References:
 
 - `Project/Modules/Source/SyntacticBrokenAST/cli_arguments.cpp`
 - `Project/Layer/Back system/syntacticBrokenAST.cpp`
+
+### Runtime Layout (Implemented)
+
+- Runtime layout is anchored beside the executable directory:
+  - `Input/` for source ingestion (top-level scan only)
+  - `Output/analysis_report/` for JSON report artifacts
+  - `Output/generated_code/` for generated C++ output
+  - `Output/html/` for HTML output
+- The runner ensures required directories exist at startup.
+- Installer/post-install helper scripts can pre-create the same layout:
+  - `Infrastructure/runtime-layout/setup_runtime_layout.ps1`
+  - `Infrastructure/runtime-layout/setup_runtime_layout.sh`
 
 ### A2. Root and File-Level Separation
 
@@ -201,12 +217,16 @@ References:
 
 ### A8. Symbol API Extensions
 
-- Existing API remains:
-  - `getClassByName(...)`
-  - `getFunctionByName(...)`
-- Added API:
-  - `getFunctionByKey(...)`
-  - `getFunctionsByName(...)`
+- Symbol APIs are now table-scoped (no process-global symbol registry).
+- Core API now includes:
+  - `build_parse_tree_symbol_tables(...)`
+  - `class_symbol_table(...)`
+  - `function_symbol_table(...)`
+  - `class_usage_table(...)`
+  - `find_class_by_name(...)`
+  - `find_function_by_name(...)`
+  - `find_function_by_key(...)`
+  - `find_functions_by_name(...)`
 
 References:
 

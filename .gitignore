@@ -95,3 +95,6 @@ Makefile
 .DS_Store
 Thumbs.db
 Desktop.ini
+
+.github/
+launch.vs.json
