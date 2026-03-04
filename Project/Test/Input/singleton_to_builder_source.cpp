@@ -1,47 +1,35 @@
-// Sample input for CLI analysis:
-// source_pattern=singleton target_pattern=builder
-
+#include <iostream>
 #include <string>
-#include <vector>
 
-class AuditLogger {
+class ReportService {
 public:
-    static AuditLogger instance() {
-        static AuditLogger singleton_instance;
-        return singleton_instance;
+    static ReportService& instance()
+    {
+        static ReportService inst;
+        return inst;
     }
 
-    void set_service_name(std::string name) {
-        service_name = name;
-    }
-
-    void log(std::string message) {
-        logs.push_back(message);
-    }
-
-    size_t size() const {
-        return logs.size();
+    void set_format(const std::string& value) { format_ = value; }
+    void enable_timestamp(bool value) { timestamp_enabled_ = value; }
+    void configure_channel(const std::string& value) { channel_ = value; }
+    void log(const std::string& message) const
+    {
+        std::cout << "[" << channel_ << "] " << message << " format=" << format_
+                  << " ts=" << timestamp_enabled_ << "\n";
     }
 
 private:
-    std::string service_name = "core";
-    std::vector<std::string> logs;
+    std::string format_ = "text";
+    std::string channel_ = "stdout";
+    bool timestamp_enabled_ = false;
 };
 
-class RequestScope {
-public:
-    std::string trace_id;
-    std::string actor;
-};
-
-int main() {
-    AuditLogger logger = AuditLogger::instance();
-    logger.set_service_name("api-gateway");
-    logger.log("request-start");
-
-    RequestScope scope;
-    scope.trace_id = "trace-9001";
-    scope.actor = "system";
-
-    return logger.size() > 0 ? 0 : 1;
+int main()
+{
+    ReportService service = ReportService::instance();
+    service.set_format("json");
+    service.enable_timestamp(true);
+    service.configure_channel("file");
+    service.log("ready");
+    return 0;
 }

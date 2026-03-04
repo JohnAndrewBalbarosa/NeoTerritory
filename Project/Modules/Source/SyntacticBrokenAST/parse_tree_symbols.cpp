@@ -139,22 +139,12 @@ bool is_main_function_name(const std::string& name)
 
 bool is_class_block(const ParseTreeNode& node)
 {
-    const LanguageTokenConfig& cfg = language_tokens(LanguageId::Cpp);
     if (node.kind != "Block")
     {
         return false;
     }
 
-    const std::string lowered = lowercase_ascii(trim(node.value));
-    for (const std::string& kw : cfg.class_keywords)
-    {
-        if (starts_with(lowered, kw + " "))
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return !class_name_from_signature(node.value).empty();
 }
 
 bool is_function_block(const ParseTreeNode& node)
