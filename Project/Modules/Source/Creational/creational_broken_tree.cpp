@@ -7,35 +7,93 @@
 #include <functional>
 #include <sstream>
 #include <string>
+#include <utility>
+#include <vector>
+
+namespace
+{
+class FactoryPatternDetector final : public ICreationalDetector
+{
+public:
+    CreationalTreeNode detect(const ParseTreeNode& parse_root) const override
+    {
+        return build_factory_pattern_tree(parse_root);
+    }
+};
+
+class SingletonPatternDetector final : public ICreationalDetector
+{
+public:
+    CreationalTreeNode detect(const ParseTreeNode& parse_root) const override
+    {
+        return build_singleton_pattern_tree(parse_root);
+    }
+};
+
+class BuilderPatternDetector final : public ICreationalDetector
+{
+public:
+    CreationalTreeNode detect(const ParseTreeNode& parse_root) const override
+    {
+        return build_builder_pattern_tree(parse_root);
+    }
+};
+
+class DefaultCreationalTreeCreator final : public ICreationalTreeCreator
+{
+public:
+    CreationalTreeNode create(
+        const ParseTreeNode& parse_root,
+        const std::vector<const ICreationalDetector*>& detectors) const override
+    {
+        CreationalTreeNode out{"CreationalPatternsRoot", "factory + singleton + builder", {}};
+
+        for (const ICreationalDetector* detector : detectors)
+        {
+            if (detector == nullptr)
+            {
+                continue;
+            }
+
+            CreationalTreeNode detected = detector->detect(parse_root);
+            if (!detected.children.empty())
+            {
+                out.children.push_back(std::move(detected));
+            }
+        }
+
+        if (out.children.empty())
+        {
+            out.label = "NoFactoryOrSingletonOrBuilderPatternFound";
+        }
+
+        return out;
+    }
+};
+} // namespace
 
 CreationalTreeNode build_creational_broken_tree(const ParseTreeNode& root)
 {
-    CreationalTreeNode out{"CreationalPatternsRoot", "factory + singleton + builder", {}};
+    const FactoryPatternDetector factory_detector;
+    const SingletonPatternDetector singleton_detector;
+    const BuilderPatternDetector builder_detector;
+    const DefaultCreationalTreeCreator creator;
 
-    CreationalTreeNode factory_tree = build_factory_pattern_tree(root);
-    if (!factory_tree.children.empty())
-    {
-        out.children.push_back(std::move(factory_tree));
-    }
+    const std::vector<const ICreationalDetector*> detectors = {
+        &factory_detector,
+        &singleton_detector,
+        &builder_detector,
+    };
 
-    CreationalTreeNode singleton_tree = build_singleton_pattern_tree(root);
-    if (!singleton_tree.children.empty())
-    {
-        out.children.push_back(std::move(singleton_tree));
-    }
+    return build_creational_broken_tree(root, creator, detectors);
+}
 
-    CreationalTreeNode builder_tree = build_builder_pattern_tree(root);
-    if (!builder_tree.children.empty())
-    {
-        out.children.push_back(std::move(builder_tree));
-    }
-
-    if (out.children.empty())
-    {
-        out.label = "NoFactoryOrSingletonOrBuilderPatternFound";
-    }
-
-    return out;
+CreationalTreeNode build_creational_broken_tree(
+    const ParseTreeNode& root,
+    const ICreationalTreeCreator& creator,
+    const std::vector<const ICreationalDetector*>& detectors)
+{
+    return creator.create(root, detectors);
 }
 
 ParseTreeNode creational_tree_to_parse_tree_node(const CreationalTreeNode& root)

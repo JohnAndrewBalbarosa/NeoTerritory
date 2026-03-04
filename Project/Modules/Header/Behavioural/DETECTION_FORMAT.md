@@ -7,6 +7,9 @@ Implementation and rule details are documented in:
 Public APIs related to detection:
 
 - `build_behavioural_broken_tree(...)`
+- `build_behavioural_broken_tree(..., const IBehaviouralTreeCreator&, const std::vector<const IBehaviouralDetector*>&)`
 - `build_behavioural_function_scaffold(...)`
 - `build_behavioural_structure_checker(...)`
+- `IBehaviouralDetector`
+- `IBehaviouralTreeCreator`
 
