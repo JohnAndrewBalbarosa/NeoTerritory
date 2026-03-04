@@ -431,7 +431,8 @@ int run_syntactic_broken_ast(int argc, char* argv[])
             pipeline_report_to_json(
                 artifacts.report,
                 artifacts.symbol_tables,
-                artifacts.line_hash_traces)))
+                artifacts.line_hash_traces,
+                get_last_transform_decisions())))
     {
         print_error_diagnostics(
             "Failed to write performance report.",

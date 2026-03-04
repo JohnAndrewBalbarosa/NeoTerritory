@@ -1,40 +1,28 @@
-// Sample input for CLI analysis:
-// source_pattern=singleton target_pattern=factory
-
+#include <iostream>
 #include <string>
 
-class RuntimeConfig {
+class SettingsStore {
 public:
-    static RuntimeConfig instance() {
-        static RuntimeConfig singleton_instance;
-        return singleton_instance;
+    static SettingsStore& instance()
+    {
+        static SettingsStore inst;
+        return inst;
     }
 
-    void set_environment(std::string name) {
-        environment = name;
-    }
-
-    std::string environment_name() const {
-        return environment;
-    }
+    void set_path(const std::string& value) { path_ = value; }
+    void enable_cache(bool value) { cache_enabled_ = value; }
+    void log() const { std::cout << "path=" << path_ << " cache=" << cache_enabled_ << "\n"; }
 
 private:
-    std::string environment = "dev";
+    std::string path_;
+    bool cache_enabled_ = false;
 };
 
-class SessionContext {
-public:
-    std::string user_id;
-    std::string locale;
-};
-
-int main() {
-    RuntimeConfig config = RuntimeConfig::instance();
-    config.set_environment("prod");
-
-    SessionContext ctx;
-    ctx.user_id = "u-101";
-    ctx.locale = "en-US";
-
-    return config.environment_name().empty() ? 1 : 0;
+int main()
+{
+    SettingsStore settings = SettingsStore::instance();
+    settings.set_path("/tmp/config.json");
+    settings.enable_cache(true);
+    settings.log();
+    return 0;
 }

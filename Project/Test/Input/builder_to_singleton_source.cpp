@@ -1,48 +1,45 @@
-// Sample input for CLI analysis:
-// source_pattern=builder target_pattern=singleton
-
 #include <string>
 
-class HttpRequest {
+class Query {
 public:
-    std::string host;
-    int port = 80;
-    std::string path = "/";
+    void set_name(const std::string& value) { name_ = value; }
+    void set_limit(int value) { limit_ = value; }
+
+private:
+    std::string name_;
+    int limit_ = 0;
 };
 
-class HttpRequestBuilder {
+class QueryBuilder {
 public:
-    HttpRequestBuilder set_host(std::string value) {
-        host = value;
+    QueryBuilder& set_name(const std::string& value)
+    {
+        name_ = value;
         return *this;
     }
 
-    HttpRequestBuilder set_port(int value) {
-        port = value;
+    QueryBuilder& set_limit(int value)
+    {
+        limit_ = value;
         return *this;
     }
 
-    HttpRequestBuilder set_path(std::string value) {
-        path = value;
-        return *this;
-    }
-
-    HttpRequest build() {
-        HttpRequest req;
-        req.host = host;
-        req.port = port;
-        req.path = path;
-        return req;
+    Query build() const
+    {
+        Query out;
+        out.set_name(name_);
+        out.set_limit(limit_);
+        return out;
     }
 
 private:
-    std::string host = "localhost";
-    int port = 8080;
-    std::string path = "/health";
+    std::string name_;
+    int limit_ = 0;
 };
 
-int main() {
-    HttpRequestBuilder builder;
-    HttpRequest request = builder.set_host("api.local").set_port(443).set_path("/v1/status").build();
-    return request.host.empty() ? 1 : 0;
+int main()
+{
+    Query query = QueryBuilder().set_name("users").set_limit(10).build();
+    (void)query;
+    return 0;
 }

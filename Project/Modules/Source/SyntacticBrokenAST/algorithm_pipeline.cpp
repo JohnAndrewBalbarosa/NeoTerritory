@@ -1,11 +1,13 @@
 #include "algorithm_pipeline.hpp"
 
+#include "language_tokens.hpp"
 #include "parse_tree_symbols.hpp"
 
 #include <algorithm>
 #include <chrono>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace
@@ -153,7 +155,8 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 
     // 5) Generate monolithic representation
     run_stage("GenerateMonolithicRepresentation", [&]() {
-        artifacts.monolithic_representation = parse_tree_to_text(artifacts.virtual_tree);
+        artifacts.monolithic_representation =
+            generate_base_code_from_source(join_source_file_units(source_files));
         return artifacts.monolithic_representation.size();
     });
 
@@ -181,7 +184,8 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 std::string pipeline_report_to_json(
     const PipelineReport& report,
     const ParseTreeSymbolTables& symbol_tables,
-    const std::vector<LineHashTrace>& line_hash_traces)
+    const std::vector<LineHashTrace>& line_hash_traces,
+    const std::vector<TransformDecision>& transform_decisions)
 {
     const std::vector<ParseSymbolUsage>& class_usages = class_usage_table(symbol_tables);
     std::unordered_set<std::string> candidate_class_names;
@@ -191,6 +195,16 @@ std::string pipeline_report_to_json(
         {
             candidate_class_names.insert(usage.name);
         }
+    }
+
+    std::unordered_map<std::string, TransformDecision> decisions_by_class;
+    for (const TransformDecision& decision : transform_decisions)
+    {
+        if (decision.class_name.empty())
+        {
+            continue;
+        }
+        decisions_by_class[decision.class_name] = decision;
     }
 
     std::ostringstream out;
@@ -207,6 +221,30 @@ std::string pipeline_report_to_json(
     for (size_t i = 0; i < class_symbols.size(); ++i)
     {
         const ParseSymbol& s = class_symbols[i];
+
+        bool transform_applied = false;
+        std::vector<std::string> transform_reason;
+
+        const auto decision_it = decisions_by_class.find(s.name);
+        if (decision_it != decisions_by_class.end())
+        {
+            transform_applied = decision_it->second.transform_applied;
+            transform_reason = decision_it->second.transform_reason;
+        }
+
+        if (!transform_applied && transform_reason.empty())
+        {
+            if (lowercase_ascii(report.source_pattern) == "singleton" &&
+                lowercase_ascii(report.target_pattern) == "builder")
+            {
+                transform_reason.push_back("singleton_candidate_not_found");
+            }
+            else
+            {
+                transform_reason.push_back("transform_policy_not_applicable_for_source_target");
+            }
+        }
+
         out << "    {\n";
         out << "      \"name\": \"" << json_escape(s.name) << "\",\n";
         out << "      \"file_path\": \"" << json_escape(s.file_path) << "\",\n";
@@ -215,6 +253,17 @@ std::string pipeline_report_to_json(
         out << "      \"hash\": " << s.hash_value << ",\n";
         out << "      \"refactor_candidate\": "
             << (candidate_class_names.find(s.name) != candidate_class_names.end() ? "true" : "false") << ",\n";
+        out << "      \"transform_applied\": " << (transform_applied ? "true" : "false") << ",\n";
+        out << "      \"transform_reason\": [";
+        for (size_t reason_i = 0; reason_i < transform_reason.size(); ++reason_i)
+        {
+            if (reason_i > 0)
+            {
+                out << ", ";
+            }
+            out << "\"" << json_escape(transform_reason[reason_i]) << "\"";
+        }
+        out << "],\n";
         out << "      \"definition_node_index\": " << s.definition_node_index << "\n";
         out << "    }";
         if (i + 1 < class_symbols.size())

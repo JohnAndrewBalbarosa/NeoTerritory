@@ -1,20 +1,32 @@
-// Additional non-pattern context classes.
-// These should not be treated as creational pattern targets.
-
 #include <string>
 
 class Driver {
 public:
-    std::string license_id;
+    void set_name(const std::string& value) { name_ = value; }
+    std::string name() const { return name_; }
+
+private:
+    std::string name_;
 };
 
 class FleetVehicle {
 public:
-    std::string plate_number;
+    void set_plate(const std::string& value) { plate_ = value; }
+    std::string plate() const { return plate_; }
+
+private:
+    std::string plate_;
 };
 
 class Trip {
 public:
-    Driver driver;
-    FleetVehicle vehicle;
+    void assign(const Driver& driver, const FleetVehicle& vehicle)
+    {
+        driver_name_ = driver.name();
+        plate_ = vehicle.plate();
+    }
+
+private:
+    std::string driver_name_;
+    std::string plate_;
 };

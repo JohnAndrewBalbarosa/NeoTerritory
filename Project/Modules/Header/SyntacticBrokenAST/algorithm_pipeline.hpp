@@ -4,6 +4,7 @@
 #include "behavioural_broken_tree.hpp"
 #include "creational_broken_tree.hpp"
 #include "parse_tree.hpp"
+#include "parse_tree_code_generator.hpp"
 #include "parse_tree_symbols.hpp"
 #include "source_reader.hpp"
 
@@ -51,6 +52,7 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 std::string pipeline_report_to_json(
     const PipelineReport& report,
     const ParseTreeSymbolTables& symbol_tables,
-    const std::vector<LineHashTrace>& line_hash_traces);
+    const std::vector<LineHashTrace>& line_hash_traces,
+    const std::vector<TransformDecision>& transform_decisions = {});
 
 #endif // ALGORITHM_PIPELINE_HPP
