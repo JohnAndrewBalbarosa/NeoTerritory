@@ -6,6 +6,7 @@
 #include <chrono>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 namespace
 {
@@ -182,6 +183,16 @@ std::string pipeline_report_to_json(
     const ParseTreeSymbolTables& symbol_tables,
     const std::vector<LineHashTrace>& line_hash_traces)
 {
+    const std::vector<ParseSymbolUsage>& class_usages = class_usage_table(symbol_tables);
+    std::unordered_set<std::string> candidate_class_names;
+    for (const ParseSymbolUsage& usage : class_usages)
+    {
+        if (usage.refactor_candidate)
+        {
+            candidate_class_names.insert(usage.name);
+        }
+    }
+
     std::ostringstream out;
     out << "{\n";
     out << "  \"source_pattern\": \"" << json_escape(report.source_pattern) << "\",\n";
@@ -202,6 +213,8 @@ std::string pipeline_report_to_json(
         out << "      \"name_hash\": " << s.name_hash << ",\n";
         out << "      \"contextual_hash\": " << s.contextual_hash << ",\n";
         out << "      \"hash\": " << s.hash_value << ",\n";
+        out << "      \"refactor_candidate\": "
+            << (candidate_class_names.find(s.name) != candidate_class_names.end() ? "true" : "false") << ",\n";
         out << "      \"definition_node_index\": " << s.definition_node_index << "\n";
         out << "    }";
         if (i + 1 < class_symbols.size())
@@ -214,7 +227,6 @@ std::string pipeline_report_to_json(
     out << "  ],\n";
     out << "  \"class_usages\": [\n";
 
-    const std::vector<ParseSymbolUsage>& class_usages = class_usage_table(symbol_tables);
     for (size_t i = 0; i < class_usages.size(); ++i)
     {
         const ParseSymbolUsage& u = class_usages[i];
@@ -252,6 +264,8 @@ std::string pipeline_report_to_json(
         out << "      \"hit_token_index\": " << t.hit_token_index << ",\n";
         out << "      \"outgoing_hash\": " << t.outgoing_hash << ",\n";
         out << "      \"dirty_token_count\": " << t.dirty_token_count << ",\n";
+        out << "      \"refactor_candidate_class\": "
+            << (candidate_class_names.find(t.class_name) != candidate_class_names.end() ? "true" : "false") << ",\n";
         out << "      \"hash_collision\": " << (t.hash_collision ? "true" : "false") << "\n";
         out << "    }";
         if (i + 1 < line_hash_traces.size())

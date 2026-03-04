@@ -6,7 +6,9 @@
 
 /**
  * @brief Analyze class/function/conditional blocks for factory-style creation:
- * return new T(...) or return make_unique<T>/make_shared<T>(...) where T is a known class.
+ * return new T(...), return make_unique<T>/make_shared<T>(...), or return object indications
+ * (e.g. return T(...), return var_of_T, return { ... } with known return type T),
+ * where T is a known class.
  */
 CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root);
 

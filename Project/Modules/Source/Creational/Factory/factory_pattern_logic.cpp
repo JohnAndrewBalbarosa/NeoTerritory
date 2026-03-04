@@ -5,6 +5,7 @@
 
 #include <cctype>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace
@@ -137,7 +138,10 @@ bool is_conditional_block(const ParseTreeNode& node)
     }
 
     const std::string lowered = to_lower(trim(node.value));
-    return starts_with(lowered, "if") || starts_with(lowered, "else if") || starts_with(lowered, "switch");
+    return starts_with(lowered, "if") ||
+           starts_with(lowered, "else if") ||
+           starts_with(lowered, "else") ||
+           starts_with(lowered, "switch");
 }
 
 std::string extract_return_expr(const std::string& value)
@@ -176,6 +180,40 @@ std::string remove_spaces(const std::string& input)
     return out;
 }
 
+bool is_identifier_token(const std::string& token)
+{
+    if (token.empty())
+    {
+        return false;
+    }
+
+    const char first = token.front();
+    if (!(std::isalpha(static_cast<unsigned char>(first)) || first == '_'))
+    {
+        return false;
+    }
+
+    for (char c : token)
+    {
+        if (!(std::isalnum(static_cast<unsigned char>(c)) || c == '_'))
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool contains_factory_hint(const std::string& name)
+{
+    const std::string lowered = to_lower(name);
+    return lowered.find("factory") != std::string::npos ||
+           lowered.find("creator") != std::string::npos ||
+           lowered.find("create") != std::string::npos ||
+           lowered.find("make") != std::string::npos ||
+           lowered.find("build") != std::string::npos;
+}
+
 bool is_factory_allocator_return(
     const ParseTreeSymbolTables& tables,
     const std::string& return_expr,
@@ -211,13 +249,234 @@ bool is_factory_allocator_return(
 
     return false;
 }
+
+bool function_contains_allocator_return(
+    const ParseTreeNode& fn_node,
+    const ParseTreeSymbolTables& tables)
+{
+    std::vector<const ParseTreeNode*> stack{&fn_node};
+    while (!stack.empty())
+    {
+        const ParseTreeNode* node = stack.back();
+        stack.pop_back();
+
+        if (node->kind == "ReturnStatement")
+        {
+            const std::string expr = extract_return_expr(node->value);
+            std::string matched_class;
+            if (is_factory_allocator_return(tables, expr, matched_class))
+            {
+                return true;
+            }
+        }
+
+        for (const ParseTreeNode& child : node->children)
+        {
+            stack.push_back(&child);
+        }
+    }
+
+    return false;
+}
+
+std::string function_return_class_name(
+    const ParseTreeSymbolTables& tables,
+    const std::string& signature)
+{
+    const std::string trimmed = trim(signature);
+    const size_t open = trimmed.find('(');
+    if (open == std::string::npos)
+    {
+        return {};
+    }
+
+    const std::vector<std::string> words = split_words(trimmed.substr(0, open));
+    if (words.size() < 2)
+    {
+        return {};
+    }
+
+    for (size_t i = words.size() - 1; i-- > 0;)
+    {
+        if (find_class_by_name(tables, words[i]) != nullptr)
+        {
+            return words[i];
+        }
+    }
+
+    return {};
+}
+
+std::unordered_map<std::string, std::string> collect_local_object_variables(
+    const ParseTreeNode& fn_node,
+    const ParseTreeSymbolTables& tables)
+{
+    std::unordered_map<std::string, std::string> out;
+
+    std::vector<const ParseTreeNode*> stack{&fn_node};
+    while (!stack.empty())
+    {
+        const ParseTreeNode* node = stack.back();
+        stack.pop_back();
+
+        if (node->kind != "ReturnStatement")
+        {
+            const std::vector<std::string> words = split_words(node->value);
+            for (size_t i = 0; i + 1 < words.size(); ++i)
+            {
+                const std::string& class_candidate = words[i];
+                const std::string& variable_candidate = words[i + 1];
+
+                if (find_class_by_name(tables, class_candidate) == nullptr)
+                {
+                    continue;
+                }
+                if (!is_identifier_token(variable_candidate))
+                {
+                    continue;
+                }
+
+                out[variable_candidate] = class_candidate;
+            }
+        }
+
+        for (const ParseTreeNode& child : node->children)
+        {
+            stack.push_back(&child);
+        }
+    }
+
+    return out;
+}
+
+bool is_factory_object_return(
+    const ParseTreeSymbolTables& tables,
+    const std::string& return_expr,
+    bool allow_object_return,
+    const std::string& function_return_class,
+    const std::unordered_map<std::string, std::string>& local_object_variables,
+    std::string& out_matched_class)
+{
+    if (!allow_object_return)
+    {
+        return false;
+    }
+
+    const std::string expr = trim(return_expr);
+    if (expr.empty())
+    {
+        return false;
+    }
+
+    if (expr.front() == '{' && !function_return_class.empty())
+    {
+        out_matched_class = function_return_class;
+        return true;
+    }
+
+    const std::vector<std::string> words = split_words(expr);
+    if (words.empty())
+    {
+        return false;
+    }
+
+    if (find_class_by_name(tables, words.front()) != nullptr)
+    {
+        out_matched_class = words.front();
+        return true;
+    }
+
+    const auto direct_identifier_hit = local_object_variables.find(words.front());
+    if (words.size() == 1 && direct_identifier_hit != local_object_variables.end())
+    {
+        out_matched_class = direct_identifier_hit->second;
+        return true;
+    }
+
+    const auto wrapped_identifier_hit = local_object_variables.find(words.back());
+    if (wrapped_identifier_hit != local_object_variables.end())
+    {
+        out_matched_class = wrapped_identifier_hit->second;
+        return true;
+    }
+
+    return false;
+}
+
+bool append_factory_return_if_matched(
+    const ParseTreeNode& node,
+    const ParseTreeSymbolTables& tables,
+    bool allow_object_return,
+    const std::string& function_return_class,
+    const std::unordered_map<std::string, std::string>& local_object_variables,
+    std::vector<CreationalTreeNode>& out_children)
+{
+    if (node.kind != "ReturnStatement")
+    {
+        return false;
+    }
+
+    const std::string expr = extract_return_expr(node.value);
+    std::string matched_class;
+    if (is_factory_allocator_return(tables, expr, matched_class))
+    {
+        out_children.push_back(CreationalTreeNode{"AllocatorReturn", expr + " | class=" + matched_class, {}});
+        return true;
+    }
+
+    if (is_factory_object_return(
+            tables,
+            expr,
+            allow_object_return,
+            function_return_class,
+            local_object_variables,
+            matched_class))
+    {
+        out_children.push_back(CreationalTreeNode{"ObjectReturn", expr + " | class=" + matched_class, {}});
+        return true;
+    }
+
+    return false;
+}
+
+void collect_factory_returns_in_subtree(
+    const ParseTreeNode& root,
+    const ParseTreeSymbolTables& tables,
+    bool allow_object_return,
+    const std::string& function_return_class,
+    const std::unordered_map<std::string, std::string>& local_object_variables,
+    std::vector<CreationalTreeNode>& out_children)
+{
+    std::vector<const ParseTreeNode*> stack{&root};
+    while (!stack.empty())
+    {
+        const ParseTreeNode* node = stack.back();
+        stack.pop_back();
+
+        append_factory_return_if_matched(
+            *node,
+            tables,
+            allow_object_return,
+            function_return_class,
+            local_object_variables,
+            out_children);
+
+        for (const ParseTreeNode& child : node->children)
+        {
+            stack.push_back(&child);
+        }
+    }
+}
 } // namespace
 
 CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
 {
     const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(parse_root);
 
-    CreationalTreeNode root{"FactoryPatternRoot", "class/function/conditional/allocator-return", {}};
+    CreationalTreeNode root{
+        "FactoryPatternRoot",
+        "class/function/conditional-or-fallthrough/allocator-or-object-return",
+        {}};
 
     std::vector<const ParseTreeNode*> class_blocks;
     std::vector<const ParseTreeNode*> stack{&parse_root};
@@ -246,7 +505,15 @@ CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
                 continue;
             }
 
-            CreationalTreeNode fn_node{"FunctionNode", function_name_from_signature(fn.value), {}};
+            const std::string function_name = function_name_from_signature(fn.value);
+            CreationalTreeNode fn_node{"FunctionNode", function_name, {}};
+            const std::string function_return_class = function_return_class_name(tables, fn.value);
+            const std::unordered_map<std::string, std::string> local_object_variables =
+                collect_local_object_variables(fn, tables);
+            const bool allow_object_return =
+                contains_factory_hint(class_node.label) ||
+                contains_factory_hint(function_name) ||
+                function_contains_allocator_return(fn, tables);
 
             for (const ParseTreeNode& cond : fn.children)
             {
@@ -256,27 +523,39 @@ CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
                 }
 
                 CreationalTreeNode cond_node{"ConditionalNode", trim(cond.value), {}};
-
-                for (const ParseTreeNode& inner : cond.children)
-                {
-                    if (inner.kind != "ReturnStatement")
-                    {
-                        continue;
-                    }
-
-                    const std::string expr = extract_return_expr(inner.value);
-                    std::string matched_class;
-                    if (is_factory_allocator_return(tables, expr, matched_class))
-                    {
-                        cond_node.children.push_back(
-                            CreationalTreeNode{"AllocatorReturn", expr + " | class=" + matched_class, {}});
-                    }
-                }
+                collect_factory_returns_in_subtree(
+                    cond,
+                    tables,
+                    allow_object_return,
+                    function_return_class,
+                    local_object_variables,
+                    cond_node.children);
 
                 if (!cond_node.children.empty())
                 {
                     fn_node.children.push_back(std::move(cond_node));
                 }
+            }
+
+            CreationalTreeNode fallthrough_node{"ConditionalNode", "fallthrough-return", {}};
+            for (const ParseTreeNode& child : fn.children)
+            {
+                if (is_conditional_block(child))
+                {
+                    continue;
+                }
+                append_factory_return_if_matched(
+                    child,
+                    tables,
+                    allow_object_return,
+                    function_return_class,
+                    local_object_variables,
+                    fallthrough_node.children);
+            }
+
+            if (!fallthrough_node.children.empty())
+            {
+                fn_node.children.push_back(std::move(fallthrough_node));
             }
 
             if (!fn_node.children.empty())
