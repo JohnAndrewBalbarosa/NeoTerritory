@@ -4,29 +4,81 @@
 #include "tree_html_renderer.hpp"
 
 #include <utility>
+#include <vector>
+
+namespace
+{
+class BehaviouralFunctionScaffoldDetector final : public IBehaviouralDetector
+{
+public:
+    ParseTreeNode detect(const ParseTreeNode& parse_root) const override
+    {
+        return build_behavioural_function_scaffold(parse_root);
+    }
+};
+
+class BehaviouralStructureCheckerDetector final : public IBehaviouralDetector
+{
+public:
+    ParseTreeNode detect(const ParseTreeNode& parse_root) const override
+    {
+        return build_behavioural_structure_checker(parse_root);
+    }
+};
+
+class DefaultBehaviouralTreeCreator final : public IBehaviouralTreeCreator
+{
+public:
+    ParseTreeNode create(
+        const ParseTreeNode& parse_root,
+        const std::vector<const IBehaviouralDetector*>& detectors) const override
+    {
+        ParseTreeNode root{"BehaviouralPatternsRoot", "function scaffold + structure checks", {}};
+
+        for (const IBehaviouralDetector* detector : detectors)
+        {
+            if (detector == nullptr)
+            {
+                continue;
+            }
+
+            ParseTreeNode detected = detector->detect(parse_root);
+            if (!detected.children.empty())
+            {
+                root.children.push_back(std::move(detected));
+            }
+        }
+
+        if (root.children.empty())
+        {
+            root.value = "NoBehaviouralPatternStructureFound";
+        }
+
+        return root;
+    }
+};
+} // namespace
 
 ParseTreeNode build_behavioural_broken_tree(const ParseTreeNode& parse_root)
 {
-    ParseTreeNode root{"BehaviouralPatternsRoot", "function scaffold + structure checks", {}};
+    const BehaviouralFunctionScaffoldDetector function_scaffold_detector;
+    const BehaviouralStructureCheckerDetector structure_checker_detector;
+    const DefaultBehaviouralTreeCreator creator;
 
-    ParseTreeNode function_scaffold = build_behavioural_function_scaffold(parse_root);
-    if (!function_scaffold.children.empty())
-    {
-        root.children.push_back(std::move(function_scaffold));
-    }
+    const std::vector<const IBehaviouralDetector*> detectors = {
+        &function_scaffold_detector,
+        &structure_checker_detector,
+    };
 
-    ParseTreeNode structure_checks = build_behavioural_structure_checker(parse_root);
-    if (!structure_checks.children.empty())
-    {
-        root.children.push_back(std::move(structure_checks));
-    }
+    return build_behavioural_broken_tree(parse_root, creator, detectors);
+}
 
-    if (root.children.empty())
-    {
-        root.value = "NoBehaviouralPatternStructureFound";
-    }
-
-    return root;
+ParseTreeNode build_behavioural_broken_tree(
+    const ParseTreeNode& parse_root,
+    const IBehaviouralTreeCreator& creator,
+    const std::vector<const IBehaviouralDetector*>& detectors)
+{
+    return creator.create(parse_root, detectors);
 }
 
 std::string behavioural_broken_tree_to_html(const ParseTreeNode& root)

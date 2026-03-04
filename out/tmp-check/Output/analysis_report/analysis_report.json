@@ -1,0 +1,70 @@
+{
+  "source_pattern": "strategy",
+  "target_pattern": "singleton",
+  "input_file_count": 1,
+  "total_elapsed_ms": 0.4455,
+  "peak_estimated_bytes": 3248,
+  "graph_consistent": true,
+  "class_registry": [
+    {
+      "name": "StrategyBase",
+      "file_path": "C:\\Users\\Joy\\OneDrive\\Documents\\Frontend NeoTerritory\\NeoTerritory\\out\\tmp-check\\Input\\pure_virtual_only.cpp",
+      "name_hash": 9336255133541108967,
+      "contextual_hash": 4521816225874576644,
+      "hash": 2975017438194854768,
+      "definition_node_index": 4
+    }
+  ],
+  "class_usages": [
+  ],
+  "line_hash_traces": [
+    {
+      "file_path": "C:\\Users\\Joy\\OneDrive\\Documents\\Frontend NeoTerritory\\NeoTerritory\\out\\tmp-check\\Input\\pure_virtual_only.cpp",
+      "line_number": 1,
+      "class_name": "StrategyBase",
+      "class_name_hash": 9336255133541108967,
+      "matched_class_contextual_hash": 2975017438194854768,
+      "hit_token_index": 1,
+      "outgoing_hash": 11692210603367876549,
+      "dirty_token_count": 3,
+      "hash_collision": false
+    }
+  ],
+  "stages": [
+    {
+      "name": "ParseBaseGraph",
+      "elapsed_ms": 0.2985,
+      "estimated_bytes": 3248
+    },
+    {
+      "name": "DetectPatternInstances",
+      "elapsed_ms": 0.0957,
+      "estimated_bytes": 360
+    },
+    {
+      "name": "CreateVirtualSubgraph",
+      "elapsed_ms": 0.0003,
+      "estimated_bytes": 1624
+    },
+    {
+      "name": "HashAffectedNodes",
+      "elapsed_ms": 0.0362,
+      "estimated_bytes": 222
+    },
+    {
+      "name": "GenerateMonolithicRepresentation",
+      "elapsed_ms": 0.0057,
+      "estimated_bytes": 741
+    },
+    {
+      "name": "ApplyTargetPolicies",
+      "elapsed_ms": 0.0002,
+      "estimated_bytes": 1624
+    },
+    {
+      "name": "ValidateGraphConsistency",
+      "elapsed_ms": 0.0001,
+      "estimated_bytes": 1624
+    }
+  ]
+}

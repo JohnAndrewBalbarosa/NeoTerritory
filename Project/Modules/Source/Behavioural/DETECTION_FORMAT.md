@@ -4,6 +4,24 @@ This folder currently provides:
 
 1. A function-symbol scaffold.
 2. A behavioural structure checker (heuristic) for Strategy/Observer-style roles.
+3. A virtual detector + creator composition layer for decoupled detection flow.
+
+## Virtual Detector + Creator (Decoupled)
+
+Interfaces:
+
+- `IBehaviouralDetector`
+- `IBehaviouralTreeCreator`
+
+Location:
+
+- `behavioural_broken_tree.hpp` (interfaces + build overload)
+- `behavioural_broken_tree.cpp` (default creator + default detector set)
+
+Default detectors wired through the creator:
+
+1. Function scaffold detector (`build_behavioural_function_scaffold(...)`)
+2. Structure checker detector (`build_behavioural_structure_checker(...)`)
 
 ## Function Scaffold
 

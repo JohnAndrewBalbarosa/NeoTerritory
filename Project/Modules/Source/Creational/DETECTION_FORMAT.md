@@ -2,6 +2,24 @@
 
 This folder uses parse-tree heuristics to detect creational-pattern structure.
 
+## Virtual Detector + Creator (Decoupled)
+
+Interfaces:
+
+- `ICreationalDetector`
+- `ICreationalTreeCreator`
+
+Location:
+
+- `creational_broken_tree.hpp` (interfaces + build overload)
+- `creational_broken_tree.cpp` (default creator + default detector set)
+
+Default detectors wired through the creator:
+
+1. Factory detector (`build_factory_pattern_tree(...)`)
+2. Singleton detector (`build_singleton_pattern_tree(...)`)
+3. Builder detector (`build_builder_pattern_tree(...)`)
+
 ## Factory
 
 Implementation: `Factory/factory_pattern_logic.cpp`
