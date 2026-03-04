@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generated Target Code</title>
+  <style>body{font-family:Consolas,monospace;margin:24px;background:#f8fbff;color:#1f2937;}pre{white-space:pre-wrap;border:1px solid #d1d5db;padding:12px;background:#fff;}</style>
+</head>
+<body>
+  <h1>Generated Target Code</h1>
+  <pre>// Monolithic/Target Code View (Builder)
+
+// EVIDENCE_REMOVED:
+// - static ReportService instance()
+// - static ReportService inst;
+// - return inst;
+// - ReportService::instance()
+
+// EVIDENCE_ADDED:
+// - class ReportServiceBuilder
+// - ReportServiceBuilder&amp; set_format(...)
+// - ReportServiceBuilder&amp; enable_timestamp(...)
+// - ReportServiceBuilder&amp; configure_channel(...)
+// - ReportService build()
+// - ReportService service = ReportServiceBuilder().set_format(...).enable_timestamp(...).configure_channel(...).build();
+
+// TYPE_SKELETON:
+
+class ReportService {
+public:
+    void log(...);
+};
+
+class ReportServiceBuilder {
+public:
+    ReportServiceBuilder&amp; set_format(...);
+    ReportServiceBuilder&amp; enable_timestamp(...);
+    ReportServiceBuilder&amp; configure_channel(...);
+    ReportService build();
+};
+
+// CALLSITE_SKELETON:
+
+int main() {
+    ReportService service = ReportServiceBuilder().set_format().enable_timestamp().configure_channel().build();
+    service.log();
+}
+</pre>
+</body>
+</html>
