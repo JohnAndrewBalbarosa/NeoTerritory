@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodiNeo — C++ Conformance Analyzer</title>
+    <meta name="description"
+        content="CodiNeo is a C++ code conformance analysis tool that detects structural violations, checks semantic alignment, and suggests automated fixes." />
+    <link rel="stylesheet" href="styles/main.css" />
+    <link rel="stylesheet" href="styles/components.css" />
+</head>
+
+<body>
+
+    <div id="app">
+
+        <!-- ── Sidebar ───────────────────────────────────────────── -->
+        <aside id="sidebar">
+            <div class="sidebar-brand">
+                <div class="sidebar-brand-icon">NT</div>
+                <span class="sidebar-brand-name">Codi-Neo</span>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-route="#/dashboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7" rx="1" />
+                        <rect x="14" y="3" width="7" height="7" rx="1" />
+                        <rect x="3" y="14" width="7" height="7" rx="1" />
+                        <rect x="14" y="14" width="7" height="7" rx="1" />
+                    </svg>
+                    Overview
+                </div>
+
+                <div class="nav-item" data-route="#/analysis/new">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="8" x2="12" y2="16" />
+                        <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                    New Analysis
+                </div>
+
+                <div class="nav-item" data-route="#/results">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14 2 14 8 20 8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                        <polyline points="10 9 9 9 8 9" />
+                    </svg>
+                    Results
+                </div>
+
+                <div class="nav-item" data-route="#/diff/1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <polyline points="16 3 21 3 21 8" />
+                        <line x1="4" y1="20" x2="21" y2="3" />
+                        <polyline points="21 16 21 21 16 21" />
+                        <line x1="15" y1="15" x2="21" y2="21" />
+                        <line x1="4" y1="4" x2="9" y2="9" />
+                    </svg>
+                    Diff Viewer
+                </div>
+
+                <div class="nav-item" data-route="#/fixes/1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path
+                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                    </svg>
+                    Fix Suggestions
+                </div>
+
+                <div class="nav-item" data-route="#/download/1">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                        stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    Downloads
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="theme-toggle">
+                    <button class="theme-toggle-btn active" data-theme="dark" title="Dark mode">🌙</button>
+                    <button class="theme-toggle-btn" data-theme="light" title="Light mode">☀️</button>
+                </div>
+                <span style="font-size:11px; color:var(--text-muted);">v1.0.0</span>
+            </div>
+        </aside>
+
+        <!-- Overlay (mobile) -->
+        <div id="sidebar-overlay"></div>
+
+        <!-- ── Main Content ──────────────────────────────────────── -->
+        <main id="main-content">
+            <div id="page-content" style="transition: opacity 0.22s ease, transform 0.22s ease;"></div>
+        </main>
+
+        <!-- FAB (mobile) -->
+        <button id="menu-fab" aria-label="Open navigation menu">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <line x1="3" y1="6" x2="21" y2="6" />
+                <line x1="3" y1="12" x2="21" y2="12" />
+                <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+        </button>
+
+    </div>
+
+    <script src="scripts/diff-viewer.js"></script>
+    <script src="scripts/fix-suggestions.js"></script>
+    <script src="scripts/analysis.js"></script>
+
+    <script type="module">
+        import { initRouter } from './scripts/router.js';
+        import { initSidebar } from './scripts/sidebar.js';
+
+        initSidebar();
+
+        // Called by router after each page's DOM is injected and ready
+        window.onPageReady = function (hash) {
+            if (hash === '#/diff/1' && typeof window.initDiffViewer === 'function') {
+                window.initDiffViewer();
+            } else if (hash === '#/fixes/1' && typeof window.initFixSuggestions === 'function') {
+                window.initFixSuggestions();
+            } else if (hash === '#/analysis/new' && typeof window.initAnalysisNew === 'function') {
+                window.initAnalysisNew();
+            }
+        };
+
+        initRouter();
+    </script>
+
+</body>
+
+</html>

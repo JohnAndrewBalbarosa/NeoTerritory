@@ -15,6 +15,36 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+# Check if running as Administrator, re-launch with elevation if needed
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+if (-not $isAdmin)
+{
+    Write-Host "[NeoTerritory][Warning] This script requires Administrator privileges to configure Minikube properly." -ForegroundColor Yellow
+    Write-Host "[NeoTerritory][Info] Re-launching as Administrator..." -ForegroundColor Cyan
+    
+    # Reconstruct the command line with all parameters
+    $scriptPath = $MyInvocation.MyCommand.Path
+    $arguments = @("-NoExit", "-Command", "& '$scriptPath'")
+    
+    # Add parameters if they were provided
+    if (-not [string]::IsNullOrWhiteSpace($ConfigPath)) { $arguments += "-ConfigPath `"$ConfigPath`"" }
+    if (-not [string]::IsNullOrWhiteSpace($UserId)) { $arguments += "-UserId `"$UserId`"" }
+    if (-not [string]::IsNullOrWhiteSpace($Image)) { $arguments += "-Image `"$Image`"" }
+    if (-not [string]::IsNullOrWhiteSpace($RuntimeRoot)) { $arguments += "-RuntimeRoot `"$RuntimeRoot`"" }
+    if ($SkipDependencyInstall) { $arguments += "-SkipDependencyInstall" }
+    if ($SkipDockerStart) { $arguments += "-SkipDockerStart" }
+    if ($SkipClusterStart) { $arguments += "-SkipClusterStart" }
+    if ($SkipImageBuild) { $arguments += "-SkipImageBuild" }
+    if ($SkipDeploy) { $arguments += "-SkipDeploy" }
+    if ($SkipRuntimeLayout) { $arguments += "-SkipRuntimeLayout" }
+    if ($LegacyWslToolsInstall) { $arguments += "-LegacyWslToolsInstall" }
+    
+    Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -Verb RunAs
+    exit 0
+}
+
+Write-Host "[NeoTerritory][Info] Running with Administrator privileges." -ForegroundColor Green
+
 if ($LegacyWslToolsInstall)
 {
     Write-Host "[NeoTerritory][Legacy] Installing Minikube + kubectl in WSL..." -ForegroundColor Yellow
