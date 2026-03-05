@@ -29,6 +29,110 @@ function Test-CommandExists([string]$CommandName)
     return [bool](Get-Command $CommandName -ErrorAction SilentlyContinue)
 }
 
+function Get-WingetPath()
+{
+    # First, try to find winget in PATH
+    $wingetCmd = Get-Command "winget" -ErrorAction SilentlyContinue
+    if ($wingetCmd)
+    {
+        return $wingetCmd.Source
+    }
+
+    # If not in PATH, search for it in Windows.apps installations
+    $appxPackage = Get-AppxPackage -Name "Microsoft.DesktopAppInstaller" -ErrorAction SilentlyContinue
+    if ($appxPackage)
+    {
+        $installPath = $appxPackage.InstallLocation
+        $wingetExe = Join-Path $installPath "winget.exe"
+        if (Test-Path $wingetExe)
+        {
+            return $wingetExe
+        }
+    }
+
+    return $null
+}
+
+function Get-DockerPath()
+{
+    # First, try to find docker in PATH
+    $dockerCmd = Get-Command "docker" -ErrorAction SilentlyContinue
+    if ($dockerCmd)
+    {
+        return $dockerCmd.Source
+    }
+
+    # If not in PATH, search for it in standard Docker Desktop locations
+    $commonPaths = @(
+        "C:\Program Files\Docker\Docker\resources\bin\docker.exe",
+        "C:\Program Files (x86)\Docker\Docker\resources\bin\docker.exe"
+    )
+
+    foreach ($path in $commonPaths)
+    {
+        if (Test-Path $path)
+        {
+            return $path
+        }
+    }
+
+    return $null
+}
+
+function Get-MinikubePath()
+{
+    # First, try to find minikube in PATH
+    $minikubeCmd = Get-Command "minikube" -ErrorAction SilentlyContinue
+    if ($minikubeCmd)
+    {
+        return $minikubeCmd.Source
+    }
+
+    # If not in PATH, check common installation locations
+    $commonPaths = @(
+        "C:\Program Files\Kubernetes\Minikube\minikube.exe",
+        "C:\Program Files (x86)\Kubernetes\Minikube\minikube.exe",
+        "$env:LOCALAPPDATA\Programs\Kubernetes\Minikube\minikube.exe"
+    )
+
+    foreach ($path in $commonPaths)
+    {
+        if (Test-Path $path)
+        {
+            return $path
+        }
+    }
+
+    return $null
+}
+
+function Get-KubectlPath()
+{
+    # First, try to find kubectl in PATH
+    $kubectlCmd = Get-Command "kubectl" -ErrorAction SilentlyContinue
+    if ($kubectlCmd)
+    {
+        return $kubectlCmd.Source
+    }
+
+    # If not in PATH, check common installation locations
+    $commonPaths = @(
+        "C:\Program Files\Kubernetes\kubectl\kubectl.exe",
+        "C:\Program Files (x86)\Kubernetes\kubectl\kubectl.exe",
+        "$env:LOCALAPPDATA\Programs\Kubernetes\kubectl\kubectl.exe"
+    )
+
+    foreach ($path in $commonPaths)
+    {
+        if (Test-Path $path)
+        {
+            return $path
+        }
+    }
+
+    return $null
+}
+
 function Invoke-ExternalCommand(
     [string]$FilePath,
     [string[]]$Arguments)
@@ -45,33 +149,52 @@ function Install-WithWinget(
     [string]$PackageId,
     [string]$DisplayName)
 {
-    if (-not (Test-CommandExists "winget"))
+    $wingetPath = Get-WingetPath
+    if (-not $wingetPath)
     {
         throw "winget is not installed. Install App Installer from Microsoft Store first."
     }
 
     Write-Step ("Installing {0} via winget..." -f $DisplayName)
-    Invoke-ExternalCommand "winget" @(
-        "install",
-        "--id", $PackageId,
-        "-e",
-        "--accept-package-agreements",
-        "--accept-source-agreements"
-    )
+    $output = & $wingetPath install --id $PackageId -e --accept-package-agreements --accept-source-agreements 2>&1
+    $exitCode = $LASTEXITCODE
+    
+    # Exit code -1978335189 typically means package already installed, which is fine
+    # Exit code 0 or the "already installed" code are both acceptable
+    if ($exitCode -ne 0 -and $exitCode -ne -1978335189)
+    {
+        $outputStr = $output -join "`n"
+        if ($outputStr -like "*already installed*" -or $outputStr -like "*No available upgrade*")
+        {
+            Write-Info ("{0} is already installed." -f $DisplayName)
+            return
+        }
+        throw ("Failed to install {0}. Exit code: {1}" -f $DisplayName, $exitCode)
+    }
+    
+    Write-Info ("{0} installation completed." -f $DisplayName)
 }
 
-function Wait-ForDocker([int]$TimeoutSeconds = 240)
+function Wait-ForDocker(
+    [string]$DockerPath = "",
+    [int]$TimeoutSeconds = 240)
 {
+    if ([string]::IsNullOrWhiteSpace($DockerPath))
+    {
+        $DockerPath = Get-DockerPath
+        if (-not $DockerPath)
+        {
+            throw "Docker path not available."
+        }
+    }
+
     $deadline = (Get-Date).AddSeconds($TimeoutSeconds)
     while ((Get-Date) -lt $deadline)
     {
-        if (Test-CommandExists "docker")
+        & $DockerPath info *> $null
+        if ($LASTEXITCODE -eq 0)
         {
-            & docker info *> $null
-            if ($LASTEXITCODE -eq 0)
-            {
-                return
-            }
+            return
         }
         Start-Sleep -Seconds 3
     }
@@ -172,11 +295,11 @@ try
         {
             Install-WithWinget -PackageId "Docker.DockerDesktop" -DisplayName "Docker Desktop"
         }
-        if (-not (Test-CommandExists "kubectl"))
+        if (-not (Get-KubectlPath))
         {
             Install-WithWinget -PackageId "Kubernetes.kubectl" -DisplayName "kubectl"
         }
-        if (-not (Test-CommandExists "minikube"))
+        if (-not (Get-MinikubePath))
         {
             Install-WithWinget -PackageId "Kubernetes.minikube" -DisplayName "Minikube"
         }
@@ -185,7 +308,8 @@ try
     if (-not $SkipDockerStart)
     {
         Write-Step "Ensuring Docker daemon is running..."
-        if (-not (Test-CommandExists "docker"))
+        $dockerPath = Get-DockerPath
+        if (-not $dockerPath)
         {
             throw "Docker CLI is unavailable. Install Docker Desktop first."
         }
@@ -195,21 +319,87 @@ try
         {
             Start-Process -FilePath $dockerDesktopExe | Out-Null
         }
-        Wait-ForDocker
+        Wait-ForDocker -DockerPath $dockerPath
         Write-Info "Docker is ready."
     }
 
     if (-not $SkipClusterStart)
     {
         Write-Step ("Starting Minikube profile '{0}'..." -f $minikubeProfile)
-        Invoke-ExternalCommand "minikube" @("start", "-p", $minikubeProfile, "--driver=docker")
-        Invoke-ExternalCommand "kubectl" @("cluster-info")
+        
+        # Ensure Docker and Kubernetes tools are in PATH
+        $dockerPath = Get-DockerPath
+        if ($dockerPath)
+        {
+            $dockerDir = Split-Path $dockerPath -Parent
+            $env:PATH = "$dockerDir;$env:PATH"
+        }
+        
+        $kubectlPath = Get-KubectlPath
+        if ($kubectlPath)
+        {
+            $kubectlDir = Split-Path $kubectlPath -Parent
+            $env:PATH = "$kubectlDir;$env:PATH"
+        }
+        
+        $minikubePath = Get-MinikubePath
+        if (-not $minikubePath)
+        {
+            throw "Minikube is not installed. Please install Minikube first."
+        }
+        
+        $minikubeDir = Split-Path $minikubePath -Parent
+        $env:PATH = "$minikubeDir;$env:PATH"
+        
+        # Try to clean up corrupted profile from previous failed attempts
+        Write-Step "Checking Minikube profile state..."
+        $profileDir = Join-Path $env:USERPROFILE ".minikube\machines\$minikubeProfile"
+        if (Test-Path $profileDir)
+        {
+            Write-Info "Removing corrupted Minikube profile directory..."
+            try
+            {
+                Remove-Item -Path $profileDir -Recurse -Force -ErrorAction Stop
+                Write-Info "Corrupted profile cleaned up."
+            }
+            catch
+            {
+                Write-Info "Could not remove profile directory, proceeding anyway..."
+            }
+            Start-Sleep -Seconds 1
+        }
+        
+        Invoke-ExternalCommand $minikubePath @("start", "-p", $minikubeProfile, "--driver=docker")
+        
+        if (-not $kubectlPath)
+        {
+            throw "kubectl is not installed. Please install kubectl first."
+        }
+        Invoke-ExternalCommand $kubectlPath @("cluster-info")
     }
 
     if (-not $SkipImageBuild)
     {
         Write-Step "Configuring shell to use Minikube Docker daemon..."
-        $dockerEnv = & minikube -p $minikubeProfile docker-env --shell powershell
+        
+        # Ensure tools are in PATH
+        $minikubePath = Get-MinikubePath
+        if (-not $minikubePath)
+        {
+            throw "Minikube is not installed. Please install Minikube first."
+        }
+        $minikubeDir = Split-Path $minikubePath -Parent
+        $env:PATH = "$minikubeDir;$env:PATH"
+        
+        $dockerPath = Get-DockerPath
+        if (-not $dockerPath)
+        {
+            throw "Docker path not available for image build."
+        }
+        $dockerDir = Split-Path $dockerPath -Parent
+        $env:PATH = "$dockerDir;$env:PATH"
+        
+        $dockerEnv = & $minikubePath -p $minikubeProfile docker-env --shell powershell
         if ($LASTEXITCODE -ne 0)
         {
             throw "Failed to query Minikube Docker environment."
@@ -217,7 +407,7 @@ try
         Invoke-Expression (($dockerEnv -join "`n"))
 
         Write-Step ("Building image '{0}'..." -f $resolvedImage)
-        Invoke-ExternalCommand "docker" @(
+        Invoke-ExternalCommand $dockerPath @(
             "build",
             "-t", $resolvedImage,
             "-f", $dockerfilePath,

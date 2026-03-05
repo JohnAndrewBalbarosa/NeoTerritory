@@ -6,6 +6,7 @@
 
 # Visual Studio
 .vs/
+out/
 *.suo
 *.user
 *.userosscache

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>CodiNeo – Fix Suggestions</title>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- Back link -->
+        <a class="back-link" href="#/results" onclick="event.preventDefault(); location.hash='#/results'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+            </svg>
+            Back to Results
+        </a>
+
+        <!-- Header row -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Fix Suggestions</h1>
+                <p class="page-subtitle">Stack-based correction with reversibility &bull; <code
+                        style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">src/core/engine.cpp</code>
+                </p>
+            </div>
+            <div class="fix-counter">
+                Applied
+                <strong id="applied-count">0 / 8</strong>
+            </div>
+        </div>
+
+        <!-- Two-column layout -->
+        <div class="fixes-layout">
+
+            <!-- Left: Fix cards -->
+            <div id="fix-cards-list">
+
+                <!-- Info card -->
+                <div class="info-card">
+                    <div class="info-card-header">
+                        <svg class="info-card-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="16" x2="12" y2="12" />
+                            <line x1="12" y1="8" x2="12.01" y2="8" />
+                        </svg>
+                        <span class="info-card-title">Stack-based Correction System</span>
+                    </div>
+                    <p class="info-card-body">Apply fixes sequentially with full reversibility. Each fix is pushed onto
+                        the stack and can be undone (popped) in reverse order. Changes are only committed after
+                        validation passes.</p>
+                </div>
+
+                <!-- Fix cards rendered via JS -->
+                <div id="fix-cards"></div>
+
+            </div>
+
+            <!-- Right: Validation panel -->
+            <div class="validation-panel">
+                <h2 class="validation-panel-title">Validation Status</h2>
+
+                <div class="validation-stat">
+                    <span>Fixes Applied</span>
+                    <span id="val-fixes-count">0 / 8</span>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="val-progress" style="width:0%"></div>
+                </div>
+
+                <p class="checklist-section-title">Verification Checklist</p>
+
+                <div id="checklist-items">
+                    <!-- rendered by JS -->
+                </div>
+
+                <button class="btn btn-primary btn-full" style="margin-top:20px;" id="apply-all-btn"
+                    onclick="window.applyAllFixes()">
+                    Apply All Fixes
+                </button>
+                <button class="btn btn-ghost btn-full" style="margin-top:10px; display:none;" id="reset-btn"
+                    onclick="window.resetFixes()">
+                    Reset
+                </button>
+            </div>
+
+        </div>
+
+    </div>
+    <!-- Logic handled by external scripts/fix-suggestions.js -->
+</body>
+
+</html>
