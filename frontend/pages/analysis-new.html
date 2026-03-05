@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>CodiNeo – Run Analysis</title>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- Back link -->
+        <a class="back-link" href="#/dashboard" onclick="event.preventDefault(); location.hash='#/dashboard'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+            </svg>
+            Back to Dashboard
+        </a>
+
+        <!-- Header -->
+        <div class="page-header">
+            <div>
+                <h1 class="page-title">Run Analysis</h1>
+                <p class="page-subtitle">Execute the conformance analysis pipeline</p>
+            </div>
+            <!-- Theme toggle shortcut (mirrors wireframe top-right) -->
+            <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+                <div class="theme-toggle">
+                    <button class="theme-toggle-btn" data-theme="dark" title="Dark">🌙</button>
+                    <button class="theme-toggle-btn" data-theme="light" title="Light">☀️</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Analysis Config Summary -->
+        <div class="card" style="margin-bottom:16px;">
+            <div class="page-subtitle"
+                style="font-weight:700; font-size:14px; margin-bottom:18px; color:var(--text-primary);">Analysis
+                Configuration Summary</div>
+            <div class="grid-config">
+                <div class="config-row">
+                    <span class="config-label">Language</span>
+                    <span class="config-value">C++</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Files</span>
+                    <span class="config-value">5</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Source</span>
+                    <span class="config-value">monolithic</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Target</span>
+                    <span class="config-value">mvc</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Dirty-bit</span>
+                    <span class="config-value">Enabled</span>
+                </div>
+                <div class="config-row">
+                    <span class="config-label">Virtual AST</span>
+                    <span class="config-value">Enabled</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ready to Start card -->
+        <div class="ready-card" id="ready-card">
+            <svg class="ready-play-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="5 3 19 12 5 21 5 3" fill="rgba(192,255,0,0.15)" stroke="#C0FF00" />
+            </svg>
+            <h2 class="ready-title">Ready to Start</h2>
+            <p class="ready-subtitle">The analysis pipeline will process your codebase through all verification stages
+            </p>
+        </div>
+
+        <!-- Progress card (hidden until analysis starts) -->
+        <div class="card" id="progress-card" style="display:none; margin-bottom:16px;">
+            <div style="font-size:14px; font-weight:600; margin-bottom:14px;">Analysis in progress…</div>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div>
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">
+                        <span>Parsing AST</span><span id="prog-pct-1">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="prog-bar-1" style="width:0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">
+                        <span>Structural analysis</span><span id="prog-pct-2">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill progress-fill-purple" id="prog-bar-2" style="width:0%"></div>
+                    </div>
+                </div>
+                <div>
+                    <div
+                        style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-secondary); margin-bottom:6px;">
+                        <span>Semantic alignment</span><span id="prog-pct-3">0%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="prog-bar-3" style="width:0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Start button -->
+        <button class="btn btn-primary btn-full" id="start-btn" onclick="startAnalysis()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                stroke-linejoin="round" style="width:18px;height:18px;">
+                <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Start Analysis
+        </button>
+
+    </div>
+
+    <!-- Logic handled by external scripts/analysis.js -->
+</body>
+
+</html>
+const btn = document.getElementById('start-btn');
+const readyCard = document.getElementById('ready-card');
+const progressCard = document.getElementById('progress-card');
+
+btn.disabled = true;
+btn.textContent = 'Running…';
+btn.style.opacity = '0.7';
+readyCard.style.display = 'none';
+progressCard.style.display = 'block';
+
+// Animate progress bars
+function animateBar(barId, pctId, targetPct, delay, onDone) {
+setTimeout(() => {
+let current = 0;
+const interval = setInterval(() => {
+current = Math.min(current + 2, targetPct);
+document.getElementById(barId).style.width = current + '%';
+document.getElementById(pctId).textContent = current + '%';
+if (current >= targetPct) {
+clearInterval(interval);
+if (onDone) onDone();
+}
+}, 30);
+}, delay);
+}
+
+animateBar('prog-bar-1', 'prog-pct-1', 100, 200, () => {
+animateBar('prog-bar-2', 'prog-pct-2', 100, 400, () => {
+animateBar('prog-bar-3', 'prog-pct-3', 100, 400, () => {
+setTimeout(() => { location.hash = '#/results'; }, 600);
+});
+});
+});
+}
+</script>
+</body>
+
+</html>

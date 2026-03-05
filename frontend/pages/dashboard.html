@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>CodiNeo – Overview</title>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- Header -->
+        <div class="dashboard-header">
+            <div>
+                <h1 class="page-title">Overview</h1>
+                <p class="page-subtitle">Welcome back to your analysis dashboard</p>
+            </div>
+            <a href="#/analysis/new" class="btn btn-primary btn-lg"
+                onclick="event.preventDefault(); location.hash='#/analysis/new'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                    <line x1="12" y1="5" x2="12" y2="19" />
+                    <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New Analysis
+            </a>
+        </div>
+
+        <!-- Filter chips -->
+        <div class="filter-chips">
+            <div class="chip">Language: <span class="chip-green">C++</span></div>
+            <div class="chip">Mode: <span class="chip-purple">Static analysis</span></div>
+            <div class="chip">Safety: <span class="chip-yellow">Virtual AST isolation</span></div>
+        </div>
+
+        <!-- Stat Cards -->
+        <div class="stat-cards">
+
+            <!-- Last run status -->
+            <div class="card card-green-border" style="cursor:pointer" onclick="location.hash='#/results'">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="#C0FF00" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+                <div class="card-label">Last run status</div>
+                <div class="card-value" style="color:var(--accent-green)">Conformant</div>
+            </div>
+
+            <!-- Files analyzed -->
+            <div class="card card-purple-border">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="#8B5CF6" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                </svg>
+                <div class="card-label">Files analyzed</div>
+                <div class="card-value" style="color:var(--accent-purple)">245</div>
+            </div>
+
+            <!-- Violations found -->
+            <div class="card card-yellow-border">
+                <svg class="card-icon" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                </svg>
+                <div class="card-label">Violations found</div>
+                <div class="card-value" style="color:var(--accent-yellow)">0</div>
+            </div>
+
+        </div>
+
+        <!-- Recent Activity hint -->
+        <div style="margin-top:32px;">
+            <p style="font-size:12px; color:var(--text-muted); text-align:center;">
+                Click <strong style="color:var(--text-secondary)">Last run status</strong> to view latest results
+                &nbsp;·&nbsp;
+                Click <strong style="color:var(--accent-green)">+ New Analysis</strong> to start a new run
+            </p>
+        </div>
+
+    </div>
+</body>
+
+</html>
