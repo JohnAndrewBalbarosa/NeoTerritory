@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>CodiNeo – Download Result</title>
+</head>
+
+<body>
+    <div class="page">
+
+        <!-- Back link -->
+        <a class="back-link" href="#/results" onclick="event.preventDefault(); location.hash='#/results'">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+            </svg>
+            Back to Results
+        </a>
+
+        <!-- Header -->
+        <div style="margin-bottom: 28px;">
+            <h1 class="page-title">Download Result</h1>
+            <p class="page-subtitle">Export your confirmed, standards-compliant codebase</p>
+        </div>
+
+        <!-- Success card -->
+        <div class="success-card">
+            <div class="success-icon-wrap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                </svg>
+            </div>
+            <h2 class="success-title">Analysis Complete!</h2>
+            <p class="success-text">Your codebase has been successfully transformed and verified. All changes maintain
+                structural integrity and comply with standards.</p>
+        </div>
+
+        <!-- Transformation summary -->
+        <div class="transformation-summary">
+            <h3 class="summary-title">Transformation Summary</h3>
+
+            <div class="summary-row">
+                <span class="summary-row-label">Project</span>
+                <span class="summary-row-value">MyProject-v2</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-row-label">Files transformed</span>
+                <span class="summary-row-value">5</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-row-label">Violations fixed</span>
+                <span class="summary-row-value">8</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-row-label">Target pattern</span>
+                <span class="summary-row-value">MVC</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-row-label">Memory model</span>
+                <span class="summary-row-value">RAII / Smart Pointers</span>
+            </div>
+            <div class="summary-row">
+                <span class="summary-row-label">Output format</span>
+                <span class="summary-row-value">.zip archive</span>
+            </div>
+        </div>
+
+        <!-- Download buttons -->
+        <div class="download-buttons">
+            <button class="btn btn-primary btn-lg" onclick="triggerDownload()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                    stroke-linejoin="round" style="width:16px;height:16px;">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+                Download .zip
+            </button>
+            <button class="btn btn-ghost btn-lg" onclick="location.hash='#/diff/1'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" style="width:16px;height:16px;">
+                    <polyline points="16 3 21 3 21 8" />
+                    <line x1="4" y1="20" x2="21" y2="3" />
+                </svg>
+                View Diff
+            </button>
+            <button class="btn btn-ghost btn-lg" onclick="location.hash='#/dashboard'">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round" style="width:16px;height:16px;">
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="3" y="14" width="7" height="7" rx="1" />
+                    <rect x="14" y="14" width="7" height="7" rx="1" />
+                </svg>
+                Back to Dashboard
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        function triggerDownload() {
+            const btn = event.target.closest('button');
+            btn.textContent = 'Preparing…';
+            btn.disabled = true;
+            setTimeout(() => {
+                btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Downloaded!`;
+                btn.disabled = false;
+                // In real integration: trigger actual file download from backend
+            }, 1200);
+        }
+    </script>
+</body>
+
+</html>

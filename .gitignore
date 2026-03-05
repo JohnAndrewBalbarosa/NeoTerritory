@@ -1,0 +1,26 @@
+# Ignore everything by default
+*
+
+# Keep this file
+!.gitignore
+
+# Keep allowed folders
+!frontend/
+!frontend/**
+!Project/
+!Project/**
+!project/
+!project/**
+
+# Keep allowed files
+!CONTRIBUTING.md
+!contributing.md
+!LICENSE
+!license
+!Notes
+!notes
+!README.md
+!README
+!readme
+!TIMELINE.md
+!timeline.md
