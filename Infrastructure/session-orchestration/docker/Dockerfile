@@ -15,4 +15,4 @@ RUN mkdir -p /build \
     && cmake /app \
     && make -j"$(nproc)"
 
-CMD ["./build/NeoTerritory"]
+CMD ["/build/NeoTerritory"]

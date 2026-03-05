@@ -3,6 +3,7 @@ param(
     [string]$UserId = "",
     [string]$Image = "",
     [string]$RuntimeRoot = "",
+    [switch]$DockerOnly,
     [switch]$SkipDependencyInstall,
     [switch]$SkipDockerStart,
     [switch]$SkipClusterStart,
@@ -202,6 +203,146 @@ function Wait-ForDocker(
     throw "Docker daemon was not ready within timeout."
 }
 
+function Test-MinikubeProfileCorrupted([string]$ProfileName)
+{
+    $minikubeRoot = Join-Path $env:USERPROFILE ".minikube"
+    $machineConfigPath = Join-Path $minikubeRoot "machines\$ProfileName\config.json"
+    $profileConfigPath = Join-Path $minikubeRoot "profiles\$ProfileName\config.json"
+
+    $machineDirExists = Test-Path (Split-Path $machineConfigPath -Parent) -PathType Container
+    $profileDirExists = Test-Path (Split-Path $profileConfigPath -Parent) -PathType Container
+    $machineConfigExists = Test-Path $machineConfigPath -PathType Leaf
+    $profileConfigExists = Test-Path $profileConfigPath -PathType Leaf
+
+    return (($profileDirExists -and -not $machineConfigExists) -or ($machineDirExists -and -not $profileConfigExists))
+}
+
+function Invoke-MinikubeDeleteBestEffort(
+    [string]$MinikubePath,
+    [string]$ProfileName)
+{
+    Write-Info ("Attempting to delete Minikube profile '{0}'..." -f $ProfileName)
+    $deleteOutput = @()
+    $hasNativePref = [bool](Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue)
+    $previousNativePref = $null
+    if ($hasNativePref)
+    {
+        $previousNativePref = $PSNativeCommandUseErrorActionPreference
+        $PSNativeCommandUseErrorActionPreference = $false
+    }
+
+    try
+    {
+        $deleteOutput = & $MinikubePath delete -p $ProfileName 2>&1
+    }
+    finally
+    {
+        if ($hasNativePref)
+        {
+            $PSNativeCommandUseErrorActionPreference = $previousNativePref
+        }
+    }
+
+    if ($deleteOutput)
+    {
+        $deleteOutput | ForEach-Object { Write-Host $_ }
+    }
+
+    if ($LASTEXITCODE -ne 0)
+    {
+        Write-Info ("minikube delete exited with code {0}; continuing with local profile cleanup." -f $LASTEXITCODE)
+    }
+}
+
+function Remove-MinikubeProfileArtifacts([string]$ProfileName)
+{
+    if ([string]::IsNullOrWhiteSpace($ProfileName))
+    {
+        throw "Profile name is required for Minikube cleanup."
+    }
+
+    $minikubeRoot = Join-Path $env:USERPROFILE ".minikube"
+    $paths = @(
+        Join-Path $minikubeRoot "machines\$ProfileName",
+        Join-Path $minikubeRoot "profiles\$ProfileName"
+    )
+
+    foreach ($path in $paths)
+    {
+        if (Test-Path $path)
+        {
+            Write-Info ("Removing Minikube state path: {0}" -f $path)
+            Remove-Item -Path $path -Recurse -Force -ErrorAction Stop
+        }
+    }
+}
+
+function Start-MinikubeWithRecovery(
+    [string]$MinikubePath,
+    [string]$ProfileName)
+{
+    if (Test-MinikubeProfileCorrupted -ProfileName $ProfileName)
+    {
+        Write-Info "Detected broken Minikube profile metadata before start. Cleaning up."
+        Invoke-MinikubeDeleteBestEffort -MinikubePath $MinikubePath -ProfileName $ProfileName
+        Remove-MinikubeProfileArtifacts -ProfileName $ProfileName
+    }
+
+    $startArgs = @("start", "-p", $ProfileName, "--driver=docker")
+    Write-Host ("> {0} {1}" -f $MinikubePath, ($startArgs -join " ")) -ForegroundColor DarkGray
+    $startOutput = @()
+    $startExitCode = 1
+    $hasNativePref = [bool](Get-Variable -Name PSNativeCommandUseErrorActionPreference -ErrorAction SilentlyContinue)
+    $previousNativePref = $null
+    if ($hasNativePref)
+    {
+        $previousNativePref = $PSNativeCommandUseErrorActionPreference
+        $PSNativeCommandUseErrorActionPreference = $false
+    }
+
+    try
+    {
+        $startOutput = & $MinikubePath @startArgs 2>&1
+        $startExitCode = $LASTEXITCODE
+    }
+    finally
+    {
+        if ($hasNativePref)
+        {
+            $PSNativeCommandUseErrorActionPreference = $previousNativePref
+        }
+    }
+
+    if ($startOutput)
+    {
+        $startOutput | ForEach-Object { Write-Host $_ }
+    }
+
+    if ($startExitCode -eq 0)
+    {
+        return
+    }
+
+    $startText = ($startOutput | Out-String)
+    $recoverableFailure = (
+        $startText -match "unable to execute icacls" -or
+        $startText -match "error loading existing host" -or
+        $startText -match "open .*\.minikube\\machines\\.*\\config\.json" -or
+        $startText -match "Failed to start docker container"
+    )
+
+    if (-not $recoverableFailure)
+    {
+        throw ("Minikube start failed with exit code {0}." -f $startExitCode)
+    }
+
+    Write-Info "Minikube startup failed with recoverable profile state error. Cleaning up and retrying once."
+    Invoke-MinikubeDeleteBestEffort -MinikubePath $MinikubePath -ProfileName $ProfileName
+    Remove-MinikubeProfileArtifacts -ProfileName $ProfileName
+    Start-Sleep -Seconds 1
+    Invoke-ExternalCommand $MinikubePath $startArgs
+}
+
 function Resolve-AbsolutePath([string]$BaseDir, [string]$RelativeOrAbsolutePath)
 {
     if ([System.IO.Path]::IsPathRooted($RelativeOrAbsolutePath))
@@ -259,6 +400,16 @@ try
     $minikubeProfile = [string]$config.minikubeProfile
     $dockerfilePath = Resolve-AbsolutePath $repoRoot ([string]$config.dockerfile)
     $templatePaths = @($config.k8sTemplates | ForEach-Object { Resolve-AbsolutePath $repoRoot ([string]$_) })
+    $effectiveSkipClusterStart = [bool]($SkipClusterStart -or $DockerOnly)
+    $effectiveSkipDeploy = [bool]($SkipDeploy -or $DockerOnly)
+    $requiresMinikubeProfile = [bool]((-not $effectiveSkipClusterStart) -or ((-not $DockerOnly) -and (-not $SkipImageBuild)))
+    $executionMode = if ($DockerOnly) { "Docker-only" } else { "Full Kubernetes" }
+
+    Write-Info ("Execution mode: {0}" -f $executionMode)
+    if ($DockerOnly)
+    {
+        Write-Info "Minikube start and Kubernetes deploy are disabled for this run."
+    }
 
     if ([string]::IsNullOrWhiteSpace($resolvedUserId))
     {
@@ -268,21 +419,21 @@ try
     {
         throw "Config 'image' is required."
     }
-    if ([string]::IsNullOrWhiteSpace($minikubeProfile))
+    if ($requiresMinikubeProfile -and [string]::IsNullOrWhiteSpace($minikubeProfile))
     {
         throw "Config 'minikubeProfile' is required."
     }
-    if (-not (Test-Path $dockerfilePath))
+    if (-not $SkipImageBuild -and -not (Test-Path $dockerfilePath))
     {
         throw ("Dockerfile does not exist: {0}" -f $dockerfilePath)
     }
-    if ($templatePaths.Count -eq 0)
+    if (-not $effectiveSkipDeploy -and $templatePaths.Count -eq 0)
     {
         throw "Config 'k8sTemplates' must contain at least one template path."
     }
     foreach ($path in $templatePaths)
     {
-        if (-not (Test-Path $path))
+        if (-not $effectiveSkipDeploy -and -not (Test-Path $path))
         {
             throw ("K8s template does not exist: {0}" -f $path)
         }
@@ -323,7 +474,7 @@ try
         Write-Info "Docker is ready."
     }
 
-    if (-not $SkipClusterStart)
+    if (-not $effectiveSkipClusterStart)
     {
         Write-Step ("Starting Minikube profile '{0}'..." -f $minikubeProfile)
         
@@ -351,25 +502,8 @@ try
         $minikubeDir = Split-Path $minikubePath -Parent
         $env:PATH = "$minikubeDir;$env:PATH"
         
-        # Try to clean up corrupted profile from previous failed attempts
         Write-Step "Checking Minikube profile state..."
-        $profileDir = Join-Path $env:USERPROFILE ".minikube\machines\$minikubeProfile"
-        if (Test-Path $profileDir)
-        {
-            Write-Info "Removing corrupted Minikube profile directory..."
-            try
-            {
-                Remove-Item -Path $profileDir -Recurse -Force -ErrorAction Stop
-                Write-Info "Corrupted profile cleaned up."
-            }
-            catch
-            {
-                Write-Info "Could not remove profile directory, proceeding anyway..."
-            }
-            Start-Sleep -Seconds 1
-        }
-        
-        Invoke-ExternalCommand $minikubePath @("start", "-p", $minikubeProfile, "--driver=docker")
+        Start-MinikubeWithRecovery -MinikubePath $minikubePath -ProfileName $minikubeProfile
         
         if (-not $kubectlPath)
         {
@@ -380,17 +514,6 @@ try
 
     if (-not $SkipImageBuild)
     {
-        Write-Step "Configuring shell to use Minikube Docker daemon..."
-        
-        # Ensure tools are in PATH
-        $minikubePath = Get-MinikubePath
-        if (-not $minikubePath)
-        {
-            throw "Minikube is not installed. Please install Minikube first."
-        }
-        $minikubeDir = Split-Path $minikubePath -Parent
-        $env:PATH = "$minikubeDir;$env:PATH"
-        
         $dockerPath = Get-DockerPath
         if (-not $dockerPath)
         {
@@ -398,24 +521,48 @@ try
         }
         $dockerDir = Split-Path $dockerPath -Parent
         $env:PATH = "$dockerDir;$env:PATH"
-        
-        $dockerEnv = & $minikubePath -p $minikubeProfile docker-env --shell powershell
-        if ($LASTEXITCODE -ne 0)
-        {
-            throw "Failed to query Minikube Docker environment."
-        }
-        Invoke-Expression (($dockerEnv -join "`n"))
 
-        Write-Step ("Building image '{0}'..." -f $resolvedImage)
-        Invoke-ExternalCommand $dockerPath @(
-            "build",
-            "-t", $resolvedImage,
-            "-f", $dockerfilePath,
-            $repoRoot
-        )
+        if ($DockerOnly)
+        {
+            Write-Step ("Building image '{0}' with local Docker daemon..." -f $resolvedImage)
+            Invoke-ExternalCommand $dockerPath @(
+                "build",
+                "-t", $resolvedImage,
+                "-f", $dockerfilePath,
+                $repoRoot
+            )
+        }
+        else
+        {
+            Write-Step "Configuring shell to use Minikube Docker daemon..."
+
+            # Ensure tools are in PATH
+            $minikubePath = Get-MinikubePath
+            if (-not $minikubePath)
+            {
+                throw "Minikube is not installed. Please install Minikube first."
+            }
+            $minikubeDir = Split-Path $minikubePath -Parent
+            $env:PATH = "$minikubeDir;$env:PATH"
+
+            $dockerEnv = & $minikubePath -p $minikubeProfile docker-env --shell powershell
+            if ($LASTEXITCODE -ne 0)
+            {
+                throw "Failed to query Minikube Docker environment."
+            }
+            Invoke-Expression (($dockerEnv -join "`n"))
+
+            Write-Step ("Building image '{0}'..." -f $resolvedImage)
+            Invoke-ExternalCommand $dockerPath @(
+                "build",
+                "-t", $resolvedImage,
+                "-f", $dockerfilePath,
+                $repoRoot
+            )
+        }
     }
 
-    if (-not $SkipDeploy)
+    if (-not $effectiveSkipDeploy)
     {
         Write-Step "Applying Kubernetes templates..."
         foreach ($templatePath in $templatePaths)
@@ -447,7 +594,15 @@ try
     Write-Host ("- User session id: {0}" -f $resolvedUserId)
     Write-Host ("- Image: {0}" -f $resolvedImage)
     Write-Host ("- Runtime root: {0}" -f $resolvedRuntimeRoot)
-    Write-Host ("- Check pods: kubectl get pods")
+    Write-Host ("- Mode: {0}" -f $executionMode)
+    if (-not $effectiveSkipDeploy)
+    {
+        Write-Host ("- Check pods: kubectl get pods")
+    }
+    else
+    {
+        Write-Host ("- Docker image ready: docker images {0}" -f $resolvedImage)
+    }
 }
 catch
 {
