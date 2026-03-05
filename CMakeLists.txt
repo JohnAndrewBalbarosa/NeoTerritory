@@ -17,24 +17,26 @@ project(NeoTerritory)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(NEOTERRITORY_SOURCE_ROOT "Microservice")
+
 file(GLOB_RECURSE ALL_MODULE_SOURCES CONFIGURE_DEPENDS 
-    "Project/Modules/Source/*.cpp"
-    "Project/Modules/Header/*.hpp"
-    "Project/Modules/Header/*.h"
+    "${NEOTERRITORY_SOURCE_ROOT}/Modules/Source/*.cpp"
+    "${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/*.hpp"
+    "${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/*.h"
 )
 
 file(GLOB_RECURSE LAYER_SOURCES CONFIGURE_DEPENDS
-    "Project/Layer/**/*.cpp"
+    "${NEOTERRITORY_SOURCE_ROOT}/Layer/*.cpp"
 )
 
 add_executable(NeoTerritory 
-    "Project/main.cpp"
+    "${NEOTERRITORY_SOURCE_ROOT}/main.cpp"
     ${LAYER_SOURCES}
     ${ALL_MODULE_SOURCES}
 )
 
 target_include_directories(NeoTerritory PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/SyntacticBrokenAST"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/Creational"
-    "${CMAKE_CURRENT_SOURCE_DIR}/Project/Modules/Header/Behavioural"
+    "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/SyntacticBrokenAST"
+    "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/Creational"
+    "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/Behavioural"
 )
