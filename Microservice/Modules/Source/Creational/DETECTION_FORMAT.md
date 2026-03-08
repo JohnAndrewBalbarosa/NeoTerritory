@@ -20,6 +20,7 @@ Creational pattern implementation is owned by the **Creational** module.
   - `creational_code_generator_internal.cpp`
   - `creational_transform_rules.cpp`
   - `creational_transform_evidence.cpp`
+  - `creational_transform_factory_reverse.cpp`
 
 `SyntacticBrokenAST` no longer owns singleton/builder/factory transformation logic.
 
@@ -39,8 +40,23 @@ Detector sub-roots:
 
 Rule dispatch is creational-owned and currently supports:
 
-1. `singleton -> builder`
-2. `* -> singleton`
+1. `factory -> base` (reverse-factory to direct instantiation)
+2. `singleton -> builder`
+3. `* -> singleton`
+
+`factory -> base` v1 scope:
+
+- scans single-line callsites of `... = FactoryClass::create(literal);`
+- supports literal argument mapping only (`"str"`, `'c'`, integer)
+- maps `if/else-if` equality branches and `switch/case` branches in `create(...)`
+- rewrites declaration types only for:
+  - `std::unique_ptr<Base>` -> `std::unique_ptr<Concrete>`
+  - `std::shared_ptr<Base>` -> `std::shared_ptr<Concrete>`
+  - `Base*` -> `Concrete*`
+  - keeps `auto` unchanged
+- preserves allocator style (`make_unique`, `make_shared`, `new`)
+- skips ambiguous/unsupported callsites and records transform reasons
+- safely deletes the Factory class only when no remaining references exist outside class definition
 
 Result contract from creational transform pipeline:
 
@@ -51,13 +67,18 @@ Result contract from creational transform pipeline:
 
 Creational evidence rendering owns base/target monolithic evidence output:
 
-- `render_creational_evidence_view(source, target, target_view)`
+- `render_creational_evidence_view(source, target, target_view, source_pattern, target_pattern)`
 
-It emits the same evidence sections used by current reporting:
+Rendering mode is pattern-aware:
 
-- source view: `EVIDENCE_PRESENT`
-- target view: `EVIDENCE_REMOVED`, `EVIDENCE_ADDED`
-- plus `TYPE_SKELETON` and `CALLSITE_SKELETON`
+1. `singleton -> builder`:
+   - emits evidence sections used by reporting:
+     - source view: `EVIDENCE_PRESENT`
+     - target view: `EVIDENCE_REMOVED`, `EVIDENCE_ADDED`
+     - plus `TYPE_SKELETON` and `CALLSITE_SKELETON`
+2. Other routes (including `* -> singleton`):
+   - emits passthrough source/target code view
+   - retains one preferred `main()` (matching `<source>_to_<target>` file hint when available) to keep generated `.cpp` outputs compilable.
 
 ## Structural Hook Ownership
 

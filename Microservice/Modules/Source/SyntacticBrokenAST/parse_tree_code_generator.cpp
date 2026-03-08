@@ -14,7 +14,15 @@ const std::vector<TransformDecision>& get_last_transform_decisions()
 
 std::string generate_base_code_from_source(const std::string& source)
 {
-    return render_creational_evidence_view(source, "", false);
+    return generate_base_code_from_source(source, "", "");
+}
+
+std::string generate_base_code_from_source(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern)
+{
+    return render_creational_evidence_view(source, "", false, source_pattern, target_pattern);
 }
 
 std::string generate_target_code_from_source(
@@ -28,5 +36,10 @@ std::string generate_target_code_from_source(
         target_pattern);
 
     g_last_transform_decisions = result.decisions;
-    return render_creational_evidence_view(source, result.transformed_source, true);
+    return render_creational_evidence_view(
+        source,
+        result.transformed_source,
+        true,
+        source_pattern,
+        target_pattern);
 }

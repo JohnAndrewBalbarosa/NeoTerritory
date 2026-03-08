@@ -394,7 +394,8 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     std::cout << "Behavioural HTML generated: " << behavioural_output_path << '\n';
 
     const std::string merged_source = join_source_file_units(source_files);
-    const std::string base_code = generate_base_code_from_source(merged_source);
+    const std::string base_code =
+        generate_base_code_from_source(merged_source, cli.source_pattern, cli.target_pattern);
     const std::string target_code =
         generate_target_code_from_source(merged_source, cli.source_pattern, cli.target_pattern);
 

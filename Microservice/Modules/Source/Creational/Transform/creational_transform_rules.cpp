@@ -1,4 +1,5 @@
 #include "Transform/creational_code_generator_internal.hpp"
+#include "Transform/creational_transform_factory_reverse.hpp"
 
 #include "parse_tree_symbols.hpp"
 
@@ -351,13 +352,52 @@ std::string transform_to_singleton_by_class_references(
     const std::vector<std::string> crucial_classes =
         extract_crucial_class_names(out, source_pattern, target_pattern);
 
+    std::unordered_map<std::string, TransformDecision> decisions_by_class;
     for (const std::string& class_name : crucial_classes)
     {
+        TransformDecision& decision = ensure_decision(decisions_by_class, class_name);
+        decision.transform_applied = false;
+        decision.transform_reason.clear();
+
+        const std::string before_transform = out;
         inject_singleton_accessor(out, class_name);
         rewrite_class_instantiations_to_singleton_references(out, class_name);
+
+        if (out != before_transform)
+        {
+            decision.transform_applied = true;
+            decision.transform_reason.clear();
+            continue;
+        }
+
+        add_reason_if_missing(decision, "singleton_rewrite_no_matching_class_or_callsite");
+    }
+
+    g_last_transform_decisions.clear();
+    for (const std::string& class_name : crucial_classes)
+    {
+        const auto it = decisions_by_class.find(class_name);
+        if (it != decisions_by_class.end())
+        {
+            g_last_transform_decisions.push_back(it->second);
+        }
     }
 
     return out;
+}
+
+std::string transform_factory_to_base(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern)
+{
+    (void)source_pattern;
+    (void)target_pattern;
+
+    const FactoryReverseTransformResult result =
+        transform_factory_to_base_by_direct_instantiation(source);
+    g_last_transform_decisions = result.decisions;
+    return result.transformed_source;
 }
 
 std::string transform_singleton_to_builder(
@@ -464,6 +504,7 @@ bool pattern_matches(const std::string& normalized_input, const char* expected_p
 const std::vector<TransformRule>& transform_rules()
 {
     static const std::vector<TransformRule> rules = {
+        {"factory", "base", &transform_factory_to_base},
         {"singleton", "builder", &transform_singleton_to_builder},
         {"*", "singleton", &transform_to_singleton_by_class_references},
     };
