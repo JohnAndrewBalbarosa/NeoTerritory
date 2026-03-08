@@ -1,4 +1,4 @@
-#include "Internal/parse_tree_code_generator_internal.hpp"
+#include "Transform/creational_code_generator_internal.hpp"
 
 #include "parse_tree_symbols.hpp"
 
@@ -11,9 +11,7 @@
 #include <utility>
 #include <vector>
 
-namespace parse_tree_codegen_internal
-{
-namespace
+namespace creational_codegen_internal
 {
 struct ConfigMethodModel
 {
@@ -327,8 +325,8 @@ bool rewrite_simple_singleton_callsite_to_builder(std::string& source, const Cla
 
         std::ostringstream rewritten_line;
         rewritten_line << indent
-                       << model.class_name << " " << variable_name
-                       << " = " << model.class_name << "Builder()";
+                      << model.class_name << " " << variable_name
+                      << " = " << model.class_name << "Builder()";
         for (const std::string& call : chain_calls)
         {
             rewritten_line << call;
@@ -343,7 +341,6 @@ bool rewrite_simple_singleton_callsite_to_builder(std::string& source, const Cla
 
     return false;
 }
-} // namespace
 
 std::string transform_to_singleton_by_class_references(
     const std::string& source,
@@ -445,4 +442,60 @@ std::string transform_singleton_to_builder(
 
     return out;
 }
-} // namespace parse_tree_codegen_internal
+
+using TransformFn = std::string (*)(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern);
+
+struct TransformRule
+{
+    const char* source_pattern;
+    const char* target_pattern;
+    TransformFn transform;
+};
+
+bool pattern_matches(const std::string& normalized_input, const char* expected_pattern)
+{
+    const std::string expected = lower(expected_pattern == nullptr ? "" : expected_pattern);
+    return expected == "*" || expected == normalized_input;
+}
+
+const std::vector<TransformRule>& transform_rules()
+{
+    static const std::vector<TransformRule> rules = {
+        {"singleton", "builder", &transform_singleton_to_builder},
+        {"*", "singleton", &transform_to_singleton_by_class_references},
+    };
+    return rules;
+}
+
+std::string transform_using_registered_rule(
+    const std::string& source,
+    const std::string& source_pattern,
+    const std::string& target_pattern)
+{
+    g_last_transform_decisions.clear();
+
+    const std::string normalized_source = lower(source_pattern);
+    const std::string normalized_target = lower(target_pattern);
+
+    for (const TransformRule& rule : transform_rules())
+    {
+        if (!pattern_matches(normalized_source, rule.source_pattern))
+        {
+            continue;
+        }
+        if (!pattern_matches(normalized_target, rule.target_pattern))
+        {
+            continue;
+        }
+        return rule.transform(source, source_pattern, target_pattern);
+    }
+
+    return source;
+}
+
+} // namespace creational_codegen_internal
+
+

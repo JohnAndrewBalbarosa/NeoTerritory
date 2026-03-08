@@ -36,7 +36,7 @@ bool parse_cli_arguments(int argc, char* argv[], CliArguments& out, std::string&
     out.target_pattern.clear();
 
     // Compatibility path for launch profiles that pass both args as one string:
-    // argv[1] = "factory singleton"
+    // argv[1] = "<source_pattern> <target_pattern>"
     if (argc == 2 && argv[1] != nullptr)
     {
         const std::vector<std::string> tokens = split_whitespace_tokens(std::string(argv[1]));

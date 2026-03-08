@@ -1,15 +1,20 @@
 #include "parse_tree_code_generator.hpp"
 
-#include "Internal/parse_tree_code_generator_internal.hpp"
+#include "Transform/creational_transform_pipeline.hpp"
+
+namespace
+{
+std::vector<TransformDecision> g_last_transform_decisions;
+}
 
 const std::vector<TransformDecision>& get_last_transform_decisions()
 {
-    return parse_tree_codegen_internal::g_last_transform_decisions;
+    return g_last_transform_decisions;
 }
 
 std::string generate_base_code_from_source(const std::string& source)
 {
-    return parse_tree_codegen_internal::build_monolithic_evidence_view(source, "", false);
+    return render_creational_evidence_view(source, "", false);
 }
 
 std::string generate_target_code_from_source(
@@ -17,10 +22,11 @@ std::string generate_target_code_from_source(
     const std::string& source_pattern,
     const std::string& target_pattern)
 {
-    const std::string transformed = parse_tree_codegen_internal::transform_using_registered_rule(
+    const CreationalTransformResult result = run_creational_transform_pipeline(
         source,
         source_pattern,
         target_pattern);
 
-    return parse_tree_codegen_internal::build_monolithic_evidence_view(source, transformed, true);
+    g_last_transform_decisions = result.decisions;
+    return render_creational_evidence_view(source, result.transformed_source, true);
 }
