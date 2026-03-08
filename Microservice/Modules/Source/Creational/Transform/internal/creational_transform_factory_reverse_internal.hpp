@@ -103,6 +103,7 @@ bool is_supported_literal(const std::string& expression);
 std::string normalize_literal(const std::string& expression);
 std::string first_return_expression(const std::string& body_text);
 std::string collapse_ascii_whitespace(const std::string& input);
+std::string make_fnv1a64_hash_id(const std::string& input);
 std::string make_vital_part_hash_id(const std::string& normalized_vital_part);
 FactoryHashLedgerEntry build_hash_ledger_entry(const std::string& creation_expression);
 bool parse_parameter_name_from_signature(

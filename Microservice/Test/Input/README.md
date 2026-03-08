@@ -4,6 +4,8 @@ Use these files as CLI input for the static analysis pipeline:
 
 - `factory_to_singleton_source.cpp`: contains factory + singleton pattern candidates.
 - `factory_to_base_instance_source.cpp`: factory instance-call regression for `factory -> base` (assignment-form callsite).
+- `factory_to_base_kind_numeric_source.cpp`: numeric literal exact-match regression for `factory -> base` (`kind == 1`, `create(1)`).
+- `factory_to_base_identifier_literal_source.cpp`: identifier literal exact-match regression for `factory -> base` (`kind == zero`, `create(zero)`).
 - `factory_to_base_unresolved_instance_source.cpp`: unresolved factory instance typing regression for `factory -> base`.
 - `factory_to_base_non_literal_source.cpp`: non-literal argument regression for `factory -> base`.
 - `singleton_to_factory_source.cpp`: contains singleton pattern candidates (`source_pattern=singleton`, `target_pattern=factory`).

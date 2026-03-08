@@ -39,6 +39,7 @@ struct PipelineArtifacts
     ParseTreeNode virtual_tree;
     HashLinkIndex hash_links;
     std::vector<LineHashTrace> line_hash_traces;
+    std::vector<FactoryInvocationTrace> factory_invocation_traces;
     std::vector<CrucialClassInfo> crucial_classes;
     ParseTreeSymbolTables symbol_tables;
     std::string monolithic_representation;
@@ -55,6 +56,7 @@ std::string pipeline_report_to_json(
     const PipelineReport& report,
     const ParseTreeSymbolTables& symbol_tables,
     const std::vector<LineHashTrace>& line_hash_traces,
+    const std::vector<FactoryInvocationTrace>& factory_invocation_traces,
     const HashLinkIndex& hash_links,
     const std::vector<TransformDecision>& transform_decisions = {});
 

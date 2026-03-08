@@ -1,6 +1,8 @@
 #include "Internal/parse_tree_internal.hpp"
 
+#include <cstdint>
 #include <functional>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -10,6 +12,24 @@ namespace parse_tree_internal
 size_t hash_combine_token(size_t seed, const std::string& token)
 {
     return std::hash<std::string>{}(std::to_string(seed) + "|" + token);
+}
+
+std::string make_fnv1a64_hash_id(const std::string& token)
+{
+    const uint64_t fnv_offset_basis = 14695981039346656037ull;
+    const uint64_t fnv_prime = 1099511628211ull;
+
+    uint64_t hash = fnv_offset_basis;
+    for (unsigned char c : token)
+    {
+        hash ^= static_cast<uint64_t>(c);
+        hash *= fnv_prime;
+    }
+
+    std::ostringstream out;
+    out << "fnv1a64:";
+    out << std::hex << std::setfill('0') << std::setw(16) << hash;
+    return out.str();
 }
 
 size_t derive_child_context_hash(

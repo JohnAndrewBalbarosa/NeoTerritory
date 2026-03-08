@@ -85,6 +85,18 @@ bool is_supported_literal(const std::string& expression)
         return literal.size() >= 2;
     }
 
+    if (std::isalpha(static_cast<unsigned char>(literal[0])) || literal[0] == '_')
+    {
+        for (size_t i = 1; i < literal.size(); ++i)
+        {
+            if (!std::isalnum(static_cast<unsigned char>(literal[i])) && literal[i] != '_')
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     size_t start = 0;
     if (literal[start] == '+' || literal[start] == '-')
     {
@@ -138,11 +150,16 @@ std::string collapse_ascii_whitespace(const std::string& input)
 
 std::string make_vital_part_hash_id(const std::string& normalized_vital_part)
 {
+    return make_fnv1a64_hash_id(normalized_vital_part);
+}
+
+std::string make_fnv1a64_hash_id(const std::string& input)
+{
     const uint64_t fnv_offset_basis = 14695981039346656037ull;
     const uint64_t fnv_prime = 1099511628211ull;
 
     uint64_t hash = fnv_offset_basis;
-    for (unsigned char c : normalized_vital_part)
+    for (unsigned char c : input)
     {
         hash ^= static_cast<uint64_t>(c);
         hash *= fnv_prime;
