@@ -3,7 +3,6 @@ param(
     [string]$UserId = "",
     [string]$Image = "",
     [string]$RuntimeRoot = "",
-    [switch]$DockerOnly,
     [switch]$SkipDependencyInstall,
     [switch]$SkipDockerStart,
     [switch]$SkipClusterStart,
@@ -32,7 +31,6 @@ if (-not $isAdmin)
     if (-not [string]::IsNullOrWhiteSpace($UserId)) { $arguments += "-UserId `"$UserId`"" }
     if (-not [string]::IsNullOrWhiteSpace($Image)) { $arguments += "-Image `"$Image`"" }
     if (-not [string]::IsNullOrWhiteSpace($RuntimeRoot)) { $arguments += "-RuntimeRoot `"$RuntimeRoot`"" }
-    if ($DockerOnly) { $arguments += "-DockerOnly" }
     if ($SkipDependencyInstall) { $arguments += "-SkipDependencyInstall" }
     if ($SkipDockerStart) { $arguments += "-SkipDockerStart" }
     if ($SkipClusterStart) { $arguments += "-SkipClusterStart" }
@@ -74,20 +72,12 @@ if (-not [string]::IsNullOrWhiteSpace($ConfigPath)) { $paramsForBootstrap.Config
 if (-not [string]::IsNullOrWhiteSpace($UserId)) { $paramsForBootstrap.UserId = $UserId }
 if (-not [string]::IsNullOrWhiteSpace($Image)) { $paramsForBootstrap.Image = $Image }
 if (-not [string]::IsNullOrWhiteSpace($RuntimeRoot)) { $paramsForBootstrap.RuntimeRoot = $RuntimeRoot }
-if ($DockerOnly) { $paramsForBootstrap.DockerOnly = $true }
 if ($SkipDependencyInstall) { $paramsForBootstrap.SkipDependencyInstall = $true }
 if ($SkipDockerStart) { $paramsForBootstrap.SkipDockerStart = $true }
 if ($SkipClusterStart) { $paramsForBootstrap.SkipClusterStart = $true }
 if ($SkipImageBuild) { $paramsForBootstrap.SkipImageBuild = $true }
 if ($SkipDeploy) { $paramsForBootstrap.SkipDeploy = $true }
 if ($SkipRuntimeLayout) { $paramsForBootstrap.SkipRuntimeLayout = $true }
-
-if ($DockerOnly)
-{
-    Write-Host "[NeoTerritory][Info] Docker-only mode enabled: Minikube start and Kubernetes deploy will be skipped." -ForegroundColor Cyan
-    $paramsForBootstrap.SkipClusterStart = $true
-    $paramsForBootstrap.SkipDeploy = $true
-}
 
 & $bootstrapScript @paramsForBootstrap
 if (Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue)
