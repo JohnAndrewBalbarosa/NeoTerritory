@@ -55,7 +55,7 @@ Rule dispatch is creational-owned and currently supports:
   - `var = factoryObj.create(literal);`
   - `var = factoryPtr->create(literal);`
   - assignment rewrite requires a prior typed declaration for `var`; otherwise rewrite is skipped (`factory_result_declaration_unresolved`)
-- supports literal argument mapping only (`"str"`, `'c'`, integer)
+- supports exact-token literal argument mapping (`"str"`, `'c'`, integer, bare identifier like `zero`)
 - maps `if/else-if` equality branches and `switch/case` branches in `create(...)`
 - builds a hash ledger for each vital branch return:
   - vital line format: `return <creation-expression>;`
@@ -73,6 +73,7 @@ Rule dispatch is creational-owned and currently supports:
 - skips ambiguous/unsupported callsites and records transform reasons
 - removes now-unused factory instance declarations after successful inlining
 - safely deletes the Factory class only when no remaining references exist outside class definition
+- phase-1 report includes advisory `factory_invocation_traces[]` with invocation form, receiver token, resolved class (if known), raw argument token, and `fnv1a64` argument hash
 
 Result contract from creational transform pipeline:
 

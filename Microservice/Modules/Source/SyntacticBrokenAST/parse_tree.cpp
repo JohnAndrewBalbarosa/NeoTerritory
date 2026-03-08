@@ -40,6 +40,7 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
     bundle.shadow_tree.contextual_hash = bundle.main_tree.contextual_hash;
 
     bundle.line_hash_traces.clear();
+    bundle.factory_invocation_traces.clear();
     StructuralAnalysisState structural_state;
     reset_structural_analysis_state(structural_state);
 
@@ -81,6 +82,7 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
             context,
             structural_state,
             bundle.line_hash_traces,
+            bundle.factory_invocation_traces,
             class_hash_registry);
         parse_tree_internal::collect_class_definitions_by_file(
             bundle.main_tree.children[i], files[i].path, class_def_file);

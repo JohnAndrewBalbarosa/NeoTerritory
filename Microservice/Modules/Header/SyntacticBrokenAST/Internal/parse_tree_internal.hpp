@@ -25,6 +25,7 @@ inline constexpr const char* k_file_class_bucket_kind = "ClassDeclarations";
 inline constexpr const char* k_file_global_function_bucket_kind = "GlobalFunctionDeclarations";
 
 size_t hash_combine_token(size_t seed, const std::string& token);
+std::string make_fnv1a64_hash_id(const std::string& token);
 size_t derive_child_context_hash(
     size_t parent_hash,
     const std::string& kind,
@@ -96,6 +97,7 @@ void parse_file_content_into_node(
     const ParseTreeBuildContext& context,
     StructuralAnalysisState& structural_state,
     std::vector<LineHashTrace>& line_hash_traces,
+    std::vector<FactoryInvocationTrace>& factory_invocation_traces,
     ClassHashRegistry& class_hash_registry);
 
 void collect_class_definitions_by_file(

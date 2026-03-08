@@ -266,6 +266,7 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
         artifacts.base_tree = trees.main_tree;
         artifacts.virtual_tree = trees.shadow_tree;
         artifacts.line_hash_traces = trees.line_hash_traces;
+        artifacts.factory_invocation_traces = trees.factory_invocation_traces;
         artifacts.crucial_classes = trees.crucial_classes;
         return estimate_parse_tree_bytes(artifacts.base_tree) +
                estimate_parse_tree_bytes(artifacts.virtual_tree);
@@ -336,6 +337,7 @@ std::string pipeline_report_to_json(
     const PipelineReport& report,
     const ParseTreeSymbolTables& symbol_tables,
     const std::vector<LineHashTrace>& line_hash_traces,
+    const std::vector<FactoryInvocationTrace>& factory_invocation_traces,
     const HashLinkIndex& hash_links,
     const std::vector<TransformDecision>& transform_decisions)
 {
@@ -358,11 +360,22 @@ std::string pipeline_report_to_json(
         }
         decisions_by_class[decision.class_name] = decision;
     }
+    const std::string normalized_source_pattern = lowercase_ascii(report.source_pattern);
+    const std::string normalized_target_pattern = lowercase_ascii(report.target_pattern);
 
     std::ostringstream out;
     out << "{\n";
     out << "  \"source_pattern\": \"" << json_escape(report.source_pattern) << "\",\n";
     out << "  \"target_pattern\": \"" << json_escape(report.target_pattern) << "\",\n";
+    const bool factory_reverse_route_selected =
+        normalized_source_pattern == "factory" &&
+        normalized_target_pattern == "base";
+    out << "  \"factory_reverse_route_selected\": "
+        << (factory_reverse_route_selected ? "true" : "false") << ",\n";
+    if (normalized_source_pattern == "factory" && !factory_reverse_route_selected)
+    {
+        out << "  \"factory_reverse_route_hint\": \"set target_pattern=base to enable factory reverse direct-instantiation output\",\n";
+    }
     out << "  \"input_file_count\": " << report.input_file_count << ",\n";
     out << "  \"total_elapsed_ms\": " << report.total_elapsed_ms << ",\n";
     out << "  \"peak_estimated_bytes\": " << report.peak_estimated_bytes << ",\n";
@@ -394,20 +407,28 @@ std::string pipeline_report_to_json(
 
         bool transform_applied = false;
         std::vector<std::string> transform_reason;
+        std::vector<std::string> transform_trace;
 
         const auto decision_it = decisions_by_class.find(s.name);
         if (decision_it != decisions_by_class.end())
         {
             transform_applied = decision_it->second.transform_applied;
             transform_reason = decision_it->second.transform_reason;
+            transform_trace = decision_it->second.transform_trace;
         }
 
         if (!transform_applied && transform_reason.empty())
         {
-            if (lowercase_ascii(report.source_pattern) == "singleton" &&
-                lowercase_ascii(report.target_pattern) == "builder")
+            if (normalized_source_pattern == "singleton" &&
+                normalized_target_pattern == "builder")
             {
                 transform_reason.push_back("singleton_candidate_not_found");
+            }
+            else if (normalized_source_pattern == "factory" &&
+                     normalized_target_pattern != "base" &&
+                     candidate_class_names.find(s.name) != candidate_class_names.end())
+            {
+                transform_reason.push_back("factory_reverse_transform_requires_target_base");
             }
             else
             {
@@ -432,6 +453,16 @@ std::string pipeline_report_to_json(
                 out << ", ";
             }
             out << "\"" << json_escape(transform_reason[reason_i]) << "\"";
+        }
+        out << "],\n";
+        out << "      \"transform_trace\": [";
+        for (size_t trace_i = 0; trace_i < transform_trace.size(); ++trace_i)
+        {
+            if (trace_i > 0)
+            {
+                out << ", ";
+            }
+            out << "\"" << json_escape(transform_trace[trace_i]) << "\"";
         }
         out << "],\n";
         out << "      \"actual_link_status\": \""
@@ -562,6 +593,29 @@ std::string pipeline_report_to_json(
         out << "\n";
         out << "    }";
         if (i + 1 < line_hash_traces.size())
+        {
+            out << ",";
+        }
+        out << "\n";
+    }
+
+    out << "  ],\n";
+    out << "  \"factory_invocation_traces\": [\n";
+
+    for (size_t i = 0; i < factory_invocation_traces.size(); ++i)
+    {
+        const FactoryInvocationTrace& trace = factory_invocation_traces[i];
+        out << "    {\n";
+        out << "      \"file_path\": \"" << json_escape(trace.file_path) << "\",\n";
+        out << "      \"line_number\": " << trace.line_number << ",\n";
+        out << "      \"scope_context_hash\": " << trace.scope_context_hash << ",\n";
+        out << "      \"invocation_form\": \"" << json_escape(trace.invocation_form) << "\",\n";
+        out << "      \"receiver_token\": \"" << json_escape(trace.receiver_token) << "\",\n";
+        out << "      \"resolved_factory_class\": \"" << json_escape(trace.resolved_factory_class) << "\",\n";
+        out << "      \"argument_token\": \"" << json_escape(trace.argument_token) << "\",\n";
+        out << "      \"argument_hash_id\": \"" << json_escape(trace.argument_hash_id) << "\"\n";
+        out << "    }";
+        if (i + 1 < factory_invocation_traces.size())
         {
             out << ",";
         }

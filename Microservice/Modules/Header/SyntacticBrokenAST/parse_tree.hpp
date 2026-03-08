@@ -33,11 +33,24 @@ struct LineHashTrace
     std::vector<size_t> hash_chain;
 };
 
+struct FactoryInvocationTrace
+{
+    std::string file_path;
+    size_t line_number = 0;
+    std::string invocation_form;
+    std::string receiver_token;
+    std::string resolved_factory_class;
+    std::string argument_token;
+    std::string argument_hash_id;
+    size_t scope_context_hash = 0;
+};
+
 struct ParseTreeBundle
 {
     ParseTreeNode main_tree;
     ParseTreeNode shadow_tree;
     std::vector<LineHashTrace> line_hash_traces;
+    std::vector<FactoryInvocationTrace> factory_invocation_traces;
     std::vector<CrucialClassInfo> crucial_classes;
 };
 

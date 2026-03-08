@@ -111,6 +111,9 @@ FactoryReverseTransformResult transform_factory_to_base_by_direct_instantiation(
 
         FactoryRewriteStats& stats = stats_by_name[callsite.factory_class_name];
         stats.callsite_found = true;
+        const std::string raw_argument_token = trim(callsite.argument_expression);
+        const std::string phase1_arg_hash_id =
+            raw_argument_token.empty() ? "" : make_fnv1a64_hash_id(raw_argument_token);
 
         if (callsite.unresolved_result_declaration)
         {
@@ -129,7 +132,8 @@ FactoryReverseTransformResult transform_factory_to_base_by_direct_instantiation(
             stats.transform_trace.push_back(
                 "callsite_line=" + std::to_string(line_index + 1) +
                 ";invocation=" + callsite.invocation_form +
-                ";argument=" + trim(callsite.argument_expression) +
+                ";argument=" + raw_argument_token +
+                ";phase1_arg_hash=" + phase1_arg_hash_id +
                 ";status=non_literal_argument");
             continue;
         }
@@ -158,6 +162,7 @@ FactoryReverseTransformResult transform_factory_to_base_by_direct_instantiation(
                 "callsite_line=" + std::to_string(line_index + 1) +
                 ";invocation=" + callsite.invocation_form +
                 ";argument=" + normalized_literal +
+                ";phase1_arg_hash=" + phase1_arg_hash_id +
                 ";status=no_matching_branch");
             continue;
         }
@@ -211,6 +216,7 @@ FactoryReverseTransformResult transform_factory_to_base_by_direct_instantiation(
             ";invocation=" + callsite.invocation_form +
             ";argument=" + normalized_literal +
             ";hash_id=" + selected_entry.hash_id +
+            ";phase1_arg_hash=" + phase1_arg_hash_id +
             ";creation=" + selected_entry.creation_expression);
 
         if (!callsite.factory_receiver_name.empty())
