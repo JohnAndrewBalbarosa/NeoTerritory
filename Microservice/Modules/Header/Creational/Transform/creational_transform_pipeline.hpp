@@ -20,6 +20,8 @@ CreationalTransformResult run_creational_transform_pipeline(
 std::string render_creational_evidence_view(
     const std::string& source_code,
     const std::string& target_code,
-    bool target_view);
+    bool target_view,
+    const std::string& source_pattern = "",
+    const std::string& target_pattern = "");
 
 #endif // CREATIONAL_TRANSFORM_PIPELINE_HPP

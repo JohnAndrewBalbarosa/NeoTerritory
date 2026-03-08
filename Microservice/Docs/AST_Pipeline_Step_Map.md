@@ -90,9 +90,14 @@ Report includes:
   - `hash_ancestry`
 - link status fields:
   - `unique | multi_match | unresolved`
+- transform decision projection per class:
+  - `transform_applied`
+  - `transform_reason[]`
 
 ## Delegation Flow (Current)
 
 - `generate_target_code_from_source(...)` in Syntactic delegates transform execution to Creational transform pipeline.
 - `generate_base_code_from_source(...)` and target rendering delegate evidence rendering to Creational.
+  - `singleton -> builder` uses monolithic evidence sections/skeletons.
+  - other routes (including `* -> singleton`) use passthrough generated code view with single-main retention.
 - Lexical structural hooks in Syntactic resolve keywords via Creational and Behavioural providers.

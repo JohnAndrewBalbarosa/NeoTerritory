@@ -63,7 +63,9 @@ std::string regex_capture_or_empty(const std::smatch& match, size_t index);
 std::string build_monolithic_evidence_view(
     const std::string& source_code,
     const std::string& target_code,
-    bool target_view);
+    bool target_view,
+    const std::string& source_pattern = "",
+    const std::string& target_pattern = "");
 
 std::string transform_to_singleton_by_class_references(
     const std::string& source,
