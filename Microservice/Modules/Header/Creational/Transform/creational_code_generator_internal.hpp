@@ -1,8 +1,8 @@
-#ifndef PARSE_TREE_CODE_GENERATOR_INTERNAL_HPP
-#define PARSE_TREE_CODE_GENERATOR_INTERNAL_HPP
+#ifndef CREATIONAL_CODE_GENERATOR_INTERNAL_HPP
+#define CREATIONAL_CODE_GENERATOR_INTERNAL_HPP
 
-#include "parse_tree_code_generator.hpp"
 #include "parse_tree.hpp"
+#include "parse_tree_code_generator.hpp"
 #include "Singleton/singleton_pattern_logic.hpp"
 
 #include <cstddef>
@@ -11,7 +11,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace parse_tree_codegen_internal
+namespace creational_codegen_internal
 {
 extern std::vector<TransformDecision> g_last_transform_decisions;
 
@@ -77,6 +77,6 @@ std::string transform_using_registered_rule(
     const std::string& source,
     const std::string& source_pattern,
     const std::string& target_pattern);
-} // namespace parse_tree_codegen_internal
+} // namespace creational_codegen_internal
 
-#endif // PARSE_TREE_CODE_GENERATOR_INTERNAL_HPP
+#endif // CREATIONAL_CODE_GENERATOR_INTERNAL_HPP

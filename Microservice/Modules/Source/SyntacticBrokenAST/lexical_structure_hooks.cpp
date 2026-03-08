@@ -1,5 +1,7 @@
 #include "lexical_structure_hooks.hpp"
 
+#include "Logic/behavioural_structural_hooks.hpp"
+#include "Logic/creational_structural_hooks.hpp"
 #include "language_tokens.hpp"
 
 #include <functional>
@@ -9,108 +11,6 @@
 
 namespace
 {
-class IStructuralAnalyzer
-{
-public:
-    virtual ~IStructuralAnalyzer() = default;
-    virtual const char* strategy_name() const = 0;
-    virtual bool is_crucial_class(
-        const std::string& class_name,
-        const std::vector<std::string>& declaration_tokens) const = 0;
-};
-
-class KeywordAnalyzer final : public IStructuralAnalyzer
-{
-public:
-    KeywordAnalyzer(std::string name, std::vector<std::string> keywords)
-        : strategy_name_(std::move(name)), keywords_(std::move(keywords))
-    {
-    }
-
-    const char* strategy_name() const override
-    {
-        return strategy_name_.c_str();
-    }
-
-    bool is_crucial_class(
-        const std::string& class_name,
-        const std::vector<std::string>& declaration_tokens) const override
-    {
-        const std::string lowered_name = lowercase_ascii(class_name);
-        for (const std::string& keyword : keywords_)
-        {
-            if (lowered_name.find(keyword) != std::string::npos)
-            {
-                return true;
-            }
-        }
-
-        for (const std::string& $1***REDACTED***$2)
-        {
-            const std::string lowered_$1***REDACTED***$2(token);
-            for (const std::string& keyword : keywords_)
-            {
-                if (lowered_token.find(keyword) != std::string::npos)
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-private:
-    std::string strategy_name_;
-    std::vector<std::string> keywords_;
-};
-
-const IStructuralAnalyzer& select_analyzer(const std::string& source_pattern)
-{
-    static const KeywordAnalyzer factory_analyzer(
-        "FactoryStructuralStrategy",
-        {"factory", "creator", "create"});
-    static const KeywordAnalyzer singleton_analyzer(
-        "SingletonStructuralStrategy",
-        {"singleton", "instance", "config"});
-    static const KeywordAnalyzer builder_analyzer(
-        "BuilderStructuralStrategy",
-        {"builder", "build", "director"});
-    static const KeywordAnalyzer strategy_analyzer(
-        "StrategyStructuralStrategy",
-        {"strategy", "context"});
-    static const KeywordAnalyzer observer_analyzer(
-        "ObserverStructuralStrategy",
-        {"observer", "subject", "listener"});
-    static const KeywordAnalyzer null_analyzer(
-        "NullStructuralStrategy",
-        {});
-
-    const std::string pattern = lowercase_ascii(source_pattern);
-    if (pattern == "factory")
-    {
-        return factory_analyzer;
-    }
-    if (pattern == "singleton")
-    {
-        return singleton_analyzer;
-    }
-    if (pattern == "builder")
-    {
-        return builder_analyzer;
-    }
-    if (pattern == "strategy")
-    {
-        return strategy_analyzer;
-    }
-    if (pattern == "observer")
-    {
-        return observer_analyzer;
-    }
-
-    return null_analyzer;
-}
-
 bool contains_class(const StructuralAnalysisState& state, const std::string& class_name)
 {
     for (const CrucialClassInfo& info : state.crucial_classes)
@@ -122,6 +22,66 @@ bool contains_class(const StructuralAnalysisState& state, const std::string& cla
     }
     return false;
 }
+
+bool token_matches_any_keyword(const std::string& token, const std::vector<std::string>& keywords)
+{
+    const std::string lowered = lowercase_ascii(token);
+    for (const std::string& keyword : keywords)
+    {
+        if (lowered.find(keyword) != std::string::npos)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool is_keyword_hit(
+    const std::string& class_name,
+    const std::vector<std::string>& declaration_tokens,
+    const std::vector<std::string>& keywords)
+{
+    if (keywords.empty())
+    {
+        return false;
+    }
+
+    if (token_matches_any_keyword(class_name, keywords))
+    {
+        return true;
+    }
+
+    for (const std::string& $1***REDACTED***$2)
+    {
+        if (token_matches_any_keyword(token, keywords))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool select_structural_keywords(
+    const std::string& source_pattern,
+    std::string& out_strategy_name,
+    std::vector<std::string>& out_keywords)
+{
+    out_strategy_name.clear();
+    out_keywords.clear();
+
+    if (resolve_creational_structural_keywords(source_pattern, out_strategy_name, out_keywords))
+    {
+        return true;
+    }
+
+    if (resolve_behavioural_structural_keywords(source_pattern, out_strategy_name, out_keywords))
+    {
+        return true;
+    }
+
+    return false;
+}
 } // namespace
 
 void on_class_scanned_structural_hook(
@@ -130,8 +90,14 @@ void on_class_scanned_structural_hook(
     const ParseTreeBuildContext& context,
     StructuralAnalysisState& state)
 {
-    const IStructuralAnalyzer& analyzer = select_analyzer(context.source_pattern);
-    if (!analyzer.is_crucial_class(class_name, declaration_tokens))
+    std::string strategy_name;
+    std::vector<std::string> keywords;
+    if (!select_structural_keywords(context.source_pattern, strategy_name, keywords))
+    {
+        return;
+    }
+
+    if (!is_keyword_hit(class_name, declaration_tokens, keywords))
     {
         return;
     }
@@ -146,7 +112,7 @@ void on_class_scanned_structural_hook(
     CrucialClassInfo info;
     info.name = class_name;
     info.class_name_hash = class_name_hash;
-    info.strategy_name = analyzer.strategy_name();
+    info.strategy_name = std::move(strategy_name);
     state.crucial_classes.push_back(std::move(info));
 }
 

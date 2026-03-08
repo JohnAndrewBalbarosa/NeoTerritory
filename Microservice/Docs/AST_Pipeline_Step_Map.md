@@ -2,284 +2,97 @@
 
 ## Scope
 
-This document is split into two phases:
+This map documents the implemented pipeline behavior and ownership boundaries.
 
-1. **Phase A**: implemented now.
-2. **Phase B**: future extension only (not implemented in code).
+## Ownership Boundary (Implemented)
 
-The format is plain Markdown so it can be converted with Pandoc.
+- `SyntacticBrokenAST` owns generic parsing, AST construction, hash links, symbol indexing, and pipeline/report orchestration.
+- `Creational` owns creational detection and creational code transforms/evidence rendering.
+- `Behavioural` owns behavioural detection and behavioural structural hook keyword providers.
 
-## Current Hashing Type (Implemented)
+`SyntacticBrokenAST` now delegates pattern-specific logic instead of implementing pattern transforms directly.
 
-The system currently uses **non-cryptographic `std::hash<std::string>` composition**.
+## A1. CLI + Context Entry
 
-- It is used for contextual node hashes (`parent + kind + value + sibling_index`).
-- It is used for class-name hashes (`hash(class_name)`).
-- It is used for file-aware class identity (`hash(file_path + "|" + class_name)`).
-- It is used for function keys (`hash(file_path + "|" + owner_scope + "|" + function_name + "|" + parameter_hint)`).
-- It is used for line propagation chains (`hash(prev_hash + "|" + token)`).
+- CLI captures source/target pattern and input folder files.
+- Parse context is passed into lexical parsing and downstream pipeline stages.
 
-Notes:
+## A2. Root + File Separation
 
-- This is **not SHA-256** and **not cryptographic**.
-- Rationale in current code: fast lookup and lightweight symbol indexing.
+- Parse root: `TranslationUnit("Root")`
+- Immediate children: per-file `FileUnit`
 
-### Specific Algorithm Detail (RRL-Ready)
+## A3. Dual Tree Build
 
-For your current local compiler/toolchain (`g++ 15.2.0`, libstdc++ on MSYS2/UCRT64):
+- `main_tree`: full parse graph
+- `shadow_tree`: relevance-filtered virtual graph
 
-1. The code calls `std::hash<std::string>`.
-2. In libstdc++, `hash<string>` routes to `std::_Hash_impl::hash(...)`.
-3. `std::_Hash_impl::hash(...)` calls `_Hash_bytes(ptr, len, seed)`.
-4. Default seed in this path is `0xc70f6907UL`.
+## A4. Class Registration + Line Hash Traces
 
-Important limitation for write-up:
+During lexical parse:
 
-- `_Hash_bytes` is an internal libstdc++ primitive whose exact algorithm is **implementation-defined** and can change between library releases.
-- So the most accurate statement is:
-  "The project uses libstdc++ `std::hash<std::string>` (via `_Hash_impl` / `_Hash_bytes`), not a fixed cryptographic algorithm such as SHA-256."
+- class name hash and file-aware class context hash are registered
+- line traces capture `matched_class_contextual_hash`, `outgoing_hash`, `hash_chain`, and collision markers
 
-Reference files from your local toolchain:
+## A5. Scope Propagation Hashing
 
-- `C:/msys64/ucrt64/include/c++/15.2.0/bits/basic_string.h` (`hash<basic_string<...>>`)
-- `C:/msys64/ucrt64/include/c++/15.2.0/bits/functional_hash.h` (`_Hash_impl`)
-- `C:/msys64/ucrt64/include/c++/15.2.0/bits/hash_bytes.h` (`_Hash_bytes` notes)
+- Child contextual hashes derive from parent hash + node identity + sibling index
+- Usage hashes are propagated within lexical scope and copied into parse nodes
 
-### Documentation Links (for RRL citations)
+## A6. File Bucketization
 
-Primary mechanism docs (official libstdc++ API/source pages):
+Each file node is bucketized for traversal:
 
-1. `functional_hash.h` (`_Hash_impl`, default seed `0xc70f6907UL`):
-   <https://gcc.gnu.org/onlinedocs/gcc-15.1.0/libstdc++/api/a00800_source.html>
-2. `basic_string.h` (`hash<string>` delegates to `_Hash_impl::hash(...)`):
-   <https://gcc.gnu.org/onlinedocs/gcc-15.1.0/libstdc++/api/a00650_source.html>
-3. `hash_bytes.h` (states `_Hash_bytes` may change, `_Fnv_hash_bytes` is stable FNV):
-   <https://gcc.gnu.org/onlinedocs/gcc-15.1.0/libstdc++/api/a00350_source.html>
+- `ClassDeclarations`
+- `GlobalFunctionDeclarations`
 
-Toolchain/version context:
+Applied to both actual and virtual trees.
 
-4. GCC 15.2 release information:
-   <https://gcc.gnu.org/gcc-15/>
-5. GCC 15.2 source release archive:
-   <https://gcc.gnu.org/pub/gcc/releases/gcc-15.2.0/>
+## A7. Symbol Tables + Overload-safe Function Keys
 
-Examples showing why hashing internals get updated:
+Function identity key includes:
 
-6. libstdc++ `_Hash_bytes` correctness fix for large lengths (PR89629):
-   <https://gcc.gnu.org/pipermail/libstdc++/2019-March/048378.html>
-7. libstdc++ `_Hash_bytes` portability fix for I16LP32 targets (PR107885):
-   <https://gcc.gnu.org/pipermail/libstdc++/2022-November/055116.html>
+- file path
+- owner scope
+- function name
+- parameter hint
 
-### Why the Hashing Mechanism Gets Updated
+This prevents same-name overload collisions across files/scopes.
 
-From libstdc++'s own `hash_bytes.h` comments and maintenance history:
+## A8. Hash Link Stage (Paired File View)
 
-1. **Quality and speed tuning**:
-   `_Hash_bytes` is intentionally allowed to change to improve hash distribution and performance.
-2. **Correctness fixes**:
-   updates are applied when edge cases produce incorrect behavior (for example, very large input lengths).
-3. **Portability/architecture safety**:
-   updates fix undefined behavior or integer-width issues on less common architectures.
+Hash-link stage emits paired traversal context:
 
-Practical implication for this project:
+- `Root -> FileUnit -> ActualParseTree`
+- `Root -> FileUnit -> VirtualParseTree`
 
-- Your current hashing path is tied to your current libstdc++ build.
-- It is reliable for in-process lookup, but should not be treated as a permanent cross-version fingerprint format.
+Bidirectional link indexing includes:
 
-### Hashing Theory Framing (for Panel Defense)
+- class anchors (class hash + contextual hash)
+- usage anchors (outgoing/hash_chain + propagated usage hashes)
 
-If asked "what exact hashing theory/algorithm is used?", the most accurate answer is:
+Collision disambiguation contract:
 
-1. **C++ standard level**:
-   `std::hash` is specified as a hash function object with behavioral requirements (equal keys must hash equally), but the exact algorithm is **not standardized**.
-2. **Toolchain level (your current setup)**:
-   in libstdc++ 15.x, `std::hash<std::string>` calls `_Hash_impl::hash(...)`, which calls `_Hash_bytes(...)` with seed `0xc70f6907UL`.
-3. **Algorithm naming level**:
-   `_Hash_bytes` is intentionally implementation-defined and may change; therefore you should describe it as a **seeded non-cryptographic byte-mixing hash used for hashtable indexing**, not as a fixed named cryptographic primitive.
+1. class-name hash candidates
+2. parent ancestry expansion
+3. file basename
+4. full file path
+5. node index path tie-break
 
-In other words, your implementation follows this practical theory:
+## A9. Report Serialization
 
-- **Hash family type**: non-cryptographic, seeded byte-sequence hashing.
-- **Design goal**: fast average-case lookup for hash tables, acceptable distribution (low accidental clustering), and ABI/runtime practicality.
-- **Complexity**: `O(L)` per token/string where `L` is input length.
-- **Security property**: not collision-resistant in the cryptographic sense.
+Report includes:
 
-Contrast that with libstdc++'s explicit FNV path:
+- class registry links for actual/virtual trees
+- line hash trace links for class anchors and usage anchors
+- ancestry metadata:
+  - `readable_ancestry`
+  - `hash_ancestry`
+- link status fields:
+  - `unique | multi_match | unresolved`
 
-- `_Fnv_hash_bytes` is documented as FNV-based and stable across releases.
-- `std::hash<std::string>` in your current path does **not** use that stable FNV path directly; it uses `_Hash_bytes`.
+## Delegation Flow (Current)
 
-## Phase A (Implemented)
-
-### A1. CLI and Context Entry
-
-- CLI accepts:
-  - `argv[1]`: source design pattern
-  - `argv[2]`: target design pattern
-- Folder-only ingestion is enforced:
-  - extra CLI file arguments are rejected with guidance
-  - source files are discovered from executable-local `Input` directory
-    (for example: `.../out/build/x64-Debug/Input`)
-- Parse context is initialized in the pipeline from CLI pattern args plus resolved input file list.
-- On validation failures (invalid args, invalid inputs, write failures), the runner exits non-zero with diagnostic guidance.
-
-References:
-
-- `Project/Modules/Source/SyntacticBrokenAST/cli_arguments.cpp`
-- `Project/Layer/Back system/syntacticBrokenAST.cpp`
-
-### Runtime Layout (Implemented)
-
-- Runtime layout is anchored beside the executable directory:
-  - `Input/` for source ingestion (top-level scan only)
-  - `Output/analysis_report/` for JSON report artifacts
-  - `Output/generated_code/` for generated C++ output
-  - `Output/html/` for HTML output
-- The runner ensures required directories exist at startup.
-- Installer/post-install helper scripts can pre-create the same layout:
-  - `Infrastructure/runtime-layout/setup_runtime_layout.ps1`
-  - `Infrastructure/runtime-layout/setup_runtime_layout.sh`
-
-### A2. Root and File-Level Separation
-
-- Parse trees use a root node (`TranslationUnit` / `"Root"`).
-- Immediate children are `FileUnit` nodes (one per input file).
-- Files stay separated in memory (no forced merge for parsing).
-
-References:
-
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`build_cpp_parse_trees(...)`)
-- `Project/Modules/Header/SyntacticBrokenAST/parse_tree.hpp`
-
-### A3. Dual-Tree Build
-
-- Two trees are produced:
-  - `main_tree` (full AST-like structure)
-  - `shadow_tree` (virtual filtered tree)
-- Shadow tree keeps only pattern-relevant branches.
-
-References:
-
-- `Project/Modules/Header/SyntacticBrokenAST/parse_tree.hpp` (`ParseTreeBundle`)
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp`
-
-### A4. File-Aware Class Hash Registration During Lexing
-
-- Class names are hashed immediately during lexical pass.
-- Hashing keeps:
-  - class name hash (`hash(class_name)`)
-  - file-aware contextual hash (`hash(file_path + "|" + class_name)`)
-- Class-hit traces store file path and matched class contextual hash.
-
-References:
-
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`register_classes_in_line(...)`)
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`token_hits_registered_class(...)`)
-- `Project/Modules/Header/SyntacticBrokenAST/parse_tree.hpp` (`LineHashTrace`)
-
-### A5. Scope Propagation Hashing
-
-- Parent contextual hash is propagated to child nodes.
-- Usage hashes are propagated per lexical scope.
-- Outgoing line hash traces are recorded for class-hit lines.
-
-References:
-
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`derive_child_context_hash(...)`)
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`collect_line_hash_trace(...)`)
-
-### A6. Explicit Traversal Buckets Per File
-
-- Each `FileUnit` now has explicit traversal buckets:
-  - `ClassDeclarations`
-  - `GlobalFunctionDeclarations`
-- This separation is applied to both main and shadow trees.
-
-References:
-
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`bucketize_file_node_for_traversal(...)`)
-
-### A7. Function Symbol Overload Support (Signature-Aware Key)
-
-- Function symbols are no longer indexed by name only.
-- New function identity key includes:
-  - file path
-  - owner scope (class name or `global`)
-  - function name
-  - parameter hint
-- This prevents same-name overload collisions across scopes/files.
-
-References:
-
-- `Project/Modules/Header/SyntacticBrokenAST/parse_tree_symbols.hpp` (`ParseSymbol`)
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree_symbols.cpp` (`build_function_key(...)`)
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree_symbols.cpp` (`add_function_symbol(...)`)
-
-### A8. Symbol API Extensions
-
-- Symbol APIs are now table-scoped (no process-global symbol registry).
-- Core API now includes:
-  - `build_parse_tree_symbol_tables(...)`
-  - `class_symbol_table(...)`
-  - `function_symbol_table(...)`
-  - `class_usage_table(...)`
-  - `find_class_by_name(...)`
-  - `find_function_by_name(...)`
-  - `find_function_by_key(...)`
-  - `find_functions_by_name(...)`
-
-References:
-
-- `Project/Modules/Header/SyntacticBrokenAST/parse_tree_symbols.hpp`
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree_symbols.cpp`
-
-### A9. Shadow Tree Function-Relevance Filter
-
-- Shadow population uses:
-  - usage hashes
-  - tracked class names
-  - tracked function names (owned by tracked classes)
-- Global function bucket keeps only relevant subtrees.
-
-References:
-
-- `Project/Modules/Source/SyntacticBrokenAST/parse_tree.cpp` (`append_shadow_subtree_if_relevant(...)`)
-
-## Phase B (Future Feature, Not Implemented)
-
-Phase B is intentionally left as a future extension. No code in this step implements these items.
-
-### B1. Cryptographic Hash Mode
-
-- Optional SHA-256/BLAKE3 mode for deterministic cross-platform fingerprints.
-- Keep current fast `std::hash` mode as default.
-
-### B2. Optional Reverse-Merkle Chain
-
-- Add explicit parent-seeded chain objects for selective scopes.
-- This is separate from current contextual hash propagation.
-
-### B3. Explicit Dirty-Bit Token Objects
-
-- Materialize dirty-bit state as token/node metadata structs.
-- Current implementation uses propagated usage hash vectors instead.
-
-### B4. Pattern-Specific Hash Namespaces
-
-- Separate hash namespaces by pattern family (`creational`, `behavioural`, `structural`).
-- Prevent accidental cross-pattern key reuse.
-
-### B5. Persistent Symbol Store
-
-- Optional symbol serialization/reload across runs.
-- Useful for incremental scans on large multi-file projects.
-
-## One-Pass Intent Status
-
-Current behavior already aligns with one-pass lexical-first intent:
-
-- class scanning and structural hook execution happen during lexical parse
-- usage propagation is computed during the same pass
-- symbol tables are rebuilt from final tree once structure is complete
-
-This keeps the parser pipeline simple while preserving modular pattern logic.
+- `generate_target_code_from_source(...)` in Syntactic delegates transform execution to Creational transform pipeline.
+- `generate_base_code_from_source(...)` and target rendering delegate evidence rendering to Creational.
+- Lexical structural hooks in Syntactic resolve keywords via Creational and Behavioural providers.

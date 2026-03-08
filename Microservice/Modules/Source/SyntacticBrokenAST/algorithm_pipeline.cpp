@@ -405,15 +405,7 @@ std::string pipeline_report_to_json(
 
         if (!transform_applied && transform_reason.empty())
         {
-            if (lowercase_ascii(report.source_pattern) == "singleton" &&
-                lowercase_ascii(report.target_pattern) == "builder")
-            {
-                transform_reason.push_back("singleton_candidate_not_found");
-            }
-            else
-            {
-                transform_reason.push_back("transform_policy_not_applicable_for_source_target");
-            }
+            transform_reason.push_back("transform_policy_not_applicable_for_source_target");
         }
 
         out << "    {\n";
