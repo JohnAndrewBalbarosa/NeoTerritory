@@ -11,6 +11,7 @@ struct TransformDecision
     std::string class_name;
     bool transform_applied = false;
     std::vector<std::string> transform_reason;
+    std::vector<std::string> transform_trace;
 };
 
 std::string generate_base_code_from_source(const std::string& source);
