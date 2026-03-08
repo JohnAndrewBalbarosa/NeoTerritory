@@ -432,6 +432,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
                 artifacts.report,
                 artifacts.symbol_tables,
                 artifacts.line_hash_traces,
+                artifacts.hash_links,
                 get_last_transform_decisions())))
     {
         print_error_diagnostics(

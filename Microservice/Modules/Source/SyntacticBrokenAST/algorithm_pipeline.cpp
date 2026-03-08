@@ -9,6 +9,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace
 {
@@ -62,6 +63,92 @@ size_t estimate_symbol_table_bytes(const ParseTreeSymbolTables& tables)
     return total;
 }
 
+size_t estimate_node_ref_bytes(const NodeRef& ref)
+{
+    size_t total = sizeof(NodeRef);
+    total += ref.tree_side.size();
+    total += ref.file_basename.size();
+    total += ref.file_path.size();
+    total += ref.node_kind.size();
+    total += ref.node_value.size();
+    total += ref.node_index_path.capacity() * sizeof(size_t);
+    total += ref.ancestry.readable_chain.capacity() * sizeof(std::string);
+    total += ref.ancestry.hash_chain.capacity() * sizeof(size_t);
+
+    for (const std::string& entry : ref.ancestry.readable_chain)
+    {
+        total += entry.size();
+    }
+
+    return total;
+}
+
+size_t estimate_hash_links_bytes(const HashLinkIndex& links)
+{
+    size_t total = sizeof(HashLinkIndex);
+    total += links.paired_file_view.capacity() * sizeof(FilePairedTreeView);
+    total += links.class_links.capacity() * sizeof(ClassHashLink);
+    total += links.usage_links.capacity() * sizeof(UsageHashLink);
+
+    for (const FilePairedTreeView& view : links.paired_file_view)
+    {
+        total += view.file_basename.size();
+        total += view.file_path.size();
+        total += view.actual_root_kind.size();
+        total += view.virtual_root_kind.size();
+    }
+
+    for (const ClassHashLink& link : links.class_links)
+    {
+        total += link.class_name.size();
+        total += link.file_path.size();
+        total += link.actual_link_status.size();
+        total += link.virtual_link_status.size();
+        total += link.link_status.size();
+        total += link.actual_nodes.capacity() * sizeof(NodeRef);
+        total += link.virtual_nodes.capacity() * sizeof(NodeRef);
+        for (const NodeRef& ref : link.actual_nodes)
+        {
+            total += estimate_node_ref_bytes(ref);
+        }
+        for (const NodeRef& ref : link.virtual_nodes)
+        {
+            total += estimate_node_ref_bytes(ref);
+        }
+    }
+
+    for (const UsageHashLink& link : links.usage_links)
+    {
+        total += link.file_path.size();
+        total += link.class_name.size();
+        total += link.hash_chain.capacity() * sizeof(size_t);
+        total += link.class_link_status.size();
+        total += link.usage_link_status.size();
+        total += link.class_anchor_actual_nodes.capacity() * sizeof(NodeRef);
+        total += link.class_anchor_virtual_nodes.capacity() * sizeof(NodeRef);
+        total += link.usage_actual_nodes.capacity() * sizeof(NodeRef);
+        total += link.usage_virtual_nodes.capacity() * sizeof(NodeRef);
+        for (const NodeRef& ref : link.class_anchor_actual_nodes)
+        {
+            total += estimate_node_ref_bytes(ref);
+        }
+        for (const NodeRef& ref : link.class_anchor_virtual_nodes)
+        {
+            total += estimate_node_ref_bytes(ref);
+        }
+        for (const NodeRef& ref : link.usage_actual_nodes)
+        {
+            total += estimate_node_ref_bytes(ref);
+        }
+        for (const NodeRef& ref : link.usage_virtual_nodes)
+        {
+            total += estimate_node_ref_bytes(ref);
+        }
+    }
+
+    return total;
+}
+
 std::string json_escape(const std::string& input)
 {
     std::string out;
@@ -79,6 +166,64 @@ std::string json_escape(const std::string& input)
         }
     }
     return out;
+}
+
+void append_json_string_array(std::ostringstream& out, const std::vector<std::string>& values)
+{
+    out << "[";
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        if (i > 0)
+        {
+            out << ", ";
+        }
+        out << "\"" << json_escape(values[i]) << "\"";
+    }
+    out << "]";
+}
+
+void append_json_number_array(std::ostringstream& out, const std::vector<size_t>& values)
+{
+    out << "[";
+    for (size_t i = 0; i < values.size(); ++i)
+    {
+        if (i > 0)
+        {
+            out << ", ";
+        }
+        out << values[i];
+    }
+    out << "]";
+}
+
+void append_json_node_refs(std::ostringstream& out, const std::vector<NodeRef>& refs)
+{
+    out << "[";
+    for (size_t i = 0; i < refs.size(); ++i)
+    {
+        const NodeRef& ref = refs[i];
+        out << "{";
+        out << "\"tree_side\":\"" << json_escape(ref.tree_side) << "\",";
+        out << "\"file_basename\":\"" << json_escape(ref.file_basename) << "\",";
+        out << "\"file_path\":\"" << json_escape(ref.file_path) << "\",";
+        out << "\"node_kind\":\"" << json_escape(ref.node_kind) << "\",";
+        out << "\"node_value\":\"" << json_escape(ref.node_value) << "\",";
+        out << "\"contextual_hash\":" << ref.contextual_hash << ",";
+        out << "\"node_index_path\":";
+        append_json_number_array(out, ref.node_index_path);
+        out << ",";
+        out << "\"readable_ancestry\":";
+        append_json_string_array(out, ref.ancestry.readable_chain);
+        out << ",";
+        out << "\"hash_ancestry\":";
+        append_json_number_array(out, ref.ancestry.hash_chain);
+        out << "}";
+        if (i + 1 < refs.size())
+        {
+            out << ",";
+        }
+    }
+    out << "]";
 }
 } // namespace
 
@@ -150,7 +295,14 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
         }
 
         artifacts.symbol_tables = build_parse_tree_symbol_tables(artifacts.base_tree, symbol_options);
-        return estimate_symbol_table_bytes(artifacts.symbol_tables);
+        artifacts.hash_links = build_parse_tree_hash_links(
+            artifacts.base_tree,
+            artifacts.virtual_tree,
+            artifacts.symbol_tables,
+            artifacts.line_hash_traces);
+
+        return estimate_symbol_table_bytes(artifacts.symbol_tables) +
+               estimate_hash_links_bytes(artifacts.hash_links);
     });
 
     // 5) Generate monolithic representation
@@ -185,6 +337,7 @@ std::string pipeline_report_to_json(
     const PipelineReport& report,
     const ParseTreeSymbolTables& symbol_tables,
     const std::vector<LineHashTrace>& line_hash_traces,
+    const HashLinkIndex& hash_links,
     const std::vector<TransformDecision>& transform_decisions)
 {
     const std::vector<ParseSymbolUsage>& class_usages = class_usage_table(symbol_tables);
@@ -215,12 +368,30 @@ std::string pipeline_report_to_json(
     out << "  \"total_elapsed_ms\": " << report.total_elapsed_ms << ",\n";
     out << "  \"peak_estimated_bytes\": " << report.peak_estimated_bytes << ",\n";
     out << "  \"graph_consistent\": " << (report.graph_consistent ? "true" : "false") << ",\n";
+    out << "  \"paired_file_view\": [\n";
+    for (size_t i = 0; i < hash_links.paired_file_view.size(); ++i)
+    {
+        const FilePairedTreeView& view = hash_links.paired_file_view[i];
+        out << "    {\n";
+        out << "      \"file_basename\": \"" << json_escape(view.file_basename) << "\",\n";
+        out << "      \"file_path\": \"" << json_escape(view.file_path) << "\",\n";
+        out << "      \"actual_root_kind\": \"" << json_escape(view.actual_root_kind) << "\",\n";
+        out << "      \"virtual_root_kind\": \"" << json_escape(view.virtual_root_kind) << "\"\n";
+        out << "    }";
+        if (i + 1 < hash_links.paired_file_view.size())
+        {
+            out << ",";
+        }
+        out << "\n";
+    }
+    out << "  ],\n";
     out << "  \"class_registry\": [\n";
 
     const std::vector<ParseSymbol>& class_symbols = class_symbol_table(symbol_tables);
     for (size_t i = 0; i < class_symbols.size(); ++i)
     {
         const ParseSymbol& s = class_symbols[i];
+        const ClassHashLink* class_link = i < hash_links.class_links.size() ? &hash_links.class_links[i] : nullptr;
 
         bool transform_applied = false;
         std::vector<std::string> transform_reason;
@@ -264,6 +435,32 @@ std::string pipeline_report_to_json(
             out << "\"" << json_escape(transform_reason[reason_i]) << "\"";
         }
         out << "],\n";
+        out << "      \"actual_link_status\": \""
+            << json_escape(class_link == nullptr ? "unresolved" : class_link->actual_link_status) << "\",\n";
+        out << "      \"virtual_link_status\": \""
+            << json_escape(class_link == nullptr ? "unresolved" : class_link->virtual_link_status) << "\",\n";
+        out << "      \"link_status\": \""
+            << json_escape(class_link == nullptr ? "unresolved" : class_link->link_status) << "\",\n";
+        out << "      \"actual_tree_links\": ";
+        if (class_link != nullptr)
+        {
+            append_json_node_refs(out, class_link->actual_nodes);
+        }
+        else
+        {
+            out << "[]";
+        }
+        out << ",\n";
+        out << "      \"virtual_tree_links\": ";
+        if (class_link != nullptr)
+        {
+            append_json_node_refs(out, class_link->virtual_nodes);
+        }
+        else
+        {
+            out << "[]";
+        }
+        out << ",\n";
         out << "      \"definition_node_index\": " << s.definition_node_index << "\n";
         out << "    }";
         if (i + 1 < class_symbols.size())
@@ -304,6 +501,7 @@ std::string pipeline_report_to_json(
     for (size_t i = 0; i < line_hash_traces.size(); ++i)
     {
         const LineHashTrace& t = line_hash_traces[i];
+        const UsageHashLink* usage_link = i < hash_links.usage_links.size() ? &hash_links.usage_links[i] : nullptr;
         out << "    {\n";
         out << "      \"file_path\": \"" << json_escape(t.file_path) << "\",\n";
         out << "      \"line_number\": " << t.line_number << ",\n";
@@ -313,9 +511,56 @@ std::string pipeline_report_to_json(
         out << "      \"hit_token_index\": " << t.hit_token_index << ",\n";
         out << "      \"outgoing_hash\": " << t.outgoing_hash << ",\n";
         out << "      \"dirty_token_count\": " << t.dirty_token_count << ",\n";
+        out << "      \"hash_chain\": ";
+        append_json_number_array(out, t.hash_chain);
+        out << ",\n";
         out << "      \"refactor_candidate_class\": "
             << (candidate_class_names.find(t.class_name) != candidate_class_names.end() ? "true" : "false") << ",\n";
-        out << "      \"hash_collision\": " << (t.hash_collision ? "true" : "false") << "\n";
+        out << "      \"hash_collision\": " << (t.hash_collision ? "true" : "false") << ",\n";
+        out << "      \"class_link_status\": \""
+            << json_escape(usage_link == nullptr ? "unresolved" : usage_link->class_link_status) << "\",\n";
+        out << "      \"class_anchor_actual_tree_links\": ";
+        if (usage_link != nullptr)
+        {
+            append_json_node_refs(out, usage_link->class_anchor_actual_nodes);
+        }
+        else
+        {
+            out << "[]";
+        }
+        out << ",\n";
+        out << "      \"class_anchor_virtual_tree_links\": ";
+        if (usage_link != nullptr)
+        {
+            append_json_node_refs(out, usage_link->class_anchor_virtual_nodes);
+        }
+        else
+        {
+            out << "[]";
+        }
+        out << ",\n";
+        out << "      \"usage_link_status\": \""
+            << json_escape(usage_link == nullptr ? "unresolved" : usage_link->usage_link_status) << "\",\n";
+        out << "      \"usage_actual_tree_links\": ";
+        if (usage_link != nullptr)
+        {
+            append_json_node_refs(out, usage_link->usage_actual_nodes);
+        }
+        else
+        {
+            out << "[]";
+        }
+        out << ",\n";
+        out << "      \"usage_virtual_tree_links\": ";
+        if (usage_link != nullptr)
+        {
+            append_json_node_refs(out, usage_link->usage_virtual_nodes);
+        }
+        else
+        {
+            out << "[]";
+        }
+        out << "\n";
         out << "    }";
         if (i + 1 < line_hash_traces.size())
         {
