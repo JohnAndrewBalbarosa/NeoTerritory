@@ -5,6 +5,7 @@
 #include "creational_broken_tree.hpp"
 #include "parse_tree.hpp"
 #include "parse_tree_code_generator.hpp"
+#include "parse_tree_hash_links.hpp"
 #include "parse_tree_symbols.hpp"
 #include "source_reader.hpp"
 
@@ -36,6 +37,7 @@ struct PipelineArtifacts
     ParseTreeNode behavioural_tree;
     CreationalTreeNode creational_tree;
     ParseTreeNode virtual_tree;
+    HashLinkIndex hash_links;
     std::vector<LineHashTrace> line_hash_traces;
     std::vector<CrucialClassInfo> crucial_classes;
     ParseTreeSymbolTables symbol_tables;
@@ -53,6 +55,7 @@ std::string pipeline_report_to_json(
     const PipelineReport& report,
     const ParseTreeSymbolTables& symbol_tables,
     const std::vector<LineHashTrace>& line_hash_traces,
+    const HashLinkIndex& hash_links,
     const std::vector<TransformDecision>& transform_decisions = {});
 
 #endif // ALGORITHM_PIPELINE_HPP
