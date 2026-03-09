@@ -106,7 +106,8 @@ void collect_line_hash_trace(
         return;
     }
 
-    size_t current_hash = hash_combine_token(scope_hash, std::to_string(class_hash));
+    const size_t scoped_class_usage_hash = hash_combine_token(scope_hash, std::to_string(class_hash));
+    size_t current_hash = scoped_class_usage_hash;
     std::vector<size_t> chain;
 
     for (size_t i = hit_token_index; i > 0; --i)
@@ -126,9 +127,14 @@ void collect_line_hash_trace(
     trace.class_name = line_tokens[hit_token_index];
     trace.class_name_hash = class_hash;
     trace.matched_class_contextual_hash = matched_class_context_hash;
+    trace.scope_hash = scope_hash;
+    trace.scoped_class_usage_hash = scoped_class_usage_hash;
     trace.hit_token_index = hit_token_index;
     trace.outgoing_hash = current_hash;
     trace.hash_collision = hash_collision;
+    trace.intentional_scope_collision =
+        matched_class_context_hash != 0 &&
+        hash_class_name_with_file(file_path, trace.class_name) == matched_class_context_hash;
     trace.dirty_token_count = line_tokens.size();
     trace.hash_chain = std::move(chain);
     line_hash_traces.push_back(std::move(trace));

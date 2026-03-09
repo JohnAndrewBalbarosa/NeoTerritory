@@ -14,6 +14,81 @@ namespace
 {
 using Clock = std::chrono::steady_clock;
 
+bool file_has_bucket_kind(const ParseTreeNode& file_node, const std::string& bucket_kind)
+{
+    for (const ParseTreeNode& child : file_node.children)
+    {
+        if (child.kind == bucket_kind)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+bool validate_file_pairing(
+    const ParseTreeNode& actual_root,
+    const ParseTreeNode& virtual_root,
+    std::vector<std::string>& failures)
+{
+    if (actual_root.children.size() != virtual_root.children.size())
+    {
+        failures.push_back("actual_virtual_file_count_mismatch");
+        return false;
+    }
+
+    bool valid = true;
+    for (size_t i = 0; i < actual_root.children.size(); ++i)
+    {
+        const ParseTreeNode& actual_file = actual_root.children[i];
+        const ParseTreeNode& virtual_file = virtual_root.children[i];
+        if (actual_file.kind != "FileUnit" || virtual_file.kind != "FileUnit")
+        {
+            failures.push_back("file_unit_kind_missing_at_index_" + std::to_string(i));
+            valid = false;
+            continue;
+        }
+        if (actual_file.value != virtual_file.value)
+        {
+            failures.push_back("file_unit_path_mismatch_at_index_" + std::to_string(i));
+            valid = false;
+        }
+    }
+
+    return valid;
+}
+
+bool validate_bucketized_files(const ParseTreeNode& root, std::vector<std::string>& failures)
+{
+    bool valid = true;
+    for (size_t i = 0; i < root.children.size(); ++i)
+    {
+        const ParseTreeNode& file_node = root.children[i];
+        if (file_node.kind != "FileUnit")
+        {
+            continue;
+        }
+
+        bool has_unbucketized_class_decl = false;
+        for (const ParseTreeNode& child : file_node.children)
+        {
+            if (child.kind == "ClassDecl" || child.kind == "StructDecl")
+            {
+                has_unbucketized_class_decl = true;
+                break;
+            }
+        }
+
+        const bool has_class_bucket = file_has_bucket_kind(file_node, "ClassDeclarations");
+        if (has_unbucketized_class_decl && !has_class_bucket)
+        {
+            failures.push_back("bucketized_structure_missing_for_file_" + std::to_string(i));
+            valid = false;
+        }
+    }
+    return valid;
+}
+
 size_t estimate_parse_tree_bytes(const ParseTreeNode& node)
 {
     size_t total = sizeof(ParseTreeNode) + node.kind.size() + node.value.size();
@@ -239,6 +314,13 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     artifacts.report.input_file_count = input_file_count;
     artifacts.report.total_elapsed_ms = 0.0;
     artifacts.report.peak_estimated_bytes = 0;
+    artifacts.report.expected_file_pair_count = source_files.size();
+    artifacts.report.paired_file_count = 0;
+    artifacts.report.invariant_failure_count = 0;
+    artifacts.report.dirty_trace_count = 0;
+    artifacts.report.intentional_collision_total = 0;
+    artifacts.report.intentional_collision_validated = 0;
+    artifacts.report.invariant_failures.clear();
     artifacts.report.graph_consistent = false;
 
     const Clock::time_point pipeline_begin = Clock::now();
@@ -301,6 +383,21 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
             artifacts.symbol_tables,
             artifacts.line_hash_traces);
 
+        artifacts.report.dirty_trace_count = artifacts.line_hash_traces.size();
+        artifacts.report.paired_file_count = artifacts.hash_links.paired_file_view.size();
+        size_t intentional_total = 0;
+        size_t intentional_validated = 0;
+        for (const LineHashTrace& trace : artifacts.line_hash_traces)
+        {
+            ++intentional_total;
+            if (trace.intentional_scope_collision)
+            {
+                ++intentional_validated;
+            }
+        }
+        artifacts.report.intentional_collision_total = intentional_total;
+        artifacts.report.intentional_collision_validated = intentional_validated;
+
         return estimate_symbol_table_bytes(artifacts.symbol_tables) +
                estimate_hash_links_bytes(artifacts.hash_links);
     });
@@ -319,10 +416,35 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
 
     // 7) Validate consistency
     run_stage("ValidateGraphConsistency", [&]() {
+        std::vector<std::string> failures;
+        const bool pairing_valid = validate_file_pairing(
+            artifacts.base_tree,
+            artifacts.virtual_tree,
+            failures);
+        const bool base_bucketized = validate_bucketized_files(artifacts.base_tree, failures);
+        const bool virtual_bucketized = validate_bucketized_files(artifacts.virtual_tree, failures);
+
+        if (artifacts.report.paired_file_count != artifacts.report.expected_file_pair_count)
+        {
+            failures.push_back("paired_file_count_does_not_match_input_file_count");
+        }
+        if (artifacts.report.intentional_collision_total > 0 &&
+            artifacts.report.intentional_collision_validated == 0)
+        {
+            failures.push_back("intentional_scope_collision_validation_failed");
+        }
+
+        artifacts.report.invariant_failures = std::move(failures);
+        artifacts.report.invariant_failure_count = artifacts.report.invariant_failures.size();
+
         artifacts.report.graph_consistent =
             !artifacts.base_tree.kind.empty() &&
             !artifacts.virtual_tree.kind.empty() &&
-            (!artifacts.monolithic_representation.empty());
+            (!artifacts.monolithic_representation.empty()) &&
+            pairing_valid &&
+            base_bucketized &&
+            virtual_bucketized &&
+            artifacts.report.invariant_failure_count == 0;
         return estimate_parse_tree_bytes(artifacts.base_tree);
     });
 
@@ -379,7 +501,16 @@ std::string pipeline_report_to_json(
     out << "  \"input_file_count\": " << report.input_file_count << ",\n";
     out << "  \"total_elapsed_ms\": " << report.total_elapsed_ms << ",\n";
     out << "  \"peak_estimated_bytes\": " << report.peak_estimated_bytes << ",\n";
+    out << "  \"expected_file_pair_count\": " << report.expected_file_pair_count << ",\n";
+    out << "  \"paired_file_count\": " << report.paired_file_count << ",\n";
+    out << "  \"invariant_failure_count\": " << report.invariant_failure_count << ",\n";
+    out << "  \"dirty_trace_count\": " << report.dirty_trace_count << ",\n";
+    out << "  \"intentional_collision_total\": " << report.intentional_collision_total << ",\n";
+    out << "  \"intentional_collision_validated\": " << report.intentional_collision_validated << ",\n";
     out << "  \"graph_consistent\": " << (report.graph_consistent ? "true" : "false") << ",\n";
+    out << "  \"invariant_failures\": ";
+    append_json_string_array(out, report.invariant_failures);
+    out << ",\n";
     out << "  \"paired_file_view\": [\n";
     for (size_t i = 0; i < hash_links.paired_file_view.size(); ++i)
     {
@@ -538,6 +669,8 @@ std::string pipeline_report_to_json(
         out << "      \"class_name\": \"" << json_escape(t.class_name) << "\",\n";
         out << "      \"class_name_hash\": " << t.class_name_hash << ",\n";
         out << "      \"matched_class_contextual_hash\": " << t.matched_class_contextual_hash << ",\n";
+        out << "      \"scope_hash\": " << t.scope_hash << ",\n";
+        out << "      \"scoped_class_usage_hash\": " << t.scoped_class_usage_hash << ",\n";
         out << "      \"hit_token_index\": " << t.hit_token_index << ",\n";
         out << "      \"outgoing_hash\": " << t.outgoing_hash << ",\n";
         out << "      \"dirty_token_count\": " << t.dirty_token_count << ",\n";
@@ -547,6 +680,8 @@ std::string pipeline_report_to_json(
         out << "      \"refactor_candidate_class\": "
             << (candidate_class_names.find(t.class_name) != candidate_class_names.end() ? "true" : "false") << ",\n";
         out << "      \"hash_collision\": " << (t.hash_collision ? "true" : "false") << ",\n";
+        out << "      \"intentional_scope_collision\": "
+            << (t.intentional_scope_collision ? "true" : "false") << ",\n";
         out << "      \"class_link_status\": \""
             << json_escape(usage_link == nullptr ? "unresolved" : usage_link->class_link_status) << "\",\n";
         out << "      \"class_anchor_actual_tree_links\": ";

@@ -24,12 +24,15 @@ struct LineHashTrace
     std::string file_path;
     size_t line_number;
     std::string class_name;
-    size_t class_name_hash;
-    size_t matched_class_contextual_hash;
-    size_t hit_token_index;
-    size_t outgoing_hash;
-    size_t dirty_token_count;
-    bool hash_collision;
+    size_t class_name_hash = 0;
+    size_t matched_class_contextual_hash = 0;
+    size_t scope_hash = 0;
+    size_t scoped_class_usage_hash = 0;
+    size_t hit_token_index = 0;
+    size_t outgoing_hash = 0;
+    size_t dirty_token_count = 0;
+    bool hash_collision = false;
+    bool intentional_scope_collision = false;
     std::vector<size_t> hash_chain;
 };
 

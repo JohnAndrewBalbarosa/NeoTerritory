@@ -54,7 +54,10 @@ struct UsageHashLink
     std::string class_name;
     size_t class_name_hash = 0;
     size_t matched_class_contextual_hash = 0;
+    size_t scope_hash = 0;
+    size_t scoped_class_usage_hash = 0;
     size_t outgoing_hash = 0;
+    bool intentional_scope_collision = false;
     std::vector<size_t> hash_chain;
     std::string class_link_status;
     std::vector<NodeRef> class_anchor_actual_nodes;

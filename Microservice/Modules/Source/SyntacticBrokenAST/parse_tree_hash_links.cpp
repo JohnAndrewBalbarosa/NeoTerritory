@@ -85,7 +85,10 @@ HashLinkIndex build_parse_tree_hash_links(
         usage_link.class_name = trace.class_name;
         usage_link.class_name_hash = trace.class_name_hash;
         usage_link.matched_class_contextual_hash = trace.matched_class_contextual_hash;
+        usage_link.scope_hash = trace.scope_hash;
+        usage_link.scoped_class_usage_hash = trace.scoped_class_usage_hash;
         usage_link.outgoing_hash = trace.outgoing_hash;
+        usage_link.intentional_scope_collision = trace.intentional_scope_collision;
         usage_link.hash_chain = trace.hash_chain;
 
         const std::vector<size_t> class_candidates_actual = parse_tree_hash_links_internal::lookup_class_candidates(actual, trace.class_name_hash);
