@@ -320,6 +320,8 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     artifacts.report.dirty_trace_count = 0;
     artifacts.report.intentional_collision_total = 0;
     artifacts.report.intentional_collision_validated = 0;
+    artifacts.report.virtual_nodes_kept = 0;
+    artifacts.report.virtual_nodes_pruned = 0;
     artifacts.report.invariant_failures.clear();
     artifacts.report.graph_consistent = false;
 
@@ -350,6 +352,8 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
         artifacts.line_hash_traces = trees.line_hash_traces;
         artifacts.factory_invocation_traces = trees.factory_invocation_traces;
         artifacts.crucial_classes = trees.crucial_classes;
+        artifacts.report.virtual_nodes_kept = trees.virtual_nodes_kept;
+        artifacts.report.virtual_nodes_pruned = trees.virtual_nodes_pruned;
         return estimate_parse_tree_bytes(artifacts.base_tree) +
                estimate_parse_tree_bytes(artifacts.virtual_tree);
     });
@@ -507,6 +511,8 @@ std::string pipeline_report_to_json(
     out << "  \"dirty_trace_count\": " << report.dirty_trace_count << ",\n";
     out << "  \"intentional_collision_total\": " << report.intentional_collision_total << ",\n";
     out << "  \"intentional_collision_validated\": " << report.intentional_collision_validated << ",\n";
+    out << "  \"virtual_nodes_kept\": " << report.virtual_nodes_kept << ",\n";
+    out << "  \"virtual_nodes_pruned\": " << report.virtual_nodes_pruned << ",\n";
     out << "  \"graph_consistent\": " << (report.graph_consistent ? "true" : "false") << ",\n";
     out << "  \"invariant_failures\": ";
     append_json_string_array(out, report.invariant_failures);

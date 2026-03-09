@@ -34,6 +34,8 @@ struct PipelineReport
     size_t dirty_trace_count;
     size_t intentional_collision_total;
     size_t intentional_collision_validated;
+    size_t virtual_nodes_kept;
+    size_t virtual_nodes_pruned;
     bool graph_consistent;
     std::vector<std::string> invariant_failures;
 };

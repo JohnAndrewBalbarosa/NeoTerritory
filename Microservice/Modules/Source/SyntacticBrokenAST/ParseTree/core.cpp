@@ -132,6 +132,31 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
         }
     }
 
+    std::unordered_map<std::string, std::unordered_set<size_t>> relevant_usage_hashes_by_file;
+    for (const LineHashTrace& trace : bundle.line_hash_traces)
+    {
+        if (tracked_class_names.find(trace.class_name) == tracked_class_names.end())
+        {
+            continue;
+        }
+
+        if (!trace.intentional_scope_collision && trace.hash_collision)
+        {
+            continue;
+        }
+
+        std::unordered_set<size_t>& hashes = relevant_usage_hashes_by_file[trace.file_path];
+        hashes.insert(trace.scoped_class_usage_hash);
+        hashes.insert(trace.outgoing_hash);
+        for (size_t h : trace.hash_chain)
+        {
+            hashes.insert(h);
+        }
+    }
+
+    bundle.virtual_nodes_kept = 0;
+    bundle.virtual_nodes_pruned = 0;
+
     for (size_t i = 0; i < bundle.main_tree.children.size() && i < bundle.shadow_tree.children.size(); ++i)
     {
         ParseTreeNode& shadow_file = bundle.shadow_tree.children[i];
@@ -140,10 +165,16 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
         for (const ParseTreeNode& child : bundle.main_tree.children[i].children)
         {
             ParseTreeNode filtered;
+            const auto usage_hashes_hit = relevant_usage_hashes_by_file.find(bundle.main_tree.children[i].value);
+            const std::unordered_set<size_t>* relevant_usage_hashes =
+                usage_hashes_hit == relevant_usage_hashes_by_file.end() ? nullptr : &usage_hashes_hit->second;
             if (parse_tree_internal::append_shadow_subtree_if_relevant(
                     child,
                     tracked_class_names,
                     tracked_function_names,
+                    relevant_usage_hashes,
+                    &bundle.virtual_nodes_kept,
+                    &bundle.virtual_nodes_pruned,
                     filtered))
             {
                 shadow_file.children.push_back(std::move(filtered));
