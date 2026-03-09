@@ -28,7 +28,14 @@ struct PipelineReport
     size_t input_file_count;
     double total_elapsed_ms;
     size_t peak_estimated_bytes;
+    size_t expected_file_pair_count;
+    size_t paired_file_count;
+    size_t invariant_failure_count;
+    size_t dirty_trace_count;
+    size_t intentional_collision_total;
+    size_t intentional_collision_validated;
     bool graph_consistent;
+    std::vector<std::string> invariant_failures;
 };
 
 struct PipelineArtifacts
