@@ -1,0 +1,6 @@
+# .gitignore
+node_modules/
+.env
+uploads/
+outputs/
+src/db/database.sqlite
