@@ -1,5 +1,10 @@
 # AST Pipeline Step Map
 
+## Related Documents
+
+- See `Algorithm_Plan.md` for planning scope, milestones, and acceptance criteria.
+- See `Algorithm_Implementation.md` for deterministic execution details and runtime behavior.
+
 ## Scope
 
 This map documents the implemented pipeline behavior and ownership boundaries.
