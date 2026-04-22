@@ -30,8 +30,8 @@ This script implements one piece of the frontend interaction model. It runs insi
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Run escapeHtml()]
-    N1[Run renderCode() to validate conditions and branch on failures and update DOM state]
+    N0[Run renderCode() to validate conditions and branch on failures and update DOM state]
+    N1[Run escapeHtml()]
     End([End])
     Start --> N0
     N0 --> N1

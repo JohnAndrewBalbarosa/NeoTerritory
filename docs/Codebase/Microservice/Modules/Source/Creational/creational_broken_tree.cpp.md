@@ -40,9 +40,9 @@ This source file implements creational-pattern analysis over the generic parse t
 flowchart TD
     Start([Start])
     N0[Execute build creational broken tree to assemble tree or artifact structures]
-    N1[Execute creational tree to parse tree node to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N1[Execute creational tree to text to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
     N2[Execute creational tree to html to parse or tokenize input text and render text or HTML views]
-    N3[Execute creational tree to text to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
+    N3[Execute creational tree to parse tree node to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
     End([End])
     Start --> N0
     N0 --> N1

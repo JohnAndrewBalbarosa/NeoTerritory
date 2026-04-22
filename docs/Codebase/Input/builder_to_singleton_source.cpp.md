@@ -24,10 +24,10 @@ This file implements a sample input scenario rather than part of the runtime eng
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute set name]
-    N1[Execute set limit]
-    N2[Execute build]
-    N3[Execute main]
+    N0[Execute main]
+    N1[Execute build]
+    N2[Execute set limit]
+    N3[Execute set name]
     End([End])
     Start --> N0
     N0 --> N1

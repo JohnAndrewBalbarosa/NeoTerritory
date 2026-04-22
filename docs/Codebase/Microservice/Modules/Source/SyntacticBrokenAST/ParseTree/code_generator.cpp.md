@@ -23,9 +23,9 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute get last transform decisions]
+    N0[Execute generate target code from source to render text or HTML views]
     N1[Execute generate base code from source to generate code or evidence output]
-    N2[Execute generate target code from source to render text or HTML views]
+    N2[Execute get last transform decisions]
     End([End])
     Start --> N0
     N0 --> N1

@@ -33,20 +33,18 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute match instance declaration for class to branch on runtime conditions]
-    N1[Execute match simple variable declaration to branch on runtime conditions]
-    N2[Execute parse allocation expression to branch on runtime conditions]
-    N3[Execute is auto declaration type]
-    N4[Execute rewrite declaration type to branch on runtime conditions]
-    N5[Execute resolve variable declaration site to iterate over the active collection and branch on runtime conditions]
+    N0[Execute parse factory callsite line to branch on runtime conditions]
+    N1[Execute parse allocation expression to branch on runtime conditions]
+    N2[Execute resolve variable declaration site to iterate over the active collection and branch on runtime conditions]
+    N3[Execute rewrite declaration type to branch on runtime conditions]
+    N4[Execute remove unused factory instance declaration to iterate over the active collection and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

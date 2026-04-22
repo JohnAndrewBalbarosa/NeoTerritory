@@ -41,20 +41,18 @@ This application-layer source file implements the runtime story that wraps the c
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute supported extensions text]
-    N1[Execute print error diagnostics to iterate over the active collection and branch on runtime conditions]
-    N2[Execute get executable dir to inspect or prepare filesystem paths and branch on runtime conditions]
-    N3[Execute ensure directory to inspect or prepare filesystem paths]
-    N4[Execute has supported extension]
-    N5[Execute discover input files to inspect or prepare filesystem paths, assemble tree or artifact structures, and iterate over the active collection]
+    N0[Execute run syntactic broken ast to write generated artifacts, parse or tokenize input text, and compute hash metadata]
+    N1[Execute write tree outputs to write generated artifacts, parse or tokenize input text, and render text or HTML views]
+    N2[Execute write text file to write generated artifacts, inspect or prepare filesystem paths, and branch on runtime conditions]
+    N3[Execute resolve runtime layout]
+    N4[Execute print symbol diagnostics to compute hash metadata and iterate over the active collection]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

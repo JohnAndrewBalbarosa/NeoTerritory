@@ -26,11 +26,11 @@ This file implements a sample input scenario rather than part of the runtime eng
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute set name]
-    N1[Execute name]
-    N2[Execute set plate]
+    N0[Execute assign]
+    N1[Execute set plate]
+    N2[Execute set name]
     N3[Execute plate]
-    N4[Execute assign]
+    N4[Execute name]
     End([End])
     Start --> N0
     N0 --> N1

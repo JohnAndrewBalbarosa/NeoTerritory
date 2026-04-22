@@ -26,9 +26,9 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute build source evidence present lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute build target evidence removed lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute build target evidence added lines to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
+    N0[Execute build target evidence added lines to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
+    N1[Execute build source evidence present lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N2[Execute build target evidence removed lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
     N3[Execute append evidence section to iterate over the active collection and branch on runtime conditions]
     N4[Execute append code section to iterate over the active collection]
     End([End])

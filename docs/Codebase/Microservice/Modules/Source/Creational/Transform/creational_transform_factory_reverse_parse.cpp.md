@@ -26,8 +26,8 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute parse create mapping from class body]
-    N1[Execute collect factory classes to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N0[Execute collect factory classes to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N1[Execute parse create mapping from class body]
     End([End])
     Start --> N0
     N0 --> N1

@@ -32,20 +32,18 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute symbol table builder]
-    N1[Execute add class symbol to assemble tree or artifact structures, compute hash metadata, and branch on runtime conditions]
-    N2[Execute add function symbol to assemble tree or artifact structures, compute hash metadata, and branch on runtime conditions]
-    N3[Execute collect symbols dfs to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
-    N4[Execute collect class usages dfs to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
-    N5[Execute build symbol tables with builder]
+    N0[Execute collect symbols dfs to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N1[Execute collect class usages dfs to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N2[Execute build symbol tables with builder]
+    N3[Execute symbol table builder]
+    N4[Execute add function symbol to assemble tree or artifact structures, compute hash metadata, and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

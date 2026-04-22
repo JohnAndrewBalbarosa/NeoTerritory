@@ -28,20 +28,18 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute tokenize text to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute join tokens to serialize report content, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute split lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute if to assemble tree or artifact structures]
+    N0[Execute include target from line to parse or tokenize input text, iterate over the active collection, and branch on runtime conditions]
+    N1[Execute split lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N2[Execute tokenize text to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N3[Execute join tokens to serialize report content, iterate over the active collection, and branch on runtime conditions]
     N4[Execute file basename to branch on runtime conditions]
-    N5[Execute include target from line to parse or tokenize input text, iterate over the active collection, and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

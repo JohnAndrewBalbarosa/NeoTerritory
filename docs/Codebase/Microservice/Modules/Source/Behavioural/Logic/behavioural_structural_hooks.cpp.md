@@ -23,8 +23,8 @@ This source file implements behavioural-pattern scaffolding or checks on top of 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute lower ascii to iterate over the active collection]
-    N1[Execute resolve behavioural structural keywords to branch on runtime conditions]
+    N0[Execute resolve behavioural structural keywords to branch on runtime conditions]
+    N1[Execute lower ascii to iterate over the active collection]
     End([End])
     Start --> N0
     N0 --> N1

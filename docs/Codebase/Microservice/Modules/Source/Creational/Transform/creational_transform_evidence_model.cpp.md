@@ -29,9 +29,9 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute ensure class view to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute method name from chain call to branch on runtime conditions]
-    N2[Execute build class views to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N0[Execute build class views to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N1[Execute ensure class view to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N2[Execute method name from chain call to branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1

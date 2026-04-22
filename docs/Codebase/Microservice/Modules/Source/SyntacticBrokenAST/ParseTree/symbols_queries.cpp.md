@@ -30,20 +30,18 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute class symbol table]
-    N1[Execute function symbol table]
-    N2[Execute class usage table]
-    N3[Execute find class by name to iterate over the active collection and branch on runtime conditions]
-    N4[Execute find class by hash to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
-    N5[Execute find function by name to iterate over the active collection and branch on runtime conditions]
+    N0[Execute find class by hash to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
+    N1[Execute return targets known class to parse or tokenize input text and branch on runtime conditions]
+    N2[Execute find functions by name to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N3[Execute find class usages by name to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N4[Execute find function by key to iterate over the active collection and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

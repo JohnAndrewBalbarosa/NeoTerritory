@@ -1,43 +1,46 @@
 ﻿# Codebase Mirror
 
-This directory mirrors the current NeoTerritory source tree with one markdown file per source or configuration artifact. Each generated document keeps the source filename and appends .md.
-
+- Folder: docs/Codebase
+- Descendant source docs: 147
 - Generated on: 2026-04-22
-- Documented files: 152
-- Story doc: ../CODEBASE_STORY.md
 
-## Top-Level Coverage
-- Backend : 14 files
-- Frontend : 15 files
-- Infrastructure : 7 files
-- Input : 5 files
-- Microservice : 104 files
-- RepositoryRoot : 7 files
+## Logic Summary
+Top-level logical view of the generated codebase mirror. It groups the repository into runtime entrypoints, frontend prototype code, backend service code, infrastructure automation, sample inputs, and the C++ microservice core.
 
-## Root-Level File Docs
-- ./CMakeLists.txt.md
-- ./CMakeSettings.json.md
-- ./CppProperties.json.md
-- ./Notes.md
-- ./setup.ps1.md
-- ./setup.sh.md
-- ./test.sh.md
+## Child Folders By Logic
+### Backend Service
+- Backend/ : Backend service surface. This area groups the Express entrypoint, package metadata, and the HTTP runtime internals under src.
 
-## Generation Note
-- The generated mirror is intentionally structural and navigational.
-- The higher-level chronology, architecture story, and Mermaid diagrams live in docs/CODEBASE_STORY.md.
+### Frontend Prototype
+- Frontend/ : Frontend prototype shell. This area groups the browser entrypoint with route fragments, scripts, and styles.
 
-## Implementation Story
-This generated directory is the per-file narrative layer for the repository. The generation process walks the source and configuration tree, creates a markdown twin for each supported artifact, summarizes its role and chronology, and now adds a short implementation story plus a Mermaid activity diagram so each file can be read as part of a flow instead of as an isolated path.
+### Infrastructure Automation
+- Infrastructure/ : Infrastructure automation and runtime environment assembly for local containerized execution.
 
-## Activity Diagram
-```mermaid
-flowchart TD
-    Start([Start]) --> Scan[Scan the repository for supported files]
-    Scan --> Summarize[Extract symbols, dependencies, role, and chronology]
-    Summarize --> Story[Write the implementation story section]
-    Story --> Diagram[Write the Mermaid activity diagram section]
-    Diagram --> Save[Save one markdown twin per artifact]
-    Save --> End([End])
-```
+### Microservice Core
+- Microservice/ : C++ executable and module tree that implement the parser, detector, transform, rendering, and report pipeline.
+
+### Sample Inputs
+- Input/ : Top-level sample source files used as manual or research-oriented inputs for the microservice.
+
+## Documents By Logic
+### Bootstrap Scripts
+- setup.ps1.md : Windows bootstrap wrapper that ensures elevation and delegates to infrastructure automation.
+- setup.sh.md : Shell bootstrap entrypoint for non-Windows setup flows.
+
+### Build System
+- CMakeLists.txt.md : Builds the NeoTerritory executable from the microservice layer and module sources.
+- CMakeSettings.json.md : Stores IDE-oriented CMake configuration defaults.
+
+### Editor Configuration
+- CppProperties.json.md : Provides editor include-path and IntelliSense settings.
+
+### Project Notes
+- Notes.md : Keeps loose repository-level notes outside the formal docs set.
+
+### Validation Scripts
+- test.sh.md : Shell helper for local compile or execution checks.
+
+## Reading Hint
+- Read the local file docs first for concrete behavior, then descend into the child folders for narrower subsystem details.
 

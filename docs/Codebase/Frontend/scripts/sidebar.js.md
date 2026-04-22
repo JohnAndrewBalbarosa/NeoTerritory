@@ -31,19 +31,17 @@ This file implements navigation chrome behavior around the SPA shell. It wires s
 flowchart TD
     Start([Start])
     N0[Run initSidebar() to validate conditions and branch on failures, update DOM state, and bind browser event listeners]
-    N1[Run openSidebar()]
+    N1[Run toggleSidebar() to validate conditions and branch on failures]
     N2[Run closeSidebar()]
-    N3[Run toggleSidebar() to validate conditions and branch on failures]
+    N3[Run openSidebar()]
     N4[Run applyTheme() to update DOM state]
-    N5[Run handleResize() to validate conditions and branch on failures]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

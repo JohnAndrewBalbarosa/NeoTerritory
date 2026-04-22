@@ -25,8 +25,8 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute brace delta to iterate over the active collection and branch on runtime conditions]
-    N1[Execute retain single main function]
+    N0[Execute retain single main function]
+    N1[Execute brace delta to iterate over the active collection and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1

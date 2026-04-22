@@ -35,20 +35,18 @@ This source file implements creational-pattern analysis over the generic parse t
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute trim to iterate over the active collection]
-    N1[Execute split words to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute if to assemble tree or artifact structures]
-    N3[Execute lower]
-    N4[Execute starts with]
-    N5[Execute is class block to branch on runtime conditions]
+    N0[Execute build builder pattern tree to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N1[Execute check builder pattern structure to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N2[Execute has builder assignments to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N3[Execute starts with]
+    N4[Execute is function block to branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

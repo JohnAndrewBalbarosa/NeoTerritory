@@ -31,8 +31,8 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute collect if branch mapping to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
-    N1[Execute collect switch branch mapping to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N0[Execute collect switch branch mapping to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N1[Execute collect if branch mapping to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
     N2[Execute collect top level default return to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
     End([End])
     Start --> N0
