@@ -30,8 +30,8 @@ flowchart TD
     Start([Start])
     N0[Execute collect side nodes to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
     N1[Execute build node refs to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute lookup class candidates to compute hash metadata and branch on runtime conditions]
-    N3[Execute lookup usage candidates to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
+    N2[Execute lookup usage candidates to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
+    N3[Execute lookup class candidates to compute hash metadata and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1

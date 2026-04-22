@@ -33,8 +33,8 @@ This controller implements the authentication story of the backend. It receives 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Run register() to validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials]
-    N1[Run login() to validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials]
+    N0[Run login() to validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials]
+    N1[Run register() to validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials]
     End([End])
     Start --> N0
     N0 --> N1

@@ -27,8 +27,8 @@ This utility file implements small backend helpers that keep request handlers an
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Run sanitizeFilename()]
-    N1[Run uniqueFilename() to move or write filesystem artifacts]
+    N0[Run uniqueFilename() to move or write filesystem artifacts]
+    N1[Run sanitizeFilename()]
     End([End])
     Start --> N0
     N0 --> N1

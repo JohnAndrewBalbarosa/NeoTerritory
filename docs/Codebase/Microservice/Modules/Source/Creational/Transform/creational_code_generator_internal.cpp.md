@@ -38,20 +38,18 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute lower]
-    N1[Execute trim to iterate over the active collection]
-    N2[Execute split words to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute if to assemble tree or artifact structures]
-    N4[Execute starts with]
-    N5[Execute find matching brace]
+    N0[Execute inject singleton accessor to parse or tokenize input text, assemble tree or artifact structures, and serialize report content]
+    N1[Execute starts with]
+    N2[Execute extract crucial class names to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N3[Execute is function block to branch on runtime conditions]
+    N4[Execute split words to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

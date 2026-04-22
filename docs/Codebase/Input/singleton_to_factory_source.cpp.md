@@ -25,11 +25,11 @@ This file implements a sample input scenario rather than part of the runtime eng
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute instance]
-    N1[Execute set path]
-    N2[Execute enable cache]
-    N3[Execute log]
-    N4[Execute main to serialize report content]
+    N0[Execute main to serialize report content]
+    N1[Execute log]
+    N2[Execute instance]
+    N3[Execute enable cache]
+    N4[Execute set path]
     End([End])
     Start --> N0
     N0 --> N1

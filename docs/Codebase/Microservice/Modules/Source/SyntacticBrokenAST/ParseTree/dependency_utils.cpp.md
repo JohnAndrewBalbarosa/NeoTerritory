@@ -22,8 +22,8 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute collect dependency class nodes to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
-    N1[Execute collect dependency function nodes to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N0[Execute collect dependency function nodes to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N1[Execute collect dependency class nodes to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
     End([End])
     Start --> N0
     N0 --> N1

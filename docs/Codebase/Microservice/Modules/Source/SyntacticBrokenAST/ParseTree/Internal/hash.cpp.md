@@ -33,20 +33,18 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute hash combine token to compute hash metadata]
-    N1[Execute make fnv1a64 hash id to compute hash metadata, serialize report content, and iterate over the active collection]
-    N2[Execute derive child context hash to compute hash metadata]
-    N3[Execute hash class name with file to compute hash metadata]
-    N4[Execute rehash subtree to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
-    N5[Execute add unique hash to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N0[Execute make fnv1a64 hash id to compute hash metadata, serialize report content, and iterate over the active collection]
+    N1[Execute add unique hash to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N2[Execute rehash subtree to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N3[Execute derive child context hash to compute hash metadata]
+    N4[Execute hash combine token to compute hash metadata]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

@@ -26,20 +26,18 @@ This file implements a sample input scenario rather than part of the runtime eng
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute instance]
-    N1[Execute set format]
-    N2[Execute enable timestamp]
-    N3[Execute configure channel]
-    N4[Execute log]
-    N5[Execute main to serialize report content]
+    N0[Execute main to serialize report content]
+    N1[Execute log]
+    N2[Execute instance]
+    N3[Execute enable timestamp]
+    N4[Execute configure channel]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

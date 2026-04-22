@@ -27,20 +27,18 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute is type keyword]
-    N1[Execute detect statement kind to iterate over the active collection and branch on runtime conditions]
+    N0[Execute detect statement kind to iterate over the active collection and branch on runtime conditions]
+    N1[Execute is function signature to parse or tokenize input text, iterate over the active collection, and branch on runtime conditions]
     N2[Execute is class or struct signature to parse or tokenize input text and branch on runtime conditions]
-    N3[Execute is function signature to parse or tokenize input text, iterate over the active collection, and branch on runtime conditions]
-    N4[Execute if]
-    N5[Execute is class declaration node to branch on runtime conditions]
+    N3[Execute is class declaration node to branch on runtime conditions]
+    N4[Execute is type keyword]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

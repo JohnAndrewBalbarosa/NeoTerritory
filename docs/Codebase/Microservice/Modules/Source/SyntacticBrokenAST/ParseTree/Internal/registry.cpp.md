@@ -27,9 +27,9 @@ This source file implements one internal part of the generic parse-tree engine. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute register classes in line to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
-    N1[Execute token hits registered class to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute collect line hash trace to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N0[Execute collect line hash trace to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N1[Execute register classes in line to assemble tree or artifact structures, compute hash metadata, and iterate over the active collection]
+    N2[Execute token hits registered class to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1

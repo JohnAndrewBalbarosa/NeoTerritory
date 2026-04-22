@@ -35,9 +35,9 @@ This file implements the high-level parse-tree assembly loop. It creates the roo
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute build cpp parse tree to parse or tokenize input text and assemble tree or artifact structures]
-    N1[Execute build cpp parse trees to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
-    N2[Execute parse tree to text to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N0[Execute build cpp parse trees to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N1[Execute parse tree to text to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N2[Execute build cpp parse tree to parse or tokenize input text and assemble tree or artifact structures]
     N3[Execute parse tree to html to render text or HTML views]
     End([End])
     Start --> N0

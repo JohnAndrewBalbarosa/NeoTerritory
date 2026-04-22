@@ -30,8 +30,8 @@ This file implements the client-side route transition loop. It reads the current
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Run navigate() to validate conditions and branch on failures, fetch route or page content, and update DOM state]
-    N1[Run initRouter() to bind browser event listeners and change the active route]
+    N0[Run initRouter() to bind browser event listeners and change the active route]
+    N1[Run navigate() to validate conditions and branch on failures, fetch route or page content, and update DOM state]
     End([End])
     Start --> N0
     N0 --> N1

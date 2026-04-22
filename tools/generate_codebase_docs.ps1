@@ -50,6 +50,61 @@ function Get-RepoRelativePath([string]$fullPath)
     return $relative.Replace('\', '/')
 }
 
+function Get-DocRelativePath([string]$sourceRelativePath)
+{
+    switch ($sourceRelativePath)
+    {
+        "Microservice/Modules/Source/SyntacticBrokenAST/algorithm_pipeline.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration/algorithm_pipeline.cpp.md"
+        }
+        "Microservice/Modules/Source/SyntacticBrokenAST/cli_arguments.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/cli_arguments.cpp.md"
+        }
+        "Microservice/Modules/Source/SyntacticBrokenAST/source_reader.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/source_reader.cpp.md"
+        }
+        "Microservice/Modules/Source/SyntacticBrokenAST/codebase_output_writer.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering/codebase_output_writer.cpp.md"
+        }
+        "Microservice/Modules/Source/SyntacticBrokenAST/tree_html_renderer.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering/tree_html_renderer.cpp.md"
+        }
+        "Microservice/Modules/Source/SyntacticBrokenAST/language_tokens.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/language_tokens.cpp.md"
+        }
+        "Microservice/Modules/Source/SyntacticBrokenAST/lexical_structure_hooks.cpp" {
+            return "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.cpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/algorithm_pipeline.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts/algorithm_pipeline.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/analysis_context.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts/analysis_context.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/cli_arguments.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI/cli_arguments.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/source_reader.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI/source_reader.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/codebase_output_writer.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Output-and-Rendering/codebase_output_writer.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/tree_html_renderer.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Output-and-Rendering/tree_html_renderer.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/language_tokens.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure/language_tokens.hpp.md"
+        }
+        "Microservice/Modules/Header/SyntacticBrokenAST/lexical_structure_hooks.hpp" {
+            return "Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.hpp.md"
+        }
+        default {
+            return $sourceRelativePath + ".md"
+        }
+    }
+}
+
 function Add-UniqueValue([System.Collections.Generic.List[string]]$list, [string]$value)
 {
     if ([string]::IsNullOrWhiteSpace($value))
@@ -638,7 +693,7 @@ function Get-ActivityStepsFromCode([string]$relativePath, [string]$content)
                 Body = $_.Body
                 Score = Get-FunctionPriorityScore $_.Name $_.Body $pathTokens "js"
             }
-        } | Sort-Object Score -Descending, @{Expression={$_.Body.Length};Descending=$true}
+        } | Sort-Object -Property @{Expression={$_.Score};Descending=$true}, @{Expression={$_.Body.Length};Descending=$true}
 
         foreach ($function in ($functions | Select-Object -First 5))
         {
@@ -662,7 +717,7 @@ function Get-ActivityStepsFromCode([string]$relativePath, [string]$content)
                 Body = $_.Body
                 Score = Get-FunctionPriorityScore $_.Name $_.Body $pathTokens "cpp"
             }
-        } | Sort-Object Score -Descending, @{Expression={$_.Body.Length};Descending=$true}
+        } | Sort-Object -Property @{Expression={$_.Score};Descending=$true}, @{Expression={$_.Body.Length};Descending=$true}
 
         foreach ($function in ($functions | Select-Object -First 5))
         {
@@ -761,6 +816,285 @@ function Get-ActivityStepsFromCode([string]$relativePath, [string]$content)
     }
 
     return @($steps | Select-Object -First 6)
+}
+
+function Get-LogicalGroup([string]$relativePath)
+{
+    switch -Wildcard ($relativePath)
+    {
+        "Backend/server.js" { return "Runtime Entrypoints" }
+        "Backend/package.json" { return "Runtime Configuration" }
+        "Backend/src/controllers/*" { return "Controllers" }
+        "Backend/src/routes/*" { return "Routes" }
+        "Backend/src/middleware/*" { return "Middleware" }
+        "Backend/src/db/*" { return "Data Layer" }
+        "Backend/src/services/*" { return "Services" }
+        "Backend/src/utils/*" { return "Utilities" }
+
+        "Frontend/index.html" { return "Shell Entrypoints" }
+        "Frontend/pages/*" { return "Pages" }
+        "Frontend/scripts/*" { return "Browser Logic" }
+        "Frontend/styles/*" { return "Styling" }
+
+        "Infrastructure/runtime-layout/*" { return "Runtime Layout" }
+        "Infrastructure/session-orchestration/docker/*" { return "Container Assets" }
+        "Infrastructure/session-orchestration/k8s/*" { return "Kubernetes Manifests" }
+        "Infrastructure/session-orchestration/*" { return "Bootstrap Orchestration" }
+
+        "Input/*" { return "Sample Inputs" }
+
+        "Microservice/main.cpp" { return "Executable Entrypoints" }
+        "Microservice/Layer/*" { return "Application Runner" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/Internal/*" { return "ParseTree Internal Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/*" { return "ParseTree Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Internal/*" { return "Internal Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/*" { return "Syntactic Interfaces" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/*" { return "ParseTree Internals" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/*" { return "ParseTree Engine" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/*" { return "Syntactic Pipeline" }
+        "Microservice/Modules/Header/Creational/Transform/*" { return "Creational Transform Contracts" }
+        "Microservice/Modules/Header/Creational/Logic/*" { return "Creational Logic Contracts" }
+        "Microservice/Modules/Header/Creational/*" { return "Creational Interfaces" }
+        "Microservice/Modules/Source/Creational/Transform/internal/*" { return "Creational Transform Internals" }
+        "Microservice/Modules/Source/Creational/Transform/*" { return "Creational Transform Pipeline" }
+        "Microservice/Modules/Source/Creational/Logic/*" { return "Creational Logic" }
+        "Microservice/Modules/Source/Creational/*" { return "Creational Detection" }
+        "Microservice/Modules/Header/Behavioural/Logic/*" { return "Behavioural Logic Contracts" }
+        "Microservice/Modules/Header/Behavioural/*" { return "Behavioural Interfaces" }
+        "Microservice/Modules/Source/Behavioural/Logic/*" { return "Behavioural Logic" }
+        "Microservice/Modules/Source/Behavioural/*" { return "Behavioural Detection" }
+        "Microservice/Test/Input/*" { return "Regression Inputs" }
+
+        "CMakeLists.txt" { return "Build System" }
+        "CMakeSettings.json" { return "Build System" }
+        "CppProperties.json" { return "Editor Configuration" }
+        "setup.ps1" { return "Bootstrap Scripts" }
+        "setup.sh" { return "Bootstrap Scripts" }
+        "test.sh" { return "Validation Scripts" }
+        "Notes" { return "Project Notes" }
+
+        default { return "General Artifacts" }
+    }
+}
+
+function Get-FolderLogicSummary([string]$folderRelativePath)
+{
+    switch -Wildcard ($folderRelativePath)
+    {
+        "" { return "Top-level logical view of the generated codebase mirror. It groups the repository into runtime entrypoints, frontend prototype code, backend service code, infrastructure automation, sample inputs, and the C++ microservice core." }
+        "Backend" { return "Backend service surface. This area groups the Express entrypoint, package metadata, and the HTTP runtime internals under src." }
+        "Backend/src" { return "Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work." }
+        "Backend/src/controllers" { return "Controller layer for concrete backend request handling after routing and middleware have finished preliminary work." }
+        "Backend/src/routes" { return "Route layer that maps URL paths to middleware chains and controller entrypoints." }
+        "Backend/src/middleware" { return "Cross-cutting backend request logic such as auth, upload handling, and error shaping." }
+        "Backend/src/db" { return "SQLite-oriented persistence helpers and schema initialization logic." }
+        "Backend/src/services" { return "Reusable backend support services called from controllers or middleware." }
+        "Backend/src/utils" { return "Small backend utilities used to keep the request handlers concise." }
+
+        "Frontend" { return "Frontend prototype shell. This area groups the browser entrypoint with route fragments, scripts, and styles." }
+        "Frontend/pages" { return "Route-sized HTML fragments loaded by the client router." }
+        "Frontend/scripts" { return "Browser logic that powers routing, UI state changes, mock data usage, and page interactions." }
+        "Frontend/styles" { return "Visual system and component styling for the prototype frontend." }
+
+        "Infrastructure" { return "Infrastructure automation and runtime environment assembly for local containerized execution." }
+        "Infrastructure/runtime-layout" { return "Scripts that create the filesystem layout expected by the executable runtime." }
+        "Infrastructure/session-orchestration" { return "Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders." }
+        "Infrastructure/session-orchestration/docker" { return "Container image definitions used by the orchestration bootstrap." }
+        "Infrastructure/session-orchestration/k8s" { return "Kubernetes deployment-side assets for user-scoped runtime sessions." }
+        "Infrastructure/session-orchestration/k8s/templates" { return "Parameterized Kubernetes manifests rendered and applied by the bootstrap process." }
+
+        "Input" { return "Top-level sample source files used as manual or research-oriented inputs for the microservice." }
+
+        "Microservice" { return "C++ executable and module tree that implement the parser, detector, transform, rendering, and report pipeline." }
+        "Microservice/Layer" { return "Application-layer orchestration around the deeper module code." }
+        "Microservice/Layer/Back system" { return "The runtime runner that ties CLI parsing, file discovery, pipeline execution, and output writing together." }
+        "Microservice/Modules" { return "Modularized C++ implementation divided into compile-time headers and source implementations." }
+        "Microservice/Modules/Header" { return "Header contracts grouped by subsystem." }
+        "Microservice/Modules/Header/SyntacticBrokenAST" { return "Generic parser and analysis interfaces shared across the microservice." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts" { return "Pipeline-level contracts for reports, shared context, and orchestration-facing syntactic types." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI" { return "Contracts that describe how source files enter the syntactic subsystem and how command input is represented." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Output-and-Rendering" { return "Contracts for output writing and visual rendering of generated syntactic artifacts." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure" { return "Contracts for token vocabulary and structural keyword hooks used during parsing." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Internal" { return "Internal header contracts supporting the syntactic subsystem." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/ParseTree" { return "Public parse-tree contracts and helper interfaces." }
+        "Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/Internal" { return "Private parse-tree implementation contracts used by the C++ sources." }
+        "Microservice/Modules/Header/Creational" { return "Creational detection and transform interface layer." }
+        "Microservice/Modules/Header/Creational/Builder" { return "Builder-pattern specific contract layer." }
+        "Microservice/Modules/Header/Creational/Factory" { return "Factory-pattern specific contract layer." }
+        "Microservice/Modules/Header/Creational/Logic" { return "Creational logic and keyword-resolution contracts." }
+        "Microservice/Modules/Header/Creational/Singleton" { return "Singleton-pattern specific contract layer." }
+        "Microservice/Modules/Header/Creational/Transform" { return "Creational transform and evidence-rendering contracts." }
+        "Microservice/Modules/Header/Behavioural" { return "Behavioural detection interface layer." }
+        "Microservice/Modules/Header/Behavioural/Logic" { return "Behavioural logic and structural-hook contracts." }
+
+        "Microservice/Modules/Source" { return "C++ source implementations grouped by subsystem." }
+        "Microservice/Modules/Source/SyntacticBrokenAST" { return "Generic syntactic pipeline services such as CLI parsing, source reading, lexical hooks, generation, and reporting." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration" { return "Top-level pipeline orchestration and report-shaping code for the syntactic subsystem." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI" { return "Input discovery, source loading, and command-argument handling for the syntactic subsystem." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering" { return "Generated artifact writing and HTML/text rendering helpers for syntactic outputs." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure" { return "Language token definitions and structural hook logic that guide pattern-aware parsing." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree" { return "Parse-tree engine implementation for building, linking, symbolizing, and rendering the tree artifacts." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal" { return "Private parse-tree implementation helpers used by the engine internals." }
+        "Microservice/Modules/Source/Creational" { return "Creational pattern detection and transform implementation over the generic parse tree." }
+        "Microservice/Modules/Source/Creational/Builder" { return "Builder-pattern specific detection logic." }
+        "Microservice/Modules/Source/Creational/Factory" { return "Factory-pattern specific detection logic." }
+        "Microservice/Modules/Source/Creational/Logic" { return "Shared creational logic helpers and keyword providers." }
+        "Microservice/Modules/Source/Creational/Singleton" { return "Singleton-pattern specific detection logic." }
+        "Microservice/Modules/Source/Creational/Transform" { return "Creational transform execution and evidence rendering pipeline." }
+        "Microservice/Modules/Source/Creational/Transform/internal" { return "Internal helpers used by the creational transform pipeline." }
+        "Microservice/Modules/Source/Behavioural" { return "Behavioural pattern detection implementation." }
+        "Microservice/Modules/Source/Behavioural/Logic" { return "Behavioural scaffolding and structural-hook implementation helpers." }
+        "Microservice/Test" { return "Validation-oriented source corpus and test support assets." }
+        "Microservice/Test/Input" { return "Regression-focused input programs used to exercise specific transform and detection routes." }
+
+        default { return "Logical grouping index for this part of the generated codebase mirror." }
+    }
+}
+
+function Get-FolderGroup([string]$folderRelativePath)
+{
+    switch -Wildcard ($folderRelativePath)
+    {
+        "Backend" { return "Backend Service" }
+        "Backend/src" { return "Backend Internals" }
+        "Backend/src/controllers" { return "Controllers" }
+        "Backend/src/routes" { return "Routes" }
+        "Backend/src/middleware" { return "Middleware" }
+        "Backend/src/db" { return "Data Layer" }
+        "Backend/src/services" { return "Services" }
+        "Backend/src/utils" { return "Utilities" }
+
+        "Frontend" { return "Frontend Prototype" }
+        "Frontend/pages" { return "Pages" }
+        "Frontend/scripts" { return "Browser Logic" }
+        "Frontend/styles" { return "Styling" }
+
+        "Infrastructure" { return "Infrastructure Automation" }
+        "Infrastructure/runtime-layout" { return "Runtime Layout" }
+        "Infrastructure/session-orchestration" { return "Session Orchestration" }
+        "Infrastructure/session-orchestration/docker" { return "Container Assets" }
+        "Infrastructure/session-orchestration/k8s" { return "Kubernetes Assets" }
+        "Infrastructure/session-orchestration/k8s/templates" { return "Kubernetes Manifests" }
+
+        "Input" { return "Sample Inputs" }
+
+        "Microservice" { return "Microservice Core" }
+        "Microservice/Layer" { return "Application Runner" }
+        "Microservice/Layer/Back system" { return "Runtime Runner" }
+        "Microservice/Modules" { return "Module Tree" }
+        "Microservice/Modules/Header" { return "Header Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST" { return "Syntactic Interfaces" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts" { return "Pipeline Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI" { return "Input And CLI Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Output-and-Rendering" { return "Output And Rendering Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure" { return "Language And Structure Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/Internal" { return "Internal Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/ParseTree" { return "ParseTree Contracts" }
+        "Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/Internal" { return "ParseTree Internal Contracts" }
+        "Microservice/Modules/Header/Creational" { return "Creational Interfaces" }
+        "Microservice/Modules/Header/Creational/Builder" { return "Builder Contracts" }
+        "Microservice/Modules/Header/Creational/Factory" { return "Factory Contracts" }
+        "Microservice/Modules/Header/Creational/Logic" { return "Creational Logic Contracts" }
+        "Microservice/Modules/Header/Creational/Singleton" { return "Singleton Contracts" }
+        "Microservice/Modules/Header/Creational/Transform" { return "Creational Transform Contracts" }
+        "Microservice/Modules/Header/Behavioural" { return "Behavioural Interfaces" }
+        "Microservice/Modules/Header/Behavioural/Logic" { return "Behavioural Logic Contracts" }
+        "Microservice/Modules/Source" { return "Source Implementations" }
+        "Microservice/Modules/Source/SyntacticBrokenAST" { return "Syntactic Pipeline" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration" { return "Pipeline Orchestration" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI" { return "Input And CLI" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering" { return "Output And Rendering" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure" { return "Language And Structure" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree" { return "ParseTree Engine" }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal" { return "ParseTree Internals" }
+        "Microservice/Modules/Source/Creational" { return "Creational Detection" }
+        "Microservice/Modules/Source/Creational/Builder" { return "Builder Logic" }
+        "Microservice/Modules/Source/Creational/Factory" { return "Factory Logic" }
+        "Microservice/Modules/Source/Creational/Logic" { return "Creational Logic" }
+        "Microservice/Modules/Source/Creational/Singleton" { return "Singleton Logic" }
+        "Microservice/Modules/Source/Creational/Transform" { return "Creational Transform Pipeline" }
+        "Microservice/Modules/Source/Creational/Transform/internal" { return "Creational Transform Internals" }
+        "Microservice/Modules/Source/Behavioural" { return "Behavioural Detection" }
+        "Microservice/Modules/Source/Behavioural/Logic" { return "Behavioural Logic" }
+        "Microservice/Test" { return "Validation Assets" }
+        "Microservice/Test/Input" { return "Regression Inputs" }
+
+        default { return "Subsystems" }
+    }
+}
+
+function New-FolderReadme(
+    [string]$folderRelativePath,
+    [object[]]$immediateChildDirs,
+    [object[]]$immediateFiles,
+    [int]$totalDescendantFiles)
+{
+    $childDirArray = @($immediateChildDirs)
+    $fileArray = @($immediateFiles)
+    $title = if ([string]::IsNullOrWhiteSpace($folderRelativePath)) { "Codebase Mirror" } else { [System.IO.Path]::GetFileName($folderRelativePath) }
+    $summary = Get-FolderLogicSummary $folderRelativePath
+
+    $lines = New-Object 'System.Collections.Generic.List[string]'
+    $lines.Add("# $title")
+    $lines.Add("")
+    if ([string]::IsNullOrWhiteSpace($folderRelativePath))
+    {
+        $lines.Add("- Folder: docs/Codebase")
+    }
+    else
+    {
+        $lines.Add("- Folder: docs/Codebase/$folderRelativePath")
+    }
+    $lines.Add("- Descendant source docs: $totalDescendantFiles")
+    $lines.Add("- Generated on: $generatedOn")
+    $lines.Add("")
+    $lines.Add("## Logic Summary")
+    $lines.Add($summary)
+    $lines.Add("")
+
+    if ((($childDirArray | Measure-Object).Count) -gt 0)
+    {
+        $lines.Add("## Child Folders By Logic")
+        foreach ($group in ($childDirArray | Group-Object Group | Sort-Object Name))
+        {
+            $lines.Add("### $($group.Name)")
+            foreach ($item in ($group.Group | Sort-Object Name))
+            {
+                $lines.Add("- $($item.Name)/ : $($item.Summary)")
+            }
+            $lines.Add("")
+        }
+    }
+
+    if ((($fileArray | Measure-Object).Count) -gt 0)
+    {
+        $lines.Add("## Documents By Logic")
+        foreach ($group in ($fileArray | Group-Object Group | Sort-Object Name))
+        {
+            $lines.Add("### $($group.Name)")
+            foreach ($item in ($group.Group | Sort-Object Name))
+            {
+                $lines.Add("- $($item.DocName) : $($item.Role)")
+            }
+            $lines.Add("")
+        }
+    }
+
+    $lines.Add("## Reading Hint")
+    if ((($childDirArray | Measure-Object).Count) -gt 0 -and (($fileArray | Measure-Object).Count) -gt 0)
+    {
+        $lines.Add("- Read the local file docs first for concrete behavior, then descend into the child folders for narrower subsystem details.")
+    }
+    elseif ((($fileArray | Measure-Object).Count) -gt 0)
+    {
+        $lines.Add("- This folder is mostly leaf-level. Read the local file docs to understand the logic in this area.")
+    }
+    else
+    {
+        $lines.Add("- Use the child folder groups to navigate deeper into this subsystem.")
+    }
+
+    return ($lines -join "`r`n") + "`r`n"
 }
 
 function Get-ImplementationStory(
@@ -1026,17 +1360,30 @@ foreach ($rootDir in $sourceRoots)
 }
 
 $files = @($sourceFiles | Sort-Object FullName -Unique)
+$sourceFileMetadata = New-Object 'System.Collections.Generic.List[object]'
 
 foreach ($file in $files)
 {
     $relativePath = Get-RepoRelativePath $file.FullName
-    $docPath = Join-Path $generatedDocsRoot ($relativePath + ".md")
+    $docRelativePath = Get-DocRelativePath $relativePath
+    $role = Get-Role $relativePath
+    $docPath = Join-Path $generatedDocsRoot $docRelativePath
     $docDir = Split-Path -Parent $docPath
     New-Item -ItemType Directory -Path $docDir -Force | Out-Null
 
     $content = Get-Content -Path $file.FullName -Raw
     $docContent = New-FileDoc $relativePath $content
     Set-Content -Path $docPath -Value $docContent -Encoding utf8
+
+    $sourceFileMetadata.Add([PSCustomObject]@{
+        SourceRelativePath = $relativePath
+        RelativePath = $docRelativePath
+        Directory = ([System.IO.Path]::GetDirectoryName($docRelativePath) -replace '\\','/')
+        Name = [System.IO.Path]::GetFileName($relativePath)
+        DocName = [System.IO.Path]::GetFileName($docRelativePath)
+        Role = $role
+        Group = Get-LogicalGroup $relativePath
+    })
 }
 
 $sectionCounts = @{}
@@ -1051,46 +1398,99 @@ foreach ($file in $files)
     $sectionCounts[$topLevel] += 1
 }
 
-$readmeLines = New-Object 'System.Collections.Generic.List[string]'
-$readmeLines.Add("# Codebase Mirror")
-$readmeLines.Add("")
-$readmeLines.Add("This directory mirrors the current NeoTerritory source tree with one markdown file per source or configuration artifact. Each generated document keeps the source filename and appends .md.")
-$readmeLines.Add("")
-$readmeLines.Add("- Generated on: $generatedOn")
-$readmeLines.Add("- Documented files: $(($files).Count)")
-$readmeLines.Add("- Story doc: ../CODEBASE_STORY.md")
-$readmeLines.Add("")
-$readmeLines.Add("## Top-Level Coverage")
-foreach ($entry in ($sectionCounts.GetEnumerator() | Sort-Object Name))
+$allDirectories = New-Object 'System.Collections.Generic.HashSet[string]'
+$null = $allDirectories.Add("")
+foreach ($meta in $sourceFileMetadata)
 {
-    $readmeLines.Add("- $($entry.Name) : $($entry.Value) files")
-}
-$readmeLines.Add("")
-$readmeLines.Add("## Root-Level File Docs")
-$rootRelativeDocs = @($files | ForEach-Object { Get-RepoRelativePath $_.FullName } | Where-Object { $_ -notmatch "/" } | Sort-Object)
-foreach ($relativeDoc in $rootRelativeDocs)
-{
-    $readmeLines.Add("- ./$relativeDoc.md")
-}
-$readmeLines.Add("")
-$readmeLines.Add("## Generation Note")
-$readmeLines.Add("- The generated mirror is intentionally structural and navigational.")
-$readmeLines.Add("- The higher-level chronology, architecture story, and Mermaid diagrams live in docs/CODEBASE_STORY.md.")
-$readmeLines.Add("")
-$readmeLines.Add("## Implementation Story")
-$readmeLines.Add("This generated directory is the per-file narrative layer for the repository. The generation process walks the source and configuration tree, creates a markdown twin for each supported artifact, summarizes its role and chronology, and now adds a short implementation story plus a Mermaid activity diagram so each file can be read as part of a flow instead of as an isolated path.")
-$readmeLines.Add("")
-$readmeLines.Add("## Activity Diagram")
-$readmeLines.Add('```mermaid')
-$readmeLines.Add("flowchart TD")
-$readmeLines.Add("    Start([Start]) --> Scan[Scan the repository for supported files]")
-$readmeLines.Add("    Scan --> Summarize[Extract symbols, dependencies, role, and chronology]")
-$readmeLines.Add("    Summarize --> Story[Write the implementation story section]")
-$readmeLines.Add("    Story --> Diagram[Write the Mermaid activity diagram section]")
-$readmeLines.Add("    Diagram --> Save[Save one markdown twin per artifact]")
-$readmeLines.Add("    Save --> End([End])")
-$readmeLines.Add('```')
+    $dir = $meta.Directory
+    if ([string]::IsNullOrWhiteSpace($dir))
+    {
+        $null = $allDirectories.Add("")
+        continue
+    }
 
-Set-Content -Path (Join-Path $generatedDocsRoot "README.md") -Value (($readmeLines -join "`r`n") + "`r`n") -Encoding utf8
+    $current = $dir
+    while (-not [string]::IsNullOrWhiteSpace($current))
+    {
+        $null = $allDirectories.Add($current)
+        $parent = [System.IO.Path]::GetDirectoryName($current)
+        if ([string]::IsNullOrWhiteSpace($parent))
+        {
+            $null = $allDirectories.Add("")
+            break
+        }
+        $current = $parent.Replace('\', '/')
+    }
+}
+
+$orderedDirectories = @(
+    $allDirectories |
+    ForEach-Object {
+        [PSCustomObject]@{
+            Path = $_
+            Depth = if ([string]::IsNullOrWhiteSpace($_)) { 0 } else { $_.Split('/').Count }
+        }
+    } |
+    Sort-Object -Property Depth, Path |
+    Select-Object -ExpandProperty Path
+)
+
+foreach ($dir in $orderedDirectories)
+{
+    $immediateFiles = @($sourceFileMetadata | Where-Object { $_.Directory -eq $dir } | Sort-Object Name)
+
+    $immediateChildDirs = @()
+    foreach ($candidate in $orderedDirectories)
+    {
+        if ($candidate -eq $dir)
+        {
+            continue
+        }
+        if ([string]::IsNullOrWhiteSpace($candidate))
+        {
+            continue
+        }
+
+        $parent = [System.IO.Path]::GetDirectoryName($candidate)
+        $normalizedParent = if ([string]::IsNullOrWhiteSpace($parent)) { "" } else { $parent.Replace('\', '/') }
+        if ($normalizedParent -ne $dir)
+        {
+            continue
+        }
+
+        $childName = [System.IO.Path]::GetFileName($candidate)
+        $childFiles = @($sourceFileMetadata | Where-Object { $_.RelativePath.StartsWith(($candidate + "/")) -or $_.Directory -eq $candidate })
+        $group = Get-FolderGroup $candidate
+        $summary = Get-FolderLogicSummary $candidate
+
+        $immediateChildDirs += [PSCustomObject]@{
+            Name = $childName
+            RelativePath = $candidate
+            Group = $group
+            Summary = $summary
+        }
+    }
+
+    $descendantFiles = if ([string]::IsNullOrWhiteSpace($dir))
+    {
+        $sourceFileMetadata.ToArray()
+    }
+    else
+    {
+        @($sourceFileMetadata | Where-Object { $_.Directory -eq $dir -or $_.RelativePath.StartsWith(($dir + "/")) })
+    }
+
+    $folderReadme = New-FolderReadme $dir $immediateChildDirs $immediateFiles (($descendantFiles | Measure-Object).Count)
+    $readmePath = if ([string]::IsNullOrWhiteSpace($dir))
+    {
+        Join-Path $generatedDocsRoot "README.md"
+    }
+    else
+    {
+        Join-Path (Join-Path $generatedDocsRoot $dir) "README.md"
+    }
+
+    Set-Content -Path $readmePath -Value $folderReadme -Encoding utf8
+}
 
 Write-Host ("Generated {0} codebase mirror docs under {1}" -f ($files.Count), $generatedDocsRoot)

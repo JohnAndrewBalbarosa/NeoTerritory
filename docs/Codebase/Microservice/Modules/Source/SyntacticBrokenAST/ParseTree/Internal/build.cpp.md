@@ -39,20 +39,18 @@ This file implements the line-by-line parse-tree construction mechanics. It toke
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute clear statement buffers to compute hash metadata]
-    N1[Execute trim ascii to iterate over the active collection]
-    N2[Execute has factory keyword]
-    N3[Execute token is registered class to compute hash metadata, iterate over the active collection, and branch on runtime conditions]
-    N4[Execute track factory instance declaration to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
-    N5[Execute parse factory callsite from line to branch on runtime conditions]
+    N0[Execute parse file content into node to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N1[Execute parse factory callsite from line to branch on runtime conditions]
+    N2[Execute collect factory invocation trace for line to parse or tokenize input text, assemble tree or artifact structures, and compute hash metadata]
+    N3[Execute collect symbol dependencies for file to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N4[Execute collect class definitions by file to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

@@ -24,8 +24,8 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute collect class signature lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute collect method signature lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N0[Execute collect method signature lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N1[Execute collect class signature lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1

@@ -36,20 +36,18 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute escape regex literal to assemble tree or artifact structures and iterate over the active collection]
-    N1[Execute find matching paren to iterate over the active collection and branch on runtime conditions]
-    N2[Execute if to branch on runtime conditions]
-    N3[Execute is supported literal to iterate over the active collection and branch on runtime conditions]
-    N4[Execute normalize literal]
-    N5[Execute collapse ascii whitespace to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N0[Execute parse parameter name from signature to branch on runtime conditions]
+    N1[Execute build hash ledger entry to compute hash metadata]
+    N2[Execute is supported literal to iterate over the active collection and branch on runtime conditions]
+    N3[Execute collapse ascii whitespace to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N4[Execute make fnv1a64 hash id to compute hash metadata, serialize report content, and iterate over the active collection]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

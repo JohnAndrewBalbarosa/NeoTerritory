@@ -36,20 +36,18 @@ This source file implements behavioural-pattern scaffolding or checks on top of 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute trim to iterate over the active collection]
-    N1[Execute lower]
-    N2[Execute split words to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute if to assemble tree or artifact structures]
-    N4[Execute starts with]
-    N5[Execute class name from signature to iterate over the active collection and branch on runtime conditions]
+    N0[Execute build behavioural function scaffold to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N1[Execute build behavioural structure checker to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N2[Execute collect class signals to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N3[Execute starts with]
+    N4[Execute is function block to branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

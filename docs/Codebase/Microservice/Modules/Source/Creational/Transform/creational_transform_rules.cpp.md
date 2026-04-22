@@ -40,20 +40,18 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute derive field base name to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute collect config methods for class to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
-    N2[Execute generate builder class code to serialize report content, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute inject builder class to parse or tokenize input text, assemble tree or artifact structures, and serialize report content]
-    N4[Execute rewrite simple singleton callsite to builder to parse or tokenize input text, assemble tree or artifact structures, and serialize report content]
-    N5[Execute transform to singleton by class references to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N0[Execute transform singleton to builder to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
+    N1[Execute transform to singleton by class references to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N2[Execute transform rules]
+    N3[Execute transform using registered rule to iterate over the active collection and branch on runtime conditions]
+    N4[Execute generate builder class code to serialize report content, iterate over the active collection, and branch on runtime conditions]
     End([End])
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Documentation Note

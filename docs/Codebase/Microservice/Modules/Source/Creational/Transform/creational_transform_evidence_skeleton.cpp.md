@@ -24,10 +24,10 @@ This source file implements a creational transform or evidence-rendering stage. 
 ```mermaid
 flowchart TD
     Start([Start])
-    N0[Execute build source type skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute build target type skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute build source callsite skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute build target callsite skeleton lines to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
+    N0[Execute build target callsite skeleton lines to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
+    N1[Execute build source callsite skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N2[Execute build target type skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
+    N3[Execute build source type skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
     N4[Execute validate monolithic structure to iterate over the active collection and branch on runtime conditions]
     End([End])
     Start --> N0
