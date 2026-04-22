@@ -1,4 +1,4 @@
-# NeoTerritory Research System Specifications
+﻿# NeoTerritory Research System Specifications
 
 This document defines **research-oriented** baseline and best-performance specifications for the NeoTerritory C++ project, including its current local Kubernetes simulation using Minikube and the planned migration to a full Kubernetes server environment. Values are tuned for reproducible research and pipeline stability rather than consumer-grade minimums.
 
@@ -78,3 +78,27 @@ https://docs.github.com/enterprise-cloud@latest/repositories/working-with-files/
 
 [10] GitHub Enterprise Server repository limits (10 GB on-disk size guidance):  
 https://docs.github.com/en/enterprise-server@3.15/repositories/creating-and-managing-repositories/repository-limits
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This document corresponds to the environment requirements behind the implementation. The code it supports spans the CMake-based microservice build, the Docker and Minikube infrastructure path, and the local execution assumptions required for reproducible NeoTerritory runs.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Provision the required hardware and OS]
+    N1[Install the compiler and build toolchain]
+    N2[Install Docker and Minikube for local orchestration]
+    N3[Build and run NeoTerritory within the supported environment]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

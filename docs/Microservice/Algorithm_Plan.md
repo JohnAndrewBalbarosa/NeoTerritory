@@ -1,4 +1,4 @@
-# Microservice Algorithm Plan
+﻿# Microservice Algorithm Plan
 
 ## Purpose
 
@@ -92,3 +92,29 @@ Required markdown outputs per run:
 3. Enable base-code-to-specific-pattern training mode.
 4. Enable test generation/execution pipeline stage.
 5. Make documentation outputs default for onboarding workflow.
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This planning document corresponds to the same implemented microservice pipeline but describes it from the rollout angle. The codebase currently realizes that plan through the parser, detector, evidence, and report modules in Microservice/Modules, with the application-layer runner coordinating them at execution time.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Define the target source and destination patterns]
+    N1[Build deterministic parse artifacts]
+    N2[Separate pattern-defining evidence from neutral code]
+    N3[Generate documentation and optional transformed output]
+    N4[Validate the resulting artifacts]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

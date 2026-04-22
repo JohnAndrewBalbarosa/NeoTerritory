@@ -13,7 +13,7 @@ NeoTerritory/
   Backend/README.md
   CONTRIBUTING.md
   Infrastructure/session-orchestration/README.md
-  Microservice/Docs/AST_Pipeline_Step_Map.md
+  Microservice/AST_Pipeline_Step_Map.md
   Microservice/Modules/Header/Behavioural/DETECTION_FORMAT.md
   Microservice/Modules/Header/Creational/DETECTION_FORMAT.md
   Microservice/Modules/Source/Behavioural/DETECTION_FORMAT.md
@@ -421,7 +421,7 @@ Legacy WSL-only tool install (previous behavior):
 
 ---
 
-### Microservice/Docs/AST_Pipeline_Step_Map.md
+### Microservice/AST_Pipeline_Step_Map.md
 
 # AST Pipeline Step Map
 
@@ -860,4 +860,27 @@ https://docs.github.com/enterprise-cloud@latest/repositories/working-with-files/
 
 [10] GitHub Enterprise Server repository limits (10 GB on-disk size guidance):  
 https://docs.github.com/en/enterprise-server@3.15/repositories/creating-and-managing-repositories/repository-limits
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This document is the aggregate reference view over the rest of the markdown corpus. Its implementation story is documentary rather than executable: it gathers the important markdown files, preserves their tree order, and gives one place where the repository's code-facing guidance and design notes can be read end to end.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Collect the markdown documents of interest]
+    N1[Preserve their tree structure in an index]
+    N2[Concatenate the document contents into one reference view]
+    N3[Use the compiled document as a single-pass repository reference]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
 

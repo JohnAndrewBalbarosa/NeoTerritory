@@ -1,4 +1,4 @@
-# Sample Analysis Inputs
+﻿# Sample Analysis Inputs
 
 Use these files as CLI input for the static analysis pipeline:
 
@@ -25,3 +25,27 @@ Use these files as CLI input for the static analysis pipeline:
 - `analysis_report.json`
 
 The non-pattern domain classes are included only as context and should not be the main target of creational pattern detection.
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This README documents the regression corpus that feeds the implemented microservice. The corresponding code story starts when one of these sample files is copied into the runtime Input folder and ends when the parser, detectors, and generators produce HTML, code, and JSON outputs describing what the sample triggered.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Select a sample input file]
+    N1[Feed it into the Input folder or corpus list]
+    N2[Run the microservice pipeline]
+    N3[Inspect the generated trees, code, and report artifacts]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

@@ -1,4 +1,4 @@
-# Creational Detection + Transform Format
+﻿# Creational Detection + Transform Format
 
 ## Current Ownership
 
@@ -124,3 +124,29 @@ Supported pattern hooks:
 - `factory` -> `FactoryStructuralStrategy`
 - `singleton` -> `SingletonStructuralStrategy`
 - `builder` -> `BuilderStructuralStrategy`
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This document corresponds to the most implementation-heavy part of the creational subsystem. The code it describes spans detector entrypoints such as creational_broken_tree.cpp, pattern logic modules for factory, singleton, and builder, and the transform pipeline that turns parse evidence into generated target or evidence views.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Receive the generic parse tree and selected route]
+    N1[Run factory, singleton, and builder detection]
+    N2[Apply the selected creational transform rule when needed]
+    N3[Render evidence or target code output]
+    N4[Return transform decisions to reporting]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

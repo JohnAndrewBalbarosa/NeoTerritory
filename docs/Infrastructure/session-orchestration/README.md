@@ -1,4 +1,4 @@
-# Session Orchestration Assets
+﻿# Session Orchestration Assets
 
 This folder is intentionally decoupled from the C++ source tree and contains only container/orchestration assets for per-user runtime sessions.
 
@@ -59,3 +59,29 @@ Legacy WSL-only tool install (previous behavior):
   - one dedicated ClusterIP Service per `user_id`
   - one dedicated Ingress path: `/session/{{user_id}}`
 - No Deployment or ReplicaSet resources are included.
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This README describes the implemented environment bring-up path rather than a single function. The corresponding code lives in the PowerShell bootstrap script, the runtime-layout script, the Dockerfile, and the Kubernetes templates, and together they move the system from a bare machine to a runnable NeoTerritory session environment.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Load the infrastructure configuration]
+    N1[Check or install Docker, kubectl, and Minikube]
+    N2[Build the runtime image]
+    N3[Apply the Kubernetes templates]
+    N4[Prepare the runtime folder layout]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

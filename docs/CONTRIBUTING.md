@@ -1,4 +1,4 @@
-# Contributing to NeoTerritory
+﻿# Contributing to NeoTerritory
 
 Thank you for your interest in contributing to NeoTerritory! This document outlines the guidelines, roles, and permissions for team members.
 
@@ -144,3 +144,29 @@ All contributors will be acknowledged in the project. Thank you for your contrib
 ---
 
 *Last updated: October 2025*
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This document corresponds to the implementation workflow around the code rather than to a runtime module. The codebase it governs is the same NeoTerritory system, and the workflow it describes determines how contributors move from an issue to a branch, into a reviewed implementation, and finally into the protected main branch.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Open or triage an issue]
+    N1[Create a working branch]
+    N2[Implement and document the change]
+    N3[Submit the pull request for review]
+    N4[Merge once the change is approved and validated]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+
