@@ -1,4 +1,4 @@
-# AST Pipeline Step Map
+﻿# AST Pipeline Step Map
 
 ## Related Documents
 
@@ -106,3 +106,29 @@ Report includes:
   - `singleton -> builder` uses monolithic evidence sections/skeletons.
   - other routes (including `* -> singleton`) use passthrough generated code view with single-main retention.
 - Lexical structural hooks in Syntactic resolve keywords via Creational and Behavioural providers.
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This step map is the clearest documentation mirror of the implemented parser pipeline. Each major stage in the document corresponds to concrete code in the syntactic runner, parse-tree builders, symbol-table builders, hash-link builders, and report serializer, so it effectively narrates the execution order of the microservice internals.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Parse CLI and runtime context]
+    N1[Build per-file main and shadow trees]
+    N2[Register classes and collect hash traces]
+    N3[Build symbols and hash links]
+    N4[Serialize outputs and transform decisions]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

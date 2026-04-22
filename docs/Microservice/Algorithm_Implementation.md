@@ -1,4 +1,4 @@
-# Microservice Algorithm Implementation
+﻿# Microservice Algorithm Implementation
 
 ## Architecture Summary
 
@@ -125,3 +125,29 @@ When a pattern context is selected, the system should be able to:
 - Keep pattern-specific detection logic delegated to module boundaries (for example, Creational and Behavioural modules).
 - Keep syntactic pipeline responsible for parse graph, hash links, and orchestration.
 - Ensure report serialization includes evidence paths and reasons for each classified code region.
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This document now maps closely to the implemented microservice pipeline. The corresponding code begins in Microservice/Layer/Back system/syntacticBrokenAST.cpp, then flows through source_reader.cpp, algorithm_pipeline.cpp, the parse-tree builders in ParseTree/core.cpp and ParseTree/Internal/build.cpp, and finally into the creational and behavioural detector modules before outputs are written.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Read the discovered input files]
+    N1[Build the main and shadow parse trees]
+    N2[Detect creational and behavioural structure]
+    N3[Generate evidence and target outputs]
+    N4[Write HTML and JSON reports]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+

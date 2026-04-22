@@ -1,4 +1,4 @@
-# Behavioural Detection Format
+﻿# Behavioural Detection Format
 
 ## Current Ownership
 
@@ -39,3 +39,27 @@ The lexical parser applies these keywords generically and records matched classe
 ## Non-Ownership Clarification
 
 Behavioural module does not own creational transforms (singleton/builder/factory rewrites). Those are owned by `Creational/Transform`.
+
+<!-- AUTO-IMPLEMENTATION-STORY-START -->
+
+## Implementation Story
+This source-oriented behavioural format document corresponds directly to the behavioural implementation files. The code path it describes begins once a generic parse tree already exists, then runs the scaffold and structural checks, and finally contributes a behavioural broken-tree view back to the pipeline.
+
+## Activity Diagram
+```mermaid
+flowchart TD
+    Start([Start])
+    N0[Receive the generic parse tree]
+    N1[Run the behavioural scaffold detector]
+    N2[Run the behavioural structure checker]
+    N3[Aggregate the detector results into the behavioural tree]
+    End([End])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
+```
+
+<!-- AUTO-IMPLEMENTATION-STORY-END -->
+
