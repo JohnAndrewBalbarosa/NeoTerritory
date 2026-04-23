@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Frontend/scripts
 - Descendant source docs: 6
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Browser logic that powers routing, UI state changes, mock data usage, and page interactions.

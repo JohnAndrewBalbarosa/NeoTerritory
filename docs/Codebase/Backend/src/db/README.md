@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Backend/src/db
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 SQLite-oriented persistence helpers and schema initialization logic.

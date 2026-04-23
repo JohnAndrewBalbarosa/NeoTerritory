@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Source/Creational
 - Descendant source docs: 25
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Creational pattern detection and transform implementation over the generic parse tree.

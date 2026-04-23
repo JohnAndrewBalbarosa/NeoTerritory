@@ -14,10 +14,20 @@
 - kubectl
 - minikube
 
-## Implementation Story
-This script is the shell-side repository bootstrap entrypoint. Its implementation exists to prepare or delegate the non-Windows setup path before the rest of the toolchain is used. Shell bootstrap entrypoint for non-Windows setup flows. Usually the first POSIX entrypoint: it starts repository setup outside the Windows path. In practice it collaborates directly with docker, kubectl, and minikube.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This script is the shell-side repository bootstrap entrypoint. Its implementation exists to prepare or delegate the non-Windows setup path before the rest of the toolchain is used.
+
+### Position In The Flow
+
+Usually the first POSIX entrypoint: it starts repository setup outside the Windows path.
+
+### Main Surface Area
+
+Shell bootstrap entrypoint for non-Windows setup flows. It collaborates directly with docker, kubectl, and minikube.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -33,5 +43,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

@@ -21,10 +21,20 @@
 - scripts/fix-suggestions.js
 - scripts/analysis.js
 
-## Implementation Story
-This file is the shell document for the frontend prototype. Its implementation lays out the persistent frame of the application, loads the shared styles and scripts, and then starts the router and sidebar logic that populate the page. Defines the shell document for the hash-routed frontend application. Browser entrypoint: the user loads this shell before any route fragment or mock data is rendered. The implementation surface is easiest to recognize through symbols such as #app, #sidebar, #sidebar-overlay, and #main-content. In practice it collaborates directly with styles/main.css, styles/components.css, scripts/diff-viewer.js, and scripts/fix-suggestions.js.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This file is the shell document for the frontend prototype. Its implementation lays out the persistent frame of the application, loads the shared styles and scripts, and then starts the router and sidebar logic that populate the page.
+
+### Position In The Flow
+
+Browser entrypoint: the user loads this shell before any route fragment or mock data is rendered.
+
+### Main Surface Area
+
+Defines the shell document for the hash-routed frontend application. The main surface area is easiest to track through symbols such as #app, #sidebar, #sidebar-overlay, and #main-content. It collaborates directly with styles/main.css, styles/components.css, scripts/diff-viewer.js, and scripts/fix-suggestions.js.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -46,5 +56,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

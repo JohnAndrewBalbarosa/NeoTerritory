@@ -13,10 +13,20 @@
 - ubuntu:24.04
 - . /app
 
-## Implementation Story
-This file implements the container build recipe for NeoTerritory session execution. It defines the image composition that later gets built and deployed by the bootstrap scripts. Builds the container image used for per-user NeoTerritory sessions. Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared. In practice it collaborates directly with ubuntu:24.04 and . /app.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This file implements the container build recipe for NeoTerritory session execution. It defines the image composition that later gets built and deployed by the bootstrap scripts.
+
+### Position In The Flow
+
+Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared.
+
+### Main Surface Area
+
+Builds the container image used for per-user NeoTerritory sessions. It collaborates directly with ubuntu:24.04 and . /app.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -36,5 +46,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

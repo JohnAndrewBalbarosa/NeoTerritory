@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Infrastructure/session-orchestration
 - Descendant source docs: 5
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders.

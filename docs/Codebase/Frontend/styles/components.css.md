@@ -107,8 +107,18 @@
 ## Direct Dependencies
 - No direct dependency list was extracted from the file text.
 
-## Implementation Story
-This stylesheet implements the visual layer of the frontend prototype. It is not executable in the same way as the JavaScript files, but it still participates in the flow by defining how the rendered route shell and components appear. Defines the visual system and component styling for the frontend prototype. Applied during page render to define the frontend presentation layer. The implementation surface is easiest to recognize through symbols such as /* ============================================================
+## File Outline
+### Responsibility
+
+This stylesheet implements the visual layer of the frontend prototype. It is not executable in the same way as the JavaScript files, but it still participates in the flow by defining how the rendered route shell and components appear.
+
+### Position In The Flow
+
+Applied during page render to define the frontend presentation layer.
+
+### Main Surface Area
+
+Defines the visual system and component styling for the frontend prototype. The main surface area is easiest to track through symbols such as /* ============================================================
    CodiNeo â€” Component Styles
    Page-specific and reusable components
    ============================================================ */
@@ -139,7 +149,7 @@ This stylesheet implements the visual layer of the frontend prototype. It is not
 
 .ready-title.
 
-## Activity Diagram
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -202,5 +212,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

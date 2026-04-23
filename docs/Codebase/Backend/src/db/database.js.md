@@ -16,10 +16,20 @@
 - better-sqlite3
 - path
 
-## Implementation Story
-This file lives in the persistence layer of the backend. Its implementation supports startup-time or request-time SQLite operations used by the HTTP layer. Owns SQLite connectivity and schema initialization. Supports backend startup and request-time persistence operations. The implementation surface is easiest to recognize through symbols such as Database, path, dbPath, and db. In practice it collaborates directly with better-sqlite3 and path.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This file lives in the persistence layer of the backend. Its implementation supports startup-time or request-time SQLite operations used by the HTTP layer.
+
+### Position In The Flow
+
+Supports backend startup and request-time persistence operations.
+
+### Main Surface Area
+
+Owns SQLite connectivity and schema initialization. The main surface area is easiest to track through symbols such as Database, path, dbPath, and db. It collaborates directly with better-sqlite3 and path.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -35,5 +45,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

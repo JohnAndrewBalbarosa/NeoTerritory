@@ -61,7 +61,7 @@ if ($LegacyWslToolsInstall)
     exit 0
 }
 
-$bootstrapScript = Join-Path $PSScriptRoot "Infrastructure\session-orchestration\bootstrap_and_deploy.ps1"
+$bootstrapScript = Join-Path $PSScriptRoot "Codebase\Infrastructure\session-orchestration\bootstrap_and_deploy.ps1"
 if (-not (Test-Path $bootstrapScript))
 {
     throw ("Bootstrap script not found: {0}" -f $bootstrapScript)

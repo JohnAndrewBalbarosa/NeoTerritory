@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Layer/Back system
 - Descendant source docs: 1
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 The runtime runner that ties CLI parsing, file discovery, pipeline execution, and output writing together.

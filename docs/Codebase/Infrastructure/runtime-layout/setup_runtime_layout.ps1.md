@@ -23,10 +23,20 @@
 ## Direct Dependencies
 - No direct dependency list was extracted from the file text.
 
-## Implementation Story
-This script implements the filesystem contract expected by the microservice runtime. It creates the Input and Output subtree and can optionally seed placeholder files so later stages have a predictable directory layout. Creates the Input and Output directory layout expected by the microservice runtime. Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared. The implementation surface is easiest to recognize through symbols such as $TargetDir, $CreatePlaceholders, $runtimeRoot, and $inputDir.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This script implements the filesystem contract expected by the microservice runtime. It creates the Input and Output subtree and can optionally seed placeholder files so later stages have a predictable directory layout.
+
+### Position In The Flow
+
+Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared.
+
+### Main Surface Area
+
+Creates the Input and Output directory layout expected by the microservice runtime. The main surface area is easiest to track through symbols such as $TargetDir, $CreatePlaceholders, $runtimeRoot, and $inputDir.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -44,5 +54,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

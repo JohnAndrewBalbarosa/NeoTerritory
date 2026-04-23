@@ -2,6 +2,7 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
+$codebaseRoot = Join-Path $repoRoot "Codebase"
 $generatedDocsRoot = Join-Path $repoRoot "docs\Codebase"
 $generatedOn = Get-Date -Format "yyyy-MM-dd"
 
@@ -47,7 +48,12 @@ $allowedNames = @(
 function Get-RepoRelativePath([string]$fullPath)
 {
     $relative = $fullPath.Substring($repoRoot.Length).TrimStart('\', '/')
-    return $relative.Replace('\', '/')
+    $relative = $relative.Replace('\', '/')
+    if ($relative.StartsWith("Codebase/"))
+    {
+        $relative = $relative.Substring("Codebase/".Length)
+    }
+    return $relative
 }
 
 function Get-DocRelativePath([string]$sourceRelativePath)
@@ -478,6 +484,23 @@ function Get-BraceBoundBody([string]$content, [int]$openBraceIndex)
     return ""
 }
 
+function Get-LineNumberFromIndex([string]$content, [int]$index)
+{
+    if ($index -lt 0)
+    {
+        return 0
+    }
+
+    $safeLength = [Math]::Min($index, $content.Length)
+    if ($safeLength -le 0)
+    {
+        return 1
+    }
+
+    $prefix = $content.Substring(0, $safeLength)
+    return ([System.Text.RegularExpressions.Regex]::Matches($prefix, "\r?\n").Count + 1)
+}
+
 function Get-JSFunctionInfo([string]$content)
 {
     $results = New-Object 'System.Collections.Generic.List[object]'
@@ -510,6 +533,7 @@ function Get-JSFunctionInfo([string]$content)
             $results.Add([PSCustomObject]@{
                 Name = $name
                 Body = $body
+                Line = Get-LineNumberFromIndex $content $match.Index
             })
         }
     }
@@ -542,6 +566,38 @@ function Get-CppFunctionInfo([string]$content)
         $results.Add([PSCustomObject]@{
             Name = $name
             Body = $body
+            Line = Get-LineNumberFromIndex $content $match.Index
+        })
+    }
+
+    return $results.ToArray()
+}
+
+function Get-PowerShellFunctionInfo([string]$content)
+{
+    $results = New-Object 'System.Collections.Generic.List[object]'
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]'
+
+    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*function\s+([A-Za-z_][A-Za-z0-9_\-]*)\b'))
+    {
+        $name = $match.Groups[1].Value
+        if ([string]::IsNullOrWhiteSpace($name) -or $seen.Contains($name))
+        {
+            continue
+        }
+
+        $braceIndex = $content.IndexOf('{', $match.Index)
+        $body = ""
+        if ($braceIndex -ge 0)
+        {
+            $body = Get-BraceBoundBody $content $braceIndex
+        }
+
+        $null = $seen.Add($name)
+        $results.Add([PSCustomObject]@{
+            Name = $name
+            Body = $body
+            Line = Get-LineNumberFromIndex $content $match.Index
         })
     }
 
@@ -577,6 +633,48 @@ function Get-HeaderDeclarations([string]$content)
     return @($items | Select-Object -First 6)
 }
 
+function Get-HeaderDeclarationInfo([string]$content)
+{
+    $results = New-Object 'System.Collections.Generic.List[object]'
+    $seen = New-Object 'System.Collections.Generic.HashSet[string]'
+
+    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*(class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)'))
+    {
+        $name = $match.Groups[2].Value
+        if ([string]::IsNullOrWhiteSpace($name) -or $seen.Contains($name))
+        {
+            continue
+        }
+
+        $null = $seen.Add($name)
+        $results.Add([PSCustomObject]@{
+            Name = $name
+            Kind = "type declaration"
+            Body = ""
+            Line = Get-LineNumberFromIndex $content $match.Index
+        })
+    }
+
+    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*(?:[\w:<>~*&]+\s+)+([A-Za-z_~][A-Za-z0-9_:~]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?;'))
+    {
+        $name = $match.Groups[1].Value
+        if ($name -in @("if", "for", "while", "switch", "catch", "return") -or [string]::IsNullOrWhiteSpace($name) -or $seen.Contains($name))
+        {
+            continue
+        }
+
+        $null = $seen.Add($name)
+        $results.Add([PSCustomObject]@{
+            Name = $name
+            Kind = "function declaration"
+            Body = ""
+            Line = Get-LineNumberFromIndex $content $match.Index
+        })
+    }
+
+    return $results.ToArray()
+}
+
 function Get-JSOperationPhrases([string]$body)
 {
     $ops = New-StepList
@@ -593,6 +691,19 @@ function Get-JSOperationPhrases([string]$body)
     if ($body -match 'location\.hash|navigate\s*\(') { Add-UniqueStep $ops "change the active route" }
     if ($body -match 'res\.status|res\.json|res\.send') { Add-UniqueStep $ops "return the HTTP response" }
     if ($body -match 'module\.exports|export\s') { Add-UniqueStep $ops "expose the module API" }
+    return @($ops)
+}
+
+function Get-PowerShellOperationPhrases([string]$body)
+{
+    $ops = New-StepList
+    if ($body -match 'Test-Path|Get-Item|Resolve-Path') { Add-UniqueStep $ops "inspect the current filesystem state" }
+    if ($body -match 'New-Item|Set-Content|Add-Content|Copy-Item|Move-Item') { Add-UniqueStep $ops "create or update filesystem artifacts" }
+    if ($body -match 'Start-Process') { Add-UniqueStep $ops "launch a child process" }
+    if ($body -match 'Write-Host|Write-Error|Write-Warning|throw') { Add-UniqueStep $ops "report status or failures to the caller" }
+    if ($body -match 'docker|kubectl|minikube|cmake') { Add-UniqueStep $ops "invoke external tooling" }
+    if ($body -match 'if\s*\(') { Add-UniqueStep $ops "branch on runtime conditions" }
+    if ($body -match 'foreach\s*\(|for\s*\(|while\s*\(') { Add-UniqueStep $ops "iterate over the active collection" }
     return @($ops)
 }
 
@@ -816,6 +927,199 @@ function Get-ActivityStepsFromCode([string]$relativePath, [string]$content)
     }
 
     return @($steps | Select-Object -First 6)
+}
+
+function Convert-ToSentenceCase([string]$text)
+{
+    if ([string]::IsNullOrWhiteSpace($text))
+    {
+        return ""
+    }
+
+    $trimmed = $text.Trim()
+    if ($trimmed.Length -eq 1)
+    {
+        return $trimmed.ToUpperInvariant()
+    }
+
+    return $trimmed.Substring(0, 1).ToUpperInvariant() + $trimmed.Substring(1)
+}
+
+function Get-RoutinePurposeLead([string]$name, [string]$kind)
+{
+    if ($kind -eq "type declaration")
+    {
+        return "This declaration introduces a shared type that other files compile against."
+    }
+
+    if ($kind -eq "function declaration")
+    {
+        return "This declaration exposes a callable contract without providing the runtime body here."
+    }
+
+    $lowerName = $name.ToLowerInvariant()
+
+    switch -Regex ($lowerName)
+    {
+        '^(validate|check|assert)' { return "This routine acts as a guard step before later logic is allowed to continue." }
+        '^(estimate|count|size|measure)' { return "This helper computes a size, count, or cost estimate used by surrounding logic." }
+        '^(append|format|escape|trim|normalize)' { return "This helper reshapes small pieces of data so the surrounding code can stay readable." }
+        '^(build|create|make|assemble)' { return "This routine assembles a larger structure from the inputs it receives." }
+        '^(parse|tokenize|scan|read|load)' { return "This routine ingests source content and turns it into a more useful structured form." }
+        '^(render|write|emit|serialize|print)' { return "This routine materializes internal state into an output format that later stages can consume." }
+        '^(resolve|collect|register|link)' { return "This routine connects discovered items back into the broader model owned by the file." }
+        '^(run|start|init|bootstrap)' { return "This routine prepares or drives one of the main execution paths in the file." }
+        default { return "This routine owns one focused piece of the file's behavior." }
+    }
+}
+
+function Get-RoutineNarrative([object]$routine)
+{
+    $ops = @($routine.Operations)
+    $flowNotes = New-StepList
+    $kind = if ($null -ne $routine.Kind) { $routine.Kind } else { "function" }
+
+    $paragraphs = New-Object 'System.Collections.Generic.List[string]'
+    $lead = Get-RoutinePurposeLead $routine.Name $kind
+    $lineText = if ($routine.Line -gt 0) { " It appears near line $($routine.Line)." } else { "" }
+    $paragraphs.Add($lead + $lineText)
+
+    if (($ops | Measure-Object).Count -gt 0)
+    {
+        $paragraphs.Add("Inside the body, it mainly handles " + (Join-SummaryList $ops 4) + ".")
+    }
+    elseif ($kind -eq "type declaration")
+    {
+        $paragraphs.Add("The surrounding implementation can use this type as a shared data shape or compile-time boundary.")
+    }
+    elseif ($kind -eq "function declaration")
+    {
+        $paragraphs.Add("The runtime implementation lives elsewhere, but this header still tells callers what parameters and return shape to expect.")
+    }
+
+    if ($routine.Body -match 'for\s*\(|foreach\s*\(|while\s*\(') { Add-UniqueStep $flowNotes "The implementation iterates over a collection or repeated workload." }
+    if ($routine.Body -match 'if\s*\(') { Add-UniqueStep $flowNotes "It branches on runtime conditions instead of following one fixed path." }
+    if ($routine.Body -match 'return\b') { Add-UniqueStep $flowNotes "The caller receives a computed result or status from this step." }
+
+    if (($flowNotes | Measure-Object).Count -gt 0)
+    {
+        $paragraphs.Add(($flowNotes -join " "))
+    }
+
+    return @($paragraphs)
+}
+
+function Get-RoutineDiagramSteps([object]$routine)
+{
+    $steps = New-StepList
+    $ops = @($routine.Operations)
+
+    Add-UniqueStep $steps ("Enter " + $routine.Name + "()")
+
+    foreach ($op in ($ops | Select-Object -First 5))
+    {
+        Add-UniqueStep $steps (Convert-ToSentenceCase $op)
+    }
+
+    if (($ops | Measure-Object).Count -eq 0)
+    {
+        if ($routine.Kind -eq "type declaration")
+        {
+            Add-UniqueStep $steps "Expose the shared type contract"
+        }
+        elseif ($routine.Kind -eq "function declaration")
+        {
+            Add-UniqueStep $steps "Expose the callable contract"
+        }
+        else
+        {
+            Add-UniqueStep $steps "Apply the routine's local logic"
+        }
+    }
+
+    if ($routine.Body -match 'return\b')
+    {
+        Add-UniqueStep $steps "Return the result to the caller"
+    }
+    else
+    {
+        Add-UniqueStep $steps "Hand control back to the caller"
+    }
+
+    return @($steps)
+}
+
+function Get-RoutineDocs([string]$relativePath, [string]$content)
+{
+    $ext = [System.IO.Path]::GetExtension($relativePath).ToLowerInvariant()
+    $routines = New-Object 'System.Collections.Generic.List[object]'
+
+    if ($ext -eq ".js")
+    {
+        foreach ($info in (Get-JSFunctionInfo $content | Sort-Object Line, Name))
+        {
+            $ops = Get-JSOperationPhrases $info.Body
+            $routines.Add([PSCustomObject]@{
+                Name = $info.Name
+                Kind = "function"
+                Body = $info.Body
+                Line = $info.Line
+                Operations = @($ops)
+            })
+        }
+    }
+    elseif ($ext -in @(".cpp", ".cc", ".cxx"))
+    {
+        foreach ($info in (Get-CppFunctionInfo $content | Sort-Object Line, Name))
+        {
+            $ops = Get-CppOperationPhrases $info.Body
+            $routines.Add([PSCustomObject]@{
+                Name = $info.Name
+                Kind = "function"
+                Body = $info.Body
+                Line = $info.Line
+                Operations = @($ops)
+            })
+        }
+    }
+    elseif ($ext -in @(".hpp", ".h"))
+    {
+        foreach ($info in (Get-HeaderDeclarationInfo $content | Sort-Object Line, Name))
+        {
+            $ops = if ($info.Kind -eq "type declaration")
+            {
+                @("declare a shared type", "expose the compile-time contract")
+            }
+            else
+            {
+                @("declare a callable contract", "let implementation files define the runtime body")
+            }
+
+            $routines.Add([PSCustomObject]@{
+                Name = $info.Name
+                Kind = $info.Kind
+                Body = $info.Body
+                Line = $info.Line
+                Operations = @($ops)
+            })
+        }
+    }
+    elseif ($ext -eq ".ps1")
+    {
+        foreach ($info in (Get-PowerShellFunctionInfo $content | Sort-Object Line, Name))
+        {
+            $ops = Get-PowerShellOperationPhrases $info.Body
+            $routines.Add([PSCustomObject]@{
+                Name = $info.Name
+                Kind = "function"
+                Body = $info.Body
+                Line = $info.Line
+                Operations = @($ops)
+            })
+        }
+    }
+
+    return $routines.ToArray()
 }
 
 function Get-LogicalGroup([string]$relativePath)
@@ -1157,21 +1461,31 @@ function Get-ImplementationStory(
         default { "This file participates in the NeoTerritory implementation as a focused artifact with a narrow local responsibility. Its behavior is best understood by reading it in the context of the module that loads or compiles it." }
     }
 
-    $story = $baseStory + " " + $role + " " + $chronology
+    $paragraphs = New-Object 'System.Collections.Generic.List[string]'
+    $paragraphs.Add("### Responsibility")
+    $paragraphs.Add($baseStory)
+    $paragraphs.Add("### Position In The Flow")
+    $paragraphs.Add($chronology)
+
+    $surfaceDetails = New-Object 'System.Collections.Generic.List[string]'
+    $surfaceDetails.Add($role)
 
     $symbolSummary = Join-SummaryList $symbols 4
     if (-not [string]::IsNullOrWhiteSpace($symbolSummary))
     {
-        $story += " The implementation surface is easiest to recognize through symbols such as " + $symbolSummary + "."
+        $surfaceDetails.Add("The main surface area is easiest to track through symbols such as " + $symbolSummary + ".")
     }
 
     $dependencySummary = Join-SummaryList $dependencies 4
     if (-not [string]::IsNullOrWhiteSpace($dependencySummary))
     {
-        $story += " In practice it collaborates directly with " + $dependencySummary + "."
+        $surfaceDetails.Add("It collaborates directly with " + $dependencySummary + ".")
     }
 
-    return $story
+    $paragraphs.Add("### Main Surface Area")
+    $paragraphs.Add(($surfaceDetails -join " "))
+
+    return ($paragraphs -join "`r`n`r`n")
 }
 
 function Get-PathActivitySteps([string]$relativePath, [string]$role)
@@ -1230,13 +1544,16 @@ function Get-PathActivitySteps([string]$relativePath, [string]$role)
     }
 }
 
-function New-MermaidActivity([string[]]$steps)
+function New-MermaidActivity(
+    [string[]]$steps,
+    [string]$startLabel = "Start",
+    [string]$endLabel = "End")
 {
     $stepArray = @($steps)
     $lines = New-Object 'System.Collections.Generic.List[string]'
     $lines.Add('```mermaid')
     $lines.Add("flowchart TD")
-    $lines.Add("    Start([Start])")
+    $lines.Add(("    Start([{0}])" -f $startLabel.Replace('"', "'")))
 
     for ($i = 0; $i -lt $stepArray.Count; ++$i)
     {
@@ -1246,7 +1563,7 @@ function New-MermaidActivity([string[]]$steps)
         $lines.Add(("    N{0}[{1}]" -f $i, $safeLabel))
     }
 
-    $lines.Add("    End([End])")
+    $lines.Add(("    End([{0}])" -f $endLabel.Replace('"', "'")))
 
     if ($stepArray.Count -gt 0)
     {
@@ -1276,6 +1593,7 @@ function New-FileDoc([string]$relativePath, [string]$content)
     $dependencies = Get-Dependencies $content $relativePath
     $story = Get-ImplementationStory $relativePath $role $chronology $symbols $dependencies
     $activitySteps = Get-ActivityStepsFromCode $relativePath $content
+    $routines = Get-RoutineDocs $relativePath $content
     if ((@($activitySteps).Count) -eq 0)
     {
         $activitySteps = Get-PathActivitySteps $relativePath $role
@@ -1303,13 +1621,39 @@ function New-FileDoc([string]$relativePath, [string]$content)
         $lines.Add($line)
     }
     $lines.Add("")
-    $lines.Add("## Implementation Story")
+    $lines.Add("## File Outline")
     $lines.Add($story)
     $lines.Add("")
-    $lines.Add("## Activity Diagram")
+    $lines.Add("## File Activity")
     foreach ($line in (New-MermaidActivity $activitySteps))
     {
         $lines.Add($line)
+    }
+    if ((@($routines).Count) -gt 0)
+    {
+        $lines.Add("")
+        $lines.Add("## Function Walkthrough")
+        foreach ($routine in $routines)
+        {
+            $lines.Add("")
+            $lines.Add("### $($routine.Name)")
+            foreach ($paragraph in (Get-RoutineNarrative $routine))
+            {
+                $lines.Add($paragraph)
+                $lines.Add("")
+            }
+            $lines.Add("Key operations:")
+            foreach ($line in (New-BulletLines $routine.Operations "This routine is primarily structural and does not expose obvious runtime operations from static inspection."))
+            {
+                $lines.Add($line)
+            }
+            $lines.Add("")
+            $lines.Add("Activity:")
+            foreach ($line in (New-MermaidActivity (Get-RoutineDiagramSteps $routine) ($routine.Name + "()") "Return"))
+            {
+                $lines.Add($line)
+            }
+        }
     }
     $lines.Add("")
     $lines.Add("## Documentation Note")
@@ -1348,7 +1692,7 @@ foreach ($rootFile in $rootFiles)
 
 foreach ($rootDir in $sourceRoots)
 {
-    $fullPath = Join-Path $repoRoot $rootDir
+    $fullPath = Join-Path $codebaseRoot $rootDir
     if (-not (Test-Path $fullPath))
     {
         continue

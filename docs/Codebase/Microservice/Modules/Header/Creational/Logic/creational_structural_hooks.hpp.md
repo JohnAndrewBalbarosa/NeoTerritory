@@ -13,10 +13,20 @@
 - string
 - vector
 
-## Implementation Story
-This header implements the compile-time contract for the creational subsystem. It declares the detectors, transforms, and helper types that the runtime sources later define. Declares creational-pattern detection and transform interfaces. This artifact participates in the repository flow according to the surrounding module or toolchain that loads it. The implementation surface is easiest to recognize through symbols such as resolve_creational_structural_keywords. In practice it collaborates directly with string and vector.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This header implements the compile-time contract for the creational subsystem. It declares the detectors, transforms, and helper types that the runtime sources later define.
+
+### Position In The Flow
+
+This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+### Main Surface Area
+
+Declares creational-pattern detection and transform interfaces. The main surface area is easiest to track through symbols such as resolve_creational_structural_keywords. It collaborates directly with string and vector.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -26,7 +36,34 @@ flowchart TD
     N0 --> End
 ```
 
+## Function Walkthrough
+
+### resolve_creational_structural_keywords
+This declaration exposes a callable contract without providing the runtime body here. It appears near line 6.
+
+Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
+
+Key operations:
+- declare a callable contract
+- let implementation files define the runtime body
+
+Activity:
+```mermaid
+flowchart TD
+    Start([resolve_creational_structural_keywords()])
+    N0[Enter resolve_creational_structural_keywords()]
+    N1[Declare a callable contract]
+    N2[Let implementation files define the runtime body]
+    N3[Hand control back to the caller]
+    End([Return])
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
+```
+
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

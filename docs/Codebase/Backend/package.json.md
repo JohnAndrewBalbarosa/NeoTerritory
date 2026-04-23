@@ -23,10 +23,20 @@
 ## Direct Dependencies
 - No direct dependency list was extracted from the file text.
 
-## Implementation Story
-This manifest tells the backend runtime how to start and what to load. Its implementation role is declarative: it defines the executable scripts and package dependencies that make the Express service run. Declares backend scripts and runtime dependencies. This artifact participates in the repository flow according to the surrounding module or toolchain that loads it. The implementation surface is easiest to recognize through symbols such as name, version, description, and main.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This manifest tells the backend runtime how to start and what to load. Its implementation role is declarative: it defines the executable scripts and package dependencies that make the Express service run.
+
+### Position In The Flow
+
+This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+### Main Surface Area
+
+Declares backend scripts and runtime dependencies. The main surface area is easiest to track through symbols such as name, version, description, and main.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -48,5 +58,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

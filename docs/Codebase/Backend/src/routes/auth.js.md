@@ -14,10 +14,20 @@
 - express
 - ../controllers/authController
 
-## Implementation Story
-This route file is a traffic director rather than a business-logic endpoint. Its implementation wires HTTP verbs and paths to the middleware chain and then forwards the request into the controller that performs the real work. Maps HTTP routes to middleware and controllers. Reached after Express accepts a request and before controller logic executes. The implementation surface is easiest to recognize through symbols such as express and router. In practice it collaborates directly with express and ../controllers/authController.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This route file is a traffic director rather than a business-logic endpoint. Its implementation wires HTTP verbs and paths to the middleware chain and then forwards the request into the controller that performs the real work.
+
+### Position In The Flow
+
+Reached after Express accepts a request and before controller logic executes.
+
+### Main Surface Area
+
+Maps HTTP routes to middleware and controllers. The main surface area is easiest to track through symbols such as express and router. It collaborates directly with express and ../controllers/authController.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -35,5 +45,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

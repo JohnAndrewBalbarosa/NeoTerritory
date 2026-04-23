@@ -12,10 +12,20 @@
 ## Direct Dependencies
 - ParseTree/parse_tree_code_generator.hpp
 
-## Implementation Story
-This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on the shared data structures and function signatures. Declares the public interfaces and shared data types for the generic parse and analysis pipeline. This artifact participates in the repository flow according to the surrounding module or toolchain that loads it. In practice it collaborates directly with ParseTree/parse_tree_code_generator.hpp.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on the shared data structures and function signatures.
+
+### Position In The Flow
+
+This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+### Main Surface Area
+
+Declares the public interfaces and shared data types for the generic parse and analysis pipeline. It collaborates directly with ParseTree/parse_tree_code_generator.hpp.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -31,5 +41,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

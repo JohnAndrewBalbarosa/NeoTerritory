@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase
 - Descendant source docs: 147
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Top-level logical view of the generated codebase mirror. It groups the repository into runtime entrypoints, frontend prototype code, backend service code, infrastructure automation, sample inputs, and the C++ microservice core.

@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Header/Creational
 - Descendant source docs: 10
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Creational detection and transform interface layer.

@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Contracts that describe how source files enter the syntactic subsystem and how command input is represented.

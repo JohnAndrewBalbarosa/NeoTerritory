@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/ParseTree
 - Descendant source docs: 7
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Public parse-tree contracts and helper interfaces.
