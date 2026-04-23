@@ -4,8 +4,8 @@
 Contracts define the public shape of the single middleman and the pattern hooks.
 
 ## Files As Interfaces
-- `pattern_middleman_contract.md` is the caller-facing middleman interface.
-- `pattern_hook_contract.md` is the hook-facing algorithm interface.
+- `pattern_middleman_contract.cpp.md` is the caller-facing middleman interface.
+- `pattern_hook_contract.cpp.md` is the hook-facing algorithm interface.
 - Both Behavioural and Creational code depend on these same contracts.
 
 ## Folder Flow

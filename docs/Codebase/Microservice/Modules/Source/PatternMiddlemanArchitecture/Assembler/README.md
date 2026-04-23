@@ -4,7 +4,7 @@
 Assembler owns tree shape and output assembly.
 
 ## Files As Implementation Units
-- `pattern_tree_assembler.md` represents the output tree builder.
+- `pattern_tree_assembler.cpp.md` represents the output tree builder.
 - It receives hook evidence and creates the final tree.
 - Hooks never create the final root or shared output shape.
 
