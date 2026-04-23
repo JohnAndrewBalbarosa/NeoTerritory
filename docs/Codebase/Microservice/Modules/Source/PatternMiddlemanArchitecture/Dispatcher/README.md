@@ -4,7 +4,7 @@
 Dispatcher selects hook groups and calls hooks through the shared contract.
 
 ## Files As Implementation Units
-- `pattern_hook_dispatcher.md` represents hook routing.
+- `pattern_hook_dispatcher.cpp.md` represents hook routing.
 - It decides which pattern hooks run.
 - It keeps Behavioural and Creational selection inside one shared pipeline.
 

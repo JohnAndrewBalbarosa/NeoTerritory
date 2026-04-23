@@ -80,9 +80,9 @@ flowchart TD
 ```
 
 ## Read Order
-1. Start with `Middleman/pattern_middleman.md`.
-2. Open `Registry/pattern_registry.md`.
-3. Open `Context/pattern_context.md`.
-4. Open `Dispatcher/pattern_hook_dispatcher.md`.
-5. Open `Assembler/pattern_tree_assembler.md`.
+1. Start with `Middleman/pattern_middleman.cpp.md`.
+2. Open `Registry/pattern_registry.cpp.md`.
+3. Open `Context/pattern_context.cpp.md`.
+4. Open `Dispatcher/pattern_hook_dispatcher.cpp.md`.
+5. Open `Assembler/pattern_tree_assembler.cpp.md`.
 6. Open only the hook file for the pattern algorithm.
