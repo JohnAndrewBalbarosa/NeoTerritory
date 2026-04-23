@@ -1,592 +1,85 @@
-﻿# creational_transform_evidence_internal.hpp
+# creational_transform_evidence_internal.hpp
 
 - Source: Microservice/Modules/Source/Creational/Transform/internal/creational_transform_evidence_internal.hpp
 - Kind: C++ header
 - Lines: 96
-- Role: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
-- Chronology: Runs after the generic parse tree exists so creational detection or transformation can operate on it.
 
-## Notable Symbols
-- SingletonCallsiteEvidence
-- EvidenceScanResult
-- MonolithicClassView
-- collect_class_signature_lines
-- collect_method_signature_lines
-- brace_delta
-- retain_single_main_function
-- scan_pattern_evidence
-- ensure_class_view
-- method_name_from_chain_call
-- build_class_views
-- build_source_evidence_present_lines
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- Transform/creational_code_generator_internal.hpp
-- sstream
-- string
-- vector
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions.
+Runs after the generic parse tree exists so creational detection can label the structure.
 
-### Position In The Flow
-
-Runs after the generic parse tree exists so creational detection or transformation can operate on it.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements creational transform dispatch, evidence rendering, and rewrite helpers. The main surface area is easiest to track through symbols such as SingletonCallsiteEvidence, EvidenceScanResult, MonolithicClassView, and collect_class_signature_lines. It collaborates directly with Transform/creational_code_generator_internal.hpp, sstream, string, and vector.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Declare SingletonCallsiteEvidence]
-    N1[Declare EvidenceScanResult]
-    N2[Declare MonolithicClassView]
-    N3[Declare collect_class_signature_lines]
-    N4[Declare collect_method_signature_lines]
-    N5[Declare brace_delta]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
-
-## Function Walkthrough
-
-### SingletonCallsiteEvidence
-This declaration introduces a shared type that other files compile against. It appears near line 12.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([SingletonCallsiteEvidence()])
-    N0[Enter SingletonCallsiteEvidence()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### EvidenceScanResult
-This declaration introduces a shared type that other files compile against. It appears near line 19.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([EvidenceScanResult()])
-    N0[Enter EvidenceScanResult()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### MonolithicClassView
-This declaration introduces a shared type that other files compile against. It appears near line 35.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([MonolithicClassView()])
-    N0[Enter MonolithicClassView()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### collect_class_signature_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 49.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([collect_class_signature_lines()])
-    N0[Enter collect_class_signature_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### collect_method_signature_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 53.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([collect_method_signature_lines()])
-    N0[Enter collect_method_signature_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### brace_delta
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 56.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([brace_delta()])
-    N0[Enter brace_delta()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### retain_single_main_function
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 57.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([retain_single_main_function()])
-    N0[Enter retain_single_main_function()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### scan_pattern_evidence
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 60.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([scan_pattern_evidence()])
-    N0[Enter scan_pattern_evidence()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### ensure_class_view
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 61.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([ensure_class_view()])
-    N0[Enter ensure_class_view()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### method_name_from_chain_call
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 64.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([method_name_from_chain_call()])
-    N0[Enter method_name_from_chain_call()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_class_views
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 65.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_class_views()])
-    N0[Enter build_class_views()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_source_evidence_present_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 68.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_source_evidence_present_lines()])
-    N0[Enter build_source_evidence_present_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_target_evidence_removed_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 70.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_target_evidence_removed_lines()])
-    N0[Enter build_target_evidence_removed_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_target_evidence_added_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 72.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_target_evidence_added_lines()])
-    N0[Enter build_target_evidence_added_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_source_type_skeleton_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 74.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_source_type_skeleton_lines()])
-    N0[Enter build_source_type_skeleton_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_target_type_skeleton_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 76.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_target_type_skeleton_lines()])
-    N0[Enter build_target_type_skeleton_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_source_callsite_skeleton_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 78.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_source_callsite_skeleton_lines()])
-    N0[Enter build_source_callsite_skeleton_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_target_callsite_skeleton_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 80.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_target_callsite_skeleton_lines()])
-    N0[Enter build_target_callsite_skeleton_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### validate_monolithic_structure
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 82.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([validate_monolithic_structure()])
-    N0[Enter validate_monolithic_structure()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### append_evidence_section
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 85.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_evidence_section()])
-    N0[Enter append_evidence_section()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### append_code_section
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 89.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_code_section()])
-    N0[Enter append_code_section()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
+
+- [program_flow](./creational_transform_evidence_internal/creational_transform_evidence_internal_program_flow.cpp.md)
+## Reading Map
+Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
+
+Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+
+Names worth recognizing while reading: SingletonCallsiteEvidence, EvidenceScanResult, MonolithicClassView, collect_class_signature_lines, collect_method_signature_lines, and brace_delta.
+
+It leans on nearby contracts or tools such as Transform/creational_code_generator_internal.hpp, sstream, string, and vector.
+
+## Story Groups
+
+### Promises This File Makes
+These entries tell the rest of the program what this file can provide.
+- SingletonCallsiteEvidence (line 12): Declare a shared type and expose the compile-time contract
+- EvidenceScanResult (line 19): Declare a shared type and expose the compile-time contract
+- MonolithicClassView (line 35): Declare a shared type and expose the compile-time contract
+- collect_class_signature_lines() (line 49): Declare a callable contract and let implementation files define the runtime body
+- collect_method_signature_lines() (line 53): Declare a callable contract and let implementation files define the runtime body
+- brace_delta() (line 56): Declare a callable contract and let implementation files define the runtime body
+- retain_single_main_function() (line 57): Declare a callable contract and let implementation files define the runtime body
+- scan_pattern_evidence() (line 60): Declare a callable contract and let implementation files define the runtime body
+- ensure_class_view() (line 61): Declare a callable contract and let implementation files define the runtime body
+- method_name_from_chain_call() (line 64): Declare a callable contract and let implementation files define the runtime body
+- build_class_views() (line 65): Declare a callable contract and let implementation files define the runtime body
+- build_source_evidence_present_lines() (line 68): Declare a callable contract and let implementation files define the runtime body
+- build_target_evidence_removed_lines() (line 70): Declare a callable contract and let implementation files define the runtime body
+- build_target_evidence_added_lines() (line 72): Declare a callable contract and let implementation files define the runtime body
+- build_source_type_skeleton_lines() (line 74): Declare a callable contract and let implementation files define the runtime body
+- build_target_type_skeleton_lines() (line 76): Declare a callable contract and let implementation files define the runtime body
+- build_source_callsite_skeleton_lines() (line 78): Declare a callable contract and let implementation files define the runtime body
+- build_target_callsite_skeleton_lines() (line 80): Declare a callable contract and let implementation files define the runtime body
+- validate_monolithic_structure() (line 82): Declare a callable contract and let implementation files define the runtime body
+- append_evidence_section() (line 85): Declare a callable contract and let implementation files define the runtime body
+- append_code_section() (line 89): Declare a callable contract and let implementation files define the runtime body
+
+## Function Stories
+Function-level logic is decoupled into future implementation units:
+
+- [singletoncallsiteevidence](./creational_transform_evidence_internal/functions/singletoncallsiteevidence.cpp.md)
+- [evidencescanresult](./creational_transform_evidence_internal/functions/evidencescanresult.cpp.md)
+- [monolithicclassview](./creational_transform_evidence_internal/functions/monolithicclassview.cpp.md)
+- [collect_class_signature_lines](./creational_transform_evidence_internal/functions/collect_class_signature_lines.cpp.md)
+- [collect_method_signature_lines](./creational_transform_evidence_internal/functions/collect_method_signature_lines.cpp.md)
+- [brace_delta](./creational_transform_evidence_internal/functions/brace_delta.cpp.md)
+- [retain_single_main_function](./creational_transform_evidence_internal/functions/retain_single_main_function.cpp.md)
+- [scan_pattern_evidence](./creational_transform_evidence_internal/functions/scan_pattern_evidence.cpp.md)
+- [ensure_class_view](./creational_transform_evidence_internal/functions/ensure_class_view.cpp.md)
+- [method_name_from_chain_call](./creational_transform_evidence_internal/functions/method_name_from_chain_call.cpp.md)
+- [build_class_views](./creational_transform_evidence_internal/functions/build_class_views.cpp.md)
+- [build_source_evidence_present_lines](./creational_transform_evidence_internal/functions/build_source_evidence_present_lines.cpp.md)
+- [build_target_evidence_removed_lines](./creational_transform_evidence_internal/functions/build_target_evidence_removed_lines.cpp.md)
+- [build_target_evidence_added_lines](./creational_transform_evidence_internal/functions/build_target_evidence_added_lines.cpp.md)
+- [build_source_type_skeleton_lines](./creational_transform_evidence_internal/functions/build_source_type_skeleton_lines.cpp.md)
+- [build_target_type_skeleton_lines](./creational_transform_evidence_internal/functions/build_target_type_skeleton_lines.cpp.md)
+- [build_source_callsite_skeleton_lines](./creational_transform_evidence_internal/functions/build_source_callsite_skeleton_lines.cpp.md)
+- [build_target_callsite_skeleton_lines](./creational_transform_evidence_internal/functions/build_target_callsite_skeleton_lines.cpp.md)
+- [validate_monolithic_structure](./creational_transform_evidence_internal/functions/validate_monolithic_structure.cpp.md)
+- [append_evidence_section](./creational_transform_evidence_internal/functions/append_evidence_section.cpp.md)
+- [append_code_section](./creational_transform_evidence_internal/functions/append_code_section.cpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

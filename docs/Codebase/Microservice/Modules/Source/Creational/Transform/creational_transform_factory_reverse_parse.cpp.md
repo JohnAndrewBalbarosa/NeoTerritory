@@ -1,105 +1,168 @@
-﻿# creational_transform_factory_reverse_parse.cpp
+# creational_transform_factory_reverse_parse.cpp
 
 - Source: Microservice/Modules/Source/Creational/Transform/creational_transform_factory_reverse_parse.cpp
 - Kind: C++ implementation
 - Lines: 165
-- Role: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
-- Chronology: Runs after the generic parse tree exists so creational detection or transformation can operate on it.
 
-## Notable Symbols
-- parse_create_mapping_from_class_body
-- collect_factory_classes
-- class_regex
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- internal/creational_transform_factory_reverse_internal.hpp
-- Transform/creational_code_generator_internal.hpp
-- cctype
-- regex
-- string
-- vector
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions.
+Runs after the generic parse tree exists so creational detection can label the structure.
 
-### Position In The Flow
-
-Runs after the generic parse tree exists so creational detection or transformation can operate on it.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements creational transform dispatch, evidence rendering, and rewrite helpers. The main surface area is easiest to track through symbols such as parse_create_mapping_from_class_body, collect_factory_classes, and class_regex. It collaborates directly with internal/creational_transform_factory_reverse_internal.hpp, Transform/creational_code_generator_internal.hpp, cctype, and regex.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+
+### Block 1 - Program Flow Details
+#### Part 1
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Execute collect factory classes to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
-    N1[Execute parse create mapping from class body]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> End
-```
-
-## Function Walkthrough
-
-### parse_create_mapping_from_class_body
-This routine ingests source content and turns it into a more useful structured form. It appears near line 11.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([parse_create_mapping_from_class_body()])
-    N0[Enter parse_create_mapping_from_class_body()]
-    N1[Apply the routine's local logic]
-    N2[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### collect_factory_classes
-This routine connects discovered items back into the broader model owned by the file. It appears near line 103.
-
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([collect_factory_classes()])
-    N0[Enter collect_factory_classes()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Iterate over the active collection]
-    N4[Branch on runtime conditions]
-    N5[Return the result to the caller]
-    End([Return])
-    Start --> N0
+    N0["Start"]
+    N1["Reading the input"]
+    N2["Enter parse_create_mapping_from_class_body()"]
+    N3["Parse text"]
+    N4["Register classes"]
+    N5["Leave parse_create_mapping_from_class_body()"]
+    N6["Finding what matters"]
+    N7["Enter collect_factory_classes()"]
+    N8["Collect facts"]
+    N9["Handle factory"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
     N4 --> N5
-    N5 --> End
+    N5 --> N6
+    N6 --> N7
+    N7 --> N8
+    N8 --> N9
+```
+
+#### Part 2
+```mermaid
+flowchart TD
+    N0["Register classes"]
+    N1["Match regex"]
+    N2["Look up entries"]
+    N3["Record output"]
+    N4["Return result"]
+    N5["End"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+```
+
+## Reading Map
+Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
+
+Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+
+Names worth recognizing while reading: parse_create_mapping_from_class_body, collect_factory_classes, and class_regex.
+
+It leans on nearby contracts or tools such as internal/creational_transform_factory_reverse_internal.hpp, Transform/creational_code_generator_internal.hpp, cctype, regex, string, and vector.
+
+## Story Groups
+
+### Reading The Input
+These steps turn raw text or arguments into something the program can follow.
+- parse_create_mapping_from_class_body() (line 11): Parse source text into structured values and inspect or register class-level information
+
+### Finding What Matters
+These steps pick out the facts, traces, and relationships that later stages need.
+- collect_factory_classes() (line 103): Collect derived facts for later stages, handle factory-specific detection or rewrite logic, and inspect or register class-level information
+
+## Function Stories
+
+### parse_create_mapping_from_class_body()
+This routine ingests source content and turns it into a more useful structured form. It appears near line 11.
+
+Inside the body, it mainly handles parse source text into structured values and inspect or register class-level information.
+
+What it does:
+- parse source text into structured values
+- inspect or register class-level information
+
+Flow:
+```mermaid
+flowchart TD
+    Start["parse_create_mapping_from_class_body()"]
+    N0["Enter parse_create_mapping_from_class_body()"]
+    N1["Parse text"]
+    N2["Register classes"]
+    N3["Hand back"]
+    End["Return"]
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
+```
+
+### collect_factory_classes()
+This routine connects discovered items back into the broader model owned by the file. It appears near line 103.
+
+Inside the body, it mainly handles collect derived facts for later stages, handle factory-specific detection or rewrite logic, inspect or register class-level information, and match source text with regular expressions.
+
+The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+
+What it does:
+- collect derived facts for later stages
+- handle factory-specific detection or rewrite logic
+- inspect or register class-level information
+- match source text with regular expressions
+- look up entries in previously collected maps or sets
+- record derived output into collections
+- normalize raw text before later parsing
+- populate output fields or accumulators
+- parse or tokenize input text
+- assemble tree or artifact structures
+- iterate over the active collection
+- branch on runtime conditions
+
+Flow:
+
+### Block 2 - collect_factory_classes() Details
+#### Part 1
+```mermaid
+flowchart TD
+    N0["collect_factory_classes()"]
+    N1["Enter collect_factory_classes()"]
+    N2["Collect facts"]
+    N3["Handle factory"]
+    N4["Register classes"]
+    N5["Match regex"]
+    N6["Look up entries"]
+    N7["Record output"]
+    N8["Clean text"]
+    N9["Populate outputs"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+    N6 --> N7
+    N7 --> N8
+    N8 --> N9
+```
+
+#### Part 2
+```mermaid
+flowchart TD
+    N0["Return result"]
+    N1["Return"]
+    N0 --> N1
 ```
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

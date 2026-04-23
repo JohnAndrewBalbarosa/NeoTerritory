@@ -4,7 +4,6 @@
 #include "behavioural_broken_tree.hpp"
 #include "creational_broken_tree.hpp"
 #include "parse_tree.hpp"
-#include "parse_tree_code_generator.hpp"
 #include "parse_tree_hash_links.hpp"
 #include "parse_tree_symbols.hpp"
 #include "Input-and-CLI/source_reader.hpp"
@@ -32,12 +31,28 @@ struct PipelineReport
     size_t paired_file_count;
     size_t invariant_failure_count;
     size_t dirty_trace_count;
+    size_t design_pattern_tag_count;
     size_t intentional_collision_total;
     size_t intentional_collision_validated;
     size_t virtual_nodes_kept;
     size_t virtual_nodes_pruned;
     bool graph_consistent;
     std::vector<std::string> invariant_failures;
+};
+
+struct DesignPatternTag
+{
+    std::string tag_id;
+    std::string pattern;
+    std::string tag_type;
+    std::string file_path;
+    size_t line_number;
+    std::string symbol_name;
+    std::string node_kind;
+    std::string node_value;
+    std::string reason;
+    std::string documentation_hint;
+    size_t evidence_hash;
 };
 
 struct PipelineArtifacts
@@ -49,6 +64,7 @@ struct PipelineArtifacts
     HashLinkIndex hash_links;
     std::vector<LineHashTrace> line_hash_traces;
     std::vector<FactoryInvocationTrace> factory_invocation_traces;
+    std::vector<DesignPatternTag> design_pattern_tags;
     std::vector<CrucialClassInfo> crucial_classes;
     ParseTreeSymbolTables symbol_tables;
     std::string monolithic_representation;
@@ -67,6 +83,6 @@ std::string pipeline_report_to_json(
     const std::vector<LineHashTrace>& line_hash_traces,
     const std::vector<FactoryInvocationTrace>& factory_invocation_traces,
     const HashLinkIndex& hash_links,
-    const std::vector<TransformDecision>& transform_decisions = {});
+    const std::vector<DesignPatternTag>& design_pattern_tags = {});
 
 #endif // ALGORITHM_PIPELINE_HPP

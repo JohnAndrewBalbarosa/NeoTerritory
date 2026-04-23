@@ -1,61 +1,76 @@
-﻿# behavioural_structural_hooks.hpp
+# behavioural_structural_hooks.hpp
 
 - Source: Microservice/Modules/Header/Behavioural/Logic/behavioural_structural_hooks.hpp
 - Kind: C++ header
 - Lines: 13
-- Role: Declares behavioural detection interfaces and structural-hook contracts.
-- Chronology: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-## Notable Symbols
-- resolve_behavioural_structural_keywords
-
-## Direct Dependencies
-- string
-- vector
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This header implements the compile-time contract for the behavioural subsystem. It defines the interfaces and hook declarations used when the generic parser delegates behavioural structure decisions.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Declares behavioural detection interfaces and structural-hook contracts. The main surface area is easiest to track through symbols such as resolve_behavioural_structural_keywords. It collaborates directly with string and vector.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Declare resolve_behavioural_structural_keywords]
-    End([End])
+    Start["Start"]
+    N0["Promises this file makes"]
+    N1["Enter resolve_behavioural_structural_keywords()"]
+    N2["Declare call"]
+    N3["Defer body"]
+    N4["Leave resolve_behavioural_structural_keywords()"]
+    End["End"]
     Start --> N0
-    N0 --> End
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> End
 ```
 
-## Function Walkthrough
+## Reading Map
+Read this file as: Declares behavioural detection interfaces and structural-hook contracts.
 
-### resolve_behavioural_structural_keywords
+Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+Names worth recognizing while reading: resolve_behavioural_structural_keywords.
+
+It leans on nearby contracts or tools such as string and vector.
+
+## Story Groups
+
+### Promises This File Makes
+These entries tell the rest of the program what this file can provide.
+- resolve_behavioural_structural_keywords() (line 6): Declare a callable contract and let implementation files define the runtime body
+
+## Function Stories
+
+### resolve_behavioural_structural_keywords()
 This declaration exposes a callable contract without providing the runtime body here. It appears near line 6.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
-Key operations:
+What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([resolve_behavioural_structural_keywords()])
-    N0[Enter resolve_behavioural_structural_keywords()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
+    Start["resolve_behavioural_structural_keywords()"]
+    N0["Enter resolve_behavioural_structural_keywords()"]
+    N1["Declare call"]
+    N2["Defer body"]
+    N3["Hand back"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2

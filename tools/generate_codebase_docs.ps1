@@ -20,7 +20,7 @@ $sourceRoots = @(
     "Backend",
     "Frontend",
     "Infrastructure",
-    "Input",
+    "LegacyPatternTransformSamples",
     "Microservice"
 )
 
@@ -186,9 +186,16 @@ function Get-Role([string]$relativePath)
         "Infrastructure/session-orchestration/installer.config.json" { return "Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values." }
         "Infrastructure/session-orchestration/docker/Dockerfile" { return "Builds the container image used for per-user NeoTerritory sessions." }
         "Infrastructure/session-orchestration/k8s/templates/*" { return "Declares user-scoped Kubernetes resources for session pods and routing." }
-        "Input/*" { return "Provides sample source programs for manual or research-oriented runs." }
+        "LegacyPatternTransformSamples/*" { return "Provides legacy sample source programs from the older pattern-to-pattern transform system." }
         "Microservice/main.cpp" { return "Thin executable entrypoint that delegates to the syntactic broken AST runner." }
-        "Microservice/Layer/*" { return "Owns application-layer orchestration around parsing, generation, and report emission." }
+        "Microservice/Layer/*" { return "Owns application-layer orchestration around parsing, documentation tagging, and report emission." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration/algorithm_pipeline.cpp" { return "Runs the ordered analysis pipeline and packages the resulting artifacts, documentation tags, traces, and metrics." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/source_reader.cpp" { return "Loads discovered source files into SourceFileUnit records and optional monolithic views." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/cli_arguments.cpp" { return "Normalizes the requested source and target pattern arguments before runtime execution begins." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering/codebase_output_writer.cpp" { return "Keeps the older generated-code writer isolated from the current tagging-focused runtime path." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.cpp" { return "Resolves pattern-specific structural keywords and records the crucial classes used by later filtering stages." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/core.cpp" { return "Builds the main parse tree, dependency context, and filtered shadow tree for the source corpus." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/build.cpp" { return "Constructs file-local parse-tree nodes from tokenized source lines and scoped statements." }
         "Microservice/Modules/Header/SyntacticBrokenAST/*" { return "Declares the public interfaces and shared data types for the generic parse and analysis pipeline." }
         "Microservice/Modules/Source/SyntacticBrokenAST/*" { return "Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting." }
         "Microservice/Modules/Header/Creational/*" { return "Declares creational-pattern detection and transform interfaces." }
@@ -218,14 +225,17 @@ function Get-Chronology([string]$relativePath)
         "Backend/src/controllers/*" { return "Runs after routing and middleware resolution to perform request-specific backend work." }
         "Backend/src/db/*" { return "Supports backend startup and request-time persistence operations." }
         "Microservice/main.cpp" { return "Executable handoff point: it forwards control into the application-layer runner." }
-        "Microservice/Layer/*" { return "Runs after process startup to validate CLI args, discover input files, execute the pipeline, and write outputs." }
+        "Microservice/Layer/*" { return "Runs after process startup to validate CLI args, discover input files, execute the pipeline, and write documentation-oriented outputs." }
         "Microservice/Modules/Source/SyntacticBrokenAST/source_reader.cpp" { return "Runs early in the microservice flow to load raw file contents before parsing begins." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/source_reader.cpp" { return "Runs early in the microservice flow to load raw file contents before parsing begins." }
         "Microservice/Modules/Source/SyntacticBrokenAST/cli_arguments.cpp" { return "Runs at the start of the microservice flow to validate the requested source and target pattern pair." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/cli_arguments.cpp" { return "Runs at the start of the microservice flow to validate the requested source and target pattern pair." }
         "Microservice/Modules/Source/SyntacticBrokenAST/algorithm_pipeline.cpp" { return "Orchestrates the core analysis stages once source files have been loaded." }
-        "Microservice/Modules/Source/SyntacticBrokenAST/*" { return "Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, reports, and rendered outputs." }
-        "Microservice/Modules/Source/Creational/*" { return "Runs after the generic parse tree exists so creational detection or transformation can operate on it." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration/algorithm_pipeline.cpp" { return "Orchestrates the core analysis stages once source files have been loaded." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/*" { return "Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs." }
+        "Microservice/Modules/Source/Creational/*" { return "Runs after the generic parse tree exists so creational detection can label the structure." }
         "Microservice/Modules/Source/Behavioural/*" { return "Runs after the generic parse tree exists so behavioural scaffolds can classify pattern structure." }
-        "Input/*" { return "These files are consumed as sample inputs before or during a run rather than executed as infrastructure or service code." }
+        "LegacyPatternTransformSamples/*" { return "These files document the older design-pattern transformation corpus rather than the current tagging-first runtime." }
         "Microservice/Test/Input/*" { return "These files are consumed as regression corpus input during validation scenarios." }
         default { return "This artifact participates in the repository flow according to the surrounding module or toolchain that loads it." }
     }
@@ -328,7 +338,7 @@ function Get-KeySymbols([string]$content, [string]$relativePath)
         {
             Add-UniqueValue $items $match.Groups[1].Value
         }
-        foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*(?:inline\s+)?(?:constexpr\s+)?(?:static\s+)?(?:virtual\s+)?(?:[\w:<>~*&]+\s+)+([A-Za-z_][A-Za-z0-9_:]*)\s*\('))
+        foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*(?:inline\s+)?(?:constexpr\s+)?(?:static\s+)?(?:virtual\s+)?(?:[\w:<>~*&]+[ \t]+)+([A-Za-z_][A-Za-z0-9_:]*)\s*\('))
         {
             $name = $match.Groups[1].Value
             if ($name -notin @("if", "for", "while", "switch", "return", "catch"))
@@ -545,7 +555,7 @@ function Get-CppFunctionInfo([string]$content)
 {
     $results = New-Object 'System.Collections.Generic.List[object]'
     $seen = New-Object 'System.Collections.Generic.HashSet[string]'
-    $pattern = '(?m)^\s*(?!if\b|for\b|while\b|switch\b|catch\b|return\b)(?:template\s*<[^>]+>\s*)?(?:inline\s+)?(?:static\s+)?(?:virtual\s+)?(?:constexpr\s+)?(?:[\w:<>~*&]+\s+)+([A-Za-z_~][A-Za-z0-9_:~]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?\{'
+    $pattern = '(?m)^\s*(?!if\b|for\b|while\b|switch\b|catch\b|return\b)(?:template\s*<[^>]+>\s*)?(?:inline\s+)?(?:static\s+)?(?:virtual\s+)?(?:constexpr\s+)?(?:[\w:<>~*&]+[ \t]+)+([A-Za-z_~][A-Za-z0-9_:~]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?\{'
 
     foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, $pattern))
     {
@@ -655,7 +665,7 @@ function Get-HeaderDeclarationInfo([string]$content)
         })
     }
 
-    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*(?:[\w:<>~*&]+\s+)+([A-Za-z_~][A-Za-z0-9_:~]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?;'))
+    foreach ($match in [System.Text.RegularExpressions.Regex]::Matches($content, '(?m)^\s*(?:[\w:<>~*&]+[ \t]+)+([A-Za-z_~][A-Za-z0-9_:~]*)\s*\([^;{}]*\)\s*(?:const\s*)?(?:noexcept\s*)?;'))
     {
         $name = $match.Groups[1].Value
         if ($name -in @("if", "for", "while", "switch", "catch", "return") -or [string]::IsNullOrWhiteSpace($name) -or $seen.Contains($name))
@@ -704,6 +714,53 @@ function Get-PowerShellOperationPhrases([string]$body)
     if ($body -match 'docker|kubectl|minikube|cmake') { Add-UniqueStep $ops "invoke external tooling" }
     if ($body -match 'if\s*\(') { Add-UniqueStep $ops "branch on runtime conditions" }
     if ($body -match 'foreach\s*\(|for\s*\(|while\s*\(') { Add-UniqueStep $ops "iterate over the active collection" }
+    return @($ops)
+}
+
+function Get-NameDrivenOperationPhrases([string]$name, [string]$body, [string]$language)
+{
+    $ops = New-StepList
+    $lowerName = $name.ToLowerInvariant()
+
+    switch -Regex ($lowerName)
+    {
+        '^(clear|reset)' { Add-UniqueStep $ops "clear temporary buffers or state" }
+        '^(trim|lowercase|normalize|format|escape)' { Add-UniqueStep $ops "normalize or format text values" }
+        '^(split|tokenize)' { Add-UniqueStep $ops "split source text into smaller units" }
+        '^(parse|scan)' { Add-UniqueStep $ops "parse source text into structured values" }
+        '^(read|load)' { Add-UniqueStep $ops "load input into working structures" }
+        '^(collect|gather)' { Add-UniqueStep $ops "collect derived facts for later stages" }
+        '^(track|record)' { Add-UniqueStep $ops "track discovered declarations, references, or traces" }
+        '^(find|locate|lookup)' { Add-UniqueStep $ops "search previously collected data" }
+        '^(validate|check|ensure|assert)' { Add-UniqueStep $ops "validate assumptions before continuing" }
+        '^(estimate|count|measure|size)' { Add-UniqueStep $ops "estimate the size or cost of generated state" }
+        '^(build|create|assemble|emit|add)' { Add-UniqueStep $ops "build or append the next output structure" }
+        '^(rewrite|transform|replace)' { Add-UniqueStep $ops "rewrite source text or model state" }
+        '^(remove|cleanup)' { Add-UniqueStep $ops "remove obsolete transformed artifacts" }
+        '^(render|serialize|write|print)' { Add-UniqueStep $ops "render or serialize the result" }
+        '^(register|resolve|link)' { Add-UniqueStep $ops "connect discovered data back into the shared model" }
+        '^(init|start|run|bootstrap|navigate)' { Add-UniqueStep $ops "drive the main execution path" }
+    }
+
+    if ($lowerName -match 'argument|cli') { Add-UniqueStep $ops "normalize command or call input" }
+    if ($lowerName -match 'factory') { Add-UniqueStep $ops "handle factory-specific detection or rewrite logic" }
+    if ($lowerName -match 'symbol') { Add-UniqueStep $ops "work with symbol-oriented state" }
+    if ($lowerName -match 'hash') { Add-UniqueStep $ops "compute or reuse hash-oriented identifiers" }
+    if ($lowerName -match 'class') { Add-UniqueStep $ops "inspect or register class-level information" }
+    if ($lowerName -match 'line') { Add-UniqueStep $ops "work one source line at a time" }
+    if ($lowerName -match 'declaration') { Add-UniqueStep $ops "inspect or rewrite declarations" }
+    if ($lowerName -match 'callsite') { Add-UniqueStep $ops "recognize or rewrite callsite structure" }
+
+    if ($body -match 'std::regex|regex_match|regex_search') { Add-UniqueStep $ops "match source text with regular expressions" }
+    if ($body -match 'split_lines') { Add-UniqueStep $ops "split the source into individual lines" }
+    if ($body -match 'join_lines|join_tokens') { Add-UniqueStep $ops "reassemble token or line collections into text" }
+    if ($body -match 'std::sort|sort\(') { Add-UniqueStep $ops "order candidate values before selecting or emitting them" }
+    if ($body -match '\.find\(|find\(') { Add-UniqueStep $ops "look up entries in previously collected maps or sets" }
+    if ($body -match 'push_back|emplace_back|insert\(') { Add-UniqueStep $ops "record derived output into collections" }
+    if ($body -match 'erase\(|remove_') { Add-UniqueStep $ops "drop stale entries or obsolete source fragments" }
+    if ($body -match 'substr|trim|tolower|isspace') { Add-UniqueStep $ops "normalize raw text before later parsing" }
+    if ($body -match 'out_[A-Za-z_]|out\.') { Add-UniqueStep $ops "populate output fields or accumulators" }
+
     return @($ops)
 }
 
@@ -804,7 +861,7 @@ function Get-ActivityStepsFromCode([string]$relativePath, [string]$content)
                 Body = $_.Body
                 Score = Get-FunctionPriorityScore $_.Name $_.Body $pathTokens "js"
             }
-        } | Sort-Object -Property @{Expression={$_.Score};Descending=$true}, @{Expression={$_.Body.Length};Descending=$true}
+        } | Where-Object { $_.Name -notin @("if", "for", "while", "switch", "catch", "return") } | Sort-Object -Property @{Expression={$_.Score};Descending=$true}, @{Expression={$_.Body.Length};Descending=$true}
 
         foreach ($function in ($functions | Select-Object -First 5))
         {
@@ -828,7 +885,7 @@ function Get-ActivityStepsFromCode([string]$relativePath, [string]$content)
                 Body = $_.Body
                 Score = Get-FunctionPriorityScore $_.Name $_.Body $pathTokens "cpp"
             }
-        } | Sort-Object -Property @{Expression={$_.Score};Descending=$true}, @{Expression={$_.Body.Length};Descending=$true}
+        } | Where-Object { $_.Name -notin @("if", "for", "while", "switch", "catch", "return") } | Sort-Object -Property @{Expression={$_.Score};Descending=$true}, @{Expression={$_.Body.Length};Descending=$true}
 
         foreach ($function in ($functions | Select-Object -First 5))
         {
@@ -945,6 +1002,105 @@ function Convert-ToSentenceCase([string]$text)
     return $trimmed.Substring(0, 1).ToUpperInvariant() + $trimmed.Substring(1)
 }
 
+function Convert-ToShortMermaidStep([string]$text)
+{
+    if ([string]::IsNullOrWhiteSpace($text))
+    {
+        return ""
+    }
+
+    $trimmed = [System.Text.RegularExpressions.Regex]::Replace($text.Trim(), '\s+', ' ')
+    $lower = $trimmed.ToLowerInvariant()
+
+    switch -Regex ($lower)
+    {
+        '^study the (.+?) documents in' { return "Study " + (Convert-ToSentenceCase $Matches[1]) + " docs" }
+        '^descend into the (.+?) child' { return "Open " + (Convert-ToSentenceCase $Matches[1]) + " folders" }
+        '^phase\s+\d+:\s*(.+)$' { return (Convert-ToSentenceCase $Matches[1]) }
+        '^enter\s+(.+)$' { return "Enter " + $Matches[1] }
+        '^return\b' { return "Return result" }
+        '^hand control\b' { return "Hand back" }
+        '^run\s+(.+?)\s+to\b' { return "Run " + (Convert-ToSentenceCase $Matches[1]) }
+        '^execute\s+(.+?)\s+to\b' { return "Run " + (Convert-ToSentenceCase $Matches[1]) }
+
+        'declare a shared type' { return "Declare type" }
+        'expose the compile-time contract' { return "Expose contract" }
+        'declare a callable contract' { return "Declare call" }
+        'let implementation files define' { return "Defer body" }
+        'clear temporary buffers' { return "Clear state" }
+        'normalize or format text values' { return "Normalize text" }
+        'split source text' { return "Split text" }
+        'parse source text' { return "Parse text" }
+        'load input' { return "Load input" }
+        'collect derived facts' { return "Collect facts" }
+        'track discovered declarations' { return "Track discoveries" }
+        'search previously collected data' { return "Search data" }
+        'validate assumptions' { return "Validate assumptions" }
+        'estimate the size' { return "Estimate size" }
+        'build or append' { return "Build output" }
+        'rewrite source text' { return "Rewrite source" }
+        'remove obsolete' { return "Remove obsolete" }
+        'render or serialize' { return "Render output" }
+        'connect discovered data' { return "Connect data" }
+        'drive the main execution path' { return "Drive path" }
+        'normalize command or call input' { return "Normalize input" }
+        'handle factory-specific' { return "Handle factory" }
+        'work with symbol-oriented' { return "Work symbols" }
+        'compute or reuse hash' { return "Use hashes" }
+        'inspect or register class' { return "Register classes" }
+        'work one source line' { return "Read lines" }
+        'inspect or rewrite declarations' { return "Inspect declarations" }
+        'recognize or rewrite callsite' { return "Rewrite callsites" }
+        'match source text' { return "Match regex" }
+        'split the source' { return "Split lines" }
+        'reassemble token' { return "Join tokens" }
+        'order candidate' { return "Sort candidates" }
+        'look up entries' { return "Look up entries" }
+        'record derived output' { return "Record output" }
+        'drop stale entries' { return "Drop stale data" }
+        'normalize raw text' { return "Clean text" }
+        'populate output fields' { return "Populate outputs" }
+        'read source or input files' { return "Read files" }
+        'write generated artifacts' { return "Write artifacts" }
+        'inspect or prepare filesystem paths' { return "Prepare paths" }
+        'parse or tokenize input text' { return "Tokenize input" }
+        'assemble tree or artifact structures' { return "Assemble tree" }
+        'compute hash metadata' { return "Compute hashes" }
+        'render text or html views' { return "Render views" }
+        'serialize report content' { return "Serialize report" }
+        'validate pipeline invariants' { return "Check invariants" }
+        'generate code or evidence output' { return "Generate evidence" }
+        'iterate over the active collection' { return "Loop collection" }
+        'branch on runtime conditions' { return "Branch condition" }
+        'inspect the current filesystem state' { return "Inspect files" }
+        'create or update filesystem artifacts' { return "Update files" }
+        'launch a child process' { return "Launch process" }
+        'report status or failures' { return "Report status" }
+        'invoke external tooling' { return "Invoke tooling" }
+        'validate conditions and branch' { return "Validate branch" }
+        'query or update sqlite' { return "Use SQLite" }
+        'hash or compare credentials' { return "Check credentials" }
+        'sign or verify jwt' { return "Verify JWT" }
+        'move or write filesystem' { return "Move files" }
+        'fetch route or page' { return "Fetch content" }
+        'update dom state' { return "Update DOM" }
+        'bind browser event listeners' { return "Bind events" }
+        'persist browser state' { return "Save state" }
+        'schedule ui updates' { return "Schedule UI" }
+        'change the active route' { return "Change route" }
+        'return the http response' { return "Send response" }
+        'expose the module api' { return "Expose API" }
+    }
+
+    $words = $trimmed.Split(' ') | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+    if ($words.Count -le 6)
+    {
+        return (Convert-ToSentenceCase $trimmed)
+    }
+
+    return (Convert-ToSentenceCase (($words | Select-Object -First 6) -join " "))
+}
+
 function Get-RoutinePurposeLead([string]$name, [string]$kind)
 {
     if ($kind -eq "type declaration")
@@ -1009,6 +1165,177 @@ function Get-RoutineNarrative([object]$routine)
     return @($paragraphs)
 }
 
+function Get-RoutineDisplayName([object]$routine)
+{
+    if ($routine.Kind -eq "type declaration")
+    {
+        return $routine.Name
+    }
+    if ($routine.Kind -eq "function declaration")
+    {
+        return $routine.Name + "()"
+    }
+    return $routine.Name + "()"
+}
+
+function Get-RoutineCategory([object]$routine)
+{
+    $lowerName = $routine.Name.ToLowerInvariant()
+    $opsText = (@($routine.Operations) -join " ").ToLowerInvariant()
+
+    if ($routine.Kind -eq "type declaration" -or $routine.Kind -eq "function declaration")
+    {
+        return "Promises This File Makes"
+    }
+    if ($lowerName -match '^(clear|reset|trim|lowercase|normalize|format|escape|split|join|append_json)')
+    {
+        return "Small Preparation Steps"
+    }
+    if ($lowerName -match '^(validate|check|ensure|assert|has_|is_)')
+    {
+        return "Checks Before Moving On"
+    }
+    if ($lowerName -match '^(parse|scan|read|load|tokenize)' -or $opsText -match 'parse source text')
+    {
+        return "Reading The Input"
+    }
+    if ($lowerName -match '^(collect|track|register|resolve|find|locate|lookup)' -or $opsText -match 'collect derived facts|track discovered')
+    {
+        return "Finding What Matters"
+    }
+    if ($lowerName -match '^(build|create|assemble|emit|append|add)' -or $opsText -match 'build or append the next output structure|assemble tree')
+    {
+        return "Building The Working Picture"
+    }
+    if ($lowerName -match '^(rewrite|transform|replace|remove|cleanup)' -or $opsText -match 'rewrite source text|remove obsolete')
+    {
+        return "Changing Or Cleaning The Picture"
+    }
+    if ($lowerName -match '^(render|serialize|write|print)' -or $routine.Name -match 'to_html|to_text|to_json' -or $opsText -match 'render or serialize')
+    {
+        return "Showing The Result"
+    }
+    if ($lowerName -match '^(run|start|init|bootstrap|navigate)' -or $opsText -match 'drive the main execution path')
+    {
+        return "Main Path"
+    }
+    return "Supporting Steps"
+}
+
+function Get-RoutineCategoryOrder([string]$category)
+{
+    switch ($category)
+    {
+        "Promises This File Makes" { return 10 }
+        "Small Preparation Steps" { return 20 }
+        "Checks Before Moving On" { return 30 }
+        "Reading The Input" { return 40 }
+        "Finding What Matters" { return 50 }
+        "Building The Working Picture" { return 60 }
+        "Changing Or Cleaning The Picture" { return 70 }
+        "Showing The Result" { return 80 }
+        "Main Path" { return 90 }
+        default { return 100 }
+    }
+}
+
+function Get-RoutineCategorySummary([string]$category)
+{
+    switch ($category)
+    {
+        "Promises This File Makes" { return "These entries tell the rest of the program what this file can provide." }
+        "Small Preparation Steps" { return "These steps clean up names, text, or small values before the larger work begins." }
+        "Checks Before Moving On" { return "These steps stop bad input or unsupported state before it can confuse the next part of the run." }
+        "Reading The Input" { return "These steps turn raw text or arguments into something the program can follow." }
+        "Finding What Matters" { return "These steps pick out the facts, traces, and relationships that later stages need." }
+        "Building The Working Picture" { return "These steps assemble the trees, models, or bundles used by the rest of the file." }
+        "Changing Or Cleaning The Picture" { return "These steps adjust existing state or remove stale pieces after better information is available." }
+        "Showing The Result" { return "These steps turn internal state into text, HTML, JSON, or another output a reader can inspect." }
+        "Main Path" { return "These steps drive the main execution path by calling the supporting work in order." }
+        default { return "These steps support the local behavior of the file." }
+    }
+}
+
+function Get-FileActivityStepsFromRoutines([object[]]$routines)
+{
+    $steps = New-Object 'System.Collections.Generic.List[string]'
+    $routineArray = @($routines | Sort-Object Line, Name)
+    $currentCategory = ""
+    $phaseIndex = 1
+
+    foreach ($routine in $routineArray)
+    {
+        $category = Get-RoutineCategory $routine
+        if ($category -ne $currentCategory)
+        {
+            $steps.Add("Phase ${phaseIndex}: " + $category)
+            $currentCategory = $category
+            $phaseIndex += 1
+        }
+
+        $steps.Add("Enter " + (Get-RoutineDisplayName $routine))
+
+        $ops = @($routine.Operations)
+        if (($ops | Measure-Object).Count -eq 0)
+        {
+            $steps.Add("Carry out " + (Convert-NameToWords $routine.Name))
+        }
+        else
+        {
+            foreach ($op in ($ops | Select-Object -First 6))
+            {
+                $steps.Add((Convert-ToSentenceCase $op))
+            }
+        }
+
+        if ($routine.Body -match 'return\b')
+        {
+            $steps.Add("Return from " + (Get-RoutineDisplayName $routine))
+        }
+        else
+        {
+            $steps.Add("Leave " + (Get-RoutineDisplayName $routine))
+        }
+    }
+
+    return @($steps)
+}
+
+function New-RoutineGroupSection([object[]]$routines)
+{
+    $lines = New-Object 'System.Collections.Generic.List[string]'
+    $routineArray = @($routines)
+    if (($routineArray | Measure-Object).Count -eq 0)
+    {
+        return @()
+    }
+
+    $lines.Add("## Story Groups")
+    foreach ($group in ($routineArray | Group-Object { Get-RoutineCategory $_ } | Sort-Object { Get-RoutineCategoryOrder $_.Name }, Name))
+    {
+        $lines.Add("")
+        $lines.Add("### $($group.Name)")
+        $lines.Add((Get-RoutineCategorySummary $group.Name))
+        foreach ($routine in ($group.Group | Sort-Object Line, Name))
+        {
+            $summary = Join-SummaryList $routine.Operations 3
+            if ([string]::IsNullOrWhiteSpace($summary))
+            {
+                $summary = "Owns a focused local responsibility."
+            }
+            else
+            {
+                $summary = Convert-ToSentenceCase $summary + "."
+            }
+
+            $lineSuffix = if ($routine.Line -gt 0) { "line $($routine.Line)" } else { "line unknown" }
+            $lines.Add("- $(Get-RoutineDisplayName $routine) ($lineSuffix): $summary")
+        }
+    }
+
+    return @($lines)
+}
+
 function Get-RoutineDiagramSteps([object]$routine)
 {
     $steps = New-StepList
@@ -1016,7 +1343,7 @@ function Get-RoutineDiagramSteps([object]$routine)
 
     Add-UniqueStep $steps ("Enter " + $routine.Name + "()")
 
-    foreach ($op in ($ops | Select-Object -First 5))
+    foreach ($op in ($ops | Select-Object -First 8))
     {
         Add-UniqueStep $steps (Convert-ToSentenceCase $op)
     }
@@ -1058,7 +1385,14 @@ function Get-RoutineDocs([string]$relativePath, [string]$content)
     {
         foreach ($info in (Get-JSFunctionInfo $content | Sort-Object Line, Name))
         {
-            $ops = Get-JSOperationPhrases $info.Body
+            if ($info.Name -in @("if", "for", "while", "switch", "catch", "return"))
+            {
+                continue
+            }
+
+            $nameOps = @(Get-NameDrivenOperationPhrases $info.Name $info.Body "js")
+            $bodyOps = @(Get-JSOperationPhrases $info.Body)
+            $ops = @(($nameOps + $bodyOps) | Select-Object -Unique)
             $routines.Add([PSCustomObject]@{
                 Name = $info.Name
                 Kind = "function"
@@ -1072,7 +1406,14 @@ function Get-RoutineDocs([string]$relativePath, [string]$content)
     {
         foreach ($info in (Get-CppFunctionInfo $content | Sort-Object Line, Name))
         {
-            $ops = Get-CppOperationPhrases $info.Body
+            if ($info.Name -in @("if", "for", "while", "switch", "catch", "return"))
+            {
+                continue
+            }
+
+            $nameOps = @(Get-NameDrivenOperationPhrases $info.Name $info.Body "cpp")
+            $bodyOps = @(Get-CppOperationPhrases $info.Body)
+            $ops = @(($nameOps + $bodyOps) | Select-Object -Unique)
             $routines.Add([PSCustomObject]@{
                 Name = $info.Name
                 Kind = "function"
@@ -1108,7 +1449,9 @@ function Get-RoutineDocs([string]$relativePath, [string]$content)
     {
         foreach ($info in (Get-PowerShellFunctionInfo $content | Sort-Object Line, Name))
         {
-            $ops = Get-PowerShellOperationPhrases $info.Body
+            $nameOps = @(Get-NameDrivenOperationPhrases $info.Name $info.Body "powershell")
+            $bodyOps = @(Get-PowerShellOperationPhrases $info.Body)
+            $ops = @(($nameOps + $bodyOps) | Select-Object -Unique)
             $routines.Add([PSCustomObject]@{
                 Name = $info.Name
                 Kind = "function"
@@ -1145,7 +1488,7 @@ function Get-LogicalGroup([string]$relativePath)
         "Infrastructure/session-orchestration/k8s/*" { return "Kubernetes Manifests" }
         "Infrastructure/session-orchestration/*" { return "Bootstrap Orchestration" }
 
-        "Input/*" { return "Sample Inputs" }
+        "LegacyPatternTransformSamples/*" { return "Legacy Transform Samples" }
 
         "Microservice/main.cpp" { return "Executable Entrypoints" }
         "Microservice/Layer/*" { return "Application Runner" }
@@ -1185,7 +1528,7 @@ function Get-FolderLogicSummary([string]$folderRelativePath)
 {
     switch -Wildcard ($folderRelativePath)
     {
-        "" { return "Top-level logical view of the generated codebase mirror. It groups the repository into runtime entrypoints, frontend prototype code, backend service code, infrastructure automation, sample inputs, and the C++ microservice core." }
+        "" { return "Top-level logical view of the generated codebase mirror. It groups the repository into runtime entrypoints, frontend prototype code, backend service code, infrastructure automation, legacy transform samples, and the C++ microservice core." }
         "Backend" { return "Backend service surface. This area groups the Express entrypoint, package metadata, and the HTTP runtime internals under src." }
         "Backend/src" { return "Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work." }
         "Backend/src/controllers" { return "Controller layer for concrete backend request handling after routing and middleware have finished preliminary work." }
@@ -1207,9 +1550,9 @@ function Get-FolderLogicSummary([string]$folderRelativePath)
         "Infrastructure/session-orchestration/k8s" { return "Kubernetes deployment-side assets for user-scoped runtime sessions." }
         "Infrastructure/session-orchestration/k8s/templates" { return "Parameterized Kubernetes manifests rendered and applied by the bootstrap process." }
 
-        "Input" { return "Top-level sample source files used as manual or research-oriented inputs for the microservice." }
+        "LegacyPatternTransformSamples" { return "Legacy pattern-to-pattern transform examples kept for historical comparison with the current tagging-first system." }
 
-        "Microservice" { return "C++ executable and module tree that implement the parser, detector, transform, rendering, and report pipeline." }
+        "Microservice" { return "C++ executable and module tree that implement the parser, detector, documentation tagging, rendering, and report pipeline." }
         "Microservice/Layer" { return "Application-layer orchestration around the deeper module code." }
         "Microservice/Layer/Back system" { return "The runtime runner that ties CLI parsing, file discovery, pipeline execution, and output writing together." }
         "Microservice/Modules" { return "Modularized C++ implementation divided into compile-time headers and source implementations." }
@@ -1232,20 +1575,20 @@ function Get-FolderLogicSummary([string]$folderRelativePath)
         "Microservice/Modules/Header/Behavioural/Logic" { return "Behavioural logic and structural-hook contracts." }
 
         "Microservice/Modules/Source" { return "C++ source implementations grouped by subsystem." }
-        "Microservice/Modules/Source/SyntacticBrokenAST" { return "Generic syntactic pipeline services such as CLI parsing, source reading, lexical hooks, generation, and reporting." }
+        "Microservice/Modules/Source/SyntacticBrokenAST" { return "Generic syntactic pipeline services such as CLI parsing, source reading, lexical hooks, documentation tagging, and reporting." }
         "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration" { return "Top-level pipeline orchestration and report-shaping code for the syntactic subsystem." }
         "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI" { return "Input discovery, source loading, and command-argument handling for the syntactic subsystem." }
-        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering" { return "Generated artifact writing and HTML/text rendering helpers for syntactic outputs." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering" { return "HTML/text rendering helpers and older generated-output helpers for syntactic outputs." }
         "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure" { return "Language token definitions and structural hook logic that guide pattern-aware parsing." }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree" { return "Parse-tree engine implementation for building, linking, symbolizing, and rendering the tree artifacts." }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal" { return "Private parse-tree implementation helpers used by the engine internals." }
-        "Microservice/Modules/Source/Creational" { return "Creational pattern detection and transform implementation over the generic parse tree." }
+        "Microservice/Modules/Source/Creational" { return "Creational pattern detection over the generic parse tree." }
         "Microservice/Modules/Source/Creational/Builder" { return "Builder-pattern specific detection logic." }
         "Microservice/Modules/Source/Creational/Factory" { return "Factory-pattern specific detection logic." }
         "Microservice/Modules/Source/Creational/Logic" { return "Shared creational logic helpers and keyword providers." }
         "Microservice/Modules/Source/Creational/Singleton" { return "Singleton-pattern specific detection logic." }
-        "Microservice/Modules/Source/Creational/Transform" { return "Creational transform execution and evidence rendering pipeline." }
-        "Microservice/Modules/Source/Creational/Transform/internal" { return "Internal helpers used by the creational transform pipeline." }
+        "Microservice/Modules/Source/Creational/Transform" { return "Older creational transform and evidence helpers kept separate from the current tagging runtime path." }
+        "Microservice/Modules/Source/Creational/Transform/internal" { return "Internal helpers used by the older creational transform path." }
         "Microservice/Modules/Source/Behavioural" { return "Behavioural pattern detection implementation." }
         "Microservice/Modules/Source/Behavioural/Logic" { return "Behavioural scaffolding and structural-hook implementation helpers." }
         "Microservice/Test" { return "Validation-oriented source corpus and test support assets." }
@@ -1280,7 +1623,7 @@ function Get-FolderGroup([string]$folderRelativePath)
         "Infrastructure/session-orchestration/k8s" { return "Kubernetes Assets" }
         "Infrastructure/session-orchestration/k8s/templates" { return "Kubernetes Manifests" }
 
-        "Input" { return "Sample Inputs" }
+        "LegacyPatternTransformSamples" { return "Legacy Transform Samples" }
 
         "Microservice" { return "Microservice Core" }
         "Microservice/Layer" { return "Application Runner" }
@@ -1327,6 +1670,71 @@ function Get-FolderGroup([string]$folderRelativePath)
     }
 }
 
+function Get-LogicGroupSortRank([string]$groupName)
+{
+    switch -Regex ($groupName)
+    {
+        'Entrypoint|Orchestration|Runner|Service|Prototype|Core' { return 10 }
+        'Contract|Interface|Configuration|Build' { return 20 }
+        'Route|Controller|Middleware|Input|Language|Logic' { return 30 }
+        'ParseTree|Detection|Transform|Rendering|Styling' { return 40 }
+        'Internal|Utility|Assets|Inputs' { return 50 }
+        default { return 100 }
+    }
+}
+
+function Get-GroupedItemSummary([string]$groupName, [object[]]$items, [string]$itemKind)
+{
+    $descriptions = New-Object 'System.Collections.Generic.List[string]'
+    foreach ($item in @($items))
+    {
+        if ($itemKind -eq "folder")
+        {
+            Add-UniqueValue $descriptions $item.Summary
+        }
+        else
+        {
+            Add-UniqueValue $descriptions $item.Role
+        }
+    }
+
+    $summary = Join-SummaryList @($descriptions) 2
+    if ([string]::IsNullOrWhiteSpace($summary))
+    {
+        if ($itemKind -eq "folder")
+        {
+            return "These child folders extend the subsystem from a narrower angle."
+        }
+        return "These documents explain the concrete logic that lives in this part of the subsystem."
+    }
+
+    if ($itemKind -eq "folder")
+    {
+        return "These child folders continue the subsystem by covering " + $summary + "."
+    }
+
+    return "These documents explain the local implementation by covering " + $summary + "."
+}
+
+function Get-FolderFlowSteps([object[]]$immediateChildDirs, [object[]]$immediateFiles)
+{
+    $steps = New-StepList
+    $fileArray = @($immediateFiles)
+    $childDirArray = @($immediateChildDirs)
+
+    foreach ($group in ($fileArray | Group-Object Group | Sort-Object { Get-LogicGroupSortRank $_.Name }, Name))
+    {
+        Add-UniqueStep $steps ("Study the " + $group.Name + " documents in this folder")
+    }
+
+    foreach ($group in ($childDirArray | Group-Object Group | Sort-Object { Get-LogicGroupSortRank $_.Name }, Name))
+    {
+        Add-UniqueStep $steps ("Descend into the " + $group.Name + " child folders")
+    }
+
+    return @($steps)
+}
+
 function New-FolderReadme(
     [string]$folderRelativePath,
     [object[]]$immediateChildDirs,
@@ -1355,13 +1763,39 @@ function New-FolderReadme(
     $lines.Add("## Logic Summary")
     $lines.Add($summary)
     $lines.Add("")
+    $lines.Add("## Subsystem Story")
+    if ((($fileArray | Measure-Object).Count) -gt 0 -and (($childDirArray | Measure-Object).Count) -gt 0)
+    {
+        $lines.Add("This folder mixes concrete local documents with deeper child subsystems. Read the local docs to understand the visible behavior first, then descend into the child folders for the lower-level detail that supports it.")
+    }
+    elseif ((($fileArray | Measure-Object).Count) -gt 0)
+    {
+        $lines.Add("This folder is mostly leaf-level. The local documents here carry the main explanation of the subsystem without requiring much extra descent.")
+    }
+    else
+    {
+        $lines.Add("This folder mainly acts as a navigation layer. Use it to understand how the deeper child folders divide the subsystem into smaller concerns.")
+    }
+    $lines.Add("")
+
+    $flowSteps = Get-FolderFlowSteps $childDirArray $fileArray
+    if ((@($flowSteps).Count) -gt 0)
+    {
+        $lines.Add("## Folder Flow")
+        foreach ($line in (New-MermaidActivity $flowSteps "Folder Entry" "Folder Exit"))
+        {
+            $lines.Add($line)
+        }
+        $lines.Add("")
+    }
 
     if ((($childDirArray | Measure-Object).Count) -gt 0)
     {
         $lines.Add("## Child Folders By Logic")
-        foreach ($group in ($childDirArray | Group-Object Group | Sort-Object Name))
+        foreach ($group in ($childDirArray | Group-Object Group | Sort-Object { Get-LogicGroupSortRank $_.Name }, Name))
         {
             $lines.Add("### $($group.Name)")
+            $lines.Add((Get-GroupedItemSummary $group.Name @($group.Group) "folder"))
             foreach ($item in ($group.Group | Sort-Object Name))
             {
                 $lines.Add("- $($item.Name)/ : $($item.Summary)")
@@ -1373,9 +1807,10 @@ function New-FolderReadme(
     if ((($fileArray | Measure-Object).Count) -gt 0)
     {
         $lines.Add("## Documents By Logic")
-        foreach ($group in ($fileArray | Group-Object Group | Sort-Object Name))
+        foreach ($group in ($fileArray | Group-Object Group | Sort-Object { Get-LogicGroupSortRank $_.Name }, Name))
         {
             $lines.Add("### $($group.Name)")
+            $lines.Add((Get-GroupedItemSummary $group.Name @($group.Group) "file"))
             foreach ($item in ($group.Group | Sort-Object Name))
             {
                 $lines.Add("- $($item.DocName) : $($item.Role)")
@@ -1439,32 +1874,37 @@ function Get-ImplementationStory(
         "Infrastructure/session-orchestration/docker/Dockerfile" { "This file implements the container build recipe for NeoTerritory session execution. It defines the image composition that later gets built and deployed by the bootstrap scripts." }
         "Infrastructure/session-orchestration/k8s/templates/*" { "This manifest implements one deployment-side resource in the session orchestration story. The bootstrap script renders user-specific values into it and applies it so the runtime image becomes reachable inside the local cluster." }
         "Infrastructure/session-orchestration/installer.config.json" { "This configuration file implements the parameter source for the bootstrap script. It carries the image tag, Minikube profile, runtime root, and template paths that determine how the environment is assembled." }
-        "Input/*" { "This file implements a sample input scenario rather than part of the runtime engine itself. Its code exists to be consumed by the microservice so the parser, detector, and transform pipeline can be exercised on a known pattern example." }
+        "LegacyPatternTransformSamples/*" { "This file implements a legacy pattern-transform scenario rather than part of the current runtime engine. Its code is kept to document the older design-pattern-changing system while the active analyzer focuses on tagging evidence." }
         "Microservice/main.cpp" { "This file implements the thinnest possible executable entrypoint. It accepts process control from the OS, forwards the arguments to the syntactic broken AST runner, and returns that runner's exit code unchanged." }
         "Microservice/Layer/*" { "This application-layer source file implements the runtime story that wraps the core parser modules. It is responsible for validating arguments, discovering files, invoking the analysis pipeline, and materializing all of the generated outputs." }
-        "Microservice/Modules/Source/SyntacticBrokenAST/algorithm_pipeline.cpp" { "This file implements the ordered core pipeline of the C++ system. It measures and runs the parse, detect, hash-link, monolithic-generation, and validation stages, and then packages the resulting trees, tables, traces, and metrics into the artifact bundle returned to the application layer." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/algorithm_pipeline.cpp" { "This file implements the ordered core pipeline of the C++ system. It reads the source picture, builds the actual and virtual trees, detects pattern structure, links the evidence, tags the parts that deserve documentation, validates the graph, and returns one report-ready bundle to the application layer." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration/algorithm_pipeline.cpp" { "This file implements the ordered core pipeline of the C++ system. It reads the source picture, builds the actual and virtual trees, detects pattern structure, links the evidence, tags the parts that deserve documentation, validates the graph, and returns one report-ready bundle to the application layer." }
         "Microservice/Modules/Source/SyntacticBrokenAST/source_reader.cpp" { "This file implements the source-ingestion step for the C++ pipeline. It opens each discovered file, reads the contents into SourceFileUnit records, and can also flatten the set into a monolithic source string for later evidence rendering." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/source_reader.cpp" { "This file implements the source-ingestion step for the C++ pipeline. It opens each discovered file, reads the contents into SourceFileUnit records, and can also flatten the set into a monolithic source string for later evidence rendering." }
         "Microservice/Modules/Source/SyntacticBrokenAST/cli_arguments.cpp" { "This file implements the command-line contract for the executable. It supports the normal two-argument pattern pair, tolerates a compatibility form where both values arrive in one token, and rejects extra file-path arguments because the runtime now discovers inputs from the folder layout." }
-        "Microservice/Modules/Source/SyntacticBrokenAST/codebase_output_writer.cpp" { "This file implements the final output-materialization step for generated code views. It sanitizes the target pattern name, ensures the output folders exist, and writes both .cpp and .html renderings of the base and target code artifacts." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/cli_arguments.cpp" { "This file implements the command-line contract for the executable. It supports the normal two-argument pattern pair, tolerates a compatibility form where both values arrive in one token, and rejects extra file-path arguments because the runtime now discovers inputs from the folder layout." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/codebase_output_writer.cpp" { "This file keeps the older generated-code writer in one place. The current runtime path does not call it; it remains separate so output-writing behavior can be reviewed without mixing it into the tagging pipeline." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering/codebase_output_writer.cpp" { "This file keeps the older generated-code writer in one place. The current runtime path does not call it; it remains separate so output-writing behavior can be reviewed without mixing it into the tagging pipeline." }
         "Microservice/Modules/Source/SyntacticBrokenAST/lexical_structure_hooks.cpp" { "This file implements the bridge between generic parsing and pattern-specific structural keywords. It resolves the keyword set for the selected source pattern, scans class declarations for hits, and records the crucial classes that later drive relevance filtering and symbol tracking." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.cpp" { "This file implements the bridge between generic parsing and pattern-specific structural keywords. It resolves the keyword set for the selected source pattern, scans class declarations for hits, and records the crucial classes that later drive relevance filtering and symbol tracking." }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/core.cpp" { "This file implements the high-level parse-tree assembly loop. It creates the root and file nodes, parses each source file into the main tree, collects cross-file dependency information, and then derives the filtered shadow tree that keeps only relevant pattern evidence." }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/build.cpp" { "This file implements the line-by-line parse-tree construction mechanics. It tokenizes input lines, detects includes and classes, records line hash traces and factory invocation traces, opens and closes block scopes, and emits statements into the file-local parse tree." }
-        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/*" { "This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as code generation, dependency handling, symbolization, or hash-link construction after the raw tree exists." }
+        "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/*" { "This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as dependency handling, symbolization, hash-link construction, rendering, or older generation helpers after the raw tree exists." }
         "Microservice/Modules/Source/SyntacticBrokenAST/*" { "This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written." }
         "Microservice/Modules/Header/SyntacticBrokenAST/*" { "This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on the shared data structures and function signatures." }
-        "Microservice/Modules/Source/Creational/Transform/*" { "This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views." }
-        "Microservice/Modules/Source/Creational/*" { "This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions." }
+        "Microservice/Modules/Source/Creational/Transform/*" { "This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code." }
+        "Microservice/Modules/Source/Creational/*" { "This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags." }
         "Microservice/Modules/Header/Creational/*" { "This header implements the compile-time contract for the creational subsystem. It declares the detectors, transforms, and helper types that the runtime sources later define." }
         "Microservice/Modules/Source/Behavioural/*" { "This source file implements behavioural-pattern scaffolding or checks on top of the generic parse tree. It contributes one part of the behavioural broken-tree output by scanning for behavioural structure signals." }
         "Microservice/Modules/Header/Behavioural/*" { "This header implements the compile-time contract for the behavioural subsystem. It defines the interfaces and hook declarations used when the generic parser delegates behavioural structure decisions." }
-        "Microservice/Test/Input/*" { "This file implements a regression corpus case for the microservice. Its code is not part of the executable itself; instead, it is analyzed so the pipeline can prove that specific pattern transitions or edge cases are handled correctly." }
+        "Microservice/Test/Input/*" { "This file implements a regression corpus case for the microservice. Its code is not part of the executable itself; instead, it is analyzed so the pipeline can prove that specific pattern evidence or edge cases are tagged correctly." }
         default { "This file participates in the NeoTerritory implementation as a focused artifact with a narrow local responsibility. Its behavior is best understood by reading it in the context of the module that loads or compiles it." }
     }
 
     $paragraphs = New-Object 'System.Collections.Generic.List[string]'
-    $paragraphs.Add("### Responsibility")
+    $paragraphs.Add("### What Happens Here")
     $paragraphs.Add($baseStory)
-    $paragraphs.Add("### Position In The Flow")
+    $paragraphs.Add("### Why It Matters In The Flow")
     $paragraphs.Add($chronology)
 
     $surfaceDetails = New-Object 'System.Collections.Generic.List[string]'
@@ -1482,7 +1922,7 @@ function Get-ImplementationStory(
         $surfaceDetails.Add("It collaborates directly with " + $dependencySummary + ".")
     }
 
-    $paragraphs.Add("### Main Surface Area")
+    $paragraphs.Add("### What To Watch While Reading")
     $paragraphs.Add(($surfaceDetails -join " "))
 
     return ($paragraphs -join "`r`n`r`n")
@@ -1521,25 +1961,30 @@ function Get-PathActivitySteps([string]$relativePath, [string]$role)
         "Infrastructure/session-orchestration/docker/Dockerfile" { return @("Start from the chosen base image", "Copy or install the runtime dependencies", "Build the NeoTerritory execution environment", "Publish the final image definition") }
         "Infrastructure/session-orchestration/k8s/templates/*" { return @("Receive rendered template values from bootstrap", "Create the Kubernetes resource manifest", "Apply the resource into the cluster", "Expose the session runtime") }
         "Infrastructure/session-orchestration/installer.config.json" { return @("Provide image and profile values", "Provide runtime-root and template paths", "Drive the bootstrap script with declarative configuration") }
-        "Input/*" { return @("Enter the microservice as a sample source file", "Expose pattern-specific source structure", "Feed the parser and detector pipeline", "Contribute to generated outputs and evidence") }
+        "LegacyPatternTransformSamples/*" { return @("Open the legacy transform sample", "Expose the old source pattern", "Show the intended target pattern", "Compare with tagging output", "Keep it outside active runtime flow") }
         "Microservice/main.cpp" { return @("Receive process execution at main", "Forward argc and argv to the runner", "Return the runner exit code") }
-        "Microservice/Layer/*" { return @("Validate CLI and runtime layout", "Discover the input files", "Read the source corpus", "Run the pipeline", "Write HTML, code, and JSON outputs", "Return the process exit code") }
-        "Microservice/Modules/Source/SyntacticBrokenAST/algorithm_pipeline.cpp" { return @("Build the base and shadow parse graphs", "Run creational and behavioural detection", "Build symbol tables and hash links", "Generate the monolithic evidence view", "Validate graph consistency", "Return the artifact bundle and metrics") }
+        "Microservice/Layer/*" { return @("Validate CLI and runtime layout", "Discover the input files", "Read the source corpus", "Run the pipeline", "Write tree HTML and JSON reports", "Return the process exit code") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/algorithm_pipeline.cpp" { return @("Build the real and shadow source trees", "Find the pattern structure", "Connect symbols and hash evidence", "Tag the code parts worth documenting", "Check whether the trees still agree", "Return the report bundle") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration/algorithm_pipeline.cpp" { return @("Build the real and shadow source trees", "Find the pattern structure", "Connect symbols and hash evidence", "Tag the code parts worth documenting", "Check whether the trees still agree", "Return the report bundle") }
         "Microservice/Modules/Source/SyntacticBrokenAST/source_reader.cpp" { return @("Receive the discovered file paths", "Open each source file", "Read file content into SourceFileUnit records", "Optionally merge the units into a monolithic source view") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/source_reader.cpp" { return @("Receive the discovered file paths", "Open each source file", "Read file content into SourceFileUnit records", "Optionally merge the units into a monolithic source view") }
         "Microservice/Modules/Source/SyntacticBrokenAST/cli_arguments.cpp" { return @("Inspect argc and argv", "Handle the compatibility one-token pattern form", "Reject unsupported extra arguments", "Return the normalized source and target patterns") }
-        "Microservice/Modules/Source/SyntacticBrokenAST/codebase_output_writer.cpp" { return @("Sanitize the target pattern name", "Ensure generated output directories exist", "Compute base and target output paths", "Write generated C++ and HTML files", "Return the write status") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Input-and-CLI/cli_arguments.cpp" { return @("Inspect argc and argv", "Handle the compatibility one-token pattern form", "Reject unsupported extra arguments", "Return the normalized source and target patterns") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/codebase_output_writer.cpp" { return @("Receive older generated-output text", "Prepare safe output names", "Write the legacy code and HTML files", "Return the write status") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering/codebase_output_writer.cpp" { return @("Receive older generated-output text", "Prepare safe output names", "Write the legacy code and HTML files", "Return the write status") }
         "Microservice/Modules/Source/SyntacticBrokenAST/lexical_structure_hooks.cpp" { return @("Resolve the structural keyword set for the source pattern", "Scan class declarations for keyword hits", "Register crucial classes", "Expose the crucial-class registry to later stages") }
+        "Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.cpp" { return @("Resolve the structural keyword set for the source pattern", "Scan class declarations for keyword hits", "Register crucial classes", "Expose the crucial-class registry to later stages") }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/core.cpp" { return @("Create the root and per-file nodes", "Parse each file into the main tree", "Resolve include and symbol dependencies", "Compute the crucial class set", "Filter the shadow tree to relevant nodes", "Return the parse-tree bundle") }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/build.cpp" { return @("Split the file into lines and tokens", "Track includes, classes, and factory calls", "Record line hash traces", "Emit statements and blocks into the parse tree", "Flush the final file-local structure") }
         "Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/*" { return @("Enter the specialized parse-tree stage", "Traverse or transform the tree structures", "Publish the resulting parse-tree support artifact") }
         "Microservice/Modules/Source/SyntacticBrokenAST/*" { return @("Enter the generic syntactic pipeline service", "Apply the file's parsing, linking, rendering, or reporting responsibility", "Pass the result to the surrounding pipeline stage") }
         "Microservice/Modules/Header/SyntacticBrokenAST/*" { return @("Include the header during compilation", "Expose the shared types or function contracts", "Let implementation files compile against the declared interface") }
-        "Microservice/Modules/Source/Creational/Transform/*" { return @("Receive source and pattern-route context", "Apply the creational transform or evidence logic", "Return transformed text or evidence sections", "Feed the generator and reporting layers") }
-        "Microservice/Modules/Source/Creational/*" { return @("Traverse the generic parse tree", "Apply creational pattern rules", "Emit pattern candidates or transform decisions", "Return results to the pipeline") }
+        "Microservice/Modules/Source/Creational/Transform/*" { return @("Receive source and pattern-route context", "Apply the older creational transform or evidence logic", "Return transformed text or evidence sections", "Keep legacy rewrite behavior isolated from tagging") }
+        "Microservice/Modules/Source/Creational/*" { return @("Traverse the generic parse tree", "Apply creational pattern rules", "Emit pattern candidates", "Return results to the pipeline") }
         "Microservice/Modules/Header/Creational/*" { return @("Include the header during compilation", "Expose creational detectors and transform contracts", "Allow source files to implement and consume the contract") }
         "Microservice/Modules/Source/Behavioural/*" { return @("Traverse the generic parse tree", "Apply behavioural scaffolding or structure checks", "Emit behavioural nodes into the broken tree", "Return the detector result") }
         "Microservice/Modules/Header/Behavioural/*" { return @("Include the header during compilation", "Expose behavioural detection and hook contracts", "Allow source files to implement and consume those contracts") }
-        "Microservice/Test/Input/*" { return @("Enter the pipeline as a regression input", "Exercise one named transform or edge-case scenario", "Contribute to the resulting reports and generated outputs") }
+        "Microservice/Test/Input/*" { return @("Enter the pipeline as a regression input", "Exercise one named pattern or edge-case scenario", "Contribute to the resulting tags and reports") }
         default { return @("Enter the file through its owning module", "Apply the local responsibility declared by the artifact", "Hand control or data to the next stage of the repository flow") }
     }
 }
@@ -1553,26 +1998,76 @@ function New-MermaidActivity(
     $lines = New-Object 'System.Collections.Generic.List[string]'
     $lines.Add('```mermaid')
     $lines.Add("flowchart TD")
-    $lines.Add(("    Start([{0}])" -f $startLabel.Replace('"', "'")))
+
+    function Convert-MermaidLabel([string]$label)
+    {
+        $safe = $label.Replace("[", "(")
+        $safe = $safe.Replace("]", ")")
+        $safe = $safe.Replace("{", "(")
+        $safe = $safe.Replace("}", ")")
+        $safe = $safe.Replace('"', "'")
+        $safe = [System.Text.RegularExpressions.Regex]::Replace($safe, '\s+', ' ').Trim()
+        return $safe
+    }
+
+    function Test-DecisionStep([string]$label)
+    {
+        return $label -match '(?i)\b(validate|check|ensure|inspect|verify|reject|missing|failure|auth|permission|required|unsupported|if|when|branch|condition)\b'
+    }
+
+    function Test-LoopStep([string]$label)
+    {
+        return $label -match '(?i)\b(each|every|iterate|loop|collection|files|folders|routes|children|tokens|lines|items)\b'
+    }
+
+    $safeStartLabel = Convert-MermaidLabel $startLabel
+    $lines.Add(("    Start[""{0}""]" -f $safeStartLabel))
 
     for ($i = 0; $i -lt $stepArray.Count; ++$i)
     {
-        $safeLabel = $stepArray[$i].Replace("[", "(")
-        $safeLabel = $safeLabel.Replace("]", ")")
-        $safeLabel = $safeLabel.Replace('"', "'")
-        $lines.Add(("    N{0}[{1}]" -f $i, $safeLabel))
+        $shortLabel = Convert-ToShortMermaidStep $stepArray[$i]
+        $safeLabel = Convert-MermaidLabel $shortLabel
+        $lines.Add(("    N{0}[""{1}""]" -f $i, $safeLabel))
+        if (Test-DecisionStep $safeLabel)
+        {
+            $lines.Add(("    D{0}{{""Continue?""}}" -f $i))
+            $lines.Add(("    R{0}[""Stop path""]" -f $i))
+        }
+        elseif (Test-LoopStep $safeLabel)
+        {
+            $lines.Add(("    L{0}{{""More items?""}}" -f $i))
+        }
     }
 
-    $lines.Add(("    End([{0}])" -f $endLabel.Replace('"', "'")))
+    $safeEndLabel = Convert-MermaidLabel $endLabel
+    $lines.Add(("    End[""{0}""]" -f $safeEndLabel))
 
     if ($stepArray.Count -gt 0)
     {
         $lines.Add("    Start --> N0")
-        for ($i = 0; $i -lt ($stepArray.Count - 1); ++$i)
+        for ($i = 0; $i -lt $stepArray.Count; ++$i)
         {
-            $lines.Add(("    N{0} --> N{1}" -f $i, ($i + 1)))
+            $shortLabel = Convert-ToShortMermaidStep $stepArray[$i]
+            $safeLabel = Convert-MermaidLabel $shortLabel
+            $next = if ($i -lt ($stepArray.Count - 1)) { "N" + ($i + 1) } else { "End" }
+            if (Test-DecisionStep $safeLabel)
+            {
+                $lines.Add(("    N{0} --> D{0}" -f $i))
+                $lines.Add(("    D{0} -->|yes| {1}" -f $i, $next))
+                $lines.Add(("    D{0} -->|no| R{0}" -f $i))
+                $lines.Add(("    R{0} --> End" -f $i))
+            }
+            elseif (Test-LoopStep $safeLabel)
+            {
+                $lines.Add(("    N{0} --> L{0}" -f $i))
+                $lines.Add(("    L{0} -->|more| N{0}" -f $i))
+                $lines.Add(("    L{0} -->|done| {1}" -f $i, $next))
+            }
+            else
+            {
+                $lines.Add(("    N{0} --> {1}" -f $i, $next))
+            }
         }
-        $lines.Add(("    N{0} --> End" -f ($stepArray.Count - 1)))
     }
     else
     {
@@ -1592,8 +2087,16 @@ function New-FileDoc([string]$relativePath, [string]$content)
     $symbols = Get-KeySymbols $content $relativePath
     $dependencies = Get-Dependencies $content $relativePath
     $story = Get-ImplementationStory $relativePath $role $chronology $symbols $dependencies
-    $activitySteps = Get-ActivityStepsFromCode $relativePath $content
     $routines = Get-RoutineDocs $relativePath $content
+    if ((@($routines).Count) -gt 0)
+    {
+        $activitySteps = Get-FileActivityStepsFromRoutines $routines
+    }
+    else
+    {
+        $activitySteps = Get-ActivityStepsFromCode $relativePath $content
+        $activitySteps = @($activitySteps | Where-Object { $_ -notmatch '^(?:Execute|Run)\s+(?:if|for|while|switch|catch|return)\b' })
+    }
     if ((@($activitySteps).Count) -eq 0)
     {
         $activitySteps = Get-PathActivitySteps $relativePath $role
@@ -1606,50 +2109,59 @@ function New-FileDoc([string]$relativePath, [string]$content)
     $lines.Add("- Source: $relativePath")
     $lines.Add("- Kind: $kind")
     $lines.Add("- Lines: $lineCount")
-    $lines.Add("- Role: $role")
-    $lines.Add("- Chronology: $chronology")
     $lines.Add("")
-    $lines.Add("## Notable Symbols")
-    foreach ($line in (New-BulletLines $symbols "This artifact is primarily declarative or inline and does not expose many named symbols."))
-    {
-        $lines.Add($line)
-    }
-    $lines.Add("")
-    $lines.Add("## Direct Dependencies")
-    foreach ($line in (New-BulletLines $dependencies "No direct dependency list was extracted from the file text."))
-    {
-        $lines.Add($line)
-    }
-    $lines.Add("")
-    $lines.Add("## File Outline")
+    $lines.Add("## Story")
     $lines.Add($story)
     $lines.Add("")
-    $lines.Add("## File Activity")
+    $lines.Add("## Program Flow")
+    $lines.Add("This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.")
     foreach ($line in (New-MermaidActivity $activitySteps))
     {
         $lines.Add($line)
     }
+    $lines.Add("")
+    $lines.Add("## Reading Map")
+    $lines.Add("Read this file as: " + $role)
+    $lines.Add("")
+    $lines.Add("Where it sits in the run: " + $chronology)
+    $symbolSummary = Join-SummaryList $symbols 6
+    if (-not [string]::IsNullOrWhiteSpace($symbolSummary))
+    {
+        $lines.Add("")
+        $lines.Add("Names worth recognizing while reading: " + $symbolSummary + ".")
+    }
+    $dependencySummary = Join-SummaryList $dependencies 6
+    if (-not [string]::IsNullOrWhiteSpace($dependencySummary))
+    {
+        $lines.Add("")
+        $lines.Add("It leans on nearby contracts or tools such as " + $dependencySummary + ".")
+    }
     if ((@($routines).Count) -gt 0)
     {
         $lines.Add("")
-        $lines.Add("## Function Walkthrough")
+        foreach ($line in (New-RoutineGroupSection $routines))
+        {
+            $lines.Add($line)
+        }
+        $lines.Add("")
+        $lines.Add("## Function Stories")
         foreach ($routine in $routines)
         {
             $lines.Add("")
-            $lines.Add("### $($routine.Name)")
+            $lines.Add("### $(Get-RoutineDisplayName $routine)")
             foreach ($paragraph in (Get-RoutineNarrative $routine))
             {
                 $lines.Add($paragraph)
                 $lines.Add("")
             }
-            $lines.Add("Key operations:")
+            $lines.Add("What it does:")
             foreach ($line in (New-BulletLines $routine.Operations "This routine is primarily structural and does not expose obvious runtime operations from static inspection."))
             {
                 $lines.Add($line)
             }
             $lines.Add("")
-            $lines.Add("Activity:")
-            foreach ($line in (New-MermaidActivity (Get-RoutineDiagramSteps $routine) ($routine.Name + "()") "Return"))
+            $lines.Add("Flow:")
+            foreach ($line in (New-MermaidActivity (Get-RoutineDiagramSteps $routine) (Get-RoutineDisplayName $routine) "Return"))
             {
                 $lines.Add($line)
             }

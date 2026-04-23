@@ -3,116 +3,17 @@
 - Source: Frontend/styles/main.css
 - Kind: CSS stylesheet
 - Lines: 598
-- Role: Defines the visual system and component styling for the frontend prototype.
-- Chronology: Applied during page render to define the frontend presentation layer.
 
-## Notable Symbols
-- /* ============================================================
-   CodiNeo â€” Design System
-   Color palette and tokens derived from Figma wireframe
-   ============================================================ */
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
-
-/* â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-:root
-- /* Colors */
-  --bg-base:        #09090C;
-  --bg-surface:     #111116;
-  --bg-surface-2:   #18181F;
-  --bg-surface-3:   #1F1F28;
-  --bg-overlay:     rgba(0,0,0,0.65);
-
-  --accent-green:   #C0FF00;
-  --accent-green-glow: rgba(192,255,0,0.18);
-  --accent-green-dim:  #8BBF00;
-  --accent-purple:  #8B5CF6;
-  --accent-purple-glow: rgba(139,92,246,0.18);
-  --accent-yellow:  #F59E0B;
-  --accent-red:     #EF4444;
-  --accent-red-bg:  rgba(239,68,68,0.15);
-
-  --text-primary:   #FFFFFF;
-  --text-secondary: #9CA3AF;
-  --text-muted:     #6B7280;
-
-  --border:         rgba(255,255,255,0.07);
-  --border-active:  rgba(192,255,0,0.35);
-  --border-purple:  rgba(139,92,246,0.35);
-
-  /* Typography */
-  --font-sans:  'Inter', system-ui, sans-serif;
-  --font-mono:  'JetBrains Mono', 'Courier New', monospace;
-
-  /* Radii */
-  --radius-sm:  8px;
-  --radius-md:  14px;
-  --radius-lg:  20px;
-  --radius-xl:  28px;
-  --radius-full:999px;
-
-  /* Shadows */
-  --shadow-card: 0 2px 20px rgba(0,0,0,0.45);
-  --shadow-green: 0 0 24px rgba(192,255,0,0.2);
-  --shadow-purple: 0 0 24px rgba(139,92,246,0.2);
-
-  /* Transitions */
-  --transition-fast: 0.15s ease;
-  --transition-med:  0.25s ease;
-
-  /* Layout */
-  --sidebar-width: 280px;
-  --topbar-height: 60px;
-}
-
-/* Light mode */
-[data-theme="light"]
-- --bg-base:       #F3F4F8;
-  --bg-surface:    #FFFFFF;
-  --bg-surface-2:  #ECEDF3;
-  --bg-surface-3:  #E4E5ED;
-  --text-primary:  #0D0D12;
-  --text-secondary:#52556A;
-  --text-muted:    #8A8DA0;
-  --border:        rgba(0,0,0,0.08);
-  --shadow-card:   0 2px 16px rgba(0,0,0,0.09);
-}
-
-/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-*, *::before, *::after
-- html
-- body
-- font-family: var(--font-sans);
-  background: var(--bg-base);
-  color: var(--text-primary);
-  line-height: 1.6;
-  min-height: 100vh;
-  display: flex;
-  overflow-x: hidden;
-}
-
-a
-- button
-- ul, ol
-- /* â”€â”€ Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-::-webkit-scrollbar
-- ::-webkit-scrollbar-track
-- ::-webkit-scrollbar-thumb
-- ::-webkit-scrollbar-thumb:hover
-
-## Direct Dependencies
-- https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This stylesheet implements the visual layer of the frontend prototype. It is not executable in the same way as the JavaScript files, but it still participates in the flow by defining how the rendered route shell and components appear.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 Applied during page render to define the frontend presentation layer.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Defines the visual system and component styling for the frontend prototype. The main surface area is easiest to track through symbols such as /* ============================================================
    CodiNeo â€” Design System
@@ -186,11 +87,33 @@ Defines the visual system and component styling for the frontend prototype. The 
 /* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 *, *::before, *::after, and html. It collaborates directly with https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Style /* ============================================================
+    Start["Start"]
+    N0["Style /* ============================================================ CodiNeo â€” Design"]
+    N1["Style /* Colors */ --bg-base: #09090C;"]
+    N2["Style --bg-base: #F3F4F8; --bg-surface: #FFFFFF; --bg-surface-2:"]
+    N3["Style html"]
+    N4["Style body"]
+    N5["Style font-family: var(--font-sans); background: var(--bg-base); color:"]
+    End["End"]
+    Start --> N0
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> End
+```
+
+## Reading Map
+Read this file as: Defines the visual system and component styling for the frontend prototype.
+
+Where it sits in the run: Applied during page render to define the frontend presentation layer.
+
+Names worth recognizing while reading: /* ============================================================
    CodiNeo â€” Design System
    Color palette and tokens derived from Figma wireframe
    ============================================================ */
@@ -198,8 +121,7 @@ flowchart TD
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
 /* â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-:root]
-    N1[Style /* Colors */
+:root, /* Colors */
   --bg-base:        #09090C;
   --bg-surface:     #111116;
   --bg-surface-2:   #18181F;
@@ -249,8 +171,7 @@ flowchart TD
 }
 
 /* Light mode */
-(data-theme='light')]
-    N2[Style --bg-base:       #F3F4F8;
+[data-theme="light"], --bg-base:       #F3F4F8;
   --bg-surface:    #FFFFFF;
   --bg-surface-2:  #ECEDF3;
   --bg-surface-3:  #E4E5ED;
@@ -262,10 +183,7 @@ flowchart TD
 }
 
 /* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
-*, *::before, *::after]
-    N3[Style html]
-    N4[Style body]
-    N5[Style font-family: var(--font-sans);
+*, *::before, *::after, html, body, and font-family: var(--font-sans);
   background: var(--bg-base);
   color: var(--text-primary);
   line-height: 1.6;
@@ -274,16 +192,9 @@ flowchart TD
   overflow-x: hidden;
 }
 
-a]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
+a.
+
+It leans on nearby contracts or tools such as https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap.
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.

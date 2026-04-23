@@ -1,781 +1,117 @@
-﻿# creational_code_generator_internal.cpp
+# creational_code_generator_internal.cpp
 
 - Source: Microservice/Modules/Source/Creational/Transform/creational_code_generator_internal.cpp
 - Kind: C++ implementation
 - Lines: 494
-- Role: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
-- Chronology: Runs after the generic parse tree exists so creational detection or transformation can operate on it.
 
-## Notable Symbols
-- lower
-- lowercase_ascii
-- trim
-- split_words
-- starts_with
-- find_matching_brace
-- is_class_block
-- is_function_block
-- class_name_from_signature
-- function_name_from_signature
-- inject_singleton_accessor
-- rewrite_class_instantiations_to_singleton_references
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- Transform/creational_code_generator_internal.hpp
-- Language-and-Structure/language_tokens.hpp
-- cctype
-- regex
-- sstream
-- string
-- unordered_map
-- unordered_set
-- vector
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions.
+Runs after the generic parse tree exists so creational detection can label the structure.
 
-### Position In The Flow
-
-Runs after the generic parse tree exists so creational detection or transformation can operate on it.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements creational transform dispatch, evidence rendering, and rewrite helpers. The main surface area is easiest to track through symbols such as lower, lowercase_ascii, trim, and split_words. It collaborates directly with Transform/creational_code_generator_internal.hpp, Language-and-Structure/language_tokens.hpp, cctype, and regex.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Execute inject singleton accessor to parse or tokenize input text, assemble tree or artifact structures, and serialize report content]
-    N1[Execute starts with]
-    N2[Execute extract crucial class names to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
-    N3[Execute is function block to branch on runtime conditions]
-    N4[Execute split words to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-## Function Walkthrough
-
-### lower
-This routine owns one focused piece of the file's behavior. It appears near line 16.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([lower()])
-    N0[Enter lower()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### trim
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 21.
-
-Inside the body, it mainly handles iterate over the active collection.
-
-The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-
-Activity:
-```mermaid
-flowchart TD
-    Start([trim()])
-    N0[Enter trim()]
-    N1[Iterate over the active collection]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### split_words
-This routine owns one focused piece of the file's behavior. It appears near line 38.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([split_words()])
-    N0[Enter split_words()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### if
-This routine owns one focused piece of the file's behavior. It appears near line 50.
-
-Inside the body, it mainly handles assemble tree or artifact structures.
-
-Key operations:
-- assemble tree or artifact structures
-
-Activity:
-```mermaid
-flowchart TD
-    Start([if()])
-    N0[Enter if()]
-    N1[Assemble tree or artifact structures]
-    N2[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### starts_with
-This routine prepares or drives one of the main execution paths in the file. It appears near line 64.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([starts_with()])
-    N0[Enter starts_with()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### find_matching_brace
-This routine owns one focused piece of the file's behavior. It appears near line 69.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([find_matching_brace()])
-    N0[Enter find_matching_brace()]
-    N1[Apply the routine's local logic]
-    N2[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### is_class_block
-This routine owns one focused piece of the file's behavior. It appears near line 96.
-
-Inside the body, it mainly handles iterate over the active collection and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_class_block()])
-    N0[Enter is_class_block()]
-    N1[Iterate over the active collection]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_function_block
-This routine owns one focused piece of the file's behavior. It appears near line 115.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_function_block()])
-    N0[Enter is_function_block()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### class_name_from_signature
-This routine owns one focused piece of the file's behavior. It appears near line 139.
-
-Inside the body, it mainly handles iterate over the active collection and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([class_name_from_signature()])
-    N0[Enter class_name_from_signature()]
-    N1[Iterate over the active collection]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### function_name_from_signature
-This routine owns one focused piece of the file's behavior. It appears near line 153.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([function_name_from_signature()])
-    N0[Enter function_name_from_signature()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### inject_singleton_accessor
-This routine owns one focused piece of the file's behavior. It appears near line 171.
-
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, serialize report content, and iterate over the active collection.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([inject_singleton_accessor()])
-    N0[Enter inject_singleton_accessor()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Serialize report content]
-    N4[Iterate over the active collection]
-    N5[Branch on runtime conditions]
-    N6[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> End
-```
-
-### rewrite_class_instantiations_to_singleton_references
-This routine owns one focused piece of the file's behavior. It appears near line 222.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([rewrite_class_instantiations_to_singleton_references()])
-    N0[Enter rewrite_class_instantiations_to_singleton_references()]
-    N1[Apply the routine's local logic]
-    N2[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### extract_crucial_class_names
-This routine owns one focused piece of the file's behavior. It appears near line 240.
-
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([extract_crucial_class_names()])
-    N0[Enter extract_crucial_class_names()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Iterate over the active collection]
-    N4[Branch on runtime conditions]
-    N5[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
-
-### ensure_decision
-This routine owns one focused piece of the file's behavior. It appears near line 271.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([ensure_decision()])
-    N0[Enter ensure_decision()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### add_reason_if_missing
-This routine owns one focused piece of the file's behavior. It appears near line 287.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([add_reason_if_missing()])
-    N0[Enter add_reason_if_missing()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### split_lines
-This routine owns one focused piece of the file's behavior. It appears near line 299.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([split_lines()])
-    N0[Enter split_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### join_lines
-This routine owns one focused piece of the file's behavior. It appears near line 320.
-
-Inside the body, it mainly handles serialize report content, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([join_lines()])
-    N0[Enter join_lines()]
-    N1[Serialize report content]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### is_config_method_name
-This routine owns one focused piece of the file's behavior. It appears near line 385.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_config_method_name()])
-    N0[Enter is_config_method_name()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### is_monolithic_config_method_name
-This routine owns one focused piece of the file's behavior. It appears near line 395.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_monolithic_config_method_name()])
-    N0[Enter is_monolithic_config_method_name()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### is_monolithic_build_method_name
-This routine owns one focused piece of the file's behavior. It appears near line 404.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_monolithic_build_method_name()])
-    N0[Enter is_monolithic_build_method_name()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### is_build_method_name
-This routine owns one focused piece of the file's behavior. It appears near line 414.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_build_method_name()])
-    N0[Enter is_build_method_name()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### is_operational_method_name
-This routine owns one focused piece of the file's behavior. It appears near line 424.
-
-Inside the body, it mainly handles assemble tree or artifact structures.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_operational_method_name()])
-    N0[Enter is_operational_method_name()]
-    N1[Assemble tree or artifact structures]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### ends_with
-This routine owns one focused piece of the file's behavior. It appears near line 432.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([ends_with()])
-    N0[Enter ends_with()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### strip_builder_suffix
-This routine owns one focused piece of the file's behavior. It appears near line 438.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([strip_builder_suffix()])
-    N0[Enter strip_builder_suffix()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### append_unique_token
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 447.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_unique_token()])
-    N0[Enter append_unique_token()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### append_unique_line
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 463.
-
-Inside the body, it mainly handles assemble tree or artifact structures and branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_unique_line()])
-    N0[Enter append_unique_line()]
-    N1[Assemble tree or artifact structures]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### append_unique_lines
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 473.
-
-Inside the body, it mainly handles assemble tree or artifact structures and iterate over the active collection.
-
-The implementation iterates over a collection or repeated workload.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_unique_lines()])
-    N0[Enter append_unique_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### regex_capture_or_empty
-This routine owns one focused piece of the file's behavior. It appears near line 481.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([regex_capture_or_empty()])
-    N0[Enter regex_capture_or_empty()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
+
+- [program_flow_01](./creational_code_generator_internal/creational_code_generator_internal_program_flow_01.cpp.md)
+- [program_flow_02](./creational_code_generator_internal/creational_code_generator_internal_program_flow_02.cpp.md)
+- [program_flow_03](./creational_code_generator_internal/creational_code_generator_internal_program_flow_03.cpp.md)
+## Reading Map
+Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
+
+Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+
+Names worth recognizing while reading: lower, lowercase_ascii, trim, split_words, starts_with, and find_matching_brace.
+
+It leans on nearby contracts or tools such as Transform/creational_code_generator_internal.hpp, Language-and-Structure/language_tokens.hpp, cctype, regex, sstream, and string.
+
+## Story Groups
+
+### Small Preparation Steps
+These steps clean up names, text, or small values before the larger work begins.
+- trim() (line 21): Normalize or format text values, normalize raw text before later parsing, and iterate over the active collection
+- split_words() (line 38): Split source text into smaller units, record derived output into collections, and assemble tree or artifact structures
+- split_lines() (line 299): Split source text into smaller units, work one source line at a time, and record derived output into collections
+- join_lines() (line 320): Work one source line at a time, populate output fields or accumulators, and serialize report content
+
+### Checks Before Moving On
+These steps stop bad input or unsupported state before it can confuse the next part of the run.
+- is_class_block() (line 96): Inspect or register class-level information, normalize raw text before later parsing, and iterate over the active collection
+- is_function_block() (line 115): Look up entries in previously collected maps or sets, normalize raw text before later parsing, and branch on runtime conditions
+- ensure_decision() (line 271): Validate assumptions before continuing, look up entries in previously collected maps or sets, and record derived output into collections
+- is_config_method_name() (line 385): Owns a focused local responsibility.
+- is_monolithic_config_method_name() (line 395): Owns a focused local responsibility.
+- is_monolithic_build_method_name() (line 404): Owns a focused local responsibility.
+- is_build_method_name() (line 414): Owns a focused local responsibility.
+- is_operational_method_name() (line 424): Assemble tree or artifact structures
+
+### Finding What Matters
+These steps pick out the facts, traces, and relationships that later stages need.
+- find_matching_brace() (line 69): Search previously collected data
+
+### Building The Working Picture
+These steps assemble the trees, models, or bundles used by the rest of the file.
+- inject_singleton_accessor() (line 171): Match source text with regular expressions, split the source into individual lines, and reassemble token or line collections into text
+- extract_crucial_class_names() (line 240): Inspect or register class-level information, record derived output into collections, and parse or tokenize input text
+- add_reason_if_missing() (line 287): Build or append the next output structure, record derived output into collections, and assemble tree or artifact structures
+- append_unique_token() (line 447): Record derived output into collections, populate output fields or accumulators, and assemble tree or artifact structures
+- append_unique_line() (line 463): Work one source line at a time, normalize raw text before later parsing, and assemble tree or artifact structures
+- append_unique_lines() (line 473): Work one source line at a time, assemble tree or artifact structures, and iterate over the active collection
+
+### Changing Or Cleaning The Picture
+These steps adjust existing state or remove stale pieces after better information is available.
+- rewrite_class_instantiations_to_singleton_references() (line 222): Rewrite source text or model state, inspect or register class-level information, and match source text with regular expressions
+
+### Main Path
+These steps drive the main execution path by calling the supporting work in order.
+- starts_with() (line 64): Drive the main execution path
+
+### Supporting Steps
+These steps support the local behavior of the file.
+- lower() (line 16): Owns a focused local responsibility.
+- class_name_from_signature() (line 139): Inspect or register class-level information, iterate over the active collection, and branch on runtime conditions
+- function_name_from_signature() (line 153): Look up entries in previously collected maps or sets, normalize raw text before later parsing, and branch on runtime conditions
+- ends_with() (line 432): Owns a focused local responsibility.
+- strip_builder_suffix() (line 438): Normalize raw text before later parsing and branch on runtime conditions
+- regex_capture_or_empty() (line 481): Branch on runtime conditions
+
+## Function Stories
+Function-level logic is decoupled into future implementation units:
+
+- [lower](./creational_code_generator_internal/functions/lower.cpp.md)
+- [trim](./creational_code_generator_internal/functions/trim.cpp.md)
+- [split_words](./creational_code_generator_internal/functions/split_words.cpp.md)
+- [starts_with](./creational_code_generator_internal/functions/starts_with.cpp.md)
+- [find_matching_brace](./creational_code_generator_internal/functions/find_matching_brace.cpp.md)
+- [is_class_block](./creational_code_generator_internal/functions/is_class_block.cpp.md)
+- [is_function_block](./creational_code_generator_internal/functions/is_function_block.cpp.md)
+- [class_name_from_signature](./creational_code_generator_internal/functions/class_name_from_signature.cpp.md)
+- [function_name_from_signature](./creational_code_generator_internal/functions/function_name_from_signature.cpp.md)
+- [inject_singleton_accessor](./creational_code_generator_internal/functions/inject_singleton_accessor.cpp.md)
+- [rewrite_class_instantiations_to_singleton_references](./creational_code_generator_internal/functions/rewrite_class_instantiations_to_singleton_references.cpp.md)
+- [extract_crucial_class_names](./creational_code_generator_internal/functions/extract_crucial_class_names.cpp.md)
+- [ensure_decision](./creational_code_generator_internal/functions/ensure_decision.cpp.md)
+- [add_reason_if_missing](./creational_code_generator_internal/functions/add_reason_if_missing.cpp.md)
+- [split_lines](./creational_code_generator_internal/functions/split_lines.cpp.md)
+- [join_lines](./creational_code_generator_internal/functions/join_lines.cpp.md)
+- [is_config_method_name](./creational_code_generator_internal/functions/is_config_method_name.cpp.md)
+- [is_monolithic_config_method_name](./creational_code_generator_internal/functions/is_monolithic_config_method_name.cpp.md)
+- [is_monolithic_build_method_name](./creational_code_generator_internal/functions/is_monolithic_build_method_name.cpp.md)
+- [is_build_method_name](./creational_code_generator_internal/functions/is_build_method_name.cpp.md)
+- [is_operational_method_name](./creational_code_generator_internal/functions/is_operational_method_name.cpp.md)
+- [ends_with](./creational_code_generator_internal/functions/ends_with.cpp.md)
+- [strip_builder_suffix](./creational_code_generator_internal/functions/strip_builder_suffix.cpp.md)
+- [append_unique_token](./creational_code_generator_internal/functions/append_unique_token.cpp.md)
+- [append_unique_line](./creational_code_generator_internal/functions/append_unique_line.cpp.md)
+- [append_unique_lines](./creational_code_generator_internal/functions/append_unique_lines.cpp.md)
+- [regex_capture_or_empty](./creational_code_generator_internal/functions/regex_capture_or_empty.cpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

@@ -1,12 +1,11 @@
 #include "Pipeline-Contracts/algorithm_pipeline.hpp"
-#include "Language-and-Structure/language_tokens.hpp"
 #include "parse_tree_symbols.hpp"
 
 #include <algorithm>
 #include <chrono>
+#include <functional>
 #include <sstream>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
@@ -299,6 +298,147 @@ void append_json_node_refs(std::ostringstream& out, const std::vector<NodeRef>& 
     }
     out << "]";
 }
+
+std::string make_tag_id(
+    const std::string& pattern,
+    const std::string& tag_type,
+    const std::string& symbol_name,
+    const std::string& file_path,
+    size_t line_number,
+    size_t evidence_hash)
+{
+    return pattern + ":" +
+           tag_type + ":" +
+           symbol_name + ":" +
+           file_path + ":" +
+           std::to_string(line_number) + ":" +
+           std::to_string(evidence_hash);
+}
+
+void add_design_pattern_tag(
+    std::vector<DesignPatternTag>& tags,
+    std::unordered_set<std::string>& seen_ids,
+    DesignPatternTag tag)
+{
+    if (tag.tag_id.empty())
+    {
+        tag.tag_id = make_tag_id(
+            tag.pattern,
+            tag.tag_type,
+            tag.symbol_name,
+            tag.file_path,
+            tag.line_number,
+            tag.evidence_hash);
+    }
+
+    if (seen_ids.insert(tag.tag_id).second)
+    {
+        tags.push_back(std::move(tag));
+    }
+}
+
+std::vector<DesignPatternTag> build_design_pattern_tags(
+    const std::string& source_pattern,
+    const std::vector<CrucialClassInfo>& crucial_classes,
+    const ParseTreeSymbolTables& symbol_tables,
+    const std::vector<LineHashTrace>& line_hash_traces,
+    const std::vector<FactoryInvocationTrace>& factory_invocation_traces)
+{
+    std::vector<DesignPatternTag> tags;
+    std::unordered_set<std::string> seen_ids;
+    const std::string pattern = source_pattern.empty() ? "unknown" : source_pattern;
+
+    for (const CrucialClassInfo& class_info : crucial_classes)
+    {
+        const ParseSymbol* symbol = find_class_by_name(symbol_tables, class_info.name);
+        DesignPatternTag tag;
+        tag.pattern = pattern;
+        tag.tag_type = "pattern_role_class";
+        tag.file_path = symbol == nullptr ? std::string{} : symbol->file_path;
+        tag.line_number = 0;
+        tag.symbol_name = class_info.name;
+        tag.node_kind = "ClassDecl";
+        tag.node_value = class_info.name;
+        tag.reason = "class selected by structural analysis strategy: " + class_info.strategy_name;
+        tag.documentation_hint = "Document why this class is essential to the detected pattern role and how callers depend on it.";
+        tag.evidence_hash = class_info.class_name_hash;
+        add_design_pattern_tag(tags, seen_ids, std::move(tag));
+    }
+
+    for (const ParseSymbolUsage& usage : class_usage_table(symbol_tables))
+    {
+        if (!usage.refactor_candidate)
+        {
+            continue;
+        }
+
+        const ParseSymbol* symbol = find_class_by_name(symbol_tables, usage.name);
+        DesignPatternTag tag;
+        tag.pattern = pattern;
+        tag.tag_type = "pattern_candidate_usage";
+        tag.file_path = symbol == nullptr ? std::string{} : symbol->file_path;
+        tag.line_number = 0;
+        tag.symbol_name = usage.name;
+        tag.node_kind = usage.node_kind;
+        tag.node_value = usage.node_value;
+        tag.reason = "usage references a class selected as design-pattern-relevant by the structural analyzer";
+        tag.documentation_hint = "Document the usage site as evidence of how the pattern participant is consumed.";
+        tag.evidence_hash = usage.hash_value;
+        add_design_pattern_tag(tags, seen_ids, std::move(tag));
+    }
+
+    for (const LineHashTrace& trace : line_hash_traces)
+    {
+        DesignPatternTag tag;
+        tag.pattern = pattern;
+        tag.tag_type = "pattern_line_trace";
+        tag.file_path = trace.file_path;
+        tag.line_number = trace.line_number;
+        tag.symbol_name = trace.class_name;
+        tag.node_kind = "LineHashTrace";
+        tag.node_value = trace.class_name;
+        tag.reason = "line-level hash trace marks the exact source line tied to a pattern candidate";
+        tag.documentation_hint = "Document this line when explaining the pattern evidence, scope, and hash relationship.";
+        tag.evidence_hash = trace.scoped_class_usage_hash;
+        add_design_pattern_tag(tags, seen_ids, std::move(tag));
+    }
+
+    for (const FactoryInvocationTrace& trace : factory_invocation_traces)
+    {
+        DesignPatternTag tag;
+        tag.pattern = pattern;
+        tag.tag_type = "factory_invocation";
+        tag.file_path = trace.file_path;
+        tag.line_number = trace.line_number;
+        tag.symbol_name = trace.resolved_factory_class.empty() ? trace.receiver_token : trace.resolved_factory_class;
+        tag.node_kind = "FactoryInvocation";
+        tag.node_value = trace.invocation_form;
+        tag.reason = "factory invocation trace captures construction behavior that should be documented as pattern evidence";
+        tag.documentation_hint = "Document the receiver, argument token, and resolved factory class before changing or explaining this pattern.";
+        tag.evidence_hash = trace.scope_context_hash;
+        add_design_pattern_tag(tags, seen_ids, std::move(tag));
+    }
+
+    return tags;
+}
+
+size_t estimate_design_pattern_tag_bytes(const std::vector<DesignPatternTag>& tags)
+{
+    size_t total = tags.capacity() * sizeof(DesignPatternTag);
+    for (const DesignPatternTag& tag : tags)
+    {
+        total += tag.tag_id.size() +
+                 tag.pattern.size() +
+                 tag.tag_type.size() +
+                 tag.file_path.size() +
+                 tag.symbol_name.size() +
+                 tag.node_kind.size() +
+                 tag.node_value.size() +
+                 tag.reason.size() +
+                 tag.documentation_hint.size();
+    }
+    return total;
+}
 } // namespace
 
 PipelineArtifacts run_normalize_and_rewrite_pipeline(
@@ -318,6 +458,7 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
     artifacts.report.paired_file_count = 0;
     artifacts.report.invariant_failure_count = 0;
     artifacts.report.dirty_trace_count = 0;
+    artifacts.report.design_pattern_tag_count = 0;
     artifacts.report.intentional_collision_total = 0;
     artifacts.report.intentional_collision_validated = 0;
     artifacts.report.virtual_nodes_kept = 0;
@@ -406,11 +547,16 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
                estimate_hash_links_bytes(artifacts.hash_links);
     });
 
-    // 5) Generate monolithic representation
-    run_stage("GenerateMonolithicRepresentation", [&]() {
-        artifacts.monolithic_representation =
-            generate_base_code_from_source(join_source_file_units(source_files));
-        return artifacts.monolithic_representation.size();
+    // 5) Mark design-pattern evidence for documentation and test coverage.
+    run_stage("TagDesignPatternEvidence", [&]() {
+        artifacts.design_pattern_tags = build_design_pattern_tags(
+            source_pattern,
+            artifacts.crucial_classes,
+            artifacts.symbol_tables,
+            artifacts.line_hash_traces,
+            artifacts.factory_invocation_traces);
+        artifacts.report.design_pattern_tag_count = artifacts.design_pattern_tags.size();
+        return estimate_design_pattern_tag_bytes(artifacts.design_pattern_tags);
     });
 
     // 6) Apply target policies (scaffold/no-op)
@@ -444,7 +590,6 @@ PipelineArtifacts run_normalize_and_rewrite_pipeline(
         artifacts.report.graph_consistent =
             !artifacts.base_tree.kind.empty() &&
             !artifacts.virtual_tree.kind.empty() &&
-            (!artifacts.monolithic_representation.empty()) &&
             pairing_valid &&
             base_bucketized &&
             virtual_bucketized &&
@@ -465,7 +610,7 @@ std::string pipeline_report_to_json(
     const std::vector<LineHashTrace>& line_hash_traces,
     const std::vector<FactoryInvocationTrace>& factory_invocation_traces,
     const HashLinkIndex& hash_links,
-    const std::vector<TransformDecision>& transform_decisions)
+    const std::vector<DesignPatternTag>& design_pattern_tags)
 {
     const std::vector<ParseSymbolUsage>& class_usages = class_usage_table(symbol_tables);
     std::unordered_set<std::string> candidate_class_names;
@@ -477,31 +622,21 @@ std::string pipeline_report_to_json(
         }
     }
 
-    std::unordered_map<std::string, TransformDecision> decisions_by_class;
-    for (const TransformDecision& decision : transform_decisions)
+    std::unordered_set<std::string> documentation_tagged_symbols;
+    for (const DesignPatternTag& tag : design_pattern_tags)
     {
-        if (decision.class_name.empty())
+        if (!tag.symbol_name.empty())
         {
-            continue;
+            documentation_tagged_symbols.insert(tag.symbol_name);
         }
-        decisions_by_class[decision.class_name] = decision;
     }
-    const std::string normalized_source_pattern = lowercase_ascii(report.source_pattern);
-    const std::string normalized_target_pattern = lowercase_ascii(report.target_pattern);
 
     std::ostringstream out;
     out << "{\n";
+    out << "  \"analysis_mode\": \"design_pattern_tagging\",\n";
+    out << "  \"code_generation_enabled\": false,\n";
     out << "  \"source_pattern\": \"" << json_escape(report.source_pattern) << "\",\n";
     out << "  \"target_pattern\": \"" << json_escape(report.target_pattern) << "\",\n";
-    const bool factory_reverse_route_selected =
-        normalized_source_pattern == "factory" &&
-        normalized_target_pattern == "base";
-    out << "  \"factory_reverse_route_selected\": "
-        << (factory_reverse_route_selected ? "true" : "false") << ",\n";
-    if (normalized_source_pattern == "factory" && !factory_reverse_route_selected)
-    {
-        out << "  \"factory_reverse_route_hint\": \"set target_pattern=base to enable factory reverse direct-instantiation output\",\n";
-    }
     out << "  \"input_file_count\": " << report.input_file_count << ",\n";
     out << "  \"total_elapsed_ms\": " << report.total_elapsed_ms << ",\n";
     out << "  \"peak_estimated_bytes\": " << report.peak_estimated_bytes << ",\n";
@@ -509,6 +644,7 @@ std::string pipeline_report_to_json(
     out << "  \"paired_file_count\": " << report.paired_file_count << ",\n";
     out << "  \"invariant_failure_count\": " << report.invariant_failure_count << ",\n";
     out << "  \"dirty_trace_count\": " << report.dirty_trace_count << ",\n";
+    out << "  \"design_pattern_tag_count\": " << design_pattern_tags.size() << ",\n";
     out << "  \"intentional_collision_total\": " << report.intentional_collision_total << ",\n";
     out << "  \"intentional_collision_validated\": " << report.intentional_collision_validated << ",\n";
     out << "  \"virtual_nodes_kept\": " << report.virtual_nodes_kept << ",\n";
@@ -541,37 +677,8 @@ std::string pipeline_report_to_json(
     {
         const ParseSymbol& s = class_symbols[i];
         const ClassHashLink* class_link = i < hash_links.class_links.size() ? &hash_links.class_links[i] : nullptr;
-
-        bool transform_applied = false;
-        std::vector<std::string> transform_reason;
-        std::vector<std::string> transform_trace;
-
-        const auto decision_it = decisions_by_class.find(s.name);
-        if (decision_it != decisions_by_class.end())
-        {
-            transform_applied = decision_it->second.transform_applied;
-            transform_reason = decision_it->second.transform_reason;
-            transform_trace = decision_it->second.transform_trace;
-        }
-
-        if (!transform_applied && transform_reason.empty())
-        {
-            if (normalized_source_pattern == "singleton" &&
-                normalized_target_pattern == "builder")
-            {
-                transform_reason.push_back("singleton_candidate_not_found");
-            }
-            else if (normalized_source_pattern == "factory" &&
-                     normalized_target_pattern != "base" &&
-                     candidate_class_names.find(s.name) != candidate_class_names.end())
-            {
-                transform_reason.push_back("factory_reverse_transform_requires_target_base");
-            }
-            else
-            {
-                transform_reason.push_back("transform_policy_not_applicable_for_source_target");
-            }
-        }
+        const bool documentation_tagged =
+            documentation_tagged_symbols.find(s.name) != documentation_tagged_symbols.end();
 
         out << "    {\n";
         out << "      \"name\": \"" << json_escape(s.name) << "\",\n";
@@ -581,27 +688,7 @@ std::string pipeline_report_to_json(
         out << "      \"hash\": " << s.hash_value << ",\n";
         out << "      \"refactor_candidate\": "
             << (candidate_class_names.find(s.name) != candidate_class_names.end() ? "true" : "false") << ",\n";
-        out << "      \"transform_applied\": " << (transform_applied ? "true" : "false") << ",\n";
-        out << "      \"transform_reason\": [";
-        for (size_t reason_i = 0; reason_i < transform_reason.size(); ++reason_i)
-        {
-            if (reason_i > 0)
-            {
-                out << ", ";
-            }
-            out << "\"" << json_escape(transform_reason[reason_i]) << "\"";
-        }
-        out << "],\n";
-        out << "      \"transform_trace\": [";
-        for (size_t trace_i = 0; trace_i < transform_trace.size(); ++trace_i)
-        {
-            if (trace_i > 0)
-            {
-                out << ", ";
-            }
-            out << "\"" << json_escape(transform_trace[trace_i]) << "\"";
-        }
-        out << "],\n";
+        out << "      \"documentation_tagged\": " << (documentation_tagged ? "true" : "false") << ",\n";
         out << "      \"actual_link_status\": \""
             << json_escape(class_link == nullptr ? "unresolved" : class_link->actual_link_status) << "\",\n";
         out << "      \"virtual_link_status\": \""
@@ -653,6 +740,8 @@ std::string pipeline_report_to_json(
         out << "      \"class_name_hash\": " << u.class_name_hash << ",\n";
         out << "      \"hash_collision\": " << (u.hash_collision ? "true" : "false") << ",\n";
         out << "      \"refactor_candidate\": " << (u.refactor_candidate ? "true" : "false") << ",\n";
+        out << "      \"documentation_tagged\": "
+            << (documentation_tagged_symbols.find(u.name) != documentation_tagged_symbols.end() ? "true" : "false") << ",\n";
         out << "      \"hash\": " << u.hash_value << "\n";
         out << "    }";
         if (i + 1 < class_usages.size())
@@ -757,6 +846,32 @@ std::string pipeline_report_to_json(
         out << "      \"argument_hash_id\": \"" << json_escape(trace.argument_hash_id) << "\"\n";
         out << "    }";
         if (i + 1 < factory_invocation_traces.size())
+        {
+            out << ",";
+        }
+        out << "\n";
+    }
+
+    out << "  ],\n";
+    out << "  \"design_pattern_tags\": [\n";
+
+    for (size_t i = 0; i < design_pattern_tags.size(); ++i)
+    {
+        const DesignPatternTag& tag = design_pattern_tags[i];
+        out << "    {\n";
+        out << "      \"tag_id\": \"" << json_escape(tag.tag_id) << "\",\n";
+        out << "      \"pattern\": \"" << json_escape(tag.pattern) << "\",\n";
+        out << "      \"tag_type\": \"" << json_escape(tag.tag_type) << "\",\n";
+        out << "      \"file_path\": \"" << json_escape(tag.file_path) << "\",\n";
+        out << "      \"line_number\": " << tag.line_number << ",\n";
+        out << "      \"symbol_name\": \"" << json_escape(tag.symbol_name) << "\",\n";
+        out << "      \"node_kind\": \"" << json_escape(tag.node_kind) << "\",\n";
+        out << "      \"node_value\": \"" << json_escape(tag.node_value) << "\",\n";
+        out << "      \"reason\": \"" << json_escape(tag.reason) << "\",\n";
+        out << "      \"documentation_hint\": \"" << json_escape(tag.documentation_hint) << "\",\n";
+        out << "      \"evidence_hash\": " << tag.evidence_hash << "\n";
+        out << "    }";
+        if (i + 1 < design_pattern_tags.size())
         {
             out << ",";
         }

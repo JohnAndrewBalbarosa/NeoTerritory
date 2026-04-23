@@ -7,12 +7,35 @@
 ## Logic Summary
 Infrastructure automation and runtime environment assembly for local containerized execution.
 
-## Child Folders By Logic
-### Runtime Layout
-- runtime-layout/ : Scripts that create the filesystem layout expected by the executable runtime.
+## Subsystem Story
+This folder mainly acts as a navigation layer. Use it to understand how the deeper child folders divide the subsystem into smaller concerns.
 
+## Folder Flow
+```mermaid
+flowchart TD
+    Start["Folder Entry"]
+    N0["Open Session orchestration folders"]
+    L0{"More items?"}
+    N1["Open Runtime layout folders"]
+    L1{"More items?"}
+    End["Folder Exit"]
+    Start --> N0
+    N0 --> L0
+    L0 -->|more| N0
+    L0 -->|done| N1
+    N1 --> L1
+    L1 -->|more| N1
+    L1 -->|done| End
+```
+
+## Child Folders By Logic
 ### Session Orchestration
+These child folders continue the subsystem by covering Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders..
 - session-orchestration/ : Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders.
+
+### Runtime Layout
+These child folders continue the subsystem by covering Scripts that create the filesystem layout expected by the executable runtime..
+- runtime-layout/ : Scripts that create the filesystem layout expected by the executable runtime.
 
 ## Reading Hint
 - Use the child folder groups to navigate deeper into this subsystem.

@@ -3,57 +3,70 @@
 - Source: Backend/src/services/logService.js
 - Kind: JavaScript module
 - Lines: 9
-- Role: Provides backend support services used across request handlers.
-- Chronology: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-## Notable Symbols
-- logEvent
-- db
-
-## Direct Dependencies
-- ../db/database
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This service file implements reusable backend support logic. Its implementation is called from controllers or middleware so those layers can stay focused on request flow.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Provides backend support services used across request handlers. The main surface area is easiest to track through symbols such as logEvent and db. It collaborates directly with ../db/database.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Run logEvent() to query or update SQLite state]
-    End([End])
+    Start["Start"]
+    N0["Supporting steps"]
+    N1["Enter logevent()"]
+    N2["Use SQLite"]
+    N3["Leave logEvent()"]
+    End["End"]
     Start --> N0
-    N0 --> End
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> End
 ```
 
-## Function Walkthrough
+## Reading Map
+Read this file as: Provides backend support services used across request handlers.
 
-### logEvent
+Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+Names worth recognizing while reading: logEvent and db.
+
+It leans on nearby contracts or tools such as ../db/database.
+
+## Story Groups
+
+### Supporting Steps
+These steps support the local behavior of the file.
+- logEvent() (line 2): Query or update SQLite state
+
+## Function Stories
+
+### logEvent()
 This routine owns one focused piece of the file's behavior. It appears near line 2.
 
 Inside the body, it mainly handles query or update SQLite state.
 
-Key operations:
+What it does:
 - query or update SQLite state
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([logEvent()])
-    N0[Enter logEvent()]
-    N1[Query or update SQLite state]
-    N2[Hand control back to the caller]
-    End([Return])
+    Start["logEvent()"]
+    N0["Enter logevent()"]
+    N1["Use SQLite"]
+    N2["Hand back"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2

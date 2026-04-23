@@ -2,6 +2,7 @@
 #define BUILDER_PATTERN_LOGIC_HPP
 
 #include "creational_broken_tree.hpp"
+#include "Logic/creational_pattern_mediator.hpp"
 #include "parse_tree.hpp"
 
 #include <cstddef>
@@ -36,5 +37,6 @@ std::vector<BuilderStructureCheckResult> check_builder_pattern_structure(const P
  * multiple methods containing assignments and member assignments (obj->attribute = ...).
  */
 CreationalTreeNode build_builder_pattern_tree(const ParseTreeNode& parse_root);
+const ICreationalPatternAlgorithm& builder_pattern_algorithm();
 
 #endif // BUILDER_PATTERN_LOGIC_HPP

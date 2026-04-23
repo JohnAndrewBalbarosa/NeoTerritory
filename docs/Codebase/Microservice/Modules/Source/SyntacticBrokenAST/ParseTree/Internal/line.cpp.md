@@ -1,226 +1,59 @@
-﻿# line.cpp
+# line.cpp
 
 - Source: Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/line.cpp
 - Kind: C++ implementation
 - Lines: 152
-- Role: Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.
-- Chronology: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, reports, and rendered outputs.
 
-## Notable Symbols
-- tokenize_text
-- join_tokens
-- split_lines
-- file_basename
-- include_target_from_line
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- Internal/parse_tree_internal.hpp
-- Language-and-Structure/language_tokens.hpp
-- cctype
-- sstream
-- string
-- vector
+This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as dependency handling, symbolization, hash-link construction, rendering, or older generation helpers after the raw tree exists. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as code generation, dependency handling, symbolization, or hash-link construction after the raw tree exists. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
+Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
 
-### Position In The Flow
-
-Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, reports, and rendered outputs.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as tokenize_text, join_tokens, split_lines, and file_basename. It collaborates directly with Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, cctype, and sstream.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Execute include target from line to parse or tokenize input text, iterate over the active collection, and branch on runtime conditions]
-    N1[Execute split lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute tokenize text to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute join tokens to serialize report content, iterate over the active collection, and branch on runtime conditions]
-    N4[Execute file basename to branch on runtime conditions]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
 
-## Function Walkthrough
+- [program_flow](./line/line_program_flow.cpp.md)
+## Reading Map
+Read this file as: Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.
 
-### tokenize_text
-This routine ingests source content and turns it into a more useful structured form. It appears near line 11.
+Where it sits in the run: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
 
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
+Names worth recognizing while reading: tokenize_text, join_tokens, split_lines, file_basename, and include_target_from_line.
 
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, cctype, sstream, string, and vector.
 
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
+## Story Groups
 
-Activity:
-```mermaid
-flowchart TD
-    Start([tokenize_text()])
-    N0[Enter tokenize_text()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+### Small Preparation Steps
+These steps clean up names, text, or small values before the larger work begins.
+- join_tokens() (line 69): Populate output fields or accumulators, serialize report content, and iterate over the active collection
+- split_lines() (line 88): Split source text into smaller units, work one source line at a time, and record derived output into collections
 
-### join_tokens
-This routine owns one focused piece of the file's behavior. It appears near line 69.
+### Reading The Input
+These steps turn raw text or arguments into something the program can follow.
+- tokenize_text() (line 11): Split source text into smaller units, record derived output into collections, and normalize raw text before later parsing
 
-Inside the body, it mainly handles serialize report content, iterate over the active collection, and branch on runtime conditions.
+### Supporting Steps
+These steps support the local behavior of the file.
+- file_basename() (line 110): Normalize raw text before later parsing and branch on runtime conditions
+- include_target_from_line() (line 120): Work one source line at a time, parse or tokenize input text, and iterate over the active collection
 
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+## Function Stories
+Function-level logic is decoupled into future implementation units:
 
-Key operations:
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([join_tokens()])
-    N0[Enter join_tokens()]
-    N1[Serialize report content]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### split_lines
-This routine owns one focused piece of the file's behavior. It appears near line 88.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([split_lines()])
-    N0[Enter split_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### if
-This routine owns one focused piece of the file's behavior. It appears near line 101.
-
-Inside the body, it mainly handles assemble tree or artifact structures.
-
-Key operations:
-- assemble tree or artifact structures
-
-Activity:
-```mermaid
-flowchart TD
-    Start([if()])
-    N0[Enter if()]
-    N1[Assemble tree or artifact structures]
-    N2[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### file_basename
-This routine owns one focused piece of the file's behavior. It appears near line 110.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([file_basename()])
-    N0[Enter file_basename()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### include_target_from_line
-This routine owns one focused piece of the file's behavior. It appears near line 120.
-
-Inside the body, it mainly handles parse or tokenize input text, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([include_target_from_line()])
-    N0[Enter include_target_from_line()]
-    N1[Parse or tokenize input text]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
+- [tokenize_text](./line/functions/tokenize_text.cpp.md)
+- [join_tokens](./line/functions/join_tokens.cpp.md)
+- [split_lines](./line/functions/split_lines.cpp.md)
+- [file_basename](./line/functions/file_basename.cpp.md)
+- [include_target_from_line](./line/functions/include_target_from_line.cpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

@@ -2,6 +2,7 @@
 #define FACTORY_PATTERN_LOGIC_HPP
 
 #include "creational_broken_tree.hpp"
+#include "Logic/creational_pattern_mediator.hpp"
 #include "parse_tree.hpp"
 
 /**
@@ -11,5 +12,6 @@
  * where T is a known class.
  */
 CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root);
+const ICreationalPatternAlgorithm& factory_pattern_algorithm();
 
 #endif // FACTORY_PATTERN_LOGIC_HPP

@@ -1,46 +1,34 @@
-﻿# installer.config.json
+# installer.config.json
 
 - Source: Infrastructure/session-orchestration/installer.config.json
 - Kind: JSON configuration
 - Lines: 12
-- Role: Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values.
-- Chronology: Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared.
 
-## Notable Symbols
-- minikubeProfile
-- image
-- userId
-- runtimeRoot
-- dockerfile
-- k8sTemplates
-
-## Direct Dependencies
-- No direct dependency list was extracted from the file text.
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This configuration file implements the parameter source for the bootstrap script. It carries the image tag, Minikube profile, runtime root, and template paths that determine how the environment is assembled.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values. The main surface area is easiest to track through symbols such as minikubeProfile, image, userId, and runtimeRoot.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Define minikubeProfile]
-    N1[Define image]
-    N2[Define userId]
-    N3[Define runtimeRoot]
-    N4[Define dockerfile]
-    N5[Define k8sTemplates]
-    End([End])
+    Start["Start"]
+    N0["Define minikubeProfile"]
+    N1["Define image"]
+    N2["Define userId"]
+    N3["Define runtimeRoot"]
+    N4["Define dockerfile"]
+    N5["Define k8sTemplates"]
+    End["End"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -49,6 +37,13 @@ flowchart TD
     N4 --> N5
     N5 --> End
 ```
+
+## Reading Map
+Read this file as: Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values.
+
+Where it sits in the run: Runs before the C++ executable when the environment, runtime folders, container image, or Kubernetes assets need to be prepared.
+
+Names worth recognizing while reading: minikubeProfile, image, userId, runtimeRoot, dockerfile, and k8sTemplates.
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
