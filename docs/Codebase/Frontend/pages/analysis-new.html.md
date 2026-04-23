@@ -20,10 +20,20 @@
 ## Direct Dependencies
 - #/dashboard
 
-## Implementation Story
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life. Provides a page fragment that the client-side router injects into the main content area. Loaded after the router selects a route and injects the fragment into the shell document. The implementation surface is easiest to recognize through symbols such as #ready-card, #progress-card, #prog-pct-1, and #prog-bar-1. In practice it collaborates directly with #/dashboard.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+
+### Position In The Flow
+
+Loaded after the router selects a route and injects the fragment into the shell document.
+
+### Main Surface Area
+
+Provides a page fragment that the client-side router injects into the main content area. The main surface area is easiest to track through symbols such as #ready-card, #progress-card, #prog-pct-1, and #prog-bar-1. It collaborates directly with #/dashboard.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -45,5 +55,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

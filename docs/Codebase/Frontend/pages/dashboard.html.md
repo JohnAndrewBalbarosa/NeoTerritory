@@ -12,10 +12,20 @@
 ## Direct Dependencies
 - #/analysis/new
 
-## Implementation Story
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life. Provides a page fragment that the client-side router injects into the main content area. Loaded after the router selects a route and injects the fragment into the shell document. In practice it collaborates directly with #/analysis/new.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+
+### Position In The Flow
+
+Loaded after the router selects a route and injects the fragment into the shell document.
+
+### Main Surface Area
+
+Provides a page fragment that the client-side router injects into the main content area. It collaborates directly with #/analysis/new.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -33,5 +43,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

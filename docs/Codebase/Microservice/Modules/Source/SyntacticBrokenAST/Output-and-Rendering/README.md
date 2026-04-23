@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Source/SyntacticBrokenAST/Output-and-Rendering
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Generated artifact writing and HTML/text rendering helpers for syntactic outputs.

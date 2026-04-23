@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Backend/src
 - Descendant source docs: 12
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work.

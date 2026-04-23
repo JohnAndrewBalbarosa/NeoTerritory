@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal
 - Descendant source docs: 8
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Private parse-tree implementation helpers used by the engine internals.

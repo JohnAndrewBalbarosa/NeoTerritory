@@ -1,0 +1,11 @@
+{
+  "minikubeProfile": "neoterritory",
+  "image": "neoterritory:latest",
+  "userId": "user123",
+  "runtimeRoot": "out/build/x64-Debug",
+  "dockerfile": "Codebase/Infrastructure/session-orchestration/docker/Dockerfile",
+  "k8sTemplates": [
+    "Codebase/Infrastructure/session-orchestration/k8s/templates/user-session-pod.yaml",
+    "Codebase/Infrastructure/session-orchestration/k8s/templates/user-routing.yaml"
+  ]
+}

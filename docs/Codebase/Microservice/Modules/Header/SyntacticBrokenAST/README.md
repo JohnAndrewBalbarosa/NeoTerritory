@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST
 - Descendant source docs: 23
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Generic parser and analysis interfaces shared across the microservice.

@@ -21,10 +21,20 @@
 ## Direct Dependencies
 - No direct dependency list was extracted from the file text.
 
-## Implementation Story
-This file participates in the NeoTerritory implementation as a focused artifact with a narrow local responsibility. Its behavior is best understood by reading it in the context of the module that loads or compiles it. Stores IDE-oriented CMake configuration defaults. This artifact participates in the repository flow according to the surrounding module or toolchain that loads it. The implementation surface is easiest to recognize through symbols such as configurations, name, generator, and configurationType.
+## File Outline
+### Responsibility
 
-## Activity Diagram
+This file participates in the NeoTerritory implementation as a focused artifact with a narrow local responsibility. Its behavior is best understood by reading it in the context of the module that loads or compiles it.
+
+### Position In The Flow
+
+This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+### Main Surface Area
+
+Stores IDE-oriented CMake configuration defaults. The main surface area is easiest to track through symbols such as configurations, name, generator, and configurationType.
+
+## File Activity
 ```mermaid
 flowchart TD
     Start([Start])
@@ -46,5 +56,5 @@ flowchart TD
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-22 after reading the existing docs corpus and the current source tree.
+- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
 

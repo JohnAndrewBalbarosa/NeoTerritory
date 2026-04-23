@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Source/SyntacticBrokenAST
 - Descendant source docs: 26
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Generic syntactic pipeline services such as CLI parsing, source reading, lexical hooks, generation, and reporting.

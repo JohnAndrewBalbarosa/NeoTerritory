@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice
 - Descendant source docs: 99
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 C++ executable and module tree that implement the parser, detector, transform, rendering, and report pipeline.

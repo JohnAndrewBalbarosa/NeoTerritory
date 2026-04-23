@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Infrastructure/runtime-layout
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Scripts that create the filesystem layout expected by the executable runtime.

@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Frontend
 - Descendant source docs: 15
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Frontend prototype shell. This area groups the browser entrypoint with route fragments, scripts, and styles.

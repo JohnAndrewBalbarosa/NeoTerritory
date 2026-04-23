@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Backend/src/routes
 - Descendant source docs: 3
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Route layer that maps URL paths to middleware chains and controller entrypoints.

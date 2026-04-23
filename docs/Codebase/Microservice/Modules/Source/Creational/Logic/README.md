@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Source/Creational/Logic
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Shared creational logic helpers and keyword providers.

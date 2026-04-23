@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Header
 - Descendant source docs: 37
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Header contracts grouped by subsystem.

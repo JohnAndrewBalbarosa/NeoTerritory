@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Pipeline-level contracts for reports, shared context, and orchestration-facing syntactic types.

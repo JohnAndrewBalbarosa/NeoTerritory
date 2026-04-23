@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Backend
 - Descendant source docs: 14
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Backend service surface. This area groups the Express entrypoint, package metadata, and the HTTP runtime internals under src.

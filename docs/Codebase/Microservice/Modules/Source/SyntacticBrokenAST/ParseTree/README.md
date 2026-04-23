@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree
 - Descendant source docs: 19
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Parse-tree engine implementation for building, linking, symbolizing, and rendering the tree artifacts.

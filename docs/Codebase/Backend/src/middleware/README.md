@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Backend/src/middleware
 - Descendant source docs: 3
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Cross-cutting backend request logic such as auth, upload handling, and error shaping.

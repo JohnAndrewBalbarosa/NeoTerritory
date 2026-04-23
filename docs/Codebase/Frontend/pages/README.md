@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Frontend/pages
 - Descendant source docs: 6
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Route-sized HTML fragments loaded by the client router.

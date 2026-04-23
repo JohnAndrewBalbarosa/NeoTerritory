@@ -2,7 +2,7 @@
 
 - Folder: docs/Codebase/Infrastructure/session-orchestration/k8s/templates
 - Descendant source docs: 2
-- Generated on: 2026-04-22
+- Generated on: 2026-04-23
 
 ## Logic Summary
 Parameterized Kubernetes manifests rendered and applied by the bootstrap process.
