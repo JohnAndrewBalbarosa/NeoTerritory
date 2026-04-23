@@ -1,238 +1,57 @@
-﻿# parse_tree_hash_links.hpp
+# parse_tree_hash_links.hpp
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree_hash_links.hpp
 - Kind: C++ header
 - Lines: 84
-- Role: Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
-- Chronology: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-## Notable Symbols
-- NodeAncestry
-- NodeRef
-- FilePairedTreeView
-- ClassHashLink
-- UsageHashLink
-- HashLinkIndex
-- build_parse_tree_hash_links
-
-## Direct Dependencies
-- parse_tree.hpp
-- parse_tree_symbols.hpp
-- cstddef
-- string
-- vector
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on the shared data structures and function signatures.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Declares the public interfaces and shared data types for the generic parse and analysis pipeline. The main surface area is easiest to track through symbols such as NodeAncestry, NodeRef, FilePairedTreeView, and ClassHashLink. It collaborates directly with parse_tree.hpp, parse_tree_symbols.hpp, cstddef, and string.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Declare NodeAncestry]
-    N1[Declare NodeRef]
-    N2[Declare FilePairedTreeView]
-    N3[Declare ClassHashLink]
-    N4[Declare UsageHashLink]
-    N5[Declare HashLinkIndex]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
 
-## Function Walkthrough
+- [program_flow](./parse_tree_hash_links/parse_tree_hash_links_program_flow.hpp.md)
+## Reading Map
+Read this file as: Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 
-### NodeAncestry
-This declaration introduces a shared type that other files compile against. It appears near line 10.
+Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
+Names worth recognizing while reading: NodeAncestry, NodeRef, FilePairedTreeView, ClassHashLink, UsageHashLink, and HashLinkIndex.
 
-Key operations:
-- declare a shared type
-- expose the compile-time contract
+It leans on nearby contracts or tools such as parse_tree.hpp, parse_tree_symbols.hpp, cstddef, string, and vector.
 
-Activity:
-```mermaid
-flowchart TD
-    Start([NodeAncestry()])
-    N0[Enter NodeAncestry()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
+## Story Groups
 
-### NodeRef
-This declaration introduces a shared type that other files compile against. It appears near line 16.
+### Promises This File Makes
+These entries tell the rest of the program what this file can provide.
+- NodeAncestry (line 10): Declare a shared type and expose the compile-time contract
+- NodeRef (line 16): Declare a shared type and expose the compile-time contract
+- FilePairedTreeView (line 28): Declare a shared type and expose the compile-time contract
+- ClassHashLink (line 36): Declare a shared type and expose the compile-time contract
+- UsageHashLink (line 49): Declare a shared type and expose the compile-time contract
+- HashLinkIndex (line 69): Declare a shared type and expose the compile-time contract
+- build_parse_tree_hash_links() (line 76): Declare a callable contract and let implementation files define the runtime body
 
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
+## Function Stories
+Function-level logic is decoupled into future implementation units:
 
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([NodeRef()])
-    N0[Enter NodeRef()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### FilePairedTreeView
-This declaration introduces a shared type that other files compile against. It appears near line 28.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([FilePairedTreeView()])
-    N0[Enter FilePairedTreeView()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### ClassHashLink
-This declaration introduces a shared type that other files compile against. It appears near line 36.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([ClassHashLink()])
-    N0[Enter ClassHashLink()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### UsageHashLink
-This declaration introduces a shared type that other files compile against. It appears near line 49.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([UsageHashLink()])
-    N0[Enter UsageHashLink()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### HashLinkIndex
-This declaration introduces a shared type that other files compile against. It appears near line 69.
-
-Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
-
-Key operations:
-- declare a shared type
-- expose the compile-time contract
-
-Activity:
-```mermaid
-flowchart TD
-    Start([HashLinkIndex()])
-    N0[Enter HashLinkIndex()]
-    N1[Declare a shared type]
-    N2[Expose the compile-time contract]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_parse_tree_hash_links
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 76.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_parse_tree_hash_links()])
-    N0[Enter build_parse_tree_hash_links()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
+- [nodeancestry](./parse_tree_hash_links/functions/nodeancestry.hpp.md)
+- [noderef](./parse_tree_hash_links/functions/noderef.hpp.md)
+- [filepairedtreeview](./parse_tree_hash_links/functions/filepairedtreeview.hpp.md)
+- [classhashlink](./parse_tree_hash_links/functions/classhashlink.hpp.md)
+- [usagehashlink](./parse_tree_hash_links/functions/usagehashlink.hpp.md)
+- [hashlinkindex](./parse_tree_hash_links/functions/hashlinkindex.hpp.md)
+- [build_parse_tree_hash_links](./parse_tree_hash_links/functions/build_parse_tree_hash_links.hpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

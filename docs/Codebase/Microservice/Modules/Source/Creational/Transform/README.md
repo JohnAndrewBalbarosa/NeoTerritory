@@ -1,18 +1,38 @@
-﻿# Transform
+# Transform
 
 - Folder: docs/Codebase/Microservice/Modules/Source/Creational/Transform
 - Descendant source docs: 18
 - Generated on: 2026-04-23
 
 ## Logic Summary
-Creational transform execution and evidence rendering pipeline.
+Older creational transform and evidence helpers kept separate from the current tagging runtime path.
+
+## Subsystem Story
+This folder mixes concrete local documents with deeper child subsystems. Read the local docs to understand the visible behavior first, then descend into the child folders for the lower-level detail that supports it.
+
+## Folder Flow
+```mermaid
+flowchart TD
+    Start["Folder Entry"]
+    N0["Study Creational transform pipeline docs"]
+    N1["Open Creational transform internals folders"]
+    L1{"More items?"}
+    End["Folder Exit"]
+    Start --> N0
+    N0 --> N1
+    N1 --> L1
+    L1 -->|more| N1
+    L1 -->|done| End
+```
 
 ## Child Folders By Logic
 ### Creational Transform Internals
-- internal/ : Internal helpers used by the creational transform pipeline.
+These child folders continue the subsystem by covering Internal helpers used by the older creational transform path..
+- internal/ : Internal helpers used by the older creational transform path.
 
 ## Documents By Logic
 ### Creational Transform Pipeline
+These documents explain the local implementation by covering Implements creational transform dispatch, evidence rendering, and rewrite helpers..
 - creational_code_generator_internal.cpp.md : Implements creational transform dispatch, evidence rendering, and rewrite helpers.
 - creational_transform_evidence.cpp.md : Implements creational transform dispatch, evidence rendering, and rewrite helpers.
 - creational_transform_evidence_main_retention.cpp.md : Implements creational transform dispatch, evidence rendering, and rewrite helpers.

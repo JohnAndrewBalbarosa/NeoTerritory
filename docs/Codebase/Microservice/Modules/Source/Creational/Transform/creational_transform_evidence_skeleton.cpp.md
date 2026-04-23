@@ -1,206 +1,56 @@
-﻿# creational_transform_evidence_skeleton.cpp
+# creational_transform_evidence_skeleton.cpp
 
 - Source: Microservice/Modules/Source/Creational/Transform/creational_transform_evidence_skeleton.cpp
 - Kind: C++ implementation
 - Lines: 181
-- Role: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
-- Chronology: Runs after the generic parse tree exists so creational detection or transformation can operate on it.
 
-## Notable Symbols
-- build_source_type_skeleton_lines
-- build_target_type_skeleton_lines
-- build_source_callsite_skeleton_lines
-- build_target_callsite_skeleton_lines
-- validate_monolithic_structure
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- internal/creational_transform_evidence_internal.hpp
-- sstream
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions.
+Runs after the generic parse tree exists so creational detection can label the structure.
 
-### Position In The Flow
-
-Runs after the generic parse tree exists so creational detection or transformation can operate on it.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements creational transform dispatch, evidence rendering, and rewrite helpers. The main surface area is easiest to track through symbols such as build_source_type_skeleton_lines, build_target_type_skeleton_lines, build_source_callsite_skeleton_lines, and build_target_callsite_skeleton_lines. It collaborates directly with internal/creational_transform_evidence_internal.hpp and sstream.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Execute build target callsite skeleton lines to assemble tree or artifact structures, serialize report content, and iterate over the active collection]
-    N1[Execute build source callsite skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute build target type skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N3[Execute build source type skeleton lines to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N4[Execute validate monolithic structure to iterate over the active collection and branch on runtime conditions]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
 
-## Function Walkthrough
+- [program_flow](./creational_transform_evidence_skeleton/creational_transform_evidence_skeleton_program_flow.cpp.md)
+## Reading Map
+Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
 
-### build_source_type_skeleton_lines
-This routine assembles a larger structure from the inputs it receives. It appears near line 7.
+Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
 
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
+Names worth recognizing while reading: build_source_type_skeleton_lines, build_target_type_skeleton_lines, build_source_callsite_skeleton_lines, build_target_callsite_skeleton_lines, and validate_monolithic_structure.
 
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+It leans on nearby contracts or tools such as internal/creational_transform_evidence_internal.hpp and sstream.
 
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
+## Story Groups
 
-Activity:
-```mermaid
-flowchart TD
-    Start([build_source_type_skeleton_lines()])
-    N0[Enter build_source_type_skeleton_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+### Checks Before Moving On
+These steps stop bad input or unsupported state before it can confuse the next part of the run.
+- validate_monolithic_structure() (line 143): Validate assumptions before continuing, look up entries in previously collected maps or sets, and normalize raw text before later parsing
 
-### build_target_type_skeleton_lines
-This routine assembles a larger structure from the inputs it receives. It appears near line 34.
+### Building The Working Picture
+These steps assemble the trees, models, or bundles used by the rest of the file.
+- build_source_type_skeleton_lines() (line 7): Build or append the next output structure, work one source line at a time, and record derived output into collections
+- build_target_type_skeleton_lines() (line 34): Build or append the next output structure, work one source line at a time, and record derived output into collections
+- build_source_callsite_skeleton_lines() (line 67): Build or append the next output structure, work one source line at a time, and recognize or rewrite callsite structure
+- build_target_callsite_skeleton_lines() (line 97): Build or append the next output structure, work one source line at a time, and recognize or rewrite callsite structure
 
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
+## Function Stories
+Function-level logic is decoupled into future implementation units:
 
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_target_type_skeleton_lines()])
-    N0[Enter build_target_type_skeleton_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### build_source_callsite_skeleton_lines
-This routine assembles a larger structure from the inputs it receives. It appears near line 67.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_source_callsite_skeleton_lines()])
-    N0[Enter build_source_callsite_skeleton_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### build_target_callsite_skeleton_lines
-This routine assembles a larger structure from the inputs it receives. It appears near line 97.
-
-Inside the body, it mainly handles assemble tree or artifact structures, serialize report content, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_target_callsite_skeleton_lines()])
-    N0[Enter build_target_callsite_skeleton_lines()]
-    N1[Assemble tree or artifact structures]
-    N2[Serialize report content]
-    N3[Iterate over the active collection]
-    N4[Branch on runtime conditions]
-    N5[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
-
-### validate_monolithic_structure
-This routine acts as a guard step before later logic is allowed to continue. It appears near line 143.
-
-Inside the body, it mainly handles iterate over the active collection and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([validate_monolithic_structure()])
-    N0[Enter validate_monolithic_structure()]
-    N1[Iterate over the active collection]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
+- [build_source_type_skeleton_lines](./creational_transform_evidence_skeleton/functions/build_source_type_skeleton_lines.cpp.md)
+- [build_target_type_skeleton_lines](./creational_transform_evidence_skeleton/functions/build_target_type_skeleton_lines.cpp.md)
+- [build_source_callsite_skeleton_lines](./creational_transform_evidence_skeleton/functions/build_source_callsite_skeleton_lines.cpp.md)
+- [build_target_callsite_skeleton_lines](./creational_transform_evidence_skeleton/functions/build_target_callsite_skeleton_lines.cpp.md)
+- [validate_monolithic_structure](./creational_transform_evidence_skeleton/functions/validate_monolithic_structure.cpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

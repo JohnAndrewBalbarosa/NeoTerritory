@@ -1,121 +1,159 @@
-﻿# language_tokens.cpp
+# language_tokens.cpp
 
 - Source: Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/language_tokens.cpp
 - Kind: C++ implementation
 - Lines: 70
-- Role: Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.
-- Chronology: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, reports, and rendered outputs.
 
-## Notable Symbols
-- build_cpp_tokens
-- language_tokens
-- std::runtime_error
-- lowercase_ascii
-
-## Direct Dependencies
-- Language-and-Structure/language_tokens.hpp
-- algorithm
-- cctype
-- stdexcept
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
-Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, reports, and rendered outputs.
+Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as build_cpp_tokens, language_tokens, std::runtime_error, and lowercase_ascii. It collaborates directly with Language-and-Structure/language_tokens.hpp, algorithm, cctype, and stdexcept.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+
+### Block 1 - Program Flow Details
+#### Part 1
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Execute build cpp tokens]
-    N1[Execute language tokens to assemble tree or artifact structures]
-    N2[Execute lowercase ascii]
-    End([End])
-    Start --> N0
+    N0["Start"]
+    N1["Building the working picture"]
+    N2["Enter build_cpp_tokens()"]
+    N3["Build output"]
+    N4["Return result"]
+    N5["Enter language_tokens()"]
+    N6["Assemble tree"]
+    N7["Return result"]
+    N8["Small preparation steps"]
+    N9["Enter lowercase_ascii()"]
     N0 --> N1
     N1 --> N2
-    N2 --> End
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+    N6 --> N7
+    N7 --> N8
+    N8 --> N9
 ```
 
-## Function Walkthrough
+#### Part 2
+```mermaid
+flowchart TD
+    N0["Normalize text"]
+    N1["Clean text"]
+    N2["Return result"]
+    N3["End"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+```
 
-### build_cpp_tokens
+## Reading Map
+Read this file as: Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.
+
+Where it sits in the run: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
+
+Names worth recognizing while reading: build_cpp_tokens, language_tokens, std::runtime_error, and lowercase_ascii.
+
+It leans on nearby contracts or tools such as Language-and-Structure/language_tokens.hpp, algorithm, cctype, and stdexcept.
+
+## Story Groups
+
+### Small Preparation Steps
+These steps clean up names, text, or small values before the larger work begins.
+- lowercase_ascii() (line 61): Normalize or format text values and normalize raw text before later parsing
+
+### Building The Working Picture
+These steps assemble the trees, models, or bundles used by the rest of the file.
+- build_cpp_tokens() (line 9): Build or append the next output structure
+- language_tokens() (line 48): Assemble tree or artifact structures
+
+## Function Stories
+
+### build_cpp_tokens()
 This routine assembles a larger structure from the inputs it receives. It appears near line 9.
+
+Inside the body, it mainly handles build or append the next output structure.
 
 The caller receives a computed result or status from this step.
 
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
+What it does:
+- build or append the next output structure
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([build_cpp_tokens()])
-    N0[Enter build_cpp_tokens()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
+    Start["build_cpp_tokens()"]
+    N0["Enter build_cpp_tokens()"]
+    N1["Build output"]
+    N2["Return result"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> End
 ```
 
-### language_tokens
+### language_tokens()
 This routine owns one focused piece of the file's behavior. It appears near line 48.
 
 Inside the body, it mainly handles assemble tree or artifact structures.
 
 The caller receives a computed result or status from this step.
 
-Key operations:
+What it does:
 - assemble tree or artifact structures
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([language_tokens()])
-    N0[Enter language_tokens()]
-    N1[Assemble tree or artifact structures]
-    N2[Return the result to the caller]
-    End([Return])
+    Start["language_tokens()"]
+    N0["Enter language_tokens()"]
+    N1["Assemble tree"]
+    N2["Return result"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> End
 ```
 
-### lowercase_ascii
+### lowercase_ascii()
 This routine owns one focused piece of the file's behavior. It appears near line 61.
+
+Inside the body, it mainly handles normalize or format text values and normalize raw text before later parsing.
 
 The caller receives a computed result or status from this step.
 
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
+What it does:
+- normalize or format text values
+- normalize raw text before later parsing
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([lowercase_ascii()])
-    N0[Enter lowercase_ascii()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
+    Start["lowercase_ascii()"]
+    N0["Enter lowercase_ascii()"]
+    N1["Normalize text"]
+    N2["Clean text"]
+    N3["Return result"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2
-    N2 --> End
+    N2 --> N3
+    N3 --> End
 ```
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

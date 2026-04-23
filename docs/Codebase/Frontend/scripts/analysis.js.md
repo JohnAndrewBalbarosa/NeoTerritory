@@ -1,76 +1,93 @@
-﻿# analysis.js
+# analysis.js
 
 - Source: Frontend/scripts/analysis.js
 - Kind: JavaScript module
 - Lines: 80
-- Role: Implements page-level interactive behavior for the static frontend.
-- Chronology: Runs in the browser while the user navigates the prototype UI.
 
-## Notable Symbols
-- animateBar
-- btn
-- readyCard
-- progressCard
-- current
-- interval
-- bar
-- pct
-- el
-- spinStyle
-
-## Direct Dependencies
-- No direct dependency list was extracted from the file text.
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This file implements the staged-analysis demo flow on the frontend. It reacts to the start button, swaps ready and progress states, animates the progress bars, and navigates to the results view when the simulated pipeline finishes. This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 Runs in the browser while the user navigates the prototype UI.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Implements page-level interactive behavior for the static frontend. The main surface area is easiest to track through symbols such as animateBar, btn, readyCard, and progressCard.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Run animateBar() to validate conditions and branch on failures, update DOM state, and schedule UI updates]
-    End([End])
+    Start["Start"]
+    N0["Supporting steps"]
+    N1["Enter animatebar()"]
+    N2["Validate branch"]
+    D2{"Continue?"}
+    R2["Stop path"]
+    N3["Update DOM"]
+    N4["Schedule UI"]
+    N5["Leave animateBar()"]
+    End["End"]
     Start --> N0
-    N0 --> End
+    N0 --> N1
+    N1 --> N2
+    N2 --> D2
+    D2 -->|yes| N3
+    D2 -->|no| R2
+    R2 --> End
+    N3 --> N4
+    N4 --> N5
+    N5 --> End
 ```
 
-## Function Walkthrough
+## Reading Map
+Read this file as: Implements page-level interactive behavior for the static frontend.
 
-### animateBar
+Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+
+Names worth recognizing while reading: animateBar, btn, readyCard, progressCard, current, and interval.
+
+## Story Groups
+
+### Supporting Steps
+These steps support the local behavior of the file.
+- animateBar() (line 17): Validate conditions and branch on failures, update DOM state, and schedule UI updates
+
+## Function Stories
+
+### animateBar()
 This routine owns one focused piece of the file's behavior. It appears near line 17.
 
 Inside the body, it mainly handles validate conditions and branch on failures, update DOM state, and schedule UI updates.
 
 It branches on runtime conditions instead of following one fixed path.
 
-Key operations:
+What it does:
 - validate conditions and branch on failures
 - update DOM state
 - schedule UI updates
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([animateBar()])
-    N0[Enter animateBar()]
-    N1[Validate conditions and branch on failures]
-    N2[Update DOM state]
-    N3[Schedule UI updates]
-    N4[Hand control back to the caller]
-    End([Return])
+    Start["animateBar()"]
+    N0["Enter animatebar()"]
+    N1["Validate branch"]
+    D1{"Continue?"}
+    R1["Stop path"]
+    N2["Update DOM"]
+    N3["Schedule UI"]
+    N4["Hand back"]
+    End["Return"]
     Start --> N0
     N0 --> N1
-    N1 --> N2
+    N1 --> D1
+    D1 -->|yes| N2
+    D1 -->|no| R1
+    R1 --> End
     N2 --> N3
     N3 --> N4
     N4 --> End

@@ -1,64 +1,92 @@
-﻿# behavioural_symbol_test.hpp
+# behavioural_symbol_test.hpp
 
 - Source: Microservice/Modules/Header/Behavioural/behavioural_symbol_test.hpp
 - Kind: C++ header
 - Lines: 19
-- Role: Declares behavioural detection interfaces and structural-hook contracts.
-- Chronology: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-## Notable Symbols
-- build_behavioural_symbol_test_tree
-- behavioural_symbol_test_to_text
-
-## Direct Dependencies
-- parse_tree.hpp
-- string
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This header implements the compile-time contract for the behavioural subsystem. It defines the interfaces and hook declarations used when the generic parser delegates behavioural structure decisions.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Declares behavioural detection interfaces and structural-hook contracts. The main surface area is easiest to track through symbols such as build_behavioural_symbol_test_tree and behavioural_symbol_test_to_text. It collaborates directly with parse_tree.hpp and string.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+
+### Block 1 - Program Flow Details
+#### Part 1
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Declare build_behavioural_symbol_test_tree]
-    N1[Declare behavioural_symbol_test_to_text]
-    End([End])
-    Start --> N0
+    N0["Start"]
+    N1["Promises this file makes"]
+    N2["Enter build_behavioural_symbol_test_tree()"]
+    N3["Declare call"]
+    N4["Defer body"]
+    N5["Leave build_behavioural_symbol_test_tree()"]
+    N6["Enter behavioural_symbol_test_to_text()"]
+    N7["Declare call"]
+    N8["Defer body"]
+    N9["Leave behavioural_symbol_test_to_text()"]
     N0 --> N1
-    N1 --> End
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+    N6 --> N7
+    N7 --> N8
+    N8 --> N9
 ```
 
-## Function Walkthrough
+#### Part 2
+```mermaid
+flowchart TD
+    N0["End"]
+```
 
-### build_behavioural_symbol_test_tree
+## Reading Map
+Read this file as: Declares behavioural detection interfaces and structural-hook contracts.
+
+Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+Names worth recognizing while reading: build_behavioural_symbol_test_tree and behavioural_symbol_test_to_text.
+
+It leans on nearby contracts or tools such as parse_tree.hpp and string.
+
+## Story Groups
+
+### Promises This File Makes
+These entries tell the rest of the program what this file can provide.
+- build_behavioural_symbol_test_tree() (line 11): Declare a callable contract and let implementation files define the runtime body
+- behavioural_symbol_test_to_text() (line 16): Declare a callable contract and let implementation files define the runtime body
+
+## Function Stories
+
+### build_behavioural_symbol_test_tree()
 This declaration exposes a callable contract without providing the runtime body here. It appears near line 11.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
-Key operations:
+What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([build_behavioural_symbol_test_tree()])
-    N0[Enter build_behavioural_symbol_test_tree()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
+    Start["build_behavioural_symbol_test_tree()"]
+    N0["Enter build_behavioural_symbol_test_tree()"]
+    N1["Declare call"]
+    N2["Defer body"]
+    N3["Hand back"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -66,24 +94,24 @@ flowchart TD
     N3 --> End
 ```
 
-### behavioural_symbol_test_to_text
+### behavioural_symbol_test_to_text()
 This declaration exposes a callable contract without providing the runtime body here. It appears near line 16.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
-Key operations:
+What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
-Activity:
+Flow:
 ```mermaid
 flowchart TD
-    Start([behavioural_symbol_test_to_text()])
-    N0[Enter behavioural_symbol_test_to_text()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
+    Start["behavioural_symbol_test_to_text()"]
+    N0["Enter behavioural_symbol_test_to_text()"]
+    N1["Declare call"]
+    N2["Defer body"]
+    N3["Hand back"]
+    End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -94,4 +122,3 @@ flowchart TD
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

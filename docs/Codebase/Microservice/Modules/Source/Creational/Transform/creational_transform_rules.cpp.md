@@ -1,394 +1,74 @@
-﻿# creational_transform_rules.cpp
+# creational_transform_rules.cpp
 
 - Source: Microservice/Modules/Source/Creational/Transform/creational_transform_rules.cpp
 - Kind: C++ implementation
 - Lines: 543
-- Role: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
-- Chronology: Runs after the generic parse tree exists so creational detection or transformation can operate on it.
 
-## Notable Symbols
-- ConfigMethodModel
-- ClassBuilderModel
-- TransformRule
-- derive_field_base_name
-- collect_config_methods_for_class
-- generate_builder_class_code
-- inject_builder_class
-- rewrite_simple_singleton_callsite_to_builder
-- decl_regex
-- method_call_regex
-- transform_to_singleton_by_class_references
-- transform_factory_to_base
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- Transform/creational_code_generator_internal.hpp
-- Transform/creational_transform_factory_reverse.hpp
-- parse_tree_symbols.hpp
-- cctype
-- regex
-- sstream
-- string
-- unordered_map
-- unordered_set
-- utility
-- vector
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions.
+Runs after the generic parse tree exists so creational detection can label the structure.
 
-### Position In The Flow
-
-Runs after the generic parse tree exists so creational detection or transformation can operate on it.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements creational transform dispatch, evidence rendering, and rewrite helpers. The main surface area is easiest to track through symbols such as ConfigMethodModel, ClassBuilderModel, TransformRule, and derive_field_base_name. It collaborates directly with Transform/creational_code_generator_internal.hpp, Transform/creational_transform_factory_reverse.hpp, parse_tree_symbols.hpp, and cctype.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Execute transform singleton to builder to parse or tokenize input text, assemble tree or artifact structures, and iterate over the active collection]
-    N1[Execute transform to singleton by class references to assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions]
-    N2[Execute transform rules]
-    N3[Execute transform using registered rule to iterate over the active collection and branch on runtime conditions]
-    N4[Execute generate builder class code to serialize report content, iterate over the active collection, and branch on runtime conditions]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
 
-## Function Walkthrough
+- [program_flow](./creational_transform_rules/creational_transform_rules_program_flow.cpp.md)
+## Reading Map
+Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
 
-### derive_field_base_name
-This routine owns one focused piece of the file's behavior. It appears near line 32.
+Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
 
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
+Names worth recognizing while reading: ConfigMethodModel, ClassBuilderModel, TransformRule, derive_field_base_name, collect_config_methods_for_class, and generate_builder_class_code.
 
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+It leans on nearby contracts or tools such as Transform/creational_code_generator_internal.hpp, Transform/creational_transform_factory_reverse.hpp, parse_tree_symbols.hpp, cctype, regex, and sstream.
 
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
+## Story Groups
 
-Activity:
-```mermaid
-flowchart TD
-    Start([derive_field_base_name()])
-    N0[Enter derive_field_base_name()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+### Finding What Matters
+These steps pick out the facts, traces, and relationships that later stages need.
+- collect_config_methods_for_class() (line 72): Collect derived facts for later stages, inspect or register class-level information, and look up entries in previously collected maps or sets
 
-### collect_config_methods_for_class
-This routine connects discovered items back into the broader model owned by the file. It appears near line 72.
+### Building The Working Picture
+These steps assemble the trees, models, or bundles used by the rest of the file.
+- derive_field_base_name() (line 32): Record derived output into collections, normalize raw text before later parsing, and assemble tree or artifact structures
+- inject_builder_class() (line 230): Inspect or register class-level information, match source text with regular expressions, and split the source into individual lines
+- rewrite_simple_singleton_callsite_to_builder() (line 275): Rewrite source text or model state, recognize or rewrite callsite structure, and match source text with regular expressions
+- transform_to_singleton_by_class_references() (line 345): Rewrite source text or model state, inspect or register class-level information, and look up entries in previously collected maps or sets
+- transform_singleton_to_builder() (line 402): Rewrite source text or model state, look up entries in previously collected maps or sets, and record derived output into collections
 
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
+### Changing Or Cleaning The Picture
+These steps adjust existing state or remove stale pieces after better information is available.
+- transform_factory_to_base() (line 388): Rewrite source text or model state and handle factory-specific detection or rewrite logic
+- transform_rules() (line 503): Rewrite source text or model state
+- transform_using_registered_rule() (line 513): Rewrite source text or model state, iterate over the active collection, and branch on runtime conditions
 
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+### Supporting Steps
+These steps support the local behavior of the file.
+- generate_builder_class_code() (line 177): Inspect or register class-level information, populate output fields or accumulators, and serialize report content
+- pattern_matches() (line 497): Owns a focused local responsibility.
 
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
+## Function Stories
+Function-level logic is decoupled into future implementation units:
 
-Activity:
-```mermaid
-flowchart TD
-    Start([collect_config_methods_for_class()])
-    N0[Enter collect_config_methods_for_class()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Iterate over the active collection]
-    N4[Branch on runtime conditions]
-    N5[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
-
-### generate_builder_class_code
-This routine owns one focused piece of the file's behavior. It appears near line 177.
-
-Inside the body, it mainly handles serialize report content, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([generate_builder_class_code()])
-    N0[Enter generate_builder_class_code()]
-    N1[Serialize report content]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### inject_builder_class
-This routine owns one focused piece of the file's behavior. It appears near line 230.
-
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, serialize report content, and generate code or evidence output.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- serialize report content
-- generate code or evidence output
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([inject_builder_class()])
-    N0[Enter inject_builder_class()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Serialize report content]
-    N4[Generate code or evidence output]
-    N5[Iterate over the active collection]
-    N6[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> End
-```
-
-### rewrite_simple_singleton_callsite_to_builder
-This routine owns one focused piece of the file's behavior. It appears near line 275.
-
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, serialize report content, and iterate over the active collection.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([rewrite_simple_singleton_callsite_to_builder()])
-    N0[Enter rewrite_simple_singleton_callsite_to_builder()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Serialize report content]
-    N4[Iterate over the active collection]
-    N5[Branch on runtime conditions]
-    N6[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> End
-```
-
-### transform_to_singleton_by_class_references
-This routine owns one focused piece of the file's behavior. It appears near line 345.
-
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_to_singleton_by_class_references()])
-    N0[Enter transform_to_singleton_by_class_references()]
-    N1[Assemble tree or artifact structures]
-    N2[Iterate over the active collection]
-    N3[Branch on runtime conditions]
-    N4[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
-
-### transform_factory_to_base
-This routine owns one focused piece of the file's behavior. It appears near line 388.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_factory_to_base()])
-    N0[Enter transform_factory_to_base()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### transform_singleton_to_builder
-This routine owns one focused piece of the file's behavior. It appears near line 402.
-
-Inside the body, it mainly handles parse or tokenize input text, assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- parse or tokenize input text
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_singleton_to_builder()])
-    N0[Enter transform_singleton_to_builder()]
-    N1[Parse or tokenize input text]
-    N2[Assemble tree or artifact structures]
-    N3[Iterate over the active collection]
-    N4[Branch on runtime conditions]
-    N5[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
-
-### pattern_matches
-This routine owns one focused piece of the file's behavior. It appears near line 497.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([pattern_matches()])
-    N0[Enter pattern_matches()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### transform_rules
-This routine owns one focused piece of the file's behavior. It appears near line 503.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_rules()])
-    N0[Enter transform_rules()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### transform_using_registered_rule
-This routine owns one focused piece of the file's behavior. It appears near line 513.
-
-Inside the body, it mainly handles iterate over the active collection and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_using_registered_rule()])
-    N0[Enter transform_using_registered_rule()]
-    N1[Iterate over the active collection]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
+- [derive_field_base_name](./creational_transform_rules/functions/derive_field_base_name.cpp.md)
+- [collect_config_methods_for_class](./creational_transform_rules/functions/collect_config_methods_for_class.cpp.md)
+- [generate_builder_class_code](./creational_transform_rules/functions/generate_builder_class_code.cpp.md)
+- [inject_builder_class](./creational_transform_rules/functions/inject_builder_class.cpp.md)
+- [rewrite_simple_singleton_callsite_to_builder](./creational_transform_rules/functions/rewrite_simple_singleton_callsite_to_builder.cpp.md)
+- [transform_to_singleton_by_class_references](./creational_transform_rules/functions/transform_to_singleton_by_class_references.cpp.md)
+- [transform_factory_to_base](./creational_transform_rules/functions/transform_factory_to_base.cpp.md)
+- [transform_singleton_to_builder](./creational_transform_rules/functions/transform_singleton_to_builder.cpp.md)
+- [pattern_matches](./creational_transform_rules/functions/pattern_matches.cpp.md)
+- [transform_rules](./creational_transform_rules/functions/transform_rules.cpp.md)
+- [transform_using_registered_rule](./creational_transform_rules/functions/transform_using_registered_rule.cpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

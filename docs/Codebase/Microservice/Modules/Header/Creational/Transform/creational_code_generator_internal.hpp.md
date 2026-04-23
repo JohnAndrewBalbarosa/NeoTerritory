@@ -1,846 +1,106 @@
-﻿# creational_code_generator_internal.hpp
+# creational_code_generator_internal.hpp
 
 - Source: Microservice/Modules/Header/Creational/Transform/creational_code_generator_internal.hpp
 - Kind: C++ header
 - Lines: 85
-- Role: Declares creational-pattern detection and transform interfaces.
-- Chronology: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-## Notable Symbols
-- lower
-- trim
-- split_words
-- starts_with
-- find_matching_brace
-- is_class_block
-- is_function_block
-- class_name_from_signature
-- function_name_from_signature
-- inject_singleton_accessor
-- rewrite_class_instantiations_to_singleton_references
-- extract_crucial_class_names
-
-## Direct Dependencies
-- parse_tree.hpp
-- parse_tree_code_generator.hpp
-- Singleton/singleton_pattern_logic.hpp
-- cstddef
-- regex
-- string
-- unordered_map
-- vector
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This header implements the compile-time contract for the creational subsystem. It declares the detectors, transforms, and helper types that the runtime sources later define.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Declares creational-pattern detection and transform interfaces. The main surface area is easiest to track through symbols such as lower, trim, split_words, and starts_with. It collaborates directly with parse_tree.hpp, parse_tree_code_generator.hpp, Singleton/singleton_pattern_logic.hpp, and cstddef.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Declare lower]
-    N1[Declare trim]
-    N2[Declare split_words]
-    N3[Declare starts_with]
-    N4[Declare find_matching_brace]
-    N5[Declare is_class_block]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
-```
-
-## Function Walkthrough
-
-### lower
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 17.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([lower()])
-    N0[Enter lower()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### trim
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 19.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([trim()])
-    N0[Enter trim()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### split_words
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 20.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([split_words()])
-    N0[Enter split_words()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### starts_with
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 21.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([starts_with()])
-    N0[Enter starts_with()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### find_matching_brace
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 22.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([find_matching_brace()])
-    N0[Enter find_matching_brace()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_class_block
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 23.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_class_block()])
-    N0[Enter is_class_block()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_function_block
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 25.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_function_block()])
-    N0[Enter is_function_block()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### class_name_from_signature
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 26.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([class_name_from_signature()])
-    N0[Enter class_name_from_signature()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### function_name_from_signature
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 27.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([function_name_from_signature()])
-    N0[Enter function_name_from_signature()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### inject_singleton_accessor
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 28.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([inject_singleton_accessor()])
-    N0[Enter inject_singleton_accessor()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### rewrite_class_instantiations_to_singleton_references
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 30.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([rewrite_class_instantiations_to_singleton_references()])
-    N0[Enter rewrite_class_instantiations_to_singleton_references()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### extract_crucial_class_names
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 31.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([extract_crucial_class_names()])
-    N0[Enter extract_crucial_class_names()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### ensure_decision
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 36.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([ensure_decision()])
-    N0[Enter ensure_decision()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### add_reason_if_missing
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 40.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([add_reason_if_missing()])
-    N0[Enter add_reason_if_missing()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### split_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 42.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([split_lines()])
-    N0[Enter split_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### join_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 44.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([join_lines()])
-    N0[Enter join_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_config_method_name
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 48.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_config_method_name()])
-    N0[Enter is_config_method_name()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_monolithic_config_method_name
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 50.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_monolithic_config_method_name()])
-    N0[Enter is_monolithic_config_method_name()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_monolithic_build_method_name
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 51.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_monolithic_build_method_name()])
-    N0[Enter is_monolithic_build_method_name()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_build_method_name
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 52.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_build_method_name()])
-    N0[Enter is_build_method_name()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### is_operational_method_name
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 53.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_operational_method_name()])
-    N0[Enter is_operational_method_name()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### ends_with
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 54.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([ends_with()])
-    N0[Enter ends_with()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### strip_builder_suffix
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 56.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([strip_builder_suffix()])
-    N0[Enter strip_builder_suffix()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### append_unique_token
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 57.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_unique_token()])
-    N0[Enter append_unique_token()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### append_unique_line
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 59.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_unique_line()])
-    N0[Enter append_unique_line()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### append_unique_lines
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 60.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([append_unique_lines()])
-    N0[Enter append_unique_lines()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### regex_capture_or_empty
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 61.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([regex_capture_or_empty()])
-    N0[Enter regex_capture_or_empty()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### build_monolithic_evidence_view
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 62.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_monolithic_evidence_view()])
-    N0[Enter build_monolithic_evidence_view()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### transform_to_singleton_by_class_references
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 69.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_to_singleton_by_class_references()])
-    N0[Enter transform_to_singleton_by_class_references()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### transform_singleton_to_builder
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 74.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_singleton_to_builder()])
-    N0[Enter transform_singleton_to_builder()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### transform_using_registered_rule
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 78.
-
-Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
-
-Key operations:
-- declare a callable contract
-- let implementation files define the runtime body
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform_using_registered_rule()])
-    N0[Enter transform_using_registered_rule()]
-    N1[Declare a callable contract]
-    N2[Let implementation files define the runtime body]
-    N3[Hand control back to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
+
+- [program_flow_01](./creational_code_generator_internal/creational_code_generator_internal_program_flow_01.hpp.md)
+- [program_flow_02](./creational_code_generator_internal/creational_code_generator_internal_program_flow_02.hpp.md)
+## Reading Map
+Read this file as: Declares creational-pattern detection and transform interfaces.
+
+Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+
+Names worth recognizing while reading: lower, trim, split_words, starts_with, find_matching_brace, and is_class_block.
+
+It leans on nearby contracts or tools such as parse_tree.hpp, parse_tree_code_generator.hpp, Singleton/singleton_pattern_logic.hpp, cstddef, regex, and string.
+
+## Story Groups
+
+### Promises This File Makes
+These entries tell the rest of the program what this file can provide.
+- lower() (line 17): Declare a callable contract and let implementation files define the runtime body
+- trim() (line 19): Declare a callable contract and let implementation files define the runtime body
+- split_words() (line 20): Declare a callable contract and let implementation files define the runtime body
+- starts_with() (line 21): Declare a callable contract and let implementation files define the runtime body
+- find_matching_brace() (line 22): Declare a callable contract and let implementation files define the runtime body
+- is_class_block() (line 23): Declare a callable contract and let implementation files define the runtime body
+- is_function_block() (line 25): Declare a callable contract and let implementation files define the runtime body
+- class_name_from_signature() (line 26): Declare a callable contract and let implementation files define the runtime body
+- function_name_from_signature() (line 27): Declare a callable contract and let implementation files define the runtime body
+- inject_singleton_accessor() (line 28): Declare a callable contract and let implementation files define the runtime body
+- rewrite_class_instantiations_to_singleton_references() (line 30): Declare a callable contract and let implementation files define the runtime body
+- extract_crucial_class_names() (line 31): Declare a callable contract and let implementation files define the runtime body
+- ensure_decision() (line 36): Declare a callable contract and let implementation files define the runtime body
+- add_reason_if_missing() (line 40): Declare a callable contract and let implementation files define the runtime body
+- split_lines() (line 42): Declare a callable contract and let implementation files define the runtime body
+- join_lines() (line 44): Declare a callable contract and let implementation files define the runtime body
+- is_config_method_name() (line 48): Declare a callable contract and let implementation files define the runtime body
+- is_monolithic_config_method_name() (line 50): Declare a callable contract and let implementation files define the runtime body
+- is_monolithic_build_method_name() (line 51): Declare a callable contract and let implementation files define the runtime body
+- is_build_method_name() (line 52): Declare a callable contract and let implementation files define the runtime body
+- is_operational_method_name() (line 53): Declare a callable contract and let implementation files define the runtime body
+- ends_with() (line 54): Declare a callable contract and let implementation files define the runtime body
+- strip_builder_suffix() (line 56): Declare a callable contract and let implementation files define the runtime body
+- append_unique_token() (line 57): Declare a callable contract and let implementation files define the runtime body
+- append_unique_line() (line 59): Declare a callable contract and let implementation files define the runtime body
+- append_unique_lines() (line 60): Declare a callable contract and let implementation files define the runtime body
+- regex_capture_or_empty() (line 61): Declare a callable contract and let implementation files define the runtime body
+- build_monolithic_evidence_view() (line 62): Declare a callable contract and let implementation files define the runtime body
+- transform_to_singleton_by_class_references() (line 69): Declare a callable contract and let implementation files define the runtime body
+- transform_singleton_to_builder() (line 74): Declare a callable contract and let implementation files define the runtime body
+- transform_using_registered_rule() (line 78): Declare a callable contract and let implementation files define the runtime body
+
+## Function Stories
+Function-level logic is decoupled into future implementation units:
+
+- [lower](./creational_code_generator_internal/functions/lower.hpp.md)
+- [trim](./creational_code_generator_internal/functions/trim.hpp.md)
+- [split_words](./creational_code_generator_internal/functions/split_words.hpp.md)
+- [starts_with](./creational_code_generator_internal/functions/starts_with.hpp.md)
+- [find_matching_brace](./creational_code_generator_internal/functions/find_matching_brace.hpp.md)
+- [is_class_block](./creational_code_generator_internal/functions/is_class_block.hpp.md)
+- [is_function_block](./creational_code_generator_internal/functions/is_function_block.hpp.md)
+- [class_name_from_signature](./creational_code_generator_internal/functions/class_name_from_signature.hpp.md)
+- [function_name_from_signature](./creational_code_generator_internal/functions/function_name_from_signature.hpp.md)
+- [inject_singleton_accessor](./creational_code_generator_internal/functions/inject_singleton_accessor.hpp.md)
+- [rewrite_class_instantiations_to_singleton_references](./creational_code_generator_internal/functions/rewrite_class_instantiations_to_singleton_references.hpp.md)
+- [extract_crucial_class_names](./creational_code_generator_internal/functions/extract_crucial_class_names.hpp.md)
+- [ensure_decision](./creational_code_generator_internal/functions/ensure_decision.hpp.md)
+- [add_reason_if_missing](./creational_code_generator_internal/functions/add_reason_if_missing.hpp.md)
+- [split_lines](./creational_code_generator_internal/functions/split_lines.hpp.md)
+- [join_lines](./creational_code_generator_internal/functions/join_lines.hpp.md)
+- [is_config_method_name](./creational_code_generator_internal/functions/is_config_method_name.hpp.md)
+- [is_monolithic_config_method_name](./creational_code_generator_internal/functions/is_monolithic_config_method_name.hpp.md)
+- [is_monolithic_build_method_name](./creational_code_generator_internal/functions/is_monolithic_build_method_name.hpp.md)
+- [is_build_method_name](./creational_code_generator_internal/functions/is_build_method_name.hpp.md)
+- [is_operational_method_name](./creational_code_generator_internal/functions/is_operational_method_name.hpp.md)
+- [ends_with](./creational_code_generator_internal/functions/ends_with.hpp.md)
+- [strip_builder_suffix](./creational_code_generator_internal/functions/strip_builder_suffix.hpp.md)
+- [append_unique_token](./creational_code_generator_internal/functions/append_unique_token.hpp.md)
+- [append_unique_line](./creational_code_generator_internal/functions/append_unique_line.hpp.md)
+- [append_unique_lines](./creational_code_generator_internal/functions/append_unique_lines.hpp.md)
+- [regex_capture_or_empty](./creational_code_generator_internal/functions/regex_capture_or_empty.hpp.md)
+- [build_monolithic_evidence_view](./creational_code_generator_internal/functions/build_monolithic_evidence_view.hpp.md)
+- [transform_to_singleton_by_class_references](./creational_code_generator_internal/functions/transform_to_singleton_by_class_references.hpp.md)
+- [transform_singleton_to_builder](./creational_code_generator_internal/functions/transform_singleton_to_builder.hpp.md)
+- [transform_using_registered_rule](./creational_code_generator_internal/functions/transform_using_registered_rule.hpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

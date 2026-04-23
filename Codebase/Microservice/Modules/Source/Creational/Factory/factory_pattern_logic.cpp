@@ -467,38 +467,33 @@ void collect_factory_returns_in_subtree(
         }
     }
 }
-} // namespace
 
-CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
+class FactoryPatternAlgorithm final : public ICreationalPatternAlgorithm
 {
-    const ParseTreeSymbolTables tables = build_parse_tree_symbol_tables(parse_root);
-
-    CreationalTreeNode root{
-        "FactoryPatternRoot",
-        "class/function/conditional-or-fallthrough/allocator-or-object-return",
-        {}};
-
-    std::vector<const ParseTreeNode*> class_blocks;
-    std::vector<const ParseTreeNode*> stack{&parse_root};
-    while (!stack.empty())
+public:
+    std::string pattern_root_kind() const override
     {
-        const ParseTreeNode* node = stack.back();
-        stack.pop_back();
-        if (is_class_block(*node))
-        {
-            class_blocks.push_back(node);
-        }
-        for (const ParseTreeNode& child : node->children)
-        {
-            stack.push_back(&child);
-        }
+        return "FactoryPatternRoot";
     }
 
-    for (const ParseTreeNode* cls : class_blocks)
+    std::string pattern_root_label() const override
     {
-        CreationalTreeNode class_node{"ClassNode", class_name_from_signature(cls->value), {}};
+        return "class/function/conditional-or-fallthrough/allocator-or-object-return";
+    }
 
-        for (const ParseTreeNode& fn : cls->children)
+    bool inspect_registered_class(
+        const CreationalRegisteredClass& registered_class,
+        const ParseTreeSymbolTables& tables,
+        CreationalTreeNode& out_class_node) const override
+    {
+        if (registered_class.node == nullptr)
+        {
+            return false;
+        }
+
+        CreationalTreeNode class_node{"ClassNode", registered_class.name, {}};
+
+        for (const ParseTreeNode& fn : registered_class.node->children)
         {
             if (!is_function_block(fn))
             {
@@ -564,11 +559,24 @@ CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
             }
         }
 
-        if (!class_node.children.empty())
+        if (class_node.children.empty())
         {
-            root.children.push_back(std::move(class_node));
+            return false;
         }
-    }
 
-    return root;
+        out_class_node = std::move(class_node);
+        return true;
+    }
+};
+} // namespace
+
+CreationalTreeNode build_factory_pattern_tree(const ParseTreeNode& parse_root)
+{
+    return build_creational_pattern_tree_with_mediator(parse_root, factory_pattern_algorithm());
+}
+
+const ICreationalPatternAlgorithm& factory_pattern_algorithm()
+{
+    static const FactoryPatternAlgorithm algorithm;
+    return algorithm;
 }

@@ -1,91 +1,131 @@
-﻿# transformController.js
+# transformController.js
 
 - Source: Backend/src/controllers/transformController.js
 - Kind: JavaScript module
 - Lines: 46
-- Role: Implements HTTP endpoint behavior after routing and before response serialization.
-- Chronology: Runs after routing and middleware resolution to perform request-specific backend work.
 
-## Notable Symbols
-- path
-- fs
-- db
-- allowedExt
-- transform
-- ext
-- safeInput
-- inputPath
-- outputName
-- outputPath
-- stmt
-- info
-
-## Direct Dependencies
-- path
-- fs
-- ../db/database
-- ../services/logService
-- ../utils/fileUtils
-
-## File Outline
-### Responsibility
+## Story
+### What Happens Here
 
 This controller implements the current upload-to-placeholder-transform path. It validates the uploaded file, normalizes and relocates the input, creates an output placeholder, persists a job record, writes log entries, and returns the job metadata to the caller.
 
-### Position In The Flow
+### Why It Matters In The Flow
 
 Runs after routing and middleware resolution to perform request-specific backend work.
 
-### Main Surface Area
+### What To Watch While Reading
 
 Implements HTTP endpoint behavior after routing and before response serialization. The main surface area is easiest to track through symbols such as path, fs, db, and allowedExt. It collaborates directly with path, fs, ../db/database, and ../services/logService.
 
-## File Activity
+## Program Flow
+This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+
+### Block 1 - Program Flow Details
+#### Part 1
 ```mermaid
 flowchart TD
-    Start([Start])
-    N0[Run transform() to validate conditions and branch on failures, query or update SQLite state, and move or write filesystem artifacts]
-    End([End])
-    Start --> N0
-    N0 --> End
-```
-
-## Function Walkthrough
-
-### transform
-This routine owns one focused piece of the file's behavior. It appears near line 8.
-
-Inside the body, it mainly handles validate conditions and branch on failures, query or update SQLite state, move or write filesystem artifacts, and return the HTTP response.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- validate conditions and branch on failures
-- query or update SQLite state
-- move or write filesystem artifacts
-- return the HTTP response
-
-Activity:
-```mermaid
-flowchart TD
-    Start([transform()])
-    N0[Enter transform()]
-    N1[Validate conditions and branch on failures]
-    N2[Query or update SQLite state]
-    N3[Move or write filesystem artifacts]
-    N4[Return the HTTP response]
-    N5[Return the result to the caller]
-    End([Return])
-    Start --> N0
+    N0["Start"]
+    N1["Changing or cleaning the picture"]
+    N2["Enter transform()"]
+    N3["Rewrite source"]
+    N4["Clean text"]
+    N5["Validate branch"]
+    N6["Continue?"]
+    N7["Stop path"]
+    N8["Use SQLite"]
+    N9["Move files"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
     N4 --> N5
-    N5 --> End
+    N5 --> N6
+    N6 --> N7
+    N7 --> N8
+    N8 --> N9
+```
+
+#### Part 2
+```mermaid
+flowchart TD
+    N0["More items?"]
+    N1["Return result"]
+    N2["Return result"]
+    N3["End"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+```
+
+## Reading Map
+Read this file as: Implements HTTP endpoint behavior after routing and before response serialization.
+
+Where it sits in the run: Runs after routing and middleware resolution to perform request-specific backend work.
+
+Names worth recognizing while reading: path, fs, db, allowedExt, transform, and ext.
+
+It leans on nearby contracts or tools such as path, fs, ../db/database, ../services/logService, and ../utils/fileUtils.
+
+## Story Groups
+
+### Changing Or Cleaning The Picture
+These steps adjust existing state or remove stale pieces after better information is available.
+- transform() (line 8): Rewrite source text or model state, normalize raw text before later parsing, and validate conditions and branch on failures
+
+## Function Stories
+
+### transform()
+This routine owns one focused piece of the file's behavior. It appears near line 8.
+
+Inside the body, it mainly handles rewrite source text or model state, normalize raw text before later parsing, validate conditions and branch on failures, and query or update SQLite state.
+
+It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+
+What it does:
+- rewrite source text or model state
+- normalize raw text before later parsing
+- validate conditions and branch on failures
+- query or update SQLite state
+- move or write filesystem artifacts
+- return the HTTP response
+
+Flow:
+
+### Block 2 - transform() Details
+#### Part 1
+```mermaid
+flowchart TD
+    N0["transform()"]
+    N1["Enter transform()"]
+    N2["Rewrite source"]
+    N3["Clean text"]
+    N4["Validate branch"]
+    N5["Continue?"]
+    N6["Stop path"]
+    N7["Use SQLite"]
+    N8["Move files"]
+    N9["More items?"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+    N6 --> N7
+    N7 --> N8
+    N8 --> N9
+```
+
+#### Part 2
+```mermaid
+flowchart TD
+    N0["Return result"]
+    N1["Return result"]
+    N2["Return"]
+    N0 --> N1
+    N1 --> N2
 ```
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-

@@ -1,10 +1,8 @@
 #include "Input-and-CLI/source_reader.hpp"
 #include "Pipeline-Contracts/algorithm_pipeline.hpp"
 #include "Input-and-CLI/cli_arguments.hpp"
-#include "Output-and-Rendering/codebase_output_writer.hpp"
 #include "Language-and-Structure/lexical_structure_hooks.hpp"
 #include "parse_tree.hpp"
-#include "parse_tree_code_generator.hpp"
 #include "parse_tree_symbols.hpp"
 #include "creational_broken_tree.hpp"
 #include "behavioural_broken_tree.hpp"
@@ -20,7 +18,6 @@ namespace
 {
 const std::string k_input_dir_name = "Input";
 const std::string k_output_dir_name = "Output";
-const std::string k_generated_code_dir_name = "generated_code";
 const std::string k_generated_html_dir_name = "html";
 const std::string k_analysis_report_dir_name = "analysis_report";
 
@@ -32,7 +29,6 @@ enum class RunExitCode
     SourceReadFailure = 4,
     OutputPreparationFailure = 5,
     ParseTreeOutputFailure = 6,
-    CodeOutputFailure = 7,
     ReportOutputFailure = 8
 };
 
@@ -41,7 +37,6 @@ struct RuntimeLayout
     std::filesystem::path exe_dir;
     std::filesystem::path input_dir;
     std::filesystem::path output_dir;
-    std::filesystem::path generated_code_dir;
     std::filesystem::path generated_html_dir;
     std::filesystem::path analysis_report_dir;
 };
@@ -131,7 +126,6 @@ RuntimeLayout resolve_runtime_layout(const char* argv0)
     layout.exe_dir = get_executable_dir(argv0);
     layout.input_dir = layout.exe_dir / k_input_dir_name;
     layout.output_dir = layout.exe_dir / k_output_dir_name;
-    layout.generated_code_dir = layout.output_dir / k_generated_code_dir_name;
     layout.generated_html_dir = layout.output_dir / k_generated_html_dir_name;
     layout.analysis_report_dir = layout.output_dir / k_analysis_report_dir_name;
     return layout;
@@ -142,7 +136,6 @@ bool ensure_runtime_layout(const RuntimeLayout& layout, std::string& error_path)
     const std::vector<std::filesystem::path> required_dirs = {
         layout.input_dir,
         layout.output_dir,
-        layout.generated_code_dir,
         layout.generated_html_dir,
         layout.analysis_report_dir,
     };
@@ -275,6 +268,19 @@ void print_symbol_diagnostics(const PipelineArtifacts& artifacts)
                   << '\n';
     }
 }
+
+void print_design_pattern_tags(const PipelineArtifacts& artifacts)
+{
+    std::cout << "\n=== Design Pattern Documentation Tags ===\n";
+    std::cout << "Tags selected: " << artifacts.design_pattern_tags.size() << '\n';
+    for (const DesignPatternTag& tag : artifacts.design_pattern_tags)
+    {
+        std::cout << " - type=" << tag.tag_type
+                  << " | symbol=" << tag.symbol_name
+                  << " | line=" << tag.line_number
+                  << " | reason=" << tag.reason << '\n';
+    }
+}
 } // namespace
 
 int run_syntactic_broken_ast(int argc, char* argv[])
@@ -393,38 +399,9 @@ int run_syntactic_broken_ast(int argc, char* argv[])
     std::cout << "Creational HTML generated: " << creational_output_path << '\n';
     std::cout << "Behavioural HTML generated: " << behavioural_output_path << '\n';
 
-    const std::string merged_source = join_source_file_units(source_files);
-    const std::string base_code =
-        generate_base_code_from_source(merged_source, cli.source_pattern, cli.target_pattern);
-    const std::string target_code =
-        generate_target_code_from_source(merged_source, cli.source_pattern, cli.target_pattern);
-
-    std::cout << "\n=== Generated Base Code ===\n";
-    std::cout << base_code << '\n';
-
-    CodebaseOutputPaths code_paths;
-    if (!write_codebase_outputs(
-            base_code,
-            target_code,
-            cli.target_pattern,
-            layout.generated_code_dir.string(),
-            layout.generated_html_dir.string(),
-            code_paths))
-    {
-        print_error_diagnostics(
-            "Failed to write generated base/target outputs.",
-            {"Code dir: " + layout.generated_code_dir.string(), "HTML dir: " + layout.generated_html_dir.string()},
-            {"Check directory permissions and available disk space."});
-        return static_cast<int>(RunExitCode::CodeOutputFailure);
-    }
-
-    std::cout << "Generated base code cpp: " << code_paths.base_cpp_path << '\n';
-    std::cout << "Generated target code cpp: " << code_paths.target_cpp_path << '\n';
-    std::cout << "Generated base code html: " << code_paths.base_html_path << '\n';
-    std::cout << "Generated target code html: " << code_paths.target_html_path << '\n';
-
     print_performance_report(artifacts.report);
     print_symbol_diagnostics(artifacts);
+    print_design_pattern_tags(artifacts);
 
     const std::string report_output_path = (layout.analysis_report_dir / "analysis_report.json").string();
     if (!write_text_file(
@@ -435,7 +412,7 @@ int run_syntactic_broken_ast(int argc, char* argv[])
                 artifacts.line_hash_traces,
                 artifacts.factory_invocation_traces,
                 artifacts.hash_links,
-                get_last_transform_decisions())))
+                artifacts.design_pattern_tags)))
     {
         print_error_diagnostics(
             "Failed to write performance report.",

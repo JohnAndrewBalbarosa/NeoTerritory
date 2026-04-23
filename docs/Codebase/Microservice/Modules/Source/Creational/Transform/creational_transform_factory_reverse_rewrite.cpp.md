@@ -1,329 +1,81 @@
-﻿# creational_transform_factory_reverse_rewrite.cpp
+# creational_transform_factory_reverse_rewrite.cpp
 
 - Source: Microservice/Modules/Source/Creational/Transform/creational_transform_factory_reverse_rewrite.cpp
 - Kind: C++ implementation
 - Lines: 508
-- Role: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
-- Chronology: Runs after the generic parse tree exists so creational detection or transformation can operate on it.
 
-## Notable Symbols
-- match_instance_declaration_for_class
-- declaration_regex
-- match_simple_variable_declaration
-- parse_allocation_expression
-- make_unique_regex
-- make_shared_regex
-- raw_new_regex
-- is_auto_declaration_type
-- auto_regex
-- std::regex_match
-- rewrite_declaration_type
-- unique_ptr_regex
+## Story
+### What Happens Here
 
-## Direct Dependencies
-- internal/creational_transform_factory_reverse_internal.hpp
-- Transform/creational_code_generator_internal.hpp
-- regex
-- string
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
-## File Outline
-### Responsibility
+### Why It Matters In The Flow
 
-This source file implements a creational transform or evidence-rendering stage. It runs after the generic parse tree has been built and focuses on turning detected structure into rewritten code or explanatory evidence views. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or transform decisions.
+Runs after the generic parse tree exists so creational detection can label the structure.
 
-### Position In The Flow
-
-Runs after the generic parse tree exists so creational detection or transformation can operate on it.
-
-### Main Surface Area
+### What To Watch While Reading
 
 Implements creational transform dispatch, evidence rendering, and rewrite helpers. The main surface area is easiest to track through symbols such as match_instance_declaration_for_class, declaration_regex, match_simple_variable_declaration, and parse_allocation_expression. It collaborates directly with internal/creational_transform_factory_reverse_internal.hpp, Transform/creational_code_generator_internal.hpp, regex, and string.
 
-## File Activity
-```mermaid
-flowchart TD
-    Start([Start])
-    N0[Execute parse factory callsite line to branch on runtime conditions]
-    N1[Execute parse allocation expression to branch on runtime conditions]
-    N2[Execute resolve variable declaration site to iterate over the active collection and branch on runtime conditions]
-    N3[Execute rewrite declaration type to branch on runtime conditions]
-    N4[Execute remove unused factory instance declaration to iterate over the active collection and branch on runtime conditions]
-    End([End])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
-```
+## Program Flow
+Detailed program flow is decoupled into future implementation units:
 
-## Function Walkthrough
+- [program_flow_01](./creational_transform_factory_reverse_rewrite/creational_transform_factory_reverse_rewrite_program_flow_01.cpp.md)
+- [program_flow_02](./creational_transform_factory_reverse_rewrite/creational_transform_factory_reverse_rewrite_program_flow_02.cpp.md)
+## Reading Map
+Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
 
-### match_instance_declaration_for_class
-This routine owns one focused piece of the file's behavior. It appears near line 11.
+Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
 
-Inside the body, it mainly handles branch on runtime conditions.
+Names worth recognizing while reading: match_instance_declaration_for_class, declaration_regex, match_simple_variable_declaration, parse_allocation_expression, make_unique_regex, and make_shared_regex.
 
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+It leans on nearby contracts or tools such as internal/creational_transform_factory_reverse_internal.hpp, Transform/creational_code_generator_internal.hpp, regex, and string.
 
-Key operations:
-- branch on runtime conditions
+## Story Groups
 
-Activity:
-```mermaid
-flowchart TD
-    Start([match_instance_declaration_for_class()])
-    N0[Enter match_instance_declaration_for_class()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
+### Checks Before Moving On
+These steps stop bad input or unsupported state before it can confuse the next part of the run.
+- is_auto_declaration_type() (line 110): Inspect or rewrite declarations and match source text with regular expressions
 
-### match_simple_variable_declaration
-This routine owns one focused piece of the file's behavior. It appears near line 31.
+### Reading The Input
+These steps turn raw text or arguments into something the program can follow.
+- parse_allocation_expression() (line 70): Parse source text into structured values, match source text with regular expressions, and normalize raw text before later parsing
+- parse_factory_callsite_line() (line 243): Parse source text into structured values, handle factory-specific detection or rewrite logic, and work one source line at a time
 
-Inside the body, it mainly handles branch on runtime conditions.
+### Finding What Matters
+These steps pick out the facts, traces, and relationships that later stages need.
+- resolve_variable_declaration_site() (line 217): Connect discovered data back into the shared model, inspect or rewrite declarations, and look up entries in previously collected maps or sets
 
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
+### Building The Working Picture
+These steps assemble the trees, models, or bundles used by the rest of the file.
+- build_rewritten_callsite_line() (line 420): Build or append the next output structure, work one source line at a time, and recognize or rewrite callsite structure
+- build_rewritten_assignment_line() (line 429): Build or append the next output structure and work one source line at a time
 
-Key operations:
-- branch on runtime conditions
+### Changing Or Cleaning The Picture
+These steps adjust existing state or remove stale pieces after better information is available.
+- rewrite_declaration_type() (line 116): Rewrite source text or model state, inspect or rewrite declarations, and match source text with regular expressions
+- rewrite_variable_declaration_line() (line 436): Rewrite source text or model state, work one source line at a time, and inspect or rewrite declarations
+- remove_unused_factory_instance_declaration() (line 464): Remove obsolete transformed artifacts, handle factory-specific detection or rewrite logic, and inspect or rewrite declarations
 
-Activity:
-```mermaid
-flowchart TD
-    Start([match_simple_variable_declaration()])
-    N0[Enter match_simple_variable_declaration()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
+### Supporting Steps
+These steps support the local behavior of the file.
+- match_instance_declaration_for_class() (line 11): Inspect or register class-level information, inspect or rewrite declarations, and match source text with regular expressions
+- match_simple_variable_declaration() (line 31): Inspect or rewrite declarations, match source text with regular expressions, and normalize raw text before later parsing
 
-### parse_allocation_expression
-This routine ingests source content and turns it into a more useful structured form. It appears near line 70.
+## Function Stories
+Function-level logic is decoupled into future implementation units:
 
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([parse_allocation_expression()])
-    N0[Enter parse_allocation_expression()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### is_auto_declaration_type
-This routine owns one focused piece of the file's behavior. It appears near line 110.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([is_auto_declaration_type()])
-    N0[Enter is_auto_declaration_type()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### rewrite_declaration_type
-This routine owns one focused piece of the file's behavior. It appears near line 116.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([rewrite_declaration_type()])
-    N0[Enter rewrite_declaration_type()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### resolve_variable_declaration_site
-This routine connects discovered items back into the broader model owned by the file. It appears near line 217.
-
-Inside the body, it mainly handles iterate over the active collection and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([resolve_variable_declaration_site()])
-    N0[Enter resolve_variable_declaration_site()]
-    N1[Iterate over the active collection]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
-### parse_factory_callsite_line
-This routine ingests source content and turns it into a more useful structured form. It appears near line 243.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([parse_factory_callsite_line()])
-    N0[Enter parse_factory_callsite_line()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### build_rewritten_callsite_line
-This routine assembles a larger structure from the inputs it receives. It appears near line 420.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_rewritten_callsite_line()])
-    N0[Enter build_rewritten_callsite_line()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### build_rewritten_assignment_line
-This routine assembles a larger structure from the inputs it receives. It appears near line 429.
-
-The caller receives a computed result or status from this step.
-
-Key operations:
-- This routine is primarily structural and does not expose obvious runtime operations from static inspection.
-
-Activity:
-```mermaid
-flowchart TD
-    Start([build_rewritten_assignment_line()])
-    N0[Enter build_rewritten_assignment_line()]
-    N1[Apply the routine's local logic]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### rewrite_variable_declaration_line
-This routine owns one focused piece of the file's behavior. It appears near line 436.
-
-Inside the body, it mainly handles branch on runtime conditions.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([rewrite_variable_declaration_line()])
-    N0[Enter rewrite_variable_declaration_line()]
-    N1[Branch on runtime conditions]
-    N2[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> End
-```
-
-### remove_unused_factory_instance_declaration
-This routine owns one focused piece of the file's behavior. It appears near line 464.
-
-Inside the body, it mainly handles iterate over the active collection and branch on runtime conditions.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-Key operations:
-- iterate over the active collection
-- branch on runtime conditions
-
-Activity:
-```mermaid
-flowchart TD
-    Start([remove_unused_factory_instance_declaration()])
-    N0[Enter remove_unused_factory_instance_declaration()]
-    N1[Iterate over the active collection]
-    N2[Branch on runtime conditions]
-    N3[Return the result to the caller]
-    End([Return])
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
-```
-
+- [match_instance_declaration_for_class](./creational_transform_factory_reverse_rewrite/functions/match_instance_declaration_for_class.cpp.md)
+- [match_simple_variable_declaration](./creational_transform_factory_reverse_rewrite/functions/match_simple_variable_declaration.cpp.md)
+- [parse_allocation_expression](./creational_transform_factory_reverse_rewrite/functions/parse_allocation_expression.cpp.md)
+- [is_auto_declaration_type](./creational_transform_factory_reverse_rewrite/functions/is_auto_declaration_type.cpp.md)
+- [rewrite_declaration_type](./creational_transform_factory_reverse_rewrite/functions/rewrite_declaration_type.cpp.md)
+- [resolve_variable_declaration_site](./creational_transform_factory_reverse_rewrite/functions/resolve_variable_declaration_site.cpp.md)
+- [parse_factory_callsite_line](./creational_transform_factory_reverse_rewrite/functions/parse_factory_callsite_line.cpp.md)
+- [build_rewritten_callsite_line](./creational_transform_factory_reverse_rewrite/functions/build_rewritten_callsite_line.cpp.md)
+- [build_rewritten_assignment_line](./creational_transform_factory_reverse_rewrite/functions/build_rewritten_assignment_line.cpp.md)
+- [rewrite_variable_declaration_line](./creational_transform_factory_reverse_rewrite/functions/rewrite_variable_declaration_line.cpp.md)
+- [remove_unused_factory_instance_declaration](./creational_transform_factory_reverse_rewrite/functions/remove_unused_factory_instance_declaration.cpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-
