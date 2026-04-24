@@ -17,6 +17,8 @@ struct ParseTreeNode
     size_t contextual_hash = 0;
     std::vector<size_t> propagated_usage_hashes;
     std::string annotated_value;
+    bool detached_virtual_branch = false;
+    bool verified_virtual_branch = false;
 };
 
 struct LineHashTrace
@@ -52,11 +54,14 @@ struct ParseTreeBundle
 {
     ParseTreeNode main_tree;
     ParseTreeNode shadow_tree;
+    ParseTreeNode virtual_tree_scaffold;
     std::vector<LineHashTrace> line_hash_traces;
     std::vector<FactoryInvocationTrace> factory_invocation_traces;
     std::vector<CrucialClassInfo> crucial_classes;
     size_t virtual_nodes_kept = 0;
     size_t virtual_nodes_pruned = 0;
+    size_t virtual_class_candidates_attached = 0;
+    size_t virtual_class_candidates_discarded = 0;
 };
 
 /**
