@@ -1,4 +1,4 @@
-﻿# utils
+# utils
 
 - Folder: docs/Codebase/Backend/src/utils
 - Descendant source docs: 1
@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Utilities
-These documents explain the local implementation by covering Holds small reusable backend helpers..
+These documents explain the local implementation by covering Holds small reusable backend helpers.
 - fileUtils.js.md : Holds small reusable backend helpers.
 
 ## Reading Hint

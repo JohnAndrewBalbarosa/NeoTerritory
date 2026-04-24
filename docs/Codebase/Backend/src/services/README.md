@@ -1,4 +1,4 @@
-﻿# services
+# services
 
 - Folder: docs/Codebase/Backend/src/services
 - Descendant source docs: 1
@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Services
-These documents explain the local implementation by covering Provides backend support services used across request handlers..
+These documents explain the local implementation by covering Provides backend support services used across request handlers.
 - logService.js.md : Provides backend support services used across request handlers.
 
 ## Reading Hint

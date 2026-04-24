@@ -1,4 +1,4 @@
-﻿# Frontend
+# Frontend
 
 - Folder: docs/Codebase/Frontend
 - Descendant source docs: 15
@@ -37,20 +37,20 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Browser Logic
-These child folders continue the subsystem by covering Browser logic that powers routing, UI state changes, mock data usage, and page interactions..
+These child folders continue the subsystem by covering Browser logic that powers routing, UI state changes, mock data usage, and page interactions.
 - scripts/ : Browser logic that powers routing, UI state changes, mock data usage, and page interactions.
 
 ### Styling
-These child folders continue the subsystem by covering Visual system and component styling for the prototype frontend..
+These child folders continue the subsystem by covering Visual system and component styling for the prototype frontend.
 - styles/ : Visual system and component styling for the prototype frontend.
 
 ### Pages
-These child folders continue the subsystem by covering Route-sized HTML fragments loaded by the client router..
+These child folders continue the subsystem by covering Route-sized HTML fragments loaded by the client router.
 - pages/ : Route-sized HTML fragments loaded by the client router.
 
 ## Documents By Logic
 ### Shell Entrypoints
-These documents explain the local implementation by covering Defines the shell document for the hash-routed frontend application..
+These documents explain the local implementation by covering Defines the shell document for the hash-routed frontend application.
 - index.html.md : Defines the shell document for the hash-routed frontend application.
 
 ## Reading Hint

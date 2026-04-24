@@ -1,4 +1,4 @@
-﻿# runtime-layout
+# runtime-layout
 
 - Folder: docs/Codebase/Infrastructure/runtime-layout
 - Descendant source docs: 2
@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Runtime Layout
-These documents explain the local implementation by covering Creates the Input and Output directory layout expected by the microservice runtime..
+These documents explain the local implementation by covering Creates the Input and Output directory layout expected by the microservice runtime.
 - setup_runtime_layout.ps1.md : Creates the Input and Output directory layout expected by the microservice runtime.
 - setup_runtime_layout.sh.md : Creates the Input and Output directory layout expected by the microservice runtime.
 

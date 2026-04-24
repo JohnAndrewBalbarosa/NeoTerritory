@@ -4,27 +4,27 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### estimate_creational_tree_bytes()
-This helper computes a size, count, or cost estimate used by surrounding logic. It appears near line 103.
+This helper computes a size, count, or cost estimate used by surrounding logic.
 
-Inside the body, it mainly handles estimate the size or cost of generated state, assemble tree or artifact structures, and iterate over the active collection.
+Inside the body, it mainly handles estimate the size or cost of generated state, connect local structures, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
 - estimate the size or cost of generated state
-- assemble tree or artifact structures
-- iterate over the active collection
+- connect local structures
+- walk the local collection
 
 Flow:
 ```mermaid
 flowchart TD
     Start["estimate_creational_tree_bytes()"]
-    N0["Enter estimate_creational_tree_bytes()"]
+    N0["Execute file-local step"]
     N1["Estimate size"]
-    N2["Assemble tree"]
+    N2["Connect local nodes"]
     N3["Loop collection"]
     L3{"More items?"}
-    N4["Return result"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

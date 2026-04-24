@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### make_tag_id()
-This routine assembles a larger structure from the inputs it receives. It appears near line 301.
+This routine assembles a larger structure from the inputs it receives.
 
 Inside the body, it mainly handles compute hash metadata.
 
@@ -17,9 +17,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["make_tag_id()"]
-    N0["Enter make_tag_id()"]
+    N0["Execute file-local step"]
     N1["Compute hashes"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

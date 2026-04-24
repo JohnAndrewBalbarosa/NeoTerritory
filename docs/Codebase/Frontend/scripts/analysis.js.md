@@ -2,7 +2,6 @@
 
 - Source: Frontend/scripts/analysis.js
 - Kind: JavaScript module
-- Lines: 80
 
 ## Story
 ### What Happens Here
@@ -21,16 +20,16 @@ Implements page-level interactive behavior for the static frontend. The main sur
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Supporting steps"]
-    N1["Enter animatebar()"]
+    Start["Begin local flow"]
+    N0["Run helper branch"]
+    N1["Handle animate bar"]
     N2["Validate branch"]
     D2{"Continue?"}
-    R2["Stop path"]
+    R2["Return early path"]
     N3["Update DOM"]
     N4["Schedule UI"]
-    N5["Leave animateBar()"]
-    End["End"]
+    N5["Return from local helper"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -54,12 +53,12 @@ Names worth recognizing while reading: animateBar, btn, readyCard, progressCard,
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- animateBar() (line 17): Validate conditions and branch on failures, update DOM state, and schedule UI updates
+- animateBar(): Validate conditions and branch on failures, update DOM state, and schedule UI updates
 
 ## Function Stories
 
 ### animateBar()
-This routine owns one focused piece of the file's behavior. It appears near line 17.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures, update DOM state, and schedule UI updates.
 
@@ -74,10 +73,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["animateBar()"]
-    N0["Enter animatebar()"]
+    N0["Handle animate bar"]
     N1["Validate branch"]
     D1{"Continue?"}
-    R1["Stop path"]
+    R1["Return early path"]
     N2["Update DOM"]
     N3["Schedule UI"]
     N4["Hand back"]

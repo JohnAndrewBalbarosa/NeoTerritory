@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/Internal/parse_tree_hash_links_internal.hpp
 - Kind: C++ header
-- Lines: 69
 
 ## Story
 ### What Happens Here
@@ -34,24 +33,24 @@ It leans on nearby contracts or tools such as parse_tree_hash_links.hpp, cstddef
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- CollectedNode (line 13): Declare a shared type and expose the compile-time contract
-- SideIndexes (line 20): Declare a shared type and expose the compile-time contract
-- ResolutionResult (line 29): Declare a shared type and expose the compile-time contract
-- trim() (line 35): Declare a callable contract and let implementation files define the runtime body
-- file_basename() (line 37): Declare a callable contract and let implementation files define the runtime body
-- split_words() (line 38): Declare a callable contract and let implementation files define the runtime body
-- class_name_from_signature() (line 39): Declare a callable contract and let implementation files define the runtime body
-- is_class_declaration_node() (line 40): Declare a callable contract and let implementation files define the runtime body
-- chain_entry() (line 41): Declare a callable contract and let implementation files define the runtime body
-- parent_tail_key() (line 42): Declare a callable contract and let implementation files define the runtime body
-- compare_index_paths() (line 43): Declare a callable contract and let implementation files define the runtime body
-- dedupe_keep_order() (line 44): Declare a callable contract and let implementation files define the runtime body
-- combine_status() (line 45): Declare a callable contract and let implementation files define the runtime body
-- collect_side_nodes() (line 46): Declare a callable contract and let implementation files define the runtime body
-- resolve_candidates() (line 51): Declare a callable contract and let implementation files define the runtime body
-- build_node_refs() (line 58): Declare a callable contract and let implementation files define the runtime body
-- lookup_class_candidates() (line 60): Declare a callable contract and let implementation files define the runtime body
-- lookup_usage_candidates() (line 61): Declare a callable contract and let implementation files define the runtime body
+- CollectedNode: Declare a shared type and expose the compile-time contract
+- SideIndexes: Declare a shared type and expose the compile-time contract
+- ResolutionResult: Declare a shared type and expose the compile-time contract
+- trim(): Declare a callable contract and let implementation files define the runtime body
+- file_basename(): Declare a callable contract and let implementation files define the runtime body
+- split_words(): Declare a callable contract and let implementation files define the runtime body
+- class_name_from_signature(): Declare a callable contract and let implementation files define the runtime body
+- is_class_declaration_node(): Declare a callable contract and let implementation files define the runtime body
+- chain_entry(): Declare a callable contract and let implementation files define the runtime body
+- parent_tail_key(): Declare a callable contract and let implementation files define the runtime body
+- compare_index_paths(): Declare a callable contract and let implementation files define the runtime body
+- dedupe_keep_order(): Declare a callable contract and let implementation files define the runtime body
+- combine_status(): Declare a callable contract and let implementation files define the runtime body
+- collect_side_nodes(): Declare a callable contract and let implementation files define the runtime body
+- resolve_candidates(): Declare a callable contract and let implementation files define the runtime body
+- build_node_refs(): Declare a callable contract and let implementation files define the runtime body
+- lookup_class_candidates(): Declare a callable contract and let implementation files define the runtime body
+- lookup_usage_candidates(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

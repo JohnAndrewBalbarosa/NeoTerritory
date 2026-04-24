@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### handleResize()
-This routine owns one focused piece of the file's behavior. It appears near line 71.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures.
 
@@ -17,10 +17,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["handleResize()"]
-    N0["Enter handleresize()"]
+    N0["Execute file-local step"]
     N1["Validate branch"]
     D1{"Continue?"}
-    R1["Stop path"]
+    R1["Return early path"]
     N2["Hand back"]
     End["Return"]
     Start --> N0

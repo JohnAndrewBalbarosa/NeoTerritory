@@ -4,38 +4,38 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### creational_tree_to_text()
-This routine owns one focused piece of the file's behavior. It appears near line 121.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles populate output fields or accumulators, assemble tree or artifact structures, serialize report content, and iterate over the active collection.
+Inside the body, it mainly handles fill local output fields, connect local structures, serialize report content, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- populate output fields or accumulators
-- assemble tree or artifact structures
+- fill local output fields
+- connect local structures
 - serialize report content
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 
 ### Block 3 - creational_tree_to_text() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of creational_tree_to_text.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for creational_tree_to_text.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: creational_tree_to_text.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["creational_tree_to_text()"]
-    N1["Enter creational_tree_to_text()"]
+    N1["Handle creational tree to text"]
     N2["Populate outputs"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     N4["Serialize report"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -47,12 +47,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of creational_tree_to_text.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for creational_tree_to_text.cpp after setup.
 Why this is separate: creational_tree_to_text.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
+    N0["Return local result"]
     N1["Return"]
     N0 --> N1
 ```

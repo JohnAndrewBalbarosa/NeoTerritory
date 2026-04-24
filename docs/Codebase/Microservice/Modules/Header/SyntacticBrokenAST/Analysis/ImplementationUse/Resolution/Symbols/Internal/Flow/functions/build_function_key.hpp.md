@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### build_function_key()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 18.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["build_function_key()"]
-    N0["Enter build_function_key()"]
+    N0["Create function key"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

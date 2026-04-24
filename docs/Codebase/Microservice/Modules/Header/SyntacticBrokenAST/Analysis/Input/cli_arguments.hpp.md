@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI/cli_arguments.hpp
 - Kind: C++ header
-- Lines: 17
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of cli_a
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of cli_arguments.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for cli_arguments.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: cli_arguments.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter cliarguments"]
     N3["Declare type"]
     N4["Expose contract"]
     N5["Leave CliArguments"]
-    N6["Enter parse_cli_arguments()"]
+    N6["Execute file-local step"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave parse_cli_arguments()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,12 +49,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of cli_arguments.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for cli_arguments.hpp after setup.
 Why this is separate: cli_arguments.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 
 ## Reading Map
@@ -71,13 +70,13 @@ It leans on nearby contracts or tools such as string and vector.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- CliArguments (line 6): Declare a shared type and expose the compile-time contract
-- parse_cli_arguments() (line 13): Declare a callable contract and let implementation files define the runtime body
+- CliArguments: Declare a shared type and expose the compile-time contract
+- parse_cli_arguments(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### CliArguments
-This declaration introduces a shared type that other files compile against. It appears near line 6.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -89,7 +88,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["CliArguments"]
-    N0["Enter cliarguments()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -102,7 +101,7 @@ flowchart TD
 ```
 
 ### parse_cli_arguments()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 13.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -114,7 +113,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["parse_cli_arguments()"]
-    N0["Enter parse_cli_arguments()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

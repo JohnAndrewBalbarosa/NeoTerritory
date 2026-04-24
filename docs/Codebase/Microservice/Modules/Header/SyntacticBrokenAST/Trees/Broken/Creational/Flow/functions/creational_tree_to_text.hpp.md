@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### creational_tree_to_text()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 47.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["creational_tree_to_text()"]
-    N0["Enter creational_tree_to_text()"]
+    N0["Handle creational tree to text"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

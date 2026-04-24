@@ -1,4 +1,4 @@
-﻿# templates
+# templates
 
 - Folder: docs/Codebase/Infrastructure/session-orchestration/k8s/templates
 - Descendant source docs: 2
@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Kubernetes Manifests
-These documents explain the local implementation by covering Declares user-scoped Kubernetes resources for session pods and routing..
+These documents explain the local implementation by covering Declares user-scoped Kubernetes resources for session pods and routing.
 - user-routing.yaml.md : Declares user-scoped Kubernetes resources for session pods and routing.
 - user-session-pod.yaml.md : Declares user-scoped Kubernetes resources for session pods and routing.
 

@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/Behavioural/behavioural_broken_tree.hpp
 - Kind: C++ header
-- Lines: 37
 
 ## Story
 ### What Happens Here
@@ -24,12 +23,12 @@ The flow is intentionally split into smaller slices so the major intent of behav
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of behavioural_broken_tree.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for behavioural_broken_tree.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: behavioural_broken_tree.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter ibehaviouraldetector"]
     N3["Declare type"]
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of behavioural_broken_tree.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for behavioural_broken_tree.hpp after setup.
 Why this is separate: behavioural_broken_tree.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter build_behavioural_broken_tree()"]
+    N0["Create behavioural broken tree"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave build_behavioural_broken_tree()"]
-    N4["Enter behavioural_broken_tree_to_html()"]
+    N3["Return from local helper"]
+    N4["Handle behavioural broken tree to html"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave behavioural_broken_tree_to_html()"]
-    N8["End"]
+    N7["Return from local helper"]
+    N8["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,15 +86,15 @@ It leans on nearby contracts or tools such as parse_tree.hpp, string, and vector
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- IBehaviouralDetector (line 8): Declare a shared type and expose the compile-time contract
-- IBehaviouralTreeCreator (line 15): Declare a shared type and expose the compile-time contract
-- build_behavioural_broken_tree() (line 29): Declare a callable contract and let implementation files define the runtime body
-- behavioural_broken_tree_to_html() (line 34): Declare a callable contract and let implementation files define the runtime body
+- IBehaviouralDetector: Declare a shared type and expose the compile-time contract
+- IBehaviouralTreeCreator: Declare a shared type and expose the compile-time contract
+- build_behavioural_broken_tree(): Declare a callable contract and let implementation files define the runtime body
+- behavioural_broken_tree_to_html(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### IBehaviouralDetector
-This declaration introduces a shared type that other files compile against. It appears near line 8.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -107,7 +106,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["IBehaviouralDetector"]
-    N0["Enter ibehaviouraldetector()"]
+    N0["Handle i behavioural detect or"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -120,7 +119,7 @@ flowchart TD
 ```
 
 ### IBehaviouralTreeCreator
-This declaration introduces a shared type that other files compile against. It appears near line 15.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -132,7 +131,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["IBehaviouralTreeCreator"]
-    N0["Enter ibehaviouraltreecreator()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -145,7 +144,7 @@ flowchart TD
 ```
 
 ### build_behavioural_broken_tree()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 29.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -157,7 +156,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["build_behavioural_broken_tree()"]
-    N0["Enter build_behavioural_broken_tree()"]
+    N0["Create behavioural broken tree"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -170,7 +169,7 @@ flowchart TD
 ```
 
 ### behavioural_broken_tree_to_html()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 34.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -182,7 +181,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["behavioural_broken_tree_to_html()"]
-    N0["Enter behavioural_broken_tree_to_html()"]
+    N0["Handle behavioural broken tree to html"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

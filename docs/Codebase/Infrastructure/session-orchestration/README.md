@@ -32,16 +32,16 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Container Assets
-These child folders continue the subsystem by covering Container image definitions used by the orchestration bootstrap..
+These child folders continue the subsystem by covering Container image definitions used by the orchestration bootstrap.
 - docker/ : Container image definitions used by the orchestration bootstrap.
 
 ### Kubernetes Assets
-These child folders continue the subsystem by covering Kubernetes deployment-side assets for user-scoped runtime sessions..
+These child folders continue the subsystem by covering Kubernetes deployment-side assets for user-scoped runtime sessions.
 - k8s/ : Kubernetes deployment-side assets for user-scoped runtime sessions.
 
 ## Documents By Logic
 ### Bootstrap Orchestration
-These documents explain the local implementation by covering Automates dependency install, Docker and Minikube startup, image build, template deployment, and runtime layout preparation. and Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values..
+These documents explain the local implementation by covering Automates dependency install, Docker and Minikube startup, image build, template deployment, and runtime layout preparation. and Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values.
 - bootstrap_and_deploy.ps1.md : Automates dependency install, Docker and Minikube startup, image build, template deployment, and runtime layout preparation.
 - installer.config.json.md : Parameterizes the infrastructure bootstrap flow with image, profile, template, and runtime-root values.
 

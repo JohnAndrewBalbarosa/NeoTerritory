@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### usage_hash_list()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 38.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["usage_hash_list()"]
-    N0["Enter usage_hash_list()"]
+    N0["Handle usage hash list"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

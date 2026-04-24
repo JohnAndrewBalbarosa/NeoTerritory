@@ -1,78 +1,84 @@
 # build.cpp
 
-- Source: Microservice/Modules/Source/ParseTree/Internal/build.cpp
-- Kind: C++ implementation
-- Lines: 470
+- Source: `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/build.cpp`
+- Kind: C++ implementation blueprint
+- Local role: build file-local actual parse-tree nodes while coordinating detached virtual-broken class candidates.
 
-## Story
-### What Happens Here
+## Read First
 
-This file implements the line-by-line parse-tree construction mechanics. It tokenizes input lines, detects includes and classes, records line hash traces and factory invocation traces, opens and closes block scopes, and emits statements into the file-local parse tree. This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as dependency handling, symbolization, hash-link construction, rendering, or older generation helpers after the raw tree exists. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
+This file is the line parser for the actual class-generation path. It reads source text one file at a time, creates actual parse-tree nodes under the already attached file node, records hash traces, and keeps the detached virtual-broken candidate in sync only while the structural verifier still accepts the class shape.
 
-### Why It Matters In The Flow
+The important distinction is that the actual parse tree is always written into the file-local tree. The virtual-broken candidate is only a temporary side branch; it is attached after a verified class completes, or discarded immediately when the expected structure fails.
 
-Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
+## File-Level Flow
 
-### What To Watch While Reading
+Quick summary: this is the local workflow inside `build.cpp`. It starts from one source file and exits with the actual file node plus optional detached-virtual results for the caller.
 
-Constructs file-local parse-tree nodes from tokenized source lines and scoped statements. The main surface area is easiest to track through symbols such as clear_statement_buffers, trim_ascii, has_factory_keyword, and lowercase_ascii. It collaborates directly with Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, Language-and-Structure/lexical_structure_hooks.hpp, and cctype.
+Why this slice is separate: this diagram shows how this file's responsibilities connect. Function internals are documented in the lower sections instead of being repeated here.
 
-## Program Flow
-Detailed program flow is decoupled into future implementation units:
+```mermaid
+flowchart TD
+    A["Receive source file"]
+    B["Create detached virtual file state"]
+    C["Scan lines and tokens"]
+    D["Write actual tree nodes"]
+    E["Mirror valid structural nodes"]
+    F{"Class still matches rules?"}
+    G["Attach verified virtual branch"]
+    H["Discard failed virtual branch"]
+    I["Return actual and virtual outputs"]
 
-- [program_flow_01](./build/build_program_flow_01.cpp.md)
-- [program_flow_02](./build/build_program_flow_02.cpp.md)
-## Reading Map
-Read this file as: Constructs file-local parse-tree nodes from tokenized source lines and scoped statements.
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F -->|yes, class complete| G
+    F -->|no, rule failed| H
+    G --> I
+    H --> I
+```
 
-Where it sits in the run: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
+## Function Map
 
-Names worth recognizing while reading: clear_statement_buffers, trim_ascii, has_factory_keyword, lowercase_ascii, token_is_registered_class, and track_factory_instance_declaration.
+- `parse_file_content_into_node(...)`: parses one file into the actual file node and coordinates detached virtual-broken class branches.
+- `initialize_detached_virtual_file_state(...)`: prepares a detached file-root mirror for possible verified virtual branches.
+- `begin_detached_virtual_class_branch(...)`: starts a temporary virtual class branch after lexical structure detection says the class is worth tracking.
+- `append_detached_virtual_candidate_node(...)`: copies eligible actual statement nodes into the temporary virtual branch.
+- `enter_detached_virtual_scope(...)` and `exit_detached_virtual_scope(...)`: keep virtual scope depth aligned with actual brace scopes.
+- `finalize_detached_virtual_class_branch(...)`: marks a completed candidate as verified and keeps it for caller attachment.
+- `discard_detached_virtual_class_branch(...)`: deletes the temporary candidate when the expected class structure fails.
+- `collect_class_definitions_by_file(...)`: maps class or struct declarations to the file where they were defined.
+- `collect_symbol_dependencies_for_file(...)`: emits cross-file symbol dependency nodes from class-name usage.
+- `resolve_include_dependencies(...)`: rewrites include dependency nodes from basename-only to basename plus resolved path.
 
-It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, Language-and-Structure/lexical_structure_hooks.hpp, cctype, regex, and string.
+## Detailed Flow Docs
 
-## Story Groups
+These files break down the large local workflow without duplicating the main diagram:
 
-### Small Preparation Steps
-These steps clean up names, text, or small values before the larger work begins.
-- clear_statement_buffers() (line 18): Clear temporary buffers or state and compute hash metadata
-- trim_ascii() (line 27): Normalize or format text values, normalize raw text before later parsing, and iterate over the active collection
+- [build_program_flow_01.cpp.md](./Build/Flow/build_program_flow_01.cpp.md): line parsing, actual node writes, detached virtual candidate handling.
+- [build_program_flow_02.cpp.md](./Build/Flow/build_program_flow_02.cpp.md): post-parse dependency extraction and include resolution.
 
-### Checks Before Moving On
-These steps stop bad input or unsupported state before it can confuse the next part of the run.
-- has_factory_keyword() (line 44): Handle factory-specific detection or rewrite logic and look up entries in previously collected maps or sets
+## Local Boundaries
 
-### Reading The Input
-These steps turn raw text or arguments into something the program can follow.
-- parse_factory_callsite_from_line() (line 102): Parse source text into structured values, handle factory-specific detection or rewrite logic, and work one source line at a time
-- parse_file_content_into_node() (line 213): Parse source text into structured values, split the source into individual lines, and reassemble token or line collections into text
+This file owns:
 
-### Finding What Matters
-These steps pick out the facts, traces, and relationships that later stages need.
-- track_factory_instance_declaration() (line 70): Track discovered declarations, references, or traces, handle factory-specific detection or rewrite logic, and inspect or rewrite declarations
-- collect_factory_invocation_trace_for_line() (line 152): Collect derived facts for later stages, handle factory-specific detection or rewrite logic, and work one source line at a time
-- collect_class_definitions_by_file() (line 390): Collect derived facts for later stages, inspect or register class-level information, and parse or tokenize input text
-- collect_symbol_dependencies_for_file() (line 414): Collect derived facts for later stages, work with symbol-oriented state, and look up entries in previously collected maps or sets
-- resolve_include_dependencies() (line 450): Connect discovered data back into the shared model, look up entries in previously collected maps or sets, and assemble tree or artifact structures
+- actual statement and block node construction for a single source file
+- line-level hash trace collection
+- factory callsite trace collection
+- detached virtual-broken branch lifecycle while parsing a class
+- class definition discovery, symbol dependency extraction, and include dependency resolution
 
-### Supporting Steps
-These steps support the local behavior of the file.
-- token_is_registered_class() (line 49): Inspect or register class-level information, look up entries in previously collected maps or sets, and compute hash metadata
+This file does not own:
 
-## Function Stories
-Function-level logic is decoupled into future implementation units:
+- source entry orchestration across many files
+- root main-tree creation
+- final output rendering
+- expected-structure rule definitions inside the lexical structure hooks
 
-- [clear_statement_buffers](./build/functions/clear_statement_buffers.cpp.md)
-- [trim_ascii](./build/functions/trim_ascii.cpp.md)
-- [has_factory_keyword](./build/functions/has_factory_keyword.cpp.md)
-- [token_is_registered_class](./build/functions/token_is_registered_class.cpp.md)
-- [track_factory_instance_declaration](./build/functions/track_factory_instance_declaration.cpp.md)
-- [parse_factory_callsite_from_line](./build/functions/parse_factory_callsite_from_line.cpp.md)
-- [collect_factory_invocation_trace_for_line](./build/functions/collect_factory_invocation_trace_for_line.cpp.md)
-- [parse_file_content_into_node](./build/functions/parse_file_content_into_node.cpp.md)
-- [collect_class_definitions_by_file](./build/functions/collect_class_definitions_by_file.cpp.md)
-- [collect_symbol_dependencies_for_file](./build/functions/collect_symbol_dependencies_for_file.cpp.md)
-- [resolve_include_dependencies](./build/functions/resolve_include_dependencies.cpp.md)
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
+## Acceptance Checks
+
+- File-level Mermaid shows only this file's workflow and uses no generic action-bucket nodes.
+- Function names appear in prose headings or maps, not as the main action labels inside Mermaid nodes.
+- The actual tree and detached virtual-broken branch are shown as separate outputs with attach/discard behavior.
+- Cross-file references appear only as source path and caller/callee boundary notes.

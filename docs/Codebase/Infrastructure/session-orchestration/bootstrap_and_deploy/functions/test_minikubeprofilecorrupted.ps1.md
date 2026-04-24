@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Test-MinikubeProfileCorrupted()
-This routine owns one focused piece of the file's behavior. It appears near line 205.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles inspect the current filesystem state and invoke external tooling.
 
@@ -18,12 +18,12 @@ Flow:
 ```mermaid
 flowchart TD
     Start["Test-MinikubeProfileCorrupted()"]
-    N0["Enter test-minikubeprofilecorrupted()"]
+    N0["Check minikubeprofilecorrupted"]
     N1["Inspect files"]
     D1{"Continue?"}
-    R1["Stop path"]
+    R1["Return early path"]
     N2["Invoke tooling"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

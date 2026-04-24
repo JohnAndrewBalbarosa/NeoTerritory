@@ -1,13 +1,12 @@
-﻿# initDb.js
+# initDb.js
 
 - Source: Backend/src/db/initDb.js
 - Kind: JavaScript module
-- Lines: 33
 
 ## Story
 ### What Happens Here
 
-This file implements the database bootstrapping sequence. It creates the users, jobs, and logs tables if they do not already exist so the backend can start in a valid persistence state. This file lives in the persistence layer of the backend. Its implementation supports startup-time or request-time SQLite operations used by the HTTP layer.
+This file implements the database bootstrapping sequence. It creates the users, jobs, and logs tables if they do not already exist so the backend can start in a valid persistence state. In the target ETL implementation, this file should also call the ETL schema module after the baseline tables are ready.
 
 ### Why It Matters In The Flow
 
@@ -15,19 +14,19 @@ Supports backend startup and request-time persistence operations.
 
 ### What To Watch While Reading
 
-Owns SQLite connectivity and schema initialization. The main surface area is easiest to track through symbols such as initDb and db. It collaborates directly with ./database.
+Owns startup schema initialization. The main surface area is easiest to track through symbols such as `initDb` and `db`. It collaborates directly with `./database`, and should call `./etlSchema` after baseline table creation.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Main path"]
-    N1["Enter initdb()"]
-    N2["Drive path"]
-    N3["Use SQLite"]
-    N4["Leave initDb()"]
-    End["End"]
+    N1["Create users table"]
+    N2["Create jobs table"]
+    N3["Create logs table"]
+    N4["Call ETL schema"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -43,33 +42,34 @@ Where it sits in the run: Supports backend startup and request-time persistence 
 
 Names worth recognizing while reading: initDb and db.
 
-It leans on nearby contracts or tools such as ./database.
+It leans on nearby contracts or tools such as `./database`. The ETL extension should live in `./etlSchema` instead of adding all ETL table creation directly into this file.
 
 ## Story Groups
 
 ### Main Path
 These steps drive the main execution path by calling the supporting work in order.
-- initDb() (line 2): Drive the main execution path and query or update SQLite state
+- initDb(): Create baseline tables, then delegate ETL tables to `initEtlSchema(db)`
 
 ## Function Stories
 
 ### initDb()
-This routine prepares or drives one of the main execution paths in the file. It appears near line 2.
+This routine prepares or drives one of the main execution paths in the file.
 
-Inside the body, it mainly handles drive the main execution path and query or update SQLite state.
+Inside the body, it should keep the startup sequence readable by creating baseline tables first, then delegating ETL schema creation to a local DB schema module.
 
 What it does:
-- drive the main execution path
-- query or update SQLite state
+- create baseline tables
+- call feature schema modules
+- keep schema initialization idempotent
 
 Flow:
 ```mermaid
 flowchart TD
     Start["initDb()"]
-    N0["Enter initdb()"]
-    N1["Drive path"]
-    N2["Use SQLite"]
-    N3["Hand back"]
+    N0["Create users"]
+    N1["Create jobs"]
+    N2["Create logs"]
+    N3["Create ETL schema"]
     End["Return"]
     Start --> N0
     N0 --> N1

@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree_code_generator.hpp
 - Kind: C++ header
-- Lines: 30
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of parse
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of parse_tree_code_generator.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for parse_tree_code_generator.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: parse_tree_code_generator.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter transformdecision"]
     N3["Declare type"]
     N4["Expose contract"]
     N5["Leave TransformDecision"]
-    N6["Enter generate_base_code_from_source()"]
+    N6["Execute file-local step"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave generate_base_code_from_source()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of parse_tree_code_generator.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for parse_tree_code_generator.hpp after setup.
 Why this is separate: parse_tree_code_generator.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter generate_target_code_from_source()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave generate_target_code_from_source()"]
-    N4["Enter get_last_transform_decisions()"]
+    N3["Return from local helper"]
+    N4["Execute file-local step"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave get_last_transform_decisions()"]
-    N8["End"]
+    N7["Return from local helper"]
+    N8["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,15 +86,15 @@ It leans on nearby contracts or tools such as parse_tree.hpp, string, and vector
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- TransformDecision (line 8): Declare a shared type and expose the compile-time contract
-- generate_base_code_from_source() (line 16): Declare a callable contract and let implementation files define the runtime body
-- generate_target_code_from_source() (line 22): Declare a callable contract and let implementation files define the runtime body
-- get_last_transform_decisions() (line 26): Declare a callable contract and let implementation files define the runtime body
+- TransformDecision: Declare a shared type and expose the compile-time contract
+- generate_base_code_from_source(): Declare a callable contract and let implementation files define the runtime body
+- generate_target_code_from_source(): Declare a callable contract and let implementation files define the runtime body
+- get_last_transform_decisions(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### TransformDecision
-This declaration introduces a shared type that other files compile against. It appears near line 8.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -107,7 +106,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["TransformDecision"]
-    N0["Enter transformdecision()"]
+    N0["Process transform request"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -120,7 +119,7 @@ flowchart TD
 ```
 
 ### generate_base_code_from_source()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 16.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -132,7 +131,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["generate_base_code_from_source()"]
-    N0["Enter generate_base_code_from_source()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -145,7 +144,7 @@ flowchart TD
 ```
 
 ### generate_target_code_from_source()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 22.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -157,7 +156,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["generate_target_code_from_source()"]
-    N0["Enter generate_target_code_from_source()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -170,7 +169,7 @@ flowchart TD
 ```
 
 ### get_last_transform_decisions()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 26.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -182,7 +181,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["get_last_transform_decisions()"]
-    N0["Enter get_last_transform_decisions()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

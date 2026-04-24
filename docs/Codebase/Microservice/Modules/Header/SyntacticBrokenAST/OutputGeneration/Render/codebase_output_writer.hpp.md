@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Output-and-Rendering/codebase_output_writer.hpp
 - Kind: C++ header
-- Lines: 23
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of codeb
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of codebase_output_writer.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for codebase_output_writer.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: codebase_output_writer.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter codebaseoutputpaths"]
     N3["Declare type"]
     N4["Expose contract"]
     N5["Leave CodebaseOutputPaths"]
-    N6["Enter write_codebase_outputs()"]
+    N6["Execute file-local step"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave write_codebase_outputs()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,12 +49,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of codebase_output_writer.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for codebase_output_writer.hpp after setup.
 Why this is separate: codebase_output_writer.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 
 ## Reading Map
@@ -71,13 +70,13 @@ It leans on nearby contracts or tools such as string.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- CodebaseOutputPaths (line 5): Declare a shared type and expose the compile-time contract
-- write_codebase_outputs() (line 13): Declare a callable contract and let implementation files define the runtime body
+- CodebaseOutputPaths: Declare a shared type and expose the compile-time contract
+- write_codebase_outputs(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### CodebaseOutputPaths
-This declaration introduces a shared type that other files compile against. It appears near line 5.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -89,7 +88,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["CodebaseOutputPaths"]
-    N0["Enter codebaseoutputpaths()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -102,7 +101,7 @@ flowchart TD
 ```
 
 ### write_codebase_outputs()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 13.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -114,7 +113,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["write_codebase_outputs()"]
-    N0["Enter write_codebase_outputs()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

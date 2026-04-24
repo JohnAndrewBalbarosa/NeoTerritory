@@ -2,7 +2,6 @@
 
 - Source: CMakeSettings.json
 - Kind: JSON configuration
-- Lines: 15
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Stores IDE-oriented CMake configuration defaults. The main surface area is easie
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Define configurations"]
     N1["Define name"]
     N2["Define generator"]
     N3["Define configurationType"]
     N4["Define inheritEnvironments"]
     N5["Define buildRoot"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

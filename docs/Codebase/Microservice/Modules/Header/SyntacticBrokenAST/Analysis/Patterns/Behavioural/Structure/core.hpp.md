@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/Behavioural/Logic/behavioural_structural_hooks.hpp
 - Kind: C++ header
-- Lines: 13
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Declares behavioural detection interfaces and structural-hook contracts. The mai
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Promises this file makes"]
-    N1["Enter resolve_behavioural_structural_keywords()"]
+    N1["Resolve behavioural structural keywords"]
     N2["Declare call"]
     N3["Defer body"]
-    N4["Leave resolve_behavioural_structural_keywords()"]
-    End["End"]
+    N4["Return from local helper"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -49,12 +48,12 @@ It leans on nearby contracts or tools such as string and vector.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- resolve_behavioural_structural_keywords() (line 6): Declare a callable contract and let implementation files define the runtime body
+- resolve_behavioural_structural_keywords(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### resolve_behavioural_structural_keywords()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 6.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -66,7 +65,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["resolve_behavioural_structural_keywords()"]
-    N0["Enter resolve_behavioural_structural_keywords()"]
+    N0["Resolve behavioural structural keywords"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

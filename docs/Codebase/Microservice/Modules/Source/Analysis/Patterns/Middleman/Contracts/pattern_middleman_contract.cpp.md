@@ -53,7 +53,7 @@ flowchart TD
     N1["Check family"]
     N2["Check hooks"]
     N3["Accept request"]
-    End["Run middleman"]
+    End["Handle middleman"]
     Start --> N0
     N0 --> N1
     N1 --> N2

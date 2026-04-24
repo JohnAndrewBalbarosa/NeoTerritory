@@ -2,7 +2,6 @@
 
 - Source: CppProperties.json
 - Kind: JSON configuration
-- Lines: 25
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Provides editor include-path and IntelliSense settings. The main surface area is
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Define configurations"]
     N1["Define inheritEnvironments"]
     N2["Define name"]
     N3["Define includePath"]
     N4["Define excludePath"]
     N5["Define defines"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

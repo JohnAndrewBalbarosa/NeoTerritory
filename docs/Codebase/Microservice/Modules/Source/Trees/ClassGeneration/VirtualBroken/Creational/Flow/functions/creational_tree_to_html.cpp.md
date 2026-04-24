@@ -4,24 +4,24 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### creational_tree_to_html()
-This routine owns one focused piece of the file's behavior. It appears near line 112.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles parse or tokenize input text and render text or HTML views.
+Inside the body, it mainly handles read local tokens and render text or HTML views.
 
 The caller receives a computed result or status from this step.
 
 What it does:
-- parse or tokenize input text
+- read local tokens
 - render text or HTML views
 
 Flow:
 ```mermaid
 flowchart TD
     Start["creational_tree_to_html()"]
-    N0["Enter creational_tree_to_html()"]
-    N1["Tokenize input"]
+    N0["Handle creational tree to html"]
+    N1["Read structured tokens"]
     N2["Render views"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

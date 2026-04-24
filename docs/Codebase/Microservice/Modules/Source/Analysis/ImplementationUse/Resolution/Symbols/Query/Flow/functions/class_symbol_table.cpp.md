@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### class_symbol_table()
-This routine owns one focused piece of the file's behavior. It appears near line 5.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles work with symbol-oriented state and inspect or register class-level information.
 
@@ -18,10 +18,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["class_symbol_table()"]
-    N0["Enter class_symbol_table()"]
+    N0["Execute file-local step"]
     N1["Work symbols"]
     N2["Register classes"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

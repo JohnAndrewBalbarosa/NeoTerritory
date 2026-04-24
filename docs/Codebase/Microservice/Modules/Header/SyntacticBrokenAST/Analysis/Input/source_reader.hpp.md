@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Input-and-CLI/source_reader.hpp
 - Kind: C++ header
-- Lines: 26
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of sourc
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of source_reader.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for source_reader.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: source_reader.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter sourcefileunit"]
     N3["Declare type"]
     N4["Expose contract"]
     N5["Leave SourceFileUnit"]
-    N6["Enter read_source_file_units()"]
+    N6["Read source file units"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave read_source_file_units()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,16 +49,16 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of source_reader.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for source_reader.hpp after setup.
 Why this is separate: source_reader.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter join_source_file_units()"]
+    N0["Join source file units"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave join_source_file_units()"]
-    N4["End"]
+    N3["Return from local helper"]
+    N4["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -79,14 +78,14 @@ It leans on nearby contracts or tools such as string and vector.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- SourceFileUnit (line 6): Declare a shared type and expose the compile-time contract
-- read_source_file_units() (line 18): Declare a callable contract and let implementation files define the runtime body
-- join_source_file_units() (line 23): Declare a callable contract and let implementation files define the runtime body
+- SourceFileUnit: Declare a shared type and expose the compile-time contract
+- read_source_file_units(): Declare a callable contract and let implementation files define the runtime body
+- join_source_file_units(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### SourceFileUnit
-This declaration introduces a shared type that other files compile against. It appears near line 6.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -98,7 +97,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["SourceFileUnit"]
-    N0["Enter sourcefileunit()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -111,7 +110,7 @@ flowchart TD
 ```
 
 ### read_source_file_units()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 18.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -123,7 +122,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["read_source_file_units()"]
-    N0["Enter read_source_file_units()"]
+    N0["Read source file units"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -136,7 +135,7 @@ flowchart TD
 ```
 
 ### join_source_file_units()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 23.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -148,7 +147,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["join_source_file_units()"]
-    N0["Enter join_source_file_units()"]
+    N0["Join source file units"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

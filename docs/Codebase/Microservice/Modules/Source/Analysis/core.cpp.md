@@ -21,12 +21,12 @@
 ```mermaid
 flowchart TD
     N0["Load source inputs"]
-    N1["Run lexical scan"]
+    N1["Execute file-local step"]
     N2["Emit structural events"]
     N3["Verify expected structure"]
     N4["Bind actual usage"]
     N5["Resolve class or function target"]
-    N6["Run pattern interpretation"]
+    N6["Execute file-local step"]
     N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6
 ```
 

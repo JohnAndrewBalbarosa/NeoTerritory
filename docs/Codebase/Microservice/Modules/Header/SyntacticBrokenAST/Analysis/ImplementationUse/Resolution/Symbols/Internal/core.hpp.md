@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Internal/parse_tree_symbols_internal.hpp
 - Kind: C++ header
-- Lines: 36
 
 ## Story
 ### What Happens Here
@@ -34,19 +33,19 @@ It leans on nearby contracts or tools such as parse_tree_symbols.hpp, string, an
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- trim() (line 11): Declare a callable contract and let implementation files define the runtime body
-- starts_with() (line 12): Declare a callable contract and let implementation files define the runtime body
-- split_words() (line 13): Declare a callable contract and let implementation files define the runtime body
-- class_name_from_signature() (line 14): Declare a callable contract and let implementation files define the runtime body
-- function_name_from_signature() (line 16): Declare a callable contract and let implementation files define the runtime body
-- function_parameter_hint_from_signature() (line 17): Declare a callable contract and let implementation files define the runtime body
-- build_function_key() (line 18): Declare a callable contract and let implementation files define the runtime body
-- is_main_function_name() (line 23): Declare a callable contract and let implementation files define the runtime body
-- is_class_block() (line 25): Declare a callable contract and let implementation files define the runtime body
-- is_function_block() (line 26): Declare a callable contract and let implementation files define the runtime body
-- is_candidate_usage_node() (line 27): Declare a callable contract and let implementation files define the runtime body
-- extract_return_candidate_name() (line 28): Declare a callable contract and let implementation files define the runtime body
-- build_symbol_tables_with_builder() (line 29): Declare a callable contract and let implementation files define the runtime body
+- trim(): Declare a callable contract and let implementation files define the runtime body
+- starts_with(): Declare a callable contract and let implementation files define the runtime body
+- split_words(): Declare a callable contract and let implementation files define the runtime body
+- class_name_from_signature(): Declare a callable contract and let implementation files define the runtime body
+- function_name_from_signature(): Declare a callable contract and let implementation files define the runtime body
+- function_parameter_hint_from_signature(): Declare a callable contract and let implementation files define the runtime body
+- build_function_key(): Declare a callable contract and let implementation files define the runtime body
+- is_main_function_name(): Declare a callable contract and let implementation files define the runtime body
+- is_class_block(): Declare a callable contract and let implementation files define the runtime body
+- is_function_block(): Declare a callable contract and let implementation files define the runtime body
+- is_candidate_usage_node(): Declare a callable contract and let implementation files define the runtime body
+- extract_return_candidate_name(): Declare a callable contract and let implementation files define the runtime body
+- build_symbol_tables_with_builder(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

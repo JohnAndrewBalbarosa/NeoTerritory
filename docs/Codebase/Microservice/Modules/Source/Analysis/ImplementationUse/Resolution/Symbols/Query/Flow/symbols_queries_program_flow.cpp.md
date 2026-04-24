@@ -9,21 +9,21 @@ The flow is intentionally split into smaller slices so the major intent of symbo
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of symbols_queries_program_flow.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for symbols_queries_program_flow.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter class_symbol_table()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Execute file-local step"]
     N3["Work symbols"]
     N4["Register classes"]
-    N5["Return result"]
-    N6["Enter function_symbol_table()"]
+    N5["Return local result"]
+    N6["Execute file-local step"]
     N7["Work symbols"]
-    N8["Return result"]
-    N9["Enter class_usage_table()"]
+    N8["Return local result"]
+    N9["Execute file-local step"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -35,20 +35,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of symbols_queries_program_flow.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for symbols_queries_program_flow.cpp after setup.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Register classes"]
-    N1["Return result"]
-    N2["Finding what matters"]
-    N3["Enter find_class_by_name()"]
+    N1["Return local result"]
+    N2["Collect local facts"]
+    N3["Find class by name"]
     N4["Search data"]
     N5["Register classes"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -61,21 +61,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in symbols_queries_program_flow.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how symbols_queries_program_flow.cpp passes prepared local state into its next operation.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
-    N2["Enter find_class_by_hash()"]
+    N0["Return early path"]
+    N1["Return local result"]
+    N2["Find class by hash"]
     N3["Search data"]
     N4["Use hashes"]
     N5["Register classes"]
     N6["Compute hashes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,21 +87,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in symbols_queries_program_flow.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in symbols_queries_program_flow.cpp and its immediate result.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["Enter find_function_by_name()"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Find function by name"]
     N4["Search data"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -113,21 +113,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 5 - Follow-Through Stage
-Quick summary: This slice follows the next working stage of symbols_queries_program_flow.cpp after the earlier decisions have narrowed the path.
+#### Slice 5 - Continue Local Work
+Quick summary: This slice shows the next local work stage in symbols_queries_program_flow.cpp after earlier checks.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["Enter find_function_by_key()"]
+    N0["Return local result"]
+    N1["Find function by key"]
     N2["Search data"]
     N3["Loop collection"]
-    N4["More items?"]
-    N5["Branch condition"]
+    N4["More local items?"]
+    N5["Check local condition"]
     N6["Continue?"]
-    N7["Stop path"]
-    N8["Return result"]
-    N9["Enter find_functions_by_name()"]
+    N7["Return early path"]
+    N8["Return local result"]
+    N9["Find functions by name"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -139,21 +139,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 6 - Late-Stage Checks
-Quick summary: This slice highlights later checks and continuation steps in symbols_queries_program_flow.cpp before the run approaches its end.
+#### Slice 6 - Run Late Checks
+Quick summary: This slice shows the later local checks in symbols_queries_program_flow.cpp before return handling.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Search data"]
-    N1["Record output"]
+    N1["Store local result"]
     N2["Populate outputs"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     N4["Loop collection"]
-    N5["More items?"]
-    N6["Branch condition"]
+    N5["More local items?"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -165,21 +165,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 7 - Final Assembly
-Quick summary: This slice shows the final assembly-oriented stage of symbols_queries_program_flow.cpp where later outputs or states are brought together.
+#### Slice 7 - Connect Final State
+Quick summary: This slice shows how symbols_queries_program_flow.cpp connects its final local state before returning.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter find_class_usages_by_name()"]
+    N0["Find class usages by name"]
     N1["Search data"]
     N2["Register classes"]
-    N3["Record output"]
+    N3["Store local result"]
     N4["Populate outputs"]
-    N5["Assemble tree"]
+    N5["Connect local nodes"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Return result"]
-    N9["Supporting steps"]
+    N7["More local items?"]
+    N8["Return local result"]
+    N9["Run helper branch"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -191,19 +191,19 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 8 - Exit Preparation
-Quick summary: This slice covers the exit preparation of symbols_queries_program_flow.cpp and the last handoff before the return path.
+#### Slice 8 - Prepare Return Path
+Quick summary: This slice shows the final local return preparation for symbols_queries_program_flow.cpp.
 Why this is separate: symbols_queries_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter return_targets_known_class()"]
+    N0["Execute file-local step"]
     N1["Register classes"]
-    N2["Tokenize input"]
-    N3["Branch condition"]
+    N2["Read structured tokens"]
+    N3["Check local condition"]
     N4["Continue?"]
-    N5["Stop path"]
-    N6["Return result"]
-    N7["End"]
+    N5["Return early path"]
+    N6["Return local result"]
+    N7["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

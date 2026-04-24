@@ -1,8 +1,7 @@
-﻿# index.html
+# index.html
 
 - Source: Frontend/index.html
 - Kind: HTML view
-- Lines: 145
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Defines the shell document for the hash-routed frontend application. The main su
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Render #app"]
     N1["Render #sidebar"]
     N2["Render #sidebar-overlay"]
     N3["Render #main-content"]
     N4["Render #page-content"]
     N5["Render #menu-fab"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

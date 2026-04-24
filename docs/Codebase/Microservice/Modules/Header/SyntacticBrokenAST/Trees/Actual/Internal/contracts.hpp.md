@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/Internal/parse_tree_internal.hpp
 - Kind: C++ header
-- Lines: 124
 
 ## Story
 ### What Happens Here
@@ -35,37 +34,37 @@ It leans on nearby contracts or tools such as parse_tree.hpp, cstddef, string, u
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- RegisteredClassSymbol (line 14): Declare a shared type and expose the compile-time contract
-- hash_combine_token() (line 26): Declare a callable contract and let implementation files define the runtime body
-- make_fnv1a64_hash_id() (line 28): Declare a callable contract and let implementation files define the runtime body
-- derive_child_context_hash() (line 29): Declare a callable contract and let implementation files define the runtime body
-- hash_class_name_with_file() (line 34): Declare a callable contract and let implementation files define the runtime body
-- rehash_subtree() (line 35): Declare a callable contract and let implementation files define the runtime body
-- add_unique_hash() (line 36): Declare a callable contract and let implementation files define the runtime body
-- usage_hash_suffix() (line 37): Declare a callable contract and let implementation files define the runtime body
-- usage_hash_list() (line 38): Declare a callable contract and let implementation files define the runtime body
-- tokenize_text() (line 39): Declare a callable contract and let implementation files define the runtime body
-- join_tokens() (line 41): Declare a callable contract and let implementation files define the runtime body
-- split_lines() (line 42): Declare a callable contract and let implementation files define the runtime body
-- file_basename() (line 43): Declare a callable contract and let implementation files define the runtime body
-- include_target_from_line() (line 44): Declare a callable contract and let implementation files define the runtime body
-- detect_statement_kind() (line 45): Declare a callable contract and let implementation files define the runtime body
-- is_class_or_struct_signature() (line 47): Declare a callable contract and let implementation files define the runtime body
-- is_function_signature() (line 48): Declare a callable contract and let implementation files define the runtime body
-- is_class_declaration_node() (line 49): Declare a callable contract and let implementation files define the runtime body
-- is_global_function_declaration_node() (line 50): Declare a callable contract and let implementation files define the runtime body
-- node_at_path() (line 51): Declare a callable contract and let implementation files define the runtime body
-- append_node_at_path() (line 54): Declare a callable contract and let implementation files define the runtime body
-- register_classes_in_line() (line 55): Declare a callable contract and let implementation files define the runtime body
-- token_hits_registered_class() (line 62): Declare a callable contract and let implementation files define the runtime body
-- collect_line_hash_trace() (line 69): Declare a callable contract and let implementation files define the runtime body
-- bucketize_file_node_for_traversal() (line 80): Declare a callable contract and let implementation files define the runtime body
-- line_contains_any_tracked_token() (line 82): Declare a callable contract and let implementation files define the runtime body
-- append_shadow_subtree_if_relevant() (line 87): Declare a callable contract and let implementation files define the runtime body
-- parse_file_content_into_node() (line 96): Declare a callable contract and let implementation files define the runtime body
-- collect_class_definitions_by_file() (line 105): Declare a callable contract and let implementation files define the runtime body
-- collect_symbol_dependencies_for_file() (line 110): Declare a callable contract and let implementation files define the runtime body
-- resolve_include_dependencies() (line 117): Declare a callable contract and let implementation files define the runtime body
+- RegisteredClassSymbol: Declare a shared type and expose the compile-time contract
+- hash_combine_token(): Declare a callable contract and let implementation files define the runtime body
+- make_fnv1a64_hash_id(): Declare a callable contract and let implementation files define the runtime body
+- derive_child_context_hash(): Declare a callable contract and let implementation files define the runtime body
+- hash_class_name_with_file(): Declare a callable contract and let implementation files define the runtime body
+- rehash_subtree(): Declare a callable contract and let implementation files define the runtime body
+- add_unique_hash(): Declare a callable contract and let implementation files define the runtime body
+- usage_hash_suffix(): Declare a callable contract and let implementation files define the runtime body
+- usage_hash_list(): Declare a callable contract and let implementation files define the runtime body
+- tokenize_text(): Declare a callable contract and let implementation files define the runtime body
+- join_tokens(): Declare a callable contract and let implementation files define the runtime body
+- split_lines(): Declare a callable contract and let implementation files define the runtime body
+- file_basename(): Declare a callable contract and let implementation files define the runtime body
+- include_target_from_line(): Declare a callable contract and let implementation files define the runtime body
+- detect_statement_kind(): Declare a callable contract and let implementation files define the runtime body
+- is_class_or_struct_signature(): Declare a callable contract and let implementation files define the runtime body
+- is_function_signature(): Declare a callable contract and let implementation files define the runtime body
+- is_class_declaration_node(): Declare a callable contract and let implementation files define the runtime body
+- is_global_function_declaration_node(): Declare a callable contract and let implementation files define the runtime body
+- node_at_path(): Declare a callable contract and let implementation files define the runtime body
+- append_node_at_path(): Declare a callable contract and let implementation files define the runtime body
+- register_classes_in_line(): Declare a callable contract and let implementation files define the runtime body
+- token_hits_registered_class(): Declare a callable contract and let implementation files define the runtime body
+- collect_line_hash_trace(): Declare a callable contract and let implementation files define the runtime body
+- bucketize_file_node_for_traversal(): Declare a callable contract and let implementation files define the runtime body
+- line_contains_any_tracked_token(): Declare a callable contract and let implementation files define the runtime body
+- append_shadow_subtree_if_relevant(): Declare a callable contract and let implementation files define the runtime body
+- parse_file_content_into_node(): Declare a callable contract and let implementation files define the runtime body
+- collect_class_definitions_by_file(): Declare a callable contract and let implementation files define the runtime body
+- collect_symbol_dependencies_for_file(): Declare a callable contract and let implementation files define the runtime body
+- resolve_include_dependencies(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

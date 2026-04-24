@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### derive_child_context_hash()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 29.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["derive_child_context_hash()"]
-    N0["Enter derive_child_context_hash()"]
+    N0["Handle derive child context hash"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

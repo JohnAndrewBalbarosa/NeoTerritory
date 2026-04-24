@@ -2,7 +2,6 @@
 
 - Source: Backend/src/middleware/jwtAuth.js
 - Kind: JavaScript module
-- Lines: 19
 
 ## Story
 ### What Happens Here
@@ -21,19 +20,19 @@ Applies request-shaping concerns such as auth, uploads, and error handling. The 
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter jwtauth()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Handle jwt auth"]
     N3["Validate branch"]
     N4["Continue?"]
-    N5["Stop path"]
+    N5["Return early path"]
     N6["Verify JWT"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -45,11 +44,11 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["End"]
+    N0["Return local result"]
+    N1["Return from local flow"]
     N0 --> N1
 ```
 
@@ -66,12 +65,12 @@ It leans on nearby contracts or tools such as jsonwebtoken.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- jwtAuth() (line 2): Validate conditions and branch on failures, sign or verify JWT tokens, and return the HTTP response
+- jwtAuth(): Validate conditions and branch on failures, sign or verify JWT tokens, and return the HTTP response
 
 ## Function Stories
 
 ### jwtAuth()
-This routine owns one focused piece of the file's behavior. It appears near line 2.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures, sign or verify JWT tokens, and return the HTTP response.
 
@@ -85,19 +84,19 @@ What it does:
 Flow:
 
 ### Block 2 - jwtAuth() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["jwtAuth()"]
-    N1["Enter jwtauth()"]
+    N1["Handle jwt auth"]
     N2["Validate branch"]
     N3["Continue?"]
-    N4["Stop path"]
+    N4["Return early path"]
     N5["Verify JWT"]
     N6["Continue?"]
-    N7["Stop path"]
-    N8["Return result"]
-    N9["Return result"]
+    N7["Return early path"]
+    N8["Return local result"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -109,7 +108,7 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Return"]

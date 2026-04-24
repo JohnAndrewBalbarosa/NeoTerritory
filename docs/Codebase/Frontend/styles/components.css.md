@@ -1,8 +1,7 @@
-﻿# components.css
+# components.css
 
 - Source: Frontend/styles/components.css
 - Kind: CSS stylesheet
-- Lines: 591
 
 ## Story
 ### What Happens Here
@@ -16,11 +15,11 @@ Applied during page render to define the frontend presentation layer.
 ### What To Watch While Reading
 
 Defines the visual system and component styling for the frontend prototype. The main surface area is easiest to track through symbols such as /* ============================================================
-   CodiNeo â€” Component Styles
+   CodiNeo — Component Styles
    Page-specific and reusable components
    ============================================================ */
 
-/* â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Dashboard ─────────────────────────────────────────── */
 .dashboard-header, display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -28,7 +27,7 @@ Defines the visual system and component styling for the frontend prototype. The 
     margin-bottom: 24px;
 }
 
-/* â”€â”€ Analysis New Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Analysis New Page ─────────────────────────────────── */
 .ready-card, background: var(--bg-surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -50,15 +49,15 @@ Defines the visual system and component styling for the frontend prototype. The 
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Style /* ============================================================ CodiNeo â€” Component"]
+    Start["Begin local flow"]
+    N0["Style /* ============================================================ CodiNeo — Component"]
     N1["Style display: flex; align-items: flex-start; justify-content:"]
     L1{"More items?"}
     N2["Style background: var(--bg-surface-2); border: 1px solid"]
     N3["Style width: 72px; height: 72px; margin:"]
     N4["Style font-size: 20px; font-weight: 700; margin-bottom:"]
     N5["Style font-size: 14px; color: var(--text-secondary); max-width:"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> L1
@@ -76,11 +75,11 @@ Read this file as: Defines the visual system and component styling for the front
 Where it sits in the run: Applied during page render to define the frontend presentation layer.
 
 Names worth recognizing while reading: /* ============================================================
-   CodiNeo â€” Component Styles
+   CodiNeo — Component Styles
    Page-specific and reusable components
    ============================================================ */
 
-/* â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Dashboard ─────────────────────────────────────────── */
 .dashboard-header, display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -88,7 +87,7 @@ Names worth recognizing while reading: /* ======================================
     margin-bottom: 24px;
 }
 
-/* â”€â”€ Analysis New Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Analysis New Page ─────────────────────────────────── */
 .ready-card, background: var(--bg-surface-2);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
@@ -115,7 +114,7 @@ Names worth recognizing while reading: /* ======================================
     margin: 0 auto;
 }
 
-/* â”€â”€ Results Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Results Page ──────────────────────────────────────── */
 .results-project-header.
 
 ## Documentation Note

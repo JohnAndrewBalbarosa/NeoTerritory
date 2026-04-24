@@ -71,6 +71,12 @@ Codex should document:
 - migration order
 - acceptance checks
 
+Do not document source line numbers as stable references:
+- avoid metadata such as `Lines: 120`
+- avoid symbol notes such as `function_name() (line 52)` or `appears near line 52`
+- prefer file paths, function names, folder ownership, and Mermaid flow boundaries instead
+- line numbers may be used only in temporary review comments, not in durable docs under `docs/Codebase`
+
 Codex should not implement:
 - C++ logic
 - JavaScript logic
@@ -83,6 +89,16 @@ Codex should not implement:
 Mermaid diagrams must use short phrases per node and show logical flow. If a process is detailed, split it into multiple small Mermaid blocks inside the same Markdown file.
 
 Each Mermaid block should stay at or below 10 defined process nodes where practical.
+
+Mermaid content must be local to the Markdown file's represented code unit:
+- file-level diagrams should show relationships between functions in that file, not repeat every function's internal steps
+- function-level diagrams should describe what the function does using short intent labels, not merely repeat the function name
+- detailed function steps belong in that function's own section, not in the file-level workflow
+- do not use generic action-bucket labels such as `Build output`, `Record output`, `Assemble tree`, or `Apply local logic` unless those are the actual domain actions in that code
+- utility files should show utility behavior only, not the whole subsystem pipeline
+- cross-file references are allowed only at the entry boundary and exit boundary of the diagram
+- every `*.cpp.md` implementation document must include at least one Mermaid activity diagram in that same file
+- implementation docs may link to deeper flow docs, but the local file must still show its own main activity path
 
 When a flow is split into multiple Mermaid blocks:
 - do not label sections as only `Part 1`, `Part 2`, and so on

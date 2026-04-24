@@ -13,18 +13,18 @@ This folder mainly acts as a navigation layer. Use it to understand how the deep
 ## Folder Flow
 
 ### Block 1 - Folder Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Folder Entry"]
     N1["Open Services folders"]
-    N2["More items?"]
+    N2["More local items?"]
     N3["Open Controllers folders"]
-    N4["More items?"]
+    N4["More local items?"]
     N5["Open Middleware folders"]
-    N6["More items?"]
+    N6["More local items?"]
     N7["Open Routes folders"]
-    N8["More items?"]
+    N8["More local items?"]
     N9["Open Data layer folders"]
     N0 --> N1
     N1 --> N2
@@ -37,12 +37,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["More items?"]
+    N0["More local items?"]
     N1["Open Utilities folders"]
-    N2["More items?"]
+    N2["More local items?"]
     N3["Folder Exit"]
     N0 --> N1
     N1 --> N2
@@ -51,27 +51,27 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Services
-These child folders continue the subsystem by covering Reusable backend support services called from controllers or middleware..
+These child folders continue the subsystem by covering Reusable backend support services called from controllers or middleware.
 - services/ : Reusable backend support services called from controllers or middleware.
 
 ### Controllers
-These child folders continue the subsystem by covering Controller layer for concrete backend request handling after routing and middleware have finished preliminary work..
+These child folders continue the subsystem by covering Controller layer for concrete backend request handling after routing and middleware have finished preliminary work.
 - controllers/ : Controller layer for concrete backend request handling after routing and middleware have finished preliminary work.
 
 ### Middleware
-These child folders continue the subsystem by covering Cross-cutting backend request logic such as auth, upload handling, and error shaping..
+These child folders continue the subsystem by covering Cross-cutting backend request logic such as auth, upload handling, and error shaping.
 - middleware/ : Cross-cutting backend request logic such as auth, upload handling, and error shaping.
 
 ### Routes
-These child folders continue the subsystem by covering Route layer that maps URL paths to middleware chains and controller entrypoints..
+These child folders continue the subsystem by covering Route layer that maps URL paths to middleware chains and controller entrypoints.
 - routes/ : Route layer that maps URL paths to middleware chains and controller entrypoints.
 
 ### Data Layer
-These child folders continue the subsystem by covering SQLite-oriented persistence helpers and schema initialization logic..
+These child folders continue the subsystem by covering SQLite-oriented persistence helpers and schema initialization logic.
 - db/ : SQLite-oriented persistence helpers and schema initialization logic.
 
 ### Utilities
-These child folders continue the subsystem by covering Small backend utilities used to keep the request handlers concise..
+These child folders continue the subsystem by covering Small backend utilities used to keep the request handlers concise.
 - utils/ : Small backend utilities used to keep the request handlers concise.
 
 ## Reading Hint

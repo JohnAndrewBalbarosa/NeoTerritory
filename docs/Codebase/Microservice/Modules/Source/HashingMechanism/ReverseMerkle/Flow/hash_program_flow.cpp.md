@@ -9,18 +9,18 @@ The flow is intentionally split into smaller slices so the major intent of hash_
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of hash_program_flow.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for hash_program_flow.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter hash_combine_token()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Handle hash combine token"]
     N3["Use hashes"]
     N4["Compute hashes"]
-    N5["Return result"]
-    N6["Enter make_fnv1a64_hash_id()"]
+    N5["Return local result"]
+    N6["Handle make fnv1a64 hash id"]
     N7["Use hashes"]
     N8["Populate outputs"]
     N9["Compute hashes"]
@@ -35,20 +35,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of hash_program_flow.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for hash_program_flow.cpp after setup.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Serialize report"]
     N1["Loop collection"]
-    N2["More items?"]
-    N3["Return result"]
-    N4["Enter derive_child_context_hash()"]
+    N2["More local items?"]
+    N3["Return local result"]
+    N4["Handle derive child context hash"]
     N5["Use hashes"]
     N6["Compute hashes"]
-    N7["Return result"]
-    N8["Enter hash_class_name_with_file()"]
+    N7["Return local result"]
+    N8["Handle hash class name with file"]
     N9["Use hashes"]
     N0 --> N1
     N1 --> N2
@@ -61,21 +61,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in hash_program_flow.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how hash_program_flow.cpp passes prepared local state into its next operation.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Register classes"]
     N1["Compute hashes"]
-    N2["Return result"]
-    N3["Building the working picture"]
-    N4["Enter rehash_subtree()"]
+    N2["Return local result"]
+    N3["Prepare local model"]
+    N4["Handle rehash subtree"]
     N5["Use hashes"]
-    N6["Assemble tree"]
+    N6["Connect local nodes"]
     N7["Compute hashes"]
     N8["Loop collection"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,21 +87,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in hash_program_flow.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in hash_program_flow.cpp and its immediate result.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Leave rehash_subtree()"]
-    N1["Enter add_unique_hash()"]
-    N2["Build output"]
+    N0["Return from local helper"]
+    N1["Add unique hash"]
+    N2["Create local result"]
     N3["Use hashes"]
-    N4["Record output"]
-    N5["Assemble tree"]
+    N4["Store local result"]
+    N5["Connect local nodes"]
     N6["Compute hashes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Return result"]
+    N8["More local items?"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -113,20 +113,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 5 - Follow-Through Stage
-Quick summary: This slice follows the next working stage of hash_program_flow.cpp after the earlier decisions have narrowed the path.
+#### Slice 5 - Continue Local Work
+Quick summary: This slice shows the next local work stage in hash_program_flow.cpp after earlier checks.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Supporting steps"]
-    N1["Enter usage_hash_suffix()"]
+    N0["Run helper branch"]
+    N1["Handle usage hash suffix"]
     N2["Use hashes"]
     N3["Populate outputs"]
     N4["Compute hashes"]
     N5["Serialize report"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -139,21 +139,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 6 - Late-Stage Checks
-Quick summary: This slice highlights later checks and continuation steps in hash_program_flow.cpp before the run approaches its end.
+#### Slice 6 - Run Late Checks
+Quick summary: This slice shows the later local checks in hash_program_flow.cpp before return handling.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
-    N2["Enter usage_hash_list()"]
+    N0["Return early path"]
+    N1["Return local result"]
+    N2["Handle usage hash list"]
     N3["Use hashes"]
     N4["Populate outputs"]
     N5["Compute hashes"]
     N6["Serialize report"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -165,15 +165,15 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 7 - Final Assembly
-Quick summary: This slice shows the final assembly-oriented stage of hash_program_flow.cpp where later outputs or states are brought together.
+#### Slice 7 - Connect Final State
+Quick summary: This slice shows how hash_program_flow.cpp connects its final local state before returning.
 Why this is separate: hash_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["End"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

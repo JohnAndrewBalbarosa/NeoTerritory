@@ -2,7 +2,6 @@
 
 - Source: setup.sh
 - Kind: Shell script
-- Lines: 26
 
 ## Story
 ### What Happens Here
@@ -21,11 +20,11 @@ Shell bootstrap entrypoint for non-Windows setup flows. It collaborates directly
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Invoke docker"]
     N1["Invoke kubectl"]
     N2["Invoke minikube"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

@@ -4,25 +4,25 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### estimate_design_pattern_tag_bytes()
-This helper computes a size, count, or cost estimate used by surrounding logic. It appears near line 424.
+This helper computes a size, count, or cost estimate used by surrounding logic.
 
-Inside the body, it mainly handles estimate the size or cost of generated state and iterate over the active collection.
+Inside the body, it mainly handles estimate the size or cost of generated state and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
 - estimate the size or cost of generated state
-- iterate over the active collection
+- walk the local collection
 
 Flow:
 ```mermaid
 flowchart TD
     Start["estimate_design_pattern_tag_bytes()"]
-    N0["Enter estimate_design_pattern_tag_bytes()"]
+    N0["Execute file-local step"]
     N1["Estimate size"]
     N2["Loop collection"]
     L2{"More items?"}
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

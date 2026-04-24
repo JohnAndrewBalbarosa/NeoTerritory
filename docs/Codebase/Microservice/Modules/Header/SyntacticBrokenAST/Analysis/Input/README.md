@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Syntactic Interfaces
-These documents explain the local implementation by covering Declares the public interfaces and shared data types for the generic parse and analysis pipeline..
+These documents explain the local implementation by covering Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 - cli_arguments.hpp.md : Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 - source_reader.hpp.md : Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 

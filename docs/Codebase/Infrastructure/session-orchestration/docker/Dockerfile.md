@@ -1,8 +1,7 @@
-﻿# Dockerfile
+# Dockerfile
 
 - Source: Infrastructure/session-orchestration/docker/Dockerfile
 - Kind: Container build definition
-- Lines: 19
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Builds the container image used for per-user NeoTerritory sessions. It collabora
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["FROM ubuntu:24.04"]
     N1["RUN apt-get update \"]
     N2["COPY . /app"]
     N3["RUN mkdir -p /build \"]
     N4["CMD ('/build/NeoTerritory')"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

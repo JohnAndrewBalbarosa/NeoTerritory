@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/Creational/creational_symbol_test.hpp
 - Kind: C++ header
-- Lines: 19
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of creat
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of creational_symbol_test.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for creational_symbol_test.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: creational_symbol_test.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
-    N2["Enter build_creational_symbol_test_tree()"]
+    N2["Create creational symbol test tree"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave build_creational_symbol_test_tree()"]
-    N6["Enter creational_symbol_test_to_text()"]
+    N5["Return from local helper"]
+    N6["Handle creational symbol test to text"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave creational_symbol_test_to_text()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,12 +49,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of creational_symbol_test.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for creational_symbol_test.hpp after setup.
 Why this is separate: creational_symbol_test.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 
 ## Reading Map
@@ -71,13 +70,13 @@ It leans on nearby contracts or tools such as parse_tree.hpp and string.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- build_creational_symbol_test_tree() (line 11): Declare a callable contract and let implementation files define the runtime body
-- creational_symbol_test_to_text() (line 16): Declare a callable contract and let implementation files define the runtime body
+- build_creational_symbol_test_tree(): Declare a callable contract and let implementation files define the runtime body
+- creational_symbol_test_to_text(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### build_creational_symbol_test_tree()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 11.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -89,7 +88,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["build_creational_symbol_test_tree()"]
-    N0["Enter build_creational_symbol_test_tree()"]
+    N0["Create creational symbol test tree"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -102,7 +101,7 @@ flowchart TD
 ```
 
 ### creational_symbol_test_to_text()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 16.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -114,7 +113,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["creational_symbol_test_to_text()"]
-    N0["Enter creational_symbol_test_to_text()"]
+    N0["Handle creational symbol test to text"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

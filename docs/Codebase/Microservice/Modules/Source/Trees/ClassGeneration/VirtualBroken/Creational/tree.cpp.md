@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Creational/creational_broken_tree.cpp
 - Kind: C++ implementation
-- Lines: 143
 
 ## Story
 ### What Happens Here
@@ -22,8 +21,8 @@ The desired design is that this file behaves as the creational middleman for tre
 
 
 ### Block 1 - Required Middleman Flow Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of creational_broken_tree.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for creational_broken_tree.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: creational_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -48,12 +47,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of creational_broken_tree.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for creational_broken_tree.cpp after setup.
 Why this is separate: creational_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Run algorithm"]
+    N0["Execute file-local step"]
     N1["Collect nodes"]
     N2["Nodes found?"]
     N3["Ignore empty"]
@@ -96,13 +95,13 @@ It leans on nearby contracts or tools such as creational_broken_tree.hpp, Builde
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- build_creational_broken_tree() (line 74): Build or append the next output structure and assemble tree or artifact structures
-- creational_tree_to_parse_tree_node() (line 98): Record derived output into collections, populate output fields or accumulators, and parse or tokenize input text
-- creational_tree_to_text() (line 121): Populate output fields or accumulators, assemble tree or artifact structures, and serialize report content
+- build_creational_broken_tree(): Create the local output structure and connect local structures
+- creational_tree_to_parse_tree_node(): store local findings, fill local output fields, and read local tokens
+- creational_tree_to_text(): fill local output fields, connect local structures, and serialize report content
 
 ### Showing The Result
 These steps turn internal state into text, HTML, JSON, or another output a reader can inspect.
-- creational_tree_to_html() (line 112): Parse or tokenize input text and render text or HTML views
+- creational_tree_to_html(): read local tokens and render text or HTML views
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

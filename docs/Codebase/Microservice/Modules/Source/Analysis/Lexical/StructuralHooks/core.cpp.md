@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Language-and-Structure/lexical_structure_hooks.cpp
 - Kind: C++ implementation
-- Lines: 150
 
 ## Story
 ### What Happens Here
@@ -18,6 +17,27 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 Resolves pattern-specific structural keywords and records the crucial classes used by later filtering stages. The main surface area is easiest to track through symbols such as contains_class, token_matches_any_keyword, is_keyword_hit, and select_structural_keywords. It collaborates directly with Language-and-Structure/lexical_structure_hooks.hpp, Logic/behavioural_structural_hooks.hpp, Logic/creational_structural_hooks.hpp, and Language-and-Structure/language_tokens.hpp.
 
 ## Program Flow
+Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
+
+Why this slice is separate: deeper helper docs can explain individual functions, while this file still needs to show the main activity path in place.
+
+```mermaid
+flowchart TD
+    N0["Receive local input"]
+    N1["Reset structural analysis state"]
+    N2["Check keyword hit"]
+    N3["Check crucial class name"]
+    N4["Execute file-local step"]
+    N5["Check class"]
+    N6["Return local result"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+```
+
 Detailed program flow is decoupled into future implementation units:
 
 - [program_flow](./lexical_structure_hooks/lexical_structure_hooks_program_flow.cpp.md)
@@ -34,23 +54,23 @@ It leans on nearby contracts or tools such as Language-and-Structure/lexical_str
 
 ### Small Preparation Steps
 These steps clean up names, text, or small values before the larger work begins.
-- reset_structural_analysis_state() (line 118): Clear temporary buffers or state
+- reset_structural_analysis_state(): Clear temporary buffers or state
 
 ### Checks Before Moving On
 These steps stop bad input or unsupported state before it can confuse the next part of the run.
-- is_keyword_hit() (line 38): Iterate over the active collection and branch on runtime conditions
-- is_crucial_class_name() (line 123): Inspect or register class-level information, populate output fields or accumulators, and compute hash metadata
+- is_keyword_hit(): walk the local collection and branch on local conditions
+- is_crucial_class_name(): Inspect or register class-level information, fill local output fields, and compute hash metadata
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- on_class_scanned_structural_hook() (line 86): Inspect or register class-level information, record derived output into collections, and assemble tree or artifact structures
+- on_class_scanned_structural_hook(): Inspect or register class-level information, store local findings, and connect local structures
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- contains_class() (line 14): Inspect or register class-level information, iterate over the active collection, and branch on runtime conditions
-- token_matches_any_keyword() (line 25): Look up entries in previously collected maps or sets, iterate over the active collection, and branch on runtime conditions
-- select_structural_keywords() (line 64): Populate output fields or accumulators and branch on runtime conditions
-- get_crucial_class_registry() (line 145): Inspect or register class-level information
+- contains_class(): Inspect or register class-level information, walk the local collection, and branch on local conditions
+- token_matches_any_keyword(): look up local indexes, walk the local collection, and branch on local conditions
+- select_structural_keywords(): fill local output fields and branch on local conditions
+- get_crucial_class_registry(): Inspect or register class-level information
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

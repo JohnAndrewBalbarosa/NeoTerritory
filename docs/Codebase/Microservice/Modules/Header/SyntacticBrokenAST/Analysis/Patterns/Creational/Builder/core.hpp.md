@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/Creational/Builder/builder_pattern_logic.hpp
 - Kind: C++ header
-- Lines: 41
 
 ## Story
 ### What Happens Here
@@ -24,12 +23,12 @@ The flow is intentionally split into smaller slices so the major intent of build
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of builder_pattern_logic.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for builder_pattern_logic.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: builder_pattern_logic.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter buildermethodstructurecheck"]
     N3["Declare type"]
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of builder_pattern_logic.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for builder_pattern_logic.hpp after setup.
 Why this is separate: builder_pattern_logic.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter check_builder_pattern_structure()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave check_builder_pattern_structure()"]
-    N4["Enter assignments()"]
+    N3["Return from local helper"]
+    N4[""]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave assignments()"]
-    N8["End"]
+    N7["Return from local helper"]
+    N8["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,15 +86,15 @@ It leans on nearby contracts or tools such as creational_broken_tree.hpp, parse_
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- BuilderMethodStructureCheck (line 10): Declare a shared type and expose the compile-time contract
-- BuilderStructureCheckResult (line 18): Declare a shared type and expose the compile-time contract
-- check_builder_pattern_structure() (line 32): Declare a callable contract and let implementation files define the runtime body
-- assignments() (line 36): Declare a callable contract and let implementation files define the runtime body
+- BuilderMethodStructureCheck: Declare a shared type and expose the compile-time contract
+- BuilderStructureCheckResult: Declare a shared type and expose the compile-time contract
+- check_builder_pattern_structure(): Declare a callable contract and let implementation files define the runtime body
+- assignments(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### BuilderMethodStructureCheck
-This declaration introduces a shared type that other files compile against. It appears near line 10.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -107,7 +106,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["BuilderMethodStructureCheck"]
-    N0["Enter buildermethodstructurecheck()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -120,7 +119,7 @@ flowchart TD
 ```
 
 ### BuilderStructureCheckResult
-This declaration introduces a shared type that other files compile against. It appears near line 18.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -132,7 +131,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["BuilderStructureCheckResult"]
-    N0["Enter builderstructurecheckresult()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -145,7 +144,7 @@ flowchart TD
 ```
 
 ### check_builder_pattern_structure()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 32.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -157,7 +156,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["check_builder_pattern_structure()"]
-    N0["Enter check_builder_pattern_structure()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -170,7 +169,7 @@ flowchart TD
 ```
 
 ### assignments()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 36.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -182,7 +181,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["assignments()"]
-    N0["Enter assignments()"]
+    N0[""]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

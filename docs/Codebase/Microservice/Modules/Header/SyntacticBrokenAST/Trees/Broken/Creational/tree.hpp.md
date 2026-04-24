@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/Creational/creational_broken_tree.hpp
 - Kind: C++ header
-- Lines: 50
 
 ## Story
 ### What Happens Here
@@ -34,13 +33,13 @@ It leans on nearby contracts or tools such as parse_tree.hpp, string, and vector
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- CreationalTreeNode (line 8): Declare a shared type and expose the compile-time contract
-- ICreationalDetector (line 15): Declare a shared type and expose the compile-time contract
-- ICreationalTreeCreator (line 22): Declare a shared type and expose the compile-time contract
-- build_creational_broken_tree() (line 36): Declare a callable contract and let implementation files define the runtime body
-- creational_tree_to_parse_tree_node() (line 41): Declare a callable contract and let implementation files define the runtime body
-- creational_tree_to_html() (line 42): Declare a callable contract and let implementation files define the runtime body
-- creational_tree_to_text() (line 47): Declare a callable contract and let implementation files define the runtime body
+- CreationalTreeNode: Declare a shared type and expose the compile-time contract
+- ICreationalDetector: Declare a shared type and expose the compile-time contract
+- ICreationalTreeCreator: Declare a shared type and expose the compile-time contract
+- build_creational_broken_tree(): Declare a callable contract and let implementation files define the runtime body
+- creational_tree_to_parse_tree_node(): Declare a callable contract and let implementation files define the runtime body
+- creational_tree_to_html(): Declare a callable contract and let implementation files define the runtime body
+- creational_tree_to_text(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

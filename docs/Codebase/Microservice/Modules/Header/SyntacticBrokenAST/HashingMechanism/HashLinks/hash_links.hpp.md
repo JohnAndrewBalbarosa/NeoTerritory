@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree_hash_links.hpp
 - Kind: C++ header
-- Lines: 84
 
 ## Story
 ### What Happens Here
@@ -34,13 +33,13 @@ It leans on nearby contracts or tools such as parse_tree.hpp, parse_tree_symbols
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- NodeAncestry (line 10): Declare a shared type and expose the compile-time contract
-- NodeRef (line 16): Declare a shared type and expose the compile-time contract
-- FilePairedTreeView (line 28): Declare a shared type and expose the compile-time contract
-- ClassHashLink (line 36): Declare a shared type and expose the compile-time contract
-- UsageHashLink (line 49): Declare a shared type and expose the compile-time contract
-- HashLinkIndex (line 69): Declare a shared type and expose the compile-time contract
-- build_parse_tree_hash_links() (line 76): Declare a callable contract and let implementation files define the runtime body
+- NodeAncestry: Declare a shared type and expose the compile-time contract
+- NodeRef: Declare a shared type and expose the compile-time contract
+- FilePairedTreeView: Declare a shared type and expose the compile-time contract
+- ClassHashLink: Declare a shared type and expose the compile-time contract
+- UsageHashLink: Declare a shared type and expose the compile-time contract
+- HashLinkIndex: Declare a shared type and expose the compile-time contract
+- build_parse_tree_hash_links(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

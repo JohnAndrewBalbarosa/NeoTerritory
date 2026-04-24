@@ -1,31 +1,38 @@
-﻿# db
+# db
 
 - Folder: docs/Codebase/Backend/src/db
-- Descendant source docs: 2
-- Generated on: 2026-04-23
+- Future source folder: Codebase/Backend/src/db
 
 ## Logic Summary
-SQLite-oriented persistence helpers and schema initialization logic.
+This folder owns SQLite connection setup and startup-time schema creation. The ETL schema belongs here because it is persistence structure, not route logic or transform execution logic.
 
-## Subsystem Story
-This folder is mostly leaf-level. The local documents here carry the main explanation of the subsystem without requiring much extra descent.
+## Read Order
+1. `database.js.md` explains how the backend opens the SQLite database.
+2. `initDb.js.md` explains the schema boot sequence and where schema modules are called.
+3. `etlSchema.js.md` defines the ETL persistence blueprint that Claude should implement as a schema module.
 
 ## Folder Flow
+The DB layer should stay small: open the database, initialize baseline tables, then initialize feature schemas such as ETL.
+
 ```mermaid
 flowchart TD
-    Start["Folder Entry"]
-    N0["Study Data layer docs"]
-    End["Folder Exit"]
-    Start --> N0
-    N0 --> End
+    Start["Backend starts"]
+    Open["Open SQLite database"]
+    Base["Create baseline tables"]
+    ETL["Create ETL tables"]
+    Ready["Database ready"]
+
+    Start --> Open
+    Open --> Base
+    Base --> ETL
+    ETL --> Ready
 ```
 
 ## Documents By Logic
-### Data Layer
-These documents explain the local implementation by covering Owns SQLite connectivity and schema initialization..
-- database.js.md : Owns SQLite connectivity and schema initialization.
-- initDb.js.md : Owns SQLite connectivity and schema initialization.
+- `database.js.md`: SQLite connection boundary.
+- `initDb.js.md`: startup schema entrypoint.
+- `etlSchema.js.md`: ETL runs, steps, artifacts, errors, and metrics schema blueprint.
 
-## Reading Hint
-- This folder is mostly leaf-level. Read the local file docs to understand the logic in this area.
+## Ownership Boundary
+This folder should only describe database structure and DB initialization. ETL execution, file transformation, parsing, and output generation should remain outside this folder and only write their state into these tables.
 

@@ -4,36 +4,36 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### is_class_declaration_node()
-This routine owns one focused piece of the file's behavior. It appears near line 83.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles inspect or register class-level information, inspect or rewrite declarations, and branch on runtime conditions.
+Inside the body, it mainly handles inspect or register class-level information, inspect or rewrite declarations, and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - inspect or register class-level information
 - inspect or rewrite declarations
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 
 
 ### Block 4 - is_class_declaration_node() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of is_class_declaration_node.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for is_class_declaration_node.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: is_class_declaration_node.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["is_class_declaration_node()"]
-    N1["Enter is_class_declaration_node()"]
+    N1["Check class declaration node"]
     N2["Register classes"]
     N3["Inspect declarations"]
     N4["Continue?"]
-    N5["Stop path"]
-    N6["Branch condition"]
+    N5["Return early path"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -45,8 +45,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of is_class_declaration_node.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for is_class_declaration_node.cpp after setup.
 Why this is separate: is_class_declaration_node.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD

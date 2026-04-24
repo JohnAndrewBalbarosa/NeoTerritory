@@ -4,25 +4,25 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### rehash_subtree()
-This routine owns one focused piece of the file's behavior. It appears near line 52.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles compute or reuse hash-oriented identifiers, assemble tree or artifact structures, compute hash metadata, and iterate over the active collection.
+Inside the body, it mainly handles compute or reuse hash-oriented identifiers, connect local structures, compute hash metadata, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload.
 
 What it does:
 - compute or reuse hash-oriented identifiers
-- assemble tree or artifact structures
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
+- walk the local collection
 
 Flow:
 ```mermaid
 flowchart TD
     Start["rehash_subtree()"]
-    N0["Enter rehash_subtree()"]
+    N0["Handle rehash subtree"]
     N1["Use hashes"]
-    N2["Assemble tree"]
+    N2["Connect local nodes"]
     N3["Compute hashes"]
     N4["Loop collection"]
     L4{"More items?"}

@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts/algorithm_pipeline.hpp
 - Kind: C++ header
-- Lines: 89
 
 ## Story
 ### What Happens Here
@@ -24,12 +23,12 @@ The flow is intentionally split into smaller slices so the major intent of algor
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of algorithm_pipeline.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for algorithm_pipeline.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: algorithm_pipeline.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter stagemetric"]
     N3["Declare type"]
@@ -50,8 +49,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of algorithm_pipeline.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for algorithm_pipeline.hpp after setup.
 Why this is separate: algorithm_pipeline.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -63,7 +62,7 @@ flowchart TD
     N5["Declare type"]
     N6["Expose contract"]
     N7["Leave PipelineArtifacts"]
-    N8["Enter run_normalize_and_rewrite_pipeline()"]
+    N8["Execute file-local step"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -76,14 +75,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in algorithm_pipeline.hpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how algorithm_pipeline.hpp passes prepared local state into its next operation.
 Why this is separate: algorithm_pipeline.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave run_normalize_and_rewrite_pipeline()"]
-    N2["End"]
+    N1["Return from local helper"]
+    N2["Return from local flow"]
     N0 --> N1
     N1 --> N2
 ```
@@ -101,16 +100,16 @@ It leans on nearby contracts or tools such as behavioural_broken_tree.hpp, creat
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- StageMetric (line 14): Declare a shared type and expose the compile-time contract
-- PipelineReport (line 21): Declare a shared type and expose the compile-time contract
-- DesignPatternTag (line 42): Declare a shared type and expose the compile-time contract
-- PipelineArtifacts (line 57): Declare a shared type and expose the compile-time contract
-- run_normalize_and_rewrite_pipeline() (line 73): Declare a callable contract and let implementation files define the runtime body
+- StageMetric: Declare a shared type and expose the compile-time contract
+- PipelineReport: Declare a shared type and expose the compile-time contract
+- DesignPatternTag: Declare a shared type and expose the compile-time contract
+- PipelineArtifacts: Declare a shared type and expose the compile-time contract
+- run_normalize_and_rewrite_pipeline(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### StageMetric
-This declaration introduces a shared type that other files compile against. It appears near line 14.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -122,7 +121,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["StageMetric"]
-    N0["Enter stagemetric()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -135,7 +134,7 @@ flowchart TD
 ```
 
 ### PipelineReport
-This declaration introduces a shared type that other files compile against. It appears near line 21.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -147,7 +146,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["PipelineReport"]
-    N0["Enter pipelinereport()"]
+    N0["Handle pipeline report"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -160,7 +159,7 @@ flowchart TD
 ```
 
 ### DesignPatternTag
-This declaration introduces a shared type that other files compile against. It appears near line 42.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -172,7 +171,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["DesignPatternTag"]
-    N0["Enter designpatterntag()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -185,7 +184,7 @@ flowchart TD
 ```
 
 ### PipelineArtifacts
-This declaration introduces a shared type that other files compile against. It appears near line 57.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -197,7 +196,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["PipelineArtifacts"]
-    N0["Enter pipelineartifacts()"]
+    N0["Handle pipeline artifacts"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -210,7 +209,7 @@ flowchart TD
 ```
 
 ### run_normalize_and_rewrite_pipeline()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 73.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -222,7 +221,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["run_normalize_and_rewrite_pipeline()"]
-    N0["Enter run_normalize_and_rewrite_pipeline()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

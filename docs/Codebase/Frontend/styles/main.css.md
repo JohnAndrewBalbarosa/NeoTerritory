@@ -1,8 +1,7 @@
-﻿# main.css
+# main.css
 
 - Source: Frontend/styles/main.css
 - Kind: CSS stylesheet
-- Lines: 598
 
 ## Story
 ### What Happens Here
@@ -16,13 +15,13 @@ Applied during page render to define the frontend presentation layer.
 ### What To Watch While Reading
 
 Defines the visual system and component styling for the frontend prototype. The main surface area is easiest to track through symbols such as /* ============================================================
-   CodiNeo â€” Design System
+   CodiNeo — Design System
    Color palette and tokens derived from Figma wireframe
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── CSS Custom Properties ─────────────────────────────── */
 :root, /* Colors */
   --bg-base:        #09090C;
   --bg-surface:     #111116;
@@ -84,21 +83,21 @@ Defines the visual system and component styling for the frontend prototype. The 
   --shadow-card:   0 2px 16px rgba(0,0,0,0.09);
 }
 
-/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after, and html. It collaborates directly with https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Style /* ============================================================ CodiNeo â€” Design"]
+    Start["Begin local flow"]
+    N0["Style /* ============================================================ CodiNeo — Design"]
     N1["Style /* Colors */ --bg-base: #09090C;"]
     N2["Style --bg-base: #F3F4F8; --bg-surface: #FFFFFF; --bg-surface-2:"]
     N3["Style html"]
     N4["Style body"]
     N5["Style font-family: var(--font-sans); background: var(--bg-base); color:"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -114,13 +113,13 @@ Read this file as: Defines the visual system and component styling for the front
 Where it sits in the run: Applied during page render to define the frontend presentation layer.
 
 Names worth recognizing while reading: /* ============================================================
-   CodiNeo â€” Design System
+   CodiNeo — Design System
    Color palette and tokens derived from Figma wireframe
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* â”€â”€ CSS Custom Properties â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── CSS Custom Properties ─────────────────────────────── */
 :root, /* Colors */
   --bg-base:        #09090C;
   --bg-surface:     #111116;
@@ -182,7 +181,7 @@ Names worth recognizing while reading: /* ======================================
   --shadow-card:   0 2px 16px rgba(0,0,0,0.09);
 }
 
-/* â”€â”€ Reset & Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Reset & Base ──────────────────────────────────────── */
 *, *::before, *::after, html, body, and font-family: var(--font-sans);
   background: var(--bg-base);
   color: var(--text-primary);

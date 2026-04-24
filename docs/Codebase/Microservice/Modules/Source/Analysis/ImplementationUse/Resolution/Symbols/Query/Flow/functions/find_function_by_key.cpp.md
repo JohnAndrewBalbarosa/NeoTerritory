@@ -4,29 +4,29 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### find_function_by_key()
-This routine owns one focused piece of the file's behavior. It appears near line 56.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles search previously collected data, iterate over the active collection, and branch on runtime conditions.
+Inside the body, it mainly handles search previously collected data, walk the local collection, and branch on local conditions.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - search previously collected data
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["find_function_by_key()"]
-    N0["Enter find_function_by_key()"]
+    N0["Find function by key"]
     N1["Search data"]
     N2["Loop collection"]
     L2{"More items?"}
-    N3["Branch condition"]
+    N3["Check local condition"]
     D3{"Continue?"}
-    R3["Stop path"]
-    N4["Return result"]
+    R3["Return early path"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

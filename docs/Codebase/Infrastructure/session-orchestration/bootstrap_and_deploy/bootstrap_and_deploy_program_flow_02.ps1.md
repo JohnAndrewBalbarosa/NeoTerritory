@@ -3,19 +3,19 @@
 - Source document: [bootstrap_and_deploy.ps1.md](../bootstrap_and_deploy.ps1.md)
 - Purpose: decoupled implementation logic for a future code unit.
 
-#### Part 9
+#### Slice 9 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
+    N0["Return early path"]
     N1["Invoke tooling"]
-    N2["Return result"]
-    N3["Enter invoke-minikubedeletebesteffort()"]
+    N2["Return local result"]
+    N3["Execute file-local step"]
     N4["Report status"]
     N5["Invoke tooling"]
-    N6["Branch condition"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Leave Invoke-MinikubeDeleteBestEffort()"]
+    N8["Return early path"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -27,17 +27,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 10
+#### Slice 10 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Changing or cleaning the picture"]
-    N1["Enter remove-minikubeprofileartifacts()"]
+    N1["Remove minikubeprofileartifacts"]
     N2["Remove obsolete"]
     N3["Inspect files"]
     N4["Continue?"]
-    N5["Stop path"]
+    N5["Return early path"]
     N6["Update files"]
-    N7["More items?"]
+    N7["More local items?"]
     N8["Report status"]
     N9["Invoke tooling"]
     N0 --> N1
@@ -51,19 +51,19 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 11
+#### Slice 11 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Branch condition"]
+    N0["Check local condition"]
     N1["Continue?"]
-    N2["Stop path"]
-    N3["Leave Remove-MinikubeProfileArtifacts()"]
+    N2["Return early path"]
+    N3["Return from local helper"]
     N4["Main path"]
-    N5["Enter start-minikubewithrecovery()"]
+    N5["Execute file-local step"]
     N6["Drive path"]
     N7["Report status"]
     N8["Invoke tooling"]
-    N9["Branch condition"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -75,19 +75,19 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 12
+#### Slice 12 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["Finding what matters"]
-    N4["Enter resolve-absolutepath()"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Collect local facts"]
+    N4["Resolve absolutepath"]
     N5["Connect data"]
-    N6["Branch condition"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -99,18 +99,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 13
+#### Slice 13 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Supporting steps"]
-    N1["Enter apply-k8stemplate()"]
+    N0["Run helper branch"]
+    N1["Apply k8stemplate"]
     N2["Inspect files"]
     N3["Continue?"]
-    N4["Stop path"]
+    N4["Return early path"]
     N5["Update files"]
-    N6["More items?"]
+    N6["More local items?"]
     N7["Invoke tooling"]
-    N8["Branch condition"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -123,12 +123,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 14
+#### Slice 14 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Leave Apply-K8sTemplate()"]
-    N2["End"]
+    N0["Return early path"]
+    N1["Return from local helper"]
+    N2["Return from local flow"]
     N0 --> N1
     N1 --> N2
 ```

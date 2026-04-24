@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### RegisteredClassSymbol
-This declaration introduces a shared type that other files compile against. It appears near line 14.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["RegisteredClassSymbol"]
-    N0["Enter registeredclasssymbol()"]
+    N0["Validate registration request"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]

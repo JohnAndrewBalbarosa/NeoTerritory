@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/Internal/relevance.cpp
 - Kind: C++ implementation
-- Lines: 108
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of relev
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of relevance.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for relevance.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter line_contains_any_tracked_token()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Execute file-local step"]
     N3["Read lines"]
-    N4["More items?"]
+    N4["More local items?"]
     N5["Look up entries"]
-    N6["Tokenize input"]
+    N6["Read structured tokens"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of relevance.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for relevance.cpp after setup.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["Building the working picture"]
-    N4["Enter append_shadow_subtree_if_relevant()"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Prepare local model"]
+    N4["Execute file-local step"]
     N5["Look up entries"]
-    N6["Record output"]
+    N6["Store local result"]
     N7["Populate outputs"]
-    N8["Assemble tree"]
+    N8["Connect local nodes"]
     N9["Compute hashes"]
     N0 --> N1
     N1 --> N2
@@ -76,15 +75,15 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in relevance.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how relevance.cpp passes prepared local state into its next operation.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Loop collection"]
-    N1["More items?"]
-    N2["Return result"]
-    N3["End"]
+    N1["More local items?"]
+    N2["Return local result"]
+    N3["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -103,45 +102,45 @@ It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, 
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- append_shadow_subtree_if_relevant() (line 29): Look up entries in previously collected maps or sets, record derived output into collections, and populate output fields or accumulators
+- append_shadow_subtree_if_relevant(): look up local indexes, store local findings, and fill local output fields
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- line_contains_any_tracked_token() (line 10): Work one source line at a time, look up entries in previously collected maps or sets, and parse or tokenize input text
+- line_contains_any_tracked_token(): Work one source line at a time, look up local indexes, and read local tokens
 
 ## Function Stories
 
 ### line_contains_any_tracked_token()
-This routine owns one focused piece of the file's behavior. It appears near line 10.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles work one source line at a time, look up entries in previously collected maps or sets, parse or tokenize input text, and iterate over the active collection.
+Inside the body, it mainly handles work one source line at a time, look up local indexes, read local tokens, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - work one source line at a time
-- look up entries in previously collected maps or sets
-- parse or tokenize input text
-- iterate over the active collection
-- branch on runtime conditions
+- look up local indexes
+- read local tokens
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 2 - line_contains_any_tracked_token() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of relevance.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for relevance.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["line_contains_any_tracked_token()"]
-    N1["Enter line_contains_any_tracked_token()"]
+    N1["Execute file-local step"]
     N2["Read lines"]
-    N3["More items?"]
+    N3["More local items?"]
     N4["Look up entries"]
-    N5["Tokenize input"]
+    N5["Read structured tokens"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -154,52 +153,52 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of relevance.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for relevance.cpp after setup.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
+    N0["Return early path"]
+    N1["Return local result"]
     N2["Return"]
     N0 --> N1
     N1 --> N2
 ```
 
 ### append_shadow_subtree_if_relevant()
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 29.
+This helper reshapes small pieces of data so the surrounding code can stay readable.
 
-Inside the body, it mainly handles look up entries in previously collected maps or sets, record derived output into collections, populate output fields or accumulators, and assemble tree or artifact structures.
+Inside the body, it mainly handles look up local indexes, store local findings, fill local output fields, and connect local structures.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- look up entries in previously collected maps or sets
-- record derived output into collections
-- populate output fields or accumulators
-- assemble tree or artifact structures
+- look up local indexes
+- store local findings
+- fill local output fields
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 3 - append_shadow_subtree_if_relevant() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of relevance.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for relevance.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["append_shadow_subtree_if_relevant()"]
-    N1["Enter append_shadow_subtree_if_relevant()"]
+    N1["Execute file-local step"]
     N2["Look up entries"]
-    N3["Record output"]
+    N3["Store local result"]
     N4["Populate outputs"]
-    N5["Assemble tree"]
+    N5["Connect local nodes"]
     N6["Compute hashes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -211,14 +210,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of relevance.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for relevance.cpp after setup.
 Why this is separate: relevance.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
+    N1["Return early path"]
+    N2["Return local result"]
     N3["Return"]
     N0 --> N1
     N1 --> N2

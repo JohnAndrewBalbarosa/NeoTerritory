@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree_dependency_utils.hpp
 - Kind: C++ header
-- Lines: 21
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of parse
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of parse_tree_dependency_utils.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for parse_tree_dependency_utils.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: parse_tree_dependency_utils.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter dependencysymbolnode"]
     N3["Declare type"]
     N4["Expose contract"]
     N5["Leave DependencySymbolNode"]
-    N6["Enter collect_dependency_class_nodes()"]
+    N6["Collect dependency class nodes"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave collect_dependency_class_nodes()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,16 +49,16 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of parse_tree_dependency_utils.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for parse_tree_dependency_utils.hpp after setup.
 Why this is separate: parse_tree_dependency_utils.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter collect_dependency_function_nodes()"]
+    N0["Collect dependency function nodes"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave collect_dependency_function_nodes()"]
-    N4["End"]
+    N3["Return from local helper"]
+    N4["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -79,14 +78,14 @@ It leans on nearby contracts or tools such as parse_tree.hpp, cstddef, string, a
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- DependencySymbolNode (line 9): Declare a shared type and expose the compile-time contract
-- collect_dependency_class_nodes() (line 16): Declare a callable contract and let implementation files define the runtime body
-- collect_dependency_function_nodes() (line 18): Declare a callable contract and let implementation files define the runtime body
+- DependencySymbolNode: Declare a shared type and expose the compile-time contract
+- collect_dependency_class_nodes(): Declare a callable contract and let implementation files define the runtime body
+- collect_dependency_function_nodes(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### DependencySymbolNode
-This declaration introduces a shared type that other files compile against. It appears near line 9.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -98,7 +97,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["DependencySymbolNode"]
-    N0["Enter dependencysymbolnode()"]
+    N0["Handle dependency symbol node"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -111,7 +110,7 @@ flowchart TD
 ```
 
 ### collect_dependency_class_nodes()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 16.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -123,7 +122,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["collect_dependency_class_nodes()"]
-    N0["Enter collect_dependency_class_nodes()"]
+    N0["Collect dependency class nodes"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -136,7 +135,7 @@ flowchart TD
 ```
 
 ### collect_dependency_function_nodes()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 18.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -148,7 +147,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["collect_dependency_function_nodes()"]
-    N0["Enter collect_dependency_function_nodes()"]
+    N0["Collect dependency function nodes"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

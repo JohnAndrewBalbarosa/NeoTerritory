@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Middleware
-These documents explain the local implementation by covering Applies request-shaping concerns such as auth, uploads, and error handling..
+These documents explain the local implementation by covering Applies request-shaping concerns such as auth, uploads, and error handling.
 - errorHandler.js.md : Applies request-shaping concerns such as auth, uploads, and error handling.
 - jwtAuth.js.md : Applies request-shaping concerns such as auth, uploads, and error handling.
 - upload.js.md : Applies request-shaping concerns such as auth, uploads, and error handling.

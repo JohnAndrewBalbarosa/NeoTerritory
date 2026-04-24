@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### make_fnv1a64_hash_id()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 28.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["make_fnv1a64_hash_id()"]
-    N0["Enter make_fnv1a64_hash_id()"]
+    N0["Handle make fnv1a64 hash id"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

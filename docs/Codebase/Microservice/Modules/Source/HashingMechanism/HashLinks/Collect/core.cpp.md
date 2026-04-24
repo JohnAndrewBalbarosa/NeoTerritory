@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/hash_links_collect.cpp
 - Kind: C++ implementation
-- Lines: 162
 
 ## Story
 ### What Happens Here
@@ -18,6 +17,25 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as collect_side_nodes, build_node_refs, lookup_class_candidates, and lookup_usage_candidates. It collaborates directly with Internal/parse_tree_hash_links_internal.hpp, cstddef, functional, and string.
 
 ## Program Flow
+Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
+
+Why this slice is separate: deeper helper docs can explain individual functions, while this file still needs to show the main activity path in place.
+
+```mermaid
+flowchart TD
+    N0["Receive local input"]
+    N1["Collect side nodes"]
+    N2["Resolve class candidates"]
+    N3["Resolve usage candidates"]
+    N4["Create node refs"]
+    N5["Return local result"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+```
+
 Detailed program flow is decoupled into future implementation units:
 
 - [program_flow](./hash_links_collect/hash_links_collect_program_flow.cpp.md)
@@ -34,13 +52,13 @@ It leans on nearby contracts or tools such as Internal/parse_tree_hash_links_int
 
 ### Finding What Matters
 These steps pick out the facts, traces, and relationships that later stages need.
-- collect_side_nodes() (line 12): Collect derived facts for later stages, record derived output into collections, and populate output fields or accumulators
-- lookup_class_candidates() (line 119): Search previously collected data, inspect or register class-level information, and look up entries in previously collected maps or sets
-- lookup_usage_candidates() (line 129): Search previously collected data, look up entries in previously collected maps or sets, and record derived output into collections
+- collect_side_nodes(): Collect derived facts for later stages, store local findings, and fill local output fields
+- lookup_class_candidates(): Search previously collected data, inspect or register class-level information, and look up local indexes
+- lookup_usage_candidates(): Search previously collected data, look up local indexes, and store local findings
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- build_node_refs() (line 104): Build or append the next output structure, record derived output into collections, and assemble tree or artifact structures
+- build_node_refs(): Create the local output structure, store local findings, and connect local structures
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

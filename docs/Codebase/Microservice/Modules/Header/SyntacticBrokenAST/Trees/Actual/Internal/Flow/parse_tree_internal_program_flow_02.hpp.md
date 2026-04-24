@@ -9,15 +9,15 @@ Why this is separate: parse_tree_internal_program_flow_02.hpp has multiple branc
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave node_at_path()"]
-    N2["Enter append_node_at_path()"]
+    N1["Return from local helper"]
+    N2["Execute file-local step"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave append_node_at_path()"]
-    N6["Enter register_classes_in_line()"]
+    N5["Return from local helper"]
+    N6["Validate registration request"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave register_classes_in_line()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -29,20 +29,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 10 - Flow Slice 10
+#### Slice 10 - Continue Local Flow
 Quick summary: This slice covers one readable stage of parse_tree_internal_program_flow_02.hpp without collapsing the entire flow into one oversized Mermaid block.
 Why this is separate: parse_tree_internal_program_flow_02.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter token_hits_registered_class()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave token_hits_registered_class()"]
-    N4["Enter collect_line_hash_trace()"]
+    N3["Return from local helper"]
+    N4["Execute file-local step"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave collect_line_hash_trace()"]
-    N8["Enter bucketize_file_node_for_traversal()"]
+    N7["Return from local helper"]
+    N8["Group file node for traversal"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -55,21 +55,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 11 - Flow Slice 11
+#### Slice 11 - Continue Local Flow
 Quick summary: This slice covers one readable stage of parse_tree_internal_program_flow_02.hpp without collapsing the entire flow into one oversized Mermaid block.
 Why this is separate: parse_tree_internal_program_flow_02.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave bucketize_file_node_for_traversal()"]
-    N2["Enter line_contains_any_tracked_token()"]
+    N1["Return from local helper"]
+    N2["Execute file-local step"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave line_contains_any_tracked_token()"]
-    N6["Enter append_shadow_subtree_if_relevant()"]
+    N5["Return from local helper"]
+    N6["Execute file-local step"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave append_shadow_subtree_if_relevant()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -81,20 +81,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 12 - Flow Slice 12
+#### Slice 12 - Continue Local Flow
 Quick summary: This slice covers one readable stage of parse_tree_internal_program_flow_02.hpp without collapsing the entire flow into one oversized Mermaid block.
 Why this is separate: parse_tree_internal_program_flow_02.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter parse_file_content_into_node()"]
+    N0["Parse file content into node"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave parse_file_content_into_node()"]
-    N4["Enter collect_class_definitions_by_file()"]
+    N3["Return from local helper"]
+    N4["Collect class definitions by file"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave collect_class_definitions_by_file()"]
-    N8["Enter collect_symbol_dependencies_for_file()"]
+    N7["Return from local helper"]
+    N8["Collect symbol dependencies for file"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -107,18 +107,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 13 - Flow Slice 13
+#### Slice 13 - Continue Local Flow
 Quick summary: This slice covers one readable stage of parse_tree_internal_program_flow_02.hpp without collapsing the entire flow into one oversized Mermaid block.
 Why this is separate: parse_tree_internal_program_flow_02.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave collect_symbol_dependencies_for_file()"]
-    N2["Enter resolve_include_dependencies()"]
+    N1["Return from local helper"]
+    N2["Resolve include dependencies"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave resolve_include_dependencies()"]
-    N6["End"]
+    N5["Return from local helper"]
+    N6["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

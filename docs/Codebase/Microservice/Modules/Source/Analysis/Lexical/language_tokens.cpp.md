@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Language-and-Structure/language_tokens.cpp
 - Kind: C++ implementation
-- Lines: 70
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of langu
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of language_tokens.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for language_tokens.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: language_tokens.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter build_cpp_tokens()"]
-    N3["Build output"]
-    N4["Return result"]
-    N5["Enter language_tokens()"]
-    N6["Assemble tree"]
-    N7["Return result"]
+    N0["Begin local flow"]
+    N1["Prepare local model"]
+    N2["Execute file-local step"]
+    N3["Create local result"]
+    N4["Return local result"]
+    N5["Handle language tokens"]
+    N6["Connect local nodes"]
+    N7["Return local result"]
     N8["Small preparation steps"]
-    N9["Enter lowercase_ascii()"]
+    N9["Handle lowercase ascii"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,15 +49,15 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of language_tokens.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for language_tokens.cpp after setup.
 Why this is separate: language_tokens.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Normalize text"]
     N1["Clean text"]
-    N2["Return result"]
-    N3["End"]
+    N2["Return local result"]
+    N3["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -77,32 +76,32 @@ It leans on nearby contracts or tools such as Language-and-Structure/language_to
 
 ### Small Preparation Steps
 These steps clean up names, text, or small values before the larger work begins.
-- lowercase_ascii() (line 61): Normalize or format text values and normalize raw text before later parsing
+- lowercase_ascii(): Normalize or format text values and normalize raw text before later parsing
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- build_cpp_tokens() (line 9): Build or append the next output structure
-- language_tokens() (line 48): Assemble tree or artifact structures
+- build_cpp_tokens(): Create the local output structure
+- language_tokens(): connect local structures
 
 ## Function Stories
 
 ### build_cpp_tokens()
-This routine assembles a larger structure from the inputs it receives. It appears near line 9.
+This routine assembles a larger structure from the inputs it receives.
 
-Inside the body, it mainly handles build or append the next output structure.
+Inside the body, it mainly handles Create the local output structure.
 
 The caller receives a computed result or status from this step.
 
 What it does:
-- build or append the next output structure
+- Create the local output structure
 
 Flow:
 ```mermaid
 flowchart TD
     Start["build_cpp_tokens()"]
-    N0["Enter build_cpp_tokens()"]
-    N1["Build output"]
-    N2["Return result"]
+    N0["Execute file-local step"]
+    N1["Create local result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -111,22 +110,22 @@ flowchart TD
 ```
 
 ### language_tokens()
-This routine owns one focused piece of the file's behavior. It appears near line 48.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles assemble tree or artifact structures.
+Inside the body, it mainly handles connect local structures.
 
 The caller receives a computed result or status from this step.
 
 What it does:
-- assemble tree or artifact structures
+- connect local structures
 
 Flow:
 ```mermaid
 flowchart TD
     Start["language_tokens()"]
-    N0["Enter language_tokens()"]
-    N1["Assemble tree"]
-    N2["Return result"]
+    N0["Handle language tokens"]
+    N1["Connect local nodes"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -135,7 +134,7 @@ flowchart TD
 ```
 
 ### lowercase_ascii()
-This routine owns one focused piece of the file's behavior. It appears near line 61.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles normalize or format text values and normalize raw text before later parsing.
 
@@ -149,10 +148,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["lowercase_ascii()"]
-    N0["Enter lowercase_ascii()"]
+    N0["Handle lowercase ascii"]
     N1["Normalize text"]
     N2["Clean text"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

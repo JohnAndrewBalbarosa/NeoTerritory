@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### function_symbol_table()
-This routine owns one focused piece of the file's behavior. It appears near line 10.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles work with symbol-oriented state.
 
@@ -17,9 +17,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["function_symbol_table()"]
-    N0["Enter function_symbol_table()"]
+    N0["Execute file-local step"]
     N1["Work symbols"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

@@ -1,8 +1,7 @@
-﻿# package.json
+# package.json
 
 - Source: Backend/package.json
 - Kind: JSON configuration
-- Lines: 26
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Declares backend scripts and runtime dependencies. The main surface area is easi
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Define name"]
     N1["Define version"]
     N2["Define description"]
     N3["Define main"]
     N4["Define type"]
     N5["Define scripts"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

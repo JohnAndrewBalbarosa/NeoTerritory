@@ -6,16 +6,16 @@
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Main path"]
-    N2["Enter initsidebar()"]
+    N2["Initialize sidebar"]
     N3["Drive path"]
     N4["Validate branch"]
     N5["Continue?"]
-    N6["Stop path"]
+    N6["Return early path"]
     N7["Update DOM"]
     N8["Bind events"]
     N9["Save state"]
@@ -30,19 +30,19 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Change route"]
-    N1["Leave initSidebar()"]
-    N2["Supporting steps"]
-    N3["Enter opensidebar()"]
+    N1["Return from local helper"]
+    N2["Run helper branch"]
+    N3["Open sidebar"]
     N4["Carry out open sidebar"]
-    N5["Leave openSidebar()"]
-    N6["Enter closesidebar()"]
+    N5["Return from local helper"]
+    N6["Close sidebar"]
     N7["Carry out close sidebar"]
-    N8["Leave closeSidebar()"]
-    N9["Enter togglesidebar()"]
+    N8["Return from local helper"]
+    N9["Toggle sidebar"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -54,17 +54,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 3
+#### Slice 3 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Validate branch"]
     N1["Continue?"]
-    N2["Stop path"]
-    N3["Leave toggleSidebar()"]
-    N4["Enter applytheme()"]
+    N2["Return early path"]
+    N3["Return from local helper"]
+    N4["Apply theme"]
     N5["Update DOM"]
-    N6["Leave applyTheme()"]
-    N7["Enter handleresize()"]
+    N6["Return from local helper"]
+    N7["Execute file-local step"]
     N8["Validate branch"]
     N9["Continue?"]
     N0 --> N1
@@ -78,12 +78,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 4
+#### Slice 4 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Leave handleResize()"]
-    N2["End"]
+    N0["Return early path"]
+    N1["Return from local helper"]
+    N2["Return from local flow"]
     N0 --> N1
     N1 --> N2
 ```

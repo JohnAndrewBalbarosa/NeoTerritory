@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Output-and-Rendering/codebase_output_writer.cpp
 - Kind: C++ implementation
-- Lines: 118
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of codeb
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of codebase_output_writer.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for codebase_output_writer.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Small preparation steps"]
-    N2["Enter escape_html()"]
+    N2["Escape html"]
     N3["Normalize text"]
-    N4["Record output"]
+    N4["Store local result"]
     N5["Populate outputs"]
-    N6["Assemble tree"]
+    N6["Connect local nodes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Return result"]
+    N8["More local items?"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of codebase_output_writer.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for codebase_output_writer.cpp after setup.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Showing the result"]
-    N1["Enter code_to_html()"]
+    N1["Handle code to html"]
     N2["Carry out code to html"]
-    N3["Return result"]
-    N4["Building the working picture"]
-    N5["Enter sanitize_component()"]
-    N6["Record output"]
+    N3["Return local result"]
+    N4["Prepare local model"]
+    N5["Execute file-local step"]
+    N6["Store local result"]
     N7["Populate outputs"]
-    N8["Assemble tree"]
+    N8["Connect local nodes"]
     N9["Loop collection"]
     N0 --> N1
     N1 --> N2
@@ -76,18 +75,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in codebase_output_writer.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how codebase_output_writer.cpp passes prepared local state into its next operation.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["More items?"]
-    N1["Branch condition"]
+    N0["More local items?"]
+    N1["Check local condition"]
     N2["Continue?"]
-    N3["Stop path"]
-    N4["Return result"]
+    N3["Return early path"]
+    N4["Return local result"]
     N5["Showing the result"]
-    N6["Enter write_codebase_outputs()"]
+    N6["Execute file-local step"]
     N7["Render output"]
     N8["Populate outputs"]
     N9["Write artifacts"]
@@ -102,18 +101,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in codebase_output_writer.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in codebase_output_writer.cpp and its immediate result.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Prepare paths"]
     N1["Render views"]
-    N2["Branch condition"]
+    N2["Check local condition"]
     N3["Continue?"]
-    N4["Stop path"]
-    N5["Return result"]
-    N6["End"]
+    N4["Return early path"]
+    N5["Return local result"]
+    N6["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -135,45 +134,45 @@ It leans on nearby contracts or tools such as Output-and-Rendering/codebase_outp
 
 ### Small Preparation Steps
 These steps clean up names, text, or small values before the larger work begins.
-- escape_html() (line 10): Normalize or format text values, record derived output into collections, and populate output fields or accumulators
+- escape_html(): Normalize or format text values, store local findings, and fill local output fields
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- sanitize_component() (line 45): Record derived output into collections, populate output fields or accumulators, and assemble tree or artifact structures
+- sanitize_component(): store local findings, fill local output fields, and connect local structures
 
 ### Showing The Result
 These steps turn internal state into text, HTML, JSON, or another output a reader can inspect.
-- code_to_html() (line 30): Owns a focused local responsibility.
-- write_codebase_outputs() (line 72): Render or serialize the result, populate output fields or accumulators, and write generated artifacts
+- code_to_html(): Owns a focused local responsibility.
+- write_codebase_outputs(): Render or serialize the result, fill local output fields, and write generated artifacts
 
 ## Function Stories
 
 ### escape_html()
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 10.
+This helper reshapes small pieces of data so the surrounding code can stay readable.
 
-Inside the body, it mainly handles normalize or format text values, record derived output into collections, populate output fields or accumulators, and assemble tree or artifact structures.
+Inside the body, it mainly handles normalize or format text values, store local findings, fill local output fields, and connect local structures.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
 - normalize or format text values
-- record derived output into collections
-- populate output fields or accumulators
-- assemble tree or artifact structures
-- iterate over the active collection
+- store local findings
+- fill local output fields
+- connect local structures
+- walk the local collection
 
 Flow:
 ```mermaid
 flowchart TD
     Start["escape_html()"]
-    N0["Enter escape_html()"]
+    N0["Escape html"]
     N1["Normalize text"]
-    N2["Record output"]
+    N2["Store local result"]
     N3["Populate outputs"]
-    N4["Assemble tree"]
+    N4["Connect local nodes"]
     N5["Loop collection"]
     L5{"More items?"}
-    N6["Return result"]
+    N6["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -188,7 +187,7 @@ flowchart TD
 ```
 
 ### code_to_html()
-This routine owns one focused piece of the file's behavior. It appears near line 30.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -199,9 +198,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["code_to_html()"]
-    N0["Enter code_to_html()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle code to html"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -210,37 +209,37 @@ flowchart TD
 ```
 
 ### sanitize_component()
-This routine owns one focused piece of the file's behavior. It appears near line 45.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles record derived output into collections, populate output fields or accumulators, assemble tree or artifact structures, and iterate over the active collection.
+Inside the body, it mainly handles store local findings, fill local output fields, connect local structures, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- record derived output into collections
-- populate output fields or accumulators
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
+- store local findings
+- fill local output fields
+- connect local structures
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 2 - sanitize_component() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of codebase_output_writer.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for codebase_output_writer.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["sanitize_component()"]
-    N1["Enter sanitize_component()"]
-    N2["Record output"]
+    N1["Execute file-local step"]
+    N2["Store local result"]
     N3["Populate outputs"]
-    N4["Assemble tree"]
+    N4["Connect local nodes"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -252,49 +251,49 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of codebase_output_writer.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for codebase_output_writer.cpp after setup.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
+    N0["Return local result"]
     N1["Return"]
     N0 --> N1
 ```
 
 ### write_codebase_outputs()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 72.
+This routine materializes internal state into an output format that later stages can consume.
 
-Inside the body, it mainly handles render or serialize the result, populate output fields or accumulators, write generated artifacts, and inspect or prepare filesystem paths.
+Inside the body, it mainly handles render or serialize the result, fill local output fields, write generated artifacts, and inspect or prepare filesystem paths.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - render or serialize the result
-- populate output fields or accumulators
+- fill local output fields
 - write generated artifacts
 - inspect or prepare filesystem paths
 - render text or HTML views
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 
 ### Block 3 - write_codebase_outputs() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of codebase_output_writer.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for codebase_output_writer.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["write_codebase_outputs()"]
-    N1["Enter write_codebase_outputs()"]
+    N1["Execute file-local step"]
     N2["Render output"]
     N3["Populate outputs"]
     N4["Write artifacts"]
     N5["Prepare paths"]
     N6["Render views"]
-    N7["Branch condition"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -306,12 +305,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of codebase_output_writer.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for codebase_output_writer.cpp after setup.
 Why this is separate: codebase_output_writer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
+    N0["Return local result"]
     N1["Return"]
     N0 --> N1
 ```

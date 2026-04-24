@@ -9,21 +9,21 @@ The flow is intentionally split into smaller slices so the major intent of state
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of statement_program_flow.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for statement_program_flow.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: statement_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Checks before moving on"]
-    N2["Enter is_type_keyword()"]
+    N2["Check type keyword"]
     N3["Look up entries"]
-    N4["Return result"]
-    N5["Supporting steps"]
-    N6["Enter detect_statement_kind()"]
+    N4["Return local result"]
+    N5["Run helper branch"]
+    N6["Handle detect statement kind"]
     N7["Look up entries"]
     N8["Loop collection"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -35,21 +35,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of statement_program_flow.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for statement_program_flow.cpp after setup.
 Why this is separate: statement_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Branch condition"]
+    N0["Check local condition"]
     N1["Continue?"]
-    N2["Stop path"]
-    N3["Return result"]
+    N2["Return early path"]
+    N3["Return local result"]
     N4["Checks before moving on"]
-    N5["Enter is_class_or_struct_signature()"]
+    N5["Execute file-local step"]
     N6["Register classes"]
     N7["Look up entries"]
-    N8["Tokenize input"]
-    N9["Branch condition"]
+    N8["Read structured tokens"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -61,20 +61,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in statement_program_flow.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how statement_program_flow.cpp passes prepared local state into its next operation.
 Why this is separate: statement_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["Enter is_function_signature()"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Execute file-local step"]
     N4["Look up entries"]
-    N5["Tokenize input"]
+    N5["Read structured tokens"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -87,21 +87,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in statement_program_flow.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in statement_program_flow.cpp and its immediate result.
 Why this is separate: statement_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
-    N2["Enter is_class_declaration_node()"]
+    N0["Return early path"]
+    N1["Return local result"]
+    N2["Check class declaration node"]
     N3["Register classes"]
     N4["Inspect declarations"]
     N5["Continue?"]
-    N6["Stop path"]
-    N7["Branch condition"]
+    N6["Return early path"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -113,18 +113,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 5 - Follow-Through Stage
-Quick summary: This slice follows the next working stage of statement_program_flow.cpp after the earlier decisions have narrowed the path.
+#### Slice 5 - Continue Local Work
+Quick summary: This slice shows the next local work stage in statement_program_flow.cpp after earlier checks.
 Why this is separate: statement_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["Enter is_global_function_declaration_node()"]
+    N0["Return local result"]
+    N1["Check global function declaration node"]
     N2["Inspect declarations"]
     N3["Continue?"]
-    N4["Stop path"]
-    N5["Return result"]
-    N6["End"]
+    N4["Return early path"]
+    N5["Return local result"]
+    N6["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

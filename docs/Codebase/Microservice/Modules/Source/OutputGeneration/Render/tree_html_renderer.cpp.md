@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Output-and-Rendering/tree_html_renderer.cpp
 - Kind: C++ implementation
-- Lines: 95
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of tree_
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of tree_html_renderer.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for tree_html_renderer.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Small preparation steps"]
-    N2["Enter escape_html()"]
+    N2["Escape html"]
     N3["Normalize text"]
-    N4["Record output"]
+    N4["Store local result"]
     N5["Populate outputs"]
-    N6["Assemble tree"]
+    N6["Connect local nodes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Return result"]
+    N8["More local items?"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,21 +49,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of tree_html_renderer.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for tree_html_renderer.cpp after setup.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Building the working picture"]
-    N1["Enter write_node_html()"]
+    N0["Prepare local model"]
+    N1["Write node html"]
     N2["Render output"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     N4["Compute hashes"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -76,21 +75,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in tree_html_renderer.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how tree_html_renderer.cpp passes prepared local state into its next operation.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Leave write_node_html()"]
-    N1["Enter render_tree_html()"]
+    N0["Return from local helper"]
+    N1["Render tree html"]
     N2["Render output"]
     N3["Populate outputs"]
-    N4["Assemble tree"]
+    N4["Connect local nodes"]
     N5["Serialize report"]
-    N6["Branch condition"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -102,12 +101,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in tree_html_renderer.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in tree_html_renderer.cpp and its immediate result.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 
 ## Reading Map
@@ -123,41 +122,41 @@ It leans on nearby contracts or tools such as Output-and-Rendering/tree_html_ren
 
 ### Small Preparation Steps
 These steps clean up names, text, or small values before the larger work begins.
-- escape_html() (line 7): Normalize or format text values, record derived output into collections, and populate output fields or accumulators
+- escape_html(): Normalize or format text values, store local findings, and fill local output fields
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- write_node_html() (line 27): Render or serialize the result, assemble tree or artifact structures, and compute hash metadata
-- render_tree_html() (line 51): Render or serialize the result, populate output fields or accumulators, and assemble tree or artifact structures
+- write_node_html(): Render or serialize the result, connect local structures, and compute hash metadata
+- render_tree_html(): Render or serialize the result, fill local output fields, and connect local structures
 
 ## Function Stories
 
 ### escape_html()
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 7.
+This helper reshapes small pieces of data so the surrounding code can stay readable.
 
-Inside the body, it mainly handles normalize or format text values, record derived output into collections, populate output fields or accumulators, and assemble tree or artifact structures.
+Inside the body, it mainly handles normalize or format text values, store local findings, fill local output fields, and connect local structures.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
 - normalize or format text values
-- record derived output into collections
-- populate output fields or accumulators
-- assemble tree or artifact structures
-- iterate over the active collection
+- store local findings
+- fill local output fields
+- connect local structures
+- walk the local collection
 
 Flow:
 ```mermaid
 flowchart TD
     Start["escape_html()"]
-    N0["Enter escape_html()"]
+    N0["Escape html"]
     N1["Normalize text"]
-    N2["Record output"]
+    N2["Store local result"]
     N3["Populate outputs"]
-    N4["Assemble tree"]
+    N4["Connect local nodes"]
     N5["Loop collection"]
     L5{"More items?"}
-    N6["Return result"]
+    N6["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -172,37 +171,37 @@ flowchart TD
 ```
 
 ### write_node_html()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 27.
+This routine materializes internal state into an output format that later stages can consume.
 
-Inside the body, it mainly handles render or serialize the result, assemble tree or artifact structures, compute hash metadata, and iterate over the active collection.
+Inside the body, it mainly handles render or serialize the result, connect local structures, compute hash metadata, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path.
 
 What it does:
 - render or serialize the result
-- assemble tree or artifact structures
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 2 - write_node_html() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of tree_html_renderer.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for tree_html_renderer.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["write_node_html()"]
-    N1["Enter write_node_html()"]
+    N1["Write node html"]
     N2["Render output"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     N4["Compute hashes"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -214,8 +213,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of tree_html_renderer.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for tree_html_renderer.cpp after setup.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -225,37 +224,37 @@ flowchart TD
 ```
 
 ### render_tree_html()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 51.
+This routine materializes internal state into an output format that later stages can consume.
 
-Inside the body, it mainly handles render or serialize the result, populate output fields or accumulators, assemble tree or artifact structures, and serialize report content.
+Inside the body, it mainly handles render or serialize the result, fill local output fields, connect local structures, and serialize report content.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - render or serialize the result
-- populate output fields or accumulators
-- assemble tree or artifact structures
+- fill local output fields
+- connect local structures
 - serialize report content
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 
 ### Block 3 - render_tree_html() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of tree_html_renderer.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for tree_html_renderer.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["render_tree_html()"]
-    N1["Enter render_tree_html()"]
+    N1["Render tree html"]
     N2["Render output"]
     N3["Populate outputs"]
-    N4["Assemble tree"]
+    N4["Connect local nodes"]
     N5["Serialize report"]
-    N6["Branch condition"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -267,8 +266,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of tree_html_renderer.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for tree_html_renderer.cpp after setup.
 Why this is separate: tree_html_renderer.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD

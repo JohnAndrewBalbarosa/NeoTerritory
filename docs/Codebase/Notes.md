@@ -2,7 +2,6 @@
 
 - Source: Notes
 - Kind: Project note
-- Lines: 1
 
 ## Story
 ### What Happens Here
@@ -21,11 +20,11 @@ Keeps loose repository-level notes outside the formal docs set.
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Enter the file through its owning module"]
     N1["Apply the local responsibility declared by"]
     N2["Hand back"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

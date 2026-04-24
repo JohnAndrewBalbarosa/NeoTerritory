@@ -1,8 +1,7 @@
-﻿# singleton_pattern_logic.hpp
+# singleton_pattern_logic.hpp
 
 - Source: Microservice/Modules/Header/Creational/Singleton/singleton_pattern_logic.hpp
 - Kind: C++ header
-- Lines: 14
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Declares creational-pattern detection and transform interfaces. The main surface
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Promises this file makes"]
-    N1["Enter build_singleton_pattern_tree()"]
+    N1["Create singleton pattern tree"]
     N2["Declare call"]
     N3["Defer body"]
-    N4["Leave build_singleton_pattern_tree()"]
-    End["End"]
+    N4["Return from local helper"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -49,12 +48,12 @@ It leans on nearby contracts or tools such as creational_broken_tree.hpp and par
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- build_singleton_pattern_tree() (line 11): Declare a callable contract and let implementation files define the runtime body
+- build_singleton_pattern_tree(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### build_singleton_pattern_tree()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 11.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -66,7 +65,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["build_singleton_pattern_tree()"]
-    N0["Enter build_singleton_pattern_tree()"]
+    N0["Create singleton pattern tree"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

@@ -2,7 +2,6 @@
 
 - Source: Backend/src/controllers/authController.js
 - Kind: JavaScript module
-- Lines: 49
 
 ## Story
 ### What Happens Here
@@ -21,16 +20,16 @@ Implements HTTP endpoint behavior after routing and before response serializatio
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Finding what matters"]
-    N2["Enter register()"]
+    N0["Begin local flow"]
+    N1["Collect local facts"]
+    N2["Validate registration request"]
     N3["Connect data"]
     N4["Validate branch"]
     N5["Continue?"]
-    N6["Stop path"]
+    N6["Return early path"]
     N7["Use SQLite"]
     N8["Check credentials"]
     N9["Continue?"]
@@ -45,17 +44,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
-    N2["Return result"]
-    N3["Supporting steps"]
-    N4["Enter login()"]
+    N0["Return early path"]
+    N1["Return local result"]
+    N2["Return local result"]
+    N3["Run helper branch"]
+    N4["Validate login request"]
     N5["Validate branch"]
     N6["Continue?"]
-    N7["Stop path"]
+    N7["Return early path"]
     N8["Use SQLite"]
     N9["Check credentials"]
     N0 --> N1
@@ -69,17 +68,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 3
+#### Slice 3 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
+    N1["Return early path"]
     N2["Verify JWT"]
     N3["Continue?"]
-    N4["Stop path"]
-    N5["Return result"]
-    N6["Return result"]
-    N7["End"]
+    N4["Return early path"]
+    N5["Return local result"]
+    N6["Return local result"]
+    N7["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -102,16 +101,16 @@ It leans on nearby contracts or tools such as bcrypt, jsonwebtoken, ../db/databa
 
 ### Finding What Matters
 These steps pick out the facts, traces, and relationships that later stages need.
-- register() (line 5): Connect discovered data back into the shared model, validate conditions and branch on failures, and query or update SQLite state
+- register(): Connect discovered data back into the shared model, validate conditions and branch on failures, and query or update SQLite state
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- login() (line 25): Validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials
+- login(): Validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials
 
 ## Function Stories
 
 ### register()
-This routine connects discovered items back into the broader model owned by the file. It appears near line 5.
+This routine connects discovered items back into the broader model owned by the file.
 
 Inside the body, it mainly handles connect discovered data back into the shared model, validate conditions and branch on failures, query or update SQLite state, and hash or compare credentials.
 
@@ -127,19 +126,19 @@ What it does:
 Flow:
 
 ### Block 2 - register() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["register()"]
-    N1["Enter register()"]
+    N1["Validate registration request"]
     N2["Connect data"]
     N3["Validate branch"]
     N4["Continue?"]
-    N5["Stop path"]
+    N5["Return early path"]
     N6["Use SQLite"]
     N7["Check credentials"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -151,18 +150,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["Return result"]
+    N0["Return local result"]
+    N1["Return local result"]
     N2["Return"]
     N0 --> N1
     N1 --> N2
 ```
 
 ### login()
-This routine owns one focused piece of the file's behavior. It appears near line 25.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures, query or update SQLite state, hash or compare credentials, and sign or verify JWT tokens.
 
@@ -178,18 +177,18 @@ What it does:
 Flow:
 
 ### Block 3 - login() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["login()"]
-    N1["Enter login()"]
+    N1["Validate login request"]
     N2["Validate branch"]
     N3["Continue?"]
-    N4["Stop path"]
+    N4["Return early path"]
     N5["Use SQLite"]
     N6["Check credentials"]
     N7["Continue?"]
-    N8["Stop path"]
+    N8["Return early path"]
     N9["Verify JWT"]
     N0 --> N1
     N1 --> N2
@@ -202,13 +201,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["Return result"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Return local result"]
     N4["Return"]
     N0 --> N1
     N1 --> N2

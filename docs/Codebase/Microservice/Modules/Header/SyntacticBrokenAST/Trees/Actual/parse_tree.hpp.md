@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree.hpp
 - Kind: C++ header
-- Lines: 82
 
 ## Story
 ### What Happens Here
@@ -34,13 +33,13 @@ It leans on nearby contracts or tools such as Pipeline-Contracts/analysis_contex
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- ParseTreeNode (line 11): Declare a shared type and expose the compile-time contract
-- LineHashTrace (line 21): Declare a shared type and expose the compile-time contract
-- FactoryInvocationTrace (line 38): Declare a shared type and expose the compile-time contract
-- ParseTreeBundle (line 50): Declare a shared type and expose the compile-time contract
-- build_cpp_parse_trees() (line 71): Declare a callable contract and let implementation files define the runtime body
-- parse_tree_to_text() (line 78): Declare a callable contract and let implementation files define the runtime body
-- parse_tree_to_html() (line 79): Declare a callable contract and let implementation files define the runtime body
+- ParseTreeNode: Declare a shared type and expose the compile-time contract
+- LineHashTrace: Declare a shared type and expose the compile-time contract
+- FactoryInvocationTrace: Declare a shared type and expose the compile-time contract
+- ParseTreeBundle: Declare a shared type and expose the compile-time contract
+- build_cpp_parse_trees(): Declare a callable contract and let implementation files define the runtime body
+- parse_tree_to_text(): Declare a callable contract and let implementation files define the runtime body
+- parse_tree_to_html(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/Internal/node_path.cpp
 - Kind: C++ implementation
-- Lines: 50
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of node_
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of node_path.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for node_path.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: node_path.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter node_at_path()"]
-    N3["Assemble tree"]
+    N0["Begin local flow"]
+    N1["Prepare local model"]
+    N2["Execute file-local step"]
+    N3["Connect local nodes"]
     N4["Loop collection"]
-    N5["More items?"]
-    N6["Branch condition"]
+    N5["More local items?"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of node_path.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for node_path.cpp after setup.
 Why this is separate: node_path.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter append_node_at_path()"]
-    N1["Record output"]
-    N2["Assemble tree"]
+    N0["Execute file-local step"]
+    N1["Store local result"]
+    N2["Connect local nodes"]
     N3["Compute hashes"]
-    N4["Branch condition"]
+    N4["Check local condition"]
     N5["Continue?"]
-    N6["Stop path"]
-    N7["Return result"]
-    N8["End"]
+    N6["Return early path"]
+    N7["Return local result"]
+    N8["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,35 +86,35 @@ It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, 
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- node_at_path() (line 8): Assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions
-- append_node_at_path() (line 35): Record derived output into collections, assemble tree or artifact structures, and compute hash metadata
+- node_at_path(): connect local structures, walk the local collection, and branch on local conditions
+- append_node_at_path(): store local findings, connect local structures, and compute hash metadata
 
 ## Function Stories
 
 ### node_at_path()
-This routine owns one focused piece of the file's behavior. It appears near line 8.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles assemble tree or artifact structures, iterate over the active collection, and branch on runtime conditions.
+Inside the body, it mainly handles connect local structures, walk the local collection, and branch on local conditions.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- assemble tree or artifact structures
-- iterate over the active collection
-- branch on runtime conditions
+- connect local structures
+- walk the local collection
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["node_at_path()"]
-    N0["Enter node_at_path()"]
-    N1["Assemble tree"]
+    N0["Execute file-local step"]
+    N1["Connect local nodes"]
     N2["Loop collection"]
     L2{"More items?"}
-    N3["Branch condition"]
+    N3["Check local condition"]
     D3{"Continue?"}
-    R3["Stop path"]
-    N4["Return result"]
+    R3["Return early path"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -131,30 +130,30 @@ flowchart TD
 ```
 
 ### append_node_at_path()
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 35.
+This helper reshapes small pieces of data so the surrounding code can stay readable.
 
-Inside the body, it mainly handles record derived output into collections, assemble tree or artifact structures, compute hash metadata, and branch on runtime conditions.
+Inside the body, it mainly handles store local findings, connect local structures, compute hash metadata, and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- record derived output into collections
-- assemble tree or artifact structures
+- store local findings
+- connect local structures
 - compute hash metadata
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["append_node_at_path()"]
-    N0["Enter append_node_at_path()"]
-    N1["Record output"]
-    N2["Assemble tree"]
+    N0["Execute file-local step"]
+    N1["Store local result"]
+    N2["Connect local nodes"]
     N3["Compute hashes"]
-    N4["Branch condition"]
+    N4["Check local condition"]
     D4{"Continue?"}
-    R4["Stop path"]
-    N5["Return result"]
+    R4["Return early path"]
+    N5["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

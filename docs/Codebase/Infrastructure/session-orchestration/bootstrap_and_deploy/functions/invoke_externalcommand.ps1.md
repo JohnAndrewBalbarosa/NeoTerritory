@@ -4,25 +4,25 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Invoke-ExternalCommand()
-This routine owns one focused piece of the file's behavior. It appears near line 136.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles report status or failures to the caller and branch on runtime conditions.
+Inside the body, it mainly handles report status or failures to the caller and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path.
 
 What it does:
 - report status or failures to the caller
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["Invoke-ExternalCommand()"]
-    N0["Enter invoke-externalcommand()"]
+    N0["Handle external command"]
     N1["Report status"]
-    N2["Branch condition"]
+    N2["Check local condition"]
     D2{"Continue?"}
-    R2["Stop path"]
+    R2["Return early path"]
     N3["Hand back"]
     End["Return"]
     Start --> N0

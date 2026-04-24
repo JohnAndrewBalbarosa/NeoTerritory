@@ -1,8 +1,7 @@
-﻿# database.js
+# database.js
 
 - Source: Backend/src/db/database.js
 - Kind: JavaScript module
-- Lines: 6
 
 ## Story
 ### What Happens Here
@@ -21,11 +20,11 @@ Owns SQLite connectivity and schema initialization. The main surface area is eas
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Enter the persistence helper"]
-    N1["Perform the file's database-focused responsibility"]
-    N2["Return result"]
-    End["End"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

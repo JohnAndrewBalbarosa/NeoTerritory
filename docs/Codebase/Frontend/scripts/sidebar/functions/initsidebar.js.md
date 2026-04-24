@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### initSidebar()
-This routine prepares or drives one of the main execution paths in the file. It appears near line 4.
+This routine prepares or drives one of the main execution paths in the file.
 
 Inside the body, it mainly handles drive the main execution path, validate conditions and branch on failures, update DOM state, and bind browser event listeners.
 
@@ -22,15 +22,15 @@ Flow:
 
 
 ### Block 2 - initSidebar() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["initSidebar()"]
-    N1["Enter initsidebar()"]
+    N1["Initialize sidebar"]
     N2["Drive path"]
     N3["Validate branch"]
     N4["Continue?"]
-    N5["Stop path"]
+    N5["Return early path"]
     N6["Update DOM"]
     N7["Bind events"]
     N8["Save state"]
@@ -46,7 +46,7 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Hand back"]

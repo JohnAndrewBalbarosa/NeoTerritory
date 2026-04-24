@@ -1,8 +1,7 @@
-﻿# fileUtils.js
+# fileUtils.js
 
 - Source: Backend/src/utils/fileUtils.js
 - Kind: JavaScript module
-- Lines: 21
 
 ## Story
 ### What Happens Here
@@ -21,16 +20,16 @@ Holds small reusable backend helpers. The main surface area is easiest to track 
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Supporting steps"]
-    N1["Enter sanitizefilename()"]
+    Start["Begin local flow"]
+    N0["Run helper branch"]
+    N1["Sanitize filename"]
     N2["Carry out sanitize filename"]
-    N3["Return result"]
-    N4["Enter uniquefilename()"]
+    N3["Return local result"]
+    N4["Handle unique filename"]
     N5["Move files"]
     L5{"More items?"}
-    N6["Return result"]
-    End["End"]
+    N6["Return local result"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -56,13 +55,13 @@ It leans on nearby contracts or tools such as path and fs.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- sanitizeFilename() (line 3): Owns a focused local responsibility.
-- uniqueFilename() (line 7): Move or write filesystem artifacts
+- sanitizeFilename(): Owns a focused local responsibility.
+- uniqueFilename(): Move or write filesystem artifacts
 
 ## Function Stories
 
 ### sanitizeFilename()
-This routine owns one focused piece of the file's behavior. It appears near line 3.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -73,9 +72,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["sanitizeFilename()"]
-    N0["Enter sanitizefilename()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Sanitize filename"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -84,7 +83,7 @@ flowchart TD
 ```
 
 ### uniqueFilename()
-This routine owns one focused piece of the file's behavior. It appears near line 7.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles move or write filesystem artifacts.
 
@@ -97,10 +96,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["uniqueFilename()"]
-    N0["Enter uniquefilename()"]
+    N0["Handle unique filename"]
     N1["Move files"]
     L1{"More items?"}
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

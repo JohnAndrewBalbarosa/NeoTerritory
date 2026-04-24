@@ -9,21 +9,21 @@ The flow is intentionally split into smaller slices so the major intent of line_
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of line_program_flow.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for line_program_flow.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: line_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Reading the input"]
-    N2["Enter tokenize_text()"]
+    N0["Begin local flow"]
+    N1["Read local input"]
+    N2["Execute file-local step"]
     N3["Split text"]
-    N4["Record output"]
+    N4["Store local result"]
     N5["Clean text"]
-    N6["Assemble tree"]
+    N6["Connect local nodes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -35,21 +35,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of line_program_flow.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for line_program_flow.cpp after setup.
 Why this is separate: line_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
+    N1["Return early path"]
+    N2["Return local result"]
     N3["Small preparation steps"]
-    N4["Enter join_tokens()"]
+    N4["Join tokens"]
     N5["Populate outputs"]
     N6["Serialize report"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -61,20 +61,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in line_program_flow.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how line_program_flow.cpp passes prepared local state into its next operation.
 Why this is separate: line_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
-    N3["Enter split_lines()"]
+    N1["Return early path"]
+    N2["Return local result"]
+    N3["Split line s"]
     N4["Split text"]
     N5["Read lines"]
-    N6["More items?"]
-    N7["Record output"]
-    N8["Assemble tree"]
+    N6["More local items?"]
+    N7["Store local result"]
+    N8["Connect local nodes"]
     N9["Loop collection"]
     N0 --> N1
     N1 --> N2
@@ -87,20 +87,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in line_program_flow.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in line_program_flow.cpp and its immediate result.
 Why this is separate: line_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["More items?"]
-    N1["Branch condition"]
+    N0["More local items?"]
+    N1["Check local condition"]
     N2["Continue?"]
-    N3["Stop path"]
-    N4["Return result"]
-    N5["Supporting steps"]
-    N6["Enter file_basename()"]
+    N3["Return early path"]
+    N4["Return local result"]
+    N5["Run helper branch"]
+    N6["Handle file basename"]
     N7["Clean text"]
-    N8["Branch condition"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -113,20 +113,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 5 - Follow-Through Stage
-Quick summary: This slice follows the next working stage of line_program_flow.cpp after the earlier decisions have narrowed the path.
+#### Slice 5 - Continue Local Work
+Quick summary: This slice shows the next local work stage in line_program_flow.cpp after earlier checks.
 Why this is separate: line_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
-    N2["Enter include_target_from_line()"]
+    N0["Return early path"]
+    N1["Return local result"]
+    N2["Execute file-local step"]
     N3["Read lines"]
-    N4["More items?"]
-    N5["Tokenize input"]
+    N4["More local items?"]
+    N5["Read structured tokens"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -139,14 +139,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 6 - Late-Stage Checks
-Quick summary: This slice highlights later checks and continuation steps in line_program_flow.cpp before the run approaches its end.
+#### Slice 6 - Run Late Checks
+Quick summary: This slice shows the later local checks in line_program_flow.cpp before return handling.
 Why this is separate: line_program_flow.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
-    N2["End"]
+    N0["Return early path"]
+    N1["Return local result"]
+    N2["Return from local flow"]
     N0 --> N1
     N1 --> N2
 ```

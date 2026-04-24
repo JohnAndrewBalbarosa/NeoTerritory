@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### join_tokens()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 41.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["join_tokens()"]
-    N0["Enter join_tokens()"]
+    N0["Join tokens"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### class_name_from_signature()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 14.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["class_name_from_signature()"]
-    N0["Enter class_name_from_signature()"]
+    N0["Handle class name from signature"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

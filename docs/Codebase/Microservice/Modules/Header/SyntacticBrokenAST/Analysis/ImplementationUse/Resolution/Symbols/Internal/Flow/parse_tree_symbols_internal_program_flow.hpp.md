@@ -9,21 +9,21 @@ The flow is intentionally split into smaller slices so the major intent of parse
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of parse_tree_symbols_internal_program_flow.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for parse_tree_symbols_internal_program_flow.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: parse_tree_symbols_internal_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
-    N2["Enter trim()"]
+    N2["Handle trim"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave trim()"]
-    N6["Enter starts_with()"]
+    N5["Return from local helper"]
+    N6["Execute file-local step"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave starts_with()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -35,20 +35,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of parse_tree_symbols_internal_program_flow.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for parse_tree_symbols_internal_program_flow.hpp after setup.
 Why this is separate: parse_tree_symbols_internal_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter split_words()"]
+    N0["Split w or d s"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave split_words()"]
-    N4["Enter class_name_from_signature()"]
+    N3["Return from local helper"]
+    N4["Handle class name from signature"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave class_name_from_signature()"]
-    N8["Enter function_name_from_signature()"]
+    N7["Return from local helper"]
+    N8["Handle function name from signature"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -61,21 +61,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in parse_tree_symbols_internal_program_flow.hpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how parse_tree_symbols_internal_program_flow.hpp passes prepared local state into its next operation.
 Why this is separate: parse_tree_symbols_internal_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave function_name_from_signature()"]
-    N2["Enter function_parameter_hint_from_signature()"]
+    N1["Return from local helper"]
+    N2["Execute file-local step"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave function_parameter_hint_from_signature()"]
-    N6["Enter build_function_key()"]
+    N5["Return from local helper"]
+    N6["Create function key"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave build_function_key()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,20 +87,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in parse_tree_symbols_internal_program_flow.hpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in parse_tree_symbols_internal_program_flow.hpp and its immediate result.
 Why this is separate: parse_tree_symbols_internal_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter is_main_function_name()"]
+    N0["Check main function name"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave is_main_function_name()"]
-    N4["Enter is_class_block()"]
+    N3["Return from local helper"]
+    N4["Check class block"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave is_class_block()"]
-    N8["Enter is_function_block()"]
+    N7["Return from local helper"]
+    N8["Check function block"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -113,21 +113,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 5 - Follow-Through Stage
-Quick summary: This slice follows the next working stage of parse_tree_symbols_internal_program_flow.hpp after the earlier decisions have narrowed the path.
+#### Slice 5 - Continue Local Work
+Quick summary: This slice shows the next local work stage in parse_tree_symbols_internal_program_flow.hpp after earlier checks.
 Why this is separate: parse_tree_symbols_internal_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave is_function_block()"]
-    N2["Enter is_candidate_usage_node()"]
+    N1["Return from local helper"]
+    N2["Check candidate usage node"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave is_candidate_usage_node()"]
-    N6["Enter extract_return_candidate_name()"]
+    N5["Return from local helper"]
+    N6["Extract return candidate name"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave extract_return_candidate_name()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -139,16 +139,16 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 6 - Late-Stage Checks
-Quick summary: This slice highlights later checks and continuation steps in parse_tree_symbols_internal_program_flow.hpp before the run approaches its end.
+#### Slice 6 - Run Late Checks
+Quick summary: This slice shows the later local checks in parse_tree_symbols_internal_program_flow.hpp before return handling.
 Why this is separate: parse_tree_symbols_internal_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter build_symbol_tables_with_builder()"]
+    N0["Create symbol tables with builder"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave build_symbol_tables_with_builder()"]
-    N4["End"]
+    N3["Return from local helper"]
+    N4["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### ParseTree Internal Contracts
-These documents explain the local implementation by covering Declares the public interfaces and shared data types for the generic parse and analysis pipeline..
+These documents explain the local implementation by covering Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 - parse_tree_hash_links_internal.hpp.md : Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 - parse_tree_internal.hpp.md : Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
 

@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/dependency_utils.cpp
 - Kind: C++ implementation
-- Lines: 46
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of depen
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of dependency_utils.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for dependency_utils.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: dependency_utils.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Finding what matters"]
-    N2["Enter collect_dependency_class_nodes()"]
+    N0["Begin local flow"]
+    N1["Collect local facts"]
+    N2["Collect dependency class nodes"]
     N3["Collect facts"]
     N4["Register classes"]
-    N5["Record output"]
+    N5["Store local result"]
     N6["Populate outputs"]
-    N7["Tokenize input"]
-    N8["Assemble tree"]
-    N9["Return result"]
+    N7["Read structured tokens"]
+    N8["Connect local nodes"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of dependency_utils.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for dependency_utils.cpp after setup.
 Why this is separate: dependency_utils.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter collect_dependency_function_nodes()"]
+    N0["Collect dependency function nodes"]
     N1["Collect facts"]
-    N2["Record output"]
+    N2["Store local result"]
     N3["Populate outputs"]
-    N4["Tokenize input"]
-    N5["Assemble tree"]
+    N4["Read structured tokens"]
+    N5["Connect local nodes"]
     N6["Compute hashes"]
-    N7["Return result"]
-    N8["End"]
+    N7["Return local result"]
+    N8["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,44 +86,44 @@ It leans on nearby contracts or tools such as parse_tree_dependency_utils.hpp, p
 
 ### Finding What Matters
 These steps pick out the facts, traces, and relationships that later stages need.
-- collect_dependency_class_nodes() (line 6): Collect derived facts for later stages, inspect or register class-level information, and record derived output into collections
-- collect_dependency_function_nodes() (line 26): Collect derived facts for later stages, record derived output into collections, and populate output fields or accumulators
+- collect_dependency_class_nodes(): Collect derived facts for later stages, inspect or register class-level information, and store local findings
+- collect_dependency_function_nodes(): Collect derived facts for later stages, store local findings, and fill local output fields
 
 ## Function Stories
 
 ### collect_dependency_class_nodes()
-This routine connects discovered items back into the broader model owned by the file. It appears near line 6.
+This routine connects discovered items back into the broader model owned by the file.
 
-Inside the body, it mainly handles collect derived facts for later stages, inspect or register class-level information, record derived output into collections, and populate output fields or accumulators.
+Inside the body, it mainly handles collect derived facts for later stages, inspect or register class-level information, store local findings, and fill local output fields.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
 - collect derived facts for later stages
 - inspect or register class-level information
-- record derived output into collections
-- populate output fields or accumulators
-- parse or tokenize input text
-- assemble tree or artifact structures
+- store local findings
+- fill local output fields
+- read local tokens
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
+- walk the local collection
 
 Flow:
 
 ### Block 2 - collect_dependency_class_nodes() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of dependency_utils.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for dependency_utils.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: dependency_utils.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["collect_dependency_class_nodes()"]
-    N1["Enter collect_dependency_class_nodes()"]
+    N1["Collect dependency class nodes"]
     N2["Collect facts"]
     N3["Register classes"]
-    N4["Record output"]
+    N4["Store local result"]
     N5["Populate outputs"]
-    N6["Tokenize input"]
-    N7["Assemble tree"]
+    N6["Read structured tokens"]
+    N7["Connect local nodes"]
     N8["Compute hashes"]
     N9["Loop collection"]
     N0 --> N1
@@ -138,52 +137,52 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of dependency_utils.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for dependency_utils.cpp after setup.
 Why this is separate: dependency_utils.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["More items?"]
-    N1["Return result"]
+    N0["More local items?"]
+    N1["Return local result"]
     N2["Return"]
     N0 --> N1
     N1 --> N2
 ```
 
 ### collect_dependency_function_nodes()
-This routine connects discovered items back into the broader model owned by the file. It appears near line 26.
+This routine connects discovered items back into the broader model owned by the file.
 
-Inside the body, it mainly handles collect derived facts for later stages, record derived output into collections, populate output fields or accumulators, and parse or tokenize input text.
+Inside the body, it mainly handles collect derived facts for later stages, store local findings, fill local output fields, and read local tokens.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
 - collect derived facts for later stages
-- record derived output into collections
-- populate output fields or accumulators
-- parse or tokenize input text
-- assemble tree or artifact structures
+- store local findings
+- fill local output fields
+- read local tokens
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
+- walk the local collection
 
 Flow:
 
 ### Block 3 - collect_dependency_function_nodes() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of dependency_utils.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for dependency_utils.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: dependency_utils.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["collect_dependency_function_nodes()"]
-    N1["Enter collect_dependency_function_nodes()"]
+    N1["Collect dependency function nodes"]
     N2["Collect facts"]
-    N3["Record output"]
+    N3["Store local result"]
     N4["Populate outputs"]
-    N5["Tokenize input"]
-    N6["Assemble tree"]
+    N5["Read structured tokens"]
+    N6["Connect local nodes"]
     N7["Compute hashes"]
     N8["Loop collection"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -195,12 +194,12 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of dependency_utils.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for dependency_utils.cpp after setup.
 Why this is separate: dependency_utils.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
+    N0["Return local result"]
     N1["Return"]
     N0 --> N1
 ```

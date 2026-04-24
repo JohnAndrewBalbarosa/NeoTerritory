@@ -2,7 +2,6 @@
 
 - Source: Backend/src/middleware/errorHandler.js
 - Kind: JavaScript module
-- Lines: 12
 
 ## Story
 ### What Happens Here
@@ -21,15 +20,15 @@ Applies request-shaping concerns such as auth, uploads, and error handling. The 
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Supporting steps"]
-    N1["Enter errorhandler()"]
+    Start["Begin local flow"]
+    N0["Run helper branch"]
+    N1["Handle error handler"]
     N2["Validate branch"]
     D2{"Continue?"}
-    R2["Stop path"]
-    N3["Return result"]
-    N4["Return result"]
-    End["End"]
+    R2["Return early path"]
+    N3["Return local result"]
+    N4["Return local result"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -52,12 +51,12 @@ Names worth recognizing while reading: errorHandler.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- errorHandler() (line 1): Validate conditions and branch on failures and return the HTTP response
+- errorHandler(): Validate conditions and branch on failures and return the HTTP response
 
 ## Function Stories
 
 ### errorHandler()
-This routine owns one focused piece of the file's behavior. It appears near line 1.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures and return the HTTP response.
 
@@ -71,12 +70,12 @@ Flow:
 ```mermaid
 flowchart TD
     Start["errorHandler()"]
-    N0["Enter errorhandler()"]
+    N0["Handle error handler"]
     N1["Validate branch"]
     D1{"Continue?"}
-    R1["Stop path"]
-    N2["Return result"]
-    N3["Return result"]
+    R1["Return early path"]
+    N2["Return local result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

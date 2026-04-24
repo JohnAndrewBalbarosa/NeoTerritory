@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Output-and-Rendering/tree_html_renderer.hpp
 - Kind: C++ header
-- Lines: 17
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Declares the public interfaces and shared data types for the generic parse and a
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Promises this file makes"]
-    N1["Enter render_tree_html()"]
+    N1["Render tree html"]
     N2["Declare call"]
     N3["Defer body"]
-    N4["Leave render_tree_html()"]
-    End["End"]
+    N4["Return from local helper"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -49,12 +48,12 @@ It leans on nearby contracts or tools such as parse_tree.hpp and string.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- render_tree_html() (line 11): Declare a callable contract and let implementation files define the runtime body
+- render_tree_html(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### render_tree_html()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 11.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -66,7 +65,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["render_tree_html()"]
-    N0["Enter render_tree_html()"]
+    N0["Render tree html"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

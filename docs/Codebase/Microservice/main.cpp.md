@@ -1,8 +1,7 @@
-﻿# main.cpp
+# main.cpp
 
 - Source: Microservice/main.cpp
 - Kind: C++ implementation
-- Lines: 10
 
 ## Story
 ### What Happens Here
@@ -21,12 +20,12 @@ Thin executable entrypoint that delegates to the syntactic broken AST runner. Th
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Supporting steps"]
-    N1["Enter main()"]
+    Start["Begin local flow"]
+    N0["Run helper branch"]
+    N1["Handle main"]
     N2["Carry out main"]
-    N3["Return result"]
-    End["End"]
+    N3["Return local result"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -47,12 +46,12 @@ It leans on nearby contracts or tools such as iostream.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- main() (line 5): Owns a focused local responsibility.
+- main(): Owns a focused local responsibility.
 
 ## Function Stories
 
 ### main()
-This routine owns one focused piece of the file's behavior. It appears near line 5.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -63,9 +62,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["main()"]
-    N0["Enter main()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle main"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

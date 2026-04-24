@@ -2,7 +2,6 @@
 
 - Source: Frontend/scripts/api.js
 - Kind: JavaScript module
-- Lines: 179
 
 ## Story
 ### What Happens Here
@@ -21,11 +20,11 @@ Supplies mock data that feeds the current frontend experience.
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Export the mock data structures"]
     N1["Let page scripts read the exported"]
     N2["Render static prototype content without live"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

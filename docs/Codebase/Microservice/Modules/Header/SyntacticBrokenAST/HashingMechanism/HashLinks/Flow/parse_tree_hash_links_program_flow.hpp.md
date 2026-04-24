@@ -9,12 +9,12 @@ The flow is intentionally split into smaller slices so the major intent of parse
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of parse_tree_hash_links_program_flow.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for parse_tree_hash_links_program_flow.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: parse_tree_hash_links_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter nodeancestry"]
     N3["Declare type"]
@@ -35,8 +35,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of parse_tree_hash_links_program_flow.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for parse_tree_hash_links_program_flow.hpp after setup.
 Why this is separate: parse_tree_hash_links_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -61,8 +61,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in parse_tree_hash_links_program_flow.hpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how parse_tree_hash_links_program_flow.hpp passes prepared local state into its next operation.
 Why this is separate: parse_tree_hash_links_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -72,10 +72,10 @@ flowchart TD
     N3["Declare type"]
     N4["Expose contract"]
     N5["Leave HashLinkIndex"]
-    N6["Enter build_parse_tree_hash_links()"]
+    N6["Create parse tree hash links"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave build_parse_tree_hash_links()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,11 +87,11 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in parse_tree_hash_links_program_flow.hpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in parse_tree_hash_links_program_flow.hpp and its immediate result.
 Why this is separate: parse_tree_hash_links_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 
