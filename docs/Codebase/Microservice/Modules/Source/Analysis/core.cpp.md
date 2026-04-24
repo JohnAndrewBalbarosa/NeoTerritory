@@ -15,6 +15,7 @@
 - `Analysis/` decides structural meaning and usage binding.
 - `Trees/` builds declaration-side tree views.
 - `HashingMechanism/` creates propagated identities and lookup chains.
+- `Diffing/` can ask this stage to refresh lexical structure for changed source intervals.
 - `OutputGeneration/` emits downstream artifacts.
 
 ## Major Workflow
@@ -33,6 +34,7 @@ flowchart TD
 ## Handoff
 - Hands to `../Trees/core.cpp.md` once declaration-side structure needs actual, virtual, or broken tree construction.
 - Hands to `../HashingMechanism/core.cpp.md` once usage and structure need stable propagated identities.
+- Serves `../Diffing/core.cpp.md` during interval checks by re-emitting lexical structural signals for changed regions.
 
 ## Local Ownership
 - `Input/` owns source intake and argument-facing entry.

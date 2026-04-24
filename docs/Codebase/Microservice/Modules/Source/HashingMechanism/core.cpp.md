@@ -14,6 +14,7 @@
 ## Why This Stage Is Separate
 - `Trees/` creates the tree shapes.
 - `HashingMechanism/` makes those shapes traceable across scopes and transformed views.
+- `Diffing/` requests scoped hash refresh after partial subtree regeneration.
 - `OutputGeneration/` consumes the resolved bundle after identity and lookup are stable.
 
 ## Major Workflow
@@ -30,6 +31,7 @@ flowchart TD
 ## Handoff
 - Receives tree forms from `../Trees/core.cpp.md`.
 - Hands resolved identities and lookup outputs to `../OutputGeneration/core.cpp.md`.
+- Serves `../Diffing/core.cpp.md` when affected subtree hashes and dependent ancestor hashes need recalculation.
 
 ## Local Ownership
 - `ReverseMerkle/` owns cascading identity construction.
