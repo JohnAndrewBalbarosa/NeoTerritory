@@ -25,6 +25,11 @@ Source/
   HashingMechanism/
     ReverseMerkle/
     HashLinks/
+  Diffing/
+    AffectedNodeLocator/
+    SubtreeComparison/
+    PatternOwnership/
+    RegenerationPlan/
   OutputGeneration/
     UnitTestGeneration/
     DocumentationTagger/
@@ -37,6 +42,7 @@ Source/
 - Structural and pattern analysis: `Analysis/`
 - Rooted tree ownership and class generation: `Trees/`
 - Cascading identity and lookup: `HashingMechanism/`
+- Interval auto-checking and partial subtree regeneration: `Diffing/`
 - Unit-test generation, tagging, reports, and render output: `OutputGeneration/`
 
 ## Boundary

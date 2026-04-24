@@ -16,6 +16,7 @@
 - `Analysis/` decides structure and usage meaning.
 - `Trees/` materializes the rooted branches and class-level subtrees from that structural understanding.
 - `HashingMechanism/` gives those tree nodes propagated identity and reconnectable lookup paths.
+- `Diffing/` asks this stage to locate and regenerate only affected subtrees.
 
 ## Major Workflow
 ```mermaid
@@ -38,6 +39,7 @@ flowchart TD
 ## Handoff
 - Receives structural context from `../Analysis/core.cpp.md`.
 - Hands to `../HashingMechanism/core.cpp.md` when tree nodes need reverse-Merkle identity and hash-link lookup.
+- Serves `../Diffing/core.cpp.md` by exposing affected actual subtree boundaries and virtual-broken equivalents.
 
 ## Local Ownership
 - `MainTree/` owns root and file-node attachment rules.

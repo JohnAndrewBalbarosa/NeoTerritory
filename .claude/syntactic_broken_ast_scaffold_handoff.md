@@ -7,15 +7,32 @@ Do not treat this as a replacement for `CLAUDE.md`. `CLAUDE.md` stays the genera
 ## Intent
 Build only the scaffold for the updated `SyntacticBrokenAST` algorithm.
 
-The scaffold must reflect this model:
-- structural verification happens during lexical analysis
-- actual parse-tree growth is independent from expected-structure verification
-- virtual copy and broken AST are the same detached branch
-- the detached virtual-broken branch grows only while the lexical verifier still matches
-- on the first hard mismatch, stop the detached branch for that class immediately
-- the actual tree continues
-- attach the detached virtual-broken branch only after class success
-- discard the detached branch on class failure
+Claude should focus on control-plane boundaries first, not the final deep algorithm. The goal is to make the codebase ready for strict lexical verification, class-local virtual-broken generation, interval diffing, and partial subtree regeneration.
+
+## Algorithm Model
+
+### Initial Parse And Virtual-Broken Lifecycle
+- Structural verification happens during lexical analysis.
+- Actual parse-tree growth is independent from expected-structure verification.
+- Virtual copy and broken AST are the same detached branch.
+- The detached virtual-broken branch grows only while the lexical verifier still matches.
+- On the first hard mismatch, stop the detached branch for that class immediately.
+- The actual tree continues even after virtual-broken generation stops.
+- Attach the detached virtual-broken branch only after class success.
+- Discard the detached branch on class failure.
+
+### Interval Diffing And Partial Regeneration
+- Every auto-check interval re-runs lexical structural analysis for the changed source region.
+- Line metadata is not the diffing algorithm. It only locates the affected actual-tree node or subtree.
+- Once the affected subtree is known, subtree-level regeneration and comparison begins.
+- If the affected actual subtree has a virtual-broken equivalent, regenerate the virtual subtree first.
+- After virtual regeneration succeeds, compare the regenerated virtual subtree against the equivalent actual parse subtree.
+- Regenerate only the equivalent affected actual nodes, not the whole tree.
+- If the changed actual subtree has no virtual-broken equivalent, regenerate that actual subtree directly.
+- After direct actual-subtree regeneration, recheck whether it now follows an assigned design structure.
+- If it now follows a design structure, create or attach a virtual-broken subtree.
+- Refresh hashes only for affected subtree boundaries and dependent ancestors.
+- Send a regeneration report forward instead of making output generation infer what changed.
 
 ## Read These Docs First
 - `docs/Codebase/Microservice/Modules/Source/main.cpp.md`
@@ -27,190 +44,222 @@ The scaffold must reflect this model:
 - `docs/Codebase/Microservice/Modules/Source/Trees/ClassGeneration/core.cpp.md`
 - `docs/Codebase/Microservice/Modules/Source/Trees/ClassGeneration/VirtualBroken/core.cpp.md`
 - `docs/Codebase/Microservice/Modules/Source/Trees/ClassGeneration/Attachment/core.cpp.md`
+- `docs/Codebase/Microservice/Modules/Source/Diffing/core.cpp.md`
+- `docs/Codebase/Microservice/Modules/Source/Diffing/AffectedNodeLocator/core.cpp.md`
+- `docs/Codebase/Microservice/Modules/Source/Diffing/SubtreeComparison/core.cpp.md`
+- `docs/Codebase/Microservice/Modules/Source/Diffing/PatternOwnership/core.cpp.md`
+- `docs/Codebase/Microservice/Modules/Source/Diffing/RegenerationPlan/core.cpp.md`
+
+## Highest Focus
+Claude should focus most on these areas:
+- Make lexical analysis able to refresh structure for a changed interval.
+- Make parse-tree nodes carry enough location and branch metadata to find affected subtrees.
+- Make the detached virtual-broken lifecycle explicit and class-local.
+- Make diffing produce a regeneration plan instead of directly rewriting everything.
+- Keep actual parse-tree growth independent from virtual-broken verification.
+- Keep compatibility with the current pipeline while the real algorithm is incomplete.
+
+Claude should not focus on these yet:
+- Final pattern rule completeness.
+- Final subtree equivalence algorithm.
+- Final source rewriting.
+- Full output regeneration.
+- Full hash-link rewrite.
 
 ## Scope Rule
 Scaffold only.
 
 That means:
-- add types
-- add state holders
-- add function declarations
-- add minimal control-flow wiring
-- add TODO markers where full behavior still needs deeper implementation
+- Add types.
+- Add state holders.
+- Add function declarations.
+- Add minimal control-flow wiring.
+- Add TODO markers where full behavior still needs deeper implementation.
 
 Do not try to finish every downstream feature in one pass.
 
 ## Primary Edit Set
 
-### 1. Lexical verifier contract
+### 0. Diffing Scaffold Contract
+Files:
+- `Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Diffing/core.hpp`
+- `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/Diffing/core.cpp`
+
+Current scaffold status:
+- `SourceChangeInterval` exists.
+- `LexicalRefreshSummary` exists.
+- `AffectedSubtreeRef` exists.
+- `PatternOwnershipState` exists.
+- `SubtreeDiffResult` exists.
+- `DiffRegenerationPlan` exists.
+- `plan_interval_subtree_regeneration(...)` exists.
+
+What Claude should adjust:
+- Keep this as the main interval diffing entrypoint.
+- Replace file-level placeholder lookup with affected subtree lookup once node line metadata exists.
+- Make lexical refresh call into the lexical analysis hook instead of only returning a placeholder event.
+- Keep this function returning a plan, not performing full regeneration directly.
+- Split helper functions later only if they become too large.
+
+Do not do yet:
+- Do not implement deep semantic diffing.
+- Do not regenerate the whole actual tree by default.
+- Do not move hash-link logic into this file.
+- Do not make output generation depend on raw line ranges.
+
+### 1. Lexical Verifier Contract
 File:
 - `Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.hpp`
 
-Target lines:
-- `10-37`
+Focus anchors:
+- `CrucialClassInfo`
+- `StructuralClassVerifierState`
+- `StructuralAnalysisState`
+- `record_structural_lexical_event`
+- `current_structural_candidate`
 
 What Claude should adjust:
-- extend `CrucialClassInfo` if needed so it can carry verifier-facing pattern metadata
-- extend `StructuralAnalysisState` so it can own per-class verifier state, not only `crucial_classes`
-- add scaffold declarations for:
-  - class-start reset
-  - lexical event feed
-  - verifier state query
-  - class-finalization decision
+- Extend `CrucialClassInfo` only if verifier-facing pattern metadata is needed.
+- Extend `StructuralAnalysisState` so it can own per-class verifier state.
+- Add or expose an interval refresh contract for changed source regions.
+- Add scaffold declarations for class-start reset, lexical event feed, verifier state query, class-finalization decision, and changed-region lexical refresh.
 
 Reason:
-- this is the narrowest existing contract for lexical structural logic
-- current contract only registers crucial classes and is too thin for the new strict verifier lifecycle
+- Interval diffing must reuse lexical structural analysis instead of inventing a second structure scanner.
 
-### 2. Lexical verifier implementation
+### 2. Lexical Verifier Implementation
 File:
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.cpp`
 
-Target lines:
-- `14-149`
-- highest-priority region: `87-149`
+Focus anchors:
+- `on_class_scanned_structural_hook`
+- `record_structural_lexical_event`
+- `should_keep_virtual_broken_branch`
+- `current_structural_candidate_ready_to_attach`
+- `current_structural_candidate_failed`
 
 What Claude should adjust:
-- keep the current keyword-selection logic as the seed for the verifier
-- add scaffold-level verifier state transitions around:
-  - class candidate start
-  - class candidate still valid
-  - class candidate failed
-  - class candidate finalized
-- do not make actual parse-tree growth depend on this file
-- this file should only decide whether the detached virtual-broken branch is still allowed to exist for the current class
+- Keep the current keyword-selection logic as the seed for the verifier.
+- Add scaffold-level verifier state transitions for class candidate start, still valid, failed, and finalized.
+- Add scaffold-level changed-region lexical refresh behavior for interval diffing.
+- Do not make actual parse-tree growth depend on this file.
+- This file should only decide whether the detached virtual-broken branch is still allowed to exist for the current class.
+- When called from diffing, this file should emit structural signals that help locate the affected subtree.
 
-Reason:
-- this is where strict structural verification already begins today
-- the scaffold should evolve this file into the lexical fail-fast gate instead of moving that logic downstream
-
-### 3. Parse-tree public data model
+### 3. Parse-Tree Public Data Model
 File:
 - `Codebase/Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree.hpp`
 
-Target lines:
-- `12-20`
-- `51-60`
-- `71-73`
+Focus anchors:
+- `ParseTreeNode`
+- `LineHashTrace`
+- `ParseTreeBundle`
+- `build_cpp_parse_trees`
 
 What Claude should adjust:
-- extend `ParseTreeNode` only if a small metadata flag is needed for:
-  - actual branch node
-  - detached virtual-broken node
-  - attached virtual-broken node
-- update `ParseTreeBundle` so the old `shadow_tree` model no longer implies a pure post-filtered copy
-- if a compatibility field must remain for now, mark it clearly as transitional
-- keep the public parse-tree entrypoints stable unless a tiny overload or helper is required for the scaffold
+- Extend `ParseTreeNode` only if small metadata is needed for actual branch node, detached virtual-broken node, attached virtual-broken node, source line start, source line end, stable node path, or identity for subtree targeting.
+- Update `ParseTreeBundle` so the old `shadow_tree` model no longer implies a pure post-filtered copy.
+- If a compatibility field must remain for now, mark it clearly as transitional.
+- Keep public parse-tree entrypoints stable unless a tiny overload or helper is required.
 
 Reason:
-- the current bundle still centers the older `shadow_tree` shape
-- the docs now define a detached virtual-broken lifecycle instead
+- Interval diffing needs node location metadata so line intervals can identify affected subtrees.
 
-### 4. Internal parse-tree contracts
+### 4. Internal Parse-Tree Contracts
 File:
 - `Codebase/Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/Internal/parse_tree_internal.hpp`
 
-Target lines:
-- `56-60`
-- `88-104`
+Focus anchors:
+- `parse_file_content_into_node`
+- detached branch helper declarations
+- internal parse state structs
 
 What Claude should adjust:
-- widen the internal signatures so lexical verification state and detached virtual-branch state can be threaded through internal parse functions
-- add scaffold declarations for helper boundaries such as:
-  - start detached class branch
-  - append detached branch node
-  - finalize detached branch
-  - release detached branch
-- keep the symbols/hash-links contracts out of this change unless strictly necessary
+- Widen internal signatures so lexical verification state and detached virtual-branch state can be threaded through internal parse functions.
+- Add scaffold declarations for start detached class branch, append detached branch node, finalize detached branch, and release detached branch.
+- Add scaffold declarations for locate affected subtree by interval, regenerate actual subtree placeholder, and regenerate virtual subtree placeholder.
+- Keep symbols and hash-links contracts out of this change unless strictly necessary.
 
 Reason:
-- this is the control-plane header for internal parse-tree mechanics
-- if the scaffold does not define these boundaries here, implementation will become ad hoc inside `build.cpp`
+- Diffing needs tree helpers, but those helpers should belong to tree contracts rather than the diffing coordinator itself.
 
-### 5. Top-level parse-tree orchestration
+### 5. Top-Level Parse-Tree Orchestration
 File:
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/core.cpp`
 
-Target lines:
-- `29-187`
-- highest-priority regions:
-  - `33-52`
-  - `77-89`
-  - `157-185`
+Focus anchors:
+- `build_cpp_parse_trees`
+- `main_tree`
+- `shadow_tree`
+- `virtual_tree_scaffold`
 
 What Claude should adjust:
-- preserve `main_tree` as the rooted source truth
-- stop presenting the secondary tree as only a post-pass relevance filter
-- add scaffold-level orchestration for:
-  - file-root ownership
-  - detached virtual-broken collection per file
-  - attach-on-success path
-  - discard-on-failure path
-- if the old post-pass filtered copy must remain temporarily, fence it as compatibility behavior and do not let it define the new architecture
+- Preserve `main_tree` as the rooted source truth.
+- Stop presenting the secondary tree as only a post-pass relevance filter.
+- Add scaffold-level orchestration for file-root ownership, detached virtual-broken collection per file, attach-on-success path, and discard-on-failure path.
+- If the old post-pass filtered copy must remain temporarily, fence it as compatibility behavior and do not let it define the new architecture.
 
-Reason:
-- this is the top source entry for tree assembly
-- it currently creates `main_tree` and `shadow_tree` as parallel rooted trees too early for the new model
-
-### 6. Actual parse loop and class lifecycle
+### 6. Actual Parse Loop And Class Lifecycle
 File:
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/build.cpp`
 
-Target lines:
-- `214-389`
-- highest-priority regions:
-  - `223-232`
-  - `262-320`
-  - `322-389`
+Focus anchors:
+- `parse_file_content_into_node`
+- class or struct declaration handling
+- scope-enter and scope-exit handling
+- lexical event emission
 
 What Claude should adjust:
-- keep actual node growth rooted in `file_node`
-- feed lexical events into verifier state during scanning
-- add scaffold state for the current class lifecycle:
-  - active class candidate
-  - detached virtual-broken branch buffer
-  - failed current class candidate
-  - class boundary reset
-- do not route `Build actual class subtree -> Check expected structure`
-- the expected-structure check should control only the detached virtual-broken branch
-- on failure:
-  - stop detached growth now
-  - leave actual growth alone
-  - wait until the next class boundary before resetting detached state
+- Keep actual node growth rooted in `file_node`.
+- Feed lexical events into verifier state during scanning.
+- Record source location metadata on class/function nodes where safe.
+- Add scaffold state for active class candidate, detached virtual-broken branch buffer, failed current class candidate, and class boundary reset.
+- Do not route `Build actual class subtree -> Check expected structure`.
+- The expected-structure check should control only the detached virtual-broken branch.
+- On failure, stop detached growth immediately, leave actual growth alone, and reset detached state only at the next class boundary.
 
 Reason:
-- this is the real place where lexical events, scope movement, and actual tree growth happen together
-- this file needs the scaffold most
+- Diffing depends on this file eventually producing reliable affected-subtree metadata.
 
-### 7. Old relevance filter quarantine
+### 7. Diffing Integration With Tree And Lexical Scaffolds
+Files:
+- `Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Diffing/core.hpp`
+- `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/Diffing/core.cpp`
+- tree helper declarations added in `ParseTree/Internal/parse_tree_internal.hpp`
+- lexical refresh declarations added in `Language-and-Structure/lexical_structure_hooks.hpp`
+
+What Claude should adjust:
+- Keep `plan_interval_subtree_regeneration(...)` as the public coordinator.
+- Call lexical refresh first for every interval.
+- Use line metadata only to locate affected nodes, not to classify the diff.
+- Call tree helpers to locate the smallest safe affected subtree.
+- Classify pattern ownership based on virtual-broken equivalent presence and refreshed structure signals.
+- Return `DiffRegenerationPlan` with actions for virtual regeneration, actual regeneration, hash refresh, and output notification.
+
+### 8. Old Relevance Filter Quarantine
 File:
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/Internal/relevance.cpp`
 
-Target lines:
-- `30-105`
+Focus anchors:
+- `append_shadow_subtree_if_relevant`
 
 What Claude should adjust:
-- do not fully rewrite this unless required
-- mark this path as compatibility or transitional if the new scaffold no longer wants virtual-broken generation to be treated as pure relevance filtering
-- if needed, add a narrow TODO comment or wrapper rename inside the code to signal that this is not the final virtual-broken model
-
-Reason:
-- this file currently encodes the older “append shadow subtree if relevant” idea
-- the new algorithm is stricter and class-lifecycle-driven, not only relevance-pruning-driven
+- Do not fully rewrite this unless required.
+- Mark this path as compatibility or transitional if the new scaffold no longer wants virtual-broken generation to be treated as pure relevance filtering.
+- If needed, add a narrow TODO comment or wrapper rename inside the code to signal that this is not the final virtual-broken model.
 
 ## Secondary Edit Set
 
-### 8. Build-context extension point
+### Build-Context Extension Point
 File:
 - `Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts/analysis_context.hpp`
-
-Target lines:
-- `7-12`
 
 Adjust only if needed.
 
 Possible use:
-- scaffold fields for verifier mode or strict-structure policy flags
+- scaffold fields for verifier mode
+- strict-structure policy flags
+- interval auto-check mode
 
 Do not touch this file unless the scaffold truly needs explicit context knobs.
 
@@ -224,44 +273,55 @@ Do not touch this file unless the scaffold truly needs explicit context knobs.
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/hash_links_common.cpp`
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/hash_links_resolve.cpp`
 - `Codebase/Microservice/Modules/Source/SyntacticBrokenAST/Pipeline-Orchestration/algorithm_pipeline.cpp`
-- pattern-specific logic files under `Codebase/Microservice/Modules/Source/Behavioural` and `Codebase/Microservice/Modules/Source/Creational`
+- pattern-specific logic files under `Codebase/Microservice/Modules/Source/Behavioural`
+- pattern-specific logic files under `Codebase/Microservice/Modules/Source/Creational`
 
 Reason:
-- the scaffold should first establish lexical verification, actual-tree independence, and detached virtual-broken lifecycle
-- symbol, hash-link, pipeline, and pattern logic can be adapted after the scaffold surfaces exist
+- The scaffold should first establish lexical verification, actual-tree independence, detached virtual-broken lifecycle, and interval regeneration planning.
+- Symbol, hash-link, pipeline, output, and pattern logic can be adapted after the scaffold surfaces exist.
 
 ## Edit Priority
-1. `lexical_structure_hooks.hpp`
-2. `lexical_structure_hooks.cpp`
-3. `parse_tree_internal.hpp`
+1. `Diffing/core.hpp` and `Diffing/core.cpp`
+2. `lexical_structure_hooks.hpp`
+3. `lexical_structure_hooks.cpp`
 4. `parse_tree.hpp`
-5. `ParseTree/Internal/build.cpp`
-6. `ParseTree/core.cpp`
-7. `ParseTree/Internal/relevance.cpp`
-8. `analysis_context.hpp` only if needed
+5. `parse_tree_internal.hpp`
+6. `ParseTree/Internal/build.cpp`
+7. `ParseTree/core.cpp`
+8. `ParseTree/Internal/relevance.cpp`
+9. `analysis_context.hpp` only if needed
 
 ## Guardrails For Claude
-- do not let the actual parse tree look derived from the virtual copy
-- do not move structural verification out of lexical analysis
-- do not make the detached virtual-broken branch file-global if the lifecycle is class-local
-- do not rewrite hash-links or symbols in the same scaffold pass
-- prefer thin scaffold structs and helper functions over one giant function rewrite
+- Do not let the actual parse tree look derived from the virtual copy.
+- Do not move structural verification out of lexical analysis.
+- Do not make the detached virtual-broken branch file-global if the lifecycle is class-local.
+- Do not rewrite hash-links or symbols in the same scaffold pass.
+- Do not treat line ranges as the diffing algorithm.
+- Do not regenerate the whole tree when a subtree target is available.
+- Do not make `Diffing/` own lexical scanning, tree building, hashing, or output rendering.
+- Prefer thin scaffold structs and helper functions over one giant function rewrite.
 
 ## Suggested Scaffold Deliverable
-Claude’s scaffold pass should leave the codebase with:
+Claude's scaffold pass should leave the codebase with:
 - a lexical verifier state carrier
 - a class-local detached virtual-broken branch carrier
 - explicit attach-or-discard boundaries
+- node metadata sufficient for affected-subtree targeting
 - top-level parse-tree orchestration that no longer treats the secondary branch as only a late relevance filter
+- an interval diffing coordinator that returns a `DiffRegenerationPlan`
+- placeholder tree regeneration hooks for actual and virtual subtrees
+- placeholder scoped hash refresh and output notification actions
 - TODO markers where the final strict rule catalog still needs expansion
 
-## Line Number Rule
-Use the line ranges above as the starting target.
-
-If line numbers drift, the function or struct anchors named in each section are the authority:
+## Anchor Rule
+Use function and struct anchors as the authority if line numbers drift:
 - `StructuralAnalysisState`
 - `on_class_scanned_structural_hook`
+- `record_structural_lexical_event`
+- `ParseTreeNode`
 - `ParseTreeBundle`
 - `parse_file_content_into_node`
 - `append_shadow_subtree_if_relevant`
 - `build_cpp_parse_trees`
+- `plan_interval_subtree_regeneration`
+- `DiffRegenerationPlan`

@@ -5,7 +5,7 @@
 - Generated on: 2026-04-23
 
 ## Logic Summary
-Top-level logical view of the generated codebase mirror. It groups the repository into runtime entrypoints, frontend prototype code, backend service code, infrastructure automation, legacy transform samples, and the C++ microservice core.
+Top-level logical view of the generated codebase mirror. It groups the repository into frontend prototype code, backend service code, infrastructure automation, legacy transform samples, and the C++ microservice core.
 
 ## Blueprint Boundary
 This `docs/Codebase` tree is the implementation mirror. Folders and Markdown files here should map to current or planned code folders/files.
@@ -15,7 +15,7 @@ Granular Mermaid details stay inside the Markdown file they describe. Do not cre
 Every normal folder in this tree should be safe to treat as a current or planned implementation folder.
 
 ## Subsystem Story
-This folder mixes concrete local documents with deeper child subsystems. Read the local docs to understand the visible behavior first, then descend into the child folders for the lower-level detail that supports it.
+This folder should mostly route readers into subsystem folders. Microservice-only build and editor artifacts belong under `Microservice/`, not beside Backend, Frontend, and Infrastructure.
 
 ## Folder Flow
 
@@ -24,12 +24,12 @@ This folder mixes concrete local documents with deeper child subsystems. Read th
 ```mermaid
 flowchart TD
     N0["Folder Entry"]
-    N1["Study Build system docs"]
-    N2["Study Editor configuration docs"]
-    N3["Study Bootstrap scripts docs"]
-    N4["Study Project notes docs"]
-    N5["Study Validation scripts docs"]
-    N6["Open Backend service folders"]
+    N1["Study Bootstrap scripts docs"]
+    N2["Study Project notes docs"]
+    N3["Study Validation scripts docs"]
+    N4["Open Backend service folders"]
+    N5["Open Frontend prototype folders"]
+    N6["Open Microservice core folders"]
     N7["More local items?"]
     N8["Open Frontend prototype folders"]
     N9["More local items?"]
@@ -47,11 +47,11 @@ flowchart TD
 #### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Open Microservice core folders"]
+    N0["Open Legacy transform samples folders"]
     N1["More local items?"]
-    N2["Open Legacy transform samples folders"]
+    N2["Open Infrastructure automation folders"]
     N3["More local items?"]
-    N4["Open Infrastructure automation folders"]
+    N4["Confirm subsystem boundaries"]
     N5["More local items?"]
     N6["Folder Exit"]
     N0 --> N1
@@ -84,15 +84,6 @@ These child folders continue the subsystem by covering Infrastructure automation
 - Infrastructure/ : Infrastructure automation and runtime environment assembly for local containerized execution.
 
 ## Documents By Logic
-### Build System
-These documents explain the local implementation by covering Builds the NeoTerritory executable from the microservice layer and module sources. and Stores IDE-oriented CMake configuration defaults.
-- CMakeLists.txt.md : Builds the NeoTerritory executable from the microservice layer and module sources.
-- CMakeSettings.json.md : Stores IDE-oriented CMake configuration defaults.
-
-### Editor Configuration
-These documents explain the local implementation by covering Provides editor include-path and IntelliSense settings.
-- CppProperties.json.md : Provides editor include-path and IntelliSense settings.
-
 ### Bootstrap Scripts
 These documents explain the local implementation by covering Windows bootstrap wrapper that ensures elevation and delegates to infrastructure automation. and Shell bootstrap entrypoint for non-Windows setup flows.
 - setup.ps1.md : Windows bootstrap wrapper that ensures elevation and delegates to infrastructure automation.
@@ -107,4 +98,4 @@ These documents explain the local implementation by covering Shell helper for lo
 - test.sh.md : Shell helper for local compile or execution checks.
 
 ## Reading Hint
-- Read the local file docs first for concrete behavior, then descend into the child folders for narrower subsystem details.
+- Start with the subsystem folder that owns the concern. Use `Microservice/` for C++ build, executable, module, and validation docs.

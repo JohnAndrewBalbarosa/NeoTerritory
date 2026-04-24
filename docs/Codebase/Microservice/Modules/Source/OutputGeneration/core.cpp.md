@@ -8,17 +8,17 @@
 - Then read `UnitTestGeneration/`, `DocumentationTagger/`, `Report/`, and `Render/` in that order.
 
 ## Quick Summary
-- This stage packages the analyzed bundle into concrete outputs.
+- This stage packages the analyzed bundle or interval regeneration report into concrete outputs.
 - It keeps future unit-test generation, documentation tagging, structured reports, and rendered views as separate output paths.
 
 ## Why This Stage Is Separate
-- `Analysis/`, `Trees/`, and `HashingMechanism/` prepare the internal understanding of the codebase.
+- `Analysis/`, `Trees/`, `HashingMechanism/`, and `Diffing/` prepare the internal understanding of the codebase.
 - `OutputGeneration/` turns that internal understanding into emitted artifacts.
 
 ## Major Workflow
 ```mermaid
 flowchart TD
-    N0["Receive resolved bundle"]
+    N0["Receive bundle or diff report"]
     N1["Generate unit-test targets"]
     N2["Attach documentation tags"]
     N3["Assemble reports"]
@@ -28,6 +28,7 @@ flowchart TD
 
 ## Handoff
 - Receives resolved tree and identity results from `../HashingMechanism/core.cpp.md`.
+- Receives interval regeneration reports from `../Diffing/core.cpp.md` when auto-checking is active.
 - Produces the final outward-facing artifacts for downstream implementation and validation.
 
 ## Local Ownership
