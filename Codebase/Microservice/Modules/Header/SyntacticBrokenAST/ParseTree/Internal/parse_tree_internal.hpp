@@ -21,6 +21,16 @@ struct RegisteredClassSymbol
 
 using ClassHashRegistry = std::unordered_map<size_t, std::vector<RegisteredClassSymbol>>;
 
+struct DetachedVirtualBranchState
+{
+    ParseTreeNode file_root;
+    std::vector<size_t> active_path;
+    bool file_initialized = false;
+    bool class_active = false;
+    size_t attached_class_count = 0;
+    size_t discarded_class_count = 0;
+};
+
 inline constexpr const char* k_file_class_bucket_kind = "ClassDeclarations";
 inline constexpr const char* k_file_global_function_bucket_kind = "GlobalFunctionDeclarations";
 
@@ -94,6 +104,26 @@ bool append_shadow_subtree_if_relevant(
     size_t* pruned_node_count,
     ParseTreeNode& out_shadow_node);
 
+void initialize_detached_virtual_file_state(
+    DetachedVirtualBranchState& state,
+    const ParseTreeNode& file_node);
+void begin_detached_virtual_class_branch(
+    DetachedVirtualBranchState& state,
+    const StructuralAnalysisState& structural_state);
+void append_detached_virtual_candidate_node(
+    DetachedVirtualBranchState& state,
+    ParseTreeNode node);
+void enter_detached_virtual_scope(
+    DetachedVirtualBranchState& state,
+    ParseTreeNode block_node);
+void exit_detached_virtual_scope(DetachedVirtualBranchState& state);
+bool finalize_detached_virtual_class_branch(
+    DetachedVirtualBranchState& state,
+    StructuralAnalysisState& structural_state);
+bool discard_detached_virtual_class_branch(
+    DetachedVirtualBranchState& state,
+    StructuralAnalysisState& structural_state);
+
 void parse_file_content_into_node(
     const SourceFileUnit& file,
     ParseTreeNode& file_node,
@@ -101,7 +131,10 @@ void parse_file_content_into_node(
     StructuralAnalysisState& structural_state,
     std::vector<LineHashTrace>& line_hash_traces,
     std::vector<FactoryInvocationTrace>& factory_invocation_traces,
-    ClassHashRegistry& class_hash_registry);
+    ClassHashRegistry& class_hash_registry,
+    ParseTreeNode* out_virtual_file_node,
+    size_t* out_virtual_attached_class_count,
+    size_t* out_virtual_discarded_class_count);
 
 void collect_class_definitions_by_file(
     const ParseTreeNode& node,

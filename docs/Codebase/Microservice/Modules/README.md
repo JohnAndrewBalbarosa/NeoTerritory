@@ -1,42 +1,39 @@
-﻿# Modules
+# Modules
 
-- Folder: docs/Codebase/Microservice/Modules
-- Descendant source docs: 92
-- Generated on: 2026-04-23
+- Folder: `docs/Codebase/Microservice/Modules`
+- Role: top-level blueprint for source and header documentation structure
 
-## Logic Summary
-Modularized C++ implementation divided into compile-time headers and source implementations.
+## Structure Rule
+- outer folder = subsystem
+- next folder = algorithm stage or functional module
+- next folder = pattern family only when the logic truly branches by pattern
+- file name = local implementation unit
 
-## Subsystem Story
-This folder mainly acts as a navigation layer. Use it to understand how the deeper child folders divide the subsystem into smaller concerns.
-
-## Folder Flow
-```mermaid
-flowchart TD
-    Start["Folder Entry"]
-    N0["Open Header contracts folders"]
-    L0{"More items?"}
-    N1["Open Source implementations folders"]
-    L1{"More items?"}
-    End["Folder Exit"]
-    Start --> N0
-    N0 --> L0
-    L0 -->|more| N0
-    L0 -->|done| N1
-    N1 --> L1
-    L1 -->|more| N1
-    L1 -->|done| End
+## Active Shape
+```text
+Modules/
+  Source/
+    main.cpp.md
+    Analysis/
+    Trees/
+    HashingMechanism/
+    OutputGeneration/
+  Header/
+    SyntacticBrokenAST/
+      Analysis/
+      Trees/
+      HashingMechanism/
+      OutputGeneration/
 ```
 
-## Child Folders By Logic
-### Header Contracts
-These child folders continue the subsystem by covering Header contracts grouped by subsystem..
-- Header/ : Header contracts grouped by subsystem.
+## Naming Rule
+- absorb repeated conceptual prefixes into folders
+- shorten file names after the path already carries the shared meaning
+- keep `Library/` only for truly shared cross-module logic
 
-### Source Implementations
-These child folders continue the subsystem by covering C++ source implementations grouped by subsystem..
-- Source/ : C++ source implementations grouped by subsystem.
-
-## Reading Hint
-- Use the child folder groups to navigate deeper into this subsystem.
-
+## Acceptance Checks
+- source starts from a direct `main.cpp.md` entrypoint instead of a single-subsystem wrapper folder
+- header still mirrors the same logic-first stage order inside its active wrapper
+- tree logic, hashing logic, and output logic are visibly separate
+- the source tree stage can describe rooted ownership and simultaneous actual plus virtual-broken generation without falling back to old sibling labels
+- family-first pattern roots are gone from the active module tree

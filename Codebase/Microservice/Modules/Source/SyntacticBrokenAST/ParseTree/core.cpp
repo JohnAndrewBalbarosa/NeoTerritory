@@ -39,8 +39,14 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
     bundle.shadow_tree.value = "Root";
     bundle.shadow_tree.contextual_hash = bundle.main_tree.contextual_hash;
 
+    bundle.virtual_tree_scaffold.kind = cfg.node_translation_unit;
+    bundle.virtual_tree_scaffold.value = "Root";
+    bundle.virtual_tree_scaffold.contextual_hash = bundle.main_tree.contextual_hash;
+
     bundle.line_hash_traces.clear();
     bundle.factory_invocation_traces.clear();
+    bundle.virtual_class_candidates_attached = 0;
+    bundle.virtual_class_candidates_discarded = 0;
     StructuralAnalysisState structural_state;
     reset_structural_analysis_state(structural_state);
 
@@ -50,6 +56,7 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
 
     bundle.main_tree.children.reserve(files.size());
     bundle.shadow_tree.children.reserve(files.size());
+    bundle.virtual_tree_scaffold.children.reserve(files.size());
     for (size_t i = 0; i < files.size(); ++i)
     {
         const SourceFileUnit& file = files[i];
@@ -71,11 +78,21 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
         shadow_file_node.contextual_hash = file_context_hash;
         bundle.shadow_tree.children.push_back(std::move(shadow_file_node));
 
+        ParseTreeNode virtual_file_node;
+        virtual_file_node.kind = "FileUnit";
+        virtual_file_node.value = file.path;
+        virtual_file_node.contextual_hash = file_context_hash;
+        virtual_file_node.detached_virtual_branch = true;
+        bundle.virtual_tree_scaffold.children.push_back(std::move(virtual_file_node));
+
         basename_to_path[parse_tree_internal::file_basename(file.path)] = file.path;
     }
 
     for (size_t i = 0; i < files.size(); ++i)
     {
+        ParseTreeNode virtual_file_node;
+        size_t attached_class_count = 0;
+        size_t discarded_class_count = 0;
         parse_tree_internal::parse_file_content_into_node(
             files[i],
             bundle.main_tree.children[i],
@@ -83,7 +100,13 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
             structural_state,
             bundle.line_hash_traces,
             bundle.factory_invocation_traces,
-            class_hash_registry);
+            class_hash_registry,
+            &virtual_file_node,
+            &attached_class_count,
+            &discarded_class_count);
+        bundle.virtual_tree_scaffold.children[i] = std::move(virtual_file_node);
+        bundle.virtual_class_candidates_attached += attached_class_count;
+        bundle.virtual_class_candidates_discarded += discarded_class_count;
         parse_tree_internal::collect_class_definitions_by_file(
             bundle.main_tree.children[i], files[i].path, class_def_file);
     }
