@@ -1,3 +1,12 @@
+// Transitional. This file implements the legacy "post-pass relevance
+// filter" that used to be the virtual-broken representation. In the new
+// scaffold the virtual-broken branch is a class-local detached branch
+// built inline during the parse loop (see Internal/build.cpp) and this
+// filter is kept only so upstream code that reads `shadow_tree` keeps
+// working. Do not add new virtual-broken logic here.
+//
+// TODO: retire append_shadow_subtree_if_relevant once readers switch to
+// `ParseTreeBundle::virtual_tree_scaffold`.
 #include "Internal/parse_tree_internal.hpp"
 
 #include <string>

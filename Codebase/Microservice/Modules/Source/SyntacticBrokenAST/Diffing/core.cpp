@@ -1,5 +1,8 @@
 #include "Diffing/core.hpp"
 
+#include "Internal/parse_tree_internal.hpp"
+#include "Language-and-Structure/lexical_structure_hooks.hpp"
+
 #include <algorithm>
 
 namespace
@@ -11,99 +14,88 @@ bool interval_is_valid(const SourceChangeInterval& interval)
            interval.end_line >= interval.start_line;
 }
 
-void find_first_matching_file_node(
-    const ParseTreeNode& node,
-    const std::string& file_path,
-    std::vector<size_t>& path,
-    AffectedSubtreeRef& out)
-{
-    if (out.found)
-    {
-        return;
-    }
-
-    if (node.kind == "FileUnit" && node.value == file_path)
-    {
-        out.file_path = file_path;
-        out.node_path = path;
-        out.node_kind = node.kind;
-        out.node_value = node.value;
-        out.found = true;
-        return;
-    }
-
-    for (size_t i = 0; i < node.children.size(); ++i)
-    {
-        path.push_back(i);
-        find_first_matching_file_node(node.children[i], file_path, path, out);
-        path.pop_back();
-        if (out.found)
-        {
-            return;
-        }
-    }
-}
-
-AffectedSubtreeRef locate_affected_subtree_scaffold(
-    const SourceChangeInterval& interval,
-    const ParseTreeNode& actual_tree)
-{
-    AffectedSubtreeRef ref;
-    if (!interval_is_valid(interval))
-    {
-        return ref;
-    }
-
-    std::vector<size_t> path;
-    find_first_matching_file_node(actual_tree, interval.file_path, path, ref);
-    return ref;
-}
-
-bool virtual_tree_mentions_file(const ParseTreeNode& node, const std::string& file_path)
-{
-    if (node.kind == "FileUnit" && node.value == file_path)
-    {
-        return true;
-    }
-
-    return std::any_of(
-        node.children.begin(),
-        node.children.end(),
-        [&](const ParseTreeNode& child) {
-            return virtual_tree_mentions_file(child, file_path);
-        });
-}
-
-LexicalRefreshSummary refresh_lexical_structure_scaffold(const SourceChangeInterval& interval)
+// Scaffold adapter: call the real lexical refresh entrypoint instead of
+// returning a static placeholder event. The verifier still has a TODO to
+// populate real per-class signals, but the control-plane wiring is now
+// routed through Language-and-Structure.
+LexicalRefreshSummary refresh_lexical_structure_via_hook(const SourceChangeInterval& interval)
 {
     LexicalRefreshSummary summary;
-    summary.refreshed = interval_is_valid(interval);
-    if (summary.refreshed)
+    if (!interval_is_valid(interval))
     {
-        summary.structure_events.push_back("changed_region_scheduled_for_lexical_refresh");
+        summary.notes.push_back("invalid interval; lexical refresh skipped");
+        return summary;
+    }
+
+    LexicalIntervalRefreshInput input;
+    input.file_path = interval.file_path;
+    input.source = interval.changed_source;
+    input.start_line = interval.start_line;
+    input.end_line = interval.end_line;
+    input.source_pattern = interval.source_pattern;
+
+    StructuralAnalysisState local_state;
+    reset_structural_analysis_state(local_state);
+    const LexicalIntervalRefreshOutput output =
+        refresh_lexical_structure_for_interval(input, local_state);
+
+    summary.refreshed = output.refreshed;
+    summary.class_boundary_seen = output.class_boundary_seen;
+    summary.hard_violation_seen = output.hard_violation_seen;
+    summary.affected_class_name = output.affected_class_name;
+    summary.notes = output.notes;
+    summary.structure_events.reserve(output.structure_events.size());
+    for (const StructuralLexicalEvent& event : output.structure_events)
+    {
+        summary.structure_events.push_back(event.token);
     }
     return summary;
 }
 
-PatternOwnershipState classify_pattern_ownership_scaffold(const AffectedSubtreeRef& affected)
+AffectedSubtreeRef to_subtree_ref(const parse_tree_internal::AffectedSubtreeLocation& loc)
 {
-    if (!affected.found)
+    AffectedSubtreeRef ref;
+    ref.found = loc.found;
+    ref.has_virtual_equivalent = loc.has_virtual_equivalent;
+    ref.file_path = loc.file_path;
+    ref.node_path = loc.node_path;
+    ref.node_kind = loc.node_kind;
+    ref.node_value = loc.node_value;
+    return ref;
+}
+
+PatternOwnershipState classify_pattern_ownership_scaffold(
+    const parse_tree_internal::AffectedSubtreeLocation& loc,
+    const LexicalRefreshSummary& refresh)
+{
+    if (!loc.found)
     {
         return PatternOwnershipState::Unknown;
     }
-    return affected.has_virtual_equivalent
-        ? PatternOwnershipState::PatternOwnedChanged
-        : PatternOwnershipState::OutsidePatternChanged;
+
+    if (refresh.hard_violation_seen && loc.has_virtual_equivalent)
+    {
+        return PatternOwnershipState::PatternStructureRemoved;
+    }
+    if (loc.has_virtual_equivalent)
+    {
+        return PatternOwnershipState::PatternOwnedChanged;
+    }
+    if (refresh.class_boundary_seen && !loc.has_virtual_equivalent)
+    {
+        return PatternOwnershipState::BecamePatternCandidate;
+    }
+    return PatternOwnershipState::OutsidePatternChanged;
 }
 
-SubtreeDiffResult compare_subtrees_scaffold(const AffectedSubtreeRef& affected)
+SubtreeDiffResult compare_subtrees_scaffold(const parse_tree_internal::AffectedSubtreeLocation& loc)
 {
     SubtreeDiffResult result;
-    result.equivalent_subtree_found = affected.has_virtual_equivalent;
-    result.structural_delta_found = affected.found;
-    if (affected.found)
+    result.equivalent_subtree_found = loc.has_virtual_equivalent;
+    result.structural_delta_found = loc.found;
+    if (loc.found)
     {
-        result.affected_actual_node_paths.push_back(affected.node_path);
+        result.affected_actual_node_paths.push_back(loc.node_path);
     }
     return result;
 }
@@ -149,20 +141,41 @@ DiffRegenerationPlan plan_interval_subtree_regeneration(
 {
     DiffRegenerationPlan plan;
     plan.interval = interval;
-    plan.lexical_refresh = refresh_lexical_structure_scaffold(interval);
-    plan.affected_subtree = locate_affected_subtree_scaffold(interval, actual_tree);
-    plan.affected_subtree.has_virtual_equivalent =
-        plan.affected_subtree.found &&
-        virtual_tree_mentions_file(virtual_tree, plan.affected_subtree.file_path);
-    plan.ownership = classify_pattern_ownership_scaffold(plan.affected_subtree);
-    plan.subtree_diff = compare_subtrees_scaffold(plan.affected_subtree);
 
-    if (!plan.lexical_refresh.refreshed)
+    // 1) Lexical refresh for the changed region first. Interval diffing
+    //    must reuse lexical structural analysis instead of scanning twice.
+    plan.lexical_refresh = refresh_lexical_structure_via_hook(interval);
+
+    // 2) Use line metadata only to locate the smallest safe actual
+    //    subtree. Line ranges are locator metadata, not the diff itself.
+    const parse_tree_internal::AffectedSubtreeLocation location =
+        parse_tree_internal::locate_affected_subtree_by_interval(
+            actual_tree,
+            virtual_tree,
+            interval.file_path,
+            interval.start_line,
+            interval.end_line);
+
+    plan.affected_subtree = to_subtree_ref(location);
+
+    // 3) Classify ownership using refreshed structural signals plus
+    //    virtual-equivalence presence. Never classify from raw line ranges.
+    plan.ownership = classify_pattern_ownership_scaffold(location, plan.lexical_refresh);
+
+    // 4) Summarize the subtree comparison for downstream consumers.
+    plan.subtree_diff = compare_subtrees_scaffold(location);
+
+    // 5) Build the scoped regeneration plan. The coordinator returns a
+    //    plan; it never performs full regeneration directly.
+    append_regeneration_actions(plan);
+
+    // Carry lexical notes into plan notes so downstream readers can see
+    // why a refresh was skipped or flagged.
+    for (const std::string& note : plan.lexical_refresh.notes)
     {
-        plan.notes.push_back("invalid interval; lexical refresh skipped");
+        plan.notes.push_back(note);
     }
 
-    append_regeneration_actions(plan);
     return plan;
 }
 

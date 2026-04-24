@@ -56,6 +56,29 @@ struct StructuralAnalysisState
     StructuralClassVerifierState current_class;
 };
 
+// Scaffold: interval diffing must reuse lexical structural analysis
+// instead of introducing a second scanner. These structs describe a
+// changed source region and the structural signals the verifier emits
+// when asked to re-scan that region.
+struct LexicalIntervalRefreshInput
+{
+    std::string file_path;
+    std::string source;
+    size_t start_line = 0;
+    size_t end_line = 0;
+    std::string source_pattern;
+};
+
+struct LexicalIntervalRefreshOutput
+{
+    bool refreshed = false;
+    bool class_boundary_seen = false;
+    bool hard_violation_seen = false;
+    std::string affected_class_name;
+    std::vector<StructuralLexicalEvent> structure_events;
+    std::vector<std::string> notes;
+};
+
 /**
  * Hook for modular structural-analysis logic when a class/struct declaration is seen
  * during lexical parsing.
@@ -78,5 +101,29 @@ bool current_structural_candidate_ready_to_attach(const StructuralAnalysisState&
 bool current_structural_candidate_failed(const StructuralAnalysisState& state);
 void clear_current_structural_candidate(StructuralAnalysisState& state);
 const StructuralClassVerifierState* current_structural_candidate(const StructuralAnalysisState& state);
+
+// Scaffold class-candidate lifecycle helpers. The build loop drives these
+// as it crosses class boundaries so the verifier state stays class-local
+// and the detached virtual-broken branch can attach or discard safely.
+void begin_class_candidate(
+    const std::string& class_name,
+    const std::string& strategy_name,
+    const std::vector<std::string>& expected_keywords,
+    size_t line_started,
+    StructuralAnalysisState& state);
+void mark_class_candidate_failed(
+    const std::string& reason,
+    StructuralAnalysisState& state);
+void mark_class_candidate_ready_to_attach(StructuralAnalysisState& state);
+
+// Scaffold: interval refresh entrypoint. Re-runs lexical structural
+// analysis for a changed source region and reports the structural
+// signals needed by the diffing locator.
+//
+// TODO: replace stub emission with a real slice of the existing scanner
+// once the lexical verifier is fully extracted from the build loop.
+LexicalIntervalRefreshOutput refresh_lexical_structure_for_interval(
+    const LexicalIntervalRefreshInput& input,
+    StructuralAnalysisState& state);
 
 #endif // LEXICAL_STRUCTURE_HOOKS_HPP
