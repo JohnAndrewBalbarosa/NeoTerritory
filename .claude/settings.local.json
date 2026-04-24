@@ -3,7 +3,8 @@
     "allow": [
       "Edit(*)",
       "Write(*)",
-      "Bash(*)"
+      "Bash(*)",
+      "PowerShell(& \"C:\\\\Users\\\\Drew\\\\Desktop\\\\NeoTerritory\\\\out\\\\build\\\\NeoTerritory.exe\" factory singleton 2>&1 | Select-Object -First 60)"
     ]
   }
 }

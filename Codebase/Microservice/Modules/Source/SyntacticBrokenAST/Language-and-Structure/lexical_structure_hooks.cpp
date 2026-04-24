@@ -232,3 +232,70 @@ const StructuralClassVerifierState* current_structural_candidate(const Structura
     }
     return &state.current_class;
 }
+
+void begin_class_candidate(
+    const std::string& class_name,
+    const std::string& strategy_name,
+    const std::vector<std::string>& expected_keywords,
+    size_t line_started,
+    StructuralAnalysisState& state)
+{
+    StructuralClassVerifierState current;
+    current.status = StructuralVerificationStatus::Tracking;
+    current.class_name = class_name;
+    current.strategy_name = strategy_name;
+    current.expected_keywords = expected_keywords;
+    current.class_name_hash = std::hash<std::string>{}(class_name);
+    current.line_started = line_started;
+    state.current_class = std::move(current);
+}
+
+void mark_class_candidate_failed(
+    const std::string& reason,
+    StructuralAnalysisState& state)
+{
+    if (state.current_class.status == StructuralVerificationStatus::Idle)
+    {
+        return;
+    }
+    state.current_class.status = StructuralVerificationStatus::Failed;
+    state.current_class.failure_reason = reason;
+}
+
+void mark_class_candidate_ready_to_attach(StructuralAnalysisState& state)
+{
+    if (state.current_class.status != StructuralVerificationStatus::Tracking)
+    {
+        return;
+    }
+    state.current_class.status = StructuralVerificationStatus::ReadyToAttach;
+}
+
+LexicalIntervalRefreshOutput refresh_lexical_structure_for_interval(
+    const LexicalIntervalRefreshInput& input,
+    StructuralAnalysisState& /*state*/)
+{
+    LexicalIntervalRefreshOutput output;
+    if (input.file_path.empty() || input.start_line == 0 || input.end_line < input.start_line)
+    {
+        output.notes.push_back("invalid_interval");
+        return output;
+    }
+
+    // Scaffold-level refresh signal. This is the control-plane surface
+    // diffing calls. Deep re-scan work belongs to the lexical scanner
+    // once the verifier is lifted out of the build loop.
+    output.refreshed = true;
+
+    StructuralLexicalEvent scheduled;
+    scheduled.kind = StructuralLexicalEventKind::StatementCompleted;
+    scheduled.$1***REDACTED***$2;
+    scheduled.line_number = input.start_line;
+    output.structure_events.push_back(std::move(scheduled));
+
+    output.notes.push_back("scaffold_refresh_emitted");
+    // TODO: drive per-class candidate lifecycle and populate
+    // affected_class_name / class_boundary_seen / hard_violation_seen
+    // from real re-scan output.
+    return output;
+}

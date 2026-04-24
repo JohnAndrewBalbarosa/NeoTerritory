@@ -234,6 +234,10 @@ void initialize_detached_virtual_file_state(
     state.file_root.value = file_node.value;
     state.file_root.contextual_hash = file_node.contextual_hash;
     state.file_root.detached_virtual_branch = true;
+    state.file_root.branch_kind = ParseBranchKind::DetachedVirtualBroken;
+    state.file_root.source_file_path = file_node.source_file_path.empty() ? file_node.value : file_node.source_file_path;
+    state.file_root.source_line_start = file_node.source_line_start;
+    state.file_root.source_line_end = file_node.source_line_end;
     state.file_initialized = true;
 }
 
@@ -302,6 +306,7 @@ bool finalize_detached_virtual_class_branch(
     {
         class_root->detached_virtual_branch = false;
         class_root->verified_virtual_branch = true;
+        class_root->branch_kind = ParseBranchKind::AttachedVirtualBroken;
     }
 
     state.active_path.clear();
@@ -347,16 +352,24 @@ void parse_file_content_into_node(
     const std::vector<std::string> lines = split_lines(file.content);
     const bool track_factory_invocations = lowercase_ascii(context.source_pattern) == "factory";
 
+    // Record file-level source metadata so affected-subtree location works.
+    file_node.source_file_path = file.path;
+    file_node.source_line_start = lines.empty() ? 0 : 1;
+    file_node.source_line_end = lines.size();
+    file_node.branch_kind = ParseBranchKind::Actual;
+
     std::vector<size_t> context_path;
     std::vector<std::vector<size_t>> scope_usage_hashes(1);
     std::vector<std::string> statement_tokens;
     std::vector<std::string> tracked_statement_tokens;
     std::vector<size_t> statement_usage_hashes;
+    size_t statement_line_start = 0;
+    std::vector<size_t> scope_line_starts;
     std::unordered_map<std::string, std::string> factory_instance_type_by_name;
     DetachedVirtualBranchState detached_virtual_state;
     initialize_detached_virtual_file_state(detached_virtual_state, file_node);
 
-    auto flush_statement = [&]() {
+    auto flush_statement = [&](size_t current_line_one_based) {
         if (statement_tokens.empty())
         {
             return;
@@ -366,6 +379,10 @@ void parse_file_content_into_node(
         node.kind = detect_statement_kind(statement_tokens);
         node.value = join_tokens(statement_tokens, 0, statement_tokens.size());
         node.propagated_usage_hashes = statement_usage_hashes;
+        node.source_file_path = file.path;
+        node.source_line_start = statement_line_start == 0 ? current_line_one_based : statement_line_start;
+        node.source_line_end = current_line_one_based;
+        node.branch_kind = ParseBranchKind::Actual;
 
         const std::string annotated = join_tokens(tracked_statement_tokens, 0, tracked_statement_tokens.size());
         if (annotated != node.value)
@@ -376,11 +393,13 @@ void parse_file_content_into_node(
         if (should_keep_virtual_broken_branch(structural_state))
         {
             ParseTreeNode virtual_node = node;
+            virtual_node.branch_kind = ParseBranchKind::DetachedVirtualBroken;
             append_detached_virtual_candidate_node(detached_virtual_state, std::move(virtual_node));
         }
 
         append_node_at_path(file_node, context_path, std::move(node));
         clear_statement_buffers(statement_tokens, tracked_statement_tokens, statement_usage_hashes);
+        statement_line_start = 0;
     };
 
     auto mark_statement_with_scope_hashes = [&]() {
@@ -400,6 +419,10 @@ void parse_file_content_into_node(
             ParseTreeNode include_node;
             include_node.kind = "IncludeDependency";
             include_node.value = include_target;
+            include_node.source_file_path = file.path;
+            include_node.source_line_start = line_idx + 1;
+            include_node.source_line_end = line_idx + 1;
+            include_node.branch_kind = ParseBranchKind::Actual;
             append_node_at_path(file_node, {}, std::move(include_node));
         }
 
@@ -466,6 +489,10 @@ void parse_file_content_into_node(
                 block.kind = cfg.node_block;
                 block.value = join_tokens(statement_tokens, 0, statement_tokens.size());
                 block.propagated_usage_hashes = statement_usage_hashes;
+                block.source_file_path = file.path;
+                block.source_line_start = statement_line_start == 0 ? line_idx + 1 : statement_line_start;
+                block.source_line_end = line_idx + 1;
+                block.branch_kind = ParseBranchKind::Actual;
 
                 const std::string annotated = join_tokens(tracked_statement_tokens, 0, tracked_statement_tokens.size());
                 if (annotated != block.value)
@@ -476,19 +503,30 @@ void parse_file_content_into_node(
                 if (should_keep_virtual_broken_branch(structural_state))
                 {
                     ParseTreeNode virtual_block = block;
+                    virtual_block.branch_kind = ParseBranchKind::DetachedVirtualBroken;
                     enter_detached_virtual_scope(detached_virtual_state, std::move(virtual_block));
                 }
 
                 const size_t new_index = append_node_at_path(file_node, context_path, std::move(block));
                 context_path.push_back(new_index);
                 scope_usage_hashes.push_back(scope_usage_hashes.back());
+                scope_line_starts.push_back(block.source_line_start);
                 clear_statement_buffers(statement_tokens, tracked_statement_tokens, statement_usage_hashes);
+                statement_line_start = 0;
                 continue;
             }
 
             if (token == cfg.token_close_brace)
             {
-                flush_statement();
+                flush_statement(line_idx + 1);
+                // Close out the actual block's source_line_end now that we know it.
+                {
+                    ParseTreeNode* closing_block = node_at_path(file_node, context_path);
+                    if (closing_block != nullptr)
+                    {
+                        closing_block->source_line_end = line_idx + 1;
+                    }
+                }
                 exit_detached_virtual_scope(detached_virtual_state);
                 record_structural_lexical_event(
                     StructuralLexicalEvent{StructuralLexicalEventKind::ScopeExited, token, line_idx + 1},
@@ -509,12 +547,16 @@ void parse_file_content_into_node(
                 {
                     scope_usage_hashes.pop_back();
                 }
+                if (!scope_line_starts.empty())
+                {
+                    scope_line_starts.pop_back();
+                }
                 continue;
             }
 
             if (token == cfg.token_statement_end)
             {
-                flush_statement();
+                flush_statement(line_idx + 1);
                 record_structural_lexical_event(
                     StructuralLexicalEvent{StructuralLexicalEventKind::StatementCompleted, token, line_idx + 1},
                     structural_state);
@@ -528,6 +570,10 @@ void parse_file_content_into_node(
                 tracked_token += suffix;
             }
 
+            if (statement_line_start == 0)
+            {
+                statement_line_start = line_idx + 1;
+            }
             statement_tokens.push_back(token);
             tracked_statement_tokens.push_back(std::move(tracked_token));
             mark_statement_with_scope_hashes();
@@ -545,7 +591,7 @@ void parse_file_content_into_node(
         }
     }
 
-    flush_statement();
+    flush_statement(lines.size());
     if (current_structural_candidate_ready_to_attach(structural_state))
     {
         finalize_detached_virtual_class_branch(detached_virtual_state, structural_state);

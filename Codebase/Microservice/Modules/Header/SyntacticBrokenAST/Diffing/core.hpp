@@ -1,6 +1,7 @@
 #ifndef DIFFING_CORE_HPP
 #define DIFFING_CORE_HPP
 
+#include "Language-and-Structure/lexical_structure_hooks.hpp"
 #include "parse_tree.hpp"
 
 #include <cstddef>
@@ -10,6 +11,8 @@
 struct SourceChangeInterval
 {
     std::string file_path;
+    std::string changed_source;
+    std::string source_pattern;
     size_t start_line = 0;
     size_t end_line = 0;
 };
@@ -17,7 +20,11 @@ struct SourceChangeInterval
 struct LexicalRefreshSummary
 {
     bool refreshed = false;
+    bool class_boundary_seen = false;
+    bool hard_violation_seen = false;
+    std::string affected_class_name;
     std::vector<std::string> structure_events;
+    std::vector<std::string> notes;
 };
 
 struct AffectedSubtreeRef

@@ -104,6 +104,38 @@ bool append_shadow_subtree_if_relevant(
     size_t* pruned_node_count,
     ParseTreeNode& out_shadow_node);
 
+// Scaffold: interval diffing helpers that belong to tree contracts,
+// not to the diffing coordinator. Keeps Diffing/ from owning tree
+// building, hashing, or output rendering.
+struct AffectedSubtreeLocation
+{
+    bool found = false;
+    bool has_virtual_equivalent = false;
+    std::string file_path;
+    std::string node_kind;
+    std::string node_value;
+    std::vector<size_t> node_path;
+    size_t source_line_start = 0;
+    size_t source_line_end = 0;
+};
+
+AffectedSubtreeLocation locate_affected_subtree_by_interval(
+    const ParseTreeNode& actual_tree_root,
+    const ParseTreeNode& virtual_tree_root,
+    const std::string& file_path,
+    size_t start_line,
+    size_t end_line);
+
+bool regenerate_actual_subtree_placeholder(
+    ParseTreeNode& actual_tree_root,
+    const AffectedSubtreeLocation& location,
+    std::vector<std::string>& notes);
+
+bool regenerate_virtual_subtree_placeholder(
+    ParseTreeNode& virtual_tree_root,
+    const AffectedSubtreeLocation& location,
+    std::vector<std::string>& notes);
+
 void initialize_detached_virtual_file_state(
     DetachedVirtualBranchState& state,
     const ParseTreeNode& file_node);

@@ -34,14 +34,20 @@ ParseTreeBundle build_cpp_parse_trees(const std::vector<SourceFileUnit>& files, 
     bundle.main_tree.kind = cfg.node_translation_unit;
     bundle.main_tree.value = "Root";
     bundle.main_tree.contextual_hash = std::hash<std::string>{}(cfg.node_translation_unit + "|Root|main");
+    bundle.main_tree.branch_kind = ParseBranchKind::Actual;
 
+    // Transitional: shadow_tree used to be a post-pass relevance copy.
+    // The new model treats virtual-broken as a class-local detached branch
+    // that attaches on success. shadow_tree stays for compatibility.
     bundle.shadow_tree.kind = cfg.node_translation_unit;
     bundle.shadow_tree.value = "Root";
     bundle.shadow_tree.contextual_hash = bundle.main_tree.contextual_hash;
+    bundle.shadow_tree.branch_kind = ParseBranchKind::Actual;
 
     bundle.virtual_tree_scaffold.kind = cfg.node_translation_unit;
     bundle.virtual_tree_scaffold.value = "Root";
     bundle.virtual_tree_scaffold.contextual_hash = bundle.main_tree.contextual_hash;
+    bundle.virtual_tree_scaffold.branch_kind = ParseBranchKind::AttachedVirtualBroken;
 
     bundle.line_hash_traces.clear();
     bundle.factory_invocation_traces.clear();

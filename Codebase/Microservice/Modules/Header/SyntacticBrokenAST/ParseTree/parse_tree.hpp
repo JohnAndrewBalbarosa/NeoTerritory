@@ -9,6 +9,13 @@
 #include <string>
 #include <vector>
 
+enum class ParseBranchKind
+{
+    Actual,
+    DetachedVirtualBroken,
+    AttachedVirtualBroken,
+};
+
 struct ParseTreeNode
 {
     std::string kind;
@@ -19,6 +26,14 @@ struct ParseTreeNode
     std::string annotated_value;
     bool detached_virtual_branch = false;
     bool verified_virtual_branch = false;
+
+    // Scaffold: location metadata so interval diffing can locate affected
+    // subtrees without re-inventing a second structural scanner.
+    ParseBranchKind branch_kind = ParseBranchKind::Actual;
+    std::string source_file_path;
+    size_t source_line_start = 0;
+    size_t source_line_end = 0;
+    std::vector<size_t> stable_node_path;
 };
 
 struct LineHashTrace
@@ -52,9 +67,22 @@ struct FactoryInvocationTrace
 
 struct ParseTreeBundle
 {
+    // Rooted source truth. Always attached, independent from virtual-broken
+    // verification success or failure.
     ParseTreeNode main_tree;
+
+    // Transitional compatibility field. The old model treated this as a
+    // post-filtered relevance copy of the main tree. In the new scaffold
+    // the detached virtual-broken branch is what matters; this field is
+    // preserved only so upstream code that reads `shadow_tree` keeps
+    // working while the new model is wired through.
+    // TODO: remove once all readers migrate to `virtual_tree_scaffold`.
     ParseTreeNode shadow_tree;
+
+    // Per-file detached virtual-broken branches that survived class-local
+    // lexical verification and were attached at class-success boundaries.
     ParseTreeNode virtual_tree_scaffold;
+
     std::vector<LineHashTrace> line_hash_traces;
     std::vector<FactoryInvocationTrace> factory_invocation_traces;
     std::vector<CrucialClassInfo> crucial_classes;
