@@ -2,7 +2,6 @@
 
 - Source: LegacyPatternTransformSamples/legacy_singleton_to_builder_sample.cpp
 - Kind: C++ implementation
-- Lines: 36
 
 ## Story
 ### What Happens Here
@@ -21,18 +20,18 @@ Provides legacy sample source programs from the older pattern-to-pattern transfo
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter instance()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Handle instance"]
     N3["Carry out instance"]
-    N4["Return result"]
-    N5["Enter set_format()"]
+    N4["Return local result"]
+    N5["Set format"]
     N6["Carry out set format"]
-    N7["Leave set_format()"]
-    N8["Enter enable_timestamp()"]
+    N7["Return from local helper"]
+    N8["Enable timestamp"]
     N9["Carry out enable timestamp"]
     N0 --> N1
     N1 --> N2
@@ -45,19 +44,19 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Leave enable_timestamp()"]
-    N1["Enter configure_channel()"]
+    N0["Return from local helper"]
+    N1["Configure channel"]
     N2["Carry out configure channel"]
-    N3["Leave configure_channel()"]
-    N4["Enter log()"]
+    N3["Return from local helper"]
+    N4["Handle log"]
     N5["Carry out log"]
-    N6["Leave log()"]
-    N7["Enter main()"]
+    N6["Return from local helper"]
+    N7["Handle main"]
     N8["Serialize report"]
-    N9["Return result"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -69,10 +68,10 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 3
+#### Slice 3 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 
 ## Reading Map
@@ -88,17 +87,17 @@ It leans on nearby contracts or tools such as iostream and string.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- instance() (line 6): Owns a focused local responsibility.
-- set_format() (line 11): Owns a focused local responsibility.
-- enable_timestamp() (line 13): Owns a focused local responsibility.
-- configure_channel() (line 14): Owns a focused local responsibility.
-- log() (line 15): Owns a focused local responsibility.
-- main() (line 26): Serialize report content
+- instance(): Owns a focused local responsibility.
+- set_format(): Owns a focused local responsibility.
+- enable_timestamp(): Owns a focused local responsibility.
+- configure_channel(): Owns a focused local responsibility.
+- log(): Owns a focused local responsibility.
+- main(): Serialize report content
 
 ## Function Stories
 
 ### instance()
-This routine owns one focused piece of the file's behavior. It appears near line 6.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -109,9 +108,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["instance()"]
-    N0["Enter instance()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle instance"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -120,7 +119,7 @@ flowchart TD
 ```
 
 ### set_format()
-This routine owns one focused piece of the file's behavior. It appears near line 11.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -129,8 +128,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["set_format()"]
-    N0["Enter set_format()"]
-    N1["Apply the routine's local logic"]
+    N0["Set format"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -140,7 +139,7 @@ flowchart TD
 ```
 
 ### enable_timestamp()
-This routine owns one focused piece of the file's behavior. It appears near line 13.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -149,8 +148,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["enable_timestamp()"]
-    N0["Enter enable_timestamp()"]
-    N1["Apply the routine's local logic"]
+    N0["Enable timestamp"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -160,7 +159,7 @@ flowchart TD
 ```
 
 ### configure_channel()
-This routine owns one focused piece of the file's behavior. It appears near line 14.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -169,8 +168,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["configure_channel()"]
-    N0["Enter configure_channel()"]
-    N1["Apply the routine's local logic"]
+    N0["Configure channel"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -180,7 +179,7 @@ flowchart TD
 ```
 
 ### log()
-This routine owns one focused piece of the file's behavior. It appears near line 15.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -189,8 +188,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["log()"]
-    N0["Enter log()"]
-    N1["Apply the routine's local logic"]
+    N0["Handle log"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -200,7 +199,7 @@ flowchart TD
 ```
 
 ### main()
-This routine owns one focused piece of the file's behavior. It appears near line 26.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles serialize report content.
 
@@ -213,9 +212,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["main()"]
-    N0["Enter main()"]
+    N0["Handle main"]
     N1["Serialize report"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

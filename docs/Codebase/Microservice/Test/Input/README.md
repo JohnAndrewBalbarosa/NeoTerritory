@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Regression Inputs
-These documents explain the local implementation by covering Supplies regression-style sample programs for microservice analysis routes..
+These documents explain the local implementation by covering Supplies regression-style sample programs for microservice analysis routes.
 - factory_to_base_identifier_literal_source.cpp.md : Supplies regression-style sample programs for microservice analysis routes.
 - factory_to_base_instance_source.cpp.md : Supplies regression-style sample programs for microservice analysis routes.
 - factory_to_base_kind_numeric_source.cpp.md : Supplies regression-style sample programs for microservice analysis routes.

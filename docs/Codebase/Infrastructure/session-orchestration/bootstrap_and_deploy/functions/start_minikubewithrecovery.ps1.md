@@ -4,9 +4,9 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Start-MinikubeWithRecovery()
-This routine prepares or drives one of the main execution paths in the file. It appears near line 279.
+This routine prepares or drives one of the main execution paths in the file.
 
-Inside the body, it mainly handles drive the main execution path, report status or failures to the caller, invoke external tooling, and branch on runtime conditions.
+Inside the body, it mainly handles drive the main execution path, report status or failures to the caller, invoke external tooling, and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
@@ -14,20 +14,20 @@ What it does:
 - drive the main execution path
 - report status or failures to the caller
 - invoke external tooling
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["Start-MinikubeWithRecovery()"]
-    N0["Enter start-minikubewithrecovery()"]
+    N0["Execute file-local step"]
     N1["Drive path"]
     N2["Report status"]
     N3["Invoke tooling"]
-    N4["Branch condition"]
+    N4["Check local condition"]
     D4{"Continue?"}
-    R4["Stop path"]
-    N5["Return result"]
+    R4["Return early path"]
+    N5["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

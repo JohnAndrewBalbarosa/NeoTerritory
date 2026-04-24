@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/Internal/bucket.cpp
 - Kind: C++ implementation
-- Lines: 68
 
 ## Story
 ### What Happens Here
@@ -24,20 +23,20 @@ The flow is intentionally split into smaller slices so the major intent of bucke
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of bucket.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for bucket.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: bucket.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter bucketize_file_node_for_traversal()"]
-    N3["Record output"]
-    N4["Assemble tree"]
+    N0["Begin local flow"]
+    N1["Prepare local model"]
+    N2["Group file node for traversal"]
+    N3["Store local result"]
+    N4["Connect local nodes"]
     N5["Compute hashes"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -50,14 +49,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of bucket.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for bucket.cpp after setup.
 Why this is separate: bucket.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Leave bucketize_file_node_for_traversal()"]
-    N2["End"]
+    N0["Return early path"]
+    N1["Return from local helper"]
+    N2["Return from local flow"]
     N0 --> N1
     N1 --> N2
 ```
@@ -75,42 +74,42 @@ It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, 
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- bucketize_file_node_for_traversal() (line 8): Record derived output into collections, assemble tree or artifact structures, and compute hash metadata
+- bucketize_file_node_for_traversal(): store local findings, connect local structures, and compute hash metadata
 
 ## Function Stories
 
 ### bucketize_file_node_for_traversal()
-This routine owns one focused piece of the file's behavior. It appears near line 8.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles record derived output into collections, assemble tree or artifact structures, compute hash metadata, and iterate over the active collection.
+Inside the body, it mainly handles store local findings, connect local structures, compute hash metadata, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path.
 
 What it does:
-- record derived output into collections
-- assemble tree or artifact structures
+- store local findings
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 2 - bucketize_file_node_for_traversal() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of bucket.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for bucket.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: bucket.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["bucketize_file_node_for_traversal()"]
-    N1["Enter bucketize_file_node_for_traversal()"]
-    N2["Record output"]
-    N3["Assemble tree"]
+    N1["Group file node for traversal"]
+    N2["Store local result"]
+    N3["Connect local nodes"]
     N4["Compute hashes"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -122,8 +121,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of bucket.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for bucket.cpp after setup.
 Why this is separate: bucket.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD

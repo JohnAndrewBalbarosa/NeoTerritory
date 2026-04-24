@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### is_main_function_name()
-This routine owns one focused piece of the file's behavior. It appears near line 131.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -15,9 +15,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["is_main_function_name()"]
-    N0["Enter is_main_function_name()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Check main function name"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

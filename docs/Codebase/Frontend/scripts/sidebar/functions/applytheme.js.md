@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### applyTheme()
-This routine owns one focused piece of the file's behavior. It appears near line 62.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles update DOM state.
 
@@ -17,7 +17,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["applyTheme()"]
-    N0["Enter applytheme()"]
+    N0["Apply theme"]
     N1["Update DOM"]
     N2["Hand back"]
     End["Return"]

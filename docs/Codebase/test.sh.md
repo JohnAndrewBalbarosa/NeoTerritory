@@ -2,7 +2,6 @@
 
 - Source: test.sh
 - Kind: Shell script
-- Lines: 21
 
 ## Story
 ### What Happens Here
@@ -21,9 +20,9 @@ Shell helper for local compile or execution checks. It collaborates directly wit
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Invoke kubectl"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> End
 ```

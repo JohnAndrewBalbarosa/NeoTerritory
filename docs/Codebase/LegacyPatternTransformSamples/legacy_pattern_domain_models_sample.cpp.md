@@ -2,7 +2,6 @@
 
 - Source: LegacyPatternTransformSamples/legacy_pattern_domain_models_sample.cpp
 - Kind: C++ implementation
-- Lines: 33
 
 ## Story
 ### What Happens Here
@@ -21,18 +20,18 @@ Provides legacy sample source programs from the older pattern-to-pattern transfo
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter set_name()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Set name"]
     N3["Carry out set name"]
-    N4["Leave set_name()"]
-    N5["Enter name()"]
+    N4["Return from local helper"]
+    N5["Handle name"]
     N6["Carry out name"]
-    N7["Return result"]
-    N8["Enter set_plate()"]
+    N7["Return local result"]
+    N8["Set plate"]
     N9["Carry out set plate"]
     N0 --> N1
     N1 --> N2
@@ -45,17 +44,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Leave set_plate()"]
-    N1["Enter plate()"]
+    N0["Return from local helper"]
+    N1["Handle plate"]
     N2["Carry out plate"]
-    N3["Return result"]
-    N4["Enter assign()"]
+    N3["Return local result"]
+    N4["Handle assign"]
     N5["Carry out assign"]
-    N6["Leave assign()"]
-    N7["End"]
+    N6["Return from local helper"]
+    N7["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -78,16 +77,16 @@ It leans on nearby contracts or tools such as string.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- set_name() (line 5): Owns a focused local responsibility.
-- name() (line 6): Owns a focused local responsibility.
-- set_plate() (line 14): Owns a focused local responsibility.
-- plate() (line 15): Owns a focused local responsibility.
-- assign() (line 23): Owns a focused local responsibility.
+- set_name(): Owns a focused local responsibility.
+- name(): Owns a focused local responsibility.
+- set_plate(): Owns a focused local responsibility.
+- plate(): Owns a focused local responsibility.
+- assign(): Owns a focused local responsibility.
 
 ## Function Stories
 
 ### set_name()
-This routine owns one focused piece of the file's behavior. It appears near line 5.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -96,8 +95,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["set_name()"]
-    N0["Enter set_name()"]
-    N1["Apply the routine's local logic"]
+    N0["Set name"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -107,7 +106,7 @@ flowchart TD
 ```
 
 ### name()
-This routine owns one focused piece of the file's behavior. It appears near line 6.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -118,9 +117,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["name()"]
-    N0["Enter name()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle name"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -129,7 +128,7 @@ flowchart TD
 ```
 
 ### set_plate()
-This routine owns one focused piece of the file's behavior. It appears near line 14.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -138,8 +137,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["set_plate()"]
-    N0["Enter set_plate()"]
-    N1["Apply the routine's local logic"]
+    N0["Set plate"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -149,7 +148,7 @@ flowchart TD
 ```
 
 ### plate()
-This routine owns one focused piece of the file's behavior. It appears near line 15.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -160,9 +159,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["plate()"]
-    N0["Enter plate()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle plate"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -171,7 +170,7 @@ flowchart TD
 ```
 
 ### assign()
-This routine owns one focused piece of the file's behavior. It appears near line 23.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -180,8 +179,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["assign()"]
-    N0["Enter assign()"]
-    N1["Apply the routine's local logic"]
+    N0["Handle assign"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0

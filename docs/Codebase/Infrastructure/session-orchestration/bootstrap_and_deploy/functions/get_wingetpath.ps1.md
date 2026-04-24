@@ -4,28 +4,28 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Get-WingetPath()
-This routine owns one focused piece of the file's behavior. It appears near line 32.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles inspect the current filesystem state and branch on runtime conditions.
+Inside the body, it mainly handles inspect the current filesystem state and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - inspect the current filesystem state
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["Get-WingetPath()"]
-    N0["Enter get-wingetpath()"]
+    N0["Resolve wingetpath"]
     N1["Inspect files"]
     D1{"Continue?"}
-    R1["Stop path"]
-    N2["Branch condition"]
+    R1["Return early path"]
+    N2["Check local condition"]
     D2{"Continue?"}
-    R2["Stop path"]
-    N3["Return result"]
+    R2["Return early path"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

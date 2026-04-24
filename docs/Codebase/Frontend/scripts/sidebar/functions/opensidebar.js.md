@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### openSidebar()
-This routine owns one focused piece of the file's behavior. It appears near line 10.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -13,8 +13,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["openSidebar()"]
-    N0["Enter opensidebar()"]
-    N1["Apply the routine's local logic"]
+    N0["Open sidebar"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0

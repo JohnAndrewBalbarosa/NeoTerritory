@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### derive_child_context_hash()
-This routine owns one focused piece of the file's behavior. It appears near line 34.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles compute or reuse hash-oriented identifiers and compute hash metadata.
 
@@ -18,10 +18,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["derive_child_context_hash()"]
-    N0["Enter derive_child_context_hash()"]
+    N0["Handle derive child context hash"]
     N1["Use hashes"]
     N2["Compute hashes"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

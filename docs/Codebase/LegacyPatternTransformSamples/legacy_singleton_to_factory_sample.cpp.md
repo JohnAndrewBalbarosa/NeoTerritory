@@ -2,7 +2,6 @@
 
 - Source: LegacyPatternTransformSamples/legacy_singleton_to_factory_sample.cpp
 - Kind: C++ implementation
-- Lines: 29
 
 ## Story
 ### What Happens Here
@@ -21,18 +20,18 @@ Provides legacy sample source programs from the older pattern-to-pattern transfo
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter instance()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Handle instance"]
     N3["Carry out instance"]
-    N4["Return result"]
-    N5["Enter set_path()"]
+    N4["Return local result"]
+    N5["Set path"]
     N6["Carry out set path"]
-    N7["Leave set_path()"]
-    N8["Enter enable_cache()"]
+    N7["Return from local helper"]
+    N8["Enable cache"]
     N9["Carry out enable cache"]
     N0 --> N1
     N1 --> N2
@@ -45,17 +44,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Leave enable_cache()"]
-    N1["Enter log()"]
+    N0["Return from local helper"]
+    N1["Handle log"]
     N2["Carry out log"]
-    N3["Leave log()"]
-    N4["Enter main()"]
+    N3["Return from local helper"]
+    N4["Handle main"]
     N5["Serialize report"]
-    N6["Return result"]
-    N7["End"]
+    N6["Return local result"]
+    N7["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -78,16 +77,16 @@ It leans on nearby contracts or tools such as iostream and string.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- instance() (line 6): Owns a focused local responsibility.
-- set_path() (line 11): Owns a focused local responsibility.
-- enable_cache() (line 13): Owns a focused local responsibility.
-- log() (line 14): Owns a focused local responsibility.
-- main() (line 20): Serialize report content
+- instance(): Owns a focused local responsibility.
+- set_path(): Owns a focused local responsibility.
+- enable_cache(): Owns a focused local responsibility.
+- log(): Owns a focused local responsibility.
+- main(): Serialize report content
 
 ## Function Stories
 
 ### instance()
-This routine owns one focused piece of the file's behavior. It appears near line 6.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -98,9 +97,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["instance()"]
-    N0["Enter instance()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle instance"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -109,7 +108,7 @@ flowchart TD
 ```
 
 ### set_path()
-This routine owns one focused piece of the file's behavior. It appears near line 11.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -118,8 +117,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["set_path()"]
-    N0["Enter set_path()"]
-    N1["Apply the routine's local logic"]
+    N0["Set path"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -129,7 +128,7 @@ flowchart TD
 ```
 
 ### enable_cache()
-This routine owns one focused piece of the file's behavior. It appears near line 13.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -138,8 +137,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["enable_cache()"]
-    N0["Enter enable_cache()"]
-    N1["Apply the routine's local logic"]
+    N0["Enable cache"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -149,7 +148,7 @@ flowchart TD
 ```
 
 ### log()
-This routine owns one focused piece of the file's behavior. It appears near line 14.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -158,8 +157,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["log()"]
-    N0["Enter log()"]
-    N1["Apply the routine's local logic"]
+    N0["Handle log"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -169,7 +168,7 @@ flowchart TD
 ```
 
 ### main()
-This routine owns one focused piece of the file's behavior. It appears near line 20.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles serialize report content.
 
@@ -182,9 +181,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["main()"]
-    N0["Enter main()"]
+    N0["Handle main"]
     N1["Serialize report"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

@@ -12,7 +12,7 @@ flowchart TD
     Start["Hook call"]
     N0["Receive context"]
     N1["Inspect target"]
-    N2["Run algorithm"]
+    N2["Execute file-local step"]
     N3["Return evidence"]
     End["Middleman resumes"]
     Start --> N0
@@ -53,7 +53,7 @@ flowchart TD
     D0{"Match?"}
     N1["Emit evidence"]
     N2["Emit empty"]
-    End["Return result"]
+    End["Return local result"]
     Start --> N0
     N0 --> D0
     D0 -->|yes| N1

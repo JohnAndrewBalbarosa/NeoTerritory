@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### extract_return_candidate_name()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 28.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["extract_return_candidate_name()"]
-    N0["Enter extract_return_candidate_name()"]
+    N0["Extract return candidate name"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

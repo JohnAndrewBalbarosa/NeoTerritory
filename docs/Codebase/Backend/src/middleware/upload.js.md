@@ -2,7 +2,6 @@
 
 - Source: Backend/src/middleware/upload.js
 - Kind: JavaScript module
-- Lines: 33
 
 ## Story
 ### What Happens Here
@@ -21,15 +20,15 @@ Applies request-shaping concerns such as auth, uploads, and error handling. The 
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Supporting steps"]
-    N1["Enter filefilter()"]
+    Start["Begin local flow"]
+    N0["Run helper branch"]
+    N1["Filter uploaded file"]
     N2["Clean text"]
     N3["Validate branch"]
     D3{"Continue?"}
-    R3["Stop path"]
-    N4["Return result"]
-    End["End"]
+    R3["Return early path"]
+    N4["Return local result"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -54,12 +53,12 @@ It leans on nearby contracts or tools such as multer, path, fs, and ../utils/fil
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- fileFilter() (line 17): Normalize raw text before later parsing and validate conditions and branch on failures
+- fileFilter(): Normalize raw text before later parsing and validate conditions and branch on failures
 
 ## Function Stories
 
 ### fileFilter()
-This routine owns one focused piece of the file's behavior. It appears near line 17.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles normalize raw text before later parsing and validate conditions and branch on failures.
 
@@ -73,12 +72,12 @@ Flow:
 ```mermaid
 flowchart TD
     Start["fileFilter()"]
-    N0["Enter filefilter()"]
+    N0["Filter uploaded file"]
     N1["Clean text"]
     N2["Validate branch"]
     D2{"Continue?"}
-    R2["Stop path"]
-    N3["Return result"]
+    R2["Return early path"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

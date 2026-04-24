@@ -1,4 +1,4 @@
-﻿# styles
+# styles
 
 - Folder: docs/Codebase/Frontend/styles
 - Descendant source docs: 2
@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Styling
-These documents explain the local implementation by covering Defines the visual system and component styling for the frontend prototype..
+These documents explain the local implementation by covering Defines the visual system and component styling for the frontend prototype.
 - components.css.md : Defines the visual system and component styling for the frontend prototype.
 - main.css.md : Defines the visual system and component styling for the frontend prototype.
 

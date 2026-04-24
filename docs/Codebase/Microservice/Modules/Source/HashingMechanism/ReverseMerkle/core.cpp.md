@@ -1,50 +1,72 @@
-# hash.cpp
+# core.cpp
 
 - Source: Microservice/Modules/Source/ParseTree/Internal/hash.cpp
 - Kind: C++ implementation
-- Lines: 114
+- Docs role: Reverse-Merkle hashing entrypoint for the future `HashingMechanism/ReverseMerkle/` source folder.
 
 ## Story
 ### What Happens Here
 
-This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as dependency handling, symbolization, hash-link construction, rendering, or older generation helpers after the raw tree exists. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
+This file exists because reverse-Merkle hashing is a standalone algorithm stage in the parser pipeline. It owns the helpers that derive a child hash from the immediate parent, cascade contextual hashes through tree descendants, keep usage hashes unique, and format usage-hash evidence for output.
 
 ### Why It Matters In The Flow
 
-Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
+Runs after tree nodes exist and before downstream hash-linking, reports, and rendered outputs consume the contextual hash state.
 
 ### What To Watch While Reading
 
-Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as hash_combine_token, make_fnv1a64_hash_id, std::setfill, and derive_child_context_hash. It collaborates directly with Internal/parse_tree_internal.hpp, cstdint, functional, and iomanip.
+Watch the parent-to-child hash handoff. The important symbols are `hash_combine_token`, `derive_child_context_hash`, `rehash_subtree`, `add_unique_hash`, `usage_hash_suffix`, and `usage_hash_list`.
 
 ## Program Flow
-Detailed program flow is decoupled into future implementation units:
+Quick summary: this file owns the local reverse-Merkle hash helpers used by parse-tree generation. It derives child context hashes from the immediate parent, cascades hashes through descendants, and formats usage-hash evidence for later readers.
+
+Why this slice is separate: this diagram is the file-local activity path. The linked flow docs can expand individual helpers, but this file still needs to show what the implementation does as a whole.
+
+```mermaid
+flowchart TD
+    A["Receive parent context"]
+    B["Combine parent and token"]
+    C["Derive child context hash"]
+    D["Cascade hash into subtree"]
+    E["Keep unique usage hashes"]
+    F["Format usage hash evidence"]
+    G["Return hashed tree state"]
+
+    A --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G
+```
+
+Detailed helper flow is decoupled into future implementation units:
 
 - [program_flow](./hash/hash_program_flow.cpp.md)
 ## Reading Map
-Read this file as: Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.
+Read this file as: reverse-Merkle hash propagation and usage-hash formatting.
 
-Where it sits in the run: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
+Where it sits in the run: after actual/virtual tree nodes exist, before hash-link resolution and output generation.
 
 Names worth recognizing while reading: hash_combine_token, make_fnv1a64_hash_id, std::setfill, derive_child_context_hash, hash_class_name_with_file, and rehash_subtree.
 
-It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, cstdint, functional, iomanip, sstream, and string.
+It leans on nearby contracts or tools such as `Internal/parse_tree_internal.hpp`, `cstdint`, `functional`, `iomanip`, `sstream`, and `string`.
 
 ## Story Groups
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- rehash_subtree() (line 52): Compute or reuse hash-oriented identifiers, assemble tree or artifact structures, and compute hash metadata
-- add_unique_hash() (line 61): Build or append the next output structure, compute or reuse hash-oriented identifiers, and record derived output into collections
+- rehash_subtree(): Compute or reuse hash-oriented identifiers, connect local structures, and compute hash metadata
+- add_unique_hash(): Create the local output structure, compute or reuse hash-oriented identifiers, and store local findings
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- hash_combine_token() (line 12): Compute or reuse hash-oriented identifiers and compute hash metadata
-- make_fnv1a64_hash_id() (line 16): Compute or reuse hash-oriented identifiers, populate output fields or accumulators, and compute hash metadata
-- derive_child_context_hash() (line 34): Compute or reuse hash-oriented identifiers and compute hash metadata
-- hash_class_name_with_file() (line 47): Compute or reuse hash-oriented identifiers, inspect or register class-level information, and compute hash metadata
-- usage_hash_suffix() (line 73): Compute or reuse hash-oriented identifiers, populate output fields or accumulators, and compute hash metadata
-- usage_hash_list() (line 94): Compute or reuse hash-oriented identifiers, populate output fields or accumulators, and compute hash metadata
+- hash_combine_token(): Compute or reuse hash-oriented identifiers and compute hash metadata
+- make_fnv1a64_hash_id(): Compute or reuse hash-oriented identifiers, fill local output fields, and compute hash metadata
+- derive_child_context_hash(): Compute or reuse hash-oriented identifiers and compute hash metadata
+- hash_class_name_with_file(): Compute or reuse hash-oriented identifiers, inspect or register class-level information, and compute hash metadata
+- usage_hash_suffix(): Compute or reuse hash-oriented identifiers, fill local output fields, and compute hash metadata
+- usage_hash_list(): Compute or reuse hash-oriented identifiers, fill local output fields, and compute hash metadata
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

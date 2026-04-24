@@ -1,8 +1,7 @@
-﻿# logService.js
+# logService.js
 
 - Source: Backend/src/services/logService.js
 - Kind: JavaScript module
-- Lines: 9
 
 ## Story
 ### What Happens Here
@@ -21,12 +20,12 @@ Provides backend support services used across request handlers. The main surface
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Supporting steps"]
-    N1["Enter logevent()"]
+    Start["Begin local flow"]
+    N0["Run helper branch"]
+    N1["Write audit log event"]
     N2["Use SQLite"]
-    N3["Leave logEvent()"]
-    End["End"]
+    N3["Return from local helper"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -47,12 +46,12 @@ It leans on nearby contracts or tools such as ../db/database.
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- logEvent() (line 2): Query or update SQLite state
+- logEvent(): Query or update SQLite state
 
 ## Function Stories
 
 ### logEvent()
-This routine owns one focused piece of the file's behavior. It appears near line 2.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles query or update SQLite state.
 
@@ -63,7 +62,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["logEvent()"]
-    N0["Enter logevent()"]
+    N0["Write audit log event"]
     N1["Use SQLite"]
     N2["Hand back"]
     End["Return"]

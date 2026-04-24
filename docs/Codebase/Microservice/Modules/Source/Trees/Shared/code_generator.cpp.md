@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/code_generator.cpp
 - Kind: C++ implementation
-- Lines: 46
 
 ## Story
 ### What Happens Here
@@ -24,20 +23,20 @@ The flow is intentionally split into smaller slices so the major intent of code_
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of code_generator.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for code_generator.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: code_generator.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter get_last_transform_decisions()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Execute file-local step"]
     N3["Carry out get last transform decisions"]
-    N4["Return result"]
-    N5["Enter generate_base_code_from_source()"]
+    N4["Return local result"]
+    N5["Execute file-local step"]
     N6["Generate evidence"]
-    N7["Return result"]
-    N8["Enter generate_target_code_from_source()"]
+    N7["Return local result"]
+    N8["Execute file-local step"]
     N9["Render views"]
     N0 --> N1
     N1 --> N2
@@ -50,13 +49,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of code_generator.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for code_generator.cpp after setup.
 Why this is separate: code_generator.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["End"]
+    N0["Return local result"]
+    N1["Return from local flow"]
     N0 --> N1
 ```
 
@@ -73,14 +72,14 @@ It leans on nearby contracts or tools such as parse_tree_code_generator.hpp and 
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- get_last_transform_decisions() (line 9): Owns a focused local responsibility.
-- generate_base_code_from_source() (line 14): Generate code or evidence output
-- generate_target_code_from_source() (line 27): Render text or HTML views
+- get_last_transform_decisions(): Owns a focused local responsibility.
+- generate_base_code_from_source(): Generate code or evidence output
+- generate_target_code_from_source(): Render text or HTML views
 
 ## Function Stories
 
 ### get_last_transform_decisions()
-This routine owns one focused piece of the file's behavior. It appears near line 9.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -91,9 +90,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["get_last_transform_decisions()"]
-    N0["Enter get_last_transform_decisions()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Execute file-local step"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -102,7 +101,7 @@ flowchart TD
 ```
 
 ### generate_base_code_from_source()
-This routine owns one focused piece of the file's behavior. It appears near line 14.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles generate code or evidence output.
 
@@ -115,9 +114,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["generate_base_code_from_source()"]
-    N0["Enter generate_base_code_from_source()"]
+    N0["Execute file-local step"]
     N1["Generate evidence"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -126,7 +125,7 @@ flowchart TD
 ```
 
 ### generate_target_code_from_source()
-This routine owns one focused piece of the file's behavior. It appears near line 27.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles render text or HTML views.
 
@@ -139,9 +138,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["generate_target_code_from_source()"]
-    N0["Enter generate_target_code_from_source()"]
+    N0["Execute file-local step"]
     N1["Render views"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

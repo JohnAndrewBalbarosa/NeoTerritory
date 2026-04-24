@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/Internal/statement.cpp
 - Kind: C++ implementation
-- Lines: 149
 
 ## Story
 ### What Happens Here
@@ -18,6 +17,27 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as is_type_keyword, detect_statement_kind, is_class_or_struct_signature, and is_function_signature. It collaborates directly with Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, string, and vector.
 
 ## Program Flow
+Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
+
+Why this slice is separate: deeper helper docs can explain individual functions, while this file still needs to show the main activity path in place.
+
+```mermaid
+flowchart TD
+    N0["Receive local input"]
+    N1["Check type keyword"]
+    N2["Check class or struct signature"]
+    N3["Check function signature"]
+    N4["Check class declaration node"]
+    N5["Check global function declaration node"]
+    N6["Return local result"]
+    N0 --> N1
+    N1 --> N2
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> N6
+```
+
 Detailed program flow is decoupled into future implementation units:
 
 - [program_flow](./statement/statement_program_flow.cpp.md)
@@ -34,15 +54,15 @@ It leans on nearby contracts or tools such as Internal/parse_tree_internal.hpp, 
 
 ### Checks Before Moving On
 These steps stop bad input or unsupported state before it can confuse the next part of the run.
-- is_type_keyword() (line 12): Look up entries in previously collected maps or sets
-- is_class_or_struct_signature() (line 79): Inspect or register class-level information, look up entries in previously collected maps or sets, and parse or tokenize input text
-- is_function_signature() (line 91): Look up entries in previously collected maps or sets, parse or tokenize input text, and iterate over the active collection
-- is_class_declaration_node() (line 133): Inspect or register class-level information, inspect or rewrite declarations, and branch on runtime conditions
-- is_global_function_declaration_node() (line 143): Inspect or rewrite declarations
+- is_type_keyword(): look up local indexes
+- is_class_or_struct_signature(): Inspect or register class-level information, look up local indexes, and read local tokens
+- is_function_signature(): look up local indexes, read local tokens, and walk the local collection
+- is_class_declaration_node(): Inspect or register class-level information, inspect or rewrite declarations, and branch on local conditions
+- is_global_function_declaration_node(): Inspect or rewrite declarations
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- detect_statement_kind() (line 18): Look up entries in previously collected maps or sets, iterate over the active collection, and branch on runtime conditions
+- detect_statement_kind(): look up local indexes, walk the local collection, and branch on local conditions
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

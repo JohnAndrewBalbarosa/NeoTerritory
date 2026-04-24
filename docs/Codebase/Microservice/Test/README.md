@@ -1,4 +1,4 @@
-﻿# Test
+# Test
 
 - Folder: docs/Codebase/Microservice/Test
 - Descendant source docs: 5
@@ -25,7 +25,7 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Regression Inputs
-These child folders continue the subsystem by covering Regression-focused input programs used to exercise specific transform and detection routes..
+These child folders continue the subsystem by covering Regression-focused input programs used to exercise specific transform and detection routes.
 - Input/ : Regression-focused input programs used to exercise specific transform and detection routes.
 
 ## Reading Hint

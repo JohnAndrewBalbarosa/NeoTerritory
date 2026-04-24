@@ -1,4 +1,4 @@
-﻿# pages
+# pages
 
 - Folder: docs/Codebase/Frontend/pages
 - Descendant source docs: 6
@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Pages
-These documents explain the local implementation by covering Provides a page fragment that the client-side router injects into the main content area..
+These documents explain the local implementation by covering Provides a page fragment that the client-side router injects into the main content area.
 - analysis-new.html.md : Provides a page fragment that the client-side router injects into the main content area.
 - dashboard.html.md : Provides a page fragment that the client-side router injects into the main content area.
 - diff-viewer.html.md : Provides a page fragment that the client-side router injects into the main content area.

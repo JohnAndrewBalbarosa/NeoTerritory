@@ -1,66 +1,29 @@
-# PatternMiddlemanArchitecture
+# Middleman
 
-- Folder: `docs/Codebase/Microservice/Modules/Source/PatternMiddlemanArchitecture`
-- Purpose: current shared pattern-function subtree
-- Status: function-first internally, wrong outer placement
+- Folder: `docs/Codebase/Microservice/Modules/Source/Analysis/Patterns/Middleman`
+- Role: shared orchestration layer for pattern analysis.
 
-## Current Contents
-```text
-PatternMiddlemanArchitecture/
-  Assembler/
-  Context/
-  Contracts/
-  Dispatcher/
-  Hooks/
-  Middleman/
-  Migration/
-  Registry/
-```
+## Read Order
+1. `Contracts/`
+2. `Registry/`
+3. `Context/`
+4. `Dispatcher/`
+5. `Assembler/`
+6. `Middleman/`
+7. `Hooks/`
+8. `Migration/`
 
-## Structure Reading
-This subtree already shows the right inner rule:
-- first folder = function
-- pattern-specific implementation appears only under `Hooks/`
+## Boundary
+- This folder owns shared pattern contracts, registry, context, dispatch, assembly, middleman orchestration, and migration notes.
+- It intentionally stays outside `../Families/` because it coordinates multiple pattern families.
+- Family-specific implementation logic belongs in `../Families/Behavioural/` or `../Families/Creational/`.
 
-The problem is that this good function-first shape is isolated in a separate outer folder while the actual pattern files still live in `Behavioural/` and `Creational/`.
-
-## Required Rewrite
-This subtree should stop being a standalone architecture branch and become the shared function core of the pattern subsystem.
-
-## Target Placement
-```text
-Pattern/
-  Contracts/
-  Registry/
-  Context/
-  Dispatcher/
-  Assembler/
-  Middleman/
-  Hooks/
-    Behavioural/
-    Creational/
-  BrokenTree/
-  SymbolTest/
-  Transform/
-```
-
-## Concrete Mapping
-- `PatternMiddlemanArchitecture/Contracts/` becomes `Pattern/Contracts/`.
-- `PatternMiddlemanArchitecture/Registry/` becomes `Pattern/Registry/`.
-- `PatternMiddlemanArchitecture/Context/` becomes `Pattern/Context/`.
-- `PatternMiddlemanArchitecture/Dispatcher/` becomes `Pattern/Dispatcher/`.
-- `PatternMiddlemanArchitecture/Assembler/` becomes `Pattern/Assembler/`.
-- `PatternMiddlemanArchitecture/Middleman/` becomes `Pattern/Middleman/`.
-- `PatternMiddlemanArchitecture/Hooks/Behavioural/` becomes `Pattern/Hooks/Behavioural/`.
-- `PatternMiddlemanArchitecture/Hooks/Creational/` becomes `Pattern/Hooks/Creational/`.
-
-## Naming Rule
-- Keep the function folders.
-- Change the outer folder to the actual subsystem name.
-- Do not keep architecture style as the outer grouping rule.
-- Shorten file names after the function folder already provides the common meaning.
+## Placement Rule
+- Put cross-family orchestration here.
+- Put behavioural and creational algorithm implementations under `../Families/`.
+- Keep hook adapters here only when they connect family-specific logic into the shared middleman pipeline.
 
 ## Acceptance Checks
-- Shared pattern logic is stored directly under the pattern subsystem.
-- `Hooks/` is the only place where design-pattern families branch.
-- A reader reaches function folders before family folders.
+- `Middleman/` remains a sibling of `Families/`, not a child of it.
+- Shared pattern flow can be understood before reading any family-specific implementation.
+- Family-specific docs do not duplicate registry, dispatch, or contract ownership.

@@ -2,7 +2,6 @@
 
 - Source: LegacyPatternTransformSamples/legacy_factory_to_singleton_sample.cpp
 - Kind: C++ implementation
-- Lines: 46
 
 ## Story
 ### What Happens Here
@@ -21,19 +20,19 @@ Provides legacy sample source programs from the older pattern-to-pattern transfo
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter create()"]
-    N3["Build output"]
+    N0["Begin local flow"]
+    N1["Prepare local model"]
+    N2["Handle create"]
+    N3["Create local result"]
     N4["Serialize report"]
-    N5["Branch condition"]
+    N5["Check local condition"]
     N6["Continue?"]
-    N7["Stop path"]
-    N8["Return result"]
-    N9["Supporting steps"]
+    N7["Return early path"]
+    N8["Return local result"]
+    N9["Run helper branch"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -45,16 +44,16 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Enter main()"]
+    N0["Handle main"]
     N1["Serialize report"]
-    N2["Branch condition"]
+    N2["Check local condition"]
     N3["Continue?"]
-    N4["Stop path"]
-    N5["Return result"]
-    N6["End"]
+    N4["Return early path"]
+    N5["Return local result"]
+    N6["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -76,37 +75,37 @@ It leans on nearby contracts or tools such as iostream, memory, and string.
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- create() (line 23): Build or append the next output structure, serialize report content, and branch on runtime conditions
+- create(): Create the local output structure, serialize report content, and branch on local conditions
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- main() (line 36): Serialize report content and branch on runtime conditions
+- main(): Serialize report content and branch on local conditions
 
 ## Function Stories
 
 ### create()
-This routine assembles a larger structure from the inputs it receives. It appears near line 23.
+This routine assembles a larger structure from the inputs it receives.
 
-Inside the body, it mainly handles build or append the next output structure, serialize report content, and branch on runtime conditions.
+Inside the body, it mainly handles Create the local output structure, serialize report content, and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- build or append the next output structure
+- Create the local output structure
 - serialize report content
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["create()"]
-    N0["Enter create()"]
-    N1["Build output"]
+    N0["Handle create"]
+    N1["Create local result"]
     N2["Serialize report"]
-    N3["Branch condition"]
+    N3["Check local condition"]
     D3{"Continue?"}
-    R3["Stop path"]
-    N4["Return result"]
+    R3["Return early path"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -120,26 +119,26 @@ flowchart TD
 ```
 
 ### main()
-This routine owns one focused piece of the file's behavior. It appears near line 36.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles serialize report content and branch on runtime conditions.
+Inside the body, it mainly handles serialize report content and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - serialize report content
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["main()"]
-    N0["Enter main()"]
+    N0["Handle main"]
     N1["Serialize report"]
-    N2["Branch condition"]
+    N2["Check local condition"]
     D2{"Continue?"}
-    R2["Stop path"]
-    N3["Return result"]
+    R2["Return early path"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

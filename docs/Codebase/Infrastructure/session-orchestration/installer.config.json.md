@@ -2,7 +2,6 @@
 
 - Source: Infrastructure/session-orchestration/installer.config.json
 - Kind: JSON configuration
-- Lines: 12
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Parameterizes the infrastructure bootstrap flow with image, profile, template, a
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Define minikubeProfile"]
     N1["Define image"]
     N2["Define userId"]
     N3["Define runtimeRoot"]
     N4["Define dockerfile"]
     N5["Define k8sTemplates"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

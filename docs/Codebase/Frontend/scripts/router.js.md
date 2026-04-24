@@ -2,7 +2,6 @@
 
 - Source: Frontend/scripts/router.js
 - Kind: JavaScript module
-- Lines: 107
 
 ## Story
 ### What Happens Here
@@ -21,16 +20,16 @@ Drives hash routing, fragment loading, and page-init hooks. The main surface are
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Main path"]
-    N2["Enter navigate()"]
+    N2["Handle navigate"]
     N3["Drive path"]
     N4["Validate branch"]
     N5["Continue?"]
-    N6["Stop path"]
+    N6["Return early path"]
     N7["Fetch content"]
     N8["Update DOM"]
     N9["Schedule UI"]
@@ -45,16 +44,16 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["Enter initrouter()"]
+    N0["Return local result"]
+    N1["Initialize router"]
     N2["Drive path"]
     N3["Bind events"]
     N4["Change route"]
-    N5["Leave initRouter()"]
-    N6["End"]
+    N5["Return from local helper"]
+    N6["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -74,13 +73,13 @@ Names worth recognizing while reading: navigate, initRouter, ROUTES, DEFAULT_ROU
 
 ### Main Path
 These steps drive the main execution path by calling the supporting work in order.
-- navigate() (line 18): Drive the main execution path, validate conditions and branch on failures, and fetch route or page content
-- initRouter() (line 92): Drive the main execution path, bind browser event listeners, and change the active route
+- navigate(): Drive the main execution path, validate conditions and branch on failures, and fetch route or page content
+- initRouter(): Drive the main execution path, bind browser event listeners, and change the active route
 
 ## Function Stories
 
 ### navigate()
-This routine owns one focused piece of the file's behavior. It appears near line 18.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles drive the main execution path, validate conditions and branch on failures, fetch route or page content, and update DOM state.
 
@@ -96,19 +95,19 @@ What it does:
 Flow:
 
 ### Block 2 - navigate() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["navigate()"]
-    N1["Enter navigate()"]
+    N1["Handle navigate"]
     N2["Drive path"]
     N3["Validate branch"]
     N4["Continue?"]
-    N5["Stop path"]
+    N5["Return early path"]
     N6["Fetch content"]
     N7["Update DOM"]
     N8["Schedule UI"]
-    N9["Return result"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -120,14 +119,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Return"]
 ```
 
 ### initRouter()
-This routine prepares or drives one of the main execution paths in the file. It appears near line 92.
+This routine prepares or drives one of the main execution paths in the file.
 
 Inside the body, it mainly handles drive the main execution path, bind browser event listeners, and change the active route.
 
@@ -140,7 +139,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["initRouter()"]
-    N0["Enter initrouter()"]
+    N0["Initialize router"]
     N1["Drive path"]
     N2["Bind events"]
     N3["Change route"]

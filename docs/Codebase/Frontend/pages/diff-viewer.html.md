@@ -1,8 +1,7 @@
-﻿# diff-viewer.html
+# diff-viewer.html
 
 - Source: Frontend/pages/diff-viewer.html
 - Kind: HTML view
-- Lines: 131
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Provides a page fragment that the client-side router injects into the main conte
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Render #icon-code"]
     N1["Render #icon-graph"]
     N2["Render #tab-text"]
     N3["Render #tab-ast"]
     N4["Render #text-diff-view"]
     N5["Render #original-code"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

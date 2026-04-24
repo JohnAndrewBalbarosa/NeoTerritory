@@ -9,12 +9,12 @@ The flow is intentionally split into smaller slices so the major intent of creat
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of creational_broken_tree_program_flow.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for creational_broken_tree_program_flow.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: creational_broken_tree_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter creationaltreenode"]
     N3["Declare type"]
@@ -35,8 +35,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of creational_broken_tree_program_flow.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for creational_broken_tree_program_flow.hpp after setup.
 Why this is separate: creational_broken_tree_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -44,11 +44,11 @@ flowchart TD
     N1["Declare type"]
     N2["Expose contract"]
     N3["Leave ICreationalTreeCreator"]
-    N4["Enter build_creational_broken_tree()"]
+    N4["Create creational broken tree"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave build_creational_broken_tree()"]
-    N8["Enter creational_tree_to_parse_tree_node()"]
+    N7["Return from local helper"]
+    N8["Handle creational tree to parse tree node"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -61,21 +61,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in creational_broken_tree_program_flow.hpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how creational_broken_tree_program_flow.hpp passes prepared local state into its next operation.
 Why this is separate: creational_broken_tree_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave creational_tree_to_parse_tree_node()"]
-    N2["Enter creational_tree_to_html()"]
+    N1["Return from local helper"]
+    N2["Handle creational tree to html"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave creational_tree_to_html()"]
-    N6["Enter creational_tree_to_text()"]
+    N5["Return from local helper"]
+    N6["Handle creational tree to text"]
     N7["Declare call"]
     N8["Defer body"]
-    N9["Leave creational_tree_to_text()"]
+    N9["Return from local helper"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,11 +87,11 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in creational_broken_tree_program_flow.hpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in creational_broken_tree_program_flow.hpp and its immediate result.
 Why this is separate: creational_broken_tree_program_flow.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["End"]
+    N0["Return from local flow"]
 ```
 

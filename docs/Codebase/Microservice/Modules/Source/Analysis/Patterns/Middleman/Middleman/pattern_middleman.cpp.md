@@ -13,7 +13,7 @@ flowchart TD
     N0["Build registry"]
     N1["Build context"]
     N2["Dispatch hooks"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     N4["Return output"]
     End["Done"]
     Start --> N0
@@ -64,7 +64,7 @@ flowchart TD
     N0["Send assembler"]
     N1["Build tree"]
     N2["Add diagnostics"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Caller resumes"]
     Start --> N0
     N0 --> N1

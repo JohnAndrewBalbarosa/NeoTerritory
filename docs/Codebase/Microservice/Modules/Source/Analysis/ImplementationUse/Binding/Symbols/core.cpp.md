@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/symbols.cpp
 - Kind: C++ implementation
-- Lines: 11
 
 ## Story
 ### What Happens Here
@@ -21,15 +20,15 @@ Implements parsing, shadow-tree building, symbolization, hash linking, rendering
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
-    N0["Building the working picture"]
-    N1["Enter build_parse_tree_symbol_tables()"]
-    N2["Build output"]
+    Start["Begin local flow"]
+    N0["Prepare local model"]
+    N1["Create parse tree symbol tables"]
+    N2["Create local result"]
     N3["Work symbols"]
-    N4["Tokenize input"]
-    N5["Assemble tree"]
-    N6["Return result"]
-    End["End"]
+    N4["Read structured tokens"]
+    N5["Connect local nodes"]
+    N6["Return local result"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -53,33 +52,33 @@ It leans on nearby contracts or tools such as parse_tree_symbols.hpp and Interna
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- build_parse_tree_symbol_tables() (line 4): Build or append the next output structure, work with symbol-oriented state, and parse or tokenize input text
+- build_parse_tree_symbol_tables(): Create the local output structure, work with symbol-oriented state, and read local tokens
 
 ## Function Stories
 
 ### build_parse_tree_symbol_tables()
-This routine assembles a larger structure from the inputs it receives. It appears near line 4.
+This routine assembles a larger structure from the inputs it receives.
 
-Inside the body, it mainly handles build or append the next output structure, work with symbol-oriented state, parse or tokenize input text, and assemble tree or artifact structures.
+Inside the body, it mainly handles Create the local output structure, work with symbol-oriented state, read local tokens, and connect local structures.
 
 The caller receives a computed result or status from this step.
 
 What it does:
-- build or append the next output structure
+- Create the local output structure
 - work with symbol-oriented state
-- parse or tokenize input text
-- assemble tree or artifact structures
+- read local tokens
+- connect local structures
 
 Flow:
 ```mermaid
 flowchart TD
     Start["build_parse_tree_symbol_tables()"]
-    N0["Enter build_parse_tree_symbol_tables()"]
-    N1["Build output"]
+    N0["Create parse tree symbol tables"]
+    N1["Create local result"]
     N2["Work symbols"]
-    N3["Tokenize input"]
-    N4["Assemble tree"]
-    N5["Return result"]
+    N3["Read structured tokens"]
+    N4["Connect local nodes"]
+    N5["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

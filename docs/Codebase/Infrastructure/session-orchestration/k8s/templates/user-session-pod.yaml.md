@@ -1,8 +1,7 @@
-﻿# user-session-pod.yaml
+# user-session-pod.yaml
 
 - Source: Infrastructure/session-orchestration/k8s/templates/user-session-pod.yaml
 - Kind: YAML manifest
-- Lines: 22
 
 ## Story
 ### What Happens Here
@@ -21,14 +20,14 @@ Declares user-scoped Kubernetes resources for session pods and routing. The main
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Declare apiVersion"]
     N1["Declare kind"]
     N2["Declare metadata"]
     N3["Declare name"]
     N4["Declare labels"]
     N5["Declare app"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Pipeline-Contracts/analysis_context.hpp
 - Kind: C++ header
-- Lines: 15
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Declares the public interfaces and shared data types for the generic parse and a
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Promises this file makes"]
     N1["Enter parsetreebuildcontext"]
     N2["Declare type"]
     N3["Expose contract"]
     N4["Leave ParseTreeBuildContext"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -49,12 +48,12 @@ It leans on nearby contracts or tools such as string and vector.
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- ParseTreeBuildContext (line 6): Declare a shared type and expose the compile-time contract
+- ParseTreeBuildContext: Declare a shared type and expose the compile-time contract
 
 ## Function Stories
 
 ### ParseTreeBuildContext
-This declaration introduces a shared type that other files compile against. It appears near line 6.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -66,7 +65,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["ParseTreeBuildContext"]
-    N0["Enter parsetreebuildcontext()"]
+    N0["Parse tree build context"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]

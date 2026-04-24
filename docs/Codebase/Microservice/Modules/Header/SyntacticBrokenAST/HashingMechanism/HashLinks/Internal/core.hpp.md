@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Internal/parse_tree_hash_links_internal.hpp
 - Kind: C++ header
-- Lines: 6
 
 ## Story
 ### What Happens Here
@@ -21,12 +20,12 @@ Declares the public interfaces and shared data types for the generic parse and a
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Include the header during compilation"]
     N1["Expose the shared types or function"]
     N2["Let implementation files compile against the"]
     L2{"More items?"}
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

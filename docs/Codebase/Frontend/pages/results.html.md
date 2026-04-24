@@ -1,8 +1,7 @@
-﻿# results.html
+# results.html
 
 - Source: Frontend/pages/results.html
 - Kind: HTML view
-- Lines: 102
 
 ## Story
 ### What Happens Here
@@ -21,12 +20,12 @@ Provides a page fragment that the client-side router injects into the main conte
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Let the router request the page"]
     N1["Inject the fragment into the shell"]
-    N2["Run any matching page initialization logic"]
+    N2["Execute file-local step"]
     N3["Display the route-specific content to the"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

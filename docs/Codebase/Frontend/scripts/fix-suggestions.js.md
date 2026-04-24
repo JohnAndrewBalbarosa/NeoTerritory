@@ -2,7 +2,6 @@
 
 - Source: Frontend/scripts/fix-suggestions.js
 - Kind: JavaScript module
-- Lines: 118
 
 ## Story
 ### What Happens Here
@@ -21,19 +20,19 @@ Implements page-level interactive behavior for the static frontend. The main sur
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Showing the result"]
-    N2["Enter renderfixcards()"]
+    N2["Render fix cards"]
     N3["Render output"]
     N4["Validate branch"]
     N5["Continue?"]
-    N6["Stop path"]
+    N6["Return early path"]
     N7["Update DOM"]
-    N8["Return result"]
-    N9["Enter renderchecklist()"]
+    N8["Return local result"]
+    N9["Render checklist"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -45,17 +44,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Render output"]
     N1["Validate branch"]
     N2["Continue?"]
-    N3["Stop path"]
+    N3["Return early path"]
     N4["Update DOM"]
-    N5["Return result"]
-    N6["Supporting steps"]
-    N7["Enter updatecounts()"]
+    N5["Return local result"]
+    N6["Run helper branch"]
+    N7["Update counts"]
     N8["Validate branch"]
     N9["Continue?"]
     N0 --> N1
@@ -69,13 +68,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 3
+#### Slice 3 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
+    N0["Return early path"]
     N1["Update DOM"]
-    N2["Leave updateCounts()"]
-    N3["End"]
+    N2["Return from local helper"]
+    N3["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -92,17 +91,17 @@ Names worth recognizing while reading: renderFixCards, renderChecklist, updateCo
 
 ### Showing The Result
 These steps turn internal state into text, HTML, JSON, or another output a reader can inspect.
-- renderFixCards() (line 25): Render or serialize the result, validate conditions and branch on failures, and update DOM state
-- renderChecklist() (line 49): Render or serialize the result, validate conditions and branch on failures, and update DOM state
+- renderFixCards(): Render or serialize the result, validate conditions and branch on failures, and update DOM state
+- renderChecklist(): Render or serialize the result, validate conditions and branch on failures, and update DOM state
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- updateCounts() (line 66): Validate conditions and branch on failures and update DOM state
+- updateCounts(): Validate conditions and branch on failures and update DOM state
 
 ## Function Stories
 
 ### renderFixCards()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 25.
+This routine materializes internal state into an output format that later stages can consume.
 
 Inside the body, it mainly handles render or serialize the result, validate conditions and branch on failures, and update DOM state.
 
@@ -117,13 +116,13 @@ Flow:
 ```mermaid
 flowchart TD
     Start["renderFixCards()"]
-    N0["Enter renderfixcards()"]
+    N0["Render fix cards"]
     N1["Render output"]
     N2["Validate branch"]
     D2{"Continue?"}
-    R2["Stop path"]
+    R2["Return early path"]
     N3["Update DOM"]
-    N4["Return result"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -137,7 +136,7 @@ flowchart TD
 ```
 
 ### renderChecklist()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 49.
+This routine materializes internal state into an output format that later stages can consume.
 
 Inside the body, it mainly handles render or serialize the result, validate conditions and branch on failures, and update DOM state.
 
@@ -152,13 +151,13 @@ Flow:
 ```mermaid
 flowchart TD
     Start["renderChecklist()"]
-    N0["Enter renderchecklist()"]
+    N0["Render checklist"]
     N1["Render output"]
     N2["Validate branch"]
     D2{"Continue?"}
-    R2["Stop path"]
+    R2["Return early path"]
     N3["Update DOM"]
-    N4["Return result"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -172,7 +171,7 @@ flowchart TD
 ```
 
 ### updateCounts()
-This routine owns one focused piece of the file's behavior. It appears near line 66.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures and update DOM state.
 
@@ -186,10 +185,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["updateCounts()"]
-    N0["Enter updatecounts()"]
+    N0["Update counts"]
     N1["Validate branch"]
     D1{"Continue?"}
-    R1["Stop path"]
+    R1["Return early path"]
     N2["Update DOM"]
     N3["Hand back"]
     End["Return"]

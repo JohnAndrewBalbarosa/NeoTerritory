@@ -4,29 +4,29 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### json_escape()
-This routine owns one focused piece of the file's behavior. It appears near line 224.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles record derived output into collections, populate output fields or accumulators, assemble tree or artifact structures, and iterate over the active collection.
+Inside the body, it mainly handles store local findings, fill local output fields, connect local structures, and walk the local collection.
 
 The implementation iterates over a collection or repeated workload. The caller receives a computed result or status from this step.
 
 What it does:
-- record derived output into collections
-- populate output fields or accumulators
-- assemble tree or artifact structures
-- iterate over the active collection
+- store local findings
+- fill local output fields
+- connect local structures
+- walk the local collection
 
 Flow:
 ```mermaid
 flowchart TD
     Start["json_escape()"]
-    N0["Enter json_escape()"]
-    N1["Record output"]
+    N0["Handle json escape"]
+    N1["Store local result"]
     N2["Populate outputs"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     N4["Loop collection"]
     L4{"More items?"}
-    N5["Return result"]
+    N5["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

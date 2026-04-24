@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Input-and-CLI/source_reader.cpp
 - Kind: C++ implementation
-- Lines: 51
 
 ## Story
 ### What Happens Here
@@ -24,19 +23,19 @@ The flow is intentionally split into smaller slices so the major intent of sourc
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of source_reader.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for source_reader.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: source_reader.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Reading the input"]
-    N2["Enter read_source_file_units()"]
+    N0["Begin local flow"]
+    N1["Read local input"]
+    N2["Read source file units"]
     N3["Load input"]
-    N4["Record output"]
+    N4["Store local result"]
     N5["Read files"]
-    N6["More items?"]
-    N7["Assemble tree"]
+    N6["More local items?"]
+    N7["Connect local nodes"]
     N8["Serialize report"]
     N9["Loop collection"]
     N0 --> N1
@@ -50,21 +49,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of source_reader.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for source_reader.cpp after setup.
 Why this is separate: source_reader.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["More items?"]
-    N1["Return result"]
+    N0["More local items?"]
+    N1["Return local result"]
     N2["Small preparation steps"]
-    N3["Enter join_source_file_units()"]
+    N3["Join source file units"]
     N4["Serialize report"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -76,13 +75,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in source_reader.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how source_reader.cpp passes prepared local state into its next operation.
 Why this is separate: source_reader.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["End"]
+    N0["Return local result"]
+    N1["Return from local flow"]
     N0 --> N1
 ```
 
@@ -99,48 +98,48 @@ It leans on nearby contracts or tools such as Input-and-CLI/source_reader.hpp, f
 
 ### Small Preparation Steps
 These steps clean up names, text, or small values before the larger work begins.
-- join_source_file_units() (line 36): Serialize report content, iterate over the active collection, and branch on runtime conditions
+- join_source_file_units(): Serialize report content, walk the local collection, and branch on local conditions
 
 ### Reading The Input
 These steps turn raw text or arguments into something the program can follow.
-- read_source_file_units() (line 6): Load input into working structures, record derived output into collections, and read source or input files
+- read_source_file_units(): Load input into working structures, store local findings, and read source or input files
 
 ## Function Stories
 
 ### read_source_file_units()
-This routine ingests source content and turns it into a more useful structured form. It appears near line 6.
+This routine ingests source content and turns it into a more useful structured form.
 
-Inside the body, it mainly handles load input into working structures, record derived output into collections, read source or input files, and assemble tree or artifact structures.
+Inside the body, it mainly handles load input into working structures, store local findings, read source or input files, and connect local structures.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - load input into working structures
-- record derived output into collections
+- store local findings
 - read source or input files
-- assemble tree or artifact structures
+- connect local structures
 - serialize report content
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 2 - read_source_file_units() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of source_reader.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for source_reader.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: source_reader.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["read_source_file_units()"]
-    N1["Enter read_source_file_units()"]
+    N1["Read source file units"]
     N2["Load input"]
-    N3["Record output"]
+    N3["Store local result"]
     N4["Read files"]
-    N5["More items?"]
-    N6["Assemble tree"]
+    N5["More local items?"]
+    N6["Connect local nodes"]
     N7["Serialize report"]
     N8["Loop collection"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -152,15 +151,15 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of source_reader.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for source_reader.cpp after setup.
 Why this is separate: source_reader.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Branch condition"]
+    N0["Check local condition"]
     N1["Continue?"]
-    N2["Stop path"]
-    N3["Return result"]
+    N2["Return early path"]
+    N3["Return local result"]
     N4["Return"]
     N0 --> N1
     N1 --> N2
@@ -169,29 +168,29 @@ flowchart TD
 ```
 
 ### join_source_file_units()
-This routine owns one focused piece of the file's behavior. It appears near line 36.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles serialize report content, iterate over the active collection, and branch on runtime conditions.
+Inside the body, it mainly handles serialize report content, walk the local collection, and branch on local conditions.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - serialize report content
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["join_source_file_units()"]
-    N0["Enter join_source_file_units()"]
+    N0["Join source file units"]
     N1["Serialize report"]
     N2["Loop collection"]
     L2{"More items?"}
-    N3["Branch condition"]
+    N3["Check local condition"]
     D3{"Continue?"}
-    R3["Stop path"]
-    N4["Return result"]
+    R3["Return early path"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

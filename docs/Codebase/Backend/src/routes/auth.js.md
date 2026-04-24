@@ -1,8 +1,7 @@
-﻿# auth.js
+# auth.js
 
 - Source: Backend/src/routes/auth.js
 - Kind: JavaScript module
-- Lines: 9
 
 ## Story
 ### What Happens Here
@@ -21,12 +20,12 @@ Maps HTTP routes to middleware and controllers. The main surface area is easiest
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Receive an HTTP request for the"]
-    N1["Run any configured middleware"]
+    N1["Execute file-local step"]
     N2["Forward control into the matching controller"]
     N3["Serialize the controller result back to"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Write-Info()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 22.
+This routine materializes internal state into an output format that later stages can consume.
 
 Inside the body, it mainly handles render or serialize the result and report status or failures to the caller.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["Write-Info()"]
-    N0["Enter write-info()"]
+    N0["Write info"]
     N1["Render output"]
     N2["Report status"]
     N3["Hand back"]

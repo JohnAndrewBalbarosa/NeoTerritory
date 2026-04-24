@@ -1,4 +1,4 @@
-﻿# k8s
+# k8s
 
 - Folder: docs/Codebase/Infrastructure/session-orchestration/k8s
 - Descendant source docs: 2
@@ -25,7 +25,7 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Kubernetes Manifests
-These child folders continue the subsystem by covering Parameterized Kubernetes manifests rendered and applied by the bootstrap process..
+These child folders continue the subsystem by covering Parameterized Kubernetes manifests rendered and applied by the bootstrap process.
 - templates/ : Parameterized Kubernetes manifests rendered and applied by the bootstrap process.
 
 ## Reading Hint

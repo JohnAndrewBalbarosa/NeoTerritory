@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Controllers
-These documents explain the local implementation by covering Implements HTTP endpoint behavior after routing and before response serialization..
+These documents explain the local implementation by covering Implements HTTP endpoint behavior after routing and before response serialization.
 - authController.js.md : Implements HTTP endpoint behavior after routing and before response serialization.
 - transformController.js.md : Implements HTTP endpoint behavior after routing and before response serialization.
 

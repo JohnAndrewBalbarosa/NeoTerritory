@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Browser Logic
-These documents explain the local implementation by covering Implements page-level interactive behavior for the static frontend. and Supplies mock data that feeds the current frontend experience..
+These documents explain the local implementation by covering Implements page-level interactive behavior for the static frontend. and Supplies mock data that feeds the current frontend experience.
 - analysis.js.md : Implements page-level interactive behavior for the static frontend.
 - api.js.md : Supplies mock data that feeds the current frontend experience.
 - diff-viewer.js.md : Implements page-level interactive behavior for the static frontend.

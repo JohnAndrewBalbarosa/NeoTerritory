@@ -1,8 +1,7 @@
-﻿# setup_runtime_layout.sh
+# setup_runtime_layout.sh
 
 - Source: Infrastructure/runtime-layout/setup_runtime_layout.sh
 - Kind: Shell script
-- Lines: 43
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Creates the Input and Output directory layout expected by the microservice runti
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Resolve the target runtime directory"]
     N1["Create Input and Output subdirectories"]
     N2["Optionally create placeholder files"]
     L2{"More items?"}
     N3["Report the prepared layout"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2

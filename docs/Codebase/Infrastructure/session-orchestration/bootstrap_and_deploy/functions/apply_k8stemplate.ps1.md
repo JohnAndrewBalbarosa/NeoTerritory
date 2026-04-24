@@ -4,9 +4,9 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Apply-K8sTemplate()
-This routine owns one focused piece of the file's behavior. It appears near line 354.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles inspect the current filesystem state, create or update filesystem artifacts, invoke external tooling, and branch on runtime conditions.
+Inside the body, it mainly handles inspect the current filesystem state, create or update filesystem artifacts, invoke external tooling, and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path.
 
@@ -14,24 +14,24 @@ What it does:
 - inspect the current filesystem state
 - create or update filesystem artifacts
 - invoke external tooling
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 
 
 ### Block 7 - Apply-K8sTemplate() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Apply-K8sTemplate()"]
-    N1["Enter apply-k8stemplate()"]
+    N1["Apply k8stemplate"]
     N2["Inspect files"]
     N3["Continue?"]
-    N4["Stop path"]
+    N4["Return early path"]
     N5["Update files"]
-    N6["More items?"]
+    N6["More local items?"]
     N7["Invoke tooling"]
-    N8["Branch condition"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -44,10 +44,10 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
+    N0["Return early path"]
     N1["Hand back"]
     N2["Return"]
     N0 --> N1

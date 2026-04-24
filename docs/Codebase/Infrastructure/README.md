@@ -1,4 +1,4 @@
-﻿# Infrastructure
+# Infrastructure
 
 - Folder: docs/Codebase/Infrastructure
 - Descendant source docs: 7
@@ -30,11 +30,11 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Session Orchestration
-These child folders continue the subsystem by covering Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders..
+These child folders continue the subsystem by covering Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders.
 - session-orchestration/ : Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders.
 
 ### Runtime Layout
-These child folders continue the subsystem by covering Scripts that create the filesystem layout expected by the executable runtime..
+These child folders continue the subsystem by covering Scripts that create the filesystem layout expected by the executable runtime.
 - runtime-layout/ : Scripts that create the filesystem layout expected by the executable runtime.
 
 ## Reading Hint

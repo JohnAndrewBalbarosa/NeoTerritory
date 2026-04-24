@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### NodeRef
-This declaration introduces a shared type that other files compile against. It appears near line 16.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["NodeRef"]
-    N0["Enter noderef()"]
+    N0["Handle node ref"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]

@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### lookup_class_candidates()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 60.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["lookup_class_candidates()"]
-    N0["Enter lookup_class_candidates()"]
+    N0["Lookup class candidates"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

@@ -1,4 +1,4 @@
-﻿# routes
+# routes
 
 - Folder: docs/Codebase/Backend/src/routes
 - Descendant source docs: 3
@@ -25,7 +25,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Routes
-These documents explain the local implementation by covering Maps HTTP routes to middleware and controllers..
+These documents explain the local implementation by covering Maps HTTP routes to middleware and controllers.
 - auth.js.md : Maps HTTP routes to middleware and controllers.
 - health.js.md : Maps HTTP routes to middleware and controllers.
 - transform.js.md : Maps HTTP routes to middleware and controllers.

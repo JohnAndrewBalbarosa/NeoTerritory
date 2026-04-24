@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### ParseTree Internals
-These documents explain the local implementation by covering Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. and Constructs file-local parse-tree nodes from tokenized source lines and scoped statements..
+These documents explain the local implementation by covering Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. and Constructs file-local parse-tree nodes from tokenized source lines and scoped statements.
 - bucket.cpp.md : Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.
 - build.cpp.md : Constructs file-local parse-tree nodes from tokenized source lines and scoped statements.
 - hash.cpp.md : Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting.

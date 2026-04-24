@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/ParseTree/parse_tree_symbols.hpp
 - Kind: C++ header
-- Lines: 96
 
 ## Story
 ### What Happens Here
@@ -34,20 +33,20 @@ It leans on nearby contracts or tools such as parse_tree.hpp, cstddef, string, u
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- ParseSymbol (line 10): Declare a shared type and expose the compile-time contract
-- ParseSymbolUsage (line 23): Declare a shared type and expose the compile-time contract
-- ParseTreeSymbolBuildOptions (line 37): Declare a shared type and expose the compile-time contract
-- ParseTreeSymbolTables (line 42): Declare a shared type and expose the compile-time contract
-- class_symbol_table() (line 60): Declare a callable contract and let implementation files define the runtime body
-- function_symbol_table() (line 65): Declare a callable contract and let implementation files define the runtime body
-- class_usage_table() (line 70): Declare a callable contract and let implementation files define the runtime body
-- find_class_by_name() (line 75): Declare a callable contract and let implementation files define the runtime body
-- find_class_by_hash() (line 76): Declare a callable contract and let implementation files define the runtime body
-- find_function_by_name() (line 81): Declare a callable contract and let implementation files define the runtime body
-- find_function_by_key() (line 82): Declare a callable contract and let implementation files define the runtime body
-- find_functions_by_name() (line 83): Declare a callable contract and let implementation files define the runtime body
-- find_class_usages_by_name() (line 88): Declare a callable contract and let implementation files define the runtime body
-- return_targets_known_class() (line 93): Declare a callable contract and let implementation files define the runtime body
+- ParseSymbol: Declare a shared type and expose the compile-time contract
+- ParseSymbolUsage: Declare a shared type and expose the compile-time contract
+- ParseTreeSymbolBuildOptions: Declare a shared type and expose the compile-time contract
+- ParseTreeSymbolTables: Declare a shared type and expose the compile-time contract
+- class_symbol_table(): Declare a callable contract and let implementation files define the runtime body
+- function_symbol_table(): Declare a callable contract and let implementation files define the runtime body
+- class_usage_table(): Declare a callable contract and let implementation files define the runtime body
+- find_class_by_name(): Declare a callable contract and let implementation files define the runtime body
+- find_class_by_hash(): Declare a callable contract and let implementation files define the runtime body
+- find_function_by_name(): Declare a callable contract and let implementation files define the runtime body
+- find_function_by_key(): Declare a callable contract and let implementation files define the runtime body
+- find_functions_by_name(): Declare a callable contract and let implementation files define the runtime body
+- find_class_usages_by_name(): Declare a callable contract and let implementation files define the runtime body
+- return_targets_known_class(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

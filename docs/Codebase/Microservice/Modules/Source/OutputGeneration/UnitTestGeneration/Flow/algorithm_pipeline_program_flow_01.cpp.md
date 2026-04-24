@@ -9,21 +9,21 @@ The flow is intentionally split into smaller slices so the major intent of algor
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of algorithm_pipeline_program_flow_01.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for algorithm_pipeline_program_flow_01.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter file_has_bucket_kind()"]
-    N3["Assemble tree"]
+    N0["Begin local flow"]
+    N1["Prepare local model"]
+    N2["Execute file-local step"]
+    N3["Connect local nodes"]
     N4["Loop collection"]
-    N5["More items?"]
-    N6["Branch condition"]
+    N5["More local items?"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -35,21 +35,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of algorithm_pipeline_program_flow_01.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for algorithm_pipeline_program_flow_01.cpp after setup.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Checks before moving on"]
-    N1["Enter validate_file_pairing()"]
+    N1["Validate file pairing"]
     N2["Validate assumptions"]
     N3["Continue?"]
-    N4["Stop path"]
-    N5["Record output"]
-    N6["Assemble tree"]
+    N4["Return early path"]
+    N5["Store local result"]
+    N6["Connect local nodes"]
     N7["Check invariants"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -61,21 +61,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in algorithm_pipeline_program_flow_01.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how algorithm_pipeline_program_flow_01.cpp passes prepared local state into its next operation.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Loop collection"]
-    N1["More items?"]
-    N2["Branch condition"]
+    N1["More local items?"]
+    N2["Check local condition"]
     N3["Continue?"]
-    N4["Stop path"]
-    N5["Return result"]
-    N6["Enter validate_bucketized_files()"]
+    N4["Return early path"]
+    N5["Return local result"]
+    N6["Validate bucketized files"]
     N7["Validate assumptions"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -87,21 +87,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 4 - Secondary Decision Path
-Quick summary: This slice focuses on the next decision path in algorithm_pipeline_program_flow_01.cpp and the outcomes that follow from it.
+#### Slice 4 - Resolve Secondary Branch
+Quick summary: This slice shows the next local decision path in algorithm_pipeline_program_flow_01.cpp and its immediate result.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Record output"]
-    N1["Assemble tree"]
+    N0["Store local result"]
+    N1["Connect local nodes"]
     N2["Check invariants"]
     N3["Continue?"]
-    N4["Stop path"]
+    N4["Return early path"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Branch condition"]
+    N6["More local items?"]
+    N7["Check local condition"]
     N8["Continue?"]
-    N9["Stop path"]
+    N9["Return early path"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -113,21 +113,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 5 - Follow-Through Stage
-Quick summary: This slice follows the next working stage of algorithm_pipeline_program_flow_01.cpp after the earlier decisions have narrowed the path.
+#### Slice 5 - Continue Local Work
+Quick summary: This slice shows the next local work stage in algorithm_pipeline_program_flow_01.cpp after earlier checks.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["Building the working picture"]
-    N2["Enter estimate_parse_tree_bytes()"]
+    N0["Return local result"]
+    N1["Prepare local model"]
+    N2["Execute file-local step"]
     N3["Estimate size"]
-    N4["Tokenize input"]
-    N5["Assemble tree"]
+    N4["Read structured tokens"]
+    N5["Connect local nodes"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Return result"]
-    N9["Enter estimate_creational_tree_bytes()"]
+    N7["More local items?"]
+    N8["Return local result"]
+    N9["Execute file-local step"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -139,18 +139,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 6 - Late-Stage Checks
-Quick summary: This slice highlights later checks and continuation steps in algorithm_pipeline_program_flow_01.cpp before the run approaches its end.
+#### Slice 6 - Run Late Checks
+Quick summary: This slice shows the later local checks in algorithm_pipeline_program_flow_01.cpp before return handling.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Estimate size"]
-    N1["Assemble tree"]
+    N1["Connect local nodes"]
     N2["Loop collection"]
-    N3["More items?"]
-    N4["Return result"]
-    N5["Supporting steps"]
-    N6["Enter estimate_symbol_table_bytes()"]
+    N3["More local items?"]
+    N4["Return local result"]
+    N5["Run helper branch"]
+    N6["Execute file-local step"]
     N7["Estimate size"]
     N8["Work symbols"]
     N9["Loop collection"]
@@ -165,20 +165,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 7 - Final Assembly
-Quick summary: This slice shows the final assembly-oriented stage of algorithm_pipeline_program_flow_01.cpp where later outputs or states are brought together.
+#### Slice 7 - Connect Final State
+Quick summary: This slice shows how algorithm_pipeline_program_flow_01.cpp connects its final local state before returning.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["More items?"]
-    N1["Return result"]
-    N2["Enter estimate_node_ref_bytes()"]
+    N0["More local items?"]
+    N1["Return local result"]
+    N2["Execute file-local step"]
     N3["Estimate size"]
     N4["Compute hashes"]
     N5["Loop collection"]
-    N6["More items?"]
-    N7["Return result"]
-    N8["Enter estimate_hash_links_bytes()"]
+    N6["More local items?"]
+    N7["Return local result"]
+    N8["Execute file-local step"]
     N9["Estimate size"]
     N0 --> N1
     N1 --> N2
@@ -191,21 +191,21 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 8 - Exit Preparation
-Quick summary: This slice covers the exit preparation of algorithm_pipeline_program_flow_01.cpp and the last handoff before the return path.
+#### Slice 8 - Prepare Return Path
+Quick summary: This slice shows the final local return preparation for algorithm_pipeline_program_flow_01.cpp.
 Why this is separate: algorithm_pipeline_program_flow_01.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Use hashes"]
     N1["Compute hashes"]
     N2["Loop collection"]
-    N3["More items?"]
-    N4["Return result"]
-    N5["Building the working picture"]
-    N6["Enter json_escape()"]
-    N7["Record output"]
+    N3["More local items?"]
+    N4["Return local result"]
+    N5["Prepare local model"]
+    N6["Handle json escape"]
+    N7["Store local result"]
     N8["Populate outputs"]
-    N9["Assemble tree"]
+    N9["Connect local nodes"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

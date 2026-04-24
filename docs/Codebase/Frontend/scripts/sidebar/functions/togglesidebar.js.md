@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### toggleSidebar()
-This routine owns one focused piece of the file's behavior. It appears near line 20.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles validate conditions and branch on failures.
 
@@ -17,10 +17,10 @@ Flow:
 ```mermaid
 flowchart TD
     Start["toggleSidebar()"]
-    N0["Enter togglesidebar()"]
+    N0["Toggle sidebar"]
     N1["Validate branch"]
     D1{"Continue?"}
-    R1["Stop path"]
+    R1["Return early path"]
     N2["Hand back"]
     End["Return"]
     Start --> N0

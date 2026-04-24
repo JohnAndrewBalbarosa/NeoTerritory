@@ -2,7 +2,6 @@
 
 - Source: Frontend/scripts/sidebar.js
 - Kind: JavaScript module
-- Lines: 80
 
 ## Story
 ### What Happens Here
@@ -32,15 +31,15 @@ Names worth recognizing while reading: openSidebar, closeSidebar, toggleSidebar,
 
 ### Main Path
 These steps drive the main execution path by calling the supporting work in order.
-- initSidebar() (line 4): Drive the main execution path, validate conditions and branch on failures, and update DOM state
+- initSidebar(): Drive the main execution path, validate conditions and branch on failures, and update DOM state
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- openSidebar() (line 10): Owns a focused local responsibility.
-- closeSidebar() (line 15): Owns a focused local responsibility.
-- toggleSidebar() (line 20): Validate conditions and branch on failures
-- applyTheme() (line 62): Update DOM state
-- handleResize() (line 71): Validate conditions and branch on failures
+- openSidebar(): Owns a focused local responsibility.
+- closeSidebar(): Owns a focused local responsibility.
+- toggleSidebar(): Validate conditions and branch on failures
+- applyTheme(): Update DOM state
+- handleResize(): Validate conditions and branch on failures
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

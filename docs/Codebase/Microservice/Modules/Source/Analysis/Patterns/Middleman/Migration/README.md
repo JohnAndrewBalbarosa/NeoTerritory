@@ -1,41 +1,29 @@
 # Migration
 
 ## Purpose
-These migration notes should convert the current docs tree from mixed grouping rules to one logic-first pattern subtree.
+These migration notes explain how the pattern docs are organized around one shared middleman layer and one grouped family layer.
 
-## Current Split To Remove
+## Current Split
 ```text
-Source/
-  Behavioural/
-  Creational/
-  PatternMiddlemanArchitecture/
+Patterns/
+  Middleman/
+  Families/
+    Behavioural/
+    Creational/
 ```
 
-## Target Split
-```text
-Source/
-  Pattern/
-    Contracts/
-    Registry/
-    Context/
-    Dispatcher/
-    Assembler/
-    Middleman/
-    BrokenTree/
-    SymbolTest/
-    Hooks/
-    Transform/
-```
+## Ownership
+- `Middleman/` owns cross-family orchestration, contracts, registry, context, dispatch, assembly, and hook adapters.
+- `Families/Behavioural/` owns behavioural-specific implementation logic.
+- `Families/Creational/` owns creational-specific implementation logic.
 
 ## Migration Sequence
-1. Move shared folders from `PatternMiddlemanArchitecture/` into `Pattern/`.
-2. Move `behavioural_broken_tree` and `creational_broken_tree` content under `Pattern/BrokenTree/`.
-3. Move `behavioural_symbol_test` and `creational_symbol_test` content under `Pattern/SymbolTest/`.
-4. Move Builder, Factory, Singleton, Strategy, Observer, and scaffold logic under `Pattern/Hooks/`.
-5. Keep `Transform/` as its own function folder.
-6. Shorten filenames after the folder path already carries the overlap.
+1. Keep shared middleman docs outside `Families/`.
+2. Keep Behavioural and Creational under `Families/`.
+3. Update links that previously pointed at top-level family folders.
+4. Keep future family folders under `Families/` unless they are shared orchestration logic.
 
 ## Acceptance Checks
-- One outer pattern subtree replaces the current three-way split.
-- Function folders come before family folders.
-- Family prefixes are removed from file names when the path already carries that meaning.
+- There are no top-level family folders under `Patterns/`.
+- `Patterns/Middleman/` remains a sibling of `Patterns/Families/`.
+- Family docs link through `Families/` when referring to Behavioural or Creational.

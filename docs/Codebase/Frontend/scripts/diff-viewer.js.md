@@ -2,7 +2,6 @@
 
 - Source: Frontend/scripts/diff-viewer.js
 - Kind: JavaScript module
-- Lines: 100
 
 ## Story
 ### What Happens Here
@@ -21,16 +20,16 @@ Implements page-level interactive behavior for the static frontend. The main sur
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Small preparation steps"]
-    N2["Enter escapehtml()"]
+    N2["Escape html"]
     N3["Normalize text"]
-    N4["Return result"]
+    N4["Return local result"]
     N5["Showing the result"]
-    N6["Enter rendercode()"]
+    N6["Render code"]
     N7["Render output"]
     N8["Validate branch"]
     N9["Continue?"]
@@ -45,13 +44,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Stop path"]
+    N0["Return early path"]
     N1["Update DOM"]
-    N2["Return result"]
-    N3["End"]
+    N2["Return local result"]
+    N3["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -68,16 +67,16 @@ Names worth recognizing while reading: escapeHtml, renderCode, originalLines, tr
 
 ### Small Preparation Steps
 These steps clean up names, text, or small values before the larger work begins.
-- escapeHtml() (line 54): Normalize or format text values
+- escapeHtml(): Normalize or format text values
 
 ### Showing The Result
 These steps turn internal state into text, HTML, JSON, or another output a reader can inspect.
-- renderCode() (line 58): Render or serialize the result, validate conditions and branch on failures, and update DOM state
+- renderCode(): Render or serialize the result, validate conditions and branch on failures, and update DOM state
 
 ## Function Stories
 
 ### escapeHtml()
-This helper reshapes small pieces of data so the surrounding code can stay readable. It appears near line 54.
+This helper reshapes small pieces of data so the surrounding code can stay readable.
 
 Inside the body, it mainly handles normalize or format text values.
 
@@ -90,9 +89,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["escapeHtml()"]
-    N0["Enter escapehtml()"]
+    N0["Escape html"]
     N1["Normalize text"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -101,7 +100,7 @@ flowchart TD
 ```
 
 ### renderCode()
-This routine materializes internal state into an output format that later stages can consume. It appears near line 58.
+This routine materializes internal state into an output format that later stages can consume.
 
 Inside the body, it mainly handles render or serialize the result, validate conditions and branch on failures, and update DOM state.
 
@@ -116,13 +115,13 @@ Flow:
 ```mermaid
 flowchart TD
     Start["renderCode()"]
-    N0["Enter rendercode()"]
+    N0["Render code"]
     N1["Render output"]
     N2["Validate branch"]
     D2{"Continue?"}
-    R2["Stop path"]
+    R2["Return early path"]
     N3["Update DOM"]
-    N4["Return result"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

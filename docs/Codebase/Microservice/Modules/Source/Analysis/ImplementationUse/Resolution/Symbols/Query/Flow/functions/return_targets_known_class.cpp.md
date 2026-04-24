@@ -4,28 +4,28 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### return_targets_known_class()
-This routine owns one focused piece of the file's behavior. It appears near line 94.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles inspect or register class-level information, parse or tokenize input text, and branch on runtime conditions.
+Inside the body, it mainly handles inspect or register class-level information, read local tokens, and branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - inspect or register class-level information
-- parse or tokenize input text
-- branch on runtime conditions
+- read local tokens
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["return_targets_known_class()"]
-    N0["Enter return_targets_known_class()"]
+    N0["Execute file-local step"]
     N1["Register classes"]
-    N2["Tokenize input"]
-    N3["Branch condition"]
+    N2["Read structured tokens"]
+    N3["Check local condition"]
     D3{"Continue?"}
-    R3["Stop path"]
-    N4["Return result"]
+    R3["Return early path"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

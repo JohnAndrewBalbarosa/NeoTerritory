@@ -1,4 +1,4 @@
-﻿# Backend
+# Backend
 
 - Folder: docs/Codebase/Backend
 - Descendant source docs: 14
@@ -29,16 +29,16 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Backend Internals
-These child folders continue the subsystem by covering Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work..
+These child folders continue the subsystem by covering Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work.
 - src/ : Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work.
 
 ## Documents By Logic
 ### Runtime Entrypoints
-These documents explain the local implementation by covering Bootstraps the Express backend, middleware stack, routes, database initialization, and filesystem layout..
+These documents explain the local implementation by covering Bootstraps the Express backend, middleware stack, routes, database initialization, and filesystem layout.
 - server.js.md : Bootstraps the Express backend, middleware stack, routes, database initialization, and filesystem layout.
 
 ### Runtime Configuration
-These documents explain the local implementation by covering Declares backend scripts and runtime dependencies..
+These documents explain the local implementation by covering Declares backend scripts and runtime dependencies.
 - package.json.md : Declares backend scripts and runtime dependencies.
 
 ## Reading Hint

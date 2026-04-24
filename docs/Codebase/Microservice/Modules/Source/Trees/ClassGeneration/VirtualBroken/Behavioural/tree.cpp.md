@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/Behavioural/behavioural_broken_tree.cpp
 - Kind: C++ implementation
-- Lines: 91
 
 ## Story
 ### What Happens Here
@@ -22,8 +21,8 @@ The desired design is that this file behaves as the behavioural middleman for tr
 
 
 ### Block 1 - Required Middleman Flow Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of behavioural_broken_tree.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for behavioural_broken_tree.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: behavioural_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -48,13 +47,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of behavioural_broken_tree.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for behavioural_broken_tree.cpp after setup.
 Why this is separate: behavioural_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Pass context"]
-    N1["Run algorithm"]
+    N1["Execute file-local step"]
     N2["Collect signals"]
     N3["Signals found?"]
     N4["Ignore empty"]
@@ -74,8 +73,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in behavioural_broken_tree.cpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how behavioural_broken_tree.cpp passes prepared local state into its next operation.
 Why this is separate: behavioural_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
@@ -94,20 +93,20 @@ The flow is intentionally split into smaller slices so the major intent of behav
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of behavioural_broken_tree.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for behavioural_broken_tree.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: behavioural_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter build_behavioural_broken_tree()"]
-    N3["Build output"]
-    N4["Tokenize input"]
-    N5["Assemble tree"]
-    N6["Return result"]
+    N0["Begin local flow"]
+    N1["Prepare local model"]
+    N2["Create behavioural broken tree"]
+    N3["Create local result"]
+    N4["Read structured tokens"]
+    N5["Connect local nodes"]
+    N6["Return local result"]
     N7["Showing the result"]
-    N8["Enter behavioural_broken_tree_to_html()"]
+    N8["Handle behavioural broken tree to html"]
     N9["Render views"]
     N0 --> N1
     N1 --> N2
@@ -120,13 +119,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of behavioural_broken_tree.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for behavioural_broken_tree.cpp after setup.
 Why this is separate: behavioural_broken_tree.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["End"]
+    N0["Return local result"]
+    N1["Return from local flow"]
     N0 --> N1
 ```
 
@@ -143,35 +142,35 @@ It leans on nearby contracts or tools such as behavioural_broken_tree.hpp, Logic
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- build_behavioural_broken_tree() (line 61): Build or append the next output structure, parse or tokenize input text, and assemble tree or artifact structures
+- build_behavioural_broken_tree(): Create the local output structure, read local tokens, and connect local structures
 
 ### Showing The Result
 These steps turn internal state into text, HTML, JSON, or another output a reader can inspect.
-- behavioural_broken_tree_to_html() (line 83): Render text or HTML views
+- behavioural_broken_tree_to_html(): Render text or HTML views
 
 ## Function Stories
 
 ### build_behavioural_broken_tree()
-This routine assembles a larger structure from the inputs it receives. It appears near line 61.
+This routine assembles a larger structure from the inputs it receives.
 
-Inside the body, it mainly handles build or append the next output structure, parse or tokenize input text, and assemble tree or artifact structures.
+Inside the body, it mainly handles Create the local output structure, read local tokens, and connect local structures.
 
 The caller receives a computed result or status from this step.
 
 What it does:
-- build or append the next output structure
-- parse or tokenize input text
-- assemble tree or artifact structures
+- Create the local output structure
+- read local tokens
+- connect local structures
 
 Flow:
 ```mermaid
 flowchart TD
     Start["build_behavioural_broken_tree()"]
-    N0["Enter build_behavioural_broken_tree()"]
-    N1["Build output"]
-    N2["Tokenize input"]
-    N3["Assemble tree"]
-    N4["Return result"]
+    N0["Create behavioural broken tree"]
+    N1["Create local result"]
+    N2["Read structured tokens"]
+    N3["Connect local nodes"]
+    N4["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -182,7 +181,7 @@ flowchart TD
 ```
 
 ### behavioural_broken_tree_to_html()
-This routine owns one focused piece of the file's behavior. It appears near line 83.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles render text or HTML views.
 
@@ -195,9 +194,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["behavioural_broken_tree_to_html()"]
-    N0["Enter behavioural_broken_tree_to_html()"]
+    N0["Handle behavioural broken tree to html"]
     N1["Render views"]
-    N2["Return result"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

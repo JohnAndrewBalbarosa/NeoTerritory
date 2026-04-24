@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Source/ParseTree/hash_links_resolve.cpp
 - Kind: C++ implementation
-- Lines: 191
 
 ## Story
 ### What Happens Here
@@ -24,21 +23,21 @@ The flow is intentionally split into smaller slices so the major intent of hash_
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of hash_links_resolve.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for hash_links_resolve.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: hash_links_resolve.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Finding what matters"]
-    N2["Enter resolve_candidates()"]
+    N0["Begin local flow"]
+    N1["Collect local facts"]
+    N2["Resolve candidates"]
     N3["Connect data"]
     N4["Sort candidates"]
-    N5["Record output"]
-    N6["Assemble tree"]
+    N5["Store local result"]
+    N6["Connect local nodes"]
     N7["Compute hashes"]
     N8["Loop collection"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -50,13 +49,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of hash_links_resolve.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for hash_links_resolve.cpp after setup.
 Why this is separate: hash_links_resolve.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["End"]
+    N0["Return local result"]
+    N1["Return from local flow"]
     N0 --> N1
 ```
 
@@ -73,44 +72,44 @@ It leans on nearby contracts or tools such as Internal/parse_tree_hash_links_int
 
 ### Finding What Matters
 These steps pick out the facts, traces, and relationships that later stages need.
-- resolve_candidates() (line 11): Connect discovered data back into the shared model, order candidate values before selecting or emitting them, and record derived output into collections
+- resolve_candidates(): Connect discovered data back into the shared model, order candidate values before selecting or emitting them, and store local findings
 
 ## Function Stories
 
 ### resolve_candidates()
-This routine connects discovered items back into the broader model owned by the file. It appears near line 11.
+This routine connects discovered items back into the broader model owned by the file.
 
-Inside the body, it mainly handles connect discovered data back into the shared model, order candidate values before selecting or emitting them, record derived output into collections, and assemble tree or artifact structures.
+Inside the body, it mainly handles connect discovered data back into the shared model, order candidate values before selecting or emitting them, store local findings, and connect local structures.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - connect discovered data back into the shared model
 - order candidate values before selecting or emitting them
-- record derived output into collections
-- assemble tree or artifact structures
+- store local findings
+- connect local structures
 - compute hash metadata
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 ### Block 2 - resolve_candidates() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of hash_links_resolve.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for hash_links_resolve.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: hash_links_resolve.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["resolve_candidates()"]
-    N1["Enter resolve_candidates()"]
+    N1["Resolve candidates"]
     N2["Connect data"]
     N3["Sort candidates"]
-    N4["Record output"]
-    N5["Assemble tree"]
+    N4["Store local result"]
+    N5["Connect local nodes"]
     N6["Compute hashes"]
     N7["Loop collection"]
-    N8["More items?"]
-    N9["Branch condition"]
+    N8["More local items?"]
+    N9["Check local condition"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -122,14 +121,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of hash_links_resolve.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for hash_links_resolve.cpp after setup.
 Why this is separate: hash_links_resolve.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Continue?"]
-    N1["Stop path"]
-    N2["Return result"]
+    N1["Return early path"]
+    N2["Return local result"]
     N3["Return"]
     N0 --> N1
     N1 --> N2

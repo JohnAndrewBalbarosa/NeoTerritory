@@ -2,7 +2,6 @@
 
 - Source: Backend/src/controllers/transformController.js
 - Kind: JavaScript module
-- Lines: 46
 
 ## Story
 ### What Happens Here
@@ -21,17 +20,17 @@ Implements HTTP endpoint behavior after routing and before response serializatio
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Changing or cleaning the picture"]
-    N2["Enter transform()"]
+    N2["Handle transform"]
     N3["Rewrite source"]
     N4["Clean text"]
     N5["Validate branch"]
     N6["Continue?"]
-    N7["Stop path"]
+    N7["Return early path"]
     N8["Use SQLite"]
     N9["Move files"]
     N0 --> N1
@@ -45,13 +44,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["More items?"]
-    N1["Return result"]
-    N2["Return result"]
-    N3["End"]
+    N0["More local items?"]
+    N1["Return local result"]
+    N2["Return local result"]
+    N3["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -70,12 +69,12 @@ It leans on nearby contracts or tools such as path, fs, ../db/database, ../servi
 
 ### Changing Or Cleaning The Picture
 These steps adjust existing state or remove stale pieces after better information is available.
-- transform() (line 8): Rewrite source text or model state, normalize raw text before later parsing, and validate conditions and branch on failures
+- transform(): Rewrite source text or model state, normalize raw text before later parsing, and validate conditions and branch on failures
 
 ## Function Stories
 
 ### transform()
-This routine owns one focused piece of the file's behavior. It appears near line 8.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles rewrite source text or model state, normalize raw text before later parsing, validate conditions and branch on failures, and query or update SQLite state.
 
@@ -92,19 +91,19 @@ What it does:
 Flow:
 
 ### Block 2 - transform() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["transform()"]
-    N1["Enter transform()"]
+    N1["Handle transform"]
     N2["Rewrite source"]
     N3["Clean text"]
     N4["Validate branch"]
     N5["Continue?"]
-    N6["Stop path"]
+    N6["Return early path"]
     N7["Use SQLite"]
     N8["Move files"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -116,11 +115,11 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return result"]
-    N1["Return result"]
+    N0["Return local result"]
+    N1["Return local result"]
     N2["Return"]
     N0 --> N1
     N1 --> N2

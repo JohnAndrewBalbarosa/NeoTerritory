@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### is_global_function_declaration_node()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 50.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["is_global_function_declaration_node()"]
-    N0["Enter is_global_function_declaration_node()"]
+    N0["Check global function declaration node"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

@@ -2,7 +2,6 @@
 
 - Source: CMakeLists.txt
 - Kind: Text artifact
-- Lines: 43
 
 ## Story
 ### What Happens Here
@@ -21,16 +20,16 @@ Builds the NeoTerritory executable from the microservice layer and module source
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Call CMake command cmake_minimum_required"]
     N1["Call CMake command if"]
     D1{"Continue?"}
-    R1["Stop path"]
+    R1["Return early path"]
     N2["Call CMake command set"]
     N3["Call CMake command elseif"]
     N4["Call CMake command endif"]
     N5["Call CMake command project"]
-    End["End"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> D1

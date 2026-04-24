@@ -4,36 +4,36 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Wait-ForDocker()
-This routine owns one focused piece of the file's behavior. It appears near line 178.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles populate output fields or accumulators, report status or failures to the caller, invoke external tooling, and branch on runtime conditions.
+Inside the body, it mainly handles fill local output fields, report status or failures to the caller, invoke external tooling, and branch on local conditions.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- populate output fields or accumulators
+- fill local output fields
 - report status or failures to the caller
 - invoke external tooling
-- branch on runtime conditions
-- iterate over the active collection
+- branch on local conditions
+- walk the local collection
 
 Flow:
 
 
 ### Block 5 - Wait-ForDocker() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Wait-ForDocker()"]
-    N1["Enter wait-fordocker()"]
+    N1["Wait fordocker"]
     N2["Populate outputs"]
     N3["Report status"]
     N4["Invoke tooling"]
-    N5["Branch condition"]
+    N5["Check local condition"]
     N6["Continue?"]
-    N7["Stop path"]
+    N7["Return early path"]
     N8["Loop collection"]
-    N9["More items?"]
+    N9["More local items?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -45,10 +45,10 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return result"]
+    N0["Return local result"]
     N1["Return"]
     N0 --> N1
 ```

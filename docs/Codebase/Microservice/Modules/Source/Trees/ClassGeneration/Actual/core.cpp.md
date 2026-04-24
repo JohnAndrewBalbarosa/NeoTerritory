@@ -1,325 +1,159 @@
 # core.cpp
 
-- Source: Microservice/Modules/Source/ParseTree/core.cpp
+- Source: `Microservice/Modules/Source/SyntacticBrokenAST/ParseTree/core.cpp`
 - Kind: C++ implementation
-- Lines: 224
+- Role: actual parse-tree entrypoint for rooted source truth
 
 ## Folder Role
 This file is the actual-branch entrypoint for `Trees/ClassGeneration/Actual/`.
 
 ## Quick Summary
-This branch records the literal class structure that is always allowed to remain attached under the main tree. It is built in parallel with the detached `VirtualBroken/` branch, but unlike that detached branch, the actual branch is never discarded just because the expected pattern structure failed.
+This file owns the public parse-tree entrypoints. It creates the rooted `main_tree`, prepares per-file roots, calls the internal file parser, keeps the compatibility `shadow_tree`, and exposes text or HTML rendering helpers.
 
-## Why It Is Separate From VirtualBroken
-The actual branch captures source truth. The virtual-broken branch captures strict expected structure for the same class. The actual branch stays rooted even when the virtual-broken branch diverges and must be released.
+The actual branch is independent from `VirtualBroken/`. It records source truth even when a detached virtual-broken class candidate fails expected-structure verification.
 
-## Story
-### What Happens Here
+## File-Level Flow
+This diagram shows only how the functions in this file relate to each other. Detailed steps are kept inside each function section so the same behavior is not repeated twice.
 
-This file implements the high-level parse-tree assembly loop. It creates the root and file nodes, attaches the actual branch to the main tree, parses each source file into that rooted branch, collects cross-file dependency information, and coordinates with the detached virtual-broken path that is validated separately before any attachment is allowed. This source file implements one internal part of the generic parse-tree engine. It contributes specialized behavior such as dependency handling, symbolization, hash-link construction, rendering, or older generation helpers after the raw tree exists. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
-
-### Why It Matters In The Flow
-
-Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
-
-### What To Watch While Reading
-
-Builds the main parse tree, dependency context, and filtered shadow tree for the source corpus. The main surface area is easiest to track through symbols such as build_cpp_parse_tree, build_cpp_parse_trees, parse_tree_to_text, and std::string. It collaborates directly with parse_tree.hpp, Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, and Language-and-Structure/lexical_structure_hooks.hpp.
-
-## Program Flow
-This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
-
-The flow is intentionally split into smaller slices so the major intent of core.cpp stays readable. Each slice names the stage it is covering, gives a quick summary, and explains why that stage is separated from the next one.
-
-
-### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of core.cpp and the first major actions that frame the rest of the flow.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Building the working picture"]
-    N2["Enter build_cpp_parse_tree()"]
-    N3["Build output"]
-    N4["Record output"]
-    N5["Tokenize input"]
-    N6["Assemble tree"]
-    N7["Return result"]
-    N8["Enter build_cpp_parse_trees()"]
-    N9["Build output"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
+    N0["Caller provides source"]
+    N1["Wrap memory source as file"]
+    N2["Build full parse bundle"]
+    N3["Return rooted main tree"]
+    N4["Render tree as text"]
+    N5["Render tree as HTML"]
+    N0 --> N1 --> N2 --> N3
+    N0 --> N2
     N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N3 --> N5
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of core.cpp after the opening path has been established.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+## Function Map
+- `build_cpp_parse_tree(source, context)` wraps an in-memory source string as a single file, then delegates to the file-list overload.
+- `build_cpp_parse_tree(files, context)` builds the full bundle, then returns only `main_tree`.
+- `build_cpp_parse_trees(files, context)` builds the full parse bundle with main, shadow, virtual scaffold, traces, dependency metadata, and report counters.
+- `parse_tree_to_text(root)` walks a tree and emits an indented text view.
+- `parse_tree_to_html(root)` delegates HTML rendering to the renderer module.
+
+## build_cpp_parse_tree(source, context)
+This overload does not parse directly. It adapts a raw source string into a `SourceFileUnit` named `<memory>` and then uses the file-list overload.
+
 ```mermaid
 flowchart TD
-    N0["Look up entries"]
-    N1["Record output"]
-    N2["Tokenize input"]
-    N3["Assemble tree"]
-    N4["Compute hashes"]
-    N5["Return result"]
-    N6["Reading the input"]
-    N7["Enter parse_tree_to_text()"]
-    N8["Parse text"]
-    N9["Populate outputs"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N0["Receive source text"]
+    N1["Create memory file unit"]
+    N2["Delegate to file-list overload"]
+    N3["Return main tree"]
+    N0 --> N1 --> N2 --> N3
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in core.cpp where preparation turns into deeper processing.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+## build_cpp_parse_tree(files, context)
+This overload keeps the public API small. It asks `build_cpp_parse_trees()` for the full bundle and returns the rooted actual tree only.
+
 ```mermaid
 flowchart TD
-    N0["Tokenize input"]
-    N1["Assemble tree"]
-    N2["Compute hashes"]
-    N3["Serialize report"]
-    N4["Return result"]
-    N5["Enter parse_tree_to_html()"]
-    N6["Parse text"]
-    N7["Render views"]
-    N8["Return result"]
-    N9["End"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N0["Receive source files"]
+    N1["Build parse bundle"]
+    N2["Select main_tree"]
+    N3["Return actual tree"]
+    N0 --> N1 --> N2 --> N3
 ```
 
-## Reading Map
-Read this file as: Builds the main parse tree, dependency context, and filtered shadow tree for the source corpus.
+## build_cpp_parse_trees(files, context)
+This is the real bundle builder in this file. It sets up roots, routes each file through the internal parser, records detached virtual-branch scaffold results, resolves dependencies, builds symbol relevance, and keeps the transitional shadow tree for downstream compatibility.
 
-Where it sits in the run: Runs across the middle of the microservice flow to build parse trees, hash links, symbol tables, documentation tags, reports, and rendered outputs.
+### Slice 1 - Root And File Setup
+Quick summary: This slice prepares the bundle-level roots and per-file child nodes.
+Why this is separate: root setup is structural bookkeeping; it happens before any file content is parsed.
 
-Names worth recognizing while reading: build_cpp_parse_tree, build_cpp_parse_trees, parse_tree_to_text, std::string, parse_tree_to_html, and render_tree_html.
-
-It leans on nearby contracts or tools such as parse_tree.hpp, Internal/parse_tree_internal.hpp, Language-and-Structure/language_tokens.hpp, Language-and-Structure/lexical_structure_hooks.hpp, parse_tree_symbols.hpp, and Output-and-Rendering/tree_html_renderer.hpp.
-
-## Story Groups
-
-### Reading The Input
-These steps turn raw text or arguments into something the program can follow.
-- parse_tree_to_text() (line 189): Parse source text into structured values, populate output fields or accumulators, and parse or tokenize input text
-- parse_tree_to_html() (line 219): Parse source text into structured values and render text or HTML views
-
-### Building The Working Picture
-These steps assemble the trees, models, or bundles used by the rest of the file.
-- build_cpp_parse_tree() (line 15): Build or append the next output structure, record derived output into collections, and parse or tokenize input text
-- build_cpp_parse_trees() (line 28): Build or append the next output structure, look up entries in previously collected maps or sets, and record derived output into collections
-
-## Function Stories
-
-### build_cpp_parse_tree()
-This routine assembles a larger structure from the inputs it receives. It appears near line 15.
-
-Inside the body, it mainly handles build or append the next output structure, record derived output into collections, parse or tokenize input text, and assemble tree or artifact structures.
-
-The caller receives a computed result or status from this step.
-
-What it does:
-- build or append the next output structure
-- record derived output into collections
-- parse or tokenize input text
-- assemble tree or artifact structures
-
-Flow:
 ```mermaid
 flowchart TD
-    Start["build_cpp_parse_tree()"]
-    N0["Enter build_cpp_parse_tree()"]
-    N1["Build output"]
-    N2["Record output"]
-    N3["Tokenize input"]
-    N4["Assemble tree"]
-    N5["Return result"]
-    End["Return"]
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N0["Load C++ token config"]
+    N1["Create main root"]
+    N2["Create shadow root"]
+    N3["Create virtual scaffold root"]
+    N4["Create file nodes"]
+    N5["Map basename to path"]
+    N0 --> N1 --> N2 --> N3 --> N4 --> N5
 ```
 
-### build_cpp_parse_trees()
-This routine assembles a larger structure from the inputs it receives. It appears near line 28.
+### Slice 2 - Parse Files Into Actual Branch
+Quick summary: This slice shows the file parsing loop and the class-local virtual scaffold counters.
+Why this is separate: actual tree growth happens inside `parse_file_content_into_node()`, while this file only orchestrates the call and stores the results.
 
-Inside the body, it mainly handles build or append the next output structure, look up entries in previously collected maps or sets, record derived output into collections, and parse or tokenize input text.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-What it does:
-- build or append the next output structure
-- look up entries in previously collected maps or sets
-- record derived output into collections
-- parse or tokenize input text
-- assemble tree or artifact structures
-- compute hash metadata
-- iterate over the active collection
-- branch on runtime conditions
-
-Flow:
-
-### Block 2 - build_cpp_parse_trees() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of core.cpp and the first major actions that frame the rest of the flow.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["build_cpp_parse_trees()"]
-    N1["Enter build_cpp_parse_trees()"]
-    N2["Build output"]
-    N3["Look up entries"]
-    N4["Record output"]
-    N5["Tokenize input"]
-    N6["Assemble tree"]
-    N7["Compute hashes"]
-    N8["Loop collection"]
-    N9["More items?"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N0["Iterate source files"]
+    N1["Parse file into main branch"]
+    N2["Receive virtual scaffold file"]
+    N3["Add attached class count"]
+    N4["Add discarded class count"]
+    N5["Collect class definitions"]
+    N0 --> N1 --> N2 --> N3 --> N4 --> N5
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of core.cpp after the opening path has been established.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+### Slice 3 - Enrich Actual File Nodes
+Quick summary: This slice resolves cross-file context after all files have actual tree nodes.
+Why this is separate: include dependencies and symbol dependencies require the file-level class-definition map built during parsing.
+
 ```mermaid
 flowchart TD
-    N0["Branch condition"]
-    N1["Continue?"]
-    N2["Stop path"]
-    N3["Return result"]
-    N4["Return"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
+    N0["Visit each file node"]
+    N1["Resolve include paths"]
+    N2["Collect symbol dependencies"]
+    N3["Append dependency nodes"]
+    N4["Bucketize file node"]
+    N0 --> N1 --> N2 --> N3 --> N4
 ```
 
-### parse_tree_to_text()
-This routine ingests source content and turns it into a more useful structured form. It appears near line 189.
+### Slice 4 - Build Transitional Shadow Tree
+Quick summary: This slice keeps the older filtered shadow output alive for downstream consumers.
+Why this is separate: this is compatibility behavior, not the same lifecycle as the detached virtual-broken scaffold.
 
-Inside the body, it mainly handles parse source text into structured values, populate output fields or accumulators, parse or tokenize input text, and assemble tree or artifact structures.
-
-The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-What it does:
-- parse source text into structured values
-- populate output fields or accumulators
-- parse or tokenize input text
-- assemble tree or artifact structures
-- compute hash metadata
-- serialize report content
-- iterate over the active collection
-- branch on runtime conditions
-
-Flow:
-
-### Block 3 - parse_tree_to_text() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of core.cpp and the first major actions that frame the rest of the flow.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["parse_tree_to_text()"]
-    N1["Enter parse_tree_to_text()"]
-    N2["Parse text"]
-    N3["Populate outputs"]
-    N4["Tokenize input"]
-    N5["Assemble tree"]
-    N6["Compute hashes"]
-    N7["Serialize report"]
-    N8["Loop collection"]
-    N9["More items?"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N0["Read crucial classes"]
+    N1["Build symbol tables"]
+    N2["Collect relevant hashes"]
+    N3["Filter main children"]
+    N4["Count kept or pruned nodes"]
+    N5["Return bundle"]
+    N0 --> N1 --> N2 --> N3 --> N4 --> N5
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of core.cpp after the opening path has been established.
-Why this is separate: core.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+## parse_tree_to_text(root)
+This function renders one tree into an indented text representation. It recursively walks children, chooses the annotated display value when present, and prints hash metadata.
+
 ```mermaid
 flowchart TD
-    N0["Branch condition"]
-    N1["Continue?"]
-    N2["Stop path"]
-    N3["Return result"]
-    N4["Return"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
+    N0["Start recursive walk"]
+    N1["Write kind and value"]
+    N2["Write context hash"]
+    N3["Write usage hashes"]
+    N4["Visit children"]
+    N5["Return text"]
+    N0 --> N1 --> N2 --> N3 --> N4 --> N5
 ```
 
-### parse_tree_to_html()
-This routine ingests source content and turns it into a more useful structured form. It appears near line 219.
+## parse_tree_to_html(root)
+This function does not build HTML itself. It delegates to the HTML renderer with the fixed title `C++ Parse Tree`.
 
-Inside the body, it mainly handles parse source text into structured values and render text or HTML views.
-
-The caller receives a computed result or status from this step.
-
-What it does:
-- parse source text into structured values
-- render text or HTML views
-
-Flow:
 ```mermaid
 flowchart TD
-    Start["parse_tree_to_html()"]
-    N0["Enter parse_tree_to_html()"]
-    N1["Parse text"]
-    N2["Render views"]
-    N3["Return result"]
-    End["Return"]
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> End
+    N0["Receive parse tree"]
+    N1["Call HTML renderer"]
+    N2["Return HTML"]
+    N0 --> N1 --> N2
 ```
 
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
+## Reading Boundaries
+- Entry references outside this file: callers use the public parse-tree functions from `parse_tree.hpp`.
+- Exit references outside this file: content parsing is delegated to `Internal/parse_tree_internal.hpp`, and HTML output is delegated to the tree renderer.
+- Internal diagrams in this file should stay focused on the functions listed above.
 
-
+## Acceptance Checks
+- The file-level diagram shows function relationships only.
+- Function diagrams describe local behavior using short intent labels, not generic action buckets.
+- Detailed steps for `build_cpp_parse_trees()` appear only in that function section.
+- Cross-file references appear only as entry or exit boundaries.

@@ -2,7 +2,6 @@
 
 - Source: Infrastructure/session-orchestration/bootstrap_and_deploy.ps1
 - Kind: PowerShell script
-- Lines: 612
 
 ## Story
 ### What Happens Here
@@ -35,34 +34,34 @@ It leans on nearby contracts or tools such as docker, kubectl, minikube, winget,
 
 ### Finding What Matters
 These steps pick out the facts, traces, and relationships that later stages need.
-- Resolve-AbsolutePath() (line 345): Connect discovered data back into the shared model and branch on runtime conditions
+- Resolve-AbsolutePath(): Connect discovered data back into the shared model and branch on local conditions
 
 ### Changing Or Cleaning The Picture
 These steps adjust existing state or remove stale pieces after better information is available.
-- Remove-MinikubeProfileArtifacts() (line 256): Remove obsolete transformed artifacts, inspect the current filesystem state, and create or update filesystem artifacts
+- Remove-MinikubeProfileArtifacts(): Remove obsolete transformed artifacts, inspect the current filesystem state, and create or update filesystem artifacts
 
 ### Showing The Result
 These steps turn internal state into text, HTML, JSON, or another output a reader can inspect.
-- Write-Step() (line 17): Render or serialize the result and report status or failures to the caller
-- Write-Info() (line 22): Render or serialize the result and report status or failures to the caller
+- Write-Step(): Render or serialize the result and report status or failures to the caller
+- Write-Info(): Render or serialize the result and report status or failures to the caller
 
 ### Main Path
 These steps drive the main execution path by calling the supporting work in order.
-- Start-MinikubeWithRecovery() (line 279): Drive the main execution path, report status or failures to the caller, and invoke external tooling
+- Start-MinikubeWithRecovery(): Drive the main execution path, report status or failures to the caller, and invoke external tooling
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- Test-CommandExists() (line 27): Owns a focused local responsibility.
-- Get-WingetPath() (line 32): Inspect the current filesystem state and branch on runtime conditions
-- Get-DockerPath() (line 56): Inspect the current filesystem state, invoke external tooling, and branch on runtime conditions
-- Get-MinikubePath() (line 82): Inspect the current filesystem state, invoke external tooling, and branch on runtime conditions
-- Get-KubectlPath() (line 109): Inspect the current filesystem state, invoke external tooling, and branch on runtime conditions
-- Invoke-ExternalCommand() (line 136): Report status or failures to the caller and branch on runtime conditions
-- Install-WithWinget() (line 148): Report status or failures to the caller and branch on runtime conditions
-- Wait-ForDocker() (line 178): Populate output fields or accumulators, report status or failures to the caller, and invoke external tooling
-- Test-MinikubeProfileCorrupted() (line 205): Inspect the current filesystem state and invoke external tooling
-- Invoke-MinikubeDeleteBestEffort() (line 219): Report status or failures to the caller, invoke external tooling, and branch on runtime conditions
-- Apply-K8sTemplate() (line 354): Inspect the current filesystem state, create or update filesystem artifacts, and invoke external tooling
+- Test-CommandExists(): Owns a focused local responsibility.
+- Get-WingetPath(): Inspect the current filesystem state and branch on local conditions
+- Get-DockerPath(): Inspect the current filesystem state, invoke external tooling, and branch on local conditions
+- Get-MinikubePath(): Inspect the current filesystem state, invoke external tooling, and branch on local conditions
+- Get-KubectlPath(): Inspect the current filesystem state, invoke external tooling, and branch on local conditions
+- Invoke-ExternalCommand(): Report status or failures to the caller and branch on local conditions
+- Install-WithWinget(): Report status or failures to the caller and branch on local conditions
+- Wait-ForDocker(): fill local output fields, report status or failures to the caller, and invoke external tooling
+- Test-MinikubeProfileCorrupted(): Inspect the current filesystem state and invoke external tooling
+- Invoke-MinikubeDeleteBestEffort(): Report status or failures to the caller, invoke external tooling, and branch on local conditions
+- Apply-K8sTemplate(): Inspect the current filesystem state, create or update filesystem artifacts, and invoke external tooling
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

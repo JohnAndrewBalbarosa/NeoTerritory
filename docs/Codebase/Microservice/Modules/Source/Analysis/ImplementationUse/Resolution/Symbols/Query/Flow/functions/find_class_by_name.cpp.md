@@ -4,37 +4,37 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### find_class_by_name()
-This routine owns one focused piece of the file's behavior. It appears near line 20.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles search previously collected data, inspect or register class-level information, iterate over the active collection, and branch on runtime conditions.
+Inside the body, it mainly handles search previously collected data, inspect or register class-level information, walk the local collection, and branch on local conditions.
 
 The implementation iterates over a collection or repeated workload. It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
 - search previously collected data
 - inspect or register class-level information
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 
 ### Block 2 - find_class_by_name() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of find_class_by_name.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for find_class_by_name.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: find_class_by_name.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["find_class_by_name()"]
-    N1["Enter find_class_by_name()"]
+    N1["Find class by name"]
     N2["Search data"]
     N3["Register classes"]
     N4["Loop collection"]
-    N5["More items?"]
-    N6["Branch condition"]
+    N5["More local items?"]
+    N6["Check local condition"]
     N7["Continue?"]
-    N8["Stop path"]
-    N9["Return result"]
+    N8["Return early path"]
+    N9["Return local result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -46,8 +46,8 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of find_class_by_name.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for find_class_by_name.cpp after setup.
 Why this is separate: find_class_by_name.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD

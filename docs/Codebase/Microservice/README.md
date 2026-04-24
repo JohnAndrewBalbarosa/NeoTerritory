@@ -1,4 +1,4 @@
-﻿# Microservice
+# Microservice
 
 - Folder: docs/Codebase/Microservice
 - Descendant source docs: 99
@@ -36,21 +36,21 @@ flowchart TD
 ```
 
 ## Child Folders By Logic
-### Application Runner
-These child folders continue the subsystem by covering Application-layer orchestration around the deeper module code..
-- Layer/ : Application-layer orchestration around the deeper module code.
+### Runtime
+These child folders continue the subsystem by covering application runtime orchestration around the deeper module code.
+- Runtime/ : CLI validation, file discovery, pipeline execution, diagnostics, and output writing.
 
 ### Validation Assets
-These child folders continue the subsystem by covering Validation-oriented source corpus and test support assets..
+These child folders continue the subsystem by covering Validation-oriented source corpus and test support assets.
 - Test/ : Validation-oriented source corpus and test support assets.
 
 ### Module Tree
-These child folders continue the subsystem by covering Modularized C++ implementation divided into compile-time headers and source implementations..
+These child folders continue the subsystem by covering Modularized C++ implementation divided into compile-time headers and source implementations.
 - Modules/ : Modularized C++ implementation divided into compile-time headers and source implementations.
 
 ## Documents By Logic
 ### Executable Entrypoints
-These documents explain the local implementation by covering Thin executable entrypoint that delegates to the syntactic broken AST runner..
+These documents explain the local implementation by covering Thin executable entrypoint that delegates to the syntactic broken AST runner.
 - main.cpp.md : Thin executable entrypoint that delegates to the syntactic broken AST runner.
 
 ## Reading Hint

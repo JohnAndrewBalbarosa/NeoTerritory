@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### ParseTreeSymbolBuildOptions
-This declaration introduces a shared type that other files compile against. It appears near line 37.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -16,7 +16,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["ParseTreeSymbolBuildOptions"]
-    N0["Enter parsetreesymbolbuildoptions()"]
+    N0["Parse tree symbol build options"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]

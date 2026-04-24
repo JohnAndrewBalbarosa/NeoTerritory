@@ -22,7 +22,7 @@ flowchart TD
 
 ## Documents By Logic
 ### Legacy Transform Samples
-These documents explain the local implementation by covering Provides legacy sample source programs from the older pattern-to-pattern transform system..
+These documents explain the local implementation by covering Provides legacy sample source programs from the older pattern-to-pattern transform system.
 - legacy_builder_to_singleton_sample.cpp.md : Provides legacy sample source programs from the older pattern-to-pattern transform system.
 - legacy_factory_to_singleton_sample.cpp.md : Provides legacy sample source programs from the older pattern-to-pattern transform system.
 - legacy_pattern_domain_models_sample.cpp.md : Provides legacy sample source programs from the older pattern-to-pattern transform system.

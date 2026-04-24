@@ -1,8 +1,7 @@
-﻿# factory_pattern_logic.hpp
+# factory_pattern_logic.hpp
 
 - Source: Microservice/Modules/Header/Creational/Factory/factory_pattern_logic.hpp
 - Kind: C++ header
-- Lines: 16
 
 ## Story
 ### What Happens Here
@@ -21,13 +20,13 @@ Declares creational-pattern detection and transform interfaces. The main surface
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Start"]
+    Start["Begin local flow"]
     N0["Promises this file makes"]
-    N1["Enter build_factory_pattern_tree()"]
+    N1["Create factory pattern tree"]
     N2["Declare call"]
     N3["Defer body"]
-    N4["Leave build_factory_pattern_tree()"]
-    End["End"]
+    N4["Return from local helper"]
+    End["Return from local flow"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -49,12 +48,12 @@ It leans on nearby contracts or tools such as creational_broken_tree.hpp and par
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- build_factory_pattern_tree() (line 13): Declare a callable contract and let implementation files define the runtime body
+- build_factory_pattern_tree(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### build_factory_pattern_tree()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 13.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -66,7 +65,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["build_factory_pattern_tree()"]
-    N0["Enter build_factory_pattern_tree()"]
+    N0["Create factory pattern tree"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

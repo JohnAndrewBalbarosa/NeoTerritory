@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/Creational/Transform/creational_code_generator_internal.hpp
 - Kind: C++ header
-- Lines: 85
 
 ## Story
 ### What Happens Here
@@ -35,37 +34,37 @@ It leans on nearby contracts or tools such as parse_tree.hpp, parse_tree_code_ge
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- lower() (line 17): Declare a callable contract and let implementation files define the runtime body
-- trim() (line 19): Declare a callable contract and let implementation files define the runtime body
-- split_words() (line 20): Declare a callable contract and let implementation files define the runtime body
-- starts_with() (line 21): Declare a callable contract and let implementation files define the runtime body
-- find_matching_brace() (line 22): Declare a callable contract and let implementation files define the runtime body
-- is_class_block() (line 23): Declare a callable contract and let implementation files define the runtime body
-- is_function_block() (line 25): Declare a callable contract and let implementation files define the runtime body
-- class_name_from_signature() (line 26): Declare a callable contract and let implementation files define the runtime body
-- function_name_from_signature() (line 27): Declare a callable contract and let implementation files define the runtime body
-- inject_singleton_accessor() (line 28): Declare a callable contract and let implementation files define the runtime body
-- rewrite_class_instantiations_to_singleton_references() (line 30): Declare a callable contract and let implementation files define the runtime body
-- extract_crucial_class_names() (line 31): Declare a callable contract and let implementation files define the runtime body
-- ensure_decision() (line 36): Declare a callable contract and let implementation files define the runtime body
-- add_reason_if_missing() (line 40): Declare a callable contract and let implementation files define the runtime body
-- split_lines() (line 42): Declare a callable contract and let implementation files define the runtime body
-- join_lines() (line 44): Declare a callable contract and let implementation files define the runtime body
-- is_config_method_name() (line 48): Declare a callable contract and let implementation files define the runtime body
-- is_monolithic_config_method_name() (line 50): Declare a callable contract and let implementation files define the runtime body
-- is_monolithic_build_method_name() (line 51): Declare a callable contract and let implementation files define the runtime body
-- is_build_method_name() (line 52): Declare a callable contract and let implementation files define the runtime body
-- is_operational_method_name() (line 53): Declare a callable contract and let implementation files define the runtime body
-- ends_with() (line 54): Declare a callable contract and let implementation files define the runtime body
-- strip_builder_suffix() (line 56): Declare a callable contract and let implementation files define the runtime body
-- append_unique_token() (line 57): Declare a callable contract and let implementation files define the runtime body
-- append_unique_line() (line 59): Declare a callable contract and let implementation files define the runtime body
-- append_unique_lines() (line 60): Declare a callable contract and let implementation files define the runtime body
-- regex_capture_or_empty() (line 61): Declare a callable contract and let implementation files define the runtime body
-- build_monolithic_evidence_view() (line 62): Declare a callable contract and let implementation files define the runtime body
-- transform_to_singleton_by_class_references() (line 69): Declare a callable contract and let implementation files define the runtime body
-- transform_singleton_to_builder() (line 74): Declare a callable contract and let implementation files define the runtime body
-- transform_using_registered_rule() (line 78): Declare a callable contract and let implementation files define the runtime body
+- lower(): Declare a callable contract and let implementation files define the runtime body
+- trim(): Declare a callable contract and let implementation files define the runtime body
+- split_words(): Declare a callable contract and let implementation files define the runtime body
+- starts_with(): Declare a callable contract and let implementation files define the runtime body
+- find_matching_brace(): Declare a callable contract and let implementation files define the runtime body
+- is_class_block(): Declare a callable contract and let implementation files define the runtime body
+- is_function_block(): Declare a callable contract and let implementation files define the runtime body
+- class_name_from_signature(): Declare a callable contract and let implementation files define the runtime body
+- function_name_from_signature(): Declare a callable contract and let implementation files define the runtime body
+- inject_singleton_accessor(): Declare a callable contract and let implementation files define the runtime body
+- rewrite_class_instantiations_to_singleton_references(): Declare a callable contract and let implementation files define the runtime body
+- extract_crucial_class_names(): Declare a callable contract and let implementation files define the runtime body
+- ensure_decision(): Declare a callable contract and let implementation files define the runtime body
+- add_reason_if_missing(): Declare a callable contract and let implementation files define the runtime body
+- split_lines(): Declare a callable contract and let implementation files define the runtime body
+- join_lines(): Declare a callable contract and let implementation files define the runtime body
+- is_config_method_name(): Declare a callable contract and let implementation files define the runtime body
+- is_monolithic_config_method_name(): Declare a callable contract and let implementation files define the runtime body
+- is_monolithic_build_method_name(): Declare a callable contract and let implementation files define the runtime body
+- is_build_method_name(): Declare a callable contract and let implementation files define the runtime body
+- is_operational_method_name(): Declare a callable contract and let implementation files define the runtime body
+- ends_with(): Declare a callable contract and let implementation files define the runtime body
+- strip_builder_suffix(): Declare a callable contract and let implementation files define the runtime body
+- append_unique_token(): Declare a callable contract and let implementation files define the runtime body
+- append_unique_line(): Declare a callable contract and let implementation files define the runtime body
+- append_unique_lines(): Declare a callable contract and let implementation files define the runtime body
+- regex_capture_or_empty(): Declare a callable contract and let implementation files define the runtime body
+- build_monolithic_evidence_view(): Declare a callable contract and let implementation files define the runtime body
+- transform_to_singleton_by_class_references(): Declare a callable contract and let implementation files define the runtime body
+- transform_singleton_to_builder(): Declare a callable contract and let implementation files define the runtime body
+- transform_using_registered_rule(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 Function-level logic is decoupled into future implementation units:

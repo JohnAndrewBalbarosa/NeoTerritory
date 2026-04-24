@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### Remove-MinikubeProfileArtifacts()
-This routine owns one focused piece of the file's behavior. It appears near line 256.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles remove obsolete transformed artifacts, inspect the current filesystem state, create or update filesystem artifacts, and report status or failures to the caller.
 
@@ -16,24 +16,24 @@ What it does:
 - create or update filesystem artifacts
 - report status or failures to the caller
 - invoke external tooling
-- branch on runtime conditions
-- iterate over the active collection
+- branch on local conditions
+- walk the local collection
 
 Flow:
 
 
 ### Block 6 - Remove-MinikubeProfileArtifacts() Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
     N0["Remove-MinikubeProfileArtifacts()"]
-    N1["Enter remove-minikubeprofileartifacts()"]
+    N1["Remove minikubeprofileartifacts"]
     N2["Remove obsolete"]
     N3["Inspect files"]
     N4["Continue?"]
-    N5["Stop path"]
+    N5["Return early path"]
     N6["Update files"]
-    N7["More items?"]
+    N7["More local items?"]
     N8["Report status"]
     N9["Invoke tooling"]
     N0 --> N1
@@ -47,14 +47,14 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Branch condition"]
+    N0["Check local condition"]
     N1["Continue?"]
-    N2["Stop path"]
+    N2["Return early path"]
     N3["Loop collection"]
-    N4["More items?"]
+    N4["More local items?"]
     N5["Hand back"]
     N6["Return"]
     N0 --> N1

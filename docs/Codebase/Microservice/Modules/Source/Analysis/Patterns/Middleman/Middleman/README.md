@@ -15,7 +15,7 @@ flowchart TD
     N0["Build registry"]
     N1["Build context"]
     N2["Dispatch hooks"]
-    N3["Assemble tree"]
+    N3["Connect local nodes"]
     End["Return tree"]
     Start --> N0
     N0 --> N1

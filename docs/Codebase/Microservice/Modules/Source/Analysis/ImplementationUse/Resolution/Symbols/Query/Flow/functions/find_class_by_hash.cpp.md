@@ -4,7 +4,7 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### find_class_by_hash()
-This routine owns one focused piece of the file's behavior. It appears near line 32.
+This routine owns one focused piece of the file's behavior.
 
 Inside the body, it mainly handles search previously collected data, compute or reuse hash-oriented identifiers, inspect or register class-level information, and compute hash metadata.
 
@@ -15,27 +15,27 @@ What it does:
 - compute or reuse hash-oriented identifiers
 - inspect or register class-level information
 - compute hash metadata
-- iterate over the active collection
-- branch on runtime conditions
+- walk the local collection
+- branch on local conditions
 
 Flow:
 
 
 ### Block 3 - find_class_by_hash() Details
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of find_class_by_hash.cpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for find_class_by_hash.cpp and keeps the diagram scoped to this code unit.
 Why this is separate: find_class_by_hash.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["find_class_by_hash()"]
-    N1["Enter find_class_by_hash()"]
+    N1["Find class by hash"]
     N2["Search data"]
     N3["Use hashes"]
     N4["Register classes"]
     N5["Compute hashes"]
     N6["Loop collection"]
-    N7["More items?"]
-    N8["Branch condition"]
+    N7["More local items?"]
+    N8["Check local condition"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -48,13 +48,13 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of find_class_by_hash.cpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for find_class_by_hash.cpp after setup.
 Why this is separate: find_class_by_hash.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Stop path"]
-    N1["Return result"]
+    N0["Return early path"]
+    N1["Return local result"]
     N2["Return"]
     N0 --> N1
     N1 --> N2

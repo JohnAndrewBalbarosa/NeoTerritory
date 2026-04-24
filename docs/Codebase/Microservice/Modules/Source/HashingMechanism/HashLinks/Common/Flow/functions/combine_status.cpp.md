@@ -4,24 +4,24 @@
 - Purpose: decoupled implementation logic for a future code unit.
 
 ### combine_status()
-This routine owns one focused piece of the file's behavior. It appears near line 167.
+This routine owns one focused piece of the file's behavior.
 
-Inside the body, it mainly handles branch on runtime conditions.
+Inside the body, it mainly handles branch on local conditions.
 
 It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
 
 What it does:
-- branch on runtime conditions
+- branch on local conditions
 
 Flow:
 ```mermaid
 flowchart TD
     Start["combine_status()"]
-    N0["Enter combine_status()"]
-    N1["Branch condition"]
+    N0["Handle combine status"]
+    N1["Check local condition"]
     D1{"Continue?"}
-    R1["Stop path"]
-    N2["Return result"]
+    R1["Return early path"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1

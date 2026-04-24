@@ -2,7 +2,6 @@
 
 - Source: Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure/lexical_structure_hooks.hpp
 - Kind: C++ header
-- Lines: 40
 
 ## Story
 ### What Happens Here
@@ -24,12 +23,12 @@ The flow is intentionally split into smaller slices so the major intent of lexic
 
 
 ### Program Flow Slices
-#### Slice 1 - Opening Intent
-Quick summary: This slice shows the opening intent of lexical_structure_hooks.hpp and the first major actions that frame the rest of the flow.
+#### Slice 1 - Establish Local Entry
+Quick summary: This slice shows the first file-local stage for lexical_structure_hooks.hpp and keeps the diagram scoped to this code unit.
 Why this is separate: lexical_structure_hooks.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Start"]
+    N0["Begin local flow"]
     N1["Promises this file makes"]
     N2["Enter crucialclassinfo"]
     N3["Declare type"]
@@ -50,20 +49,20 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 2 - Early Branches
-Quick summary: This slice covers the first branch-heavy continuation of lexical_structure_hooks.hpp after the opening path has been established.
+#### Slice 2 - Handle Early Decisions
+Quick summary: This slice shows the first local decision path for lexical_structure_hooks.hpp after setup.
 Why this is separate: lexical_structure_hooks.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
-    N0["Enter on_class_scanned_structural_hook()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
-    N3["Leave on_class_scanned_structural_hook()"]
-    N4["Enter reset_structural_analysis_state()"]
+    N3["Return from local helper"]
+    N4["Reset structural analysis state"]
     N5["Declare call"]
     N6["Defer body"]
-    N7["Leave reset_structural_analysis_state()"]
-    N8["Enter is_crucial_class_name()"]
+    N7["Return from local helper"]
+    N8["Check crucial class name"]
     N9["Declare call"]
     N0 --> N1
     N1 --> N2
@@ -76,18 +75,18 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Slice 3 - Mid-Flow Handoff
-Quick summary: This slice captures the mid-flow handoff in lexical_structure_hooks.hpp where preparation turns into deeper processing.
+#### Slice 3 - Hand Off Local State
+Quick summary: This slice shows how lexical_structure_hooks.hpp passes prepared local state into its next operation.
 Why this is separate: lexical_structure_hooks.hpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
 ```mermaid
 flowchart TD
     N0["Defer body"]
-    N1["Leave is_crucial_class_name()"]
-    N2["Enter get_crucial_class_registry()"]
+    N1["Return from local helper"]
+    N2["Execute file-local step"]
     N3["Declare call"]
     N4["Defer body"]
-    N5["Leave get_crucial_class_registry()"]
-    N6["End"]
+    N5["Return from local helper"]
+    N6["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -109,17 +108,17 @@ It leans on nearby contracts or tools such as Pipeline-Contracts/analysis_contex
 
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- CrucialClassInfo (line 9): Declare a shared type and expose the compile-time contract
-- StructuralAnalysisState (line 16): Declare a shared type and expose the compile-time contract
-- on_class_scanned_structural_hook() (line 26): Declare a callable contract and let implementation files define the runtime body
-- reset_structural_analysis_state() (line 31): Declare a callable contract and let implementation files define the runtime body
-- is_crucial_class_name() (line 33): Declare a callable contract and let implementation files define the runtime body
-- get_crucial_class_registry() (line 37): Declare a callable contract and let implementation files define the runtime body
+- CrucialClassInfo: Declare a shared type and expose the compile-time contract
+- StructuralAnalysisState: Declare a shared type and expose the compile-time contract
+- on_class_scanned_structural_hook(): Declare a callable contract and let implementation files define the runtime body
+- reset_structural_analysis_state(): Declare a callable contract and let implementation files define the runtime body
+- is_crucial_class_name(): Declare a callable contract and let implementation files define the runtime body
+- get_crucial_class_registry(): Declare a callable contract and let implementation files define the runtime body
 
 ## Function Stories
 
 ### CrucialClassInfo
-This declaration introduces a shared type that other files compile against. It appears near line 9.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -131,7 +130,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["CrucialClassInfo"]
-    N0["Enter crucialclassinfo()"]
+    N0["Execute file-local step"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -144,7 +143,7 @@ flowchart TD
 ```
 
 ### StructuralAnalysisState
-This declaration introduces a shared type that other files compile against. It appears near line 16.
+This declaration introduces a shared type that other files compile against.
 
 Inside the body, it mainly handles declare a shared type and expose the compile-time contract.
 
@@ -156,7 +155,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["StructuralAnalysisState"]
-    N0["Enter structuralanalysisstate()"]
+    N0["Handle structural analysis state"]
     N1["Declare type"]
     N2["Expose contract"]
     N3["Hand back"]
@@ -169,7 +168,7 @@ flowchart TD
 ```
 
 ### on_class_scanned_structural_hook()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 26.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -181,7 +180,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["on_class_scanned_structural_hook()"]
-    N0["Enter on_class_scanned_structural_hook()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -194,7 +193,7 @@ flowchart TD
 ```
 
 ### reset_structural_analysis_state()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 31.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -206,7 +205,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["reset_structural_analysis_state()"]
-    N0["Enter reset_structural_analysis_state()"]
+    N0["Reset structural analysis state"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -219,7 +218,7 @@ flowchart TD
 ```
 
 ### is_crucial_class_name()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 33.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -231,7 +230,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["is_crucial_class_name()"]
-    N0["Enter is_crucial_class_name()"]
+    N0["Check crucial class name"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]
@@ -244,7 +243,7 @@ flowchart TD
 ```
 
 ### get_crucial_class_registry()
-This declaration exposes a callable contract without providing the runtime body here. It appears near line 37.
+This declaration exposes a callable contract without providing the runtime body here.
 
 Inside the body, it mainly handles declare a callable contract and let implementation files define the runtime body.
 
@@ -256,7 +255,7 @@ Flow:
 ```mermaid
 flowchart TD
     Start["get_crucial_class_registry()"]
-    N0["Enter get_crucial_class_registry()"]
+    N0["Execute file-local step"]
     N1["Declare call"]
     N2["Defer body"]
     N3["Hand back"]

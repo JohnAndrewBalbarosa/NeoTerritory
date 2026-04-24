@@ -2,7 +2,6 @@
 
 - Source: LegacyPatternTransformSamples/legacy_builder_to_singleton_sample.cpp
 - Kind: C++ implementation
-- Lines: 46
 
 ## Story
 ### What Happens Here
@@ -21,19 +20,19 @@ Provides legacy sample source programs from the older pattern-to-pattern transfo
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
 ### Block 1 - Program Flow Details
-#### Part 1
+#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Start"]
-    N1["Supporting steps"]
-    N2["Enter set_name()"]
+    N0["Begin local flow"]
+    N1["Run helper branch"]
+    N2["Set name"]
     N3["Carry out set name"]
-    N4["Leave set_name()"]
-    N5["Enter set_limit()"]
+    N4["Return from local helper"]
+    N5["Set limit"]
     N6["Carry out set limit"]
-    N7["Leave set_limit()"]
-    N8["Building the working picture"]
-    N9["Enter build()"]
+    N7["Return from local helper"]
+    N8["Prepare local model"]
+    N9["Handle build"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -45,17 +44,17 @@ flowchart TD
     N8 --> N9
 ```
 
-#### Part 2
+#### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Build output"]
+    N0["Create local result"]
     N1["Populate outputs"]
-    N2["Return result"]
-    N3["Supporting steps"]
-    N4["Enter main()"]
+    N2["Return local result"]
+    N3["Run helper branch"]
+    N4["Handle main"]
     N5["Carry out main"]
-    N6["Return result"]
-    N7["End"]
+    N6["Return local result"]
+    N7["Return from local flow"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -78,18 +77,18 @@ It leans on nearby contracts or tools such as string.
 
 ### Building The Working Picture
 These steps assemble the trees, models, or bundles used by the rest of the file.
-- build() (line 26): Build or append the next output structure and populate output fields or accumulators
+- build(): Create the local output structure and fill local output fields
 
 ### Supporting Steps
 These steps support the local behavior of the file.
-- set_name() (line 5): Owns a focused local responsibility.
-- set_limit() (line 6): Owns a focused local responsibility.
-- main() (line 39): Owns a focused local responsibility.
+- set_name(): Owns a focused local responsibility.
+- set_limit(): Owns a focused local responsibility.
+- main(): Owns a focused local responsibility.
 
 ## Function Stories
 
 ### set_name()
-This routine owns one focused piece of the file's behavior. It appears near line 5.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -98,8 +97,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["set_name()"]
-    N0["Enter set_name()"]
-    N1["Apply the routine's local logic"]
+    N0["Set name"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -109,7 +108,7 @@ flowchart TD
 ```
 
 ### set_limit()
-This routine owns one focused piece of the file's behavior. It appears near line 6.
+This routine owns one focused piece of the file's behavior.
 
 What it does:
 - This routine is primarily structural and does not expose obvious runtime operations from static inspection.
@@ -118,8 +117,8 @@ Flow:
 ```mermaid
 flowchart TD
     Start["set_limit()"]
-    N0["Enter set_limit()"]
-    N1["Apply the routine's local logic"]
+    N0["Set limit"]
+    N1["Execute file-local step"]
     N2["Hand back"]
     End["Return"]
     Start --> N0
@@ -129,24 +128,24 @@ flowchart TD
 ```
 
 ### build()
-This routine assembles a larger structure from the inputs it receives. It appears near line 26.
+This routine assembles a larger structure from the inputs it receives.
 
-Inside the body, it mainly handles build or append the next output structure and populate output fields or accumulators.
+Inside the body, it mainly handles Create the local output structure and fill local output fields.
 
 The caller receives a computed result or status from this step.
 
 What it does:
-- build or append the next output structure
-- populate output fields or accumulators
+- Create the local output structure
+- fill local output fields
 
 Flow:
 ```mermaid
 flowchart TD
     Start["build()"]
-    N0["Enter build()"]
-    N1["Build output"]
+    N0["Handle build"]
+    N1["Create local result"]
     N2["Populate outputs"]
-    N3["Return result"]
+    N3["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
@@ -156,7 +155,7 @@ flowchart TD
 ```
 
 ### main()
-This routine owns one focused piece of the file's behavior. It appears near line 39.
+This routine owns one focused piece of the file's behavior.
 
 The caller receives a computed result or status from this step.
 
@@ -167,9 +166,9 @@ Flow:
 ```mermaid
 flowchart TD
     Start["main()"]
-    N0["Enter main()"]
-    N1["Apply the routine's local logic"]
-    N2["Return result"]
+    N0["Handle main"]
+    N1["Execute file-local step"]
+    N2["Return local result"]
     End["Return"]
     Start --> N0
     N0 --> N1
