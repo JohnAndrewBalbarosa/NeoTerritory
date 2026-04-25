@@ -1,51 +1,16 @@
-#include <iostream>
-#include <memory>
-#include <string>
-
-class Report
+struct ShapeBase
 {
-public:
-    virtual ~Report() = default;
-    virtual void print() const = 0;
+    virtual ~ShapeBase() = default;
 };
 
-class JsonReport : public Report
+struct Circle : ShapeBase
 {
-public:
-    void print() const override { std::cout << "json report\n"; }
 };
 
-class CsvReport : public Report
+struct ShapeFactory
 {
-public:
-    void print() const override { std::cout << "csv report\n"; }
-};
-
-class ReportFactory
-{
-public:
-    std::unique_ptr<Report> create(const std::string& type)
+    static ShapeBase* create()
     {
-        if (type == "json")
-        {
-            return std::make_unique<JsonReport>();
-        }
-        if (type == "csv")
-        {
-            return std::make_unique<CsvReport>();
-        }
-        return nullptr;
+        return new Circle();
     }
 };
-
-int main()
-{
-    ReportFactory factory;
-    std::unique_ptr<Report> report;
-    report = factory.create("json");
-    if (report)
-    {
-        report->print();
-    }
-    return 0;
-}

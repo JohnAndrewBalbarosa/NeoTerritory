@@ -20,7 +20,10 @@ The markdown files describe the file's purpose, flow, collaborators, and key sym
 Before editing code, read:
 - `AGENTS.md`
 - `.codex/instructions.md`
+- `docs/Codebase/DESIGN_DECISIONS.md` — durable design agreements that survive across sessions; read this so design nuance doesn't get re-derived inconsistently
 - relevant files under `docs/Codebase`
+
+When a new design call is made during implementation, record it in `docs/Codebase/DESIGN_DECISIONS.md` BEFORE writing dependent code. This protects design intent from context compression.
 
 ## Code Implementation Rule
 Implement code from the docs. Do not assume that documentation-only support folders are implementation targets. The `docs/Codebase` tree itself is the intended future code/file structure.

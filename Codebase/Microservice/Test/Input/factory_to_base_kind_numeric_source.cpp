@@ -1,36 +1,28 @@
-#include <memory>
-#include <string>
-
-class Report
+struct VehicleBase
 {
-public:
-    virtual ~Report() = default;
+    virtual ~VehicleBase() = default;
 };
 
-class CsvReport : public Report
+struct Car : VehicleBase
 {
 };
 
-class JsonReport : public Report
+struct Truck : VehicleBase
 {
 };
 
-class ReportFactory
+struct VehicleFactory
 {
-public:
-    std::unique_ptr<Report> create(int kind)
+    static VehicleBase* create(int kind)
     {
+        if (kind == 0)
+        {
+            return new Car();
+        }
         if (kind == 1)
         {
-            return std::make_unique<CsvReport>();
+            return new Truck();
         }
-        return std::make_unique<JsonReport>();
+        return nullptr;
     }
 };
-
-int main()
-{
-    ReportFactory factory;
-    std::unique_ptr<Report> report = factory.create(1);
-    return report ? 0 : 1;
-}
