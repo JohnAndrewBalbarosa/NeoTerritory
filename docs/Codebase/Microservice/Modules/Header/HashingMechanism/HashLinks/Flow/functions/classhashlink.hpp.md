@@ -12,12 +12,17 @@ What it does:
 - declare a shared type
 - expose the compile-time contract
 
+Contract details:
+- `ClassHashLink` should connect a class hash to the class head record.
+- It can carry path evidence for child locations, but the class pointer target remains the class subtree head.
+- Include file context when class names can repeat across files.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["ClassHashLink"]
-    N0["Execute file-local step"]
-    N1["Declare type"]
+    N0["Link class head"]
+    N1["Keep file context"]
     N2["Expose contract"]
     N3["Hand back"]
     End["Return"]

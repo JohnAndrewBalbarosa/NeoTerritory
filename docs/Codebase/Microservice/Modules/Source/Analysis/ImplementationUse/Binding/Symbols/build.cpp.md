@@ -16,6 +16,18 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as SymbolTableBuilder, options, add_class_symbol, and add_function_symbol. It collaborates directly with Internal/parse_tree_symbols_internal.hpp, cstddef, functional, and string.
 
+## Symbol Registry Decisions
+- Class declarations are first treated as candidates. The builder records the class name and identity context, then computes the `std::hash`-derived class key.
+- The class registry record should store the hash and pointer targets for the actual subtree head and the virtual-copy / virtual-broken subtree head.
+- The virtual subtree pointer can remain empty while validation is still in progress.
+- Function entries use a hash input that includes function name, parameter signature, owner context, and file context when available.
+- Registry pointers target head nodes only. Child hashes under a class or function are kept as ancestry/location evidence so later lookup can find the exact nested function, statement, or lexeme.
+- Member function entries should be reachable through the owning class record or through a function key that includes the class hash. A visible function name such as `speak` must never be registered as globally unique by name alone.
+- While parsing a running function, class-name lexemes can create variable bindings. For `Person p1`, bind the variable hash for `p1` to the resolved `Person` class hash. For `p1.speak()`, combine that class hash with the member name and file/parent context to resolve the function head.
+- The durable variable→class map should be owned by a separate Binding-phase file. This builder may populate it, but the semantic symbol facade should not own that persistence contract.
+- Collision handling belongs in registration. If a hash bucket already exists, compare the stored hash and identity before adding or returning a record.
+- If the implementation represents registry collision as an exception, catch it here and emit a symbol-table diagnostic instead of allowing silent overwrite.
+
 ## Program Flow
 Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
 
@@ -24,12 +36,12 @@ Why this slice is separate: deeper helper docs can explain individual functions,
 ```mermaid
 flowchart TD
     N0["Receive local input"]
-    N1["Collect symbols dfs"]
-    N2["Collect class usages dfs"]
-    N3["Update hash state"]
-    N4["Create symbol tables with builder"]
-    N5["Execute file-local step"]
-    N6["Return local result"]
+    N1["Collect declarations"]
+    N2["Build parent keys"]
+    N3["Register heads"]
+    N4["Bind variables"]
+    N5["Collect member calls"]
+    N6["Return tables"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

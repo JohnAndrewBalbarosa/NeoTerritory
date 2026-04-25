@@ -16,6 +16,17 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as class_symbol_table, function_symbol_table, class_usage_table, and find_class_by_name. It collaborates directly with Internal/parse_tree_symbols_internal.hpp, string, and vector.
 
+## Query Contract
+- Class lookup can start from a name or a hash, but the final result should be the class registry record.
+- The class registry record carries the stored hash and subtree-head pointers for actual code and virtual-copy / virtual-broken code.
+- Hash lookup must check stored identity before trusting the pointer target.
+- Function lookup by key is precise. Function lookup by name can be ambiguous and should preserve overload candidates.
+- Class usage lookup returns many usage records for one class hash.
+- Function lookup returns a function head node. Child hashes and parent-tail hashes only identify the exact path to a nested function, statement, or lexeme.
+- Member-call lookup should resolve object-variable bindings first. For `p1.speak()`, resolve `p1` to its class hash, then find `speak` under that class hash plus file and immediate parent context.
+- Name lookup exists for class implementation and usage cross-reference, but final member-function resolution should not rely on a bare visible name.
+- `return_targets_known_class()` stays a predicate that asks whether a return target resolves to a registered class.
+
 ## Program Flow
 Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
 
@@ -24,12 +35,12 @@ Why this slice is separate: deeper helper docs can explain individual functions,
 ```mermaid
 flowchart TD
     N0["Receive local input"]
-    N1["Resolve class by name"]
-    N2["Resolve class by hash"]
-    N3["Resolve function by name"]
-    N4["Resolve function by key"]
-    N5["Resolve functions by name"]
-    N6["Return local result"]
+    N1["Resolve class name"]
+    N2["Resolve variable binding"]
+    N3["Apply parent hash"]
+    N4["Resolve member head"]
+    N5["Collect usage records"]
+    N6["Return query result"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

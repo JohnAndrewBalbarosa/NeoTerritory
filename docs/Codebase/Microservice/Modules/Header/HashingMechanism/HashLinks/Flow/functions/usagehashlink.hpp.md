@@ -12,12 +12,17 @@ What it does:
 - declare a shared type
 - expose the compile-time contract
 
+Contract details:
+- `UsageHashLink` should connect usage sites to resolved class/function heads through path evidence.
+- For object member calls, it should preserve the variable binding, such as `p1 -> Person hash`, before resolving the member name.
+- It should not claim ownership of class or function subtree nodes.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["UsageHashLink"]
-    N0["Execute file-local step"]
-    N1["Declare type"]
+    N0["Link usage site"]
+    N1["Keep binding"]
     N2["Expose contract"]
     N3["Hand back"]
     End["Return"]

@@ -18,6 +18,7 @@
 - It consumes normalized catalog definitions from `../Catalog/`.
 - It intentionally stays outside `../Families/` because it coordinates multiple pattern families.
 - Family-specific implementation logic belongs in `../Families/Behavioural/` or `../Families/Creational/`.
+- Shared types like `PatternTemplateNode`, `PatternScaffold`, and `PatternStructureChecker` stay here in `Contracts/`, not inside a family folder.
 
 ## Placement Rule
 - Put cross-family orchestration here.

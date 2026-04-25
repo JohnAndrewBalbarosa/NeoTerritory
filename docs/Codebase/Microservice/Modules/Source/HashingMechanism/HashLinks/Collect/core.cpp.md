@@ -16,6 +16,8 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as collect_side_nodes, build_node_refs, lookup_class_candidates, and lookup_usage_candidates. It collaborates directly with Internal/parse_tree_hash_links_internal.hpp, cstddef, functional, and string.
 
+Collection should separate head-node candidates from child-path evidence. Class and function candidates resolve to head records; usage candidates may carry variable bindings and member-call paths.
+
 ## Program Flow
 Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
 
@@ -24,10 +26,10 @@ Why this slice is separate: deeper helper docs can explain individual functions,
 ```mermaid
 flowchart TD
     N0["Receive local input"]
-    N1["Collect side nodes"]
-    N2["Resolve class candidates"]
-    N3["Resolve usage candidates"]
-    N4["Create node refs"]
+    N1["Collect head nodes"]
+    N2["Resolve class heads"]
+    N3["Resolve usage bindings"]
+    N4["Create path refs"]
     N5["Return local result"]
     N0 --> N1
     N1 --> N2

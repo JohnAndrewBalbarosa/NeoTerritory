@@ -12,7 +12,9 @@
 - This folder owns behavioural-specific checks, scaffolding, and symbol-test output.
 - Shared dispatch, registry, hook contracts, and orchestration stay in `../../Middleman/`.
 - Creational-specific logic belongs in `../Creational/`.
+- Behavioural scaffold/checker builders should behave like family-specific hooks under the shared middleman contract.
 
 ## Placement Rule
 - Keep behavioural implementation docs here only when their behavior depends on behavioural pattern semantics.
 - Put reusable cross-family helpers in `../../Middleman/` or a shared analysis utility instead of duplicating them here.
+- Prefer catalog-first shape definitions when the structure can be described as ordered lexemes and scoped blocks.

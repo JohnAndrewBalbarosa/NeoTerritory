@@ -12,14 +12,20 @@ What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
+Contract details:
+- `find_functions_by_name()` is the plural lookup for overloads and same-name functions.
+- It returns all records with the requested function name before the caller narrows by signature, owner, file, or hash key.
+- This function exists because function names alone are not unique.
+- Results should preserve the owning class hash and file hash for each candidate so callers can select the correct head node.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["find_functions_by_name()"]
-    N0["Find functions by name"]
-    N1["Declare call"]
-    N2["Defer body"]
-    N3["Hand back"]
+    N0["Read function name"]
+    N1["Collect matches"]
+    N2["Keep owner hashes"]
+    N3["Return records"]
     End["Return"]
     Start --> N0
     N0 --> N1

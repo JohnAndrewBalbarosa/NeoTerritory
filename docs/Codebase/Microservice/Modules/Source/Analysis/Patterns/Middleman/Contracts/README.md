@@ -7,6 +7,7 @@ Contracts define the public shape of the single catalog-driven middleman and the
 - `pattern_middleman_contract.cpp.md` is the caller-facing recognition interface.
 - `pattern_hook_contract.cpp.md` is the hook-facing algorithm interface.
 - Both Behavioural and Creational code depend on these same contracts.
+- Shared pattern types for templates, scaffolds, and structure checking are owned by the middleman contract layer, then consumed by hooks.
 
 ## Folder Flow
 ```mermaid

@@ -9,6 +9,8 @@
 
 This file exists because reverse-Merkle hashing is a standalone algorithm stage in the parser pipeline. It owns the helpers that derive a child hash from the immediate parent, cascade contextual hashes through tree descendants, keep usage hashes unique, and format usage-hash evidence for output.
 
+Registry ownership remains head-based. Reverse-Merkle child hashes tell later lookup where a nested function or lexeme is located under a head node; they do not create new registry owners for every child.
+
 ### Why It Matters In The Flow
 
 Runs after tree nodes exist and before downstream hash-linking, reports, and rendered outputs consume the contextual hash state.
@@ -16,6 +18,8 @@ Runs after tree nodes exist and before downstream hash-linking, reports, and ren
 ### What To Watch While Reading
 
 Watch the parent-to-child hash handoff. The important symbols are `hash_combine_token`, `derive_child_context_hash`, `rehash_subtree`, `add_unique_hash`, `usage_hash_suffix`, and `usage_hash_list`.
+
+For repeated names such as `speak`, the visible token hash is insufficient. The child context must carry the immediate parent hash, and class-level identity must include file context when the same class name can appear in multiple files.
 
 ## Program Flow
 Quick summary: this file owns the local reverse-Merkle hash helpers used by parse-tree generation. It derives child context hashes from the immediate parent, cascades hashes through descendants, and formats usage-hash evidence for later readers.
@@ -26,10 +30,10 @@ Why this slice is separate: this diagram is the file-local activity path. The li
 flowchart TD
     A["Receive parent context"]
     B["Combine parent and token"]
-    C["Derive child context hash"]
-    D["Cascade hash into subtree"]
-    E["Keep unique usage hashes"]
-    F["Format usage hash evidence"]
+    C["Derive child path"]
+    D["Keep head pointer"]
+    E["Track usage hashes"]
+    F["Format path evidence"]
     G["Return hashed tree state"]
 
     A --> B

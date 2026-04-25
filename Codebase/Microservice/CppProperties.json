@@ -1,0 +1,24 @@
+{
+  "configurations": [
+    {
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "name": "x64",
+      "includePath": [
+        "${workspaceRoot}\\**",
+        "${workspaceRoot}\\Modules\\Header\\**"
+      ],
+      "excludePath": [
+        "${workspaceRoot}\\out\\**",
+        "${workspaceRoot}\\build\\**",
+        "${workspaceRoot}\\build-msys\\**",
+        "${workspaceRoot}\\build-ninja\\**"
+      ],
+      "defines": [
+        "_DEBUG",
+        "UNICODE",
+        "_UNICODE"
+      ],
+      "intelliSenseMode": "windows-msvc-x64"
+    }
+  ]
+}

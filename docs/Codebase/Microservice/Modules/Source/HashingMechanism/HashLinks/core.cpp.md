@@ -16,6 +16,8 @@ Runs across the middle of the microservice flow to build parse trees, hash links
 
 Implements parsing, shadow-tree building, symbolization, hash linking, rendering, and reporting. The main surface area is easiest to track through symbols such as build_parse_tree_hash_links. It collaborates directly with parse_tree_hash_links.hpp, Internal/parse_tree_hash_links_internal.hpp, string, and unordered_set.
 
+Hash links should connect registry head nodes to path evidence. A class or function registry still owns the head-node pointer; child hashes and parent-tail keys only identify exact nested locations after the head is selected.
+
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 
@@ -24,20 +26,20 @@ The flow is intentionally split into smaller slices so the major intent of hash_
 
 ### Program Flow Slices
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for hash_links.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: hash_links.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice creates hash links from head-node identity to child-path evidence.
+Why this is separate: hash links should make repeated names resolvable without changing registry ownership.
 ```mermaid
 flowchart TD
     N0["Begin local flow"]
-    N1["Prepare local model"]
-    N2["Create parse tree hash links"]
-    N3["Create local result"]
-    N4["Use hashes"]
-    N5["Store local result"]
-    N6["Read structured tokens"]
-    N7["Connect local nodes"]
-    N8["Compute hashes"]
-    N9["Return local result"]
+    N1["Read head records"]
+    N2["Create hash links"]
+    N3["Keep path evidence"]
+    N4["Use parent hash"]
+    N5["Store link result"]
+    N6["Read member tokens"]
+    N7["Connect locations"]
+    N8["Check file context"]
+    N9["Return link set"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -91,24 +93,30 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Build links from class/function head identities to child path hashes.
+- Use immediate parent hash and file context to disambiguate repeated names.
+- For object member calls, keep the variable binding path so `p1.speak()` can resolve through `p1 -> class hash`.
+- Do not publish child hashes as registry-owned function records.
+
 Flow:
 
 ### Block 2 - build_parse_tree_hash_links() Details
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for hash_links.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: hash_links.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice builds lookup links that preserve head ownership and child location evidence.
+Why this is separate: lookup needs child paths to find exact function locations after class or function head resolution.
 ```mermaid
 flowchart TD
     N0["build_parse_tree_hash_links()"]
-    N1["Create parse tree hash links"]
-    N2["Create local result"]
-    N3["Use hashes"]
-    N4["Store local result"]
-    N5["Read structured tokens"]
-    N6["Connect local nodes"]
-    N7["Compute hashes"]
-    N8["Loop collection"]
-    N9["More local items?"]
+    N1["Read head identity"]
+    N2["Create link result"]
+    N3["Use parent hash"]
+    N4["Store path hash"]
+    N5["Read member token"]
+    N6["Connect location"]
+    N7["Add file context"]
+    N8["Loop paths"]
+    N9["More paths?"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

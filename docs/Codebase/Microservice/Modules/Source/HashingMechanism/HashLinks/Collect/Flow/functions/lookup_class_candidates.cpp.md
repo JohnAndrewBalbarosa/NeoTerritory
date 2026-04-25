@@ -17,34 +17,40 @@ What it does:
 - compute hash metadata
 - branch on local conditions
 
+Implementation contract:
+- Class candidate lookup should resolve to a class registry head record.
+- Use class name plus file context when the same class name can exist in multiple files.
+- The hash-link path may include child hashes, but those child hashes only help locate nested evidence under the class head.
+- Do not return a child node as the class registry pointer target.
+
 Flow:
 
 
 ### Block 4 - lookup_class_candidates() Details
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for lookup_class_candidates.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: lookup_class_candidates.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice resolves class candidates to class head records while keeping child hashes as path evidence.
+Why this is separate: class lookup must not confuse nested evidence with registry ownership.
 ```mermaid
 flowchart TD
     N0["lookup_class_candidates()"]
-    N1["Lookup class candidates"]
-    N2["Search data"]
-    N3["Register classes"]
-    N4["Look up entries"]
-    N5["Compute hashes"]
-    N6["Check local condition"]
-    N7["Continue?"]
-    N8["Return early path"]
-    N9["Return local result"]
+    N1["Read class candidate"]
+    N2["Apply file context"]
+    N3["Find class head"]
+    N4["Read path evidence"]
+    N5["Check identity"]
+    N6["Return class record"]
+    N7["Collision?"]
+    N8["Report diagnostic"]
+    N9["Return none"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
     N4 --> N5
-    N5 --> N6
-    N6 --> N7
+    N5 -->|match| N6
+    N5 -->|collision| N7
     N7 --> N8
-    N8 --> N9
+    N5 -->|missing| N9
 ```
 
 #### Slice 2 - Handle Early Decisions
