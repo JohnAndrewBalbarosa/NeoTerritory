@@ -14,7 +14,7 @@ const register = async (req, res, next) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
     const hash = await bcrypt.hash(password, 10);
-    const stmt = db.prepare('INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, datetime("now"))');
+    const stmt = db.prepare('INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, datetime(\'now\'))');
     const info = stmt.run(username, email, hash);
     logEvent(info.lastInsertRowid, 'register', `User registered: ${email}`);
     res.status(201).json({ message: 'User registered' });

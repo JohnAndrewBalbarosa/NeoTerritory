@@ -412,7 +412,9 @@ int run_syntactic_broken_ast(int argc, char* argv[])
                 artifacts.line_hash_traces,
                 artifacts.factory_invocation_traces,
                 artifacts.hash_links,
-                artifacts.design_pattern_tags)))
+                artifacts.design_pattern_tags,
+                artifacts.branch_evidence,
+                artifacts.contract_methods)))
     {
         print_error_diagnostics(
             "Failed to write performance report.",

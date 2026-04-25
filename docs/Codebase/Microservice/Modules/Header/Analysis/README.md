@@ -1,6 +1,6 @@
 # Analysis
 
-- Folder: `docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Analysis`
+- Folder: `docs/Codebase/Microservice/Modules/Header/Analysis`
 - Role: contracts for source intake, lexical scanning, implementation-use binding, and pattern interpretation
 
 ## Read Order

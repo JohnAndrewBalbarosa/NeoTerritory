@@ -22,8 +22,8 @@ flowchart TD
 
 ## Documents By Logic
 ### Syntactic Pipeline
-These documents explain the local implementation by covering Normalizes the requested source and target pattern arguments before runtime execution begins. and Loads discovered source files into SourceFileUnit records and optional monolithic views.
-- cli_arguments.cpp.md : Normalizes the requested source and target pattern arguments before runtime execution begins.
+These documents explain the local implementation by covering Normalizes runtime arguments before source loading and catalog-driven pattern recognition begins. and Loads discovered source files into SourceFileUnit records and optional monolithic views.
+- cli_arguments.cpp.md : Normalizes runtime arguments before source loading and catalog-driven pattern recognition begins.
 - source_reader.cpp.md : Loads discovered source files into SourceFileUnit records and optional monolithic views.
 
 ## Reading Hint

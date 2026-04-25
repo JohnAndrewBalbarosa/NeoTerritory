@@ -55,6 +55,33 @@ struct DesignPatternTag
     size_t evidence_hash;
 };
 
+struct BranchEvidence
+{
+    std::string file_path;
+    size_t line_number = 0;
+    std::string class_name;
+    std::string function_name;
+    std::string branch_kind;
+    std::string condition_text;
+    size_t branch_index = 0;
+    size_t branch_arity = 0;
+    size_t scope_context_hash = 0;
+    bool returns_concrete_type = false;
+    std::string returned_concrete_class;
+};
+
+struct ContractMethodEvidence
+{
+    std::string file_path;
+    size_t line_number = 0;
+    std::string class_name;
+    std::string method_name;
+    std::string method_signature;
+    std::string contract_kind;
+    std::string base_class_name;
+    size_t contract_hash = 0;
+};
+
 struct PipelineArtifacts
 {
     ParseTreeNode base_tree;
@@ -64,6 +91,8 @@ struct PipelineArtifacts
     HashLinkIndex hash_links;
     std::vector<LineHashTrace> line_hash_traces;
     std::vector<FactoryInvocationTrace> factory_invocation_traces;
+    std::vector<BranchEvidence> branch_evidence;
+    std::vector<ContractMethodEvidence> contract_methods;
     std::vector<DesignPatternTag> design_pattern_tags;
     std::vector<CrucialClassInfo> crucial_classes;
     ParseTreeSymbolTables symbol_tables;
@@ -83,6 +112,8 @@ std::string pipeline_report_to_json(
     const std::vector<LineHashTrace>& line_hash_traces,
     const std::vector<FactoryInvocationTrace>& factory_invocation_traces,
     const HashLinkIndex& hash_links,
-    const std::vector<DesignPatternTag>& design_pattern_tags = {});
+    const std::vector<DesignPatternTag>& design_pattern_tags = {},
+    const std::vector<BranchEvidence>& branch_evidence = {},
+    const std::vector<ContractMethodEvidence>& contract_methods = {});
 
 #endif // ALGORITHM_PIPELINE_HPP

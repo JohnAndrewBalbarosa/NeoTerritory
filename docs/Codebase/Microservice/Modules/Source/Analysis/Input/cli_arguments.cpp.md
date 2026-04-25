@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This file implements the command-line contract for the executable. It supports the normal two-argument pattern pair, tolerates a compatibility form where both values arrive in one token, and rejects extra file-path arguments because the runtime now discovers inputs from the folder layout. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
+This file implements the command-line contract for the executable. Pattern recognition should no longer treat a user-provided source design pattern as the source of truth. Runtime arguments may still select output mode, target transformation mode, or a catalog override, but source-pattern recognition defaults to all enabled catalog definitions. This source file implements one of the generic middle-stage services in the C++ pipeline. It is executed after sources are loaded and before the final report and rendered outputs are written.
 
 ### Why It Matters In The Flow
 
-Runs at the start of the microservice flow to validate the requested source and target pattern pair.
+Runs at the start of the microservice flow to normalize runtime options before automatic catalog recognition begins.
 
 ### What To Watch While Reading
 
-Normalizes the requested source and target pattern arguments before runtime execution begins. The main surface area is easiest to track through symbols such as split_whitespace_tokens, input, format_usage_with_argc, and parse_cli_arguments. It collaborates directly with Input-and-CLI/cli_arguments.hpp, sstream, string, and vector.
+Normalizes runtime arguments before source loading and catalog-driven pattern recognition begins. The main surface area is easiest to track through symbols such as split_whitespace_tokens, input, format_usage_with_argc, and parse_cli_arguments. It collaborates directly with Input-and-CLI/cli_arguments.hpp, sstream, string, and vector.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
@@ -86,9 +86,9 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Normalizes the requested source and target pattern arguments before runtime execution begins.
+Read this file as: Normalizes runtime arguments before source loading and catalog-driven pattern recognition begins.
 
-Where it sits in the run: Runs at the start of the microservice flow to validate the requested source and target pattern pair.
+Where it sits in the run: Runs at the start of the microservice flow to normalize runtime options before automatic catalog recognition begins.
 
 Names worth recognizing while reading: split_whitespace_tokens, input, format_usage_with_argc, and parse_cli_arguments.
 
@@ -104,6 +104,12 @@ These steps clean up names, text, or small values before the larger work begins.
 ### Reading The Input
 These steps turn raw text or arguments into something the program can follow.
 - parse_cli_arguments(): Parse source text into structured values, normalize command or call input, and fill local output fields
+
+## Automation Note
+- Do not require a source design-pattern argument for analysis.
+- If legacy arguments still arrive as a source and target pair, treat the source value as compatibility input only.
+- Pattern recognition should receive either the default catalog path or an explicit catalog override.
+- All enabled catalog definitions are checked after class declarations are generated.
 
 ## Function Stories
 
