@@ -1,130 +1,118 @@
 # transformController.js
 
-- Source: Backend/src/controllers/transformController.js
+- Source: `Backend/src/controllers/transformController.js`
 - Kind: JavaScript module
 
 ## Story
 ### What Happens Here
 
-This controller implements the current upload-to-placeholder-transform path. It validates the uploaded file, normalizes and relocates the input, creates an output placeholder, persists a job record, writes log entries, and returns the job metadata to the caller.
+This controller owns HTTP request handling for analysis-related work. For the live editor path, it receives a completed class declaration slice, validates the request version and class range, delegates lexical and subtree analysis to services, asks the AI documentation service to document the selected code units, writes a structured log event, and returns normalized analysis data to the frontend.
+
+The controller should stop using transform/refactor wording for this path. The user is not requesting code rewriting. The product behavior is now documentation and unit-test generation for code parts that exist because a design pattern was detected.
 
 ### Why It Matters In The Flow
 
-Runs after routing and middleware resolution to perform request-specific backend work.
+This is the backend handoff between frontend trigger logic and deeper analysis services. It must protect the backend from incomplete editor input and keep the response shape stable for the live UI.
 
 ### What To Watch While Reading
 
-Implements HTTP endpoint behavior after routing and before response serialization. The main surface area is easiest to track through symbols such as path, fs, db, and allowedExt. It collaborates directly with path, fs, ../db/database, and ../services/logService.
+Do not accept source-pattern, target-pattern, source-input, source-output, or refactor-candidate fields from the frontend. The algorithm detects pattern evidence through cross-referencing after lexical analysis and subtree construction.
 
-## Program Flow
-This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+## Live Class Flow
 
-### Block 1 - Program Flow Details
-#### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Begin local flow"]
-    N1["Changing or cleaning the picture"]
-    N2["Handle transform"]
-    N3["Rewrite source"]
-    N4["Clean text"]
-    N5["Validate branch"]
-    N6["Continue?"]
-    N7["Return early path"]
-    N8["Use SQLite"]
-    N9["Move files"]
+    Start["Receive class slice"]
+    N0["Validate body"]
+    N1["Lexical analysis"]
+    D1{"Tokens valid?"}
+    N2["Return diagnostics"]
+    N3["Build subtree"]
+    D2{"Subtree valid?"}
+    N4["Cross-reference"]
+    N5["Ask AI docs"]
+    End["Return result"]
+    Start --> N0
     N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
+    N1 --> D1
+    D1 -->|no| N2
+    D1 -->|yes| N3
+    N3 --> D2
+    D2 -->|no| N2
+    D2 -->|yes| N4
     N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N5 --> End
+    N2 --> End
 ```
 
-#### Slice 2 - Continue Local Flow
-```mermaid
-flowchart TD
-    N0["More local items?"]
-    N1["Return local result"]
-    N2["Return local result"]
-    N3["Return from local flow"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
+## Request Contract
+
+Expected request body:
+
+```json
+{
+  "documentId": "active-editor",
+  "documentVersion": 17,
+  "className": "Factory",
+  "classRange": {
+    "startOffset": 128,
+    "endOffset": 615
+  },
+  "code": "class Factory { ... };"
+}
 ```
 
-## Reading Map
-Read this file as: Implements HTTP endpoint behavior after routing and before response serialization.
+Rejected request fields:
+- `sourcePattern`
+- `targetPattern`
+- `sourceInput`
+- `sourceOutput`
+- `refactorCandidate`
 
-Where it sits in the run: Runs after routing and middleware resolution to perform request-specific backend work.
+## Response Contract
 
-Names worth recognizing while reading: path, fs, db, allowedExt, transform, and ext.
+Expected successful response:
 
-It leans on nearby contracts or tools such as path, fs, ../db/database, ../services/logService, and ../utils/fileUtils.
-
-## Story Groups
-
-### Changing Or Cleaning The Picture
-These steps adjust existing state or remove stale pieces after better information is available.
-- transform(): Rewrite source text or model state, normalize raw text before later parsing, and validate conditions and branch on failures
-
-## Function Stories
-
-### transform()
-This routine owns one focused piece of the file's behavior.
-
-Inside the body, it mainly handles rewrite source text or model state, normalize raw text before later parsing, validate conditions and branch on failures, and query or update SQLite state.
-
-It branches on runtime conditions instead of following one fixed path. The caller receives a computed result or status from this step.
-
-What it does:
-- rewrite source text or model state
-- normalize raw text before later parsing
-- validate conditions and branch on failures
-- query or update SQLite state
-- move or write filesystem artifacts
-- return the HTTP response
-
-Flow:
-
-### Block 2 - transform() Details
-#### Slice 1 - Continue Local Flow
-```mermaid
-flowchart TD
-    N0["transform()"]
-    N1["Handle transform"]
-    N2["Rewrite source"]
-    N3["Clean text"]
-    N4["Validate branch"]
-    N5["Continue?"]
-    N6["Return early path"]
-    N7["Use SQLite"]
-    N8["Move files"]
-    N9["More local items?"]
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> N5
-    N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+```json
+{
+  "documentVersion": 17,
+  "accepted": true,
+  "stage": "complete",
+  "detectedPattern": "factory",
+  "diagnostics": [],
+  "documentationTargets": [],
+  "unitTestTargets": [],
+  "aiDocumentation": {
+    "status": "generated",
+    "sections": []
+  }
+}
 ```
 
-#### Slice 2 - Continue Local Flow
-```mermaid
-flowchart TD
-    N0["Return local result"]
-    N1["Return local result"]
-    N2["Return"]
-    N0 --> N1
-    N1 --> N2
-```
+Diagnostics responses should keep the same shape and set `accepted` to `false` only when the request itself cannot be analyzed.
 
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
+## AI Documentation Boundary
+
+The controller must pass the AI service the exact code units that need documentation. These code units come from the analysis result, not from a manual frontend selection.
+
+Each AI input item should include:
+- detected pattern.
+- tag type.
+- symbol name.
+- file path if available.
+- class range or evidence hash.
+- code excerpt to document.
+- documentation hint.
+- related unit-test target when available.
+
+## Structured Log Event
+
+The controller should write one structured event per accepted class analysis. The event should include the normalized analysis result and AI documentation status, not raw upload paths or transform output paths.
+
+## Acceptance Checks
+
+- The live endpoint waits for complete class input before deeper services run.
+- Lexical errors stop subtree, cross-reference, and AI documentation work.
+- Subtree errors stop cross-reference and AI documentation work.
+- Successful analysis includes the code excerpts to document in the backend AI payload.
+- Refactor terminology is absent from the live analysis response.
