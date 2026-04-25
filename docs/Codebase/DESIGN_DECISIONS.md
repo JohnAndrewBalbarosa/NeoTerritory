@@ -108,3 +108,15 @@ When real algorithm clarity is gathered (during Phase C iteration or future revi
 
 ## D17 — Decision-recording habit
 When ANY new design call is made (in chat, review, or doc reading), record it here in this file BEFORE writing dependent code. This is a hard rule from CLAUDE.md to protect design intent across context compression.
+
+## D18 — Phase C empty placeholders + Phase B holds inert bodies (refines D13)
+**Problem found while starting Phase C**: with 485 untouched Phase C files, leaving them empty would cause linker failures because Phase B parents declared functions but didn't define them (deferring to "with decomp" Phase C).
+
+**Resolution**: Phase B parent `.cpp` files (even those with Phase C decomposition) hold **inert default bodies** for every function declared in their matching Phase B header. Phase C function `.cpp` files are kept as **empty placeholders** until real algorithm work moves a body into them.
+
+**Migration rule**: when real algorithm work fills a Phase C function file with a real body, you MUST simultaneously delete that function's inert body from the Phase B parent to avoid double-definition.
+
+This refines D13 — D13 said "minimal" parents; D18 clarifies "minimal = inert bodies, not no bodies."
+
+## D19 — Phase C `.hpp` files are pure pass-throughs
+Per-function `.hpp` files in `Flow/functions/` (Phase C) carry zero real declarations — those live in the parent header. Phase C `.hpp` files become single-line `#pragma once` placeholders.
