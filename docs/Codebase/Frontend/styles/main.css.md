@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This stylesheet implements the visual layer of the frontend prototype. It is not executable in the same way as the JavaScript files, but it still participates in the flow by defining how the rendered route shell and components appear.
+This stylesheet implements the global visual layer of the frontend analysis workflow. It is not executable in the same way as the JavaScript files, but it still participates in the flow by defining how the rendered route shell and shared components appear.
 
 ### Why It Matters In The Flow
 
@@ -14,7 +14,7 @@ Applied during page render to define the frontend presentation layer.
 
 ### What To Watch While Reading
 
-Defines the visual system and component styling for the frontend prototype. The main surface area is easiest to track through symbols such as /* ============================================================
+Defines the visual system and shell styling for the microservice workflow frontend. The main surface area is easiest to track through symbols such as /* ============================================================
    CodiNeo — Design System
    Color palette and tokens derived from Figma wireframe
    ============================================================ */
@@ -108,7 +108,7 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Defines the visual system and component styling for the frontend prototype.
+Read this file as: Defines global layout, theme tokens, typography, and shell styling for the analysis workflow.
 
 Where it sits in the run: Applied during page render to define the frontend presentation layer.
 

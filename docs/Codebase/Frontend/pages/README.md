@@ -5,10 +5,10 @@
 - Generated on: 2026-04-23
 
 ## Logic Summary
-Route-sized HTML fragments loaded by the client router.
+Route-sized HTML fragments for the user-facing microservice workflow.
 
 ## Subsystem Story
-This folder is mostly leaf-level. The local documents here carry the main explanation of the subsystem without requiring much extra descent.
+This folder is mostly leaf-level. The local documents explain the screens a user moves through while submitting input, waiting for backend orchestration, inspecting microservice artifacts, reviewing fixes, and downloading output.
 
 ## Folder Flow
 ```mermaid
@@ -22,14 +22,14 @@ flowchart TD
 
 ## Documents By Logic
 ### Pages
-These documents explain the local implementation by covering Provides a page fragment that the client-side router injects into the main content area.
-- analysis-new.html.md : Provides a page fragment that the client-side router injects into the main content area.
-- dashboard.html.md : Provides a page fragment that the client-side router injects into the main content area.
-- diff-viewer.html.md : Provides a page fragment that the client-side router injects into the main content area.
-- download.html.md : Provides a page fragment that the client-side router injects into the main content area.
-- fix-suggestions.html.md : Provides a page fragment that the client-side router injects into the main content area.
-- results.html.md : Provides a page fragment that the client-side router injects into the main content area.
+These documents explain the route fragments that the client-side router injects into the main content area.
+- dashboard.html.md : Shows job summaries and entry points into the microservice workflow.
+- analysis-new.html.md : Captures source input and starts a backend transform job.
+- results.html.md : Summarizes completed microservice output and links to artifacts.
+- diff-viewer.html.md : Displays source, diff, parse-tree, and report artifacts.
+- fix-suggestions.html.md : Displays returned fix candidates and validation checks.
+- download.html.md : Exposes generated output artifacts for download.
 
 ## Reading Hint
-- This folder is mostly leaf-level. Read the local file docs to understand the logic in this area.
+- Read these pages in workflow order: dashboard, analysis-new, results, diff-viewer, fix-suggestions, download.
 

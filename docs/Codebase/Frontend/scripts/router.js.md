@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This file implements the client-side route transition loop. It reads the current hash, resolves the matching page fragment, fetches it, injects it into the shell, updates the nav state, and triggers page-specific initialization hooks. This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
+This file implements the client-side route transition loop. It reads the current hash, resolves the matching page fragment, fetches it, injects it into the shell, updates the nav state, and triggers page-specific initialization hooks for the microservice workflow screens.
 
 ### Why It Matters In The Flow
 
-Runs in the browser while the user navigates the prototype UI.
+Runs in the browser while the user moves between dashboard, analysis submission, result inspection, fix review, and download screens.
 
 ### What To Watch While Reading
 
-Drives hash routing, fragment loading, and page-init hooks. The main surface area is easiest to track through symbols such as navigate, initRouter, ROUTES, and DEFAULT_ROUTE.
+Drives hash routing, fragment loading, and page-init hooks. It should not hold analysis state beyond route selection; job and artifact state should flow through `api.js` and page-specific initialization.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
@@ -63,9 +63,9 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Drives hash routing, fragment loading, and page-init hooks.
+Read this file as: Drives route loading for the frontend microservice workflow.
 
-Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+Where it sits in the run: Runs in the browser while the user navigates the analysis workflow.
 
 Names worth recognizing while reading: navigate, initRouter, ROUTES, DEFAULT_ROUTE, currentPage, and contentEl.
 

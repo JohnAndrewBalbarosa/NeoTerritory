@@ -6,28 +6,28 @@
 ## Story
 ### What Happens Here
 
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+This page fragment captures source input and starts the backend transform workflow. It should collect the file or project input, show accepted options, and hand the request to frontend scripts that call the backend route responsible for microservice orchestration.
 
 ### Why It Matters In The Flow
 
-Loaded after the router selects a route and injects the fragment into the shell document.
+Loaded when the user starts a new analysis. It is the user-facing handoff from UI intent to backend and microservice execution.
 
 ### What To Watch While Reading
 
-Provides a page fragment that the client-side router injects into the main content area. The main surface area is easiest to track through symbols such as #ready-card, #progress-card, #prog-pct-1, and #prog-bar-1. It collaborates directly with #/dashboard.
+Keep this page focused on input collection, start controls, progress display, and error presentation. It should not contain analysis rules, AST logic, or transform decisions.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Render #ready-card"]
-    N1["Render #progress-card"]
-    N2["Render #prog-pct-1"]
-    N3["Render #prog-bar-1"]
-    N4["Render #prog-pct-2"]
-    N5["Render #prog-bar-2"]
-    End["Return from local flow"]
+    Start["Open analysis"]
+    N0["Collect input"]
+    N1["Choose options"]
+    N2["Start job"]
+    N3["Show progress"]
+    N4["Handle failure"]
+    N5["Go results"]
+    End["Run submitted"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -38,9 +38,9 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Provides a page fragment that the client-side router injects into the main content area.
+Read this file as: Captures source input and starts a backend transform job.
 
-Where it sits in the run: Loaded after the router selects a route and injects the fragment into the shell document.
+Where it sits in the run: Loaded between the dashboard and the backend job creation call.
 
 Names worth recognizing while reading: #ready-card, #progress-card, #prog-pct-1, #prog-bar-1, #prog-pct-2, and #prog-bar-2.
 

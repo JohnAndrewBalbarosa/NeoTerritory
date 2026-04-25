@@ -6,37 +6,41 @@
 ## Story
 ### What Happens Here
 
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+This page fragment summarizes the completed backend transform job and the artifacts produced by the C++ microservice. It should show run status, report highlights, artifact availability, and navigation into diff, fix, and download screens.
 
 ### Why It Matters In The Flow
 
-Loaded after the router selects a route and injects the fragment into the shell document.
+Loaded after the backend reports that the microservice run completed or failed. It is the main result landing page.
 
 ### What To Watch While Reading
 
-Provides a page fragment that the client-side router injects into the main content area. It collaborates directly with #/dashboard.
+Keep this page as a summary of returned data. It should link to details rather than recompute or reinterpret microservice output.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Let the router request the page"]
-    N1["Inject the fragment into the shell"]
-    N2["Execute file-local step"]
-    N3["Display the route-specific content to the"]
-    End["Return from local flow"]
+    Start["Open results"]
+    N0["Load job"]
+    N1["Read report"]
+    N2["Show status"]
+    N3["Link diff"]
+    N4["Link fixes"]
+    N5["Link download"]
+    End["Results ready"]
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
-    N3 --> End
+    N3 --> N4
+    N4 --> N5
+    N5 --> End
 ```
 
 ## Reading Map
-Read this file as: Provides a page fragment that the client-side router injects into the main content area.
+Read this file as: Summarizes completed microservice output and links to artifacts.
 
-Where it sits in the run: Loaded after the router selects a route and injects the fragment into the shell document.
+Where it sits in the run: Loaded after backend job completion.
 
 It leans on nearby contracts or tools such as #/dashboard.
 

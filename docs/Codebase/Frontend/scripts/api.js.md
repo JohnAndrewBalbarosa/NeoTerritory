@@ -6,35 +6,48 @@
 ## Story
 ### What Happens Here
 
-This file implements the mock-data contract for the current frontend. Instead of calling a live backend, the pages pull their dashboard, diff, fixes, and download content from the exported in-memory structures defined here. This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
+This file is the intended browser-to-backend contract for the frontend. During the temporary compatibility phase it may still expose local placeholder structures, but its target responsibility is to submit transform jobs, poll job status, fetch microservice artifacts, and normalize response shapes for page scripts.
 
 ### Why It Matters In The Flow
 
-Runs in the browser while the user navigates the prototype UI.
+Runs in the browser between route-level UI code and the backend transform API. It prevents page scripts from inventing microservice state or duplicating analysis logic.
 
 ### What To Watch While Reading
 
-Supplies mock data that feeds the current frontend experience.
+Keep this file as the only frontend boundary that knows backend endpoint shapes. The backend should own file persistence and process orchestration. The C++ microservice should own parsing, pattern detection, diff/report generation, documentation tagging, and generated output.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Export the mock data structures"]
-    N1["Let page scripts read the exported"]
-    N2["Render static prototype content without live"]
-    End["Return from local flow"]
+    Start["Receive UI request"]
+    N0["Build job payload"]
+    N1["Call backend"]
+    N2["Receive job id"]
+    N3["Poll status"]
+    N4["Fetch artifacts"]
+    N5["Normalize data"]
+    End["Return page data"]
     Start --> N0
     N0 --> N1
     N1 --> N2
-    N2 --> End
+    N2 --> N3
+    N3 --> N4
+    N4 --> N5
+    N5 --> End
 ```
 
 ## Reading Map
-Read this file as: Supplies mock data that feeds the current frontend experience.
+Read this file as: Owns the browser contract for transform jobs and artifact retrieval.
 
-Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+Where it sits in the run: Runs after page actions and before backend responses are rendered.
+
+## Migration Notes
+
+- Replace mock exports with backend-backed functions without changing page ownership.
+- Keep request payloads aligned with backend transform docs.
+- Treat microservice outputs as immutable artifacts for rendering.
+- Do not implement pattern detection, AST generation, or transform rules in this file.
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.

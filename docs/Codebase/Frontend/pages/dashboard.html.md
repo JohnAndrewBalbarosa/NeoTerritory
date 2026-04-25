@@ -6,26 +6,26 @@
 ## Story
 ### What Happens Here
 
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+This page fragment is the landing dashboard for the microservice workflow. It should summarize recent or active backend transform jobs, expose the new-analysis entry point, and keep the user oriented around generated artifacts rather than local placeholder content.
 
 ### Why It Matters In The Flow
 
-Loaded after the router selects a route and injects the fragment into the shell document.
+Loaded after the router selects the dashboard route. It is the normal place to start a new microservice run or return to the latest result.
 
 ### What To Watch While Reading
 
-Provides a page fragment that the client-side router injects into the main content area. It collaborates directly with #/analysis/new.
+This page should present backend job state and high-level result status. It should not compute analysis metrics locally.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Let the router request the page"]
-    N1["Inject the fragment into the shell"]
-    N2["Execute file-local step"]
-    N3["Display the route-specific content to the"]
-    End["Return from local flow"]
+    Start["Open dashboard"]
+    N0["Load job summary"]
+    N1["Show latest status"]
+    N2["Offer new run"]
+    N3["Link artifacts"]
+    End["Dashboard ready"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -34,9 +34,9 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Provides a page fragment that the client-side router injects into the main content area.
+Read this file as: Shows job summaries and entry points into the microservice workflow.
 
-Where it sits in the run: Loaded after the router selects a route and injects the fragment into the shell document.
+Where it sits in the run: Loaded before starting or resuming a backend transform job.
 
 It leans on nearby contracts or tools such as #/analysis/new.
 

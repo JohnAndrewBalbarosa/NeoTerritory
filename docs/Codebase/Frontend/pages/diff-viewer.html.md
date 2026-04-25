@@ -6,28 +6,28 @@
 ## Story
 ### What Happens Here
 
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+This page fragment displays detailed comparison artifacts from a completed microservice run. It should provide the tabs and containers for original source, transformed source, parse-tree views, and report-backed diff output.
 
 ### Why It Matters In The Flow
 
-Loaded after the router selects a route and injects the fragment into the shell document.
+Loaded after results are available and the user wants to inspect what changed.
 
 ### What To Watch While Reading
 
-Provides a page fragment that the client-side router injects into the main content area. The main surface area is easiest to track through symbols such as #icon-code, #icon-graph, #tab-text, and #tab-ast. It collaborates directly with #/results.
+The page owns display structure only. The source text, tree data, and diff facts should come from backend or microservice artifacts.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Render #icon-code"]
-    N1["Render #icon-graph"]
-    N2["Render #tab-text"]
-    N3["Render #tab-ast"]
-    N4["Render #text-diff-view"]
-    N5["Render #original-code"]
-    End["Return from local flow"]
+    Start["Open diff"]
+    N0["Load artifacts"]
+    N1["Show text tab"]
+    N2["Show tree tab"]
+    N3["Show report"]
+    N4["Switch views"]
+    N5["Return results"]
+    End["Diff ready"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -38,9 +38,9 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Provides a page fragment that the client-side router injects into the main content area.
+Read this file as: Displays source, diff, parse-tree, and report artifacts.
 
-Where it sits in the run: Loaded after the router selects a route and injects the fragment into the shell document.
+Where it sits in the run: Loaded after result artifacts are available.
 
 Names worth recognizing while reading: #icon-code, #icon-graph, #tab-text, #tab-ast, #text-diff-view, and #original-code.
 
