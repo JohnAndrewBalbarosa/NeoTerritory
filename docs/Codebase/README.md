@@ -1,11 +1,11 @@
 # Codebase Mirror
 
 - Folder: docs/Codebase
-- Descendant source docs: 148
+- Descendant source docs: 151
 - Generated on: 2026-04-23
 
 ## Logic Summary
-Top-level logical view of the generated codebase mirror. It groups the repository into the frontend operator surface, backend service code, infrastructure automation, legacy transform samples, repository hygiene, and the C++ microservice core.
+Top-level logical view of the generated codebase mirror. It groups the repository into the frontend live-analysis surface, backend service code, infrastructure automation, legacy transform samples, repository hygiene, and the C++ microservice core.
 
 ## Blueprint Boundary
 This `docs/Codebase` tree is the implementation mirror. Folders and Markdown files here should map to current or planned code folders/files.
@@ -64,12 +64,12 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Backend Service
-These child folders continue the subsystem by covering Backend service surface. This area groups the Express entrypoint, package metadata, and the HTTP runtime internals under src.
-- Backend/ : Backend service surface. This area groups the Express entrypoint, package metadata, and the HTTP runtime internals under src.
+These child folders continue the subsystem by covering Backend service surface for live class analysis, AI documentation, structured logs, and HTTP runtime internals under src.
+- Backend/ : Backend service surface for live class analysis, AI documentation, and HTTP runtime internals.
 
 ### Frontend Prototype
-These child folders continue the subsystem by covering Frontend prototype shell. This area groups the browser entrypoint with route fragments, scripts, and styles.
-- Frontend/ : Frontend prototype shell. This area groups the browser entrypoint with route fragments, scripts, and styles.
+These child folders continue the subsystem by covering Frontend prototype shell. This area groups the browser entrypoint with route fragments, scripts, styles, and the class-boundary trigger.
+- Frontend/ : Frontend prototype shell for live class-boundary analysis and rendered results.
 
 ### Microservice Core
 These child folders continue the subsystem by covering C++ executable and module tree that implement the parser, detector, documentation tagging, rendering, and report pipeline.

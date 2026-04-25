@@ -5,7 +5,7 @@
 
 ## Start Here
 - Read this file first for the output-stage workflow.
-- Then read `UnitTestGeneration/`, `DocumentationTagger/`, `Report/`, and `Render/` in that order.
+- Then read `DocumentationTagger/`, `UnitTestGeneration/`, `Report/`, and `Render/` in that order.
 
 ## Quick Summary
 - This stage packages the analyzed bundle or interval regeneration report into concrete outputs.
@@ -19,8 +19,8 @@
 ```mermaid
 flowchart TD
     N0["Receive bundle or diff report"]
-    N1["Generate unit-test targets"]
-    N2["Attach documentation tags"]
+    N1["Attach doc tags"]
+    N2["Generate test targets"]
     N3["Assemble reports"]
     N4["Render final views"]
     N0 --> N1 --> N2 --> N3 --> N4
@@ -32,12 +32,13 @@ flowchart TD
 - Produces the final outward-facing artifacts for downstream implementation and validation.
 
 ## Local Ownership
-- `UnitTestGeneration/` owns future test-case generation and acceptance-oriented output.
 - `DocumentationTagger/` owns documentation-facing pattern tags.
+- `UnitTestGeneration/` owns unit-test targets derived from documentation-facing pattern evidence.
 - `Report/` owns structured report assembly.
 - `Render/` owns HTML or other rendered views.
 
 ## Acceptance Checks
 - Unit-test generation stays separate from reports and rendering.
 - Documentation tagging is visible as its own output path.
+- Output names use documentation and unit-test target language instead of refactor language.
 - The whole output stage is readable from one entry file.

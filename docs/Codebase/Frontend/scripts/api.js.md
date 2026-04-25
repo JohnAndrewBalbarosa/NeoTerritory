@@ -1,55 +1,79 @@
 # api.js
 
-- Source: Frontend/scripts/api.js
+- Source: `Frontend/scripts/api.js`
 - Kind: JavaScript module
 
 ## Story
 ### What Happens Here
 
-This file is the intended browser-to-backend contract for the frontend. During the temporary compatibility phase it may still expose local placeholder structures, but its target responsibility is to submit transform jobs, poll job status, fetch microservice artifacts, and normalize response shapes for page scripts.
+This file is the only browser-side boundary that knows backend endpoint shapes. For live class analysis, it accepts a complete class declaration from `analysis.js`, sends it to the backend, and normalizes the response for the analysis page.
+
+The file should not contain parsing rules beyond transport validation. It should not infer design patterns, documentation tags, unit-test targets, or AI prompts.
 
 ### Why It Matters In The Flow
 
-Runs in the browser between route-level UI code and the backend transform API. It prevents page scripts from inventing microservice state or duplicating analysis logic.
+The frontend page should stay stable even if the backend route changes. `api.js` owns request serialization, response parsing, API errors, and version-aware result normalization.
 
 ### What To Watch While Reading
 
-Keep this file as the only frontend boundary that knows backend endpoint shapes. The backend should own file persistence and process orchestration. The C++ microservice should own parsing, pattern detection, diff/report generation, documentation tagging, and generated output.
+Keep live editor analysis separate from legacy file-upload transform jobs. The new path is not a transform request and should not carry old source or target pattern options.
 
 ## Program Flow
-This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+
 ```mermaid
 flowchart TD
-    Start["Receive UI request"]
-    N0["Build job payload"]
-    N1["Call backend"]
-    N2["Receive job id"]
-    N3["Poll status"]
-    N4["Fetch artifacts"]
-    N5["Normalize data"]
-    End["Return page data"]
+    Start["Receive class slice"]
+    N0["Validate payload"]
+    N1["POST live class"]
+    D1{"HTTP ok?"}
+    N2["Normalize error"]
+    N3["Parse result"]
+    N4["Return status"]
+    End["Done"]
     Start --> N0
     N0 --> N1
-    N1 --> N2
-    N2 --> N3
+    N1 --> D1
+    D1 -->|no| N2
+    D1 -->|yes| N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N2 --> N4
+    N4 --> End
 ```
 
-## Reading Map
-Read this file as: Owns the browser contract for transform jobs and artifact retrieval.
+## Public Contract
 
-Where it sits in the run: Runs after page actions and before backend responses are rendered.
+Expose a function such as `analyzeClassDeclaration(payload)`.
 
-## Migration Notes
+Request fields:
+- `documentId`: editor or tab identity.
+- `documentVersion`: monotonically increasing input version.
+- `className`: best-effort class name from the frontend boundary scan.
+- `classRange`: offsets for the declaration slice.
+- `code`: complete class or struct declaration text.
 
-- Replace mock exports with backend-backed functions without changing page ownership.
-- Keep request payloads aligned with backend transform docs.
-- Treat microservice outputs as immutable artifacts for rendering.
-- Do not implement pattern detection, AST generation, or transform rules in this file.
+Response fields normalized for the page:
+- `documentVersion`: response version echo.
+- `accepted`: whether backend accepted the slice for analysis.
+- `stage`: `lexical`, `subtree`, `cross_reference`, `ai_documentation`, or `complete`.
+- `diagnostics`: lexer or parser diagnostics.
+- `detectedPattern`: backend-detected pattern name, or `unknown`.
+- `documentationTargets`: code parts to document.
+- `unitTestTargets`: code parts to test.
+- `aiDocumentation`: generated or pending documentation result.
 
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
+## Endpoint
 
+The intended endpoint is:
+
+```text
+POST /api/transform/live-class
+```
+
+This endpoint accepts JSON, not multipart file upload.
+
+## Acceptance Checks
+
+- `api.js` has one function for live class analysis instead of leaking route details into page scripts.
+- It never sends `sourcePattern`, `targetPattern`, `sourceInput`, `sourceOutput`, or `refactorCandidate`.
+- It passes `documentVersion` through unchanged so `analysis.js` can ignore stale responses.
+- It treats backend diagnostics as data, not thrown exceptions, when the HTTP request itself succeeded.

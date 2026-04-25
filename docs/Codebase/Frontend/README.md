@@ -6,31 +6,31 @@
 - Alignment update: 2026-04-25
 
 ## Logic Summary
-Operator-facing browser shell for the NeoTerritory analysis workflow. This area groups the entrypoint, route fragments, scripts, and styles that let a user submit source input, follow backend job progress, inspect C++ microservice artifacts, and download the generated output package.
+Operator-facing browser shell for the NeoTerritory analysis workflow. This area groups the entrypoint, route fragments, scripts, and styles that let a user type source in the live editor, wait for a complete class declaration, call backend analysis, and inspect documentation or unit-test targets returned from the pipeline.
 
 ## Ownership Boundary
-The frontend owns navigation, upload/start controls, job-progress presentation, artifact previews, and download affordances. It must not own AST parsing, pattern detection, transformation rules, diff generation, documentation tagging, or output-file layout. Those concerns belong to the backend bridge and the C++ microservice docs under `docs/Codebase/Microservice`.
+The frontend owns navigation, live editor state, class-boundary trigger status, diagnostics presentation, and target previews. It must not own lexical analysis, AST parsing, pattern detection, transformation rules, AI documentation prompt assembly, documentation tagging, unit-test generation, or output-file layout. Those concerns belong to the backend bridge and the C++ microservice docs under `docs/Codebase/Microservice`.
 
 ## Microservice Alignment
 The frontend is the human-facing surface for a backend-orchestrated microservice run:
-- It sends source input and run options to the backend transform route.
-- It displays job state returned by the backend instead of inventing local analysis state.
-- It renders artifacts produced by the microservice, including reports, parse-tree views, diff views, validation checks, and downloadable output.
+- It sends complete class declarations to the backend live-class route.
+- It displays trigger state and backend diagnostics instead of inventing analysis state.
+- It renders detected pattern evidence, documentation targets, unit-test targets, and AI documentation returned by the backend.
 - It treats local placeholder data as temporary scaffolding only until the backend exposes the real artifact contract.
 
 ## Subsystem Story
-This folder mixes concrete shell documents with deeper child subsystems. Read `index.html.md` first for the persistent browser frame, then read `scripts/api.js.md` for the backend contract, then read the page docs in workflow order: dashboard, new analysis, results, diff viewer, fix suggestions, and download.
+This folder mixes concrete shell documents with deeper child subsystems. Read `index.html.md` first for the persistent browser frame, then read `scripts/analysis.js.md` for the class-boundary trigger, then `scripts/api.js.md` for the backend contract, then `pages/analysis-new.html.md` for the live analysis page.
 
 ## Folder Flow
 ```mermaid
 flowchart TD
     Start["Open shell"]
     N0["Load routes"]
-    N1["Start analysis"]
-    N2["Send backend job"]
-    N3["Watch status"]
-    N4["Inspect artifacts"]
-    N5["Download output"]
+    N1["Type class"]
+    N2["Detect boundary"]
+    N3["Send class slice"]
+    N4["Show targets"]
+    N5["Show AI docs"]
     End["Leave workflow"]
     Start --> N0
     N0 --> N1
@@ -43,8 +43,8 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Browser Logic
-These child folders continue the subsystem by covering browser coordination, backend API calls, job state, artifact rendering, and page interactions.
-- scripts/ : Browser logic that powers routing, backend communication, job progress, artifact rendering, and UI state changes.
+These child folders continue the subsystem by covering browser coordination, backend API calls, trigger state, diagnostics rendering, and page interactions.
+- scripts/ : Browser logic that powers routing, live class-boundary detection, backend communication, diagnostics, and UI state changes.
 
 ### Styling
 These child folders continue the subsystem by covering visual system and component styling for the analysis workflow frontend.
@@ -52,7 +52,7 @@ These child folders continue the subsystem by covering visual system and compone
 
 ### Pages
 These child folders continue the subsystem by covering route-sized HTML fragments loaded by the client router.
-- pages/ : Route-sized workflow screens for dashboard, analysis submission, result inspection, suggested fixes, and output download.
+- pages/ : Route-sized workflow screens for dashboard, live analysis, result inspection, suggested fixes, and output download.
 
 ## Documents By Logic
 ### Shell Entrypoints

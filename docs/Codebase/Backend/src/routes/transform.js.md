@@ -1,48 +1,60 @@
 # transform.js
 
-- Source: Backend/src/routes/transform.js
+- Source: `Backend/src/routes/transform.js`
 - Kind: JavaScript module
 
 ## Story
 ### What Happens Here
 
-This route file is a traffic director rather than a business-logic endpoint. Its implementation wires HTTP verbs and paths to the middleware chain and then forwards the request into the controller that performs the real work.
+This route file maps transform-related HTTP traffic into controller entrypoints. The new live editor path should accept a completed class declaration as JSON and forward it to the controller without upload middleware.
+
+The legacy upload route can stay as a separate compatibility path, but live class analysis must not depend on multipart file upload or source/target pattern fields.
 
 ### Why It Matters In The Flow
 
-Reached after Express accepts a request and before controller logic executes.
+The frontend calls this route after `analysis.js` detects a complete class declaration. Routing must preserve that low-latency request path and avoid running unrelated file-upload middleware.
 
 ### What To Watch While Reading
 
-Maps HTTP routes to middleware and controllers. The main surface area is easiest to track through symbols such as express and router. It collaborates directly with express, ../middleware/jwtAuth, ../controllers/transformController, and ../middleware/upload.
+Keep route ownership narrow:
+- route chooses the endpoint and middleware chain.
+- controller validates request body and coordinates services.
+- services own lexical analysis, subtree analysis, AI documentation payloads, and structured logs.
 
-## Program Flow
-This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+## Route Flow
+
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Receive an HTTP request for the"]
-    N1["Execute file-local step"]
-    N2["Forward control into the matching controller"]
-    N3["Serialize the controller result back to"]
-    End["Return from local flow"]
-    Start --> N0
+    Start["Receive request"]
+    D1{"Live class?"}
+    N0["Use JSON body"]
+    N1["Call live controller"]
+    N2["Use upload path"]
+    N3["Call upload controller"]
+    End["Return response"]
+    Start --> D1
+    D1 -->|yes| N0
     N0 --> N1
-    N1 --> N2
+    D1 -->|no| N2
     N2 --> N3
+    N1 --> End
     N3 --> End
 ```
 
-## Reading Map
-Read this file as: Maps HTTP routes to middleware and controllers.
+## Intended Routes
 
-Where it sits in the run: Reached after Express accepts a request and before controller logic executes.
+- `POST /api/transform/live-class`
+  - JSON body.
+  - Requires a complete class or struct declaration slice.
+  - Calls `analyzeLiveClassDeclaration`.
 
-Names worth recognizing while reading: express and router.
+- `POST /api/transform`
+  - Existing upload path.
+  - May remain for batch or legacy runs.
 
-It leans on nearby contracts or tools such as express, ../middleware/jwtAuth, ../controllers/transformController, and ../middleware/upload.
+## Acceptance Checks
 
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
-
+- The live class route does not use upload middleware.
+- The live class route does not require source-pattern or target-pattern form fields.
+- The route forwards to a controller named for analysis/documentation rather than transformation.
+- Authentication behavior is consistent with the surrounding backend routes.

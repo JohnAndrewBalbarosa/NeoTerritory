@@ -1,11 +1,11 @@
 # src
 
 - Folder: docs/Codebase/Backend/src
-- Descendant source docs: 12
+- Descendant source docs: 14
 - Generated on: 2026-04-23
 
 ## Logic Summary
-Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting the work.
+Backend internals grouped by request flow. Routing directs requests into middleware, then controllers, with database, service, and utility helpers supporting live class analysis, AI documentation, and structured logs.
 
 ## Subsystem Story
 This folder mainly acts as a navigation layer. Use it to understand how the deeper child folders divide the subsystem into smaller concerns.
@@ -51,20 +51,20 @@ flowchart TD
 
 ## Child Folders By Logic
 ### Services
-These child folders continue the subsystem by covering Reusable backend support services called from controllers or middleware.
-- services/ : Reusable backend support services called from controllers or middleware.
+These child folders continue the subsystem by covering reusable backend support for class analysis, AI documentation, and structured logging.
+- services/ : Reusable backend support services for analysis, AI documentation, and logs.
 
 ### Controllers
-These child folders continue the subsystem by covering Controller layer for concrete backend request handling after routing and middleware have finished preliminary work.
-- controllers/ : Controller layer for concrete backend request handling after routing and middleware have finished preliminary work.
+These child folders continue the subsystem by covering controller behavior for concrete backend request handling after routing and middleware have finished preliminary work.
+- controllers/ : Controller layer for live class analysis and related request handling.
 
 ### Middleware
 These child folders continue the subsystem by covering Cross-cutting backend request logic such as auth, upload handling, and error shaping.
 - middleware/ : Cross-cutting backend request logic such as auth, upload handling, and error shaping.
 
 ### Routes
-These child folders continue the subsystem by covering Route layer that maps URL paths to middleware chains and controller entrypoints.
-- routes/ : Route layer that maps URL paths to middleware chains and controller entrypoints.
+These child folders continue the subsystem by covering route behavior that maps URL paths to middleware chains and controller entrypoints.
+- routes/ : Route layer for live class-analysis JSON requests and existing backend routes.
 
 ### Data Layer
 These child folders continue the subsystem by covering SQLite-oriented persistence helpers and schema initialization logic.

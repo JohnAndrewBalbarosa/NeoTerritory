@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on the shared data structures and function signatures.
+This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on shared data structures for detected pattern evidence, documentation targets, unit-test targets, and report serialization.
 
 ### Why It Matters In The Flow
 
@@ -14,7 +14,7 @@ This artifact participates in the repository flow according to the surrounding m
 
 ### What To Watch While Reading
 
-Declares the public interfaces and shared data types for the generic parse and analysis pipeline. The main surface area is easiest to track through symbols such as StageMetric, PipelineReport, DesignPatternTag, and PipelineArtifacts. It collaborates directly with behavioural_broken_tree.hpp, creational_broken_tree.hpp, parse_tree.hpp, and parse_tree_hash_links.hpp.
+Declares the public interfaces and shared data types for the generic parse and analysis pipeline. The main surface area is easiest to track through symbols such as StageMetric, PipelineReport, DesignPatternTag, and PipelineArtifacts. The future contract should use documentation and unit-test terminology rather than refactor terminology.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
@@ -105,6 +105,17 @@ These entries tell the rest of the program what this file can provide.
 - DesignPatternTag: Declare a shared type and expose the compile-time contract
 - PipelineArtifacts: Declare a shared type and expose the compile-time contract
 - run_normalize_and_rewrite_pipeline(): Declare a callable contract and let implementation files define the runtime body
+
+## Contract Direction
+
+Future implementation should add or rename fields so the report can expose:
+- detected pattern metadata.
+- documentation target count.
+- unit-test target count.
+- `to_be_documented` marker on documentation evidence.
+- code excerpt or node value needed by backend AI documentation.
+
+The contract should not expose `refactor_candidate` for the live documentation path.
 
 ## Function Stories
 

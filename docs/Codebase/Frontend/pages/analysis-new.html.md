@@ -1,33 +1,38 @@
 # analysis-new.html
 
-- Source: Frontend/pages/analysis-new.html
+- Source: `Frontend/pages/analysis-new.html`
 - Kind: HTML view
 
 ## Story
 ### What Happens Here
 
-This page fragment captures source input and starts the backend transform workflow. It should collect the file or project input, show accepted options, and hand the request to frontend scripts that call the backend route responsible for microservice orchestration.
+This page is the live class-analysis workspace. It should provide the editor surface, status area, diagnostics area, documentation-target list, unit-test-target list, and AI documentation preview.
+
+The page no longer asks the user for source pattern, target pattern, source input, or output selection. The backend detects the design-pattern evidence by cross-referencing the completed class subtree with the wider analysis model.
 
 ### Why It Matters In The Flow
 
-Loaded when the user starts a new analysis. It is the user-facing handoff from UI intent to backend and microservice execution.
+This page is where the user types code in real time. It must feel responsive without making the parser run on every keystroke. It therefore delegates trigger logic to `analysis.js` and backend calls to `api.js`.
 
 ### What To Watch While Reading
 
-Keep this page focused on input collection, start controls, progress display, and error presentation. It should not contain analysis rules, AST logic, or transform decisions.
+Keep visible labels aligned with the new product behavior:
+- use `Detected pattern`, not `Source` and `Target`.
+- use `Documentation targets`, not `Refactor candidates`.
+- use `Unit-test targets`, not `Fix suggestions`, for this flow.
 
-## Program Flow
-This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+## Page Flow
+
 ```mermaid
 flowchart TD
-    Start["Open analysis"]
-    N0["Collect input"]
-    N1["Choose options"]
-    N2["Start job"]
-    N3["Show progress"]
-    N4["Handle failure"]
-    N5["Go results"]
-    End["Run submitted"]
+    Start["Open page"]
+    N0["Show editor"]
+    N1["User types"]
+    N2["Show trigger state"]
+    N3["Show diagnostics"]
+    N4["Show targets"]
+    N5["Show AI docs"]
+    End["Ready input"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -37,16 +42,30 @@ flowchart TD
     N5 --> End
 ```
 
-## Reading Map
-Read this file as: Captures source input and starts a backend transform job.
+## Required Page Regions
 
-Where it sits in the run: Loaded between the dashboard and the backend job creation call.
+- Editor region: code textarea or editor component for C++ class declarations.
+- Trigger status: `Typing`, `Waiting for complete class`, `Analyzing`, or `Complete`.
+- Diagnostics: lexical and subtree errors returned by backend.
+- Detected pattern summary: pattern name, confidence if available, and evidence count.
+- Documentation targets: code units that the algorithm says should be documented.
+- Unit-test targets: code units that need generated test-case coverage.
+- AI documentation preview: generated documentation or pending status.
 
-Names worth recognizing while reading: #ready-card, #progress-card, #prog-pct-1, #prog-bar-1, #prog-pct-2, and #prog-bar-2.
+## UI Ownership Boundary
 
-It leans on nearby contracts or tools such as #/dashboard.
+This page owns DOM structure only. It does not contain:
+- class-boundary scanner logic.
+- backend fetch logic.
+- lexical analysis.
+- subtree construction.
+- AI prompt assembly.
+- report JSON schema mapping.
 
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
+## Acceptance Checks
 
+- The page has no source-pattern or target-pattern selection.
+- The page has no source-output or transform-output selector.
+- The page does not display refactor terminology.
+- The page includes visible space for documentation targets and unit-test targets.
+- The page can show backend diagnostics without navigating away.
