@@ -1,6 +1,6 @@
 # Trees
 
-- Folder: `docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Trees`
+- Folder: `docs/Codebase/Microservice/Modules/Header/Trees`
 - Role: contracts for actual, virtual, broken, and shared tree structures
 
 ## Read Order

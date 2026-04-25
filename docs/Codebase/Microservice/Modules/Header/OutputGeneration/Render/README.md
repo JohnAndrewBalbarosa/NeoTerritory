@@ -1,6 +1,6 @@
 # Render
 
-- Folder: `docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/OutputGeneration/Render`
+- Folder: `docs/Codebase/Microservice/Modules/Header/OutputGeneration/Render`
 - Role: contracts for emitted writers and rendered views
 
 ## Start Here

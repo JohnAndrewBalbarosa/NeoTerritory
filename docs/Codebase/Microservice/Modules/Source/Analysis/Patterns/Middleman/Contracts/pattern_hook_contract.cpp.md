@@ -1,18 +1,18 @@
 # pattern_hook_contract.cpp
 
 ## Role
-Defines how pattern-specific algorithms plug into the middleman. The hook may be a virtual function, function pointer, or equivalent callback.
+Defines how pattern-specific algorithms plug into catalog-driven recognition. The hook may be a virtual function, function pointer, or equivalent callback.
 
 ## Intended Source Role
-This file maps to the future hook interface. Every Factory, Singleton, Builder, Strategy, Observer, or scaffold detector must fit this same callable shape.
+This file maps to the future hook interface. Every Factory, Singleton, Builder, Strategy, Observer, or scaffold detector must fit this same callable shape when catalog rules need custom evidence.
 
 ## Hook Contract Flow
 ```mermaid
 flowchart TD
     Start["Hook call"]
     N0["Receive context"]
-    N1["Inspect target"]
-    N2["Execute file-local step"]
+    N1["Receive pattern"]
+    N2["Inspect class"]
     N3["Return evidence"]
     End["Middleman resumes"]
     Start --> N0
@@ -29,9 +29,11 @@ flowchart TD
 - Do not assemble final trees.
 - Do only pattern-specific logic.
 - Return empty output when no match exists.
+- Do not decide which catalog entries are active.
 
 ## Hook Inputs
 - Shared context.
+- Current catalog pattern definition.
 - Current class record.
 - Related function records.
 - Pattern options.

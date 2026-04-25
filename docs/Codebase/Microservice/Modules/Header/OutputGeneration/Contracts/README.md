@@ -1,6 +1,6 @@
 # Contracts
 
-- Folder: `docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/OutputGeneration/Contracts`
+- Folder: `docs/Codebase/Microservice/Modules/Header/OutputGeneration/Contracts`
 - Role: output-side orchestration contracts
 
 ## Start Here

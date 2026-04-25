@@ -1,7 +1,7 @@
 # StructureVerification
 
 - Folder: `docs/Codebase/Microservice/Modules/Source/Analysis/Lexical/StructureVerification`
-- Role: implementation-ready plan for strict expected-structure verification during lexical analysis
+- Role: implementation-ready plan for validating structural event shape before deferred catalog recognition
 
 ## Primary Entry
 - Start with `core.cpp.md`.
@@ -10,4 +10,4 @@
 1. `core.cpp.md`
 
 ## Workflow File
-- `core.cpp.md` defines the verifier lifecycle, state model, hard-stop behavior, and the handoff into `Trees/ClassGeneration/VirtualBroken/`.
+- `core.cpp.md` defines the event validator lifecycle, state model, class-boundary behavior, and the handoff into declaration generation.

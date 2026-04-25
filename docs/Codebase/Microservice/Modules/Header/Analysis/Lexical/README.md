@@ -1,6 +1,6 @@
 # Language-and-Structure
 
-- Folder: docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/Language-and-Structure
+- Folder: `docs/Codebase/Microservice/Modules/Header/Analysis/Lexical`
 - Descendant source docs: 2
 - Generated on: 2026-04-23
 

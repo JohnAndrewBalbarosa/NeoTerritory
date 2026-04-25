@@ -26,7 +26,7 @@ const transform = (req, res, next) => {
     fs.writeFileSync(outputPath, '// Transformation output placeholder\n');
 
     // Insert job
-    const stmt = db.prepare('INSERT INTO jobs (user_id, input_file_path, output_file_path, job_status, created_at) VALUES (?, ?, ?, ?, datetime("now"))');
+    const stmt = db.prepare("INSERT INTO jobs (user_id, input_file_path, output_file_path, job_status, created_at) VALUES (?, ?, ?, ?, datetime('now'))");
     const info = stmt.run(req.user.id, inputPath, outputPath, 'completed_placeholder');
     logEvent(req.user.id, 'upload', `Uploaded file: ${inputPath}`);
     logEvent(req.user.id, 'transform', `Transformation placeholder created: ${outputPath}`);

@@ -1,16 +1,16 @@
 # pattern_registry.cpp
 
 ## Role
-Creates one shared registry used by Behavioural and Creational hooks. This prevents each pattern from walking the parse tree and registering the same classes again.
+Creates one shared registry from completed class declarations for Behavioural and Creational hooks. This prevents each pattern from walking the parse tree and registering the same classes again.
 
 ## Intended Source Role
-This file maps to the future registry builder. It should be called once by the middleman before any pattern hook runs.
+This file maps to the future registry builder. It should be called once by the middleman after class declaration generation and before any pattern hook runs.
 
 ## Registry Flow
 ```mermaid
 flowchart TD
-    Start["Parse root"]
-    N0["Walk nodes"]
+    Start["Declarations"]
+    N0["Read class facts"]
     N1["Find classes"]
     N2["Find functions"]
     N3["Create records"]

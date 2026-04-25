@@ -1,6 +1,6 @@
 # HashingMechanism
 
-- Folder: `docs/Codebase/Microservice/Modules/Header/SyntacticBrokenAST/HashingMechanism`
+- Folder: `docs/Codebase/Microservice/Modules/Header/HashingMechanism`
 - Role: contracts for reverse-Merkle identity and hash-link lookup
 
 ## Read Order
@@ -9,4 +9,3 @@
 ## Boundary
 - Keep lookup contracts and internal hash-link contracts here.
 - Keep tree contracts in `../Trees/`.
-
