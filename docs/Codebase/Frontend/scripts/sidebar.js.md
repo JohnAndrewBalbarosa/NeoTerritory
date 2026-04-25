@@ -6,11 +6,11 @@
 ## Story
 ### What Happens Here
 
-This file implements navigation chrome behavior around the SPA shell. It wires sidebar open and close actions, route clicks, theme persistence, and responsive cleanup so the shared layout stays coherent while pages change. This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
+This file implements navigation chrome behavior around the SPA shell. It wires sidebar open and close actions, route clicks, theme persistence, and responsive cleanup so the shared layout stays coherent while the user moves through the microservice workflow pages.
 
 ### Why It Matters In The Flow
 
-Runs in the browser while the user navigates the prototype UI.
+Runs in the browser while the user navigates dashboard, analysis, results, fixes, and download screens.
 
 ### What To Watch While Reading
 
@@ -23,7 +23,7 @@ Detailed program flow is decoupled into future implementation units:
 ## Reading Map
 Read this file as: Controls navigation state, mobile sidebar behavior, and theme toggling.
 
-Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+Where it sits in the run: Runs in the browser while the user navigates the analysis workflow.
 
 Names worth recognizing while reading: openSidebar, closeSidebar, toggleSidebar, applyTheme, handleResize, and sidebar.
 

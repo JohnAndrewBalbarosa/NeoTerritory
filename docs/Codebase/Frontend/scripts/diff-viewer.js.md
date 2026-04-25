@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
+This script renders code and tree comparison artifacts returned from the backend. It may escape and format text for safe display, but the comparison data, AST output, and transformed source should come from the microservice artifact contract.
 
 ### Why It Matters In The Flow
 
-Runs in the browser while the user navigates the prototype UI.
+Runs after a completed transform job when the user inspects source changes, parse-tree views, or report-backed diff output.
 
 ### What To Watch While Reading
 
-Implements page-level interactive behavior for the static frontend. The main surface area is easiest to track through symbols such as escapeHtml, renderCode, originalLines, and transformedLines.
+Keep this script as a renderer. It should not compute pattern matches, rewrite source, or infer semantic changes. Those decisions must be produced by the microservice and delivered through the backend.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
@@ -23,16 +23,16 @@ This diagram follows the action path in plain words. Decision diamonds show wher
 #### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Begin local flow"]
-    N1["Small preparation steps"]
-    N2["Escape html"]
-    N3["Normalize text"]
-    N4["Return local result"]
-    N5["Showing the result"]
-    N6["Render code"]
-    N7["Render output"]
-    N8["Validate branch"]
-    N9["Continue?"]
+    N0["Open diff view"]
+    N1["Request artifacts"]
+    N2["Escape text"]
+    N3["Choose tab"]
+    N4["Render source"]
+    N5["Render tree"]
+    N6["Show report"]
+    N7["Bind toggles"]
+    N8["Handle empty"]
+    N9["Return view"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -47,19 +47,19 @@ flowchart TD
 #### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return early path"]
-    N1["Update DOM"]
-    N2["Return local result"]
-    N3["Return from local flow"]
+    N0["No artifact"]
+    N1["Show fallback"]
+    N2["Keep route"]
+    N3["End view"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
 ```
 
 ## Reading Map
-Read this file as: Implements page-level interactive behavior for the static frontend.
+Read this file as: Renders source and AST artifacts returned by the backend or microservice.
 
-Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+Where it sits in the run: Runs after result artifacts are available.
 
 Names worth recognizing while reading: escapeHtml, renderCode, originalLines, transformedLines, el, and cls.
 

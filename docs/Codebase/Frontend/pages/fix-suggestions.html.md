@@ -6,44 +6,41 @@
 ## Story
 ### What Happens Here
 
-This page fragment implements one route-sized screen inside the frontend shell. The router fetches it on demand, injects it into the main content container, and then lets the page-specific scripts bring it to life.
+This page fragment displays fix candidates and validation checks returned by the backend or microservice report. It should help the user review generated suggestions, understand acceptance status, and proceed to download when the output is ready.
 
 ### Why It Matters In The Flow
 
-Loaded after the router selects a route and injects the fragment into the shell document.
+Loaded after results are available and the user wants to review suggested remediation or transform output.
 
 ### What To Watch While Reading
 
-Provides a page fragment that the client-side router injects into the main content area. The main surface area is easiest to track through symbols such as #applied-count, #fix-cards-list, #fix-cards, and #val-fixes-count. It collaborates directly with #/results.
+Keep the page as a review surface. It should not decide rule correctness or generate fixes locally.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Render #applied-count"]
-    N1["Render #fix-cards-list"]
-    N2["Render #fix-cards"]
-    N3["Render #val-fixes-count"]
-    N4["Render #val-progress"]
-    N5["Render #checklist-items"]
-    L5{"More items?"}
-    End["Return from local flow"]
+    Start["Open fixes"]
+    N0["Load suggestions"]
+    N1["Show cards"]
+    N2["Show checks"]
+    N3["Track applied"]
+    N4["Show validation"]
+    N5["Enable download"]
+    End["Fixes ready"]
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
     N4 --> N5
-    N5 --> L5
-    L5 -->|more| N5
-    L5 -->|done| End
+    N5 --> End
 ```
 
 ## Reading Map
-Read this file as: Provides a page fragment that the client-side router injects into the main content area.
+Read this file as: Displays returned fix candidates and validation checks.
 
-Where it sits in the run: Loaded after the router selects a route and injects the fragment into the shell document.
+Where it sits in the run: Loaded after result artifacts are available and before download.
 
 Names worth recognizing while reading: #applied-count, #fix-cards-list, #fix-cards, #val-fixes-count, #val-progress, and #checklist-items.
 

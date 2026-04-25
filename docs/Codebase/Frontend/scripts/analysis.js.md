@@ -6,46 +6,44 @@
 ## Story
 ### What Happens Here
 
-This file implements the staged-analysis demo flow on the frontend. It reacts to the start button, swaps ready and progress states, animates the progress bars, and navigates to the results view when the simulated pipeline finishes. This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
+This file owns the analysis-start interaction on the frontend. It reacts to the start action, gathers the selected input and options from the page, asks `api.js` to create a backend transform job, reflects backend progress, and routes to results when the microservice artifacts are ready.
 
 ### Why It Matters In The Flow
 
-Runs in the browser while the user navigates the prototype UI.
+Runs at the handoff from user intent to backend orchestration. It should show progress, errors, and completion state without simulating microservice decisions as business logic.
 
 ### What To Watch While Reading
 
-Implements page-level interactive behavior for the static frontend. The main surface area is easiest to track through symbols such as animateBar, btn, readyCard, and progressCard.
+Keep UI animation separate from job truth. Progress bars may smooth the experience, but completion, failure, and artifact availability should come from the backend job state.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Run helper branch"]
-    N1["Handle animate bar"]
-    N2["Validate branch"]
-    D2{"Continue?"}
-    R2["Return early path"]
-    N3["Update DOM"]
-    N4["Schedule UI"]
-    N5["Return from local helper"]
-    End["Return from local flow"]
+    Start["Start click"]
+    N0["Validate input"]
+    N1["Submit job"]
+    D1{"Accepted?"}
+    R1["Show error"]
+    N2["Show progress"]
+    N3["Read status"]
+    N4["Route results"]
+    End["Analysis done"]
     Start --> N0
     N0 --> N1
-    N1 --> N2
-    N2 --> D2
-    D2 -->|yes| N3
-    D2 -->|no| R2
-    R2 --> End
+    N1 --> D1
+    D1 -->|no| R1
+    R1 --> End
+    D1 -->|yes| N2
+    N2 --> N3
     N3 --> N4
-    N4 --> N5
-    N5 --> End
+    N4 --> End
 ```
 
 ## Reading Map
-Read this file as: Implements page-level interactive behavior for the static frontend.
+Read this file as: Starts backend transform jobs and displays microservice run progress.
 
-Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+Where it sits in the run: Runs after the analysis page loads and before result artifacts are inspected.
 
 Names worth recognizing while reading: animateBar, btn, readyCard, progressCard, current, and interval.
 

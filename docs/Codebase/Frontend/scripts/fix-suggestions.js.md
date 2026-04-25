@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This script implements one piece of the frontend interaction model. It runs inside the browser after the SPA shell loads and updates the page in response to routing or user actions.
+This script renders fix candidates, validation checks, and applied-state presentation from backend or microservice output. It owns display state only; it must not define transform rules or decide which pattern migration is correct.
 
 ### Why It Matters In The Flow
 
-Runs in the browser while the user navigates the prototype UI.
+Runs after a transform job reports suggestions or generated changes. It helps the user inspect what the microservice recommends before downloading output.
 
 ### What To Watch While Reading
 
-Implements page-level interactive behavior for the static frontend. The main surface area is easiest to track through symbols such as renderFixCards, renderChecklist, updateCounts, and fixes.
+Keep suggested fixes traceable to the microservice report. UI counters and cards should summarize returned data, not replace backend validation.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
@@ -23,16 +23,16 @@ This diagram follows the action path in plain words. Decision diamonds show wher
 #### Slice 1 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Begin local flow"]
-    N1["Showing the result"]
-    N2["Render fix cards"]
-    N3["Render output"]
-    N4["Validate branch"]
-    N5["Continue?"]
-    N6["Return early path"]
-    N7["Update DOM"]
-    N8["Return local result"]
-    N9["Render checklist"]
+    N0["Open fixes"]
+    N1["Load report"]
+    N2["Render cards"]
+    N3["Render checks"]
+    N4["Validate data"]
+    N5["Has fixes?"]
+    N6["Show empty"]
+    N7["Update counts"]
+    N8["Track applied"]
+    N9["Enable download"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -47,15 +47,15 @@ flowchart TD
 #### Slice 2 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Render output"]
-    N1["Validate branch"]
-    N2["Continue?"]
-    N3["Return early path"]
-    N4["Update DOM"]
-    N5["Return local result"]
-    N6["Run helper branch"]
+    N0["Toggle fix"]
+    N1["Update state"]
+    N2["Count applied"]
+    N3["Refresh cards"]
+    N4["Refresh checks"]
+    N5["Preserve report"]
+    N6["Await action"]
     N7["Update counts"]
-    N8["Validate branch"]
+    N8["Validate DOM"]
     N9["Continue?"]
     N0 --> N1
     N1 --> N2
@@ -71,19 +71,19 @@ flowchart TD
 #### Slice 3 - Continue Local Flow
 ```mermaid
 flowchart TD
-    N0["Return early path"]
-    N1["Update DOM"]
-    N2["Return from local helper"]
-    N3["Return from local flow"]
+    N0["Missing DOM"]
+    N1["Skip update"]
+    N2["Return helper"]
+    N3["End view"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
 ```
 
 ## Reading Map
-Read this file as: Implements page-level interactive behavior for the static frontend.
+Read this file as: Renders microservice-provided fix candidates and validation checks.
 
-Where it sits in the run: Runs in the browser while the user navigates the prototype UI.
+Where it sits in the run: Runs after analysis results are available and before output download.
 
 Names worth recognizing while reading: renderFixCards, renderChecklist, updateCounts, fixes, checklist, and appliedSet.
 

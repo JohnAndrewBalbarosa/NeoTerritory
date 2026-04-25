@@ -1,11 +1,11 @@
 # Codebase Mirror
 
 - Folder: docs/Codebase
-- Descendant source docs: 147
+- Descendant source docs: 148
 - Generated on: 2026-04-23
 
 ## Logic Summary
-Top-level logical view of the generated codebase mirror. It groups the repository into frontend prototype code, backend service code, infrastructure automation, legacy transform samples, and the C++ microservice core.
+Top-level logical view of the generated codebase mirror. It groups the repository into the frontend operator surface, backend service code, infrastructure automation, legacy transform samples, repository hygiene, and the C++ microservice core.
 
 ## Blueprint Boundary
 This `docs/Codebase` tree is the implementation mirror. Folders and Markdown files here should map to current or planned code folders/files.
@@ -92,6 +92,10 @@ These documents explain the local implementation by covering Windows bootstrap w
 ### Project Notes
 These documents explain the local implementation by covering Keeps loose repository-level notes outside the formal docs set.
 - Notes.md : Keeps loose repository-level notes outside the formal docs set.
+
+### Repository Hygiene
+These documents explain which generated or machine-local artifacts must stay out of Git before normal pushes or force-push cleanups.
+- .gitignore.md : Keeps dependency caches, build output, generated frontend bundles, runtime logs, and local editor state out of version control.
 
 ### Validation Scripts
 These documents explain the local implementation by covering Shell helper for local compile or execution checks.

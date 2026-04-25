@@ -49,6 +49,9 @@ cmake-build-*/
 
 # CMake build directories (artifacts only)
 build/
+build-*/
+build-ninja/
+build-msys/
 cmake-build-*/
 CMakeFiles/
 CMakeCache.txt
@@ -57,6 +60,39 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps/
+Testing/
+DartConfiguration.tcl
+*.ninja
+.ninja_*
+
+# Node dependencies and package-manager caches
+node_modules/
+.npm/
+.yarn/
+.pnpm-store/
+
+# Frontend and JavaScript build outputs
+dist/
+coverage/
+.cache/
+.vite/
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.parcel-cache/
+*.tsbuildinfo
+*.eslintcache
+
+# Local environment and runtime logs
+.env
+.env.*
+!.env.example
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
 
 # Test results output (not tracked)
 Project/TestResults/

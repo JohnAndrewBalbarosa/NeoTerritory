@@ -6,28 +6,28 @@
 ## Story
 ### What Happens Here
 
-This file is the shell document for the frontend prototype. Its implementation lays out the persistent frame of the application, loads the shared styles and scripts, and then starts the router and sidebar logic that populate the page.
+This file is the persistent browser shell for the microservice analysis workflow. Its implementation lays out the application frame, loads shared styles and scripts, and starts the router and sidebar logic that expose the dashboard, analysis submission, result review, fix suggestions, and download pages.
 
 ### Why It Matters In The Flow
 
-Browser entrypoint: the user loads this shell before any route fragment or mock data is rendered.
+Browser entrypoint: the user loads this shell before any route fragment, backend job state, or microservice artifact is rendered.
 
 ### What To Watch While Reading
 
-Defines the shell document for the hash-routed frontend application. The main surface area is easiest to track through symbols such as #app, #sidebar, #sidebar-overlay, and #main-content. It collaborates directly with styles/main.css, styles/components.css, scripts/diff-viewer.js, and scripts/fix-suggestions.js.
+Defines the shell document for the hash-routed frontend application. The shell should stay focused on persistent layout and bootstrapping. Analysis behavior belongs to page scripts, backend calls belong to `scripts/api.js`, and AST or transform logic belongs to the microservice.
 
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
 flowchart TD
-    Start["Begin local flow"]
-    N0["Render #app"]
-    N1["Render #sidebar"]
-    N2["Render #sidebar-overlay"]
-    N3["Render #main-content"]
-    N4["Render #page-content"]
-    N5["Render #menu-fab"]
-    End["Return from local flow"]
+    Start["Load shell"]
+    N0["Render frame"]
+    N1["Load styles"]
+    N2["Load scripts"]
+    N3["Start router"]
+    N4["Show route"]
+    N5["Await job action"]
+    End["Shell ready"]
     Start --> N0
     N0 --> N1
     N1 --> N2
@@ -38,9 +38,9 @@ flowchart TD
 ```
 
 ## Reading Map
-Read this file as: Defines the shell document for the hash-routed frontend application.
+Read this file as: Defines the persistent browser shell for the microservice analysis workflow.
 
-Where it sits in the run: Browser entrypoint: the user loads this shell before any route fragment or mock data is rendered.
+Where it sits in the run: Browser entrypoint before route fragments, backend job state, or microservice artifacts are rendered.
 
 Names worth recognizing while reading: #app, #sidebar, #sidebar-overlay, #main-content, #page-content, and #menu-fab.
 
