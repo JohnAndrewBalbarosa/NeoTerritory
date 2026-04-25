@@ -14,14 +14,20 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Build the tail portion of a lookup key from the immediate parent context and the child token path.
+- Use it to distinguish repeated visible names under different classes or files.
+- The tail key should guide lookup to the exact child location after a head node has already been selected.
+- Do not use a tail key as a replacement for class or function head-node registry ownership.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["parent_tail_key()"]
-    N0["Handle parent tail key"]
-    N1["Loop collection"]
+    N0["Read parent context"]
+    N1["Walk child path"]
     L1{"More items?"}
-    N2["Check local condition"]
+    N2["Build tail key"]
     D2{"Continue?"}
     R2["Return early path"]
     N3["Return local result"]

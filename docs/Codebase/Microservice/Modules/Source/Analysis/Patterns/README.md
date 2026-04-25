@@ -16,12 +16,15 @@
 - `Families/` groups pattern families that use the shared middleman boundary.
 - `Families/Behavioural/` owns behavioural-specific detection, structure, scaffold, and symbol-test logic.
 - `Families/Creational/` owns creational-specific detection, structure, scaffold, symbol-test, and transform logic.
+- Pattern recognition is intended to be extensible through catalog entries and family hooks, not through hard-coded per-lexeme checks only.
+- A pattern definition can be expressed as structured catalog data first, then extended with family-specific hooks when token order is not enough.
 
 ## Placement Rule
 - Add new supported pattern structures through `Catalog/` first.
 - Put pattern families under `Families/` when they are specific categories of pattern logic.
 - Keep cross-family orchestration outside `Families/`; it belongs in `Middleman/`.
 - Do not place `Middleman/` inside `Families/` because it is the dispatcher and contract layer used by multiple families.
+- Keep the detector contract stable so families can share one dispatcher and only vary by evidence rules.
 
 ## Recognition Order
 ```mermaid
@@ -41,3 +44,4 @@ flowchart TD
 - Every enabled catalog pattern is eligible for every completed class declaration.
 - Catalog entries carry ordered token sequences for parser cross-reference.
 - Adding a new structure starts with catalog data before custom hook code.
+- The same dispatcher can route multiple families through one shared hook contract.

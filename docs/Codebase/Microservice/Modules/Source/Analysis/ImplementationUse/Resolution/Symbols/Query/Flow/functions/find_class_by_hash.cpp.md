@@ -18,45 +18,53 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Use the hash as the registry index, not as proof that the record is correct.
+- Fetch the bucket, compare the stored hash and normalized identity, then return the class record.
+- The class record points to the actual subtree head and the virtual-copy / virtual-broken subtree head when available.
+- On collision, return no match or a diagnostic unless identity disambiguation selects one record safely.
+- Use try/catch only if the registry implementation reports collision or invalid lookup through exceptions.
+
 Flow:
 
 
 ### Block 3 - find_class_by_hash() Details
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for find_class_by_hash.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: find_class_by_hash.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice shows the hash/index lookup path and the required collision guard.
+Why this is separate: the hash is only the entry point; the stored identity must still be checked.
 ```mermaid
 flowchart TD
     N0["find_class_by_hash()"]
-    N1["Find class by hash"]
-    N2["Search data"]
-    N3["Use hashes"]
-    N4["Register classes"]
-    N5["Compute hashes"]
-    N6["Loop collection"]
-    N7["More local items?"]
-    N8["Check local condition"]
-    N9["Continue?"]
+    N1["Read hash index"]
+    N2["Fetch bucket"]
+    N3["Read stored hash"]
+    N4["Compare identity"]
+    N5["Load actual head"]
+    N6["Load virtual head"]
+    N7["Return record"]
+    N8["Detect collision"]
+    N9["Return diagnostic"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
-    N4 --> N5
+    N4 -->|match| N5
     N5 --> N6
     N6 --> N7
-    N7 --> N8
+    N4 -->|collision| N8
     N8 --> N9
 ```
 
 #### Slice 2 - Handle Early Decisions
-Quick summary: This slice shows the first local decision path for find_class_by_hash.cpp after setup.
-Why this is separate: find_class_by_hash.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice shows how the lookup responds when the hash bucket is empty or mismatched.
+Why this is separate: callers need a safe no-match path instead of a wrong subtree pointer.
 ```mermaid
 flowchart TD
-    N0["Return early path"]
-    N1["Return local result"]
-    N2["Return"]
-    N0 --> N1
+    N0["Bucket missing"]
+    N1["Identity mismatch"]
+    N2["No class record"]
+    N3["Return none"]
+    N0 --> N2
     N1 --> N2
+    N2 --> N3
 ```
-

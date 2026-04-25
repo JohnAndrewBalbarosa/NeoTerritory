@@ -16,6 +16,8 @@ Runs after the generic parse tree exists so creational detection can label the s
 
 Implements creational pattern detection over the generic parse tree. The main surface area is easiest to track through symbols such as AccessorSignatureInfo, ReturnBinding, trim, and to_lower. It collaborates directly with Singleton/singleton_pattern_logic.hpp, Language-and-Structure/language_tokens.hpp, cctype, and unordered_map.
 
+Singleton detection should also stay inside the shared hook shape. It may use its own evidence model, but the middleman should still be able to call it like the other family detectors.
+
 ## Program Flow
 Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
 

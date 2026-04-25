@@ -15,28 +15,35 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Use this function when the caller already has the precise function key.
+- The key hash input includes function name, parameter signature, owner class or scope, and file context when available.
+- Match the stored identity before returning a function record, especially when names are overloaded.
+- For member calls, the key should be built after variable binding resolution. `p1.speak()` first resolves `p1` to its class hash, then combines that class hash with `speak` and file/parent context.
+- Return the function head node. Any child hash in the key is location evidence under that head.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["find_function_by_key()"]
-    N0["Find function by key"]
-    N1["Search data"]
-    N2["Loop collection"]
-    L2{"More items?"}
-    N3["Check local condition"]
-    D3{"Continue?"}
-    R3["Return early path"]
-    N4["Return local result"]
+    N0["Read member key"]
+    N1["Use class hash"]
+    N2["Fetch head"]
+    L2{"Identity match?"}
+    N3["Return record"]
+    D3{"Bucket missing?"}
+    R3["Return none"]
+    N4["Report ambiguity"]
     End["Return"]
     Start --> N0
     N0 --> N1
     N1 --> N2
     N2 --> L2
-    L2 -->|more| N2
-    L2 -->|done| N3
-    N3 --> D3
-    D3 -->|yes| N4
-    D3 -->|no| R3
+    L2 -->|yes| N3
+    L2 -->|no| D3
+    D3 -->|yes| R3
+    D3 -->|no| N4
+    N3 --> End
     R3 --> End
     N4 --> End
 ```

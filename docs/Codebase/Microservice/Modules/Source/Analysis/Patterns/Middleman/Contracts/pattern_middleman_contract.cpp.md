@@ -34,6 +34,15 @@ flowchart TD
 - Return finished match evidence.
 - Avoid family-specific middlemen.
 
+## Shared Pattern Types
+These shared types belong to the Middleman contract layer because they are used by every family-specific hook and by the dispatcher before any family code runs.
+
+- `PatternTemplateNode`: normalized ordered pattern node used to describe the catalog layout.
+- `PatternScaffold`: shared structural template passed to hooks when a pattern is defined as a nested class/function/control-block shape.
+- `PatternStructureChecker`: shared checker contract used to verify whether the candidate matches the template.
+
+These types are not owned by `Families/Behavioural/` or `Families/Creational/`. Family docs should only consume them.
+
 ## Request Fields
 - Parse root pointer.
 - Generated class declaration registry.

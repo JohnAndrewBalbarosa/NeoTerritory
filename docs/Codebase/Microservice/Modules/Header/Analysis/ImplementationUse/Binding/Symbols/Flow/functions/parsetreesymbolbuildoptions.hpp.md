@@ -12,14 +12,21 @@ What it does:
 - declare a shared type
 - expose the compile-time contract
 
+Contract details:
+- `ParseTreeSymbolBuildOptions` belongs to symbol-table construction only.
+- Keep class-declaration candidates until cross-reference decides whether they resolve to real class symbols.
+- Include a switch or policy for recording virtual-copy subtree heads once they become attachable.
+- Include collision diagnostics so registry build can report hash conflicts instead of replacing entries silently.
+- Avoid unrelated parser knobs here unless Drew confirms they belong to symbol table construction.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["ParseTreeSymbolBuildOptions"]
-    N0["Parse tree symbol build options"]
-    N1["Declare type"]
-    N2["Expose contract"]
-    N3["Hand back"]
+    N0["Keep candidates"]
+    N1["Record virtual heads"]
+    N2["Set collision policy"]
+    N3["Expose options"]
     End["Return"]
     Start --> N0
     N0 --> N1

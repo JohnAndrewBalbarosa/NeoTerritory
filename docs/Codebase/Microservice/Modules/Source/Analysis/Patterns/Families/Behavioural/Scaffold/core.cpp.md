@@ -16,6 +16,8 @@ Runs after the generic parse tree exists so behavioural scaffolds can classify p
 
 Implements behavioural detection and structural verification scaffolds. The main surface area is easiest to track through symbols such as BehaviouralClassSignals, trim, lower, and lowercase_ascii. It collaborates directly with Logic/behavioural_logic_scaffold.hpp, Language-and-Structure/language_tokens.hpp, parse_tree_dependency_utils.hpp, and cctype.
 
+This family should plug into the shared hook contract. `build_behavioural_function_scaffold()` and `build_behavioural_structure_checker()` are family-specific hook builders, not separate dispatcher shapes. They should return the evidence shape expected by the middleman interface.
+
 ## Program Flow
 Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
 

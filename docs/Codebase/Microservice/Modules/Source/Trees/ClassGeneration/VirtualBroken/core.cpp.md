@@ -45,8 +45,10 @@ flowchart TD
 ## Success Rules
 - If the class finishes without structure violation, the completed detached branch becomes attachable.
 - Attachment itself is handled by `../Attachment/core.cpp.md`.
+- The class registry may know the candidate while this branch is detached, but it should not expose the virtual subtree pointer as final until attachment succeeds.
 
 ## Acceptance Checks
 - The docs explicitly say virtual copy and broken AST are the same branch.
 - The docs explicitly say this branch is detached during generation.
 - The docs explicitly say failure discards the branch per class.
+- The docs keep final registry pointer publication in the attachment stage.

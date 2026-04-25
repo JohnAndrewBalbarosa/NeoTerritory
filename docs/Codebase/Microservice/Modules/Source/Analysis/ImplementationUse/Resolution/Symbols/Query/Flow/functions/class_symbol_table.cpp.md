@@ -14,14 +14,21 @@ What it does:
 - work with symbol-oriented state
 - inspect or register class-level information
 
+Implementation contract:
+- Return or expose the class registry from the symbol-table bundle.
+- The registry is keyed by the `std::hash`-derived class hash.
+- Each value stores the hash plus pointer targets for the actual subtree head and the virtual-copy / virtual-broken subtree head.
+- Consumers should treat the hash as the lookup index, then validate the stored identity before using the returned pointer.
+- Class records should expose member-function lookup by owner context. The stored function pointers target member head nodes; descendant hashes only locate child positions.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["class_symbol_table()"]
-    N0["Execute file-local step"]
-    N1["Work symbols"]
-    N2["Register classes"]
-    N3["Return local result"]
+    N0["Read table bundle"]
+    N1["Expose class map"]
+    N2["Expose members"]
+    N3["Return registry"]
     End["Return"]
     Start --> N0
     N0 --> N1

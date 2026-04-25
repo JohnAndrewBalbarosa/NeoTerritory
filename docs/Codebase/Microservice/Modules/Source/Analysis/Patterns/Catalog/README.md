@@ -13,6 +13,8 @@
 - JSON maps cleanly to C++ structures without indentation-sensitive rules.
 - JSON can be validated before any pattern hook runs.
 - JSON is easy to extend when a new pattern structure is added.
+- JSON-style catalog files are the preferred layout for extensible lexeme/scoping descriptions.
+- A catalog entry can describe ordered lexeme layout first, then delegate deeper evidence to family hooks.
 
 ## Boundary
 - This folder owns supported pattern definitions and catalog parsing.
@@ -20,6 +22,7 @@
 - It does not own family-specific algorithms.
 - It does not own final tree assembly.
 - It feeds normalized pattern definitions into `../Middleman/`.
+- If a pattern needs a more detailed scoping layout, add it as catalog data here before introducing family-specific code.
 
 ## Catalog Recognition Flow
 ```mermaid
@@ -39,6 +42,7 @@ flowchart TD
 - Runtime options may disable patterns, but the default behavior is to check all enabled definitions.
 - A new pattern can start as catalog-only when structure matching is enough.
 - A custom hook is needed only when the pattern requires algorithmic evidence beyond the catalog rules.
+- The old lexeme-by-lexeme strict matcher is still valid for small, fixed cases, but the catalog should support a more extensible scoped layout so patterns can be described as nested structures when needed.
 
 ## Acceptance Checks
 - No source design-pattern argument is required for recognition.

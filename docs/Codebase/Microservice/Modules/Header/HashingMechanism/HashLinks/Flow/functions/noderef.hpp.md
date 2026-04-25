@@ -12,12 +12,17 @@ What it does:
 - declare a shared type
 - expose the compile-time contract
 
+Contract details:
+- `NodeRef` should distinguish a registry head pointer from a child path reference.
+- Head refs identify the class or function subtree owner.
+- Child refs identify exact internal locations under that head, such as a member call lexeme or statement node.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["NodeRef"]
-    N0["Handle node ref"]
-    N1["Declare type"]
+    N0["Identify head"]
+    N1["Keep child path"]
     N2["Expose contract"]
     N3["Hand back"]
     End["Return"]

@@ -31,6 +31,14 @@ It leans on nearby contracts or tools such as parse_tree.hpp, parse_tree_symbols
 
 ## Story Groups
 
+### Head And Path Contract
+- This file owns the all-nodes pointer index, not the semantic symbol facade.
+- Hash links connect stable head-node identities to path evidence.
+- Class and function registries own the head-node pointers.
+- Child hashes and parent-tail keys identify the exact nested location after a head has been selected.
+- Repeated visible names must be disambiguated with immediate parent context and file context.
+- Member calls should resolve object-variable bindings before using the member name hash.
+
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
 - NodeAncestry: Declare a shared type and expose the compile-time contract

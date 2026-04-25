@@ -12,14 +12,19 @@ What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
+Contract details:
+- `find_class_usages_by_name()` resolves the name to a class hash before reading usage records.
+- The usage table is an unordered map from resolved class hash to many `ParseSymbolUsage` records.
+- If the name cannot resolve to a class hash, return no resolved usages and leave unresolved candidates to the builder/cross-reference stage.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["find_class_usages_by_name()"]
-    N0["Find class usages by name"]
-    N1["Declare call"]
-    N2["Defer body"]
-    N3["Hand back"]
+    N0["Resolve class hash"]
+    N1["Read usage map"]
+    N2["Return usage list"]
+    N3["Defer body"]
     End["Return"]
     Start --> N0
     N0 --> N1

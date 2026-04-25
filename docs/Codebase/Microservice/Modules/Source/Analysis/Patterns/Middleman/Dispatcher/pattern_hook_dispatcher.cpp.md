@@ -56,6 +56,8 @@ flowchart TD
 - Failed hooks return diagnostics without breaking shared setup.
 - Default behavior checks all enabled catalog entries against every completed class declaration.
 - Token-sequence evidence from `../../Catalog/pattern_token_sequence_matcher.cpp.md` is passed to hooks before family-specific logic runs.
+- The dispatcher is the shared cross-pattern loop. It should iterate catalog entries, call the shared hook contract, and let each family contribute evidence without changing the dispatcher shape.
+- If a catalog entry describes a nested layout, the dispatcher should hand the scoped layout to the hook and let the hook decide whether the candidate stays in the main tree or becomes detached virtual evidence.
 
 ## Error Flow
 ```mermaid

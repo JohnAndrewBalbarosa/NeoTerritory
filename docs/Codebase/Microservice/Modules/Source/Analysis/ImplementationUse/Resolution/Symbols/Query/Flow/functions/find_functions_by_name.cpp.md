@@ -18,25 +18,33 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Return all function records with the requested visible name.
+- Preserve overloads rather than collapsing them.
+- Each returned function record should still carry or reference its full key: name, parameter signature, owner context, and file context.
+- The caller can then narrow by signature, owner, file, or hash.
+- Return candidates with their owning class hash and file hash intact.
+- Do not flatten same-name member functions into one global record.
+
 Flow:
 
 
 ### Block 4 - find_functions_by_name() Details
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for find_functions_by_name.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: find_functions_by_name.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice keeps every same-name function candidate visible for later narrowing.
+Why this is separate: plural lookup is the overload-safe path and should not collapse records too early.
 ```mermaid
 flowchart TD
     N0["find_functions_by_name()"]
-    N1["Find functions by name"]
-    N2["Search data"]
-    N3["Store local result"]
-    N4["Populate outputs"]
-    N5["Connect local nodes"]
-    N6["Loop collection"]
-    N7["More local items?"]
-    N8["Check local condition"]
-    N9["Continue?"]
+    N1["Read function name"]
+    N2["Scan registry"]
+    N3["Match visible name"]
+    N4["Keep class hash"]
+    N5["Keep file hash"]
+    N6["Store candidate"]
+    N7["More records?"]
+    N8["Return matches"]
+    N9["Return empty"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
@@ -44,18 +52,19 @@ flowchart TD
     N4 --> N5
     N5 --> N6
     N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N7 -->|more| N2
+    N7 -->|matches| N8
+    N7 -->|none| N9
 ```
 
 #### Slice 2 - Handle Early Decisions
-Quick summary: This slice shows the first local decision path for find_functions_by_name.cpp after setup.
-Why this is separate: find_functions_by_name.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice shows the no-match path.
+Why this is separate: no match is a normal query result and should not become an invented function record.
 ```mermaid
 flowchart TD
-    N0["Return early path"]
-    N1["Return local result"]
-    N2["Return"]
+    N0["No visible name"]
+    N1["Return empty list"]
+    N2["Caller narrows later"]
     N0 --> N1
     N1 --> N2
 ```

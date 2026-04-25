@@ -15,15 +15,20 @@ What it does:
 - inspect or register class-level information
 - compute hash metadata
 
+Implementation contract:
+- Combine class name with file context before hashing when class names may repeat across files.
+- This class hash is the parent identity used by member-function keys.
+- A member name such as `speak` should resolve under this class hash, not through a bare member-name hash.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["hash_class_name_with_file()"]
-    N0["Handle hash class name with file"]
-    N1["Use hashes"]
-    N2["Register classes"]
-    N3["Compute hashes"]
-    N4["Return local result"]
+    N0["Read class name"]
+    N1["Read file context"]
+    N2["Build class identity"]
+    N3["Compute class hash"]
+    N4["Return parent hash"]
     End["Return"]
     Start --> N0
     N0 --> N1

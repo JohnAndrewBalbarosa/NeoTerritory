@@ -14,14 +14,20 @@ What it does:
 - compute or reuse hash-oriented identifiers
 - compute hash metadata
 
+Implementation contract:
+- Derive a child context hash from the immediate parent hash plus the child token or node identity.
+- Use this hash to locate where a child function, statement, or lexeme lives under a head node.
+- Do not treat the child hash as the registry pointer target. Registries point to class or function head nodes.
+- For member functions, the child/member token must stay tied to the class or variable-resolved owner hash.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["derive_child_context_hash()"]
-    N0["Handle derive child context hash"]
-    N1["Use hashes"]
-    N2["Compute hashes"]
-    N3["Return local result"]
+    N0["Read parent hash"]
+    N1["Read child token"]
+    N2["Build path hash"]
+    N3["Return location hash"]
     End["Return"]
     Start --> N0
     N0 --> N1

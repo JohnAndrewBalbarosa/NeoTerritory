@@ -32,8 +32,12 @@ flowchart TD
 - Attach only if the class still matches the expected strict structure after generation completes.
 - Release immediately on violation or divergence.
 - Never remove or rewrite the already-rooted actual subtree because the actual branch records source truth.
+- When attach succeeds, the class registry record should pair the `std::hash`-derived class key with both subtree head pointers: actual code and virtual copy.
+- When attach fails, do not leave a registry record that points to the released virtual branch.
+- If registry update sees an existing hash bucket for another identity, treat it as a collision and report it through the symbol-table diagnostic path.
 
 ## Acceptance Checks
 - Attach-on-success is described separately from generation.
 - Discard-on-failure is explicit.
 - The next class restart is part of the documented lifecycle.
+- Successful attach finalizes the class registry pointers for actual and virtual subtree heads.

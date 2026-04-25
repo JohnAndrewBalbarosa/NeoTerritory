@@ -19,25 +19,31 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Usage candidate lookup should preserve object-variable bindings and member-call evidence.
+- For `Person p1`, the usage candidate binds variable `p1` to the resolved `Person` class hash.
+- For `p1.speak()`, lookup should use the variable binding to select the `Person` class head, then use the child/member hash to locate the `speak` function head under that class.
+- Child hashes identify exact location in the usage path; they do not own the class or function record.
+
 Flow:
 
 
 ### Block 5 - lookup_usage_candidates() Details
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for lookup_usage_candidates.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: lookup_usage_candidates.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice resolves usage candidates through class bindings before member lookup.
+Why this is separate: member names are ambiguous until the object variable resolves to a class hash.
 ```mermaid
 flowchart TD
     N0["lookup_usage_candidates()"]
-    N1["Lookup usage candidates"]
-    N2["Search data"]
-    N3["Look up entries"]
-    N4["Store local result"]
-    N5["Populate outputs"]
-    N6["Compute hashes"]
-    N7["Loop collection"]
-    N8["More local items?"]
-    N9["Check local condition"]
+    N1["Read usage token"]
+    N2["Resolve variable"]
+    N3["Get class hash"]
+    N4["Read member name"]
+    N5["Build member key"]
+    N6["Store path evidence"]
+    N7["Loop usage path"]
+    N8["More tokens?"]
+    N9["Return candidate"]
     N0 --> N1
     N1 --> N2
     N2 --> N3

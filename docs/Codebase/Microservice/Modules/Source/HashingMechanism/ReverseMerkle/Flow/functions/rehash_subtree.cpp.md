@@ -16,15 +16,21 @@ What it does:
 - compute hash metadata
 - walk the local collection
 
+Implementation contract:
+- Start from the subtree head node and cascade child path hashes beneath it.
+- Preserve the head node as the registry pointer target.
+- Use child hashes to recover exact nested location after the head is found.
+- When the subtree contains member functions, carry the owning class/file context into descendant function keys.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["rehash_subtree()"]
-    N0["Handle rehash subtree"]
-    N1["Use hashes"]
-    N2["Connect local nodes"]
-    N3["Compute hashes"]
-    N4["Loop collection"]
+    N0["Read head node"]
+    N1["Carry parent hash"]
+    N2["Hash child path"]
+    N3["Keep head owner"]
+    N4["Loop children"]
     L4{"More items?"}
     N5["Hand back"]
     End["Return"]

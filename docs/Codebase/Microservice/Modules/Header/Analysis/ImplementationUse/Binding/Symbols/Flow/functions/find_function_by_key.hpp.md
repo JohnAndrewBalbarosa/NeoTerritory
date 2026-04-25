@@ -12,14 +12,21 @@ What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
+Contract details:
+- `find_function_by_key()` is the precise lookup path.
+- The key should already include name, parameter signature, owning class or scope, and file context.
+- Return the matching function record only after the stored identity matches the requested key.
+- For member calls, the key should include the variable-resolved class hash, not only the member name.
+- The returned pointer targets the function head node.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["find_function_by_key()"]
-    N0["Find function by key"]
-    N1["Declare call"]
-    N2["Defer body"]
-    N3["Hand back"]
+    N0["Read member key"]
+    N1["Use class hash"]
+    N2["Match function head"]
+    N3["Return record"]
     End["Return"]
     Start --> N0
     N0 --> N1

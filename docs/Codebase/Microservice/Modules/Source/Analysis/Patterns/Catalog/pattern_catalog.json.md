@@ -7,6 +7,7 @@
 This file houses the known pattern structures that automatic recognition should check after class declarations are generated. The catalog replaces the old assumption that the user must provide the source design pattern.
 
 The important requirement is that every generic pattern entry carries enough ordered token information for the parser to cross-reference a completed class against the pattern list.
+For extensibility, a pattern entry can describe a nested lexeme layout first and let the middleman or a hook verify the deeper cross-pattern rules later.
 
 ## Shape
 ```json
@@ -78,6 +79,8 @@ The important requirement is that every generic pattern entry carries enough ord
 ## Pattern List Cross Reference
 Each pattern entry should be treated as a row in the supported pattern list. Recognition walks the list and compares the candidate class token stream against every enabled pattern entry.
 
+If a pattern becomes too complex for a single flat token list, the catalog can express it as a scoped hierarchy of ordered pieces, then leave cross-reference or family hooks to decide whether the candidate belongs in the main tree or a detached virtual branch.
+
 ```mermaid
 flowchart TD
     N0["Completed class"]
@@ -105,6 +108,7 @@ flowchart TD
 - Every enabled pattern is checked against every completed class declaration unless runtime options explicitly filter it.
 - A catalog entry can produce a match when its ordered token sequences and role relations match the candidate.
 - If generic rules are not enough, the catalog entry can name a hook that adds pattern-specific evidence.
+- The old strict lexeme-by-lexeme check is still valid for small cases, but the catalog should support scoped nested layouts for extensible pattern families.
 
 ## Acceptance Checks
 - Adding a new structure means adding a new catalog entry first.

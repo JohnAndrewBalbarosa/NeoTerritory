@@ -16,6 +16,8 @@ Runs after the generic parse tree exists so creational detection can label the s
 
 Implements creational pattern detection over the generic parse tree. The main surface area is easiest to track through symbols such as trim, split_words, lower, and lowercase_ascii. It collaborates directly with Builder/builder_pattern_logic.hpp, Language-and-Structure/language_tokens.hpp, cctype, and string.
 
+This family also plugs into the shared hook contract. Builder scaffold and checker builders should return the common detector/evidence shape expected by the middleman dispatcher, even when the internal evidence rules are Builder-specific.
+
 ## Program Flow
 Quick summary: this diagram shows the file-local activity path for this implementation unit. It stays inside this code file and uses only entry and return boundaries as external references.
 

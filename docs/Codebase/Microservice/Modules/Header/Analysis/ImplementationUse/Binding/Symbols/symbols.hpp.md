@@ -6,65 +6,57 @@
 ## Story
 ### What Happens Here
 
-This header implements the compile-time contract for the generic parse and analysis pipeline. It is included before runtime execution begins so the C++ sources can agree on the shared data structures and function signatures.
+This header defines the semantic symbol facade for the parse and analysis pipeline. It gives the rest of the codebase a small shared contract for class symbols, function symbols, and usage records.
 
 ### Why It Matters In The Flow
 
-This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+This file sits at the binding/resolution boundary. It should stay narrow and describe named semantic records, not every-node pointer indexing or hash-link plumbing.
 
 ### What To Watch While Reading
 
-Declares the public interfaces and shared data types for the generic parse and analysis pipeline. The main surface area is easiest to track through symbols such as ParseSymbol, ParseSymbolUsage, ParseTreeSymbolBuildOptions, and ParseTreeSymbolTables. It collaborates directly with parse_tree.hpp, cstddef, string, and unordered_set.
+Track `ParseSymbol`, `ParseSymbolUsage`, `ParseTreeSymbolBuildOptions`, and `ParseTreeSymbolTables`. Those are the only contracts this facade should own.
 
 ## Program Flow
 Detailed program flow is decoupled into future implementation units:
 
 - [program_flow](./parse_tree_symbols/parse_tree_symbols_program_flow.hpp.md)
+
 ## Reading Map
-Read this file as: Declares the public interfaces and shared data types for the generic parse and analysis pipeline.
+Read this file as: the semantic symbol contracts and the bundled table types.
 
-Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
+Where it sits in the run: this artifact participates in binding and resolution, according to the surrounding module or toolchain that loads it.
 
-Names worth recognizing while reading: ParseSymbol, ParseSymbolUsage, ParseTreeSymbolBuildOptions, ParseTreeSymbolTables, build_parse_tree_symbol_tables, and class_symbol_table.
+Names worth recognizing while reading: `ParseSymbol`, `ParseSymbolUsage`, `ParseTreeSymbolBuildOptions`, and `ParseTreeSymbolTables`.
 
-It leans on nearby contracts or tools such as parse_tree.hpp, cstddef, string, unordered_set, and vector.
+It leans on nearby contracts or tools such as `parse_tree.hpp`, `cstddef`, `string`, `unordered_set`, and `vector`.
 
 ## Story Groups
 
+### Claude Handoff Contract
+These notes capture the split the implementation should follow.
+
+- Keep this facade slim. It owns `ParseSymbol`, `ParseSymbolUsage`, `ParseTreeSymbolBuildOptions`, and `ParseTreeSymbolTables` only.
+- `ParseSymbol` is a light semantic record with two subtree pointers, used for the primary head and the alternate or virtual head when that exists.
+- `ParseSymbolUsage` is a usage-site record with one usage pointer plus the containing function hash.
+- `ParseTreeSymbolTables` bundles three maps: class symbols, function symbols, and class usages.
+- Class and function keys are derived with `std::hash` from normalized identity strings.
+- Registry ownership for actual pointers lives elsewhere. This file does not own an all-nodes pointer index.
+- Class declarations become candidates first and become final only after cross-reference and validation accept them.
+- Class registry entries still point at subtree heads. Child hashes are path evidence, not ownership pointers.
+- Function records need owner context and parameter signatures so overloads and repeated names stay distinct.
+- `class_usage_table` records class usage facts and can reference binding evidence, but the durable variable->class map belongs in a separate Binding-phase file.
+- `return_targets_known_class()` stays a narrow predicate that checks whether a return target resolves to a known class.
+
 ### Promises This File Makes
 These entries tell the rest of the program what this file can provide.
-- ParseSymbol: Declare a shared type and expose the compile-time contract
-- ParseSymbolUsage: Declare a shared type and expose the compile-time contract
-- ParseTreeSymbolBuildOptions: Declare a shared type and expose the compile-time contract
-- ParseTreeSymbolTables: Declare a shared type and expose the compile-time contract
-- class_symbol_table(): Declare a callable contract and let implementation files define the runtime body
-- function_symbol_table(): Declare a callable contract and let implementation files define the runtime body
-- class_usage_table(): Declare a callable contract and let implementation files define the runtime body
-- find_class_by_name(): Declare a callable contract and let implementation files define the runtime body
-- find_class_by_hash(): Declare a callable contract and let implementation files define the runtime body
-- find_function_by_name(): Declare a callable contract and let implementation files define the runtime body
-- find_function_by_key(): Declare a callable contract and let implementation files define the runtime body
-- find_functions_by_name(): Declare a callable contract and let implementation files define the runtime body
-- find_class_usages_by_name(): Declare a callable contract and let implementation files define the runtime body
-- return_targets_known_class(): Declare a callable contract and let implementation files define the runtime body
+- `ParseSymbol`: declare a shared type and expose the compile-time contract
+- `ParseSymbolUsage`: declare a shared type and expose the compile-time contract
+- `ParseTreeSymbolBuildOptions`: declare a shared type and expose the compile-time contract
+- `ParseTreeSymbolTables`: declare a shared type and expose the compile-time contract
 
 ## Function Stories
-Function-level logic is decoupled into future implementation units:
+Implementation details are decoupled into the relevant binding, resolution, and hash docs.
 
-- [parsesymbol](./parse_tree_symbols/functions/parsesymbol.hpp.md)
-- [parsesymbolusage](./parse_tree_symbols/functions/parsesymbolusage.hpp.md)
-- [parsetreesymbolbuildoptions](./parse_tree_symbols/functions/parsetreesymbolbuildoptions.hpp.md)
-- [parsetreesymboltables](./parse_tree_symbols/functions/parsetreesymboltables.hpp.md)
-- [class_symbol_table](./parse_tree_symbols/functions/class_symbol_table.hpp.md)
-- [function_symbol_table](./parse_tree_symbols/functions/function_symbol_table.hpp.md)
-- [class_usage_table](./parse_tree_symbols/functions/class_usage_table.hpp.md)
-- [find_class_by_name](./parse_tree_symbols/functions/find_class_by_name.hpp.md)
-- [find_class_by_hash](./parse_tree_symbols/functions/find_class_by_hash.hpp.md)
-- [find_function_by_name](./parse_tree_symbols/functions/find_function_by_name.hpp.md)
-- [find_function_by_key](./parse_tree_symbols/functions/find_function_by_key.hpp.md)
-- [find_functions_by_name](./parse_tree_symbols/functions/find_functions_by_name.hpp.md)
-- [find_class_usages_by_name](./parse_tree_symbols/functions/find_class_usages_by_name.hpp.md)
-- [return_targets_known_class](./parse_tree_symbols/functions/return_targets_known_class.hpp.md)
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.
 - It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.

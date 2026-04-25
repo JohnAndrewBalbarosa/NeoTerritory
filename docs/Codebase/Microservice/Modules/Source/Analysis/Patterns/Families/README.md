@@ -11,7 +11,9 @@
 - This folder owns pattern-family logic only.
 - Shared pattern dispatch, contracts, registry, hooks orchestration, and migration notes stay in `../Middleman/`.
 - New pattern families should be added here only when their logic is family-specific and not part of the shared middleman layer.
+- Families should share the same detector shape through the middleman contract even if each family returns different evidence details.
 
 ## Current Families
 - `Behavioural/`: behavioural family structure, scaffold, and symbol evidence.
 - `Creational/`: creational family structure, scaffold, symbol evidence, and transform pipeline.
+- Add future families here only when they can plug into the shared dispatcher without needing a new orchestration layer.

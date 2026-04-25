@@ -12,12 +12,18 @@ What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
+Contract details:
+- `parent_tail_key()` derives the path key below a selected parent/head context.
+- It should distinguish repeated visible names by carrying immediate parent context.
+- The tail key is path evidence. It does not replace the class or function registry head pointer.
+- Member-function lookup should combine class hash, file context, and member name before using child-path evidence.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["parent_tail_key()"]
-    N0["Handle parent tail key"]
-    N1["Declare call"]
+    N0["Read parent context"]
+    N1["Build tail key"]
     N2["Defer body"]
     N3["Hand back"]
     End["Return"]

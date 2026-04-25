@@ -12,14 +12,19 @@ What it does:
 - declare a callable contract
 - let implementation files define the runtime body
 
+Contract details:
+- `find_class_by_hash()` resolves directly through the registry hash/index.
+- It must compare the stored hash and identity before trusting the returned pointer target.
+- On collision, return no match, a diagnostic, or the collision-safe record selected by identity. Do not silently return the first bucket entry.
+
 Flow:
 ```mermaid
 flowchart TD
     Start["find_class_by_hash()"]
-    N0["Find class by hash"]
-    N1["Declare call"]
-    N2["Defer body"]
-    N3["Hand back"]
+    N0["Read hash index"]
+    N1["Fetch bucket"]
+    N2["Check collision"]
+    N3["Return record"]
     End["Return"]
     Start --> N0
     N0 --> N1

@@ -16,41 +16,53 @@ What it does:
 - walk the local collection
 - branch on local conditions
 
+Implementation contract:
+- Start with the class name read from a declaration or usage candidate.
+- Combine the name with available owner or file context to build the same identity used during registration.
+- Hash that identity with `std::hash`, then resolve through the class registry.
+- Return the registry record or optional registry view with hash/index plus actual and virtual subtree pointers.
+- If multiple candidates share the same visible name, do not guess. Use context or return ambiguity for the caller to resolve.
+- This lookup is useful when checking class implementation or usage candidates that first appear as visible names before final hash resolution.
+
 Flow:
 
 
 ### Block 2 - find_class_by_name() Details
 #### Slice 1 - Establish Local Entry
-Quick summary: This slice shows the first file-local stage for find_class_by_name.cpp and keeps the diagram scoped to this code unit.
-Why this is separate: find_class_by_name.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice shows the name-to-registry path for class lookup.
+Why this is separate: name lookup must rebuild the same identity used by registration before hash lookup is safe.
 ```mermaid
 flowchart TD
     N0["find_class_by_name()"]
-    N1["Find class by name"]
-    N2["Search data"]
-    N3["Register classes"]
-    N4["Loop collection"]
-    N5["More local items?"]
-    N6["Check local condition"]
-    N7["Continue?"]
-    N8["Return early path"]
-    N9["Return local result"]
+    N1["Read class name"]
+    N2["Apply context"]
+    N3["Build identity"]
+    N4["Hash identity"]
+    N5["Fetch registry"]
+    N6["Check match"]
+    N7["Return record"]
+    N8["Report ambiguity"]
+    N9["Return none"]
     N0 --> N1
     N1 --> N2
     N2 --> N3
     N3 --> N4
     N4 --> N5
     N5 --> N6
-    N6 --> N7
-    N7 --> N8
-    N8 --> N9
+    N6 -->|match| N7
+    N6 -->|ambiguous| N8
+    N6 -->|missing| N9
 ```
 
 #### Slice 2 - Handle Early Decisions
-Quick summary: This slice shows the first local decision path for find_class_by_name.cpp after setup.
-Why this is separate: find_class_by_name.cpp has multiple branches, loops, or stage changes, so this section is split out to keep one major intent visible at a time instead of forcing one oversized diagram.
+Quick summary: This slice shows the branch when name lookup finds more than one possible class identity.
+Why this is separate: ambiguity must be explicit so outside code does not attach or rewrite the wrong subtree.
 ```mermaid
 flowchart TD
-    N0["Return"]
+    N0["Multiple candidates"]
+    N1["Use owner context"]
+    N2["Use file context"]
+    N3["Still ambiguous"]
+    N4["Return no match"]
+    N0 --> N1 --> N2 --> N3 --> N4
 ```
-
