@@ -65,7 +65,7 @@ void run_output_stage(SourcePipelineState& state)
     paths.json_report_path   = state.build_context.output_path + "/report.json";
     paths.evidence_directory = state.build_context.output_path + "/evidence";
 
-    write_codebase_outputs(state.report, paths);
+    write_evidence_files_only(state.report, paths);
 
     const std::string parse_tree_html  = render_tree_html(state.main_tree);
     const std::string parse_tree_path  = paths.html_directory + "/parse_tree.html";
@@ -73,6 +73,10 @@ void run_output_stage(SourcePipelineState& state)
     {
         state.report.artifacts.written_files.push_back(parse_tree_path);
     }
+
+    state.report.artifacts.written_files.push_back(paths.json_report_path);
+    const std::string report_json = render_pipeline_report_json(state.report);
+    write_text_file_safely(paths.json_report_path, report_json);
 }
 
 std::string pipeline_report_to_json(const PipelineReport& report)

@@ -1,0 +1,49 @@
+{
+  "pattern_id": "structural.proxy",
+  "pattern_family": "structural",
+  "pattern_name": "Proxy",
+  "enabled": true,
+  "ordered_checks": [
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "proxy_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "real_subject",
+      "expected_kind": "Identifier",
+      "capture_as": "real_subject",
+      "document_as": "proxy_real_subject"
+    },
+    {
+      "id": "forward_operator",
+      "one_of": [
+        { "expected_kind": "Punctuation", "expected_lexeme_any_of": ["."] },
+        { "expected_kind": "Operator",    "expected_lexeme_any_of": ["->"] }
+      ],
+      "document_as": "proxy_forwarding_op"
+    },
+    {
+      "id": "forwarded_method",
+      "expected_kind": "Identifier",
+      "capture_as": "forwarded_method",
+      "document_as": "proxy_forwarded_call"
+    },
+    {
+      "id": "forwarded_open_paren",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["("]
+    }
+  ]
+}

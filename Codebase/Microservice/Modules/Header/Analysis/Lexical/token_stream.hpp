@@ -30,7 +30,9 @@ struct LexicalToken
 struct ClassTokenStream
 {
     std::size_t                class_hash = 0;
+    std::string                class_name;
     std::string                file_name;
+    std::string                class_text;
     std::vector<LexicalToken>  tokens;
 };
 

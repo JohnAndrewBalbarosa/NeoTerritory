@@ -73,6 +73,9 @@ void write_design_pattern_tag(std::ostringstream& out, const DesignPatternTag& t
     out << ",\"pattern_name\":";     write_string(out, tag.pattern_name);
     out << ",\"pattern_id\":";       write_string(out, tag.pattern_id);
     out << ",\"target_class_hash\":" << tag.target_class_hash;
+    out << ",\"class_name\":";       write_string(out, tag.class_name);
+    out << ",\"file_name\":";        write_string(out, tag.file_name);
+    out << ",\"class_text\":";       write_string(out, tag.class_text);
 
     out << ",\"documentation_targets\":[";
     for (std::size_t i = 0; i < tag.documentation_targets.size(); ++i)
@@ -190,26 +193,38 @@ std::string sanitize_filename_component(const std::string& text)
 }
 } // namespace
 
+void write_evidence_files_only(PipelineReport& report, const CodebaseOutputPaths& paths)
+{
+    if (!paths.root.empty()) ensure_directory(paths.root);
+    if (!paths.evidence_directory.empty()) ensure_directory(paths.evidence_directory);
+
+    if (paths.evidence_directory.empty()) return;
+
+    for (const DesignPatternTag& tag : report.detected_patterns)
+    {
+        const std::string filename =
+            sanitize_filename_component(tag.pattern_id.empty() ? tag.pattern_name : tag.pattern_id) +
+            "_" + std::to_string(tag.target_class_hash) + ".json";
+        const std::string evidence_path = paths.evidence_directory + "/" + filename;
+        if (write_text_file(evidence_path, render_match_evidence_json(tag)))
+        {
+            report.artifacts.written_files.push_back(evidence_path);
+        }
+    }
+}
+
+std::string render_pipeline_report_json(const PipelineReport& report)
+{
+    return render_full_report_json(report);
+}
+
 void write_codebase_outputs(PipelineReport& report, const CodebaseOutputPaths& paths)
 {
     if (!paths.root.empty()) ensure_directory(paths.root);
     if (!paths.html_directory.empty()) ensure_directory(paths.html_directory);
     if (!paths.evidence_directory.empty()) ensure_directory(paths.evidence_directory);
 
-    if (!paths.evidence_directory.empty())
-    {
-        for (const DesignPatternTag& tag : report.detected_patterns)
-        {
-            const std::string filename =
-                sanitize_filename_component(tag.pattern_id.empty() ? tag.pattern_name : tag.pattern_id) +
-                "_" + std::to_string(tag.target_class_hash) + ".json";
-            const std::string evidence_path = paths.evidence_directory + "/" + filename;
-            if (write_text_file(evidence_path, render_match_evidence_json(tag)))
-            {
-                report.artifacts.written_files.push_back(evidence_path);
-            }
-        }
-    }
+    write_evidence_files_only(report, paths);
 
     if (!paths.json_report_path.empty())
     {

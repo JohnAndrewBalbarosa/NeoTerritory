@@ -1,0 +1,49 @@
+{
+  "pattern_id": "structural.adapter",
+  "pattern_family": "structural",
+  "pattern_name": "Adapter",
+  "enabled": true,
+  "ordered_checks": [
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "adapter_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "wrapped_member",
+      "expected_kind": "Identifier",
+      "capture_as": "wrapped_member",
+      "document_as": "adapter_wrapped_target"
+    },
+    {
+      "id": "forward_operator",
+      "one_of": [
+        { "expected_kind": "Punctuation", "expected_lexeme_any_of": ["."] },
+        { "expected_kind": "Operator",    "expected_lexeme_any_of": ["->"] }
+      ],
+      "document_as": "adapter_forwarding_op"
+    },
+    {
+      "id": "forwarded_method",
+      "expected_kind": "Identifier",
+      "capture_as": "forwarded_method",
+      "document_as": "adapter_forwarded_call"
+    },
+    {
+      "id": "forwarded_open_paren",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["("]
+    }
+  ]
+}

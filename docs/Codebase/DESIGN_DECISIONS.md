@@ -138,3 +138,65 @@ The C++ microservice never makes network calls and never depends on AI providers
 **Implication on backend**: the backend spawns the microservice as a child process (or reads its outputs from disk if pre-run), reads `report.json`, follows evidence-path pointers, and is the only component that builds AI prompts or calls external services. The microservice codebase must contain zero references to AI vendors, HTTP clients, or prompt templates.
 
 **Implication on the current placeholder analyzer (`Codebase/Backend/src/services/analyzer.js`)**: this regex-scoring service is **dud / experimental**. It is not the intended long-term shape and is intentionally **not doc-locked** in `docs/Codebase/Backend/`. It will be replaced with a microservice-spawning + AI-orchestrating adapter once the AI provider is chosen. Until then, only stable backend pieces (server bootstrap, db, middleware, transform routes, frontend shell) are mirrored into `docs/Codebase/`.
+
+## D21 — Initial pattern catalog locked at seven entries
+The first iteration of `pattern_catalog/` ships seven patterns:
+
+- **Creational**: `creational.singleton`, `creational.factory`, `creational.builder`, `creational.method_chaining`
+- **Structural**: `structural.adapter`, `structural.proxy`, `structural.decorator`
+
+**Co-emit pairs** (deliberate, per D20):
+- `creational.builder` and `creational.method_chaining` both match any class with fluent setters returning `*this`. Builder additionally requires a `build` / `Build` identifier; if absent, only Method Chaining matches. If present, both match.
+- `structural.adapter`, `structural.proxy`, and `structural.decorator` all match the same wrapping signature (a class that forwards a call to a member via `.` or `->`). All three emit when the shape matches; backend AI disambiguates which role the wrapping serves.
+
+**Each catalog entry is one JSON file under `Codebase/Microservice/pattern_catalog/<family>/<pattern>.json`**. Adding a new pattern is a "drop a JSON file and rerun" operation — no C++ recompile is required.
+
+**Reference samples and negative controls** live under `Codebase/Microservice/samples/<pattern>/` and `Codebase/Microservice/samples/integration/all_patterns.cpp`. The integration sample exercises every pattern in one source file and serves as the regression contract: any future change to the matcher or the catalog must keep the integration sample's detection set stable.
+
+**Known limitations of this iteration**:
+- Patterns are forward-scan token sequences. A signature whose tokens appear out of canonical order (e.g., a `build()` declared above its fluent setters) may miss the Builder match and be classified as Method Chaining only. This is acceptable per D20: the AI sees the structural facts and can reclassify.
+- The wrapping-family signature is intentionally permissive: any class that does `obj.method(` or `obj->method(` will match all three of Adapter/Proxy/Decorator. This is by design — the AI decides which wrapping role it actually plays based on the class text and surrounding context.
+- The current catalog targets idiomatic C++ implementations (Meyer's Singleton, branching `create`/`make`, `*this` fluent return, member-pointer wrappers). Stylistic deviations may need additional pattern variants.
+
+## D22 — AI provider: Anthropic Claude (Sonnet 4.6 default)
+Per D20, the backend is the sole external-integration adapter. The AI provider chosen for the first integration is **Anthropic Claude**, defaulting to model `claude-sonnet-4-6`.
+
+**Why Anthropic Claude**:
+- Strong code-comprehension and structured-output behavior, which fits the disambiguation + documentation task.
+- Already part of the existing development workflow (this project is built with Claude Code), so the operator already has a key path and quota visibility.
+- Single HTTP endpoint via the Messages API — implementable with built-in `fetch` in Node 18+, no SDK dependency required.
+
+**Model selection policy**:
+- Default model: `claude-sonnet-4-6` (good price/latency/quality balance for documentation work).
+- Override: `ANTHROPIC_MODEL` env var. Recommended overrides: `claude-opus-4-7` for higher-quality batches, `claude-haiku-4-5-20251001` for cheaper bulk runs.
+
+**Auth**:
+- API key read from `ANTHROPIC_API_KEY` env var.
+- If the key is missing, `aiDocumentationService.generateDocumentation()` returns `{status: "pending_provider", reason: "ai_provider_not_configured", payload}` and the run still completes — the structural facts and evidence files are returned to the frontend so the user can ship them to the AI manually if desired. This preserves the determinism guarantee of D20.
+
+**Prompt shape**:
+The backend builds a single Messages API request per detected pattern. The user message contains:
+- The detected pattern id, family, and name (the structural verdict from the microservice).
+- The class name and file name.
+- The full class text slice from `evidence/<class_hash>__<pattern_id>.json` (the virtual-copy slice).
+- The captured documentation anchors (label + line + lexeme).
+- The unit-test targets (function name + branch kind + line).
+
+The system prompt instructs the model to:
+1. Confirm or reclassify the structural verdict (since several patterns are intentionally co-emit).
+2. Emit per-anchor documentation paragraphs.
+3. Emit per-unit-test-target test-design notes.
+4. Return a single JSON object so the result is machine-parseable.
+
+**Replacement of `analyzer.js`**:
+The regex-based `services/analyzer.js` is removed. Its endpoints in `routes/analysis.js` are rewritten to drive `classDeclarationAnalysisService.js` (spawn microservice) and `aiDocumentationService.js` (call Claude). API surface stays the same so the Frontend continues to work without changes:
+- `POST /api/analyze`
+- `GET  /api/runs`, `GET /api/runs/:id`
+- `GET  /api/runs/:id/export?format=...`
+- `GET  /api/sample`, `GET /api/health`
+
+**Microservice binary discovery**:
+- Default path: `Codebase/Microservice/build/NeoTerritory.exe` on Windows, `.../NeoTerritory` elsewhere.
+- Override: `NEOTERRITORY_BIN` env var.
+- Catalog path default: `Codebase/Microservice/pattern_catalog`. Override: `NEOTERRITORY_CATALOG` env var.
+- If the binary is missing, the run returns a diagnostic and `status: "microservice_unavailable"`. No fallback to regex analysis (the regex analyzer is gone — D20 says structural detection is the microservice's job, not the backend's).
