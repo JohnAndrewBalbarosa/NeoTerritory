@@ -1,145 +1,167 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
-
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CodiNeo — C++ Conformance Analyzer</title>
-    <meta name="description"
-        content="CodiNeo is a C++ code conformance analysis tool that detects structural violations, checks semantic alignment, and suggests automated fixes." />
-    <link rel="stylesheet" href="styles/main.css" />
-    <link rel="stylesheet" href="styles/components.css" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NeoTerritory Studio</title>
+  <meta name="description" content="Upload C++ source, run structural analysis, and review inline comments with exportable annotated code." />
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/neo.min.css" />
 </head>
-
 <body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">NeoTerritory Studio</p>
+        <h1>Analyze source, inspect structure, ship the result.</h1>
+        <p class="lede">Upload a file or paste code, run a backend analysis pass, and review line-anchored comments, scores, and downloadable annotated output in one view.</p>
+        <div class="analysis-chiprow" aria-label="Pipeline stages">
+          <span class="mini-chip"><strong>Input</strong> file or code</span>
+          <span class="mini-chip"><strong>Analysis</strong> lexical facts</span>
+          <span class="mini-chip"><strong>Trees</strong> class subtree</span>
+          <span class="mini-chip"><strong>Hashing</strong> identity</span>
+          <span class="mini-chip"><strong>Output</strong> artifact</span>
+        </div>
+      </div>
+      <div class="status-card">
+        <span class="status-label">Backend</span>
+        <strong id="service-status">Checking...</strong>
+        <span id="service-detail">Waiting for API response.</span>
+      </div>
+    </header>
 
-    <div id="app">
+    <main class="content">
+      <section class="workspace">
+      <article class="panel composer">
+        <div class="panel-head">
+          <h2>Source input</h2>
+          <div class="panel-actions">
+            <button class="ghost-btn" id="load-sample-btn" type="button">Load sample</button>
+            <button class="ghost-btn" id="clear-btn" type="button">Clear</button>
+          </div>
+        </div>
 
-        <!-- ── Sidebar ───────────────────────────────────────────── -->
-        <aside id="sidebar">
-            <div class="sidebar-brand">
-                <div class="sidebar-brand-icon">NT</div>
-                <span class="sidebar-brand-name">Codi-Neo</span>
+        <form id="analysis-form">
+          <label class="field">
+            <span>File</span>
+            <input id="file-input" type="file" accept=".cpp,.cc,.cxx,.h,.hpp,.txt" />
+          </label>
+
+          <label class="field">
+            <span>Filename</span>
+            <input id="filename-input" type="text" value="snippet.cpp" />
+          </label>
+
+          <div class="form-actions">
+            <button class="primary-btn" id="analyze-btn" type="submit">Run analysis</button>
+            <p class="hint">The backend stores each run and returns line-anchored comments plus exportable code and comment-only downloads.</p>
+          </div>
+          <div class="source-state" id="source-status" data-kind="idle">No source loaded</div>
+        </form>
+
+        <div class="source-workbench">
+          <section class="editor-shell" aria-label="Source editor">
+            <textarea id="code-input" spellcheck="false" placeholder="Paste C++ source here..."></textarea>
+          </section>
+
+          <aside class="analysis-rail" aria-label="Analysis summary">
+            <div class="panel-head integrated-head">
+              <div>
+                <h2>Annotated source</h2>
+                <span class="subtle" id="comment-summary">Run analysis to see inline comments.</span>
+              </div>
+              <div class="panel-actions">
+                <a class="ghost-btn link-btn" id="commented-code-link" href="#" aria-disabled="true">Code + comments</a>
+                <a class="ghost-btn link-btn" id="comments-only-link" href="#" aria-disabled="true">Comments only</a>
+              </div>
             </div>
-
-            <nav class="sidebar-nav">
-                <div class="nav-item active" data-route="#/dashboard">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <rect x="3" y="3" width="7" height="7" rx="1" />
-                        <rect x="14" y="3" width="7" height="7" rx="1" />
-                        <rect x="3" y="14" width="7" height="7" rx="1" />
-                        <rect x="14" y="14" width="7" height="7" rx="1" />
-                    </svg>
-                    Overview
-                </div>
-
-                <div class="nav-item" data-route="#/analysis/new">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="8" x2="12" y2="16" />
-                        <line x1="8" y1="12" x2="16" y2="12" />
-                    </svg>
-                    New Analysis
-                </div>
-
-                <div class="nav-item" data-route="#/results">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14 2 14 8 20 8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                        <polyline points="10 9 9 9 8 9" />
-                    </svg>
-                    Results
-                </div>
-
-                <div class="nav-item" data-route="#/diff/1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <polyline points="16 3 21 3 21 8" />
-                        <line x1="4" y1="20" x2="21" y2="3" />
-                        <polyline points="21 16 21 21 16 21" />
-                        <line x1="15" y1="15" x2="21" y2="21" />
-                        <line x1="4" y1="4" x2="9" y2="9" />
-                    </svg>
-                    Diff Viewer
-                </div>
-
-                <div class="nav-item" data-route="#/fixes/1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path
-                            d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
-                    </svg>
-                    Fix Suggestions
-                </div>
-
-                <div class="nav-item" data-route="#/download/1">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
-                        stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="7 10 12 15 17 10" />
-                        <line x1="12" y1="15" x2="12" y2="3" />
-                    </svg>
-                    Downloads
-                </div>
-            </nav>
-
-            <div class="sidebar-footer">
-                <div class="theme-toggle">
-                    <button class="theme-toggle-btn active" data-theme="dark" title="Dark mode">🌙</button>
-                    <button class="theme-toggle-btn" data-theme="light" title="Light mode">☀️</button>
-                </div>
-                <span style="font-size:11px; color:var(--text-muted);">v1.0.0</span>
+            <div id="comment-rail" class="comment-rail">
+              <div class="empty-state">Comments will appear here.</div>
             </div>
-        </aside>
+          </aside>
+        </div>
+      </article>
 
-        <!-- Overlay (mobile) -->
-        <div id="sidebar-overlay"></div>
+      <aside class="stack">
+        <article class="panel pipeline-panel">
+          <div class="panel-head">
+            <h2>Pipeline</h2>
+            <span class="subtle" id="run-meta">No run yet</span>
+          </div>
+          <div id="pipeline-list" class="pipeline-list">
+            <div class="empty-state">Run analysis to populate the pipeline view.</div>
+          </div>
+        </article>
 
-        <!-- ── Main Content ──────────────────────────────────────── -->
-        <main id="main-content">
-            <div id="page-content" style="transition: opacity 0.22s ease, transform 0.22s ease;"></div>
-        </main>
+        <article class="panel metric-panel">
+          <div class="panel-head">
+            <h2>Scores</h2>
+            <span class="subtle">Structure and modernization</span>
+          </div>
+          <div class="metrics">
+            <div class="metric">
+              <span>Structure</span>
+              <strong id="structure-score">--</strong>
+              <div class="meter"><i id="structure-bar"></i></div>
+            </div>
+            <div class="metric">
+              <span>Modernization</span>
+              <strong id="modernization-score">--</strong>
+              <div class="meter purple"><i id="modernization-bar"></i></div>
+            </div>
+            <div class="metric">
+              <span>Comments</span>
+              <strong id="finding-count">--</strong>
+              <p id="summary-text" class="summary">Run analysis to populate this panel.</p>
+            </div>
+          </div>
+        </article>
+      </aside>
+      </section>
 
-        <!-- FAB (mobile) -->
-        <button id="menu-fab" aria-label="Open navigation menu">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-        </button>
+      <section class="bottom-grid">
+      <article class="panel comments-panel">
+        <div class="panel-head">
+          <h2>Comment threads</h2>
+          <span class="subtle" id="code-stats">0 lines</span>
+        </div>
+        <div id="findings-list" class="finding-list">
+          <div class="empty-state">No comments yet.</div>
+        </div>
+      </article>
 
+      <article class="panel history-panel">
+        <div class="panel-head">
+          <h2>Recent runs</h2>
+          <button class="ghost-btn" id="refresh-btn" type="button">Refresh</button>
+        </div>
+        <div id="run-list" class="run-list">
+          <div class="empty-state">No runs stored yet.</div>
+        </div>
+      </article>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="source-modal" id="source-modal">
+    <div class="source-modal-card">
+      <p class="eyebrow">Unsaved source</p>
+      <h2 id="source-modal-title">Replace current source?</h2>
+      <p id="source-modal-message">You have unsaved edits. Overwrite the current source with the template?</p>
+      <div class="source-modal-actions">
+        <button class="ghost-btn" id="source-modal-keep" type="button">Keep current</button>
+        <button class="primary-btn" id="source-modal-overwrite" type="button">Overwrite template</button>
+      </div>
     </div>
+  </dialog>
 
-    <script src="scripts/diff-viewer.js"></script>
-    <script src="scripts/fix-suggestions.js"></script>
-    <script src="scripts/analysis.js"></script>
-
-    <script type="module">
-        import { initRouter } from './scripts/router.js';
-        import { initSidebar } from './scripts/sidebar.js';
-
-        initSidebar();
-
-        // Called by router after each page's DOM is injected and ready
-        window.onPageReady = function (hash) {
-            if (hash === '#/diff/1' && typeof window.initDiffViewer === 'function') {
-                window.initDiffViewer();
-            } else if (hash === '#/fixes/1' && typeof window.initFixSuggestions === 'function') {
-                window.initFixSuggestions();
-            } else if (hash === '#/analysis/new' && typeof window.initAnalysisNew === 'function') {
-                window.initAnalysisNew();
-            }
-        };
-
-        initRouter();
-    </script>
-
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/clike/clike.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/placeholder.min.js"></script>
+  <script src="/app.js" type="module"></script>
 </body>
-
 </html>

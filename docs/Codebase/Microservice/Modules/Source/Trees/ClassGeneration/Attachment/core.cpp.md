@@ -4,22 +4,22 @@
 - Role: final decision point for attaching or releasing the detached virtual-broken branch
 
 ## Start Here
-- Read this file first if you want the last decision after actual and virtual-broken generation finish for a class.
+- Read this file first if you want the last decision after actual class-subtree generation and virtual-broken evidence assembly finish for a class.
 
 ## Quick Summary
 - This folder does not build either branch.
-- It decides whether the detached virtual-broken branch becomes part of the main tree or gets released.
+- It decides whether matched detached virtual-broken evidence becomes part of the main tree or gets released.
 
 ## Why This Folder Is Separate
 - Attachment is not the same as generation.
-- The actual branch already exists in the main tree.
+- The actual class-declaration subtree already exists in the main tree before this folder runs.
 - The detached virtual-broken branch still needs a final pass/fail decision.
 
 ## Major Workflow
 ```mermaid
 flowchart TD
-    N0["Finish class generation"]
-    N1["Check final structure state"]
+    N0["Receive matched class"]
+    N1["Check evidence fit"]
     N2["Attach detached branch"]
     N3["Release detached branch"]
     N4["Resume at next class"]
@@ -29,8 +29,8 @@ flowchart TD
 ```
 
 ## Decision Rules
-- Attach only if the class still matches the expected strict structure after generation completes.
-- Release immediately on violation or divergence.
+- Attach only if the completed class-declaration subtree still fits the expected strict structure after evidence assembly.
+- Release immediately on evidence divergence.
 - Never remove or rewrite the already-rooted actual subtree because the actual branch records source truth.
 - When attach succeeds, the class registry record should pair the `std::hash`-derived class key with both subtree head pointers: actual code and virtual copy.
 - When attach fails, do not leave a registry record that points to the released virtual branch.

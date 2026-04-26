@@ -7,7 +7,11 @@
 #include <vector>
 
 struct ParseTreeNode;
-struct SymbolTableBuilder;
+
+struct SymbolTableBuilder
+{
+    ParseTreeSymbolTables tables;
+};
 
 std::string trim(const std::string& text);
 

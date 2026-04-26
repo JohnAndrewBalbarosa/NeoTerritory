@@ -6,11 +6,11 @@
 ## Story
 ### What Happens Here
 
-This source file implements behavioural-pattern scaffolding or checks on top of the generic parse tree. It contributes one part of the behavioural broken-tree output by scanning for behavioural structure signals.
+This source file implements behavioural-pattern scaffolding or checks against completed class-declaration subtrees. It contributes one part of the behavioural broken-tree output by scanning for behavioural structure signals.
 
 ### Why It Matters In The Flow
 
-Runs after the generic parse tree exists so behavioural scaffolds can classify pattern structure.
+Runs after a specific class-declaration subtree exists so behavioural scaffolds can evaluate that completed class.
 
 ### What To Watch While Reading
 
@@ -70,7 +70,7 @@ flowchart TD
 ## Reading Map
 Read this file as: Implements behavioural detection and structural verification scaffolds.
 
-Where it sits in the run: Runs after the generic parse tree exists so behavioural scaffolds can classify pattern structure.
+Where it sits in the run: Runs after a specific class-declaration subtree exists so behavioural scaffolds can evaluate that completed class.
 
 Names worth recognizing while reading: lower_ascii and resolve_behavioural_structural_keywords.
 

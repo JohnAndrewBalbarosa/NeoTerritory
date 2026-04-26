@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
+This source file implements creational-pattern analysis against completed class-declaration subtrees. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
 ### Why It Matters In The Flow
 
-Runs after the generic parse tree exists so creational detection can label the structure.
+Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 ### What To Watch While Reading
 
-Implements creational pattern detection over the generic parse tree. The main surface area is easiest to track through symbols such as trim, split_words, lower, and lowercase_ascii. It collaborates directly with Builder/builder_pattern_logic.hpp, Language-and-Structure/language_tokens.hpp, cctype, and string.
+Implements creational pattern detection against completed class-declaration subtrees. The main surface area is easiest to track through symbols such as trim, split_words, lower, and lowercase_ascii. It collaborates directly with Builder/builder_pattern_logic.hpp, Language-and-Structure/language_tokens.hpp, cctype, and string.
 
 This family also plugs into the shared hook contract. Builder scaffold and checker builders should return the common detector/evidence shape expected by the middleman dispatcher, even when the internal evidence rules are Builder-specific.
 
@@ -45,9 +45,9 @@ Detailed program flow is decoupled into future implementation units:
 - [program_flow_01](./Flow/builder_pattern_logic_program_flow_01.cpp.md)
 - [program_flow_02](./Flow/builder_pattern_logic_program_flow_02.cpp.md)
 ## Reading Map
-Read this file as: Implements creational pattern detection over the generic parse tree.
+Read this file as: Implements creational pattern detection against completed class-declaration subtrees.
 
-Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+Where it sits in the run: Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 Names worth recognizing while reading: trim, split_words, lower, lowercase_ascii, starts_with, and is_class_block.
 

@@ -59,6 +59,9 @@ These documents explain the local C++ build and editor surface for the microserv
 These documents explain the local implementation by covering Thin executable entrypoint that delegates to the syntactic broken AST runner.
 - main.cpp.md : Thin executable entrypoint that delegates to the syntactic broken AST runner.
 
+## Entrypoint Boundary
+- `main.cpp.md` is the only executable entrypoint document for the microservice root.
+- The source-module algorithm entrypoint lives at `Modules/Source/core.cpp.md` so readers do not confuse it with another runtime `main.cpp`.
+
 ## Reading Hint
 - Read the local file docs first for concrete behavior, then descend into the child folders for narrower subsystem details.
-

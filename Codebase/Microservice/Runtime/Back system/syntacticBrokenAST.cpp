@@ -20,7 +20,8 @@ int run_syntactic_broken_ast(int argc, char** argv)
         return 1;
     }
 
-    const PipelineReport report = run_normalize_and_rewrite_pipeline(args.input_paths, args.output_path);
+    const PipelineReport report = run_normalize_and_rewrite_pipeline(
+        args.input_paths, args.output_path, args.catalog_path);
 
     CodebaseOutputPaths paths;
     paths.root             = args.output_path;

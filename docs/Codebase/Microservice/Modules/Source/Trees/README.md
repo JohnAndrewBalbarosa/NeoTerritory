@@ -1,7 +1,7 @@
 # Trees
 
 - Folder: `docs/Codebase/Microservice/Modules/Source/Trees`
-- Role: rooted tree ownership and class-level branch generation for actual and virtual-broken views
+- Role: rooted tree ownership and class-declaration subtree generation
 
 ## Read Order
 1. `core.cpp.md`
@@ -14,7 +14,7 @@
 
 ## Boundary
 - `MainTree/` owns the entry root, file nodes, and branch-attachment rules.
-- `ClassGeneration/` owns simultaneous actual and virtual-broken generation at class scope.
+- `ClassGeneration/` owns actual class-declaration subtree generation at class scope.
 - `Shared/` holds helpers that serve more than one tree-side branch.
 
 ## Workflow File
@@ -23,8 +23,8 @@
 ## Acceptance Checks
 - Tree generation is not hidden inside `Analysis/`.
 - The docs treat virtual copy and broken AST as one branch.
-- The docs show actual and virtual-broken generation as simultaneous for each class.
-- The docs show that the virtual-broken branch stays detached until it passes validation.
+- The docs show actual class-declaration subtree generation before structural pattern analysis.
+- The docs show that the virtual-broken branch stays detached until matched evidence passes validation.
 - Shared helpers stay under `Shared/`, not spread across sibling folders.
 
 

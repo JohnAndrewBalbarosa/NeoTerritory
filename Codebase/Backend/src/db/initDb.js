@@ -1,4 +1,5 @@
 const db = require('./database');
+const { initEtlSchema } = require('./etlSchema');
 
 function initDb() {
   db.prepare(`CREATE TABLE IF NOT EXISTS users (
@@ -27,6 +28,8 @@ function initDb() {
     created_at TEXT NOT NULL,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
+
+  initEtlSchema(db);
 }
 
 module.exports = { initDb };

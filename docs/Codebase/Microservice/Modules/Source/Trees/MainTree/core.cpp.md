@@ -9,7 +9,7 @@
 ## Quick Summary
 - The main tree has one entry root.
 - Each direct child of that root is a file node.
-- Each file node owns an actual parse-tree branch and may later gain a virtual-broken branch for classes that passed strict structure validation.
+- Each file node owns actual class-declaration subtrees first and may later gain virtual-broken evidence branches for classes that passed structural pattern analysis.
 
 ## Why This Folder Is Separate
 - The rooted ownership model is different from class-level generation.
@@ -22,34 +22,34 @@ flowchart TD
     N0["Start main root"]
     N1["Create file node"]
     N2["Attach actual branch"]
-    N3["Start detached virtual-broken branch"]
-    N4["Validate class structure"]
-    N5["Attach virtual-broken branch"]
-    N6["Discard detached branch"]
-    N0 --> N1 --> N2
-    N1 --> N3
-    N3 --> N4
-    N4 -->|match| N5
-    N4 -->|violation| N6
+    N3["Build class subtree"]
+    N4["Register subtree head"]
+    N5["Analyze pattern structure"]
+    N6["Attach virtual evidence"]
+    N7["Keep actual only"]
+    N0 --> N1 --> N2 --> N3 --> N4 --> N5
+    N5 -->|match| N6
+    N5 -->|no match| N7
 ```
 
 ## Structure Rules
 - Root direct children are file nodes.
 - Under each file node, the actual parse-tree path is part of the main tree as soon as generation begins.
 - Class declaration and class implementation distinctions can appear in both actual and virtual-broken branches.
-- The virtual-broken branch is not attached to the file node while its class is still under validation.
-- The virtual-broken branch attaches only after both actual and virtual-broken generation for that class are complete and the structure still matches expectations.
-- The class registry must point to subtree heads, not duplicate tree content. After a class is accepted, its registry record should be able to reference both the actual subtree head and the attached virtual-broken subtree head.
+- Structural pattern analysis starts only after the actual class-declaration subtree is complete and registered.
+- The virtual-broken branch is not attached to the file node until the completed class subtree has matched a pattern scaffold.
+- The class registry must point to subtree heads, not duplicate tree content. After a class is accepted, its registry record should be able to reference the actual subtree head and, when present, the attached virtual-broken evidence head.
 
 ## Attachment Rules
 - Actual branch: attached immediately because it records the literal source structure.
-- Virtual-broken branch: detached during generation because it is provisional and may be discarded.
-- On violation: release the detached branch and continue with the next class while the actual branch stays intact.
-- On match: attach the finished virtual-broken branch under the same file node.
+- Virtual-broken branch: detached after a pattern match because it is evidence, not the source-truth branch.
+- On no match: continue with the next class while the actual branch stays intact.
+- On match: attach the finished virtual-broken evidence branch under the same file node.
 - On match, update or finalize the class registry record so the `std::hash`-derived class key can resolve back to the actual and virtual subtree heads.
 
 ## Acceptance Checks
 - The docs show one entry root with file nodes as direct children.
 - The actual branch is always described as rooted early.
-- The virtual-broken branch is always described as detached until validation success.
+- Structural pattern analysis is always downstream of actual class-subtree generation.
+- The virtual-broken branch is always described as detached until pattern success.
 - The registry pointer target is described as subtree heads for actual and virtual branches.

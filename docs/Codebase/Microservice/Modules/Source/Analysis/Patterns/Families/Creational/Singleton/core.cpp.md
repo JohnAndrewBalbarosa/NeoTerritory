@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
+This source file implements creational-pattern analysis against completed class-declaration subtrees. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
 ### Why It Matters In The Flow
 
-Runs after the generic parse tree exists so creational detection can label the structure.
+Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 ### What To Watch While Reading
 
-Implements creational pattern detection over the generic parse tree. The main surface area is easiest to track through symbols such as AccessorSignatureInfo, ReturnBinding, trim, and to_lower. It collaborates directly with Singleton/singleton_pattern_logic.hpp, Language-and-Structure/language_tokens.hpp, cctype, and unordered_map.
+Implements creational pattern detection against completed class-declaration subtrees. The main surface area is easiest to track through symbols such as AccessorSignatureInfo, ReturnBinding, trim, and to_lower. It collaborates directly with Singleton/singleton_pattern_logic.hpp, Language-and-Structure/language_tokens.hpp, cctype, and unordered_map.
 
 Singleton detection should also stay inside the shared hook shape. It may use its own evidence model, but the middleman should still be able to call it like the other family detectors.
 
@@ -45,9 +45,9 @@ Detailed program flow is decoupled into future implementation units:
 - [program_flow_01](./Flow/singleton_pattern_logic_program_flow_01.cpp.md)
 - [program_flow_02](./Flow/singleton_pattern_logic_program_flow_02.cpp.md)
 ## Reading Map
-Read this file as: Implements creational pattern detection over the generic parse tree.
+Read this file as: Implements creational pattern detection against completed class-declaration subtrees.
 
-Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+Where it sits in the run: Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 Names worth recognizing while reading: AccessorSignatureInfo, ReturnBinding, trim, to_lower, lowercase_ascii, and starts_with.
 

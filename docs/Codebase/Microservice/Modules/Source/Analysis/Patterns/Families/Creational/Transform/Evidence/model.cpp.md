@@ -6,11 +6,11 @@
 ## Story
 ### What Happens Here
 
-This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
+This source file belongs to the older creational transform support path. It is useful for understanding previous rewrite behavior, but the current analyzer runtime focuses on tagging evidence instead of generating replacement code. This source file implements creational-pattern analysis against completed class-declaration subtrees. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
 
 ### Why It Matters In The Flow
 
-Runs after the generic parse tree exists so creational detection can label the structure.
+Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 ### What To Watch While Reading
 
@@ -116,7 +116,7 @@ flowchart TD
 ## Reading Map
 Read this file as: Implements creational transform dispatch, evidence rendering, and rewrite helpers.
 
-Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+Where it sits in the run: Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 Names worth recognizing while reading: ensure_class_view, method_name_from_chain_call, build_class_views, accessor_regex, static_decl_regex, and return_regex.
 

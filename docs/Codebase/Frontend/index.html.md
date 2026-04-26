@@ -6,27 +6,28 @@
 ## Story
 ### What Happens Here
 
-This file is the persistent browser shell for the microservice analysis workflow. Its implementation lays out the application frame, loads shared styles and scripts, and starts the router and sidebar logic that expose the dashboard, analysis submission, result review, fix suggestions, and download pages.
+This file is the single-page browser shell for the NeoTerritory Studio analysis workflow. The shell renders one composite layout: a top status bar, a source-input composer, a CodeMirror editor with annotation rail, score and pipeline panels, recent-runs history, and an export action row. There is no client-side router and no per-page navigation — the entire UX lives on this single document.
 
 ### Why It Matters In The Flow
 
-Browser entrypoint: the user loads this shell before any route fragment, backend job state, or microservice artifact is rendered.
+Browser entrypoint. The user loads this shell, the backend health check fires, and the user can immediately upload a source file, paste source code, run analysis, and review line-anchored documentation comments. All other UX states (annotated source view, comment threads, run history) are rendered into containers inside this shell by `app.js`.
 
 ### What To Watch While Reading
 
-Defines the shell document for the hash-routed frontend application. The shell should stay focused on persistent layout and bootstrapping. Analysis behavior belongs to page scripts, backend calls belong to `scripts/api.js`, and AST or transform logic belongs to the microservice.
+Keep the shell purely declarative. The shell defines layout containers, stylesheets, the CodeMirror dependency tags, and the `app.js` entrypoint. It does not perform analysis, build prompts, or call the AI. Analysis state belongs to `app.js`. Backend calls belong to `app.js`. Pattern detection and AI documentation generation belong to the backend, which in turn delegates structural detection to the C++ microservice (per D20).
 
 ## Program Flow
-This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
+
 ```mermaid
 flowchart TD
     Start["Load shell"]
     N0["Render frame"]
-    N1["Load styles"]
-    N2["Load scripts"]
-    N3["Start router"]
-    N4["Show route"]
-    N5["Await job action"]
+    N1["Load /styles.css"]
+    N2["Load CodeMirror CSS"]
+    N3["Load CodeMirror JS"]
+    N4["Load /app.js"]
+    N5["app.js attaches handlers"]
+    N6["app.js calls /api/health"]
     End["Shell ready"]
     Start --> N0
     N0 --> N1
@@ -34,19 +35,27 @@ flowchart TD
     N2 --> N3
     N3 --> N4
     N4 --> N5
-    N5 --> End
+    N5 --> N6
+    N6 --> End
 ```
 
-## Reading Map
-Read this file as: Defines the persistent browser shell for the microservice analysis workflow.
+## Layout Sections
 
-Where it sits in the run: Browser entrypoint before route fragments, backend job state, or microservice artifacts are rendered.
+- `header.topbar` — eyebrow, title, lede, pipeline chip row (`Input → Analysis → Trees → Hashing → Output`), backend status card.
+- `section.workspace` — two columns:
+  - `article.composer` — file upload, filename text input, code textarea (upgraded to CodeMirror), source dirty-state indicator, run button, and the annotation rail with export links.
+  - `aside.stack` — pipeline stage list and structure/modernization scores panel.
+- `section.bottom-grid` — comment-threads panel and recent-runs history panel.
+- `dialog.source-modal` — guards against accidentally overwriting unsaved edits when loading a template.
 
-Names worth recognizing while reading: #app, #sidebar, #sidebar-overlay, #main-content, #page-content, and #menu-fab.
+## External Dependencies
 
-It leans on nearby contracts or tools such as styles/main.css, styles/components.css, scripts/diff-viewer.js, scripts/fix-suggestions.js, and scripts/analysis.js.
+- CodeMirror 5.65.16 (CDN) — code editor with C-like mode, bracket matching, active-line highlight.
+- Google Fonts (loaded via `styles.css`) — Space Grotesk and IBM Plex Mono.
 
-## Documentation Note
-- This markdown file is part of the generated docs/Codebase mirror.
-- It was generated from the repository state on 2026-04-23 after reading the existing docs corpus and the current source tree.
+## Acceptance Checks
 
+- The shell file contains no inline JavaScript beyond the `<script>` tags that load CodeMirror addons and `app.js`.
+- The shell does not reference any per-page route file or sidebar navigation.
+- All interactive behavior is delegated to `app.js` via element ids that `app.js` looks up.
+- `app.js` is loaded with `type="module"` so import semantics are available if needed in future extensions.

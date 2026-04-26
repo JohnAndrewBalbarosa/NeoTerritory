@@ -10,7 +10,7 @@ This file is the actual-branch entrypoint for `Trees/ClassGeneration/Actual/`.
 ## Quick Summary
 This file owns the public parse-tree entrypoints. It creates the rooted `main_tree`, prepares per-file roots, calls the internal file parser, keeps the compatibility `shadow_tree`, and exposes text or HTML rendering helpers.
 
-The actual branch is independent from `VirtualBroken/`. It records source truth even when a detached virtual-broken class candidate fails expected-structure verification.
+The actual branch is independent from `VirtualBroken/`. It records source truth and must produce the specific class-declaration subtree before structural pattern analysis or virtual-broken evidence assembly starts.
 
 ## File-Level Flow
 This diagram shows only how the functions in this file relate to each other. Detailed steps are kept inside each function section so the same behavior is not repeated twice.
@@ -32,7 +32,7 @@ flowchart TD
 ## Function Map
 - `build_cpp_parse_tree(source, context)` wraps an in-memory source string as a single file, then delegates to the file-list overload.
 - `build_cpp_parse_tree(files, context)` builds the full bundle, then returns only `main_tree`.
-- `build_cpp_parse_trees(files, context)` builds the full parse bundle with main, shadow, virtual scaffold, traces, dependency metadata, and report counters.
+- `build_cpp_parse_trees(files, context)` builds the full parse bundle with main tree, completed class-subtree candidates, traces, dependency metadata, and report counters.
 - `parse_tree_to_text(root)` walks a tree and emits an indented text view.
 - `parse_tree_to_html(root)` delegates HTML rendering to the renderer module.
 
@@ -61,7 +61,7 @@ flowchart TD
 ```
 
 ## build_cpp_parse_trees(files, context)
-This is the real bundle builder in this file. It sets up roots, routes each file through the internal parser, records detached virtual-branch scaffold results, resolves dependencies, builds symbol relevance, and keeps the transitional shadow tree for downstream compatibility.
+This is the real bundle builder in this file. It sets up roots, routes each file through the internal parser, records completed class-subtree candidates, resolves dependencies, builds symbol relevance, and keeps the transitional shadow tree for downstream compatibility.
 
 ### Slice 1 - Root And File Setup
 Quick summary: This slice prepares the bundle-level roots and per-file child nodes.
@@ -72,24 +72,24 @@ flowchart TD
     N0["Load C++ token config"]
     N1["Create main root"]
     N2["Create shadow root"]
-    N3["Create virtual scaffold root"]
+    N3["Create candidate registry"]
     N4["Create file nodes"]
     N5["Map basename to path"]
     N0 --> N1 --> N2 --> N3 --> N4 --> N5
 ```
 
 ### Slice 2 - Parse Files Into Actual Branch
-Quick summary: This slice shows the file parsing loop and the class-local virtual scaffold counters.
-Why this is separate: actual tree growth happens inside `parse_file_content_into_node()`, while this file only orchestrates the call and stores the results.
+Quick summary: This slice shows the file parsing loop and the class-declaration subtree records that later pattern analysis consumes.
+Why this is separate: actual tree growth happens inside `parse_file_content_into_node()`, while this file only orchestrates the call and stores completed class candidates.
 
 ```mermaid
 flowchart TD
     N0["Iterate source files"]
     N1["Parse file into main branch"]
-    N2["Receive virtual scaffold file"]
-    N3["Add attached class count"]
-    N4["Add discarded class count"]
-    N5["Collect class definitions"]
+    N2["Finish class subtrees"]
+    N3["Collect class definitions"]
+    N4["Register subtree heads"]
+    N5["Return actual bundle"]
     N0 --> N1 --> N2 --> N3 --> N4 --> N5
 ```
 
@@ -109,7 +109,7 @@ flowchart TD
 
 ### Slice 4 - Build Transitional Shadow Tree
 Quick summary: This slice keeps the older filtered shadow output alive for downstream consumers.
-Why this is separate: this is compatibility behavior, not the same lifecycle as the detached virtual-broken scaffold.
+Why this is separate: this is compatibility behavior, not the same lifecycle as class-subtree generation or later virtual-broken evidence.
 
 ```mermaid
 flowchart TD
@@ -157,3 +157,4 @@ flowchart TD
 - Function diagrams describe local behavior using short intent labels, not generic action buckets.
 - Detailed steps for `build_cpp_parse_trees()` appear only in that function section.
 - Cross-file references appear only as entry or exit boundaries.
+- The actual class-declaration subtree is documented as the prerequisite for pattern analysis.

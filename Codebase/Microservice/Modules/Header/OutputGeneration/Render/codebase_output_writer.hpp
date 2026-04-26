@@ -13,5 +13,5 @@ struct CodebaseOutputPaths
 };
 
 void write_codebase_outputs(
-    const PipelineReport&      report,
+    PipelineReport&            report,
     const CodebaseOutputPaths& paths);

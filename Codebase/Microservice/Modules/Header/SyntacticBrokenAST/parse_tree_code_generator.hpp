@@ -1,6 +1,0 @@
-#ifndef PARSE_TREE_CODE_GENERATOR_FORWARD_HPP
-#define PARSE_TREE_CODE_GENERATOR_FORWARD_HPP
-
-#include "ParseTree/parse_tree_code_generator.hpp"
-
-#endif // PARSE_TREE_CODE_GENERATOR_FORWARD_HPP
