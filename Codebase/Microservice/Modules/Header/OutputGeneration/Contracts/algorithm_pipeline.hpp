@@ -38,6 +38,9 @@ struct DesignPatternTag
     std::string                       pattern_name;
     std::string                       pattern_id;
     std::size_t                       target_class_hash = 0;
+    std::string                       class_name;
+    std::string                       file_name;
+    std::string                       class_text;
     std::vector<DocumentationTarget>  documentation_targets;
     std::vector<UnitTestTarget>       unit_test_targets;
 };

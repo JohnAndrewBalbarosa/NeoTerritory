@@ -40,10 +40,14 @@ add_executable(NeoTerritory
 target_include_directories(NeoTerritory PRIVATE
     ${MICROSERVICE_ROOT}
     ${MODULES_HEADER_ROOT}
+    ${MODULES_SOURCE_ROOT}
 )
 
 if(MSVC)
     target_compile_options(NeoTerritory PRIVATE /W4 /permissive-)
 else()
     target_compile_options(NeoTerritory PRIVATE -Wall -Wextra -Wpedantic)
+    # Static-link runtime so the binary works without ucrt64 DLLs on PATH
+    # (required when the backend spawns the binary from Node child_process).
+    target_link_options(NeoTerritory PRIVATE -static-libgcc -static-libstdc++)
 endif()

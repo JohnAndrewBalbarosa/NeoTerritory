@@ -89,10 +89,41 @@ void extract_classes_from_file(
 
         ClassTokenStream stream;
         stream.class_hash = hash_class_identity(class_name, source.file_name);
+        stream.class_name = class_name;
         stream.file_name  = source.file_name;
         stream.tokens.assign(
             file_tokens.begin() + static_cast<std::ptrdiff_t>(i),
             file_tokens.begin() + static_cast<std::ptrdiff_t>(close_brace_index + 1));
+
+        const std::size_t start_line = file_tokens[i].line;
+        const std::size_t end_line   = file_tokens[close_brace_index].line;
+        if (start_line >= 1 && end_line >= start_line)
+        {
+            std::size_t current_line  = 1;
+            std::size_t slice_start   = std::string::npos;
+            std::size_t slice_end     = source.contents.size();
+            for (std::size_t pos = 0; pos < source.contents.size(); ++pos)
+            {
+                if (current_line == start_line && slice_start == std::string::npos)
+                {
+                    slice_start = pos;
+                }
+                if (current_line > end_line)
+                {
+                    slice_end = pos;
+                    break;
+                }
+                if (source.contents[pos] == '\n')
+                {
+                    ++current_line;
+                }
+            }
+            if (slice_start != std::string::npos && slice_end > slice_start)
+            {
+                stream.class_text = source.contents.substr(slice_start, slice_end - slice_start);
+            }
+        }
+
         out_streams.push_back(std::move(stream));
 
         i = close_brace_index;

@@ -1,0 +1,57 @@
+{
+  "pattern_id": "creational.singleton",
+  "pattern_family": "creational",
+  "pattern_name": "Singleton",
+  "enabled": true,
+  "ordered_checks": [
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "singleton_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "static_keyword",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["static"],
+      "document_as": "static_instance_accessor"
+    },
+    {
+      "id": "accessor_returns_reference",
+      "expected_kind": "Operator",
+      "expected_lexeme_any_of": ["&"]
+    },
+    {
+      "id": "accessor_name",
+      "expected_kind": "Identifier",
+      "capture_as": "accessor_name",
+      "document_as": "instance_accessor_method"
+    },
+    {
+      "id": "accessor_open_paren",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["("]
+    },
+    {
+      "id": "accessor_close_paren",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": [")"]
+    },
+    {
+      "id": "deleted_copy_op",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["delete"],
+      "document_as": "explicit_copy_deletion"
+    }
+  ]
+}

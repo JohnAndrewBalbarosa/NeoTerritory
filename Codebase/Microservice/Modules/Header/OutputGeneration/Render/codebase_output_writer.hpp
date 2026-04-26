@@ -15,3 +15,9 @@ struct CodebaseOutputPaths
 void write_codebase_outputs(
     PipelineReport&            report,
     const CodebaseOutputPaths& paths);
+
+void write_evidence_files_only(
+    PipelineReport&            report,
+    const CodebaseOutputPaths& paths);
+
+std::string render_pipeline_report_json(const PipelineReport& report);

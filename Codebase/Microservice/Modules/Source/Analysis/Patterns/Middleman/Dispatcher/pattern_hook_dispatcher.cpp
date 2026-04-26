@@ -1,9 +1,11 @@
 #include "OutputGeneration/Contracts/pipeline_state.hpp"
 
+#include "Analysis/ImplementationUse/Binding/Symbols/symbols.hpp"
 #include "Analysis/Patterns/Catalog/catalog.hpp"
 #include "Analysis/Patterns/Catalog/matcher.hpp"
 #include "Analysis/Patterns/Middleman/dispatcher.hpp"
 #include "OutputGeneration/UnitTestGeneration/core.hpp"
+#include "Trees/Actual/parse_tree.hpp"
 
 PatternDispatchOutput dispatch_patterns_against_subtrees(const PatternDispatchInput& input)
 {
@@ -58,6 +60,19 @@ void run_pattern_dispatch_stage(SourcePipelineState& state)
         tag.pattern_name      = match.pattern_name;
         tag.pattern_id        = match.pattern_id;
         tag.target_class_hash = match.class_hash;
+
+        for (const ClassTokenStream& class_stream : state.class_token_streams)
+        {
+            if (class_stream.class_hash == match.class_hash)
+            {
+                tag.class_name = class_stream.class_name;
+                tag.file_name  = class_stream.file_name;
+                tag.class_text = class_stream.class_text;
+                tag.unit_test_targets = extract_unit_test_targets(class_stream);
+                break;
+            }
+        }
+
         for (const PatternDocumentationAnchor& anchor : match.documentation_anchors)
         {
             DocumentationTarget target;
@@ -67,14 +82,6 @@ void run_pattern_dispatch_stage(SourcePipelineState& state)
             target.column    = anchor.column;
             target.lexeme    = anchor.lexeme;
             tag.documentation_targets.push_back(std::move(target));
-        }
-        for (const ClassTokenStream& class_stream : state.class_token_streams)
-        {
-            if (class_stream.class_hash == match.class_hash)
-            {
-                tag.unit_test_targets = extract_unit_test_targets(class_stream);
-                break;
-            }
         }
         state.report.detected_patterns.push_back(std::move(tag));
     }

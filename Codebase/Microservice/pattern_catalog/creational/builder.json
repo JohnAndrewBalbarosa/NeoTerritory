@@ -1,0 +1,47 @@
+{
+  "pattern_id": "creational.builder",
+  "pattern_family": "creational",
+  "pattern_name": "Builder",
+  "enabled": true,
+  "ordered_checks": [
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "builder_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "fluent_return_signature",
+      "expected_kind": "Operator",
+      "expected_lexeme_any_of": ["&"],
+      "document_as": "fluent_setter_return"
+    },
+    {
+      "id": "fluent_return_keyword",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["return"]
+    },
+    {
+      "id": "fluent_return_this",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["this"],
+      "document_as": "fluent_self_return"
+    },
+    {
+      "id": "build_terminator",
+      "expected_kind": "Identifier",
+      "expected_lexeme_any_of": ["build", "Build"],
+      "document_as": "builder_terminator_method"
+    }
+  ]
+}

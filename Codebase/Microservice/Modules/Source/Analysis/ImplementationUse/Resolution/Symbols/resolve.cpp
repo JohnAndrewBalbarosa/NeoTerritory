@@ -1,4 +1,5 @@
 #include "Analysis/ImplementationUse/Resolution/Symbols/Internal/core.hpp"
+#include "Trees/Actual/parse_tree.hpp"
 
 #include <cctype>
 #include <sstream>

@@ -1,0 +1,44 @@
+{
+  "pattern_id": "creational.factory",
+  "pattern_family": "creational",
+  "pattern_name": "Factory",
+  "enabled": true,
+  "ordered_checks": [
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "factory_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "branch_decision",
+      "one_of": [
+        { "expected_kind": "Keyword", "expected_lexeme_any_of": ["if"] },
+        { "expected_kind": "Keyword", "expected_lexeme_any_of": ["switch"] }
+      ],
+      "document_as": "factory_branch_decision"
+    },
+    {
+      "id": "concrete_construction",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["new"],
+      "document_as": "factory_concrete_creation"
+    },
+    {
+      "id": "return_concrete",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["return"],
+      "document_as": "factory_return"
+    }
+  ]
+}
