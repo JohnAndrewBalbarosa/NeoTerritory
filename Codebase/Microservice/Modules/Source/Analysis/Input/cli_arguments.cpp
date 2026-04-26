@@ -23,6 +23,13 @@ CliArguments parse_cli_arguments(int argc, char** argv)
                 args.output_path = argv[++i];
             }
         }
+        else if (token == "--catalog" || token == "-c")
+        {
+            if (i + 1 < argc)
+            {
+                args.catalog_path = argv[++i];
+            }
+        }
         else
         {
             args.input_paths.push_back(token);

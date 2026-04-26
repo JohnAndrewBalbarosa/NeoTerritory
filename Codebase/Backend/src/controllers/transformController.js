@@ -5,6 +5,16 @@ const { logEvent } = require('../services/logService');
 const { sanitizeFilename, uniqueFilename } = require('../utils/fileUtils');
 
 const allowedExt = ['.cpp', '.cc', '.cxx', '.rs'];
+const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
+const outputsDir = path.join(__dirname, '..', '..', 'outputs');
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+if (!fs.existsSync(outputsDir)) {
+  fs.mkdirSync(outputsDir, { recursive: true });
+}
 
 const transform = (req, res, next) => {
   try {
@@ -16,13 +26,13 @@ const transform = (req, res, next) => {
       return res.status(400).json({ error: 'Invalid file type' });
     }
     // Sanitize and ensure unique filenames
-    const safeInput = uniqueFilename('uploads', sanitizeFilename(req.file.originalname));
-    const inputPath = path.join('uploads', safeInput);
+    const safeInput = uniqueFilename(uploadsDir, sanitizeFilename(req.file.originalname));
+    const inputPath = path.join(uploadsDir, safeInput);
     fs.renameSync(req.file.path, inputPath);
 
     // Output placeholder
-    const outputName = uniqueFilename('outputs', safeInput.replace(ext, '.out'));
-    const outputPath = path.join('outputs', outputName);
+    const outputName = uniqueFilename(outputsDir, safeInput.replace(ext, '.out'));
+    const outputPath = path.join(outputsDir, outputName);
     fs.writeFileSync(outputPath, '// Transformation output placeholder\n');
 
     // Insert job

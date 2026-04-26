@@ -1,7 +1,7 @@
 # VirtualBroken
 
 - Folder: `docs/Codebase/Microservice/Modules/Source/Trees/ClassGeneration/VirtualBroken`
-- Role: detached temporary branch for the strict expected structure used during class validation
+- Role: detached evidence branch for strict expected structures accepted after class-subtree analysis
 
 ## Primary Entry
 - Start with `core.cpp.md`.
@@ -13,4 +13,4 @@
 4. `Creational/`
 
 ## Workflow File
-- `core.cpp.md` explains why this branch is detached during generation and why it may be attached or discarded per class.
+- `core.cpp.md` explains why this branch is created only after a completed actual class-declaration subtree matches a structural pattern, why it stays detached during evidence assembly, and why it may be attached or discarded per class.

@@ -7,6 +7,7 @@ struct CliArguments
 {
     std::vector<std::string> input_paths;
     std::string              output_path;
+    std::string              catalog_path;
     bool                     verbose = false;
     bool                     help    = false;
 };

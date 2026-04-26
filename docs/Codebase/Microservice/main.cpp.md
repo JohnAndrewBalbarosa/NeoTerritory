@@ -42,6 +42,9 @@ Names worth recognizing while reading: run_syntactic_broken_ast and main.
 
 It leans on nearby contracts or tools such as iostream.
 
+## Boundary Note
+This is the real executable entrypoint. Source-module analysis flow is documented separately at `Modules/Source/core.cpp.md`; that document must not be treated as a second runtime `main.cpp`.
+
 ## Story Groups
 
 ### Supporting Steps

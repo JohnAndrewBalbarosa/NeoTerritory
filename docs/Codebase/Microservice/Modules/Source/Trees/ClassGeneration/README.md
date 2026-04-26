@@ -13,4 +13,4 @@
 4. `Attachment/`
 
 ## Workflow File
-- `core.cpp.md` explains simultaneous class-level generation and the attach-or-discard decision.
+- `core.cpp.md` explains class-level actual subtree generation, the later pattern-analysis handoff, and the attach-or-discard decision for optional virtual-broken evidence.

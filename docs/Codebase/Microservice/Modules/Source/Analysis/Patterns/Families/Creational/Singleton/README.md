@@ -49,8 +49,8 @@ flowchart TD
 
 ## Documents By Logic
 ### Creational Detection
-These documents explain the local implementation by covering Implements creational pattern detection over the generic parse tree.
-- singleton_pattern_logic.cpp.md : Implements creational pattern detection over the generic parse tree.
+These documents explain the local implementation by covering Implements creational pattern detection against completed class-declaration subtrees.
+- singleton_pattern_logic.cpp.md : Implements creational pattern detection against completed class-declaration subtrees.
 
 ## Reading Hint
 - This folder is mostly leaf-level. Read the local file docs to understand the logic in this area.

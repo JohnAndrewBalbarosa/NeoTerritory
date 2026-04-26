@@ -6,15 +6,15 @@
 ## Story
 ### What Happens Here
 
-This source file implements creational-pattern analysis over the generic parse tree. It inspects parsed structure, applies pattern-specific rules, and emits detector results that later appear in the creational tree or documentation tags.
+This source file implements creational-pattern analysis against completed class-declaration subtrees. It inspects a specific actual class subtree, applies pattern-specific rules, and emits virtual-broken evidence that later appears in the creational tree or documentation tags.
 
 ### Why It Matters In The Flow
 
-Runs after the generic parse tree exists so creational detection can label the structure.
+Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 ### What To Watch While Reading
 
-Implements creational pattern detection over the generic parse tree. The main surface area is easiest to track through symbols such as FactoryPatternDetector, SingletonPatternDetector, BuilderPatternDetector, and DefaultCreationalTreeCreator. It collaborates directly with creational_broken_tree.hpp, Builder/builder_pattern_logic.hpp, Factory/factory_pattern_logic.hpp, and Singleton/singleton_pattern_logic.hpp.
+Implements creational pattern detection against completed class-declaration subtrees. The main surface area is easiest to track through symbols such as FactoryPatternDetector, SingletonPatternDetector, BuilderPatternDetector, and DefaultCreationalTreeCreator. It collaborates directly with creational_broken_tree.hpp, Builder/builder_pattern_logic.hpp, Factory/factory_pattern_logic.hpp, and Singleton/singleton_pattern_logic.hpp.
 
 ## Required Middleman Flow
 The desired design is that this file behaves as the creational middleman for tree assembly. Individual pattern files should not own the repeated work of class registration, shared context setup, family-root assembly, or result attachment. They should expose only pattern-specific algorithms through virtual hooks or function-pointer style dispatch.
@@ -83,9 +83,9 @@ Detailed program flow is decoupled into future implementation units:
 
 - [program_flow](./creational_broken_tree/creational_broken_tree_program_flow.cpp.md)
 ## Reading Map
-Read this file as: Implements creational pattern detection over the generic parse tree.
+Read this file as: Implements creational pattern detection against completed class-declaration subtrees.
 
-Where it sits in the run: Runs after the generic parse tree exists so creational detection can label the structure.
+Where it sits in the run: Runs after a specific class-declaration subtree exists so creational detection can evaluate that completed class.
 
 Names worth recognizing while reading: FactoryPatternDetector, SingletonPatternDetector, BuilderPatternDetector, DefaultCreationalTreeCreator, detect, and build_factory_pattern_tree.
 

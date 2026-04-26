@@ -1,6 +1,0 @@
-#ifndef PARSE_TREE_DEPENDENCY_UTILS_FORWARD_HPP
-#define PARSE_TREE_DEPENDENCY_UTILS_FORWARD_HPP
-
-#include "ParseTree/parse_tree_dependency_utils.hpp"
-
-#endif // PARSE_TREE_DEPENDENCY_UTILS_FORWARD_HPP
