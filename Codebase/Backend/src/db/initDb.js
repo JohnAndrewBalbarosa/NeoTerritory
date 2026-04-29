@@ -95,9 +95,13 @@ function initDb() {
 
   initEtlSchema(db);
 
-  // TEST SEED — REMOVE FOR PRODUCTION
-  seedDevconUsers(db);
-  ensureTestFolders();
+  // Mode-aware seeding:
+  //   tester  -> Devcon1..100 + admin. SEED_TEST_USERS env still gates `_testSeed`.
+  //   actual  -> admin only; Devcon accounts are NOT created.
+  if ((db.mode || 'tester') === 'tester') {
+    seedDevconUsers(db);
+    ensureTestFolders();
+  }
 
   seedAdminAccount();
 }

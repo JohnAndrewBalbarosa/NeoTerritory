@@ -33,13 +33,25 @@ function ensureTestFolders() {
   if (created > 0) console.log(`[seed] Created ${created} missing devcon folder(s) under ${testRoot}.`);
 }
 
+/* Tester-mode seed gating. Mode precedence:
+     1. NEOTERRITORY_MODE explicitly set wins. `actual` => not tester even if
+        SEED_TEST_USERS=1 is left over in .env. `tester` => is tester.
+     2. If NEOTERRITORY_MODE is unset, fall back to legacy SEED_TEST_USERS=1.
+     3. Default: tester. */
+function isTesterMode() {
+  const explicit = (process.env.NEOTERRITORY_MODE || '').toLowerCase();
+  if (explicit === 'actual') return false;
+  if (explicit === 'tester') return true;
+  return process.env.SEED_TEST_USERS === '1';
+}
+
 function listTestAccounts() {
-  if (process.env.SEED_TEST_USERS !== '1') return [];
+  if (!isTesterMode()) return [];
   return Array.from({ length: TEST_USER_COUNT }, (_, i) => `${TEST_USERNAME_PREFIX}${i + 1}`);
 }
 
 function seedDevconUsers(db) {
-  if (process.env.SEED_TEST_USERS !== '1') return;
+  if (!isTesterMode()) return;
 
   const hash = bcrypt.hashSync(TEST_PASSWORD, 10);
   const insert = db.prepare(

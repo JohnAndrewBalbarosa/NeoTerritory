@@ -1,0 +1,313 @@
+{
+  "sourceName": "all_patterns.cpp",
+  "stage": "subtree",
+  "diagnostics": [
+    {
+      "code": "microservice_exit_nonzero",
+      "message": "Exit code 3221225785. stderr: "
+    }
+  ],
+  "detectedPatterns": [],
+  "documentationTargets": [],
+  "unitTestTargets": [],
+  "aiByPattern": [],
+  "ranking": {
+    "ranks": [],
+    "verdict": "no_clear_pattern",
+    "leadingPatternId": null,
+    "ambiguousCandidates": [],
+    "thresholds": {
+      "confident": 0.85,
+      "ambiguityDelta": 0.1,
+      "noClearPattern": 0.5
+    }
+  },
+  "classUsageBindings": {
+    "ConfigSingleton": [
+      {
+        "line": 14,
+        "kind": "declaration",
+        "sub_kind": "ref_decl",
+        "varName": "getInstance",
+        "boundClass": "ConfigSingleton",
+        "snippet": "ConfigSingleton& getInstance() { static ConfigSingle"
+      },
+      {
+        "line": 15,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "instance",
+        "boundClass": "ConfigSingleton",
+        "snippet": "ConfigSingleton instance; return instance; }"
+      },
+      {
+        "line": 19,
+        "kind": "declaration",
+        "sub_kind": "ref_decl",
+        "varName": "operator",
+        "boundClass": "ConfigSingleton",
+        "snippet": "ConfigSingleton& operator=(const ConfigSingleton&) = delete;"
+      },
+      {
+        "line": 112,
+        "kind": "qualified_call",
+        "methodName": "getInstance",
+        "boundClass": "ConfigSingleton",
+        "snippet": "ConfigSingleton::getInstance(); ShapeFactory factory;"
+      }
+    ],
+    "Vehicle": [
+      {
+        "line": 42,
+        "kind": "declaration",
+        "sub_kind": "ptr_decl",
+        "varName": "make",
+        "boundClass": "Vehicle",
+        "snippet": "Vehicle* make(const std::string& kind) { if (kind =="
+      },
+      {
+        "line": 114,
+        "kind": "declaration",
+        "sub_kind": "ptr_decl",
+        "varName": "v",
+        "boundClass": "Vehicle",
+        "snippet": "Vehicle* v = factory.make(\"car\"); delete v; QueryBu"
+      }
+    ],
+    "Car": [
+      {
+        "line": 44,
+        "kind": "new_ctor",
+        "boundClass": "Car",
+        "snippet": "new Car(); } if (kind == \"truck\") {"
+      }
+    ],
+    "Truck": [
+      {
+        "line": 47,
+        "kind": "new_ctor",
+        "boundClass": "Truck",
+        "snippet": "new Truck(); } return nullptr; } }; cla"
+      }
+    ],
+    "ShapeFactory": [
+      {
+        "line": 113,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "factory",
+        "boundClass": "ShapeFactory",
+        "snippet": "ShapeFactory factory; Vehicle* v = factory.make(\"car\");"
+      },
+      {
+        "line": 114,
+        "kind": "member_call",
+        "varName": "factory",
+        "methodName": "make",
+        "boundClass": "ShapeFactory",
+        "snippet": "factory.make(\"car\"); delete v; QueryBuilder qb;",
+        "evidence": "decl@line 113"
+      }
+    ],
+    "QueryBuilder": [
+      {
+        "line": 55,
+        "kind": "declaration",
+        "sub_kind": "ref_decl",
+        "varName": "table",
+        "boundClass": "QueryBuilder",
+        "snippet": "QueryBuilder& table(const std::string& name) { m_tab"
+      },
+      {
+        "line": 59,
+        "kind": "declaration",
+        "sub_kind": "ref_decl",
+        "varName": "where",
+        "boundClass": "QueryBuilder",
+        "snippet": "QueryBuilder& where(const std::string& clause) { m_w"
+      },
+      {
+        "line": 117,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "qb",
+        "boundClass": "QueryBuilder",
+        "snippet": "QueryBuilder qb; std::string sql = qb.table(\"users\").whe"
+      },
+      {
+        "line": 118,
+        "kind": "member_call",
+        "varName": "qb",
+        "methodName": "table",
+        "boundClass": "QueryBuilder",
+        "snippet": "qb.table(\"users\").where(\"id=1\").build(); FluentLogger l",
+        "evidence": "decl@line 117"
+      }
+    ],
+    "FluentLogger": [
+      {
+        "line": 73,
+        "kind": "declaration",
+        "sub_kind": "ref_decl",
+        "varName": "tag",
+        "boundClass": "FluentLogger",
+        "snippet": "FluentLogger& tag(const std::string& value) { m_tag"
+      },
+      {
+        "line": 77,
+        "kind": "declaration",
+        "sub_kind": "ref_decl",
+        "varName": "level",
+        "boundClass": "FluentLogger",
+        "snippet": "FluentLogger& level(const std::string& value) { m_le"
+      },
+      {
+        "line": 120,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "logger",
+        "boundClass": "FluentLogger",
+        "snippet": "FluentLogger logger; logger.tag(\"auth\").level(\"info\");"
+      },
+      {
+        "line": 121,
+        "kind": "member_call",
+        "varName": "logger",
+        "methodName": "tag",
+        "boundClass": "FluentLogger",
+        "snippet": "logger.tag(\"auth\").level(\"info\"); Repository repo;",
+        "evidence": "decl@line 120"
+      }
+    ],
+    "Repository": [
+      {
+        "line": 95,
+        "kind": "declaration",
+        "sub_kind": "ptr_decl",
+        "varName": "inner",
+        "boundClass": "Repository",
+        "snippet": "Repository* inner) : m_inner(inner) {} std::string read("
+      },
+      {
+        "line": 97,
+        "kind": "arrow_call",
+        "varName": "m_inner",
+        "methodName": "read",
+        "boundClass": "Repository",
+        "snippet": "m_inner->read(key); } private: Repository* m_inner;",
+        "evidence": "decl@line 100"
+      },
+      {
+        "line": 100,
+        "kind": "declaration",
+        "sub_kind": "ptr_decl",
+        "varName": "m_inner",
+        "boundClass": "Repository",
+        "snippet": "Repository* m_inner; }; class PlainHolder { public: Pla"
+      },
+      {
+        "line": 123,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "repo",
+        "boundClass": "Repository",
+        "snippet": "Repository repo; CachedRepository cached(&repo); cac"
+      }
+    ],
+    "CachedRepository": [
+      {
+        "line": 124,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "cached",
+        "boundClass": "CachedRepository",
+        "snippet": "CachedRepository cached(&repo); cached.read(\"token\");"
+      },
+      {
+        "line": 125,
+        "kind": "member_call",
+        "varName": "cached",
+        "methodName": "read",
+        "boundClass": "CachedRepository",
+        "snippet": "cached.read(\"token\"); PlainHolder holder(42); retur",
+        "evidence": "decl@line 124"
+      }
+    ],
+    "PlainHolder": [
+      {
+        "line": 127,
+        "kind": "declaration",
+        "sub_kind": "value_decl",
+        "varName": "holder",
+        "boundClass": "PlainHolder",
+        "snippet": "PlainHolder holder(42); return 0; }"
+      }
+    ]
+  },
+  "classUsageBindingSource": "heuristic",
+  "annotations": [
+    {
+      "id": "comment-1",
+      "order": 1,
+      "stage": "Review",
+      "severity": "low",
+      "line": 1,
+      "lineEnd": 1,
+      "title": "No structural patterns detected",
+      "comment": "The microservice did not match any pattern in the catalog against this source.",
+      "excerpt": "// Integration test: one class per pattern in a single source file.",
+      "kind": "no_match"
+    }
+  ],
+  "pipeline": [
+    {
+      "key": "analysis",
+      "title": "Analysis",
+      "state": "waiting",
+      "summary": "Awaiting microservice run.",
+      "detail": ""
+    },
+    {
+      "key": "trees",
+      "title": "Trees",
+      "state": "waiting",
+      "summary": "",
+      "detail": ""
+    },
+    {
+      "key": "pattern_dispatch",
+      "title": "Pattern Dispatch",
+      "state": "waiting",
+      "summary": "",
+      "detail": ""
+    },
+    {
+      "key": "hashing",
+      "title": "Hashing",
+      "state": "waiting",
+      "summary": "",
+      "detail": ""
+    },
+    {
+      "key": "output",
+      "title": "Output",
+      "state": "waiting",
+      "summary": "",
+      "detail": ""
+    }
+  ],
+  "stageMetrics": [],
+  "microserviceArtifacts": {},
+  "microserviceRunDir": null,
+  "microserviceOutputDir": null,
+  "summary": "all_patterns.cpp: 0 pattern match(es), 0 documentation anchor(s), 0 unit-test target(s).",
+  "findings": [
+    {
+      "code": "microservice_exit_nonzero",
+      "message": "Exit code 3221225785. stderr: "
+    }
+  ],
+  "commentedCode": "  1 | // Integration test: one class per pattern in a single source file.\n  // [Comment 1] Review: No structural patterns detected - The microservice did not match any pattern in the catalog against this source.\n  2 | // Expected detections (per class):\n  3 | //   ConfigSingleton    -> creational.singleton\n  4 | //   ShapeFactory       -> creational.factory\n  5 | //   QueryBuilder       -> creational.builder + creational.method_chaining\n  6 | //   FluentLogger       -> creational.method_chaining (no build, so Builder excluded)\n  7 | //   CachedRepository   -> structural.adapter + structural.proxy + structural.decorator\n  8 | //   PlainHolder        -> NO matches (negative control)\n  9 | \n 10 | #include <string>\n 11 | \n 12 | class ConfigSingleton {\n 13 | public:\n 14 |     static ConfigSingleton& getInstance() {\n 15 |         static ConfigSingleton instance;\n 16 |         return instance;\n 17 |     }\n 18 |     ConfigSingleton(const ConfigSingleton&) = delete;\n 19 |     ConfigSingleton& operator=(const ConfigSingleton&) = delete;\n 20 | private:\n 21 |     ConfigSingleton() = default;\n 22 | };\n 23 | \n 24 | class Vehicle {\n 25 | public:\n 26 |     virtual ~Vehicle() = default;\n 27 |     virtual std::string label() const = 0;\n 28 | };\n 29 | \n 30 | class Car : public Vehicle {\n 31 | public:\n 32 |     std::string label() const override { return \"car\"; }\n 33 | };\n 34 | \n 35 | class Truck : public Vehicle {\n 36 | public:\n 37 |     std::string label() const override { return \"truck\"; }\n 38 | };\n 39 | \n 40 | class ShapeFactory {\n 41 | public:\n 42 |     Vehicle* make(const std::string& kind) {\n 43 |         if (kind == \"car\") {\n 44 |             return new Car();\n 45 |         }\n 46 |         if (kind == \"truck\") {\n 47 |             return new Truck();\n 48 |         }\n 49 |         return nullptr;\n 50 |     }\n 51 | };\n 52 | \n 53 | class QueryBuilder {\n 54 | public:\n 55 |     QueryBuilder& table(const std::string& name) {\n 56 |         m_table = name;\n 57 |         return *this;\n 58 |     }\n 59 |     QueryBuilder& where(const std::string& clause) {\n 60 |         m_where = clause;\n 61 |         return *this;\n 62 |     }\n 63 |     std::string build() const {\n 64 |         return \"SELECT * FROM \" + m_table + \" WHERE \" + m_where;\n 65 |     }\n 66 | private:\n 67 |     std::string m_table;\n 68 |     std::string m_where;\n 69 | };\n 70 | \n 71 | class FluentLogger {\n 72 | public:\n 73 |     FluentLogger& tag(const std::string& value) {\n 74 |         m_tag = value;\n 75 |         return *this;\n 76 |     }\n 77 |     FluentLogger& level(const std::string& value) {\n 78 |         m_level = value;\n 79 |         return *this;\n 80 |     }\n 81 | private:\n 82 |     std::string m_tag;\n 83 |     std::string m_level;\n 84 | };\n 85 | \n 86 | class Repository {\n 87 | public:\n 88 |     std::string read(const std::string& key) {\n 89 |         return \"value_\" + key;\n 90 |     }\n 91 | };\n 92 | \n 93 | class CachedRepository {\n 94 | public:\n 95 |     CachedRepository(Repository* inner) : m_inner(inner) {}\n 96 |     std::string read(const std::string& key) {\n 97 |         return m_inner->read(key);\n 98 |     }\n 99 | private:\n100 |     Repository* m_inner;\n101 | };\n102 | \n103 | class PlainHolder {\n104 | public:\n105 |     PlainHolder(int value) : m_value(value) {}\n106 |     int value() const { return m_value; }\n107 | private:\n108 |     int m_value;\n109 | };\n110 | \n111 | int main() {\n112 |     ConfigSingleton::getInstance();\n113 |     ShapeFactory factory;\n114 |     Vehicle* v = factory.make(\"car\");\n115 |     delete v;\n116 | \n117 |     QueryBuilder qb;\n118 |     std::string sql = qb.table(\"users\").where(\"id=1\").build();\n119 | \n120 |     FluentLogger logger;\n121 |     logger.tag(\"auth\").level(\"info\");\n122 | \n123 |     Repository repo;\n124 |     CachedRepository cached(&repo);\n125 |     cached.read(\"token\");\n126 | \n127 |     PlainHolder holder(42);\n128 |     return 0;\n129 | }",
+  "commentsOnly": "# Comments for all_patterns.cpp\n\n- Comment count: 1\n\n## Comment 1\n- Stage: Review\n- Severity: low\n- Anchor: L1\n- Title: No structural patterns detected\n- Note: The microservice did not match any pattern in the catalog against this source.\n- Excerpt: `// Integration test: one class per pattern in a single source file.`",
+  "transformedPreview": "  1 | // Integration test: one class per pattern in a single source file.\n  // [Comment 1] Review: No structural patterns detected - The microservice did not match any pattern in the catalog against this source.\n  2 | // Expected detections (per class):\n  3 | //   ConfigSingleton    -> creational.singleton\n  4 | //   ShapeFactory       -> creational.factory\n  5 | //   QueryBuilder       -> creational.builder + creational.method_chaining\n  6 | //   FluentLogger       -> creational.method_chaining (no build, so Builder excluded)\n  7 | //   CachedRepository   -> structural.adapter + structural.proxy + structural.decorator\n  8 | //   PlainHolder        -> NO matches (negative control)\n  9 | \n 10 | #include <string>\n 11 | \n 12 | class ConfigSingleton {\n 13 | public:\n 14 |     static ConfigSingleton& getInstance() {\n 15 |         static ConfigSingleton instance;\n 16 |         return instance;\n 17 |     }\n 18 |     ConfigSingleton(const ConfigSingleton&) = delete;\n 19 |     ConfigSingleton& operator=(const ConfigSingleton&) = delete;\n 20 | private:\n 21 |     ConfigSingleton() = default;\n 22 | };\n 23 | \n 24 | class Vehicle {\n 25 | public:\n 26 |     virtual ~Vehicle() = default;\n 27 |     virtual std::string label() const = 0;\n 28 | };\n 29 | \n 30 | class Car : public Vehicle {\n 31 | public:\n 32 |     std::string label() const override { return \"car\"; }\n 33 | };\n 34 | \n 35 | class Truck : public Vehicle {\n 36 | public:\n 37 |     std::string label() const override { return \"truck\"; }\n 3"
+}

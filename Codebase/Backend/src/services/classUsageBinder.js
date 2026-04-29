@@ -57,6 +57,51 @@ function bindUsages(sourceText, className) {
     for (const m of findAllMatches(p.re, sourceText)) {
       const varName = m.captures[p.captureIndex];
       if (!varName) continue;
+
+      // v3.2 layer 1: reject function headers. After the captured identifier, if
+      // the next non-whitespace character is `(`, this is `<Class>* foo(...)` —
+      // a function declaration, not a variable. The location of the identifier
+      // in source is right before the trailing terminator captured by the regex,
+      // so we re-scan from the end of the match to see what comes after.
+      const after = sourceText.slice(m.index + m.full.length);
+      const head = after.match(/^\s*/)[0];
+      // The trailing terminator the regex consumed is one of [;={(,] for value_decl,
+      // or none for ref/ptr/smart. Combine: peek backward at last char of m.full.
+      const lastCharOfMatch = m.full.charAt(m.full.length - 1);
+      // For ref_decl/ptr_decl/smart_decl the regex stops at `\b` after the var
+      // name — no terminator consumed — so check if the next char is `(`.
+      // For value_decl, if the regex consumed `(`, this MIGHT be a fn header
+      // (`Vehicle make()`) OR a value-init (`Person p1(arg)`). Distinguish by
+      // looking at what follows the consumed `(` and the preceding context: a
+      // function header has return type before, but that's hard to detect — so
+      // we use a stronger heuristic: skip if a `{` follows the close-paren on
+      // the same logical line, which is the body-open of a function definition.
+      if (p.kind !== 'value_decl') {
+        if (after.charAt(0) === '(') continue; // `Class* foo(...)` — fn header
+      } else if (lastCharOfMatch === '(') {
+        // Find matching close paren (cheap, single-line scope).
+        const tail = sourceText.slice(m.index + m.full.length);
+        let depth = 1, idx = 0;
+        while (idx < tail.length && depth > 0) {
+          const ch = tail.charAt(idx);
+          if (ch === '(') depth += 1;
+          else if (ch === ')') depth -= 1;
+          if (ch === '\n' || ch === ';') break;
+          idx += 1;
+        }
+        if (depth === 0) {
+          const afterCall = tail.slice(idx + 1);
+          // Function definition: `... ) [const|noexcept|override|=delete|=default]* {`
+          if (/^\s*(const\s+|noexcept\s*|override\s+|final\s+|=\s*\w+\s*)*\{/.test(afterCall)) {
+            continue; // fn definition, not a value-init
+          }
+          // Pure-virtual or function declaration: `... ) [const|noexcept|...]* ;`
+          if (/^\s*(const\s+|noexcept\s*|override\s+|final\s+|=\s*0\s*)*;/.test(afterCall)) {
+            continue;
+          }
+        }
+      }
+
       const declLine = lineOf(sourceText, m.index);
       decls.push({ varName, declLine, kind: p.kind });
       usages.push({

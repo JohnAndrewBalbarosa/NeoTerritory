@@ -23,16 +23,15 @@
         "describe": "Body contains `override` specifier — strong concrete-strategy signal"
       }
     ],
-    "expected_collaborators": [
-      {
-        "id": "constructed_via_make_unique",
-        "shape_regex": "make_unique\\s*<\\s*{class_name}\\s*>",
-        "weight": 0.6,
-        "describe": "Concrete strategy is created via make_unique<{class_name}>()"
-      }
-    ],
+    "expected_collaborators": [],
     "negative_signals": []
   },
 
-  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+  "evidence_rules": [
+    { "id": "inherits_from_base",          "kind": "inheritance_present",         "polarity": "positive" },
+    { "id": "override_specifier_present",  "kind": "override_specifier_count", "min": 1, "polarity": "positive" },
+    { "id": "final_specifier",             "kind": "final_specifier_on_class",    "polarity": "positive" },
+    { "id": "no_pure_virtual",             "kind": "pure_virtual_count", "max": 0, "polarity": "positive" },
+    { "id": "constructed_via_make_unique_of_self", "kind": "stl_call", "callee": "std::make_unique", "type_arg": "{class_name}", "polarity": "positive" }
+  ]
 }

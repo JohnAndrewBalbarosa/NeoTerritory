@@ -1,13 +1,19 @@
 # NeoTerritory dev runner.
-# Usage: .\run-dev.ps1                  # build (if needed) + start + open browser
-#        .\run-dev.ps1 -Rebuild         # force microservice rebuild
+# Usage: .\run-dev.ps1                  # ALWAYS rebuild microservice + start + open browser (default)
+#        .\run-dev.ps1 -SkipRebuild     # opt out of the forced rebuild (use existing binary)
 #        .\run-dev.ps1 -Port 3055       # custom port
 #        .\run-dev.ps1 -NoBrowser       # don't auto-open browser
+#
+# Note: per the user's instruction, every `run-dev.ps1` invocation rebuilds the C++
+# microservice by default so catalog edits + source changes always reach the running
+# binary. Pass `-SkipRebuild` only when you know the binary is current.
 
 param(
-  [switch]$Rebuild,
+  [switch]$SkipRebuild,
   [switch]$NoBrowser,
-  [int]$Port = 3001
+  [int]$Port = 3001,
+  [ValidateSet('tester','actual')]
+  [string]$Mode = 'tester'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -76,10 +82,14 @@ DB_PATH=./src/db/database.sqlite
   Write-Ok '.env already exists.'
 }
 
-# 4. Microservice build
-$needsBuild = $Rebuild -or (-not (Test-Path $BinaryPath))
+# 4. Microservice build — ALWAYS rebuild by default; -SkipRebuild opts out.
+$needsBuild = (-not $SkipRebuild) -or (-not (Test-Path $BinaryPath))
 if ($needsBuild) {
-  Write-Step 'Building microservice (CMake + make)'
+  if ($SkipRebuild -and -not (Test-Path $BinaryPath)) {
+    Write-Warn '-SkipRebuild was passed but no binary exists — rebuilding anyway.'
+  } else {
+    Write-Step 'Rebuilding microservice (forced on every run; pass -SkipRebuild to opt out)'
+  }
   if (-not (Test-Path $BuildDir)) { New-Item -ItemType Directory -Path $BuildDir | Out-Null }
 
   # Pick a generator that works with whatever compiler is installed
@@ -95,19 +105,40 @@ if ($needsBuild) {
       & cmake -S . -B build
     }
     if ($LASTEXITCODE -ne 0) { throw 'cmake configure failed.' }
-    & cmake --build build
+    # Serial build (-j1) — mingw32-make occasionally swallows compile errors under
+    # parallel builds on Windows, leaving "Error 1" with no diagnostic.
+    & cmake --build build -- -j1
     if ($LASTEXITCODE -ne 0) { throw 'cmake build failed.' }
   } finally {
     Pop-Location
   }
   Write-Ok "Microservice built: $BinaryPath"
 } else {
-  Write-Ok "Microservice binary already built: $BinaryPath"
+  Write-Ok "Skipping microservice rebuild (-SkipRebuild). Using: $BinaryPath"
 }
 
 # 5. Start backend
-Write-Step "Starting backend on port $Port"
+Write-Step "Starting backend on port $Port (mode: $Mode)"
 $env:PORT = "$Port"
+$env:NEOTERRITORY_MODE = $Mode
+
+# Ensure the spawned microservice can find MinGW runtime DLLs (libstdc++-6.dll,
+# libgcc_s_seh-1.dll, libwinpthread-1.dll). On Windows the loader resolves these
+# via PATH; if PowerShell was launched without MinGW on PATH, the child process
+# inherits the same gap and the .exe exits with STATUS_ENTRYPOINT_NOT_FOUND
+# (0xC0000139 / 3221225785).
+$mingwCandidates = @(
+  'C:\msys64\ucrt64\bin',
+  'C:\msys64\mingw64\bin',
+  'C:\Program Files\Cobol\mingw64\bin',
+  (Join-Path (Split-Path -Parent (Get-Command g++ -ErrorAction SilentlyContinue).Path 2>$null) '')
+) | Where-Object { $_ -and (Test-Path $_) } | Select-Object -Unique
+foreach ($p in $mingwCandidates) {
+  if (-not ($env:Path -split ';' | Where-Object { $_ -ieq $p })) {
+    $env:Path = "$p;$env:Path"
+    Write-Ok "Added $p to PATH for microservice DLL resolution."
+  }
+}
 
 # Free the port if something's already on it
 $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue

@@ -43,5 +43,12 @@
       "expected_lexeme_any_of": ["build", "Build"],
       "document_as": "builder_terminator_method"
     }
+  ],
+
+  "evidence_rules": [
+    { "id": "owns_target_via_smart_ptr",  "kind": "owning_member",  "smart_ptr": ["unique_ptr", "shared_ptr"], "polarity": "positive" },
+    { "id": "constructs_target_with_make_unique", "kind": "stl_call", "callee": "std::make_unique", "polarity": "positive" },
+    { "id": "self_reference_return_type", "kind": "self_reference_return", "polarity": "positive" },
+    { "id": "no_pure_virtual",            "kind": "pure_virtual_count", "max": 0, "polarity": "positive" }
   ]
 }

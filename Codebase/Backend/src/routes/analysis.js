@@ -138,9 +138,15 @@ function buildAnnotations(detectedPatterns, aiByPattern, sourceText) {
         line:     anchor.line || null,
         lineEnd:  anchor.line || null,
         title:    `${pattern.patternName || pattern.patternId} :: ${anchor.label}`,
-        comment:  aiDocs[anchor.label] || `Structural anchor "${anchor.label}" — AI documentation pending.`,
+        // Manual-first copy: never surface "AI pending" wording. When AI text
+        // is present, use it; otherwise leave the comment empty so the popover
+        // can render the manual "Add documentation for this scope" affordance.
+        comment:  aiDocs[anchor.label] || '',
         excerpt:  lineText,
-        kind:     anchor.label
+        kind:     anchor.label,
+        patternId: pattern.patternId,
+        anchorLabel: anchor.label,
+        scopeKey: `${pattern.patternId}::${pattern.className}::${anchor.label}`
       });
     });
 
@@ -157,28 +163,20 @@ function buildAnnotations(detectedPatterns, aiByPattern, sourceText) {
         line:     target.line || null,
         lineEnd:  target.line || null,
         title:    `${pattern.patternName || pattern.patternId} :: ${target.function_name || target.branch_kind}`,
-        comment:  aiTests[planKey]
-          || `Unit-test target (${target.branch_kind}) — AI test plan pending.`,
+        // Manual-first copy: empty when no AI text, popover shows the "Add unit-test plan" affordance.
+        comment:  aiTests[planKey] || '',
         excerpt:  lineText,
-        kind:     `unit_test:${target.branch_kind}`
+        kind:     `unit_test:${target.branch_kind}`,
+        patternId: pattern.patternId,
+        scopeKey:  `${pattern.patternId}::${pattern.className}::test::${target.branch_kind}::${target.function_name || ''}::L${target.line || 0}`
       });
     });
   });
 
-  if (!annotations.length) {
-    annotations.push({
-      id:       'comment-1',
-      order:    1,
-      stage:    'Review',
-      severity: 'low',
-      line:     1,
-      lineEnd:  1,
-      title:    'No structural patterns detected',
-      comment:  'The microservice did not match any pattern in the catalog against this source.',
-      excerpt:  (lines[0] || '').trim(),
-      kind:     'no_match'
-    });
-  }
+  // Note: when zero patterns are detected we DO NOT push a fake line-1 annotation.
+  // The frontend reads `analysis.noPatternsDetected` and renders a single banner
+  // outside the source view (criterion: no false "No pattern found" markers next
+  // to actual lines of code).
 
   return annotations;
 }
@@ -275,6 +273,7 @@ router.get('/health', (req, res) => {
   res.json({
     status: 'ok',
     service: 'NeoTerritory analysis api',
+    mode: db.mode || (process.env.NEOTERRITORY_MODE || 'tester').toLowerCase(),
     aiProviderConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     aiModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
     microservice,
@@ -349,14 +348,34 @@ router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) =
     const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText);
     const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
 
+    // Build "suspected structures" — the de-duplicated, per-class winner list.
+    // This is what the frontend should surface prominently as the headline result.
+    const suspectedStructures = (ranking.winners || []).map(w => {
+      const detected = detectedPatterns.find(p =>
+        p.patternId === w.patternId && p.className === w.className) || {};
+      return {
+        className:         w.className,
+        patternId:         w.patternId,
+        patternName:       detected.patternName || w.patternId,
+        patternFamily:     detected.patternFamily || (w.patternId.split('.')[0] || ''),
+        finalRank:         w.finalRank,
+        implementationFit: w.implementationFit,
+        evidence:          w.evidence,
+        rivals:            ranking.perClassRivals[w.className] || []
+      };
+    });
+
     const analysis = {
       sourceName,
       stage:               structural.stage,
       diagnostics:         structural.diagnostics || [],
       detectedPatterns,
+      noPatternsDetected:  detectedPatterns.length === 0,
+      suspectedStructures,
       documentationTargets: structural.documentationTargets || [],
       unitTestTargets:      structural.unitTestTargets || [],
       aiByPattern,
+      aiAvailable:         Boolean(process.env.ANTHROPIC_API_KEY),
       ranking,
       classUsageBindings,
       classUsageBindingSource: 'heuristic',
@@ -367,6 +386,7 @@ router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) =
       microserviceRunDir:    structural.runDirectory || null,
       microserviceOutputDir: structural.outputDirectory || null,
       summary: `${sourceName}: ${detectedPatterns.length} pattern match(es), `
+             + `${suspectedStructures.length} suspected structure(s), `
              + `${(structural.documentationTargets || []).length} documentation anchor(s), `
              + `${(structural.unitTestTargets || []).length} unit-test target(s).`,
       findings: structural.diagnostics || [],

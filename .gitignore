@@ -131,3 +131,14 @@ Desktop.ini
 launch.vs.json
 NeoTerritory.slnx
 Setup/Setup.vdproj
+# Mode-aware local SQLite stores (D30 dual-mode)
+Codebase/Backend/src/db/database.sqlite
+Codebase/Backend/src/db/database.tester.sqlite
+Codebase/Backend/src/db/database.actual.sqlite
+
+# Scratch directories from diagnostic runs
+.repro_out/
+.baseline_lexemes/
+.baseline_lexemes.frozen/
+.after_lexemes/
+.after_evidence/

@@ -45,5 +45,12 @@
       "expected_kind": "Punctuation",
       "expected_lexeme_any_of": ["("]
     }
+  ],
+
+  "evidence_rules": [
+    { "id": "inherits_from_base",                "kind": "inheritance_present",                       "polarity": "positive" },
+    { "id": "owns_smart_ptr_to_base",            "kind": "owning_member_of_base_type", "smart_ptr": ["unique_ptr", "shared_ptr"], "polarity": "positive" },
+    { "id": "lazy_init_of_owned_member",         "kind": "null_check_then_construct_member",          "polarity": "positive" },
+    { "id": "override_specifier_present",        "kind": "override_specifier_count", "min": 1,        "polarity": "positive" }
   ]
 }

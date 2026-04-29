@@ -40,5 +40,14 @@
       "expected_lexeme_any_of": ["return"],
       "document_as": "factory_return"
     }
+  ],
+
+  "evidence_rules": [
+    { "id": "constructs_via_make_unique",  "kind": "stl_call",   "callee": "std::make_unique",   "polarity": "positive" },
+    { "id": "constructs_via_make_shared",  "kind": "stl_call",   "callee": "std::make_shared",   "polarity": "positive" },
+    { "id": "uses_new_keyword",            "kind": "token_pattern", "tokens": ["new"],            "polarity": "positive" },
+    { "id": "branches_then_constructs",    "kind": "control_flow_then_construction", "polarity": "positive" },
+    { "id": "returns_owning_pointer_to_base", "kind": "return_type_smart_ptr", "polarity": "positive" },
+    { "id": "no_self_reference_return",    "kind": "self_reference_return", "polarity": "negative" }
   ]
 }

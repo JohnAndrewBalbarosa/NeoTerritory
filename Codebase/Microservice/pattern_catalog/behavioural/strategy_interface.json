@@ -22,29 +22,14 @@
         "describe": "A concrete class derives from this interface and overrides a method"
       }
     ],
-    "expected_collaborators": [
-      {
-        "id": "context_holds_strategy",
-        "shape_regex": "(unique_ptr|shared_ptr|{class_name}\\s*\\*)\\s*<?\\s*{class_name}\\s*>?",
-        "weight": 0.5,
-        "describe": "A context class holds the strategy via pointer / smart pointer"
-      },
-      {
-        "id": "set_strategy_setter",
-        "shape_regex": "\\b(set[A-Z]\\w*|inject[A-Z]\\w*)\\s*\\(\\s*(unique_ptr|shared_ptr|const)?",
-        "weight": 0.3,
-        "describe": "A setter / injector method named set... or inject..."
-      }
-    ],
-    "negative_signals": [
-      {
-        "id": "no_virtual_pure_marker",
-        "shape_regex": "class\\s+{class_name}[\\s\\S]{0,200}\\{[\\s\\S]{0,500}\\bvirtual\\b[\\s\\S]{0,200}=\\s*0",
-        "weight": 0.0,
-        "describe": "Confirms pure-virtual marker (= 0); zero-weight, used as evidence display only"
-      }
-    ]
+    "expected_collaborators": [],
+    "negative_signals": []
   },
 
-  "ranking_weights": { "class_fit": 0.35, "implementation_fit": 0.65 }
+  "evidence_rules": [
+    { "id": "pure_virtual_present",            "kind": "pure_virtual_count",                "min": 1, "polarity": "positive" },
+    { "id": "no_data_members",                 "kind": "non_static_data_member_count",      "max": 0, "polarity": "positive" },
+    { "id": "context_owns_smart_ptr_to_self",  "kind": "owning_member_of_self_type",        "smart_ptr": ["unique_ptr", "shared_ptr"], "polarity": "positive" },
+    { "id": "no_concrete_construction_inside", "kind": "stl_call", "callee": "std::make_unique", "polarity": "negative" }
+  ]
 }

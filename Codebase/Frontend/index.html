@@ -9,9 +9,20 @@
 <body>
   <div id="login-overlay" class="login-overlay" hidden>
     <div class="login-wrap">
-      <form id="login-form" class="login-card">
+      <!-- TESTER MODE: pick a Devcon account from the grid; admin tile asks for credentials. -->
+      <div id="tester-chooser" class="tester-chooser" hidden>
+        <header class="tester-chooser-head">
+          <h2>Pick an account</h2>
+          <p class="tester-hint">Tester mode &middot; click a Devcon seat to claim it. Admin asks for credentials.</p>
+        </header>
+        <div class="tester-grid" id="tester-grid"></div>
+        <p class="login-error" id="tester-error" hidden></p>
+      </div>
+
+      <!-- ACTUAL MODE: standard sign-in + create-account. -->
+      <form id="login-form" class="login-card" hidden>
         <h2>Sign in</h2>
-        <p class="login-hint">Default tester password: <code>devcon</code></p>
+        <p class="login-hint">Enter your username and password.</p>
         <label class="field">
           <span>Username</span>
           <input id="login-username" type="text" autocomplete="username" required />
@@ -22,12 +33,50 @@
         </label>
         <button class="primary-btn" type="submit">Sign in</button>
         <p class="login-error" id="login-error" hidden></p>
+        <p class="login-toggle">
+          No account? <button type="button" class="link-btn" id="show-register-btn">Create one</button>
+        </p>
       </form>
-      <aside class="tester-list" id="tester-list" hidden>
-        <h3>Tester accounts</h3>
-        <p class="tester-hint">Click to autofill. Password is shared.</p>
-        <div class="tester-grid" id="tester-grid"></div>
-      </aside>
+
+      <!-- ACTUAL MODE: create account stub (basic fields, will be polished by user later). -->
+      <form id="register-form" class="login-card" hidden>
+        <h2>Create account</h2>
+        <p class="login-hint">Actual mode &middot; basic registration. Tweak fields later.</p>
+        <label class="field">
+          <span>Username</span>
+          <input id="register-username" type="text" autocomplete="username" required />
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input id="register-email" type="email" autocomplete="email" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="register-password" type="password" autocomplete="new-password" required minlength="6" />
+        </label>
+        <button class="primary-btn" type="submit">Create &amp; sign in</button>
+        <p class="login-error" id="register-error" hidden></p>
+        <p class="login-toggle">
+          Already have an account? <button type="button" class="link-btn" id="show-login-btn">Sign in</button>
+        </p>
+      </form>
+
+      <!-- TESTER MODE: admin credential prompt (shown only after clicking the Admin tile). -->
+      <form id="admin-login-form" class="login-card" hidden>
+        <h2>Admin sign in</h2>
+        <p class="login-hint">Tester mode &middot; admin requires a username and password.</p>
+        <label class="field">
+          <span>Username</span>
+          <input id="admin-login-username" type="text" autocomplete="username" required />
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input id="admin-login-password" type="password" autocomplete="current-password" required />
+        </label>
+        <button class="primary-btn" type="submit">Sign in as admin</button>
+        <button class="ghost-btn" type="button" id="admin-cancel-btn">Back to chooser</button>
+        <p class="login-error" id="admin-login-error" hidden></p>
+      </form>
     </div>
   </div>
 
@@ -124,12 +173,9 @@
 
         <div class="legend" id="pattern-legend"></div>
 
-        <div class="results-grid">
+        <div class="results-grid results-grid-single">
           <div class="source-pane">
             <pre id="source-view" class="source-view" aria-label="Annotated source"></pre>
-          </div>
-          <div class="comments-pane" id="comments-pane">
-            <div class="empty-state">No comments yet.</div>
           </div>
         </div>
 

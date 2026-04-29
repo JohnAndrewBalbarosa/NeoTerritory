@@ -293,3 +293,81 @@ Per D20 the backend is the sole external-integration adapter. Admin dashboard ag
 **Frontend animation, not server-rendered images**: backend returns aggregate JSON; `Codebase/Frontend/admin.js` renders animated charts via Chart.js 4.x (CDN). User wanted "appealing" animation; Chart.js entrance animations + rAF count-up tweens + IntersectionObserver section reveals deliver this with no Python dependency.
 
 **Future Python offload (per user note)**: if richer statistical visualizations are needed later, the aggregation source can be swapped to a Python service that returns the **same JSON shape**. Chart.js stays in the browser. The contract worth preserving is the per-endpoint JSON shape (`runs-per-day`, `pattern-frequency`, `score-distribution`, `per-user-activity`), not the implementation language.
+
+## D28 — Pattern catalog lexeme expansion stays additive; naming hints land in `implementation_template`, not in the C++ matcher
+
+**Superseded by:** D29.
+
+Originally I attempted to disambiguate patterns by widening `expected_lexeme_any_of` lists and adding `implementation_template.shape_regex` entries that matched naming conventions (`class \w*Builder`, `target_`, `s_instance`, `(get|Get)?[Ii]nstance`, etc.). This was wrong: those rules are arbitrary, depend on developer naming style, and conflate "class is named like a Factory" with "class behaves like a Factory." The user explicitly rejected this approach — it is not algorithmic, and a class named `FooBar` that behaves exactly like a Factory would score lower for no real reason. All naming-heuristic `shape_regex` entries have been removed; see D29 for the replacement.
+
+## D29 — Pattern evidence is discretized via `evidence_rules`, grounded in language tokens and STL types only
+
+Catalog entries no longer carry `implementation_template` regex blocks (with the exception of Adapter, which still has its long-standing `expected_collaborators` adaptee-arg shape). Instead each pattern carries an `evidence_rules` array, where every entry is a **typed, discretized predicate** the parse tree / symbol table can answer with a yes-or-no:
+
+```json
+"evidence_rules": [
+  { "id": "deleted_copy_ctor",            "kind": "deleted_method",   "method": "copy_ctor",       "polarity": "positive" },
+  { "id": "static_local_self_in_method",  "kind": "static_local",     "of_type": "{class_name}",   "polarity": "positive" },
+  { "id": "constructs_via_make_unique",   "kind": "stl_call",         "callee": "std::make_unique", "polarity": "positive" },
+  { "id": "owns_smart_ptr_to_base",       "kind": "owning_member_of_base_type", "smart_ptr": ["unique_ptr","shared_ptr"], "polarity": "positive" },
+  { "id": "pure_virtual_present",         "kind": "pure_virtual_count","min": 1,                   "polarity": "positive" },
+  { "id": "no_data_members",              "kind": "non_static_data_member_count","max": 0,         "polarity": "positive" }
+]
+```
+
+**Discretization invariant**: every `kind` is a question the parse tree can answer deterministically. No regex over identifier text. No "class name ends in X." A signal either fires (yes) or doesn't (no). The JS ranker becomes a pure logic combinator over yes/no signals.
+
+**Vocabulary of `kind` values** (the analyzer must implement detection for each — initially in C++ for the existing analyzer, and per language for future analyzers under `Analyzers/<Language>/`):
+
+| `kind` | What it answers |
+|---|---|
+| `token_pattern` | Does an exact token sequence (e.g. `["virtual", "...", "=", "0"]`) appear in the class body? |
+| `stl_call` | Is there a call to `std::make_unique` / `std::make_shared` / etc., optionally constrained to a `type_arg`? |
+| `deleted_method` | Is `copy_ctor` / `copy_assign` / `move_ctor` / `move_assign` `= delete`? |
+| `defaulted_method` | Same shape with `= default`. |
+| `static_local` | Is there a `static T name` inside a method body, with `T` matching a captured type? |
+| `static_member` | Is there a static data member of a given type (optionally pointer/ref)? |
+| `pure_virtual_count` | How many `virtual ... = 0` methods does the class have? `min` / `max` filter. |
+| `non_static_data_member_count` | Count of non-static data members. `min` / `max` filter. |
+| `override_specifier_count` | How many methods carry `override`? |
+| `final_specifier_on_class` | Is `final` applied to the class? |
+| `inheritance_present` | Does the class inherit from any base? |
+| `inherits_from_member_type` | Does the class inherit from the type of one of its members? (positive for some patterns, negative for Adapter.) |
+| `non_self_class_member` | Does the class hold a member of a non-self class type? |
+| `owning_member` / `owning_member_of_self_type` / `owning_member_of_base_type` | Does the class hold a `unique_ptr<T>` / `shared_ptr<T>` of a relevant type? |
+| `self_reference_return` | Does any method declared return type equal `Self&` or `Self*`? |
+| `method_forwards_to_member` | Does any method body delegate via `.` or `->` to a member? |
+| `null_check_then_construct_member` | Does any method body do `if (!member_)` then construct `member_`? |
+| `control_flow_then_construction` | Does any method body branch (`if`/`switch`) and then construct via `new` / `make_unique`? |
+| `return_type_smart_ptr` | Does any method's declared return type include `unique_ptr<...>` or `shared_ptr<...>`? |
+| `terminator_method_with_distinct_return` | Does the class have a method whose return type is NOT `Self&`/`Self*`? |
+| `friend_class` | Does the class declare a `friend class X`? |
+
+**Polarity**: `"positive"` adds confidence when the rule fires; `"negative"` adds confidence when the rule does NOT fire (or subtracts when it does — the ranker decides).
+
+**C++ side**: a new evidence-extraction pass under `Codebase/Microservice/Modules/Source/Analysis/Patterns/Evidence/` runs once per detected class and emits `evidence_signals: { "<class_name>": { "<rule_id>": true|false|count } }` in the report JSON. The C++ pattern catalog parser already silently ignores unknown JSON fields (verified against all 10 existing fixtures — zero detection drift after the schema change).
+
+**JS / TS side**: `patternRankingService` (being ported to TypeScript) consumes `evidence_signals` only. No regex compilation. A pattern's `finalRank` is a function of `count(positive_rules_fired) / count(positive_rules) - count(negative_rules_fired) / count(negative_rules)`, clamped. Deterministic, explainable, replayable.
+
+**Multi-language hook**: the `evidence_rules` vocabulary is conceptual. C++ implements `pure_virtual_count` via `virtual ... = 0`; a future Java analyzer implements it via `abstract`; a future Python analyzer via `@abstractmethod`. The catalog says what signal it wants; each language's analyzer decides how to detect it.
+
+**Why this is "super safe and strict"**: every signal has one true value at one moment in time, regardless of who wrote the code or what they named anything. A class behaves like a Singleton if and only if `deleted_copy_ctor` AND (`static_local_self_in_method` OR `static_self_member_pointer`) — three discrete questions, three discrete answers, no naming guesswork.
+
+**Backwards compatibility**: existing `ordered_checks` (the C++ matcher's all-or-nothing token-sequence gate) are unchanged. The matcher still decides "is this class shape a candidate"; `evidence_rules` decide "among candidate patterns, which one is it." The only widened lexeme list (`creational/builder.json:build_terminator`) was reverted to its original two-element form — Builder disambiguation now happens through `evidence_rules`, not through identifier-name widening.
+
+## D30 — Backend migrates to TypeScript with strict + no-implicit-any from day zero
+
+`Codebase/Backend/` is migrating from CommonJS JavaScript to TypeScript. The migration is gradual (`allowJs: true`, per-file rename), but new strictness is applied immediately to every TS file: `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `noImplicitOverride`, `useUnknownInCatchVariables`. ESLint adds `@typescript-eslint/no-explicit-any: error` and `no-floating-promises: error`.
+
+**Phase 0 (this commit)**: tooling installed at `Codebase/Backend/`. `tsconfig.json` and `tsconfig.build.json` written. `.eslintrc.cjs` configured. `npm run typecheck` / `npm run lint` / `npm run build` scripts added. No JS files renamed yet — everything still runs as before.
+
+**Phase 1 (this commit)**: canonical types directory landed at `Codebase/Backend/src/types/` (`api.ts`, `analysis.ts`, `auth.ts`, `catalog.ts`, `seat.ts`, `index.ts`). `npm run typecheck` is green. All future TS code imports from here.
+
+**Phase 2 onward (next stages)**:
+- Stage 2 of `may-problem-ako-pure-brooks.md` (seat-key backend) lands directly in TypeScript — `seatKeyService.ts`, `seatController.ts`, `auth.ts` (route), `jwtAuth.ts`, `devconUsers.ts`. The seat-key types in `types/seat.ts` already encode the "private key returned once, never persisted" invariant at the type level.
+- Stage 3 (frontend heartbeat) lands as TypeScript on the frontend after a Vite-style toolchain install (separate from the backend).
+- Existing JS gets ported behind new work in dependency order (utils → db → services → middleware → controllers → routes → entrypoint).
+
+**Multi-language posture**: `PatternEntry.language` in `types/catalog.ts` is a closed string-literal union (`'cpp' | 'java' | 'python' | 'go' | 'typescript'`). Adding a new language requires changing this union, which forces a compile error everywhere the dispatcher needs to handle it. This is what "multi-language ready" looks like at the type level.
+
+**Manual surface posture**: `PatternEntry.manual_documentation_template`, `manual_review_checklist`, and `manual_test_scaffold` are first-class fields on the catalog schema. The backend's manual-mode services (to be implemented next) read these directly when `aiProviderConfigured` is false. AI is augmentation; absent AI, the manual templates ARE the surface.

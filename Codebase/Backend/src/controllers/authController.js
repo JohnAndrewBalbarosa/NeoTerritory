@@ -5,6 +5,15 @@ const { logEvent } = require('../services/logService');
 
 const register = async (req, res, next) => {
   try {
+    // Dual-mode guard: tester mode disables registration. Devcon seats are claimed,
+    // not registered. Actual mode keeps registration available for normal users.
+    const mode = db.mode || (process.env.NEOTERRITORY_MODE || 'tester').toLowerCase();
+    if (mode === 'tester') {
+      return res.status(403).json({
+        error: 'Registration disabled in tester mode. Use a Devcon seat or admin sign-in.'
+      });
+    }
+
     const { username, email, password } = req.body;
     if (!username || !email || !password) {
       return res.status(400).json({ error: 'All fields required' });

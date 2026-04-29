@@ -37,5 +37,12 @@
       "expected_lexeme_any_of": ["this"],
       "document_as": "fluent_self_return"
     }
+  ],
+
+  "evidence_rules": [
+    { "id": "self_reference_return_type",  "kind": "self_reference_return",       "polarity": "positive" },
+    { "id": "returns_dereferenced_this",   "kind": "token_pattern", "tokens": ["return", "*", "this"], "polarity": "positive" },
+    { "id": "no_owning_target_member",     "kind": "owning_member", "smart_ptr": ["unique_ptr", "shared_ptr"], "polarity": "negative" },
+    { "id": "no_terminator_method",        "kind": "terminator_method_with_distinct_return", "polarity": "negative" }
   ]
 }

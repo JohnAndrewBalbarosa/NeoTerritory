@@ -1,6 +1,21 @@
 'use strict';
 
+/* Color routing covers every pattern_id the microservice can emit, plus
+   common pattern_name aliases. Lookup falls through pattern_id → pattern_name → default. */
 const PATTERN_COLORS = {
+  // Pattern IDs (canonical)
+  'creational.singleton':         { bg: 'rgba(59, 130, 246, 0.18)', border: '#3b82f6', text: '#1d4ed8' },
+  'creational.factory':           { bg: 'rgba(16, 185, 129, 0.18)', border: '#10b981', text: '#047857' },
+  'creational.builder':           { bg: 'rgba(139, 92, 246, 0.18)', border: '#8b5cf6', text: '#6d28d9' },
+  'creational.method_chaining':   { bg: 'rgba(20, 184, 166, 0.18)', border: '#14b8a6', text: '#0f766e' },
+  'structural.adapter':           { bg: 'rgba(249, 115, 22, 0.20)', border: '#f97316', text: '#c2410c' },
+  'structural.decorator':         { bg: 'rgba(236, 72, 153, 0.18)', border: '#ec4899', text: '#be185d' },
+  'structural.proxy':             { bg: 'rgba(239, 68, 68, 0.18)',  border: '#ef4444', text: '#b91c1c' },
+  'behavioural.strategy_interface': { bg: 'rgba(168, 85, 247, 0.18)', border: '#a855f7', text: '#7e22ce' },
+  'behavioural.strategy_concrete':  { bg: 'rgba(192, 132, 252, 0.20)', border: '#c084fc', text: '#9333ea' },
+  'idiom.pimpl':                  { bg: 'rgba(202, 138, 4, 0.18)', border: '#ca8a04', text: '#854d0e' },
+
+  // Pattern name aliases
   Singleton:      { bg: 'rgba(59, 130, 246, 0.18)', border: '#3b82f6', text: '#1d4ed8' },
   Factory:        { bg: 'rgba(16, 185, 129, 0.18)', border: '#10b981', text: '#047857' },
   Builder:        { bg: 'rgba(139, 92, 246, 0.18)', border: '#8b5cf6', text: '#6d28d9' },
@@ -8,7 +23,11 @@ const PATTERN_COLORS = {
   Adapter:        { bg: 'rgba(249, 115, 22, 0.20)', border: '#f97316', text: '#c2410c' },
   Decorator:      { bg: 'rgba(236, 72, 153, 0.18)', border: '#ec4899', text: '#be185d' },
   Proxy:          { bg: 'rgba(239, 68, 68, 0.18)',  border: '#ef4444', text: '#b91c1c' },
+  Strategy:       { bg: 'rgba(168, 85, 247, 0.18)', border: '#a855f7', text: '#7e22ce' },
+  StrategyConcrete: { bg: 'rgba(192, 132, 252, 0.20)', border: '#c084fc', text: '#9333ea' },
+  Pimpl:          { bg: 'rgba(202, 138, 4, 0.18)', border: '#ca8a04', text: '#854d0e' },
   Review:         { bg: 'rgba(100, 116, 139, 0.15)', border: '#64748b', text: '#475569' },
+  Ambiguous:      { bg: 'rgba(245, 158, 11, 0.20)', border: '#b45309', text: '#92400e' },
   default:        { bg: 'rgba(100, 116, 139, 0.15)', border: '#64748b', text: '#475569' }
 };
 
@@ -18,6 +37,7 @@ const USER_KEY = 'nt_user';
 const state = {
   currentRun: null,
   sourceText: '',
+  mode: 'tester',
   token: localStorage.getItem(TOKEN_KEY) || null,
   user: (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch { return null; } })(),
   sessionRanAnalyze: false,
@@ -41,19 +61,31 @@ const els = {
   resultsSummary: document.getElementById('results-summary'),
   patternLegend:document.getElementById('pattern-legend'),
   sourceView:   document.getElementById('source-view'),
-  commentsPane: document.getElementById('comments-pane'),
   runList:      document.getElementById('run-list'),
   loginOverlay: document.getElementById('login-overlay'),
   loginForm:    document.getElementById('login-form'),
   loginUsername:document.getElementById('login-username'),
   loginPassword:document.getElementById('login-password'),
   loginError:   document.getElementById('login-error'),
+  showRegisterBtn:  document.getElementById('show-register-btn'),
+  showLoginBtn:     document.getElementById('show-login-btn'),
+  registerForm:     document.getElementById('register-form'),
+  registerUsername: document.getElementById('register-username'),
+  registerEmail:    document.getElementById('register-email'),
+  registerPassword: document.getElementById('register-password'),
+  registerError:    document.getElementById('register-error'),
+  testerChooser:    document.getElementById('tester-chooser'),
+  testerError:      document.getElementById('tester-error'),
+  adminLoginForm:     document.getElementById('admin-login-form'),
+  adminLoginUsername: document.getElementById('admin-login-username'),
+  adminLoginPassword: document.getElementById('admin-login-password'),
+  adminLoginError:    document.getElementById('admin-login-error'),
+  adminCancelBtn:     document.getElementById('admin-cancel-btn'),
   userRow:      document.getElementById('user-row'),
   userLabel:    document.getElementById('user-label'),
   logoutBtn:    document.getElementById('logout-btn'),
   msRow:        document.getElementById('ms-row'),
   msStatus:     document.getElementById('ms-status'),
-  testerList:   document.getElementById('tester-list'),
   testerGrid:   document.getElementById('tester-grid'),
   savePrompt:   document.getElementById('save-prompt'),
   savePromptDetail: document.getElementById('save-prompt-detail'),
@@ -103,13 +135,22 @@ function fmtDate(value) {
 }
 
 function patternFromAnnotation(annotation) {
+  // Try pattern_id first, then pattern name extracted from "<PatternName> :: <anchor>".
+  if (annotation.patternId && PATTERN_COLORS[annotation.patternId]) return annotation.patternId;
   const title = annotation.title || '';
   const head  = title.split(' :: ')[0] || annotation.stage || 'Review';
-  return PATTERN_COLORS[head] ? head : (PATTERN_COLORS.default ? 'default' : head);
+  return PATTERN_COLORS[head] ? head : 'default';
 }
 
 function colorFor(patternKey) {
   return PATTERN_COLORS[patternKey] || PATTERN_COLORS.default;
+}
+
+function colorForPattern(detected) {
+  if (!detected) return PATTERN_COLORS.default;
+  return PATTERN_COLORS[detected.patternId]
+      || PATTERN_COLORS[detected.patternName]
+      || PATTERN_COLORS.default;
 }
 
 async function apiFetch(url, options = {}) {
@@ -131,10 +172,31 @@ async function apiFetch(url, options = {}) {
   return data;
 }
 
+/* Dual-mode auth surface (v3+):
+   tester mode -> show tester-chooser by default; admin tile flips to admin-login-form
+   actual mode -> show login-form by default; "Create one" flips to register-form */
+function setLoginSurface(view) {
+  if (!els.testerChooser) return;
+  els.testerChooser.hidden    = view !== 'tester-chooser';
+  els.adminLoginForm.hidden   = view !== 'admin-login';
+  els.loginForm.hidden        = view !== 'login';
+  els.registerForm.hidden     = view !== 'register';
+  // Reset error banners on switch.
+  [els.testerError, els.adminLoginError, els.loginError, els.registerError].forEach(e => {
+    if (e) { e.hidden = true; e.textContent = ''; }
+  });
+}
+
 function showLogin() {
   els.loginOverlay.hidden = false;
   els.userRow.hidden = true;
-  els.loginUsername.focus();
+  // Default view is mode-dependent; loadHealth() wires this.
+  if (state.mode === 'actual') {
+    setLoginSurface('login');
+    if (els.loginUsername) els.loginUsername.focus();
+  } else {
+    setLoginSurface('tester-chooser');
+  }
 }
 
 function hideLogin() {
@@ -176,31 +238,119 @@ async function handleSignOut() {
   performSignOut();
 }
 
-async function loadTesterAccounts() {
-  if (!els.testerList || !els.testerGrid) return;
+/* Tester-mode chooser: render Devcon1..N as click-to-claim tiles plus a
+   special "Admin" tile that pivots to the admin-login form. Auto-claim flow
+   uses the existing /auth/login endpoint with the seeded "devcon" password,
+   so behavior matches actual-mode login on the wire. */
+async function loadTesterChooser() {
+  if (!els.testerGrid) return;
+  if (state.mode !== 'tester') return; // chooser is tester-only
   try {
     const res = await fetch('/auth/test-accounts');
     const data = await res.json();
     const accounts = Array.isArray(data.accounts) ? data.accounts : [];
-    if (!accounts.length) { els.testerList.hidden = true; return; }
-    els.testerList.hidden = false;
+    const password = data.password || 'devcon';
     els.testerGrid.innerHTML = '';
+
+    // Admin tile first.
+    const admin = document.createElement('button');
+    admin.type = 'button';
+    admin.className = 'tester-chip tester-chip-admin';
+    admin.innerHTML = '<span class="tester-chip-label">Admin</span><span class="tester-chip-sub">requires sign-in</span>';
+    admin.addEventListener('click', () => {
+      setLoginSurface('admin-login');
+      if (els.adminLoginUsername) els.adminLoginUsername.focus();
+    });
+    els.testerGrid.appendChild(admin);
+
+    // Devcon tiles.
     accounts.forEach(name => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tester-chip';
       btn.textContent = name;
-      btn.addEventListener('click', () => {
-        els.loginUsername.value = name;
-        els.loginPassword.value = data.password || '';
-        els.testerGrid.querySelectorAll('.tester-chip[aria-pressed="true"]').forEach(b => b.removeAttribute('aria-pressed'));
-        btn.setAttribute('aria-pressed', 'true');
-        els.loginPassword.focus();
+      btn.addEventListener('click', async () => {
+        if (els.testerError) els.testerError.hidden = true;
+        try {
+          await directTesterLogin(name, password);
+        } catch (err) {
+          if (els.testerError) {
+            els.testerError.textContent = err.message || 'Could not claim that seat.';
+            els.testerError.hidden = false;
+          }
+        }
       });
       els.testerGrid.appendChild(btn);
     });
   } catch {
-    els.testerList.hidden = true;
+    if (els.testerError) {
+      els.testerError.textContent = 'Could not load tester accounts. Is the backend running?';
+      els.testerError.hidden = false;
+    }
+  }
+}
+
+async function directTesterLogin(username, password) {
+  const response = await fetch('/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ username, password })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || `Login failed (${response.status})`);
+  handleSignIn(data.token, data.user || { username });
+  await loadRuns();
+  await loadSample();
+}
+
+async function submitAdminLogin(event) {
+  event.preventDefault();
+  if (!els.adminLoginError) return;
+  els.adminLoginError.hidden = true;
+  const username = els.adminLoginUsername.value.trim();
+  const password = els.adminLoginPassword.value;
+  if (!username || !password) return;
+  try {
+    const response = await fetch('/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || `Login failed (${response.status})`);
+    if (!data.user || data.user.role !== 'admin') {
+      throw new Error('That account is not an admin.');
+    }
+    handleSignIn(data.token, data.user);
+    els.adminLoginPassword.value = '';
+  } catch (err) {
+    els.adminLoginError.textContent = err.message;
+    els.adminLoginError.hidden = false;
+  }
+}
+
+async function submitRegister(event) {
+  event.preventDefault();
+  if (!els.registerError) return;
+  els.registerError.hidden = true;
+  const username = els.registerUsername.value.trim();
+  const email    = els.registerEmail.value.trim();
+  const password = els.registerPassword.value;
+  if (!username || !email || !password) return;
+  try {
+    const r = await fetch('/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify({ username, email, password })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || `Register failed (${r.status})`);
+    // Auto-login after register.
+    await directTesterLogin(username, password);
+    els.registerPassword.value = '';
+  } catch (err) {
+    els.registerError.textContent = err.message;
+    els.registerError.hidden = false;
   }
 }
 
@@ -254,8 +404,22 @@ async function loadHealth() {
                     : 'unreachable';
       setMicroserviceStatus('offline', `offline (${reason})`);
     }
-    setStatus('ok', 'API ok',
-      `${h.service} • ${h.totalRuns} run(s)${h.aiProviderConfigured ? ' • AI on' : ' • AI off'}`);
+
+    // Dual-mode wiring: server tells us which DB it's running against and
+    // whether AI is available. AI availability stays internal — we never
+    // surface "no AI" wording, we just default to the manual surface.
+    const newMode = (h.mode || 'tester').toLowerCase();
+    const modeChanged = state.mode !== newMode;
+    state.mode = newMode;
+    state.aiAvailable = Boolean(h.aiProviderConfigured);
+    if (modeChanged && !state.token) {
+      // Re-render the login overlay to match the new mode.
+      showLogin();
+      if (state.mode === 'tester') loadTesterChooser();
+    }
+    document.body.dataset.mode = state.mode;
+
+    setStatus('ok', 'API ok', `${h.service} • ${state.mode} • ${h.totalRuns} run(s)`);
     rescheduleHealthPoll(false);
   } catch (err) {
     clearTimeout(timer);
@@ -426,6 +590,9 @@ async function submitAnalysis(event) {
       ranking: run.ranking || null,
       classUsageBindings: run.classUsageBindings || {},
       classUsageBindingSource: run.classUsageBindingSource || 'heuristic',
+      suspectedStructures: run.suspectedStructures || [],
+      noPatternsDetected: Boolean(run.noPatternsDetected),
+      aiAvailable: Boolean(run.aiAvailable),
       summary: run.summary || ''
     });
 
@@ -464,35 +631,43 @@ function renderLegend(detectedPatterns) {
   els.patternLegend.innerHTML = chips.join('');
 }
 
+/* Annotated source view: lines stay clean by default. A line with annotations
+   gets a subtle gutter dot in the pattern's color; clicking the line opens a
+   popover overlay with the full comment(s). No always-on inline backgrounds. */
+let _annotationsByLineCache = new Map();
+
 function renderSourceView(sourceText, annotations) {
   const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
   const annotationsByLine = new Map();
   annotations.forEach(a => {
-    if (!a.line) return;
+    if (!a.line || a.scope === 'file') return;
     if (!annotationsByLine.has(a.line)) annotationsByLine.set(a.line, []);
     annotationsByLine.get(a.line).push(a);
   });
+  _annotationsByLineCache = annotationsByLine;
 
   const out = [];
   const width = String(lines.length).length;
   lines.forEach((line, idx) => {
     const lineNo = idx + 1;
     const anns = annotationsByLine.get(lineNo) || [];
-    const top = anns[0];
-    let style = '';
+    const num = String(lineNo).padStart(width, ' ');
+    let dotMarkup = '<span class="src-dot" aria-hidden="true"></span>';
     let dataAttrs = `data-line="${lineNo}"`;
-    if (top) {
+    if (anns.length) {
+      // Pick dot color from the highest-priority annotation (Pattern/Documentation > Test).
+      const top = anns[0];
       const c = colorFor(patternFromAnnotation(top));
-      style = `background:${c.bg};border-left:3px solid ${c.border};`;
+      const distinctPatterns = new Set(anns.map(a => patternFromAnnotation(a))).size;
+      const dotColor = distinctPatterns > 1 ? PATTERN_COLORS.Ambiguous.border : c.border;
+      dotMarkup = `<span class="src-dot src-dot-active" aria-hidden="true" style="background:${dotColor}" title="${anns.length} note(s) — click line"></span>`;
       const ids = anns.map(a => a.id).join(' ');
       dataAttrs += ` data-comment-ids="${escapeHtml(ids)}"`;
-    } else {
-      style = 'border-left:3px solid transparent;';
     }
-    const num = String(lineNo).padStart(width, ' ');
     out.push(
-      `<span class="src-line${anns.length ? ' has-comment' : ''}" ${dataAttrs} style="${style}">` +
+      `<span class="src-line${anns.length ? ' has-comment' : ''}" ${dataAttrs}>` +
       `<span class="src-gutter">${num}</span>` +
+      dotMarkup +
       `<span class="src-code">${escapeHtml(line) || '​'}</span>` +
       `</span>`
     );
@@ -500,56 +675,178 @@ function renderSourceView(sourceText, annotations) {
   els.sourceView.innerHTML = out.join('');
 
   els.sourceView.querySelectorAll('.src-line.has-comment').forEach(el => {
-    el.addEventListener('click', () => {
-      const ids = (el.dataset.commentIds || '').split(/\s+/).filter(Boolean);
-      if (ids.length) flashComment(ids[0]);
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const lineNo = Number(el.dataset.line);
+      const anns = _annotationsByLineCache.get(lineNo) || [];
+      if (anns.length) showLinePopover(el, anns);
     });
+  });
+
+  // Click-outside dismisses popover.
+  document.addEventListener('click', (ev) => {
+    const pop = document.getElementById('src-popover');
+    if (!pop) return;
+    if (pop.contains(ev.target)) return;
+    pop.remove();
   });
 }
 
-function renderComments(annotations) {
-  if (!annotations.length) {
-    els.commentsPane.innerHTML = '<div class="empty-state">No comments produced.</div>';
-    return;
-  }
-  const sorted = annotations.slice().sort((a, b) => (a.line || 0) - (b.line || 0));
-  const out = [];
-  sorted.forEach(a => {
+/* localStorage-backed manual-doc store, keyed per (sourceName, scopeKey).
+   The scopeKey comes from the backend annotation (`<patternId>::<className>::<anchor>`)
+   and is stable across runs of the same source.
+   Entire scheme is opaque to the backend — manual notes never leave the browser
+   until/unless the user explicitly saves the run via the existing pendingId flow.
+   We don't yet round-trip them through `/runs/save`; that's a follow-up. */
+function manualDocStorageKey(sourceName, scopeKey) {
+  return `nt_manual_doc::${sourceName || '_unknown'}::${scopeKey || '_unkeyed'}`;
+}
+function readManualDoc(sourceName, scopeKey) {
+  try { return localStorage.getItem(manualDocStorageKey(sourceName, scopeKey)) || ''; }
+  catch { return ''; }
+}
+function writeManualDoc(sourceName, scopeKey, text) {
+  try {
+    if (text && text.trim()) localStorage.setItem(manualDocStorageKey(sourceName, scopeKey), text);
+    else localStorage.removeItem(manualDocStorageKey(sourceName, scopeKey));
+  } catch { /* quota / private mode — silently no-op */ }
+}
+
+function showLinePopover(anchorEl, anns) {
+  // Remove any existing popover first.
+  const existing = document.getElementById('src-popover');
+  if (existing) existing.remove();
+
+  const pop = document.createElement('div');
+  pop.id = 'src-popover';
+  pop.className = 'src-popover';
+  const distinctPatterns = new Set(anns.map(a => patternFromAnnotation(a)));
+  const isAmbiguous = distinctPatterns.size > 1;
+  const sourceName = (state.currentRun && state.currentRun.sourceName) || '';
+  const aiOn = state.aiAvailable === true;
+
+  const items = anns.map(a => {
     const patternKey = patternFromAnnotation(a);
     const c = colorFor(patternKey);
     const titleParts = (a.title || '').split(' :: ');
     const head  = titleParts[0] || a.stage || 'Comment';
     const label = titleParts.slice(1).join(' :: ') || a.kind || '';
-    out.push(
-      `<article class="comment-card" id="${escapeHtml(a.id)}" data-line="${a.line || ''}" ` +
+    const scopeKey = a.scopeKey || a.id || '';
+    const savedManual = readManualDoc(sourceName, scopeKey);
+    const aiText = (a.comment || '').trim();
+    // Decide what fills the body of this card:
+    //   1. if AI text exists, render it.
+    //   2. else if user has saved a manual note, render it (with edit affordance).
+    //   3. else render a "+ Add documentation for this scope" button.
+    let bodyMarkup = '';
+    if (aiOn && aiText) {
+      bodyMarkup = `<p class="src-popover-comment">${escapeHtml(aiText)}</p>`;
+    } else if (savedManual) {
+      bodyMarkup =
+        `<div class="src-popover-manual" data-scope-key="${escapeHtml(scopeKey)}" data-id="${escapeHtml(a.id)}">` +
+          `<p class="src-popover-comment src-popover-comment-manual">${escapeHtml(savedManual)}</p>` +
+          `<button class="src-manual-edit-btn" type="button">Edit</button>` +
+        `</div>`;
+    } else {
+      bodyMarkup =
+        `<div class="src-popover-manual" data-scope-key="${escapeHtml(scopeKey)}" data-id="${escapeHtml(a.id)}">` +
+          `<button class="src-manual-add-btn" type="button">+ Add documentation for this scope</button>` +
+        `</div>`;
+    }
+
+    return (
+      `<article class="src-popover-item" data-comment-id="${escapeHtml(a.id)}" data-scope-key="${escapeHtml(scopeKey)}" ` +
         `style="border-left:4px solid ${c.border};background:${c.bg}">` +
-      `<header class="cc-head">` +
-        `<span class="cc-pattern" style="color:${c.text}">${escapeHtml(head)}</span>` +
-        (label ? `<span class="cc-label">${escapeHtml(label)}</span>` : '') +
-        (a.line ? `<span class="cc-line">L${a.line}</span>` : '') +
+      `<header class="src-popover-head">` +
+        `<span class="src-popover-pattern" style="color:${c.text}">${escapeHtml(head)}</span>` +
+        (label ? `<span class="src-popover-label">${escapeHtml(label)}</span>` : '') +
+        (a.line ? `<span class="src-popover-line">L${a.line}</span>` : '') +
       `</header>` +
-      `<p class="cc-comment">${escapeHtml(a.comment)}</p>` +
-      (a.excerpt ? `<pre class="cc-excerpt" style="border-color:${c.border}">${escapeHtml(a.excerpt)}</pre>` : '') +
+      bodyMarkup +
+      (a.excerpt ? `<pre class="src-popover-excerpt" style="border-color:${c.border}">${escapeHtml(a.excerpt)}</pre>` : '') +
       `</article>`
     );
-  });
-  els.commentsPane.innerHTML = out.join('');
+  }).join('');
 
-  els.commentsPane.querySelectorAll('.comment-card').forEach(card => {
-    card.addEventListener('click', () => {
-      const line = Number(card.dataset.line);
-      if (line) scrollToSourceLine(line);
-    });
+  const ambiguousBadge = isAmbiguous
+    ? `<div class="src-popover-ambiguous-badge">${distinctPatterns.size} possibilities — pick the one that matches</div>`
+    : '';
+
+  pop.innerHTML =
+    `<button class="src-popover-close" aria-label="Close">×</button>` +
+    ambiguousBadge +
+    `<div class="src-popover-body">${items}</div>`;
+
+  document.body.appendChild(pop);
+
+  // Manual-doc add/edit/save via event delegation on the popover root —
+  // survives in-place re-renders because handlers are bound to the parent.
+  pop.addEventListener('click', (ev) => {
+    const target = ev.target;
+    if (!(target instanceof HTMLElement)) return;
+    const wrap = target.closest('.src-popover-manual');
+    if (!wrap) return;
+    const scopeKey = wrap.dataset.scopeKey || '';
+
+    if (target.classList.contains('src-manual-add-btn') ||
+        target.classList.contains('src-manual-edit-btn')) {
+      ev.stopPropagation();
+      const initial = readManualDoc(sourceName, scopeKey);
+      wrap.innerHTML =
+        `<textarea class="src-manual-textarea" rows="4" placeholder="Document this scope. Markdown is fine.">${escapeHtml(initial)}</textarea>` +
+        `<div class="src-manual-actions">` +
+          `<button class="src-manual-save-btn" type="button">Save</button>` +
+          `<button class="src-manual-cancel-btn" type="button">Cancel</button>` +
+        `</div>`;
+      const ta = wrap.querySelector('.src-manual-textarea');
+      ta.focus();
+      ta.setSelectionRange(ta.value.length, ta.value.length);
+      return;
+    }
+
+    if (target.classList.contains('src-manual-save-btn')) {
+      ev.stopPropagation();
+      const ta = wrap.querySelector('.src-manual-textarea');
+      const text = (ta?.value || '').trim();
+      writeManualDoc(sourceName, scopeKey, text);
+      wrap.innerHTML = text
+        ? `<p class="src-popover-comment src-popover-comment-manual">${escapeHtml(text)}</p>` +
+          `<button class="src-manual-edit-btn" type="button">Edit</button>`
+        : `<button class="src-manual-add-btn" type="button">+ Add documentation for this scope</button>`;
+      return;
+    }
+
+    if (target.classList.contains('src-manual-cancel-btn')) {
+      ev.stopPropagation();
+      const saved = readManualDoc(sourceName, scopeKey);
+      wrap.innerHTML = saved
+        ? `<p class="src-popover-comment src-popover-comment-manual">${escapeHtml(saved)}</p>` +
+          `<button class="src-manual-edit-btn" type="button">Edit</button>`
+        : `<button class="src-manual-add-btn" type="button">+ Add documentation for this scope</button>`;
+      return;
+    }
   });
+
+  // Position near the line.
+  const rect = anchorEl.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let top = window.scrollY + rect.bottom + 6;
+  let left = window.scrollX + rect.left + 40;
+  // Clamp horizontally inside viewport.
+  const vw = window.innerWidth;
+  if (left + popRect.width > vw - 12) left = vw - popRect.width - 12;
+  if (left < 12) left = 12;
+  pop.style.top  = `${top}px`;
+  pop.style.left = `${left}px`;
+
+  pop.querySelector('.src-popover-close').addEventListener('click', () => pop.remove());
+  // Esc dismisses.
+  const onKey = (e) => { if (e.key === 'Escape') { pop.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
 }
 
-function flashComment(id) {
-  const card = document.getElementById(id);
-  if (!card) return;
-  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  card.classList.add('flash');
-  setTimeout(() => card.classList.remove('flash'), 1200);
-}
+/* renderComments / flashComment removed (v3.1): the click-to-popover at
+   `showLinePopover` is now the only annotation surface. */
 
 function scrollToSourceLine(line) {
   const el = els.sourceView.querySelector(`.src-line[data-line="${line}"]`);
@@ -559,7 +856,7 @@ function scrollToSourceLine(line) {
   setTimeout(() => el.classList.remove('flash'), 1200);
 }
 
-function synthesizeUsageAnnotations(bindings, detectedPatterns) {
+function synthesizeUsageAnnotations(bindings, detectedPatterns, suspectedStructures, thresholds) {
   const classToPatternName = new Map();
   (detectedPatterns || []).forEach(p => {
     if (p && p.className && p.patternName) classToPatternName.set(p.className, p.patternName);
@@ -573,11 +870,43 @@ function synthesizeUsageAnnotations(bindings, detectedPatterns) {
     make_shared:    'make_shared',
     new_ctor:       'new'
   };
+
+  // v3.2 layer 2: build interval map of confidently-classified classes' line ranges.
+  // For each detected pattern we have documentationTargets[*].line — the min and
+  // max bound the class. A confident class (finalRank >= threshold) shields its
+  // range from OTHER classes' synthesized usage annotations.
+  const CONFIDENT = (thresholds && typeof thresholds.confident === 'number')
+    ? thresholds.confident : 0.75;
+  const confidentClassRanges = []; // [{ className, min, max }]
+  const rankByClass = new Map();
+  (suspectedStructures || []).forEach(s => {
+    if (s && s.className && typeof s.finalRank === 'number') rankByClass.set(s.className, s.finalRank);
+  });
+  (detectedPatterns || []).forEach(p => {
+    if (!p || !p.className) return;
+    const lines = (p.documentationTargets || []).map(d => d.line).filter(n => typeof n === 'number');
+    if (!lines.length) return;
+    const min = Math.min(...lines);
+    const max = Math.max(...lines);
+    const rank = rankByClass.get(p.className);
+    if (typeof rank === 'number' && rank >= CONFIDENT) {
+      confidentClassRanges.push({ className: p.className, min, max });
+    }
+  });
+  const isShieldedFromOther = (line, owningClass) => {
+    if (!line || typeof line !== 'number') return false;
+    return confidentClassRanges.some(r =>
+      r.className !== owningClass && line >= r.min && line <= r.max);
+  };
+
   const out = [];
   let id = 1;
   Object.entries(bindings || {}).forEach(([cls, rows]) => {
     const patternName = classToPatternName.get(cls) || 'Review';
     (rows || []).forEach(u => {
+      // v3.2 layer 2: skip emission if this usage line falls inside a different
+      // class's confident range — the inner-class scope wins.
+      if (isShieldedFromOther(u.line, cls)) return;
       const target = u.varName
         ? `${u.varName}${u.methodName ? '.' + u.methodName : ''}`
         : (u.methodName ? `${cls}::${u.methodName}` : cls);
@@ -603,14 +932,21 @@ function renderRun(run) {
   els.resultsPanel.hidden = false;
   const patternCount = (run.detectedPatterns || []).length;
   const baseAnns = run.annotations || [];
-  const usageAnns = synthesizeUsageAnnotations(run.classUsageBindings || {}, run.detectedPatterns || []);
+  const usageAnns = synthesizeUsageAnnotations(
+    run.classUsageBindings || {},
+    run.detectedPatterns || [],
+    run.suspectedStructures || [],
+    (run.ranking && run.ranking.thresholds) || null
+  );
   const allAnns = [...baseAnns, ...usageAnns];
   const annCount = allAnns.length;
   els.resultsSummary.textContent =
     `${escapeHtml(run.sourceName || 'snippet.cpp')} • ${patternCount} pattern(s) • ${annCount} comment(s)`;
+
+  renderNoPatternsBanner(run);
+  renderSuspectedStructures(run);
   renderLegend(run.detectedPatterns || []);
   renderSourceView(run.sourceText || '', allAnns);
-  renderComments(allAnns);
   renderPatternCards(
     run.detectedPatterns || [],
     run.ranking || null,
@@ -619,6 +955,90 @@ function renderRun(run) {
     run.classUsageBindingSource || 'heuristic'
   );
   renderClassBindings(run.classUsageBindings || {}, run.classUsageBindingSource || 'heuristic');
+}
+
+/* No-pattern banner — single, file-scoped message rendered ABOVE the source view
+   when nothing was detected. Replaces the old fake line-1 annotation. */
+function renderNoPatternsBanner(run) {
+  const host = ensureHostBefore('no-pattern-banner', els.sourceView);
+  if (!host) return;
+  if (!run.noPatternsDetected) { host.innerHTML = ''; host.hidden = true; return; }
+  host.hidden = false;
+  host.innerHTML =
+    `<div class="banner banner-empty">` +
+    `<strong>No structural patterns detected.</strong> ` +
+    `<span>The microservice did not match any catalog pattern against this source. ` +
+    `You can still annotate manually below.</span>` +
+    `</div>`;
+}
+
+/* Suspected structures — the per-class winner list. This is the headline answer:
+   for each class found, which pattern best explains it, and what tied if anything. */
+function renderSuspectedStructures(run) {
+  const host = ensureHostBefore('suspected-structures', els.sourceView);
+  if (!host) return;
+  const list = run.suspectedStructures || [];
+  if (!list.length) { host.innerHTML = ''; host.hidden = true; return; }
+  host.hidden = false;
+
+  const aiBadge = run.aiAvailable
+    ? `<span class="ai-badge ai-on" title="AI augmentation active">AI on</span>`
+    : `<span class="ai-badge ai-off" title="No API key — manual mode">manual</span>`;
+
+  const rows = list.map(s => {
+    const c = colorForPattern(s);
+    const verdictLabel = s.finalRank >= 0.75 ? 'confident'
+                       : s.finalRank >= 0.40 ? 'weak'
+                       : 'low';
+    const evidenceCount = (s.evidence && s.evidence.fired) ? s.evidence.fired.length : 0;
+    const evidenceTotal = evidenceCount + ((s.evidence && s.evidence.missed) ? s.evidence.missed.length : 0);
+    const rivalChip = (s.rivals && s.rivals.length > 1)
+      ? `<span class="ss-rival" title="Rival patterns within tie-break delta">+${s.rivals.length - 1} rival(s)</span>`
+      : '';
+    const evidenceList = (s.evidence && s.evidence.fired || [])
+      .map(id => `<li>${escapeHtml(id)}</li>`).join('');
+    const missedList = (s.evidence && s.evidence.missed || [])
+      .map(id => `<li class="ss-missed">${escapeHtml(id)}</li>`).join('');
+    return (
+      `<details class="ss-card" style="border-left:4px solid ${c.border};background:${c.bg}">` +
+      `<summary class="ss-summary">` +
+        `<span class="ss-class"><code>${escapeHtml(s.className)}</code></span>` +
+        `<span class="ss-arrow">→</span>` +
+        `<span class="ss-pattern" style="color:${c.text}">${escapeHtml(s.patternName)}</span>` +
+        `<span class="ss-verdict ss-verdict-${verdictLabel}">${verdictLabel}</span>` +
+        `<span class="ss-score">score ${(s.finalRank * 100 | 0)}%</span>` +
+        `<span class="ss-evidence">${evidenceCount}/${evidenceTotal} signals</span>` +
+        rivalChip +
+      `</summary>` +
+      `<div class="ss-body">` +
+        `<div class="ss-fired"><strong>Fired:</strong><ul>${evidenceList || '<li><em>none</em></li>'}</ul></div>` +
+        (missedList ? `<div class="ss-missed-block"><strong>Missed:</strong><ul>${missedList}</ul></div>` : '') +
+      `</div>` +
+      `</details>`
+    );
+  }).join('');
+
+  host.innerHTML =
+    `<header class="ss-header">` +
+      `<h3>Suspected structures</h3>` +
+      `<span class="ss-count">${list.length} class(es)</span>` +
+      aiBadge +
+    `</header>` +
+    `<div class="ss-list">${rows}</div>`;
+}
+
+/* Insert (or reuse) a host div with the given id, placed immediately before
+   `before`. Lets us inject panels without editing index.html. */
+function ensureHostBefore(id, before) {
+  if (!before || !before.parentNode) return null;
+  let host = document.getElementById(id);
+  if (!host) {
+    host = document.createElement('section');
+    host.id = id;
+    host.className = id;
+    before.parentNode.insertBefore(host, before);
+  }
+  return host;
 }
 
 function flashSourceLine(line) {
@@ -1026,6 +1446,11 @@ els.loadSampleBtn.addEventListener('click', loadSample);
 els.clearBtn.addEventListener('click', clearAll);
 els.refreshBtn.addEventListener('click', loadRuns);
 els.loginForm.addEventListener('submit', submitLogin);
+if (els.registerForm)    els.registerForm.addEventListener('submit', submitRegister);
+if (els.adminLoginForm)  els.adminLoginForm.addEventListener('submit', submitAdminLogin);
+if (els.showRegisterBtn) els.showRegisterBtn.addEventListener('click', () => setLoginSurface('register'));
+if (els.showLoginBtn)    els.showLoginBtn.addEventListener('click', () => setLoginSurface('login'));
+if (els.adminCancelBtn)  els.adminCancelBtn.addEventListener('click', () => setLoginSurface('tester-chooser'));
 els.logoutBtn.addEventListener('click', handleSignOut);
 els.fileInput.addEventListener('change', () => {
   const file = els.fileInput.files[0];
@@ -1048,6 +1473,6 @@ els.fileInput.addEventListener('change', () => {
     await loadSample();
   } else {
     showLogin();
-    loadTesterAccounts();
+    if (state.mode === 'tester') loadTesterChooser();
   }
 })();

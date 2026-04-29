@@ -115,3 +115,42 @@ flowchart TD
 - The parser can validate missing fields before recognition starts.
 - The catalog carries ordered tokens or token alternatives for parser cross-reference.
 - Catalog data can describe expected pattern shape without changing lexical scanning.
+
+## Live Schema (as actually consumed today)
+The active catalog at `Codebase/Microservice/pattern_catalog/<family>/<pattern>.json` uses a flatter shape than the conceptual `version 1` schema above. The C++ parser at `pattern_catalog_parser.cpp` reads only `ordered_checks`; unknown top-level fields (`evidence_rules`, `implementation_template`) are silently ignored on the matcher side.
+
+```jsonc
+{
+  "pattern_id":     "creational.singleton",
+  "pattern_family": "creational",
+  "pattern_name":   "Singleton",
+  "enabled":        true,
+
+  // C++ matcher gate: strict token-sequence "is this class a candidate?"
+  "ordered_checks": [
+    { "id": "class_introducer",  "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "deleted_copy_op",   "expected_kind": "Keyword",     "expected_lexeme_any_of": ["delete"] }
+  ],
+
+  // Discretized, language-grounded evidence questions for the ranker.
+  // Each rule is a yes/no/count question the parse tree can answer.
+  "evidence_rules": [
+    { "id": "deleted_copy_ctor",           "kind": "deleted_method",    "method": "copy_ctor",     "polarity": "positive" },
+    { "id": "static_local_self_in_method", "kind": "static_local",      "of_type": "{class_name}", "polarity": "positive" },
+    { "id": "no_pure_virtual",             "kind": "pure_virtual_count", "max": 0,                 "polarity": "positive" }
+  ]
+}
+```
+
+### Field Roles
+| Field | Consumer | Role |
+|---|---|---|
+| `ordered_checks` | C++ matcher | Strict token-sequence match — all-or-nothing gate. Widening an existing `expected_lexeme_any_of` list is safe; adding one to a step that didn't have it is a tightening change. |
+| `expected_lexeme_any_of` | C++ matcher | When present, the token's lexeme MUST be one of these. When absent, any lexeme of the right `expected_kind` matches. |
+| `capture_as` | C++ matcher | Records the matched token's lexeme under this name for downstream use. |
+| `evidence_rules` | C++ evidence extractor + JS/TS ranker | Discretized predicates. Each `kind` is a question the parse tree can answer deterministically — no regex over identifier text. See D29 in `docs/Codebase/DESIGN_DECISIONS.md` for the full vocabulary. |
+
+### Cross-cutting note
+Per `DESIGN_DECISIONS.md` D29, ALL pattern-disambiguation evidence is expressed as discretized `evidence_rules` keyed off language tokens and STL types. Naming heuristics (`class \w*Factory`, `target_`, `(get|Get)Instance`) are explicitly forbidden — they conflate "class is named like a Factory" with "class behaves like a Factory" and produce arbitrary scores that depend on developer style.
+
+The previous regex-based `implementation_template` block was removed in the same change. The Adapter file retains a single residual `implementation_template.expected_collaborators` entry (the adaptee-arg shape) pending its replacement with the equivalent `evidence_rules` entry; once Adapter's `evidence_rules` lands the legacy block will go.
