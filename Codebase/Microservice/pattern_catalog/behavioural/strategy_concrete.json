@@ -1,0 +1,38 @@
+{
+  "pattern_id": "behavioural.strategy_concrete",
+  "pattern_family": "behavioural",
+  "pattern_name": "StrategyConcrete",
+  "pattern_role": "concrete",
+  "enabled": true,
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "strategy_concrete_class" },
+    { "id": "inheritance_colon", "expected_kind": "Punctuation", "expected_lexeme_any_of": [":"], "document_as": "strategy_inheritance" },
+    { "id": "access_specifier", "expected_kind": "Keyword", "expected_lexeme_any_of": ["public", "protected", "private"] },
+    { "id": "base_class", "expected_kind": "Identifier", "capture_as": "base_class", "document_as": "strategy_base_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "override_method", "expected_kind": "Identifier", "capture_as": "override_method", "document_as": "strategy_override_method" }
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "override_keyword_present",
+        "shape_regex": "class\\s+{class_name}[\\s\\S]{0,200}\\{[\\s\\S]{0,1000}\\boverride\\b",
+        "weight": 1.0,
+        "describe": "Body contains `override` specifier — strong concrete-strategy signal"
+      }
+    ],
+    "expected_collaborators": [
+      {
+        "id": "constructed_via_make_unique",
+        "shape_regex": "make_unique\\s*<\\s*{class_name}\\s*>",
+        "weight": 0.6,
+        "describe": "Concrete strategy is created via make_unique<{class_name}>()"
+      }
+    ],
+    "negative_signals": []
+  },
+
+  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+}

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<reviewQuestions version="1">
+  <scope id="per-run">
+    <question id="accuracy" type="rating" max="5" required="true">
+      <prompt>How accurate was the pattern detection for this run?</prompt>
+    </question>
+  </scope>
+  <scope id="end-of-session">
+    <question id="overall_usefulness" type="rating" max="5" required="true">
+      <prompt>Overall, how useful was this session for understanding design patterns?</prompt>
+    </question>
+    <question id="ui_clarity" type="rating" max="5" required="true">
+      <prompt>How clear was the analysis output presentation?</prompt>
+    </question>
+    <question id="missed_patterns" type="text" required="false" maxLength="500">
+      <prompt>Were there patterns you expected the tool to catch that it missed? (optional)</prompt>
+    </question>
+    <question id="suggestion" type="text" required="false" maxLength="500">
+      <prompt>One thing you would improve?</prompt>
+    </question>
+  </scope>
+</reviewQuestions>

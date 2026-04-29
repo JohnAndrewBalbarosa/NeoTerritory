@@ -1,15 +1,50 @@
 const express = require('express');
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const multer = require('multer');
+
+const SERVER_STARTED_AT = new Date().toISOString();
 const db = require('../db/database');
-const { analyzeClassDeclaration } = require('../services/classDeclarationAnalysisService');
+const { analyzeClassDeclaration, resolveBinaryPath, resolveCatalogPath } = require('../services/classDeclarationAnalysisService');
 const { generateDocumentation }   = require('../services/aiDocumentationService');
+const { rankAll }                  = require('../services/patternRankingService');
+const { bindAll: bindClassUsages } = require('../services/classUsageBinder');
 const { logEvent } = require('../services/logService');
+const { jwtAuth } = require('../middleware/jwtAuth');
 
 const router = express.Router();
-const uploadsDir = path.join(__dirname, '..', '..', 'uploads');
-const outputsDir = path.join(__dirname, '..', '..', 'outputs');
+
+// Ephemeral cache for unsaved analysis results.
+// Keyed by uuid; entries auto-expire after 10 minutes.
+const PENDING_TTL_MS = 10 * 60 * 1000;
+const pendingRuns = new Map();
+function stashPending(payload) {
+  const id = `pen_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+  pendingRuns.set(id, { ...payload, expiresAt: Date.now() + PENDING_TTL_MS });
+  return id;
+}
+function takePending(id, userId) {
+  const entry = pendingRuns.get(id);
+  if (!entry) return null;
+  pendingRuns.delete(id);
+  if (entry.expiresAt < Date.now()) return null;
+  if (entry.userId && userId && entry.userId !== userId) return null;
+  return entry;
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of pendingRuns) if (v.expiresAt < now) pendingRuns.delete(k);
+}, 60 * 1000).unref();
+
+function safeUsername(name) {
+  return String(name || 'anon').toLowerCase().replace(/[^a-z0-9_-]/g, '_').slice(0, 64) || 'anon';
+}
+const testRoot = process.env.TEST_RESULTS_DIR
+  || path.join(__dirname, '..', '..', '..', '..', 'test');
+const uploadsDir = path.join(testRoot, '_uploads');
+// Per-user output folders live directly inside testRoot (e.g. test/devcon1/).
+const outputsDir = testRoot;
 
 const upload = multer({
   dest: uploadsDir,
@@ -30,7 +65,7 @@ function ensureAnalysisTable() {
   )`).run();
 }
 
-function saveRun({ sourceName, sourceText, analysis, artifactPath }) {
+function saveRun({ sourceName, sourceText, analysis, artifactPath, userId }) {
   ensureAnalysisTable();
   const stmt = db.prepare(`INSERT INTO analysis_runs (
     source_name,
@@ -40,8 +75,9 @@ function saveRun({ sourceName, sourceText, analysis, artifactPath }) {
     structure_score,
     modernization_score,
     findings_count,
-    created_at
-  ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`);
+    created_at,
+    user_id
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'), ?)`);
 
   const findingsCount = (analysis.findings || []).length;
   const info = stmt.run(
@@ -51,7 +87,8 @@ function saveRun({ sourceName, sourceText, analysis, artifactPath }) {
     artifactPath,
     0,
     0,
-    findingsCount
+    findingsCount,
+    userId || null
   );
 
   return { id: info.lastInsertRowid, createdAt: new Date().toISOString() };
@@ -225,13 +262,30 @@ router.get('/health', (req, res) => {
     }
   })();
 
+  const binaryPath = resolveBinaryPath();
+  const catalogPath = resolveCatalogPath();
+  const microservice = {
+    binaryPath,
+    catalogPath,
+    binaryFound: fs.existsSync(binaryPath),
+    catalogFound: fs.existsSync(catalogPath)
+  };
+  microservice.connected = microservice.binaryFound && microservice.catalogFound;
+
   res.json({
     status: 'ok',
     service: 'NeoTerritory analysis api',
     aiProviderConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     aiModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+    microservice,
     totalRuns,
-    latestRun
+    latestRun,
+    process: {
+      pid: process.pid,
+      hostname: os.hostname(),
+      port: Number(process.env.PORT) || 3001,
+      startedAt: SERVER_STARTED_AT
+    }
   });
 });
 
@@ -254,7 +308,7 @@ router.get('/sample', (req, res) => {
   });
 });
 
-router.post('/analyze', upload.single('file'), async (req, res, next) => {
+router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) => {
   try {
     const codeFromBody = typeof req.body.code === 'string' ? req.body.code : '';
     const filenameFromBody = typeof req.body.filename === 'string' && req.body.filename.trim()
@@ -290,6 +344,8 @@ router.post('/analyze', upload.single('file'), async (req, res, next) => {
     );
 
     const detectedPatterns = structural.detectedPatterns || [];
+    const ranking = rankAll(detectedPatterns, sourceText);
+    const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
     const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText);
     const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
 
@@ -301,6 +357,9 @@ router.post('/analyze', upload.single('file'), async (req, res, next) => {
       documentationTargets: structural.documentationTargets || [],
       unitTestTargets:      structural.unitTestTargets || [],
       aiByPattern,
+      ranking,
+      classUsageBindings,
+      classUsageBindingSource: 'heuristic',
       annotations,
       pipeline,
       stageMetrics:        structural.stageMetrics || [],
@@ -320,23 +379,24 @@ router.post('/analyze', upload.single('file'), async (req, res, next) => {
     analysis.commentsOnly       = buildCommentsOnly(sourceName, annotations);
     analysis.transformedPreview = analysis.commentedCode.slice(0, 1500);
 
-    const artifactName = `${path.basename(sourceName, path.extname(sourceName)) || 'analysis'}-${Date.now()}.json`;
-    if (!fs.existsSync(outputsDir)) fs.mkdirSync(outputsDir, { recursive: true });
-    const artifactPath = path.join(outputsDir, artifactName);
-    fs.writeFileSync(artifactPath, JSON.stringify(analysis, null, 2), 'utf8');
-
-    const run = saveRun({ sourceName, sourceText, analysis, artifactPath });
-
     if (req.file) fs.unlink(req.file.path, () => {});
 
-    logEvent(null, 'analysis', `Analyzed source via microservice: ${sourceName}`);
-
-    res.status(201).json({
-      runId:         run.id,
-      createdAt:     run.createdAt,
+    // Ephemeral: do NOT persist. Stash payload and return a pendingId.
+    // Frontend prompts the user; if they confirm, /runs/save promotes it.
+    const pendingId = stashPending({
       sourceName,
       sourceText,
-      artifactPath,
+      analysis,
+      userId: req.user && req.user.id
+    });
+
+    logEvent(req.user && req.user.id, 'analysis', `Analyzed (unsaved): ${sourceName}`);
+
+    res.status(200).json({
+      pendingId,
+      saved:         false,
+      sourceName,
+      sourceText,
       ...analysis
     });
   } catch (err) {
@@ -344,26 +404,66 @@ router.post('/analyze', upload.single('file'), async (req, res, next) => {
   }
 });
 
-router.get('/runs', (req, res, next) => {
+router.post('/runs/save', jwtAuth, (req, res, next) => {
+  try {
+    const { pendingId, userResolvedPattern } = req.body || {};
+    if (!pendingId) return res.status(400).json({ error: 'pendingId required' });
+    const pending = takePending(pendingId, req.user && req.user.id);
+    if (!pending) return res.status(404).json({ error: 'Pending run not found or expired' });
+    if (userResolvedPattern && typeof userResolvedPattern === 'string') {
+      pending.analysis.userResolvedPattern = userResolvedPattern;
+    }
+
+    const userDirName = safeUsername(req.user && req.user.username);
+    const userOutputsDir = path.join(outputsDir, userDirName);
+    if (!fs.existsSync(userOutputsDir)) fs.mkdirSync(userOutputsDir, { recursive: true });
+    const artifactName = `${path.basename(pending.sourceName, path.extname(pending.sourceName)) || 'analysis'}-${Date.now()}.json`;
+    const artifactPath = path.join(userOutputsDir, artifactName);
+    fs.writeFileSync(artifactPath, JSON.stringify(pending.analysis, null, 2), 'utf8');
+
+    const run = saveRun({
+      sourceName: pending.sourceName,
+      sourceText: pending.sourceText,
+      analysis:   pending.analysis,
+      artifactPath,
+      userId:     req.user && req.user.id
+    });
+
+    logEvent(req.user && req.user.id, 'save', `Saved run: ${pending.sourceName}`);
+
+    res.status(201).json({
+      saved: true,
+      runId: run.id,
+      createdAt: run.createdAt,
+      artifactPath
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/runs', jwtAuth, (req, res, next) => {
   try {
     ensureAnalysisTable();
     const limit = Math.min(Number(req.query.limit || 20), 100);
     const rows = db.prepare(`
       SELECT id, source_name, structure_score, modernization_score, findings_count, created_at
       FROM analysis_runs
+      WHERE user_id = ?
       ORDER BY id DESC
       LIMIT ?
-    `).all(limit);
+    `).all(req.user.id, limit);
     res.json({ runs: rows });
   } catch (err) {
     next(err);
   }
 });
 
-router.get('/runs/:id', (req, res, next) => {
+router.get('/runs/:id', jwtAuth, (req, res, next) => {
   try {
     ensureAnalysisTable();
-    const run = db.prepare('SELECT * FROM analysis_runs WHERE id = ?').get(req.params.id);
+    const run = db.prepare('SELECT * FROM analysis_runs WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id);
     if (!run) return res.status(404).json({ error: 'Run not found' });
 
     const analysis = JSON.parse(run.analysis_json);
@@ -383,10 +483,11 @@ router.get('/runs/:id', (req, res, next) => {
   }
 });
 
-router.get('/runs/:id/artifact', (req, res, next) => {
+router.get('/runs/:id/artifact', jwtAuth, (req, res, next) => {
   try {
     ensureAnalysisTable();
-    const run = db.prepare('SELECT * FROM analysis_runs WHERE id = ?').get(req.params.id);
+    const run = db.prepare('SELECT * FROM analysis_runs WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id);
     if (!run) return res.status(404).json({ error: 'Run not found' });
     if (!fs.existsSync(run.artifact_path)) return res.status(404).json({ error: 'Artifact missing' });
     res.download(run.artifact_path);
@@ -395,10 +496,11 @@ router.get('/runs/:id/artifact', (req, res, next) => {
   }
 });
 
-router.get('/runs/:id/export', (req, res, next) => {
+router.get('/runs/:id/export', jwtAuth, (req, res, next) => {
   try {
     ensureAnalysisTable();
-    const run = db.prepare('SELECT * FROM analysis_runs WHERE id = ?').get(req.params.id);
+    const run = db.prepare('SELECT * FROM analysis_runs WHERE id = ? AND user_id = ?')
+      .get(req.params.id, req.user.id);
     if (!run) return res.status(404).json({ error: 'Run not found' });
 
     const analysis = JSON.parse(run.analysis_json);

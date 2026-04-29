@@ -200,3 +200,96 @@ The regex-based `services/analyzer.js` is removed. Its endpoints in `routes/anal
 - Override: `NEOTERRITORY_BIN` env var.
 - Catalog path default: `Codebase/Microservice/pattern_catalog`. Override: `NEOTERRITORY_CATALOG` env var.
 - If the binary is missing, the run returns a diagnostic and `status: "microservice_unavailable"`. No fallback to regex analysis (the regex analyzer is gone — D20 says structural detection is the microservice's job, not the backend's).
+
+## D23 — Implementation-template + cross-reference ranking lives in the backend, not the microservice
+The pattern catalog JSON gains optional fields that describe the *implementation/usage shape* of a pattern (callsites, expected collaborators, global functions, negative signals). These fields refine pattern detection beyond the class-declaration-only signal currently emitted by the microservice — important for behavioural patterns and for disambiguating co-emitted shapes (Adapter vs Proxy vs Decorator per D21).
+
+**Why backend, not microservice**: per D20, the microservice stays pure-algorithm and deterministic. Putting the cross-reference / scoring / ambiguity logic into the C++ engine would couple structural detection to heuristic scoring, brittle regex, and stateful user-prompt flow. The new fields are silently ignored by the microservice (it only reads `ordered_checks`).
+
+**Schema additions** (all optional):
+```jsonc
+{
+  "implementation_template": {
+    "callsites":              [{ "id", "shape_regex", "weight", "describe" }],
+    "expected_collaborators": [{ "id", "shape_regex", "weight", "describe" }],
+    "global_functions":       [{ "id", "name_regex",  "weight", "describe" }],
+    "negative_signals":       [{ "id", "shape_regex", "weight": <negative>, "describe" }]
+  },
+  "ranking_weights": { "class_fit": 0.55, "implementation_fit": 0.45 }
+}
+```
+- `shape_regex` may contain `{class_name}` as a literal placeholder — the backend substitutes it with the matched class name from microservice output before compiling the regex.
+- Weights sum convention: positive ranges [0..1] additive, capped at 1.0; negative_signals subtract.
+
+**Ranking pipeline** (lives in `Codebase/Backend/src/services/patternRankingService.js`):
+1. Load all catalog JSONs at startup.
+2. For each `detectedPattern` from microservice → fetch matching catalog entry → compute `class_fit` (=1.0 because the microservice already matched the class shape; this preserves a meaningful ceiling for future refinement).
+3. Compute `implementation_fit` by running each `shape_regex` (with `{class_name}` substituted) against the source text and summing weighted hits, clamped to [0,1].
+4. `final_rank = ranking_weights.class_fit * class_fit + ranking_weights.implementation_fit * implementation_fit`.
+
+**Verdict thresholds**:
+- `final_rank >= 0.85` → confident, auto-accept
+- top-2 within `Δ <= 0.10` → ambiguous, ask user via the frontend (one-shot per run, not persisted across runs)
+- all `< 0.50` → emit `"no_clear_pattern"` advisory (do not silently downgrade microservice's detection — the structural class match still stands)
+
+**Ambiguity prompt UX**: frontend renders a chooser modal listing the candidate patterns with each pattern's score breakdown and a "Confirm pattern" button. The user's choice is attached to the run's analysis JSON as `userResolvedPattern: "<pattern_id>"` and is forwarded to Claude as ground truth (Claude is told "user has confirmed this is X" so it doesn't second-guess).
+
+**Backwards compat**: existing seven catalog files (per D21) work unchanged — they're treated as `class_fit` only, so `final_rank == ranking_weights.class_fit`. Patterns that author the new fields get the richer ranking automatically. Behavioural family is not yet authored; schema lands first, content lands per pattern as authored.
+
+**Initial rollout**: only `structural/adapter.json` ships the new schema in the first PR to validate the loader and UI. Other catalogs are extended pattern-by-pattern as the schema settles.
+
+## D24 — Backend-side class-usage binder is INTERIM until C++ Binding phase lands
+Per D7/D8 the authoritative source for "which function bodies use which class" is `class_usage_table` populated in the C++ Binding phase. Per D18 those bodies are inert stubs today, so the table is empty in production output.
+
+Until that work lands, the backend ships a **heuristic** variable→class usage binder at `Codebase/Backend/src/services/classUsageBinder.js` that scans the source text using the class names already returned by the microservice. This unblocks the frontend "Tagged usages" UI and gives Devcon testers something to validate against.
+
+**Scope of the heuristic**:
+- Value/reference/pointer declarations: `<Class> v;`, `<Class>& r;`, `<Class>* p;`
+- Smart-pointer declarations: `unique_ptr<<Class>> v;`, `shared_ptr<<Class>> v;`
+- Member calls on declared variables: `v.method(`, `p->method(`
+- Qualified static calls: `<Class>::method(`
+- Constructor calls: `make_unique<<Class>>(`, `make_shared<<Class>>(`, `new <Class>(`
+
+**Out of scope (intentional)**:
+- `auto x = make<Foo>()` — no type inference.
+- Typedef / `using` aliases.
+- Cross-translation-unit binding.
+- Templates with deduced types, lambdas with inferred captures.
+
+**Surface contract**:
+- Backend response gains a top-level `classUsageBindings: { "<ClassName>": [{ line, kind, varName, methodName, boundClass, snippet, evidence }] }`.
+- The frontend pattern cards look up usages by the pattern's `className` and render under a labelled section "Tagged usages [heuristic]" so the heuristic origin is honest.
+- When the C++ Binding phase lands, the microservice output gains `class_usages`. Backend then prefers microservice data and the heuristic fallback is reduced to "fill the gaps for classes the microservice doesn't bind." The frontend tag flips to "[microservice-bound]" when authoritative data is present.
+
+**Removability**: the binder is a single backend file plus one route enrichment line. To delete the interim path: drop the file, remove the require + the one-line call site, drop the section block in `Frontend/app.js`. Microservice and pattern catalog are not touched.
+
+## D25 — Roles + seeded admin account
+The `users` table gains a `role TEXT NOT NULL DEFAULT 'user'` column. JWT payload and the `/auth/login` response carry `role` so the frontend can route immediately on login.
+
+**Seeded admin** (one row, created on first DB init if missing): `username = 'Neoterritory'`, `role = 'admin'`, `password = process.env.SEED_ADMIN_PASSWORD || 'ragabag123'` (bcrypt-hashed at seed time). The hardcoded default exists per explicit user request for the research deployment; production may rotate via env without code change.
+
+**Admin gate**: `Codebase/Backend/src/middleware/requireAdmin.js` runs after `jwtAuth` and `403`s if `req.user.role !== 'admin'`. Every `/api/admin/*` route mounts both.
+
+**Why a single seeded admin instead of registration self-elevation**: there is exactly one admin in this research tool; registration self-elevation widens attack surface for no functional gain.
+
+## D26 — Review questions are XML-driven, decoupled from code
+The review questionnaire shown to users is **NOT** hardcoded in the frontend. Questions live in `Codebase/Backend/src/reviews/questions.xml` with two scopes (`per-run`, `end-of-session`) and are parsed at server start. The file is `fs.watch`ed; edits hot-reload without server restart.
+
+**Why**: the user is a researcher. Question wording and ordering will change as the study evolves. Decoupling questions from code lets non-engineers iterate on the instrument without redeploying.
+
+**Schema** (v1): `<reviewQuestions version="1">` containing one or more `<scope id="...">` elements, each containing `<question id type required>` with a child `<prompt>`. Supported `type` values are `rating` (with `max` attr), `text` (with `maxLength`), and `choice` (with nested `<option value>label</option>` — wired but unused in seed).
+
+**Robustness**: parser uses `fast-xml-parser`, validates against an explicit JS shape, and keeps the last-good schema in memory. A malformed edit logs and is rejected — runtime keeps serving the previous schema.
+
+**Storage**: new `reviews` table stores submissions. `scope`, `analysis_run_id` (NULL for end-of-session), `answers_json`, `schema_version` (copied from XML `version` attr so downstream analysis can correlate answer sets to instrument versions).
+
+**Two-tier UX** (per user direction):
+- **Per-run**: a quick 5-star accuracy rating renders inline below each `/api/analyze` result. Non-blocking — user can skip.
+- **End-of-session**: a longer questionnaire (overall usefulness, UI clarity, missed patterns, suggestion) appears once before logout if at least one analyze ran in the session and no end-of-session review was submitted yet.
+
+## D27 — Admin aggregation lives in the Node backend (Python remains an option, contract is JSON)
+Per D20 the backend is the sole external-integration adapter. Admin dashboard aggregates (counts, time-series, histograms) are computed in the **Node backend** by reducing rows from `analysis_runs`/`logs`/`reviews` in JS. The dataset is single-machine research scale; SQL window functions or a separate analytics store are not justified.
+
+**Frontend animation, not server-rendered images**: backend returns aggregate JSON; `Codebase/Frontend/admin.js` renders animated charts via Chart.js 4.x (CDN). User wanted "appealing" animation; Chart.js entrance animations + rAF count-up tweens + IntersectionObserver section reveals deliver this with no Python dependency.
+
+**Future Python offload (per user note)**: if richer statistical visualizations are needed later, the aggregation source can be swapped to a Python service that returns the **same JSON shape**. Chart.js stays in the browser. The contract worth preserving is the per-endpoint JSON shape (`runs-per-day`, `pattern-frequency`, `score-distribution`, `per-user-activity`), not the implementation language.

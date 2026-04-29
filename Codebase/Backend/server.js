@@ -13,19 +13,20 @@ const healthRoutes = require('./src/routes/health');
 const authRoutes = require('./src/routes/auth');
 const transformRoutes = require('./src/routes/transform');
 const analysisRoutes = require('./src/routes/analysis');
+const adminRoutes = require('./src/routes/admin');
+const reviewRoutes = require('./src/routes/reviews');
+const { startWatching: startReviewSchemaWatch } = require('./src/reviews/questionLoader');
 
 const app = express();
 const frontendDir = path.join(__dirname, '..', 'Frontend');
-const uploadsDir = path.join(__dirname, 'uploads');
-const outputsDir = path.join(__dirname, 'outputs');
+// Centralized testing tree at repo root: ../../test/
+// Per-user folders live directly inside (test/devcon1, test/devcon2, ...).
+// _uploads/ holds multer temp files. Override with TEST_RESULTS_DIR.
+const testRoot = process.env.TEST_RESULTS_DIR
+  || path.join(__dirname, '..', '..', 'test');
+const uploadsDir = path.join(testRoot, '_uploads');
 
-// Ensure uploads/ and outputs/ exist
-[
-  uploadsDir,
-  outputsDir
-].forEach(dir => {
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-});
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
 app.use(helmet());
@@ -44,6 +45,8 @@ app.use(express.static(frontendDir));
 app.use('/health', healthRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/transform', transformRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api', analysisRoutes);
 
 app.get('/', (req, res) => {
@@ -74,6 +77,9 @@ app.use(errorHandler);
 
 // DB init
 initDb();
+
+// Load review questionnaire and watch for edits
+startReviewSchemaWatch();
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

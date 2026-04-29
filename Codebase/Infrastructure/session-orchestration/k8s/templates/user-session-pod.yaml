@@ -6,16 +6,36 @@ metadata:
     app: neoterritory-session
     user_id: "{{user_id}}"
 spec:
-  restartPolicy: Never
-  activeDeadlineSeconds: 3600
+  restartPolicy: Always
   containers:
     - name: neoterritory
       image: "{{image}}"
       imagePullPolicy: IfNotPresent
+      ports:
+        - name: http
+          containerPort: 3001
+          protocol: TCP
+      env:
+        - name: PORT
+          value: "3001"
+        - name: CORS_ORIGIN
+          value: "*"
+      readinessProbe:
+        httpGet:
+          path: /api/health
+          port: 3001
+        initialDelaySeconds: 3
+        periodSeconds: 5
+      livenessProbe:
+        httpGet:
+          path: /api/health
+          port: 3001
+        initialDelaySeconds: 15
+        periodSeconds: 20
       resources:
         requests:
-          cpu: "1"
-          memory: "2Gi"
+          cpu: "500m"
+          memory: "512Mi"
         limits:
           cpu: "2"
-          memory: "4Gi"
+          memory: "2Gi"

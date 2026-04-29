@@ -1,0 +1,89 @@
+{
+  "sourceName": "smoke.cpp",
+  "stage": "output",
+  "diagnostics": [],
+  "detectedPatterns": [],
+  "documentationTargets": [],
+  "unitTestTargets": [],
+  "aiByPattern": [],
+  "annotations": [
+    {
+      "id": "comment-1",
+      "order": 1,
+      "stage": "Review",
+      "severity": "low",
+      "line": 1,
+      "lineEnd": 1,
+      "title": "No structural patterns detected",
+      "comment": "The microservice did not match any pattern in the catalog against this source.",
+      "excerpt": "class S{public: static S& get(){static S s;return s;}};",
+      "kind": "no_match"
+    }
+  ],
+  "pipeline": [
+    {
+      "key": "analysis",
+      "title": "Analysis",
+      "state": "ready",
+      "summary": "0 item(s) in 19 ms",
+      "detail": ""
+    },
+    {
+      "key": "trees",
+      "title": "Trees",
+      "state": "ready",
+      "summary": "0 item(s) in 0 ms",
+      "detail": ""
+    },
+    {
+      "key": "pattern_dispatch",
+      "title": "Pattern_dispatch",
+      "state": "ready",
+      "summary": "0 item(s) in 0 ms",
+      "detail": "0 pattern match(es) emitted."
+    },
+    {
+      "key": "hashing",
+      "title": "Hashing",
+      "state": "ready",
+      "summary": "0 item(s) in 0 ms",
+      "detail": ""
+    }
+  ],
+  "stageMetrics": [
+    {
+      "stage_name": "analysis",
+      "milliseconds": 19,
+      "items_processed": 0
+    },
+    {
+      "stage_name": "trees",
+      "milliseconds": 0,
+      "items_processed": 0
+    },
+    {
+      "stage_name": "pattern_dispatch",
+      "milliseconds": 0,
+      "items_processed": 0
+    },
+    {
+      "stage_name": "hashing",
+      "milliseconds": 0,
+      "items_processed": 0
+    }
+  ],
+  "microserviceArtifacts": {
+    "output_root": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777362223164-e8a06bf70ffed\\output",
+    "written_files": [
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777362223164-e8a06bf70ffed\\output/html/parse_tree.html",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777362223164-e8a06bf70ffed\\output/report.json"
+    ]
+  },
+  "microserviceRunDir": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777362223164-e8a06bf70ffed",
+  "microserviceOutputDir": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777362223164-e8a06bf70ffed\\output",
+  "summary": "smoke.cpp: 0 pattern match(es), 0 documentation anchor(s), 0 unit-test target(s).",
+  "findings": [],
+  "commentedCode": "1 | class S{public: static S& get(){static S s;return s;}};\n  // [Comment 1] Review: No structural patterns detected - The microservice did not match any pattern in the catalog against this source.",
+  "commentsOnly": "# Comments for smoke.cpp\n\n- Comment count: 1\n\n## Comment 1\n- Stage: Review\n- Severity: low\n- Anchor: L1\n- Title: No structural patterns detected\n- Note: The microservice did not match any pattern in the catalog against this source.\n- Excerpt: `class S{public: static S& get(){static S s;return s;}};`",
+  "transformedPreview": "1 | class S{public: static S& get(){static S s;return s;}};\n  // [Comment 1] Review: No structural patterns detected - The microservice did not match any pattern in the catalog against this source."
+}

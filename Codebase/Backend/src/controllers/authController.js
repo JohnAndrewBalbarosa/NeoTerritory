@@ -14,7 +14,7 @@ const register = async (req, res, next) => {
       return res.status(409).json({ error: 'Email already registered' });
     }
     const hash = await bcrypt.hash(password, 10);
-    const stmt = db.prepare('INSERT INTO users (username, email, password_hash, created_at) VALUES (?, ?, ?, datetime(\'now\'))');
+    const stmt = db.prepare('INSERT INTO users (username, email, password_hash, role, created_at) VALUES (?, ?, ?, \'user\', datetime(\'now\'))');
     const info = stmt.run(username, email, hash);
     logEvent(info.lastInsertRowid, 'register', `User registered: ${email}`);
     res.status(201).json({ message: 'User registered' });
@@ -25,11 +25,14 @@ const register = async (req, res, next) => {
 
 const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: 'Email and password required' });
+    const { email, username, password } = req.body;
+    const identifier = (username || email || '').trim();
+    if (!identifier || !password) {
+      return res.status(400).json({ error: 'Username (or email) and password required' });
     }
-    const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+    const user = db
+      .prepare('SELECT * FROM users WHERE username = ? OR email = ?')
+      .get(identifier, identifier);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
@@ -37,9 +40,14 @@ const login = async (req, res, next) => {
     if (!valid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
-    const token = jwt.sign({ id: user.id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '12h' });
-    logEvent(user.id, 'login', `User logged in: ${email}`);
-    res.json({ token });
+    const role = user.role || 'user';
+    const token = jwt.sign(
+      { id: user.id, username: user.username, email: user.email, role },
+      process.env.JWT_SECRET,
+      { expiresIn: '30d' }
+    );
+    logEvent(user.id, 'login', `User logged in: ${user.username}`);
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role } });
   } catch (err) {
     next(err);
   }

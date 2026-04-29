@@ -112,7 +112,7 @@ $env:PORT = "$Port"
 # Free the port if something's already on it
 $listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
 if ($listener) {
-  Write-Warn "Port $Port already in use by PID $($listener.OwningProcess) — killing it."
+  Write-Warn "Port $Port already in use by PID $($listener.OwningProcess) - killing it."
   Stop-Process -Id $listener.OwningProcess -Force -ErrorAction SilentlyContinue
   Start-Sleep -Seconds 1
 }

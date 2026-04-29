@@ -1,0 +1,50 @@
+{
+  "pattern_id": "behavioural.strategy_interface",
+  "pattern_family": "behavioural",
+  "pattern_name": "Strategy",
+  "pattern_role": "interface",
+  "enabled": true,
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "strategy_interface_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "virtual_marker", "expected_kind": "Keyword", "expected_lexeme_any_of": ["virtual"], "document_as": "strategy_virtual_marker" },
+    { "id": "strategy_method", "expected_kind": "Identifier", "capture_as": "strategy_method", "document_as": "strategy_method" },
+    { "id": "open_method_paren", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] }
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "concrete_override_present",
+        "shape_regex": ":\\s*public\\s+{class_name}\\b[\\s\\S]{0,400}\\boverride\\b",
+        "weight": 0.7,
+        "describe": "A concrete class derives from this interface and overrides a method"
+      }
+    ],
+    "expected_collaborators": [
+      {
+        "id": "context_holds_strategy",
+        "shape_regex": "(unique_ptr|shared_ptr|{class_name}\\s*\\*)\\s*<?\\s*{class_name}\\s*>?",
+        "weight": 0.5,
+        "describe": "A context class holds the strategy via pointer / smart pointer"
+      },
+      {
+        "id": "set_strategy_setter",
+        "shape_regex": "\\b(set[A-Z]\\w*|inject[A-Z]\\w*)\\s*\\(\\s*(unique_ptr|shared_ptr|const)?",
+        "weight": 0.3,
+        "describe": "A setter / injector method named set... or inject..."
+      }
+    ],
+    "negative_signals": [
+      {
+        "id": "no_virtual_pure_marker",
+        "shape_regex": "class\\s+{class_name}[\\s\\S]{0,200}\\{[\\s\\S]{0,500}\\bvirtual\\b[\\s\\S]{0,200}=\\s*0",
+        "weight": 0.0,
+        "describe": "Confirms pure-virtual marker (= 0); zero-weight, used as evidence display only"
+      }
+    ]
+  },
+
+  "ranking_weights": { "class_fit": 0.35, "implementation_fit": 0.65 }
+}

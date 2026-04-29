@@ -1,0 +1,29 @@
+# Don't ship pre-built artifacts — image rebuilds them in-stage
+Codebase/Microservice/build/
+Codebase/Backend/node_modules/
+Codebase/Backend/uploads/
+Codebase/Backend/outputs/
+Codebase/Backend/server.out.log
+Codebase/Backend/server.err.log
+Codebase/Backend/.env
+Codebase/Backend/.env.backup-*
+Codebase/Backend/src/db/database.sqlite
+
+# Repo metadata + tooling
+.git/
+.gitignore
+docs/
+.codex/
+.claude/
+*.md
+AGENTS.md
+CLAUDE.md
+
+# OS / editor
+.vscode/
+.idea/
+**/.DS_Store
+**/Thumbs.db
+
+# Linux minikube binary that lives in the repo — useless inside a Linux image
+Codebase/Infrastructure/minikube-linux-amd64

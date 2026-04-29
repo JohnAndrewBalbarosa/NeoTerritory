@@ -45,5 +45,38 @@
       "expected_kind": "Punctuation",
       "expected_lexeme_any_of": ["("]
     }
-  ]
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "wrapper_method_call",
+        "shape_regex": "\\b{class_name}\\s+\\w+\\s*\\(.*\\)\\s*;[\\s\\S]{0,200}\\w+\\s*\\.\\s*\\w+\\s*\\(",
+        "weight": 1.0,
+        "describe": "Adapter is constructed then has a method called on it"
+      }
+    ],
+    "expected_collaborators": [
+      {
+        "id": "adaptee_referenced",
+        "shape_regex": "\\b{class_name}\\s*\\(\\s*\\w+\\s*\\)",
+        "weight": 0.6,
+        "describe": "Adapter constructed with an adaptee argument"
+      }
+    ],
+    "global_functions": [],
+    "negative_signals": [
+      {
+        "id": "decorator_chain_giveaway",
+        "shape_regex": "\\bnew\\s+\\w+\\s*\\(\\s*new\\s+\\w+",
+        "weight": -0.4,
+        "describe": "Nested constructors are a Decorator giveaway, not Adapter"
+      }
+    ]
+  },
+
+  "ranking_weights": {
+    "class_fit": 0.55,
+    "implementation_fit": 0.45
+  }
 }

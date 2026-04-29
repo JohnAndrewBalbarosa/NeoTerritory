@@ -6,7 +6,6 @@
 
 # Visual Studio
 .vs/
-out/
 *.suo
 *.user
 *.userosscache
@@ -22,30 +21,22 @@ out/
 *.iws
 cmake-build-*/
 
-# Vim
+# Vim / Emacs
 *.swp
 *.swo
 *~
 .*.swp
 .*.swo
-
-# Emacs
-*~
 \#*\#
 .\#*
 
-# Sublime Text
+# Sublime / Atom / Eclipse
 *.sublime-workspace
 *.sublime-project
-
-# Atom
 .atom/
-
-# Eclipse
 .project
 .cproject
 .settings/
-
 
 # CMake build directories (artifacts only)
 build/
@@ -94,8 +85,18 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Test results output (not tracked)
+# Generated/runtime artifacts
 Project/TestResults/
+TestResults/
+Output/
+out/
+test-results/
+
+# Local scratch/debug artifacts
+_dbg.cpp
+_resp*.json
+_sample.json
+_smoke*.js
 
 # Generated Makefiles (Linux/Mac)
 Makefile
@@ -104,26 +105,18 @@ Makefile
 !CMakeLists.txt
 !*.cmake
 
-# Compiled Object files
+# Compiled binaries
 *.o
 *.obj
 *.ko
 *.elf
-
-# Precompiled Headers
 *.gch
 *.pch
-
-# Compiled Dynamic libraries
 *.so
 *.dylib
 *.dll
-
-# Compiled Static libraries
 *.a
 *.lib
-
-# Executables
 *.exe
 *.out
 *.app
@@ -133,6 +126,7 @@ Makefile
 Thumbs.db
 Desktop.ini
 
+# Project-specific
 .github/
 launch.vs.json
 NeoTerritory.slnx

@@ -1,0 +1,2876 @@
+{
+  "sourceName": "all_patterns.cpp",
+  "stage": "output",
+  "diagnostics": [],
+  "detectedPatterns": [
+    {
+      "patternId": "creational.singleton",
+      "patternFamily": "creational",
+      "patternName": "Singleton",
+      "targetClassHash": 3275253235645255700,
+      "className": "ConfigSingleton",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class ConfigSingleton {\npublic:\n    static ConfigSingleton& getInstance() {\n        static ConfigSingleton instance;\n        return instance;\n    }\n    ConfigSingleton(const ConfigSingleton&) = delete;\n    ConfigSingleton& operator=(const ConfigSingleton&) = delete;\nprivate:\n    ConfigSingleton() = default;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "singleton_class",
+          "node_hash": 3275253235645255700,
+          "line": 12,
+          "column": 7,
+          "lexeme": "ConfigSingleton"
+        },
+        {
+          "label": "static_instance_accessor",
+          "node_hash": 3275253235645255700,
+          "line": 14,
+          "column": 5,
+          "lexeme": "static"
+        },
+        {
+          "label": "instance_accessor_method",
+          "node_hash": 3275253235645255700,
+          "line": 14,
+          "column": 29,
+          "lexeme": "getInstance"
+        },
+        {
+          "label": "explicit_copy_deletion",
+          "node_hash": 3275253235645255700,
+          "line": 18,
+          "column": 47,
+          "lexeme": "delete"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 3275253235645255700,
+          "function_hash": 16032088409609738000,
+          "function_name": "getInstance",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 14,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 3275253235645255700,
+          "function_hash": 13197995725126332000,
+          "function_name": "ConfigSingleton",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 18,
+          "branch_kind": "constructor"
+        },
+        {
+          "containing_class_hash": 3275253235645255700,
+          "function_hash": 13197995725126332000,
+          "function_name": "ConfigSingleton",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 21,
+          "branch_kind": "constructor"
+        }
+      ]
+    },
+    {
+      "patternId": "behavioural.strategy_interface",
+      "patternFamily": "behavioural",
+      "patternName": "Strategy",
+      "targetClassHash": 15519567973551559000,
+      "className": "Vehicle",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class Vehicle {\npublic:\n    virtual ~Vehicle() = default;\n    virtual std::string label() const = 0;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "strategy_interface_class",
+          "node_hash": 15519567973551559000,
+          "line": 24,
+          "column": 7,
+          "lexeme": "Vehicle"
+        },
+        {
+          "label": "strategy_virtual_marker",
+          "node_hash": 15519567973551559000,
+          "line": 26,
+          "column": 5,
+          "lexeme": "virtual"
+        },
+        {
+          "label": "strategy_method",
+          "node_hash": 15519567973551559000,
+          "line": 26,
+          "column": 14,
+          "lexeme": "Vehicle"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 15519567973551559000,
+          "function_hash": 10767594328540598000,
+          "function_name": "Vehicle",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 26,
+          "branch_kind": "destructor"
+        },
+        {
+          "containing_class_hash": 15519567973551559000,
+          "function_hash": 9007027185141760000,
+          "function_name": "label",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 27,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "behavioural.strategy_concrete",
+      "patternFamily": "behavioural",
+      "patternName": "StrategyConcrete",
+      "targetClassHash": 16166504406085140000,
+      "className": "Car",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class Car : public Vehicle {\npublic:\n    std::string label() const override { return \"car\"; }\n};\n",
+      "documentationTargets": [
+        {
+          "label": "strategy_concrete_class",
+          "node_hash": 16166504406085140000,
+          "line": 30,
+          "column": 7,
+          "lexeme": "Car"
+        },
+        {
+          "label": "strategy_inheritance",
+          "node_hash": 16166504406085140000,
+          "line": 30,
+          "column": 11,
+          "lexeme": ":"
+        },
+        {
+          "label": "strategy_base_class",
+          "node_hash": 16166504406085140000,
+          "line": 30,
+          "column": 20,
+          "lexeme": "Vehicle"
+        },
+        {
+          "label": "strategy_override_method",
+          "node_hash": 16166504406085140000,
+          "line": 32,
+          "column": 5,
+          "lexeme": "std"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 16166504406085140000,
+          "function_hash": 8940495790501381000,
+          "function_name": "label",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 32,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "behavioural.strategy_concrete",
+      "patternFamily": "behavioural",
+      "patternName": "StrategyConcrete",
+      "targetClassHash": 8196628594539557000,
+      "className": "Truck",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class Truck : public Vehicle {\npublic:\n    std::string label() const override { return \"truck\"; }\n};\n",
+      "documentationTargets": [
+        {
+          "label": "strategy_concrete_class",
+          "node_hash": 8196628594539557000,
+          "line": 35,
+          "column": 7,
+          "lexeme": "Truck"
+        },
+        {
+          "label": "strategy_inheritance",
+          "node_hash": 8196628594539557000,
+          "line": 35,
+          "column": 13,
+          "lexeme": ":"
+        },
+        {
+          "label": "strategy_base_class",
+          "node_hash": 8196628594539557000,
+          "line": 35,
+          "column": 22,
+          "lexeme": "Vehicle"
+        },
+        {
+          "label": "strategy_override_method",
+          "node_hash": 8196628594539557000,
+          "line": 37,
+          "column": 5,
+          "lexeme": "std"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 8196628594539557000,
+          "function_hash": 9007656177638200000,
+          "function_name": "label",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 37,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "creational.factory",
+      "patternFamily": "creational",
+      "patternName": "Factory",
+      "targetClassHash": 11390940534352916000,
+      "className": "ShapeFactory",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class ShapeFactory {\npublic:\n    Vehicle* make(const std::string& kind) {\n        if (kind == \"car\") {\n            return new Car();\n        }\n        if (kind == \"truck\") {\n            return new Truck();\n        }\n        return nullptr;\n    }\n};\n",
+      "documentationTargets": [
+        {
+          "label": "factory_class",
+          "node_hash": 11390940534352916000,
+          "line": 40,
+          "column": 7,
+          "lexeme": "ShapeFactory"
+        },
+        {
+          "label": "factory_concrete_creation",
+          "node_hash": 11390940534352916000,
+          "line": 44,
+          "column": 20,
+          "lexeme": "new"
+        },
+        {
+          "label": "factory_return",
+          "node_hash": 11390940534352916000,
+          "line": 47,
+          "column": 13,
+          "lexeme": "return"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 11390940534352916000,
+          "function_hash": 12736909572919420000,
+          "function_name": "make",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 42,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 11390940534352916000,
+          "function_hash": 8208441931315005000,
+          "function_name": "",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 43,
+          "branch_kind": "if"
+        },
+        {
+          "containing_class_hash": 11390940534352916000,
+          "function_hash": 8208441931315005000,
+          "function_name": "",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 46,
+          "branch_kind": "if"
+        }
+      ]
+    },
+    {
+      "patternId": "creational.builder",
+      "patternFamily": "creational",
+      "patternName": "Builder",
+      "targetClassHash": 5020220935756046000,
+      "className": "QueryBuilder",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class QueryBuilder {\npublic:\n    QueryBuilder& table(const std::string& name) {\n        m_table = name;\n        return *this;\n    }\n    QueryBuilder& where(const std::string& clause) {\n        m_where = clause;\n        return *this;\n    }\n    std::string build() const {\n        return \"SELECT * FROM \" + m_table + \" WHERE \" + m_where;\n    }\nprivate:\n    std::string m_table;\n    std::string m_where;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "builder_class",
+          "node_hash": 5020220935756046000,
+          "line": 53,
+          "column": 7,
+          "lexeme": "QueryBuilder"
+        },
+        {
+          "label": "fluent_setter_return",
+          "node_hash": 5020220935756046000,
+          "line": 55,
+          "column": 17,
+          "lexeme": "&"
+        },
+        {
+          "label": "fluent_self_return",
+          "node_hash": 5020220935756046000,
+          "line": 57,
+          "column": 17,
+          "lexeme": "this"
+        },
+        {
+          "label": "builder_terminator_method",
+          "node_hash": 5020220935756046000,
+          "line": 63,
+          "column": 17,
+          "lexeme": "build"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 5020220935756046000,
+          "function_hash": 13040581595285926000,
+          "function_name": "table",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 55,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 5020220935756046000,
+          "function_hash": 13893801430593616000,
+          "function_name": "where",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 59,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 5020220935756046000,
+          "function_hash": 4047717788069730300,
+          "function_name": "build",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 63,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "creational.method_chaining",
+      "patternFamily": "creational",
+      "patternName": "MethodChaining",
+      "targetClassHash": 5020220935756046000,
+      "className": "QueryBuilder",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class QueryBuilder {\npublic:\n    QueryBuilder& table(const std::string& name) {\n        m_table = name;\n        return *this;\n    }\n    QueryBuilder& where(const std::string& clause) {\n        m_where = clause;\n        return *this;\n    }\n    std::string build() const {\n        return \"SELECT * FROM \" + m_table + \" WHERE \" + m_where;\n    }\nprivate:\n    std::string m_table;\n    std::string m_where;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "fluent_class",
+          "node_hash": 5020220935756046000,
+          "line": 53,
+          "column": 7,
+          "lexeme": "QueryBuilder"
+        },
+        {
+          "label": "fluent_setter_return",
+          "node_hash": 5020220935756046000,
+          "line": 55,
+          "column": 17,
+          "lexeme": "&"
+        },
+        {
+          "label": "fluent_self_return",
+          "node_hash": 5020220935756046000,
+          "line": 57,
+          "column": 17,
+          "lexeme": "this"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 5020220935756046000,
+          "function_hash": 13040581595285926000,
+          "function_name": "table",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 55,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 5020220935756046000,
+          "function_hash": 13893801430593616000,
+          "function_name": "where",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 59,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 5020220935756046000,
+          "function_hash": 4047717788069730300,
+          "function_name": "build",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 63,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "creational.method_chaining",
+      "patternFamily": "creational",
+      "patternName": "MethodChaining",
+      "targetClassHash": 1055440667531775600,
+      "className": "FluentLogger",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class FluentLogger {\npublic:\n    FluentLogger& tag(const std::string& value) {\n        m_tag = value;\n        return *this;\n    }\n    FluentLogger& level(const std::string& value) {\n        m_level = value;\n        return *this;\n    }\nprivate:\n    std::string m_tag;\n    std::string m_level;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "fluent_class",
+          "node_hash": 1055440667531775600,
+          "line": 71,
+          "column": 7,
+          "lexeme": "FluentLogger"
+        },
+        {
+          "label": "fluent_setter_return",
+          "node_hash": 1055440667531775600,
+          "line": 73,
+          "column": 17,
+          "lexeme": "&"
+        },
+        {
+          "label": "fluent_self_return",
+          "node_hash": 1055440667531775600,
+          "line": 75,
+          "column": 17,
+          "lexeme": "this"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 1055440667531775600,
+          "function_hash": 7298357523749970000,
+          "function_name": "tag",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 73,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 1055440667531775600,
+          "function_hash": 16835041109240902000,
+          "function_name": "level",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 77,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "structural.adapter",
+      "patternFamily": "structural",
+      "patternName": "Adapter",
+      "targetClassHash": 17104293218721995000,
+      "className": "CachedRepository",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class CachedRepository {\npublic:\n    CachedRepository(Repository* inner) : m_inner(inner) {}\n    std::string read(const std::string& key) {\n        return m_inner->read(key);\n    }\nprivate:\n    Repository* m_inner;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "adapter_class",
+          "node_hash": 17104293218721995000,
+          "line": 93,
+          "column": 7,
+          "lexeme": "CachedRepository"
+        },
+        {
+          "label": "adapter_wrapped_target",
+          "node_hash": 17104293218721995000,
+          "line": 95,
+          "column": 5,
+          "lexeme": "CachedRepository"
+        },
+        {
+          "label": "adapter_forwarded_call",
+          "node_hash": 17104293218721995000,
+          "line": 97,
+          "column": 25,
+          "lexeme": "read"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 17005695034366458000,
+          "function_name": "CachedRepository",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 95,
+          "branch_kind": "constructor"
+        },
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 5949570359034742000,
+          "function_name": "m_inner",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 95,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 15607901737620455000,
+          "function_name": "read",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 96,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "structural.decorator",
+      "patternFamily": "structural",
+      "patternName": "Decorator",
+      "targetClassHash": 17104293218721995000,
+      "className": "CachedRepository",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class CachedRepository {\npublic:\n    CachedRepository(Repository* inner) : m_inner(inner) {}\n    std::string read(const std::string& key) {\n        return m_inner->read(key);\n    }\nprivate:\n    Repository* m_inner;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "decorator_class",
+          "node_hash": 17104293218721995000,
+          "line": 93,
+          "column": 7,
+          "lexeme": "CachedRepository"
+        },
+        {
+          "label": "decorator_wrapped_component",
+          "node_hash": 17104293218721995000,
+          "line": 95,
+          "column": 5,
+          "lexeme": "CachedRepository"
+        },
+        {
+          "label": "decorator_forwarded_call",
+          "node_hash": 17104293218721995000,
+          "line": 97,
+          "column": 25,
+          "lexeme": "read"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 17005695034366458000,
+          "function_name": "CachedRepository",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 95,
+          "branch_kind": "constructor"
+        },
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 5949570359034742000,
+          "function_name": "m_inner",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 95,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 15607901737620455000,
+          "function_name": "read",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 96,
+          "branch_kind": "method"
+        }
+      ]
+    },
+    {
+      "patternId": "structural.proxy",
+      "patternFamily": "structural",
+      "patternName": "Proxy",
+      "targetClassHash": 17104293218721995000,
+      "className": "CachedRepository",
+      "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "classText": "class CachedRepository {\npublic:\n    CachedRepository(Repository* inner) : m_inner(inner) {}\n    std::string read(const std::string& key) {\n        return m_inner->read(key);\n    }\nprivate:\n    Repository* m_inner;\n};\n",
+      "documentationTargets": [
+        {
+          "label": "proxy_class",
+          "node_hash": 17104293218721995000,
+          "line": 93,
+          "column": 7,
+          "lexeme": "CachedRepository"
+        },
+        {
+          "label": "proxy_real_subject",
+          "node_hash": 17104293218721995000,
+          "line": 95,
+          "column": 5,
+          "lexeme": "CachedRepository"
+        },
+        {
+          "label": "proxy_forwarded_call",
+          "node_hash": 17104293218721995000,
+          "line": 97,
+          "column": 25,
+          "lexeme": "read"
+        }
+      ],
+      "unitTestTargets": [
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 17005695034366458000,
+          "function_name": "CachedRepository",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 95,
+          "branch_kind": "constructor"
+        },
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 5949570359034742000,
+          "function_name": "m_inner",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 95,
+          "branch_kind": "method"
+        },
+        {
+          "containing_class_hash": 17104293218721995000,
+          "function_hash": 15607901737620455000,
+          "function_name": "read",
+          "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+          "line": 96,
+          "branch_kind": "method"
+        }
+      ]
+    }
+  ],
+  "documentationTargets": [
+    {
+      "label": "singleton_class",
+      "node_hash": 3275253235645255700,
+      "line": 12,
+      "column": 7,
+      "lexeme": "ConfigSingleton"
+    },
+    {
+      "label": "static_instance_accessor",
+      "node_hash": 3275253235645255700,
+      "line": 14,
+      "column": 5,
+      "lexeme": "static"
+    },
+    {
+      "label": "instance_accessor_method",
+      "node_hash": 3275253235645255700,
+      "line": 14,
+      "column": 29,
+      "lexeme": "getInstance"
+    },
+    {
+      "label": "explicit_copy_deletion",
+      "node_hash": 3275253235645255700,
+      "line": 18,
+      "column": 47,
+      "lexeme": "delete"
+    },
+    {
+      "label": "strategy_interface_class",
+      "node_hash": 15519567973551559000,
+      "line": 24,
+      "column": 7,
+      "lexeme": "Vehicle"
+    },
+    {
+      "label": "strategy_virtual_marker",
+      "node_hash": 15519567973551559000,
+      "line": 26,
+      "column": 5,
+      "lexeme": "virtual"
+    },
+    {
+      "label": "strategy_method",
+      "node_hash": 15519567973551559000,
+      "line": 26,
+      "column": 14,
+      "lexeme": "Vehicle"
+    },
+    {
+      "label": "strategy_concrete_class",
+      "node_hash": 16166504406085140000,
+      "line": 30,
+      "column": 7,
+      "lexeme": "Car"
+    },
+    {
+      "label": "strategy_inheritance",
+      "node_hash": 16166504406085140000,
+      "line": 30,
+      "column": 11,
+      "lexeme": ":"
+    },
+    {
+      "label": "strategy_base_class",
+      "node_hash": 16166504406085140000,
+      "line": 30,
+      "column": 20,
+      "lexeme": "Vehicle"
+    },
+    {
+      "label": "strategy_override_method",
+      "node_hash": 16166504406085140000,
+      "line": 32,
+      "column": 5,
+      "lexeme": "std"
+    },
+    {
+      "label": "strategy_concrete_class",
+      "node_hash": 8196628594539557000,
+      "line": 35,
+      "column": 7,
+      "lexeme": "Truck"
+    },
+    {
+      "label": "strategy_inheritance",
+      "node_hash": 8196628594539557000,
+      "line": 35,
+      "column": 13,
+      "lexeme": ":"
+    },
+    {
+      "label": "strategy_base_class",
+      "node_hash": 8196628594539557000,
+      "line": 35,
+      "column": 22,
+      "lexeme": "Vehicle"
+    },
+    {
+      "label": "strategy_override_method",
+      "node_hash": 8196628594539557000,
+      "line": 37,
+      "column": 5,
+      "lexeme": "std"
+    },
+    {
+      "label": "factory_class",
+      "node_hash": 11390940534352916000,
+      "line": 40,
+      "column": 7,
+      "lexeme": "ShapeFactory"
+    },
+    {
+      "label": "factory_concrete_creation",
+      "node_hash": 11390940534352916000,
+      "line": 44,
+      "column": 20,
+      "lexeme": "new"
+    },
+    {
+      "label": "factory_return",
+      "node_hash": 11390940534352916000,
+      "line": 47,
+      "column": 13,
+      "lexeme": "return"
+    },
+    {
+      "label": "builder_class",
+      "node_hash": 5020220935756046000,
+      "line": 53,
+      "column": 7,
+      "lexeme": "QueryBuilder"
+    },
+    {
+      "label": "fluent_setter_return",
+      "node_hash": 5020220935756046000,
+      "line": 55,
+      "column": 17,
+      "lexeme": "&"
+    },
+    {
+      "label": "fluent_self_return",
+      "node_hash": 5020220935756046000,
+      "line": 57,
+      "column": 17,
+      "lexeme": "this"
+    },
+    {
+      "label": "builder_terminator_method",
+      "node_hash": 5020220935756046000,
+      "line": 63,
+      "column": 17,
+      "lexeme": "build"
+    },
+    {
+      "label": "fluent_class",
+      "node_hash": 5020220935756046000,
+      "line": 53,
+      "column": 7,
+      "lexeme": "QueryBuilder"
+    },
+    {
+      "label": "fluent_setter_return",
+      "node_hash": 5020220935756046000,
+      "line": 55,
+      "column": 17,
+      "lexeme": "&"
+    },
+    {
+      "label": "fluent_self_return",
+      "node_hash": 5020220935756046000,
+      "line": 57,
+      "column": 17,
+      "lexeme": "this"
+    },
+    {
+      "label": "fluent_class",
+      "node_hash": 1055440667531775600,
+      "line": 71,
+      "column": 7,
+      "lexeme": "FluentLogger"
+    },
+    {
+      "label": "fluent_setter_return",
+      "node_hash": 1055440667531775600,
+      "line": 73,
+      "column": 17,
+      "lexeme": "&"
+    },
+    {
+      "label": "fluent_self_return",
+      "node_hash": 1055440667531775600,
+      "line": 75,
+      "column": 17,
+      "lexeme": "this"
+    },
+    {
+      "label": "adapter_class",
+      "node_hash": 17104293218721995000,
+      "line": 93,
+      "column": 7,
+      "lexeme": "CachedRepository"
+    },
+    {
+      "label": "adapter_wrapped_target",
+      "node_hash": 17104293218721995000,
+      "line": 95,
+      "column": 5,
+      "lexeme": "CachedRepository"
+    },
+    {
+      "label": "adapter_forwarded_call",
+      "node_hash": 17104293218721995000,
+      "line": 97,
+      "column": 25,
+      "lexeme": "read"
+    },
+    {
+      "label": "decorator_class",
+      "node_hash": 17104293218721995000,
+      "line": 93,
+      "column": 7,
+      "lexeme": "CachedRepository"
+    },
+    {
+      "label": "decorator_wrapped_component",
+      "node_hash": 17104293218721995000,
+      "line": 95,
+      "column": 5,
+      "lexeme": "CachedRepository"
+    },
+    {
+      "label": "decorator_forwarded_call",
+      "node_hash": 17104293218721995000,
+      "line": 97,
+      "column": 25,
+      "lexeme": "read"
+    },
+    {
+      "label": "proxy_class",
+      "node_hash": 17104293218721995000,
+      "line": 93,
+      "column": 7,
+      "lexeme": "CachedRepository"
+    },
+    {
+      "label": "proxy_real_subject",
+      "node_hash": 17104293218721995000,
+      "line": 95,
+      "column": 5,
+      "lexeme": "CachedRepository"
+    },
+    {
+      "label": "proxy_forwarded_call",
+      "node_hash": 17104293218721995000,
+      "line": 97,
+      "column": 25,
+      "lexeme": "read"
+    }
+  ],
+  "unitTestTargets": [
+    {
+      "containing_class_hash": 3275253235645255700,
+      "function_hash": 16032088409609738000,
+      "function_name": "getInstance",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 14,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 3275253235645255700,
+      "function_hash": 13197995725126332000,
+      "function_name": "ConfigSingleton",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 18,
+      "branch_kind": "constructor"
+    },
+    {
+      "containing_class_hash": 3275253235645255700,
+      "function_hash": 13197995725126332000,
+      "function_name": "ConfigSingleton",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 21,
+      "branch_kind": "constructor"
+    },
+    {
+      "containing_class_hash": 15519567973551559000,
+      "function_hash": 10767594328540598000,
+      "function_name": "Vehicle",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 26,
+      "branch_kind": "destructor"
+    },
+    {
+      "containing_class_hash": 15519567973551559000,
+      "function_hash": 9007027185141760000,
+      "function_name": "label",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 27,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 16166504406085140000,
+      "function_hash": 8940495790501381000,
+      "function_name": "label",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 32,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 8196628594539557000,
+      "function_hash": 9007656177638200000,
+      "function_name": "label",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 37,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 11390940534352916000,
+      "function_hash": 12736909572919420000,
+      "function_name": "make",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 42,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 11390940534352916000,
+      "function_hash": 8208441931315005000,
+      "function_name": "",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 43,
+      "branch_kind": "if"
+    },
+    {
+      "containing_class_hash": 11390940534352916000,
+      "function_hash": 8208441931315005000,
+      "function_name": "",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 46,
+      "branch_kind": "if"
+    },
+    {
+      "containing_class_hash": 5020220935756046000,
+      "function_hash": 13040581595285926000,
+      "function_name": "table",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 55,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 5020220935756046000,
+      "function_hash": 13893801430593616000,
+      "function_name": "where",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 59,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 5020220935756046000,
+      "function_hash": 4047717788069730300,
+      "function_name": "build",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 63,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 5020220935756046000,
+      "function_hash": 13040581595285926000,
+      "function_name": "table",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 55,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 5020220935756046000,
+      "function_hash": 13893801430593616000,
+      "function_name": "where",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 59,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 5020220935756046000,
+      "function_hash": 4047717788069730300,
+      "function_name": "build",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 63,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 1055440667531775600,
+      "function_hash": 7298357523749970000,
+      "function_name": "tag",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 73,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 1055440667531775600,
+      "function_hash": 16835041109240902000,
+      "function_name": "level",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 77,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 17005695034366458000,
+      "function_name": "CachedRepository",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 95,
+      "branch_kind": "constructor"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 5949570359034742000,
+      "function_name": "m_inner",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 95,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 15607901737620455000,
+      "function_name": "read",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 96,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 17005695034366458000,
+      "function_name": "CachedRepository",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 95,
+      "branch_kind": "constructor"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 5949570359034742000,
+      "function_name": "m_inner",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 95,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 15607901737620455000,
+      "function_name": "read",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 96,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 17005695034366458000,
+      "function_name": "CachedRepository",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 95,
+      "branch_kind": "constructor"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 5949570359034742000,
+      "function_name": "m_inner",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 95,
+      "branch_kind": "method"
+    },
+    {
+      "containing_class_hash": 17104293218721995000,
+      "function_hash": 15607901737620455000,
+      "function_name": "read",
+      "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+      "line": 96,
+      "branch_kind": "method"
+    }
+  ],
+  "aiByPattern": [
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "creational.singleton",
+        "language": "cpp",
+        "className": "ConfigSingleton",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class ConfigSingleton {\npublic:\n    static ConfigSingleton& getInstance() {\n        static ConfigSingleton instance;\n        return instance;\n    }\n    ConfigSingleton(const ConfigSingleton&) = delete;\n    ConfigSingleton& operator=(const ConfigSingleton&) = delete;\nprivate:\n    ConfigSingleton() = default;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "singleton_class",
+            "node_hash": 3275253235645255700,
+            "line": 12,
+            "column": 7,
+            "lexeme": "ConfigSingleton"
+          },
+          {
+            "label": "static_instance_accessor",
+            "node_hash": 3275253235645255700,
+            "line": 14,
+            "column": 5,
+            "lexeme": "static"
+          },
+          {
+            "label": "instance_accessor_method",
+            "node_hash": 3275253235645255700,
+            "line": 14,
+            "column": 29,
+            "lexeme": "getInstance"
+          },
+          {
+            "label": "explicit_copy_deletion",
+            "node_hash": 3275253235645255700,
+            "line": 18,
+            "column": 47,
+            "lexeme": "delete"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 3275253235645255700,
+            "function_hash": 16032088409609738000,
+            "function_name": "getInstance",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 14,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 3275253235645255700,
+            "function_hash": 13197995725126332000,
+            "function_name": "ConfigSingleton",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 18,
+            "branch_kind": "constructor"
+          },
+          {
+            "containing_class_hash": 3275253235645255700,
+            "function_hash": 13197995725126332000,
+            "function_name": "ConfigSingleton",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 21,
+            "branch_kind": "constructor"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "behavioural.strategy_interface",
+        "language": "cpp",
+        "className": "Vehicle",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class Vehicle {\npublic:\n    virtual ~Vehicle() = default;\n    virtual std::string label() const = 0;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "strategy_interface_class",
+            "node_hash": 15519567973551559000,
+            "line": 24,
+            "column": 7,
+            "lexeme": "Vehicle"
+          },
+          {
+            "label": "strategy_virtual_marker",
+            "node_hash": 15519567973551559000,
+            "line": 26,
+            "column": 5,
+            "lexeme": "virtual"
+          },
+          {
+            "label": "strategy_method",
+            "node_hash": 15519567973551559000,
+            "line": 26,
+            "column": 14,
+            "lexeme": "Vehicle"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 15519567973551559000,
+            "function_hash": 10767594328540598000,
+            "function_name": "Vehicle",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 26,
+            "branch_kind": "destructor"
+          },
+          {
+            "containing_class_hash": 15519567973551559000,
+            "function_hash": 9007027185141760000,
+            "function_name": "label",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 27,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "behavioural.strategy_concrete",
+        "language": "cpp",
+        "className": "Car",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class Car : public Vehicle {\npublic:\n    std::string label() const override { return \"car\"; }\n};\n",
+        "documentationTargets": [
+          {
+            "label": "strategy_concrete_class",
+            "node_hash": 16166504406085140000,
+            "line": 30,
+            "column": 7,
+            "lexeme": "Car"
+          },
+          {
+            "label": "strategy_inheritance",
+            "node_hash": 16166504406085140000,
+            "line": 30,
+            "column": 11,
+            "lexeme": ":"
+          },
+          {
+            "label": "strategy_base_class",
+            "node_hash": 16166504406085140000,
+            "line": 30,
+            "column": 20,
+            "lexeme": "Vehicle"
+          },
+          {
+            "label": "strategy_override_method",
+            "node_hash": 16166504406085140000,
+            "line": 32,
+            "column": 5,
+            "lexeme": "std"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 16166504406085140000,
+            "function_hash": 8940495790501381000,
+            "function_name": "label",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 32,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "behavioural.strategy_concrete",
+        "language": "cpp",
+        "className": "Truck",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class Truck : public Vehicle {\npublic:\n    std::string label() const override { return \"truck\"; }\n};\n",
+        "documentationTargets": [
+          {
+            "label": "strategy_concrete_class",
+            "node_hash": 8196628594539557000,
+            "line": 35,
+            "column": 7,
+            "lexeme": "Truck"
+          },
+          {
+            "label": "strategy_inheritance",
+            "node_hash": 8196628594539557000,
+            "line": 35,
+            "column": 13,
+            "lexeme": ":"
+          },
+          {
+            "label": "strategy_base_class",
+            "node_hash": 8196628594539557000,
+            "line": 35,
+            "column": 22,
+            "lexeme": "Vehicle"
+          },
+          {
+            "label": "strategy_override_method",
+            "node_hash": 8196628594539557000,
+            "line": 37,
+            "column": 5,
+            "lexeme": "std"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 8196628594539557000,
+            "function_hash": 9007656177638200000,
+            "function_name": "label",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 37,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "creational.factory",
+        "language": "cpp",
+        "className": "ShapeFactory",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class ShapeFactory {\npublic:\n    Vehicle* make(const std::string& kind) {\n        if (kind == \"car\") {\n            return new Car();\n        }\n        if (kind == \"truck\") {\n            return new Truck();\n        }\n        return nullptr;\n    }\n};\n",
+        "documentationTargets": [
+          {
+            "label": "factory_class",
+            "node_hash": 11390940534352916000,
+            "line": 40,
+            "column": 7,
+            "lexeme": "ShapeFactory"
+          },
+          {
+            "label": "factory_concrete_creation",
+            "node_hash": 11390940534352916000,
+            "line": 44,
+            "column": 20,
+            "lexeme": "new"
+          },
+          {
+            "label": "factory_return",
+            "node_hash": 11390940534352916000,
+            "line": 47,
+            "column": 13,
+            "lexeme": "return"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 11390940534352916000,
+            "function_hash": 12736909572919420000,
+            "function_name": "make",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 42,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 11390940534352916000,
+            "function_hash": 8208441931315005000,
+            "function_name": "",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 43,
+            "branch_kind": "if"
+          },
+          {
+            "containing_class_hash": 11390940534352916000,
+            "function_hash": 8208441931315005000,
+            "function_name": "",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 46,
+            "branch_kind": "if"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "creational.builder",
+        "language": "cpp",
+        "className": "QueryBuilder",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class QueryBuilder {\npublic:\n    QueryBuilder& table(const std::string& name) {\n        m_table = name;\n        return *this;\n    }\n    QueryBuilder& where(const std::string& clause) {\n        m_where = clause;\n        return *this;\n    }\n    std::string build() const {\n        return \"SELECT * FROM \" + m_table + \" WHERE \" + m_where;\n    }\nprivate:\n    std::string m_table;\n    std::string m_where;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "builder_class",
+            "node_hash": 5020220935756046000,
+            "line": 53,
+            "column": 7,
+            "lexeme": "QueryBuilder"
+          },
+          {
+            "label": "fluent_setter_return",
+            "node_hash": 5020220935756046000,
+            "line": 55,
+            "column": 17,
+            "lexeme": "&"
+          },
+          {
+            "label": "fluent_self_return",
+            "node_hash": 5020220935756046000,
+            "line": 57,
+            "column": 17,
+            "lexeme": "this"
+          },
+          {
+            "label": "builder_terminator_method",
+            "node_hash": 5020220935756046000,
+            "line": 63,
+            "column": 17,
+            "lexeme": "build"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 5020220935756046000,
+            "function_hash": 13040581595285926000,
+            "function_name": "table",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 55,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 5020220935756046000,
+            "function_hash": 13893801430593616000,
+            "function_name": "where",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 59,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 5020220935756046000,
+            "function_hash": 4047717788069730300,
+            "function_name": "build",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 63,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "creational.method_chaining",
+        "language": "cpp",
+        "className": "QueryBuilder",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class QueryBuilder {\npublic:\n    QueryBuilder& table(const std::string& name) {\n        m_table = name;\n        return *this;\n    }\n    QueryBuilder& where(const std::string& clause) {\n        m_where = clause;\n        return *this;\n    }\n    std::string build() const {\n        return \"SELECT * FROM \" + m_table + \" WHERE \" + m_where;\n    }\nprivate:\n    std::string m_table;\n    std::string m_where;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "fluent_class",
+            "node_hash": 5020220935756046000,
+            "line": 53,
+            "column": 7,
+            "lexeme": "QueryBuilder"
+          },
+          {
+            "label": "fluent_setter_return",
+            "node_hash": 5020220935756046000,
+            "line": 55,
+            "column": 17,
+            "lexeme": "&"
+          },
+          {
+            "label": "fluent_self_return",
+            "node_hash": 5020220935756046000,
+            "line": 57,
+            "column": 17,
+            "lexeme": "this"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 5020220935756046000,
+            "function_hash": 13040581595285926000,
+            "function_name": "table",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 55,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 5020220935756046000,
+            "function_hash": 13893801430593616000,
+            "function_name": "where",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 59,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 5020220935756046000,
+            "function_hash": 4047717788069730300,
+            "function_name": "build",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 63,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "creational.method_chaining",
+        "language": "cpp",
+        "className": "FluentLogger",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class FluentLogger {\npublic:\n    FluentLogger& tag(const std::string& value) {\n        m_tag = value;\n        return *this;\n    }\n    FluentLogger& level(const std::string& value) {\n        m_level = value;\n        return *this;\n    }\nprivate:\n    std::string m_tag;\n    std::string m_level;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "fluent_class",
+            "node_hash": 1055440667531775600,
+            "line": 71,
+            "column": 7,
+            "lexeme": "FluentLogger"
+          },
+          {
+            "label": "fluent_setter_return",
+            "node_hash": 1055440667531775600,
+            "line": 73,
+            "column": 17,
+            "lexeme": "&"
+          },
+          {
+            "label": "fluent_self_return",
+            "node_hash": 1055440667531775600,
+            "line": 75,
+            "column": 17,
+            "lexeme": "this"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 1055440667531775600,
+            "function_hash": 7298357523749970000,
+            "function_name": "tag",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 73,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 1055440667531775600,
+            "function_hash": 16835041109240902000,
+            "function_name": "level",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 77,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "structural.adapter",
+        "language": "cpp",
+        "className": "CachedRepository",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class CachedRepository {\npublic:\n    CachedRepository(Repository* inner) : m_inner(inner) {}\n    std::string read(const std::string& key) {\n        return m_inner->read(key);\n    }\nprivate:\n    Repository* m_inner;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "adapter_class",
+            "node_hash": 17104293218721995000,
+            "line": 93,
+            "column": 7,
+            "lexeme": "CachedRepository"
+          },
+          {
+            "label": "adapter_wrapped_target",
+            "node_hash": 17104293218721995000,
+            "line": 95,
+            "column": 5,
+            "lexeme": "CachedRepository"
+          },
+          {
+            "label": "adapter_forwarded_call",
+            "node_hash": 17104293218721995000,
+            "line": 97,
+            "column": 25,
+            "lexeme": "read"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 17005695034366458000,
+            "function_name": "CachedRepository",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 95,
+            "branch_kind": "constructor"
+          },
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 5949570359034742000,
+            "function_name": "m_inner",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 95,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 15607901737620455000,
+            "function_name": "read",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 96,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "structural.decorator",
+        "language": "cpp",
+        "className": "CachedRepository",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class CachedRepository {\npublic:\n    CachedRepository(Repository* inner) : m_inner(inner) {}\n    std::string read(const std::string& key) {\n        return m_inner->read(key);\n    }\nprivate:\n    Repository* m_inner;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "decorator_class",
+            "node_hash": 17104293218721995000,
+            "line": 93,
+            "column": 7,
+            "lexeme": "CachedRepository"
+          },
+          {
+            "label": "decorator_wrapped_component",
+            "node_hash": 17104293218721995000,
+            "line": 95,
+            "column": 5,
+            "lexeme": "CachedRepository"
+          },
+          {
+            "label": "decorator_forwarded_call",
+            "node_hash": 17104293218721995000,
+            "line": 97,
+            "column": 25,
+            "lexeme": "read"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 17005695034366458000,
+            "function_name": "CachedRepository",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 95,
+            "branch_kind": "constructor"
+          },
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 5949570359034742000,
+            "function_name": "m_inner",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 95,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 15607901737620455000,
+            "function_name": "read",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 96,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    },
+    {
+      "status": "pending_provider",
+      "reason": "ai_provider_not_configured",
+      "payload": {
+        "task": "document_detected_design_pattern_code",
+        "detectedPattern": "structural.proxy",
+        "language": "cpp",
+        "className": "CachedRepository",
+        "fileName": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+        "classText": "class CachedRepository {\npublic:\n    CachedRepository(Repository* inner) : m_inner(inner) {}\n    std::string read(const std::string& key) {\n        return m_inner->read(key);\n    }\nprivate:\n    Repository* m_inner;\n};\n",
+        "documentationTargets": [
+          {
+            "label": "proxy_class",
+            "node_hash": 17104293218721995000,
+            "line": 93,
+            "column": 7,
+            "lexeme": "CachedRepository"
+          },
+          {
+            "label": "proxy_real_subject",
+            "node_hash": 17104293218721995000,
+            "line": 95,
+            "column": 5,
+            "lexeme": "CachedRepository"
+          },
+          {
+            "label": "proxy_forwarded_call",
+            "node_hash": 17104293218721995000,
+            "line": 97,
+            "column": 25,
+            "lexeme": "read"
+          }
+        ],
+        "unitTestTargets": [
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 17005695034366458000,
+            "function_name": "CachedRepository",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 95,
+            "branch_kind": "constructor"
+          },
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 5949570359034742000,
+            "function_name": "m_inner",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 95,
+            "branch_kind": "method"
+          },
+          {
+            "containing_class_hash": 17104293218721995000,
+            "function_hash": 15607901737620455000,
+            "function_name": "read",
+            "file_name": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\all_patterns.cpp",
+            "line": 96,
+            "branch_kind": "method"
+          }
+        ]
+      },
+      "documentationByTarget": {},
+      "unitTestPlanByTarget": {}
+    }
+  ],
+  "ranking": {
+    "ranks": [
+      {
+        "patternId": "behavioural.strategy_concrete",
+        "classFit": 1,
+        "implementationFit": 1,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 0.4,
+          "implementation_fit": 0.6
+        },
+        "evidence": {
+          "callsites": [
+            {
+              "id": "override_keyword_present",
+              "weight": 1,
+              "line": 30,
+              "snippet": "class Car : public Vehicle {\npublic:\n    std::string label() const override { re",
+              "describe": "Body contains `override` specifier — strong concrete-strategy signal"
+            }
+          ],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": true
+      },
+      {
+        "patternId": "behavioural.strategy_concrete",
+        "classFit": 1,
+        "implementationFit": 1,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 0.4,
+          "implementation_fit": 0.6
+        },
+        "evidence": {
+          "callsites": [
+            {
+              "id": "override_keyword_present",
+              "weight": 1,
+              "line": 35,
+              "snippet": "class Truck : public Vehicle {\npublic:\n    std::string label() const override { ",
+              "describe": "Body contains `override` specifier — strong concrete-strategy signal"
+            }
+          ],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": true
+      },
+      {
+        "patternId": "structural.adapter",
+        "classFit": 1,
+        "implementationFit": 1,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 0.55,
+          "implementation_fit": 0.45
+        },
+        "evidence": {
+          "callsites": [
+            {
+              "id": "wrapper_method_call",
+              "weight": 1,
+              "line": 124,
+              "snippet": "CachedRepository cached(&repo);\n    cached.read(\"token\");\n\n    PlainHolder holde",
+              "describe": "Adapter is constructed then has a method called on it"
+            }
+          ],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": true
+      },
+      {
+        "patternId": "creational.singleton",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "creational.factory",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "creational.builder",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "creational.method_chaining",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "creational.method_chaining",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "structural.decorator",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "structural.proxy",
+        "classFit": 1,
+        "implementationFit": 0,
+        "finalRank": 1,
+        "weights": {
+          "class_fit": 1,
+          "implementation_fit": 0
+        },
+        "evidence": {
+          "callsites": [],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": []
+        },
+        "hasImplementationTemplate": false
+      },
+      {
+        "patternId": "behavioural.strategy_interface",
+        "classFit": 1,
+        "implementationFit": 0.7,
+        "finalRank": 0.8049999999999999,
+        "weights": {
+          "class_fit": 0.35,
+          "implementation_fit": 0.65
+        },
+        "evidence": {
+          "callsites": [
+            {
+              "id": "concrete_override_present",
+              "weight": 0.7,
+              "line": 30,
+              "snippet": ": public Vehicle {\npublic:\n    std::string label() const override { return \"car\"",
+              "describe": "A concrete class derives from this interface and overrides a method"
+            }
+          ],
+          "collaborators": [],
+          "globalFunctions": [],
+          "negativeSignals": [
+            {
+              "id": "no_virtual_pure_marker",
+              "weight": 0,
+              "line": 24,
+              "snippet": "class Vehicle {\npublic:\n    virtual ~Vehicle() = default;\n    virtual std::strin",
+              "describe": "Confirms pure-virtual marker (= 0); zero-weight, used as evidence display only"
+            }
+          ]
+        },
+        "hasImplementationTemplate": true
+      }
+    ],
+    "verdict": "ambiguous",
+    "leadingPatternId": "behavioural.strategy_concrete",
+    "ambiguousCandidates": [
+      "behavioural.strategy_concrete",
+      "behavioural.strategy_concrete",
+      "structural.adapter",
+      "creational.singleton",
+      "creational.factory",
+      "creational.builder",
+      "creational.method_chaining",
+      "creational.method_chaining",
+      "structural.decorator",
+      "structural.proxy"
+    ],
+    "thresholds": {
+      "confident": 0.85,
+      "ambiguityDelta": 0.1,
+      "noClearPattern": 0.5
+    }
+  },
+  "annotations": [
+    {
+      "id": "comment-1",
+      "order": 1,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 12,
+      "lineEnd": 12,
+      "title": "Singleton :: singleton_class",
+      "comment": "Structural anchor \"singleton_class\" — AI documentation pending.",
+      "excerpt": "class ConfigSingleton {",
+      "kind": "singleton_class"
+    },
+    {
+      "id": "comment-2",
+      "order": 2,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 14,
+      "lineEnd": 14,
+      "title": "Singleton :: static_instance_accessor",
+      "comment": "Structural anchor \"static_instance_accessor\" — AI documentation pending.",
+      "excerpt": "static ConfigSingleton& getInstance() {",
+      "kind": "static_instance_accessor"
+    },
+    {
+      "id": "comment-3",
+      "order": 3,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 14,
+      "lineEnd": 14,
+      "title": "Singleton :: instance_accessor_method",
+      "comment": "Structural anchor \"instance_accessor_method\" — AI documentation pending.",
+      "excerpt": "static ConfigSingleton& getInstance() {",
+      "kind": "instance_accessor_method"
+    },
+    {
+      "id": "comment-4",
+      "order": 4,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 18,
+      "lineEnd": 18,
+      "title": "Singleton :: explicit_copy_deletion",
+      "comment": "Structural anchor \"explicit_copy_deletion\" — AI documentation pending.",
+      "excerpt": "ConfigSingleton(const ConfigSingleton&) = delete;",
+      "kind": "explicit_copy_deletion"
+    },
+    {
+      "id": "comment-5",
+      "order": 5,
+      "stage": "Test",
+      "severity": "low",
+      "line": 14,
+      "lineEnd": 14,
+      "title": "Singleton :: getInstance",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "static ConfigSingleton& getInstance() {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-6",
+      "order": 6,
+      "stage": "Test",
+      "severity": "low",
+      "line": 18,
+      "lineEnd": 18,
+      "title": "Singleton :: ConfigSingleton",
+      "comment": "Unit-test target (constructor) — AI test plan pending.",
+      "excerpt": "ConfigSingleton(const ConfigSingleton&) = delete;",
+      "kind": "unit_test:constructor"
+    },
+    {
+      "id": "comment-7",
+      "order": 7,
+      "stage": "Test",
+      "severity": "low",
+      "line": 21,
+      "lineEnd": 21,
+      "title": "Singleton :: ConfigSingleton",
+      "comment": "Unit-test target (constructor) — AI test plan pending.",
+      "excerpt": "ConfigSingleton() = default;",
+      "kind": "unit_test:constructor"
+    },
+    {
+      "id": "comment-8",
+      "order": 8,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 24,
+      "lineEnd": 24,
+      "title": "Strategy :: strategy_interface_class",
+      "comment": "Structural anchor \"strategy_interface_class\" — AI documentation pending.",
+      "excerpt": "class Vehicle {",
+      "kind": "strategy_interface_class"
+    },
+    {
+      "id": "comment-9",
+      "order": 9,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 26,
+      "lineEnd": 26,
+      "title": "Strategy :: strategy_virtual_marker",
+      "comment": "Structural anchor \"strategy_virtual_marker\" — AI documentation pending.",
+      "excerpt": "virtual ~Vehicle() = default;",
+      "kind": "strategy_virtual_marker"
+    },
+    {
+      "id": "comment-10",
+      "order": 10,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 26,
+      "lineEnd": 26,
+      "title": "Strategy :: strategy_method",
+      "comment": "Structural anchor \"strategy_method\" — AI documentation pending.",
+      "excerpt": "virtual ~Vehicle() = default;",
+      "kind": "strategy_method"
+    },
+    {
+      "id": "comment-11",
+      "order": 11,
+      "stage": "Test",
+      "severity": "low",
+      "line": 26,
+      "lineEnd": 26,
+      "title": "Strategy :: Vehicle",
+      "comment": "Unit-test target (destructor) — AI test plan pending.",
+      "excerpt": "virtual ~Vehicle() = default;",
+      "kind": "unit_test:destructor"
+    },
+    {
+      "id": "comment-12",
+      "order": 12,
+      "stage": "Test",
+      "severity": "low",
+      "line": 27,
+      "lineEnd": 27,
+      "title": "Strategy :: label",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "virtual std::string label() const = 0;",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-13",
+      "order": 13,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 30,
+      "lineEnd": 30,
+      "title": "StrategyConcrete :: strategy_concrete_class",
+      "comment": "Structural anchor \"strategy_concrete_class\" — AI documentation pending.",
+      "excerpt": "class Car : public Vehicle {",
+      "kind": "strategy_concrete_class"
+    },
+    {
+      "id": "comment-14",
+      "order": 14,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 30,
+      "lineEnd": 30,
+      "title": "StrategyConcrete :: strategy_inheritance",
+      "comment": "Structural anchor \"strategy_inheritance\" — AI documentation pending.",
+      "excerpt": "class Car : public Vehicle {",
+      "kind": "strategy_inheritance"
+    },
+    {
+      "id": "comment-15",
+      "order": 15,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 30,
+      "lineEnd": 30,
+      "title": "StrategyConcrete :: strategy_base_class",
+      "comment": "Structural anchor \"strategy_base_class\" — AI documentation pending.",
+      "excerpt": "class Car : public Vehicle {",
+      "kind": "strategy_base_class"
+    },
+    {
+      "id": "comment-16",
+      "order": 16,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 32,
+      "lineEnd": 32,
+      "title": "StrategyConcrete :: strategy_override_method",
+      "comment": "Structural anchor \"strategy_override_method\" — AI documentation pending.",
+      "excerpt": "std::string label() const override { return \"car\"; }",
+      "kind": "strategy_override_method"
+    },
+    {
+      "id": "comment-17",
+      "order": 17,
+      "stage": "Test",
+      "severity": "low",
+      "line": 32,
+      "lineEnd": 32,
+      "title": "StrategyConcrete :: label",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string label() const override { return \"car\"; }",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-18",
+      "order": 18,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 35,
+      "lineEnd": 35,
+      "title": "StrategyConcrete :: strategy_concrete_class",
+      "comment": "Structural anchor \"strategy_concrete_class\" — AI documentation pending.",
+      "excerpt": "class Truck : public Vehicle {",
+      "kind": "strategy_concrete_class"
+    },
+    {
+      "id": "comment-19",
+      "order": 19,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 35,
+      "lineEnd": 35,
+      "title": "StrategyConcrete :: strategy_inheritance",
+      "comment": "Structural anchor \"strategy_inheritance\" — AI documentation pending.",
+      "excerpt": "class Truck : public Vehicle {",
+      "kind": "strategy_inheritance"
+    },
+    {
+      "id": "comment-20",
+      "order": 20,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 35,
+      "lineEnd": 35,
+      "title": "StrategyConcrete :: strategy_base_class",
+      "comment": "Structural anchor \"strategy_base_class\" — AI documentation pending.",
+      "excerpt": "class Truck : public Vehicle {",
+      "kind": "strategy_base_class"
+    },
+    {
+      "id": "comment-21",
+      "order": 21,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 37,
+      "lineEnd": 37,
+      "title": "StrategyConcrete :: strategy_override_method",
+      "comment": "Structural anchor \"strategy_override_method\" — AI documentation pending.",
+      "excerpt": "std::string label() const override { return \"truck\"; }",
+      "kind": "strategy_override_method"
+    },
+    {
+      "id": "comment-22",
+      "order": 22,
+      "stage": "Test",
+      "severity": "low",
+      "line": 37,
+      "lineEnd": 37,
+      "title": "StrategyConcrete :: label",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string label() const override { return \"truck\"; }",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-23",
+      "order": 23,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 40,
+      "lineEnd": 40,
+      "title": "Factory :: factory_class",
+      "comment": "Structural anchor \"factory_class\" — AI documentation pending.",
+      "excerpt": "class ShapeFactory {",
+      "kind": "factory_class"
+    },
+    {
+      "id": "comment-24",
+      "order": 24,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 44,
+      "lineEnd": 44,
+      "title": "Factory :: factory_concrete_creation",
+      "comment": "Structural anchor \"factory_concrete_creation\" — AI documentation pending.",
+      "excerpt": "return new Car();",
+      "kind": "factory_concrete_creation"
+    },
+    {
+      "id": "comment-25",
+      "order": 25,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 47,
+      "lineEnd": 47,
+      "title": "Factory :: factory_return",
+      "comment": "Structural anchor \"factory_return\" — AI documentation pending.",
+      "excerpt": "return new Truck();",
+      "kind": "factory_return"
+    },
+    {
+      "id": "comment-26",
+      "order": 26,
+      "stage": "Test",
+      "severity": "low",
+      "line": 42,
+      "lineEnd": 42,
+      "title": "Factory :: make",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "Vehicle* make(const std::string& kind) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-27",
+      "order": 27,
+      "stage": "Test",
+      "severity": "low",
+      "line": 43,
+      "lineEnd": 43,
+      "title": "Factory :: if",
+      "comment": "Unit-test target (if) — AI test plan pending.",
+      "excerpt": "if (kind == \"car\") {",
+      "kind": "unit_test:if"
+    },
+    {
+      "id": "comment-28",
+      "order": 28,
+      "stage": "Test",
+      "severity": "low",
+      "line": 46,
+      "lineEnd": 46,
+      "title": "Factory :: if",
+      "comment": "Unit-test target (if) — AI test plan pending.",
+      "excerpt": "if (kind == \"truck\") {",
+      "kind": "unit_test:if"
+    },
+    {
+      "id": "comment-29",
+      "order": 29,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 53,
+      "lineEnd": 53,
+      "title": "Builder :: builder_class",
+      "comment": "Structural anchor \"builder_class\" — AI documentation pending.",
+      "excerpt": "class QueryBuilder {",
+      "kind": "builder_class"
+    },
+    {
+      "id": "comment-30",
+      "order": 30,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 55,
+      "lineEnd": 55,
+      "title": "Builder :: fluent_setter_return",
+      "comment": "Structural anchor \"fluent_setter_return\" — AI documentation pending.",
+      "excerpt": "QueryBuilder& table(const std::string& name) {",
+      "kind": "fluent_setter_return"
+    },
+    {
+      "id": "comment-31",
+      "order": 31,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 57,
+      "lineEnd": 57,
+      "title": "Builder :: fluent_self_return",
+      "comment": "Structural anchor \"fluent_self_return\" — AI documentation pending.",
+      "excerpt": "return *this;",
+      "kind": "fluent_self_return"
+    },
+    {
+      "id": "comment-32",
+      "order": 32,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 63,
+      "lineEnd": 63,
+      "title": "Builder :: builder_terminator_method",
+      "comment": "Structural anchor \"builder_terminator_method\" — AI documentation pending.",
+      "excerpt": "std::string build() const {",
+      "kind": "builder_terminator_method"
+    },
+    {
+      "id": "comment-33",
+      "order": 33,
+      "stage": "Test",
+      "severity": "low",
+      "line": 55,
+      "lineEnd": 55,
+      "title": "Builder :: table",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "QueryBuilder& table(const std::string& name) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-34",
+      "order": 34,
+      "stage": "Test",
+      "severity": "low",
+      "line": 59,
+      "lineEnd": 59,
+      "title": "Builder :: where",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "QueryBuilder& where(const std::string& clause) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-35",
+      "order": 35,
+      "stage": "Test",
+      "severity": "low",
+      "line": 63,
+      "lineEnd": 63,
+      "title": "Builder :: build",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string build() const {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-36",
+      "order": 36,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 53,
+      "lineEnd": 53,
+      "title": "MethodChaining :: fluent_class",
+      "comment": "Structural anchor \"fluent_class\" — AI documentation pending.",
+      "excerpt": "class QueryBuilder {",
+      "kind": "fluent_class"
+    },
+    {
+      "id": "comment-37",
+      "order": 37,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 55,
+      "lineEnd": 55,
+      "title": "MethodChaining :: fluent_setter_return",
+      "comment": "Structural anchor \"fluent_setter_return\" — AI documentation pending.",
+      "excerpt": "QueryBuilder& table(const std::string& name) {",
+      "kind": "fluent_setter_return"
+    },
+    {
+      "id": "comment-38",
+      "order": 38,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 57,
+      "lineEnd": 57,
+      "title": "MethodChaining :: fluent_self_return",
+      "comment": "Structural anchor \"fluent_self_return\" — AI documentation pending.",
+      "excerpt": "return *this;",
+      "kind": "fluent_self_return"
+    },
+    {
+      "id": "comment-39",
+      "order": 39,
+      "stage": "Test",
+      "severity": "low",
+      "line": 55,
+      "lineEnd": 55,
+      "title": "MethodChaining :: table",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "QueryBuilder& table(const std::string& name) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-40",
+      "order": 40,
+      "stage": "Test",
+      "severity": "low",
+      "line": 59,
+      "lineEnd": 59,
+      "title": "MethodChaining :: where",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "QueryBuilder& where(const std::string& clause) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-41",
+      "order": 41,
+      "stage": "Test",
+      "severity": "low",
+      "line": 63,
+      "lineEnd": 63,
+      "title": "MethodChaining :: build",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string build() const {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-42",
+      "order": 42,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 71,
+      "lineEnd": 71,
+      "title": "MethodChaining :: fluent_class",
+      "comment": "Structural anchor \"fluent_class\" — AI documentation pending.",
+      "excerpt": "class FluentLogger {",
+      "kind": "fluent_class"
+    },
+    {
+      "id": "comment-43",
+      "order": 43,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 73,
+      "lineEnd": 73,
+      "title": "MethodChaining :: fluent_setter_return",
+      "comment": "Structural anchor \"fluent_setter_return\" — AI documentation pending.",
+      "excerpt": "FluentLogger& tag(const std::string& value) {",
+      "kind": "fluent_setter_return"
+    },
+    {
+      "id": "comment-44",
+      "order": 44,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 75,
+      "lineEnd": 75,
+      "title": "MethodChaining :: fluent_self_return",
+      "comment": "Structural anchor \"fluent_self_return\" — AI documentation pending.",
+      "excerpt": "return *this;",
+      "kind": "fluent_self_return"
+    },
+    {
+      "id": "comment-45",
+      "order": 45,
+      "stage": "Test",
+      "severity": "low",
+      "line": 73,
+      "lineEnd": 73,
+      "title": "MethodChaining :: tag",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "FluentLogger& tag(const std::string& value) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-46",
+      "order": 46,
+      "stage": "Test",
+      "severity": "low",
+      "line": 77,
+      "lineEnd": 77,
+      "title": "MethodChaining :: level",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "FluentLogger& level(const std::string& value) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-47",
+      "order": 47,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 93,
+      "lineEnd": 93,
+      "title": "Adapter :: adapter_class",
+      "comment": "Structural anchor \"adapter_class\" — AI documentation pending.",
+      "excerpt": "class CachedRepository {",
+      "kind": "adapter_class"
+    },
+    {
+      "id": "comment-48",
+      "order": 48,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Adapter :: adapter_wrapped_target",
+      "comment": "Structural anchor \"adapter_wrapped_target\" — AI documentation pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "adapter_wrapped_target"
+    },
+    {
+      "id": "comment-49",
+      "order": 49,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 97,
+      "lineEnd": 97,
+      "title": "Adapter :: adapter_forwarded_call",
+      "comment": "Structural anchor \"adapter_forwarded_call\" — AI documentation pending.",
+      "excerpt": "return m_inner->read(key);",
+      "kind": "adapter_forwarded_call"
+    },
+    {
+      "id": "comment-50",
+      "order": 50,
+      "stage": "Test",
+      "severity": "low",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Adapter :: CachedRepository",
+      "comment": "Unit-test target (constructor) — AI test plan pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "unit_test:constructor"
+    },
+    {
+      "id": "comment-51",
+      "order": 51,
+      "stage": "Test",
+      "severity": "low",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Adapter :: m_inner",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-52",
+      "order": 52,
+      "stage": "Test",
+      "severity": "low",
+      "line": 96,
+      "lineEnd": 96,
+      "title": "Adapter :: read",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string read(const std::string& key) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-53",
+      "order": 53,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 93,
+      "lineEnd": 93,
+      "title": "Decorator :: decorator_class",
+      "comment": "Structural anchor \"decorator_class\" — AI documentation pending.",
+      "excerpt": "class CachedRepository {",
+      "kind": "decorator_class"
+    },
+    {
+      "id": "comment-54",
+      "order": 54,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Decorator :: decorator_wrapped_component",
+      "comment": "Structural anchor \"decorator_wrapped_component\" — AI documentation pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "decorator_wrapped_component"
+    },
+    {
+      "id": "comment-55",
+      "order": 55,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 97,
+      "lineEnd": 97,
+      "title": "Decorator :: decorator_forwarded_call",
+      "comment": "Structural anchor \"decorator_forwarded_call\" — AI documentation pending.",
+      "excerpt": "return m_inner->read(key);",
+      "kind": "decorator_forwarded_call"
+    },
+    {
+      "id": "comment-56",
+      "order": 56,
+      "stage": "Test",
+      "severity": "low",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Decorator :: CachedRepository",
+      "comment": "Unit-test target (constructor) — AI test plan pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "unit_test:constructor"
+    },
+    {
+      "id": "comment-57",
+      "order": 57,
+      "stage": "Test",
+      "severity": "low",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Decorator :: m_inner",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-58",
+      "order": 58,
+      "stage": "Test",
+      "severity": "low",
+      "line": 96,
+      "lineEnd": 96,
+      "title": "Decorator :: read",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string read(const std::string& key) {",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-59",
+      "order": 59,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 93,
+      "lineEnd": 93,
+      "title": "Proxy :: proxy_class",
+      "comment": "Structural anchor \"proxy_class\" — AI documentation pending.",
+      "excerpt": "class CachedRepository {",
+      "kind": "proxy_class"
+    },
+    {
+      "id": "comment-60",
+      "order": 60,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Proxy :: proxy_real_subject",
+      "comment": "Structural anchor \"proxy_real_subject\" — AI documentation pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "proxy_real_subject"
+    },
+    {
+      "id": "comment-61",
+      "order": 61,
+      "stage": "Pattern",
+      "severity": "medium",
+      "line": 97,
+      "lineEnd": 97,
+      "title": "Proxy :: proxy_forwarded_call",
+      "comment": "Structural anchor \"proxy_forwarded_call\" — AI documentation pending.",
+      "excerpt": "return m_inner->read(key);",
+      "kind": "proxy_forwarded_call"
+    },
+    {
+      "id": "comment-62",
+      "order": 62,
+      "stage": "Test",
+      "severity": "low",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Proxy :: CachedRepository",
+      "comment": "Unit-test target (constructor) — AI test plan pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "unit_test:constructor"
+    },
+    {
+      "id": "comment-63",
+      "order": 63,
+      "stage": "Test",
+      "severity": "low",
+      "line": 95,
+      "lineEnd": 95,
+      "title": "Proxy :: m_inner",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "CachedRepository(Repository* inner) : m_inner(inner) {}",
+      "kind": "unit_test:method"
+    },
+    {
+      "id": "comment-64",
+      "order": 64,
+      "stage": "Test",
+      "severity": "low",
+      "line": 96,
+      "lineEnd": 96,
+      "title": "Proxy :: read",
+      "comment": "Unit-test target (method) — AI test plan pending.",
+      "excerpt": "std::string read(const std::string& key) {",
+      "kind": "unit_test:method"
+    }
+  ],
+  "pipeline": [
+    {
+      "key": "analysis",
+      "title": "Analysis",
+      "state": "ready",
+      "summary": "0 item(s) in 7 ms",
+      "detail": ""
+    },
+    {
+      "key": "trees",
+      "title": "Trees",
+      "state": "ready",
+      "summary": "0 item(s) in 0 ms",
+      "detail": ""
+    },
+    {
+      "key": "pattern_dispatch",
+      "title": "Pattern_dispatch",
+      "state": "ready",
+      "summary": "11 item(s) in 0 ms",
+      "detail": "11 pattern match(es) emitted."
+    },
+    {
+      "key": "hashing",
+      "title": "Hashing",
+      "state": "ready",
+      "summary": "11 item(s) in 0 ms",
+      "detail": ""
+    }
+  ],
+  "stageMetrics": [
+    {
+      "stage_name": "analysis",
+      "milliseconds": 7,
+      "items_processed": 0
+    },
+    {
+      "stage_name": "trees",
+      "milliseconds": 0,
+      "items_processed": 0
+    },
+    {
+      "stage_name": "pattern_dispatch",
+      "milliseconds": 0,
+      "items_processed": 11
+    },
+    {
+      "stage_name": "hashing",
+      "milliseconds": 0,
+      "items_processed": 11
+    }
+  ],
+  "microserviceArtifacts": {
+    "output_root": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output",
+    "written_files": [
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/creational.singleton_3275253235645255813.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/behavioural.strategy_interface_15519567973551557823.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/behavioural.strategy_concrete_16166504406085140033.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/behavioural.strategy_concrete_8196628594539557072.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/creational.factory_11390940534352915592.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/creational.builder_5020220935756046533.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/creational.method_chaining_5020220935756046533.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/creational.method_chaining_1055440667531775557.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/structural.adapter_17104293218721994269.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/structural.decorator_17104293218721994269.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/evidence/structural.proxy_17104293218721994269.json",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/html/parse_tree.html",
+      "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output/report.json"
+    ]
+  },
+  "microserviceRunDir": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803",
+  "microserviceOutputDir": "C:\\Users\\Drew\\AppData\\Local\\Temp\\neoterritory-run-1777366505966-1a2a1a6d31803\\output",
+  "summary": "all_patterns.cpp: 11 pattern match(es), 37 documentation anchor(s), 27 unit-test target(s).",
+  "findings": [],
+  "commentedCode": "  1 | // Integration test: one class per pattern in a single source file.\n  2 | // Expected detections (per class):\n  3 | //   ConfigSingleton    -> creational.singleton\n  4 | //   ShapeFactory       -> creational.factory\n  5 | //   QueryBuilder       -> creational.builder + creational.method_chaining\n  6 | //   FluentLogger       -> creational.method_chaining (no build, so Builder excluded)\n  7 | //   CachedRepository   -> structural.adapter + structural.proxy + structural.decorator\n  8 | //   PlainHolder        -> NO matches (negative control)\n  9 | \n 10 | #include <string>\n 11 | \n 12 | class ConfigSingleton {\n  // [Comment 1] Pattern: Singleton :: singleton_class - Structural anchor \"singleton_class\" — AI documentation pending.\n 13 | public:\n 14 |     static ConfigSingleton& getInstance() {\n  // [Comment 2] Pattern: Singleton :: static_instance_accessor - Structural anchor \"static_instance_accessor\" — AI documentation pending.\n  // [Comment 3] Pattern: Singleton :: instance_accessor_method - Structural anchor \"instance_accessor_method\" — AI documentation pending.\n  // [Comment 5] Test: Singleton :: getInstance - Unit-test target (method) — AI test plan pending.\n 15 |         static ConfigSingleton instance;\n 16 |         return instance;\n 17 |     }\n 18 |     ConfigSingleton(const ConfigSingleton&) = delete;\n  // [Comment 4] Pattern: Singleton :: explicit_copy_deletion - Structural anchor \"explicit_copy_deletion\" — AI documentation pending.\n  // [Comment 6] Test: Singleton :: ConfigSingleton - Unit-test target (constructor) — AI test plan pending.\n 19 |     ConfigSingleton& operator=(const ConfigSingleton&) = delete;\n 20 | private:\n 21 |     ConfigSingleton() = default;\n  // [Comment 7] Test: Singleton :: ConfigSingleton - Unit-test target (constructor) — AI test plan pending.\n 22 | };\n 23 | \n 24 | class Vehicle {\n  // [Comment 8] Pattern: Strategy :: strategy_interface_class - Structural anchor \"strategy_interface_class\" — AI documentation pending.\n 25 | public:\n 26 |     virtual ~Vehicle() = default;\n  // [Comment 9] Pattern: Strategy :: strategy_virtual_marker - Structural anchor \"strategy_virtual_marker\" — AI documentation pending.\n  // [Comment 10] Pattern: Strategy :: strategy_method - Structural anchor \"strategy_method\" — AI documentation pending.\n  // [Comment 11] Test: Strategy :: Vehicle - Unit-test target (destructor) — AI test plan pending.\n 27 |     virtual std::string label() const = 0;\n  // [Comment 12] Test: Strategy :: label - Unit-test target (method) — AI test plan pending.\n 28 | };\n 29 | \n 30 | class Car : public Vehicle {\n  // [Comment 13] Pattern: StrategyConcrete :: strategy_concrete_class - Structural anchor \"strategy_concrete_class\" — AI documentation pending.\n  // [Comment 14] Pattern: StrategyConcrete :: strategy_inheritance - Structural anchor \"strategy_inheritance\" — AI documentation pending.\n  // [Comment 15] Pattern: StrategyConcrete :: strategy_base_class - Structural anchor \"strategy_base_class\" — AI documentation pending.\n 31 | public:\n 32 |     std::string label() const override { return \"car\"; }\n  // [Comment 16] Pattern: StrategyConcrete :: strategy_override_method - Structural anchor \"strategy_override_method\" — AI documentation pending.\n  // [Comment 17] Test: StrategyConcrete :: label - Unit-test target (method) — AI test plan pending.\n 33 | };\n 34 | \n 35 | class Truck : public Vehicle {\n  // [Comment 18] Pattern: StrategyConcrete :: strategy_concrete_class - Structural anchor \"strategy_concrete_class\" — AI documentation pending.\n  // [Comment 19] Pattern: StrategyConcrete :: strategy_inheritance - Structural anchor \"strategy_inheritance\" — AI documentation pending.\n  // [Comment 20] Pattern: StrategyConcrete :: strategy_base_class - Structural anchor \"strategy_base_class\" — AI documentation pending.\n 36 | public:\n 37 |     std::string label() const override { return \"truck\"; }\n  // [Comment 21] Pattern: StrategyConcrete :: strategy_override_method - Structural anchor \"strategy_override_method\" — AI documentation pending.\n  // [Comment 22] Test: StrategyConcrete :: label - Unit-test target (method) — AI test plan pending.\n 38 | };\n 39 | \n 40 | class ShapeFactory {\n  // [Comment 23] Pattern: Factory :: factory_class - Structural anchor \"factory_class\" — AI documentation pending.\n 41 | public:\n 42 |     Vehicle* make(const std::string& kind) {\n  // [Comment 26] Test: Factory :: make - Unit-test target (method) — AI test plan pending.\n 43 |         if (kind == \"car\") {\n  // [Comment 27] Test: Factory :: if - Unit-test target (if) — AI test plan pending.\n 44 |             return new Car();\n  // [Comment 24] Pattern: Factory :: factory_concrete_creation - Structural anchor \"factory_concrete_creation\" — AI documentation pending.\n 45 |         }\n 46 |         if (kind == \"truck\") {\n  // [Comment 28] Test: Factory :: if - Unit-test target (if) — AI test plan pending.\n 47 |             return new Truck();\n  // [Comment 25] Pattern: Factory :: factory_return - Structural anchor \"factory_return\" — AI documentation pending.\n 48 |         }\n 49 |         return nullptr;\n 50 |     }\n 51 | };\n 52 | \n 53 | class QueryBuilder {\n  // [Comment 29] Pattern: Builder :: builder_class - Structural anchor \"builder_class\" — AI documentation pending.\n  // [Comment 36] Pattern: MethodChaining :: fluent_class - Structural anchor \"fluent_class\" — AI documentation pending.\n 54 | public:\n 55 |     QueryBuilder& table(const std::string& name) {\n  // [Comment 30] Pattern: Builder :: fluent_setter_return - Structural anchor \"fluent_setter_return\" — AI documentation pending.\n  // [Comment 33] Test: Builder :: table - Unit-test target (method) — AI test plan pending.\n  // [Comment 37] Pattern: MethodChaining :: fluent_setter_return - Structural anchor \"fluent_setter_return\" — AI documentation pending.\n  // [Comment 39] Test: MethodChaining :: table - Unit-test target (method) — AI test plan pending.\n 56 |         m_table = name;\n 57 |         return *this;\n  // [Comment 31] Pattern: Builder :: fluent_self_return - Structural anchor \"fluent_self_return\" — AI documentation pending.\n  // [Comment 38] Pattern: MethodChaining :: fluent_self_return - Structural anchor \"fluent_self_return\" — AI documentation pending.\n 58 |     }\n 59 |     QueryBuilder& where(const std::string& clause) {\n  // [Comment 34] Test: Builder :: where - Unit-test target (method) — AI test plan pending.\n  // [Comment 40] Test: MethodChaining :: where - Unit-test target (method) — AI test plan pending.\n 60 |         m_where = clause;\n 61 |         return *this;\n 62 |     }\n 63 |     std::string build() const {\n  // [Comment 32] Pattern: Builder :: builder_terminator_method - Structural anchor \"builder_terminator_method\" — AI documentation pending.\n  // [Comment 35] Test: Builder :: build - Unit-test target (method) — AI test plan pending.\n  // [Comment 41] Test: MethodChaining :: build - Unit-test target (method) — AI test plan pending.\n 64 |         return \"SELECT * FROM \" + m_table + \" WHERE \" + m_where;\n 65 |     }\n 66 | private:\n 67 |     std::string m_table;\n 68 |     std::string m_where;\n 69 | };\n 70 | \n 71 | class FluentLogger {\n  // [Comment 42] Pattern: MethodChaining :: fluent_class - Structural anchor \"fluent_class\" — AI documentation pending.\n 72 | public:\n 73 |     FluentLogger& tag(const std::string& value) {\n  // [Comment 43] Pattern: MethodChaining :: fluent_setter_return - Structural anchor \"fluent_setter_return\" — AI documentation pending.\n  // [Comment 45] Test: MethodChaining :: tag - Unit-test target (method) — AI test plan pending.\n 74 |         m_tag = value;\n 75 |         return *this;\n  // [Comment 44] Pattern: MethodChaining :: fluent_self_return - Structural anchor \"fluent_self_return\" — AI documentation pending.\n 76 |     }\n 77 |     FluentLogger& level(const std::string& value) {\n  // [Comment 46] Test: MethodChaining :: level - Unit-test target (method) — AI test plan pending.\n 78 |         m_level = value;\n 79 |         return *this;\n 80 |     }\n 81 | private:\n 82 |     std::string m_tag;\n 83 |     std::string m_level;\n 84 | };\n 85 | \n 86 | class Repository {\n 87 | public:\n 88 |     std::string read(const std::string& key) {\n 89 |         return \"value_\" + key;\n 90 |     }\n 91 | };\n 92 | \n 93 | class CachedRepository {\n  // [Comment 47] Pattern: Adapter :: adapter_class - Structural anchor \"adapter_class\" — AI documentation pending.\n  // [Comment 53] Pattern: Decorator :: decorator_class - Structural anchor \"decorator_class\" — AI documentation pending.\n  // [Comment 59] Pattern: Proxy :: proxy_class - Structural anchor \"proxy_class\" — AI documentation pending.\n 94 | public:\n 95 |     CachedRepository(Repository* inner) : m_inner(inner) {}\n  // [Comment 48] Pattern: Adapter :: adapter_wrapped_target - Structural anchor \"adapter_wrapped_target\" — AI documentation pending.\n  // [Comment 50] Test: Adapter :: CachedRepository - Unit-test target (constructor) — AI test plan pending.\n  // [Comment 51] Test: Adapter :: m_inner - Unit-test target (method) — AI test plan pending.\n  // [Comment 54] Pattern: Decorator :: decorator_wrapped_component - Structural anchor \"decorator_wrapped_component\" — AI documentation pending.\n  // [Comment 56] Test: Decorator :: CachedRepository - Unit-test target (constructor) — AI test plan pending.\n  // [Comment 57] Test: Decorator :: m_inner - Unit-test target (method) — AI test plan pending.\n  // [Comment 60] Pattern: Proxy :: proxy_real_subject - Structural anchor \"proxy_real_subject\" — AI documentation pending.\n  // [Comment 62] Test: Proxy :: CachedRepository - Unit-test target (constructor) — AI test plan pending.\n  // [Comment 63] Test: Proxy :: m_inner - Unit-test target (method) — AI test plan pending.\n 96 |     std::string read(const std::string& key) {\n  // [Comment 52] Test: Adapter :: read - Unit-test target (method) — AI test plan pending.\n  // [Comment 58] Test: Decorator :: read - Unit-test target (method) — AI test plan pending.\n  // [Comment 64] Test: Proxy :: read - Unit-test target (method) — AI test plan pending.\n 97 |         return m_inner->read(key);\n  // [Comment 49] Pattern: Adapter :: adapter_forwarded_call - Structural anchor \"adapter_forwarded_call\" — AI documentation pending.\n  // [Comment 55] Pattern: Decorator :: decorator_forwarded_call - Structural anchor \"decorator_forwarded_call\" — AI documentation pending.\n  // [Comment 61] Pattern: Proxy :: proxy_forwarded_call - Structural anchor \"proxy_forwarded_call\" — AI documentation pending.\n 98 |     }\n 99 | private:\n100 |     Repository* m_inner;\n101 | };\n102 | \n103 | class PlainHolder {\n104 | public:\n105 |     PlainHolder(int value) : m_value(value) {}\n106 |     int value() const { return m_value; }\n107 | private:\n108 |     int m_value;\n109 | };\n110 | \n111 | int main() {\n112 |     ConfigSingleton::getInstance();\n113 |     ShapeFactory factory;\n114 |     Vehicle* v = factory.make(\"car\");\n115 |     delete v;\n116 | \n117 |     QueryBuilder qb;\n118 |     std::string sql = qb.table(\"users\").where(\"id=1\").build();\n119 | \n120 |     FluentLogger logger;\n121 |     logger.tag(\"auth\").level(\"info\");\n122 | \n123 |     Repository repo;\n124 |     CachedRepository cached(&repo);\n125 |     cached.read(\"token\");\n126 | \n127 |     PlainHolder holder(42);\n128 |     return 0;\n129 | }",
+  "commentsOnly": "# Comments for all_patterns.cpp\n\n- Comment count: 64\n\n## Comment 1\n- Stage: Pattern\n- Severity: medium\n- Anchor: L12\n- Title: Singleton :: singleton_class\n- Note: Structural anchor \"singleton_class\" — AI documentation pending.\n- Excerpt: `class ConfigSingleton {`\n\n## Comment 2\n- Stage: Pattern\n- Severity: medium\n- Anchor: L14\n- Title: Singleton :: static_instance_accessor\n- Note: Structural anchor \"static_instance_accessor\" — AI documentation pending.\n- Excerpt: `static ConfigSingleton& getInstance() {`\n\n## Comment 3\n- Stage: Pattern\n- Severity: medium\n- Anchor: L14\n- Title: Singleton :: instance_accessor_method\n- Note: Structural anchor \"instance_accessor_method\" — AI documentation pending.\n- Excerpt: `static ConfigSingleton& getInstance() {`\n\n## Comment 4\n- Stage: Pattern\n- Severity: medium\n- Anchor: L18\n- Title: Singleton :: explicit_copy_deletion\n- Note: Structural anchor \"explicit_copy_deletion\" — AI documentation pending.\n- Excerpt: `ConfigSingleton(const ConfigSingleton&) = delete;`\n\n## Comment 5\n- Stage: Test\n- Severity: low\n- Anchor: L14\n- Title: Singleton :: getInstance\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `static ConfigSingleton& getInstance() {`\n\n## Comment 6\n- Stage: Test\n- Severity: low\n- Anchor: L18\n- Title: Singleton :: ConfigSingleton\n- Note: Unit-test target (constructor) — AI test plan pending.\n- Excerpt: `ConfigSingleton(const ConfigSingleton&) = delete;`\n\n## Comment 7\n- Stage: Test\n- Severity: low\n- Anchor: L21\n- Title: Singleton :: ConfigSingleton\n- Note: Unit-test target (constructor) — AI test plan pending.\n- Excerpt: `ConfigSingleton() = default;`\n\n## Comment 8\n- Stage: Pattern\n- Severity: medium\n- Anchor: L24\n- Title: Strategy :: strategy_interface_class\n- Note: Structural anchor \"strategy_interface_class\" — AI documentation pending.\n- Excerpt: `class Vehicle {`\n\n## Comment 9\n- Stage: Pattern\n- Severity: medium\n- Anchor: L26\n- Title: Strategy :: strategy_virtual_marker\n- Note: Structural anchor \"strategy_virtual_marker\" — AI documentation pending.\n- Excerpt: `virtual ~Vehicle() = default;`\n\n## Comment 10\n- Stage: Pattern\n- Severity: medium\n- Anchor: L26\n- Title: Strategy :: strategy_method\n- Note: Structural anchor \"strategy_method\" — AI documentation pending.\n- Excerpt: `virtual ~Vehicle() = default;`\n\n## Comment 11\n- Stage: Test\n- Severity: low\n- Anchor: L26\n- Title: Strategy :: Vehicle\n- Note: Unit-test target (destructor) — AI test plan pending.\n- Excerpt: `virtual ~Vehicle() = default;`\n\n## Comment 12\n- Stage: Test\n- Severity: low\n- Anchor: L27\n- Title: Strategy :: label\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `virtual std::string label() const = 0;`\n\n## Comment 13\n- Stage: Pattern\n- Severity: medium\n- Anchor: L30\n- Title: StrategyConcrete :: strategy_concrete_class\n- Note: Structural anchor \"strategy_concrete_class\" — AI documentation pending.\n- Excerpt: `class Car : public Vehicle {`\n\n## Comment 14\n- Stage: Pattern\n- Severity: medium\n- Anchor: L30\n- Title: StrategyConcrete :: strategy_inheritance\n- Note: Structural anchor \"strategy_inheritance\" — AI documentation pending.\n- Excerpt: `class Car : public Vehicle {`\n\n## Comment 15\n- Stage: Pattern\n- Severity: medium\n- Anchor: L30\n- Title: StrategyConcrete :: strategy_base_class\n- Note: Structural anchor \"strategy_base_class\" — AI documentation pending.\n- Excerpt: `class Car : public Vehicle {`\n\n## Comment 16\n- Stage: Pattern\n- Severity: medium\n- Anchor: L32\n- Title: StrategyConcrete :: strategy_override_method\n- Note: Structural anchor \"strategy_override_method\" — AI documentation pending.\n- Excerpt: `std::string label() const override { return \"car\"; }`\n\n## Comment 17\n- Stage: Test\n- Severity: low\n- Anchor: L32\n- Title: StrategyConcrete :: label\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string label() const override { return \"car\"; }`\n\n## Comment 18\n- Stage: Pattern\n- Severity: medium\n- Anchor: L35\n- Title: StrategyConcrete :: strategy_concrete_class\n- Note: Structural anchor \"strategy_concrete_class\" — AI documentation pending.\n- Excerpt: `class Truck : public Vehicle {`\n\n## Comment 19\n- Stage: Pattern\n- Severity: medium\n- Anchor: L35\n- Title: StrategyConcrete :: strategy_inheritance\n- Note: Structural anchor \"strategy_inheritance\" — AI documentation pending.\n- Excerpt: `class Truck : public Vehicle {`\n\n## Comment 20\n- Stage: Pattern\n- Severity: medium\n- Anchor: L35\n- Title: StrategyConcrete :: strategy_base_class\n- Note: Structural anchor \"strategy_base_class\" — AI documentation pending.\n- Excerpt: `class Truck : public Vehicle {`\n\n## Comment 21\n- Stage: Pattern\n- Severity: medium\n- Anchor: L37\n- Title: StrategyConcrete :: strategy_override_method\n- Note: Structural anchor \"strategy_override_method\" — AI documentation pending.\n- Excerpt: `std::string label() const override { return \"truck\"; }`\n\n## Comment 22\n- Stage: Test\n- Severity: low\n- Anchor: L37\n- Title: StrategyConcrete :: label\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string label() const override { return \"truck\"; }`\n\n## Comment 23\n- Stage: Pattern\n- Severity: medium\n- Anchor: L40\n- Title: Factory :: factory_class\n- Note: Structural anchor \"factory_class\" — AI documentation pending.\n- Excerpt: `class ShapeFactory {`\n\n## Comment 24\n- Stage: Pattern\n- Severity: medium\n- Anchor: L44\n- Title: Factory :: factory_concrete_creation\n- Note: Structural anchor \"factory_concrete_creation\" — AI documentation pending.\n- Excerpt: `return new Car();`\n\n## Comment 25\n- Stage: Pattern\n- Severity: medium\n- Anchor: L47\n- Title: Factory :: factory_return\n- Note: Structural anchor \"factory_return\" — AI documentation pending.\n- Excerpt: `return new Truck();`\n\n## Comment 26\n- Stage: Test\n- Severity: low\n- Anchor: L42\n- Title: Factory :: make\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `Vehicle* make(const std::string& kind) {`\n\n## Comment 27\n- Stage: Test\n- Severity: low\n- Anchor: L43\n- Title: Factory :: if\n- Note: Unit-test target (if) — AI test plan pending.\n- Excerpt: `if (kind == \"car\") {`\n\n## Comment 28\n- Stage: Test\n- Severity: low\n- Anchor: L46\n- Title: Factory :: if\n- Note: Unit-test target (if) — AI test plan pending.\n- Excerpt: `if (kind == \"truck\") {`\n\n## Comment 29\n- Stage: Pattern\n- Severity: medium\n- Anchor: L53\n- Title: Builder :: builder_class\n- Note: Structural anchor \"builder_class\" — AI documentation pending.\n- Excerpt: `class QueryBuilder {`\n\n## Comment 30\n- Stage: Pattern\n- Severity: medium\n- Anchor: L55\n- Title: Builder :: fluent_setter_return\n- Note: Structural anchor \"fluent_setter_return\" — AI documentation pending.\n- Excerpt: `QueryBuilder& table(const std::string& name) {`\n\n## Comment 31\n- Stage: Pattern\n- Severity: medium\n- Anchor: L57\n- Title: Builder :: fluent_self_return\n- Note: Structural anchor \"fluent_self_return\" — AI documentation pending.\n- Excerpt: `return *this;`\n\n## Comment 32\n- Stage: Pattern\n- Severity: medium\n- Anchor: L63\n- Title: Builder :: builder_terminator_method\n- Note: Structural anchor \"builder_terminator_method\" — AI documentation pending.\n- Excerpt: `std::string build() const {`\n\n## Comment 33\n- Stage: Test\n- Severity: low\n- Anchor: L55\n- Title: Builder :: table\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `QueryBuilder& table(const std::string& name) {`\n\n## Comment 34\n- Stage: Test\n- Severity: low\n- Anchor: L59\n- Title: Builder :: where\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `QueryBuilder& where(const std::string& clause) {`\n\n## Comment 35\n- Stage: Test\n- Severity: low\n- Anchor: L63\n- Title: Builder :: build\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string build() const {`\n\n## Comment 36\n- Stage: Pattern\n- Severity: medium\n- Anchor: L53\n- Title: MethodChaining :: fluent_class\n- Note: Structural anchor \"fluent_class\" — AI documentation pending.\n- Excerpt: `class QueryBuilder {`\n\n## Comment 37\n- Stage: Pattern\n- Severity: medium\n- Anchor: L55\n- Title: MethodChaining :: fluent_setter_return\n- Note: Structural anchor \"fluent_setter_return\" — AI documentation pending.\n- Excerpt: `QueryBuilder& table(const std::string& name) {`\n\n## Comment 38\n- Stage: Pattern\n- Severity: medium\n- Anchor: L57\n- Title: MethodChaining :: fluent_self_return\n- Note: Structural anchor \"fluent_self_return\" — AI documentation pending.\n- Excerpt: `return *this;`\n\n## Comment 39\n- Stage: Test\n- Severity: low\n- Anchor: L55\n- Title: MethodChaining :: table\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `QueryBuilder& table(const std::string& name) {`\n\n## Comment 40\n- Stage: Test\n- Severity: low\n- Anchor: L59\n- Title: MethodChaining :: where\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `QueryBuilder& where(const std::string& clause) {`\n\n## Comment 41\n- Stage: Test\n- Severity: low\n- Anchor: L63\n- Title: MethodChaining :: build\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string build() const {`\n\n## Comment 42\n- Stage: Pattern\n- Severity: medium\n- Anchor: L71\n- Title: MethodChaining :: fluent_class\n- Note: Structural anchor \"fluent_class\" — AI documentation pending.\n- Excerpt: `class FluentLogger {`\n\n## Comment 43\n- Stage: Pattern\n- Severity: medium\n- Anchor: L73\n- Title: MethodChaining :: fluent_setter_return\n- Note: Structural anchor \"fluent_setter_return\" — AI documentation pending.\n- Excerpt: `FluentLogger& tag(const std::string& value) {`\n\n## Comment 44\n- Stage: Pattern\n- Severity: medium\n- Anchor: L75\n- Title: MethodChaining :: fluent_self_return\n- Note: Structural anchor \"fluent_self_return\" — AI documentation pending.\n- Excerpt: `return *this;`\n\n## Comment 45\n- Stage: Test\n- Severity: low\n- Anchor: L73\n- Title: MethodChaining :: tag\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `FluentLogger& tag(const std::string& value) {`\n\n## Comment 46\n- Stage: Test\n- Severity: low\n- Anchor: L77\n- Title: MethodChaining :: level\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `FluentLogger& level(const std::string& value) {`\n\n## Comment 47\n- Stage: Pattern\n- Severity: medium\n- Anchor: L93\n- Title: Adapter :: adapter_class\n- Note: Structural anchor \"adapter_class\" — AI documentation pending.\n- Excerpt: `class CachedRepository {`\n\n## Comment 48\n- Stage: Pattern\n- Severity: medium\n- Anchor: L95\n- Title: Adapter :: adapter_wrapped_target\n- Note: Structural anchor \"adapter_wrapped_target\" — AI documentation pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 49\n- Stage: Pattern\n- Severity: medium\n- Anchor: L97\n- Title: Adapter :: adapter_forwarded_call\n- Note: Structural anchor \"adapter_forwarded_call\" — AI documentation pending.\n- Excerpt: `return m_inner->read(key);`\n\n## Comment 50\n- Stage: Test\n- Severity: low\n- Anchor: L95\n- Title: Adapter :: CachedRepository\n- Note: Unit-test target (constructor) — AI test plan pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 51\n- Stage: Test\n- Severity: low\n- Anchor: L95\n- Title: Adapter :: m_inner\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 52\n- Stage: Test\n- Severity: low\n- Anchor: L96\n- Title: Adapter :: read\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string read(const std::string& key) {`\n\n## Comment 53\n- Stage: Pattern\n- Severity: medium\n- Anchor: L93\n- Title: Decorator :: decorator_class\n- Note: Structural anchor \"decorator_class\" — AI documentation pending.\n- Excerpt: `class CachedRepository {`\n\n## Comment 54\n- Stage: Pattern\n- Severity: medium\n- Anchor: L95\n- Title: Decorator :: decorator_wrapped_component\n- Note: Structural anchor \"decorator_wrapped_component\" — AI documentation pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 55\n- Stage: Pattern\n- Severity: medium\n- Anchor: L97\n- Title: Decorator :: decorator_forwarded_call\n- Note: Structural anchor \"decorator_forwarded_call\" — AI documentation pending.\n- Excerpt: `return m_inner->read(key);`\n\n## Comment 56\n- Stage: Test\n- Severity: low\n- Anchor: L95\n- Title: Decorator :: CachedRepository\n- Note: Unit-test target (constructor) — AI test plan pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 57\n- Stage: Test\n- Severity: low\n- Anchor: L95\n- Title: Decorator :: m_inner\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 58\n- Stage: Test\n- Severity: low\n- Anchor: L96\n- Title: Decorator :: read\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string read(const std::string& key) {`\n\n## Comment 59\n- Stage: Pattern\n- Severity: medium\n- Anchor: L93\n- Title: Proxy :: proxy_class\n- Note: Structural anchor \"proxy_class\" — AI documentation pending.\n- Excerpt: `class CachedRepository {`\n\n## Comment 60\n- Stage: Pattern\n- Severity: medium\n- Anchor: L95\n- Title: Proxy :: proxy_real_subject\n- Note: Structural anchor \"proxy_real_subject\" — AI documentation pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 61\n- Stage: Pattern\n- Severity: medium\n- Anchor: L97\n- Title: Proxy :: proxy_forwarded_call\n- Note: Structural anchor \"proxy_forwarded_call\" — AI documentation pending.\n- Excerpt: `return m_inner->read(key);`\n\n## Comment 62\n- Stage: Test\n- Severity: low\n- Anchor: L95\n- Title: Proxy :: CachedRepository\n- Note: Unit-test target (constructor) — AI test plan pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 63\n- Stage: Test\n- Severity: low\n- Anchor: L95\n- Title: Proxy :: m_inner\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `CachedRepository(Repository* inner) : m_inner(inner) {}`\n\n## Comment 64\n- Stage: Test\n- Severity: low\n- Anchor: L96\n- Title: Proxy :: read\n- Note: Unit-test target (method) — AI test plan pending.\n- Excerpt: `std::string read(const std::string& key) {`",
+  "transformedPreview": "  1 | // Integration test: one class per pattern in a single source file.\n  2 | // Expected detections (per class):\n  3 | //   ConfigSingleton    -> creational.singleton\n  4 | //   ShapeFactory       -> creational.factory\n  5 | //   QueryBuilder       -> creational.builder + creational.method_chaining\n  6 | //   FluentLogger       -> creational.method_chaining (no build, so Builder excluded)\n  7 | //   CachedRepository   -> structural.adapter + structural.proxy + structural.decorator\n  8 | //   PlainHolder        -> NO matches (negative control)\n  9 | \n 10 | #include <string>\n 11 | \n 12 | class ConfigSingleton {\n  // [Comment 1] Pattern: Singleton :: singleton_class - Structural anchor \"singleton_class\" — AI documentation pending.\n 13 | public:\n 14 |     static ConfigSingleton& getInstance() {\n  // [Comment 2] Pattern: Singleton :: static_instance_accessor - Structural anchor \"static_instance_accessor\" — AI documentation pending.\n  // [Comment 3] Pattern: Singleton :: instance_accessor_method - Structural anchor \"instance_accessor_method\" — AI documentation pending.\n  // [Comment 5] Test: Singleton :: getInstance - Unit-test target (method) — AI test plan pending.\n 15 |         static ConfigSingleton instance;\n 16 |         return instance;\n 17 |     }\n 18 |     ConfigSingleton(const ConfigSingleton&) = delete;\n  // [Comment 4] Pattern: Singleton :: explicit_copy_deletion - Structural anchor \"explicit_copy_deletion\" — AI documentation pending.\n  // [Comment 6] Test: Singleton"
+}

@@ -190,5 +190,7 @@ function analyzeClassDeclaration({ sourceName, code }) {
 }
 
 module.exports = {
-  analyzeClassDeclaration
+  analyzeClassDeclaration,
+  resolveBinaryPath,
+  resolveCatalogPath
 };
