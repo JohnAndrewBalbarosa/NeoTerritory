@@ -167,11 +167,6 @@ function analyzeClassDeclaration({ sourceName, code }) {
     className:           tag.class_name,
     fileName:            tag.file_name,
     classText:           tag.class_text,
-    requiredScore:       tag.required_score,
-    evidenceScore:       tag.evidence_score,
-    negativeScore:       tag.negative_score,
-    confidence:          tag.confidence,
-    evidence:            tag.evidence || [],
     documentationTargets: tag.documentation_targets || [],
     unitTestTargets:      tag.unit_test_targets || []
   }));

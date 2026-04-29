@@ -4,7 +4,6 @@
   "pattern_name": "Strategy",
   "pattern_role": "interface",
   "enabled": true,
-  "score_threshold": 0.60,
   "ordered_checks": [
     { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
     { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "strategy_interface_class" },
@@ -13,34 +12,6 @@
     { "id": "strategy_method", "expected_kind": "Identifier", "capture_as": "strategy_method", "document_as": "strategy_method" },
     { "id": "open_method_paren", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] }
   ],
-  "evidence_rules": {
-    "required": [
-      {
-        "id": "virtual_strategy_method",
-        "tokens": [{ "kind": "Keyword", "lexeme_any_of": ["virtual"] }],
-        "weight": 0.35,
-        "document_as": "strategy_virtual_signal"
-      }
-    ],
-    "positive": [
-      {
-        "id": "pure_virtual_marker",
-        "tokens": [
-          { "kind": "Operator", "lexeme_any_of": ["="] },
-          { "kind": "Number", "lexeme_any_of": ["0"] }
-        ],
-        "weight": 0.30,
-        "document_as": "strategy_pure_virtual_signal"
-      },
-      {
-        "id": "strategy_holder",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["unique_ptr", "shared_ptr", "strategy"] }],
-        "weight": 0.15,
-        "document_as": "strategy_holder_signal"
-      }
-    ],
-    "negative": []
-  },
 
   "implementation_template": {
     "callsites": [

@@ -108,58 +108,6 @@
       </div>
     </section>
 
-    <section class="admin-panel reveal" id="alpha-panel">
-      <header class="panel-head">
-        <h2>Alpha diagnostics</h2>
-        <span class="subtle" id="alpha-summary">Live latency probes against the alpha SLA thresholds</span>
-      </header>
-      <div class="alpha-controls">
-        <label class="alpha-field">
-          <span>Tier</span>
-          <select id="alpha-tier">
-            <option value="local" selected>Local</option>
-            <option value="deploy">Deploy</option>
-          </select>
-        </label>
-        <label class="alpha-field">
-          <span>Samples per probe</span>
-          <input type="number" id="alpha-samples" min="3" max="200" value="20" />
-        </label>
-        <label class="alpha-field">
-          <span>Concurrency</span>
-          <input type="number" id="alpha-concurrency" min="1" max="20" value="4" />
-        </label>
-        <button class="ghost-btn" id="alpha-run-btn" type="button">Run probes</button>
-        <button class="ghost-btn" id="alpha-export-btn" type="button" disabled>Export JSON</button>
-        <span class="alpha-status" id="alpha-status"></span>
-      </div>
-      <table class="admin-table alpha-table" id="alpha-results-table">
-        <thead>
-          <tr>
-            <th>Endpoint</th>
-            <th>Method</th>
-            <th>p50 (ms)</th>
-            <th>p95 (ms)</th>
-            <th>p99 (ms)</th>
-            <th>max (ms)</th>
-            <th>Errors</th>
-            <th>Budget p95</th>
-            <th>Result</th>
-          </tr>
-        </thead>
-        <tbody id="alpha-results-tbody">
-          <tr><td colspan="9" class="empty-state">Click <em>Run probes</em> to start.</td></tr>
-        </tbody>
-      </table>
-      <details class="alpha-details">
-        <summary>Active SLA thresholds (from <code>test/alpha/system/thresholds.json</code>)</summary>
-        <pre id="alpha-thresholds-pre" class="alpha-pre">Loading...</pre>
-      </details>
-      <p class="alpha-refs subtle">
-        Standards: Google RAIL · Nielsen 0.1/1/10 s · ITU-T G.1010 · Apdex V1.1 · Tene (2015) on p95/p99.
-      </p>
-    </section>
-
     <section class="admin-panel reveal">
       <header class="panel-head">
         <h2>System logs</h2>

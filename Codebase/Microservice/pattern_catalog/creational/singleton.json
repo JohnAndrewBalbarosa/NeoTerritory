@@ -3,7 +3,6 @@
   "pattern_family": "creational",
   "pattern_name": "Singleton",
   "enabled": true,
-  "score_threshold": 0.60,
   "ordered_checks": [
     {
       "id": "class_introducer",
@@ -54,36 +53,5 @@
       "expected_lexeme_any_of": ["delete"],
       "document_as": "explicit_copy_deletion"
     }
-  ],
-  "evidence_rules": {
-    "required": [
-      {
-        "id": "static_instance",
-        "tokens": [{ "kind": "Keyword", "lexeme_any_of": ["static"] }],
-        "weight": 0.30,
-        "document_as": "singleton_static_signal"
-      },
-      {
-        "id": "copy_deleted",
-        "tokens": [{ "kind": "Keyword", "lexeme_any_of": ["delete"] }],
-        "weight": 0.25,
-        "document_as": "singleton_delete_signal"
-      }
-    ],
-    "positive": [
-      {
-        "id": "accessor_name",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["getInstance", "instance", "Instance", "GetInstance"] }],
-        "weight": 0.25,
-        "document_as": "singleton_accessor_name_signal"
-      },
-      {
-        "id": "private_constructor_area",
-        "tokens": [{ "kind": "Keyword", "lexeme_any_of": ["private"] }],
-        "weight": 0.15,
-        "document_as": "singleton_private_signal"
-      }
-    ],
-    "negative": []
-  }
+  ]
 }

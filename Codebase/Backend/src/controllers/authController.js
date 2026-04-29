@@ -2,7 +2,6 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const db = require('../db/database');
 const { logEvent } = require('../services/logService');
-const { isDevconUsername } = require('../db/_testSeed/devconUsers');
 
 const register = async (req, res, next) => {
   try {
@@ -36,11 +35,6 @@ const login = async (req, res, next) => {
       .get(identifier, identifier);
     if (!user) {
       return res.status(401).json({ error: 'Invalid credentials' });
-    }
-    if (isDevconUsername(user.username)) {
-      return res.status(403).json({
-        error: 'Devcon testers must claim an available seat from the tester pool.'
-      });
     }
     const valid = await bcrypt.compare(password, user.password_hash);
     if (!valid) {

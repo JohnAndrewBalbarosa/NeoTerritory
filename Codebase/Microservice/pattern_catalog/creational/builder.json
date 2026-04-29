@@ -3,7 +3,6 @@
   "pattern_family": "creational",
   "pattern_name": "Builder",
   "enabled": true,
-  "score_threshold": 0.60,
   "ordered_checks": [
     {
       "id": "class_introducer",
@@ -44,39 +43,5 @@
       "expected_lexeme_any_of": ["build", "Build"],
       "document_as": "builder_terminator_method"
     }
-  ],
-  "evidence_rules": {
-    "required": [
-      {
-        "id": "fluent_reference_return",
-        "tokens": [{ "kind": "Operator", "lexeme_any_of": ["&"] }],
-        "weight": 0.25,
-        "document_as": "builder_reference_return_signal"
-      },
-      {
-        "id": "returns_this",
-        "tokens": [
-          { "kind": "Keyword", "lexeme_any_of": ["return"] },
-          { "kind": "Keyword", "lexeme_any_of": ["this"] }
-        ],
-        "weight": 0.30,
-        "document_as": "builder_self_return_signal"
-      }
-    ],
-    "positive": [
-      {
-        "id": "build_terminator_names",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["build", "Build", "create", "Create", "finish", "Finish"] }],
-        "weight": 0.35,
-        "document_as": "builder_terminator_signal"
-      },
-      {
-        "id": "setter_style_names",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["set", "with", "table", "where", "option"] }],
-        "weight": 0.10,
-        "document_as": "builder_setter_name_signal"
-      }
-    ],
-    "negative": []
-  }
+  ]
 }

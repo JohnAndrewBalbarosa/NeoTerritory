@@ -1,9 +1,0 @@
-{
-  "name": "neoterritory-alpha-backend-unit",
-  "version": "0.0.0",
-  "private": true,
-  "description": "Alpha unit tests for backend, runs on node:test (no extra deps).",
-  "scripts": {
-    "test": "node --test --test-reporter=spec ."
-  }
-}

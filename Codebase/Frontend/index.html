@@ -10,8 +10,8 @@
   <div id="login-overlay" class="login-overlay" hidden>
     <div class="login-wrap">
       <form id="login-form" class="login-card">
-        <h2>Admin sign in</h2>
-        <p class="login-hint">Devcon testers must claim an available seat from the pool.</p>
+        <h2>Sign in</h2>
+        <p class="login-hint">Default tester password: <code>devcon</code></p>
         <label class="field">
           <span>Username</span>
           <input id="login-username" type="text" autocomplete="username" required />
@@ -24,9 +24,8 @@
         <p class="login-error" id="login-error" hidden></p>
       </form>
       <aside class="tester-list" id="tester-list" hidden>
-        <h3>Tester seats</h3>
-        <p class="tester-hint">Keys are generated only when a seat is claimed. Heartbeat runs every 30 seconds.</p>
-        <p class="seat-status" id="seat-status"></p>
+        <h3>Tester accounts</h3>
+        <p class="tester-hint">Click to autofill. Password is shared.</p>
         <div class="tester-grid" id="tester-grid"></div>
       </aside>
     </div>

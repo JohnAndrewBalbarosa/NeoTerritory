@@ -14,18 +14,12 @@ const PATTERN_COLORS = {
 
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
-const SEAT_PRIVATE_KEY = 'nt_seat_private_key';
-const SEAT_CLAIM_TOKEN = 'nt_seat_claim_token';
-const SEAT_HEARTBEAT_MS = 30000;
 
 const state = {
   currentRun: null,
   sourceText: '',
   token: localStorage.getItem(TOKEN_KEY) || null,
   user: (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch { return null; } })(),
-  seatPrivateKey: localStorage.getItem(SEAT_PRIVATE_KEY) || null,
-  seatClaimToken: localStorage.getItem(SEAT_CLAIM_TOKEN) || null,
-  seatHeartbeatTimer: null,
   sessionRanAnalyze: false,
   sessionReviewedEnd: false,
   reviewSchemaCache: {}
@@ -61,7 +55,6 @@ const els = {
   msStatus:     document.getElementById('ms-status'),
   testerList:   document.getElementById('tester-list'),
   testerGrid:   document.getElementById('tester-grid'),
-  seatStatus:   document.getElementById('seat-status'),
   savePrompt:   document.getElementById('save-prompt'),
   savePromptDetail: document.getElementById('save-prompt-detail'),
   saveConfirmBtn: document.getElementById('save-confirm-btn'),
@@ -131,7 +124,7 @@ async function apiFetch(url, options = {}) {
   const text = await response.text();
   const data = text ? JSON.parse(text) : {};
   if (response.status === 401) {
-    performSignOut({ releaseSeat: false });
+    handleSignOut();
     throw new Error(data.error || 'Session expired — please sign in.');
   }
   if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
@@ -150,111 +143,28 @@ function hideLogin() {
   if (state.user) els.userLabel.textContent = state.user.username || '';
 }
 
-function isDevconUser(user = state.user) {
-  return /^Devcon\d+$/i.test(String(user && user.username || ''));
-}
-
-function clearSeatSecrets() {
-  state.seatPrivateKey = null;
-  state.seatClaimToken = null;
-  localStorage.removeItem(SEAT_PRIVATE_KEY);
-  localStorage.removeItem(SEAT_CLAIM_TOKEN);
-}
-
-function stopSeatHeartbeat() {
-  if (state.seatHeartbeatTimer) {
-    clearInterval(state.seatHeartbeatTimer);
-    state.seatHeartbeatTimer = null;
-  }
-}
-
-function setSeatStatus(message) {
-  if (els.seatStatus) els.seatStatus.textContent = message || '';
-}
-
-async function sendSeatHeartbeat() {
-  if (!state.token || !isDevconUser() || !state.seatPrivateKey || !state.seatClaimToken) return;
-  try {
-    const response = await fetch('/auth/test-seat/heartbeat', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        Authorization: `Bearer ${state.token}`
-      },
-      body: JSON.stringify({
-        privateKey: state.seatPrivateKey,
-        claimToken: state.seatClaimToken
-      })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || `Seat heartbeat failed (${response.status})`);
-    setSeatStatus(`Seat active: ${state.user.username}. Expires ${new Date(data.expiresAt).toLocaleTimeString()}.`);
-  } catch (err) {
-    setSeatStatus(err.message);
-    performSignOut({ releaseSeat: false });
-  }
-}
-
-function startSeatHeartbeat() {
-  stopSeatHeartbeat();
-  if (!state.token || !isDevconUser() || !state.seatPrivateKey || !state.seatClaimToken) return;
-  sendSeatHeartbeat();
-  state.seatHeartbeatTimer = setInterval(sendSeatHeartbeat, SEAT_HEARTBEAT_MS);
-}
-
-function handleSignIn(token, user, seat = {}) {
+function handleSignIn(token, user) {
   state.token = token;
   state.user = user;
   localStorage.setItem(TOKEN_KEY, token);
   localStorage.setItem(USER_KEY, JSON.stringify(user));
-  if (seat.privateKey) {
-    state.seatPrivateKey = seat.privateKey;
-    localStorage.setItem(SEAT_PRIVATE_KEY, seat.privateKey);
-  }
-  if (seat.claimToken) {
-    state.seatClaimToken = seat.claimToken;
-    localStorage.setItem(SEAT_CLAIM_TOKEN, seat.claimToken);
-  }
   if (user && user.role === 'admin') {
     window.location.href = '/admin.html';
     return;
   }
   hideLogin();
-  startSeatHeartbeat();
 }
 
-async function releaseSeat() {
-  if (!state.token || !isDevconUser()) return;
-  try {
-    await fetch('/auth/test-seat/release', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${state.token}`
-      }
-    });
-  } catch {
-    // Local sign-out must still complete even if the seat already expired.
-  }
-}
-
-async function performSignOut(options = {}) {
-  const { releaseSeat: shouldReleaseSeat = true } = options;
-  if (shouldReleaseSeat) await releaseSeat();
-  stopSeatHeartbeat();
+function performSignOut() {
   state.token = null;
   state.user = null;
-  clearSeatSecrets();
   state.sessionRanAnalyze = false;
   state.sessionReviewedEnd = false;
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   els.runList.innerHTML = '<div class="empty-state">Sign in to see your runs.</div>';
   els.resultsPanel.hidden = true;
-  setSeatStatus('');
   showLogin();
-  loadTesterAccounts();
 }
 
 async function handleSignOut() {
@@ -263,7 +173,7 @@ async function handleSignOut() {
       intro: 'Before you sign out — a few quick questions about this session.'
     });
   }
-  await performSignOut();
+  performSignOut();
 }
 
 async function loadTesterAccounts() {
@@ -271,50 +181,26 @@ async function loadTesterAccounts() {
   try {
     const res = await fetch('/auth/test-accounts');
     const data = await res.json();
-    const testers = Array.isArray(data.testers) ? data.testers : [];
-    if (!testers.length) { els.testerList.hidden = true; return; }
+    const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+    if (!accounts.length) { els.testerList.hidden = true; return; }
     els.testerList.hidden = false;
     els.testerGrid.innerHTML = '';
-    testers.forEach(tester => {
-      const name = tester.username;
-      const available = tester.available !== false && tester.seatStatus !== 'occupied';
+    accounts.forEach(name => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tester-chip';
-      btn.dataset.status = available ? 'available' : 'occupied';
-      btn.disabled = !available;
-      btn.textContent = `${name} ${available ? 'Available' : 'Occupied'}`;
-      btn.addEventListener('click', () => claimSeat(name));
+      btn.textContent = name;
+      btn.addEventListener('click', () => {
+        els.loginUsername.value = name;
+        els.loginPassword.value = data.password || '';
+        els.testerGrid.querySelectorAll('.tester-chip[aria-pressed="true"]').forEach(b => b.removeAttribute('aria-pressed'));
+        btn.setAttribute('aria-pressed', 'true');
+        els.loginPassword.focus();
+      });
       els.testerGrid.appendChild(btn);
     });
   } catch {
     els.testerList.hidden = true;
-  }
-}
-
-async function claimSeat(username) {
-  els.loginError.hidden = true;
-  setSeatStatus(`Claiming ${username}...`);
-  try {
-    const response = await fetch('/auth/test-seat/claim', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ username })
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || `Seat claim failed (${response.status})`);
-    handleSignIn(data.token, data.user || { username }, {
-      privateKey: data.privateKey,
-      claimToken: data.claimToken
-    });
-    setSeatStatus(`Seat active: ${data.user.username}. Heartbeat every ${data.heartbeatIntervalSeconds || 30}s.`);
-    await loadRuns();
-    await loadSample();
-  } catch (err) {
-    els.loginError.textContent = err.message;
-    els.loginError.hidden = false;
-    setSeatStatus(err.message);
-    await loadTesterAccounts();
   }
 }
 
@@ -1157,12 +1043,7 @@ els.fileInput.addEventListener('change', () => {
   await loadHealth();
   startMicroservicePolling();
   if (state.token && state.user) {
-    if (isDevconUser() && (!state.seatPrivateKey || !state.seatClaimToken)) {
-      await performSignOut({ releaseSeat: false });
-      return;
-    }
     hideLogin();
-    startSeatHeartbeat();
     await loadRuns();
     await loadSample();
   } else {

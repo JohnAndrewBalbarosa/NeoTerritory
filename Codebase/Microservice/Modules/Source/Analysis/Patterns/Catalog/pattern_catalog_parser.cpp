@@ -309,78 +309,6 @@ PatternMatcherStep step_from_json(const JsonValue& obj)
     return step;
 }
 
-PatternEvidenceToken evidence_token_from_json(const JsonValue& obj)
-{
-    PatternEvidenceToken token;
-    if (const JsonValue* v = obj.find("kind"); v && v->kind == JsonKind::String)
-    {
-        token.expected_kind = parse_token_kind(v->string);
-    }
-    if (const JsonValue* v = obj.find("expected_kind"); v && v->kind == JsonKind::String)
-    {
-        token.expected_kind = parse_token_kind(v->string);
-    }
-    const JsonValue* lexemes = obj.find("lexeme_any_of");
-    if (!lexemes) lexemes = obj.find("expected_lexeme_any_of");
-    if (lexemes && lexemes->kind == JsonKind::Array)
-    {
-        for (const JsonValue& entry : lexemes->array)
-        {
-            if (entry.kind == JsonKind::String)
-            {
-                token.lexeme_any_of.push_back(entry.string);
-            }
-        }
-    }
-    return token;
-}
-
-PatternEvidenceRule evidence_rule_from_json(const JsonValue& obj)
-{
-    PatternEvidenceRule rule;
-    if (const JsonValue* v = obj.find("id"); v && v->kind == JsonKind::String)
-    {
-        rule.id = v->string;
-    }
-    if (const JsonValue* v = obj.find("weight"); v && v->kind == JsonKind::Number)
-    {
-        rule.weight = v->number;
-    }
-    if (const JsonValue* v = obj.find("contiguous"); v && v->kind == JsonKind::Bool)
-    {
-        rule.contiguous = v->boolean;
-    }
-    if (const JsonValue* v = obj.find("document_as"); v && v->kind == JsonKind::String)
-    {
-        rule.document_as = v->string;
-    }
-    if (const JsonValue* v = obj.find("tokens"); v && v->kind == JsonKind::Array)
-    {
-        for (const JsonValue& entry : v->array)
-        {
-            if (entry.kind == JsonKind::Object)
-            {
-                rule.tokens.push_back(evidence_token_from_json(entry));
-            }
-        }
-    }
-    return rule;
-}
-
-void append_evidence_rules(const JsonValue& root, const std::string& key, std::vector<PatternEvidenceRule>& out)
-{
-    if (const JsonValue* rules = root.find(key); rules && rules->kind == JsonKind::Array)
-    {
-        for (const JsonValue& entry : rules->array)
-        {
-            if (entry.kind == JsonKind::Object)
-            {
-                out.push_back(evidence_rule_from_json(entry));
-            }
-        }
-    }
-}
-
 PatternTemplate template_from_json(const JsonValue& obj, const std::string& source_file)
 {
     PatternTemplate pattern;
@@ -410,16 +338,6 @@ PatternTemplate template_from_json(const JsonValue& obj, const std::string& sour
                 pattern.ordered_checks.push_back(step_from_json(entry));
             }
         }
-    }
-    if (const JsonValue* v = obj.find("score_threshold"); v && v->kind == JsonKind::Number)
-    {
-        pattern.score_threshold = v->number;
-    }
-    if (const JsonValue* v = obj.find("evidence_rules"); v && v->kind == JsonKind::Object)
-    {
-        append_evidence_rules(*v, "required", pattern.evidence_rules.required);
-        append_evidence_rules(*v, "positive", pattern.evidence_rules.positive);
-        append_evidence_rules(*v, "negative", pattern.evidence_rules.negative);
     }
     return pattern;
 }

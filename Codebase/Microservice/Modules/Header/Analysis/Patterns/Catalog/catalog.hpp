@@ -26,28 +26,6 @@ struct PatternMatcherStep
     std::string                       document_as;
 };
 
-struct PatternEvidenceToken
-{
-    LexicalTokenKind          expected_kind = LexicalTokenKind::Unknown;
-    std::vector<std::string>  lexeme_any_of;
-};
-
-struct PatternEvidenceRule
-{
-    std::string                       id;
-    std::vector<PatternEvidenceToken> tokens;
-    double                            weight = 0.0;
-    bool                              contiguous = false;
-    std::string                       document_as;
-};
-
-struct PatternEvidenceRules
-{
-    std::vector<PatternEvidenceRule> required;
-    std::vector<PatternEvidenceRule> positive;
-    std::vector<PatternEvidenceRule> negative;
-};
-
 struct PatternTemplate
 {
     std::string                     pattern_id;
@@ -55,8 +33,6 @@ struct PatternTemplate
     std::string                     pattern_name;
     bool                            enabled = true;
     std::vector<PatternMatcherStep> ordered_checks;
-    PatternEvidenceRules            evidence_rules;
-    double                          score_threshold = 0.60;
     std::string                     source_file;
 };
 

@@ -3,7 +3,6 @@
   "pattern_family": "idiom",
   "pattern_name": "Pimpl",
   "enabled": true,
-  "score_threshold": 0.60,
   "ordered_checks": [
     { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
     { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "pimpl_outer_class" },
@@ -13,37 +12,6 @@
     { "id": "impl_semicolon", "expected_kind": "Punctuation", "expected_lexeme_any_of": [";"] },
     { "id": "smart_pointer_holder", "expected_kind": "Identifier", "expected_lexeme_any_of": ["unique_ptr", "shared_ptr"], "document_as": "pimpl_holder" }
   ],
-  "evidence_rules": {
-    "required": [
-      {
-        "id": "impl_type_name",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["Impl", "Pimpl", "Implementation"] }],
-        "weight": 0.35,
-        "document_as": "pimpl_impl_name_signal"
-      },
-      {
-        "id": "smart_pointer_holder",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["unique_ptr", "shared_ptr"] }],
-        "weight": 0.30,
-        "document_as": "pimpl_smart_pointer_signal"
-      }
-    ],
-    "positive": [
-      {
-        "id": "make_unique_impl",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["make_unique", "make_shared"] }],
-        "weight": 0.20,
-        "document_as": "pimpl_make_unique_signal"
-      },
-      {
-        "id": "pimpl_member_name",
-        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["pImpl", "impl", "m_impl"] }],
-        "weight": 0.15,
-        "document_as": "pimpl_member_name_signal"
-      }
-    ],
-    "negative": []
-  },
 
   "implementation_template": {
     "callsites": [
