@@ -1,9 +1,15 @@
 const express = require('express');
+const fs = require('fs');
+const path = require('path');
 const db = require('../db/database');
 const { jwtAuth } = require('../middleware/jwtAuth');
 const { requireAdmin } = require('../middleware/requireAdmin');
 
 const router = express.Router();
+
+const ALPHA_THRESHOLDS_PATH = path.join(
+  __dirname, '..', '..', '..', '..', 'test', 'alpha', 'system', 'thresholds.json'
+);
 
 router.use(jwtAuth, requireAdmin);
 
@@ -209,6 +215,17 @@ router.get('/reviews', (req, res, next) => {
         createdAt: r.created_at
       }))
     });
+  } catch (err) { next(err); }
+});
+
+router.get('/alpha/thresholds', (req, res, next) => {
+  try {
+    if (!fs.existsSync(ALPHA_THRESHOLDS_PATH)) {
+      return res.status(404).json({ error: 'thresholds.json not found' });
+    }
+    const raw = fs.readFileSync(ALPHA_THRESHOLDS_PATH, 'utf8');
+    const data = JSON.parse(raw);
+    res.json({ path: ALPHA_THRESHOLDS_PATH, thresholds: data });
   } catch (err) { next(err); }
 });
 

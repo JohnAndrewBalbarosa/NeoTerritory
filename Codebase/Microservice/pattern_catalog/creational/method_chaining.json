@@ -3,6 +3,7 @@
   "pattern_family": "creational",
   "pattern_name": "MethodChaining",
   "enabled": true,
+  "score_threshold": 0.60,
   "ordered_checks": [
     {
       "id": "class_introducer",
@@ -37,5 +38,33 @@
       "expected_lexeme_any_of": ["this"],
       "document_as": "fluent_self_return"
     }
-  ]
+  ],
+  "evidence_rules": {
+    "required": [
+      {
+        "id": "returns_this",
+        "tokens": [
+          { "kind": "Keyword", "lexeme_any_of": ["return"] },
+          { "kind": "Keyword", "lexeme_any_of": ["this"] }
+        ],
+        "weight": 0.40,
+        "document_as": "method_chain_self_return_signal"
+      }
+    ],
+    "positive": [
+      {
+        "id": "reference_return",
+        "tokens": [{ "kind": "Operator", "lexeme_any_of": ["&"] }],
+        "weight": 0.25,
+        "document_as": "method_chain_reference_return_signal"
+      },
+      {
+        "id": "chainable_name",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["set", "with", "add", "tag", "level", "where", "table"] }],
+        "weight": 0.15,
+        "document_as": "method_chain_name_signal"
+      }
+    ],
+    "negative": []
+  }
 }

@@ -3,6 +3,7 @@
   "pattern_family": "structural",
   "pattern_name": "Proxy",
   "enabled": true,
+  "score_threshold": 0.60,
   "ordered_checks": [
     {
       "id": "class_introducer",
@@ -45,5 +46,30 @@
       "expected_kind": "Punctuation",
       "expected_lexeme_any_of": ["("]
     }
-  ]
+  ],
+  "evidence_rules": {
+    "required": [
+      {
+        "id": "subject_forwarding",
+        "tokens": [{ "lexeme_any_of": [".", "->"] }],
+        "weight": 0.30,
+        "document_as": "proxy_forwarding_signal"
+      }
+    ],
+    "positive": [
+      {
+        "id": "real_subject_names",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["realSubject", "subject", "inner", "target"] }],
+        "weight": 0.20,
+        "document_as": "proxy_subject_name_signal"
+      },
+      {
+        "id": "access_control_names",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["authorize", "cache", "check", "guard"] }],
+        "weight": 0.15,
+        "document_as": "proxy_control_name_signal"
+      }
+    ],
+    "negative": []
+  }
 }

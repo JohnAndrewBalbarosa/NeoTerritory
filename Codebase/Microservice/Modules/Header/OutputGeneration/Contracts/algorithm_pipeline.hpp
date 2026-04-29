@@ -32,6 +32,14 @@ struct UnitTestTarget
     std::string branch_kind;
 };
 
+struct PatternEvidenceRecord
+{
+    std::string id;
+    std::string kind;
+    double      weight = 0.0;
+    bool        matched = false;
+};
+
 struct DesignPatternTag
 {
     std::string                       pattern_family;
@@ -41,6 +49,11 @@ struct DesignPatternTag
     std::string                       class_name;
     std::string                       file_name;
     std::string                       class_text;
+    double                            required_score = 0.0;
+    double                            evidence_score = 0.0;
+    double                            negative_score = 0.0;
+    double                            confidence = 1.0;
+    std::vector<PatternEvidenceRecord> evidence;
     std::vector<DocumentationTarget>  documentation_targets;
     std::vector<UnitTestTarget>       unit_test_targets;
 };

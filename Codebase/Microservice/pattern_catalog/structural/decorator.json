@@ -3,6 +3,7 @@
   "pattern_family": "structural",
   "pattern_name": "Decorator",
   "enabled": true,
+  "score_threshold": 0.60,
   "ordered_checks": [
     {
       "id": "class_introducer",
@@ -45,5 +46,30 @@
       "expected_kind": "Punctuation",
       "expected_lexeme_any_of": ["("]
     }
-  ]
+  ],
+  "evidence_rules": {
+    "required": [
+      {
+        "id": "component_forwarding",
+        "tokens": [{ "lexeme_any_of": [".", "->"] }],
+        "weight": 0.30,
+        "document_as": "decorator_forwarding_signal"
+      }
+    ],
+    "positive": [
+      {
+        "id": "component_names",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["component", "wrapped", "inner", "decorated"] }],
+        "weight": 0.20,
+        "document_as": "decorator_component_name_signal"
+      },
+      {
+        "id": "decoration_keywords",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["decorate", "add", "wrap"] }],
+        "weight": 0.15,
+        "document_as": "decorator_name_signal"
+      }
+    ],
+    "negative": []
+  }
 }

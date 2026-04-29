@@ -60,6 +60,20 @@ void run_pattern_dispatch_stage(SourcePipelineState& state)
         tag.pattern_name      = match.pattern_name;
         tag.pattern_id        = match.pattern_id;
         tag.target_class_hash = match.class_hash;
+        tag.required_score    = match.required_score;
+        tag.evidence_score    = match.evidence_score;
+        tag.negative_score    = match.negative_score;
+        tag.confidence        = match.confidence;
+
+        for (const PatternEvidenceHit& hit : match.evidence_hits)
+        {
+            PatternEvidenceRecord record;
+            record.id      = hit.id;
+            record.kind    = hit.kind;
+            record.weight  = hit.weight;
+            record.matched = hit.matched;
+            tag.evidence.push_back(std::move(record));
+        }
 
         for (const ClassTokenStream& class_stream : state.class_token_streams)
         {

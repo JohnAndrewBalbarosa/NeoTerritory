@@ -24,6 +24,14 @@ struct PatternDocumentationAnchor
     std::string lexeme;
 };
 
+struct PatternEvidenceHit
+{
+    std::string id;
+    std::string kind;
+    double      weight = 0.0;
+    bool        matched = false;
+};
+
 struct PatternMatchResult
 {
     bool                                    matched = false;
@@ -31,8 +39,13 @@ struct PatternMatchResult
     std::string                             pattern_family;
     std::string                             pattern_name;
     std::size_t                             class_hash = 0;
+    double                                  required_score = 0.0;
+    double                                  evidence_score = 0.0;
+    double                                  negative_score = 0.0;
+    double                                  confidence = 1.0;
     std::vector<PatternCapture>             captures;
     std::vector<PatternDocumentationAnchor> documentation_anchors;
+    std::vector<PatternEvidenceHit>         evidence_hits;
 };
 
 PatternMatchResult match_pattern_against_class(

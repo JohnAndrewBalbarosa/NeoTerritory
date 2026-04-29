@@ -1,0 +1,27 @@
+{
+  "_comment": "Single source of truth for alpha SLA. All other test scripts reference this. Numbers are sourced from RAIL, ITU-T G.1010, Nielsen, Apdex (see test/alpha/README.md).",
+  "local": {
+    "health_p95_ms":          50,
+    "api_health_p95_ms":      80,
+    "login_p95_ms":           250,
+    "analyze_p95_ms":         1500,
+    "analyze_p99_ms":         4000,
+    "microservice_cold_ms":   800,
+    "microservice_rss_mb":    80,
+    "backend_rss_mb_at_50rps": 350,
+    "apdex_T_analyze_s":      1.0,
+    "apdex_min":              0.85
+  },
+  "deploy": {
+    "health_p95_ms":          200,
+    "api_health_p95_ms":      250,
+    "login_p95_ms":           600,
+    "analyze_p95_ms":         3000,
+    "analyze_p99_ms":         6000,
+    "microservice_cold_ms":   1200,
+    "microservice_rss_mb":    120,
+    "backend_rss_mb_at_50rps": 500,
+    "apdex_T_analyze_s":      1.0,
+    "apdex_min":              0.70
+  }
+}

@@ -42,6 +42,42 @@ function initDb() {
   if (!columnExists('users', 'role')) {
     db.prepare(`ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'`).run();
   }
+  if (!columnExists('users', 'public_key_pem')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN public_key_pem TEXT`).run();
+  }
+  if (!columnExists('users', 'public_key_fingerprint')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN public_key_fingerprint TEXT`).run();
+  }
+  if (!columnExists('users', 'key_algorithm')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN key_algorithm TEXT`).run();
+  }
+  if (!columnExists('users', 'key_assigned_at')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN key_assigned_at TEXT`).run();
+  }
+  if (!columnExists('users', 'private_key_pem')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN private_key_pem TEXT`).run();
+  }
+  if (!columnExists('users', 'seat_status')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN seat_status TEXT NOT NULL DEFAULT 'available'`).run();
+  }
+  if (!columnExists('users', 'seat_claimed_at')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN seat_claimed_at TEXT`).run();
+  }
+  if (!columnExists('users', 'seat_expires_at')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN seat_expires_at TEXT`).run();
+  }
+  if (!columnExists('users', 'last_heartbeat_at')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN last_heartbeat_at TEXT`).run();
+  }
+  if (!columnExists('users', 'seat_claim_token')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN seat_claim_token TEXT`).run();
+  }
+  db.prepare(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_key_fingerprint
+     ON users(public_key_fingerprint)
+     WHERE public_key_fingerprint IS NOT NULL`
+  ).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_users_seat_status ON users(seat_status)`).run();
 
   db.prepare(`CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -3,6 +3,7 @@
   "pattern_family": "structural",
   "pattern_name": "Adapter",
   "enabled": true,
+  "score_threshold": 0.60,
   "ordered_checks": [
     {
       "id": "class_introducer",
@@ -46,6 +47,34 @@
       "expected_lexeme_any_of": ["("]
     }
   ],
+  "evidence_rules": {
+    "required": [
+      {
+        "id": "forwarding_operator",
+        "tokens": [{ "lexeme_any_of": [".", "->"] }],
+        "weight": 0.30,
+        "document_as": "adapter_forwarding_signal"
+      }
+    ],
+    "positive": [
+      {
+        "id": "wrapped_dependency",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["inner", "adaptee", "target", "wrapped"] }],
+        "weight": 0.20,
+        "document_as": "adapter_wrapped_name_signal"
+      }
+    ],
+    "negative": [
+      {
+        "id": "decorator_nested_new",
+        "tokens": [
+          { "kind": "Keyword", "lexeme_any_of": ["new"] },
+          { "kind": "Keyword", "lexeme_any_of": ["new"] }
+        ],
+        "weight": -0.20
+      }
+    ]
+  },
 
   "implementation_template": {
     "callsites": [

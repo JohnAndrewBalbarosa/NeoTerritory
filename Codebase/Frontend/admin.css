@@ -200,6 +200,122 @@
   margin-right: 6px;
 }
 
+/* ---------- alpha diagnostics ---------- */
+.alpha-controls {
+  display: flex;
+  align-items: end;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.alpha-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 130px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+
+.alpha-field input,
+.alpha-field select {
+  height: 36px;
+  border: 1px solid var(--panel-border);
+  border-radius: 9px;
+  padding: 0 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.alpha-status {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.alpha-table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.alpha-table tbody tr {
+  cursor: default;
+}
+
+.alpha-table code {
+  font-family: var(--code-font);
+  font-size: 12px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.pill-pass {
+  background: rgba(16, 185, 129, 0.14);
+  color: #047857;
+}
+
+.pill-fail {
+  background: rgba(239, 68, 68, 0.12);
+  color: #b91c1c;
+}
+
+.alpha-reason {
+  margin-top: 4px;
+  color: #b91c1c;
+  font-size: 11px;
+  white-space: normal;
+}
+
+.alpha-details {
+  margin-top: 14px;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.alpha-details summary {
+  cursor: pointer;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.alpha-pre {
+  margin: 10px 0 0;
+  max-height: 260px;
+  overflow: auto;
+  border-radius: 8px;
+  padding: 12px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-family: var(--code-font);
+  font-size: 12px;
+}
+
+.alpha-refs {
+  margin: 12px 0 0;
+  font-size: 12px;
+}
+
 /* ---------- logs ---------- */
 .logs-list {
   display: flex;
@@ -232,6 +348,10 @@
   justify-content: flex-end;
   z-index: 50;
   animation: fade-in 180ms ease both;
+}
+
+.drawer[hidden] {
+  display: none !important;
 }
 
 .drawer-card {

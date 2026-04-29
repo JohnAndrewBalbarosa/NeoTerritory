@@ -4,6 +4,7 @@
   "pattern_name": "StrategyConcrete",
   "pattern_role": "concrete",
   "enabled": true,
+  "score_threshold": 0.60,
   "ordered_checks": [
     { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
     { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "strategy_concrete_class" },
@@ -13,6 +14,34 @@
     { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
     { "id": "override_method", "expected_kind": "Identifier", "capture_as": "override_method", "document_as": "strategy_override_method" }
   ],
+  "evidence_rules": {
+    "required": [
+      {
+        "id": "inherits_base",
+        "tokens": [
+          { "kind": "Punctuation", "lexeme_any_of": [":"] },
+          { "kind": "Keyword", "lexeme_any_of": ["public", "protected", "private"] }
+        ],
+        "weight": 0.30,
+        "document_as": "strategy_inheritance_signal"
+      }
+    ],
+    "positive": [
+      {
+        "id": "override_keyword",
+        "tokens": [{ "kind": "Keyword", "lexeme_any_of": ["override"] }],
+        "weight": 0.35,
+        "document_as": "strategy_override_signal"
+      },
+      {
+        "id": "constructed_via_smart_pointer",
+        "tokens": [{ "kind": "Identifier", "lexeme_any_of": ["make_unique", "make_shared"] }],
+        "weight": 0.15,
+        "document_as": "strategy_construction_signal"
+      }
+    ],
+    "negative": []
+  },
 
   "implementation_template": {
     "callsites": [

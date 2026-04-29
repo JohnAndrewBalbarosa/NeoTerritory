@@ -66,6 +66,16 @@ void write_unit_test_target(std::ostringstream& out, const UnitTestTarget& targe
     out << '}';
 }
 
+void write_pattern_evidence_record(std::ostringstream& out, const PatternEvidenceRecord& record)
+{
+    out << '{';
+    out << "\"id\":";       write_string(out, record.id);
+    out << ",\"kind\":";    write_string(out, record.kind);
+    out << ",\"weight\":"   << record.weight;
+    out << ",\"matched\":"  << (record.matched ? "true" : "false");
+    out << '}';
+}
+
 void write_design_pattern_tag(std::ostringstream& out, const DesignPatternTag& tag)
 {
     out << '{';
@@ -76,6 +86,18 @@ void write_design_pattern_tag(std::ostringstream& out, const DesignPatternTag& t
     out << ",\"class_name\":";       write_string(out, tag.class_name);
     out << ",\"file_name\":";        write_string(out, tag.file_name);
     out << ",\"class_text\":";       write_string(out, tag.class_text);
+    out << ",\"required_score\":"    << tag.required_score;
+    out << ",\"evidence_score\":"    << tag.evidence_score;
+    out << ",\"negative_score\":"    << tag.negative_score;
+    out << ",\"confidence\":"        << tag.confidence;
+
+    out << ",\"evidence\":[";
+    for (std::size_t i = 0; i < tag.evidence.size(); ++i)
+    {
+        if (i > 0) out << ',';
+        write_pattern_evidence_record(out, tag.evidence[i]);
+    }
+    out << ']';
 
     out << ",\"documentation_targets\":[";
     for (std::size_t i = 0; i < tag.documentation_targets.size(); ++i)
