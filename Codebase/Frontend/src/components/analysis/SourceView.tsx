@@ -119,10 +119,26 @@ interface LineStyle extends React.CSSProperties {
   '--ann-border'?: string;
 }
 
-function styleFor(scopeColor: PatternColor | null, annColor: PatternColor | null): LineStyle {
+// Neutral grey used when multiple distinct patterns claim the same line.
+// We deliberately drop the per-pattern color so the user reads the line
+// as "ambiguous — pick one in the popover" instead of being misled by
+// whichever pattern happened to be first in the array.
+const AMBIGUOUS_COLOR: PatternColor = {
+  bg:       'oklch(75% 0 0 / 0.10)',
+  border:   'oklch(60% 0 0)',
+  text:     'oklch(45% 0 0)'
+};
+
+function styleFor(
+  scopeColor: PatternColor | null,
+  annColor: PatternColor | null,
+  ambiguous: boolean
+): LineStyle {
   const style: LineStyle = {};
-  if (scopeColor) style['--scope-bg'] = scopeColor.bg;
-  if (annColor) style['--ann-border'] = annColor.border;
+  const effectiveScope = ambiguous ? AMBIGUOUS_COLOR : scopeColor;
+  const effectiveAnn   = ambiguous ? AMBIGUOUS_COLOR : annColor;
+  if (effectiveScope) style['--scope-bg'] = effectiveScope.bg;
+  if (effectiveAnn) style['--ann-border'] = effectiveAnn.border;
   return style;
 }
 
@@ -165,7 +181,7 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
             ambiguous ? 'has-ambiguous' : '',
             row.isScopeStart ? 'class-scope-start' : ''
           ].filter(Boolean).join(' ');
-          const style = styleFor(scopeColor, annColor);
+          const style = styleFor(scopeColor, annColor, ambiguous);
           return (
             <span
               key={row.lineNo}

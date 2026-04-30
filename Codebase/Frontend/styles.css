@@ -846,7 +846,7 @@ body.login-active {
   border: 1px solid;
   white-space: nowrap;
 }
-.src-line.has-ambiguous { box-shadow: inset 3px 0 0 0 #b45309; }
+.src-line.has-ambiguous { box-shadow: inset 3px 0 0 0 oklch(60% 0 0); }
 .src-line-badge {
   margin-left: auto;
   font: 500 10px/1 ui-monospace, monospace;
