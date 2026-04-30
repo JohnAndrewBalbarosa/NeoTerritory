@@ -115,13 +115,60 @@ function buildPipelineFromMetrics(stageMetrics, detectedPatternsCount) {
   }));
 }
 
-function buildAnnotations(detectedPatterns, aiByPattern, sourceText) {
+/**
+ * Per-class scope coherence (user request, post-v3):
+ *   "kung ano yung confident na design pattern para sa buong class, ganun
+ *    rin dapat sa children class, magkakaroon lamang ng tie kapag may
+ *    design pattern na kung saan buong class ay kaparehas na kaparehas"
+ *
+ * Within one class, every annotation should reflect that class's winning
+ * pattern. Runner-up patterns that detected the same class shape do NOT
+ * emit annotations — unless they are genuinely tied with the winner
+ * (within ranker AMBIGUITY_DELTA), in which case both surface.
+ *
+ * Returns a set of `${patternId}::${className}` keys that ARE allowed
+ * to emit annotations. If `ranking` is null (no rank pass ran), every
+ * detection is allowed (legacy behavior).
+ */
+function buildAllowedScopeKeys(detectedPatterns, ranking) {
+  if (!ranking || !Array.isArray(ranking.ranks)) {
+    return new Set((detectedPatterns || []).map(p => `${p.patternId}::${p.className}`));
+  }
+  const AMBIGUITY_DELTA = (ranking.thresholds && ranking.thresholds.ambiguityDelta) || 0.10;
+  const byClass = new Map();
+  for (const r of ranking.ranks) {
+    const cls = r.className || '__nameless__';
+    if (!byClass.has(cls)) byClass.set(cls, []);
+    byClass.get(cls).push(r);
+  }
+  const allowed = new Set();
+  for (const [cls, list] of byClass) {
+    list.sort((a, b) => b.finalRank - a.finalRank);
+    const top = list[0];
+    if (!top) continue;
+    allowed.add(`${top.patternId}::${cls}`);
+    // Genuine tie: another pattern within AMBIGUITY_DELTA of the leader.
+    for (let i = 1; i < list.length; i += 1) {
+      if (top.finalRank - list[i].finalRank <= AMBIGUITY_DELTA) {
+        allowed.add(`${list[i].patternId}::${cls}`);
+      }
+    }
+  }
+  return allowed;
+}
+
+function buildAnnotations(detectedPatterns, aiByPattern, sourceText, ranking) {
   const normalized = (sourceText || '').replace(/\r\n/g, '\n');
   const lines = normalized.split('\n');
   const annotations = [];
   let counter = 1;
 
+  const allowedScopeKeys = buildAllowedScopeKeys(detectedPatterns, ranking);
+
   detectedPatterns.forEach((pattern, patternIndex) => {
+    // Per-class scope coherence: skip non-winning patterns on this class.
+    if (!allowedScopeKeys.has(`${pattern.patternId}::${pattern.className}`)) return;
+
     const aiResult = aiByPattern[patternIndex] || {};
     const aiDocs   = aiResult.documentationByTarget || {};
     const aiTests  = aiResult.unitTestPlanByTarget || {};
@@ -232,7 +279,8 @@ function deriveAnnotations(analysis, sourceText) {
   return buildAnnotations(
     analysis.detectedPatterns || [],
     analysis.aiByPattern      || [],
-    sourceText
+    sourceText,
+    analysis.ranking || null
   );
 }
 
@@ -345,7 +393,7 @@ router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) =
     const detectedPatterns = structural.detectedPatterns || [];
     const ranking = rankAll(detectedPatterns, sourceText);
     const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
-    const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText);
+    const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText, ranking);
     const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
 
     // Build "suspected structures" — the de-duplicated, per-class winner list.
