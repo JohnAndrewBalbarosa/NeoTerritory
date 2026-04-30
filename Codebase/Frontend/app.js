@@ -472,150 +472,6 @@ async function submitAnalysis(event) {
     els.analyzeBtn.disabled = false;
     els.analyzeBtn.textContent = originalLabel;
   }
-<<<<<<< Updated upstream
-=======
-
-  function handleSSEEvent(name, payload) {
-    if (name === 'structural') {
-      state.sessionRanAnalyze = true;
-      stablePatternCount = (payload.detectedPatterns || []).length;
-      const sourceText = payload.sourceText || code;
-      if (payload.sourceText) els.codeInput.value = payload.sourceText;
-      if (payload.sourceName) els.filenameInput.value = payload.sourceName;
-
-      renderRun({
-        sourceName: payload.sourceName || filename,
-        sourceText,
-        detectedPatterns: payload.detectedPatterns || [],
-        detectedPatternCount: stablePatternCount,
-        annotations: [],
-        ranking: null,
-        classUsageBindings: {},
-        classUsageBindingSource: 'heuristic',
-        suspectedStructures: [],
-        noPatternsDetected: Boolean(payload.noPatternsDetected),
-        aiAvailable: state.aiAvailable || false
-      });
-
-      const aiMsg = state.aiAvailable
-        ? `${stablePatternCount} detected pattern(s) found — AI commentary in progress…`
-        : `${stablePatternCount} detected pattern(s) found`;
-      setStatus('busy', 'Structural done', aiMsg);
-
-    } else if (name === 'ranking') {
-      finalRanking = payload;
-      if (state.currentRun) {
-        state.currentRun.ranking = payload;
-        finalSuspectedStructures = buildClientSuspectedStructures(
-          state.currentRun.detectedPatterns || [], payload);
-        state.currentRun.suspectedStructures = finalSuspectedStructures;
-        renderSuspectedStructures(state.currentRun);
-        renderPatternCards(
-          state.currentRun.detectedPatterns || [],
-          payload,
-          null,
-          state.currentRun.classUsageBindings || {},
-          state.currentRun.classUsageBindingSource || 'heuristic'
-        );
-      }
-
-    } else if (name === 'binding') {
-      if (state.currentRun) {
-        state.currentRun.classUsageBindings = payload.classUsageBindings || {};
-        state.currentRun.classUsageBindingSource = 'heuristic';
-        renderClassBindings(state.currentRun.classUsageBindings, 'heuristic');
-        // Re-render source view with updated usage annotations
-        const allAnns = buildAllAnnotations(state.currentRun);
-        renderSourceView(state.currentRun.sourceText || '', allAnns);
-      }
-
-    } else if (name === 'ai_item') {
-      if (Number.isInteger(payload.index)) {
-        completedAiPatternIndexes.add(payload.index);
-      } else {
-        completedAiItems += 1;
-      }
-      let aiDoneCount = completedAiPatternIndexes.size || completedAiItems;
-      if (stablePatternCount > 0) aiDoneCount = Math.min(aiDoneCount, stablePatternCount);
-      const aiProgress = stablePatternCount > 0
-        ? `${aiDoneCount}/${stablePatternCount} detected pattern(s) documented…`
-        : 'Generating AI commentary…';
-      setStatus('busy', 'AI in progress', aiProgress);
-
-    } else if (name === 'complete') {
-      pendingId = payload.pendingId || null;
-      if (state.currentRun) {
-        state.currentRun.annotations = payload.annotations || [];
-        state.currentRun.suspectedStructures = payload.suspectedStructures || [];
-        state.currentRun.ranking = payload.ranking || finalRanking;
-        state.currentRun.aiAvailable = Boolean(payload.aiAvailable);
-        state.currentRun.aiByPattern = payload.aiByPattern || [];
-      }
-
-      // Re-render with full annotations now that AI is done
-      const run = state.currentRun;
-      if (run) {
-        const allAnns = buildAllAnnotations(run);
-        renderSourceView(run.sourceText || '', allAnns);
-        renderSuspectedStructures(run);
-        renderPatternCards(
-          run.detectedPatterns || [],
-          run.ranking || null,
-          null,
-          run.classUsageBindings || {},
-          run.classUsageBindingSource || 'heuristic'
-        );
-      }
-
-      const patternCount = stablePatternCount || (run && run.detectedPatterns || []).length;
-      const commentCount = (payload.annotations || []).length;
-      const verdict = (payload.ranking || finalRanking)?.verdict || 'no_clear_pattern';
-      setStatus('ok', 'Analysis ready (unsaved)',
-        `${patternCount} detected pattern(s), ${commentCount} comment(s). Verdict: ${verdict}.`);
-
-      if (pendingId && run) {
-        promptAmbiguity(pendingId, payload.ranking || finalRanking, run.sourceName)
-          .then(userResolvedPattern => {
-            promptSaveRun(pendingId, run.sourceName, patternCount, commentCount, userResolvedPattern);
-          });
-      }
-
-    } else if (name === 'error') {
-      setStatus('error', 'Analysis failed', payload.error || 'Unknown error');
-    }
-  }
-}
-
-// Build combined annotations for source view (AI annotations + usage annotations).
-function buildAllAnnotations(run) {
-  const baseAnns = run.annotations || [];
-  const usageAnns = synthesizeUsageAnnotations(
-    run.classUsageBindings || {},
-    run.detectedPatterns || [],
-    run.suspectedStructures || [],
-    (run.ranking && run.ranking.thresholds) || null
-  );
-  return [...baseAnns, ...usageAnns];
-}
-
-// Mirrors buildSuspectedStructures() from analysis.js so the frontend can
-// render the structures section immediately after ranking arrives (before complete).
-function buildClientSuspectedStructures(detectedPatterns, ranking) {
-  return (ranking.winners || []).map(w => {
-    const det = detectedPatterns.find(p =>
-      p.patternId === w.patternId && p.className === w.className) || {};
-    return {
-      className:         w.className,
-      patternId:         w.patternId,
-      patternName:       det.patternName || w.patternId,
-      patternFamily:     det.patternFamily || (w.patternId.split('.')[0] || ''),
-      finalRank:         w.finalRank,
-      implementationFit: w.implementationFit,
-      evidence:          w.evidence,
-      rivals:            (ranking.perClassRivals || {})[w.className] || []
-    };
-  });
->>>>>>> Stashed changes
 }
 
 function renderLegend(detectedPatterns) {
@@ -772,17 +628,10 @@ function synthesizeUsageAnnotations(bindings, detectedPatterns) {
 function renderRun(run) {
   state.currentRun = run;
   els.resultsPanel.hidden = false;
-<<<<<<< Updated upstream
   const patternCount = (run.detectedPatterns || []).length;
   const baseAnns = run.annotations || [];
   const usageAnns = synthesizeUsageAnnotations(run.classUsageBindings || {}, run.detectedPatterns || []);
   const allAnns = [...baseAnns, ...usageAnns];
-=======
-  const patternCount = Number.isFinite(run.detectedPatternCount)
-    ? run.detectedPatternCount
-    : (run.detectedPatterns || []).length;
-  const allAnns = buildAllAnnotations(run);
->>>>>>> Stashed changes
   const annCount = allAnns.length;
   els.resultsSummary.textContent =
     `${escapeHtml(run.sourceName || 'snippet.cpp')} • ${patternCount} pattern(s) • ${annCount} comment(s)`;

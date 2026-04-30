@@ -133,5 +133,7 @@ NeoTerritory.slnx
 Setup/Setup.vdproj
 Codebase/Backend/keys/jwt-private.pem
 /Codebase/Backend/src/db
-/test
-/test
+
+# Test result artifacts (per-user analysis run outputs)
+/test/
+/Codebase/test/
