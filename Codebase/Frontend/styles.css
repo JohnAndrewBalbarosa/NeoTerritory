@@ -826,11 +826,38 @@ body.login-active {
   background: rgba(245, 158, 11, 0.15);
   color: #92400e;
   border: 1px solid #b45309;
-  padding: 4px 8px;
+  padding: 6px 10px;
   border-radius: 6px;
   font-size: 12px;
   margin-bottom: 8px;
   font-weight: 600;
+}
+.src-popover-rivals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+.src-popover-rival {
+  font: 500 11px/1.4 ui-monospace, SFMono-Regular, monospace;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid;
+  white-space: nowrap;
+}
+.src-line.has-ambiguous { box-shadow: inset 3px 0 0 0 #b45309; }
+.src-line-badge {
+  margin-left: auto;
+  font: 500 10px/1 ui-monospace, monospace;
+  color: var(--ann-border, #475569);
+  padding: 0 4px;
+}
+.src-popover-class {
+  font: 500 11px/1.4 ui-monospace, monospace;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid;
 }
 .src-popover-body { display: flex; flex-direction: column; gap: 8px; }
 .src-popover-item { padding: 8px 10px; border-radius: 6px; }

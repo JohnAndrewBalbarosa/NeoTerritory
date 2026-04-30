@@ -4,7 +4,6 @@ import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import AnalysisForm from '../analysis/AnalysisForm';
 import SourceView from '../analysis/SourceView';
-import CommentsPane from '../analysis/CommentsPane';
 import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
@@ -169,7 +168,6 @@ export default function MainLayout() {
                   detectedPatterns={currentRun.detectedPatterns || []}
                   onLineClick={flashComment}
                 />
-                <CommentsPane annotations={allAnnotations} onCommentClick={flashLine} />
               </div>
               <PatternCards
                 detectedPatterns={currentRun.detectedPatterns || []}

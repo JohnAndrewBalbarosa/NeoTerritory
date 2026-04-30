@@ -1,12 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
 import { colorFor, patternFromAnnotation, PatternColor } from '../../lib/patterns';
+import LinePopover from './LinePopover';
 
 interface SourceViewProps {
   sourceText: string;
   annotations: Annotation[];
   detectedPatterns: DetectedPatternFull[];
   onLineClick?: (commentId: string) => void;
+}
+
+interface PopoverState {
+  line: number;
+  annotations: Annotation[];
+  anchorRect: DOMRect | null;
 }
 
 interface ClassScope {
@@ -125,38 +132,68 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
     [sourceText, annotations, detectedPatterns]
   );
   const width = String(rows.length).length;
+  const [popover, setPopover] = useState<PopoverState | null>(null);
+
+  function handleLineClick(row: RenderedLine, ev: React.MouseEvent<HTMLSpanElement>): void {
+    if (!row.anns.length) return;
+    const rect = ev.currentTarget.getBoundingClientRect();
+    if (popover && popover.line === row.lineNo) {
+      setPopover(null);
+      return;
+    }
+    setPopover({ line: row.lineNo, annotations: row.anns, anchorRect: rect });
+    if (onLineClick) onLineClick(row.anns[0].id);
+  }
 
   return (
-    <div id="source-view" className="source-view">
-      {rows.map(row => {
-        const top = row.anns[0];
-        const scopeColor = row.scope ? colorFor(row.scope.patternKey) : null;
-        const annColor   = top ? colorFor(top.patternKey || patternFromAnnotation(top)) : null;
-        const num = String(row.lineNo).padStart(width, ' ');
-        const hasAnnotation = row.anns.length > 0;
-        const classNames = [
-          'src-line',
-          hasAnnotation ? 'has-annotation' : '',
-          hasAnnotation ? 'has-comment' : '',
-          row.isScopeStart ? 'class-scope-start' : ''
-        ].filter(Boolean).join(' ');
-        const style = styleFor(scopeColor, annColor);
-        return (
-          <span
-            key={row.lineNo}
-            className={classNames}
-            data-line={row.lineNo}
-            data-class-name={row.isScopeStart ? row.scope?.className : undefined}
-            style={style}
-            onClick={() => {
-              if (top && onLineClick) onLineClick(top.id);
-            }}
-          >
-            <span className="src-gutter">{num}</span>
-            <span className="src-code">{row.text || '​'}</span>
-          </span>
-        );
-      })}
-    </div>
+    <>
+      <div id="source-view" className="source-view">
+        {rows.map(row => {
+          const top = row.anns[0];
+          const scopeColor = row.scope ? colorFor(row.scope.patternKey) : null;
+          const annColor   = top ? colorFor(top.patternKey || patternFromAnnotation(top)) : null;
+          const num = String(row.lineNo).padStart(width, ' ');
+          const hasAnnotation = row.anns.length > 0;
+          const distinctPatternCount = hasAnnotation
+            ? new Set(row.anns.map(a => a.patternKey || patternFromAnnotation(a))).size
+            : 0;
+          const ambiguous = distinctPatternCount > 1;
+          const classNames = [
+            'src-line',
+            hasAnnotation ? 'has-annotation' : '',
+            hasAnnotation ? 'has-comment' : '',
+            ambiguous ? 'has-ambiguous' : '',
+            row.isScopeStart ? 'class-scope-start' : ''
+          ].filter(Boolean).join(' ');
+          const style = styleFor(scopeColor, annColor);
+          return (
+            <span
+              key={row.lineNo}
+              className={classNames}
+              data-line={row.lineNo}
+              data-class-name={row.isScopeStart ? row.scope?.className : undefined}
+              style={style}
+              onClick={(ev) => handleLineClick(row, ev)}
+            >
+              <span className="src-gutter">{num}</span>
+              <span className="src-code">{row.text || '​'}</span>
+              {hasAnnotation && (
+                <span className="src-line-badge" aria-hidden="true">
+                  {ambiguous ? `${distinctPatternCount}×` : ''}
+                </span>
+              )}
+            </span>
+          );
+        })}
+      </div>
+      {popover && (
+        <LinePopover
+          line={popover.line}
+          annotations={popover.annotations}
+          anchorRect={popover.anchorRect}
+          onClose={() => setPopover(null)}
+        />
+      )}
+    </>
   );
 }
