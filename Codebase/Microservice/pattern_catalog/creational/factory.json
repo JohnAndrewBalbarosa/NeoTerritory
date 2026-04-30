@@ -3,6 +3,11 @@
   "pattern_family": "creational",
   "pattern_name": "Factory",
   "enabled": true,
+  "lexeme_identifiers": {
+    "object_instantiation": ["make_unique", "make_shared", "new"],
+    "return_value":         ["return"],
+    "branch_decision":      ["if", "switch", "case"]
+  },
   "ordered_checks": [
     {
       "id": "class_introducer",

@@ -3,6 +3,10 @@
   "pattern_family": "structural",
   "pattern_name": "Decorator",
   "enabled": true,
+  "lexeme_identifiers": {
+    "wrappee_call":    ["->"],
+    "wrappee_member":  ["inner", "decorated", "wrappee"]
+  },
   "ordered_checks": [
     {
       "id": "class_introducer",

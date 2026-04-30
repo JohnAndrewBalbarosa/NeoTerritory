@@ -145,16 +145,67 @@ export async function saveRun(pendingId: string, userResolvedPattern?: string): 
   });
 }
 
+export interface TesterAccountInfo {
+  username: string;
+  claimed: boolean;
+}
+
 export interface TesterAccountsResponse {
-  accounts: string[];
+  accounts: TesterAccountInfo[];
   password?: string;
+  mode?: string;
+}
+
+function normalizeTesterAccount(value: unknown): TesterAccountInfo | null {
+  if (typeof value === 'string') {
+    return { username: value, claimed: false };
+  }
+  if (value && typeof value === 'object') {
+    const v = value as { username?: unknown; claimed?: unknown };
+    if (typeof v.username === 'string') {
+      return { username: v.username, claimed: v.claimed === true };
+    }
+  }
+  return null;
 }
 
 export async function fetchTesterAccounts(): Promise<TesterAccountsResponse> {
   const res = await fetch('/auth/test-accounts', { headers: { Accept: 'application/json' } });
   if (!res.ok) return { accounts: [] };
-  const data = await res.json() as Partial<TesterAccountsResponse>;
-  return { accounts: Array.isArray(data.accounts) ? data.accounts : [], password: data.password };
+  const data = await res.json().catch(() => ({})) as {
+    accounts?: unknown;
+    password?: string;
+    mode?: string;
+  };
+  const raw = Array.isArray(data.accounts) ? data.accounts : [];
+  const accounts: TesterAccountInfo[] = [];
+  for (const r of raw) {
+    const norm = normalizeTesterAccount(r);
+    if (norm) accounts.push(norm);
+  }
+  return { accounts, password: data.password, mode: data.mode };
+}
+
+export async function claimSeat(username: string): Promise<{ token: string; user: User }> {
+  const res = await fetch('/auth/claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ username })
+  });
+  const data = await res.json().catch(() => ({})) as {
+    token?: string;
+    user?: User;
+    error?: string;
+  };
+  if (!res.ok) {
+    const err = new Error(data.error || `Claim failed (${res.status})`);
+    (err as Error & { status?: number }).status = res.status;
+    throw err;
+  }
+  if (!data.token || !data.user) {
+    throw new Error('Claim response missing token or user');
+  }
+  return { token: data.token, user: data.user };
 }
 
 export async function fetchReviewSchema(scope: string): Promise<ReviewSchema> {

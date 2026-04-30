@@ -117,10 +117,10 @@ if ($listener) {
   Start-Sleep -Seconds 1
 }
 
-# Spawn server
+# Spawn server (TypeScript via tsx — backend was migrated; server.js no longer exists)
 $serverArgs = @{
-  FilePath               = 'node'
-  ArgumentList           = 'server.js'
+  FilePath               = 'npm.cmd'
+  ArgumentList           = @('run', 'dev')
   WorkingDirectory       = $BackendDir
   PassThru               = $true
   NoNewWindow            = $true

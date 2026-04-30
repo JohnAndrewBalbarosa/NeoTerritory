@@ -3,6 +3,10 @@
   "pattern_family": "structural",
   "pattern_name": "Adapter",
   "enabled": true,
+  "lexeme_identifiers": {
+    "forwarding":      ["->"],
+    "wrapped_member":  ["target", "wrappee", "adaptee"]
+  },
   "ordered_checks": [
     {
       "id": "class_introducer",

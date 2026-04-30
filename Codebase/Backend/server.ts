@@ -59,6 +59,7 @@ const adminLimiter = rateLimit({
 // Routes
 app.use('/health', healthRoutes);
 app.use('/auth/login', authLimiter);
+app.use('/auth/claim', authLimiter);
 app.use('/auth', authRoutes);
 app.use('/api/transform', transformRoutes);
 app.use('/api/admin', adminLimiter, adminRoutes);

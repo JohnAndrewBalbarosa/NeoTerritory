@@ -166,6 +166,7 @@ export default function MainLayout() {
                 <SourceView
                   sourceText={currentRun.sourceText || ''}
                   annotations={allAnnotations}
+                  detectedPatterns={currentRun.detectedPatterns || []}
                   onLineClick={flashComment}
                 />
                 <CommentsPane annotations={allAnnotations} onCommentClick={flashLine} />
@@ -180,7 +181,7 @@ export default function MainLayout() {
               />
               <ClassBindings
                 bindings={currentRun.classUsageBindings || {}}
-                source={currentRun.classUsageBindingSource || 'heuristic'}
+                detectedPatterns={currentRun.detectedPatterns || []}
                 onLineFlash={flashLine}
               />
             </>

@@ -43,6 +43,9 @@ export interface Annotation {
   comment: string;
   excerpt: string;
   kind: string;
+  patternKey?: string;
+  className?: string;
+  scope?: string;
 }
 
 export interface ClassUsageBinding {

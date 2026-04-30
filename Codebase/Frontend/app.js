@@ -108,8 +108,11 @@ function patternFromAnnotation(annotation) {
   return PATTERN_COLORS[head] ? head : (PATTERN_COLORS.default ? 'default' : head);
 }
 
+function hueFor(key){let h=2166136261;for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h)%360;}
+function generatedColor(key){const h=hueFor(key||'default');return {bg:`oklch(72% 0.18 ${h} / 0.10)`,border:`oklch(72% 0.18 ${h})`,text:`oklch(85% 0.14 ${h})`};}
+
 function colorFor(patternKey) {
-  return PATTERN_COLORS[patternKey] || PATTERN_COLORS.default;
+  return PATTERN_COLORS[patternKey] || generatedColor(patternKey);
 }
 
 async function apiFetch(url, options = {}) {
@@ -183,27 +186,68 @@ async function loadTesterAccounts() {
   try {
     const res = await fetch('/auth/test-accounts');
     const data = await res.json();
-    const accounts = Array.isArray(data.accounts) ? data.accounts : [];
+    const rawAccounts = Array.isArray(data.accounts) ? data.accounts : [];
+    // Backwards-compat: server may emit string[] or [{username, claimed}].
+    const accounts = rawAccounts.map(a =>
+      typeof a === 'string' ? { username: a, claimed: false } : a
+    );
     if (!accounts.length) { els.testerList.hidden = true; return; }
     els.testerList.hidden = false;
     els.testerGrid.innerHTML = '';
-    accounts.forEach(name => {
+    accounts.forEach(({ username, claimed }) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tester-chip';
-      btn.textContent = name;
-      btn.addEventListener('click', () => {
-        els.loginUsername.value = name;
-        els.loginPassword.value = data.password || '';
-        els.testerGrid.querySelectorAll('.tester-chip[aria-pressed="true"]').forEach(b => b.removeAttribute('aria-pressed'));
-        btn.setAttribute('aria-pressed', 'true');
-        els.loginPassword.focus();
+      btn.textContent = username;
+      if (claimed) {
+        btn.dataset.claimed = 'true';
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled', 'true');
+        btn.title = 'Seat already claimed';
+        els.testerGrid.appendChild(btn);
+        return;
+      }
+      btn.addEventListener('click', async () => {
+        if (els.loginError) els.loginError.hidden = true;
+        try {
+          await claimTesterSeat(username);
+        } catch (err) {
+          if (err && err.status === 409) {
+            if (els.loginError) {
+              els.loginError.textContent = 'That seat was just claimed — picking another.';
+              els.loginError.hidden = false;
+            }
+            await loadTesterAccounts();
+            return;
+          }
+          if (els.loginError) {
+            els.loginError.textContent = (err && err.message) || 'Could not claim that seat.';
+            els.loginError.hidden = false;
+          }
+        }
       });
       els.testerGrid.appendChild(btn);
     });
   } catch {
     els.testerList.hidden = true;
   }
+}
+
+async function claimTesterSeat(username) {
+  const response = await fetch('/auth/claim', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+    body: JSON.stringify({ username })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const err = new Error(data.error || `Claim failed (${response.status})`);
+    err.status = response.status;
+    throw err;
+  }
+  handleSignIn(data.token, data.user || { username });
+  if (typeof loadRuns === 'function') { try { await loadRuns(); } catch {} }
+  if (typeof loadSample === 'function') { try { await loadSample(); } catch {} }
 }
 
 async function submitLogin(event) {
@@ -403,31 +447,7 @@ async function submitAnalysis(event) {
   els.analyzeBtn.disabled = true;
   const originalLabel = els.analyzeBtn.textContent;
   els.analyzeBtn.textContent = 'Running...';
-<<<<<<< Updated upstream
   setStatus('busy', 'Running analysis', 'Spawning microservice...');
-=======
-  setStatus('busy', 'Analyzing…', 'Spawning microservice…');
-
-  let body;
-  if (file) {
-    body = new FormData();
-    body.append('file', file);
-    body.append('filename', filename);
-  } else {
-    body = JSON.stringify({ code, filename });
-  }
-
-  const headers = { Accept: 'text/event-stream' };
-  if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
-  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
-
-  let pendingId = null;
-  let finalRanking = null;
-  let finalSuspectedStructures = [];
-  let stablePatternCount = 0;
-  let completedAiItems = 0;
-  const completedAiPatternIndexes = new Set();
->>>>>>> Stashed changes
 
   try {
     let body;
@@ -491,47 +511,170 @@ function renderLegend(detectedPatterns) {
   els.patternLegend.innerHTML = chips.join('');
 }
 
-function renderSourceView(sourceText, annotations) {
+let _annotationsByLineCache = new Map();
+
+function renderSourceView(sourceText, annotations, detectedPatterns) {
   const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
+
+  // Build class scopes from detectedPatterns (range = min..max documentationTargets line)
+  const classScopes = [];
+  (detectedPatterns || []).forEach(p => {
+    if (!p || !p.className) return;
+    const ls = (p.documentationTargets || []).map(d => d.line).filter(n => typeof n === 'number');
+    if (!ls.length) return;
+    const patternKey = p.patternName || p.patternId || 'default';
+    classScopes.push({
+      className: p.className,
+      patternKey,
+      min: Math.min(...ls),
+      max: Math.max(...ls)
+    });
+  });
+
+  // For overlapping scopes, prefer inner (smaller range) when assigning a line.
+  const lineToScope = new Map();
+  for (let lineNo = 1; lineNo <= lines.length; lineNo++) {
+    let pick = null;
+    let pickSize = Infinity;
+    for (const s of classScopes) {
+      if (lineNo >= s.min && lineNo <= s.max) {
+        const size = s.max - s.min;
+        if (size < pickSize) { pick = s; pickSize = size; }
+      }
+    }
+    if (pick) lineToScope.set(lineNo, pick);
+  }
+
+  // Build lineToAnnotations covering full annotation ranges (line..lineEnd).
   const annotationsByLine = new Map();
   annotations.forEach(a => {
-    if (!a.line) return;
-    if (!annotationsByLine.has(a.line)) annotationsByLine.set(a.line, []);
-    annotationsByLine.get(a.line).push(a);
+    if (!a.line || a.scope === 'file') return;
+    const start = a.line;
+    const end = (typeof a.lineEnd === 'number' && a.lineEnd >= start) ? a.lineEnd : a.line;
+    for (let l = start; l <= end; l++) {
+      if (!annotationsByLine.has(l)) annotationsByLine.set(l, []);
+      annotationsByLine.get(l).push(a);
+    }
   });
+  _annotationsByLineCache = annotationsByLine;
 
   const out = [];
   const width = String(lines.length).length;
+  const labelledScopeStarts = new Set();
   lines.forEach((line, idx) => {
     const lineNo = idx + 1;
     const anns = annotationsByLine.get(lineNo) || [];
-    const top = anns[0];
-    let style = '';
+    const scope = lineToScope.get(lineNo);
+    const num = String(lineNo).padStart(width, ' ');
     let dataAttrs = `data-line="${lineNo}"`;
-    if (top) {
-      const c = colorFor(patternFromAnnotation(top));
-      style = `background:${c.bg};border-left:3px solid ${c.border};`;
+    const styles = [];
+    const classes = ['src-line'];
+
+    if (scope) {
+      const sc = colorFor(scope.patternKey);
+      styles.push(`--scope-bg: ${sc.bg}`);
+    }
+
+    if (anns.length) {
+      const top = anns[0];
+      const c = colorFor(top.patternKey || patternFromAnnotation(top));
+      styles.push(`--ann-border: ${c.border}`);
       const ids = anns.map(a => a.id).join(' ');
       dataAttrs += ` data-comment-ids="${escapeHtml(ids)}"`;
-    } else {
-      style = 'border-left:3px solid transparent;';
+      classes.push('has-comment');
+      classes.push('has-annotation');
     }
-    const num = String(lineNo).padStart(width, ' ');
+
+    if (scope && scope.min === lineNo && !labelledScopeStarts.has(scope.className)) {
+      labelledScopeStarts.add(scope.className);
+      classes.push('class-scope-start');
+      if (!anns.length) {
+        const sc = colorFor(scope.patternKey);
+        styles.push(`--ann-border: ${sc.border}`);
+      }
+      dataAttrs += ` data-class-name="${escapeHtml(scope.className)}"`;
+    }
+
+    const styleAttr = styles.length ? ` style="${styles.join(';')}"` : '';
     out.push(
-      `<span class="src-line${anns.length ? ' has-comment' : ''}" ${dataAttrs} style="${style}">` +
+      `<span class="${classes.join(' ')}" ${dataAttrs}${styleAttr}>` +
       `<span class="src-gutter">${num}</span>` +
+      `<span class="src-dot" aria-hidden="true"></span>` +
       `<span class="src-code">${escapeHtml(line) || '​'}</span>` +
       `</span>`
     );
   });
   els.sourceView.innerHTML = out.join('');
 
-  els.sourceView.querySelectorAll('.src-line.has-comment').forEach(el => {
-    el.addEventListener('click', () => {
-      const ids = (el.dataset.commentIds || '').split(/\s+/).filter(Boolean);
-      if (ids.length) flashComment(ids[0]);
+  els.sourceView.querySelectorAll('.src-line.has-annotation').forEach(el => {
+    el.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const lineNo = Number(el.dataset.line);
+      const anns = _annotationsByLineCache.get(lineNo) || [];
+      if (anns.length) showLinePopover(el, anns);
     });
   });
+
+  // Click-outside dismisses popover.
+  document.addEventListener('click', (ev) => {
+    const pop = document.getElementById('src-popover');
+    if (!pop) return;
+    if (pop.contains(ev.target)) return;
+    pop.remove();
+  });
+}
+
+function showLinePopover(anchorEl, anns) {
+  const existing = document.getElementById('src-popover');
+  if (existing) existing.remove();
+
+  const pop = document.createElement('div');
+  pop.id = 'src-popover';
+  pop.className = 'src-popover';
+
+  const items = anns.map(a => {
+    const patternKey = a.patternKey || patternFromAnnotation(a);
+    const c = colorFor(patternKey);
+    const titleParts = (a.title || '').split(' :: ');
+    const head  = titleParts[0] || a.stage || 'Comment';
+    const label = titleParts.slice(1).join(' :: ') || a.kind || '';
+    const classChip = a.className
+      ? `<span class="src-popover-class" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${escapeHtml(a.className)}</span>`
+      : '';
+    return (
+      `<article class="src-popover-item" data-comment-id="${escapeHtml(a.id)}" ` +
+        `style="border-left:4px solid ${c.border};background:${c.bg}">` +
+      `<header class="src-popover-head">` +
+        classChip +
+        `<span class="src-popover-pattern" style="color:${c.text}">${escapeHtml(head)}</span>` +
+        (label ? `<span class="src-popover-label">${escapeHtml(label)}</span>` : '') +
+        (a.line ? `<span class="src-popover-line">L${a.line}</span>` : '') +
+      `</header>` +
+      (a.comment ? `<p class="src-popover-comment">${escapeHtml(a.comment)}</p>` : '') +
+      (a.excerpt ? `<pre class="src-popover-excerpt" style="border-color:${c.border}">${escapeHtml(a.excerpt)}</pre>` : '') +
+      `</article>`
+    );
+  }).join('');
+
+  pop.innerHTML =
+    `<button class="src-popover-close" aria-label="Close">×</button>` +
+    `<div class="src-popover-body">${items}</div>`;
+
+  document.body.appendChild(pop);
+
+  const rect = anchorEl.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let top = window.scrollY + rect.bottom + 6;
+  let left = window.scrollX + rect.left + 40;
+  const vw = window.innerWidth;
+  if (left + popRect.width > vw - 12) left = vw - popRect.width - 12;
+  if (left < 12) left = 12;
+  pop.style.top  = `${top}px`;
+  pop.style.left = `${left}px`;
+
+  pop.querySelector('.src-popover-close').addEventListener('click', () => pop.remove());
+  const onKey = (e) => { if (e.key === 'Escape') { pop.remove(); document.removeEventListener('keydown', onKey); } };
+  document.addEventListener('keydown', onKey);
 }
 
 function renderComments(annotations) {
@@ -618,7 +761,9 @@ function synthesizeUsageAnnotations(bindings, detectedPatterns) {
         title:    `${patternName} :: ${KIND_HUMAN[u.kind] || u.kind}`,
         comment:  `${target} — bound to ${cls}` + (u.evidence ? ` (${u.evidence})` : ''),
         excerpt:  u.snippet || '',
-        kind:     'tagged_usage'
+        kind:     'tagged_usage',
+        className: cls,
+        patternKey: patternName
       });
     });
   });
@@ -636,8 +781,10 @@ function renderRun(run) {
   els.resultsSummary.textContent =
     `${escapeHtml(run.sourceName || 'snippet.cpp')} • ${patternCount} pattern(s) • ${annCount} comment(s)`;
   renderLegend(run.detectedPatterns || []);
-  renderSourceView(run.sourceText || '', allAnns);
-  renderComments(allAnns);
+  renderSourceView(run.sourceText || '', allAnns, run.detectedPatterns || []);
+  // Right-rail comments pane: file-level only (class-level usage notes live in class popouts).
+  const fileLevelAnns = allAnns.filter(a => !a.className);
+  renderComments(fileLevelAnns);
   renderPatternCards(
     run.detectedPatterns || [],
     run.ranking || null,
@@ -657,58 +804,177 @@ function flashSourceLine(line) {
   setTimeout(() => el.classList.remove('source-line-flash'), 1200);
 }
 
+function classNameToPatternKey(cls) {
+  const run = state.currentRun;
+  if (!run || !run.detectedPatterns) return 'default';
+  const p = run.detectedPatterns.find(p => p && p.className === cls);
+  return (p && (p.patternName || p.patternId)) || 'default';
+}
+
+function buildClassBindingRows(rows) {
+  const list = document.createElement('div');
+  list.className = 'pattern-row-list';
+  (rows || []).forEach(u => {
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'pattern-row';
+    const label = USAGE_KIND_LABEL[u.kind] || u.kind;
+    const target = u.varName
+      ? `<code>${escapeHtml(u.varName)}${u.methodName ? '.' + escapeHtml(u.methodName) : ''}</code>`
+      : (u.methodName ? `<code>${escapeHtml(u.boundClass)}::${escapeHtml(u.methodName)}</code>` : `<code>${escapeHtml(u.boundClass)}</code>`);
+    row.innerHTML =
+      `<span class="row-kind">${escapeHtml(label)}</span>` +
+      target +
+      `<span class="row-line">line ${u.line || '?'}</span>`;
+    row.addEventListener('click', () => flashSourceLine(u.line));
+    list.appendChild(row);
+  });
+  return list;
+}
+
+function buildClassNotes(cls) {
+  const run = state.currentRun;
+  if (!run) return null;
+  const anns = (run.annotations || []).filter(a => a.className === cls);
+  if (!anns.length) return null;
+  const wrap = document.createElement('div');
+  wrap.className = 'class-popout-notes';
+  anns.forEach(a => {
+    const patternKey = a.patternKey || patternFromAnnotation(a);
+    const c = colorFor(patternKey);
+    const titleParts = (a.title || '').split(' :: ');
+    const head  = titleParts[0] || a.stage || 'Comment';
+    const label = titleParts.slice(1).join(' :: ') || a.kind || '';
+    const item = document.createElement('article');
+    item.className = 'src-popover-item';
+    item.style.borderLeft = `4px solid ${c.border}`;
+    item.style.background = c.bg;
+    item.innerHTML =
+      `<header class="src-popover-head">` +
+        `<span class="src-popover-pattern" style="color:${c.text}">${escapeHtml(head)}</span>` +
+        (label ? `<span class="src-popover-label">${escapeHtml(label)}</span>` : '') +
+        (a.line ? `<span class="src-popover-line">L${a.line}</span>` : '') +
+      `</header>` +
+      (a.comment ? `<p class="src-popover-comment">${escapeHtml(a.comment)}</p>` : '') +
+      (a.excerpt ? `<pre class="src-popover-excerpt" style="border-color:${c.border}">${escapeHtml(a.excerpt)}</pre>` : '');
+    item.addEventListener('click', () => { if (a.line) flashSourceLine(a.line); });
+    wrap.appendChild(item);
+  });
+  return wrap;
+}
+
+function closeClassPopout() {
+  const existing = document.getElementById('class-popout');
+  if (existing) existing.remove();
+}
+
+function openClassPopout(anchorEl, cls, rows) {
+  closeClassPopout();
+  const patternKey = classNameToPatternKey(cls);
+  const c = colorFor(patternKey);
+  const pop = document.createElement('div');
+  pop.id = 'class-popout';
+  pop.className = 'class-popout';
+  pop.style.borderTop = `3px solid ${c.border}`;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'class-popout-close';
+  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.textContent = '×';
+  pop.appendChild(closeBtn);
+
+  const header = document.createElement('div');
+  header.className = 'class-popout-head';
+  header.innerHTML =
+    `<code class="class-popout-name" style="color:${c.text}">${escapeHtml(cls)}</code>` +
+    `<span class="class-popout-pattern" style="background:${c.bg};color:${c.text};border:1px solid ${c.border}">${escapeHtml(patternKey)}</span>`;
+  pop.appendChild(header);
+
+  const summary = document.createElement('div');
+  summary.className = 'class-popout-summary';
+  summary.textContent = `${rows.length} usage${rows.length === 1 ? '' : 's'}`;
+  pop.appendChild(summary);
+
+  pop.appendChild(buildClassBindingRows(rows));
+
+  const notes = buildClassNotes(cls);
+  if (notes) {
+    const notesHead = document.createElement('h4');
+    notesHead.className = 'class-popout-notes-head';
+    notesHead.textContent = 'Notes';
+    pop.appendChild(notesHead);
+    pop.appendChild(notes);
+  }
+
+  document.body.appendChild(pop);
+
+  // Anchor near chip
+  const rect = anchorEl.getBoundingClientRect();
+  const popRect = pop.getBoundingClientRect();
+  let top = window.scrollY + rect.bottom + 6;
+  let left = window.scrollX + rect.left;
+  const vw = window.innerWidth;
+  if (left + popRect.width > vw - 12) left = vw - popRect.width - 12;
+  if (left < 12) left = 12;
+  pop.style.top  = `${top}px`;
+  pop.style.left = `${left}px`;
+
+  closeBtn.addEventListener('click', closeClassPopout);
+
+  // Click-outside dismiss
+  setTimeout(() => {
+    document.addEventListener('click', onDocClick);
+    document.addEventListener('keydown', onKey);
+  }, 0);
+
+  function onDocClick(ev) {
+    const p = document.getElementById('class-popout');
+    if (!p) { document.removeEventListener('click', onDocClick); return; }
+    if (p.contains(ev.target)) return;
+    if (anchorEl.contains(ev.target)) return;
+    closeClassPopout();
+    document.removeEventListener('click', onDocClick);
+    document.removeEventListener('keydown', onKey);
+  }
+  function onKey(ev) {
+    if (ev.key === 'Escape') {
+      closeClassPopout();
+      document.removeEventListener('click', onDocClick);
+      document.removeEventListener('keydown', onKey);
+    }
+  }
+}
+
 function renderClassBindings(bindings, sourceTagRaw) {
   if (!els.classBindings) return;
   els.classBindings.innerHTML = '';
-  const classNames = Object.keys(bindings || {});
+  closeClassPopout();
+  const classNames = Object.keys(bindings || {}).filter(c => (bindings[c] || []).length);
   if (!classNames.length) return;
-  const sourceTag = sourceTagRaw === 'microservice' ? 'microservice-bound' : 'heuristic';
-  const totalRows = classNames.reduce((acc, c) => acc + (bindings[c] || []).length, 0);
-
-  const wrap = document.createElement('details');
-  wrap.className = 'class-bindings-wrap';
-  // Collapsed by default; user clicks summary to expand.
-  const summary = document.createElement('summary');
-  summary.className = 'class-bindings-summary';
-  summary.innerHTML =
-    `<span class="caret" aria-hidden="true">▶</span>` +
-    `<span class="class-bindings-title">Class usage bindings</span>` +
-    `<span class="class-bindings-count">${classNames.length} class(es) • ${totalRows} usage(s)</span>` +
-    `<span class="usage-source">[${sourceTag}]</span>`;
-  wrap.appendChild(summary);
-
-  const body = document.createElement('div');
-  body.className = 'class-bindings-body';
+  // Reshape host into a horizontal strip.
+  els.classBindings.classList.add('class-strip-row');
 
   classNames.forEach(cls => {
     const rows = bindings[cls] || [];
-    if (!rows.length) return;
-    const card = document.createElement('div');
-    card.className = 'class-binding-card';
-    card.innerHTML = `<div class="class-binding-head"><code>${escapeHtml(cls)}</code> <span class="row-line">${rows.length} usage(s)</span></div>`;
-    const list = document.createElement('div');
-    list.className = 'pattern-row-list';
-    rows.forEach(u => {
-      const row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'pattern-row';
-      const label = USAGE_KIND_LABEL[u.kind] || u.kind;
-      const target = u.varName
-        ? `<code>${escapeHtml(u.varName)}${u.methodName ? '.' + escapeHtml(u.methodName) : ''}</code>`
-        : (u.methodName ? `<code>${escapeHtml(u.boundClass)}::${escapeHtml(u.methodName)}</code>` : `<code>${escapeHtml(u.boundClass)}</code>`);
-      row.innerHTML =
-        `<span class="row-kind">${escapeHtml(label)}</span>` +
-        target +
-        `<span class="row-line">line ${u.line || '?'}</span>`;
-      row.addEventListener('click', () => flashSourceLine(u.line));
-      list.appendChild(row);
+    const patternKey = classNameToPatternKey(cls);
+    const c = colorFor(patternKey);
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'class-chip';
+    chip.dataset.class = cls;
+    chip.style.setProperty('--chip-color', c.border);
+    chip.innerHTML = `${escapeHtml(cls)} <span class="class-chip-count">${rows.length}</span>`;
+    chip.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const open = document.getElementById('class-popout');
+      if (open && open.dataset.cls === cls) { closeClassPopout(); return; }
+      openClassPopout(chip, cls, rows);
+      const after = document.getElementById('class-popout');
+      if (after) after.dataset.cls = cls;
     });
-    card.appendChild(list);
-    body.appendChild(card);
+    els.classBindings.appendChild(chip);
   });
-
-  wrap.appendChild(body);
-  els.classBindings.appendChild(wrap);
 }
 
 const USAGE_KIND_LABEL = {

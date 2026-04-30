@@ -4,6 +4,9 @@
   "pattern_name": "StrategyConcrete",
   "pattern_role": "concrete",
   "enabled": true,
+  "lexeme_identifiers": {
+    "policy_call":   ["->", "strategy_", "policy_", "algorithm_"]
+  },
   "ordered_checks": [
     { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
     { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "strategy_concrete_class" },

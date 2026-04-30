@@ -339,6 +339,22 @@ PatternTemplate template_from_json(const JsonValue& obj, const std::string& sour
             }
         }
     }
+    if (const JsonValue* v = obj.find("lexeme_identifiers"); v && v->kind == JsonKind::Object)
+    {
+        for (const auto& kv : v->object)
+        {
+            if (kv.second.kind != JsonKind::Array) continue;
+            std::vector<std::string> lexemes;
+            for (const JsonValue& entry : kv.second.array)
+            {
+                if (entry.kind == JsonKind::String)
+                {
+                    lexemes.push_back(entry.string);
+                }
+            }
+            pattern.lexeme_identifiers.emplace(kv.first, std::move(lexemes));
+        }
+    }
     return pattern;
 }
 

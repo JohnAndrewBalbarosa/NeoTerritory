@@ -1,20 +1,74 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useAppStore } from '../../store/appState';
 import { useAuth } from '../../hooks/useAuth';
+import {
+  fetchTesterAccounts,
+  claimSeat,
+  TesterAccountInfo
+} from '../../api/client';
+import { fetchRuns, fetchSample } from '../../api/client';
+import { User } from '../../types/api';
 
-/**
- * LoginOverlay — stub component for the React migration.
- * Replaces the vanilla JS login-overlay DOM structure in the old index.html.
- * Full implementation (tester account list, form validation, error display)
- * will be added in a subsequent migration phase.
- */
+type Mode = 'picker' | 'admin';
+
 export default function LoginOverlay() {
   const { signIn } = useAuth();
-  const [username, setUsername] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [error, setError] = React.useState('');
-  const [busy, setBusy] = React.useState(false);
+  const setAuth = useAppStore(s => s.setAuth);
 
-  async function handleSubmit(e: React.FormEvent) {
+  const [mode, setMode] = useState<Mode>('picker');
+  const [accounts, setAccounts] = useState<TesterAccountInfo[]>([]);
+  const [accountsError, setAccountsError] = useState('');
+  const [showPicker, setShowPicker] = useState(true);
+  const [claiming, setClaiming] = useState<string | null>(null);
+  const [error, setError] = useState('');
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const loadAccounts = useCallback(async () => {
+    try {
+      const data = await fetchTesterAccounts();
+      setAccounts(data.accounts);
+      // Hide picker entirely when backend reports no tester mode / no accounts.
+      setShowPicker(data.accounts.length > 0);
+      if (data.accounts.length === 0) {
+        setMode('admin');
+      }
+      setAccountsError('');
+    } catch (err) {
+      setAccountsError(err instanceof Error ? err.message : 'Failed to load testers');
+      setShowPicker(false);
+      setMode('admin');
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadAccounts();
+  }, [loadAccounts]);
+
+  async function handleClaim(account: TesterAccountInfo) {
+    if (account.claimed || claiming) return;
+    setClaiming(account.username);
+    setError('');
+    try {
+      const { token, user } = await claimSeat(account.username);
+      setAuth(token, user as User);
+      // Mirror useAuth.signIn parallel warm-up.
+      await Promise.all([fetchRuns(), fetchSample()]).catch(() => {});
+    } catch (err) {
+      const status = (err as Error & { status?: number }).status;
+      const msg = err instanceof Error ? err.message : 'Claim failed.';
+      setError(msg);
+      if (status === 409) {
+        await loadAccounts();
+      }
+    } finally {
+      setClaiming(null);
+    }
+  }
+
+  async function handleAdminSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError('');
     setBusy(true);
@@ -30,34 +84,79 @@ export default function LoginOverlay() {
   return (
     <div className="login-overlay">
       <div className="login-wrap">
-        <form className="login-card" onSubmit={handleSubmit}>
-          <h2>Sign in</h2>
-          <p className="login-hint">Default tester password: <code>devcon</code></p>
-          <label className="field">
-            <span>Username</span>
-            <input
-              type="text"
-              autoComplete="username"
-              required
-              value={username}
-              onChange={e => setUsername(e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input
-              type="password"
-              autoComplete="current-password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-          </label>
-          <button className="primary-btn" type="submit" disabled={busy}>
-            {busy ? 'Signing in…' : 'Sign in'}
-          </button>
-          {error && <p className="login-error">{error}</p>}
-        </form>
+        {mode === 'picker' && showPicker && (
+          <div className="login-card tester-chooser">
+            <header className="tester-chooser-head">
+              <h2>Pick a tester seat</h2>
+              <p className="tester-hint">Claim an open seat to sign in.</p>
+            </header>
+            {accountsError && <p className="login-error">{accountsError}</p>}
+            <div className="tester-grid" role="list">
+              {accounts.map(acc => {
+                const disabled = acc.claimed || claiming === acc.username;
+                return (
+                  <button
+                    key={acc.username}
+                    type="button"
+                    role="listitem"
+                    className="tester-chip tester-tile"
+                    data-claimed={acc.claimed ? 'true' : 'false'}
+                    aria-disabled={disabled}
+                    disabled={disabled}
+                    onClick={() => handleClaim(acc)}
+                  >
+                    {claiming === acc.username ? 'Claiming…' : acc.username}
+                  </button>
+                );
+              })}
+            </div>
+            {error && <p className="login-error">{error}</p>}
+            <p className="login-toggle">
+              Need admin access?{' '}
+              <button type="button" className="link-btn" onClick={() => { setMode('admin'); setError(''); }}>
+                Admin sign in
+              </button>
+            </p>
+          </div>
+        )}
+
+        {(mode === 'admin' || !showPicker) && (
+          <form className="login-card" onSubmit={handleAdminSubmit}>
+            <h2>Admin sign in</h2>
+            <p className="login-hint">Enter administrator credentials.</p>
+            <label className="field">
+              <span>Username</span>
+              <input
+                type="text"
+                autoComplete="username"
+                required
+                value={username}
+                onChange={e => setUsername(e.target.value)}
+              />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <input
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+              />
+            </label>
+            <button className="primary-btn" type="submit" disabled={busy}>
+              {busy ? 'Signing in…' : 'Sign in'}
+            </button>
+            {error && <p className="login-error">{error}</p>}
+            {showPicker && (
+              <p className="login-toggle">
+                <button type="button" className="link-btn" onClick={() => { setMode('picker'); setError(''); }}>
+                  Back to seat picker
+                </button>
+              </p>
+            )}
+          </form>
+        )}
       </div>
     </div>
   );

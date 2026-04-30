@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 enum class PatternStepRepeat
@@ -33,6 +34,7 @@ struct PatternTemplate
     std::string                     pattern_name;
     bool                            enabled = true;
     std::vector<PatternMatcherStep> ordered_checks;
+    std::unordered_map<std::string, std::vector<std::string>> lexeme_identifiers;
     std::string                     source_file;
 };
 

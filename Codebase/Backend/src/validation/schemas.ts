@@ -26,6 +26,10 @@ export const loginSchema = z.object({
   password: z.string().min(1).max(256)
 });
 
+export const claimSeatSchema = z.object({
+  username: z.string().regex(/^devcon\d+$/i)
+});
+
 const reviewAnswerValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 
 export const reviewSubmitSchema = z.object({

@@ -18,8 +18,26 @@ export const PATTERN_COLORS: Record<string, PatternColor> = {
   default:        { bg: 'rgba(100, 116, 139, 0.15)', border: '#64748b', text: '#475569' }
 };
 
-export function colorFor(patternKey: string): PatternColor {
-  return PATTERN_COLORS[patternKey] || PATTERN_COLORS.default;
+function hueFor(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return Math.abs(h) % 360;
+}
+
+function generatedColor(key: string): PatternColor {
+  const h = hueFor(key || 'default');
+  return {
+    bg:     `oklch(72% 0.18 ${h} / 0.10)`,
+    border: `oklch(72% 0.18 ${h})`,
+    text:   `oklch(85% 0.14 ${h})`
+  };
+}
+
+export function colorFor(key: string): PatternColor {
+  return PATTERN_COLORS[key] ?? generatedColor(key);
 }
 
 export function patternFromAnnotation(annotation: Annotation): string {

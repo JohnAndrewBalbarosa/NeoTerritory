@@ -1,54 +1,152 @@
 import React, { useMemo } from 'react';
-import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation } from '../../lib/patterns';
+import { Annotation, DetectedPatternFull } from '../../types/api';
+import { colorFor, patternFromAnnotation, PatternColor } from '../../lib/patterns';
 
 interface SourceViewProps {
   sourceText: string;
   annotations: Annotation[];
+  detectedPatterns: DetectedPatternFull[];
   onLineClick?: (commentId: string) => void;
+}
+
+interface ClassScope {
+  className: string;
+  patternKey: string;
+  min: number;
+  max: number;
 }
 
 interface RenderedLine {
   lineNo: number;
   text: string;
   anns: Annotation[];
+  scope: ClassScope | null;
+  isScopeStart: boolean;
 }
 
-function buildLines(sourceText: string, annotations: Annotation[]): RenderedLine[] {
-  const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
-  const byLine = new Map<number, Annotation[]>();
-  annotations.forEach(a => {
-    if (!a.line) return;
-    const list = byLine.get(a.line);
-    if (list) list.push(a);
-    else byLine.set(a.line, [a]);
+function buildClassScopes(detectedPatterns: DetectedPatternFull[]): ClassScope[] {
+  const scopes: ClassScope[] = [];
+  detectedPatterns.forEach(p => {
+    if (!p.className) return;
+    const targets = p.documentationTargets || [];
+    if (!targets.length) return;
+    let min = Infinity;
+    let max = -Infinity;
+    targets.forEach(t => {
+      if (typeof t.line !== 'number') return;
+      if (t.line < min) min = t.line;
+      if (t.line > max) max = t.line;
+    });
+    if (!Number.isFinite(min) || !Number.isFinite(max)) return;
+    scopes.push({
+      className:  p.className,
+      patternKey: p.patternName || 'Review',
+      min,
+      max
+    });
   });
-  return lines.map((text, idx) => ({
-    lineNo: idx + 1,
-    text,
-    anns: byLine.get(idx + 1) || []
-  }));
+  return scopes;
 }
 
-export default function SourceView({ sourceText, annotations, onLineClick }: SourceViewProps) {
-  const rows = useMemo(() => buildLines(sourceText, annotations), [sourceText, annotations]);
+function buildLineToScope(scopes: ClassScope[], lineCount: number): Map<number, ClassScope> {
+  const out = new Map<number, ClassScope>();
+  for (let line = 1; line <= lineCount; line++) {
+    let best: ClassScope | null = null;
+    let bestSize = Infinity;
+    for (const s of scopes) {
+      if (line < s.min || line > s.max) continue;
+      const size = s.max - s.min;
+      if (size < bestSize) {
+        best = s;
+        bestSize = size;
+      }
+    }
+    if (best) out.set(line, best);
+  }
+  return out;
+}
+
+function buildLineToAnnotations(annotations: Annotation[]): Map<number, Annotation[]> {
+  const map = new Map<number, Annotation[]>();
+  annotations.forEach(a => {
+    if (a.scope === 'file') return;
+    if (a.line == null) return;
+    const start = a.line;
+    const end   = a.lineEnd ?? a.line;
+    for (let l = start; l <= end; l++) {
+      const list = map.get(l);
+      if (list) list.push(a);
+      else map.set(l, [a]);
+    }
+  });
+  return map;
+}
+
+function buildRows(
+  sourceText: string,
+  annotations: Annotation[],
+  detectedPatterns: DetectedPatternFull[]
+): { rows: RenderedLine[]; lineToScope: Map<number, ClassScope> } {
+  const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
+  const scopes = buildClassScopes(detectedPatterns);
+  const lineToScope = buildLineToScope(scopes, lines.length);
+  const lineToAnns = buildLineToAnnotations(annotations);
+
+  const rows: RenderedLine[] = lines.map((text, idx) => {
+    const lineNo = idx + 1;
+    const scope = lineToScope.get(lineNo) || null;
+    const isScopeStart = !!scope && scope.min === lineNo;
+    return {
+      lineNo,
+      text,
+      anns: lineToAnns.get(lineNo) || [],
+      scope,
+      isScopeStart
+    };
+  });
+  return { rows, lineToScope };
+}
+
+interface LineStyle extends React.CSSProperties {
+  '--scope-bg'?: string;
+  '--ann-border'?: string;
+}
+
+function styleFor(scopeColor: PatternColor | null, annColor: PatternColor | null): LineStyle {
+  const style: LineStyle = {};
+  if (scopeColor) style['--scope-bg'] = scopeColor.bg;
+  if (annColor) style['--ann-border'] = annColor.border;
+  return style;
+}
+
+export default function SourceView({ sourceText, annotations, detectedPatterns, onLineClick }: SourceViewProps) {
+  const { rows } = useMemo(
+    () => buildRows(sourceText, annotations, detectedPatterns),
+    [sourceText, annotations, detectedPatterns]
+  );
   const width = String(rows.length).length;
 
   return (
     <div id="source-view" className="source-view">
       {rows.map(row => {
         const top = row.anns[0];
-        const c = top ? colorFor(patternFromAnnotation(top)) : null;
-        const style: React.CSSProperties = c
-          ? { background: c.bg, borderLeft: `3px solid ${c.border}` }
-          : { borderLeft: '3px solid transparent' };
+        const scopeColor = row.scope ? colorFor(row.scope.patternKey) : null;
+        const annColor   = top ? colorFor(top.patternKey || patternFromAnnotation(top)) : null;
         const num = String(row.lineNo).padStart(width, ' ');
-        const hasComment = row.anns.length > 0;
+        const hasAnnotation = row.anns.length > 0;
+        const classNames = [
+          'src-line',
+          hasAnnotation ? 'has-annotation' : '',
+          hasAnnotation ? 'has-comment' : '',
+          row.isScopeStart ? 'class-scope-start' : ''
+        ].filter(Boolean).join(' ');
+        const style = styleFor(scopeColor, annColor);
         return (
           <span
             key={row.lineNo}
-            className={`src-line${hasComment ? ' has-comment' : ''}`}
+            className={classNames}
             data-line={row.lineNo}
+            data-class-name={row.isScopeStart ? row.scope?.className : undefined}
             style={style}
             onClick={() => {
               if (top && onLineClick) onLineClick(top.id);

@@ -3,6 +3,10 @@
   "pattern_family": "idiom",
   "pattern_name": "Pimpl",
   "enabled": true,
+  "lexeme_identifiers": {
+    "impl_member":   ["pImpl", "impl_", "d_ptr"],
+    "forward_decl":  ["class"]
+  },
   "ordered_checks": [
     { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
     { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "pimpl_outer_class" },

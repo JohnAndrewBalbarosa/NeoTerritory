@@ -375,10 +375,6 @@ body.login-active {
 .user-row[hidden] { display: none !important; }
 
 .login-wrap {
-<<<<<<< Updated upstream
-  display: flex; gap: 18px; align-items: stretch;
-  width: min(820px, 96vw);
-=======
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -389,7 +385,6 @@ body.login-active {
 .login-wrap .login-card {
   width: 100%;
   box-sizing: border-box;
->>>>>>> Stashed changes
 }
 .login-wrap .login-card { flex: 0 0 380px; }
 .tester-list {
@@ -420,17 +415,10 @@ body.login-active {
 .tester-chip[aria-pressed="true"] {
   background: var(--accent); color: white; font-weight: 600;
 }
-<<<<<<< Updated upstream
-@media (max-width: 720px) {
-  .login-wrap { flex-direction: column; }
-  .login-wrap .login-card { flex: 1 1 auto; }
-  .tester-list { max-height: 240px; }
-=======
 @media (max-width: 540px) {
   .login-wrap { width: 96vw; }
   .login-overlay { padding: 10px; }
   .tester-grid { grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); }
->>>>>>> Stashed changes
 }
 
 .save-prompt {
@@ -732,18 +720,87 @@ body.login-active {
   margin-top: 8px; font-size: 12px; color: var(--ink-soft);
 }
 .user-row span { font-weight: 600; color: var(--ink); }
-<<<<<<< Updated upstream
-=======
 
 /* ===== Plan v2 additions ===== */
 
 /* Source view: dot indicator (no per-line backgrounds). */
-.src-line { display: flex; align-items: center; gap: 8px; padding: 2px 8px; }
+.src-line {
+  display: flex; align-items: center; gap: 8px; padding: 2px 8px;
+  background: var(--scope-bg, transparent);
+  border-left: 3px solid var(--ann-border, transparent);
+}
 .src-line.has-comment { cursor: pointer; }
-.src-line.has-comment:hover { background: rgba(99, 102, 241, 0.05); }
-.src-dot { width: 8px; height: 8px; border-radius: 50%; flex: none; opacity: 0; }
+.src-line.has-comment:hover { background: color-mix(in oklch, var(--scope-bg, transparent), black 4%); }
+.src-line.has-annotation {
+  background: color-mix(in oklch, var(--scope-bg, transparent), var(--ann-border) 8%);
+}
+.src-line.class-scope-start::before {
+  content: attr(data-class-name);
+  display: inline-block;
+  margin-right: 8px;
+  padding: 0 6px;
+  border-radius: 3px;
+  font: 500 10px/1.4 ui-monospace, SFMono-Regular, monospace;
+  color: var(--ann-border, var(--text-dim, #475569));
+  background: color-mix(in oklch, var(--ann-border, transparent), white 70%);
+}
+.src-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; opacity: 0.6; background: var(--ann-border, transparent); }
 .src-dot-active { opacity: 1; box-shadow: 0 0 0 2px rgba(255,255,255,0.6); }
 .src-line.source-line-flash { background: rgba(99,102,241,0.18); transition: background 0.4s; }
+
+/* Class chip + popout (replaces long class-bindings list). */
+.class-strip-row { display: flex; flex-wrap: wrap; gap: 6px; padding: 0.75rem 0; border-top: 1px solid var(--border, #e5e7eb); }
+.class-chip {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font: 500 12px/1.4 system-ui, sans-serif;
+  border: 1px solid var(--chip-color, #94a3b8);
+  color: var(--chip-color, #475569);
+  background: transparent;
+  cursor: pointer;
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.class-chip:hover { background: color-mix(in oklch, var(--chip-color), white 85%); }
+.class-chip-count {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--chip-color), white 80%);
+  color: var(--chip-color);
+}
+.class-popout {
+  position: absolute;
+  min-width: 280px;
+  max-width: 480px;
+  max-height: 60vh;
+  overflow: auto;
+  background: white;
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+  padding: 12px;
+  z-index: 50;
+}
+.class-popout-close {
+  position: absolute; top: 6px; right: 8px;
+  background: transparent; border: none; cursor: pointer;
+  font-size: 18px; line-height: 1; color: #6b7280;
+}
+.class-popout-close:hover { color: #111827; }
+.class-popout-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 4px; padding-right: 24px; }
+.class-popout-name { font-size: 14px; font-weight: 600; }
+.class-popout-pattern { font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+.class-popout-summary { font-size: 12px; color: #6b7280; margin-bottom: 8px; }
+.class-popout-notes-head { margin: 12px 0 6px; font-size: 12px; color: #475569; text-transform: uppercase; letter-spacing: 0.05em; }
+.class-popout-notes { display: flex; flex-direction: column; gap: 6px; }
+
+/* Source popover (click-to-show overlay). */
+.src-popover-class {
+  font-family: var(--code-font, ui-monospace, monospace);
+  font-size: 11px;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
 
 /* Source popover (click-to-show overlay). */
 .src-popover {
@@ -916,6 +973,17 @@ body.login-active {
   color: #2e1065;
 }
 
+.tester-chip[data-claimed="true"] {
+  text-decoration: line-through;
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tester-chip[data-claimed="true"]:hover {
+  background: inherit;
+  border-color: var(--panel-border, #e5e7eb);
+  transform: none;
+}
+
 .login-toggle { font-size: 12.5px; color: var(--ink-soft); margin-top: 8px; text-align: center; }
 .link-btn {
   background: none; border: none; color: #4f46e5;
@@ -994,4 +1062,12 @@ body.login-active {
   transform: none;
   box-shadow: none !important;
 }
->>>>>>> Stashed changes
+
+/* Class chip used inside comment cards to indicate scope */
+.cc-class {
+  font: 500 10px/1.4 ui-monospace, SFMono-Regular, monospace;
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  margin-left: 6px;
+}

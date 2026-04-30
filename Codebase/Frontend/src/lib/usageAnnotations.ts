@@ -27,16 +27,18 @@ export function synthesizeUsageAnnotations(
         ? `${u.varName}${u.methodName ? '.' + u.methodName : ''}`
         : (u.methodName ? `${cls}::${u.methodName}` : cls);
       out.push({
-        id:       `usage-${id++}`,
-        order:    1000 + id,
-        stage:    patternName,
-        severity: 'low',
-        line:     u.line,
-        lineEnd:  u.line,
-        title:    `${patternName} :: ${KIND_HUMAN[u.kind] || u.kind}`,
-        comment:  `${target} — bound to ${cls}` + (u.evidence ? ` (${u.evidence})` : ''),
-        excerpt:  u.snippet || '',
-        kind:     'tagged_usage'
+        id:         `usage-${id++}`,
+        order:      1000 + id,
+        stage:      patternName,
+        severity:   'low',
+        line:       u.line,
+        lineEnd:    u.line,
+        title:      `${patternName} :: ${KIND_HUMAN[u.kind] || u.kind}`,
+        comment:    `${target} — bound to ${cls}` + (u.evidence ? ` (${u.evidence})` : ''),
+        excerpt:    u.snippet || '',
+        kind:       'tagged_usage',
+        className:  cls,
+        patternKey: patternName
       });
     });
   });

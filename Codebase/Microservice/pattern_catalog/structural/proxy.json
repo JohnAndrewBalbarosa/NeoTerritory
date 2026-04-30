@@ -3,6 +3,10 @@
   "pattern_family": "structural",
   "pattern_name": "Proxy",
   "enabled": true,
+  "lexeme_identifiers": {
+    "forwarding":   ["->"],
+    "real_member":  ["m_real", "real", "target", "subject"]
+  },
   "ordered_checks": [
     {
       "id": "class_introducer",

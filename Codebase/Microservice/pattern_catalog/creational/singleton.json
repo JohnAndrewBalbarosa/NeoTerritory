@@ -3,6 +3,11 @@
   "pattern_family": "creational",
   "pattern_name": "Singleton",
   "enabled": true,
+  "lexeme_identifiers": {
+    "static_storage":  ["static"],
+    "accessor":        ["instance", "getInstance", "get_instance"],
+    "deleted_ops":     ["delete", "="]
+  },
   "ordered_checks": [
     {
       "id": "class_introducer",

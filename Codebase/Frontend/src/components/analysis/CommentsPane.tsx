@@ -13,7 +13,7 @@ interface CommentCardProps {
 }
 
 function CommentCard({ annotation: a, onClick }: CommentCardProps) {
-  const patternKey = patternFromAnnotation(a);
+  const patternKey = a.patternKey || patternFromAnnotation(a);
   const c = colorFor(patternKey);
   const titleParts = (a.title || '').split(' :: ');
   const head = titleParts[0] || a.stage || 'Comment';
@@ -29,6 +29,9 @@ function CommentCard({ annotation: a, onClick }: CommentCardProps) {
       <header className="cc-head">
         <span className="cc-pattern" style={{ color: c.text }}>{head}</span>
         {label && <span className="cc-label">{label}</span>}
+        {a.className && (
+          <span className="cc-class" style={{ color: c.border }}>{a.className}</span>
+        )}
         {a.line && <span className="cc-line">L{a.line}</span>}
       </header>
       <p className="cc-comment">{a.comment}</p>
