@@ -1,24 +1,30 @@
 # NeoTerritory dev runner.
-# Usage: .\run-dev.ps1                  # build (if needed) + start + open browser
-#        .\run-dev.ps1 -Rebuild         # force microservice rebuild
-#        .\run-dev.ps1 -Port 3055       # custom port
-#        .\run-dev.ps1 -NoBrowser       # don't auto-open browser
+# Usage: .\run-dev.ps1                       # build (if needed) + start backend + Vite + open browser
+#        .\run-dev.ps1 -Rebuild              # force microservice rebuild
+#        .\run-dev.ps1 -BackendPort 3055     # custom backend port (default 3001)
+#        .\run-dev.ps1 -FrontendPort 5180    # custom Vite port (default 5173)
+#        .\run-dev.ps1 -NoBrowser            # don't auto-open browser
+#        .\run-dev.ps1 -BackendOnly          # skip Vite (serve legacy static from :3001)
 
 param(
   [switch]$Rebuild,
   [switch]$NoBrowser,
-  [int]$Port = 3001
+  [switch]$BackendOnly,
+  [int]$BackendPort = 3001,
+  [int]$FrontendPort = 5173
 )
 
 $ErrorActionPreference = 'Stop'
 $ProjectRoot      = $PSScriptRoot
 $BackendDir       = Join-Path $ProjectRoot 'Codebase\Backend'
+$FrontendDir      = Join-Path $ProjectRoot 'Codebase\Frontend'
 $MicroserviceDir  = Join-Path $ProjectRoot 'Codebase\Microservice'
 $BuildDir         = Join-Path $MicroserviceDir 'build'
 $BinaryName       = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'NeoTerritory.exe' } else { 'NeoTerritory' }
 $BinaryPath       = Join-Path $BuildDir $BinaryName
 $EnvFile          = Join-Path $BackendDir '.env'
-$NodeModules      = Join-Path $BackendDir 'node_modules'
+$BackendNodeMods  = Join-Path $BackendDir 'node_modules'
+$FrontendNodeMods = Join-Path $FrontendDir 'node_modules'
 
 function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 function Write-Ok($msg)   { Write-Host "    $msg" -ForegroundColor Green }
@@ -27,6 +33,15 @@ function Write-Err($msg)  { Write-Host "    $msg" -ForegroundColor Red }
 
 function Test-Tool($name) {
   return [bool](Get-Command $name -ErrorAction SilentlyContinue)
+}
+
+function Free-Port($port) {
+  $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+  if ($listener) {
+    Write-Warn "Port $port already in use by PID $($listener.OwningProcess) - killing it."
+    Stop-Process -Id $listener.OwningProcess -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
+  }
 }
 
 # 1. Prereq checks
@@ -45,29 +60,42 @@ if ($missing.Count -gt 0) {
 Write-Ok 'node, cmake, and a C++ compiler are available.'
 
 # 2. Backend deps
-if (-not (Test-Path $NodeModules)) {
+if (-not (Test-Path $BackendNodeMods)) {
   Write-Step 'Installing backend npm dependencies'
   Push-Location $BackendDir
   try { & npm install } finally { Pop-Location }
-  if ($LASTEXITCODE -ne 0) { Write-Err 'npm install failed.'; exit 1 }
-  Write-Ok 'node_modules installed.'
+  if ($LASTEXITCODE -ne 0) { Write-Err 'backend npm install failed.'; exit 1 }
+  Write-Ok 'Backend node_modules installed.'
 } else {
-  Write-Ok 'node_modules already present.'
+  Write-Ok 'Backend node_modules already present.'
+}
+
+# 2b. Frontend deps (skip when -BackendOnly)
+if (-not $BackendOnly) {
+  if (-not (Test-Path $FrontendNodeMods)) {
+    Write-Step 'Installing frontend npm dependencies'
+    Push-Location $FrontendDir
+    try { & npm install } finally { Pop-Location }
+    if ($LASTEXITCODE -ne 0) { Write-Err 'frontend npm install failed.'; exit 1 }
+    Write-Ok 'Frontend node_modules installed.'
+  } else {
+    Write-Ok 'Frontend node_modules already present.'
+  }
 }
 
 # 3. .env
 if (-not (Test-Path $EnvFile)) {
   Write-Step 'Creating .env with defaults'
   @"
-PORT=$Port
-CORS_ORIGIN=http://localhost:$Port
+PORT=$BackendPort
+CORS_ORIGIN=http://localhost:$BackendPort,http://localhost:$FrontendPort
 DB_PATH=./src/db/database.sqlite
 
-# Anthropic Claude integration (D22). Leave unset to run microservice-only mode.
+# Anthropic Claude integration. Leave unset to run microservice-only mode.
 # ANTHROPIC_API_KEY=sk-ant-...
 # ANTHROPIC_MODEL=claude-sonnet-4-6
 
-# Microservice integration (D22). Defaults derived from project layout.
+# Microservice integration. Defaults derived from project layout.
 # NEOTERRITORY_BIN=$BinaryPath
 # NEOTERRITORY_CATALOG=$MicroserviceDir\pattern_catalog
 "@ | Set-Content -Path $EnvFile -Encoding utf8
@@ -105,19 +133,11 @@ if ($needsBuild) {
   Write-Ok "Microservice binary already built: $BinaryPath"
 }
 
-# 5. Start backend
-Write-Step "Starting backend on port $Port"
-$env:PORT = "$Port"
+# 5. Start backend (TypeScript via tsx — server.js no longer exists after the TS port)
+Write-Step "Starting backend on port $BackendPort"
+$env:PORT = "$BackendPort"
+Free-Port $BackendPort
 
-# Free the port if something's already on it
-$listener = Get-NetTCPConnection -LocalPort $Port -State Listen -ErrorAction SilentlyContinue
-if ($listener) {
-  Write-Warn "Port $Port already in use by PID $($listener.OwningProcess) - killing it."
-  Stop-Process -Id $listener.OwningProcess -Force -ErrorAction SilentlyContinue
-  Start-Sleep -Seconds 1
-}
-
-# Spawn server (TypeScript via tsx — backend was migrated; server.js no longer exists)
 $serverArgs = @{
   FilePath               = 'npm.cmd'
   ArgumentList           = @('run', 'dev')
@@ -129,47 +149,91 @@ $serverArgs = @{
 }
 $serverProc = Start-Process @serverArgs
 
-# Wait for it to actually listen
+# Wait for /api/health
 $ready = $false
-for ($i = 0; $i -lt 30; $i++) {
-  Start-Sleep -Milliseconds 400
+for ($i = 0; $i -lt 60; $i++) {
+  Start-Sleep -Milliseconds 500
   try {
-    $resp = Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:$Port/api/health" -TimeoutSec 2
+    $resp = Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:$BackendPort/api/health" -TimeoutSec 2
     if ($resp.StatusCode -eq 200) { $ready = $true; break }
   } catch { }
 }
-
 if (-not $ready) {
-  Write-Err 'Server did not become healthy within 12s. Last lines of server.err.log:'
+  Write-Err 'Backend did not become healthy within 30s. Last lines of server.err.log:'
   if (Test-Path (Join-Path $BackendDir 'server.err.log')) {
-    Get-Content (Join-Path $BackendDir 'server.err.log') -Tail 20 | ForEach-Object { Write-Host "    $_" }
+    Get-Content (Join-Path $BackendDir 'server.err.log') -Tail 30 | ForEach-Object { Write-Host "    $_" }
   }
   Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue
   exit 1
 }
-
 Write-Ok 'Backend healthy.'
-Write-Host ''
-Write-Host "  Studio UI:   http://localhost:$Port" -ForegroundColor White
-Write-Host "  Health:      http://localhost:$Port/api/health" -ForegroundColor White
-Write-Host "  Backend PID: $($serverProc.Id)" -ForegroundColor White
-Write-Host "  Logs:        $BackendDir\server.out.log" -ForegroundColor White
-Write-Host "  Errors:      $BackendDir\server.err.log" -ForegroundColor White
-Write-Host ''
-Write-Host 'Press Ctrl+C to stop the server.' -ForegroundColor Gray
 
-if (-not $NoBrowser) {
-  Start-Process "http://localhost:$Port"
+# 5b. Start Vite dev server (skip when -BackendOnly)
+$viteProc = $null
+if (-not $BackendOnly) {
+  Write-Step "Starting Vite dev server on port $FrontendPort"
+  Free-Port $FrontendPort
+
+  $viteArgs = @{
+    FilePath               = 'npm.cmd'
+    ArgumentList           = @('run', 'dev', '--', '--port', "$FrontendPort", '--strictPort')
+    WorkingDirectory       = $FrontendDir
+    PassThru               = $true
+    NoNewWindow            = $true
+    RedirectStandardOutput = (Join-Path $FrontendDir 'vite.out.log')
+    RedirectStandardError  = (Join-Path $FrontendDir 'vite.err.log')
+  }
+  $viteProc = Start-Process @viteArgs
+
+  # Wait for Vite to serve /
+  $viteReady = $false
+  for ($i = 0; $i -lt 60; $i++) {
+    Start-Sleep -Milliseconds 500
+    try {
+      $resp = Invoke-WebRequest -UseBasicParsing -Uri "http://localhost:$FrontendPort/" -TimeoutSec 2
+      if ($resp.StatusCode -eq 200) { $viteReady = $true; break }
+    } catch { }
+  }
+  if (-not $viteReady) {
+    Write-Err 'Vite did not start within 30s. Last lines of vite.err.log:'
+    if (Test-Path (Join-Path $FrontendDir 'vite.err.log')) {
+      Get-Content (Join-Path $FrontendDir 'vite.err.log') -Tail 30 | ForEach-Object { Write-Host "    $_" }
+    }
+    Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue
+    Stop-Process -Id $viteProc.Id   -Force -ErrorAction SilentlyContinue
+    exit 1
+  }
+  Write-Ok 'Vite ready.'
 }
 
-# 6. Tail logs until Ctrl+C
+$openUrl = if ($BackendOnly) { "http://localhost:$BackendPort" } else { "http://localhost:$FrontendPort" }
+
+Write-Host ''
+Write-Host "  Studio UI:    $openUrl" -ForegroundColor White
+Write-Host "  Backend API:  http://localhost:$BackendPort" -ForegroundColor White
+Write-Host "  Health:       http://localhost:$BackendPort/api/health" -ForegroundColor White
+Write-Host "  Backend PID:  $($serverProc.Id)" -ForegroundColor White
+if ($viteProc) { Write-Host "  Vite PID:     $($viteProc.Id)" -ForegroundColor White }
+Write-Host "  Backend log:  $BackendDir\server.out.log" -ForegroundColor White
+if ($viteProc) { Write-Host "  Vite log:     $FrontendDir\vite.out.log" -ForegroundColor White }
+Write-Host ''
+Write-Host 'Press Ctrl+C to stop everything.' -ForegroundColor Gray
+
+if (-not $NoBrowser) {
+  Start-Process $openUrl
+}
+
+# 6. Tail backend log until Ctrl+C; clean up both processes on exit
 try {
   Get-Content -Path (Join-Path $BackendDir 'server.out.log') -Wait -Tail 0
 } finally {
   Write-Host ''
-  Write-Step 'Shutting down backend'
+  Write-Step 'Shutting down'
   if ($serverProc -and -not $serverProc.HasExited) {
     Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue
+  }
+  if ($viteProc -and -not $viteProc.HasExited) {
+    Stop-Process -Id $viteProc.Id -Force -ErrorAction SilentlyContinue
   }
   Write-Ok 'Stopped.'
 }
