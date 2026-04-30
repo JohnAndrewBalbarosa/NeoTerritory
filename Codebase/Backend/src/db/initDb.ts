@@ -1,34 +1,46 @@
-const bcrypt = require('bcrypt');
-const db = require('./database');
-const { initEtlSchema } = require('./etlSchema');
-// TEST SEED — REMOVE FOR PRODUCTION (delete _testSeed/ + this require + the calls below)
-const { seedDevconUsers, ensureTestFolders } = require('./_testSeed/devconUsers');
+import bcrypt from 'bcrypt';
+import db from './database';
+import { initEtlSchema } from './etlSchema';
+// TEST SEED — REMOVE FOR PRODUCTION (delete _testSeed/ + this import + the calls below)
+import { seedDevconUsers, ensureTestFolders } from './_testSeed/devconUsers';
 
-const ADMIN_USERNAME = 'Neoterritory';
-const ADMIN_EMAIL = 'admin@neoterritory.local';
+const DEFAULT_ADMIN_USERNAME = 'Neoterritory';
+const DEFAULT_ADMIN_PASSWORD = 'ragabag123';
 
-function columnExists(table, column) {
-  const rows = db.prepare(`PRAGMA table_info(${table})`).all();
-  return rows.some(r => r.name === column);
+interface PragmaColumnRow { name: string }
+interface UserAdminRow { id: number; role: string }
+
+function columnExists(table: string, column: string): boolean {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as PragmaColumnRow[];
+  return rows.some((r) => r.name === column);
 }
 
-function seedAdminAccount() {
-  const existing = db.prepare('SELECT id, role FROM users WHERE username = ?').get(ADMIN_USERNAME);
-  const password = process.env.SEED_ADMIN_PASSWORD || 'ragabag123';
+function seedAdminAccount(): void {
+  const username = process.env.ADMIN_USERNAME || DEFAULT_ADMIN_USERNAME;
+  const password = process.env.ADMIN_PASSWORD
+    || process.env.SEED_ADMIN_PASSWORD
+    || DEFAULT_ADMIN_PASSWORD;
+  const email = `${username.toLowerCase()}@neoterritory.local`;
   const hash = bcrypt.hashSync(password, 10);
+
+  const existing = db
+    .prepare('SELECT id, role FROM users WHERE username = ?')
+    .get(username) as UserAdminRow | undefined;
+
   if (!existing) {
     db.prepare(
       `INSERT INTO users (username, email, password_hash, role, created_at)
        VALUES (?, ?, ?, 'admin', datetime('now'))`
-    ).run(ADMIN_USERNAME, ADMIN_EMAIL, hash);
+    ).run(username, email, hash);
     return;
   }
-  if (existing.role !== 'admin') {
-    db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(existing.id);
-  }
+
+  // Idempotent upsert: ensure role is admin and password matches env.
+  db.prepare(`UPDATE users SET role = 'admin', password_hash = ? WHERE id = ?`)
+    .run(hash, existing.id);
 }
 
-function initDb() {
+export function initDb(): void {
   db.prepare(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
@@ -42,7 +54,6 @@ function initDb() {
   if (!columnExists('users', 'role')) {
     db.prepare(`ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'user'`).run();
   }
-
   if (!columnExists('users', 'claimed_at')) {
     db.prepare(`ALTER TABLE users ADD COLUMN claimed_at TEXT`).run();
   }
@@ -97,25 +108,11 @@ function initDb() {
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id)`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_reviews_scope ON reviews(scope)`).run();
 
-  db.prepare(`CREATE TABLE IF NOT EXISTS settings (
-    key TEXT PRIMARY KEY,
-    value TEXT NOT NULL,
-    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
-  )`).run();
-  // Seed default settings (idempotent via INSERT OR IGNORE).
-  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('ai_enabled', '1')`).run();
-
   initEtlSchema(db);
 
-  // Mode-aware seeding:
-  //   tester  -> Devcon1..100 + admin. SEED_TEST_USERS env still gates `_testSeed`.
-  //   actual  -> admin only; Devcon accounts are NOT created.
-  if ((db.mode || 'tester') === 'tester') {
-    seedDevconUsers(db);
-    ensureTestFolders();
-  }
+  // TEST SEED — REMOVE FOR PRODUCTION
+  seedDevconUsers(db);
+  ensureTestFolders();
 
   seedAdminAccount();
 }
-
-module.exports = { initDb };

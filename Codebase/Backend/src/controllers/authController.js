@@ -2,6 +2,9 @@ const bcrypt = require('bcrypt');
 const db = require('../db/database');
 const { logEvent } = require('../services/logService');
 const { signToken } = require('../utils/jwtKeys');
+const { claimTestAccount } = require('../db/_testSeed/devconUsers');
+
+const DEVCON_USERNAME_RE = /^devcon\d+$/i;
 
 const register = async (req, res, next) => {
   try {
@@ -49,6 +52,9 @@ const login = async (req, res, next) => {
     if (!valid) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    if (DEVCON_USERNAME_RE.test(user.username) && user.claimed_at == null) {
+      return res.status(403).json({ error: 'Tester seat must be claimed via picker' });
+    }
     const role = user.role || 'user';
     const token = signToken({ id: user.id, username: user.username, email: user.email, role });
     logEvent(user.id, 'login', `User logged in: ${user.username}`);
@@ -58,4 +64,35 @@ const login = async (req, res, next) => {
   }
 };
 
-module.exports = { register, login };
+const claimSeat = async (req, res, next) => {
+  try {
+    const username = (req.body && req.body.username || '').trim();
+    if (!DEVCON_USERNAME_RE.test(username)) {
+      return res.status(400).json({ error: 'Invalid tester username' });
+    }
+    const result = claimTestAccount(username);
+    if (!result.ok) {
+      if (result.reason === 'not_found') {
+        return res.status(404).json({ error: 'Tester seat not found' });
+      }
+      if (result.reason === 'already_claimed') {
+        return res.status(409).json({ error: 'Tester seat already claimed' });
+      }
+      return res.status(400).json({ error: 'Could not claim seat' });
+    }
+    const user = db
+      .prepare('SELECT * FROM users WHERE username = ?')
+      .get(username);
+    if (!user) {
+      return res.status(404).json({ error: 'Tester seat not found' });
+    }
+    const role = user.role || 'user';
+    const token = signToken({ id: user.id, username: user.username, email: user.email, role });
+    logEvent(user.id, 'claim_seat', `Tester seat claimed: ${user.username}`);
+    res.json({ token, user: { id: user.id, username: user.username, email: user.email, role } });
+  } catch (err) {
+    next(err);
+  }
+};
+
+module.exports = { register, login, claimSeat };

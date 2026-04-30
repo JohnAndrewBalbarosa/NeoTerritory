@@ -11,6 +11,7 @@
 const bcrypt = require('bcrypt');
 const fs = require('fs');
 const path = require('path');
+const db = require('../database');
 
 const TEST_USER_COUNT = 100;
 const TEST_USERNAME_PREFIX = 'Devcon';
@@ -47,7 +48,48 @@ function isTesterMode() {
 
 function listTestAccounts() {
   if (!isTesterMode()) return [];
-  return Array.from({ length: TEST_USER_COUNT }, (_, i) => `${TEST_USERNAME_PREFIX}${i + 1}`);
+  let rows = [];
+  try {
+    rows = db
+      .prepare(`SELECT username, claimed_at FROM users WHERE username LIKE ? ORDER BY id ASC`)
+      .all(`${TEST_USERNAME_PREFIX}%`);
+  } catch (err) {
+    // If migration hasn't run yet, fall back to a simple query without claimed_at.
+    try {
+      rows = db
+        .prepare(`SELECT username FROM users WHERE username LIKE ? ORDER BY id ASC`)
+        .all(`${TEST_USERNAME_PREFIX}%`)
+        .map(r => ({ username: r.username, claimed_at: null }));
+    } catch {
+      rows = [];
+    }
+  }
+  return rows
+    .filter(r => /^devcon\d+$/i.test(r.username))
+    .map(r => ({ username: r.username, claimed: r.claimed_at != null }));
+}
+
+function claimTestAccount(username) {
+  if (!isTesterMode()) return { ok: false, reason: 'not_found' };
+  if (!/^devcon\d+$/i.test(username)) return { ok: false, reason: 'not_found' };
+  const result = db
+    .prepare(
+      `UPDATE users SET claimed_at = datetime('now')
+       WHERE username = ? AND claimed_at IS NULL`
+    )
+    .run(username);
+  if (result.changes > 0) return { ok: true };
+  const row = db.prepare(`SELECT id, claimed_at FROM users WHERE username = ?`).get(username);
+  if (!row) return { ok: false, reason: 'not_found' };
+  return { ok: false, reason: 'already_claimed' };
+}
+
+function releaseTestAccount(username) {
+  if (!/^devcon\d+$/i.test(username)) return { ok: false, reason: 'not_found' };
+  const result = db
+    .prepare(`UPDATE users SET claimed_at = NULL WHERE username = ?`)
+    .run(username);
+  return result.changes > 0 ? { ok: true } : { ok: false, reason: 'not_found' };
 }
 
 function seedDevconUsers(db) {
@@ -75,4 +117,10 @@ function seedDevconUsers(db) {
   }
 }
 
-module.exports = { seedDevconUsers, ensureTestFolders, listTestAccounts };
+module.exports = {
+  seedDevconUsers,
+  ensureTestFolders,
+  listTestAccounts,
+  claimTestAccount,
+  releaseTestAccount,
+};

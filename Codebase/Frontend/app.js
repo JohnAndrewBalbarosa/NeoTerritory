@@ -142,8 +142,11 @@ function patternFromAnnotation(annotation) {
   return PATTERN_COLORS[head] ? head : 'default';
 }
 
+function hueFor(key){let h=2166136261;for(let i=0;i<key.length;i++){h^=key.charCodeAt(i);h=Math.imul(h,16777619);}return Math.abs(h)%360;}
+function generatedColor(key){const h=hueFor(key||'default');return {bg:`oklch(72% 0.18 ${h} / 0.10)`,border:`oklch(72% 0.18 ${h})`,text:`oklch(85% 0.14 ${h})`};}
+
 function colorFor(patternKey) {
-  return PATTERN_COLORS[patternKey] || PATTERN_COLORS.default;
+  return PATTERN_COLORS[patternKey] || generatedColor(patternKey);
 }
 
 function colorForPattern(detected) {
@@ -248,8 +251,11 @@ async function loadTesterChooser() {
   try {
     const res = await fetch('/auth/test-accounts');
     const data = await res.json();
-    const accounts = Array.isArray(data.accounts) ? data.accounts : [];
-    const password = data.password || 'devcon';
+    const rawAccounts = Array.isArray(data.accounts) ? data.accounts : [];
+    // Backwards-compat: server may emit string[] or [{username, claimed}].
+    const accounts = rawAccounts.map(a =>
+      typeof a === 'string' ? { username: a, claimed: false } : a
+    );
     els.testerGrid.innerHTML = '';
 
     // Admin tile first.
@@ -263,23 +269,38 @@ async function loadTesterChooser() {
     });
     els.testerGrid.appendChild(admin);
 
-    // Devcon tiles.
-    accounts.forEach(name => {
+    // Devcon tiles — single-claim seats.
+    accounts.forEach(({ username, claimed }) => {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'tester-chip';
-      btn.textContent = name;
-      btn.addEventListener('click', async () => {
-        if (els.testerError) els.testerError.hidden = true;
-        try {
-          await directTesterLogin(name, password);
-        } catch (err) {
-          if (els.testerError) {
-            els.testerError.textContent = err.message || 'Could not claim that seat.';
-            els.testerError.hidden = false;
+      btn.textContent = username;
+      if (claimed) {
+        btn.dataset.claimed = 'true';
+        btn.disabled = true;
+        btn.setAttribute('aria-disabled', 'true');
+        btn.title = 'Seat already claimed';
+      } else {
+        btn.addEventListener('click', async () => {
+          if (els.testerError) els.testerError.hidden = true;
+          try {
+            await claimTesterSeat(username);
+          } catch (err) {
+            if (err && err.status === 409) {
+              if (els.testerError) {
+                els.testerError.textContent = 'That seat was just claimed — picking another.';
+                els.testerError.hidden = false;
+              }
+              await loadTesterChooser();
+              return;
+            }
+            if (els.testerError) {
+              els.testerError.textContent = (err && err.message) || 'Could not claim that seat.';
+              els.testerError.hidden = false;
+            }
           }
-        }
-      });
+        });
+      }
       els.testerGrid.appendChild(btn);
     });
   } catch {
@@ -1072,7 +1093,9 @@ function synthesizeUsageAnnotations(bindings, detectedPatterns, suspectedStructu
         title:    `${patternName} :: ${KIND_HUMAN[u.kind] || u.kind}`,
         comment:  `${target} — bound to ${cls}` + (u.evidence ? ` (${u.evidence})` : ''),
         excerpt:  u.snippet || '',
-        kind:     'tagged_usage'
+        kind:     'tagged_usage',
+        className: cls,
+        patternKey: patternName
       });
     });
   });
