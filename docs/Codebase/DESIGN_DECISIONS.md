@@ -371,3 +371,39 @@ Catalog entries no longer carry `implementation_template` regex blocks (with the
 **Multi-language posture**: `PatternEntry.language` in `types/catalog.ts` is a closed string-literal union (`'cpp' | 'java' | 'python' | 'go' | 'typescript'`). Adding a new language requires changing this union, which forces a compile error everywhere the dispatcher needs to handle it. This is what "multi-language ready" looks like at the type level.
 
 **Manual surface posture**: `PatternEntry.manual_documentation_template`, `manual_review_checklist`, and `manual_test_scaffold` are first-class fields on the catalog schema. The backend's manual-mode services (to be implemented next) read these directly when `aiProviderConfigured` is false. AI is augmentation; absent AI, the manual templates ARE the surface.
+
+## D31 — JWT migrates from HS256 to ES256 with auto-generated keypair and JWKS endpoint
+
+The backend signs auth tokens with ECDSA P-256 (ES256) instead of a shared HMAC secret. Rationale: the C++ microservice and any future verifier must be able to validate tokens **without** holding the signing secret. With HS256, anyone who can verify can also forge. With ES256, only the backend that holds the private key can sign; verifiers only need the public key, which is published at `/auth/jwks` (standard JWK Set format).
+
+**Key lifecycle**:
+- On first boot, `src/utils/jwtKeys.js` generates a P-256 keypair into `Codebase/Backend/keys/jwt-private.pem` and `keys/jwt-public.pem` (gitignored).
+- File mode `0600` on the private key. Subsequent boots reload from disk.
+- The `kid` (key id) is the SHA-256 fingerprint of the public JWK, included in every token's header. JWKS responses carry the same `kid` so verifiers can match.
+- Override paths via `JWT_PRIVATE_KEY_PATH` / `JWT_PUBLIC_KEY_PATH` for production-managed keys.
+
+**Verification fallback**: during rollout, `jwtAuth` middleware first tries ES256 with the loaded public key; on failure, falls back to HS256 with `process.env.JWT_SECRET` if set. This allows legacy tokens to keep working until the 30-day expiry window passes. Once all clients have re-authenticated, `JWT_SECRET` can be removed.
+
+**JWKS shape** (returned by `GET /auth/jwks`):
+```json
+{ "keys": [{ "kty": "EC", "crv": "P-256", "x": "...", "y": "...", "kid": "...", "use": "sig", "alg": "ES256" }] }
+```
+
+**Token claim addition**: alongside the existing `id`, `username`, `email`, `role` claims, tokens now carry `sub` (string form of `id`) for OIDC-style downstream consumers.
+
+**No external dep added**: keypair generation, PEM ↔ JWK conversion, and signing all use Node's built-in `crypto` and the existing `jsonwebtoken` package (which supports ES256 natively).
+
+## D32 — AI provider switches from Anthropic Claude to Google Gemini (gemini-2.0-flash)
+
+The AI documentation pass (`aiDocumentationService.js`) targets Google's Gemini API instead of Anthropic. Rationale: cost. Free tier on `gemini-2.0-flash` (1500 req/day, 15 RPM) covers research-mode workload at zero spend; Anthropic has no comparable free tier. Quality for this use case (JSON-structured documentation paragraphs, no creative writing) is more than sufficient.
+
+**Provider contract preserved**: `generateDocumentation(input)` signature is unchanged. Callers in `routes/analysis.js` and consumers of `aiByPattern[*]` see the same `{ status, verdict, finalPatternId, rationale, documentationByTarget, unitTestPlanByTarget, providerMetadata }` shape regardless of which model produced the result. This is the D22 stance reaffirmed: backend is the only adapter; the frontend never knows which provider is upstream.
+
+**Env vars**:
+- `GEMINI_API_KEY` (replaces `ANTHROPIC_API_KEY`)
+- `GEMINI_MODEL` defaults to `gemini-2.0-flash` (replaces `ANTHROPIC_MODEL`)
+- Old Anthropic vars are no longer read; if a deployment still has them set, they are ignored without error.
+
+**Health/status surface**: `/api/health` reports `aiProviderConfigured`, `aiModel`, and now `aiProvider: 'gemini'` so the frontend can show "AI: Gemini · gemini-2.0-flash" in admin diagnostics.
+
+**Response coercion**: Gemini's `generateContent` is configured with `generationConfig.responseMimeType = "application/json"` to force structured output. The parser still tolerates accidental code-fence wrappers via the same `extractJsonFromContent` helper, since Gemini occasionally backslides into prose for malformed prompts.

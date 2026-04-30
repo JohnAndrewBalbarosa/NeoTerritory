@@ -142,3 +142,9 @@ Codebase/Backend/src/db/database.actual.sqlite
 .baseline_lexemes.frozen/
 .after_lexemes/
 .after_evidence/
+
+# Local archive of legacy/throwaway files preserved off the main tree
+_archive/
+
+# Backend ES256 keypair (auto-generated; never commit)
+Codebase/Backend/keys/

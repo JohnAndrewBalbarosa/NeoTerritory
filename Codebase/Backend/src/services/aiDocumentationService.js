@@ -1,7 +1,31 @@
-const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
-const ANTHROPIC_VERSION = '2023-06-01';
-const DEFAULT_MODEL     = 'claude-sonnet-4-6';
+// Provider env-var schema (D32, revised): PLANNER_* names are canonical.
+// Legacy fallbacks (GEMINI_*, ANTHROPIC_*) are read only if the canonical
+// names are absent, so existing dev .env files don't break overnight.
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const DEFAULT_MODEL    = 'gemini-2.0-flash';
 const DEFAULT_MAX_TOKENS = 4096;
+const DEFAULT_TEMPERATURE = 0.2;
+const DEFAULT_TOP_P       = 0.95;
+
+function readPlannerConfig() {
+  const apiKey = process.env.PLANNER_API_KEY || process.env.GEMINI_API_KEY || '';
+  const model  = process.env.PLANNER_MODEL   || process.env.GEMINI_MODEL   || DEFAULT_MODEL;
+  const provider = (process.env.PLANNER_PROVIDER || 'gemini').toLowerCase();
+  const maxOutputTokens = Number(process.env.PLANNER_MAX_OUTPUT_TOKENS) || DEFAULT_MAX_TOKENS;
+  const temperature     = clampNumber(process.env.PLANNER_TEMPERATURE, DEFAULT_TEMPERATURE, 0, 2);
+  const topP            = clampNumber(process.env.PLANNER_TOP_P,       DEFAULT_TOP_P,       0, 1);
+  return { apiKey, model, provider, maxOutputTokens, temperature, topP };
+}
+
+function clampNumber(raw, def, lo, hi) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return def;
+  return Math.max(lo, Math.min(hi, n));
+}
+
+function isGemmaModel(model) {
+  return /^gemma/i.test(String(model || ''));
+}
 
 const SYSTEM_PROMPT = [
   'You are a code-documentation reviewer for a structural pattern detector.',
@@ -93,13 +117,20 @@ function buildUserMessage(payload) {
   return lines.join('\n');
 }
 
-function extractJsonFromContent(content) {
-  if (!Array.isArray(content)) return null;
-  const textBlock = content.find(block => block.type === 'text' && typeof block.text === 'string');
-  if (!textBlock) return null;
-  const text = textBlock.text.trim();
-  const fenceMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  const candidate = fenceMatch ? fenceMatch[1].trim() : text;
+function extractTextFromGemini(data) {
+  const candidate = Array.isArray(data?.candidates) ? data.candidates[0] : null;
+  if (!candidate) return null;
+  const parts = candidate.content?.parts;
+  if (!Array.isArray(parts)) return null;
+  const textPart = parts.find(p => typeof p.text === 'string');
+  return textPart ? textPart.text : null;
+}
+
+function parseJsonText(text) {
+  if (!text) return null;
+  const trimmed = text.trim();
+  const fenceMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/);
+  const candidate = fenceMatch ? fenceMatch[1].trim() : trimmed;
   try {
     return JSON.parse(candidate);
   } catch {
@@ -116,23 +147,32 @@ function extractJsonFromContent(content) {
   }
 }
 
-async function callAnthropicMessages(apiKey, model, payload) {
-  const body = {
-    model,
-    max_tokens: DEFAULT_MAX_TOKENS,
-    system: SYSTEM_PROMPT,
-    messages: [
-      { role: 'user', content: buildUserMessage(payload) }
-    ]
-  };
+async function callGemini(cfg, payload) {
+  const { apiKey, model, maxOutputTokens, temperature, topP } = cfg;
+  const url = `${GEMINI_API_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const userText = buildUserMessage(payload);
+  // Gemma models on the Gemini API don't accept systemInstruction — inline it.
+  const useSystemInstruction = !isGemmaModel(model);
+  const body = useSystemInstruction
+    ? {
+        systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+        contents: [{ role: 'user', parts: [{ text: userText }] }],
+        generationConfig: {
+          temperature, topP, maxOutputTokens,
+          responseMimeType: 'application/json'
+        }
+      }
+    : {
+        contents: [{ role: 'user', parts: [{ text: `${SYSTEM_PROMPT}\n\n${userText}` }] }],
+        generationConfig: {
+          temperature, topP, maxOutputTokens,
+          responseMimeType: 'application/json'
+        }
+      };
 
-  const response = await fetch(ANTHROPIC_API_URL, {
+  const response = await fetch(url, {
     method: 'POST',
-    headers: {
-      'content-type':       'application/json',
-      'x-api-key':          apiKey,
-      'anthropic-version':  ANTHROPIC_VERSION
-    },
+    headers: { 'content-type': 'application/json' },
     body: JSON.stringify(body)
   });
 
@@ -140,7 +180,7 @@ async function callAnthropicMessages(apiKey, model, payload) {
     const errorText = await response.text().catch(() => '');
     return {
       status: 'failed',
-      reason: `anthropic_http_${response.status}`,
+      reason: `gemini_http_${response.status}`,
       providerError: errorText.slice(0, 500),
       documentationByTarget: {},
       unitTestPlanByTarget: {}
@@ -148,7 +188,8 @@ async function callAnthropicMessages(apiKey, model, payload) {
   }
 
   const data = await response.json();
-  const parsed = extractJsonFromContent(data.content);
+  const text = extractTextFromGemini(data);
+  const parsed = parseJsonText(text);
 
   if (!parsed) {
     return {
@@ -156,7 +197,7 @@ async function callAnthropicMessages(apiKey, model, payload) {
       reason: 'unparseable_ai_response',
       documentationByTarget: {},
       unitTestPlanByTarget: {},
-      providerMetadata: { id: data.id, model: data.model, stop_reason: data.stop_reason }
+      providerMetadata: { model: data.modelVersion || model, finishReason: data.candidates?.[0]?.finishReason }
     };
   }
 
@@ -167,7 +208,21 @@ async function callAnthropicMessages(apiKey, model, payload) {
     rationale: parsed.rationale || '',
     documentationByTarget: parsed.documentationByTarget || {},
     unitTestPlanByTarget: parsed.unitTestPlanByTarget || {},
-    providerMetadata: { id: data.id, model: data.model, stop_reason: data.stop_reason }
+    providerMetadata: { model: data.modelVersion || model, finishReason: data.candidates?.[0]?.finishReason }
+  };
+}
+
+function isPlannerConfigured() {
+  const cfg = readPlannerConfig();
+  return Boolean(cfg.apiKey);
+}
+
+function getPlannerStatus() {
+  const cfg = readPlannerConfig();
+  return {
+    provider: cfg.provider,
+    model: cfg.model,
+    configured: Boolean(cfg.apiKey)
   };
 }
 
@@ -183,8 +238,8 @@ async function generateDocumentation(input) {
     };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  const cfg = readPlannerConfig();
+  if (!cfg.apiKey) {
     return {
       status: 'pending_provider',
       reason: 'ai_provider_not_configured',
@@ -194,14 +249,12 @@ async function generateDocumentation(input) {
     };
   }
 
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
-
   try {
-    return await callAnthropicMessages(apiKey, model, payload);
+    return await callGemini(cfg, payload);
   } catch (err) {
     return {
       status: 'failed',
-      reason: 'anthropic_call_threw',
+      reason: 'gemini_call_threw',
       providerError: String(err && err.message ? err.message : err).slice(0, 500),
       documentationByTarget: {},
       unitTestPlanByTarget: {}
@@ -212,5 +265,7 @@ async function generateDocumentation(input) {
 module.exports = {
   buildAiPayload,
   normalizeAiResult,
-  generateDocumentation
+  generateDocumentation,
+  isPlannerConfigured,
+  getPlannerStatus
 };

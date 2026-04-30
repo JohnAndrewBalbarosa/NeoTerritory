@@ -7,7 +7,7 @@ const multer = require('multer');
 const SERVER_STARTED_AT = new Date().toISOString();
 const db = require('../db/database');
 const { analyzeClassDeclaration, resolveBinaryPath, resolveCatalogPath } = require('../services/classDeclarationAnalysisService');
-const { generateDocumentation }   = require('../services/aiDocumentationService');
+const { generateDocumentation, getPlannerStatus } = require('../services/aiDocumentationService');
 const { rankAll }                  = require('../services/patternRankingService');
 const { bindAll: bindClassUsages } = require('../services/classUsageBinder');
 const { logEvent } = require('../services/logService');
@@ -322,8 +322,9 @@ router.get('/health', (req, res) => {
     status: 'ok',
     service: 'NeoTerritory analysis api',
     mode: db.mode || (process.env.NEOTERRITORY_MODE || 'tester').toLowerCase(),
-    aiProviderConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
-    aiModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+    aiProvider: getPlannerStatus().provider,
+    aiProviderConfigured: getPlannerStatus().configured,
+    aiModel: getPlannerStatus().model,
     microservice,
     totalRuns,
     latestRun,
@@ -423,7 +424,7 @@ router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) =
       documentationTargets: structural.documentationTargets || [],
       unitTestTargets:      structural.unitTestTargets || [],
       aiByPattern,
-      aiAvailable:         Boolean(process.env.ANTHROPIC_API_KEY),
+      aiAvailable:         getPlannerStatus().configured,
       ranking,
       classUsageBindings,
       classUsageBindingSource: 'heuristic',

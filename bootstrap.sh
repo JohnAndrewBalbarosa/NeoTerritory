@@ -9,8 +9,9 @@
 #   ./bootstrap.sh --only backend  # backend only
 #   ./bootstrap.sh --help
 #
-# Note: the existing ./setup.sh in this repo is the minikube deploy script —
-# unrelated to first-time provisioning. Use this file for a fresh setup.
+# Note: legacy deploy/run scripts moved to ./scripts/ (deploy-minikube.sh,
+# deploy.ps1, run-dev.ps1, setup.ps1, test.sh). This bootstrap.sh is the
+# canonical entrypoint for first-time provisioning.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

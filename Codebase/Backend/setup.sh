@@ -21,11 +21,20 @@ if [ ! -f .env ]; then
   say "Creating .env with safe defaults — edit before exposing publicly."
   cat > .env <<'EOF'
 PORT=3002
+# JWT_SECRET is only honored as a fallback for legacy HS256 tokens. ES256 keypair is
+# auto-generated under ./keys/ on first boot. See D31.
 JWT_SECRET=local_dev_secret_change_me
 CORS_ORIGIN=http://localhost:3002
 DB_PATH=./src/db/database.sqlite
 SEED_TEST_USERS=0
 SEED_ADMIN_PASSWORD=ragabag123
+# AI planner (D32). Leave PLANNER_API_KEY unset to skip the AI documentation pass.
+# PLANNER_PROVIDER=gemini
+# PLANNER_MODEL=gemini-2.0-flash
+# PLANNER_API_KEY=AIza...
+# PLANNER_MAX_OUTPUT_TOKENS=4096
+# PLANNER_TEMPERATURE=0.2
+# PLANNER_TOP_P=0.95
 EOF
 fi
 

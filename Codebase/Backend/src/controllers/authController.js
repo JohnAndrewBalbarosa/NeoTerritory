@@ -1,7 +1,7 @@
 const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
 const db = require('../db/database');
 const { logEvent } = require('../services/logService');
+const { signToken } = require('../utils/jwtKeys');
 
 const register = async (req, res, next) => {
   try {
@@ -50,11 +50,7 @@ const login = async (req, res, next) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     const role = user.role || 'user';
-    const token = jwt.sign(
-      { id: user.id, username: user.username, email: user.email, role },
-      process.env.JWT_SECRET,
-      { expiresIn: '30d' }
-    );
+    const token = signToken({ id: user.id, username: user.username, email: user.email, role });
     logEvent(user.id, 'login', `User logged in: ${user.username}`);
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role } });
   } catch (err) {
