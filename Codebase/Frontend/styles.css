@@ -231,15 +231,6 @@ body.login-active {
   line-height: 1.55;
   white-space: pre;
 }
-.src-line {
-  display: flex;
-  padding: 0 12px 0 4px;
-  border-left: 3px solid transparent;
-  cursor: default;
-  transition: filter 0.15s;
-}
-.src-line.has-comment { cursor: pointer; }
-.src-line.has-comment:hover { filter: brightness(0.96); }
 .src-line.flash { animation: flash 1.2s ease; }
 .src-gutter {
   flex-shrink: 0;
