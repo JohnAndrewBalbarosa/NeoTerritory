@@ -45,8 +45,20 @@ function generatedColor(key: string): PatternColor {
   };
 }
 
+const PATTERN_COLORS_CI: Record<string, PatternColor> = Object.fromEntries(
+  Object.entries(PATTERN_COLORS).map(([k, v]) => [k.toLowerCase(), v])
+);
+
 export function colorFor(key: string): PatternColor {
-  return PATTERN_COLORS[key] ?? generatedColor(key);
+  if (PATTERN_COLORS[key]) return PATTERN_COLORS[key];
+  const lower = (key || '').toLowerCase();
+  // Try exact lowercase match first, then strip non-alphanumerics so microservice
+  // ids like "factory_method" or "strategy (policy)" still resolve to "Factory"
+  // / "Strategy" palette entries via their leading token.
+  if (PATTERN_COLORS_CI[lower]) return PATTERN_COLORS_CI[lower];
+  const head = lower.split(/[^a-z0-9]+/).filter(Boolean)[0] || lower;
+  if (PATTERN_COLORS_CI[head]) return PATTERN_COLORS_CI[head];
+  return generatedColor(key);
 }
 
 export function patternFromAnnotation(annotation: Annotation): string {

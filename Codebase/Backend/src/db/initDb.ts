@@ -110,6 +110,64 @@ export function initDb(): void {
 
   initEtlSchema(db);
 
+  // --- Survey + manual-review tables (idempotent) ---
+  db.prepare(`CREATE TABLE IF NOT EXISTS survey_consent (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    accepted_at TEXT NOT NULL,
+    version TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_survey_consent_user ON survey_consent(user_id)`).run();
+
+  db.prepare(`CREATE TABLE IF NOT EXISTS survey_pretest (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    answers_json TEXT NOT NULL,
+    submitted_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_survey_pretest_user ON survey_pretest(user_id)`).run();
+
+  db.prepare(`CREATE TABLE IF NOT EXISTS run_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    ratings_json TEXT NOT NULL,
+    open_json TEXT NOT NULL,
+    submitted_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_run_feedback_user ON run_feedback(user_id)`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_run_feedback_run ON run_feedback(run_id)`).run();
+
+  db.prepare(`CREATE TABLE IF NOT EXISTS session_feedback (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    session_uuid TEXT NOT NULL,
+    ratings_json TEXT NOT NULL,
+    open_json TEXT NOT NULL,
+    submitted_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_session_feedback_user ON session_feedback(user_id)`).run();
+
+  db.prepare(`CREATE TABLE IF NOT EXISTS manual_pattern_decisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    line INTEGER NOT NULL,
+    candidates_json TEXT NOT NULL,
+    chosen_pattern TEXT,
+    chosen_kind TEXT NOT NULL,
+    other_text TEXT,
+    decided_at TEXT NOT NULL,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(run_id) REFERENCES analysis_runs(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_manual_decisions_run ON manual_pattern_decisions(run_id)`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_manual_decisions_user ON manual_pattern_decisions(user_id)`).run();
+
   // TEST SEED — REMOVE FOR PRODUCTION
   seedDevconUsers(db);
   ensureTestFolders();

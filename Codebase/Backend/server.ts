@@ -18,6 +18,7 @@ import transformRoutes from './src/routes/transform';
 import analysisRoutes from './src/routes/analysis';
 import adminRoutes from './src/routes/admin';
 import reviewRoutes from './src/routes/reviews';
+import surveyRoutes from './src/routes/survey';
 import { startWatching as startReviewSchemaWatch } from './src/reviews/questionLoader';
 import { uploadsDir } from './src/config/paths';
 
@@ -64,6 +65,7 @@ app.use('/auth', authRoutes);
 app.use('/api/transform', transformRoutes);
 app.use('/api/admin', adminLimiter, adminRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/survey', surveyRoutes);
 app.use('/api', analysisRoutes);
 
 app.get('/', (_req: Request, res: Response) => {

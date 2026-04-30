@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
-import { useAppStore } from '../../store/appState';
+import { useState } from 'react';
+import { useAppStore, StudioTab } from '../../store/appState';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
-import AnalysisForm from '../analysis/AnalysisForm';
-import SourceView from '../analysis/SourceView';
-import PatternLegend from '../analysis/PatternLegend';
-import PatternCards from '../analysis/PatternCards';
-import ClassBindings from '../analysis/ClassBindings';
-import RunList from '../runs/RunList';
+import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
+import SubmitTab from '../tabs/SubmitTab';
+import AnnotatedTab from '../tabs/AnnotatedTab';
+import AmbiguousTab from '../tabs/AmbiguousTab';
 import AmbiguityModal from '../modals/AmbiguityModal';
 import SavePrompt from '../modals/SavePrompt';
 import ReviewModal from '../modals/ReviewModal';
-import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
+import ConsentGate from '../survey/ConsentGate';
+import PretestForm from '../survey/PretestForm';
+import SignoutSurvey from '../survey/SignoutSurvey';
 import { AnalysisRun } from '../../types/api';
 
 interface PendingSave {
@@ -33,6 +33,11 @@ interface ReviewState {
   intro: string;
 }
 
+interface AnalyzeResponseLike extends AnalysisRun {
+  aiJobId?: string | null;
+  aiStatus?: 'pending' | 'disabled';
+}
+
 function flashLine(line: number) {
   const el = document.querySelector<HTMLElement>(`.src-line[data-line="${line}"]`);
   if (!el) return;
@@ -49,26 +54,34 @@ function flashComment(id: string) {
   setTimeout(() => card.classList.remove('flash'), 1200);
 }
 
+const TABS: Array<{ id: StudioTab; label: string }> = [
+  { id: 'submit',     label: 'Submit' },
+  { id: 'annotated',  label: 'Annotated Source' },
+  { id: 'ambiguous',  label: 'Ambiguous Review' }
+];
+
 export default function MainLayout() {
   useHealth();
-  const { status, msState, msLabel, user, currentRun, sessionRanAnalyze, sessionReviewedEnd, token } = useAppStore();
+  useAiCommentaryPoll();
+  const {
+    status, msState, msLabel, user, sessionRanAnalyze, sessionReviewedEnd,
+    token, activeTab, setActiveTab, consentAccepted, pretestSubmitted, setAiStatus
+  } = useAppStore();
   const { signOut } = useAuth();
 
   const [ambiguity, setAmbiguity] = useState<AmbiguityState | null>(null);
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
   const [review, setReview] = useState<ReviewState | null>(null);
+  const [showSignout, setShowSignout] = useState(false);
   const [runRefreshSignal, setRunRefreshSignal] = useState(0);
 
-  const allAnnotations = useMemo(() => {
-    if (!currentRun) return [];
-    const usage = synthesizeUsageAnnotations(
-      currentRun.classUsageBindings || {},
-      currentRun.detectedPatterns || []
-    );
-    return [...(currentRun.annotations || []), ...usage];
-  }, [currentRun]);
-
   function onAnalysisComplete(run: AnalysisRun) {
+    const r = run as AnalyzeResponseLike;
+    if (r.aiJobId && r.aiStatus === 'pending') {
+      setAiStatus('pending', r.aiJobId);
+    } else {
+      setAiStatus(r.aiStatus === 'disabled' ? 'disabled' : 'idle', null);
+    }
     if (!run.pendingId) return;
     const patternCount = (run.detectedPatterns || []).length;
     const commentCount = (run.annotations || []).length;
@@ -92,32 +105,32 @@ export default function MainLayout() {
     setReview({ scope: 'per-run', analysisRunId: runId, intro: 'Quick rating for this run (optional):' });
   }
 
-  async function onSignOutClick() {
+  function onSignOutClick() {
     if (sessionRanAnalyze && !sessionReviewedEnd && token) {
-      setReview({
-        scope: 'end-of-session',
-        analysisRunId: null,
-        intro: 'Before you sign out — a few quick questions about this session.'
-      });
+      setShowSignout(true);
       return;
     }
     signOut();
   }
 
-  function onReviewClose(_submitted: boolean) {
-    const wasEnd = review?.scope === 'end-of-session';
-    setReview(null);
-    if (wasEnd) {
-      useAppStore.getState().setSessionReviewedEnd(true);
-      signOut();
-    }
+  function onSignoutComplete() {
+    useAppStore.getState().setSessionReviewedEnd(true);
+    setShowSignout(false);
+    signOut();
   }
 
-  const patternCount = currentRun?.detectedPatterns?.length || 0;
-  const commentCount = allAnnotations.length;
-  const summaryText = currentRun
-    ? `${currentRun.sourceName || 'snippet.cpp'} • ${patternCount} pattern(s) • ${commentCount} comment(s)`
-    : '';
+  function onReviewClose(_submitted: boolean) {
+    setReview(null);
+  }
+
+  // Gate: consent first.
+  if (token && user && !consentAccepted) {
+    return <ConsentGate />;
+  }
+  // Gate: pretest second (auto-skips when surveyQuestions.pretest is empty).
+  if (token && user && !pretestSubmitted) {
+    return <PretestForm />;
+  }
 
   return (
     <div className="shell">
@@ -148,43 +161,29 @@ export default function MainLayout() {
         </div>
       </header>
 
-      <main className="content">
-        <section className="left-pane">
-          <AnalysisForm onAnalysisComplete={onAnalysisComplete} />
-          <RunList refreshSignal={runRefreshSignal} />
-        </section>
+      <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
+        {TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={activeTab === t.id}
+            className={`tab-btn ${activeTab === t.id ? 'is-active' : ''}`}
+            onClick={() => setActiveTab(t.id)}
+          >
+            {t.label}
+          </button>
+        ))}
+      </nav>
 
-        <section id="results-panel" className="results-panel" hidden={!currentRun}>
-          {currentRun && (
-            <>
-              <header className="results-header">
-                <p id="results-summary" className="results-summary">{summaryText}</p>
-                <PatternLegend detectedPatterns={currentRun.detectedPatterns || []} />
-              </header>
-              <div className="results-body">
-                <SourceView
-                  sourceText={currentRun.sourceText || ''}
-                  annotations={allAnnotations}
-                  detectedPatterns={currentRun.detectedPatterns || []}
-                  onLineClick={flashComment}
-                />
-              </div>
-              <PatternCards
-                detectedPatterns={currentRun.detectedPatterns || []}
-                ranking={currentRun.ranking}
-                userResolvedPattern={currentRun.userResolvedPattern}
-                classUsageBindings={currentRun.classUsageBindings || {}}
-                classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
-                onLineFlash={flashLine}
-              />
-              <ClassBindings
-                bindings={currentRun.classUsageBindings || {}}
-                detectedPatterns={currentRun.detectedPatterns || []}
-                onLineFlash={flashLine}
-              />
-            </>
-          )}
-        </section>
+      <main className="content tab-content">
+        {activeTab === 'submit' && (
+          <SubmitTab onAnalysisComplete={onAnalysisComplete} refreshSignal={runRefreshSignal} />
+        )}
+        {activeTab === 'annotated' && (
+          <AnnotatedTab onLineFlash={flashLine} onCommentFlash={flashComment} />
+        )}
+        {activeTab === 'ambiguous' && <AmbiguousTab />}
       </main>
 
       {ambiguity && ambiguity.run.ranking && (
@@ -212,6 +211,12 @@ export default function MainLayout() {
           analysisRunId={review.analysisRunId}
           intro={review.intro}
           onClose={onReviewClose}
+        />
+      )}
+      {showSignout && (
+        <SignoutSurvey
+          onComplete={onSignoutComplete}
+          onCancel={() => setShowSignout(false)}
         />
       )}
     </div>

@@ -74,6 +74,8 @@ interface AnnotationOut {
   comment: string;
   excerpt: string;
   kind: string;
+  patternKey?: string;
+  className?: string;
 }
 
 // Conditional validator: skip when request is multipart (Multer handles upload).
@@ -90,6 +92,31 @@ const router = express.Router();
 // Ephemeral cache for unsaved analysis results.
 const PENDING_TTL_MS = 10 * 60 * 1000;
 const pendingRuns = new Map<string, PendingEntry>();
+
+// Ephemeral AI commentary jobs spawned alongside structural analysis.
+interface AiJobEntry {
+  status: 'pending' | 'ready' | 'failed';
+  annotations?: AnnotationOut[];
+  error?: string;
+  expiresAt: number;
+}
+const AI_JOB_TTL_MS = 10 * 60 * 1000;
+const aiJobs = new Map<string, AiJobEntry>();
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of aiJobs) if (v.expiresAt < now) aiJobs.delete(k);
+}, 60 * 1000).unref();
+
+function aiCommenterEnabled(): boolean {
+  const flag = process.env.AI_COMMENTER_ENABLED;
+  if (flag === undefined) return true;
+  return !/^(false|0|no|off)$/i.test(flag.trim());
+}
+
+function newAiJobId(): string {
+  return `aij_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
 
 function stashPending(payload: Omit<PendingEntry, 'expiresAt'>): string {
   const id = `pen_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
@@ -183,6 +210,19 @@ function buildPipelineFromMetrics(stageMetrics: StageMetric[] | undefined, detec
   }));
 }
 
+function buildStructuralAnnotations(detectedPatterns: DetectedPatternResult[], sourceText: string): AnnotationOut[] {
+  const emptyAi: AiResult[] = detectedPatterns.map(() => ({
+    status: 'skipped',
+    documentationByTarget: {},
+    unitTestPlanByTarget: {}
+  }));
+  return buildAnnotations(detectedPatterns, emptyAi, sourceText);
+}
+
+function buildAiAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern: AiResult[], sourceText: string): AnnotationOut[] {
+  return buildAnnotations(detectedPatterns, aiByPattern, sourceText);
+}
+
 function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern: AiResult[], sourceText: string): AnnotationOut[] {
   const normalized = (sourceText || '').replace(/\r\n/g, '\n');
   const lines = normalized.split('\n');
@@ -212,7 +252,9 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         title:    `${pattern.patternName || pattern.patternId} :: ${anchor.label}`,
         comment:  aiDocs[anchor.label] || `Structural anchor "${anchor.label}" — AI documentation pending.`,
         excerpt:  lineText,
-        kind:     anchor.label
+        kind:     anchor.label,
+        patternKey: pattern.patternName || pattern.patternId,
+        className:  pattern.className
       });
     });
 
@@ -232,7 +274,9 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         comment:  aiTests[planKey]
           || `Unit-test target (${target.branch_kind}) — AI test plan pending.`,
         excerpt:  lineText,
-        kind:     `unit_test:${target.branch_kind}`
+        kind:     `unit_test:${target.branch_kind}`,
+        patternKey: pattern.patternName || pattern.patternId,
+        className:  pattern.className
       });
     });
   });
@@ -423,24 +467,16 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
 
     const structural: AnalysisResult = analyzeClassDeclaration({ sourceName, code: sourceText });
 
-    const aiByPattern: AiResult[] = await Promise.all(
-      (structural.detectedPatterns || []).map((pattern) =>
-        generateDocumentation({
-          detectedPattern:      pattern.patternId,
-          language:             'cpp',
-          className:            pattern.className,
-          fileName:             pattern.fileName,
-          classText:            pattern.classText,
-          documentationTargets: pattern.documentationTargets,
-          unitTestTargets:      pattern.unitTestTargets
-        })
-      )
-    );
-
     const detectedPatterns = structural.detectedPatterns || [];
     const ranking = rankAll(detectedPatterns, sourceText);
     const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
-    const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText);
+    const aiEnabled = aiCommenterEnabled();
+    const aiByPattern: AiResult[] = detectedPatterns.map(() => ({
+      status: 'skipped',
+      documentationByTarget: {},
+      unitTestPlanByTarget: {}
+    }));
+    const annotations = buildStructuralAnnotations(detectedPatterns, sourceText);
     const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
 
     const analysis: AnalysisPayload = {
@@ -485,12 +521,59 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
 
     logEvent(req.user?.id ?? null, 'analysis', `Analyzed (unsaved): ${sourceName}`);
 
+    let aiJobId: string | null = null;
+    let aiStatus: 'pending' | 'disabled' = 'disabled';
+    if (aiEnabled && detectedPatterns.length > 0) {
+      aiStatus = 'pending';
+      aiJobId = newAiJobId();
+      aiJobs.set(aiJobId, {
+        status: 'pending',
+        expiresAt: Date.now() + AI_JOB_TTL_MS
+      });
+      const jobId = aiJobId;
+      const patternsForAi = detectedPatterns;
+      const sourceForAi = sourceText;
+      setImmediate(() => {
+        Promise.all(
+          patternsForAi.map((pattern) =>
+            generateDocumentation({
+              detectedPattern:      pattern.patternId,
+              language:             'cpp',
+              className:            pattern.className,
+              fileName:             pattern.fileName,
+              classText:            pattern.classText,
+              documentationTargets: pattern.documentationTargets,
+              unitTestTargets:      pattern.unitTestTargets
+            })
+          )
+        )
+          .then((aiResults) => {
+            const aiAnnotations = buildAiAnnotations(patternsForAi, aiResults, sourceForAi);
+            aiJobs.set(jobId, {
+              status: 'ready',
+              annotations: aiAnnotations,
+              expiresAt: Date.now() + AI_JOB_TTL_MS
+            });
+          })
+          .catch((err: unknown) => {
+            const message = err instanceof Error ? err.message : 'AI commentary failed';
+            aiJobs.set(jobId, {
+              status: 'failed',
+              error: message,
+              expiresAt: Date.now() + AI_JOB_TTL_MS
+            });
+          });
+      });
+    }
+
     res.status(200).json({
       ...analysis,
       pendingId,
       saved:         false,
       sourceName,
-      sourceText
+      sourceText,
+      aiStatus,
+      aiJobId
     });
   } catch (err) {
     next(err);
@@ -651,6 +734,104 @@ router.get('/runs/:id/export', jwtAuth, (req: Request, res: Response, next: Next
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.type(format === 'comments-only' ? 'text/markdown; charset=utf-8' : 'text/plain; charset=utf-8');
     res.send(payload);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/analyze/ai/:jobId', jwtAuth, (req: Request, res: Response) => {
+  const jobId = req.params.jobId;
+  const entry = aiJobs.get(jobId);
+  if (!entry) {
+    res.status(404).json({ error: 'AI job not found or expired' });
+    return;
+  }
+  if (entry.expiresAt < Date.now()) {
+    aiJobs.delete(jobId);
+    res.status(404).json({ error: 'AI job expired' });
+    return;
+  }
+  if (entry.status === 'ready') {
+    res.json({ status: 'ready', annotations: entry.annotations || [] });
+    return;
+  }
+  if (entry.status === 'failed') {
+    res.json({ status: 'failed', error: entry.error || 'AI commentary failed' });
+    return;
+  }
+  res.json({ status: 'pending' });
+});
+
+interface ManualReviewRow {
+  id: number;
+  user_id: number;
+}
+
+router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const runIdNum = Number(req.params.runId);
+    if (!Number.isFinite(runIdNum)) {
+      res.status(400).json({ error: 'Invalid runId' });
+      return;
+    }
+    const owner = db.prepare('SELECT id, user_id FROM analysis_runs WHERE id = ?')
+      .get(runIdNum) as ManualReviewRow | undefined;
+    if (!owner) {
+      res.status(404).json({ error: 'Run not found' });
+      return;
+    }
+    if (owner.user_id && owner.user_id !== req.user.id) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const body = req.body as {
+      line?: unknown;
+      candidates?: unknown;
+      chosenPattern?: unknown;
+      chosenKind?: unknown;
+      otherText?: unknown;
+    };
+    const line = Number(body.line);
+    if (!Number.isFinite(line) || line < 1) {
+      res.status(400).json({ error: 'Invalid line' });
+      return;
+    }
+    if (!Array.isArray(body.candidates)) {
+      res.status(400).json({ error: 'candidates must be an array' });
+      return;
+    }
+    const candidates = body.candidates.filter((c): c is string => typeof c === 'string').slice(0, 32);
+    const chosenKindRaw = typeof body.chosenKind === 'string' ? body.chosenKind : 'pattern';
+    const chosenKind: 'pattern' | 'none' | 'other' =
+      chosenKindRaw === 'none' ? 'none' :
+      chosenKindRaw === 'other' ? 'other' : 'pattern';
+    const chosenPattern = chosenKind === 'pattern' && typeof body.chosenPattern === 'string'
+      ? body.chosenPattern.slice(0, 128)
+      : null;
+    const otherText = chosenKind === 'other' && typeof body.otherText === 'string'
+      ? body.otherText.slice(0, 1024)
+      : null;
+
+    db.prepare(`INSERT INTO manual_pattern_decisions
+      (run_id, user_id, line, candidates_json, chosen_pattern, chosen_kind, other_text, decided_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`).run(
+      runIdNum,
+      req.user.id,
+      line,
+      JSON.stringify(candidates),
+      chosenPattern,
+      chosenKind,
+      otherText
+    );
+
+    logEvent(req.user.id, 'manual_review', `runId=${runIdNum} line=${line} kind=${chosenKind}`);
+
+    res.status(201).json({ ok: true, line, chosenPattern, chosenKind });
   } catch (err) {
     next(err);
   }

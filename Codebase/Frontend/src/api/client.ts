@@ -248,5 +248,69 @@ export async function fetchAdminLogs(limit = 80): Promise<{ logs: AdminLogEntry[
   return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?limit=${limit}`);
 }
 
+// AI poll endpoint
+export interface AiPollResponse {
+  status: 'pending' | 'ready' | 'failed';
+  annotations?: AnalysisRun['annotations'];
+  error?: string;
+}
+
+export async function pollAiJob(jobId: string): Promise<AiPollResponse> {
+  return apiFetch<AiPollResponse>(`/api/analyze/ai/${encodeURIComponent(jobId)}`);
+}
+
+// Manual review endpoint
+export interface ManualReviewPayload {
+  line: number;
+  candidates: string[];
+  chosenPattern: string | null;
+  chosenKind: 'pattern' | 'none' | 'other';
+  otherText?: string;
+}
+
+export async function submitManualReview(runId: number, payload: ManualReviewPayload): Promise<unknown> {
+  return apiFetch<unknown>(`/api/analysis/${runId}/manual-review`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
+// Survey endpoints
+export async function submitConsent(version: string): Promise<unknown> {
+  return apiFetch<unknown>('/api/survey/consent', {
+    method: 'POST',
+    body: JSON.stringify({ version })
+  });
+}
+
+export async function submitPretest(answers: Record<string, unknown>): Promise<unknown> {
+  return apiFetch<unknown>('/api/survey/pretest', {
+    method: 'POST',
+    body: JSON.stringify({ answers })
+  });
+}
+
+export async function submitRunSurvey(
+  runId: string,
+  ratings: Record<string, number>,
+  openEnded: Record<string, string>
+): Promise<unknown> {
+  return apiFetch<unknown>(`/api/survey/run/${encodeURIComponent(runId)}`, {
+    method: 'POST',
+    body: JSON.stringify({ ratings, openEnded })
+  });
+}
+
+export async function submitSessionSurvey(
+  ratings: Record<string, number>,
+  openEnded: Record<string, string>,
+  sessionUuid?: string
+): Promise<unknown> {
+  return apiFetch<unknown>('/api/survey/session', {
+    method: 'POST',
+    body: JSON.stringify({ ratings, openEnded, sessionUuid })
+  });
+}
+
 // Re-export TesterAccount so consumers can avoid touching the type module directly.
 export type { TesterAccount };

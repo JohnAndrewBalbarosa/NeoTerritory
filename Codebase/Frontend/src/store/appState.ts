@@ -1,8 +1,11 @@
 import { create } from 'zustand';
-import { User, AnalysisRun, AppStatus, MsState } from '../types/api';
+import { User, AnalysisRun, AppStatus, MsState, Annotation } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
+
+export type StudioTab = 'submit' | 'annotated' | 'ambiguous';
+export type AiCommentaryStatus = 'idle' | 'pending' | 'ready' | 'failed' | 'disabled';
 
 interface AppState {
   token: string | null;
@@ -15,6 +18,12 @@ interface AppState {
   msLabel: string;
   sessionRanAnalyze: boolean;
   sessionReviewedEnd: boolean;
+  activeTab: StudioTab;
+  consentAccepted: boolean;
+  pretestSubmitted: boolean;
+  aiStatus: AiCommentaryStatus;
+  aiJobId: string | null;
+  pendingRunSurveyForRunKey: string | null;
 
   setAuth: (token: string, user: User) => void;
   clearAuth: () => void;
@@ -26,6 +35,12 @@ interface AppState {
   setMsStatus: (state: MsState, label: string) => void;
   setSessionRanAnalyze: (v: boolean) => void;
   setSessionReviewedEnd: (v: boolean) => void;
+  setActiveTab: (tab: StudioTab) => void;
+  setConsentAccepted: (v: boolean) => void;
+  setPretestSubmitted: (v: boolean) => void;
+  setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
+  mergeAiAnnotations: (aiAnnotations: Annotation[]) => void;
+  setPendingRunSurvey: (key: string | null) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -46,6 +61,12 @@ export const useAppStore = create<AppState>((set) => ({
   msLabel: 'checking...',
   sessionRanAnalyze: false,
   sessionReviewedEnd: false,
+  activeTab: 'submit',
+  consentAccepted: false,
+  pretestSubmitted: false,
+  aiStatus: 'idle',
+  aiJobId: null,
+  pendingRunSurveyForRunKey: null,
 
   setAuth: (token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
@@ -56,10 +77,25 @@ export const useAppStore = create<AppState>((set) => ({
   clearAuth: () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
-    set({ token: null, user: null, currentRun: null, sessionRanAnalyze: false, sessionReviewedEnd: false });
+    set({
+      token: null,
+      user: null,
+      currentRun: null,
+      sessionRanAnalyze: false,
+      sessionReviewedEnd: false,
+      activeTab: 'submit',
+      consentAccepted: false,
+      pretestSubmitted: false,
+      aiStatus: 'idle',
+      aiJobId: null,
+      pendingRunSurveyForRunKey: null
+    });
   },
 
-  setCurrentRun: (run) => set({ currentRun: run }),
+  setCurrentRun: (run) => set({
+    currentRun: run,
+    activeTab: run ? 'annotated' : 'submit'
+  }),
   patchCurrentRun: (patch) => set((s) => ({
     currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
   })),
@@ -69,4 +105,23 @@ export const useAppStore = create<AppState>((set) => ({
   setMsStatus: (msState, msLabel) => set({ msState, msLabel }),
   setSessionRanAnalyze: (v) => set({ sessionRanAnalyze: v }),
   setSessionReviewedEnd: (v) => set({ sessionReviewedEnd: v }),
+  setActiveTab: (tab) => set({ activeTab: tab }),
+  setConsentAccepted: (v) => set({ consentAccepted: v }),
+  setPretestSubmitted: (v) => set({ pretestSubmitted: v }),
+  setAiStatus: (status, jobId) => set((s) => ({
+    aiStatus: status,
+    aiJobId: jobId === undefined ? s.aiJobId : jobId
+  })),
+  mergeAiAnnotations: (aiAnnotations) => set((s) => {
+    if (!s.currentRun) return {};
+    const existing = s.currentRun.annotations || [];
+    // Replace structural annotations whose AI doc was a placeholder, keyed by id.
+    const byId = new Map<string, Annotation>();
+    existing.forEach((a) => byId.set(a.id, a));
+    aiAnnotations.forEach((a) => byId.set(a.id, { ...byId.get(a.id), ...a }));
+    return {
+      currentRun: { ...s.currentRun, annotations: Array.from(byId.values()) }
+    };
+  }),
+  setPendingRunSurvey: (key) => set({ pendingRunSurveyForRunKey: key }),
 }));

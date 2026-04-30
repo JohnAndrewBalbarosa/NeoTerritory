@@ -5,23 +5,16 @@ import { AnalysisRun } from '../../types/api';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
+  beforeSubmit?: (dispatch: () => void) => void;
 }
 
-export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) {
+export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
     setCurrentRun, setSessionRanAnalyze } = useAppStore();
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
 
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const code = sourceText.trim();
-    const file = fileRef.current?.files?.[0];
-    const fname = filename.trim() || 'snippet.cpp';
-    if (!code && !file) {
-      setStatus({ kind: 'error', title: 'No input', detail: 'Paste code or pick a file first.' });
-      return;
-    }
+  async function dispatchAnalyze(code: string, file: File | undefined, fname: string): Promise<void> {
     setBusy(true);
     setStatus({ kind: 'busy', title: 'Running analysis', detail: 'Spawning microservice...' });
     try {
@@ -53,6 +46,23 @@ export default function AnalysisForm({ onAnalysisComplete }: AnalysisFormProps) 
       setStatus({ kind: 'error', title: 'Analysis failed', detail: msg });
     } finally {
       setBusy(false);
+    }
+  }
+
+  function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    const code = sourceText.trim();
+    const file = fileRef.current?.files?.[0];
+    const fname = filename.trim() || 'snippet.cpp';
+    if (!code && !file) {
+      setStatus({ kind: 'error', title: 'No input', detail: 'Paste code or pick a file first.' });
+      return;
+    }
+    const run = () => { void dispatchAnalyze(code, file, fname); };
+    if (beforeSubmit) {
+      beforeSubmit(run);
+    } else {
+      run();
     }
   }
 
