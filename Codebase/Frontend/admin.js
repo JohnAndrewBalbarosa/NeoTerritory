@@ -9,6 +9,9 @@ const state = {
   charts: {}
 };
 
+// TEMPORARY: disable user-run inspection/drawers until UX is revisited.
+const RUN_INSPECT_DISABLED = true;
+
 const els = {
   refreshBtn:   document.getElementById('admin-refresh-btn'),
   logoutBtn:    document.getElementById('admin-logout-btn'),
@@ -31,6 +34,14 @@ const els = {
   runDrawerBody:document.getElementById('run-drawer-body'),
   runDrawerCloseBtn: document.getElementById('run-drawer-close-btn')
 };
+
+function warnMissingEls(names) {
+  const missing = names.filter(name => !els[name]);
+  if (missing.length) {
+    console.warn(`Admin UI missing required element(s): ${missing.join(', ')}`);
+  }
+  return missing.length === 0;
+}
 
 function escapeHtml(value) {
   return String(value == null ? '' : value)
@@ -238,6 +249,7 @@ async function loadUsers() {
   const users = data.users || [];
   if (!users.length) {
     els.usersTbody.innerHTML = '<tr><td colspan="5" class="empty-state">No users.</td></tr>';
+    els.usersTbody.classList.remove('runs-disabled');
     return;
   }
   els.usersTbody.innerHTML = users.map(u => `
@@ -249,12 +261,18 @@ async function loadUsers() {
       <td>${fmtDate(u.created_at)}</td>
     </tr>
   `).join('');
+  if (RUN_INSPECT_DISABLED) {
+    els.usersTbody.classList.add('runs-disabled');
+    return;
+  }
+  els.usersTbody.classList.remove('runs-disabled');
   els.usersTbody.querySelectorAll('tr').forEach(tr => {
     tr.addEventListener('click', () => openUserDrawer(tr.dataset.id, tr.dataset.username));
   });
 }
 
 async function openUserDrawer(userId, username) {
+  if (RUN_INSPECT_DISABLED) return;
   els.drawerTitle.textContent = `Runs · ${username}`;
   els.drawerBody.innerHTML = '<div class="empty-state">Loading...</div>';
   els.userDrawer.hidden = false;
@@ -280,6 +298,20 @@ async function openUserDrawer(userId, username) {
 }
 
 async function openRunDrawer(runId) {
+<<<<<<< Updated upstream
+=======
+  if (RUN_INSPECT_DISABLED) return;
+  state.runDrawerRequestId += 1;
+  const requestId = state.runDrawerRequestId;
+  if (state.runDrawerAbort) state.runDrawerAbort.abort();
+  const controller = new AbortController();
+  state.runDrawerAbort = controller;
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+  // Run detail should replace the blocking user drawer context.
+  if (els.userDrawer) els.userDrawer.hidden = true;
+  els.runDrawerTitle.textContent = 'Run detail';
+>>>>>>> Stashed changes
   els.runDrawerBody.innerHTML = '<div class="empty-state">Loading...</div>';
   els.runDrawer.hidden = false;
   try {
@@ -316,6 +348,20 @@ async function openRunDrawer(runId) {
   }
 }
 
+<<<<<<< Updated upstream
+=======
+function closeRunDrawer() {
+  state.runDrawerRequestId += 1;
+  if (state.runDrawerAbort) {
+    state.runDrawerAbort.abort();
+    state.runDrawerAbort = null;
+  }
+  if (els.runDrawer) els.runDrawer.hidden = true;
+  if (els.runDrawerBody) els.runDrawerBody.innerHTML = '<div class="empty-state">Loading...</div>';
+  if (els.runDrawerTitle) els.runDrawerTitle.textContent = 'Run detail';
+}
+
+>>>>>>> Stashed changes
 function renderStars(value, max = 5) {
   const v = Math.max(0, Math.min(max, Number(value) || 0));
   return '★'.repeat(v) + '☆'.repeat(max - v);
@@ -383,12 +429,28 @@ async function loadAll() {
 }
 
 function bind() {
+  if (RUN_INSPECT_DISABLED) {
+    if (els.userDrawer) els.userDrawer.hidden = true;
+    if (els.runDrawer) els.runDrawer.hidden = true;
+  }
+
+  warnMissingEls([
+    'refreshBtn',
+    'logoutBtn',
+    'drawerCloseBtn',
+    'runDrawer',
+    'runDrawerCloseBtn',
+    'runDrawerBody',
+    'runDrawerTitle'
+  ]);
+
   els.refreshBtn.addEventListener('click', () => loadAll());
   els.logoutBtn.addEventListener('click', () => {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
     window.location.href = '/';
   });
+<<<<<<< Updated upstream
   els.drawerCloseBtn.addEventListener('click', () => { els.userDrawer.hidden = true; });
   els.runDrawerCloseBtn.addEventListener('click', () => { els.runDrawer.hidden = true; });
   [els.userDrawer, els.runDrawer].forEach(drawer => {
@@ -396,6 +458,27 @@ function bind() {
       if (e.target === drawer) drawer.hidden = true;
     });
   });
+=======
+  if (!RUN_INSPECT_DISABLED) {
+    els.drawerCloseBtn.addEventListener('click', () => { els.userDrawer.hidden = true; });
+    if (els.runDrawerCloseBtn) {
+      els.runDrawerCloseBtn.addEventListener('click', closeRunDrawer);
+    }
+    if (els.userDrawer) {
+      els.userDrawer.addEventListener('click', (e) => {
+        if (e.target === els.userDrawer) els.userDrawer.hidden = true;
+      });
+    }
+    if (els.runDrawer) {
+      els.runDrawer.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target instanceof Element && target.closest('#run-drawer-close-btn')) {
+          closeRunDrawer();
+        }
+      });
+    }
+  }
+>>>>>>> Stashed changes
 }
 
 (function init() {

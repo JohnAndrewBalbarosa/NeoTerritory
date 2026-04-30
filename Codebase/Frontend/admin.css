@@ -139,6 +139,14 @@
   background: rgba(37, 99, 235, 0.05);
 }
 
+.admin-table tbody.runs-disabled tr {
+  cursor: default;
+}
+
+.admin-table tbody.runs-disabled tr:hover {
+  background: transparent;
+}
+
 .role-pill {
   display: inline-block;
   padding: 2px 8px;
@@ -234,6 +242,24 @@
   animation: fade-in 180ms ease both;
 }
 
+<<<<<<< Updated upstream
+=======
+/* Wide run-drawer: non-blocking side panel — no dim, background stays interactive */
+#run-drawer {
+  background: transparent;
+  pointer-events: none;
+  justify-content: flex-end;
+  align-items: flex-end;
+}
+#run-drawer .drawer-card-wide {
+  pointer-events: all;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  margin: 12px;
+  box-shadow: 0 22px 56px -22px rgba(15, 23, 42, 0.45);
+}
+
+>>>>>>> Stashed changes
 .drawer-card {
   width: 480px;
   max-width: 100vw;
@@ -247,6 +273,24 @@
 
 .drawer-card-wide { width: 720px; }
 
+<<<<<<< Updated upstream
+=======
+#run-drawer .drawer-card-wide {
+  width: min(400px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  height: min(68dvh, 620px);
+  max-height: calc(100dvh - 24px);
+}
+
+#run-drawer .drawer-card-wide .drawer-body {
+  max-height: calc(min(68dvh, 620px) - 66px);
+}
+
+#run-drawer .run-detail-source {
+  max-height: 220px;
+}
+
+>>>>>>> Stashed changes
 .drawer-head {
   display: flex;
   justify-content: space-between;
@@ -331,3 +375,24 @@
   .reveal { opacity: 1; transform: none; transition: none; }
   .drawer, .drawer-card { animation: none; }
 }
+<<<<<<< Updated upstream
+=======
+
+@media (max-width: 1100px) {
+  #run-drawer .drawer-card-wide {
+    width: min(380px, calc(100vw - 20px));
+    max-width: calc(100vw - 20px);
+    height: min(64dvh, 560px);
+  }
+}
+
+@media (max-width: 720px) {
+  .drawer-card,
+  #run-drawer .drawer-card-wide {
+    width: calc(100vw - 12px);
+    max-width: calc(100vw - 12px);
+    margin: 6px;
+    height: calc(100dvh - 12px);
+  }
+}
+>>>>>>> Stashed changes

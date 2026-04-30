@@ -131,3 +131,7 @@ Desktop.ini
 launch.vs.json
 NeoTerritory.slnx
 Setup/Setup.vdproj
+Codebase/Backend/keys/jwt-private.pem
+/Codebase/Backend/src/db
+/test
+/test
