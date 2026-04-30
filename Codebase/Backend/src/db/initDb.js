@@ -93,6 +93,14 @@ function initDb() {
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_reviews_user ON reviews(user_id)`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_reviews_scope ON reviews(scope)`).run();
 
+  db.prepare(`CREATE TABLE IF NOT EXISTS settings (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run();
+  // Seed default settings (idempotent via INSERT OR IGNORE).
+  db.prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES ('ai_enabled', '1')`).run();
+
   initEtlSchema(db);
 
   // Mode-aware seeding:

@@ -15,6 +15,8 @@ const transformRoutes = require('./src/routes/transform');
 const analysisRoutes = require('./src/routes/analysis');
 const adminRoutes = require('./src/routes/admin');
 const reviewRoutes = require('./src/routes/reviews');
+const { router: settingsRouter } = require('./src/routes/settings');
+const gdbRoutes = require('./src/routes/gdb');
 const { startWatching: startReviewSchemaWatch } = require('./src/reviews/questionLoader');
 
 const app = express();
@@ -46,6 +48,8 @@ app.use('/health', healthRoutes);
 app.use('/auth', authRoutes);
 app.use('/api/transform', transformRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/settings', settingsRouter);
+app.use('/api/gdb', gdbRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api', analysisRoutes);
 

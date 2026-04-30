@@ -407,3 +407,31 @@ The AI documentation pass (`aiDocumentationService.js`) targets Google's Gemini 
 **Health/status surface**: `/api/health` reports `aiProviderConfigured`, `aiModel`, and now `aiProvider: 'gemini'` so the frontend can show "AI: Gemini · gemini-2.0-flash" in admin diagnostics.
 
 **Response coercion**: Gemini's `generateContent` is configured with `generationConfig.responseMimeType = "application/json"` to force structured output. The parser still tolerates accidental code-fence wrappers via the same `extractJsonFromContent` helper, since Gemini occasionally backslides into prose for malformed prompts.
+
+
+## D33 — Strategy pattern minimum implementationFit threshold
+
+`behavioural.strategy_interface` and `behavioural.strategy_concrete` fire too easily on plain polymorphic inheritance hierarchies (Vehicle→Car→Truck). Root cause: the evidence rules for these two patterns match any abstract base class with pure virtuals and any derived class with overrides — i.e., any use of run-time polymorphism, not just the Strategy design pattern.
+
+**Fix**: `patternRankingService.js` introduces `PATTERN_MIN_IMPL_FIT`:
+```js
+const PATTERN_MIN_IMPL_FIT = {
+  'behavioural.strategy_interface': 0.85,
+  'behavioural.strategy_concrete':  0.80,
+};
+```
+If `implementationFit` falls below the floor for that pattern, `finalRank` is forced to 0. The rank entry is still returned (for diagnostic display) with `suppressedByMinFit: true`. This prevents confident false-positive detection without removing the pattern from the catalog or requiring a C++ microservice recompile.
+
+**Tradeoff**: legitimate Strategy patterns that lack a visible Context class in the same file may now score below the threshold. The AI reclassification step is the intended fallback for ambiguous cases.
+
+## D34 — GDB execution queue
+
+The backend provides a GDB execution service (`gdbService.js`) that compiles and runs user C++ code. GDB is a shared resource (only one process can safely run at a time on a single machine). An in-memory FIFO queue serializes requests. Job state lives in a `Map` with 10-minute TTL eviction. Clients poll `GET /api/gdb/job/:id` every 2 seconds and receive `{ status, queuePosition, result }`.
+
+Queue is not persisted — server restart clears it. Acceptable for the research-tool scope (D20 principle: single-machine, no HA needed).
+
+## D35 — Async pipeline: parallel AI + ranking + binding
+
+Previously `routes/analysis.js` ran AI documentation, pattern ranking, and class usage binding sequentially after the C++ microservice step. These three operations are all independent (each needs only `detectedPatterns` + `sourceText`). Wrapped in `Promise.all`, they run concurrently, cutting wall-clock time to `max(AI latency, ranking latency, binding latency)` instead of the sum.
+
+Timing data for each step is returned in `analysis._timing: { structuralMs, parallelMs, annotationsMs, totalMs }`. A dev-only endpoint `GET /api/analyze/timing-report` exercises the sample file and reports a formatted breakdown.

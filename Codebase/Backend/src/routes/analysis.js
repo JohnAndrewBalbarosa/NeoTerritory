@@ -12,6 +12,7 @@ const { rankAll }                  = require('../services/patternRankingService'
 const { bindAll: bindClassUsages } = require('../services/classUsageBinder');
 const { logEvent } = require('../services/logService');
 const { jwtAuth } = require('../middleware/jwtAuth');
+const { getSetting } = require('./settings');
 
 const router = express.Router();
 
@@ -356,63 +357,205 @@ router.get('/sample', (req, res) => {
   });
 });
 
-router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) => {
+async function runAnalysisPipeline(sourceName, sourceText) {
+  const t0 = Date.now();
+  const structural = analyzeClassDeclaration({ sourceName, code: sourceText });
+  const tStructural = Date.now() - t0;
+
+  const detectedPatterns = structural.detectedPatterns || [];
+
+  const aiEnabled = getSetting('ai_enabled', '1') !== '0';
+
+  const t1 = Date.now();
+  const [aiByPattern, ranking, classUsageBindings] = await Promise.all([
+    aiEnabled
+      ? Promise.all(detectedPatterns.map(pattern =>
+          generateDocumentation({
+            detectedPattern:      pattern.patternId,
+            language:             'cpp',
+            className:            pattern.className,
+            fileName:             pattern.fileName,
+            classText:            pattern.classText,
+            documentationTargets: pattern.documentationTargets,
+            unitTestTargets:      pattern.unitTestTargets
+          })
+        ))
+      : Promise.resolve([]),
+    Promise.resolve(rankAll(detectedPatterns, sourceText)),
+    Promise.resolve(bindClassUsages(sourceText, detectedPatterns))
+  ]);
+  const tParallel = Date.now() - t1;
+
+  const t2 = Date.now();
+  const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText, ranking);
+  const tAnnotations = Date.now() - t2;
+
+  const _timing = {
+    structuralMs:  tStructural,
+    parallelMs:    tParallel,
+    annotationsMs: tAnnotations,
+    totalMs:       Date.now() - t0
+  };
+
+  return { structural, detectedPatterns, aiByPattern, ranking, classUsageBindings, annotations, _timing, aiEnabled };
+}
+
+if (process.env.NODE_ENV !== 'production') {
+  router.get('/timing-report', async (req, res, next) => {
+    try {
+      const samplePath = path.join(__dirname, '..', '..', 'uploads', 'sample.cpp');
+      const fallbackSample = path.join(
+        __dirname, '..', '..', '..', '..',
+        'Codebase', 'Microservice', 'samples', 'integration', 'all_patterns.cpp'
+      );
+      const sourcePath = fs.existsSync(samplePath) ? samplePath
+                       : fs.existsSync(fallbackSample) ? fallbackSample
+                       : null;
+      if (!sourcePath) return res.status(404).json({ error: 'No sample file available.' });
+
+      const code = fs.readFileSync(sourcePath, 'utf8');
+      const filename = path.basename(sourcePath);
+      const { _timing, detectedPatterns, aiByPattern } = await runAnalysisPipeline(filename, code);
+
+      res.json({
+        sample: filename,
+        patternsFound: detectedPatterns.length,
+        aiCallCount: aiByPattern.length,
+        timing: _timing,
+        breakdown: [
+          `structural (C++ microservice): ${_timing.structuralMs}ms`,
+          `parallel (AI docs + ranking + binding): ${_timing.parallelMs}ms`,
+          `  └─ AI calls: ${aiByPattern.length} concurrent Gemini requests`,
+          `annotations build: ${_timing.annotationsMs}ms`,
+          `total: ${_timing.totalMs}ms`
+        ]
+      });
+    } catch (err) {
+      next(err);
+    }
+  });
+}
+
+function buildSuspectedStructures(detectedPatterns, ranking) {
+  return (ranking.winners || []).map(w => {
+    const det = detectedPatterns.find(p =>
+      p.patternId === w.patternId && p.className === w.className) || {};
+    return {
+      className:         w.className,
+      patternId:         w.patternId,
+      patternName:       det.patternName || w.patternId,
+      patternFamily:     det.patternFamily || (w.patternId.split('.')[0] || ''),
+      finalRank:         w.finalRank,
+      implementationFit: w.implementationFit,
+      evidence:          w.evidence,
+      rivals:            ranking.perClassRivals[w.className] || []
+    };
+  });
+}
+
+// Streams analysis results as Server-Sent Events so the frontend can render
+// each stage (structural, ranking, binding, AI per pattern) the moment it's ready.
+router.post('/analyze', jwtAuth, upload.single('file'), async (req, res) => {
+  const codeFromBody = typeof req.body.code === 'string' ? req.body.code : '';
+  const filenameFromBody = typeof req.body.filename === 'string' && req.body.filename.trim()
+    ? req.body.filename.trim()
+    : 'snippet.cpp';
+
+  let sourceName = filenameFromBody;
+  let sourceText = codeFromBody;
+
+  if (req.file) {
+    sourceName = req.file.originalname;
+    sourceText = fs.readFileSync(req.file.path, 'utf8');
+  }
+
+  if (!sourceText.trim()) {
+    return res.status(400).json({ error: 'Provide a file or source code text.' });
+  }
+
+  // Switch to SSE — headers must be set before first write.
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.flushHeaders();
+
+  const send = (evt, data) => {
+    res.write(`event: ${evt}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
   try {
-    const codeFromBody = typeof req.body.code === 'string' ? req.body.code : '';
-    const filenameFromBody = typeof req.body.filename === 'string' && req.body.filename.trim()
-      ? req.body.filename.trim()
-      : 'snippet.cpp';
-
-    let sourceName = filenameFromBody;
-    let sourceText = codeFromBody;
-
-    if (req.file) {
-      sourceName = req.file.originalname;
-      sourceText = fs.readFileSync(req.file.path, 'utf8');
-    }
-
-    if (!sourceText.trim()) {
-      return res.status(400).json({ error: 'Provide a file or source code text.' });
-    }
-
+    // ── Stage 1: C++ microservice (synchronous spawn) ──────────────────────
+    const t0 = Date.now();
     const structural = analyzeClassDeclaration({ sourceName, code: sourceText });
-
-    const aiByPattern = await Promise.all(
-      (structural.detectedPatterns || []).map(pattern =>
-        generateDocumentation({
-          detectedPattern:      pattern.patternId,
-          language:             'cpp',
-          className:            pattern.className,
-          fileName:             pattern.fileName,
-          classText:            pattern.classText,
-          documentationTargets: pattern.documentationTargets,
-          unitTestTargets:      pattern.unitTestTargets
-        })
-      )
-    );
-
+    const tStructural = Date.now() - t0;
     const detectedPatterns = structural.detectedPatterns || [];
-    const ranking = rankAll(detectedPatterns, sourceText);
-    const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
-    const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText, ranking);
-    const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
 
-    // Build "suspected structures" — the de-duplicated, per-class winner list.
-    // This is what the frontend should surface prominently as the headline result.
-    const suspectedStructures = (ranking.winners || []).map(w => {
-      const detected = detectedPatterns.find(p =>
-        p.patternId === w.patternId && p.className === w.className) || {};
-      return {
-        className:         w.className,
-        patternId:         w.patternId,
-        patternName:       detected.patternName || w.patternId,
-        patternFamily:     detected.patternFamily || (w.patternId.split('.')[0] || ''),
-        finalRank:         w.finalRank,
-        implementationFit: w.implementationFit,
-        evidence:          w.evidence,
-        rivals:            ranking.perClassRivals[w.className] || []
-      };
+    send('structural', {
+      sourceName,
+      sourceText,
+      stage:               structural.stage,
+      diagnostics:         structural.diagnostics || [],
+      detectedPatterns,
+      documentationTargets: structural.documentationTargets || [],
+      unitTestTargets:      structural.unitTestTargets || [],
+      stageMetrics:        structural.stageMetrics || [],
+      noPatternsDetected:  detectedPatterns.length === 0
     });
+
+    // ── Stage 2a: ranking (synchronous, <10ms) ─────────────────────────────
+    const aiEnabled = getSetting('ai_enabled', '1') !== '0';
+    const t1 = Date.now();
+
+    const ranking = rankAll(detectedPatterns, sourceText);
+    send('ranking', ranking);
+
+    // ── Stage 2b: class usage binding (synchronous, <10ms) ────────────────
+    const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
+    send('binding', { classUsageBindings });
+
+    // ── Stage 2c: AI commentary (async, one event per pattern) ───────────
+    const aiByPattern = new Array(detectedPatterns.length).fill(null);
+    const aiPromises = aiEnabled
+      ? detectedPatterns.map((pattern, i) =>
+          generateDocumentation({
+            detectedPattern:      pattern.patternId,
+            language:             'cpp',
+            className:            pattern.className,
+            fileName:             pattern.fileName,
+            classText:            pattern.classText,
+            documentationTargets: pattern.documentationTargets,
+            unitTestTargets:      pattern.unitTestTargets
+          }).then(result => {
+            aiByPattern[i] = result;
+            send('ai_item', {
+              index:     i,
+              patternId: pattern.patternId,
+              className: pattern.className,
+              result
+            });
+            return result;
+          })
+        )
+      : [];
+
+    await Promise.all(aiPromises);
+    const tParallel = Date.now() - t1;
+
+    // ── Stage 3: build final annotations (needs all AI results) ───────────
+    const t2 = Date.now();
+    const annotations = buildAnnotations(detectedPatterns, aiByPattern, sourceText, ranking);
+    const tAnnotations = Date.now() - t2;
+
+    const suspectedStructures = buildSuspectedStructures(detectedPatterns, ranking);
+    const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
+    const aiAvailable = aiEnabled && getPlannerStatus().configured;
+
+    const _timing = {
+      structuralMs:  tStructural,
+      parallelMs:    tParallel,
+      annotationsMs: tAnnotations,
+      totalMs:       Date.now() - t0
+    };
 
     const analysis = {
       sourceName,
@@ -424,52 +567,48 @@ router.post('/analyze', jwtAuth, upload.single('file'), async (req, res, next) =
       documentationTargets: structural.documentationTargets || [],
       unitTestTargets:      structural.unitTestTargets || [],
       aiByPattern,
-      aiAvailable:         getPlannerStatus().configured,
+      aiAvailable,
       ranking,
       classUsageBindings,
       classUsageBindingSource: 'heuristic',
       annotations,
       pipeline,
       stageMetrics:        structural.stageMetrics || [],
-      microserviceArtifacts: structural.artifacts || {},
-      microserviceRunDir:    structural.runDirectory || null,
-      microserviceOutputDir: structural.outputDirectory || null,
+      _timing,
       summary: `${sourceName}: ${detectedPatterns.length} pattern match(es), `
              + `${suspectedStructures.length} suspected structure(s), `
              + `${(structural.documentationTargets || []).length} documentation anchor(s), `
              + `${(structural.unitTestTargets || []).length} unit-test target(s).`,
       findings: structural.diagnostics || [],
-      commentedCode: '',
-      commentsOnly:  '',
-      transformedPreview: ''
     };
-
     analysis.commentedCode      = buildCommentedCode(sourceText, annotations);
     analysis.commentsOnly       = buildCommentsOnly(sourceName, annotations);
     analysis.transformedPreview = analysis.commentedCode.slice(0, 1500);
 
     if (req.file) fs.unlink(req.file.path, () => {});
 
-    // Ephemeral: do NOT persist. Stash payload and return a pendingId.
-    // Frontend prompts the user; if they confirm, /runs/save promotes it.
     const pendingId = stashPending({
-      sourceName,
-      sourceText,
-      analysis,
-      userId: req.user && req.user.id
+      sourceName, sourceText, analysis, userId: req.user && req.user.id
     });
-
     logEvent(req.user && req.user.id, 'analysis', `Analyzed (unsaved): ${sourceName}`);
 
-    res.status(200).json({
+    send('complete', {
       pendingId,
-      saved:         false,
-      sourceName,
-      sourceText,
-      ...analysis
+      annotations,
+      suspectedStructures,
+      ranking,
+      aiByPattern,
+      aiAvailable,
+      summary: analysis.summary,
+      _timing
     });
+
+    res.end();
   } catch (err) {
-    next(err);
+    try {
+      send('error', { error: err.message || String(err) });
+      res.end();
+    } catch { /* stream already closed */ }
   }
 });
 

@@ -122,8 +122,12 @@ function extractTextFromGemini(data) {
   if (!candidate) return null;
   const parts = candidate.content?.parts;
   if (!Array.isArray(parts)) return null;
-  const textPart = parts.find(p => typeof p.text === 'string');
-  return textPart ? textPart.text : null;
+  // Gemma reasoning models emit a "thought" part followed by the actual answer.
+  // Skip parts marked thought:true and prefer the last non-thought text part.
+  const answerParts = parts.filter(p => typeof p.text === 'string' && p.thought !== true);
+  if (answerParts.length) return answerParts[answerParts.length - 1].text;
+  const anyText = parts.find(p => typeof p.text === 'string');
+  return anyText ? anyText.text : null;
 }
 
 function parseJsonText(text) {

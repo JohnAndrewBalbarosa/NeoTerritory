@@ -31,6 +31,13 @@ const CONFIDENT_THRESHOLD = 0.75;
 const AMBIGUITY_DELTA     = 0.10;
 const NO_CLEAR_PATTERN    = 0.40;
 
+// Patterns that frequently match plain polymorphism need a higher evidence bar (D33).
+// If implementationFit is below this value, finalRank is forced to 0.
+const PATTERN_MIN_IMPL_FIT = {
+  'behavioural.strategy_interface': 0.85,
+  'behavioural.strategy_concrete':  0.80,
+};
+
 let catalogCache = null;
 
 function catalogPath() {
@@ -72,7 +79,9 @@ function rankPattern(detectedPattern, sourceText) {
   // We blend at 30/70 — the discretized evidence carries the verdict.
   const classFit = 1.0;
   const implementationFit = clamp01(result.implementationFit);
-  const finalRank = clamp01(0.30 * classFit + 0.70 * implementationFit);
+  const minFit = PATTERN_MIN_IMPL_FIT[detectedPattern.patternId];
+  const belowMinFit = minFit !== undefined && implementationFit < minFit;
+  const finalRank = belowMinFit ? 0 : clamp01(0.30 * classFit + 0.70 * implementationFit);
 
   return {
     patternId:           detectedPattern.patternId,
@@ -81,7 +90,8 @@ function rankPattern(detectedPattern, sourceText) {
     implementationFit,
     finalRank,
     evidence: { fired: result.fired, missed: result.missed },
-    hasEvidenceRules: result.hasEvidenceRules
+    hasEvidenceRules: result.hasEvidenceRules,
+    suppressedByMinFit: belowMinFit || false
   };
 }
 

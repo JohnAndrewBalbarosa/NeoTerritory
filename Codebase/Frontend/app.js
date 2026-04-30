@@ -564,54 +564,206 @@ async function submitAnalysis(event) {
   els.analyzeBtn.disabled = true;
   const originalLabel = els.analyzeBtn.textContent;
   els.analyzeBtn.textContent = 'Running...';
-  setStatus('busy', 'Running analysis', 'Spawning microservice...');
+  setStatus('busy', 'Analyzing…', 'Spawning microservice…');
+
+  let body;
+  if (file) {
+    body = new FormData();
+    body.append('file', file);
+    body.append('filename', filename);
+  } else {
+    body = JSON.stringify({ code, filename });
+  }
+
+  const headers = { Accept: 'text/event-stream' };
+  if (!(body instanceof FormData)) headers['Content-Type'] = 'application/json';
+  if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+
+  let pendingId = null;
+  let finalRanking = null;
+  let finalSuspectedStructures = [];
+  let aiItemCount = 0;
+  let totalPatterns = 0;
 
   try {
-    let body;
-    if (file) {
-      body = new FormData();
-      body.append('file', file);
-      body.append('filename', filename);
-    } else {
-      body = JSON.stringify({ code, filename });
+    const response = await fetch('/api/analyze', { method: 'POST', headers, body });
+
+    if (!response.ok) {
+      // Non-SSE error (e.g. 400 before headers switch, 401)
+      const errData = await response.json().catch(() => ({}));
+      if (response.status === 401) { handleSignOut(); }
+      throw new Error(errData.error || `HTTP ${response.status}`);
     }
-    const run = await apiFetch('/api/analyze', { method: 'POST', body });
-    state.sessionRanAnalyze = true;
-    const sourceText = run.sourceText || code;
-    if (run.sourceText) els.codeInput.value = run.sourceText;
-    if (run.sourceName) els.filenameInput.value = run.sourceName;
 
-    renderRun({
-      runId: run.runId || null,
-      sourceName: run.sourceName,
-      sourceText,
-      detectedPatterns: run.detectedPatterns || [],
-      annotations: run.annotations || [],
-      ranking: run.ranking || null,
-      classUsageBindings: run.classUsageBindings || {},
-      classUsageBindingSource: run.classUsageBindingSource || 'heuristic',
-      suspectedStructures: run.suspectedStructures || [],
-      noPatternsDetected: Boolean(run.noPatternsDetected),
-      aiAvailable: Boolean(run.aiAvailable),
-      summary: run.summary || ''
-    });
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
 
-    const patternCount = (run.detectedPatterns || []).length;
-    const commentCount = (run.annotations || []).length;
-    const verdict = run.ranking?.verdict || 'no_clear_pattern';
-    setStatus('ok', 'Analysis ready (unsaved)',
-      `${patternCount} pattern(s), ${commentCount} comment(s). Verdict: ${verdict}.`);
+    const parseSSEChunk = (chunk) => {
+      buf += chunk;
+      const parts = buf.split('\n\n');
+      buf = parts.pop(); // last (possibly incomplete) segment stays in buf
+      for (const part of parts) {
+        if (!part.trim()) continue;
+        let eventName = 'message';
+        let dataLine = '';
+        for (const line of part.split('\n')) {
+          if (line.startsWith('event:')) eventName = line.slice(6).trim();
+          else if (line.startsWith('data:')) dataLine = line.slice(5).trim();
+        }
+        if (!dataLine) continue;
+        let payload;
+        try { payload = JSON.parse(dataLine); } catch { continue; }
+        handleSSEEvent(eventName, payload);
+      }
+    };
 
-    if (run.pendingId) {
-      const userResolvedPattern = await promptAmbiguity(run.pendingId, run.ranking, run.sourceName);
-      promptSaveRun(run.pendingId, run.sourceName, patternCount, commentCount, userResolvedPattern);
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      parseSSEChunk(decoder.decode(value, { stream: true }));
     }
+    // flush any trailing buffer
+    if (buf.trim()) parseSSEChunk('\n\n');
+
   } catch (err) {
     setStatus('error', 'Analysis failed', err.message);
   } finally {
     els.analyzeBtn.disabled = false;
     els.analyzeBtn.textContent = originalLabel;
   }
+
+  function handleSSEEvent(name, payload) {
+    if (name === 'structural') {
+      state.sessionRanAnalyze = true;
+      totalPatterns = (payload.detectedPatterns || []).length;
+      const sourceText = payload.sourceText || code;
+      if (payload.sourceText) els.codeInput.value = payload.sourceText;
+      if (payload.sourceName) els.filenameInput.value = payload.sourceName;
+
+      renderRun({
+        sourceName: payload.sourceName || filename,
+        sourceText,
+        detectedPatterns: payload.detectedPatterns || [],
+        annotations: [],
+        ranking: null,
+        classUsageBindings: {},
+        classUsageBindingSource: 'heuristic',
+        suspectedStructures: [],
+        noPatternsDetected: Boolean(payload.noPatternsDetected),
+        aiAvailable: state.aiAvailable || false
+      });
+
+      const aiMsg = state.aiAvailable
+        ? `${totalPatterns} pattern(s) found — AI commentary in progress…`
+        : `${totalPatterns} pattern(s) found`;
+      setStatus('busy', 'Structural done', aiMsg);
+
+    } else if (name === 'ranking') {
+      finalRanking = payload;
+      if (state.currentRun) {
+        state.currentRun.ranking = payload;
+        finalSuspectedStructures = buildClientSuspectedStructures(
+          state.currentRun.detectedPatterns || [], payload);
+        state.currentRun.suspectedStructures = finalSuspectedStructures;
+        renderSuspectedStructures(state.currentRun);
+        renderPatternCards(
+          state.currentRun.detectedPatterns || [],
+          payload,
+          null,
+          state.currentRun.classUsageBindings || {},
+          state.currentRun.classUsageBindingSource || 'heuristic'
+        );
+      }
+
+    } else if (name === 'binding') {
+      if (state.currentRun) {
+        state.currentRun.classUsageBindings = payload.classUsageBindings || {};
+        state.currentRun.classUsageBindingSource = 'heuristic';
+        renderClassBindings(state.currentRun.classUsageBindings, 'heuristic');
+        // Re-render source view with updated usage annotations
+        const allAnns = buildAllAnnotations(state.currentRun);
+        renderSourceView(state.currentRun.sourceText || '', allAnns);
+      }
+
+    } else if (name === 'ai_item') {
+      aiItemCount++;
+      setStatus('busy', 'AI in progress',
+        `AI commentary: ${aiItemCount}/${totalPatterns} pattern(s) done…`);
+
+    } else if (name === 'complete') {
+      pendingId = payload.pendingId || null;
+      if (state.currentRun) {
+        state.currentRun.annotations = payload.annotations || [];
+        state.currentRun.suspectedStructures = payload.suspectedStructures || [];
+        state.currentRun.ranking = payload.ranking || finalRanking;
+        state.currentRun.aiAvailable = Boolean(payload.aiAvailable);
+        state.currentRun.aiByPattern = payload.aiByPattern || [];
+      }
+
+      // Re-render with full annotations now that AI is done
+      const run = state.currentRun;
+      if (run) {
+        const allAnns = buildAllAnnotations(run);
+        renderSourceView(run.sourceText || '', allAnns);
+        renderSuspectedStructures(run);
+        renderPatternCards(
+          run.detectedPatterns || [],
+          run.ranking || null,
+          null,
+          run.classUsageBindings || {},
+          run.classUsageBindingSource || 'heuristic'
+        );
+      }
+
+      const patternCount = (run && run.detectedPatterns || []).length;
+      const commentCount = (payload.annotations || []).length;
+      const verdict = (payload.ranking || finalRanking)?.verdict || 'no_clear_pattern';
+      setStatus('ok', 'Analysis ready (unsaved)',
+        `${patternCount} pattern(s), ${commentCount} comment(s). Verdict: ${verdict}.`);
+
+      if (pendingId && run) {
+        promptAmbiguity(pendingId, payload.ranking || finalRanking, run.sourceName)
+          .then(userResolvedPattern => {
+            promptSaveRun(pendingId, run.sourceName, patternCount, commentCount, userResolvedPattern);
+          });
+      }
+
+    } else if (name === 'error') {
+      setStatus('error', 'Analysis failed', payload.error || 'Unknown error');
+    }
+  }
+}
+
+// Build combined annotations for source view (AI annotations + usage annotations).
+function buildAllAnnotations(run) {
+  const baseAnns = run.annotations || [];
+  const usageAnns = synthesizeUsageAnnotations(
+    run.classUsageBindings || {},
+    run.detectedPatterns || [],
+    run.suspectedStructures || [],
+    (run.ranking && run.ranking.thresholds) || null
+  );
+  return [...baseAnns, ...usageAnns];
+}
+
+// Mirrors buildSuspectedStructures() from analysis.js so the frontend can
+// render the structures section immediately after ranking arrives (before complete).
+function buildClientSuspectedStructures(detectedPatterns, ranking) {
+  return (ranking.winners || []).map(w => {
+    const det = detectedPatterns.find(p =>
+      p.patternId === w.patternId && p.className === w.className) || {};
+    return {
+      className:         w.className,
+      patternId:         w.patternId,
+      patternName:       det.patternName || w.patternId,
+      patternFamily:     det.patternFamily || (w.patternId.split('.')[0] || ''),
+      finalRank:         w.finalRank,
+      implementationFit: w.implementationFit,
+      evidence:          w.evidence,
+      rivals:            (ranking.perClassRivals || {})[w.className] || []
+    };
+  });
 }
 
 function renderLegend(detectedPatterns) {
@@ -931,14 +1083,7 @@ function renderRun(run) {
   state.currentRun = run;
   els.resultsPanel.hidden = false;
   const patternCount = (run.detectedPatterns || []).length;
-  const baseAnns = run.annotations || [];
-  const usageAnns = synthesizeUsageAnnotations(
-    run.classUsageBindings || {},
-    run.detectedPatterns || [],
-    run.suspectedStructures || [],
-    (run.ranking && run.ranking.thresholds) || null
-  );
-  const allAnns = [...baseAnns, ...usageAnns];
+  const allAnns = buildAllAnnotations(run);
   const annCount = allAnns.length;
   els.resultsSummary.textContent =
     `${escapeHtml(run.sourceName || 'snippet.cpp')} • ${patternCount} pattern(s) • ${annCount} comment(s)`;
@@ -955,6 +1100,108 @@ function renderRun(run) {
     run.classUsageBindingSource || 'heuristic'
   );
   renderClassBindings(run.classUsageBindings || {}, run.classUsageBindingSource || 'heuristic');
+  renderGdbPanel(run);
+}
+
+/* GDB panel — shown below pattern cards. Allows running the source with GDB
+   and displays queue position while waiting. */
+let gdbPollInterval = null;
+
+function renderGdbPanel(run) {
+  let host = document.getElementById('gdb-panel');
+  if (!host) {
+    host = document.createElement('div');
+    host.id = 'gdb-panel';
+    host.style.cssText = 'margin-top:1.5rem;padding:1rem;border:1px solid #333;border-radius:8px;background:#1a1a2e';
+    els.resultsPanel.appendChild(host);
+  }
+
+  const sourceText = run.sourceText || '';
+  const sourceName = run.sourceName || 'prog.cpp';
+
+  host.innerHTML = `
+    <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <strong style="color:#a78bfa">Run with GDB</strong>
+      <button id="gdb-run-btn" style="padding:.3rem .8rem;border-radius:4px;border:1px solid #6d28d9;background:#2d1b69;color:#e9d5ff;cursor:pointer">
+        Run &amp; Debug
+      </button>
+      <span id="gdb-status" style="color:#9ca3af;font-size:.85rem"></span>
+    </div>
+    <div id="gdb-output" style="margin-top:.75rem;display:none"></div>
+  `;
+
+  document.getElementById('gdb-run-btn').addEventListener('click', async () => {
+    if (gdbPollInterval) { clearInterval(gdbPollInterval); gdbPollInterval = null; }
+    const btn = document.getElementById('gdb-run-btn');
+    const statusEl = document.getElementById('gdb-status');
+    const outputEl = document.getElementById('gdb-output');
+    btn.disabled = true;
+    statusEl.textContent = 'Submitting…';
+    outputEl.style.display = 'none';
+
+    try {
+      const res = await apiFetch('/api/gdb/run', {
+        method: 'POST',
+        body: JSON.stringify({ code: sourceText, filename: sourceName })
+      });
+      statusEl.textContent = res.queuePosition > 0
+        ? `Position ${res.queuePosition} in queue`
+        : 'Running…';
+      pollGdbJob(res.jobId, btn, statusEl, outputEl);
+    } catch (err) {
+      statusEl.textContent = `Error: ${err.message}`;
+      btn.disabled = false;
+    }
+  });
+}
+
+function pollGdbJob(jobId, btn, statusEl, outputEl) {
+  gdbPollInterval = setInterval(async () => {
+    try {
+      const job = await apiFetch(`/api/gdb/job/${jobId}`);
+      if (job.status === 'queued') {
+        statusEl.textContent = `Position ${job.queuePosition} in queue`;
+      } else if (job.status === 'running') {
+        statusEl.textContent = 'GDB: Running…';
+      } else {
+        clearInterval(gdbPollInterval);
+        gdbPollInterval = null;
+        btn.disabled = false;
+        if (job.status === 'complete' || job.status === 'failed') {
+          displayGdbResult(job.result, statusEl, outputEl);
+        }
+      }
+    } catch (err) {
+      clearInterval(gdbPollInterval);
+      gdbPollInterval = null;
+      btn.disabled = false;
+      statusEl.textContent = `Poll error: ${err.message}`;
+    }
+  }, 2000);
+}
+
+function displayGdbResult(result, statusEl, outputEl) {
+  if (!result) { statusEl.textContent = 'No result'; return; }
+  if (result.error) { statusEl.textContent = `Failed: ${result.error}`; return; }
+
+  const compiled = result.compiledOk;
+  statusEl.textContent = compiled
+    ? `Done — exit ${result.exitCode ?? '?'} (${result.runtimeMs}ms)`
+    : 'Compile failed';
+
+  outputEl.style.display = 'block';
+  const pre = (text) => `<pre style="margin:0;white-space:pre-wrap;word-break:break-all;font-size:.8rem;color:#d1d5db">${escapeHtml(String(text || ''))}</pre>`;
+
+  if (!compiled) {
+    outputEl.innerHTML = `<div style="color:#f87171;margin-bottom:.5rem">Compile errors:</div>${pre(result.compileStderr)}`;
+    return;
+  }
+
+  let html = '';
+  if (result.stdout) html += `<div style="color:#86efac;margin-bottom:.25rem">stdout:</div>${pre(result.stdout)}`;
+  if (result.backtrace) html += `<div style="color:#fbbf24;margin-top:.5rem;margin-bottom:.25rem">Backtrace:</div>${pre(result.backtrace)}`;
+  if (!html) html = `<div style="color:#9ca3af">Program exited cleanly (exit ${result.exitCode}).</div>`;
+  outputEl.innerHTML = html;
 }
 
 /* No-pattern banner — single, file-scoped message rendered ABOVE the source view

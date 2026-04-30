@@ -6,7 +6,9 @@ const USER_KEY = 'nt_user';
 const state = {
   token: localStorage.getItem(TOKEN_KEY) || null,
   user: (() => { try { return JSON.parse(localStorage.getItem(USER_KEY) || 'null'); } catch { return null; } })(),
-  charts: {}
+  charts: {},
+  runDrawerRequestId: 0,
+  runDrawerAbort: null
 };
 
 const els = {
@@ -280,10 +282,19 @@ async function openUserDrawer(userId, username) {
 }
 
 async function openRunDrawer(runId) {
+  state.runDrawerRequestId += 1;
+  const requestId = state.runDrawerRequestId;
+  if (state.runDrawerAbort) state.runDrawerAbort.abort();
+  const controller = new AbortController();
+  state.runDrawerAbort = controller;
+  const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+  els.runDrawerTitle.textContent = 'Run detail';
   els.runDrawerBody.innerHTML = '<div class="empty-state">Loading...</div>';
   els.runDrawer.hidden = false;
   try {
-    const data = await apiFetch(`/api/admin/runs/${runId}`);
+    const data = await apiFetch(`/api/admin/runs/${runId}`, { signal: controller.signal });
+    if (requestId !== state.runDrawerRequestId) return;
     els.runDrawerTitle.textContent = `Run · ${data.sourceName}`;
     const patterns = (data.analysis && data.analysis.detectedPatterns) || [];
     const ranking = (data.analysis && data.analysis.ranking) || [];
@@ -312,8 +323,24 @@ async function openRunDrawer(runId) {
       </div>
     `;
   } catch (err) {
-    els.runDrawerBody.innerHTML = `<div class="empty-state">${escapeHtml(err.message)}</div>`;
+    if (requestId !== state.runDrawerRequestId) return;
+    const message = err.name === 'AbortError'
+      ? 'Run detail took too long to load. Close this panel or pick another run.'
+      : err.message;
+    els.runDrawerBody.innerHTML = `<div class="empty-state">${escapeHtml(message)}</div>`;
+  } finally {
+    clearTimeout(timeoutId);
+    if (state.runDrawerRequestId === requestId) state.runDrawerAbort = null;
   }
+}
+
+function closeRunDrawer() {
+  state.runDrawerRequestId += 1;
+  if (state.runDrawerAbort) {
+    state.runDrawerAbort.abort();
+    state.runDrawerAbort = null;
+  }
+  els.runDrawer.hidden = true;
 }
 
 function renderStars(value, max = 5) {
@@ -390,10 +417,13 @@ function bind() {
     window.location.href = '/';
   });
   els.drawerCloseBtn.addEventListener('click', () => { els.userDrawer.hidden = true; });
-  els.runDrawerCloseBtn.addEventListener('click', () => { els.runDrawer.hidden = true; });
+  els.runDrawerCloseBtn.addEventListener('click', closeRunDrawer);
   [els.userDrawer, els.runDrawer].forEach(drawer => {
     drawer.addEventListener('click', (e) => {
-      if (e.target === drawer) drawer.hidden = true;
+      if (e.target === drawer) {
+        if (drawer === els.runDrawer) closeRunDrawer();
+        else drawer.hidden = true;
+      }
     });
   });
 }
