@@ -4,8 +4,21 @@
   "pattern_name": "Proxy",
   "enabled": true,
   "lexeme_identifiers": {
-    "forwarding":   ["->"],
-    "real_member":  ["m_real", "real", "target", "subject"]
+    "forwarding":       ["->", "."],
+    "real_member":      ["m_real", "real", "target", "subject",
+                         "m_subject", "realSubject_", "impl_", "m_impl",
+                         "real_subject_", "subject_", "m_service",
+                         "service_", "resource_", "m_resource"],
+    "lazy_init_ops":    ["make_unique", "make_shared", "std::make_unique",
+                         "std::make_shared", "unique_ptr", "shared_ptr",
+                         "new", "nullptr"],
+    "access_guard":     ["nullptr", "if", "!",
+                         "mutex", "lock_guard", "unique_lock",
+                         "std::mutex", "std::lock_guard",
+                         "cache_", "cached_", "loaded_", "initialized_"],
+    "proxy_methods":    ["request", "access", "get", "load", "check",
+                         "fetch", "acquire", "release", "lock", "unlock",
+                         "authorize", "authenticate", "log", "cache"]
   },
   "ordered_checks": [
     {
@@ -49,5 +62,59 @@
       "expected_kind": "Punctuation",
       "expected_lexeme_any_of": ["("]
     }
-  ]
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "real_subject_member",
+        "shape_regex": "\\b(\\w+\\s*\\*|(std::)?(unique_ptr|shared_ptr)\\s*<[^>]+>)\\s*(m_real|real_?|m_subject|subject_?|m_impl|impl_?|m_resource|resource_?|m_service|service_?)\\s*;",
+        "weight": 0.55,
+        "describe": "Proxy holds a pointer/smart-pointer to the real subject"
+      },
+      {
+        "id": "lazy_init_check",
+        "shape_regex": "if\\s*\\(\\s*!?\\s*(m_real|real_?|m_subject|subject_?|m_impl|impl_?|loaded_|cached_|initialized_)\\s*\\)\\s*\\{?[\\s\\S]{0,200}(=\\s*(std::)?make_(unique|shared)|=\\s*new\\b|->|\\.)",
+        "weight": 0.7,
+        "describe": "Lazy initialization guard — canonical Virtual Proxy"
+      },
+      {
+        "id": "guarded_forward_call",
+        "shape_regex": "if\\s*\\([^)]+\\)\\s*\\{?[\\s\\S]{0,200}(m_real|real_?|m_subject|subject_?|m_impl|impl_?)\\s*->\\s*\\w+\\s*\\(",
+        "weight": 0.55,
+        "describe": "Forwarding to real subject behind an access/check guard — Protection/Smart Proxy"
+      },
+      {
+        "id": "mutex_guarded_access",
+        "shape_regex": "(std::)?(lock_guard|unique_lock|scoped_lock)\\s*<[^>]*>[\\s\\S]{0,120}(m_real|real_?|m_subject|subject_?|m_impl|impl_?)\\s*->",
+        "weight": 0.5,
+        "describe": "Mutex-guarded access to real subject — Synchronization Proxy"
+      },
+      {
+        "id": "cache_member_then_forward",
+        "shape_regex": "\\b(cache_?|cached_?|m_cache)\\b[\\s\\S]{0,200}(m_real|real_?|m_subject|m_impl|impl_?)\\s*->",
+        "weight": 0.5,
+        "describe": "Cache member used alongside real-subject delegation — Cache Proxy"
+      }
+    ],
+    "expected_collaborators": [
+      {
+        "id": "shares_interface_override",
+        "shape_regex": "\\bvirtual\\s+\\w+[\\s\\S]{0,80}override\\b",
+        "weight": 0.3,
+        "describe": "Overrides the same interface as the real subject"
+      }
+    ],
+    "global_functions": [],
+    "negative_signals": [
+      {
+        "id": "no_real_subject_member",
+        "shape_regex": "class\\s+{class_name}\\s*[:\\{][\\s\\S]{0,1200}\\}(?![\\s\\S]*\\b(m_real|real_?|m_subject|subject_?|m_impl|impl_?)\\b)",
+        "weight": -0.4,
+        "describe": "No real-subject-shaped member found — unlikely a Proxy"
+      }
+    ]
+  },
+
+  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
 }

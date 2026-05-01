@@ -5,16 +5,28 @@
   "pattern_role": "concrete",
   "enabled": true,
   "lexeme_identifiers": {
-    "policy_call":   ["->", "strategy_", "policy_", "algorithm_"]
+    "policy_call":          ["->", "strategy_", "policy_", "algorithm_", "behavior_", "behaviour_"],
+    "virtual_interface":    ["override", "virtual", "final"],
+    "execution_methods":    ["execute", "perform", "apply", "run", "sort",
+                             "process", "calculate", "compute", "handle",
+                             "evaluate", "validate", "compress", "encode",
+                             "decode", "search", "filter", "transform"],
+    "smart_storage":        ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                             "std::shared_ptr", "make_unique", "make_shared",
+                             "std::make_unique", "std::make_shared"],
+    "functional_strategy":  ["std::function", "function", "std::bind", "bind",
+                             "std::mem_fn", "mem_fn", "std::invoke", "invoke",
+                             "std::ref", "std::placeholders", "_1", "_2", "_3"],
+    "inheritance_markers":  ["public", "protected", "private"]
   },
   "ordered_checks": [
-    { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
-    { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "strategy_concrete_class" },
-    { "id": "inheritance_colon", "expected_kind": "Punctuation", "expected_lexeme_any_of": [":"], "document_as": "strategy_inheritance" },
-    { "id": "access_specifier", "expected_kind": "Keyword", "expected_lexeme_any_of": ["public", "protected", "private"] },
-    { "id": "base_class", "expected_kind": "Identifier", "capture_as": "base_class", "document_as": "strategy_base_class" },
-    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
-    { "id": "override_method", "expected_kind": "Identifier", "capture_as": "override_method", "document_as": "strategy_override_method" }
+    { "id": "class_introducer",   "expected_kind": "Keyword",      "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",         "expected_kind": "Identifier",   "capture_as": "class_name",    "document_as": "strategy_concrete_class" },
+    { "id": "inheritance_colon",  "expected_kind": "Punctuation",  "expected_lexeme_any_of": [":"], "document_as": "strategy_inheritance" },
+    { "id": "access_specifier",   "expected_kind": "Keyword",      "expected_lexeme_any_of": ["public", "protected", "private"] },
+    { "id": "base_class",         "expected_kind": "Identifier",   "capture_as": "base_class",    "document_as": "strategy_base_class" },
+    { "id": "open_class_brace",   "expected_kind": "Punctuation",  "expected_lexeme_any_of": ["{"] },
+    { "id": "override_method",    "expected_kind": "Identifier",   "capture_as": "override_method", "document_as": "strategy_override_method" }
   ],
 
   "implementation_template": {
@@ -24,18 +36,55 @@
         "shape_regex": "class\\s+{class_name}[\\s\\S]{0,200}\\{[\\s\\S]{0,1000}\\boverride\\b",
         "weight": 1.0,
         "describe": "Body contains `override` specifier — strong concrete-strategy signal"
+      },
+      {
+        "id": "execution_method_override",
+        "shape_regex": "\\b(execute|perform|apply|run|sort|process|calculate|compute|handle|evaluate|validate|transform)\\s*\\([^)]*\\)\\s*(const\\s*)?\\s*override",
+        "weight": 0.8,
+        "describe": "Override of a canonical execution-named method — classic concrete strategy"
+      },
+      {
+        "id": "functional_strategy_lambda",
+        "shape_regex": "std::function\\s*<[^>]+>\\s*(strategy_|policy_|algorithm_|behavior_)\\s*=\\s*\\[",
+        "weight": 0.5,
+        "describe": "std::function member named strategy_/policy_ assigned a lambda — functional-strategy concrete"
       }
     ],
     "expected_collaborators": [
       {
         "id": "constructed_via_make_unique",
         "shape_regex": "make_unique\\s*<\\s*{class_name}\\s*>",
-        "weight": 0.6,
+        "weight": 0.7,
         "describe": "Concrete strategy is created via make_unique<{class_name}>()"
+      },
+      {
+        "id": "constructed_via_make_shared",
+        "shape_regex": "make_shared\\s*<\\s*{class_name}\\s*>",
+        "weight": 0.6,
+        "describe": "Concrete strategy is created via make_shared<{class_name}>()"
+      },
+      {
+        "id": "context_set_strategy_call",
+        "shape_regex": "\\b(setStrategy|set_strategy|setAlgorithm|set_algorithm|setPolicy|set_policy|inject|setHandler|setExecutor)\\s*\\(",
+        "weight": 0.6,
+        "describe": "Setter used to inject this concrete strategy into a context"
       }
     ],
-    "negative_signals": []
+    "negative_signals": [
+      {
+        "id": "no_override_keyword",
+        "shape_regex": "class\\s+{class_name}[\\s\\S]{0,400}\\{(?![\\s\\S]*\\boverride\\b)[\\s\\S]{0,800}\\}",
+        "weight": -0.5,
+        "describe": "Derived class has no `override` anywhere — likely simple polymorphism, not concrete strategy"
+      },
+      {
+        "id": "product_entity_naming",
+        "shape_regex": "class\\s+(Car|Truck|Bus|Bike|Vehicle|Animal|Dog|Cat|Shape|Circle|Square|Triangle|Rectangle|Color|Item|Product|Node|Leaf|Employee|User|Account)\\s*:",
+        "weight": -0.8,
+        "describe": "Class has product/entity name — this is a polymorphic entity, not a concrete Strategy"
+      }
+    ]
   },
 
-  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+  "ranking_weights": { "class_fit": 0.35, "implementation_fit": 0.65 }
 }

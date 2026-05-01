@@ -88,9 +88,9 @@ interface ClaimResult {
 }
 
 function claimSeatTransaction(username: string): ClaimResult {
-  // Atomic claim: only succeeds if seat exists AND claimed_at IS NULL.
+  // Allow claiming if: seat is unclaimed OR previous claim is older than 4 hours (stale session).
   const update = db
-    .prepare(`UPDATE users SET claimed_at = datetime('now') WHERE username = ? AND claimed_at IS NULL`)
+    .prepare(`UPDATE users SET claimed_at = datetime('now') WHERE username = ? AND (claimed_at IS NULL OR claimed_at < datetime('now', '-4 hours'))`)
     .run(username);
   if (update.changes > 0) return { ok: true };
   const existing = db

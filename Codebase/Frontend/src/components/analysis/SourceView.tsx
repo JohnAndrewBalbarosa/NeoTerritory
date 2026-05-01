@@ -95,7 +95,7 @@ function buildLineToAnnotations(
     const chosen = linePatternOverrides[lineNo];
     if (chosen) {
       const kept = anns.filter(a => patternFromAnnotation(a) === chosen);
-      filtered.set(lineNo, kept.length ? kept : anns);
+      filtered.set(lineNo, kept);
     } else {
       filtered.set(lineNo, anns);
     }
@@ -133,6 +133,13 @@ function computeClassDominance(
     return { dominantKey: winners[0], color: colorFor(winners[0]) };
   }
   return { dominantKey: null, color: AMBIGUOUS_COLOR };
+}
+
+// For annotated lines that fall outside every class scope (e.g. int main, global functions):
+// single-pattern → that pattern's solid color; multiple patterns → AMBIGUOUS_COLOR.
+function computeStandaloneColor(anns: Annotation[]): PatternColor {
+  const keys = new Set(anns.map(a => patternFromAnnotation(a)));
+  return keys.size === 1 ? colorFor([...keys][0]) : AMBIGUOUS_COLOR;
 }
 
 // Blend ratio for a single line: 0 = solid dominant, 1 = full grey.
@@ -203,7 +210,11 @@ function buildRows(
 }
 
 export default function SourceView({ sourceText, annotations, detectedPatterns, onLineClick }: SourceViewProps) {
-  const { linePatternOverrides, setLinePatternOverride, clearLinePatternOverride } = useAppStore();
+  const {
+    linePatternOverrides,
+    setLinePatternOverride, clearLinePatternOverride,
+    bulkSetLinePatternOverrides, bulkClearLinePatternOverrides
+  } = useAppStore();
 
   const { rows, scopeDominanceMap } = useMemo(
     () => buildRows(sourceText, annotations, detectedPatterns, linePatternOverrides),
@@ -222,12 +233,29 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   }
 
   function handleResolve(line: number, patternKey: string): void {
-    setLinePatternOverride(line, patternKey);
+    const scope = rows.find(r => r.lineNo === line)?.scope ?? null;
+    if (scope) {
+      const bulk: Record<number, string> = {};
+      for (let l = scope.min; l <= scope.max; l++) {
+        const r = rows.find(r => r.lineNo === l);
+        if (r && r.rawAnns.length > 0) bulk[l] = patternKey;
+      }
+      bulkSetLinePatternOverrides(bulk);
+    } else {
+      setLinePatternOverride(line, patternKey);
+    }
     setPopover(null);
   }
 
   function handleUnresolve(line: number): void {
-    clearLinePatternOverride(line);
+    const scope = rows.find(r => r.lineNo === line)?.scope ?? null;
+    if (scope) {
+      const scopeLines: number[] = [];
+      for (let l = scope.min; l <= scope.max; l++) scopeLines.push(l);
+      bulkClearLinePatternOverrides(scopeLines);
+    } else {
+      clearLinePatternOverride(line);
+    }
     setPopover(null);
   }
 
@@ -237,11 +265,12 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
         {rows.map(row => {
           const num           = String(row.lineNo).padStart(width, ' ');
           const hasAnnotation = row.rawAnns.length > 0;
-          const dominance     = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
-          const blendRatio    = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
-          const baseColor     = dominance?.color ?? null;
+          const dominance       = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
+          const standaloneColor = (!dominance && row.anns.length > 0) ? computeStandaloneColor(row.anns) : null;
+          const blendRatio      = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
+          const baseColor       = dominance?.color ?? standaloneColor;
           // Badge is always solid — never blended — so the class chip reads clearly.
-          const badgeColor    = dominance?.color ?? null;
+          const badgeColor      = dominance?.color ?? standaloneColor;
 
           const distinctPatternCount = hasAnnotation
             ? new Set(row.rawAnns.map(a => patternFromAnnotation(a))).size

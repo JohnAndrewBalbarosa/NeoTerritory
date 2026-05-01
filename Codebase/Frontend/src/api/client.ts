@@ -1,7 +1,8 @@
 import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
   ReviewSchema, AdminUser, AdminLogEntry, AdminReview, AdminOverview,
-  RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse
+  RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
+  SurveySummary, ComplexityData, F1Metrics
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -244,8 +245,41 @@ export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
 export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
   return apiFetch<{ reviews: AdminReview[] }>('/api/admin/reviews');
 }
-export async function fetchAdminLogs(limit = 80): Promise<{ logs: AdminLogEntry[] }> {
-  return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?limit=${limit}`);
+export async function fetchAdminLogs(
+  limit = 200,
+  opts?: { eventType?: string; username?: string; order?: 'asc' | 'desc' }
+): Promise<{ logs: AdminLogEntry[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (opts?.eventType) params.set('event_type', opts.eventType);
+  if (opts?.username)  params.set('username',   opts.username);
+  if (opts?.order)     params.set('order',       opts.order);
+  return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?${params}`);
+}
+export async function deleteAdminLogs(password: string): Promise<{ ok: boolean; deleted: number }> {
+  return apiFetch<{ ok: boolean; deleted: number }>('/api/admin/logs', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password })
+  });
+}
+export async function resetTesterSeats(opts?: { userIds?: number[]; offlineOnly?: boolean }): Promise<{ ok: boolean; reset: number }> {
+  const body = opts && (opts.userIds?.length || opts.offlineOnly)
+    ? JSON.stringify({ userIds: opts.userIds, offlineOnly: !!opts.offlineOnly })
+    : undefined;
+  return apiFetch<{ ok: boolean; reset: number }>('/api/admin/tester-seats/reset', {
+    method: 'POST',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body
+  });
+}
+export async function fetchAdminSurveySummary(): Promise<SurveySummary> {
+  return apiFetch<SurveySummary>('/api/admin/stats/survey-summary');
+}
+export async function fetchAdminComplexityData(): Promise<ComplexityData> {
+  return apiFetch<ComplexityData>('/api/admin/stats/complexity-data');
+}
+export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
+  return apiFetch<F1Metrics>('/api/admin/stats/f1-metrics');
 }
 
 // AI poll endpoint

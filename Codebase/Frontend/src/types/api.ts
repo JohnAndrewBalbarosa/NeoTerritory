@@ -107,9 +107,11 @@ export interface AdminUser {
   runCount?: number;
   lastRunAt?: string;
   created_at?: string;
+  last_active?: string;
 }
 
 export interface AdminLogEntry {
+  id: number;
   created_at: string;
   username?: string;
   event_type: string;
@@ -193,3 +195,58 @@ export interface AppStatus {
 }
 
 export type MsState = 'checking' | 'online' | 'offline';
+
+// ─── Admin analytics types ────────────────────────────────────────────────────
+
+export interface LikertMetric {
+  avg: number;
+  count: number;
+  distribution: number[];  // 5 elements: index 0 = rating 1, index 4 = rating 5
+}
+
+export interface SurveySummary {
+  perRun:       Record<string, LikertMetric>;
+  endOfSession: Record<string, LikertMetric>;
+}
+
+export interface ComplexityPoint {
+  runId:        number;
+  loc:          number;
+  patternCount: number;
+  totalTargets: number;
+  totalMs:      number;
+}
+
+export interface RegressionResult {
+  slope:          number;
+  intercept:      number;
+  r2:             number;
+  n:              number;
+  interpretation: string;
+}
+
+export interface ComplexityData {
+  points:     ComplexityPoint[];
+  regression: RegressionResult;
+}
+
+export interface F1Score {
+  precision: number;
+  recall:    number;
+  f1:        number;
+  tp:        number;
+  fp:        number;
+  fn:        number;
+}
+
+export interface PatternF1 extends F1Score {
+  pattern: string;
+}
+
+export interface F1Metrics {
+  overall:              F1Score;
+  perPattern:           PatternF1[];
+  userAccuracyAvg:      number | null;
+  likertF1Correlation:  number | null;
+  note:                 string;
+}

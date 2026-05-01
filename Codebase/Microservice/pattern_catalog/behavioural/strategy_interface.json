@@ -5,7 +5,22 @@
   "pattern_role": "interface",
   "enabled": true,
   "lexeme_identifiers": {
-    "policy_call":   ["->", "strategy_", "policy_", "algorithm_"]
+    "policy_call":          ["->", "strategy_", "policy_", "algorithm_", "behavior_", "behaviour_"],
+    "virtual_interface":    ["virtual", "= 0", "override", "final"],
+    "functional_strategy":  ["std::function", "function", "std::bind", "bind",
+                             "std::mem_fn", "mem_fn", "std::invoke", "invoke",
+                             "std::ref", "ref", "std::cref",
+                             "std::placeholders", "_1", "_2", "_3",
+                             "functional"],
+    "injection_methods":    ["setStrategy", "set_strategy", "setAlgorithm", "set_algorithm",
+                             "inject", "configure", "setPolicy", "set_policy",
+                             "setHandler", "set_handler", "setExecutor"],
+    "smart_storage":        ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                             "std::shared_ptr", "make_unique", "make_shared"],
+    "algorithm_names":      ["execute", "perform", "apply", "run", "sort",
+                             "process", "calculate", "compute", "handle",
+                             "evaluate", "validate", "compress", "encode",
+                             "decode", "search", "filter", "transform"]
   },
   "ordered_checks": [
     { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
@@ -23,31 +38,55 @@
         "shape_regex": ":\\s*public\\s+{class_name}\\b[\\s\\S]{0,400}\\boverride\\b",
         "weight": 0.7,
         "describe": "A concrete class derives from this interface and overrides a method"
+      },
+      {
+        "id": "std_function_as_strategy",
+        "shape_regex": "std::function\\s*<[^>]+>\\s*(strategy_|policy_|algorithm_|behavior_)",
+        "weight": 0.5,
+        "describe": "std::function member named strategy_/policy_/algorithm_ — functional strategy"
       }
     ],
     "expected_collaborators": [
       {
         "id": "context_holds_strategy",
         "shape_regex": "(unique_ptr|shared_ptr|{class_name}\\s*\\*)\\s*<?\\s*{class_name}\\s*>?",
-        "weight": 0.5,
+        "weight": 0.7,
         "describe": "A context class holds the strategy via pointer / smart pointer"
       },
       {
         "id": "set_strategy_setter",
-        "shape_regex": "\\b(set[A-Z]\\w*|inject[A-Z]\\w*)\\s*\\(\\s*(unique_ptr|shared_ptr|const)?",
-        "weight": 0.3,
-        "describe": "A setter / injector method named set... or inject..."
+        "shape_regex": "\\b(set[A-Z]\\w*|inject[A-Z]\\w*|setStrategy|setAlgorithm|setPolicy)\\s*\\(",
+        "weight": 0.6,
+        "describe": "Setter / injector method for swapping the strategy at runtime"
+      },
+      {
+        "id": "make_unique_strategy_creation",
+        "shape_regex": "make_unique\\s*<\\s*\\w+\\s*>\\s*\\(",
+        "weight": 0.4,
+        "describe": "Concrete strategy created via make_unique<ConcreteStrategy>()"
       }
     ],
     "negative_signals": [
       {
-        "id": "no_virtual_pure_marker",
-        "shape_regex": "class\\s+{class_name}[\\s\\S]{0,200}\\{[\\s\\S]{0,500}\\bvirtual\\b[\\s\\S]{0,200}=\\s*0",
-        "weight": 0.0,
-        "describe": "Confirms pure-virtual marker (= 0); zero-weight, used as evidence display only"
+        "id": "accessor_only_interface",
+        "shape_regex": "virtual\\s+[\\w:]+\\s+(label|name|getName|getType|getLabel|toString|type|kind|id|getId|getKind|getCategory|describe|description)\\s*\\(",
+        "weight": -0.7,
+        "describe": "Pure-virtual method is a name/label/type accessor — abstract product base class, NOT strategy"
+      },
+      {
+        "id": "no_context_class_in_file",
+        "shape_regex": "(setStrategy|setAlgorithm|setPolicy|set_strategy|inject\\w*Strategy|strategy_\\s*=|algorithm_\\s*=|unique_ptr\\s*<\\s*{class_name}|shared_ptr\\s*<\\s*{class_name})",
+        "weight": -0.5,
+        "describe": "No context injection or runtime strategy-swap signal found — likely plain polymorphism not Strategy"
+      },
+      {
+        "id": "product_class_naming",
+        "shape_regex": "class\\s+(Car|Truck|Bus|Bike|Vehicle|Animal|Dog|Cat|Shape|Circle|Square|Triangle|Rectangle|Color|Item|Product|Node|Leaf|Employee|User|Account)\\s*:",
+        "weight": -0.8,
+        "describe": "Inheriting classes have product/entity names — this is a polymorphic hierarchy, not a Strategy family"
       }
     ]
   },
 
-  "ranking_weights": { "class_fit": 0.35, "implementation_fit": 0.65 }
+  "ranking_weights": { "class_fit": 0.25, "implementation_fit": 0.75 }
 }

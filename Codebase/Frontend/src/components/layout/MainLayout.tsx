@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore, StudioTab } from '../../store/appState';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
@@ -57,7 +57,7 @@ function flashComment(id: string) {
 const TABS: Array<{ id: StudioTab; label: string }> = [
   { id: 'submit',     label: 'Submit' },
   { id: 'annotated',  label: 'Annotated Source' },
-  { id: 'ambiguous',  label: 'Ambiguous Review' }
+  { id: 'ambiguous',  label: 'Validate Patterns' }
 ];
 
 export default function MainLayout() {
@@ -88,6 +88,27 @@ export default function MainLayout() {
   const [review, setReview] = useState<ReviewState | null>(null);
   const [showSignout, setShowSignout] = useState(false);
   const [runRefreshSignal, setRunRefreshSignal] = useState(0);
+  const [retag, setRetag] = useState<{ className: string; candidates: string[] } | null>(null);
+
+  // Listen for retag-request events from PatternCards/ClassBindings/SourceView so any
+  // class- or class-line-related UI can re-open the picker without prop drilling.
+  useEffect(() => {
+    function onRetag(e: Event) {
+      const { className, candidates } = (e as CustomEvent<{ className: string; candidates: string[] }>).detail || {};
+      if (!className) return;
+      setRetag({ className, candidates: candidates || [] });
+    }
+    window.addEventListener('pattern:retag-request', onRetag);
+    return () => window.removeEventListener('pattern:retag-request', onRetag);
+  }, []);
+
+  function onRetagResolved(patternId: string | null) {
+    if (!retag) return;
+    if (patternId) {
+      useAppStore.getState().patchCurrentRun({ userResolvedPattern: patternId });
+    }
+    setRetag(null);
+  }
 
   function onAnalysisComplete(run: AnalysisRun) {
     const r = run as AnalyzeResponseLike;
@@ -211,6 +232,18 @@ export default function MainLayout() {
           sourceName={ambiguity.run.sourceName}
           onConfirm={onAmbiguityResolved}
           onSkip={() => onAmbiguityResolved(null)}
+        />
+      )}
+      {retag && useAppStore.getState().currentRun?.ranking && (
+        <AmbiguityModal
+          ranking={useAppStore.getState().currentRun!.ranking!}
+          sourceName={useAppStore.getState().currentRun!.sourceName}
+          onConfirm={onRetagResolved}
+          onSkip={() => onRetagResolved(null)}
+          candidatesOverride={retag.candidates}
+          title={`Tag pattern for ${retag.className}`}
+          detail={`Pick the design pattern that best matches ${retag.className}. Your choice replaces the current resolution and is persisted on the next save.`}
+          preselect={useAppStore.getState().currentRun?.userResolvedPattern || null}
         />
       )}
       {pendingSave && (

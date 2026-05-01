@@ -101,6 +101,7 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
           id="filename-input"
           type="text"
           value={filename}
+          maxLength={256}
           onChange={e => setFilename(e.target.value)}
           placeholder="snippet.cpp"
         />

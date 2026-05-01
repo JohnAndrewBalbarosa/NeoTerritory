@@ -57,6 +57,9 @@ export function initDb(): void {
   if (!columnExists('users', 'claimed_at')) {
     db.prepare(`ALTER TABLE users ADD COLUMN claimed_at TEXT`).run();
   }
+  if (!columnExists('users', 'last_active')) {
+    db.prepare(`ALTER TABLE users ADD COLUMN last_active TEXT`).run();
+  }
 
   db.prepare(`CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

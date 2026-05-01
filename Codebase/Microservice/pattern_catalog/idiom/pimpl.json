@@ -4,44 +4,116 @@
   "pattern_name": "Pimpl",
   "enabled": true,
   "lexeme_identifiers": {
-    "impl_member":   ["pImpl", "impl_", "d_ptr"],
-    "forward_decl":  ["class"]
+    "impl_member":        ["pImpl", "pimpl", "impl_", "d_ptr", "d", "m_impl",
+                           "m_d", "priv_", "private_impl", "mImpl", "m_pimpl",
+                           "impl", "Impl", "pPriv", "priv"],
+    "forward_decl":       ["class", "struct"],
+    "smart_holder":       ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                           "std::shared_ptr", "make_unique", "make_shared",
+                           "std::make_unique", "std::make_shared"],
+    "delegation_ops":     ["->", "."],
+    "raw_ptr_fallback":   ["new", "delete", "nullptr"],
+    "impl_naming_conv":   ["Impl", "Priv", "Private", "Internals", "Data",
+                           "Impl_", "_Impl", "Implementation", "Detail"]
   },
   "ordered_checks": [
-    { "id": "class_introducer", "expected_kind": "Keyword", "expected_lexeme_any_of": ["class", "struct"] },
-    { "id": "class_name", "expected_kind": "Identifier", "capture_as": "class_name", "document_as": "pimpl_outer_class" },
-    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
-    { "id": "inner_struct_keyword", "expected_kind": "Keyword", "expected_lexeme_any_of": ["struct"], "document_as": "pimpl_inner_struct_keyword" },
-    { "id": "impl_name", "expected_kind": "Identifier", "capture_as": "impl_name", "document_as": "pimpl_impl_forward_decl" },
-    { "id": "impl_semicolon", "expected_kind": "Punctuation", "expected_lexeme_any_of": [";"] },
-    { "id": "smart_pointer_holder", "expected_kind": "Identifier", "expected_lexeme_any_of": ["unique_ptr", "shared_ptr"], "document_as": "pimpl_holder" }
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "pimpl_outer_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "inner_struct_keyword",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["struct", "class"],
+      "document_as": "pimpl_inner_struct_keyword"
+    },
+    {
+      "id": "impl_name",
+      "expected_kind": "Identifier",
+      "capture_as": "impl_name",
+      "document_as": "pimpl_impl_forward_decl"
+    },
+    {
+      "id": "impl_semicolon",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": [";"]
+    },
+    {
+      "id": "smart_pointer_holder",
+      "expected_kind": "Identifier",
+      "expected_lexeme_any_of": ["unique_ptr", "shared_ptr"],
+      "document_as": "pimpl_holder"
+    }
   ],
 
   "implementation_template": {
     "callsites": [
       {
         "id": "pimpl_method_delegate",
-        "shape_regex": "{class_name}\\s*::\\s*\\w+\\s*\\([^)]*\\)\\s*\\{[^}]{0,200}pImpl\\s*->",
+        "shape_regex": "{class_name}\\s*::\\s*\\w+\\s*\\([^)]*\\)\\s*(const\\s*)?\\{[^}]{0,400}(pImpl|impl_|d_ptr|m_impl|d\\.)\\s*->",
         "weight": 1.0,
-        "describe": "Public method delegates to pImpl-> (canonical Pimpl)"
+        "describe": "Public method body delegates to pImpl-> — canonical Pimpl delegation"
+      },
+      {
+        "id": "unique_ptr_impl_member",
+        "shape_regex": "std::unique_ptr\\s*<\\s*(Impl|Priv|Private|Internals|Data|Implementation)\\s*>\\s*(pImpl|impl_|d_ptr|m_impl|d)\\s*;",
+        "weight": 0.9,
+        "describe": "unique_ptr<Impl> member with canonical pimpl naming"
+      },
+      {
+        "id": "make_unique_impl_in_ctor",
+        "shape_regex": "{class_name}\\s*\\([^)]*\\)\\s*:[^{]*\\b(pImpl|impl_|d_ptr|m_impl)\\s*\\(\\s*(std::)?make_unique\\s*<\\s*(Impl|Priv|Private|Implementation)",
+        "weight": 0.9,
+        "describe": "Constructor initializer uses make_unique<Impl>() for the pimpl pointer"
       }
     ],
     "expected_collaborators": [
       {
         "id": "out_of_line_impl_struct",
-        "shape_regex": "struct\\s+{class_name}\\s*::\\s*Impl\\s*\\{",
+        "shape_regex": "struct\\s+{class_name}\\s*::\\s*(Impl|Priv|Private|Implementation|Internals)\\s*\\{",
         "weight": 0.8,
-        "describe": "Out-of-line `struct {Class}::Impl { ... }` definition"
+        "describe": "Out-of-line `struct {Class}::Impl { ... }` definition in .cpp"
       },
       {
-        "id": "make_unique_impl_in_ctor",
-        "shape_regex": "{class_name}\\s*\\([^)]*\\)\\s*:\\s*pImpl\\s*\\(\\s*(make_unique|new)\\s*<?\\s*Impl",
-        "weight": 0.6,
-        "describe": "Constructor initializes pImpl with make_unique<Impl>() or new Impl"
+        "id": "defaulted_dtor_in_cpp",
+        "shape_regex": "{class_name}\\s*::\\s*~{class_name}\\s*\\(\\s*\\)\\s*=\\s*default",
+        "weight": 0.7,
+        "describe": "Defaulted destructor defined out-of-line — required for unique_ptr<incomplete type>"
+      },
+      {
+        "id": "raw_ptr_pimpl_ctor",
+        "shape_regex": "{class_name}\\s*\\([^)]*\\)\\s*:[^{]*\\b(pImpl|impl_|d_ptr|m_impl)\\s*\\(\\s*new\\s+(Impl|Priv|Private|Implementation)",
+        "weight": 0.5,
+        "describe": "Constructor initializes pimpl with raw `new Impl` (older style)"
       }
     ],
-    "negative_signals": []
+    "negative_signals": [
+      {
+        "id": "public_impl_members",
+        "shape_regex": "struct\\s+Impl\\s*\\{[^}]{0,600}\\bpublic\\b",
+        "weight": -0.4,
+        "describe": "Impl struct exposes public members — likely a plain nested struct, not a Pimpl"
+      },
+      {
+        "id": "no_delegation_arrow",
+        "shape_regex": "class\\s+{class_name}[\\s\\S]{0,800}(?!(pImpl|impl_|d_ptr|m_impl)\\s*->)",
+        "weight": -0.5,
+        "describe": "No delegation via impl pointer found — not a Pimpl pattern"
+      }
+    ]
   },
 
-  "ranking_weights": { "class_fit": 0.45, "implementation_fit": 0.55 }
+  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
 }

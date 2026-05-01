@@ -75,6 +75,20 @@ function ClassPopout({
         >
           {patternKey}
         </span>
+        <button
+          type="button"
+          className="ghost-btn class-popout-retag"
+          title={`Re-tag pattern for ${className}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            window.dispatchEvent(new CustomEvent('pattern:retag-request', {
+              detail: { className, candidates: [] }
+            }));
+            onClose();
+          }}
+        >
+          Tag pattern…
+        </button>
       </div>
       <div className="class-popout-summary">{rows.length} usage{rows.length === 1 ? '' : 's'}</div>
       <div className="pattern-row-list">

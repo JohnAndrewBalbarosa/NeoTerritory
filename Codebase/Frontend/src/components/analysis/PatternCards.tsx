@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DetectedPatternFull, AmbiguityRanking, PatternRankEntry,
   ClassUsageBinding, DocumentationTarget, UnitTestTarget
@@ -22,6 +22,20 @@ interface CardProps {
   taggedUsages: ClassUsageBinding[];
   classUsageBindingSource: 'heuristic' | 'microservice';
   onLineFlash?: (line: number) => void;
+  retagCandidates: string[];
+}
+
+// Top 5 ranked candidate patternIds. Used as the picker's option set when the
+// user retags a class outside the original ambiguity verdict.
+function topRankedCandidates(ranking: AmbiguityRanking | null): string[] {
+  return (ranking?.ranks || []).slice(0, 5).map(r => r.patternId);
+}
+
+function dispatchRetag(className: string, candidates: string[]): void {
+  if (!className) return;
+  window.dispatchEvent(new CustomEvent('pattern:retag-request', {
+    detail: { className, candidates }
+  }));
 }
 
 function RowButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
@@ -125,41 +139,76 @@ function TaggedUsagesSection({
 }
 
 function PatternCard(props: CardProps) {
-  const { pattern: p, rank, rankVerdict, resolved, taggedUsages, classUsageBindingSource, onLineFlash } = props;
+  const { pattern: p, rank, rankVerdict, resolved, taggedUsages, classUsageBindingSource, onLineFlash, retagCandidates } = props;
   const colour = colorFor(p.patternName || 'default');
   const declarationLine = p.documentationTargets?.[0]?.line || null;
   const sourceTag = classUsageBindingSource === 'microservice' ? 'microservice-bound' : 'heuristic';
+  const [expanded, setExpanded] = useState(false);
+
+  function onRetagClick(e: React.MouseEvent): void {
+    e.stopPropagation();
+    if (!p.className) return;
+    dispatchRetag(p.className, retagCandidates);
+  }
 
   return (
-    <div className="pattern-card" data-resolved={resolved ? 'true' : undefined}>
-      <div className="pattern-card-head">
-        <span className="pattern-badge" style={{ borderColor: colour.border, background: colour.bg, color: colour.text }}>
-          {p.patternName || p.patternId}
-        </span>
-        <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
-        {declarationLine && <span className="pattern-card-line">declared at line {declarationLine}</span>}
-      </div>
-      {rank && (
-        <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
-          <span>rank</span>
-          <div className="rank-bar-track">
-            <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
-          </div>
-          <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
-          {rank.hasImplementationTemplate
-            ? <span title="implementation_fit">impl {Math.floor((rank.implementationFit || 0) * 100)}%</span>
-            : <span title="no implementation_template authored yet">class-only</span>}
+    <div
+      className={`pattern-card ${expanded ? 'pattern-card--open' : 'pattern-card--collapsed'}`}
+      data-resolved={resolved ? 'true' : undefined}
+    >
+      <button
+        type="button"
+        className="pattern-card-toggle"
+        aria-expanded={expanded}
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div className="pattern-card-head">
+          <span className="pattern-badge" style={{ borderColor: colour.border, background: colour.bg, color: colour.text }}>
+            {p.patternName || p.patternId}
+          </span>
+          <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
+          {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
+          {p.className && (
+            <span
+              role="button"
+              tabIndex={0}
+              className="pattern-card-retag"
+              title={`Re-tag pattern for ${p.className}`}
+              onClick={onRetagClick}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onRetagClick(e as unknown as React.MouseEvent); }}
+            >
+              Tag pattern…
+            </span>
+          )}
+        </div>
+        <span className="pattern-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
+      </button>
+
+      {expanded && (
+        <div className="pattern-card-body">
+          {rank && (
+            <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
+              <span>rank</span>
+              <div className="rank-bar-track">
+                <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
+              </div>
+              <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
+              {rank.hasImplementationTemplate
+                ? <span title="implementation_fit">impl {Math.floor((rank.implementationFit || 0) * 100)}%</span>
+                : <span title="no implementation_template authored yet">class-only</span>}
+            </div>
+          )}
+          <FunctionsSection fns={p.unitTestTargets || []} onLineFlash={onLineFlash} />
+          <AnchorsSection docs={p.documentationTargets || []} onLineFlash={onLineFlash} />
+          <UsagesSection rank={rank} onLineFlash={onLineFlash} />
+          <TaggedUsagesSection
+            className={p.className || 'unknown'}
+            taggedUsages={taggedUsages}
+            sourceTag={sourceTag}
+            onLineFlash={onLineFlash}
+          />
         </div>
       )}
-      <FunctionsSection fns={p.unitTestTargets || []} onLineFlash={onLineFlash} />
-      <AnchorsSection docs={p.documentationTargets || []} onLineFlash={onLineFlash} />
-      <UsagesSection rank={rank} onLineFlash={onLineFlash} />
-      <TaggedUsagesSection
-        className={p.className || 'unknown'}
-        taggedUsages={taggedUsages}
-        sourceTag={sourceTag}
-        onLineFlash={onLineFlash}
-      />
     </div>
   );
 }
@@ -169,6 +218,7 @@ export default function PatternCards(props: PatternCardsProps) {
   if (!detectedPatterns.length) return <div id="pattern-cards" />;
   const ranksById = new Map<string, PatternRankEntry>();
   (ranking?.ranks || []).forEach(r => ranksById.set(r.patternId, r));
+  const retagCandidates = topRankedCandidates(ranking);
   return (
     <div id="pattern-cards" className="pattern-cards">
       {detectedPatterns.map(p => (
@@ -181,6 +231,7 @@ export default function PatternCards(props: PatternCardsProps) {
           taggedUsages={(p.className && classUsageBindings[p.className]) || []}
           classUsageBindingSource={classUsageBindingSource}
           onLineFlash={onLineFlash}
+          retagCandidates={retagCandidates}
         />
       ))}
     </div>

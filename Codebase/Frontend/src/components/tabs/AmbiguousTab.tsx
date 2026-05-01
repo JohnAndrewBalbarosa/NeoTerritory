@@ -1,191 +1,308 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { submitManualReview } from '../../api/client';
-import { Annotation } from '../../types/api';
+import { DetectedPatternFull, ClassUsageBinding } from '../../types/api';
 
-interface AmbiguousLine {
-  line: number;
-  excerpt: string;
-  candidates: string[];
+// ─── Tagged class row (TP / FP) ───────────────────────────────────────────────
+
+interface TaggedDecision { correct: boolean | null }
+
+interface TaggedRowProps {
+  pattern: DetectedPatternFull;
+  decision: TaggedDecision;
+  isSaved: boolean;
+  isSaving: boolean;
+  onDecide: (correct: boolean) => void;
+  onSave: () => void;
 }
 
-type ChoiceKind = 'pattern' | 'none' | 'other';
-interface RowDecision {
-  kind: ChoiceKind;
-  pattern: string | null;
-  other: string;
+function TaggedRow({ pattern, decision, isSaved, isSaving, onDecide, onSave }: TaggedRowProps) {
+  return (
+    <li className={`checklist-row ${isSaved ? 'is-saved' : ''}`}>
+      <div className="checklist-meta">
+        <strong className="checklist-classname">{pattern.className}</strong>
+        <span className="checklist-arrow">→</span>
+        <span className="checklist-pattern">{pattern.patternName}</span>
+      </div>
+      <div className="checklist-options">
+        <label className="checklist-chip">
+          <input
+            type="radio"
+            name={`tagged-${pattern.patternName}-${pattern.className}`}
+            checked={decision.correct === true}
+            onChange={() => onDecide(true)}
+            disabled={isSaved}
+          />
+          <span>Yes — correctly identified</span>
+        </label>
+        <label className="checklist-chip checklist-chip--fp">
+          <input
+            type="radio"
+            name={`tagged-${pattern.patternName}-${pattern.className}`}
+            checked={decision.correct === false}
+            onChange={() => onDecide(false)}
+            disabled={isSaved}
+          />
+          <span>No — false positive</span>
+        </label>
+      </div>
+      <div className="checklist-actions">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={decision.correct === null || isSaved || isSaving}
+          onClick={onSave}
+        >
+          {isSaved ? 'Saved ✓' : isSaving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </li>
+  );
 }
 
-function computeAmbiguous(annotations: Annotation[]): AmbiguousLine[] {
-  const byLine = new Map<number, { excerpt: string; patterns: Set<string> }>();
-  for (const a of annotations) {
-    if (!a.line || !a.patternKey) continue;
-    const entry = byLine.get(a.line) || { excerpt: a.excerpt || '', patterns: new Set<string>() };
-    entry.patterns.add(a.patternKey);
-    if (!entry.excerpt && a.excerpt) entry.excerpt = a.excerpt;
-    byLine.set(a.line, entry);
-  }
-  const result: AmbiguousLine[] = [];
-  for (const [line, info] of byLine) {
-    if (info.patterns.size >= 2) {
-      result.push({ line, excerpt: info.excerpt, candidates: Array.from(info.patterns) });
-    }
-  }
-  return result.sort((a, b) => a.line - b.line);
+// ─── Untagged class row (TN / FN) ─────────────────────────────────────────────
+
+interface UntaggedDecision { isPattern: boolean | null; patternName: string }
+
+interface UntaggedRowProps {
+  className: string;
+  decision: UntaggedDecision;
+  isSaved: boolean;
+  isSaving: boolean;
+  onDecide: (isPattern: boolean) => void;
+  onPatternName: (name: string) => void;
+  onSave: () => void;
 }
+
+function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatternName, onSave }: UntaggedRowProps) {
+  return (
+    <li className={`checklist-row ${isSaved ? 'is-saved' : ''}`}>
+      <div className="checklist-meta">
+        <strong className="checklist-classname">{className}</strong>
+        <span className="checklist-no-tag">— no pattern detected</span>
+      </div>
+      <div className="checklist-options">
+        <label className="checklist-chip">
+          <input
+            type="radio"
+            name={`untagged-${className}`}
+            checked={decision.isPattern === false}
+            onChange={() => onDecide(false)}
+            disabled={isSaved}
+          />
+          <span>Correct — not a design pattern</span>
+        </label>
+        <label className="checklist-chip checklist-chip--fn">
+          <input
+            type="radio"
+            name={`untagged-${className}`}
+            checked={decision.isPattern === true}
+            onChange={() => onDecide(true)}
+            disabled={isSaved}
+          />
+          <span>Wrong — this IS a:</span>
+          <input
+            type="text"
+            className="other-input"
+            value={decision.patternName}
+            placeholder="e.g. Singleton"
+            maxLength={64}
+            disabled={isSaved || decision.isPattern !== true}
+            onChange={e => onPatternName(e.target.value)}
+          />
+        </label>
+      </div>
+      <div className="checklist-actions">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={
+            decision.isPattern === null ||
+            (decision.isPattern === true && !decision.patternName.trim()) ||
+            isSaved || isSaving
+          }
+          onClick={onSave}
+        >
+          {isSaved ? 'Saved ✓' : isSaving ? 'Saving…' : 'Save'}
+        </button>
+      </div>
+    </li>
+  );
+}
+
+// ─── Main tab ─────────────────────────────────────────────────────────────────
 
 export default function AmbiguousTab() {
-  const { currentRun, patchCurrentRun } = useAppStore();
-  const [decisions, setDecisions] = useState<Record<number, RowDecision>>({});
-  const [savingLine, setSavingLine] = useState<number | null>(null);
-  const [savedLines, setSavedLines] = useState<Set<number>>(new Set());
-  const [error, setError] = useState<string | null>(null);
+  const { currentRun } = useAppStore();
 
-  const ambiguous = useMemo(
-    () => computeAmbiguous(currentRun?.annotations || []),
-    [currentRun]
-  );
+  const [taggedDecisions, setTaggedDecisions]   = useState<Record<string, TaggedDecision>>({});
+  const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
+  const [saving, setSaving]   = useState<string | null>(null);
+  const [saved, setSaved]     = useState<Set<string>>(new Set());
+  const [error, setError]     = useState<string | null>(null);
+
+  const { taggedClasses, untaggedClasses } = useMemo(() => {
+    if (!currentRun) return { taggedClasses: [], untaggedClasses: [] };
+
+    const tagged = (currentRun.detectedPatterns || []).filter(p => !!p.className);
+
+    const taggedNames = new Set(tagged.map(p => p.className!));
+    const allClasses  = Object.keys(currentRun.classUsageBindings || {});
+    const untagged    = allClasses.filter(n => !taggedNames.has(n));
+
+    return { taggedClasses: tagged, untaggedClasses: untagged };
+  }, [currentRun]);
 
   if (!currentRun) {
     return (
       <section className="tab-panel tab-ambiguous tab-empty">
-        <p>Run an analysis to review ambiguous lines.</p>
+        <p>Run an analysis to validate detected patterns.</p>
       </section>
     );
   }
 
-  if (ambiguous.length === 0) {
+  if (taggedClasses.length === 0 && untaggedClasses.length === 0) {
     return (
       <section className="tab-panel tab-ambiguous tab-empty">
-        <p>No ambiguous lines in this run.</p>
+        <p>No classes found in this run.</p>
       </section>
     );
   }
 
-  function setDecision(line: number, patch: Partial<RowDecision>): void {
-    setDecisions((prev) => {
-      const cur = prev[line] || { kind: 'pattern', pattern: null, other: '' };
-      return { ...prev, [line]: { ...cur, ...patch } };
+  // Capture non-null ref so closures below don't need null checks.
+  const run = currentRun;
+
+  // ── helpers ──────────────────────────────────────────────────────────────
+
+  function taggedKey(p: DetectedPatternFull) { return `${p.patternName}_${p.className}`; }
+
+  function setTagged(key: string, patch: Partial<TaggedDecision>) {
+    setTaggedDecisions(prev => {
+      const existing = prev[key] ?? { correct: null };
+      return { ...prev, [key]: { ...existing, ...patch } };
     });
   }
 
-  async function onSave(row: AmbiguousLine): Promise<void> {
-    if (!currentRun?.runId) {
-      setError('Save the run first before submitting manual decisions.');
-      return;
-    }
-    const dec = decisions[row.line];
-    if (!dec) {
-      setError(`Pick an option for line ${row.line}.`);
-      return;
-    }
-    if (dec.kind === 'pattern' && !dec.pattern) {
-      setError(`Choose a pattern for line ${row.line}.`);
-      return;
-    }
-    setError(null);
-    setSavingLine(row.line);
-    try {
-      await submitManualReview(currentRun.runId, {
-        line: row.line,
-        candidates: row.candidates,
-        chosenPattern: dec.kind === 'pattern' ? dec.pattern : null,
-        chosenKind: dec.kind,
-        otherText: dec.kind === 'other' ? dec.other : undefined
-      });
+  function setUntagged(className: string, patch: Partial<UntaggedDecision>) {
+    setUntaggedDecisions(prev => {
+      const existing = prev[className] ?? { isPattern: null, patternName: '' };
+      return { ...prev, [className]: { ...existing, ...patch } };
+    });
+  }
 
-      // Locally update the run's annotations: set patternKey on this line's
-      // annotations to the chosen pattern (clears ambiguity for re-render).
-      if (currentRun) {
-        const updated = (currentRun.annotations || []).map((a) => {
-          if (a.line !== row.line) return a;
-          if (dec.kind !== 'pattern' || !dec.pattern) return a;
-          return { ...a, patternKey: dec.pattern };
-        });
-        patchCurrentRun({ annotations: updated });
-      }
-      setSavedLines((prev) => {
-        const next = new Set(prev);
-        next.add(row.line);
-        return next;
+  function markSaved(key: string) {
+    setSaved(prev => { const next = new Set(prev); next.add(key); return next; });
+  }
+
+  // ── submit tagged (TP / FP) ───────────────────────────────────────────────
+
+  async function saveTagged(p: DetectedPatternFull): Promise<void> {
+    if (!run.runId) { setError('Save the run first.'); return; }
+    const key = taggedKey(p);
+    const dec = taggedDecisions[key];
+    if (!dec || dec.correct === null) { setError('Pick Yes or No first.'); return; }
+    const repLine = p.documentationTargets?.[0]?.line ?? 1;
+    setError(null);
+    setSaving(key);
+    try {
+      await submitManualReview(run.runId, {
+        line:          repLine,
+        candidates:    [p.patternName],
+        chosenPattern: dec.correct ? p.patternName : null,
+        chosenKind:    dec.correct ? 'pattern' : 'none'
       });
+      markSaved(key);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save manual review.');
+      setError(err instanceof Error ? err.message : 'Failed to save.');
     } finally {
-      setSavingLine(null);
+      setSaving(null);
     }
   }
 
+  // ── submit untagged (TN / FN) ─────────────────────────────────────────────
+
+  async function saveUntagged(className: string): Promise<void> {
+    if (!run.runId) { setError('Save the run first.'); return; }
+    const dec = untaggedDecisions[className];
+    if (!dec || dec.isPattern === null) { setError('Make a selection first.'); return; }
+    if (dec.isPattern && !dec.patternName.trim()) { setError('Enter the pattern name.'); return; }
+
+    const bindings: ClassUsageBinding[] = run.classUsageBindings?.[className] || [];
+    const repLine = bindings[0]?.line ?? 0;
+    setError(null);
+    setSaving(className);
+    try {
+      await submitManualReview(run.runId, {
+        line:          repLine,
+        candidates:    [],
+        chosenPattern: dec.isPattern ? dec.patternName.trim() : null,
+        chosenKind:    dec.isPattern ? 'pattern' : 'none'
+      });
+      markSaved(className);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save.');
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  // ── render ────────────────────────────────────────────────────────────────
+
   return (
     <section className="tab-panel tab-ambiguous">
-      <header className="results-header">
-        <p className="results-summary">
-          {ambiguous.length} ambiguous line{ambiguous.length === 1 ? '' : 's'} — pick the best match per line.
-        </p>
-      </header>
       {error && <div className="error-banner" role="alert">{error}</div>}
-      <ul className="ambiguous-list">
-        {ambiguous.map((row) => {
-          const dec = decisions[row.line] || { kind: 'pattern' as ChoiceKind, pattern: null, other: '' };
-          const isSaved = savedLines.has(row.line);
-          return (
-            <li key={row.line} className={`ambiguous-row ${isSaved ? 'is-saved' : ''}`}>
-              <div className="ambiguous-meta">
-                <strong>Line {row.line}</strong>
-                <code className="ambiguous-excerpt">{row.excerpt || '(no excerpt)'}</code>
-              </div>
-              <div className="ambiguous-candidates">
-                {row.candidates.map((c) => (
-                  <label key={c} className="candidate-chip">
-                    <input
-                      type="radio"
-                      name={`amb-${row.line}`}
-                      checked={dec.kind === 'pattern' && dec.pattern === c}
-                      onChange={() => setDecision(row.line, { kind: 'pattern', pattern: c })}
-                    />
-                    <span>{c}</span>
-                  </label>
-                ))}
-                <label className="candidate-chip">
-                  <input
-                    type="radio"
-                    name={`amb-${row.line}`}
-                    checked={dec.kind === 'none'}
-                    onChange={() => setDecision(row.line, { kind: 'none', pattern: null })}
-                  />
-                  <span>None of the above</span>
-                </label>
-                <label className="candidate-chip">
-                  <input
-                    type="radio"
-                    name={`amb-${row.line}`}
-                    checked={dec.kind === 'other'}
-                    onChange={() => setDecision(row.line, { kind: 'other', pattern: null })}
-                  />
-                  <span>Other:</span>
-                  <input
-                    type="text"
-                    className="other-input"
-                    value={dec.other}
-                    onChange={(e) => setDecision(row.line, { kind: 'other', pattern: null, other: e.target.value })}
-                    placeholder="Describe…"
-                  />
-                </label>
-              </div>
-              <div className="ambiguous-actions">
-                <button
-                  type="button"
-                  className="primary-btn"
-                  disabled={savingLine === row.line || isSaved}
-                  onClick={() => { void onSave(row); }}
-                >
-                  {isSaved ? 'Saved' : savingLine === row.line ? 'Saving…' : 'Save'}
-                </button>
-              </div>
-            </li>
-          );
-        })}
-      </ul>
+
+      {taggedClasses.length > 0 && (
+        <div className="checklist-section">
+          <header className="checklist-section-header">
+            <h3>Tagged classes</h3>
+            <p className="checklist-section-desc">
+              Confirm whether each detected pattern is a genuine match.
+            </p>
+          </header>
+          <ul className="checklist-list">
+            {taggedClasses.map(p => {
+              const key = taggedKey(p);
+              return (
+                <TaggedRow
+                  key={key}
+                  pattern={p}
+                  decision={taggedDecisions[key] || { correct: null }}
+                  isSaved={saved.has(key)}
+                  isSaving={saving === key}
+                  onDecide={correct => setTagged(key, { correct })}
+                  onSave={() => { void saveTagged(p); }}
+                />
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {untaggedClasses.length > 0 && (
+        <div className="checklist-section">
+          <header className="checklist-section-header">
+            <h3>Untagged classes</h3>
+            <p className="checklist-section-desc">
+              These classes were not detected as any pattern. Confirm or correct.
+            </p>
+          </header>
+          <ul className="checklist-list">
+            {untaggedClasses.map(className => (
+              <UntaggedRow
+                key={className}
+                className={className}
+                decision={untaggedDecisions[className] || { isPattern: null, patternName: '' }}
+                isSaved={saved.has(className)}
+                isSaving={saving === className}
+                onDecide={isPattern => setUntagged(className, { isPattern })}
+                onPatternName={name => setUntagged(className, { patternName: name })}
+                onSave={() => { void saveUntagged(className); }}
+              />
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }

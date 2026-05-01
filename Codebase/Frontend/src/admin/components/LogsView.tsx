@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
-import { fetchAdminLogs, fetchAdminReviews } from '../../api/client';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { fetchAdminLogs, fetchAdminReviews, deleteAdminLogs } from '../../api/client';
 import { AdminLogEntry, AdminReview } from '../../types/api';
 import { fmtDate } from '../../lib/patterns';
+
+// ─── Reviews (unchanged) ──────────────────────────────────────────────────────
 
 function renderStars(value: number, max = 5): string {
   const v = Math.max(0, Math.min(max, Math.floor(value || 0)));
@@ -64,35 +66,191 @@ function ReviewsList() {
   );
 }
 
-function LogsList() {
-  const [logs, setLogs] = useState<AdminLogEntry[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+// ─── Logs ─────────────────────────────────────────────────────────────────────
 
-  useEffect(() => {
-    let cancelled = false;
-    fetchAdminLogs(80)
-      .then(d => { if (!cancelled) setLogs(d.logs || []); })
-      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load logs'); });
-    return () => { cancelled = true; };
-  }, []);
+const EVENT_COLORS: Record<string, string> = {
+  login:         'blue',
+  claim_seat:    'blue',
+  analysis:      'green',
+  save_run:      'green',
+  manual_review: 'purple',
+  error:         'red',
+};
 
-  if (error) return <div className="empty-state admin-error" role="alert">Failed to load logs: {error}</div>;
-  if (logs === null) return <div className="empty-state">Loading logs...</div>;
-  if (!logs.length) return <div className="empty-state">No log entries.</div>;
+function EventPill({ type }: { type: string }) {
+  const color = EVENT_COLORS[type] ?? 'grey';
+  return <span className={`log-event-pill log-event-pill--${color}`}>{type}</span>;
+}
+
+interface DeleteModalProps {
+  onClose: () => void;
+  onDeleted: () => void;
+}
+
+function DeleteModal({ onClose, onDeleted }: DeleteModalProps) {
+  const [pw, setPw]   = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleConfirm() {
+    if (!pw.trim()) { setErr('Enter password'); return; }
+    setBusy(true);
+    setErr(null);
+    try {
+      await deleteAdminLogs(pw);
+      onDeleted();
+      onClose();
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : 'Delete failed');
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
-    <div id="logs-list" className="logs-list">
-      {logs.map((l, idx) => (
-        <div key={idx} className="log-row">
-          <span>{fmtDate(l.created_at)}</span>
-          <span>{l.username || '—'}</span>
-          <strong>{l.event_type}</strong>
-          <span>{l.message}</span>
+    <div className="log-delete-overlay" role="dialog" aria-modal="true" aria-label="Delete all logs">
+      <div className="log-delete-modal">
+        <h3>Delete all logs</h3>
+        <p className="log-delete-warn">This is permanent and cannot be undone.</p>
+        <input
+          type="password"
+          className="log-delete-pw-input"
+          placeholder="Delete password…"
+          value={pw}
+          maxLength={128}
+          autoFocus
+          onChange={e => setPw(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') handleConfirm(); if (e.key === 'Escape') onClose(); }}
+        />
+        {err && <p className="log-delete-err" role="alert">{err}</p>}
+        <div className="log-delete-actions">
+          <button className="log-delete-btn--cancel" onClick={onClose} disabled={busy}>Cancel</button>
+          <button className="log-delete-btn--confirm" onClick={handleConfirm} disabled={busy}>
+            {busy ? 'Deleting…' : 'Confirm delete'}
+          </button>
         </div>
-      ))}
+      </div>
     </div>
   );
 }
+
+function LogsList() {
+  const [logs, setLogs]           = useState<AdminLogEntry[] | null>(null);
+  const [error, setError]         = useState<string | null>(null);
+  const [search, setSearch]       = useState('');
+  const [eventFilter, setFilter]  = useState('');
+  const [sortDesc, setSortDesc]   = useState(true);
+  const [showDelete, setShowDelete] = useState(false);
+  const cancelledRef = useRef(false);
+
+  function load() {
+    cancelledRef.current = false;
+    fetchAdminLogs(200)
+      .then(d => { if (!cancelledRef.current) setLogs(d.logs ?? []); })
+      .catch(err => { if (!cancelledRef.current) setError(err instanceof Error ? err.message : 'Failed to load logs'); });
+  }
+
+  useEffect(() => {
+    cancelledRef.current = false;
+    load();
+    return () => { cancelledRef.current = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const allEventTypes = useMemo(() => {
+    if (!logs) return [];
+    return [...new Set(logs.map(l => l.event_type))].sort();
+  }, [logs]);
+
+  const visible = useMemo(() => {
+    if (!logs) return [];
+    let result = logs;
+    const q = search.toLowerCase();
+    if (q) result = result.filter(l => (l.username ?? '').toLowerCase().includes(q));
+    if (eventFilter) result = result.filter(l => l.event_type === eventFilter);
+    return sortDesc
+      ? [...result].sort((a, b) => b.id - a.id)
+      : [...result].sort((a, b) => a.id - b.id);
+  }, [logs, search, eventFilter, sortDesc]);
+
+  if (error) return <div className="empty-state admin-error" role="alert">Failed to load logs: {error}</div>;
+  if (logs === null) return <div className="empty-state">Loading logs…</div>;
+
+  return (
+    <>
+      <div className="logs-controls">
+        <input
+          type="search"
+          className="user-search-input"
+          placeholder="Filter by username…"
+          value={search}
+          maxLength={64}
+          onChange={e => setSearch(e.target.value)}
+          aria-label="Search logs by username"
+        />
+        <select
+          className="logs-event-select"
+          value={eventFilter}
+          onChange={e => setFilter(e.target.value)}
+          aria-label="Filter by event type"
+        >
+          <option value="">All events</option>
+          {allEventTypes.map(t => <option key={t} value={t}>{t}</option>)}
+        </select>
+        <button
+          className="user-ctrl-btn"
+          onClick={() => setSortDesc(d => !d)}
+          title={`Date ${sortDesc ? 'newest first' : 'oldest first'} — click to toggle`}
+        >
+          Date {sortDesc ? '↓' : '↑'}
+        </button>
+        <button className="user-ctrl-btn user-ctrl-btn--danger" onClick={() => setShowDelete(true)}>
+          Delete all…
+        </button>
+      </div>
+
+      {visible.length === 0
+        ? (
+          <div className="empty-state">
+            No log entries{search || eventFilter ? ' matching filters' : ''}.
+          </div>
+        )
+        : (
+          <div className="logs-table-wrap">
+            <table className="logs-table">
+              <thead>
+                <tr>
+                  <th>Date / Time</th>
+                  <th>User</th>
+                  <th>Event</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map(l => (
+                  <tr key={l.id}>
+                    <td className="logs-td-date">{fmtDate(l.created_at)}</td>
+                    <td className="logs-td-user">{l.username ?? '—'}</td>
+                    <td><EventPill type={l.event_type} /></td>
+                    <td className="logs-td-msg">{l.message}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+      {showDelete && (
+        <DeleteModal
+          onClose={() => setShowDelete(false)}
+          onDeleted={() => setLogs([])}
+        />
+      )}
+    </>
+  );
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
 
 export default function LogsView() {
   return (

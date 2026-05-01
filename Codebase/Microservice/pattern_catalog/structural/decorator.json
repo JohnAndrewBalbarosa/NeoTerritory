@@ -4,8 +4,17 @@
   "pattern_name": "Decorator",
   "enabled": true,
   "lexeme_identifiers": {
-    "wrappee_call":    ["->"],
-    "wrappee_member":  ["inner", "decorated", "wrappee"]
+    "wrappee_call":     ["->", "."],
+    "wrappee_member":   ["inner", "decorated", "wrappee", "component_", "base_",
+                         "wrapped_", "m_component", "inner_", "m_inner",
+                         "m_wrapped", "m_decoratee", "wrappee_", "decoratee_"],
+    "ownership_types":  ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                         "std::shared_ptr", "make_unique", "make_shared",
+                         "std::make_unique", "std::make_shared"],
+    "augmentation":     ["override", "virtual", "final"],
+    "decorator_method": ["decorate", "wrap", "augment", "enhance", "extend",
+                         "addBehaviour", "addBehavior", "addFeature",
+                         "addFunctionality", "before", "after"]
   },
   "ordered_checks": [
     {
@@ -49,5 +58,65 @@
       "expected_kind": "Punctuation",
       "expected_lexeme_any_of": ["("]
     }
-  ]
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "wrappee_pointer_member",
+        "shape_regex": "\\b\\w+\\s*\\*\\s*(m_inner|inner_?|wrappee_?|decoratee_?|m_wrapped|m_component|component_?|base_?)\\s*;",
+        "weight": 0.55,
+        "describe": "Decorator holds a raw pointer to the wrapped component"
+      },
+      {
+        "id": "wrappee_smart_member",
+        "shape_regex": "(std::)?(unique_ptr|shared_ptr)\\s*<[^>]+>\\s*(m_inner|inner_?|wrappee_?|decoratee_?|m_wrapped|m_component|component_?)\\s*;",
+        "weight": 0.65,
+        "describe": "Decorator owns the wrapped component via smart pointer"
+      },
+      {
+        "id": "ctor_inject_wrappee",
+        "shape_regex": "{class_name}\\s*\\([^)]*\\)\\s*:[^{]*\\b(m_inner|inner_?|wrappee_?|decoratee_?|m_component|component_?)\\s*\\(",
+        "weight": 0.55,
+        "describe": "Constructor initializer captures the injected component"
+      },
+      {
+        "id": "forwarding_call_in_body",
+        "shape_regex": "\\b(m_inner|inner_?|wrappee_?|decoratee_?|m_wrapped|m_component|component_?|base_?)\\s*->\\s*\\w+\\s*\\(",
+        "weight": 0.5,
+        "describe": "Method body forwards via wrappee->method() — canonical decorator delegation"
+      },
+      {
+        "id": "decorator_chain_construction",
+        "shape_regex": "\\bnew\\s+\\w+\\s*\\(\\s*new\\s+\\w+",
+        "weight": 0.7,
+        "describe": "Chained `new X(new Y(...))` — confident decorator composition"
+      },
+      {
+        "id": "make_unique_chain",
+        "shape_regex": "(std::)?make_unique\\s*<\\s*\\w+\\s*>\\s*\\(\\s*(std::)?make_unique\\s*<",
+        "weight": 0.6,
+        "describe": "make_unique chained to wrap another make_unique — modern decorator composition"
+      }
+    ],
+    "expected_collaborators": [
+      {
+        "id": "shared_interface_override",
+        "shape_regex": "\\bvirtual\\s+\\w+[\\s\\S]{0,80}override\\b",
+        "weight": 0.3,
+        "describe": "Overrides a virtual method of the shared component interface"
+      }
+    ],
+    "global_functions": [],
+    "negative_signals": [
+      {
+        "id": "no_forwarding_call",
+        "shape_regex": "class\\s+{class_name}\\s*[:\\{][\\s\\S]{0,1200}\\}(?![\\s\\S]*->\\s*\\w+\\s*\\()",
+        "weight": -0.2,
+        "describe": "No forwarding arrow call inside class — pure pass-through is hard to call decoration"
+      }
+    ]
+  },
+
+  "ranking_weights": { "class_fit": 0.45, "implementation_fit": 0.55 }
 }
