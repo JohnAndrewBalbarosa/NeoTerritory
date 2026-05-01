@@ -18,6 +18,11 @@ interface AppState {
   msLabel: string;
   sessionRanAnalyze: boolean;
   sessionReviewedEnd: boolean;
+  // True after at least one GDB run completed for the *current* run with
+  // every test passing. Resets when a new analysis is dispatched. Drives
+  // the Annotated tab's CTA: "Run GDB tests" first, then "Review before
+  // submission" after they pass.
+  gdbAllPassedForRun: boolean;
   activeTab: StudioTab;
   consentAccepted: boolean;
   pretestSubmitted: boolean;
@@ -44,6 +49,7 @@ interface AppState {
   setMsStatus: (state: MsState, label: string) => void;
   setSessionRanAnalyze: (v: boolean) => void;
   setSessionReviewedEnd: (v: boolean) => void;
+  setGdbAllPassedForRun: (v: boolean) => void;
   setActiveTab: (tab: StudioTab) => void;
   setConsentAccepted: (v: boolean) => void;
   setPretestSubmitted: (v: boolean) => void;
@@ -78,6 +84,7 @@ export const useAppStore = create<AppState>((set) => ({
   msLabel: 'checking...',
   sessionRanAnalyze: false,
   sessionReviewedEnd: false,
+  gdbAllPassedForRun: false,
   activeTab: 'submit',
   consentAccepted: false,
   pretestSubmitted: false,
@@ -128,7 +135,9 @@ export const useAppStore = create<AppState>((set) => ({
 
   setCurrentRun: (run) => set({
     currentRun: run,
-    activeTab: run ? 'annotated' : 'submit'
+    activeTab: run ? 'annotated' : 'submit',
+    // Setting a fresh run invalidates any prior GDB pass state.
+    gdbAllPassedForRun: false
   }),
   patchCurrentRun: (patch) => set((s) => ({
     currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
@@ -139,6 +148,7 @@ export const useAppStore = create<AppState>((set) => ({
   setMsStatus: (msState, msLabel) => set({ msState, msLabel }),
   setSessionRanAnalyze: (v) => set({ sessionRanAnalyze: v }),
   setSessionReviewedEnd: (v) => set({ sessionReviewedEnd: v }),
+  setGdbAllPassedForRun: (v) => set({ gdbAllPassedForRun: v }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setConsentAccepted: (v) => set({ consentAccepted: v }),
   setPretestSubmitted: (v) => set({ pretestSubmitted: v }),

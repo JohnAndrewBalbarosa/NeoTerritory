@@ -18,7 +18,7 @@ interface AnnotatedTabProps {
 export default function AnnotatedTab({
   onLineFlash, onCommentFlash, pendingSave, onDiscard, onGoToReview
 }: AnnotatedTabProps) {
-  const { currentRun, aiStatus } = useAppStore();
+  const { currentRun, aiStatus, gdbAllPassedForRun, setActiveTab } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
   const [classNavIdx, setClassNavIdx] = useState(0);
 
@@ -57,14 +57,17 @@ export default function AnnotatedTab({
   const fileSuffix = files.length > 1 ? ` • ${files.length} files` : '';
   const summaryText = `${activeFile?.name || currentRun.sourceName || 'snippet.cpp'} • ${patternCount} pattern(s) • ${commentCount} comment(s)${fileSuffix}`;
 
-  // The class population: detected patterns ∪ usage-binding classes.
+  // The class population: detected patterns ∪ usage-binding classes ∪
+  // classes the regex pulled from source whose body contains in-scope
+  // ambiguity. The third set matters because a class can host competing
+  // pattern guesses on its body lines without itself being directly
+  // attached to any pattern — those still count as ambiguous.
   const detectedClassNames = new Set(
     (currentRun.detectedPatterns || [])
       .map(p => p.className)
       .filter((c): c is string => !!c)
   );
   const bindingClassNames = new Set(Object.keys(currentRun.classUsageBindings || {}));
-  const allClassNames = new Set<string>([...detectedClassNames, ...bindingClassNames]);
   const resolvedMap = currentRun.classResolvedPatterns || {};
 
   // Ordered class navigation for the bottom-right overlay. Restricted to
@@ -176,12 +179,23 @@ export default function AnnotatedTab({
   // and the user has not picked a pattern via the popover. Picking a pattern
   // patches `currentRun.classResolvedPatterns`, which retriggers this memo
   // and updates the pill live without a re-fetch.
-  const { ambiguousClassNames, taggedClassNames, missingClassNames } = useMemo(() => {
+  const { ambiguousClassNames, taggedClassNames, missingClassNames, allClassNames } = useMemo(() => {
     const ambiguous = new Set<string>();
     const tagged: string[] = [];
     const missing: string[] = [];
     const { patternCountByClass, inScopePatterns } = classDerivation;
-    for (const c of allClassNames) {
+    // Classes with in-scope ambiguity are pulled in even if the matcher
+    // never attached any pattern directly to them.
+    const ambiguousByScope = new Set<string>();
+    for (const [name, pSet] of inScopePatterns) {
+      if (pSet.size > 1) ambiguousByScope.add(name);
+    }
+    const all = new Set<string>([
+      ...detectedClassNames,
+      ...bindingClassNames,
+      ...ambiguousByScope
+    ]);
+    for (const c of all) {
       const directAmbiguous  = (patternCountByClass.get(c) || 0) > 1;
       const inScopeAmbiguous = (inScopePatterns.get(c)?.size || 0) > 1;
       const isResolved = !!resolvedMap[c];
@@ -200,9 +214,10 @@ export default function AnnotatedTab({
     return {
       ambiguousClassNames: ambiguous,
       taggedClassNames:    tagged,
-      missingClassNames:   missing
+      missingClassNames:   missing,
+      allClassNames:       all
     };
-  }, [classDerivation, allClassNames, detectedClassNames, resolvedMap]);
+  }, [classDerivation, detectedClassNames, bindingClassNames, resolvedMap]);
 
   const taggedCount = taggedClassNames.length;
   const missingCount = missingClassNames.length;
@@ -232,72 +247,89 @@ export default function AnnotatedTab({
     }
   }
 
+  // CTA state machine. The user must run the GDB tests and pass them all
+  // for the current run before being allowed to advance to the Review step.
+  // gdbAllPassedForRun is invalidated whenever a new analysis is dispatched
+  // (see store.setCurrentRun), so re-running an analysis re-blocks Review.
+  const ctaPhase: 'tag' | 'gdb' | 'review' =
+    !allTagged ? 'tag' : !gdbAllPassedForRun ? 'gdb' : 'review';
+
+  function onCtaClick() {
+    if (ctaPhase === 'gdb') setActiveTab('gdb');
+    else if (ctaPhase === 'review' && onGoToReview) onGoToReview();
+  }
+
   return (
-    <section className="tab-panel tab-annotated">
-      <header className="results-header">
-        <p className="results-summary">{summaryText}</p>
-        {aiStatus === 'pending' && (
-          <span className="ai-pill ai-pill-pending" aria-live="polite">
-            AI commentary loading…
-          </span>
-        )}
-        {aiStatus === 'failed' && (
-          <span className="ai-pill ai-pill-failed">AI commentary failed</span>
-        )}
-        <PatternLegend detectedPatterns={currentRun.detectedPatterns || []} />
-        {pendingSave && onDiscard && (
-          <button
-            type="button"
-            className="ghost-btn discard-btn"
-            onClick={() => { if (confirm('Discard this run? Your tags and edits will be lost.')) onDiscard(); }}
-            title="Drop the current unsaved run"
-          >
-            Discard run
-          </button>
-        )}
-      </header>
-      {totalClasses > 0 && (
-        <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
-          <span className="tag-progress-pill tag-progress-pill--tagged">
-            {taggedCount} class{taggedCount === 1 ? '' : 'es'} tagged
-          </span>
-          {missingCount > 0 && (
-            <span className="tag-progress-pill tag-progress-pill--missing" title={missingClassNames.join(', ')}>
-              {missingCount} class{missingCount === 1 ? '' : 'es'} with missing tags
-              {ambiguousCount > 0 && (
-                <small className="tag-progress-ambig"> · {ambiguousCount} ambiguous</small>
-              )}
+    <div className="tab-annotated-shell">
+      <section className="tab-panel tab-annotated">
+        <header className="results-header">
+          <p className="results-summary">{summaryText}</p>
+          {aiStatus === 'pending' && (
+            <span className="ai-pill ai-pill-pending" aria-live="polite">
+              AI commentary loading…
             </span>
           )}
-          {allTagged && onGoToReview && (
-            <button
-              type="button"
-              className="primary-btn tag-progress-cta"
-              onClick={onGoToReview}
-            >
-              Next: Review before submission →
-            </button>
+          {aiStatus === 'failed' && (
+            <span className="ai-pill ai-pill-failed">AI commentary failed</span>
           )}
-        </div>
-      )}
-      {files.length > 1 && (
-        <nav className="file-tab-bar" role="tablist" aria-label="Submitted files">
-          {files.map((f, i) => (
-            <button
-              key={i}
-              type="button"
-              role="tab"
-              aria-selected={i === activeFileIdx}
-              className={`file-tab-btn ${i === activeFileIdx ? 'is-active' : ''}`}
-              onClick={() => setActiveFileIdx(i)}
-              title={f.name}
-            >
-              {f.name}
-            </button>
-          ))}
-        </nav>
-      )}
-      <div className="results-layout">
+          <PatternLegend detectedPatterns={currentRun.detectedPatterns || []} />
+        </header>
+        {totalClasses > 0 && (
+          <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
+            <span className="tag-progress-pill tag-progress-pill--tagged">
+              {taggedCount} class{taggedCount === 1 ? '' : 'es'} tagged
+            </span>
+            {missingCount > 0 && (
+              <span className="tag-progress-pill tag-progress-pill--missing" title={missingClassNames.join(', ')}>
+                {missingCount} class{missingCount === 1 ? '' : 'es'} with missing tags
+                {ambiguousCount > 0 && (
+                  <small className="tag-progress-ambig"> · {ambiguousCount} ambiguous</small>
+                )}
+              </span>
+            )}
+            {ctaPhase !== 'tag' && (
+              <button
+                type="button"
+                className="primary-btn tag-progress-cta"
+                onClick={onCtaClick}
+                disabled={ctaPhase === 'review' && !onGoToReview}
+              >
+                {ctaPhase === 'gdb'
+                  ? 'Next: Run unit tests →'
+                  : 'Next: Review before submission →'}
+              </button>
+            )}
+            {/* Discard tucked into the tag-progress row, right-aligned via CSS,
+                instead of competing for attention in the header. */}
+            {pendingSave && onDiscard && (
+              <button
+                type="button"
+                className="ghost-btn tag-progress-discard"
+                onClick={() => { if (confirm('Discard this run? Your tags and edits will be lost.')) onDiscard(); }}
+                title="Drop the current unsaved run"
+              >
+                Discard
+              </button>
+            )}
+          </div>
+        )}
+        {files.length > 1 && (
+          <nav className="file-tab-bar" role="tablist" aria-label="Submitted files">
+            {files.map((f, i) => (
+              <button
+                key={i}
+                type="button"
+                role="tab"
+                aria-selected={i === activeFileIdx}
+                className={`file-tab-btn ${i === activeFileIdx ? 'is-active' : ''}`}
+                onClick={() => setActiveFileIdx(i)}
+                title={f.name}
+              >
+                {f.name}
+              </button>
+            ))}
+          </nav>
+        )}
         <div className="results-body">
           <SourceView
             sourceText={activeFile?.sourceText || currentRun.sourceText || ''}
@@ -307,47 +339,53 @@ export default function AnnotatedTab({
             onLineClick={onCommentFlash}
           />
         </div>
-        <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
-          <PatternCards
-            detectedPatterns={currentRun.detectedPatterns || []}
-            ranking={currentRun.ranking}
-            userResolvedPattern={currentRun.userResolvedPattern}
-            classUsageBindings={currentRun.classUsageBindings || {}}
-            classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
-            onLineFlash={onLineFlash}
-          />
-          <ClassBindings
-            bindings={currentRun.classUsageBindings || {}}
-            detectedPatterns={currentRun.detectedPatterns || []}
-            classResolvedPatterns={currentRun.classResolvedPatterns}
-            onLineFlash={onLineFlash}
-          />
-        </aside>
-      </div>
-      {classNav.length >= 1 && navClass && (
-        <div className="class-nav-overlay" role="navigation" aria-label="Ambiguous class navigation">
-          <span className="class-nav-eyebrow">Ambiguous</span>
-          <button
-            type="button"
-            className="class-nav-btn"
-            onClick={() => gotoClass(classNavIdx - 1)}
-            aria-label="Previous class"
-            title="Previous class"
-          >←</button>
-          <span className="class-nav-label" title={navClass.className}>
-            <span className="class-nav-position">{classNavIdx + 1} / {classNav.length}</span>
-            <span className="class-nav-classname">{navClass.className}</span>
-            <span className="class-nav-line">L{navClass.line}</span>
-          </span>
-          <button
-            type="button"
-            className="class-nav-btn"
-            onClick={() => gotoClass(classNavIdx + 1)}
-            aria-label="Next class"
-            title="Next class"
-          >→</button>
-        </div>
-      )}
-    </section>
+        {classNav.length >= 1 && navClass && (
+          <div className="class-nav-overlay" role="navigation" aria-label="Ambiguous class navigation">
+            <span className="class-nav-eyebrow">Ambiguous</span>
+            <span
+              className="class-nav-count"
+              title={`${classNav.length} class${classNav.length === 1 ? '' : 'es'} need a tag`}
+            >
+              {classNav.length}
+            </span>
+            <button
+              type="button"
+              className="class-nav-btn"
+              onClick={() => gotoClass(classNavIdx - 1)}
+              aria-label="Previous class"
+              title="Previous class"
+            >←</button>
+            <span className="class-nav-label" title={navClass.className}>
+              <span className="class-nav-position">{classNavIdx + 1} / {classNav.length}</span>
+              <span className="class-nav-classname">{navClass.className}</span>
+              <span className="class-nav-line">L{navClass.line}</span>
+            </span>
+            <button
+              type="button"
+              className="class-nav-btn"
+              onClick={() => gotoClass(classNavIdx + 1)}
+              aria-label="Next class"
+              title="Next class"
+            >→</button>
+          </div>
+        )}
+      </section>
+      <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
+        <PatternCards
+          detectedPatterns={currentRun.detectedPatterns || []}
+          ranking={currentRun.ranking}
+          userResolvedPattern={currentRun.userResolvedPattern}
+          classUsageBindings={currentRun.classUsageBindings || {}}
+          classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
+          onLineFlash={onLineFlash}
+        />
+        <ClassBindings
+          bindings={currentRun.classUsageBindings || {}}
+          detectedPatterns={currentRun.detectedPatterns || []}
+          classResolvedPatterns={currentRun.classResolvedPatterns}
+          onLineFlash={onLineFlash}
+        />
+      </aside>
+    </div>
   );
 }

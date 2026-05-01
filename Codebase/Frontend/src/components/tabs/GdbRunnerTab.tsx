@@ -149,7 +149,7 @@ function PhaseRow({ phase, result, loading }: {
 }
 
 export default function GdbRunnerTab() {
-  const { currentRun, setActiveTab } = useAppStore();
+  const { currentRun, setActiveTab, setGdbAllPassedForRun } = useAppStore();
   const [groups, setGroups] = useState<PatternGroup[]>([]);
   const [activeKey, setActiveKey] = useState<string>('');
   const [busy, setBusy] = useState(false);
@@ -237,6 +237,9 @@ export default function GdbRunnerTab() {
       }
       setBudgetRemaining(data.rateLimit?.remaining ?? null);
       const passed = data.results.filter(r => r.passed).length;
+      // The Annotated tab's CTA gate: only allow advancing to Review once
+      // every emitted test result passed for the current run.
+      setGdbAllPassedForRun(data.results.length > 0 && passed === data.results.length);
       logFrontendEvent('frontend.gdb_test', `complete pass=${passed}/${data.results.length}`);
     } catch (err) {
       const e = err as ApiError;
