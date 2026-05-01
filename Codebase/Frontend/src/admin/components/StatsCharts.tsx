@@ -10,6 +10,70 @@ import { isAuthError } from '../lib/silenceAuthErrors';
 
 const PALETTE = ['#2563eb', '#10b981', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#ef4444', '#f59e0b'];
 
+// Per-family colour map. The leading segment of patternId (`creational.X`,
+// `structural.X`, …) buckets the slice; we use a deliberate per-family
+// palette so the family pie reads consistently even as new patterns join
+// the catalog.
+const FAMILY_COLOR: Record<string, string> = {
+  creational:  '#2563eb',
+  structural:  '#10b981',
+  behavioural: '#8b5cf6',
+  other:       '#94a3b8'
+};
+
+interface PieSlice { label: string; value: number; color: string }
+
+function PieChart({ slices, title, ariaLabel }: { slices: PieSlice[]; title: string; ariaLabel: string }) {
+  const total = slices.reduce((s, x) => s + x.value, 0);
+  if (total <= 0) return <div className="empty-state">{title}: no data.</div>;
+  const cx = 70, cy = 70, r = 56;
+  let acc = 0;
+  // Single full-circle slice degenerates to one path with d="..."; we fall
+  // back to a bare circle so the renderer still shows something useful.
+  const isOnlySlice = slices.filter(s => s.value > 0).length === 1;
+  return (
+    <figure className="stats-pie">
+      <svg viewBox="0 0 140 140" width="140" height="140" aria-label={ariaLabel}>
+        {isOnlySlice
+          ? <circle cx={cx} cy={cy} r={r} fill={slices.find(s => s.value > 0)!.color} />
+          : slices.map((s, i) => {
+              if (s.value <= 0) return null;
+              const startAng = (acc / total) * Math.PI * 2 - Math.PI / 2;
+              acc += s.value;
+              const endAng = (acc / total) * Math.PI * 2 - Math.PI / 2;
+              const x1 = cx + r * Math.cos(startAng), y1 = cy + r * Math.sin(startAng);
+              const x2 = cx + r * Math.cos(endAng),   y2 = cy + r * Math.sin(endAng);
+              const large = s.value / total > 0.5 ? 1 : 0;
+              const pct = ((s.value / total) * 100).toFixed(1);
+              return (
+                <path
+                  key={i}
+                  d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
+                  fill={s.color}
+                  stroke="var(--surface)"
+                  strokeWidth="1"
+                >
+                  <title>{s.label}: {s.value} ({pct}%)</title>
+                </path>
+              );
+            })}
+      </svg>
+      <figcaption>
+        <strong>{title}</strong>
+        <ul className="stats-pie-legend">
+          {slices.filter(s => s.value > 0).map((s, i) => (
+            <li key={i}>
+              <span className="stats-pie-swatch" style={{ background: s.color }} />
+              <span className="stats-pie-label">{s.label}</span>
+              <span className="stats-pie-value">{s.value}</span>
+            </li>
+          ))}
+        </ul>
+      </figcaption>
+    </figure>
+  );
+}
+
 interface SectionState<T> { data: T | null; error: string | null; }
 
 function useStat<T>(loader: () => Promise<T>): SectionState<T> {
@@ -138,7 +202,7 @@ interface TestRunStats {
 
 export default function StatsCharts() {
   const overview    = useStat<AdminOverview>(fetchAdminOverview);
-  const runsPerDay  = useStat<{ series: RunsPerDayPoint[] }>(() => fetchAdminRunsPerDay(30));
+  const runsPerDay  = useStat<{ series: RunsPerDayPoint[] }>(() => fetchAdminRunsPerDay(7));
   const patternFreq = useStat<{ series: PatternFreqPoint[] }>(fetchAdminPatternFreq);
   const testRuns    = useStat<TestRunStats>(fetchAdminTestRunStats);
 
@@ -160,7 +224,7 @@ export default function StatsCharts() {
       </section>
 
       <section className="stats-section">
-        <h3>Runs per day (last 30)</h3>
+        <h3>Runs per day (last 7, moving window)</h3>
         {runsPerDay.error && <ErrorRow message={runsPerDay.error} />}
         {runsPerDay.data && <RunsLineChart series={runsPerDay.data.series} />}
       </section>
@@ -170,14 +234,43 @@ export default function StatsCharts() {
         {patternFreq.error && <ErrorRow message={patternFreq.error} />}
         {patternFreq.data && (patternFreq.data.series.length === 0
           ? <div className="empty-state">No patterns yet.</div>
-          : [...patternFreq.data.series]
-              // Sort descending so the most frequent pattern paints the
-              // tallest bar at 100% and the rest scale proportionally.
-              .sort((a, b) => b.count - a.count)
-              .slice(0, 12)
-              .map((p, i) => (
-                <BarRow key={p.pattern} label={p.pattern} value={p.count} max={patternMax} color={PALETTE[i % PALETTE.length]} />
-              )))}
+          : (() => {
+              const sorted = [...patternFreq.data.series].sort((a, b) => b.count - a.count);
+              const top    = sorted.slice(0, 12);
+              // Per-pattern slices use the same palette index as the bars
+              // above so the legend ↔ bar colour mapping is consistent.
+              const perPatternSlices: PieSlice[] = top.map((p, i) => ({
+                label: p.pattern,
+                value: p.count,
+                color: PALETTE[i % PALETTE.length]
+              }));
+              const otherCount = sorted.slice(12).reduce((s, p) => s + p.count, 0);
+              if (otherCount > 0) {
+                perPatternSlices.push({ label: 'Other', value: otherCount, color: '#94a3b8' });
+              }
+              // Family bucketing: patternId is `<family>.<name>`.
+              const byFamily = new Map<string, number>();
+              for (const p of sorted) {
+                const fam = (p.pattern.split('.')[0] || 'other').toLowerCase();
+                byFamily.set(fam, (byFamily.get(fam) || 0) + p.count);
+              }
+              const familySlices: PieSlice[] = [...byFamily.entries()].map(([fam, value]) => ({
+                label: fam.charAt(0).toUpperCase() + fam.slice(1),
+                value,
+                color: FAMILY_COLOR[fam] || FAMILY_COLOR.other
+              }));
+              return (
+                <>
+                  {top.map((p, i) => (
+                    <BarRow key={p.pattern} label={p.pattern} value={p.count} max={patternMax} color={PALETTE[i % PALETTE.length]} />
+                  ))}
+                  <div className="stats-pies-row">
+                    <PieChart slices={perPatternSlices} title="By pattern"  ariaLabel="Per-pattern frequency pie chart" />
+                    <PieChart slices={familySlices}     title="By family"   ariaLabel="Per-family frequency pie chart" />
+                  </div>
+                </>
+              );
+            })())}
       </section>
 
       <section className="stats-section">

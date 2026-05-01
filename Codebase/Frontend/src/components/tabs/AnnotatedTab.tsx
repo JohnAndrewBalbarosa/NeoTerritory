@@ -203,6 +203,9 @@ export default function AnnotatedTab({
     ]);
     for (const className of considered) {
       if (resolvedMap[className]) continue;
+      // Only microservice-tagged classes can be in the ambiguous nav cycle.
+      // Untagged classes are surfaced separately and don't compete here.
+      if (!detectedClassNames.has(className)) continue;
       const directAmbiguous  = (patternCountByClass.get(className) || 0) > 1;
       const inScopeAmbiguous = (inScopePatterns.get(className)?.size  || 0) > 1;
       if (!directAmbiguous && !inScopeAmbiguous) continue;
@@ -215,7 +218,7 @@ export default function AnnotatedTab({
       });
     }
     return out.sort((a, b) => (a.fileIdx - b.fileIdx) || (a.line - b.line));
-  }, [currentRun, classDerivation, classLocations, resolvedMap, activeFileIdx]);
+  }, [currentRun, classDerivation, classLocations, resolvedMap, detectedClassNames, activeFileIdx]);
 
   // Tag-progress count derives from the same ambiguity model the navigator
   // uses. A class is ambiguous (and therefore "missing") when:
@@ -224,43 +227,45 @@ export default function AnnotatedTab({
   // and the user has not picked a pattern via the popover. Picking a pattern
   // patches `currentRun.classResolvedPatterns`, which retriggers this memo
   // and updates the pill live without a re-fetch.
-  const { taggedClassNames, missingClassNames, allClassNames } = useMemo(() => {
+  const { taggedClassNames, missingClassNames, untaggedClassNames, allClassNames } = useMemo(() => {
     const ambiguous = new Set<string>();
     const tagged: string[] = [];
     const missing: string[] = [];
+    const untagged: string[] = [];
     const { patternCountByClass, inScopePatterns } = classDerivation;
-    // Classes with in-scope ambiguity are pulled in even if the matcher
-    // never attached any pattern directly to them.
-    const ambiguousByScope = new Set<string>();
-    for (const [name, pSet] of inScopePatterns) {
-      if (pSet.size > 1) ambiguousByScope.add(name);
-    }
     const all = new Set<string>([
       ...detectedClassNames,
       ...bindingClassNames,
-      ...ambiguousByScope
+      ...inScopePatterns.keys()
     ]);
-    // Missing == ambiguous, by design. A class is "missing a tag" precisely
-    // when it has competing pattern guesses (direct or in-scope) and the
-    // user hasn't picked one. Classes the matcher confidently single-tagged
-    // OR the user explicitly resolved are tagged; classes with neither
-    // detection nor ambiguity are left out of the count entirely.
+    // The microservice "tagged" the class when it surfaces in
+    // detectedPatterns with a className. Only those classes are eligible
+    // for the ambiguous bucket — a class no pattern detector reported
+    // can't be ambiguous (it has nothing to be ambiguous between yet).
+    // Classes with regex/binding evidence but zero microservice tags
+    // become "untagged" — informational only, no CTA effect.
     for (const c of all) {
+      const isTaggedByMicroservice = detectedClassNames.has(c);
+      const isResolved = !!resolvedMap[c];
       const directAmbiguous  = (patternCountByClass.get(c) || 0) > 1;
       const inScopeAmbiguous = (inScopePatterns.get(c)?.size || 0) > 1;
-      const isResolved = !!resolvedMap[c];
-      const isAmbiguous = (directAmbiguous || inScopeAmbiguous) && !isResolved;
+      const isAmbiguous = isTaggedByMicroservice
+                       && (directAmbiguous || inScopeAmbiguous)
+                       && !isResolved;
       if (isAmbiguous) {
         ambiguous.add(c);
         missing.push(c);
-      } else if (detectedClassNames.has(c) || isResolved) {
+      } else if (isTaggedByMicroservice || isResolved) {
         tagged.push(c);
+      } else {
+        untagged.push(c);
       }
     }
     return {
       ambiguousClassNames: ambiguous,
       taggedClassNames:    tagged,
       missingClassNames:   missing,
+      untaggedClassNames:  untagged,
       allClassNames:       all
     };
   }, [classDerivation, detectedClassNames, bindingClassNames, resolvedMap]);
@@ -332,6 +337,14 @@ export default function AnnotatedTab({
                 {missingCount} ambiguous class{missingCount === 1 ? '' : 'es'} with missing tags
               </span>
             )}
+            {untaggedClassNames.length > 0 && (
+              <span
+                className="tag-progress-pill tag-progress-pill--untagged"
+                title={untaggedClassNames.join(', ')}
+              >
+                {untaggedClassNames.length} class{untaggedClassNames.length === 1 ? '' : 'es'} without a design pattern tag
+              </span>
+            )}
             {ctaPhase !== 'tag' && (
               <button
                 type="button"
@@ -386,37 +399,26 @@ export default function AnnotatedTab({
           />
         </div>
       </section>
-      {/* Corner buttons fallback — viewport-fixed at bottom-left and
-          bottom-right. They disappear once every class is tagged
-          (classNav.length === 0) and re-appear if an undo brings back
-          ambiguity. The middle label between the two buttons sits at the
-          bottom-center so the user always sees what they're navigating to. */}
+      {/* Two viewport-corner buttons. The middle label that previously sat
+          between them was redundant with the popover/source flash, so it
+          was dropped — the buttons themselves carry their semantics via
+          `aria-label` + `title`. They vanish when classNav.length === 0
+          and re-appear on undo. */}
       {classNav.length >= 1 && navClass && (
         <>
           <button
             type="button"
             className="class-nav-corner class-nav-corner--left"
             onClick={() => gotoClass(classNavIdx - 1)}
-            aria-label="Previous ambiguous class"
-            title="Previous ambiguous class"
+            aria-label={`Previous ambiguous class (${classNavIdx + 1} / ${classNav.length})`}
+            title={`Previous ambiguous class — currently ${navClass.className} L${navClass.line}`}
           >←</button>
-          <div className="class-nav-center" role="status" aria-live="polite">
-            <span className="class-nav-eyebrow">Ambiguous</span>
-            <span className="class-nav-count" title={`${classNav.length} class${classNav.length === 1 ? '' : 'es'} need a tag`}>
-              {classNav.length}
-            </span>
-            <span className="class-nav-label" title={navClass.className}>
-              <span className="class-nav-position">{classNavIdx + 1} / {classNav.length}</span>
-              <span className="class-nav-classname">{navClass.className}</span>
-              <span className="class-nav-line">L{navClass.line}</span>
-            </span>
-          </div>
           <button
             type="button"
             className="class-nav-corner class-nav-corner--right"
             onClick={() => gotoClass(classNavIdx + 1)}
-            aria-label="Next ambiguous class"
-            title="Next ambiguous class"
+            aria-label={`Next ambiguous class (${classNavIdx + 1} / ${classNav.length})`}
+            title={`Next ambiguous class — currently ${navClass.className} L${navClass.line}`}
           >→</button>
         </>
       )}

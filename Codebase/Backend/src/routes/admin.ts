@@ -189,7 +189,7 @@ interface RunsPerDayRow { date: string; count: number }
 
 router.get('/stats/runs-per-day', (req: Request, res: Response, next: NextFunction) => {
   try {
-    const days = Math.min(Math.max(Number(req.query.days || 30), 1), 180);
+    const days = Math.min(Math.max(Number(req.query.days || 7), 1), 180);
     const rows = db.prepare(`
       SELECT date(created_at) AS date, COUNT(*) AS count
       FROM analysis_runs

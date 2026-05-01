@@ -646,6 +646,19 @@ body.login-active{overflow:hidden;}
 .tag-progress-pill{font-size:11px;font-weight:600;letter-spacing:0.04em;padding:3px 9px;border-radius:999px;border:1px solid;}
 .tag-progress-pill--tagged{color:var(--green);border-color:var(--green);background:rgba(74,222,128,0.08);}
 .tag-progress-pill--missing{color:var(--amber);border-color:var(--amber);background:rgba(251,191,36,0.08);cursor:help;}
+.tag-progress-pill--untagged{color:var(--ink-soft);border-color:var(--border);background:var(--surface2);cursor:help;}
+
+/* === Stats pies === */
+.stats-pies-row{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px;margin-top:14px;}
+@media(max-width:720px){.stats-pies-row{grid-template-columns:1fr;}}
+.stats-pie{margin:0;padding:12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface2);display:flex;flex-direction:column;align-items:center;gap:10px;}
+.stats-pie figcaption{width:100%;}
+.stats-pie figcaption strong{display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px;text-align:center;}
+.stats-pie-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:11.5px;}
+.stats-pie-legend li{display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:8px;color:var(--ink-soft);}
+.stats-pie-swatch{width:10px;height:10px;border-radius:2px;display:block;}
+.stats-pie-label{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stats-pie-value{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-weight:600;}
 .tag-progress-cta{margin-left:auto;font-size:13px;}
 /* Viewport-corner ambiguous-class navigation. Two round buttons pinned to
    bottom-left and bottom-right of the window, with the current class
