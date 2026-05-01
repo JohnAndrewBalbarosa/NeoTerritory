@@ -562,6 +562,20 @@ body.login-active {
 .pattern-card-title { font-size: 14px; font-weight: 600; color: var(--ink); }
 .pattern-card-class { font-family: var(--code-font); font-size: 12px; color: var(--ink-soft); }
 .pattern-card-line { font-size: 11px; color: var(--ink-soft); margin-left: auto; }
+.pattern-card-retag {
+  font-size: 11px; padding: 3px 9px; border-radius: 999px;
+  border: 1px dashed var(--panel-border); color: var(--ink-soft);
+  cursor: pointer; user-select: none; line-height: 1.4;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.pattern-card-retag:hover,
+.pattern-card-retag:focus-visible {
+  outline: none; border-style: solid; border-color: var(--accent);
+  color: var(--accent); background: rgba(59, 130, 246, 0.06);
+}
+.class-popout-retag {
+  font-size: 11px; padding: 2px 9px; margin-left: auto;
+}
 .rank-bar {
   display: flex; align-items: center; gap: 8px;
   font-size: 11px; color: var(--ink-soft);

@@ -11,6 +11,10 @@ function isOnline(lastActive?: string): boolean {
   return ago >= 0 && ago < ONLINE_MS;
 }
 
+function isTesterRow(u: AdminUser): boolean {
+  return /^Devcon/i.test(u.username || '');
+}
+
 type SortKey = 'none' | 'runs-desc' | 'runs-asc' | 'lastRun-desc' | 'lastRun-asc';
 
 const SORT_CYCLE: SortKey[] = ['none', 'runs-desc', 'runs-asc', 'lastRun-desc', 'lastRun-asc'];
@@ -39,7 +43,8 @@ export default function UserTable() {
   const [error, setError]     = useState<string | null>(null);
   const [query, setQuery]     = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('none');
-  const [resetting, setResetting] = useState(false);
+  const [resetting, setResetting] = useState<'all' | 'selected' | 'offline' | null>(null);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
   const cancelledRef = useRef(false);
 
   function load() {
@@ -60,16 +65,39 @@ export default function UserTable() {
     setSortKey(k => SORT_CYCLE[(SORT_CYCLE.indexOf(k) + 1) % SORT_CYCLE.length]);
   }
 
-  async function handleReset() {
-    if (!confirm('Reset all tester seats? Active tokens stay valid but seats become re-claimable.')) return;
-    setResetting(true);
+  function toggleSelected(id: number) {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  async function runReset(mode: 'all' | 'selected' | 'offline') {
+    let confirmMsg = '';
+    let arg: Parameters<typeof resetTesterSeats>[0];
+    if (mode === 'selected') {
+      if (!selected.size) return;
+      confirmMsg = `Reset ${selected.size} selected tester seat(s)? Active tokens stay valid; the seat just becomes re-claimable.`;
+      arg = { userIds: Array.from(selected) };
+    } else if (mode === 'offline') {
+      confirmMsg = 'Reset all offline tester seats (no activity in last 5 min)? Online testers are skipped.';
+      arg = { offlineOnly: true };
+    } else {
+      confirmMsg = 'Reset ALL tester seats (online and offline)? Active tokens stay valid but seats become re-claimable.';
+      arg = undefined;
+    }
+    if (!confirm(confirmMsg)) return;
+    setResetting(mode);
     try {
-      await resetTesterSeats();
+      const res = await resetTesterSeats(arg);
+      if (mode === 'selected') setSelected(new Set());
       load();
+      alert(`Reset ${res.reset} seat(s).`);
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Reset failed');
     } finally {
-      setResetting(false);
+      setResetting(null);
     }
   }
 
@@ -81,6 +109,23 @@ export default function UserTable() {
     ? users.filter(u => u.username.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
     : users;
   const visible = applySort(filtered, sortKey);
+
+  const visibleTesterIds = visible.filter(isTesterRow).map(u => u.id);
+  const allVisibleSelected = visibleTesterIds.length > 0
+    && visibleTesterIds.every(id => selected.has(id));
+  const onlineCount = users.filter(u => isOnline(u.last_active)).length;
+
+  function toggleAllVisible() {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        for (const id of visibleTesterIds) next.delete(id);
+      } else {
+        for (const id of visibleTesterIds) next.add(id);
+      }
+      return next;
+    });
+  }
 
   return (
     <div>
@@ -95,6 +140,7 @@ export default function UserTable() {
           aria-label="Filter users"
         />
         {query && <span className="user-search-count">{visible.length} / {users.length}</span>}
+        <span className="user-online-count" title="Active in last 5 min">{onlineCount} online</span>
         <button
           className={`user-ctrl-btn${sortKey !== 'none' ? ' is-active' : ''}`}
           onClick={cycleSort}
@@ -104,11 +150,27 @@ export default function UserTable() {
         </button>
         <button
           className="user-ctrl-btn user-ctrl-btn--danger"
-          onClick={handleReset}
-          disabled={resetting}
-          title="Reset all tester seat claims"
+          onClick={() => runReset('selected')}
+          disabled={resetting !== null || selected.size === 0}
+          title="Reset only the checked tester rows"
         >
-          {resetting ? 'Resetting…' : 'Reset seats'}
+          {resetting === 'selected' ? 'Resetting…' : `Reset selected (${selected.size})`}
+        </button>
+        <button
+          className="user-ctrl-btn"
+          onClick={() => runReset('offline')}
+          disabled={resetting !== null}
+          title="Reset only tester seats whose last activity was over 5 min ago"
+        >
+          {resetting === 'offline' ? 'Resetting…' : 'Reset offline'}
+        </button>
+        <button
+          className="user-ctrl-btn user-ctrl-btn--danger"
+          onClick={() => runReset('all')}
+          disabled={resetting !== null}
+          title="Reset every tester seat"
+        >
+          {resetting === 'all' ? 'Resetting…' : 'Reset all'}
         </button>
         <button className="user-ctrl-btn" onClick={load} title="Refresh user list" aria-label="Refresh">↺</button>
       </div>
@@ -119,6 +181,15 @@ export default function UserTable() {
           <table className="admin-table">
             <thead>
               <tr>
+                <th style={{ width: 28 }}>
+                  <input
+                    type="checkbox"
+                    aria-label="Select all visible testers"
+                    checked={allVisibleSelected}
+                    disabled={visibleTesterIds.length === 0}
+                    onChange={toggleAllVisible}
+                  />
+                </th>
                 <th>User</th>
                 <th>Role</th>
                 <th>Runs</th>
@@ -127,28 +198,41 @@ export default function UserTable() {
               </tr>
             </thead>
             <tbody className="runs-disabled">
-              {visible.map(u => (
-                <tr key={u.id} data-id={u.id} data-username={u.username}>
-                  <td>
-                    <span className="user-name-cell">
-                      {isOnline(u.last_active) && (
-                        <span className="online-dot" title="Active in last 5 min" aria-label="online" />
-                      )}
-                      <strong>{u.username}</strong>
-                    </span>
-                    {u.email && <><br /><small>{u.email}</small></>}
-                  </td>
-                  <td>
-                    <span className="role-pill" data-role={u.role ?? 'user'}>{u.role ?? 'user'}</span>
-                  </td>
-                  <td>{u.runCount ?? 0}</td>
-                  <td>{fmtDate(u.lastRunAt)}</td>
-                  <td>{fmtDate(u.created_at)}</td>
-                </tr>
-              ))}
+              {visible.map(u => {
+                const tester = isTesterRow(u);
+                return (
+                  <tr key={u.id} data-id={u.id} data-username={u.username}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${u.username}`}
+                        checked={selected.has(u.id)}
+                        disabled={!tester}
+                        onChange={() => toggleSelected(u.id)}
+                        title={tester ? 'Select for reset' : 'Only tester (Devcon*) seats can be reset'}
+                      />
+                    </td>
+                    <td>
+                      <span className="user-name-cell">
+                        {isOnline(u.last_active) && (
+                          <span className="online-dot" title="Active in last 5 min" aria-label="online" />
+                        )}
+                        <strong>{u.username}</strong>
+                      </span>
+                      {u.email && <><br /><small>{u.email}</small></>}
+                    </td>
+                    <td>
+                      <span className="role-pill" data-role={u.role ?? 'user'}>{u.role ?? 'user'}</span>
+                    </td>
+                    <td>{u.runCount ?? 0}</td>
+                    <td>{fmtDate(u.lastRunAt)}</td>
+                    <td>{fmtDate(u.created_at)}</td>
+                  </tr>
+                );
+              })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', color: 'var(--ink-soft)', padding: '20px' }}>
+                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--ink-soft)', padding: '20px' }}>
                     No users match "{query}"
                   </td>
                 </tr>

@@ -22,6 +22,20 @@ interface CardProps {
   taggedUsages: ClassUsageBinding[];
   classUsageBindingSource: 'heuristic' | 'microservice';
   onLineFlash?: (line: number) => void;
+  retagCandidates: string[];
+}
+
+// Top 5 ranked candidate patternIds. Used as the picker's option set when the
+// user retags a class outside the original ambiguity verdict.
+function topRankedCandidates(ranking: AmbiguityRanking | null): string[] {
+  return (ranking?.ranks || []).slice(0, 5).map(r => r.patternId);
+}
+
+function dispatchRetag(className: string, candidates: string[]): void {
+  if (!className) return;
+  window.dispatchEvent(new CustomEvent('pattern:retag-request', {
+    detail: { className, candidates }
+  }));
 }
 
 function RowButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
@@ -125,11 +139,17 @@ function TaggedUsagesSection({
 }
 
 function PatternCard(props: CardProps) {
-  const { pattern: p, rank, rankVerdict, resolved, taggedUsages, classUsageBindingSource, onLineFlash } = props;
+  const { pattern: p, rank, rankVerdict, resolved, taggedUsages, classUsageBindingSource, onLineFlash, retagCandidates } = props;
   const colour = colorFor(p.patternName || 'default');
   const declarationLine = p.documentationTargets?.[0]?.line || null;
   const sourceTag = classUsageBindingSource === 'microservice' ? 'microservice-bound' : 'heuristic';
   const [expanded, setExpanded] = useState(false);
+
+  function onRetagClick(e: React.MouseEvent): void {
+    e.stopPropagation();
+    if (!p.className) return;
+    dispatchRetag(p.className, retagCandidates);
+  }
 
   return (
     <div
@@ -148,6 +168,18 @@ function PatternCard(props: CardProps) {
           </span>
           <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
           {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
+          {p.className && (
+            <span
+              role="button"
+              tabIndex={0}
+              className="pattern-card-retag"
+              title={`Re-tag pattern for ${p.className}`}
+              onClick={onRetagClick}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onRetagClick(e as unknown as React.MouseEvent); }}
+            >
+              Tag pattern…
+            </span>
+          )}
         </div>
         <span className="pattern-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
       </button>
@@ -186,6 +218,7 @@ export default function PatternCards(props: PatternCardsProps) {
   if (!detectedPatterns.length) return <div id="pattern-cards" />;
   const ranksById = new Map<string, PatternRankEntry>();
   (ranking?.ranks || []).forEach(r => ranksById.set(r.patternId, r));
+  const retagCandidates = topRankedCandidates(ranking);
   return (
     <div id="pattern-cards" className="pattern-cards">
       {detectedPatterns.map(p => (
@@ -198,6 +231,7 @@ export default function PatternCards(props: PatternCardsProps) {
           taggedUsages={(p.className && classUsageBindings[p.className]) || []}
           classUsageBindingSource={classUsageBindingSource}
           onLineFlash={onLineFlash}
+          retagCandidates={retagCandidates}
         />
       ))}
     </div>

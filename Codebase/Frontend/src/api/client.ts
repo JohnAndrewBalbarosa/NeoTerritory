@@ -262,8 +262,15 @@ export async function deleteAdminLogs(password: string): Promise<{ ok: boolean; 
     body: JSON.stringify({ password })
   });
 }
-export async function resetTesterSeats(): Promise<{ ok: boolean }> {
-  return apiFetch<{ ok: boolean }>('/api/admin/tester-seats/reset', { method: 'POST' });
+export async function resetTesterSeats(opts?: { userIds?: number[]; offlineOnly?: boolean }): Promise<{ ok: boolean; reset: number }> {
+  const body = opts && (opts.userIds?.length || opts.offlineOnly)
+    ? JSON.stringify({ userIds: opts.userIds, offlineOnly: !!opts.offlineOnly })
+    : undefined;
+  return apiFetch<{ ok: boolean; reset: number }>('/api/admin/tester-seats/reset', {
+    method: 'POST',
+    headers: body ? { 'Content-Type': 'application/json' } : undefined,
+    body
+  });
 }
 export async function fetchAdminSurveySummary(): Promise<SurveySummary> {
   return apiFetch<SurveySummary>('/api/admin/stats/survey-summary');

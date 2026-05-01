@@ -56,5 +56,53 @@
                                   "finalize", "done", "complete", "produce"],
       "document_as": "builder_terminator_method"
     }
-  ]
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "fluent_self_return",
+        "shape_regex": "return\\s+\\*\\s*this\\s*;",
+        "weight": 0.6,
+        "describe": "Fluent setter returns *this — canonical builder chaining"
+      },
+      {
+        "id": "fluent_setter_signature",
+        "shape_regex": "{class_name}\\s*&\\s+(set|with|add|append|configure|enable|disable|attach|put)\\w*\\s*\\(",
+        "weight": 0.5,
+        "describe": "Setter returning Builder& — fluent interface signature"
+      },
+      {
+        "id": "build_terminator_method",
+        "shape_regex": "\\b(\\w+|(std::)?(unique_ptr|shared_ptr)\\s*<[^>]+>)\\s+(build|Build|finalize|done|complete|construct|produce|assemble)\\s*\\(\\s*\\)\\s*(const\\s*)?\\{",
+        "weight": 0.55,
+        "describe": "Terminator method named build/finalize/etc. that returns the product"
+      },
+      {
+        "id": "chained_setter_usage",
+        "shape_regex": "\\.\\s*(set|with|add|append|configure|enable|attach)\\w*\\s*\\([^)]*\\)\\s*\\.\\s*(set|with|add|append|configure|enable|attach|build|done)\\w*\\s*\\(",
+        "weight": 0.55,
+        "describe": "Caller chains two or more fluent setters in sequence"
+      }
+    ],
+    "expected_collaborators": [
+      {
+        "id": "internal_state_member",
+        "shape_regex": "\\b(std::)?(string|vector|optional|map|unordered_map)\\s*<?[^;]{0,80};",
+        "weight": 0.2,
+        "describe": "Builder accumulates state in collection-like members"
+      }
+    ],
+    "global_functions": [],
+    "negative_signals": [
+      {
+        "id": "no_terminator",
+        "shape_regex": "class\\s+{class_name}\\s*[:\\{][\\s\\S]{0,1200}\\}(?![\\s\\S]*\\b(build|finalize|done|complete|produce|assemble)\\s*\\()",
+        "weight": -0.4,
+        "describe": "No terminator method found — likely not a Builder"
+      }
+    ]
+  },
+
+  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
 }

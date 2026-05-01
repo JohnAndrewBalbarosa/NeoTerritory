@@ -34,10 +34,47 @@ router.get('/users', (_req: Request, res: Response, next: NextFunction) => {
   } catch (err) { next(err); }
 });
 
-router.post('/tester-seats/reset', (req: Request, res: Response, next: NextFunction) => {
+// Five-minute window matches the admin UI's "online" indicator. A user with no
+// last_active row, or last_active older than this, is considered offline and
+// safe to reset without dropping their session.
+const ONLINE_WINDOW_SECONDS = 5 * 60;
+
+interface ResetSeatsBody {
+  userIds?: unknown;
+  offlineOnly?: unknown;
+}
+
+router.post('/tester-seats/reset', (req: Request<unknown, unknown, ResetSeatsBody>, res: Response, next: NextFunction) => {
   try {
-    db.prepare("UPDATE users SET claimed_at = NULL WHERE username LIKE 'Devcon%'").run();
-    res.json({ ok: true });
+    const body = req.body || {};
+    const rawIds = Array.isArray(body.userIds) ? body.userIds : [];
+    const userIds = rawIds
+      .map((v) => Number(v))
+      .filter((n): n is number => Number.isFinite(n) && n > 0);
+    const offlineOnly = body.offlineOnly === true;
+
+    let result: { changes: number };
+    if (userIds.length) {
+      // Selected reset: only Devcon* tester rows can have their seat freed,
+      // even if the admin sends a non-tester id.
+      const placeholders = userIds.map(() => '?').join(',');
+      result = db.prepare(
+        `UPDATE users SET claimed_at = NULL
+         WHERE username LIKE 'Devcon%' AND id IN (${placeholders})`
+      ).run(...userIds);
+    } else if (offlineOnly) {
+      // Offline reset: only tester accounts that have not pinged within the
+      // online window. NULL last_active counts as offline.
+      result = db.prepare(
+        `UPDATE users SET claimed_at = NULL
+         WHERE username LIKE 'Devcon%'
+           AND (last_active IS NULL
+                OR strftime('%s','now') - strftime('%s', last_active) >= ?)`
+      ).run(ONLINE_WINDOW_SECONDS);
+    } else {
+      result = db.prepare("UPDATE users SET claimed_at = NULL WHERE username LIKE 'Devcon%'").run();
+    }
+    res.json({ ok: true, reset: result.changes });
   } catch (err) { next(err); }
 });
 

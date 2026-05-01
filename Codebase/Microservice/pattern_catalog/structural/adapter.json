@@ -67,15 +67,39 @@
   "implementation_template": {
     "callsites": [
       {
-        "id": "wrapper_method_call",
-        "shape_regex": "\\b{class_name}\\s+\\w+\\s*\\(.*\\)\\s*;[\\s\\S]{0,200}\\w+\\s*\\.\\s*\\w+\\s*\\(",
-        "weight": 1.0,
+        "id": "wrapper_method_usage",
+        "shape_regex": "\\b{class_name}\\s+\\w+\\s*\\([^)]*\\)\\s*;[\\s\\S]{0,200}\\w+\\s*\\.\\s*\\w+\\s*\\(",
+        "weight": 0.55,
         "describe": "Adapter is constructed then has a method called on it"
+      },
+      {
+        "id": "adaptee_pointer_member",
+        "shape_regex": "\\b\\w+\\s*\\*\\s*(adaptee_?|target_?|wrappee_?|wrapped_?|m_inner|inner_?|delegate_?|m_adaptee|m_target)\\s*;",
+        "weight": 0.5,
+        "describe": "Adapter holds a raw pointer to the adaptee/wrapped object"
+      },
+      {
+        "id": "adaptee_smart_member",
+        "shape_regex": "(std::)?(unique_ptr|shared_ptr)\\s*<[^>]+>\\s*(adaptee_?|target_?|wrappee_?|wrapped_?|m_inner|inner_?|delegate_?|m_adaptee|m_target)\\s*;",
+        "weight": 0.55,
+        "describe": "Adapter owns the adaptee via smart pointer"
+      },
+      {
+        "id": "ctor_inject_adaptee",
+        "shape_regex": "{class_name}\\s*\\([^)]*\\)\\s*:[^{]*\\b(adaptee_?|target_?|wrappee_?|m_inner|inner_?|delegate_?|m_target)\\s*\\(",
+        "weight": 0.45,
+        "describe": "Constructor initializer captures the adaptee"
+      },
+      {
+        "id": "in_body_translation_call",
+        "shape_regex": "\\b(adaptee_?|target_?|wrappee_?|m_inner|inner_?|delegate_?|m_target)\\s*->\\s*\\w+\\s*\\(",
+        "weight": 0.45,
+        "describe": "Adapter method body forwards via adaptee->method() — interface translation"
       },
       {
         "id": "std_function_wrapping",
         "shape_regex": "std::function\\s*<[^>]+>\\s*\\w+\\s*=\\s*(std::bind|std::mem_fn|\\[)",
-        "weight": 0.6,
+        "weight": 0.5,
         "describe": "std::function wrapping a method via std::bind or lambda — functional-adapter signal"
       }
     ],
@@ -83,14 +107,20 @@
       {
         "id": "adaptee_referenced",
         "shape_regex": "\\b{class_name}\\s*\\(\\s*\\w+\\s*\\)",
-        "weight": 0.6,
+        "weight": 0.4,
         "describe": "Adapter constructed with an adaptee argument"
       },
       {
         "id": "bind_adaptee_method",
         "shape_regex": "std::bind\\s*\\(\\s*&?\\w+::\\w+",
-        "weight": 0.5,
+        "weight": 0.45,
         "describe": "std::bind used to bind an adaptee member function"
+      },
+      {
+        "id": "interface_override",
+        "shape_regex": "\\bvirtual\\s+\\w+[\\s\\S]{0,80}override\\b",
+        "weight": 0.25,
+        "describe": "Adapter overrides target interface methods"
       }
     ],
     "global_functions": [],

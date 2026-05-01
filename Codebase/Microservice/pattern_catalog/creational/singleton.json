@@ -66,5 +66,58 @@
       "expected_lexeme_any_of": ["delete"],
       "document_as": "explicit_copy_deletion"
     }
-  ]
+  ],
+
+  "implementation_template": {
+    "callsites": [
+      {
+        "id": "static_instance_accessor",
+        "shape_regex": "\\bstatic\\s+{class_name}\\s*[&*]?\\s*(getInstance|get_instance|GetInstance|instance|sharedInstance|getDefault)\\s*\\(\\s*\\)",
+        "weight": 0.7,
+        "describe": "static accessor returning the single instance"
+      },
+      {
+        "id": "meyers_local_static",
+        "shape_regex": "\\bstatic\\s+{class_name}\\s+\\w+\\s*;[\\s\\S]{0,80}return\\s+\\w+\\s*;",
+        "weight": 0.65,
+        "describe": "Meyers singleton: function-local `static T inst;` then return"
+      },
+      {
+        "id": "deleted_copy_ctor",
+        "shape_regex": "{class_name}\\s*\\(\\s*const\\s+{class_name}\\s*&\\s*\\)\\s*=\\s*delete",
+        "weight": 0.45,
+        "describe": "Copy constructor explicitly deleted"
+      },
+      {
+        "id": "deleted_assignment",
+        "shape_regex": "{class_name}\\s*&\\s*operator\\s*=\\s*\\(\\s*const\\s+{class_name}\\s*&\\s*\\)\\s*=\\s*delete",
+        "weight": 0.35,
+        "describe": "Copy assignment explicitly deleted"
+      },
+      {
+        "id": "private_ctor",
+        "shape_regex": "private\\s*:[\\s\\S]{0,200}{class_name}\\s*\\(\\s*\\)\\s*[;{=]",
+        "weight": 0.4,
+        "describe": "Constructor declared in private section"
+      },
+      {
+        "id": "call_once_init",
+        "shape_regex": "(std::)?call_once\\s*\\([\\s\\S]{0,200}(new\\s+{class_name}|make_unique\\s*<\\s*{class_name})",
+        "weight": 0.55,
+        "describe": "std::call_once protects single instance creation"
+      }
+    ],
+    "expected_collaborators": [],
+    "global_functions": [],
+    "negative_signals": [
+      {
+        "id": "no_static_accessor",
+        "shape_regex": "class\\s+{class_name}\\s*[:\\{][\\s\\S]{0,1200}\\}(?![\\s\\S]*\\bstatic\\b)",
+        "weight": -0.5,
+        "describe": "No static keyword anywhere in the class — not a singleton"
+      }
+    ]
+  },
+
+  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
 }
