@@ -16,6 +16,14 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$ROOT"
 
+# Shared requirements verifier — soft-fails so the bootstrap can run on
+# partial setups and just call out what's missing.
+if [[ -f "$ROOT/scripts/verify-requirements.sh" ]]; then
+  # shellcheck source=scripts/verify-requirements.sh
+  source "$ROOT/scripts/verify-requirements.sh"
+  verify_requirements full soft || true
+fi
+
 DO_FRONTEND=1; DO_BACKEND=1; DO_MICRO=1; DO_INFRA=1
 ONLY=""
 

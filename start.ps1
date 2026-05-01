@@ -38,12 +38,23 @@ function Write-Ok($msg)   { Write-Host "    $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "    $msg" -ForegroundColor Yellow }
 function Test-Tool($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 
+# ── 0. Requirements check (shared verifier) ──────────────────────────────────
+. (Join-Path $Root 'scripts\verify-requirements.ps1')
+# Pods profile when Docker is intended; soft-fail so the script continues
+# with a warning if Docker Desktop isn't running yet.
+$reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
+$report = Test-Requirements -Profile $reqProfile -Soft
+
 # ── 1. Pod image (one-time host build, tiny re-check on every start) ─────────
 
 if (-not $SkipPod) {
   Write-Step 'Checking Docker pod image (one-time per host)'
-  if (-not (Test-Tool 'docker')) {
-    Write-Warn 'docker not found on PATH — backend will fall back to local sandbox for GDB unit tests.'
+  if (-not $report.docker) {
+    Write-Warn 'docker not on PATH — pod isolation skipped; backend will use local sandbox for GDB unit tests.'
+    Write-Warn 'Install Docker Desktop from https://www.docker.com/products/docker-desktop and re-run .\start.ps1.'
+  } elseif (-not $report.dockerDaemon) {
+    Write-Warn 'docker is installed but the daemon is not responding — start Docker Desktop and re-run .\start.ps1.'
+    Write-Warn 'Pod build skipped; backend will use local sandbox for GDB unit tests.'
   } else {
     $imageProbe = & docker image inspect $PodImage 2>$null
     if ($LASTEXITCODE -ne 0) {

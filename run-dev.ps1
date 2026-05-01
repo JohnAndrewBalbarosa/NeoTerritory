@@ -44,20 +44,28 @@ function Free-Port($port) {
   }
 }
 
-# 1. Prereq checks
-Write-Step 'Checking tools'
-$missing = @()
-if (-not (Test-Tool 'node'))  { $missing += 'node (https://nodejs.org)' }
-if (-not (Test-Tool 'cmake')) { $missing += 'cmake (https://cmake.org)' }
-$cxxOk = (Test-Tool 'g++') -or (Test-Tool 'clang++') -or (Test-Tool 'cl')
-if (-not $cxxOk) { $missing += 'a C++17 compiler (g++ / clang++ / MSVC cl)' }
-if ($missing.Count -gt 0) {
-  Write-Err 'Missing prerequisites:'
-  $missing | ForEach-Object { Write-Err "  - $_" }
-  Write-Err 'Install them and rerun. (Or run .\deploy.ps1 to attempt automated install.)'
-  exit 1
+# 1. Prereq checks (shared verifier, hard-fails for missing dev tools)
+$verifierPath = Join-Path $ProjectRoot 'scripts\verify-requirements.ps1'
+if (Test-Path $verifierPath) {
+  . $verifierPath
+  try { Test-Requirements -Profile dev | Out-Null }
+  catch { Write-Err $_.Exception.Message; exit 1 }
+} else {
+  # Fallback when the verifier script isn't present (older clones).
+  Write-Step 'Checking tools'
+  $missing = @()
+  if (-not (Test-Tool 'node'))  { $missing += 'node (https://nodejs.org)' }
+  if (-not (Test-Tool 'cmake')) { $missing += 'cmake (https://cmake.org)' }
+  $cxxOk = (Test-Tool 'g++') -or (Test-Tool 'clang++') -or (Test-Tool 'cl')
+  if (-not $cxxOk) { $missing += 'a C++17 compiler (g++ / clang++ / MSVC cl)' }
+  if ($missing.Count -gt 0) {
+    Write-Err 'Missing prerequisites:'
+    $missing | ForEach-Object { Write-Err "  - $_" }
+    Write-Err 'Install them and rerun.'
+    exit 1
+  }
+  Write-Ok 'node, cmake, and a C++ compiler are available.'
 }
-Write-Ok 'node, cmake, and a C++ compiler are available.'
 
 # 2. Backend deps
 if (-not (Test-Path $BackendNodeMods)) {

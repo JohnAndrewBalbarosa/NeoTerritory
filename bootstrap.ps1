@@ -31,6 +31,10 @@ if ($Help) {
 $Root = $PSScriptRoot
 Set-Location $Root
 
+# Shared requirements verifier (soft — bootstrap is "best effort").
+$verifier = Join-Path $Root 'scripts\verify-requirements.ps1'
+if (Test-Path $verifier) { . $verifier; Test-Requirements -Profile full -Soft | Out-Null }
+
 $DoFrontend = -not $NoFrontend
 $DoBackend  = -not $NoBackend
 $DoMicro    = -not $NoMicroservice

@@ -45,6 +45,13 @@ step() { printf '\033[36m==> %s\033[0m\n' "$*"; }
 ok()   { printf '\033[32m    %s\033[0m\n' "$*"; }
 warn() { printf '\033[33m    %s\033[0m\n' "$*"; }
 
+# ── 0. Requirements check (shared verifier, soft-fails) ──────────────────────
+# shellcheck source=scripts/verify-requirements.sh
+source "$ROOT_DIR/scripts/verify-requirements.sh"
+REQ_PROFILE='pods'
+[[ $SKIP_POD -eq 1 ]] && REQ_PROFILE='dev'
+verify_requirements "$REQ_PROFILE" soft
+
 # ── 1. One-time Docker pod image build ───────────────────────────────────────
 
 if [[ $SKIP_POD -eq 0 ]]; then
