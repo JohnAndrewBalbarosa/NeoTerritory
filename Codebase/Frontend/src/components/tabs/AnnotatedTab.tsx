@@ -194,23 +194,33 @@ export default function AnnotatedTab({
   const classNav = useMemo(() => {
     const run = currentRun;
     if (!run) return [];
-    const { patternCountByClass, firstLineByClass, inScopePatterns } = classDerivation;
+    const { firstLineByClass, inScopePatterns } = classDerivation;
     const out: Array<{ className: string; line: number; fileIdx: number }> = [];
     const considered = new Set<string>([
       ...firstLineByClass.keys(),
       ...inScopePatterns.keys(),
       ...classLocations.keys()
     ]);
+    // Same own-pattern set the missing-pill memo computes; rebuilt here so
+    // the navigator can compare in-scope patterns against the class's own.
+    const ownPatternsByClass = new Map<string, Set<string>>();
+    for (const p of run.detectedPatterns || []) {
+      if (!p.className) continue;
+      if (!ownPatternsByClass.has(p.className)) ownPatternsByClass.set(p.className, new Set());
+      ownPatternsByClass.get(p.className)!.add(p.patternId);
+    }
     for (const className of considered) {
       if (resolvedMap[className]) continue;
-      // STRICT: navigator only cycles classes the microservice DIRECTLY
-      // tagged with more than one pattern. No in-scope inference, no
-      // annotation-derived guesses, no untagged classes. The set is
-      // exactly: classes with `>1` distinct patternIds where each
-      // detection carried this className. Anything else stays out.
+      // Class must be a microservice-tagged design pattern first.
       if (!detectedClassNames.has(className)) continue;
-      const directAmbiguous = (patternCountByClass.get(className) || 0) > 1;
-      if (!directAmbiguous) continue;
+      const ownSet  = ownPatternsByClass.get(className) || new Set<string>();
+      const inScope = inScopePatterns.get(className) || new Set<string>();
+      const directAmbiguous = ownSet.size > 1;
+      let foreignInScope = false;
+      for (const pid of inScope) {
+        if (!ownSet.has(pid)) { foreignInScope = true; break; }
+      }
+      if (!directAmbiguous && !foreignInScope) continue;
       const fallbackLine = firstLineByClass.get(className) ?? 1;
       const loc = classLocations.get(className);
       out.push({
@@ -234,7 +244,7 @@ export default function AnnotatedTab({
     const tagged: string[] = [];
     const missing: string[] = [];
     const untagged: string[] = [];
-    const { patternCountByClass, inScopePatterns } = classDerivation;
+    const { inScopePatterns } = classDerivation;
     const all = new Set<string>([
       ...detectedClassNames,
       ...bindingClassNames,
@@ -246,25 +256,50 @@ export default function AnnotatedTab({
     // can't be ambiguous (it has nothing to be ambiguous between yet).
     // Classes with regex/binding evidence but zero microservice tags
     // become "untagged" — informational only, no CTA effect.
+    // Two-step ambiguity rule, gated on the microservice having actually
+    // tagged the class as a design pattern (it must own a detection with
+    // its className). Only THEN is in-scope evidence considered:
+    //   1) the matcher attached >1 distinct patternIds to the class itself
+    //      (same-structure conflict on the head), OR
+    //   2) some OTHER pattern's detection landed inside the class's
+    //      declaration scope (another design pattern living inside this
+    //      one's body).
+    // Classes the microservice never tagged as a design pattern are
+    // ineligible for ambiguity entirely — they go straight to untagged.
+    const ownPatternsByClass = new Map<string, Set<string>>();
+    if (currentRun) {
+      for (const p of currentRun.detectedPatterns || []) {
+        if (!p.className) continue;
+        if (!ownPatternsByClass.has(p.className)) ownPatternsByClass.set(p.className, new Set());
+        ownPatternsByClass.get(p.className)!.add(p.patternId);
+      }
+    }
     for (const c of all) {
-      // STRICT: ambiguous == microservice DIRECTLY tagged the class with
-      // more than one distinct pattern, and the user hasn't resolved it.
-      // Classes with a single direct tag = tagged. Classes with no direct
-      // detection = untagged. No in-scope inference is allowed to bump a
-      // class into the ambiguous bucket — the navigator cycles exactly
-      // this set, and the user explicitly does not want anything else in
-      // the nav.
       const isTaggedByMicroservice = detectedClassNames.has(c);
       const isResolved = !!resolvedMap[c];
-      const directAmbiguous = (patternCountByClass.get(c) || 0) > 1;
-      const isAmbiguous = isTaggedByMicroservice && directAmbiguous && !isResolved;
+      if (!isTaggedByMicroservice && !isResolved) {
+        untagged.push(c);
+        continue;
+      }
+      const ownSet  = ownPatternsByClass.get(c) || new Set<string>();
+      const inScope = inScopePatterns.get(c) || new Set<string>();
+      // Step 1: direct conflict on the class's own head.
+      const directAmbiguous = ownSet.size > 1;
+      // Step 2: a different design pattern's detection sits inside this
+      // class's scope. We compare patternIds against the class's own set
+      // so a class hosting only its own pattern's targets stays clean.
+      let foreignInScope = false;
+      for (const pid of inScope) {
+        if (!ownSet.has(pid)) { foreignInScope = true; break; }
+      }
+      const isAmbiguous = isTaggedByMicroservice
+                       && (directAmbiguous || foreignInScope)
+                       && !isResolved;
       if (isAmbiguous) {
         ambiguous.add(c);
         missing.push(c);
-      } else if (isTaggedByMicroservice || isResolved) {
-        tagged.push(c);
       } else {
-        untagged.push(c);
+        tagged.push(c);
       }
     }
     return {
