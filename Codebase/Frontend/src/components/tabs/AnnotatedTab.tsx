@@ -5,6 +5,7 @@ import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
+import { patternFromAnnotation } from '../../lib/patterns';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -110,6 +111,30 @@ export default function AnnotatedTab({
   // patternIds whose targets fall inside each class's scope. The progress
   // pill treats (c.size > 1) as ambiguous too — even one ambiguous line
   // inside a class declaration marks the whole class.
+  // Per-line popover-ambiguity, computed with the EXACT same logic the
+  // LinePopover uses to decide when to render the
+  // "N possible patterns at this line — pick the one that matches" badge.
+  // We group annotations by line and flag any line whose distinct
+  // patternKeys (via the same `patternKey || patternFromAnnotation(a)`
+  // resolution) total >1. The class-ambiguity rule below then reuses
+  // exactly this signal so the missing pill, the corner-button nav, and
+  // the popover all agree on what counts as ambiguous.
+  const ambiguousLines = useMemo(() => {
+    const byLine = new Map<number, Set<string>>();
+    for (const a of allAnnotations) {
+      if (typeof a.line !== 'number') continue;
+      const key = a.patternKey || patternFromAnnotation(a);
+      if (!key) continue;
+      if (!byLine.has(a.line)) byLine.set(a.line, new Set());
+      byLine.get(a.line)!.add(key);
+    }
+    const set = new Set<number>();
+    for (const [line, keys] of byLine) {
+      if (keys.size > 1) set.add(line);
+    }
+    return set;
+  }, [allAnnotations]);
+
   const classDerivation = useMemo(() => {
     const run = currentRun;
     const patternCountByClass = new Map<string, number>();
@@ -195,6 +220,7 @@ export default function AnnotatedTab({
     const run = currentRun;
     if (!run) return [];
     const { firstLineByClass, inScopePatterns } = classDerivation;
+    void inScopePatterns; // retained for shape parity; classNav now uses ambiguousLines
     const out: Array<{ className: string; line: number; fileIdx: number }> = [];
     const considered = new Set<string>([
       ...firstLineByClass.keys(),
@@ -213,16 +239,21 @@ export default function AnnotatedTab({
       if (resolvedMap[className]) continue;
       // Class must be a microservice-tagged design pattern first.
       if (!detectedClassNames.has(className)) continue;
-      const ownSet  = ownPatternsByClass.get(className) || new Set<string>();
-      const inScope = inScopePatterns.get(className) || new Set<string>();
+      const ownSet = ownPatternsByClass.get(className) || new Set<string>();
       const directAmbiguous = ownSet.size > 1;
-      let foreignInScope = false;
-      for (const pid of inScope) {
-        if (!ownSet.has(pid)) { foreignInScope = true; break; }
-      }
-      if (!directAmbiguous && !foreignInScope) continue;
-      const fallbackLine = firstLineByClass.get(className) ?? 1;
+      // Body ambiguity uses the SAME per-line popover-ambiguity signal
+      // ("N possible patterns at this line"). If any line inside the
+      // class scope would prompt the popover for a pick, the class is
+      // ambiguous as a whole.
       const loc = classLocations.get(className);
+      let bodyAmbiguous = false;
+      if (loc) {
+        for (const ln of ambiguousLines) {
+          if (ln >= loc.line && ln <= loc.endLine) { bodyAmbiguous = true; break; }
+        }
+      }
+      if (!directAmbiguous && !bodyAmbiguous) continue;
+      const fallbackLine = firstLineByClass.get(className) ?? 1;
       out.push({
         className,
         line: loc?.line ?? fallbackLine,
@@ -230,7 +261,7 @@ export default function AnnotatedTab({
       });
     }
     return out.sort((a, b) => (a.fileIdx - b.fileIdx) || (a.line - b.line));
-  }, [currentRun, classDerivation, classLocations, resolvedMap, detectedClassNames, activeFileIdx]);
+  }, [currentRun, classDerivation, classLocations, resolvedMap, detectedClassNames, ambiguousLines, activeFileIdx]);
 
   // Tag-progress count derives from the same ambiguity model the navigator
   // uses. A class is ambiguous (and therefore "missing") when:
@@ -274,6 +305,17 @@ export default function AnnotatedTab({
         ownPatternsByClass.get(p.className)!.add(p.patternId);
       }
     }
+    // Pre-compute per-class "has any popover-ambiguous line inside scope".
+    // This is the same signal the LinePopover uses to render its
+    // "N possible patterns at this line" badge — applied class-wide.
+    const classHasPopoverAmbiguousLine = new Map<string, boolean>();
+    for (const [name, loc] of classLocations.entries()) {
+      let hit = false;
+      for (const ln of ambiguousLines) {
+        if (ln >= loc.line && ln <= loc.endLine) { hit = true; break; }
+      }
+      classHasPopoverAmbiguousLine.set(name, hit);
+    }
     for (const c of all) {
       const isTaggedByMicroservice = detectedClassNames.has(c);
       const isResolved = !!resolvedMap[c];
@@ -281,19 +323,17 @@ export default function AnnotatedTab({
         untagged.push(c);
         continue;
       }
-      const ownSet  = ownPatternsByClass.get(c) || new Set<string>();
-      const inScope = inScopePatterns.get(c) || new Set<string>();
-      // Step 1: direct conflict on the class's own head.
+      const ownSet = ownPatternsByClass.get(c) || new Set<string>();
+      // Step 1 — direct: matcher attached >1 distinct patterns to this
+      // class's head. (e.g. ShapeFactory tagged Factory + StrategyConcrete.)
       const directAmbiguous = ownSet.size > 1;
-      // Step 2: a different design pattern's detection sits inside this
-      // class's scope. We compare patternIds against the class's own set
-      // so a class hosting only its own pattern's targets stays clean.
-      let foreignInScope = false;
-      for (const pid of inScope) {
-        if (!ownSet.has(pid)) { foreignInScope = true; break; }
-      }
+      // Step 2 — popover-ambiguous body: any line inside the class scope
+      // has the same popover badge the user sees ("N possible patterns at
+      // this line"). If the popover would offer a choice anywhere in the
+      // body, the class as a whole is ambiguous.
+      const bodyAmbiguous = !!classHasPopoverAmbiguousLine.get(c);
       const isAmbiguous = isTaggedByMicroservice
-                       && (directAmbiguous || foreignInScope)
+                       && (directAmbiguous || bodyAmbiguous)
                        && !isResolved;
       if (isAmbiguous) {
         ambiguous.add(c);
@@ -309,7 +349,7 @@ export default function AnnotatedTab({
       untaggedClassNames:  untagged,
       allClassNames:       all
     };
-  }, [classDerivation, detectedClassNames, bindingClassNames, resolvedMap]);
+  }, [classDerivation, detectedClassNames, bindingClassNames, resolvedMap, classLocations, ambiguousLines, currentRun]);
 
   const taggedCount = taggedClassNames.length;
   const missingCount = missingClassNames.length;
