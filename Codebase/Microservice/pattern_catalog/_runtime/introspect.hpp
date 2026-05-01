@@ -9,6 +9,7 @@
 #pragma once
 #include <type_traits>
 #include <utility>
+#include <cstdio>
 
 namespace nt {
 
@@ -21,13 +22,19 @@ namespace nt {
 // (the pattern is short and unambiguous). For most pattern-relevant checks
 // (zero-arg member call) this default is enough.
 
+// NB: this macro is invoked from driver.cpp at file scope (outside any
+// namespace), so the trait declarations MUST inject themselves back into
+// `namespace nt`. Otherwise drivers that say `nt::has_<NAME>` fail with
+// "is not a member of 'nt'", which is exactly the pre-fix bug.
 #define NT_DECLARE_METHOD_PROBE(NAME)                                          \
+  namespace nt {                                                               \
   template <typename T, typename = void>                                       \
   struct has_##NAME : std::false_type {};                                      \
   template <typename T>                                                        \
   struct has_##NAME<T,                                                         \
     std::void_t<decltype(std::declval<T&>().NAME())>>                          \
-    : std::true_type {};
+    : std::true_type {};                                                       \
+  }
 
 NT_DECLARE_METHOD_PROBE(build)
 NT_DECLARE_METHOD_PROBE(finalize)
@@ -53,11 +60,13 @@ NT_DECLARE_METHOD_PROBE(load)
 // equality test is meaningful for their accessor.
 
 #define NT_DECLARE_STATIC_PROBE(NAME)                                          \
+  namespace nt {                                                               \
   template <typename T, typename = void>                                       \
   struct has_static_##NAME : std::false_type {};                               \
   template <typename T>                                                        \
   struct has_static_##NAME<T, std::void_t<decltype(T::NAME())>>                \
-    : std::true_type {};
+    : std::true_type {};                                                       \
+  }
 
 NT_DECLARE_STATIC_PROBE(instance)
 NT_DECLARE_STATIC_PROBE(getInstance)
@@ -94,5 +103,17 @@ struct is_default_constructible :
 // when an `if constexpr` body is just exercising compilation.
 template <typename T>
 inline void touch(T&& v) noexcept { (void)v; }
+
+// Print a CRITERIA line in a fixed format the backend can parse out of
+// stdout. Each test driver streams one or more of these so the unit-test
+// result panel can show plain-English criteria with pass/skip status,
+// rather than just a raw "binary exited 0".
+//
+// Format: `NT_CRITERION pattern_id|class_name|status|description`
+//   status ∈ {pass, skip, fail}
+inline void emit_criterion(const char* pattern, const char* className,
+                           const char* status, const char* description) {
+  std::printf("NT_CRITERION %s|%s|%s|%s\n", pattern, className, status, description);
+}
 
 }  // namespace nt

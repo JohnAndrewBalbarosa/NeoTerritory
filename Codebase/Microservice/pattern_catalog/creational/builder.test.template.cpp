@@ -1,9 +1,5 @@
 // Builder — flexible test driver.
 // Substitutions: {{HEADER}}, {{CLASS_NAME}}, {{TERMINATOR}}
-//
-// Creational family → we verify a builder can be stood up and that the
-// catalog-detected terminator method (build / finalize / done / produce /
-// complete) actually exists. Whichever name is present, we exercise it once.
 
 #include "{{HEADER}}"
 #include "introspect.hpp"
@@ -11,27 +7,55 @@
 
 NT_DECLARE_METHOD_PROBE({{TERMINATOR}})
 
-int main() {
-    static_assert(std::is_class_v<{{CLASS_NAME}}>, "{{CLASS_NAME}} must be a class");
-    static_assert(nt::is_default_constructible<{{CLASS_NAME}}>::value,
-                  "{{CLASS_NAME}} (Builder) should be default-constructible");
+template <typename T = {{CLASS_NAME}}>
+static int run_tests() {
+    static_assert(std::is_class_v<T>, "{{CLASS_NAME}} must be a class");
 
-    // Behavioural: cycle through the canonical terminator names. We pick the
-    // first one the user's class actually exposes; missing terminators skip
-    // silently rather than fail to compile.
-    {{CLASS_NAME}} b;
-    if constexpr (nt::has_{{TERMINATOR}}<{{CLASS_NAME}}>::value) {
-        nt::touch(b.{{TERMINATOR}}());
-    } else if constexpr (nt::has_build<{{CLASS_NAME}}>::value) {
-        nt::touch(b.build());
-    } else if constexpr (nt::has_finalize<{{CLASS_NAME}}>::value) {
-        nt::touch(b.finalize());
-    } else if constexpr (nt::has_done<{{CLASS_NAME}}>::value) {
-        nt::touch(b.done());
-    } else if constexpr (nt::has_complete<{{CLASS_NAME}}>::value) {
-        nt::touch(b.complete());
-    } else if constexpr (nt::has_produce<{{CLASS_NAME}}>::value) {
-        nt::touch(b.produce());
+    if constexpr (nt::is_default_constructible<T>::value) {
+        nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+            "Builder is default-constructible (a fresh builder can be created).");
+        T b;
+        bool exercised = false;
+        if constexpr (nt::has_{{TERMINATOR}}<T>::value) {
+            nt::touch(b.{{TERMINATOR}}());
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+                "Detected terminator method '{{TERMINATOR}}' callable with no arguments.");
+            exercised = true;
+        } else if constexpr (nt::has_build<T>::value) {
+            nt::touch(b.build());
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+                "Builder exposes build() — the canonical terminator.");
+            exercised = true;
+        } else if constexpr (nt::has_finalize<T>::value) {
+            nt::touch(b.finalize());
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+                "Builder exposes finalize() as its terminator.");
+            exercised = true;
+        } else if constexpr (nt::has_done<T>::value) {
+            nt::touch(b.done());
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+                "Builder exposes done() as its terminator.");
+            exercised = true;
+        } else if constexpr (nt::has_complete<T>::value) {
+            nt::touch(b.complete());
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+                "Builder exposes complete() as its terminator.");
+            exercised = true;
+        } else if constexpr (nt::has_produce<T>::value) {
+            nt::touch(b.produce());
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
+                "Builder exposes produce() as its terminator.");
+            exercised = true;
+        }
+        if (!exercised) {
+            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "skip",
+                "No zero-arg terminator (build/finalize/done/complete/produce) found.");
+        }
+    } else {
+        nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "skip",
+            "Builder is not default-constructible; cannot exercise terminator methods.");
     }
     return 0;
 }
+
+int main() { return run_tests<>(); }

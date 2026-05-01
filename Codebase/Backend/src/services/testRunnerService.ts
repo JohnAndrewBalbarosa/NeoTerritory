@@ -41,6 +41,10 @@ export interface TestResult {
   verdict: 'pass' | 'fail' | 'timeout' | 'segfault' | 'leak' | 'compile_error' | 'sandbox_disabled' | 'no_template' | 'skipped';
   failingLine?: number;
   message?: string;
+  // Plain-English criteria emitted by the driver via nt::emit_criterion.
+  // Each row describes one assertion the test made (or skipped) so the UI
+  // can render a per-criterion breakdown instead of just a binary verdict.
+  criteria?: Array<{ status: 'pass' | 'skip' | 'fail'; description: string }>;
 }
 
 const TIMEOUT_MS = 10_000;
@@ -344,14 +348,32 @@ async function runPhase(
     const failMsg = phase === 'compile_run'
       ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
       : `Unit-test driver exited with ${runOut.exitCode}.`;
+    // Parse plain-English criteria emitted by the driver via nt::emit_criterion.
+    // Each line: NT_CRITERION pattern_id|class|status|description
+    const criteria: NonNullable<TestResult['criteria']> = [];
+    for (const ln of (runOut.stdout || '').split('\n')) {
+      if (!ln.startsWith('NT_CRITERION ')) continue;
+      const parts = ln.slice('NT_CRITERION '.length).split('|');
+      if (parts.length < 4) continue;
+      const status = parts[2] as 'pass' | 'skip' | 'fail';
+      if (status !== 'pass' && status !== 'skip' && status !== 'fail') continue;
+      criteria.push({ status, description: parts.slice(3).join('|').trim() });
+    }
+    // Strip NT_CRITERION lines from the visible stdout — they're now
+    // first-class criteria entries; leaving them in `actual` is noise.
+    const cleanedStdout = (runOut.stdout || '')
+      .split('\n')
+      .filter(ln => !ln.startsWith('NT_CRITERION '))
+      .join('\n');
     return {
       ...base,
       passed: verdict === 'pass',
       verdict,
-      actual: runOut.stdout + (runOut.stderr ? '\n--- stderr ---\n' + runOut.stderr : ''),
+      actual: cleanedStdout + (runOut.stderr ? '\n--- stderr ---\n' + runOut.stderr : ''),
       exitCode: runOut.exitCode,
       durationMs: Date.now() - t0,
-      message: verdict === 'pass' ? passMsg : failMsg
+      message: verdict === 'pass' ? passMsg : failMsg,
+      criteria
     };
   } finally {
     try { fs.rmSync(runDir, { recursive: true, force: true }); } catch { /* ignore */ }

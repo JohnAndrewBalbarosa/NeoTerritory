@@ -54,15 +54,20 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}): Promi
   if (!response.ok) {
     // Build a richer error so callers (e.g. GdbRunnerTab) can read status,
     // detail, and retryAfterMs without parsing strings.
-    const body = data as { error?: string; detail?: string; retryAfterMs?: number };
+    const body = data as {
+      error?: string; detail?: string; retryAfterMs?: number;
+      ambiguousClasses?: string[];
+    };
     const err = new Error(body.error || `HTTP ${response.status}`) as Error & {
       status?: number;
       detail?: string;
       retryAfterMs?: number;
+      ambiguousClasses?: string[];
     };
     err.status = response.status;
     err.detail = body.detail;
     err.retryAfterMs = body.retryAfterMs;
+    err.ambiguousClasses = body.ambiguousClasses;
     throw err;
   }
 
@@ -392,19 +397,32 @@ export interface GdbTestResult {
   verdict: string;
   failingLine?: number;
   message?: string;
+  criteria?: Array<{ status: 'pass' | 'skip' | 'fail'; description: string }>;
 }
 export interface GdbRunResponse {
   results: GdbTestResult[];
   rateLimit?: { window: number; cooldownMs: number; remaining: number };
 }
-export async function runPatternTests(opts: { runId?: number; pendingId?: string }): Promise<GdbRunResponse> {
+export async function runPatternTests(opts: {
+  runId?: number;
+  pendingId?: string;
+  classResolvedPatterns?: Record<string, string>;
+}): Promise<GdbRunResponse> {
   if (opts.runId != null) {
-    return apiFetch<GdbRunResponse>(`/api/analysis/${opts.runId}/run-tests`, { method: 'POST' });
+    return apiFetch<GdbRunResponse>(`/api/analysis/${opts.runId}/run-tests`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ classResolvedPatterns: opts.classResolvedPatterns || {} })
+    });
   }
   if (!opts.pendingId) throw new Error('runId or pendingId required');
   return apiFetch<GdbRunResponse>('/api/analysis/run-tests', {
     method: 'POST',
-    body: JSON.stringify({ pendingId: opts.pendingId })
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pendingId: opts.pendingId,
+      classResolvedPatterns: opts.classResolvedPatterns || {}
+    })
   });
 }
 

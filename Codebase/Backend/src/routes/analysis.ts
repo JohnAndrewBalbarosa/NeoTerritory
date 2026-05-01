@@ -1197,12 +1197,55 @@ async function dispatchPatternTests(
   return [...compileResults, ...unitResults];
 }
 
+// A class is "ambiguous" when the matcher emitted two-or-more competing
+// patterns for it AND the user has not explicitly resolved one via
+// classResolvedPatterns. The runner refuses to run unit tests in that
+// state — there's no defensible single pattern to test against, so we
+// bounce the user back to the annotated view to disambiguate.
+function findAmbiguousClasses(
+  patterns: DetectedPatternResult[],
+  resolvedMap: Record<string, string>
+): string[] {
+  const countByClass = new Map<string, number>();
+  for (const p of patterns) {
+    if (!p.className) continue;
+    countByClass.set(p.className, (countByClass.get(p.className) || 0) + 1);
+  }
+  const out: string[] = [];
+  for (const [name, count] of countByClass) {
+    if (count > 1 && !resolvedMap[name]) out.push(name);
+  }
+  return out.sort();
+}
+
+// Keep only the patterns the user actually committed to: either the matcher
+// gave a single confident detection for the class (no ambiguity), or the
+// user picked one via classResolvedPatterns. Anything else is dropped so
+// we don't waste compile cycles testing a hypothesis the user rejected.
+function filterToTaggedPatterns(
+  patterns: DetectedPatternResult[],
+  resolvedMap: Record<string, string>
+): DetectedPatternResult[] {
+  const countByClass = new Map<string, number>();
+  for (const p of patterns) {
+    if (!p.className) continue;
+    countByClass.set(p.className, (countByClass.get(p.className) || 0) + 1);
+  }
+  return patterns.filter(p => {
+    if (!p.className) return false;
+    const cnt = countByClass.get(p.className) || 0;
+    if (cnt === 1) return true;
+    return resolvedMap[p.className] === p.patternId;
+  });
+}
+
 async function handleRunTests(
   req: Request,
   res: Response,
   patterns: DetectedPatternResult[],
   fullSource: string,
-  files?: Array<{ name: string; sourceText: string }>
+  files?: Array<{ name: string; sourceText: string }>,
+  resolvedMap: Record<string, string> = {}
 ): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -1230,7 +1273,30 @@ async function handleRunTests(
     });
     return;
   }
-  const results = await dispatchPatternTests(patterns, fullSource, files);
+  // Block the run if any class still has competing patterns the user hasn't
+  // resolved. The frontend uses this 409 to bounce back to the annotated
+  // tab and prompt for disambiguation.
+  const ambiguous = findAmbiguousClasses(patterns, resolvedMap);
+  if (ambiguous.length > 0) {
+    res.status(409).json({
+      error: 'Ambiguous classes need resolution',
+      detail: `Resolve a pattern for: ${ambiguous.join(', ')} on the Annotated source tab.`,
+      ambiguousClasses: ambiguous
+    });
+    return;
+  }
+  const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
+  const results = await dispatchPatternTests(taggedPatterns, fullSource, files);
+  // Log every test outcome — both pass and fail — so the admin Logs tab can
+  // surface the runner's history alongside other backend events. Errors
+  // land under `errors.*` so the Errors category picks them up.
+  for (const r of results) {
+    const ok = r.passed;
+    const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
+    const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
+                 + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+    logEvent(req.user?.id ?? null, ev, detail);
+  }
   res.json({
     results,
     rateLimit: {
@@ -1262,13 +1328,15 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
     const analysis = JSON.parse(row.analysis_json) as {
       detectedPatterns?: DetectedPatternResult[];
       files?: Array<{ name: string; sourceText: string }>;
+      classResolvedPatterns?: Record<string, string>;
     };
     // Saved-run full source = saved files joined when multi-file, else the
     // legacy single source_text column.
     const fullSource = (analysis.files && analysis.files.length > 0)
       ? analysis.files.map(f => f.sourceText).join('\n\n')
       : (row.source_text || '');
-    await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource, analysis.files);
+    await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource, analysis.files,
+                         analysis.classResolvedPatterns || {});
   } catch (err) {
     next(err);
   }
@@ -1295,12 +1363,18 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
     const pendingAnalysis = pending.analysis as {
       detectedPatterns?: DetectedPatternResult[];
       files?: Array<{ name: string; sourceText: string }>;
+      classResolvedPatterns?: Record<string, string>;
     };
+    // Pending-run path: the client may have resolved ambiguities in the SPA
+    // since the analysis was first computed; accept an override map on the
+    // request body and merge it over the snapshotted one.
+    const bodyResolved = ((req.body as { classResolvedPatterns?: Record<string, string> })?.classResolvedPatterns) || {};
+    const resolvedMap = { ...(pendingAnalysis.classResolvedPatterns || {}), ...bodyResolved };
     const patterns = pendingAnalysis.detectedPatterns || [];
     const fullSource = (pendingAnalysis.files && pendingAnalysis.files.length > 0)
       ? pendingAnalysis.files.map(f => f.sourceText).join('\n\n')
       : (pending.sourceText || '');
-    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files);
+    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap);
   } catch (err) {
     next(err);
   }

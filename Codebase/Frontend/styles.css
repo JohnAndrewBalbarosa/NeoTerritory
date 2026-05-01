@@ -442,6 +442,45 @@ body.login-active{overflow:hidden;}
   background:var(--accent);border-color:var(--accent);color:#fff;
 }
 
+/* === GDB tab tree layout === */
+.gdb-tree-layout{display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:start;}
+.gdb-tree{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px;max-height:70vh;overflow:auto;}
+.gdb-tree-family{margin:0;padding:0;}
+.gdb-tree-family-head,.gdb-tree-pattern-head{cursor:pointer;list-style:none;padding:6px 8px;border-radius:6px;font-weight:600;font-size:13px;color:var(--ink);display:flex;align-items:center;gap:8px;}
+.gdb-tree-family-head::-webkit-details-marker,.gdb-tree-pattern-head::-webkit-details-marker{display:none;}
+.gdb-tree-family-head::before{content:'▾';font-size:10px;color:var(--ink-soft);}
+.gdb-tree-family[open] > .gdb-tree-family-head::before{content:'▾';}
+.gdb-tree-family:not([open]) > .gdb-tree-family-head::before{content:'▸';}
+.gdb-tree-pattern-head::before{content:'▾';font-size:10px;color:var(--ink-soft);}
+.gdb-tree-pattern[open] > .gdb-tree-pattern-head::before{content:'▾';}
+.gdb-tree-pattern:not([open]) > .gdb-tree-pattern-head::before{content:'▸';}
+.gdb-tree-pattern{margin-left:14px;}
+.gdb-tree-pattern-head{font-weight:500;font-size:12.5px;color:var(--ink-soft);}
+.gdb-tree-count{margin-left:auto;background:var(--surface);border:1px solid var(--border);border-radius:9px;padding:0 6px;font-size:11px;color:var(--ink-soft);font-weight:500;}
+.gdb-tree-classes{list-style:none;margin:2px 0 6px 22px;padding:0;display:flex;flex-direction:column;gap:2px;}
+.gdb-tree-class{width:100%;text-align:left;background:transparent;border:1px solid transparent;border-radius:6px;padding:5px 8px;color:var(--ink);font:inherit;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.gdb-tree-class:hover{background:rgba(123,94,167,0.08);}
+.gdb-tree-class.is-active{background:var(--surface);border-color:var(--accent);color:var(--accent);font-weight:600;}
+.gdb-tree-class[data-overall="pass"] .gdb-tab-dot{background:#10b981;}
+.gdb-tree-class[data-overall="fail"] .gdb-tab-dot{background:#ef4444;}
+.gdb-tree-class[data-overall="loading"] .gdb-tab-dot{background:#f59e0b;animation:gdbpulse 900ms ease-in-out infinite;}
+.gdb-tree-class[data-overall="idle"] .gdb-tab-dot{background:var(--ink-soft);}
+@keyframes gdbpulse{0%,100%{opacity:0.5;}50%{opacity:1;}}
+
+/* === GDB criteria list === */
+.gdb-criteria-list{list-style:none;margin:8px 0 0 0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.gdb-criterion{display:grid;grid-template-columns:60px 1fr;gap:10px;align-items:start;padding:6px 10px;border-radius:6px;background:var(--surface2);border-left:3px solid var(--border);font-size:12.5px;line-height:1.4;}
+.gdb-criterion-status{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;padding:2px 6px;border-radius:4px;text-align:center;align-self:center;}
+.gdb-criterion-pass{border-left-color:#10b981;}
+.gdb-criterion-pass .gdb-criterion-status{background:rgba(16,185,129,0.15);color:#10b981;}
+.gdb-criterion-fail{border-left-color:#ef4444;}
+.gdb-criterion-fail .gdb-criterion-status{background:rgba(239,68,68,0.15);color:#ef4444;}
+.gdb-criterion-skip{border-left-color:var(--ink-soft);}
+.gdb-criterion-skip .gdb-criterion-status{background:var(--surface);color:var(--ink-soft);border:1px solid var(--border);}
+.gdb-criterion-desc{color:var(--ink);}
+
+.gdb-ambiguous-banner{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
+
 /* === Run-inspect modal === */
 .run-inspect-card{width:min(820px,96vw);}
 .run-inspect-pre{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;max-height:50vh;overflow:auto;font-family:var(--code-font);font-size:12px;line-height:1.5;color:var(--ink);white-space:pre;}

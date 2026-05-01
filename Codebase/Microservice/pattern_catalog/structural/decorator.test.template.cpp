@@ -1,11 +1,5 @@
 // Decorator — flexible test driver.
 // Substitutions: {{HEADER}}, {{CLASS_NAME}}, {{FORWARD_METHOD}}
-//
-// Structural family → we verify the class compiles with the user's full
-// source (which is what brings the wrapped Component base into scope). The
-// forwarding method's runtime behaviour is exercised only if the catalog
-// detected its name and that method has a no-arg overload on the class —
-// otherwise we silently skip rather than compile-error.
 
 #include "{{HEADER}}"
 #include "introspect.hpp"
@@ -13,16 +7,23 @@
 
 NT_DECLARE_METHOD_PROBE({{FORWARD_METHOD}})
 
-int main() {
-    static_assert(std::is_class_v<{{CLASS_NAME}}>, "{{CLASS_NAME}} must be a class");
+template <typename T = {{CLASS_NAME}}>
+static int run_tests() {
+    static_assert(std::is_class_v<T>, "{{CLASS_NAME}} must be a class");
+    nt::emit_criterion("structural.decorator", "{{CLASS_NAME}}", "pass",
+        "Decorator class compiles against the submission's full source.");
 
-    // Compile-only structural check: a Decorator must be reachable as a
-    // type. Construction may need an inner component arg, so we don't
-    // attempt instantiation here without method introspection support.
-    if constexpr (nt::has_{{FORWARD_METHOD}}<{{CLASS_NAME}}>::value
-                  && nt::is_default_constructible<{{CLASS_NAME}}>::value) {
-        {{CLASS_NAME}} d;
+    if constexpr (nt::has_{{FORWARD_METHOD}}<T>::value
+                  && nt::is_default_constructible<T>::value) {
+        T d;
         nt::touch(d.{{FORWARD_METHOD}}());
+        nt::emit_criterion("structural.decorator", "{{CLASS_NAME}}", "pass",
+            "Forwarding method '{{FORWARD_METHOD}}' is callable with no arguments.");
+    } else {
+        nt::emit_criterion("structural.decorator", "{{CLASS_NAME}}", "skip",
+            "Decorator is not default-constructible (typically takes an inner Component); runtime forward-call skipped.");
     }
     return 0;
 }
+
+int main() { return run_tests<>(); }
