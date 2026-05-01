@@ -1123,7 +1123,8 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
 
 async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
-  fullSource: string
+  fullSource: string,
+  files?: Array<{ name: string; sourceText: string }>
 ): Promise<TestResult[]> {
   const results: TestResult[] = [];
   for (const p of patterns) {
@@ -1139,6 +1140,7 @@ async function dispatchPatternTests(
       // base classes, forward declarations, and stdlib headers the per-class
       // snippet doesn't carry.
       fullSource,
+      files,
       forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
       factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
       terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
@@ -1157,7 +1159,8 @@ async function handleRunTests(
   req: Request,
   res: Response,
   patterns: DetectedPatternResult[],
-  fullSource: string
+  fullSource: string,
+  files?: Array<{ name: string; sourceText: string }>
 ): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -1181,7 +1184,7 @@ async function handleRunTests(
     });
     return;
   }
-  const results = await dispatchPatternTests(patterns, fullSource);
+  const results = await dispatchPatternTests(patterns, fullSource, files);
   res.json({
     results,
     rateLimit: {
@@ -1219,7 +1222,7 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
     const fullSource = (analysis.files && analysis.files.length > 0)
       ? analysis.files.map(f => f.sourceText).join('\n\n')
       : (row.source_text || '');
-    await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource);
+    await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource, analysis.files);
   } catch (err) {
     next(err);
   }
@@ -1251,7 +1254,7 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
     const fullSource = (pendingAnalysis.files && pendingAnalysis.files.length > 0)
       ? pendingAnalysis.files.map(f => f.sourceText).join('\n\n')
       : (pending.sourceText || '');
-    await handleRunTests(req, res, patterns, fullSource);
+    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files);
   } catch (err) {
     next(err);
   }

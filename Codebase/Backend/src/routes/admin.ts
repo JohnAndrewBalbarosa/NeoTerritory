@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
+import { logAudit } from '../services/logService';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
 const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
@@ -103,6 +104,23 @@ interface AdminRunRow {
   created_at: string;
 }
 
+// Cross-user run list for the admin Runs panel. Excludes admin-authored
+// runs from the result so the listing is consistent with the overview totals.
+router.get('/runs', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const limit = Math.min(Number(req.query.limit || 100), 500);
+    const rows = db.prepare(`
+      SELECT r.id, r.source_name, r.findings_count, r.created_at, u.username
+      FROM analysis_runs r
+      LEFT JOIN users u ON u.id = r.user_id
+      WHERE u.role IS NULL OR u.role != 'admin'
+      ORDER BY r.id DESC
+      LIMIT ?
+    `).all(limit);
+    res.json({ runs: rows });
+  } catch (err) { next(err); }
+});
+
 router.get('/runs/:id', (req: Request, res: Response, next: NextFunction) => {
   try {
     const run = db.prepare(`
@@ -130,15 +148,33 @@ router.get('/runs/:id', (req: Request, res: Response, next: NextFunction) => {
 
 router.get('/stats/overview', (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const totalUsers = (db.prepare(`SELECT COUNT(*) AS c FROM users`).get() as CountRow).c;
-    const totalRuns = (db.prepare(`SELECT COUNT(*) AS c FROM analysis_runs`).get() as CountRow).c;
-    const runsToday = (db.prepare(
-      `SELECT COUNT(*) AS c FROM analysis_runs WHERE date(created_at) = date('now')`
+    // Admins are excluded from totals — the dashboard is meant to summarize
+    // tester activity, not operator presence. Runs from admin accounts are
+    // also dropped from totals/avgs for the same reason.
+    const totalUsers = (db.prepare(
+      `SELECT COUNT(*) AS c FROM users WHERE role IS NULL OR role != 'admin'`
     ).get() as CountRow).c;
-    const totalReviews = (db.prepare(`SELECT COUNT(*) AS c FROM reviews`).get() as CountRow).c;
-    const avgFindings = (db.prepare(
-      `SELECT AVG(findings_count) AS a FROM analysis_runs`
-    ).get() as AvgRow).a;
+    const totalRuns = (db.prepare(`
+      SELECT COUNT(*) AS c FROM analysis_runs r
+      LEFT JOIN users u ON u.id = r.user_id
+      WHERE u.role IS NULL OR u.role != 'admin'
+    `).get() as CountRow).c;
+    const runsToday = (db.prepare(`
+      SELECT COUNT(*) AS c FROM analysis_runs r
+      LEFT JOIN users u ON u.id = r.user_id
+      WHERE date(r.created_at) = date('now')
+        AND (u.role IS NULL OR u.role != 'admin')
+    `).get() as CountRow).c;
+    const totalReviews = (db.prepare(`
+      SELECT COUNT(*) AS c FROM reviews rv
+      LEFT JOIN users u ON u.id = rv.user_id
+      WHERE u.role IS NULL OR u.role != 'admin'
+    `).get() as CountRow).c;
+    const avgFindings = (db.prepare(`
+      SELECT AVG(r.findings_count) AS a FROM analysis_runs r
+      LEFT JOIN users u ON u.id = r.user_id
+      WHERE u.role IS NULL OR u.role != 'admin'
+    `).get() as AvgRow).a;
     res.json({
       totalUsers,
       totalRuns,
@@ -278,7 +314,57 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
       return;
     }
     const { changes } = db.prepare('DELETE FROM logs').run();
+    logAudit({
+      actorUserId:   req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action:        'delete',
+      targetKind:    'logs.bulk',
+      targetId:      null,
+      detail:        `Deleted ${changes} log row(s)`
+    });
     res.json({ ok: true, deleted: changes });
+  } catch (err) { next(err); }
+});
+
+// Delete a single analysis run + its associated reviews. Admin only. The
+// removal is auditable via /admin/audit (which has no DELETE counterpart),
+// so deleting a run for "metrics cleanup" still leaves a permanent trace.
+router.delete('/runs/:id', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      res.status(400).json({ error: 'invalid run id' });
+      return;
+    }
+    const row = db.prepare('SELECT id, source_name, user_id FROM analysis_runs WHERE id = ?').get(id) as
+      { id: number; source_name: string; user_id: number | null } | undefined;
+    if (!row) { res.status(404).json({ error: 'Run not found' }); return; }
+    db.prepare('DELETE FROM reviews WHERE analysis_run_id = ?').run(id);
+    db.prepare('DELETE FROM analysis_runs WHERE id = ?').run(id);
+    logAudit({
+      actorUserId:   req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action:        'delete',
+      targetKind:    'analysis_run',
+      targetId:      String(id),
+      detail:        `source=${row.source_name} owner_user_id=${row.user_id ?? 'null'}`
+    });
+    res.json({ ok: true });
+  } catch (err) { next(err); }
+});
+
+// Read-only audit log feed. There is no DELETE/UPDATE route on this table —
+// the entries are accountability for destructive admin actions.
+router.get('/audit', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const limit = Math.min(Number(req.query.limit || 200), 500);
+    const rows = db.prepare(`
+      SELECT id, actor_user_id, actor_username, action, target_kind, target_id, detail, created_at
+      FROM audit_log
+      ORDER BY id DESC
+      LIMIT ?
+    `).all(limit);
+    res.json({ entries: rows });
   } catch (err) { next(err); }
 });
 

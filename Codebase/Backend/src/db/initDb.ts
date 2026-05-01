@@ -80,6 +80,21 @@ export function initDb(): void {
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
 
+  // Audit log — append-only record of destructive admin actions (deletions
+  // of runs and bulk log purges). Intentionally separate from `logs` because
+  // the admin UI exposes a "Delete all logs" control; this table is never
+  // exposed to that delete and has no DELETE route. Source of accountability.
+  db.prepare(`CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_user_id INTEGER,
+    actor_username TEXT,
+    action TEXT NOT NULL,
+    target_kind TEXT NOT NULL,
+    target_id TEXT,
+    detail TEXT,
+    created_at TEXT NOT NULL
+  )`).run();
+
   db.prepare(`CREATE TABLE IF NOT EXISTS analysis_runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     source_name TEXT NOT NULL,

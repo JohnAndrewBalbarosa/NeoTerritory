@@ -152,6 +152,11 @@ interface RunInputs {
   // the targeted class depends on base classes / forward declarations / std
   // headers that don't appear inside its own classText snippet.
   fullSource?: string;
+  // Per-file payload preserved verbatim with original filenames. When set,
+  // each entry is dropped into the run dir under its original name so the
+  // user's `#include "patterns.hpp"` resolves on disk; user_class.h then
+  // becomes a thin shim that #include's each user file in submission order.
+  files?: Array<{ name: string; sourceText: string }>;
   forwardMethod?: string;
   factoryFn?: string;
   terminator?: string;
@@ -196,10 +201,31 @@ const MAIN_RENAME_OPEN = '#define main __neoterritory_user_main_disabled__\n';
 const MAIN_RENAME_CLOSE = '#undef main\n';
 
 function buildUserBundle(input: RunInputs): string {
+  // Multi-file mode: each user file is written next to user_class.h with its
+  // original name, so user_class.h just chains `#include "<name>"` directives
+  // in submission order. This makes `#include "patterns.hpp"` resolve on
+  // disk instead of failing because the sibling file lives only inside a
+  // concatenated bundle string.
+  if (input.files && input.files.length > 0) {
+    const includes = input.files.map(f => `#include "${f.name}"`).join('\n');
+    return `${STANDARD_INCLUDES}${MAIN_RENAME_OPEN}${includes}\n${MAIN_RENAME_CLOSE}`;
+  }
+  // Legacy / single-file path: inline the source directly.
   const body = (input.fullSource && input.fullSource.trim().length > 0)
     ? input.fullSource
     : input.classText;
   return `${STANDARD_INCLUDES}${MAIN_RENAME_OPEN}${body}\n${MAIN_RENAME_CLOSE}`;
+}
+
+// Sanitize a user-supplied filename so it's safe to write into runDir. We
+// only allow basenames (no path separators, no ..) and clamp to a small set
+// of C++ extensions; anything else is renamed to a numbered fallback.
+function safeFileName(name: string, idx: number): string {
+  const base = (name || '').split(/[\\/]/).pop() || '';
+  if (/^[A-Za-z0-9._-]+$/.test(base) && /\.(cpp|cc|cxx|c|h|hpp|hxx|inl|ipp)$/i.test(base)) {
+    return base;
+  }
+  return `user_file_${idx}.cpp`;
 }
 
 // Stub driver for the compile_run phase. Includes the user's full source so
@@ -259,6 +285,23 @@ async function runPhase(
   // isolates phase 1 from phase 2 (so phase 2 cannot reuse phase 1's binary).
   const runDir = fs.mkdtempSync(path.join(os.tmpdir(), `nt-${phase}-`));
   try {
+    // Drop each submitted file into runDir using its original name first, so
+    // any `#include "sibling.hpp"` the user wrote resolves to a real file on
+    // disk. user_class.h then becomes a thin shim that chains them.
+    if (input.files && input.files.length > 0) {
+      const seen = new Set<string>();
+      input.files.forEach((f, i) => {
+        const name = safeFileName(f.name, i);
+        // Defensive de-dupe: two entries with the same sanitized name would
+        // otherwise overwrite each other and lose one of the files.
+        if (seen.has(name)) return;
+        seen.add(name);
+        fs.writeFileSync(path.join(runDir, name), f.sourceText || '', 'utf8');
+      });
+      // Rebuild input.files in canonical sanitized form so buildUserBundle's
+      // include directives reference the names actually on disk.
+      input = { ...input, files: input.files.map((f, i) => ({ name: safeFileName(f.name, i), sourceText: f.sourceText || '' })) };
+    }
     fs.writeFileSync(path.join(runDir, 'user_class.h'), buildUserBundle(input), 'utf8');
     // Drop the introspection middleman next to user_class.h. Templates
     // `#include "introspect.hpp"` to use the nt::has_*<T> probes.

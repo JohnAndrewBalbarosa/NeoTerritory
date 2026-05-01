@@ -141,13 +141,13 @@ function DeleteModal({ onClose, onDeleted }: DeleteModalProps) {
 
 type LogCategory = 'all' | 'auth' | 'analysis' | 'survey' | 'frontend' | 'errors';
 
-const LOG_CATEGORY_TABS: Array<{ id: LogCategory; label: string }> = [
-  { id: 'all',      label: 'All' },
-  { id: 'auth',     label: 'Auth' },
-  { id: 'analysis', label: 'Analysis' },
-  { id: 'survey',   label: 'Survey' },
-  { id: 'frontend', label: 'Frontend' },
-  { id: 'errors',   label: 'Errors' }
+const LOG_CATEGORY_TABS: Array<{ id: LogCategory; label: string; hint: string }> = [
+  { id: 'all',      label: 'All activity',     hint: 'Every event recorded across the system' },
+  { id: 'auth',     label: 'Sign-in & seats',  hint: 'Logins, registrations, tester seat claims, sign-outs' },
+  { id: 'analysis', label: 'Analysis runs',    hint: 'Submissions, saved runs, manual retags, GDB tests' },
+  { id: 'survey',   label: 'Surveys & reviews', hint: 'Consent, pretest, per-run and end-of-session feedback' },
+  { id: 'frontend', label: 'Frontend events',  hint: 'In-app actions reported by the SPA (navigation, dispatch, etc.)' },
+  { id: 'errors',   label: 'Errors & failures', hint: 'Anything that failed — backend or frontend' }
 ];
 
 // Bucket an event_type into one of the admin tab categories. Frontend events
@@ -235,10 +235,12 @@ function LogsList() {
             type="button"
             role="tab"
             aria-selected={category === t.id}
+            title={t.hint}
             className={`logs-cat-tab${category === t.id ? ' is-active' : ''}`}
             onClick={() => setCategory(t.id)}
           >
-            {t.label} <span className="logs-cat-count">{categoryCounts[t.id]}</span>
+            <span className="logs-cat-label">{t.label}</span>
+            <span className="logs-cat-count">{categoryCounts[t.id]}</span>
           </button>
         ))}
       </nav>
@@ -316,6 +318,8 @@ function LogsList() {
 
 // ─── Export ───────────────────────────────────────────────────────────────────
 
+import AuditPanel from './AuditPanel';
+
 export default function LogsView() {
   return (
     <>
@@ -326,6 +330,14 @@ export default function LogsView() {
       <section className="admin-section">
         <h2>Logs</h2>
         <LogsList />
+      </section>
+      <section className="admin-section">
+        <h2>Audit log</h2>
+        <p className="admin-section-lede">
+          Append-only record of destructive admin actions (run deletions, log
+          purges). Cannot be cleared.
+        </p>
+        <AuditPanel />
       </section>
     </>
   );

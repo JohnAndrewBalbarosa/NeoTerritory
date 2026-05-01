@@ -416,13 +416,43 @@ body.login-active{overflow:hidden;}
 .explain-body strong{color:var(--ink);}
 .modal-hint{font-size:12px;color:var(--ink-soft);font-style:italic;margin:4px 0 0 0;}
 
+.admin-section-lede{color:var(--ink-soft);font-size:13px;line-height:1.55;margin:-4px 0 10px 0;}
+
 /* === Admin log category tabs === */
-.logs-cat-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px 0;padding-bottom:6px;border-bottom:1px solid var(--border);}
-.logs-cat-tab{background:transparent;border:1px solid var(--border);border-radius:999px;padding:5px 12px;color:var(--ink-soft);font:inherit;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 120ms ease;}
-.logs-cat-tab:hover{color:var(--ink);border-color:var(--accent);}
-.logs-cat-tab.is-active{background:var(--accent);border-color:var(--accent);color:#fff;}
-.logs-cat-count{display:inline-flex;align-items:center;justify-content:center;min-width:18px;padding:0 6px;height:18px;background:var(--surface2);color:var(--ink-soft);border-radius:9px;font-size:11px;font-weight:600;}
-.logs-cat-tab.is-active .logs-cat-count{background:rgba(255,255,255,0.22);color:#fff;}
+.logs-cat-tabs{
+  display:flex;gap:4px;flex-wrap:wrap;
+  margin:4px 0 14px 0;padding:4px;
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:var(--radius-lg);
+}
+.logs-cat-tab{
+  background:transparent;border:none;
+  padding:7px 14px;border-radius:calc(var(--radius-lg) - 4px);
+  color:var(--ink-soft);
+  font:inherit;font-size:12.5px;font-weight:500;
+  cursor:pointer;
+  display:inline-flex;align-items:center;gap:8px;
+  transition:background 140ms ease, color 140ms ease;
+}
+.logs-cat-tab:hover{color:var(--ink);background:rgba(123,94,167,0.08);}
+.logs-cat-tab.is-active{
+  background:var(--surface);
+  color:var(--ink);
+  font-weight:600;
+  box-shadow:0 1px 0 rgba(0,0,0,0.04), 0 0 0 1px var(--border);
+}
+.logs-cat-tab.is-active .logs-cat-label{color:var(--accent);}
+.logs-cat-count{
+  display:inline-flex;align-items:center;justify-content:center;
+  min-width:20px;padding:0 6px;height:18px;
+  background:var(--surface);border:1px solid var(--border);
+  color:var(--ink-soft);
+  border-radius:9px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;
+}
+.logs-cat-tab.is-active .logs-cat-count{
+  background:var(--accent);border-color:var(--accent);color:#fff;
+}
 
 /* === Generic modal overlay/card (consent, pretest, run/signout survey) === */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:1200;backdrop-filter:blur(6px);padding:20px;}

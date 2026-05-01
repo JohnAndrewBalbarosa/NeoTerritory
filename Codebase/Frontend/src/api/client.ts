@@ -319,6 +319,33 @@ export async function fetchAdminLogs(
   if (opts?.order)     params.set('order',       opts.order);
   return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?${params}`);
 }
+export interface AdminRunRow {
+  id: number;
+  source_name: string;
+  findings_count: number;
+  created_at: string;
+  username: string | null;
+}
+export async function fetchAdminRuns(limit = 100): Promise<{ runs: AdminRunRow[] }> {
+  return apiFetch<{ runs: AdminRunRow[] }>(`/api/admin/runs?limit=${limit}`);
+}
+export async function deleteAdminRun(id: number): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/api/admin/runs/${id}`, { method: 'DELETE' });
+}
+export interface AdminAuditEntry {
+  id: number;
+  actor_user_id: number | null;
+  actor_username: string | null;
+  action: string;
+  target_kind: string;
+  target_id: string | null;
+  detail: string | null;
+  created_at: string;
+}
+export async function fetchAdminAudit(limit = 200): Promise<{ entries: AdminAuditEntry[] }> {
+  return apiFetch<{ entries: AdminAuditEntry[] }>(`/api/admin/audit?limit=${limit}`);
+}
+
 export async function deleteAdminLogs(password: string): Promise<{ ok: boolean; deleted: number }> {
   return apiFetch<{ ok: boolean; deleted: number }>('/api/admin/logs', {
     method: 'DELETE',

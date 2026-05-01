@@ -50,6 +50,10 @@ export function useAdminUsers(intervalMs: number = 60_000): AdminUsersState {
     return () => { cancelledRef.current = true; clearInterval(timer); };
   }, [refresh, intervalMs]);
 
-  const onlineCount = users.filter(u => isOnline(u.last_active)).length;
-  return { users, loading, onlineCount, refresh };
+  // Admins are excluded from the "online" tally and from the user count
+  // shown next to it: the pill is meant to surface tester activity, not the
+  // operators looking at the dashboard.
+  const testers = users.filter(u => u.role !== 'admin');
+  const onlineCount = testers.filter(u => isOnline(u.last_active)).length;
+  return { users: testers, loading, onlineCount, refresh };
 }
