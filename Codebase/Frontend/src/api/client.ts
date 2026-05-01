@@ -107,6 +107,18 @@ export function sendDisconnectBeacon(token: string | null): void {
   navigator.sendBeacon('/auth/disconnect-beacon', body);
 }
 
+// Explicit sign-out request. Frees the tester seat and adds the JWT to the
+// server-side revocation list so any further request with this token is
+// rejected with 401. Best-effort — failures are swallowed because the client
+// already cleared its local auth before this resolves.
+export async function signOutAndRevoke(): Promise<void> {
+  try {
+    await apiFetch('/auth/disconnect', { method: 'POST' });
+  } catch {
+    // ignore — server-side cleanup also runs via the heartbeat sweep
+  }
+}
+
 export async function fetchHealth(): Promise<HealthStatus> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 4000);

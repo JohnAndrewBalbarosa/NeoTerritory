@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { User } from '../types/api';
+import { isTokenRevoked } from './tokenRevocation';
 
 type JwtUserPayload = Pick<User, 'id' | 'username' | 'email' | 'role'>;
 
@@ -12,6 +13,12 @@ const jwtAuth = (req: Request, res: Response, next: NextFunction): void => {
     return;
   }
   const token = auth.split(' ')[1] as string;
+  // Sign-out adds the JWT to the revocation list. Reject before we even try
+  // to verify so a leaked token cannot be reused after the user logged out.
+  if (isTokenRevoked(token)) {
+    res.status(401).json({ error: 'Token revoked' });
+    return;
+  }
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as JwtUserPayload;
     req.user = decoded;

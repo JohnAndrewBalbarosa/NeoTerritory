@@ -1,5 +1,5 @@
 import { useAppStore } from '../store/appState';
-import { login as apiLogin, fetchRuns, fetchSample } from '../api/client';
+import { login as apiLogin, fetchRuns, fetchSample, signOutAndRevoke } from '../api/client';
 import { User } from '../types/api';
 
 export function useAuth() {
@@ -17,6 +17,10 @@ export function useAuth() {
   }
 
   function signOut() {
+    // Tell the server to free the tester seat and revoke the JWT BEFORE we
+    // drop the token client-side. Fire-and-forget; the local clearAuth runs
+    // immediately so the UI doesn't wait on the network round trip.
+    void signOutAndRevoke();
     clearAuth();
     setStatus({ kind: 'idle', title: 'Signed out', detail: '' });
   }

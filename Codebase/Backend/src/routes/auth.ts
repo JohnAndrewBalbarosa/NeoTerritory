@@ -6,6 +6,7 @@ import {
 import { validateBody } from '../middleware/validateBody';
 import { loginSchema, claimSeatSchema } from '../validation/schemas';
 import { jwtAuth } from '../middleware/jwtAuth';
+import { revokeToken } from '../middleware/tokenRevocation';
 import db from '../db/database';
 // TEST SEED — REMOVE FOR PRODUCTION
 import { listTestAccounts } from '../db/_testSeed/devconUsers';
@@ -44,6 +45,8 @@ router.post('/disconnect-beacon', express.json({ type: '*/*', limit: '4kb' }), (
       db.prepare("UPDATE users SET claimed_at = NULL WHERE id = ? AND username LIKE 'Devcon%'").run(decoded.id);
     }
     db.prepare("UPDATE users SET last_active = datetime('now', '-1 hour') WHERE id = ?").run(decoded.id);
+    // Revoke the token so a tab-close-then-paste-token attack can't reuse it.
+    revokeToken(token);
     res.status(204).end();
   } catch {
     res.status(401).end();

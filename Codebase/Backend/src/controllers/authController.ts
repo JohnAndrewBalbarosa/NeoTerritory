@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
+import { revokeToken } from '../middleware/tokenRevocation';
 import type { UserRow } from '../types/db';
 
 const DEVCON_USERNAME_RE = /^devcon\d+$/i;
@@ -120,9 +121,11 @@ export const heartbeat = (req: Request, res: Response): void => {
   res.json({ ok: true });
 };
 
-// Explicit disconnect. The frontend pings this on `pagehide` via sendBeacon so
-// closing the tab releases the seat instantly without waiting for the sweep.
-// We free the seat only for tester accounts to match the rest of the lifecycle.
+// Explicit disconnect. Frees the tester seat AND revokes the JWT so the same
+// token cannot be reused after sign-out. The frontend hits this on the
+// sign-out flow (and also on pagehide via the beacon variant below) so a tab
+// close or a deliberate sign-out both release the seat instantly without
+// waiting for the heartbeat sweep.
 export const disconnect = (req: Request, res: Response): void => {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -135,6 +138,12 @@ export const disconnect = (req: Request, res: Response): void => {
     db.prepare("UPDATE users SET last_active = datetime('now', '-1 hour') WHERE id = ?").run(req.user.id);
   } catch {
     // Non-fatal — sweep will reconcile.
+  }
+  // Revoke the token used to authenticate this request. Subsequent requests
+  // carrying it will be rejected by jwtAuth with 401 before verification.
+  const auth = req.headers['authorization'];
+  if (auth && auth.startsWith('Bearer ')) {
+    revokeToken(auth.split(' ')[1]);
   }
   res.json({ ok: true });
 };

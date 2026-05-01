@@ -94,16 +94,20 @@ export default function LoginOverlay() {
             <div className="tester-grid" role="list">
               {accounts.map(acc => {
                 const isClaiming = claiming === acc.username;
+                const isClaimed = !!acc.claimed;
                 return (
                   <button
                     key={acc.username}
                     type="button"
                     role="listitem"
                     className="tester-chip tester-tile"
-                    disabled={isClaiming}
+                    data-claimed={isClaimed ? 'true' : undefined}
+                    disabled={isClaiming || isClaimed}
+                    title={isClaimed ? 'Already claimed by another tester' : undefined}
                     onClick={() => handleClaim(acc)}
                   >
                     {isClaiming ? 'Claiming…' : acc.username}
+                    {isClaimed && <span className="tester-chip-sub">in use</span>}
                   </button>
                 );
               })}
