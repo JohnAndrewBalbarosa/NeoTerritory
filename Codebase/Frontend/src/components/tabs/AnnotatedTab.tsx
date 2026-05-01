@@ -336,6 +336,7 @@ export default function AnnotatedTab({
             annotations={allAnnotations}
             detectedPatterns={currentRun.detectedPatterns || []}
             classResolvedPatterns={currentRun.classResolvedPatterns}
+            classUsageBindings={currentRun.classUsageBindings}
             onLineClick={onCommentFlash}
           />
         </div>
@@ -371,18 +372,20 @@ export default function AnnotatedTab({
         )}
       </section>
       <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
+        {/* ClassBindings (which renders .class-strip-row) goes first so the
+            strip sits above the scoring-explainer-banner inside PatternCards. */}
+        <ClassBindings
+          bindings={currentRun.classUsageBindings || {}}
+          detectedPatterns={currentRun.detectedPatterns || []}
+          classResolvedPatterns={currentRun.classResolvedPatterns}
+          onLineFlash={onLineFlash}
+        />
         <PatternCards
           detectedPatterns={currentRun.detectedPatterns || []}
           ranking={currentRun.ranking}
           userResolvedPattern={currentRun.userResolvedPattern}
           classUsageBindings={currentRun.classUsageBindings || {}}
           classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
-          onLineFlash={onLineFlash}
-        />
-        <ClassBindings
-          bindings={currentRun.classUsageBindings || {}}
-          detectedPatterns={currentRun.detectedPatterns || []}
-          classResolvedPatterns={currentRun.classResolvedPatterns}
           onLineFlash={onLineFlash}
         />
       </aside>

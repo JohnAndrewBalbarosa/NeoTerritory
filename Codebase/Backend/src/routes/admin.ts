@@ -497,7 +497,7 @@ function olsRegression(points: Array<{ x: number; y: number }>): {
     sxx += (x - xBar) ** 2;
     sst += (y - yBar) ** 2;
   }
-  if (sxx === 0) return { slope: 0, intercept: yBar, r2: 0, n, interpretation: 'No LOC variance' };
+  if (sxx === 0) return { slope: 0, intercept: yBar, r2: 0, n, interpretation: 'No token variance' };
   const slope     = sxy / sxx;
   const intercept = yBar - slope * xBar;
   let ssr = 0;
@@ -507,9 +507,9 @@ function olsRegression(points: Array<{ x: number; y: number }>): {
   const r2 = sst === 0 ? 0 : Number((1 - ssr / sst).toFixed(4));
   const slopeStr = slope.toFixed(2);
   let interpretation = '';
-  if (r2 >= 0.8)       interpretation = `Strong linear O(n) — processing time grows ${slopeStr}ms per LOC (R²=${r2})`;
-  else if (r2 >= 0.5)  interpretation = `Moderate linear trend — ${slopeStr}ms per LOC (R²=${r2})`;
-  else                 interpretation = `Weak correlation — LOC is not a reliable predictor (R²=${r2})`;
+  if (r2 >= 0.8)       interpretation = `Strong linear O(n) — processing time grows ${slopeStr}ms per token (R²=${r2})`;
+  else if (r2 >= 0.5)  interpretation = `Moderate linear trend — ${slopeStr}ms per token (R²=${r2})`;
+  else                 interpretation = `Weak correlation — token count is not a reliable predictor (R²=${r2})`;
   return { slope: Number(slope.toFixed(4)), intercept: Number(intercept.toFixed(4)), r2, n, interpretation };
 }
 
@@ -521,23 +521,39 @@ router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFu
     type PointData = { x: number; y: number };
     const regressionInput: PointData[] = [];
     const points: Array<{
-      runId: number; loc: number; patternCount: number; totalTargets: number; totalMs: number
+      runId: number; tokens: number; loc: number; patternCount: number; totalTargets: number; totalMs: number
     }> = [];
+
+    // Token count is a better predictor of analyzer cost than line count:
+    // a single 200-character chained call costs more than 20 short lines.
+    // We use a coarse C++-friendly tokenizer (identifiers, numbers, and any
+    // single non-whitespace punctuation char each count as one token).
+    function countTokens(text: string): number {
+      const m = text.match(/[A-Za-z_][A-Za-z0-9_]*|\d+(?:\.\d+)?|[^\s\w]/g);
+      return m ? m.length : 0;
+    }
 
     for (const row of rows) {
       const a = safeParse(row.analysis_json) as {
         detectedPatterns?: Array<{ documentationTargets?: unknown[] }>;
         stageMetrics?:     Array<{ milliseconds?: number }>;
+        tokenCount?:       number;
       } | null;
       if (!a) continue;
-      const loc          = (row.source_text || '').split('\n').length;
+      const src          = row.source_text || '';
+      // Prefer a microservice-supplied token count when present; fall back
+      // to local tokenization so older runs still chart cleanly.
+      const tokens       = typeof a.tokenCount === 'number' && a.tokenCount > 0
+                           ? a.tokenCount
+                           : countTokens(src);
+      const loc          = src.split('\n').length;
       const patterns     = a.detectedPatterns || [];
       const patternCount = patterns.length;
       const totalTargets = patterns.reduce((s, p) => s + (p.documentationTargets?.length || 0), 0);
       const totalMs      = (a.stageMetrics || []).reduce((s, m) => s + (m.milliseconds || 0), 0);
       if (totalMs === 0) continue;
-      points.push({ runId: row.id, loc, patternCount, totalTargets, totalMs });
-      regressionInput.push({ x: loc, y: totalMs });
+      points.push({ runId: row.id, tokens, loc, patternCount, totalTargets, totalMs });
+      regressionInput.push({ x: tokens, y: totalMs });
     }
 
     res.json({ points, regression: olsRegression(regressionInput) });

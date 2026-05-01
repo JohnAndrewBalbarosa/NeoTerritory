@@ -52,6 +52,18 @@ export default function LoginOverlay() {
     setClaiming(account.username);
     setError('');
     try {
+      // Authoritative pre-flight: re-fetch the seat list right before the
+      // claim attempt and bail out locally if the picked account has
+      // flipped to claimed since the user opened the page. The server
+      // still owns the final say (409 below), but this avoids the
+      // round-trip when we already know the answer.
+      const fresh = await fetchTesterAccounts();
+      setAccounts(fresh.accounts);
+      const live = fresh.accounts.find(a => a.username === account.username);
+      if (live?.claimed) {
+        setError('That tester seat is currently in use. Pick a different one.');
+        return;
+      }
       const { token, user } = await claimSeat(account.username);
       setAuth(token, user as User);
       // Mirror useAuth.signIn parallel warm-up.

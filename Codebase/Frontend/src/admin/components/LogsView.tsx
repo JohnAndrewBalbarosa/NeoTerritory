@@ -319,7 +319,6 @@ function LogsList() {
 // ─── Export ───────────────────────────────────────────────────────────────────
 
 import AuditPanel from './AuditPanel';
-import RunsManager from './RunsManager';
 
 export default function LogsView() {
   return (
@@ -327,14 +326,6 @@ export default function LogsView() {
       <section className="admin-section">
         <h2>Reviews</h2>
         <ReviewsList />
-      </section>
-      <section className="admin-section">
-        <h2>Analysis runs</h2>
-        <p className="admin-section-lede">
-          Each row is a saved submission. Click a run to inspect the file(s)
-          that were analyzed; deletion is audited and cascades to its reviews.
-        </p>
-        <RunsManager />
       </section>
       <section className="admin-section">
         <h2>Logs</h2>

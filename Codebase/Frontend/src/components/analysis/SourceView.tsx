@@ -9,6 +9,10 @@ interface SourceViewProps {
   annotations: Annotation[];
   detectedPatterns: DetectedPatternFull[];
   classResolvedPatterns?: Record<string, string>;
+  // Per-class usage sites the analyzer flagged. When the user tags a class
+  // we also propagate the choice to every line listed here under that class
+  // name, so global-function references inherit the same pattern.
+  classUsageBindings?: Record<string, Array<{ line?: number; boundClass?: string }>>;
   onLineClick?: (commentId: string) => void;
 }
 
@@ -253,7 +257,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -276,21 +280,53 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
     if (onLineClick) onLineClick(row.rawAnns[0].id);
   }
 
-  function handleResolve(line: number, patternKey: string): void {
-    const scope = rows.find(r => r.lineNo === line)?.scope ?? null;
-    if (scope) {
-      const bulk: Record<number, string> = {};
-      for (let l = scope.min; l <= scope.max; l++) {
-        const r = rows.find(r => r.lineNo === l);
-        if (r && r.rawAnns.length > 0) bulk[l] = patternKey;
+  // Walk the in-memory binding map for `className` and return every source
+  // line it points to. These are the global-function / call-site references
+  // that should inherit the same pattern when the class is tagged.
+  function bindingLinesFor(className: string): number[] {
+    const list = (classUsageBindings && classUsageBindings[className]) || [];
+    return list.map(b => b?.line).filter((n): n is number => typeof n === 'number');
+  }
+
+  // Reverse lookup: given a line that the user clicked, find the class
+  // (declaration scope OR usage binding) that owns it. The popover uses
+  // this so tagging a single line in a global function still resolves the
+  // class as a whole (and the rest of the class's lines pick up the tag).
+  function classForLine(line: number): string | null {
+    const r = rows.find(r => r.lineNo === line);
+    if (r?.scope) return r.scope.className;
+    if (classUsageBindings) {
+      for (const [cls, list] of Object.entries(classUsageBindings)) {
+        if ((list || []).some(b => b?.line === line)) return cls;
       }
+    }
+    return null;
+  }
+
+  function handleResolve(line: number, patternKey: string): void {
+    const className = classForLine(line);
+    if (className) {
+      const scope = rows.find(r => r.lineNo === line)?.scope
+                 ?? rows.map(r => r.scope).find(s => s?.className === className)
+                 ?? null;
+      const bulk: Record<number, string> = {};
+      if (scope) {
+        for (let l = scope.min; l <= scope.max; l++) {
+          const r = rows.find(r => r.lineNo === l);
+          if (r && r.rawAnns.length > 0) bulk[l] = patternKey;
+        }
+      }
+      // Propagate the choice to every recorded usage of this class — global
+      // helper functions, call-site instantiations, etc. — so a tag picked
+      // anywhere in the related-line array applies to all of them.
+      for (const usageLine of bindingLinesFor(className)) {
+        bulk[usageLine] = patternKey;
+      }
+      bulk[line] = patternKey;
       bulkSetLinePatternOverrides(bulk);
-      // Mark the class as tagged so the AnnotatedTab progress chip updates.
-      // patchCurrentRun shallow-merges, so we read the existing map first to
-      // preserve other classes' choices.
       const prev = useAppStore.getState().currentRun?.classResolvedPatterns || {};
       useAppStore.getState().patchCurrentRun({
-        classResolvedPatterns: { ...prev, [scope.className]: patternKey },
+        classResolvedPatterns: { ...prev, [className]: patternKey },
         userResolvedPattern: patternKey
       });
     } else {
@@ -300,11 +336,23 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   }
 
   function handleUnresolve(line: number): void {
-    const scope = rows.find(r => r.lineNo === line)?.scope ?? null;
-    if (scope) {
+    const className = classForLine(line);
+    const scope = rows.find(r => r.lineNo === line)?.scope
+               ?? (className ? (rows.map(r => r.scope).find(s => s?.className === className) ?? null) : null);
+    if (className) {
       const scopeLines: number[] = [];
-      for (let l = scope.min; l <= scope.max; l++) scopeLines.push(l);
+      if (scope) {
+        for (let l = scope.min; l <= scope.max; l++) scopeLines.push(l);
+      }
+      // Mirror handleResolve's reach — un-tagging a class also un-tags all
+      // of its bound usage sites so the source view stays consistent.
+      for (const usageLine of bindingLinesFor(className)) scopeLines.push(usageLine);
+      scopeLines.push(line);
       bulkClearLinePatternOverrides(scopeLines);
+      const prev = useAppStore.getState().currentRun?.classResolvedPatterns || {};
+      const next = { ...prev };
+      delete next[className];
+      useAppStore.getState().patchCurrentRun({ classResolvedPatterns: next });
     } else {
       clearLinePatternOverride(line);
     }

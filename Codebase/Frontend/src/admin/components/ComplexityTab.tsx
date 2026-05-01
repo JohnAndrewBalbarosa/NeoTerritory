@@ -3,7 +3,7 @@ import { fetchAdminComplexityData, fetchAdminF1Metrics } from '../../api/client'
 import { ComplexityData, F1Metrics, ComplexityPoint } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
-// ─── Line chart (LOC-sorted, with regression overlay) ────────────────────────
+// ─── Line chart (token-sorted, with regression overlay) ─────────────────────
 
 const SVG_W = 480, SVG_H = 240, PAD = 48;
 
@@ -11,18 +11,18 @@ function ComplexityLineChart({ data }: { data: ComplexityData }) {
   const { points, regression } = data;
   if (points.length === 0) return <div className="empty-state">No complexity data yet.</div>;
 
-  // Sort ascending by LOC so the line chart makes directional sense.
+  // Sort ascending by token count so the line chart makes directional sense.
   const sorted = [...points].sort((a, b) => a.loc - b.loc);
 
   const xMin = 0;
-  const xMax = Math.max(...sorted.map(p => p.loc), 1);
+  const xMax = Math.max(...sorted.map(p => p.tokens), 1);
   const yMin = 0;
   const yMax = Math.max(...sorted.map(p => p.totalMs), 1);
 
   function tx(v: number) { return PAD + ((v - xMin) / (xMax - xMin)) * (SVG_W - PAD * 2); }
   function ty(v: number) { return SVG_H - PAD - ((v - yMin) / (yMax - yMin)) * (SVG_H - PAD * 2); }
 
-  const polyPts = sorted.map(p => `${tx(p.loc)},${ty(p.totalMs)}`).join(' ');
+  const polyPts = sorted.map(p => `${tx(p.tokens)},${ty(p.totalMs)}`).join(' ');
 
   // Regression line endpoints.
   const regY1 = Math.max(yMin, Math.min(yMax, regression.slope * xMin + regression.intercept));
@@ -31,7 +31,7 @@ function ComplexityLineChart({ data }: { data: ComplexityData }) {
   const ticks = 4;
 
   return (
-    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="complexity-scatter" aria-label="LOC vs processing time line chart">
+    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="complexity-scatter" aria-label="Tokens vs processing time line chart">
       {/* Grid */}
       {Array.from({ length: ticks + 1 }, (_, i) => {
         const v = Math.round(xMin + (i / ticks) * (xMax - xMin));
@@ -60,7 +60,7 @@ function ComplexityLineChart({ data }: { data: ComplexityData }) {
       <line x1={PAD} y1={SVG_H - PAD} x2={SVG_W - PAD / 2} y2={SVG_H - PAD} stroke="#ccc" strokeWidth="1" />
 
       {/* Axis labels */}
-      <text x={SVG_W / 2} y={SVG_H - 4} textAnchor="middle" fontSize="10" fill="#666">LOC</text>
+      <text x={SVG_W / 2} y={SVG_H - 4} textAnchor="middle" fontSize="10" fill="#666">Tokens</text>
       <text x={12} y={SVG_H / 2} textAnchor="middle" fontSize="10" fill="#666"
         transform={`rotate(-90 12 ${SVG_H / 2})`}>ms</text>
 
@@ -82,9 +82,9 @@ function ComplexityLineChart({ data }: { data: ComplexityData }) {
 
       {/* Data point dots */}
       {sorted.map((p: ComplexityPoint) => (
-        <circle key={p.runId} cx={tx(p.loc)} cy={ty(p.totalMs)} r={3}
+        <circle key={p.runId} cx={tx(p.tokens)} cy={ty(p.totalMs)} r={3}
           fill="#2f5aae" stroke="white" strokeWidth="1">
-          <title>Run {p.runId}: {p.loc} LOC, {p.totalMs}ms, {p.patternCount} patterns</title>
+          <title>Run {p.runId}: {p.tokens} tokens, {p.totalMs}ms, {p.patternCount} patterns</title>
         </circle>
       ))}
 
@@ -125,14 +125,14 @@ export default function ComplexityTab() {
     <div className="admin-complexity-tab">
 
       <section className="admin-section">
-        <h2>Processing time vs LOC</h2>
+        <h2>Processing time vs token count</h2>
         {cErr && <div className="empty-state admin-error" role="alert">{cErr}</div>}
         {complexity && (
           <>
             <ComplexityLineChart data={complexity} />
             <table className="complexity-coef-table">
               <tbody>
-                <tr><td>Slope</td><td><code>{complexity.regression.slope} ms/LOC</code></td></tr>
+                <tr><td>Slope</td><td><code>{complexity.regression.slope} ms/token</code></td></tr>
                 <tr><td>Intercept</td><td><code>{complexity.regression.intercept} ms</code></td></tr>
                 <tr><td>R²</td><td><code>{complexity.regression.r2}</code></td></tr>
                 <tr><td>n</td><td><code>{complexity.regression.n} runs</code></td></tr>

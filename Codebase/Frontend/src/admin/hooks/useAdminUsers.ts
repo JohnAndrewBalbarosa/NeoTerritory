@@ -43,17 +43,26 @@ export function useAdminUsers(intervalMs: number = 60_000): AdminUsersState {
       });
   }, []);
 
+  // Manual refresh triggered via the topbar button bumps `tick`, which
+  // restarts the timer so the next automatic refresh is a full intervalMs
+  // away (instead of firing right after the manual one).
+  const [tick, setTick] = useState(0);
+  const wrappedRefresh = useCallback(() => {
+    setTick(t => t + 1);
+    refresh();
+  }, [refresh]);
+
   useEffect(() => {
     cancelledRef.current = false;
     refresh();
     const timer = setInterval(refresh, intervalMs);
     return () => { cancelledRef.current = true; clearInterval(timer); };
-  }, [refresh, intervalMs]);
+  }, [refresh, intervalMs, tick]);
 
   // Admins are excluded from the "online" tally and from the user count
   // shown next to it: the pill is meant to surface tester activity, not the
   // operators looking at the dashboard.
   const testers = users.filter(u => u.role !== 'admin');
   const onlineCount = testers.filter(u => isOnline(u.last_active)).length;
-  return { users: testers, loading, onlineCount, refresh };
+  return { users: testers, loading, onlineCount, refresh: wrappedRefresh };
 }

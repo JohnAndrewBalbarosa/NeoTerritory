@@ -64,7 +64,12 @@ export default function AdminApp() {
   // Topbar online pill — pulled from the same shared hook UserTable uses, so
   // both surfaces refresh together. Errors (incl. the pre-auth 401 race)
   // surface as 0 online instead of a red banner.
-  const { onlineCount, users: adminUsers } = useAdminUsers(60_000);
+  // Admin polling cadence: 5 minutes is plenty for an operator dashboard
+  // and keeps the API quiet so the rate limiter never bites the admin
+  // session. The `Refresh` button below short-circuits the wait by
+  // re-mounting children via `refreshKey` AND calling `refresh()` on the
+  // shared hook, which resets its internal interval.
+  const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -76,7 +81,10 @@ export default function AdminApp() {
   if (!token || !user || user.role !== 'admin') return null;
 
   function onLogout() { clearAuth(); window.location.href = '/'; }
-  function onRefresh() { setRefreshKey(k => k + 1); }
+  function onRefresh() {
+    setRefreshKey(k => k + 1);
+    refreshAdminUsers();
+  }
 
   return (
     <div className="admin-shell">

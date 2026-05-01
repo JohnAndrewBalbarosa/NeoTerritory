@@ -89,9 +89,24 @@ interface ClaimResult {
 }
 
 function claimSeatTransaction(username: string): ClaimResult {
-  // Allow claiming if: seat is unclaimed OR previous claim is older than 4 hours (stale session).
+  // The seat is freely claimable when:
+  //  • nobody holds it (claimed_at IS NULL), OR
+  //  • the last claim is older than 4 hours (hard ceiling — handles
+  //    abandoned sessions where the tab simply never closed cleanly), OR
+  //  • the previous claimant has gone offline by heartbeat (last_active is
+  //    older than the online window). This is the "is the user really
+  //    sitting at the seat right now" check the frontend is asking for —
+  //    we don't want to reject a fresh sign-in because someone tabbed away
+  //    two hours ago without signing out.
   const update = db
-    .prepare(`UPDATE users SET claimed_at = datetime('now') WHERE username = ? AND (claimed_at IS NULL OR claimed_at < datetime('now', '-4 hours'))`)
+    .prepare(
+      `UPDATE users SET claimed_at = datetime('now')
+       WHERE username = ?
+         AND (claimed_at IS NULL
+              OR claimed_at < datetime('now', '-4 hours')
+              OR last_active IS NULL
+              OR last_active < datetime('now', '-2 minutes'))`
+    )
     .run(username);
   if (update.changes > 0) return { ok: true };
   const existing = db
