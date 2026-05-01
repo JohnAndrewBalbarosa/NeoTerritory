@@ -126,13 +126,19 @@ function buildLineToAnnotations(
     }
   });
 
-  // Apply user overrides: for resolved lines keep only the chosen pattern.
+  // Apply user overrides: keep matching annotations preferentially, but if
+  // the override doesn't match anything on the line we keep the raw set so
+  // the line still has content to render. Class-tag propagation can write
+  // an override to usage-binding lines whose own annotations belong to
+  // unrelated patterns; dropping those entirely was leaving the line blank.
+  // The override is now a colour signal, not a content filter — final
+  // colour priority is enforced in the row loop below.
   const filtered = new Map<number, Annotation[]>();
   raw.forEach((anns, lineNo) => {
     const chosen = linePatternOverrides[lineNo];
     if (chosen) {
       const kept = anns.filter(a => patternFromAnnotation(a) === chosen);
-      filtered.set(lineNo, kept);
+      filtered.set(lineNo, kept.length > 0 ? kept : anns);
     } else {
       filtered.set(lineNo, anns);
     }
@@ -367,13 +373,21 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           const hasAnnotation = row.rawAnns.length > 0;
           const dominance       = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
           const standaloneColor = (!dominance && row.anns.length > 0) ? computeStandaloneColor(row.anns) : null;
+          // Highest-priority colour source: an explicit per-line override.
+          // Class-tag propagation writes one of these for every usage-binding
+          // site of the resolved class, so they paint in the chosen pattern's
+          // colour even when their original annotations belong to another
+          // pattern (or when they have no annotation at all). Falls through
+          // to dominance / standalone votes when no override is set.
+          const lineOverride    = linePatternOverrides[row.lineNo];
+          const overrideColor   = lineOverride ? colorFor(lineOverride) : null;
           // When the user has resolved a class, lock every line in its scope
           // to the chosen color — no per-line vote pulling toward grey.
           const scopeResolved   = !!(row.scope && classResolvedPatterns && classResolvedPatterns[row.scope.className]);
-          const blendRatio      = scopeResolved ? 0 : (dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0);
-          const baseColor       = dominance?.color ?? standaloneColor;
+          const blendRatio      = (overrideColor || scopeResolved) ? 0 : (dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0);
+          const baseColor       = overrideColor ?? dominance?.color ?? standaloneColor;
           // Badge is always solid — never blended — so the class chip reads clearly.
-          const badgeColor      = dominance?.color ?? standaloneColor;
+          const badgeColor      = overrideColor ?? dominance?.color ?? standaloneColor;
 
           const distinctPatternCount = hasAnnotation
             ? new Set(row.rawAnns.map(a => patternFromAnnotation(a))).size

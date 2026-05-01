@@ -19,7 +19,7 @@ interface AnnotatedTabProps {
 export default function AnnotatedTab({
   onLineFlash, onCommentFlash, pendingSave, onDiscard, onGoToReview
 }: AnnotatedTabProps) {
-  const { currentRun, aiStatus, gdbAllPassedForRun, setActiveTab } = useAppStore();
+  const { currentRun, aiStatus, gdbAllPassedForRun, setActiveTab, setPendingGdbAutoRun } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
   const [classNavIdx, setClassNavIdx] = useState(0);
 
@@ -386,8 +386,16 @@ export default function AnnotatedTab({
     !allTagged ? 'tag' : !gdbAllPassedForRun ? 'gdb' : 'review';
 
   function onCtaClick() {
-    if (ctaPhase === 'gdb') setActiveTab('gdb');
-    else if (ctaPhase === 'review' && onGoToReview) onGoToReview();
+    if (ctaPhase === 'gdb') {
+      // Single-click semantics: tell the GDB tab to auto-dispatch on mount
+      // and switch over so the user doesn't have to press "Run all tests"
+      // a second time. The flag is one-shot — GdbRunnerTab resets it
+      // immediately after honouring it.
+      setPendingGdbAutoRun(true);
+      setActiveTab('gdb');
+    } else if (ctaPhase === 'review' && onGoToReview) {
+      onGoToReview();
+    }
   }
 
   return (

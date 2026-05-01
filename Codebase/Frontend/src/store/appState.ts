@@ -29,6 +29,10 @@ interface AppState {
   // setCurrentRun) so a fresh submission is required to re-run.
   lastGdbResults: import('../api/client').GdbTestResult[] | null;
   lastGdbRunKey: string | null;
+  // One-shot flag flipped by the Annotated tab CTA. The GDB tab observes
+  // it on mount and dispatches `runAll()` once, then resets it. Lets a
+  // single click on the CTA both navigate and trigger the run.
+  pendingGdbAutoRun: boolean;
   activeTab: StudioTab;
   consentAccepted: boolean;
   pretestSubmitted: boolean;
@@ -57,6 +61,7 @@ interface AppState {
   setSessionReviewedEnd: (v: boolean) => void;
   setGdbAllPassedForRun: (v: boolean) => void;
   setLastGdbResults: (results: import('../api/client').GdbTestResult[] | null, runKey: string | null) => void;
+  setPendingGdbAutoRun: (v: boolean) => void;
   setActiveTab: (tab: StudioTab) => void;
   setConsentAccepted: (v: boolean) => void;
   setPretestSubmitted: (v: boolean) => void;
@@ -94,6 +99,7 @@ export const useAppStore = create<AppState>((set) => ({
   gdbAllPassedForRun: false,
   lastGdbResults: null,
   lastGdbRunKey: null,
+  pendingGdbAutoRun: false,
   activeTab: 'submit',
   consentAccepted: false,
   pretestSubmitted: false,
@@ -149,7 +155,8 @@ export const useAppStore = create<AppState>((set) => ({
     // runner is bound to the run's identity, so new code = new session.
     gdbAllPassedForRun: false,
     lastGdbResults: null,
-    lastGdbRunKey: null
+    lastGdbRunKey: null,
+    pendingGdbAutoRun: false
   }),
   patchCurrentRun: (patch) => set((s) => ({
     currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
@@ -162,6 +169,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSessionReviewedEnd: (v) => set({ sessionReviewedEnd: v }),
   setGdbAllPassedForRun: (v) => set({ gdbAllPassedForRun: v }),
   setLastGdbResults: (results, runKey) => set({ lastGdbResults: results, lastGdbRunKey: runKey }),
+  setPendingGdbAutoRun: (v) => set({ pendingGdbAutoRun: v }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setConsentAccepted: (v) => set({ consentAccepted: v }),
   setPretestSubmitted: (v) => set({ pretestSubmitted: v }),

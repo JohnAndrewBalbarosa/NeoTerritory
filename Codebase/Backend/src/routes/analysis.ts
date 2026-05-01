@@ -1318,15 +1318,31 @@ async function handleRunTests(
   }
   const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
   const results = await dispatchPatternTests(taggedPatterns, fullSource, files);
-  // Log every test outcome — both pass and fail — so the admin Logs tab can
-  // surface the runner's history alongside other backend events. Errors
-  // land under `errors.*` so the Errors category picks them up.
-  for (const r of results) {
-    const ok = r.passed;
-    const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
-    const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
-                 + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
-    logEvent(req.user?.id ?? null, ev, detail);
+  // Validate the result set BEFORE logging anything — we only persist
+  // outcomes when every test result has the fields downstream consumers
+  // (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
+  // no_template / sandbox_disabled) is a non-result, not a failure, and
+  // must not pollute the gdb.<phase>.fail log stream — that's what was
+  // showing up as phantom failures in the accuracy chip.
+  const isCountableResult = (r: TestResult): boolean =>
+    !!r.patternId && !!r.className && typeof r.phase === 'string'
+    && r.verdict !== 'skipped'
+    && r.verdict !== 'no_template'
+    && r.verdict !== 'sandbox_disabled';
+
+  const allComplete = results.every(r =>
+    !!r.patternId && !!r.className && typeof r.phase === 'string'
+    && typeof r.verdict === 'string'
+  );
+  if (allComplete) {
+    for (const r of results) {
+      if (!isCountableResult(r)) continue;
+      const ok = r.passed;
+      const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
+      const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
+                   + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+      logEvent(req.user?.id ?? null, ev, detail);
+    }
   }
   res.json({
     results,

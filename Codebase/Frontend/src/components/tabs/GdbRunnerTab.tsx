@@ -157,7 +157,8 @@ function PhaseRow({ phase, result, loading }: {
 export default function GdbRunnerTab() {
   const {
     currentRun, setActiveTab, setGdbAllPassedForRun,
-    lastGdbResults, lastGdbRunKey, setLastGdbResults
+    lastGdbResults, lastGdbRunKey, setLastGdbResults,
+    pendingGdbAutoRun, setPendingGdbAutoRun
   } = useAppStore();
   // Session key for the current run — id-based when saved, pendingId-based
   // when unsaved. The cached GDB results in the store are only valid when
@@ -239,6 +240,21 @@ export default function GdbRunnerTab() {
 
   const cooldownLeftMs = cooldownUntil ? Math.max(0, cooldownUntil - now) : 0;
   const onCooldown = cooldownLeftMs > 0;
+
+  // Auto-run hook for the Annotated tab CTA. When the flag is set we
+  // dispatch runAll once and reset it so a later visit to this tab
+  // doesn't accidentally fire again. Gated on canRun + !busy + !onCooldown
+  // so partial / interrupted state never auto-retriggers.
+  useEffect(() => {
+    if (!pendingGdbAutoRun) return;
+    setPendingGdbAutoRun(false);
+    if (canRun && !busy && !onCooldown) {
+      void runAll();
+    }
+    // runAll is stable enough for this effect's intent — it reads from
+    // refs/state internally and we only ever invoke it once per flag flip.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingGdbAutoRun]);
 
   async function runAll(): Promise<void> {
     if (!canRun || busy || onCooldown) return;
