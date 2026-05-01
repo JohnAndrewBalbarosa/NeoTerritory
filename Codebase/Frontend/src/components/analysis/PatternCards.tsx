@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DetectedPatternFull, AmbiguityRanking, PatternRankEntry,
   ClassUsageBinding, DocumentationTarget, UnitTestTarget
@@ -129,37 +129,54 @@ function PatternCard(props: CardProps) {
   const colour = colorFor(p.patternName || 'default');
   const declarationLine = p.documentationTargets?.[0]?.line || null;
   const sourceTag = classUsageBindingSource === 'microservice' ? 'microservice-bound' : 'heuristic';
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div className="pattern-card" data-resolved={resolved ? 'true' : undefined}>
-      <div className="pattern-card-head">
-        <span className="pattern-badge" style={{ borderColor: colour.border, background: colour.bg, color: colour.text }}>
-          {p.patternName || p.patternId}
-        </span>
-        <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
-        {declarationLine && <span className="pattern-card-line">declared at line {declarationLine}</span>}
-      </div>
-      {rank && (
-        <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
-          <span>rank</span>
-          <div className="rank-bar-track">
-            <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
-          </div>
-          <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
-          {rank.hasImplementationTemplate
-            ? <span title="implementation_fit">impl {Math.floor((rank.implementationFit || 0) * 100)}%</span>
-            : <span title="no implementation_template authored yet">class-only</span>}
+    <div
+      className={`pattern-card ${expanded ? 'pattern-card--open' : 'pattern-card--collapsed'}`}
+      data-resolved={resolved ? 'true' : undefined}
+    >
+      <button
+        type="button"
+        className="pattern-card-toggle"
+        aria-expanded={expanded}
+        onClick={() => setExpanded(e => !e)}
+      >
+        <div className="pattern-card-head">
+          <span className="pattern-badge" style={{ borderColor: colour.border, background: colour.bg, color: colour.text }}>
+            {p.patternName || p.patternId}
+          </span>
+          <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
+          {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
+        </div>
+        <span className="pattern-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
+      </button>
+
+      {expanded && (
+        <div className="pattern-card-body">
+          {rank && (
+            <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
+              <span>rank</span>
+              <div className="rank-bar-track">
+                <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
+              </div>
+              <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
+              {rank.hasImplementationTemplate
+                ? <span title="implementation_fit">impl {Math.floor((rank.implementationFit || 0) * 100)}%</span>
+                : <span title="no implementation_template authored yet">class-only</span>}
+            </div>
+          )}
+          <FunctionsSection fns={p.unitTestTargets || []} onLineFlash={onLineFlash} />
+          <AnchorsSection docs={p.documentationTargets || []} onLineFlash={onLineFlash} />
+          <UsagesSection rank={rank} onLineFlash={onLineFlash} />
+          <TaggedUsagesSection
+            className={p.className || 'unknown'}
+            taggedUsages={taggedUsages}
+            sourceTag={sourceTag}
+            onLineFlash={onLineFlash}
+          />
         </div>
       )}
-      <FunctionsSection fns={p.unitTestTargets || []} onLineFlash={onLineFlash} />
-      <AnchorsSection docs={p.documentationTargets || []} onLineFlash={onLineFlash} />
-      <UsagesSection rank={rank} onLineFlash={onLineFlash} />
-      <TaggedUsagesSection
-        className={p.className || 'unknown'}
-        taggedUsages={taggedUsages}
-        sourceTag={sourceTag}
-        onLineFlash={onLineFlash}
-      />
     </div>
   );
 }

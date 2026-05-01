@@ -93,19 +93,17 @@ export default function LoginOverlay() {
             {accountsError && <p className="login-error">{accountsError}</p>}
             <div className="tester-grid" role="list">
               {accounts.map(acc => {
-                const disabled = acc.claimed || claiming === acc.username;
+                const isClaiming = claiming === acc.username;
                 return (
                   <button
                     key={acc.username}
                     type="button"
                     role="listitem"
                     className="tester-chip tester-tile"
-                    data-claimed={acc.claimed ? 'true' : 'false'}
-                    aria-disabled={disabled}
-                    disabled={disabled}
+                    disabled={isClaiming}
                     onClick={() => handleClaim(acc)}
                   >
-                    {claiming === acc.username ? 'Claiming…' : acc.username}
+                    {isClaiming ? 'Claiming…' : acc.username}
                   </button>
                 );
               })}

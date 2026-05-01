@@ -167,6 +167,34 @@
   color: #1d4ed8;
 }
 
+/* ---------- user search ---------- */
+.user-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.user-search-input {
+  flex: 1;
+  max-width: 340px;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  font-size: 13px;
+  background: var(--panel);
+  color: var(--ink);
+  outline: none;
+}
+.user-search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+.user-search-count {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
 /* ---------- reviews list ---------- */
 .reviews-list {
   display: flex;
