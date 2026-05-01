@@ -1,17 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
-import { fetchAdminUsers, resetTesterSeats } from '../../api/client';
+import { useState } from 'react';
+import { resetTesterSeats } from '../../api/client';
 import { AdminUser } from '../../types/api';
 import { fmtDate } from '../../lib/patterns';
-
-// Mirrors the backend HEARTBEAT_GRACE_SECONDS (90s) plus a small UI buffer so
-// a tab that just missed one beat doesn't flicker red.
-const ONLINE_MS = 2 * 60 * 1000;
-
-function isOnline(lastActive?: string): boolean {
-  if (!lastActive) return false;
-  const ago = Date.now() - new Date(lastActive + 'Z').getTime();
-  return ago >= 0 && ago < ONLINE_MS;
-}
+import { useAdminUsers, isOnline } from '../hooks/useAdminUsers';
 
 function isTesterRow(u: AdminUser): boolean {
   return /^Devcon/i.test(u.username || '');
@@ -49,28 +40,15 @@ function applySort(users: AdminUser[], key: SortKey): AdminUser[] {
 }
 
 export default function UserTable() {
-  const [users, setUsers]     = useState<AdminUser[] | null>(null);
-  const [error, setError]     = useState<string | null>(null);
+  // Shared admin-users hook. Errors (including the 401 "Missing or invalid
+  // token" race) are swallowed and surfaced as an empty list, so we never
+  // render a red banner for a transient pre-auth fetch.
+  const { users, loading, refresh: load } = useAdminUsers(60_000);
   const [query, setQuery]     = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('none');
   const [presence, setPresence] = useState<PresenceFilter>('all');
   const [resetting, setResetting] = useState<'all' | 'selected' | 'offline' | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
-  const cancelledRef = useRef(false);
-
-  function load() {
-    fetchAdminUsers()
-      .then(d => { if (!cancelledRef.current) setUsers(d.users ?? []); })
-      .catch(err => { if (!cancelledRef.current) setError(err instanceof Error ? err.message : 'Failed to load users'); });
-  }
-
-  useEffect(() => {
-    cancelledRef.current = false;
-    load();
-    const timer = setInterval(load, 60_000);
-    return () => { cancelledRef.current = true; clearInterval(timer); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   function cycleSort() {
     setSortKey(k => SORT_CYCLE[(SORT_CYCLE.indexOf(k) + 1) % SORT_CYCLE.length]);
@@ -116,8 +94,7 @@ export default function UserTable() {
     }
   }
 
-  if (error) return <div className="empty-state admin-error" role="alert">Failed to load users: {error}</div>;
-  if (users === null) return <div className="empty-state">Loading users…</div>;
+  if (loading) return <div className="empty-state">Loading users…</div>;
 
   const q = query.toLowerCase();
   let filtered = q
@@ -130,7 +107,6 @@ export default function UserTable() {
   const visibleTesterIds = visible.filter(isTesterRow).map(u => u.id);
   const allVisibleSelected = visibleTesterIds.length > 0
     && visibleTesterIds.every(id => selected.has(id));
-  const onlineCount = users.filter(u => isOnline(u.last_active)).length;
 
   function toggleAllVisible() {
     setSelected(prev => {
@@ -157,7 +133,6 @@ export default function UserTable() {
           aria-label="Filter users"
         />
         {query && <span className="user-search-count">{visible.length} / {users.length}</span>}
-        <span className="user-online-count" title="Active in last 2 min (heartbeat)">{onlineCount} online</span>
         <button
           className={`user-ctrl-btn${presence !== 'all' ? ' is-active' : ''}`}
           onClick={cyclePresence}

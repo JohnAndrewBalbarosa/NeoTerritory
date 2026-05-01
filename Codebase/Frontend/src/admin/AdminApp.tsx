@@ -7,6 +7,7 @@ import UserTable from './components/UserTable';
 import LogsView from './components/LogsView';
 import { fetchAdminReviews } from '../api/client';
 import { AdminReview } from '../types/api';
+import { useAdminUsers } from './hooks/useAdminUsers';
 
 type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'logs';
 
@@ -54,6 +55,10 @@ function ReviewsPanel() {
 export default function AdminApp() {
   const { token, user, clearAuth } = useAppStore();
   const { theme, toggleTheme } = useTheme();
+  // Topbar online pill — pulled from the same shared hook UserTable uses, so
+  // both surfaces refresh together. Errors (incl. the pre-auth 401 race)
+  // surface as 0 online instead of a red banner.
+  const { onlineCount, users: adminUsers } = useAdminUsers(60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -76,6 +81,16 @@ export default function AdminApp() {
           <p className="lede">Activity, scoring, and qualitative reviews across all tester accounts.</p>
         </div>
         <div className="admin-actions">
+          <span
+            className="admin-online-pill"
+            data-empty={onlineCount === 0 ? 'true' : undefined}
+            title="Active in last 2 min (heartbeat)"
+          >
+            <span className="admin-online-dot" aria-hidden="true" />
+            {onlineCount === 0
+              ? 'No users online'
+              : `${onlineCount} of ${adminUsers.length} online`}
+          </span>
           <span id="admin-user-label">{user.username} · admin</span>
           <button
             className="ghost-btn theme-toggle-btn"
