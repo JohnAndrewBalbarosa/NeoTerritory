@@ -148,3 +148,34 @@ Future deployments should provision ephemeral guest users on demand
 These three threads are interlocked: the queue moves to Redis when EC2
 goes multi-instance; the guest-user migration is independent but should
 ship before public launch so the Devcon roster never reaches production.
+
+---
+
+## 4. Cross-platform script parity audit
+
+A `bootstrap.sh` and a parallel `bootstrap.ps1` now exist at the repo root,
+plus an `npm run setup` shim in the root `package.json` that picks the right
+one. This section captures what is **not yet covered**:
+
+- **`setup.cmd`** for users on legacy `cmd.exe` without PowerShell. The
+  audit confirmed every existing root script is `.sh` or `.ps1`. A small
+  `cmd` wrapper that just calls `powershell -ExecutionPolicy Bypass -File
+  bootstrap.ps1 %*` would close the gap.
+- **`clean-browser.sh` vs `clean-browser.ps1`** — both kill stale Chromium
+  sessions used by Playwright tests, but their kill predicates differ
+  (`pgrep -f chromium` vs `Get-Process -Name chromium`). Verify they
+  produce identical results on a machine with multiple unrelated Chromium
+  windows open; reconcile if they don't.
+- **`deploy.ps1` vs `bootstrap.sh` `.env` defaults** — confirm the two
+  paths seed the same default values for `PORT`, `CORS_ORIGIN`, and the
+  optional `JWT_SECRET` placeholder. With the new autogen fallback, the
+  `JWT_SECRET=` line should be present-but-empty in both flows so the
+  warning fires consistently.
+- **CMake generator detection** — `bootstrap.ps1` falls back from VS17 to
+  the default generator silently. `bootstrap.sh` calls
+  `Codebase/Microservice/setup.sh` which assumes Make/Ninja. Document the
+  expected generator per OS in a single table inside `docs/DEPLOY.md` (to
+  be created with the EC2 work above).
+
+Track these as part of the same EC2 migration so the public deployment
+ships with audited, equivalent setup paths on every host OS.

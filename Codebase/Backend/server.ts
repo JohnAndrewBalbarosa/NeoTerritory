@@ -2,12 +2,28 @@ import path from 'path';
 import dotenv from 'dotenv';
 dotenv.config({ path: path.join(__dirname, '.env') });
 
+import crypto from 'crypto';
 import express, { Request, Response } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import fs from 'fs';
+
+// JWT secret bootstrap. Without a valid secret jsonwebtoken.sign() throws
+// "secretOrPrivateKey must have a value" on first login, which is a confusing
+// failure for a fresh-clone developer. If the env var is missing or empty we
+// generate a one-shot 64-byte hex secret for this process and warn loudly so
+// the dev knows sessions will be invalidated on restart. Production must set
+// JWT_SECRET in .env.
+if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
+  process.env.JWT_SECRET = crypto.randomBytes(64).toString('hex');
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[auth] JWT_SECRET not set — using a one-shot random secret. All sessions ' +
+    'will be invalidated on restart. Set JWT_SECRET in your .env to persist.'
+  );
+}
 
 import { errorHandler } from './src/middleware/errorHandler';
 import { initDb } from './src/db/initDb';

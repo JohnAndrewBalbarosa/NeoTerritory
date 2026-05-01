@@ -29,77 +29,135 @@ function RowButton({ children, onClick }: { children: React.ReactNode; onClick: 
   return <button type="button" className="pattern-row" onClick={onClick}>{children}</button>;
 }
 
-// Expandable breakdown of how the score was derived. When lineEvidence is
-// present, we show the Wilson score interval calculation with the actual
-// trial counts and a citation footer so the user can audit the math.
-function ScoringExplainer({ rank }: { rank: PatternRankEntry }) {
+// Top-of-list banner shown ONCE above all PatternCards. Holds the formula
+// prose and citations so each card can stay terse and only show its own
+// numbers. Defined in module scope so it does not re-mount per card.
+function ScoringExplainerBanner() {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="scoring-explainer-banner">
+      <div className="scoring-explainer-banner-head">
+        <strong>How is the accuracy calculated?</strong>
+        <span className="scoring-explainer-banner-summary">
+          Wilson 95%-confidence lower bound on per-line wins. Each non-blank
+          line in a class is one Bernoulli trial; the pattern wins the line
+          when its signal hits outweigh rival hits plus negative-signal weight.
+        </span>
+        <button
+          type="button"
+          className="scoring-explainer-toggle"
+          onClick={() => setOpen(o => !o)}
+        >
+          {open ? '▾ Hide formula' : '▸ Show formula'}
+        </button>
+      </div>
+      {open && (
+        <div className="scoring-explainer-body">
+          <p>
+            <code>n</code> = number of non-blank, non-comment lines in the
+            class&apos;s scope. <code>k</code> = how many of those lines this
+            pattern won. <code>p̂ = k / n</code>. With <code>z = 1.96</code>
+            (the 95% confidence z-score):
+          </p>
+          <p>
+            <code>
+              wilsonLower = ( p̂ + z²/(2n) − z·√(p̂(1−p̂)/n + z²/(4n²)) ) / (1 + z²/n)
+            </code>
+          </p>
+          <p>
+            Wilson is the textbook conservative estimator for a yes/no proportion
+            when the sample is small — wider margin of error when fewer lines
+            have evidence, narrower as more lines confirm.
+            <strong> confidence</strong> blends class_fit (1.0 once the structural
+            matcher confirms the shape) with this Wilson score using the
+            pattern&apos;s authored ranking weights.
+          </p>
+          <p className="scoring-citation">
+            Wilson (1927), JASA 22(158); Agresti &amp; Coull (1998), Am. Stat 52(2).
+            95% confidence is the standard reporting convention. The same lower-bound
+            is widely cited as a ranking score — see Evan Miller,{' '}
+            <em>How Not to Sort by Average Rating</em> (2009).
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Per-card numeric trace. Shows the live n/k/p̂/Wilson values, names the
+// class, and lists the winning lines as clickable chips that flash to the
+// matched source line through the existing onLineFlash callback. No formula
+// prose here — that lives in the banner above.
+function ScoringExplainer({
+  rank, pattern, onLineFlash
+}: {
+  rank: PatternRankEntry;
+  pattern: DetectedPatternFull;
+  onLineFlash?: (line: number) => void;
+}) {
   const [open, setOpen] = useState(false);
   const conf = Math.round((rank.finalRank || 0) * 100);
   const fit  = Math.round((rank.implementationFit || 0) * 100);
   const le = rank.lineEvidence;
+  const className = pattern.className || 'this class';
+  const docLines = (pattern.documentationTargets || [])
+    .map(t => t.line)
+    .filter((l): l is number => typeof l === 'number');
+  const minLine = docLines.length ? Math.min(...docLines) : null;
+  const maxLine = docLines.length ? Math.max(...docLines) : null;
+  const wins = (le?.byLine || []).filter(b => b.win);
   return (
     <div className="scoring-explainer">
       <button type="button" className="scoring-explainer-toggle" onClick={() => setOpen(o => !o)}>
-        {open ? '▾' : '▸'} How is this scored?
+        {open ? '▾' : '▸'} Show numbers
       </button>
       {open && (
-        <div className="scoring-explainer-body">
+        <div className="scoring-explainer-body scoring-explainer-body--compact">
           {le ? (
             <>
               <p>
-                <strong>Score = Wilson score interval, lower bound at 95% confidence</strong>
-                {' '}(<code>z = {le.z.toFixed(2)}</code>).
-                Each non-blank line in the class scope is one Bernoulli trial:
-                this pattern wins the line when its signal hits outweigh rival
-                hits plus the catalog-authored weight of any negative-signal hits
-                on the same line.
-              </p>
-              <p>
-                <strong>Numbers for this class:</strong>{' '}
-                <code>trials n = {le.trials}</code>,{' '}
-                <code>successes k = {le.successes}</code>,{' '}
-                <code>p̂ = k/n = {le.pHat.toFixed(3)}</code>,{' '}
+                <strong>For {className}</strong>
+                {minLine && maxLine ? (minLine === maxLine
+                  ? <> on line {minLine}</>
+                  : <> across lines {minLine}–{maxLine}</>) : null}:
+                {' '}<code>n = {le.trials}</code> non-blank lines,{' '}
+                <code>k = {le.successes}</code> won by this pattern,{' '}
+                <code>p̂ = {le.pHat.toFixed(3)}</code>,{' '}
                 <code>z = {le.z.toFixed(2)}</code>,{' '}
-                <code>Wilson lower bound = {(le.wilsonLowerBound * 100).toFixed(1)}%</code> →
-                shown as <strong>usage match {fit}%</strong>.
+                <code>Wilson = {(le.wilsonLowerBound * 100).toFixed(1)}%</code>{' '}
+                → shown as <strong>usage match {fit}%</strong>.{' '}
+                <strong>confidence {conf}%</strong> blends Wilson with class_fit
+                under the pattern&apos;s authored weights.
               </p>
-              <p>
-                <strong>Why this formula.</strong> Wilson is the textbook
-                conservative estimator for a yes/no proportion when the sample
-                is small — wider margin of error when fewer lines have evidence,
-                narrower as more lines confirm. The <code>z²/n</code> correction
-                handles small samples automatically, so coverage and negative
-                signals do not need a hand-tuned dampener. Informational counts:
-                {' '}coverage <code>{(le.coverage * 100).toFixed(0)}%</code>,{' '}
-                rival hits <code>{le.rivalHits}</code>,{' '}
-                negative hits <code>{le.negativeHits}</code>,{' '}
-                peak overlap <code>{le.hitsMax}</code>.
-              </p>
-              <p>
-                <strong>confidence ({conf}%)</strong> blends class_fit (1.0 once
-                the structural matcher confirms the shape) with usage match using
-                the pattern&apos;s own ranking weights from the catalog.
-              </p>
-              <p className="scoring-citation">
-                Wilson (1927), JASA 22(158); Agresti &amp; Coull (1998), Am. Stat
-                52(2). 95% confidence is the standard reporting convention. The
-                same lower-bound is widely cited as a ranking score — see Evan
-                Miller, <em>How Not to Sort by Average Rating</em> (2009).
-              </p>
+              {wins.length > 0 && (
+                <p className="scoring-explainer-wins">
+                  Winning lines (own / rival / opposing weight):{' '}
+                  {wins.map((b, i) => (
+                    <button
+                      key={b.line}
+                      type="button"
+                      className="scoring-explainer-line-chip"
+                      onClick={() => onLineFlash?.(b.line)}
+                      title={`Line ${b.line} — ownHits ${b.ownHits} / rival ${b.rivalHits} / negW ${b.opposingWeight.toFixed(2)}`}
+                    >
+                      L{b.line}
+                      {i < wins.length - 1 ? '' : ''}
+                    </button>
+                  ))}
+                </p>
+              )}
+              {le.negativeHits > 0 && (
+                <p className="scoring-explainer-meta">
+                  Negative signals fired: {le.negativeHits} (catalog-authored opposing weight reduced k by that line count).
+                </p>
+              )}
             </>
           ) : (
-            <>
-              <p>
-                <strong>confidence ({conf}%)</strong> blends a structural class-fit
-                with the usage-match score using the pattern&apos;s ranking weights.
-              </p>
-              <p>
-                <strong>structure only</strong> appears when the pattern has no
-                implementation_template authored yet. The matcher can still see the
-                class&apos;s shape, so confidence may be high — but we can&apos;t verify
-                the pattern is actually <em>used</em>.
-              </p>
-            </>
+            <p>
+              <strong>structure only</strong> — the pattern has no
+              implementation_template authored yet, so we matched on class
+              shape without per-line wins. <strong>confidence {conf}%</strong>.
+            </p>
           )}
         </div>
       )}
@@ -312,7 +370,7 @@ function PatternCard(props: CardProps) {
                     </span>
                   )}
               </div>
-              <ScoringExplainer rank={rank} />
+              <ScoringExplainer rank={rank} pattern={p} onLineFlash={onLineFlash} />
             </>
           )}
           <ExplainSection
@@ -338,10 +396,12 @@ function PatternCard(props: CardProps) {
 export default function PatternCards(props: PatternCardsProps) {
   const { detectedPatterns, ranking, userResolvedPattern, classUsageBindings, classUsageBindingSource, onLineFlash } = props;
   if (!detectedPatterns.length) return <div id="pattern-cards" />;
+  // Banner explanation rendered once, before any cards.
   const ranksById = new Map<string, PatternRankEntry>();
   (ranking?.ranks || []).forEach(r => ranksById.set(r.patternId, r));
   return (
     <div id="pattern-cards" className="pattern-cards">
+      <ScoringExplainerBanner />
       {detectedPatterns.map(p => (
         <PatternCard
           key={p.patternId + (p.className || '')}

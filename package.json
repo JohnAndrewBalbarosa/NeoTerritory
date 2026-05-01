@@ -1,4 +1,12 @@
 {
+  "name": "neoterritory-root",
+  "private": true,
+  "scripts": {
+    "setup": "node -e \"const p = process.platform; const cp = require('child_process'); const cmd = p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File bootstrap.ps1' : 'bash bootstrap.sh'; cp.execSync(cmd, { stdio: 'inherit' });\"",
+    "setup:backend": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File bootstrap.ps1 -Only backend' : 'bash bootstrap.sh --only backend', { stdio: 'inherit' });\"",
+    "setup:frontend": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File bootstrap.ps1 -Only frontend' : 'bash bootstrap.sh --only frontend', { stdio: 'inherit' });\"",
+    "setup:microservice": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File bootstrap.ps1 -Only microservice' : 'bash bootstrap.sh --only microservice', { stdio: 'inherit' });\""
+  },
   "dependencies": {
     "npm-check-updates": "^21.0.3"
   }

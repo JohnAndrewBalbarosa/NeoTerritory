@@ -406,56 +406,68 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
     }
     setSubmitting(true);
     setError(null);
-    try {
-      // Sequential submit so the backend can reject any malformed row without
-      // half-applied state. Each call is small.
-      for (const p of taggedClasses) {
-        const key = taggedKey(p);
-        if (saved.has(key)) continue;
-        const dec = taggedDecisions[key];
-        const repLine = p.documentationTargets?.[0]?.line ?? 1;
-        await submitManualReview(run.runId, {
-          line: repLine,
-          candidates: [p.patternName],
-          chosenPattern: dec.correct ? p.patternName : null,
-          chosenKind: dec.correct ? 'pattern' : 'none'
-        });
-        markSaved(key);
+    // Collect rejections so we surface ALL backend bounces, not just the first.
+    // The backend returns 422 for malformed payloads (e.g. chosenKind='pattern'
+    // without chosenPattern); we don't mark such rows as saved so the user can
+    // retry after fixing.
+    const rejected: string[] = [];
+    async function send(label: string, payload: Parameters<typeof submitManualReview>[1]): Promise<boolean> {
+      try {
+        await submitManualReview(run.runId!, payload);
+        return true;
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        rejected.push(`${label}: ${msg}`);
+        return false;
       }
-      for (const cls of untaggedClasses) {
-        if (saved.has(cls)) continue;
-        const dec = untaggedDecisions[cls];
-        const bindings: ClassUsageBinding[] = run.classUsageBindings?.[cls] || [];
-        const repLine = bindings[0]?.line ?? 1;
-        await submitManualReview(run.runId, {
-          line: repLine,
+    }
+    for (const p of taggedClasses) {
+      const key = taggedKey(p);
+      if (saved.has(key)) continue;
+      const dec = taggedDecisions[key];
+      const repLine = p.documentationTargets?.[0]?.line ?? 1;
+      const ok = await send(`${p.className} (${p.patternName})`, {
+        line: repLine,
+        candidates: [p.patternName],
+        chosenPattern: dec.correct ? p.patternName : null,
+        chosenKind: dec.correct ? 'pattern' : 'none'
+      });
+      if (ok) markSaved(key);
+    }
+    for (const cls of untaggedClasses) {
+      if (saved.has(cls)) continue;
+      const dec = untaggedDecisions[cls];
+      const bindings: ClassUsageBinding[] = run.classUsageBindings?.[cls] || [];
+      const repLine = bindings[0]?.line ?? 1;
+      const ok = await send(`${cls} (untagged)`, {
+        line: repLine,
+        candidates: [],
+        chosenPattern: dec.isPattern ? dec.patternName.trim() : null,
+        chosenKind: dec.isPattern ? 'pattern' : 'none'
+      });
+      if (ok) markSaved(cls);
+    }
+    for (const group of PER_RUN_QUESTIONS) {
+      for (const q of group.questions) {
+        const rating = likert[q.id];
+        if (!rating || saved.has(`likert-${q.id}`)) continue;
+        const ok = await send(`Likert ${q.id}`, {
+          line: 0,
           candidates: [],
-          chosenPattern: dec.isPattern ? dec.patternName.trim() : null,
-          chosenKind: dec.isPattern ? 'pattern' : 'none'
+          chosenKind: 'other',
+          chosenPattern: null,
+          otherText: `likert:${q.id}=${rating}`
         });
-        markSaved(cls);
+        if (ok) markSaved(`likert-${q.id}`);
       }
-      // Per-run Likert answers ride on the same endpoint via chosenKind=other
-      // with a structured otherText payload. No new schema needed.
-      for (const group of PER_RUN_QUESTIONS) {
-        for (const q of group.questions) {
-          const rating = likert[q.id];
-          if (!rating || saved.has(`likert-${q.id}`)) continue;
-          await submitManualReview(run.runId, {
-            line: 0,
-            candidates: [],
-            chosenKind: 'other',
-            chosenPattern: null,
-            otherText: `likert:${q.id}=${rating}`
-          });
-          markSaved(`likert-${q.id}`);
-        }
-      }
+    }
+    setSubmitting(false);
+    if (rejected.length === 0) {
       setStatus({ kind: 'ok', title: 'Validation submitted', detail: 'Thanks for the feedback.' });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Submission failed.');
-    } finally {
-      setSubmitting(false);
+    } else {
+      setError(
+        `Backend rejected ${rejected.length} row(s): ${rejected.slice(0, 3).join('; ')}${rejected.length > 3 ? '…' : ''}`
+      );
     }
   }
 
@@ -622,15 +634,30 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
             if (i > 0) setActiveSubTab(SUB_TABS[i - 1].id);
           }}
         >← Back</button>
-        <button
-          type="button"
-          className="ghost-btn"
-          disabled={SUB_TABS.findIndex(t => t.id === activeSubTab) === SUB_TABS.length - 1}
-          onClick={() => {
-            const i = SUB_TABS.findIndex(t => t.id === activeSubTab);
-            if (i < SUB_TABS.length - 1) setActiveSubTab(SUB_TABS[i + 1].id);
-          }}
-        >Next →</button>
+        {SUB_TABS.findIndex(t => t.id === activeSubTab) === SUB_TABS.length - 1 ? (
+          <button
+            type="button"
+            className="primary-btn"
+            disabled={!isSaved || submitting || !completeness.ok}
+            onClick={handleSubmitValidation}
+            title={!isSaved
+              ? 'Save the run first'
+              : !completeness.ok
+                ? `Missing: ${completeness.missing.length} row(s)`
+                : 'Submit validation feedback'}
+          >
+            {submitting ? 'Submitting…' : 'Submit validation'}
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="ghost-btn"
+            onClick={() => {
+              const i = SUB_TABS.findIndex(t => t.id === activeSubTab);
+              if (i < SUB_TABS.length - 1) setActiveSubTab(SUB_TABS[i + 1].id);
+            }}
+          >Next →</button>
+        )}
       </div>
     </section>
   );
