@@ -1,123 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="NeoTerritory Admin — aggregate analytics for the pattern analysis research deployment." />
   <title>NeoTerritory Admin</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/admin.css" />
 </head>
 <body>
-<div class="admin-shell">
-
-  <!-- TOPBAR -->
-  <header class="admin-topbar">
-    <div class="admin-brand">
-      <span class="admin-brand-dot"></span>
-      <div>
-        <span class="eyebrow">Research Dashboard</span>
-        <h1>NeoTerritory Admin</h1>
-      </div>
-    </div>
-    <div class="admin-topbar-actions">
-      <span class="admin-user" id="admin-user-label"></span>
-      <button id="admin-refresh-btn" class="ghost-btn">↻ Refresh</button>
-      <button id="admin-logout-btn" class="ghost-btn">Sign out</button>
-    </div>
-  </header>
-
-  <!-- STAT CARDS -->
-  <section class="admin-stats reveal" id="section-stats">
-    <div class="stat-card accent">
-      <span class="stat-label">Total runs</span>
-      <span class="stat-value" id="stat-total-runs">—</span>
-      <span class="stat-sub">across all users</span>
-    </div>
-    <div class="stat-card green">
-      <span class="stat-label">Active users</span>
-      <span class="stat-value" id="stat-active-users">—</span>
-      <span class="stat-sub">with ≥ 1 run</span>
-    </div>
-    <div class="stat-card amber">
-      <span class="stat-label">Reviews submitted</span>
-      <span class="stat-value" id="stat-reviews">—</span>
-      <span class="stat-sub">per-run + end-of-session</span>
-    </div>
-    <div class="stat-card cyan">
-      <span class="stat-label">Patterns detected</span>
-      <span class="stat-value" id="stat-patterns">—</span>
-      <span class="stat-sub">total findings</span>
-    </div>
-    <div class="stat-card">
-      <span class="stat-label">Avg findings/run</span>
-      <span class="stat-value" id="stat-avg-findings">—</span>
-      <span class="stat-sub">pattern cards per analysis</span>
-    </div>
-  </section>
-
-  <!-- CHARTS ROW 1 -->
-  <div class="admin-grid reveal" id="section-charts1">
-    <div class="chart-panel">
-      <div class="chart-panel-head">
-        <h2>Runs per day</h2>
-        <span class="badge" id="badge-runs-range">—</span>
-      </div>
-      <div class="chart-wrap"><canvas id="chart-runs-per-day"></canvas></div>
-    </div>
-    <div class="chart-panel">
-      <div class="chart-panel-head">
-        <h2>Pattern frequency</h2>
-        <span class="badge" id="badge-pattern-count">—</span>
-      </div>
-      <div class="chart-wrap"><canvas id="chart-pattern-freq"></canvas></div>
-    </div>
-  </div>
-
-  <!-- CHARTS ROW 2 -->
-  <div class="admin-grid reveal" id="section-charts2">
-    <div class="chart-panel">
-      <div class="chart-panel-head">
-        <h2>Score distribution</h2>
-      </div>
-      <div class="chart-wrap"><canvas id="chart-score-dist"></canvas></div>
-    </div>
-    <div class="chart-panel">
-      <div class="chart-panel-head">
-        <h2>Review rating distribution</h2>
-      </div>
-      <div class="chart-wrap"><canvas id="chart-review-ratings"></canvas></div>
-    </div>
-  </div>
-
-  <!-- PER-USER TABLE -->
-  <div class="admin-grid wide reveal" id="section-users">
-    <div class="chart-panel">
-      <div class="chart-panel-head">
-        <h2>Per-user activity</h2>
-        <span class="badge" id="badge-user-count">—</span>
-      </div>
-      <div style="overflow-x:auto;">
-        <table class="data-table" id="user-table">
-          <thead>
-            <tr>
-              <th>Username</th>
-              <th>Runs</th>
-              <th>Findings</th>
-              <th>Reviews</th>
-              <th>Last active</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody id="user-table-body">
-            <tr><td colspan="6" style="text-align:center;color:var(--ink-dim);padding:20px;">Loading…</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-</div>
-<script src="/admin.js"></script>
+  <div id="root"></div>
+  <script type="module" src="/src/admin/main.tsx"></script>
 </body>
 </html>

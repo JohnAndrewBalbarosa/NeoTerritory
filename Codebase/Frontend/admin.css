@@ -131,7 +131,9 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 
 /* ONLINE DOT */
 .user-name-cell{display:inline-flex;align-items:center;gap:6px;}
-.online-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;box-shadow:0 0 0 2px var(--green-glow);}
+.online-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.online-dot.is-online{background:var(--green);box-shadow:0 0 0 2px var(--green-glow);}
+.online-dot.is-offline{background:var(--red);box-shadow:0 0 0 2px rgba(248,113,113,0.18);}
 
 /* REVIEWS LIST */
 .reviews-list{display:flex;flex-direction:column;gap:10px;}

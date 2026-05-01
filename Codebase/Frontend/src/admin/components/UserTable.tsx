@@ -3,7 +3,9 @@ import { fetchAdminUsers, resetTesterSeats } from '../../api/client';
 import { AdminUser } from '../../types/api';
 import { fmtDate } from '../../lib/patterns';
 
-const ONLINE_MS = 5 * 60 * 1000;
+// Mirrors the backend HEARTBEAT_GRACE_SECONDS (90s) plus a small UI buffer so
+// a tab that just missed one beat doesn't flicker red.
+const ONLINE_MS = 2 * 60 * 1000;
 
 function isOnline(lastActive?: string): boolean {
   if (!lastActive) return false;
@@ -16,6 +18,7 @@ function isTesterRow(u: AdminUser): boolean {
 }
 
 type SortKey = 'none' | 'runs-desc' | 'runs-asc' | 'lastRun-desc' | 'lastRun-asc';
+type PresenceFilter = 'all' | 'online' | 'offline';
 
 const SORT_CYCLE: SortKey[] = ['none', 'runs-desc', 'runs-asc', 'lastRun-desc', 'lastRun-asc'];
 
@@ -25,6 +28,13 @@ const SORT_LABELS: Record<SortKey, string> = {
   'runs-asc': 'Runs ↑',
   'lastRun-desc': 'Last run ↓',
   'lastRun-asc': 'Last run ↑',
+};
+
+const PRESENCE_CYCLE: PresenceFilter[] = ['all', 'online', 'offline'];
+const PRESENCE_LABELS: Record<PresenceFilter, string> = {
+  all: 'All',
+  online: 'Online only',
+  offline: 'Offline only'
 };
 
 function applySort(users: AdminUser[], key: SortKey): AdminUser[] {
@@ -43,6 +53,7 @@ export default function UserTable() {
   const [error, setError]     = useState<string | null>(null);
   const [query, setQuery]     = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('none');
+  const [presence, setPresence] = useState<PresenceFilter>('all');
   const [resetting, setResetting] = useState<'all' | 'selected' | 'offline' | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const cancelledRef = useRef(false);
@@ -63,6 +74,10 @@ export default function UserTable() {
 
   function cycleSort() {
     setSortKey(k => SORT_CYCLE[(SORT_CYCLE.indexOf(k) + 1) % SORT_CYCLE.length]);
+  }
+
+  function cyclePresence() {
+    setPresence(p => PRESENCE_CYCLE[(PRESENCE_CYCLE.indexOf(p) + 1) % PRESENCE_CYCLE.length]);
   }
 
   function toggleSelected(id: number) {
@@ -105,9 +120,11 @@ export default function UserTable() {
   if (users === null) return <div className="empty-state">Loading users…</div>;
 
   const q = query.toLowerCase();
-  const filtered = q
+  let filtered = q
     ? users.filter(u => u.username.toLowerCase().includes(q) || (u.email ?? '').toLowerCase().includes(q))
     : users;
+  if (presence === 'online') filtered = filtered.filter(u => isOnline(u.last_active));
+  else if (presence === 'offline') filtered = filtered.filter(u => !isOnline(u.last_active));
   const visible = applySort(filtered, sortKey);
 
   const visibleTesterIds = visible.filter(isTesterRow).map(u => u.id);
@@ -140,7 +157,14 @@ export default function UserTable() {
           aria-label="Filter users"
         />
         {query && <span className="user-search-count">{visible.length} / {users.length}</span>}
-        <span className="user-online-count" title="Active in last 5 min">{onlineCount} online</span>
+        <span className="user-online-count" title="Active in last 2 min (heartbeat)">{onlineCount} online</span>
+        <button
+          className={`user-ctrl-btn${presence !== 'all' ? ' is-active' : ''}`}
+          onClick={cyclePresence}
+          title="Cycle presence filter (All / Online / Offline)"
+        >
+          {PRESENCE_LABELS[presence]}
+        </button>
         <button
           className={`user-ctrl-btn${sortKey !== 'none' ? ' is-active' : ''}`}
           onClick={cycleSort}
@@ -214,9 +238,9 @@ export default function UserTable() {
                     </td>
                     <td>
                       <span className="user-name-cell">
-                        {isOnline(u.last_active) && (
-                          <span className="online-dot" title="Active in last 5 min" aria-label="online" />
-                        )}
+                        {isOnline(u.last_active)
+                          ? <span className="online-dot is-online" title="Active in last 2 min" aria-label="online" />
+                          : <span className="online-dot is-offline" title="No heartbeat in last 2 min" aria-label="offline" />}
                         <strong>{u.username}</strong>
                       </span>
                       {u.email && <><br /><small>{u.email}</small></>}

@@ -3,6 +3,7 @@ import { useAppStore, StudioTab } from '../../store/appState';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
+import { useHeartbeat } from '../../hooks/useHeartbeat';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
@@ -59,6 +60,7 @@ const TABS: Array<{ id: StudioTab; label: string }> = [
 export default function MainLayout() {
   useHealth();
   useAiCommentaryPoll();
+  useHeartbeat();
   const {
     status, msState, msLabel, user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,

@@ -1,10 +1,16 @@
 import express, { Request, Response } from 'express';
-import { register, login, claimSeat } from '../controllers/authController';
+import jwt from 'jsonwebtoken';
+import {
+  register, login, claimSeat, heartbeat, disconnect, startTesterSeatSweep
+} from '../controllers/authController';
 import { validateBody } from '../middleware/validateBody';
 import { loginSchema, claimSeatSchema } from '../validation/schemas';
+import { jwtAuth } from '../middleware/jwtAuth';
 import db from '../db/database';
 // TEST SEED — REMOVE FOR PRODUCTION
 import { listTestAccounts } from '../db/_testSeed/devconUsers';
+
+const DEVCON_RE = /^devcon\d+$/i;
 
 const router = express.Router();
 
@@ -12,6 +18,40 @@ router.post('/register', register);
 router.post('/login', validateBody(loginSchema), login);
 // TEST SEED — REMOVE FOR PRODUCTION
 router.post('/claim', validateBody(claimSeatSchema), claimSeat);
+
+// Heartbeat: keeps the tester seat allocated while the browser tab is alive.
+// jwtAuth already touches last_active on every authed request, but we expose
+// a dedicated endpoint so an idle (no-API-activity) tab still beats.
+router.post('/heartbeat', jwtAuth, heartbeat);
+
+// Explicit release on tab close (sent via navigator.sendBeacon on pagehide).
+router.post('/disconnect', jwtAuth, disconnect);
+
+// Beacon-friendly variant: navigator.sendBeacon cannot set an Authorization
+// header, so we accept the JWT in the body. Verifies token inline and frees
+// the seat. No response is read by the browser (the page is unloading).
+router.post('/disconnect-beacon', express.json({ type: '*/*', limit: '4kb' }), (req: Request, res: Response) => {
+  const token = (req.body && (req.body as { token?: string }).token) || '';
+  if (!token) {
+    res.status(400).json({ error: 'token required' });
+    return;
+  }
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as {
+      id: number; username?: string;
+    };
+    if (decoded?.username && DEVCON_RE.test(decoded.username)) {
+      db.prepare("UPDATE users SET claimed_at = NULL WHERE id = ? AND username LIKE 'Devcon%'").run(decoded.id);
+    }
+    db.prepare("UPDATE users SET last_active = datetime('now', '-1 hour') WHERE id = ?").run(decoded.id);
+    res.status(204).end();
+  } catch {
+    res.status(401).end();
+  }
+});
+
+// Start the missed-heartbeat sweep on module load. unref()'d, single instance.
+startTesterSeatSweep();
 
 interface DevconRow {
   username: string;

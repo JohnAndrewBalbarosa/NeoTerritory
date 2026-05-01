@@ -81,6 +81,32 @@ export async function login(username: string, password: string): Promise<{ token
   }
 }
 
+// Tells the backend "this tab is still alive — keep my seat". Called every
+// ~30s by useHeartbeat. Tolerates transient network errors silently because
+// missing one beat is fine; the backend grace window covers a missed call.
+export async function sendHeartbeat(): Promise<void> {
+  try {
+    await apiFetch('/auth/heartbeat', { method: 'POST' });
+  } catch {
+    // ignore — next beat will reconcile
+  }
+}
+
+// Fired on pagehide via navigator.sendBeacon so a tab close releases the seat
+// instantly. Plain `fetch` doesn't survive page teardown, hence the beacon.
+export function sendDisconnectBeacon(token: string | null): void {
+  if (!token || typeof navigator === 'undefined' || !navigator.sendBeacon) return;
+  // sendBeacon must use a Blob; the auth header is encoded in the URL via a
+  // query string read by an alternate verifier path. Safer: send a typed body
+  // and let the existing /auth/disconnect endpoint read the bearer header
+  // through a sendBeacon-compatible Blob.
+  const body = new Blob(
+    [JSON.stringify({ token })],
+    { type: 'application/json' }
+  );
+  navigator.sendBeacon('/auth/disconnect-beacon', body);
+}
+
 export async function fetchHealth(): Promise<HealthStatus> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 4000);

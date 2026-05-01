@@ -100,6 +100,66 @@ function claimSeatTransaction(username: string): ClaimResult {
   return { ok: false, reason: 'already_claimed' };
 }
 
+// Tester seat is freed if no heartbeat lands within this many seconds. Picked
+// large enough to survive a brief network blip (frontend beats every 30s) but
+// small enough that closing a tab returns the seat within ~2 minutes.
+export const HEARTBEAT_GRACE_SECONDS = 90;
+
+// Heartbeat endpoint. Browsers POST here every ~30s while the tab lives. We
+// just touch last_active; the absence of beats is what frees a seat.
+export const heartbeat = (req: Request, res: Response): void => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  try {
+    db.prepare("UPDATE users SET last_active = datetime('now') WHERE id = ?").run(req.user.id);
+  } catch {
+    // last_active column may be missing on old DBs; non-fatal.
+  }
+  res.json({ ok: true });
+};
+
+// Explicit disconnect. The frontend pings this on `pagehide` via sendBeacon so
+// closing the tab releases the seat instantly without waiting for the sweep.
+// We free the seat only for tester accounts to match the rest of the lifecycle.
+export const disconnect = (req: Request, res: Response): void => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  try {
+    if (DEVCON_USERNAME_RE.test(req.user.username || '')) {
+      db.prepare("UPDATE users SET claimed_at = NULL WHERE id = ? AND username LIKE 'Devcon%'").run(req.user.id);
+    }
+    db.prepare("UPDATE users SET last_active = datetime('now', '-1 hour') WHERE id = ?").run(req.user.id);
+  } catch {
+    // Non-fatal — sweep will reconcile.
+  }
+  res.json({ ok: true });
+};
+
+// Periodic sweep: any tester whose claimed seat hasn't heartbeat'd within the
+// grace window has its seat freed. Runs on a single interval per process.
+let sweepStarted = false;
+export function startTesterSeatSweep(): void {
+  if (sweepStarted) return;
+  sweepStarted = true;
+  setInterval(() => {
+    try {
+      db.prepare(
+        `UPDATE users SET claimed_at = NULL
+         WHERE username LIKE 'Devcon%'
+           AND claimed_at IS NOT NULL
+           AND (last_active IS NULL
+                OR strftime('%s','now') - strftime('%s', last_active) >= ?)`
+      ).run(HEARTBEAT_GRACE_SECONDS);
+    } catch {
+      // Pre-migration DBs simply skip; the column will appear on next start.
+    }
+  }, 30 * 1000).unref();
+}
+
 export const claimSeat = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     const { username } = req.body as { username?: string };
