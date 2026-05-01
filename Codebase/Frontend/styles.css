@@ -256,11 +256,6 @@ body.login-active{overflow:hidden;}
 .pattern-card-title{font-size:13px;font-weight:600;color:var(--ink);}
 .pattern-card-class{font-family:var(--code-font);font-size:11px;color:var(--ink-soft);}
 .pattern-card-line{font-size:10px;color:var(--ink-dim);margin-left:auto;}
-.pattern-card-row{display:flex;align-items:center;gap:10px;}
-.pattern-card-row .pattern-card-toggle{flex:1;min-width:0;}
-.pattern-card-retag{font:inherit;font-size:11px;font-weight:600;padding:5px 11px;border-radius:6px;border:1px solid var(--accent);color:var(--accent);background:transparent;cursor:pointer;user-select:none;line-height:1.4;flex-shrink:0;transition:background 120ms,color 120ms,border-color 120ms;}
-.pattern-card-retag:hover,.pattern-card-retag:focus-visible{outline:none;border-color:var(--accent-hover);color:#fff;background:var(--accent);}
-.class-popout-retag{font-size:11px;padding:2px 9px;margin-left:auto;}
 .rank-bar{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-soft);}
 .rank-bar-track{flex:1;height:4px;background:var(--border);border-radius:999px;overflow:hidden;}
 .rank-bar-fill{height:100%;background:var(--accent);transition:width 300ms ease;}
@@ -305,25 +300,10 @@ body.login-active{overflow:hidden;}
 .class-popout-notes-head{margin:10px 0 5px;font-size:11px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:0.05em;}
 .class-popout-notes{display:flex;flex-direction:column;gap:5px;}
 
-/* === RETAG INSPECTOR (upper-right floating picker) === */
-.retag-inspector{position:fixed;top:20px;right:20px;width:min(340px,calc(100vw - 40px));max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius-md);box-shadow:var(--shadow-lg),0 0 24px var(--accent-glow);z-index:1100;overflow:hidden;}
-.retag-inspector-head{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);}
-.retag-inspector-eyebrow{font-size:9px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);}
-.retag-inspector-class{font-family:var(--code-font);font-size:13px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.retag-inspector-close{margin-left:auto;background:transparent;border:none;color:var(--ink-soft);font-size:18px;line-height:1;cursor:pointer;padding:0 4px;}
-.retag-inspector-close:hover{color:var(--ink);}
-.retag-inspector-list{display:flex;flex-direction:column;gap:5px;padding:10px 12px;overflow-y:auto;}
-.retag-inspector-option{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;background:transparent;transition:background 0.12s,border-color 0.12s;text-align:left;}
-.retag-inspector-option:hover{background:rgba(123,94,167,0.08);border-color:var(--border-bright);}
-.retag-inspector-option[aria-pressed="true"]{border-color:var(--accent);background:rgba(123,94,167,0.12);}
-.retag-inspector-option .opt-name{font-weight:600;font-size:12px;color:var(--ink);}
-.retag-inspector-option .opt-rank{margin-left:auto;font-family:var(--code-font);font-size:10.5px;color:var(--ink-dim);}
-.retag-inspector-empty{margin:0;padding:8px;font-size:12px;color:var(--ink-soft);font-style:italic;}
-.retag-inspector-actions{display:flex;justify-content:flex-end;gap:6px;padding:10px 14px;border-top:1px solid var(--border);background:var(--surface2);}
-@media(max-width:720px){.retag-inspector{top:auto;bottom:16px;right:16px;left:16px;width:auto;}}
-
 /* === SOURCE POPOVER === */
 .src-popover{position:absolute;z-index:1000;min-width:300px;max-width:500px;max-height:60vh;overflow:auto;background:var(--surface);border:1px solid var(--border-bright);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg),0 0 24px rgba(123,94,167,0.12);padding:12px 14px 14px;}
+.src-popover--pinned{position:fixed;top:20px;right:20px;left:auto;width:min(440px,calc(100vw - 40px));max-height:calc(100vh - 40px);}
+@media(max-width:720px){.src-popover--pinned{top:auto;bottom:16px;right:16px;left:16px;width:auto;}}
 .src-popover-close{position:absolute;top:6px;right:8px;background:transparent;border:none;cursor:pointer;font-size:17px;line-height:1;color:var(--ink-dim);}
 .src-popover-close:hover{color:var(--ink);}
 .src-popover-body{display:flex;flex-direction:column;gap:7px;}

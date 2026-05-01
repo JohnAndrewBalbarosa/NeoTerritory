@@ -8,7 +8,6 @@ import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
-import RetagInspector from '../analysis/RetagInspector';
 import ReviewModal from '../modals/ReviewModal';
 import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
@@ -87,8 +86,6 @@ export default function MainLayout() {
   const [showSignout, setShowSignout] = useState(false);
   const [runRefreshSignal, setRunRefreshSignal] = useState(0);
   const [analyzeReplace, setAnalyzeReplace] = useState<{ run: () => void } | null>(null);
-  // Retag is now self-contained inside <RetagInspector>; the upper-right panel
-  // listens to `pattern:retag-request` itself and patches currentRun directly.
 
   function onAnalysisComplete(run: AnalysisRun) {
     const r = run as AnalyzeResponseLike;
@@ -278,7 +275,6 @@ export default function MainLayout() {
         )}
       </main>
 
-      <RetagInspector />
       {analyzeReplace && (
         <div className="modal" id="analyze-replace-modal">
           <div className="modal-card">

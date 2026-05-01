@@ -112,17 +112,18 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   );
   const ambiguous = distinctPatterns.length > 1;
 
-  const top = anchorRect ? anchorRect.bottom + 4 : 80;
-  const left = anchorRect ? Math.min(anchorRect.left, window.innerWidth - 460) : 80;
+  // Pinned to the top-right of the viewport — the source view stays visible
+  // and the popover never covers the line being inspected. anchorRect is no
+  // longer used for positioning; kept on the props for API stability.
+  void anchorRect;
 
   return (
     <div
       ref={popoverRef}
       id="src-popover"
-      className="src-popover"
+      className="src-popover src-popover--pinned"
       role="dialog"
       aria-label={`Annotations for line ${line}`}
-      style={{ position: 'fixed', top, left, maxWidth: 440 }}
     >
       <button
         className="src-popover-close"
