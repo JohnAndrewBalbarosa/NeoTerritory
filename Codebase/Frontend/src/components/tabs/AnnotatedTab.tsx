@@ -53,6 +53,32 @@ export default function AnnotatedTab({
     );
   }
 
+  // Gate the annotated source until the microservice's tags are present.
+  // /api/analyze blocks on the microservice so detectedPatterns is the
+  // canonical "tags arrived" signal — when it's empty AND AI commentary
+  // hasn't settled either, we show a loading skeleton instead of letting
+  // the source view paint with no class colours / no popovers. Once tags
+  // are in (detectedPatterns.length > 0) OR the microservice has clearly
+  // returned an empty verdict (aiStatus !== 'pending'), the tab renders
+  // normally.
+  const tagsArrived = (currentRun.detectedPatterns?.length ?? 0) > 0;
+  const aiSettled   = aiStatus === 'ready' || aiStatus === 'failed' || aiStatus === 'disabled' || aiStatus === 'idle';
+  if (!tagsArrived && !aiSettled) {
+    return (
+      <section className="tab-panel tab-annotated tab-empty" aria-busy="true" aria-live="polite">
+        <div className="annotated-loading">
+          <span className="annotated-loading-spinner" aria-hidden="true" />
+          <p><strong>Tagging classes…</strong></p>
+          <p className="lede">
+            Waiting on the microservice to finish detecting design patterns
+            in your submission. The annotated source will render here as
+            soon as the tags arrive.
+          </p>
+        </div>
+      </section>
+    );
+  }
+
   const patternCount = currentRun.detectedPatterns?.length || 0;
   const commentCount = allAnnotations.length;
   const fileSuffix = files.length > 1 ? ` • ${files.length} files` : '';
