@@ -314,10 +314,10 @@ function PatternCard(props: CardProps) {
           <button
             type="button"
             className="pattern-card-retag"
-            title={`Open the pattern picker to tag or change the design pattern for ${p.className}.`}
+            title={`Open the verify-pattern picker for ${p.className}.`}
             onClick={onRetagClick}
           >
-            Change pattern…
+            Verify pattern
           </button>
         )}
       </div>

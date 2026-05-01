@@ -8,7 +8,7 @@ import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
-import RetagPickerModal from '../modals/RetagPickerModal';
+import RetagInspector from '../analysis/RetagInspector';
 import ReviewModal from '../modals/ReviewModal';
 import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
@@ -86,32 +86,9 @@ export default function MainLayout() {
   const [review, setReview] = useState<ReviewState | null>(null);
   const [showSignout, setShowSignout] = useState(false);
   const [runRefreshSignal, setRunRefreshSignal] = useState(0);
-  const [retag, setRetag] = useState<{ className: string; candidates: string[] } | null>(null);
   const [analyzeReplace, setAnalyzeReplace] = useState<{ run: () => void } | null>(null);
-
-  // Listen for retag-request events from PatternCards/ClassBindings/SourceView so any
-  // class- or class-line-related UI can re-open the picker without prop drilling.
-  useEffect(() => {
-    function onRetag(e: Event) {
-      const { className, candidates } = (e as CustomEvent<{ className: string; candidates: string[] }>).detail || {};
-      if (!className) return;
-      setRetag({ className, candidates: candidates || [] });
-    }
-    window.addEventListener('pattern:retag-request', onRetag);
-    return () => window.removeEventListener('pattern:retag-request', onRetag);
-  }, []);
-
-  function onRetagResolved(patternId: string | null) {
-    if (!retag) return;
-    if (patternId) {
-      const prevMap = useAppStore.getState().currentRun?.classResolvedPatterns || {};
-      useAppStore.getState().patchCurrentRun({
-        classResolvedPatterns: { ...prevMap, [retag.className]: patternId },
-        userResolvedPattern: patternId
-      });
-    }
-    setRetag(null);
-  }
+  // Retag is now self-contained inside <RetagInspector>; the upper-right panel
+  // listens to `pattern:retag-request` itself and patches currentRun directly.
 
   function onAnalysisComplete(run: AnalysisRun) {
     const r = run as AnalyzeResponseLike;
@@ -125,7 +102,7 @@ export default function MainLayout() {
     const commentCount = (run.annotations || []).length;
     const ambiguous = run.ranking?.verdict === 'ambiguous'
       && (run.ranking.ambiguousCandidates || []).length > 0;
-    // The auto-blocking RetagPickerModal was removed because PatternCards and
+    // The auto-blocking ambiguity modal was removed because PatternCards and
     // the class popout already expose the same picker. Surface a non-blocking
     // status nudge instead so the user knows there were tied candidates.
     if (ambiguous) {
@@ -301,22 +278,7 @@ export default function MainLayout() {
         )}
       </main>
 
-      {retag && useAppStore.getState().currentRun?.ranking && (
-        <RetagPickerModal
-          ranking={useAppStore.getState().currentRun!.ranking!}
-          sourceName={useAppStore.getState().currentRun!.sourceName}
-          onConfirm={onRetagResolved}
-          onSkip={() => onRetagResolved(null)}
-          candidatesOverride={retag.candidates}
-          title={`Tag pattern for ${retag.className}`}
-          detail={`Pick the design pattern that best matches ${retag.className}. Your choice replaces the current resolution and is persisted on the next save.`}
-          preselect={
-            useAppStore.getState().currentRun?.classResolvedPatterns?.[retag.className]
-            ?? useAppStore.getState().currentRun?.userResolvedPattern
-            ?? null
-          }
-        />
-      )}
+      <RetagInspector />
       {analyzeReplace && (
         <div className="modal" id="analyze-replace-modal">
           <div className="modal-card">
