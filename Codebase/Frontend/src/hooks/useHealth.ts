@@ -5,7 +5,7 @@ import { fetchHealth } from '../api/client';
 const POLL_INTERVAL_MS = 15000;
 
 export function useHealth() {
-  const { setStatus, setMsStatus, setAiConfigured } = useAppStore();
+  const { setStatus, setMsStatus, setAiConfigured, setMaxFilesPerSubmission } = useAppStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function poll() {
@@ -19,6 +19,9 @@ export function useHealth() {
           setMsStatus('offline', `offline (${reason})`);
         }
         setAiConfigured(h.aiProviderConfigured);
+        if (typeof h.maxFilesPerSubmission === 'number') {
+          setMaxFilesPerSubmission(h.maxFilesPerSubmission);
+        }
         setStatus({
           kind: 'ok',
           title: 'API ok',

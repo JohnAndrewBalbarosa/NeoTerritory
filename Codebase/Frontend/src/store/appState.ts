@@ -24,6 +24,7 @@ interface AppState {
   aiStatus: AiCommentaryStatus;
   aiJobId: string | null;
   aiConfigured: boolean;
+  maxFilesPerSubmission: number;
   pendingRunSurveyForRunKey: string | null;
   linePatternOverrides: Record<number, string>;
 
@@ -43,6 +44,7 @@ interface AppState {
   setPretestSubmitted: (v: boolean) => void;
   setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
   setAiConfigured: (v: boolean) => void;
+  setMaxFilesPerSubmission: (v: number) => void;
   mergeAiAnnotations: (aiAnnotations: Annotation[]) => void;
   mergeAiEducation: (educationByKey: Record<string, PatternEducation>) => void;
   setPendingRunSurvey: (key: string | null) => void;
@@ -76,6 +78,7 @@ export const useAppStore = create<AppState>((set) => ({
   aiStatus: 'idle',
   aiJobId: null,
   aiConfigured: false,
+  maxFilesPerSubmission: 3,
   pendingRunSurveyForRunKey: null,
   linePatternOverrides: {},
 
@@ -135,6 +138,7 @@ export const useAppStore = create<AppState>((set) => ({
     aiJobId: jobId === undefined ? s.aiJobId : jobId
   })),
   setAiConfigured: (v) => set({ aiConfigured: v }),
+  setMaxFilesPerSubmission: (v) => set({ maxFilesPerSubmission: Math.max(1, Math.min(16, v)) }),
   setLinePatternOverride: (line, patternKey) => set((s) => ({
     linePatternOverrides: { ...s.linePatternOverrides, [line]: patternKey }
   })),

@@ -39,25 +39,50 @@ interface RenderedLine {
   isScopeStart: boolean;
 }
 
+// Walk forward from the class's opening brace and find the matching `}` so
+// the scope spans the entire class body. Without this, methods declared
+// after the last documentation target (e.g. QueryBuilder::build() following
+// table()/where() anchors) fall outside the scope and never inherit the
+// resolved-pattern color.
+function findClassEndLine(sourceLines: string[], startLine: number): number {
+  let depth = 0;
+  let seenOpen = false;
+  for (let i = startLine - 1; i < sourceLines.length; i++) {
+    const raw = sourceLines[i] || '';
+    const noLine = raw.replace(/\/\/.*$/, '');
+    const noBlock = noLine.replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const ch of noBlock) {
+      if (ch === '{') { depth += 1; seenOpen = true; }
+      else if (ch === '}') {
+        depth -= 1;
+        if (seenOpen && depth === 0) return i + 1;
+      }
+    }
+  }
+  return sourceLines.length;
+}
+
 function buildClassScopes(
   detectedPatterns: DetectedPatternFull[],
-  classResolvedPatterns?: Record<string, string>
+  classResolvedPatterns?: Record<string, string>,
+  sourceText?: string
 ): ClassScope[] {
   const scopes: ClassScope[] = [];
+  const lines = (sourceText || '').replace(/\r\n/g, '\n').split('\n');
   detectedPatterns.forEach(p => {
     if (!p.className) return;
     const targets = p.documentationTargets || [];
     if (!targets.length) return;
     let min = Infinity;
-    let max = -Infinity;
+    let anchorMax = -Infinity;
     targets.forEach(t => {
       if (typeof t.line !== 'number') return;
       if (t.line < min) min = t.line;
-      if (t.line > max) max = t.line;
+      if (t.line > anchorMax) anchorMax = t.line;
     });
-    if (!Number.isFinite(min) || !Number.isFinite(max)) return;
-    // User's per-class choice overrides the structural patternName so the
-    // scope tint flips immediately on retag.
+    if (!Number.isFinite(min) || !Number.isFinite(anchorMax)) return;
+    const braceEnd = lines.length > 0 ? findClassEndLine(lines, min) : anchorMax;
+    const max = Math.max(anchorMax, braceEnd);
     const resolved = classResolvedPatterns && classResolvedPatterns[p.className];
     const patternKey = resolved || p.patternName || 'Review';
     scopes.push({ className: p.className, patternKey, min, max });
@@ -203,7 +228,7 @@ function buildRows(
   classResolvedPatterns?: Record<string, string>
 ): { rows: RenderedLine[]; scopeDominanceMap: Map<ClassScope, ClassDominance> } {
   const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
-  const scopes = buildClassScopes(detectedPatterns, classResolvedPatterns);
+  const scopes = buildClassScopes(detectedPatterns, classResolvedPatterns, sourceText);
   const lineToScope = buildLineToScope(scopes, lines.length);
   const { raw, filtered } = buildLineToAnnotations(annotations, linePatternOverrides);
 

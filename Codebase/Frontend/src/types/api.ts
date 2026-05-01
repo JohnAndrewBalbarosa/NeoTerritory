@@ -219,6 +219,10 @@ export interface HealthStatus {
   service: string;
   totalRuns: number;
   aiProviderConfigured: boolean;
+  maxFilesPerSubmission?: number;
+  testRunnerEnabled?: boolean;
+  gdbRunsPerWindow?: number;
+  gdbCooldownMs?: number;
   microservice: {
     connected: boolean;
     binaryFound: boolean;

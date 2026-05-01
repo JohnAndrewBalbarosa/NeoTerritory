@@ -446,6 +446,10 @@ router.get('/health', (_req: Request, res: Response) => {
     service: 'NeoTerritory analysis api',
     aiProviderConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
     aiModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+    maxFilesPerSubmission: Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3'))),
+    testRunnerEnabled: isTestRunnerEnabled(),
+    gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
+    gdbCooldownMs: GDB_COOLDOWN_MS,
     microservice,
     totalRuns,
     latestRun,
@@ -516,9 +520,13 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       res.status(400).json({ error: 'Provide a file or source code text.' });
       return;
     }
-    if (fileList.length > 16) {
+    // Per-user file cap. Default 3 keeps research sessions within the
+    // microservice's tested envelope; raise via MAX_FILES_PER_SUBMISSION
+    // (capped server-side at 16 regardless of env, as a safety floor).
+    const envCap = Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3')));
+    if (fileList.length > envCap) {
       if (req.file) fs.unlink(req.file.path, () => {});
-      res.status(400).json({ error: 'At most 16 files per submission.' });
+      res.status(400).json({ error: `At most ${envCap} files per submission.` });
       return;
     }
 
@@ -1020,20 +1028,98 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
 // pattern templates inside a sandbox and reports pass/fail/timeout/segfault.
 // Returns 503 with a clear message when the runner is disabled (default), so
 // the frontend can render a "configure ENABLE_TEST_RUNNER to enable" banner.
-interface RunTestsRow extends ManualReviewRow { source_text: string; analysis_json: string }
+//
+// Saving is NOT required — the runner works on either a saved runId (path
+// param) or a still-pending pendingId (JSON body). Either form looks up the
+// detected patterns + classText and dispatches per-pattern tests.
+//
+// Rate limit: GDB_RUNS_PER_WINDOW (default 5) attempts per user per
+// GDB_COOLDOWN_MS (default 60_000 ms). Exceeding the budget returns 429 with
+// Retry-After.
+interface RunTestsRow { id: number; user_id: number | null; source_text: string; analysis_json: string }
+const GDB_RUNS_PER_WINDOW = Number(process.env.GDB_RUNS_PER_WINDOW || '5');
+const GDB_COOLDOWN_MS = Number(process.env.GDB_COOLDOWN_MS || '60000');
+const gdbAttempts = new Map<number, number[]>();  // userId -> sorted timestamps
+
+function gdbBudgetCheck(userId: number): { allowed: boolean; retryAfterMs: number } {
+  const now = Date.now();
+  const cutoff = now - GDB_COOLDOWN_MS;
+  const arr = (gdbAttempts.get(userId) || []).filter(t => t >= cutoff);
+  if (arr.length >= GDB_RUNS_PER_WINDOW) {
+    const retryAfterMs = Math.max(0, arr[0] + GDB_COOLDOWN_MS - now);
+    gdbAttempts.set(userId, arr);
+    return { allowed: false, retryAfterMs };
+  }
+  arr.push(now);
+  gdbAttempts.set(userId, arr);
+  return { allowed: true, retryAfterMs: 0 };
+}
+
+async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<TestResult[]> {
+  const results: TestResult[] = [];
+  for (const p of patterns) {
+    if (!p.className || !p.classText) continue;
+    const firstTargetName = (p.unitTestTargets || [])[0]?.function_name;
+    const r = await runPatternTest({
+      patternId: p.patternId,
+      patternName: p.patternName,
+      className: p.className,
+      classText: p.classText,
+      forwardMethod: firstTargetName,
+      factoryFn: firstTargetName,
+      terminator: 'build',
+      instanceAccessor: 'instance',
+      componentBase: 'Component',
+      realBase: 'Subject',
+      targetBase: 'Target',
+      targetMethod: firstTargetName
+    });
+    results.push(r);
+  }
+  return results;
+}
+
+async function handleRunTests(
+  req: Request,
+  res: Response,
+  patterns: DetectedPatternResult[]
+): Promise<void> {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+  if (!isTestRunnerEnabled()) {
+    res.status(503).json({
+      error: 'Test runner not configured',
+      detail: 'Set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX in the backend .env to enable.'
+    });
+    return;
+  }
+  const budget = gdbBudgetCheck(req.user.id);
+  if (!budget.allowed) {
+    const retryS = Math.ceil(budget.retryAfterMs / 1000);
+    res.setHeader('Retry-After', String(retryS));
+    res.status(429).json({
+      error: 'Rate limited',
+      detail: `Up to ${GDB_RUNS_PER_WINDOW} test runs per ${Math.round(GDB_COOLDOWN_MS / 1000)}s. Try again in ${retryS}s.`,
+      retryAfterMs: budget.retryAfterMs
+    });
+    return;
+  }
+  const results = await dispatchPatternTests(patterns);
+  res.json({
+    results,
+    rateLimit: {
+      window: GDB_RUNS_PER_WINDOW,
+      cooldownMs: GDB_COOLDOWN_MS,
+      remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user.id) || []).length)
+    }
+  });
+}
+
+// Saved-run path (kept for parity with the old contract).
 router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-    if (!isTestRunnerEnabled()) {
-      res.status(503).json({
-        error: 'Test runner not configured',
-        detail: 'Set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX in the backend .env to enable.'
-      });
-      return;
-    }
     const runIdNum = Number(req.params.runId);
     if (!Number.isFinite(runIdNum)) {
       res.status(400).json({ error: 'Invalid runId' });
@@ -1045,36 +1131,37 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
       res.status(404).json({ error: 'Run not found' });
       return;
     }
-    if (row.user_id && row.user_id !== req.user.id) {
+    if (row.user_id && row.user_id !== req.user?.id) {
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
     const analysis = JSON.parse(row.analysis_json) as { detectedPatterns?: DetectedPatternResult[] };
-    const patterns = analysis.detectedPatterns || [];
+    await handleRunTests(req, res, analysis.detectedPatterns || []);
+  } catch (err) {
+    next(err);
+  }
+});
 
-    const results: TestResult[] = [];
-    for (const p of patterns) {
-      if (!p.className || !p.classText) continue;
-      // Best-guess substitution defaults: prefer the first unit-test target's
-      // function name when the template needs one.
-      const firstTargetName = (p.unitTestTargets || [])[0]?.function_name;
-      const r = await runPatternTest({
-        patternId: p.patternId,
-        patternName: p.patternName,
-        className: p.className,
-        classText: p.classText,
-        forwardMethod: firstTargetName,
-        factoryFn: firstTargetName,
-        terminator: 'build',
-        instanceAccessor: 'instance',
-        componentBase: 'Component',
-        realBase: 'Subject',
-        targetBase: 'Target',
-        targetMethod: firstTargetName
-      });
-      results.push(r);
+// Pending-run path: works against an unsaved run via its pendingId.
+router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = (req.body || {}) as { pendingId?: unknown };
+    const pendingId = typeof body.pendingId === 'string' ? body.pendingId : '';
+    if (!pendingId) {
+      res.status(400).json({ error: 'pendingId required' });
+      return;
     }
-    res.json({ results });
+    const pending = pendingRuns.get(pendingId);
+    if (!pending || pending.expiresAt < Date.now()) {
+      res.status(404).json({ error: 'Pending run not found or expired' });
+      return;
+    }
+    if (pending.userId && pending.userId !== req.user?.id) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    const patterns = (pending.analysis as { detectedPatterns?: DetectedPatternResult[] }).detectedPatterns || [];
+    await handleRunTests(req, res, patterns);
   } catch (err) {
     next(err);
   }

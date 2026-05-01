@@ -52,7 +52,18 @@ async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
   }
 
   if (!response.ok) {
-    throw new Error((data as { error?: string }).error || `HTTP ${response.status}`);
+    // Build a richer error so callers (e.g. GdbRunnerTab) can read status,
+    // detail, and retryAfterMs without parsing strings.
+    const body = data as { error?: string; detail?: string; retryAfterMs?: number };
+    const err = new Error(body.error || `HTTP ${response.status}`) as Error & {
+      status?: number;
+      detail?: string;
+      retryAfterMs?: number;
+    };
+    err.status = response.status;
+    err.detail = body.detail;
+    err.retryAfterMs = body.retryAfterMs;
+    throw err;
   }
 
   return data as T;
@@ -331,7 +342,8 @@ export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
 // Pre-templated unit-test runner (Tier-2). The backend may return 503 with a
 // detail string when ENABLE_TEST_RUNNER is unset; the GdbRunnerTab catches
 // that and renders a "configure to enable" banner instead of an error toast.
-export async function runPatternTests(runId: number): Promise<{ results: Array<{
+// 429 responses include retryAfterMs so the tab can show a live cooldown.
+export interface GdbTestResult {
   patternId: string;
   patternName: string;
   className: string;
@@ -344,8 +356,20 @@ export async function runPatternTests(runId: number): Promise<{ results: Array<{
   verdict: string;
   failingLine?: number;
   message?: string;
-}> }> {
-  return apiFetch(`/api/analysis/${runId}/run-tests`, { method: 'POST' });
+}
+export interface GdbRunResponse {
+  results: GdbTestResult[];
+  rateLimit?: { window: number; cooldownMs: number; remaining: number };
+}
+export async function runPatternTests(opts: { runId?: number; pendingId?: string }): Promise<GdbRunResponse> {
+  if (opts.runId != null) {
+    return apiFetch<GdbRunResponse>(`/api/analysis/${opts.runId}/run-tests`, { method: 'POST' });
+  }
+  if (!opts.pendingId) throw new Error('runId or pendingId required');
+  return apiFetch<GdbRunResponse>('/api/analysis/run-tests', {
+    method: 'POST',
+    body: JSON.stringify({ pendingId: opts.pendingId })
+  });
 }
 
 // AI poll endpoint

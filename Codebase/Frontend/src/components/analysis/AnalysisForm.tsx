@@ -14,7 +14,8 @@ interface FileSlot {
   text: string;
 }
 
-const MAX_FILES = 16;
+// Hard ceiling — backend clamps to this even if .env asks for more.
+const MAX_FILES_HARD_CAP = 16;
 const ACCEPTED_EXT = '.cpp,.cc,.cxx,.h,.hpp';
 
 function newSlotId(): string {
@@ -23,7 +24,8 @@ function newSlotId(): string {
 
 export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
-    setCurrentRun, setSessionRanAnalyze } = useAppStore();
+    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission } = useAppStore();
+  const MAX_FILES = Math.min(MAX_FILES_HARD_CAP, Math.max(1, maxFilesPerSubmission || 3));
 
   // Initialise from the legacy single-file store fields so existing flows
   // (Load sample, Clear, the old store hydration on mount) keep working.
