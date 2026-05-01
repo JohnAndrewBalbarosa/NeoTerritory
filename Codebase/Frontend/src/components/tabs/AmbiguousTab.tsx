@@ -147,11 +147,80 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
 
 // ─── Main tab ─────────────────────────────────────────────────────────────────
 
+// ─── Per-run questionnaire (run-relevant Likert items) ───────────────────────
+// Sourced from Questionnaire B → Section B (Functional Suitability and Code
+// Understanding Support). Only items that are answerable per-run live here;
+// session-wide items (UI clarity, security perception, open-ended) are asked
+// at sign-out instead. Likert 1=Strongly Disagree → 5=Strongly Agree.
+interface LikertQuestion { id: string; text: string }
+const PER_RUN_QUESTIONS: Array<{ section: string; title: string; questions: LikertQuestion[] }> = [
+  {
+    section: 'B',
+    title: 'Code understanding',
+    questions: [
+      { id: 'B1', text: 'This run helped me understand unfamiliar C++ source code.' },
+      { id: 'B2', text: 'The system helped me identify important parts of the analyzed code.' },
+      { id: 'B3', text: 'The generated documentation for this run was clear and understandable.' }
+    ]
+  },
+  {
+    section: 'B-patterns',
+    title: 'Pattern evidence',
+    questions: [
+      { id: 'B5', text: 'The detected design-pattern evidence helped me connect concepts to code.' },
+      { id: 'B6', text: 'The explanations helped me understand why structures relate to a design pattern.' }
+    ]
+  },
+  {
+    section: 'D',
+    title: 'Performance',
+    questions: [
+      { id: 'D17', text: 'The system generated this analysis without noticeable delay.' },
+      { id: 'D18', text: 'The system stayed responsive while processing the submitted code.' }
+    ]
+  }
+];
+
+type SubTabId = 'validation' | 'survey-0' | 'survey-1' | 'survey-2';
+
+const SUB_TABS: Array<{ id: SubTabId; label: string }> = [
+  { id: 'validation', label: '1. Class validation' },
+  { id: 'survey-0',   label: '2. Code understanding' },
+  { id: 'survey-1',   label: '3. Pattern evidence' },
+  { id: 'survey-2',   label: '4. Performance' }
+];
+
+function LikertRow({
+  q, value, onChange
+}: { q: LikertQuestion; value: number | null; onChange: (n: number) => void }) {
+  return (
+    <li className="checklist-row likert-row">
+      <div className="checklist-meta likert-prompt">{q.text}</div>
+      <div className="checklist-options likert-scale">
+        {[1, 2, 3, 4, 5].map(n => (
+          <label key={n} className="likert-chip">
+            <input
+              type="radio"
+              name={`likert-${q.id}`}
+              checked={value === n}
+              onChange={() => onChange(n)}
+            />
+            <span>{n}</span>
+          </label>
+        ))}
+        <span className="likert-anchors">1 = Strongly Disagree · 5 = Strongly Agree</span>
+      </div>
+    </li>
+  );
+}
+
 export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: AmbiguousTabProps) {
   const { currentRun, setStatus } = useAppStore();
 
   const [taggedDecisions, setTaggedDecisions]   = useState<Record<string, TaggedDecision>>({});
   const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
+  const [likert, setLikert] = useState<Record<string, number>>({});
+  const [activeSubTab, setActiveSubTab] = useState<SubTabId>('validation');
   const [saving, setSaving]   = useState<string | null>(null);
   const [saved, setSaved]     = useState<Set<string>>(new Set());
   const [savingRun, setSavingRun] = useState(false);
@@ -278,7 +347,30 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
       if (!dec || dec.isPattern === null) missing.push(`${cls} (Correct/Wrong)`);
       else if (dec.isPattern && !dec.patternName.trim()) missing.push(`${cls} (pattern name)`);
     }
+    for (const group of PER_RUN_QUESTIONS) {
+      for (const q of group.questions) {
+        if (!likert[q.id]) missing.push(`${q.id} (rating)`);
+      }
+    }
     return { ok: missing.length === 0, missing };
+  }
+
+  function subTabComplete(id: SubTabId): boolean {
+    if (id === 'validation') {
+      const taggedDone = taggedClasses.every(p => {
+        const d = taggedDecisions[taggedKey(p)];
+        return d && d.correct !== null;
+      });
+      const untaggedDone = untaggedClasses.every(c => {
+        const d = untaggedDecisions[c];
+        return d && d.isPattern !== null && (!d.isPattern || d.patternName.trim().length > 0);
+      });
+      return taggedDone && untaggedDone;
+    }
+    const idx = parseInt(id.split('-')[1] || '0', 10);
+    const group = PER_RUN_QUESTIONS[idx];
+    if (!group) return true;
+    return group.questions.every(q => !!likert[q.id]);
   }
 
   // ── save run handler ─────────────────────────────────────────────────────
@@ -343,6 +435,22 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
         });
         markSaved(cls);
       }
+      // Per-run Likert answers ride on the same endpoint via chosenKind=other
+      // with a structured otherText payload. No new schema needed.
+      for (const group of PER_RUN_QUESTIONS) {
+        for (const q of group.questions) {
+          const rating = likert[q.id];
+          if (!rating || saved.has(`likert-${q.id}`)) continue;
+          await submitManualReview(run.runId, {
+            line: 0,
+            candidates: [],
+            chosenKind: 'other',
+            chosenPattern: null,
+            otherText: `likert:${q.id}=${rating}`
+          });
+          markSaved(`likert-${q.id}`);
+        }
+      }
       setStatus({ kind: 'ok', title: 'Validation submitted', detail: 'Thanks for the feedback.' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Submission failed.');
@@ -404,57 +512,126 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
 
       {error && <div className="error-banner" role="alert">{error}</div>}
 
-      {taggedClasses.length > 0 && (
-        <div className="checklist-section">
-          <header className="checklist-section-header">
-            <h3>Tagged classes</h3>
-            <p className="checklist-section-desc">
-              Confirm whether each detected pattern is a genuine match. <strong>All rows are required.</strong>
-            </p>
-          </header>
-          <ul className="checklist-list">
-            {taggedClasses.map(p => {
-              const key = taggedKey(p);
-              return (
-                <TaggedRow
-                  key={key}
-                  pattern={p}
-                  decision={taggedDecisions[key] || { correct: null }}
-                  isSaved={saved.has(key)}
-                  isSaving={saving === key}
-                  onDecide={correct => setTagged(key, { correct })}
-                  onSave={() => { void saveTagged(p); }}
-                />
-              );
-            })}
-          </ul>
-        </div>
+      <nav className="review-subtab-bar" role="tablist" aria-label="Review sections">
+        {SUB_TABS.map(t => {
+          const done = subTabComplete(t.id);
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={activeSubTab === t.id}
+              data-complete={done ? 'true' : undefined}
+              className={`review-subtab-btn ${activeSubTab === t.id ? 'is-active' : ''}`}
+              onClick={() => setActiveSubTab(t.id)}
+            >
+              {t.label}{done ? ' ✓' : ''}
+            </button>
+          );
+        })}
+      </nav>
+
+      {activeSubTab === 'validation' && (
+        <>
+          {taggedClasses.length > 0 && (
+            <div className="checklist-section">
+              <header className="checklist-section-header">
+                <h3>Tagged classes</h3>
+                <p className="checklist-section-desc">
+                  Confirm whether each detected pattern is a genuine match. <strong>All rows are required.</strong>
+                </p>
+              </header>
+              <ul className="checklist-list">
+                {taggedClasses.map(p => {
+                  const key = taggedKey(p);
+                  return (
+                    <TaggedRow
+                      key={key}
+                      pattern={p}
+                      decision={taggedDecisions[key] || { correct: null }}
+                      isSaved={saved.has(key)}
+                      isSaving={saving === key}
+                      onDecide={correct => setTagged(key, { correct })}
+                      onSave={() => { void saveTagged(p); }}
+                    />
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+          {untaggedClasses.length > 0 && (
+            <div className="checklist-section">
+              <header className="checklist-section-header">
+                <h3>Untagged classes</h3>
+                <p className="checklist-section-desc">
+                  These classes were not detected as any pattern. Confirm or correct. <strong>All rows are required.</strong>
+                </p>
+              </header>
+              <ul className="checklist-list">
+                {untaggedClasses.map(className => (
+                  <UntaggedRow
+                    key={className}
+                    className={className}
+                    decision={untaggedDecisions[className] || { isPattern: null, patternName: '' }}
+                    isSaved={saved.has(className)}
+                    isSaving={saving === className}
+                    onDecide={isPattern => setUntagged(className, { isPattern })}
+                    onPatternName={name => setUntagged(className, { patternName: name })}
+                    onSave={() => { void saveUntagged(className); }}
+                  />
+                ))}
+              </ul>
+            </div>
+          )}
+        </>
       )}
 
-      {untaggedClasses.length > 0 && (
-        <div className="checklist-section">
-          <header className="checklist-section-header">
-            <h3>Untagged classes</h3>
-            <p className="checklist-section-desc">
-              These classes were not detected as any pattern. Confirm or correct. <strong>All rows are required.</strong>
-            </p>
-          </header>
-          <ul className="checklist-list">
-            {untaggedClasses.map(className => (
-              <UntaggedRow
-                key={className}
-                className={className}
-                decision={untaggedDecisions[className] || { isPattern: null, patternName: '' }}
-                isSaved={saved.has(className)}
-                isSaving={saving === className}
-                onDecide={isPattern => setUntagged(className, { isPattern })}
-                onPatternName={name => setUntagged(className, { patternName: name })}
-                onSave={() => { void saveUntagged(className); }}
-              />
-            ))}
-          </ul>
-        </div>
-      )}
+      {activeSubTab !== 'validation' && (() => {
+        const idx = parseInt(activeSubTab.split('-')[1] || '0', 10);
+        const group = PER_RUN_QUESTIONS[idx];
+        if (!group) return null;
+        return (
+          <div className="checklist-section">
+            <header className="checklist-section-header">
+              <h3>{group.title}</h3>
+              <p className="checklist-section-desc">
+                Rate each statement on a 1–5 Likert scale. <strong>All rows are required.</strong>
+              </p>
+            </header>
+            <ul className="checklist-list">
+              {group.questions.map(q => (
+                <LikertRow
+                  key={q.id}
+                  q={q}
+                  value={likert[q.id] ?? null}
+                  onChange={n => setLikert(prev => ({ ...prev, [q.id]: n }))}
+                />
+              ))}
+            </ul>
+          </div>
+        );
+      })()}
+
+      <div className="review-subtab-nav">
+        <button
+          type="button"
+          className="ghost-btn"
+          disabled={SUB_TABS.findIndex(t => t.id === activeSubTab) === 0}
+          onClick={() => {
+            const i = SUB_TABS.findIndex(t => t.id === activeSubTab);
+            if (i > 0) setActiveSubTab(SUB_TABS[i - 1].id);
+          }}
+        >← Back</button>
+        <button
+          type="button"
+          className="ghost-btn"
+          disabled={SUB_TABS.findIndex(t => t.id === activeSubTab) === SUB_TABS.length - 1}
+          onClick={() => {
+            const i = SUB_TABS.findIndex(t => t.id === activeSubTab);
+            if (i < SUB_TABS.length - 1) setActiveSubTab(SUB_TABS[i + 1].id);
+          }}
+        >Next →</button>
+      </div>
     </section>
   );
 }

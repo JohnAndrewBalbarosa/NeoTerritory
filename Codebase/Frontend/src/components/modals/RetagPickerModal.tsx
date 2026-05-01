@@ -1,7 +1,15 @@
 import { useState } from 'react';
 import { AmbiguityRanking, PatternRankEntry } from '../../types/api';
 
-interface AmbiguityModalProps {
+// Picker shown when the user clicks "Tag pattern…" on a card or class chip.
+// The legacy auto-popping ambiguity modal is gone — this component now only
+// renders inside the retag flow driven by the `pattern:retag-request` event.
+//
+// Props are kept similar to the old AmbiguityModal so the call site doesn't
+// need to change shape, but the DOM ids/classes are renamed so any leftover
+// CSS or QA hooks pointing at "ambiguity-*" disappear.
+
+interface RetagPickerModalProps {
   ranking: AmbiguityRanking;
   sourceName: string;
   onConfirm: (patternId: string | null) => void;
@@ -12,48 +20,52 @@ interface AmbiguityModalProps {
   detail?: string;
 }
 
-export default function AmbiguityModal({
+export default function RetagPickerModal({
   ranking, sourceName, onConfirm, onSkip,
   candidatesOverride, title, preselect, detail
-}: AmbiguityModalProps) {
+}: RetagPickerModalProps) {
   const [chosen, setChosen] = useState<string | null>(preselect ?? null);
   const ranksById = new Map<string, PatternRankEntry>();
   (ranking.ranks || []).forEach(r => ranksById.set(r.patternId, r));
 
-  // In retag mode, candidatesOverride is the explicit list. In ambiguity mode,
-  // fall back to the ranking's flagged candidates. If both are empty, surface
-  // the top 5 ranks so the picker still has something to choose from.
+  // candidatesOverride is the call site's explicit list. Fall back to the
+  // top 5 ranks so the picker always has options to show.
   const baseCandidates = candidatesOverride && candidatesOverride.length
     ? candidatesOverride
-    : (ranking.ambiguousCandidates || []);
-  const candidates = baseCandidates.length
-    ? baseCandidates
     : (ranking.ranks || []).slice(0, 5).map(r => r.patternId);
+  const seen = new Set<string>();
+  const candidates = baseCandidates.filter(c => {
+    if (seen.has(c)) return false;
+    seen.add(c);
+    return true;
+  });
 
-  const heading = title || 'Choose a pattern';
+  const heading = title || 'Tag pattern';
   const detailText = detail
-    || `${sourceName}: top ${candidates.length} patterns scored within tolerance. ` +
-       `You can keep reviewing the code while choosing; skip keeps all.`;
+    || `Pick the pattern that best matches this class in ${sourceName}.`;
 
   return (
-    <div id="ambiguity-modal" className="modal">
+    <div className="modal retag-picker-modal">
       <div className="modal-card">
         <h3>{heading}</h3>
-        <p id="ambiguity-detail" className="modal-detail">{detailText}</p>
-        <div id="ambiguity-list" className="ambiguity-list">
+        <p className="modal-detail">{detailText}</p>
+        <div className="retag-option-list">
           {candidates.map(pid => {
             const r = ranksById.get(pid) || { finalRank: 0, implementationFit: 0, patternId: pid };
             return (
               <button
                 key={pid}
                 type="button"
-                className="ambiguity-option"
+                className="retag-option"
                 aria-pressed={chosen === pid}
                 onClick={() => setChosen(pid)}
               >
                 <span className="opt-name">{pid}</span>
                 <span className="opt-rank">
-                  rank {Math.floor((r.finalRank || 0) * 100)}% • impl {Math.floor((r.implementationFit || 0) * 100)}%
+                  confidence {Math.floor((r.finalRank || 0) * 100)}%
+                  {typeof r.implementationFit === 'number' && r.implementationFit > 0
+                    ? <> · usage match {Math.floor(r.implementationFit * 100)}%</>
+                    : null}
                 </span>
               </button>
             );
@@ -63,9 +75,8 @@ export default function AmbiguityModal({
           )}
         </div>
         <div className="modal-actions">
-          <button id="ambiguity-skip-btn" className="ghost-btn" type="button" onClick={onSkip}>Skip</button>
+          <button className="ghost-btn" type="button" onClick={onSkip}>Cancel</button>
           <button
-            id="ambiguity-confirm-btn"
             className="primary-btn"
             type="button"
             disabled={!chosen}

@@ -65,6 +65,21 @@ export interface ClassUsageBinding {
   snippet?: string;
 }
 
+// Per-line probability summary that drives the new scoring model. Mirrors
+// LineEvidence in patternRankingService.ts.
+export interface PatternLineEvidence {
+  totalLines: number;
+  taggedLines: number;
+  hitsTotal: number;
+  hitsMax: number;
+  rivalHits: number;
+  negativeHits: number;
+  coverage: number;
+  odds: number;
+  probability: number;
+  byLine: Array<{ line: number; ownHits: number; rivalHits: number }>;
+}
+
 export interface PatternRankEntry {
   patternId: string;
   patternName?: string;
@@ -72,6 +87,7 @@ export interface PatternRankEntry {
   implementationFit: number;
   hasImplementationTemplate?: boolean;
   evidence?: { callsites?: Array<{ line: number; snippet: string }> };
+  lineEvidence?: PatternLineEvidence;
 }
 
 export interface AmbiguityRanking extends PatternRanking {

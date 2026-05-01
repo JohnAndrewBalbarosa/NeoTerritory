@@ -11,9 +11,12 @@ interface AnnotatedTabProps {
   onCommentFlash: (id: string) => void;
   pendingSave?: boolean;
   onDiscard?: () => void;
+  onGoToReview?: () => void;
 }
 
-export default function AnnotatedTab({ onLineFlash, onCommentFlash, pendingSave, onDiscard }: AnnotatedTabProps) {
+export default function AnnotatedTab({
+  onLineFlash, onCommentFlash, pendingSave, onDiscard, onGoToReview
+}: AnnotatedTabProps) {
   const { currentRun, aiStatus } = useAppStore();
 
   const allAnnotations = useMemo(() => {
@@ -39,6 +42,17 @@ export default function AnnotatedTab({ onLineFlash, onCommentFlash, pendingSave,
   const commentCount = allAnnotations.length;
   const summaryText = `${currentRun.sourceName || 'snippet.cpp'} • ${patternCount} pattern(s) • ${commentCount} comment(s)`;
 
+  // "Tagged" means the user explicitly resolved a pattern for this class via
+  // the Tag pattern… picker. Once every detected class has a resolution, we
+  // surface a CTA to move on to the Review tab.
+  const detectedClasses = (currentRun.detectedPatterns || [])
+    .map(p => p.className)
+    .filter((c): c is string => !!c);
+  const uniqueClasses = Array.from(new Set(detectedClasses));
+  const resolvedMap = currentRun.classResolvedPatterns || {};
+  const taggedCount = uniqueClasses.filter(c => !!resolvedMap[c]).length;
+  const allTagged = uniqueClasses.length > 0 && taggedCount === uniqueClasses.length;
+
   return (
     <section className="tab-panel tab-annotated">
       <header className="results-header">
@@ -63,6 +77,22 @@ export default function AnnotatedTab({ onLineFlash, onCommentFlash, pendingSave,
           </button>
         )}
       </header>
+      {uniqueClasses.length > 0 && (
+        <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
+          <span className="tag-progress-label">
+            {taggedCount} / {uniqueClasses.length} class(es) tagged
+          </span>
+          {allTagged && onGoToReview && (
+            <button
+              type="button"
+              className="primary-btn tag-progress-cta"
+              onClick={onGoToReview}
+            >
+              Next: Review before submission →
+            </button>
+          )}
+        </div>
+      )}
       <div className="results-body">
         <SourceView
           sourceText={currentRun.sourceText || ''}

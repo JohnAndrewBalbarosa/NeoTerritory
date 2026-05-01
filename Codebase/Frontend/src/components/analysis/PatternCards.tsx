@@ -45,12 +45,14 @@ function RowButton({ children, onClick }: { children: React.ReactNode; onClick: 
 
 // Expandable summary of how the two percentages on the rank bar were derived.
 // Reads the per-pattern weights and evidence from PatternRankEntry so the
-// explanation reflects the actual numbers shown above, not a generic blurb.
+// explanation reflects the actual numbers shown above. When line-evidence is
+// present (new scoring model), we show the probability breakdown instead of
+// the legacy weighted-sum description.
 function ScoringExplainer({ rank }: { rank: PatternRankEntry }) {
   const [open, setOpen] = useState(false);
   const conf = Math.round((rank.finalRank || 0) * 100);
   const fit  = Math.round((rank.implementationFit || 0) * 100);
-  const hits = rank.evidence?.callsites?.length ?? 0;
+  const le = rank.lineEvidence;
   return (
     <div className="scoring-explainer">
       <button type="button" className="scoring-explainer-toggle" onClick={() => setOpen(o => !o)}>
@@ -58,25 +60,50 @@ function ScoringExplainer({ rank }: { rank: PatternRankEntry }) {
       </button>
       {open && (
         <div className="scoring-explainer-body">
-          <p>
-            <strong>confidence ({conf}%)</strong> = <code>class_fit × class_weight + usage_match × usage_weight</code>,
-            clamped to 100%. <em>class_fit</em> is 1.0 once the structural matcher
-            confirms the class shape (private member, ctor injection, override, etc.).
-          </p>
-          <p>
-            <strong>usage match ({fit}%)</strong> sums weights of every signal in this
-            pattern&apos;s implementation_template that matched this source —
-            call-sites, expected collaborators, global functions — minus any
-            negative signals. {hits === 0
-              ? <>No call-sites matched in this file, so the score relies on structural evidence alone.</>
-              : <>{hits} call-site{hits === 1 ? '' : 's'} contributed.</>}
-          </p>
-          <p>
-            <strong>structure only</strong> appears when the pattern has no
-            implementation_template authored yet. The matcher can still see the
-            class&apos;s shape, so confidence may be high — but we can&apos;t verify
-            the pattern is actually <em>used</em>.
-          </p>
+          {le ? (
+            <>
+              <p>
+                <strong>usage match ({fit}%)</strong> comes from a per-line probability:
+                we count how many signals from this pattern hit each line of the
+                class, then compare against rival patterns that hit the same lines.
+              </p>
+              <p>
+                <strong>Counts for this class:</strong>
+                {' '}<code>own hits = {le.hitsTotal}</code> across <code>{le.taggedLines}/{le.totalLines}</code> lines
+                {' '}(coverage <code>{(le.coverage * 100).toFixed(0)}%</code>),
+                {' '}peak overlap <code>{le.hitsMax}</code> on a single line,
+                {' '}rival hits <code>{le.rivalHits}</code>,
+                {' '}negative hits <code>{le.negativeHits}</code>.
+              </p>
+              <p>
+                <strong>Formula.</strong>{' '}
+                <code>odds = (ownHits + 1) / (rivalHits + 1) = {le.odds.toFixed(2)}</code>;
+                {' '}<code>raw = odds / (odds + 1)</code>;
+                {' '}<code>prob = clamp01(raw × (0.5 + 0.5 × coverage) − 0.2 × negHits/ownHits)</code>.
+                {' '}The +1 smoothing keeps the score finite when a rival has zero hits;
+                coverage rewards spread, so a single hot line doesn&apos;t outscore
+                a pattern that matches the whole class evenly.
+              </p>
+              <p>
+                <strong>confidence ({conf}%)</strong> blends class_fit (1.0 once the
+                structural matcher confirms the shape) with usage match using the
+                pattern&apos;s own ranking weights.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                <strong>confidence ({conf}%)</strong> blends a structural class-fit
+                with the usage-match score using the pattern&apos;s ranking weights.
+              </p>
+              <p>
+                <strong>structure only</strong> appears when the pattern has no
+                implementation_template authored yet. The matcher can still see the
+                class&apos;s shape, so confidence may be high — but we can&apos;t verify
+                the pattern is actually <em>used</em>.
+              </p>
+            </>
+          )}
         </div>
       )}
     </div>

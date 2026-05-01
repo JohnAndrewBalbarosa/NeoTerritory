@@ -8,7 +8,7 @@ import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
-import AmbiguityModal from '../modals/AmbiguityModal';
+import RetagPickerModal from '../modals/RetagPickerModal';
 import ReviewModal from '../modals/ReviewModal';
 import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
@@ -125,7 +125,7 @@ export default function MainLayout() {
     const commentCount = (run.annotations || []).length;
     const ambiguous = run.ranking?.verdict === 'ambiguous'
       && (run.ranking.ambiguousCandidates || []).length > 0;
-    // The auto-blocking AmbiguityModal was removed because PatternCards and
+    // The auto-blocking RetagPickerModal was removed because PatternCards and
     // the class popout already expose the same picker. Surface a non-blocking
     // status nudge instead so the user knows there were tied candidates.
     if (ambiguous) {
@@ -160,11 +160,11 @@ export default function MainLayout() {
     setStatus({ kind: 'idle', title: 'Discarded', detail: 'Run was not saved.' });
   }
 
-  // Submit asks before clobbering an unsaved run. The user can confirm to
-  // discard the current results, or cancel to keep editing.
+  // Single popup: prompt only when there's already a run on screen. First
+  // run dispatches immediately. The popup is the only confirmation.
   function beforeAnalyze(dispatch: () => void): void {
     const hasCurrentRun = !!useAppStore.getState().currentRun;
-    if (hasCurrentRun && pendingSave) {
+    if (hasCurrentRun) {
       setAnalyzeReplace({ run: dispatch });
       return;
     }
@@ -289,6 +289,7 @@ export default function MainLayout() {
             onCommentFlash={flashComment}
             pendingSave={!!pendingSave}
             onDiscard={discardCurrentRun}
+            onGoToReview={() => setActiveTab('ambiguous')}
           />
         )}
         {activeTab === 'ambiguous' && (
@@ -301,7 +302,7 @@ export default function MainLayout() {
       </main>
 
       {retag && useAppStore.getState().currentRun?.ranking && (
-        <AmbiguityModal
+        <RetagPickerModal
           ranking={useAppStore.getState().currentRun!.ranking!}
           sourceName={useAppStore.getState().currentRun!.sourceName}
           onConfirm={onRetagResolved}
@@ -319,17 +320,14 @@ export default function MainLayout() {
       {analyzeReplace && (
         <div className="modal" id="analyze-replace-modal">
           <div className="modal-card">
-            <h3>Discard the current run?</h3>
-            <p className="modal-detail">
-              You have an unsaved analysis. Running a new analysis will discard
-              the current results. Save it from the <strong>Review before submission</strong> tab if you want to keep it.
-            </p>
+            <h3>Discard current results?</h3>
+            <p className="modal-detail">Running a new analysis replaces the run on screen.</p>
             <div className="modal-actions">
               <button
                 className="ghost-btn"
                 type="button"
                 onClick={() => setAnalyzeReplace(null)}
-              >Keep editing</button>
+              >No, keep editing</button>
               <button
                 className="primary-btn"
                 type="button"
@@ -339,7 +337,7 @@ export default function MainLayout() {
                   discardCurrentRun();
                   fn();
                 }}
-              >Discard &amp; run analysis</button>
+              >Yes, discard</button>
             </div>
           </div>
         </div>
