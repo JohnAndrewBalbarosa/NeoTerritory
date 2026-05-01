@@ -163,6 +163,7 @@ interface RunDetailPayload {
     classUsageBindingSource?: AnalysisRun['classUsageBindingSource'];
     userResolvedPattern?: string | null;
     classResolvedPatterns?: Record<string, string>;
+    files?: Array<{ name: string; sourceText: string }>;
   };
 }
 
@@ -180,7 +181,13 @@ export async function fetchRun(id: number): Promise<AnalysisRun> {
     classUsageBindingSource: a.classUsageBindingSource || 'heuristic',
     summary: a.summary || '',
     userResolvedPattern: a.userResolvedPattern || null,
-    classResolvedPatterns: a.classResolvedPatterns || undefined
+    classResolvedPatterns: a.classResolvedPatterns || undefined,
+    // Restore the multi-file payload when reopening a saved run; fall back
+    // to a single-entry list mirroring sourceName + sourceText for legacy
+    // pre-multi-file runs so AnnotatedTab can render uniformly.
+    files: a.files && a.files.length > 0
+      ? a.files
+      : [{ name: data.sourceName, sourceText: data.sourceText || '' }]
   };
 }
 

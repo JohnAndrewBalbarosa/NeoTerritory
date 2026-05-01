@@ -48,6 +48,10 @@ interface AnalysisPayload {
   transformedPreview: string;
   userResolvedPattern?: string;
   classResolvedPatterns?: Record<string, string>;
+  // Multi-file payload preserved across save/load so the run-list can
+  // restore every file when an old run is reopened. Single-file legacy runs
+  // get back-filled with one entry mirroring sourceName + sourceText.
+  files?: Array<{ name: string; sourceText: string }>;
 }
 
 interface PendingEntry {
@@ -560,7 +564,12 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     const allAnnotations: AnnotationOut[] = [];
     const mergedClassUsageBindings: Record<string, ClassUsageBinding[]> = {};
     let mergedStageMetrics: AnalysisResult['stageMetrics'] = [];
-    let primaryName = fileList[0].name;
+    // Display name derivation: prefer a file literally named main.cpp (case-
+    // insensitive), then any file whose source contains `int main(`, then
+    // fall back to the first file. This is what the saved-runs list renders.
+    const mainCppMatch = fileList.find(f => /^main\.(cpp|cc|cxx)$/i.test(f.name));
+    const intMainMatch = fileList.find(f => /\bint\s+main\s*\(/.test(f.code));
+    let primaryName = (mainCppMatch || intMainMatch || fileList[0]).name;
 
     for (const f of fileList) {
       const r: AnalysisResult = analyzeClassDeclaration({ sourceName: f.name, code: f.code });
@@ -648,7 +657,10 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       findings: structural.diagnostics || [],
       commentedCode: '',
       commentsOnly:  '',
-      transformedPreview: ''
+      transformedPreview: '',
+      // Multi-file payload: every uploaded source travels through the saved
+      // run so reopening it from the run-list restores all per-file tabs.
+      files: fileList.map(f => ({ name: f.name, sourceText: f.code }))
     };
 
     analysis.commentedCode      = buildCommentedCode(sourceText, annotations);
@@ -1055,25 +1067,62 @@ function gdbBudgetCheck(userId: number): { allowed: boolean; retryAfterMs: numbe
   return { allowed: true, retryAfterMs: 0 };
 }
 
+// Probe the class text for a method that *looks* like a Singleton instance
+// accessor — `static T& instance()`, `static T* getInstance()`, etc. Without
+// this, the templated test driver hard-codes "instance" and breaks on the
+// (very common) classes that name their accessor differently.
+function detectInstanceAccessor(classText: string, className: string): string {
+  const candidates = ['instance', 'getInstance', 'get_instance', 'GetInstance', 'sharedInstance', 'getDefault'];
+  // Prefer accessors that explicitly return a reference/pointer to the class.
+  for (const name of candidates) {
+    const re = new RegExp(
+      `\\bstatic\\s+(?:const\\s+)?${className}\\s*[&*]?\\s*${name}\\s*\\(`
+    );
+    if (re.test(classText)) return name;
+  }
+  // Fallback: any static method on the class with one of the canonical names.
+  for (const name of candidates) {
+    const re = new RegExp(`\\bstatic\\b[^;]*\\b${name}\\s*\\(`);
+    if (re.test(classText)) return name;
+  }
+  return 'instance';
+}
+
+// Same idea for the canonical method the templates dispatch through. We try
+// to lift the actual method name from unit-test targets, then fall back to
+// scanning classText for the catalog's expected method names.
+function pickMethodName(p: DetectedPatternResult, candidates: string[]): string | undefined {
+  const fromTargets = (p.unitTestTargets || [])
+    .map(t => t.function_name)
+    .filter((n): n is string => !!n)
+    .find(n => candidates.length === 0 || candidates.includes(n));
+  if (fromTargets) return fromTargets;
+  for (const name of candidates) {
+    const re = new RegExp(`\\b${name}\\s*\\(`);
+    if (re.test(p.classText || '')) return name;
+  }
+  return (p.unitTestTargets || [])[0]?.function_name;
+}
+
 async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<TestResult[]> {
   const results: TestResult[] = [];
   for (const p of patterns) {
     if (!p.className || !p.classText) continue;
-    const firstTargetName = (p.unitTestTargets || [])[0]?.function_name;
+    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
     // runPatternTest now returns TWO results per pattern (compile_run + unit_test).
     const r = await runPatternTest({
       patternId: p.patternId,
       patternName: p.patternName,
       className: p.className,
       classText: p.classText,
-      forwardMethod: firstTargetName,
-      factoryFn: firstTargetName,
-      terminator: 'build',
-      instanceAccessor: 'instance',
+      forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
+      factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
+      terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
+      instanceAccessor: detectInstanceAccessor(p.classText, p.className),
       componentBase: 'Component',
       realBase: 'Subject',
       targetBase: 'Target',
-      targetMethod: firstTargetName
+      targetMethod: fallbackTarget
     });
     results.push(...r);
   }

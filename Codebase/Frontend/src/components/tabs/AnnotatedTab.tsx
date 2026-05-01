@@ -78,26 +78,49 @@ export default function AnnotatedTab({
   const totalClasses = allClassNames.size;
   const allTagged = totalClasses > 0 && missingCount === 0;
 
-  // Ordered class navigation for the bottom-right overlay. Each entry knows
-  // its class name and the line in the active file to jump to. We sort by the
-  // first documentation-target line so previous/next traverses the source in
-  // top-down order rather than alphabetical.
+  // Ordered class navigation for the bottom-right overlay. Restricted to
+  // classes that still need attention: the matcher emitted multiple
+  // candidate patterns for them (ambiguous) OR the user has not resolved
+  // them yet (missing tag). Once a class is resolved or unambiguously
+  // detected, it drops off the nav list — no point cycling through
+  // already-decided classes.
   const classNav = useMemo(() => {
-    const seen = new Map<string, number>();
-    for (const p of currentRun?.detectedPatterns || []) {
+    const run = currentRun;
+    if (!run) return [];
+    // Count how many distinct patterns the matcher produced per class.
+    const patternCountByClass = new Map<string, number>();
+    const firstLineByClass = new Map<string, number>();
+    for (const p of run.detectedPatterns || []) {
       if (!p.className) continue;
+      patternCountByClass.set(
+        p.className,
+        (patternCountByClass.get(p.className) || 0) + 1
+      );
       const firstLine = (p.documentationTargets || [])
         .map(t => t.line)
         .filter((l): l is number => typeof l === 'number')
         .sort((a, b) => a - b)[0] ?? 1;
-      const prev = seen.get(p.className);
-      if (prev === undefined || firstLine < prev) seen.set(p.className, firstLine);
+      const prev = firstLineByClass.get(p.className);
+      if (prev === undefined || firstLine < prev) {
+        firstLineByClass.set(p.className, firstLine);
+      }
     }
-    return [...seen.entries()]
-      .map(([className, line]) => ({ className, line }))
-      .sort((a, b) => a.line - b.line);
+    const resolvedMap = run.classResolvedPatterns || {};
+    const out: Array<{ className: string; line: number }> = [];
+    for (const [className, line] of firstLineByClass.entries()) {
+      if (resolvedMap[className]) continue; // user already picked
+      const ambiguous = (patternCountByClass.get(className) || 0) > 1;
+      if (!ambiguous) continue; // single confident detection
+      out.push({ className, line });
+    }
+    return out.sort((a, b) => a.line - b.line);
   }, [currentRun]);
   const navClass = classNav[classNavIdx];
+  // If the active class drops off the list (e.g. user resolved it), snap
+  // the index back to a valid range so the overlay re-renders correctly.
+  if (navClass === undefined && classNav.length > 0 && classNavIdx !== 0) {
+    setClassNavIdx(0);
+  }
 
   function gotoClass(idx: number) {
     if (classNav.length === 0) return;
@@ -191,8 +214,9 @@ export default function AnnotatedTab({
         classResolvedPatterns={currentRun.classResolvedPatterns}
         onLineFlash={onLineFlash}
       />
-      {classNav.length > 1 && navClass && (
-        <div className="class-nav-overlay" role="navigation" aria-label="Class navigation">
+      {classNav.length >= 1 && navClass && (
+        <div className="class-nav-overlay" role="navigation" aria-label="Ambiguous class navigation">
+          <span className="class-nav-eyebrow">Ambiguous</span>
           <button
             type="button"
             className="class-nav-btn"
