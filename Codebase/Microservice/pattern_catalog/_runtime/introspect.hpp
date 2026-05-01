@@ -11,8 +11,6 @@
 #include <utility>
 #include <cstdio>
 
-namespace nt {
-
 // ---- Method-name probes -----------------------------------------------------
 //
 // `nt::has_<NAME><T>::value` is true iff `T` has a member function named NAME
@@ -75,16 +73,27 @@ NT_DECLARE_STATIC_PROBE(GetInstance)
 NT_DECLARE_STATIC_PROBE(sharedInstance)
 NT_DECLARE_STATIC_PROBE(getDefault)
 
+// ---- Non-macro helpers (explicitly inside namespace nt) ---------------------
+//
+// These are kept in their own `namespace nt { ... }` block at the bottom of
+// the file. The probe macros above self-inject into `namespace nt` from
+// global scope; if we ALSO wrap this file in an outer `namespace nt`, the
+// macros end up declaring `nt::nt::has_*`, and the helpers below — written
+// as `has_static_instance<T>` — fail to resolve. So we keep this block
+// disjoint from the macro invocations and reach the macro-declared traits
+// via fully-qualified `nt::has_static_*` names.
+namespace nt {
+
 // "Has any singleton-style static accessor" — the union of the canonical names.
 template <typename T>
 struct has_any_singleton_accessor :
   std::integral_constant<bool,
-    has_static_instance<T>::value ||
-    has_static_getInstance<T>::value ||
-    has_static_get_instance<T>::value ||
-    has_static_GetInstance<T>::value ||
-    has_static_sharedInstance<T>::value ||
-    has_static_getDefault<T>::value> {};
+    nt::has_static_instance<T>::value ||
+    nt::has_static_getInstance<T>::value ||
+    nt::has_static_get_instance<T>::value ||
+    nt::has_static_GetInstance<T>::value ||
+    nt::has_static_sharedInstance<T>::value ||
+    nt::has_static_getDefault<T>::value> {};
 
 // ---- Type-shape probes ------------------------------------------------------
 

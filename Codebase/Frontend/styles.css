@@ -442,6 +442,15 @@ body.login-active{overflow:hidden;}
   background:var(--accent);border-color:var(--accent);color:#fff;
 }
 
+/* === Annotated tab side-by-side layout === */
+.results-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:16px;align-items:start;}
+.results-sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;min-width:0;}
+@media (max-width: 900px){
+  .results-layout{grid-template-columns:1fr;}
+  .results-sidebar{position:static;max-height:none;overflow:visible;}
+}
+.tag-progress-ambig{font-weight:500;color:var(--ink-soft);margin-left:4px;}
+
 /* === GDB tab tree layout === */
 .gdb-tree-layout{display:grid;grid-template-columns:240px 1fr;gap:14px;align-items:start;}
 .gdb-tree{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px;max-height:70vh;overflow:auto;}
