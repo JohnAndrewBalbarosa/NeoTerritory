@@ -1,15 +1,215 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="NeoTerritory Studio — C++ design pattern analysis and AI documentation pipeline." />
   <title>NeoTerritory Studio</title>
-  <link rel="preconnect" href="https://fonts.bunny.net" />
-  <link rel="stylesheet" href="https://fonts.bunny.net/css?family=montserrat:600,700|lato:400,400i,700" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" />
   <link rel="stylesheet" href="/styles.css" />
 </head>
 <body>
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
+
+<!-- ======================================================
+     LOGIN OVERLAY
+     ====================================================== -->
+<div id="login-overlay" class="login-overlay" role="dialog" aria-modal="true" aria-label="Sign in">
+  <div class="login-wrap">
+
+    <!-- Credential login card -->
+    <div class="login-card" id="login-card-main">
+      <h2>NeoTerritory Studio</h2>
+      <p class="login-hint">Sign in to analyse C++ patterns and generate AI documentation.</p>
+      <form id="login-form" novalidate>
+        <div class="field" style="margin-bottom:10px;">
+          <span>Username</span>
+          <input id="login-username" type="text" autocomplete="username" placeholder="username" required />
+        </div>
+        <div class="field" style="margin-bottom:14px;">
+          <span>Password</span>
+          <input id="login-password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        </div>
+        <p id="login-error" class="login-error" hidden></p>
+        <button type="submit" class="primary-btn" style="width:100%;">Sign in</button>
+      </form>
+      <p class="login-toggle" id="login-toggle-hint">
+        Testing session? <button class="link-btn" id="show-tester-btn">Pick a tester seat</button>
+      </p>
+    </div>
+
+    <!-- Tester seat chooser -->
+    <div id="tester-list" class="tester-list" hidden>
+      <h3>Tester Accounts</h3>
+      <p class="tester-hint">Click an available seat to sign in instantly.</p>
+      <div id="tester-grid" class="tester-grid"></div>
+      <p class="login-toggle">
+        Have credentials? <button class="link-btn" id="show-login-btn">Use login form</button>
+      </p>
+    </div>
+
+  </div>
+</div>
+
+<!-- ======================================================
+     SAVE PROMPT OVERLAY
+     ====================================================== -->
+<div id="save-prompt" class="save-prompt" hidden>
+  <div class="save-card">
+    <h3>Save this run?</h3>
+    <p id="save-prompt-detail"></p>
+    <div class="save-actions">
+      <button id="save-discard-btn" class="ghost-btn">Discard</button>
+      <button id="save-confirm-btn" class="primary-btn">Save run</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     AMBIGUITY MODAL
+     ====================================================== -->
+<div id="ambiguity-modal" class="save-prompt" hidden>
+  <div class="save-card">
+    <h3>Pattern ambiguity detected</h3>
+    <p style="font-size:12px;color:var(--ink-soft);margin-bottom:4px;">Multiple patterns matched. Select the intended pattern:</p>
+    <div id="ambiguity-list" class="ambiguity-list"></div>
+    <p id="ambiguity-detail" style="font-size:11.5px;color:var(--ink-soft);margin-top:6px;"></p>
+    <div class="save-actions">
+      <button id="ambiguity-skip-btn" class="ghost-btn">Skip</button>
+      <button id="ambiguity-confirm-btn" class="primary-btn">Confirm choice</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     REVIEW MODAL
+     ====================================================== -->
+<div id="review-modal" class="save-prompt" hidden>
+  <div class="save-card review-card-modal">
+    <h3 style="font-size:14px;">Quick feedback</h3>
+    <p id="review-intro" class="review-intro"></p>
+    <div id="review-questions" class="review-questions"></div>
+    <p id="review-error" style="font-size:11.5px;color:var(--red);margin:0;" hidden></p>
+    <div class="save-actions">
+      <button id="review-skip-btn" class="ghost-btn">Skip</button>
+      <button id="review-submit-btn" class="primary-btn">Submit</button>
+    </div>
+  </div>
+</div>
+
+<!-- ======================================================
+     MAIN SHELL
+     ====================================================== -->
+<div class="shell">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <p class="eyebrow">Pattern Analysis Pipeline</p>
+      <h1>NeoTerritory Studio</h1>
+      <p class="lede">Paste or upload C++ source to detect design patterns, resolve ambiguities, and generate AI documentation anchors.</p>
+
+      <!-- Microservice + AI health -->
+      <div id="ms-row" class="ms-row" data-state="checking">
+        <span class="ms-dot"></span>
+        <span>Microservice:</span>
+        <span id="ms-status">checking...</span>
+      </div>
+      <div class="ai-row" id="ai-row" data-status="offline">
+        <span class="ms-dot"></span>
+        <span>AI provider:</span>
+        <span id="ai-status-label">offline</span>
+      </div>
+
+      <!-- User row -->
+      <div id="user-row" class="user-row" hidden>
+        <span>Signed in as</span>
+        <span id="user-label"></span>
+        <button id="logout-btn" class="ghost-btn" style="padding:4px 10px;font-size:11px;margin-left:6px;">Sign out</button>
+      </div>
+    </div>
+
+    <!-- Status card -->
+    <div id="status-card" class="status-card" data-kind="idle">
+      <span class="status-label">Status</span>
+      <strong id="status-title">Ready</strong>
+      <span id="status-detail">Sign in to begin.</span>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+
+    <!-- INPUT PANEL -->
+    <section class="panel composer" aria-label="Code input">
+      <div class="panel-head">
+        <h2>Source input</h2>
+        <div class="panel-actions">
+          <button id="load-sample-btn" class="ghost-btn">Load sample</button>
+          <button id="clear-btn" class="ghost-btn">Clear</button>
+          <button id="refresh-btn" class="ghost-btn">↻ Refresh runs</button>
+        </div>
+      </div>
+      <form id="analysis-form" novalidate>
+        <div class="form-row">
+          <div class="field">
+            <span>File name</span>
+            <input id="filename-input" type="text" value="snippet.cpp" placeholder="snippet.cpp" />
+          </div>
+          <div class="field">
+            <span>Upload .cpp file</span>
+            <input id="file-input" type="file" accept=".cpp,.cxx,.cc,.c,.hpp,.h" />
+          </div>
+          <button id="analyze-btn" type="submit" class="primary-btn">Analyse</button>
+        </div>
+        <textarea id="code-input" placeholder="// Paste C++ source here…" spellcheck="false"></textarea>
+      </form>
+    </section>
+
+    <!-- RESULTS PANEL (hidden until analysis runs) -->
+    <section id="results-panel" class="panel" hidden aria-label="Analysis results">
+      <div class="panel-head">
+        <h2>Results</h2>
+        <span id="results-summary" class="subtle"></span>
+      </div>
+
+      <!-- Pattern legend -->
+      <div id="pattern-legend" class="legend"></div>
+
+      <!-- Source + comments grid -->
+      <div class="results-grid">
+        <div class="source-pane" id="source-pane">
+          <pre id="source-view" class="source-view"></pre>
+        </div>
+        <div id="comments-pane" class="comments-pane"></div>
+      </div>
+
+      <!-- Pattern cards + class bindings -->
+      <div id="pattern-cards" class="pattern-cards"></div>
+      <details id="class-bindings" class="class-bindings-wrap">
+        <summary class="class-bindings-summary">
+          <span class="caret">▶</span>
+          <span class="class-bindings-title">Class usage bindings</span>
+          <span class="class-bindings-count"></span>
+        </summary>
+        <div class="class-bindings-body"></div>
+      </details>
+    </section>
+
+    <!-- RUN HISTORY PANEL -->
+    <section class="panel" aria-label="Run history">
+      <div class="panel-head">
+        <h2>Run history</h2>
+      </div>
+      <div id="run-list" class="run-list">
+        <div class="empty-state">Sign in to see your runs.</div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<script src="/app.js"></script>
 </body>
 </html>
