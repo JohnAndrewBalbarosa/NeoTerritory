@@ -20,6 +20,7 @@ export default function AnnotatedTab({
 }: AnnotatedTabProps) {
   const { currentRun, aiStatus } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
+  const [classNavIdx, setClassNavIdx] = useState(0);
 
   // Resolve the per-file slice. Multi-file runs ship `files[]`; legacy
   // single-file runs back-fill into a synthetic single-entry list so the
@@ -76,6 +77,34 @@ export default function AnnotatedTab({
   const missingCount = missingClassNames.length;
   const totalClasses = allClassNames.size;
   const allTagged = totalClasses > 0 && missingCount === 0;
+
+  // Ordered class navigation for the bottom-right overlay. Each entry knows
+  // its class name and the line in the active file to jump to. We sort by the
+  // first documentation-target line so previous/next traverses the source in
+  // top-down order rather than alphabetical.
+  const classNav = useMemo(() => {
+    const seen = new Map<string, number>();
+    for (const p of currentRun?.detectedPatterns || []) {
+      if (!p.className) continue;
+      const firstLine = (p.documentationTargets || [])
+        .map(t => t.line)
+        .filter((l): l is number => typeof l === 'number')
+        .sort((a, b) => a - b)[0] ?? 1;
+      const prev = seen.get(p.className);
+      if (prev === undefined || firstLine < prev) seen.set(p.className, firstLine);
+    }
+    return [...seen.entries()]
+      .map(([className, line]) => ({ className, line }))
+      .sort((a, b) => a.line - b.line);
+  }, [currentRun]);
+  const navClass = classNav[classNavIdx];
+
+  function gotoClass(idx: number) {
+    if (classNav.length === 0) return;
+    const wrapped = ((idx % classNav.length) + classNav.length) % classNav.length;
+    setClassNavIdx(wrapped);
+    onLineFlash(classNav[wrapped].line);
+  }
 
   return (
     <section className="tab-panel tab-annotated">
@@ -162,6 +191,29 @@ export default function AnnotatedTab({
         classResolvedPatterns={currentRun.classResolvedPatterns}
         onLineFlash={onLineFlash}
       />
+      {classNav.length > 1 && navClass && (
+        <div className="class-nav-overlay" role="navigation" aria-label="Class navigation">
+          <button
+            type="button"
+            className="class-nav-btn"
+            onClick={() => gotoClass(classNavIdx - 1)}
+            aria-label="Previous class"
+            title="Previous class"
+          >←</button>
+          <span className="class-nav-label" title={navClass.className}>
+            <span className="class-nav-position">{classNavIdx + 1} / {classNav.length}</span>
+            <span className="class-nav-classname">{navClass.className}</span>
+            <span className="class-nav-line">L{navClass.line}</span>
+          </span>
+          <button
+            type="button"
+            className="class-nav-btn"
+            onClick={() => gotoClass(classNavIdx + 1)}
+            aria-label="Next class"
+            title="Next class"
+          >→</button>
+        </div>
+      )}
     </section>
   );
 }

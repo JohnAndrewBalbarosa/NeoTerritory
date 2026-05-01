@@ -3,6 +3,7 @@
 
 #include "{{HEADER}}"
 #include <cassert>
+#include <type_traits>
 
 // 1. instance() returns the same address on every call.
 static int test_singleton_identity() {
@@ -12,14 +13,10 @@ static int test_singleton_identity() {
     return 0;
 }
 
-// 2. Copy and assignment must be deleted (compile-time check via SFINAE).
-template <typename T, typename = void>
-struct is_copy_constructible_check : std::false_type {};
-template <typename T>
-struct is_copy_constructible_check<T, std::void_t<decltype(T(std::declval<const T&>()))>> : std::true_type {};
-
+// 2. Copy/assign deleted (compile-time check). std::is_copy_constructible
+// already gives us the SFINAE we need — no need to roll our own helper.
 static int test_singleton_copy_deleted() {
-    static_assert(!is_copy_constructible_check<{{CLASS_NAME}}>::value,
+    static_assert(!std::is_copy_constructible<{{CLASS_NAME}}>::value,
                   "Singleton should delete its copy constructor");
     return 0;
 }
