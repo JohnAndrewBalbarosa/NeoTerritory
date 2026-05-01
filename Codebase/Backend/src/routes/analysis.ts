@@ -18,7 +18,10 @@ import { rankAll } from '../services/patternRankingService';
 import { bindAll as bindClassUsages } from '../services/classUsageBinder';
 import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
-import { runPatternTest, isTestRunnerEnabled, getDisableReason, TestResult } from '../services/testRunnerService';
+import {
+  runSubmissionCompile, runPatternUnitTest,
+  isTestRunnerEnabled, getDisableReason, TestResult
+} from '../services/testRunnerService';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
@@ -1126,33 +1129,72 @@ async function dispatchPatternTests(
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>
 ): Promise<TestResult[]> {
-  const results: TestResult[] = [];
-  for (const p of patterns) {
-    if (!p.className || !p.classText) continue;
-    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
-    // runPatternTest now returns TWO results per pattern (compile_run + unit_test).
-    const r = await runPatternTest({
-      patternId: p.patternId,
+  const eligible = patterns.filter(p => p.className && p.classText);
+  if (eligible.length === 0) return [];
+
+  // The compile_run phase only depends on the submission's source, so we run
+  // it once and replay the same TestResult under every eligible pattern's
+  // (patternId, className) keys. Cuts a 5-pattern submission from 10 compile
+  // calls to 6, and each unit_test then runs in parallel below.
+  const probe = eligible[0];
+  const sharedCompile = await runSubmissionCompile({
+    patternId:   probe.patternId,
+    patternName: probe.patternName,
+    className:   probe.className!,
+    classText:   probe.classText!,
+    fullSource,
+    files
+  });
+
+  const compileResults: TestResult[] = eligible.map(p => ({
+    ...sharedCompile,
+    patternId:   p.patternId,
+    patternName: p.patternName,
+    className:   p.className!
+  }));
+
+  // If the shared compile failed there is no point running any unit_test —
+  // mark them all skipped at once with the same upstream message.
+  if (!sharedCompile.passed) {
+    const skips: TestResult[] = eligible.map(p => ({
+      patternId:   p.patternId,
       patternName: p.patternName,
-      className: p.className,
-      classText: p.classText,
-      // Bundle the entire submission's source so the driver compiles against
-      // base classes, forward declarations, and stdlib headers the per-class
-      // snippet doesn't carry.
+      className:   p.className!,
+      phase:       'unit_test',
+      passed:      false,
+      expected:    'pass',
+      actual:      '',
+      exitCode:    0,
+      durationMs:  0,
+      verdict:     'skipped',
+      message:     'Skipped — your class did not compile or did not exit cleanly on its own.'
+    }));
+    return [...compileResults, ...skips];
+  }
+
+  // Compile succeeded → run every unit_test driver in parallel. Each driver
+  // gets its own scratch dir so they cannot collide on disk.
+  const unitResults = await Promise.all(eligible.map(p => {
+    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
+    return runPatternUnitTest({
+      patternId:        p.patternId,
+      patternName:      p.patternName,
+      className:        p.className!,
+      classText:        p.classText!,
       fullSource,
       files,
-      forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
-      factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
-      terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
-      instanceAccessor: detectInstanceAccessor(p.classText, p.className),
-      componentBase: 'Component',
-      realBase: 'Subject',
-      targetBase: 'Target',
-      targetMethod: fallbackTarget
+      forwardMethod:    pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
+      factoryFn:        pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
+      terminator:       pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
+      instanceAccessor: detectInstanceAccessor(p.classText!, p.className!),
+      componentBase:    'Component',
+      realBase:         'Subject',
+      targetBase:       'Target',
+      targetMethod:     fallbackTarget
     });
-    results.push(...r);
-  }
-  return results;
+  }));
+
+  return [...compileResults, ...unitResults];
 }
 
 async function handleRunTests(
@@ -1173,7 +1215,11 @@ async function handleRunTests(
     });
     return;
   }
-  const budget = gdbBudgetCheck(req.user.id);
+  // Admins are not rate-limited: they're operating the system, not running
+  // synthetic load. Tester accounts still go through gdbBudgetCheck so a
+  // misbehaving client can't pin the compile pool.
+  const isAdmin = req.user.role === 'admin';
+  const budget = isAdmin ? { allowed: true, retryAfterMs: 0 } : gdbBudgetCheck(req.user.id);
   if (!budget.allowed) {
     const retryS = Math.ceil(budget.retryAfterMs / 1000);
     res.setHeader('Retry-After', String(retryS));

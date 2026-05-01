@@ -358,6 +358,42 @@ async function runPhase(
   }
 }
 
+// Run a single pattern's `unit_test` phase only. Used by the batched runner
+// below: the submission's compile_run is shared across all patterns (it's
+// the same code each time), so doing it per-pattern was N× wasted work.
+export async function runPatternUnitTest(input: RunInputs): Promise<TestResult> {
+  const tplPath = templatePath(input.patternId);
+  if (!tplPath) {
+    return {
+      patternId:   input.patternId,
+      patternName: input.patternName,
+      className:   input.className,
+      phase:       'unit_test',
+      passed:      false,
+      expected:    'pass',
+      actual:      '',
+      exitCode:    0,
+      durationMs:  0,
+      verdict:     'no_template',
+      message:     `No unit-test template authored for ${input.patternId} yet.`
+    };
+  }
+  return runPhase('unit_test', input, {
+    driverSource: fillTemplate(fs.readFileSync(tplPath, 'utf8'), input),
+    binaryName:   'unit_driver'
+  });
+}
+
+// Run the submission-level `compile_run` phase once. The driver is identical
+// across patterns (it just instantiates user code and exits 0), so its
+// outcome is a property of the submission, not of any specific pattern.
+export async function runSubmissionCompile(input: RunInputs): Promise<TestResult> {
+  return runPhase('compile_run', input, {
+    driverSource: COMPILE_RUN_DRIVER,
+    binaryName:   'user_main'
+  });
+}
+
 // Run both phases for one pattern. Phase 1 ('compile_run') always runs; phase
 // 2 ('unit_test') is skipped with verdict 'skipped' when phase 1 already
 // failed, so the user sees "we didn't even try the unit test because your

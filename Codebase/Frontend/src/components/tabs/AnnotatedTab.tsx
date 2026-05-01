@@ -84,19 +84,27 @@ export default function AnnotatedTab({
   // them yet (missing tag). Once a class is resolved or unambiguously
   // detected, it drops off the nav list — no point cycling through
   // already-decided classes.
-  // Locate each class's declaration site (file + line) by scanning source
-  // text for `class ClassName` / `struct ClassName`. Multi-file runs need
-  // this so the navigator can switch to the file the class actually lives
-  // in instead of pointing at a line in the wrong tab.
+  // Locate each class's declaration site (file + line) AND a coarse line
+  // range so we can decide whether a given annotation falls "inside" a
+  // class scope. We approximate the range by finding the next class/struct
+  // declaration in the same file and using (decl_line, next_decl_line - 1)
+  // as the inclusive range — this is a heuristic, not a real C++ parser,
+  // but it's good enough to detect "ambiguous tag inside class Foo".
   const classLocations = useMemo(() => {
-    const locs = new Map<string, { fileIdx: number; line: number }>();
+    const locs = new Map<string, { fileIdx: number; line: number; endLine: number }>();
     for (let fi = 0; fi < files.length; fi++) {
       const text = files[fi].sourceText || '';
       const lines = text.split('\n');
+      const decls: Array<{ name: string; line: number }> = [];
       for (let i = 0; i < lines.length; i++) {
         const m = lines[i].match(/\b(?:class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
-        if (m && !locs.has(m[1])) {
-          locs.set(m[1], { fileIdx: fi, line: i + 1 });
+        if (m) decls.push({ name: m[1], line: i + 1 });
+      }
+      for (let k = 0; k < decls.length; k++) {
+        const d = decls[k];
+        const next = decls[k + 1]?.line ?? lines.length + 1;
+        if (!locs.has(d.name)) {
+          locs.set(d.name, { fileIdx: fi, line: d.line, endLine: next - 1 });
         }
       }
     }
@@ -125,14 +133,38 @@ export default function AnnotatedTab({
       }
     }
     const resolvedMap = run.classResolvedPatterns || {};
+
+    // Second pass: a class also counts as ambiguous when the matcher emitted
+    // an ambiguous pattern *inside its line scope*, even if the per-class
+    // attribution wasn't captured directly on that detection. We scan every
+    // detectedPattern and count how many fall into each known class scope.
+    const inScopePatterns = new Map<string, Set<string>>();
+    for (const p of run.detectedPatterns || []) {
+      const targetLines = (p.documentationTargets || [])
+        .map(t => t.line)
+        .filter((l): l is number => typeof l === 'number');
+      if (targetLines.length === 0) continue;
+      for (const [name, loc] of classLocations.entries()) {
+        const hits = targetLines.some(l => l >= loc.line && l <= loc.endLine);
+        if (hits) {
+          if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
+          inScopePatterns.get(name)!.add(p.patternId);
+        }
+      }
+    }
+
     const out: Array<{ className: string; line: number; fileIdx: number }> = [];
-    for (const [className, fallbackLine] of firstLineByClass.entries()) {
+    const considered = new Set<string>([
+      ...firstLineByClass.keys(),
+      ...inScopePatterns.keys(),
+      ...classLocations.keys()
+    ]);
+    for (const className of considered) {
       if (resolvedMap[className]) continue;
-      const ambiguous = (patternCountByClass.get(className) || 0) > 1;
-      if (!ambiguous) continue;
-      // Prefer the class declaration line (so the navigator focuses on
-      // `class Foo {` instead of the first method impl). Fall back to the
-      // first documentation-target line when the declaration isn't found.
+      const directAmbiguous   = (patternCountByClass.get(className) || 0) > 1;
+      const inScopeAmbiguous  = (inScopePatterns.get(className)?.size  || 0) > 1;
+      if (!directAmbiguous && !inScopeAmbiguous) continue;
+      const fallbackLine = firstLineByClass.get(className) ?? 1;
       const loc = classLocations.get(className);
       out.push({
         className,

@@ -418,41 +418,33 @@ body.login-active{overflow:hidden;}
 
 .admin-section-lede{color:var(--ink-soft);font-size:13px;line-height:1.55;margin:-4px 0 10px 0;}
 
-/* === Admin log category tabs === */
-.logs-cat-tabs{
-  display:flex;gap:4px;flex-wrap:wrap;
-  margin:4px 0 14px 0;padding:4px;
-  background:var(--surface2);
-  border:1px solid var(--border);
-  border-radius:var(--radius-lg);
-}
+/* === Admin log category tabs (mirrors .admin-tab-bar/.admin-tab-btn) === */
+.logs-cat-tabs{display:flex;border-bottom:1px solid var(--border);margin:4px 0 14px 0;gap:0;flex-wrap:wrap;}
 .logs-cat-tab{
-  background:transparent;border:none;
-  padding:7px 14px;border-radius:calc(var(--radius-lg) - 4px);
-  color:var(--ink-soft);
-  font:inherit;font-size:12.5px;font-weight:500;
-  cursor:pointer;
+  font-family:var(--ui-font);font-weight:700;font-size:13px;
+  padding:10px 18px;border:none;background:transparent;
+  border-bottom:3px solid transparent;margin-bottom:-1px;
+  cursor:pointer;color:var(--ink-soft);
+  transition:color 150ms, border-color 150ms;letter-spacing:0.02em;
   display:inline-flex;align-items:center;gap:8px;
-  transition:background 140ms ease, color 140ms ease;
 }
-.logs-cat-tab:hover{color:var(--ink);background:rgba(123,94,167,0.08);}
-.logs-cat-tab.is-active{
-  background:var(--surface);
-  color:var(--ink);
-  font-weight:600;
-  box-shadow:0 1px 0 rgba(0,0,0,0.04), 0 0 0 1px var(--border);
-}
-.logs-cat-tab.is-active .logs-cat-label{color:var(--accent);}
+.logs-cat-tab:hover{color:var(--accent);}
+.logs-cat-tab.is-active{color:var(--accent);border-bottom-color:var(--accent);}
 .logs-cat-count{
   display:inline-flex;align-items:center;justify-content:center;
   min-width:20px;padding:0 6px;height:18px;
-  background:var(--surface);border:1px solid var(--border);
+  background:var(--surface2);border:1px solid var(--border);
   color:var(--ink-soft);
   border-radius:9px;font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;
+  letter-spacing:0;
 }
 .logs-cat-tab.is-active .logs-cat-count{
   background:var(--accent);border-color:var(--accent);color:#fff;
 }
+
+/* === Run-inspect modal === */
+.run-inspect-card{width:min(820px,96vw);}
+.run-inspect-pre{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;max-height:50vh;overflow:auto;font-family:var(--code-font);font-size:12px;line-height:1.5;color:var(--ink);white-space:pre;}
 
 /* === Generic modal overlay/card (consent, pretest, run/signout survey) === */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:1200;backdrop-filter:blur(6px);padding:20px;}

@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   fetchAdminOverview, fetchAdminRunsPerDay, fetchAdminPatternFreq,
-  fetchAdminScoreDistribution, fetchAdminPerUser
+  fetchAdminScoreDistribution
 } from '../../api/client';
 import {
-  AdminOverview, RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint
+  AdminOverview, RunsPerDayPoint, PatternFreqPoint, ScoreBucket
 } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
@@ -43,12 +43,12 @@ function ErrorRow({ message }: { message: string }) {
 }
 
 interface BarRowProps { label: string; value: number; max: number; color: string; }
-function BarRow({ label, value, max, color }: BarRowProps) {
+export function BarRow({ label, value, max, color }: BarRowProps) {
   const pct = max > 0 ? Math.round((value / max) * 100) : 0;
   return (
-    <div className="stat-bar-row">
+    <div className="stat-bar-row" title={`${label}: ${value}`}>
       <span className="stat-bar-label">{label}</span>
-      <div className="stat-bar-track">
+      <div className="stat-bar-track" role="img" aria-label={`${label}: ${value} of ${max}`}>
         <div className="stat-bar-fill" style={{ width: `${pct}%`, background: color }} />
       </div>
       <span className="stat-bar-value">{value}</span>
@@ -161,10 +161,8 @@ export default function StatsCharts() {
   const runsPerDay  = useStat<{ series: RunsPerDayPoint[] }>(() => fetchAdminRunsPerDay(30));
   const patternFreq = useStat<{ series: PatternFreqPoint[] }>(fetchAdminPatternFreq);
   const scoreDist   = useStat<{ buckets: ScoreBucket[] }>(fetchAdminScoreDistribution);
-  const perUser     = useStat<{ series: PerUserPoint[] }>(fetchAdminPerUser);
 
   const patternMax = Math.max(1, ...(patternFreq.data?.series || []).map(p => p.count));
-  const userMax    = Math.max(1, ...(perUser.data?.series    || []).map(p => p.runs));
 
   return (
     <div className="stats-charts">
@@ -203,15 +201,6 @@ export default function StatsCharts() {
         {scoreDist.data && <ScoreDistTable buckets={scoreDist.data.buckets} />}
       </section>
 
-      <section className="stats-section">
-        <h3>Per-user activity</h3>
-        {perUser.error && <ErrorRow message={perUser.error} />}
-        {perUser.data && (perUser.data.series.length === 0
-          ? <div className="empty-state">No activity.</div>
-          : perUser.data.series.map(p => (
-              <BarRow key={p.username} label={p.username} value={p.runs} max={userMax} color="#2563eb" />
-            )))}
-      </section>
     </div>
   );
 }

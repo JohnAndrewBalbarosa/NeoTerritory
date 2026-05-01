@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react';
 import {
-  fetchAdminRuns, deleteAdminRun, AdminRunRow
+  fetchAdminRuns, deleteAdminRun, AdminRunRow, apiFetch
 } from '../../api/client';
 import { fmtDate } from '../../lib/patterns';
 import { isAuthError } from '../lib/silenceAuthErrors';
+
+interface AdminRunDetail {
+  id: number;
+  username?: string | null;
+  sourceName: string;
+  sourceText: string;
+  analysis?: { files?: Array<{ name: string; sourceText: string }> } | null;
+}
 
 // Per-run admin control. Lets the operator delete a single saved analysis
 // (e.g. test runs that pollute the metrics) with a confirmation step. Every
@@ -13,6 +21,8 @@ export default function RunsManager() {
   const [runs, setRuns] = useState<AdminRunRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
+  const [detail, setDetail] = useState<AdminRunDetail | null>(null);
+  const [detailFileIdx, setDetailFileIdx] = useState(0);
 
   function load() {
     fetchAdminRuns(100)
@@ -32,6 +42,16 @@ export default function RunsManager() {
       alert(e instanceof Error ? e.message : 'Delete failed');
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function onInspect(id: number) {
+    try {
+      const d = await apiFetch<AdminRunDetail>(`/api/admin/runs/${id}`);
+      setDetail(d);
+      setDetailFileIdx(0);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'Failed to load run');
     }
   }
 
@@ -63,6 +83,15 @@ export default function RunsManager() {
               <td>
                 <button
                   type="button"
+                  className="user-ctrl-btn"
+                  onClick={() => onInspect(r.id)}
+                  title="View the file(s) submitted for this run"
+                >
+                  Inspect
+                </button>
+                {' '}
+                <button
+                  type="button"
                   className="user-ctrl-btn user-ctrl-btn--danger"
                   disabled={busy === r.id}
                   onClick={() => onDelete(r.id, r.source_name)}
@@ -75,6 +104,44 @@ export default function RunsManager() {
           ))}
         </tbody>
       </table>
+
+      {detail && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" onClick={() => setDetail(null)}>
+          <div className="modal-card run-inspect-card" onClick={e => e.stopPropagation()}>
+            <h3>Run #{detail.id} · {detail.sourceName}</h3>
+            <p className="modal-lede">User: <strong>{detail.username ?? '—'}</strong></p>
+            {(() => {
+              const files = (detail.analysis?.files && detail.analysis.files.length > 0)
+                ? detail.analysis.files
+                : [{ name: detail.sourceName, sourceText: detail.sourceText }];
+              const active = files[Math.min(detailFileIdx, files.length - 1)];
+              return (
+                <>
+                  {files.length > 1 && (
+                    <nav className="file-tab-bar" role="tablist" aria-label="Run files">
+                      {files.map((f, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          role="tab"
+                          aria-selected={i === detailFileIdx}
+                          className={`file-tab-btn ${i === detailFileIdx ? 'is-active' : ''}`}
+                          onClick={() => setDetailFileIdx(i)}
+                          title={f.name}
+                        >{f.name}</button>
+                      ))}
+                    </nav>
+                  )}
+                  <pre className="run-inspect-pre"><code>{active?.sourceText || ''}</code></pre>
+                </>
+              );
+            })()}
+            <div className="modal-actions">
+              <button className="ghost-btn" type="button" onClick={() => setDetail(null)}>Close</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -313,16 +313,48 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
       res.status(403).json({ error: 'Wrong password' });
       return;
     }
-    const { changes } = db.prepare('DELETE FROM logs').run();
+    // Cascade: clearing logs also clears the activity it summarises —
+    // analysis_runs, reviews, and survey responses — so dashboards driven
+    // by those tables (run-count, pattern frequency, per-user activity)
+    // reset together. The audit_log row below is the immutable record of
+    // exactly what got purged.
+    const tx = db.transaction(() => {
+      const r = { logs: 0, runs: 0, reviews: 0, surveys: 0 };
+      r.surveys = db.prepare('DELETE FROM survey_responses').run().changes;
+      r.reviews = db.prepare('DELETE FROM reviews').run().changes;
+      r.runs    = db.prepare('DELETE FROM analysis_runs').run().changes;
+      r.logs    = db.prepare('DELETE FROM logs').run().changes;
+      return r;
+    });
+    let changes = 0;
+    let detail = '';
+    try {
+      const r = tx();
+      changes = r.logs;
+      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} surveys=${r.surveys}`;
+    } catch {
+      // survey_responses may not exist on older DBs — fall back to the
+      // narrower cascade so the operator's request still goes through.
+      const tx2 = db.transaction(() => {
+        const r = { logs: 0, runs: 0, reviews: 0 };
+        r.reviews = db.prepare('DELETE FROM reviews').run().changes;
+        r.runs    = db.prepare('DELETE FROM analysis_runs').run().changes;
+        r.logs    = db.prepare('DELETE FROM logs').run().changes;
+        return r;
+      });
+      const r = tx2();
+      changes = r.logs;
+      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews}`;
+    }
     logAudit({
       actorUserId:   req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,
       action:        'delete',
-      targetKind:    'logs.bulk',
+      targetKind:    'logs.bulk_cascade',
       targetId:      null,
-      detail:        `Deleted ${changes} log row(s)`
+      detail
     });
-    res.json({ ok: true, deleted: changes });
+    res.json({ ok: true, deleted: changes, detail });
   } catch (err) { next(err); }
 });
 
