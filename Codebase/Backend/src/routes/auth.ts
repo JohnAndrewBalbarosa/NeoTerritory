@@ -6,7 +6,6 @@ import {
 import { validateBody } from '../middleware/validateBody';
 import { loginSchema, claimSeatSchema } from '../validation/schemas';
 import { jwtAuth } from '../middleware/jwtAuth';
-import { revokeToken } from '../middleware/tokenRevocation';
 import { registerSession, dropSession } from '../middleware/sealedEnvelope';
 import db from '../db/database';
 // TEST SEED — REMOVE FOR PRODUCTION
@@ -46,8 +45,10 @@ router.post('/disconnect-beacon', express.json({ type: '*/*', limit: '4kb' }), (
       db.prepare("UPDATE users SET claimed_at = NULL WHERE id = ? AND username LIKE 'Devcon%'").run(decoded.id);
     }
     db.prepare("UPDATE users SET last_active = datetime('now', '-1 hour') WHERE id = ?").run(decoded.id);
-    // Revoke the token so a tab-close-then-paste-token attack can't reuse it.
-    revokeToken(token);
+    // Intentionally NOT revoking the token here: pagehide fires on every full-page
+    // navigation (including window.location.href = '/admin'), so revoking the JWT
+    // would brick the very next page load. Token revocation happens on explicit
+    // sign-out via /auth/disconnect, which is the only path that should kill the JWT.
     res.status(204).end();
   } catch {
     res.status(401).end();
