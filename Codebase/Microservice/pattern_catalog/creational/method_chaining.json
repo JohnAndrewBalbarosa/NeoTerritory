@@ -4,7 +4,12 @@
   "pattern_name": "MethodChaining",
   "enabled": true,
   "lexeme_identifiers": {
-    "chain_return":  ["return", "*", "this", "&"]
+    "chain_return":    ["return", "*", "this", "&"],
+    "configurator":    ["enable", "disable", "set", "configure", "with", "add",
+                        "append", "toggle", "reset", "assign", "put", "use",
+                        "apply", "include", "exclude", "allow", "deny"],
+    "fluent_markers":  ["fluent", "chain", "builder", "config", "options",
+                        "settings", "params", "query"]
   },
   "ordered_checks": [
     {

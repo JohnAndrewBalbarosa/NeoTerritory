@@ -4,9 +4,16 @@
   "pattern_name": "Builder",
   "enabled": true,
   "lexeme_identifiers": {
-    "chain_return":   ["return", "*", "this"],
-    "setter_prefix":  ["set", "with"],
-    "terminator":     ["build"]
+    "chain_return":      ["return", "*", "this", "&"],
+    "setter_prefix":     ["set", "with", "add", "append", "configure", "enable",
+                          "disable", "toggle", "reset", "assign", "attach", "put"],
+    "terminator":        ["build", "Build", "create", "make", "construct",
+                          "finalize", "done", "complete", "get", "produce", "assemble"],
+    "ownership_output":  ["make_unique", "make_shared", "std::make_unique", "std::make_shared",
+                          "unique_ptr", "shared_ptr", "std::unique_ptr", "std::shared_ptr",
+                          "new"],
+    "inner_state_types": ["std::string", "std::vector", "std::optional",
+                          "std::map", "std::unordered_map", "optional", "vector"]
   },
   "ordered_checks": [
     {
@@ -45,7 +52,8 @@
     {
       "id": "build_terminator",
       "expected_kind": "Identifier",
-      "expected_lexeme_any_of": ["build", "Build"],
+      "expected_lexeme_any_of": ["build", "Build", "create", "make", "construct",
+                                  "finalize", "done", "complete", "produce"],
       "document_as": "builder_terminator_method"
     }
   ]

@@ -4,8 +4,17 @@
   "pattern_name": "Decorator",
   "enabled": true,
   "lexeme_identifiers": {
-    "wrappee_call":    ["->"],
-    "wrappee_member":  ["inner", "decorated", "wrappee"]
+    "wrappee_call":     ["->", "."],
+    "wrappee_member":   ["inner", "decorated", "wrappee", "component_", "base_",
+                         "wrapped_", "m_component", "inner_", "m_inner",
+                         "m_wrapped", "m_decoratee", "wrappee_", "decoratee_"],
+    "ownership_types":  ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                         "std::shared_ptr", "make_unique", "make_shared",
+                         "std::make_unique", "std::make_shared"],
+    "augmentation":     ["override", "virtual", "final"],
+    "decorator_method": ["decorate", "wrap", "augment", "enhance", "extend",
+                         "addBehaviour", "addBehavior", "addFeature",
+                         "addFunctionality", "before", "after"]
   },
   "ordered_checks": [
     {

@@ -4,9 +4,17 @@
   "pattern_name": "Factory",
   "enabled": true,
   "lexeme_identifiers": {
-    "object_instantiation": ["make_unique", "make_shared", "new"],
-    "return_value":         ["return"],
-    "branch_decision":      ["if", "switch", "case"]
+    "object_instantiation":  ["make_unique", "make_shared", "std::make_unique", "std::make_shared",
+                              "allocate_shared", "new", "unique_ptr", "shared_ptr",
+                              "std::unique_ptr", "std::shared_ptr"],
+    "return_value":          ["return"],
+    "branch_decision":       ["if", "switch", "case"],
+    "factory_method_names":  ["create", "make", "build", "produce", "newInstance", "manufacture",
+                              "instantiate", "spawn", "generate", "construct", "createProduct",
+                              "createObject", "makeObject", "buildProduct"],
+    "product_ptr_types":     ["unique_ptr", "shared_ptr", "auto",
+                              "std::unique_ptr", "std::shared_ptr"],
+    "virtual_interface":     ["virtual", "override", "final", "= 0", "pure"]
   },
   "ordered_checks": [
     {
@@ -35,8 +43,12 @@
     },
     {
       "id": "concrete_construction",
-      "expected_kind": "Keyword",
-      "expected_lexeme_any_of": ["new"],
+      "one_of": [
+        { "expected_kind": "Keyword",    "expected_lexeme_any_of": ["new"] },
+        { "expected_kind": "Identifier", "expected_lexeme_any_of": ["make_unique", "make_shared",
+                                                                     "std::make_unique", "std::make_shared",
+                                                                     "allocate_shared"] }
+      ],
       "document_as": "factory_concrete_creation"
     },
     {

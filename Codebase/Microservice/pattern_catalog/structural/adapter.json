@@ -4,8 +4,21 @@
   "pattern_name": "Adapter",
   "enabled": true,
   "lexeme_identifiers": {
-    "forwarding":      ["->"],
-    "wrapped_member":  ["target", "wrappee", "adaptee"]
+    "forwarding":           ["->", "."],
+    "wrapped_member":       ["target", "wrappee", "adaptee", "adaptee_", "impl_",
+                             "m_adaptee", "m_target", "wrapped_", "target_",
+                             "delegate_", "inner_", "m_inner"],
+    "functional_adapter":   ["std::function", "function", "std::bind", "bind",
+                             "std::mem_fn", "mem_fn", "std::invoke", "invoke",
+                             "std::ref", "ref", "std::cref",
+                             "std::placeholders", "placeholders",
+                             "_1", "_2", "_3"],
+    "interface_methods":    ["adapt", "convert", "translate", "wrap", "transform",
+                             "process", "handle", "execute", "request", "perform",
+                             "delegate", "forward", "relay"],
+    "virtual_interface":    ["virtual", "override", "final"],
+    "ownership_types":      ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                             "std::shared_ptr", "make_unique", "make_shared"]
   },
   "ordered_checks": [
     {
@@ -58,6 +71,12 @@
         "shape_regex": "\\b{class_name}\\s+\\w+\\s*\\(.*\\)\\s*;[\\s\\S]{0,200}\\w+\\s*\\.\\s*\\w+\\s*\\(",
         "weight": 1.0,
         "describe": "Adapter is constructed then has a method called on it"
+      },
+      {
+        "id": "std_function_wrapping",
+        "shape_regex": "std::function\\s*<[^>]+>\\s*\\w+\\s*=\\s*(std::bind|std::mem_fn|\\[)",
+        "weight": 0.6,
+        "describe": "std::function wrapping a method via std::bind or lambda — functional-adapter signal"
       }
     ],
     "expected_collaborators": [
@@ -66,6 +85,12 @@
         "shape_regex": "\\b{class_name}\\s*\\(\\s*\\w+\\s*\\)",
         "weight": 0.6,
         "describe": "Adapter constructed with an adaptee argument"
+      },
+      {
+        "id": "bind_adaptee_method",
+        "shape_regex": "std::bind\\s*\\(\\s*&?\\w+::\\w+",
+        "weight": 0.5,
+        "describe": "std::bind used to bind an adaptee member function"
       }
     ],
     "global_functions": [],
