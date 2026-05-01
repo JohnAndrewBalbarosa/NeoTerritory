@@ -11,10 +11,21 @@ export const filenameSchema = z
     message: 'filename contains path separators or control characters'
   });
 
-export const analyzeBodySchema = z.object({
-  code: z.string().min(1, 'code required').max(1_000_000, 'code too large'),
-  filename: filenameSchema
+// Accepts either the legacy single-file shape ({ code, filename }) or the new
+// multi-file shape ({ files: [{ code, name }] }). At least one of the two
+// must satisfy: a non-empty code body and a valid filename.
+const fileEntrySchema = z.object({
+  code: z.string().min(1).max(1_000_000),
+  name: filenameSchema
 });
+export const analyzeBodySchema = z.object({
+  code: z.string().min(1, 'code required').max(1_000_000, 'code too large').optional(),
+  filename: filenameSchema.optional(),
+  files: z.array(fileEntrySchema).min(1).max(16).optional()
+}).refine(
+  (v) => (v.code && v.filename) || (v.files && v.files.length > 0),
+  { message: 'Provide { code, filename } or { files: [...] }' }
+);
 
 export const saveRunSchema = z.object({
   pendingId: z.string().min(1).max(128),

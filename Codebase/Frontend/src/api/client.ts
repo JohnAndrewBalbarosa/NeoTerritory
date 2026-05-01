@@ -328,6 +328,26 @@ export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
   return apiFetch<F1Metrics>('/api/admin/stats/f1-metrics');
 }
 
+// Pre-templated unit-test runner (Tier-2). The backend may return 503 with a
+// detail string when ENABLE_TEST_RUNNER is unset; the GdbRunnerTab catches
+// that and renders a "configure to enable" banner instead of an error toast.
+export async function runPatternTests(runId: number): Promise<{ results: Array<{
+  patternId: string;
+  patternName: string;
+  className: string;
+  passed: boolean;
+  expected: string;
+  actual: string;
+  gdb?: string;
+  exitCode: number;
+  durationMs: number;
+  verdict: string;
+  failingLine?: number;
+  message?: string;
+}> }> {
+  return apiFetch(`/api/analysis/${runId}/run-tests`, { method: 'POST' });
+}
+
 // AI poll endpoint
 export interface AiPollResponse {
   status: 'pending' | 'ready' | 'failed';

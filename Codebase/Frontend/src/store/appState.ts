@@ -4,7 +4,7 @@ import { User, AnalysisRun, AppStatus, MsState, Annotation, PatternEducation } f
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
 
-export type StudioTab = 'submit' | 'annotated' | 'ambiguous';
+export type StudioTab = 'submit' | 'annotated' | 'gdb' | 'ambiguous';
 export type AiCommentaryStatus = 'idle' | 'pending' | 'ready' | 'failed' | 'disabled';
 
 interface AppState {

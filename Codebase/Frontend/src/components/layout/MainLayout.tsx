@@ -8,6 +8,7 @@ import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
+import GdbRunnerTab from '../tabs/GdbRunnerTab';
 import ReviewModal from '../modals/ReviewModal';
 import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
@@ -53,6 +54,7 @@ function flashComment(id: string) {
 const TABS: Array<{ id: StudioTab; label: string }> = [
   { id: 'submit',     label: 'Submit' },
   { id: 'annotated',  label: 'Annotated Source' },
+  { id: 'gdb',        label: 'GDB Runner' },
   { id: 'ambiguous',  label: 'Review before submission' }
 ];
 
@@ -266,6 +268,7 @@ export default function MainLayout() {
             onGoToReview={() => setActiveTab('ambiguous')}
           />
         )}
+        {activeTab === 'gdb' && <GdbRunnerTab />}
         {activeTab === 'ambiguous' && (
           <AmbiguousTab
             pendingSave={pendingSave}

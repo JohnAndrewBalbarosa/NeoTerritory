@@ -173,6 +173,15 @@ export interface PatternFreqPoint { pattern: string; count: number; }
 export interface ScoreBucket { range: string; count: number; }
 export interface PerUserPoint { username: string; runs: number; }
 
+// Per-file slice of an analysis run. Multi-file submission stores one of
+// these per uploaded source. Single-file runs put their content into
+// files[0]; sourceName / sourceText on AnalysisRun stay populated as
+// aliases for files[0] so legacy call sites keep working unchanged.
+export interface AnalysisRunFile {
+  name: string;
+  sourceText: string;
+}
+
 export interface AnalysisRun {
   runId: number | null;
   sourceName: string;
@@ -189,6 +198,10 @@ export interface AnalysisRun {
   // Per-class user pattern resolutions. When set for a class, color rendering
   // and synthesized usage annotations prefer this over the heuristic verdict.
   classResolvedPatterns?: Record<string, string>;
+  // Multi-file payload. Always non-empty for runs produced by /analyze; older
+  // runs loaded from disk that predate multi-file get back-filled with a
+  // single entry mirroring sourceName + sourceText.
+  files?: AnalysisRunFile[];
 }
 
 export interface RunListItem {

@@ -50,6 +50,11 @@ export interface ClassUsageBinding {
   usageKind: string;
   line: number;
   text: string;
+  // Multi-file: which file the usage was found in. Optional for single-file
+  // legacy runs.
+  fileName?: string;
+  // Tolerate any extra heuristic/microservice fields without losing them.
+  [extra: string]: unknown;
 }
 
 export interface AnalysisRun {

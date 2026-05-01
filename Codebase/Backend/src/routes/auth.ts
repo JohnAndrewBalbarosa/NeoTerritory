@@ -7,6 +7,7 @@ import { validateBody } from '../middleware/validateBody';
 import { loginSchema, claimSeatSchema } from '../validation/schemas';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { revokeToken } from '../middleware/tokenRevocation';
+import { registerSession, dropSession } from '../middleware/sealedEnvelope';
 import db from '../db/database';
 // TEST SEED — REMOVE FOR PRODUCTION
 import { listTestAccounts } from '../db/_testSeed/devconUsers';
@@ -55,6 +56,30 @@ router.post('/disconnect-beacon', express.json({ type: '*/*', limit: '4kb' }), (
 
 // Start the missed-heartbeat sweep on module load. unref()'d, single instance.
 startTesterSeatSweep();
+
+// Stateless asymmetric session bootstrap. Client posts its ECDSA public key
+// at /auth/session-init; subsequent requests to /api/sealed/* sign their
+// envelopes with the matching private key. See docs/SECURITY.md §8.
+router.post('/session-init', jwtAuth, (req: Request, res: Response) => {
+  const { publicKeyPem } = (req.body || {}) as { publicKeyPem?: string };
+  if (typeof publicKeyPem !== 'string' || !publicKeyPem.includes('BEGIN PUBLIC KEY')) {
+    res.status(400).json({ error: 'publicKeyPem (PEM-encoded SPKI) required' });
+    return;
+  }
+  // sessionId is the JWT bearer hash so a stolen sessionId cannot be reused
+  // without also presenting the original bearer token at session-init.
+  const sessionId = require('crypto').createHash('sha256')
+    .update((req.headers['authorization'] || '').slice(7))
+    .digest('hex');
+  registerSession(sessionId, publicKeyPem);
+  res.json({ sessionId });
+});
+
+router.post('/session-revoke', jwtAuth, (req: Request, res: Response) => {
+  const { sessionId } = (req.body || {}) as { sessionId?: string };
+  if (typeof sessionId === 'string') dropSession(sessionId);
+  res.json({ ok: true });
+});
 
 interface DevconRow {
   username: string;

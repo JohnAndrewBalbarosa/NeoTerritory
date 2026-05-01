@@ -1,10 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import SourceView from '../analysis/SourceView';
 import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
+import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
   onLineFlash: (line: number) => void;
@@ -18,6 +19,17 @@ export default function AnnotatedTab({
   onLineFlash, onCommentFlash, pendingSave, onDiscard, onGoToReview
 }: AnnotatedTabProps) {
   const { currentRun, aiStatus } = useAppStore();
+  const [activeFileIdx, setActiveFileIdx] = useState(0);
+
+  // Resolve the per-file slice. Multi-file runs ship `files[]`; legacy
+  // single-file runs back-fill into a synthetic single-entry list so the
+  // rest of this component can iterate uniformly.
+  const files: AnalysisRunFile[] = useMemo(() => {
+    if (!currentRun) return [];
+    if (currentRun.files && currentRun.files.length > 0) return currentRun.files;
+    return [{ name: currentRun.sourceName || 'snippet.cpp', sourceText: currentRun.sourceText || '' }];
+  }, [currentRun]);
+  const activeFile = files[activeFileIdx] || files[0];
 
   const allAnnotations = useMemo(() => {
     if (!currentRun) return [];
@@ -40,7 +52,8 @@ export default function AnnotatedTab({
 
   const patternCount = currentRun.detectedPatterns?.length || 0;
   const commentCount = allAnnotations.length;
-  const summaryText = `${currentRun.sourceName || 'snippet.cpp'} • ${patternCount} pattern(s) • ${commentCount} comment(s)`;
+  const fileSuffix = files.length > 1 ? ` • ${files.length} files` : '';
+  const summaryText = `${activeFile?.name || currentRun.sourceName || 'snippet.cpp'} • ${patternCount} pattern(s) • ${commentCount} comment(s)${fileSuffix}`;
 
   // "Tagged" means the user explicitly resolved a pattern for this class via
   // the Tag pattern… picker. Once every detected class has a resolution, we
@@ -93,9 +106,26 @@ export default function AnnotatedTab({
           )}
         </div>
       )}
+      {files.length > 1 && (
+        <nav className="file-tab-bar" role="tablist" aria-label="Submitted files">
+          {files.map((f, i) => (
+            <button
+              key={i}
+              type="button"
+              role="tab"
+              aria-selected={i === activeFileIdx}
+              className={`file-tab-btn ${i === activeFileIdx ? 'is-active' : ''}`}
+              onClick={() => setActiveFileIdx(i)}
+              title={f.name}
+            >
+              {f.name}
+            </button>
+          ))}
+        </nav>
+      )}
       <div className="results-body">
         <SourceView
-          sourceText={currentRun.sourceText || ''}
+          sourceText={activeFile?.sourceText || currentRun.sourceText || ''}
           annotations={allAnnotations}
           detectedPatterns={currentRun.detectedPatterns || []}
           classResolvedPatterns={currentRun.classResolvedPatterns}

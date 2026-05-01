@@ -84,6 +84,17 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api', analysisRoutes);
 
+// Sealed namespace — every route under /api/sealed/* is gated by the
+// stateless asymmetric envelope verifier (see docs/SECURITY.md §8). The
+// only route currently mounted is a ping for acceptance testing; future
+// routes that need replay-protected, no-server-state authentication land
+// here without retrofitting the bearer-JWT path.
+import { verifySealedEnvelope } from './src/middleware/sealedEnvelope';
+app.post('/api/sealed/ping', verifySealedEnvelope, (req: Request, res: Response) => {
+  const env = (req as Request & { sealedEnvelope?: { dayUtc?: string; nonce?: string } }).sealedEnvelope;
+  res.json({ ok: true, echoedDayUtc: env?.dayUtc, echoedNonce: env?.nonce });
+});
+
 app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
 });

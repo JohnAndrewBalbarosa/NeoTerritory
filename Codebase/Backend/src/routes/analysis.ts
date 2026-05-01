@@ -16,7 +16,9 @@ import {
 import { generateDocumentation, AiResult } from '../services/aiDocumentationService';
 import { rankAll } from '../services/patternRankingService';
 import { bindAll as bindClassUsages } from '../services/classUsageBinder';
+import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
+import { runPatternTest, isTestRunnerEnabled, TestResult } from '../services/testRunnerService';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
@@ -84,6 +86,8 @@ interface AnnotationOut {
   patternKey?: string;
   className?: string;
   lexemeHints?: string[];
+  // Multi-file: which file in fileList[] this annotation belongs to.
+  fileName?: string;
 }
 
 const PATTERN_LEXEMES: Record<string, PatternLexemeSet> = {
@@ -476,58 +480,141 @@ router.get('/sample', (_req: Request, res: Response) => {
 
 router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const body = req.body as { code?: unknown; filename?: unknown };
-    const codeFromBody = typeof body.code === 'string' ? body.code : '';
-    const filenameFromBody = typeof body.filename === 'string' && body.filename.trim()
-      ? body.filename.trim()
-      : 'snippet.cpp';
-
-    let sourceName = filenameFromBody;
-    let sourceText = codeFromBody;
-
-    if (req.file) {
-      sourceName = req.file.originalname;
-      sourceText = fs.readFileSync(req.file.path, 'utf8');
-    }
-
-    // Validate filename even on the multipart path (Multer uses originalname).
-    const filenameCheck = filenameSchema.safeParse(sourceName);
-    if (!filenameCheck.success) {
-      if (req.file) fs.unlink(req.file.path, () => {});
-      res.status(400).json({
-        error: 'Validation failed',
-        issues: filenameCheck.error.issues
+    const body = req.body as {
+      code?: unknown;
+      filename?: unknown;
+      files?: unknown;
+    };
+    // Build the file list. Three input shapes are honoured:
+    //   1. multipart `file` field (single legacy upload)
+    //   2. JSON `{ code, filename }` (single legacy paste)
+    //   3. JSON `{ files: [{ code, name }] }` (new multi-file)
+    const fileList: Array<{ name: string; code: string }> = [];
+    if (Array.isArray(body.files)) {
+      for (const entry of body.files) {
+        if (!entry || typeof entry !== 'object') continue;
+        const e = entry as { code?: unknown; name?: unknown };
+        if (typeof e.code === 'string' && typeof e.name === 'string') {
+          fileList.push({ name: e.name, code: e.code });
+        }
+      }
+    } else if (req.file) {
+      fileList.push({
+        name: req.file.originalname,
+        code: fs.readFileSync(req.file.path, 'utf8')
       });
-      return;
+    } else {
+      const codeFromBody = typeof body.code === 'string' ? body.code : '';
+      const filenameFromBody = typeof body.filename === 'string' && body.filename.trim()
+        ? body.filename.trim()
+        : 'snippet.cpp';
+      if (codeFromBody) fileList.push({ name: filenameFromBody, code: codeFromBody });
     }
-    sourceName = filenameCheck.data;
 
-    if (!sourceText.trim()) {
+    if (fileList.length === 0) {
+      if (req.file) fs.unlink(req.file.path, () => {});
       res.status(400).json({ error: 'Provide a file or source code text.' });
       return;
     }
-    if (sourceText.length > 1_000_000) {
+    if (fileList.length > 16) {
       if (req.file) fs.unlink(req.file.path, () => {});
-      res.status(400).json({ error: 'Source code exceeds 1,000,000 character limit.' });
+      res.status(400).json({ error: 'At most 16 files per submission.' });
       return;
     }
 
-    const structural: AnalysisResult = analyzeClassDeclaration({ sourceName, code: sourceText });
+    // Validate every filename and total size envelope.
+    let totalChars = 0;
+    for (const f of fileList) {
+      const check = filenameSchema.safeParse(f.name);
+      if (!check.success) {
+        if (req.file) fs.unlink(req.file.path, () => {});
+        res.status(400).json({
+          error: 'Validation failed',
+          issues: check.error.issues
+        });
+        return;
+      }
+      f.name = check.data;
+      totalChars += f.code.length;
+    }
+    if (totalChars > 4_000_000) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      res.status(400).json({ error: 'Combined source exceeds 4,000,000 character limit.' });
+      return;
+    }
+
+    // Run the structural analyzer per-file and merge. Per-file annotations
+    // carry line numbers relative to that file, which is what the per-file
+    // source view needs to render. Detected patterns get their `fileName`
+    // stamped so the frontend can route them.
+    const allDetected: typeof fileList extends unknown ? DetectedPatternResult[] : never =
+      [] as DetectedPatternResult[];
+    const allAnnotations: AnnotationOut[] = [];
+    const mergedClassUsageBindings: Record<string, ClassUsageBinding[]> = {};
+    let mergedStageMetrics: AnalysisResult['stageMetrics'] = [];
+    let primaryName = fileList[0].name;
+
+    for (const f of fileList) {
+      const r: AnalysisResult = analyzeClassDeclaration({ sourceName: f.name, code: f.code });
+      const stamped = (r.detectedPatterns || []).map(p => ({
+        ...p,
+        fileName: f.name
+      }));
+      allDetected.push(...stamped);
+      const fileAnns = buildStructuralAnnotations(stamped, f.code).map(a => ({
+        ...a,
+        fileName: f.name
+      } as AnnotationOut));
+      allAnnotations.push(...fileAnns);
+      const bindings = bindClassUsages(f.code, stamped);
+      for (const [cls, rows] of Object.entries(bindings)) {
+        if (!mergedClassUsageBindings[cls]) mergedClassUsageBindings[cls] = [];
+        for (const rec of rows as unknown as ClassUsageBinding[]) {
+          mergedClassUsageBindings[cls].push({ ...rec, fileName: f.name });
+        }
+      }
+      mergedStageMetrics = mergedStageMetrics.concat(r.stageMetrics || []);
+    }
+
+    // Synthesise a "primary" view for the rest of the pipeline (ranking,
+    // existing class-fit logic) using the first file's source text. Multi-
+    // file ranking gets the same treatment as before per-file; downstream
+    // consumers that read sourceName/sourceText keep working.
+    const sourceName = primaryName;
+    const sourceText = fileList[0].code;
+    const structural: AnalysisResult = {
+      ...({} as AnalysisResult),
+      detectedPatterns: allDetected,
+      documentationTargets: allDetected.flatMap(p => p.documentationTargets || []),
+      unitTestTargets: allDetected.flatMap(p => p.unitTestTargets || []),
+      diagnostics: [],
+      stage: 'pattern_dispatch',
+      stageMetrics: mergedStageMetrics,
+      artifacts: {},
+      runDirectory: undefined,
+      outputDirectory: undefined
+    };
 
     const detectedPatterns = structural.detectedPatterns || [];
     const enrichedPatterns = detectedPatterns.map(p => {
       const lset = lexemesForPattern(p.patternName || p.patternId);
       return lset ? { ...p, patternLexemes: lset } : p;
     });
-    const ranking = rankAll(detectedPatterns, sourceText);
-    const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
+    // Run ranking against the concatenated text so cross-file rivalry counts;
+    // bindings are already per-file via the merge loop above.
+    const concatenatedSource = fileList.map(f => f.code).join('\n// --- file boundary ---\n');
+    const ranking = rankAll(detectedPatterns, concatenatedSource);
+    const classUsageBindings = mergedClassUsageBindings;
     const aiEnabled = aiCommenterEnabled();
     const aiByPattern: AiResult[] = detectedPatterns.map(() => ({
       status: 'skipped',
       documentationByTarget: {},
       unitTestPlanByTarget: {}
     }));
-    const annotations = buildStructuralAnnotations(detectedPatterns, sourceText);
+    // Per-file annotations were already built during the per-file analyze loop
+    // above. Reuse them here so line numbers stay relative to the file the
+    // frontend will render in its per-file tab.
+    const annotations = allAnnotations;
     const pipeline = buildPipelineFromMetrics(structural.stageMetrics, detectedPatterns.length);
 
     const analysis: AnalysisPayload = {
@@ -637,6 +724,8 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       saved:         false,
       sourceName,
       sourceText,
+      // New: per-file payload so the frontend can render per-file tabs.
+      files: fileList.map(f => ({ name: f.name, sourceText: f.code })),
       aiStatus,
       aiJobId
     });
@@ -922,6 +1011,70 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
     logEvent(req.user.id, 'manual_review', `runId=${runIdNum} line=${line} kind=${chosenKind}`);
 
     res.status(201).json({ ok: true, line, chosenPattern, chosenKind });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Pre-templated unit-test runner. Compiles the user's class against per-
+// pattern templates inside a sandbox and reports pass/fail/timeout/segfault.
+// Returns 503 with a clear message when the runner is disabled (default), so
+// the frontend can render a "configure ENABLE_TEST_RUNNER to enable" banner.
+interface RunTestsRow extends ManualReviewRow { source_text: string; analysis_json: string }
+router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    if (!isTestRunnerEnabled()) {
+      res.status(503).json({
+        error: 'Test runner not configured',
+        detail: 'Set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX in the backend .env to enable.'
+      });
+      return;
+    }
+    const runIdNum = Number(req.params.runId);
+    if (!Number.isFinite(runIdNum)) {
+      res.status(400).json({ error: 'Invalid runId' });
+      return;
+    }
+    const row = db.prepare('SELECT id, user_id, source_text, analysis_json FROM analysis_runs WHERE id = ?')
+      .get(runIdNum) as RunTestsRow | undefined;
+    if (!row) {
+      res.status(404).json({ error: 'Run not found' });
+      return;
+    }
+    if (row.user_id && row.user_id !== req.user.id) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    const analysis = JSON.parse(row.analysis_json) as { detectedPatterns?: DetectedPatternResult[] };
+    const patterns = analysis.detectedPatterns || [];
+
+    const results: TestResult[] = [];
+    for (const p of patterns) {
+      if (!p.className || !p.classText) continue;
+      // Best-guess substitution defaults: prefer the first unit-test target's
+      // function name when the template needs one.
+      const firstTargetName = (p.unitTestTargets || [])[0]?.function_name;
+      const r = await runPatternTest({
+        patternId: p.patternId,
+        patternName: p.patternName,
+        className: p.className,
+        classText: p.classText,
+        forwardMethod: firstTargetName,
+        factoryFn: firstTargetName,
+        terminator: 'build',
+        instanceAccessor: 'instance',
+        componentBase: 'Component',
+        realBase: 'Subject',
+        targetBase: 'Target',
+        targetMethod: firstTargetName
+      });
+      results.push(r);
+    }
+    res.json({ results });
   } catch (err) {
     next(err);
   }
