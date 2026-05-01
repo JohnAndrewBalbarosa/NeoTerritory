@@ -9,9 +9,11 @@ import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
 interface AnnotatedTabProps {
   onLineFlash: (line: number) => void;
   onCommentFlash: (id: string) => void;
+  pendingSave?: boolean;
+  onDiscard?: () => void;
 }
 
-export default function AnnotatedTab({ onLineFlash, onCommentFlash }: AnnotatedTabProps) {
+export default function AnnotatedTab({ onLineFlash, onCommentFlash, pendingSave, onDiscard }: AnnotatedTabProps) {
   const { currentRun, aiStatus } = useAppStore();
 
   const allAnnotations = useMemo(() => {
@@ -50,6 +52,16 @@ export default function AnnotatedTab({ onLineFlash, onCommentFlash }: AnnotatedT
           <span className="ai-pill ai-pill-failed">AI commentary failed</span>
         )}
         <PatternLegend detectedPatterns={currentRun.detectedPatterns || []} />
+        {pendingSave && onDiscard && (
+          <button
+            type="button"
+            className="ghost-btn discard-btn"
+            onClick={() => { if (confirm('Discard this run? Your tags and edits will be lost.')) onDiscard(); }}
+            title="Drop the current unsaved run"
+          >
+            Discard run
+          </button>
+        )}
       </header>
       <div className="results-body">
         <SourceView

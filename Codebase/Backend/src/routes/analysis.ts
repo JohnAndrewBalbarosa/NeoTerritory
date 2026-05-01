@@ -895,6 +895,18 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
       ? body.otherText.slice(0, 1024)
       : null;
 
+    // Completeness guard: 'pattern' kind must include a chosenPattern; 'none'
+    // and 'other' must not. Reject malformed combos with 422 so a client that
+    // skipped the form gets bounced before persistence.
+    if (chosenKind === 'pattern' && !chosenPattern) {
+      res.status(422).json({ error: 'chosenPattern is required when chosenKind is "pattern"' });
+      return;
+    }
+    if (chosenKind === 'other' && !otherText) {
+      res.status(422).json({ error: 'otherText is required when chosenKind is "other"' });
+      return;
+    }
+
     db.prepare(`INSERT INTO manual_pattern_decisions
       (run_id, user_id, line, candidates_json, chosen_pattern, chosen_kind, other_text, decided_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`).run(

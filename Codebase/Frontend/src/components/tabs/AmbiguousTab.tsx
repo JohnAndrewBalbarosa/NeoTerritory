@@ -1,7 +1,22 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
-import { submitManualReview } from '../../api/client';
+import { submitManualReview, saveRun } from '../../api/client';
 import { DetectedPatternFull, ClassUsageBinding } from '../../types/api';
+
+interface PendingSave {
+  pendingId: string;
+  sourceName: string;
+  patternCount: number;
+  commentCount: number;
+  userResolvedPattern: string | null;
+  ambiguousVerdict: boolean;
+}
+
+interface AmbiguousTabProps {
+  pendingSave: PendingSave | null;
+  onSaved: (runId: number) => void;
+  onDiscard: () => void;
+}
 
 // ─── Tagged class row (TP / FP) ───────────────────────────────────────────────
 
@@ -132,13 +147,15 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
 
 // ─── Main tab ─────────────────────────────────────────────────────────────────
 
-export default function AmbiguousTab() {
-  const { currentRun } = useAppStore();
+export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: AmbiguousTabProps) {
+  const { currentRun, setStatus } = useAppStore();
 
   const [taggedDecisions, setTaggedDecisions]   = useState<Record<string, TaggedDecision>>({});
   const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
   const [saving, setSaving]   = useState<string | null>(null);
   const [saved, setSaved]     = useState<Set<string>>(new Set());
+  const [savingRun, setSavingRun] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [error, setError]     = useState<string | null>(null);
 
   const { taggedClasses, untaggedClasses } = useMemo(() => {
@@ -246,10 +263,145 @@ export default function AmbiguousTab() {
     }
   }
 
+  // ── completeness check ───────────────────────────────────────────────────
+  // The submit button is gated until every tagged and untagged row has an
+  // answer — TP/FP for tagged, TN/FN (with pattern name when claiming FN)
+  // for untagged. Backend runs the same check for security.
+  function isComplete(): { ok: boolean; missing: string[] } {
+    const missing: string[] = [];
+    for (const p of taggedClasses) {
+      const dec = taggedDecisions[taggedKey(p)];
+      if (!dec || dec.correct === null) missing.push(`${p.className} (Yes/No)`);
+    }
+    for (const cls of untaggedClasses) {
+      const dec = untaggedDecisions[cls];
+      if (!dec || dec.isPattern === null) missing.push(`${cls} (Correct/Wrong)`);
+      else if (dec.isPattern && !dec.patternName.trim()) missing.push(`${cls} (pattern name)`);
+    }
+    return { ok: missing.length === 0, missing };
+  }
+
+  // ── save run handler ─────────────────────────────────────────────────────
+  async function handleSaveRun(): Promise<void> {
+    if (!pendingSave) return;
+    setSavingRun(true);
+    setError(null);
+    try {
+      const result = await saveRun(
+        pendingSave.pendingId,
+        run.userResolvedPattern || undefined,
+        run.classResolvedPatterns
+      );
+      setStatus({ kind: 'ok', title: 'Run saved', detail: `Saved as run #${result.runId}.` });
+      onSaved(result.runId);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSavingRun(false);
+    }
+  }
+
+  // ── batch submit (validation) ────────────────────────────────────────────
+  async function handleSubmitValidation(): Promise<void> {
+    if (!run.runId) {
+      setError('You must save the run first before submitting validation.');
+      return;
+    }
+    const check = isComplete();
+    if (!check.ok) {
+      setError(`Please answer every row before submitting. Missing: ${check.missing.slice(0, 4).join(', ')}${check.missing.length > 4 ? '…' : ''}`);
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      // Sequential submit so the backend can reject any malformed row without
+      // half-applied state. Each call is small.
+      for (const p of taggedClasses) {
+        const key = taggedKey(p);
+        if (saved.has(key)) continue;
+        const dec = taggedDecisions[key];
+        const repLine = p.documentationTargets?.[0]?.line ?? 1;
+        await submitManualReview(run.runId, {
+          line: repLine,
+          candidates: [p.patternName],
+          chosenPattern: dec.correct ? p.patternName : null,
+          chosenKind: dec.correct ? 'pattern' : 'none'
+        });
+        markSaved(key);
+      }
+      for (const cls of untaggedClasses) {
+        if (saved.has(cls)) continue;
+        const dec = untaggedDecisions[cls];
+        const bindings: ClassUsageBinding[] = run.classUsageBindings?.[cls] || [];
+        const repLine = bindings[0]?.line ?? 1;
+        await submitManualReview(run.runId, {
+          line: repLine,
+          candidates: [],
+          chosenPattern: dec.isPattern ? dec.patternName.trim() : null,
+          chosenKind: dec.isPattern ? 'pattern' : 'none'
+        });
+        markSaved(cls);
+      }
+      setStatus({ kind: 'ok', title: 'Validation submitted', detail: 'Thanks for the feedback.' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Submission failed.');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   // ── render ────────────────────────────────────────────────────────────────
+
+  const isSaved = !pendingSave && !!run.runId;
+  const completeness = isComplete();
 
   return (
     <section className="tab-panel tab-ambiguous">
+      <div className="review-action-bar">
+        <div className="review-action-status" data-saved={isSaved ? 'true' : undefined}>
+          {isSaved ? (
+            <><strong>Run saved</strong> · run #{run.runId} · ready to submit validation</>
+          ) : (
+            <><strong>Unsaved run</strong> · save before you can submit validation</>
+          )}
+        </div>
+        <div className="review-action-buttons">
+          {!isSaved && pendingSave && (
+            <button
+              type="button"
+              className="primary-btn"
+              disabled={savingRun}
+              onClick={handleSaveRun}
+            >
+              {savingRun ? 'Saving…' : 'Save run'}
+            </button>
+          )}
+          {pendingSave && (
+            <button
+              type="button"
+              className="ghost-btn discard-btn"
+              onClick={() => { if (confirm('Discard this run? Your tags and edits will be lost.')) onDiscard(); }}
+            >
+              Discard run
+            </button>
+          )}
+          <button
+            type="button"
+            className="primary-btn"
+            disabled={!isSaved || submitting || !completeness.ok}
+            onClick={handleSubmitValidation}
+            title={!isSaved
+              ? 'Save the run first'
+              : !completeness.ok
+                ? `Missing: ${completeness.missing.length} row(s)`
+                : 'Submit validation feedback'}
+          >
+            {submitting ? 'Submitting…' : 'Submit validation'}
+          </button>
+        </div>
+      </div>
+
       {error && <div className="error-banner" role="alert">{error}</div>}
 
       {taggedClasses.length > 0 && (
@@ -257,7 +409,7 @@ export default function AmbiguousTab() {
           <header className="checklist-section-header">
             <h3>Tagged classes</h3>
             <p className="checklist-section-desc">
-              Confirm whether each detected pattern is a genuine match.
+              Confirm whether each detected pattern is a genuine match. <strong>All rows are required.</strong>
             </p>
           </header>
           <ul className="checklist-list">
@@ -284,7 +436,7 @@ export default function AmbiguousTab() {
           <header className="checklist-section-header">
             <h3>Untagged classes</h3>
             <p className="checklist-section-desc">
-              These classes were not detected as any pattern. Confirm or correct.
+              These classes were not detected as any pattern. Confirm or correct. <strong>All rows are required.</strong>
             </p>
           </header>
           <ul className="checklist-list">

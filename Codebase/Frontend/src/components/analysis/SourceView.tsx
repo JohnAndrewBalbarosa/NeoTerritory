@@ -114,10 +114,20 @@ function buildLineToAnnotations(
 
 // For a given scope, determine which pattern "owns" the most annotated lines.
 // Ties (two patterns with equal coverage) → no dominant, whole scope is grey.
+// When the user has explicitly resolved this class to a pattern (retag), we
+// short-circuit the vote and lock the whole scope to that pattern. This is
+// what makes lines like `Repository* m_inner;` flip color along with the rest
+// of the class — without this lock, a member whose type is *another* class
+// (Repository) carries a foreign annotation that splits the dominance vote.
 function computeClassDominance(
   scope: ClassScope,
-  lineToAnnotations: Map<number, Annotation[]>
+  lineToAnnotations: Map<number, Annotation[]>,
+  classResolvedPatterns?: Record<string, string>
 ): ClassDominance {
+  const resolved = classResolvedPatterns && classResolvedPatterns[scope.className];
+  if (resolved) {
+    return { dominantKey: resolved, color: colorFor(resolved) };
+  }
   const patternLineCounts = new Map<string, number>();
   for (let line = scope.min; line <= scope.max; line++) {
     const anns = lineToAnnotations.get(line) || [];
@@ -199,7 +209,7 @@ function buildRows(
 
   const scopeDominanceMap = new Map<ClassScope, ClassDominance>();
   for (const scope of scopes) {
-    scopeDominanceMap.set(scope, computeClassDominance(scope, filtered));
+    scopeDominanceMap.set(scope, computeClassDominance(scope, filtered, classResolvedPatterns));
   }
 
   const rows: RenderedLine[] = lines.map((text, idx) => {
@@ -276,7 +286,10 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           const hasAnnotation = row.rawAnns.length > 0;
           const dominance       = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
           const standaloneColor = (!dominance && row.anns.length > 0) ? computeStandaloneColor(row.anns) : null;
-          const blendRatio      = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
+          // When the user has resolved a class, lock every line in its scope
+          // to the chosen color — no per-line vote pulling toward grey.
+          const scopeResolved   = !!(row.scope && classResolvedPatterns && classResolvedPatterns[row.scope.className]);
+          const blendRatio      = scopeResolved ? 0 : (dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0);
           const baseColor       = dominance?.color ?? standaloneColor;
           // Badge is always solid — never blended — so the class chip reads clearly.
           const badgeColor      = dominance?.color ?? standaloneColor;

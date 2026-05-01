@@ -9,7 +9,6 @@ import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import AmbiguityModal from '../modals/AmbiguityModal';
-import SavePrompt from '../modals/SavePrompt';
 import ReviewModal from '../modals/ReviewModal';
 import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
@@ -55,7 +54,7 @@ function flashComment(id: string) {
 const TABS: Array<{ id: StudioTab; label: string }> = [
   { id: 'submit',     label: 'Submit' },
   { id: 'annotated',  label: 'Annotated Source' },
-  { id: 'ambiguous',  label: 'Validate Patterns' }
+  { id: 'ambiguous',  label: 'Review before submission' }
 ];
 
 export default function MainLayout() {
@@ -88,6 +87,7 @@ export default function MainLayout() {
   const [showSignout, setShowSignout] = useState(false);
   const [runRefreshSignal, setRunRefreshSignal] = useState(0);
   const [retag, setRetag] = useState<{ className: string; candidates: string[] } | null>(null);
+  const [analyzeReplace, setAnalyzeReplace] = useState<{ run: () => void } | null>(null);
 
   // Listen for retag-request events from PatternCards/ClassBindings/SourceView so any
   // class- or class-line-related UI can re-open the picker without prop drilling.
@@ -148,7 +148,27 @@ export default function MainLayout() {
   function onSaved(runId: number) {
     setPendingSave(null);
     setRunRefreshSignal(s => s + 1);
+    // Stamp the runId on currentRun so the validation submit endpoint knows
+    // which row to attach manual-review answers to.
+    useAppStore.getState().patchCurrentRun({ runId });
     setReview({ scope: 'per-run', analysisRunId: runId, intro: 'Quick rating for this run (optional):' });
+  }
+
+  function discardCurrentRun(): void {
+    setPendingSave(null);
+    useAppStore.getState().setCurrentRun(null);
+    setStatus({ kind: 'idle', title: 'Discarded', detail: 'Run was not saved.' });
+  }
+
+  // Submit asks before clobbering an unsaved run. The user can confirm to
+  // discard the current results, or cancel to keep editing.
+  function beforeAnalyze(dispatch: () => void): void {
+    const hasCurrentRun = !!useAppStore.getState().currentRun;
+    if (hasCurrentRun && pendingSave) {
+      setAnalyzeReplace({ run: dispatch });
+      return;
+    }
+    dispatch();
   }
 
   function onSignOutClick() {
@@ -177,6 +197,16 @@ export default function MainLayout() {
     }
   }, [token, user]);
   if (token && user?.role === 'admin') return null;
+
+  // Reflect each gate in the URL so the address bar distinguishes consent
+  // and pretest from the studio home. replaceState avoids back-button noise.
+  if (token && user && typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    const expected = !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
+    if (path !== expected && path !== '/admin.html') {
+      window.history.replaceState(null, '', expected);
+    }
+  }
 
   // Gate: consent first (research participants only).
   if (token && user && !consentAccepted) {
@@ -247,12 +277,27 @@ export default function MainLayout() {
 
       <main className="content tab-content">
         {activeTab === 'submit' && (
-          <SubmitTab onAnalysisComplete={onAnalysisComplete} refreshSignal={runRefreshSignal} />
+          <SubmitTab
+            onAnalysisComplete={onAnalysisComplete}
+            refreshSignal={runRefreshSignal}
+            beforeAnalyze={beforeAnalyze}
+          />
         )}
         {activeTab === 'annotated' && (
-          <AnnotatedTab onLineFlash={flashLine} onCommentFlash={flashComment} />
+          <AnnotatedTab
+            onLineFlash={flashLine}
+            onCommentFlash={flashComment}
+            pendingSave={!!pendingSave}
+            onDiscard={discardCurrentRun}
+          />
         )}
-        {activeTab === 'ambiguous' && <AmbiguousTab />}
+        {activeTab === 'ambiguous' && (
+          <AmbiguousTab
+            pendingSave={pendingSave}
+            onSaved={onSaved}
+            onDiscard={discardCurrentRun}
+          />
+        )}
       </main>
 
       {retag && useAppStore.getState().currentRun?.ranking && (
@@ -271,17 +316,33 @@ export default function MainLayout() {
           }
         />
       )}
-      {pendingSave && (
-        <SavePrompt
-          pendingId={pendingSave.pendingId}
-          sourceName={pendingSave.sourceName}
-          patternCount={pendingSave.patternCount}
-          commentCount={pendingSave.commentCount}
-          userResolvedPattern={pendingSave.userResolvedPattern}
-          ambiguousVerdict={pendingSave.ambiguousVerdict}
-          onSaved={onSaved}
-          onDiscard={() => setPendingSave(null)}
-        />
+      {analyzeReplace && (
+        <div className="modal" id="analyze-replace-modal">
+          <div className="modal-card">
+            <h3>Discard the current run?</h3>
+            <p className="modal-detail">
+              You have an unsaved analysis. Running a new analysis will discard
+              the current results. Save it from the <strong>Review before submission</strong> tab if you want to keep it.
+            </p>
+            <div className="modal-actions">
+              <button
+                className="ghost-btn"
+                type="button"
+                onClick={() => setAnalyzeReplace(null)}
+              >Keep editing</button>
+              <button
+                className="primary-btn"
+                type="button"
+                onClick={() => {
+                  const fn = analyzeReplace.run;
+                  setAnalyzeReplace(null);
+                  discardCurrentRun();
+                  fn();
+                }}
+              >Discard &amp; run analysis</button>
+            </div>
+          </div>
+        </div>
       )}
       {review && (
         <ReviewModal

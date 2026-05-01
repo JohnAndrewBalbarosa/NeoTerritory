@@ -8,9 +8,10 @@ import { AnalysisRun } from '../../types/api';
 interface SubmitTabProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
   refreshSignal: number;
+  beforeAnalyze?: (dispatch: () => void) => void;
 }
 
-export default function SubmitTab({ onAnalysisComplete, refreshSignal }: SubmitTabProps) {
+export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAnalyze }: SubmitTabProps) {
   const { sessionRanAnalyze, pendingRunSurveyForRunKey, setPendingRunSurvey, currentRun } = useAppStore();
   const [queuedSubmit, setQueuedSubmit] = useState<null | (() => void)>(null);
 
@@ -18,14 +19,19 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal }: SubmitT
 
   // Wrap the analyze trigger: if a previous run exists and the per-run survey
   // hasn't been submitted yet, show the survey first and queue the dispatch.
+  // Then defer to MainLayout's beforeAnalyze for the unsaved-run guard.
   function handleBeforeAnalyze(dispatch: () => void): void {
+    const proceed = () => {
+      if (beforeAnalyze) beforeAnalyze(dispatch);
+      else dispatch();
+    };
     if (sessionRanAnalyze && currentRun && pendingRunSurveyForRunKey === null) {
       const key = String(currentRun.runId ?? currentRun.pendingId ?? Date.now());
       setPendingRunSurvey(key);
-      setQueuedSubmit(() => dispatch);
+      setQueuedSubmit(() => proceed);
       return;
     }
-    dispatch();
+    proceed();
   }
 
   function onSurveyDone() {

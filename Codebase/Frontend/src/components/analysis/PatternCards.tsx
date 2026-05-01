@@ -43,6 +43,46 @@ function RowButton({ children, onClick }: { children: React.ReactNode; onClick: 
   return <button type="button" className="pattern-row" onClick={onClick}>{children}</button>;
 }
 
+// Expandable summary of how the two percentages on the rank bar were derived.
+// Reads the per-pattern weights and evidence from PatternRankEntry so the
+// explanation reflects the actual numbers shown above, not a generic blurb.
+function ScoringExplainer({ rank }: { rank: PatternRankEntry }) {
+  const [open, setOpen] = useState(false);
+  const conf = Math.round((rank.finalRank || 0) * 100);
+  const fit  = Math.round((rank.implementationFit || 0) * 100);
+  const hits = rank.evidence?.callsites?.length ?? 0;
+  return (
+    <div className="scoring-explainer">
+      <button type="button" className="scoring-explainer-toggle" onClick={() => setOpen(o => !o)}>
+        {open ? '▾' : '▸'} How is this scored?
+      </button>
+      {open && (
+        <div className="scoring-explainer-body">
+          <p>
+            <strong>confidence ({conf}%)</strong> = <code>class_fit × class_weight + usage_match × usage_weight</code>,
+            clamped to 100%. <em>class_fit</em> is 1.0 once the structural matcher
+            confirms the class shape (private member, ctor injection, override, etc.).
+          </p>
+          <p>
+            <strong>usage match ({fit}%)</strong> sums weights of every signal in this
+            pattern&apos;s implementation_template that matched this source —
+            call-sites, expected collaborators, global functions — minus any
+            negative signals. {hits === 0
+              ? <>No call-sites matched in this file, so the score relies on structural evidence alone.</>
+              : <>{hits} call-site{hits === 1 ? '' : 's'} contributed.</>}
+          </p>
+          <p>
+            <strong>structure only</strong> appears when the pattern has no
+            implementation_template authored yet. The matcher can still see the
+            class&apos;s shape, so confidence may be high — but we can&apos;t verify
+            the pattern is actually <em>used</em>.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ExplainSection({
   patternName, education, definition
 }: {
@@ -241,24 +281,27 @@ function PatternCard(props: CardProps) {
       {expanded && (
         <div className="pattern-card-body">
           {rank && (
-            <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
-              <span title="How sure the matcher is that this class is this pattern">confidence</span>
-              <div className="rank-bar-track">
-                <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
+            <>
+              <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
+                <span title="How sure the matcher is that this class is this pattern">confidence</span>
+                <div className="rank-bar-track">
+                  <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
+                </div>
+                <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
+                {rank.hasImplementationTemplate
+                  ? (
+                    <span title="How well the class is actually used like this pattern, not just shaped like one">
+                      usage match {Math.floor((rank.implementationFit || 0) * 100)}%
+                    </span>
+                  )
+                  : (
+                    <span title="We can see the shape, but no usage examples are catalogued for this pattern yet">
+                      structure only
+                    </span>
+                  )}
               </div>
-              <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
-              {rank.hasImplementationTemplate
-                ? (
-                  <span title="How well the class is actually used like this pattern, not just shaped like one">
-                    usage match {Math.floor((rank.implementationFit || 0) * 100)}%
-                  </span>
-                )
-                : (
-                  <span title="We can see the shape, but no usage examples are catalogued for this pattern yet">
-                    structure only
-                  </span>
-                )}
-            </div>
+              <ScoringExplainer rank={rank} />
+            </>
           )}
           <ExplainSection
             patternName={p.patternName || p.patternId || 'this pattern'}

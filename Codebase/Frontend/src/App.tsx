@@ -53,6 +53,22 @@ export default function App() {
 
   const isLoggedIn = !!(token && user);
 
+  // Reflect the current gate in the URL so /login, /consent, /pretest, and
+  // /studio are visually distinct in the address bar. We use replaceState
+  // (not pushState) so the back button doesn't accumulate gate transitions.
+  // The actual rendered tree still comes from auth state — the URL is purely
+  // informational for now (no client-side router). Admins are redirected to
+  // /admin.html earlier and never hit these routes.
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    const target = isLoggedIn ? '/studio' : '/login';
+    if (!isLoggedIn && path !== '/login') {
+      window.history.replaceState(null, '', '/login');
+    } else if (isLoggedIn && path === '/login') {
+      window.history.replaceState(null, '', target);
+    }
+  }
+
   return (
     <>
       {!isLoggedIn && <LoginOverlay />}
