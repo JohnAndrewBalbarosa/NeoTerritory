@@ -1,7 +1,12 @@
 import express, { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcrypt';
 import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
+
+// Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
+const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
+  || '$2b$10$qnhM98kPsdOqV6/8QpBADeG6aTbjmKph0d1twnLFwuRT7doNvpvP.';
 
 const router = express.Router();
 
@@ -17,7 +22,7 @@ interface AvgRow { a: number | null }
 router.get('/users', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const rows = db.prepare(`
-      SELECT u.id, u.username, u.email, u.role, u.created_at,
+      SELECT u.id, u.username, u.email, u.role, u.created_at, u.last_active,
              COUNT(r.id) AS runCount,
              MAX(r.created_at) AS lastRunAt
       FROM users u
@@ -26,6 +31,13 @@ router.get('/users', (_req: Request, res: Response, next: NextFunction) => {
       ORDER BY runCount DESC, u.username ASC
     `).all();
     res.json({ users: rows });
+  } catch (err) { next(err); }
+});
+
+router.post('/tester-seats/reset', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    db.prepare("UPDATE users SET claimed_at = NULL WHERE username LIKE 'Devcon%'").run();
+    res.json({ ok: true });
   } catch (err) { next(err); }
 });
 
@@ -192,21 +204,44 @@ router.get('/stats/per-user-activity', (_req: Request, res: Response, next: Next
 
 router.get('/logs', (req: Request, res: Response, next: NextFunction) => {
   try {
-    const limit = Math.min(Number(req.query.limit || 100), 500);
-    const userId = req.query.userId ? Number(req.query.userId) : null;
-    const rows = userId
-      ? db.prepare(`
-          SELECT l.*, u.username FROM logs l
-          LEFT JOIN users u ON u.id = l.user_id
-          WHERE l.user_id = ?
-          ORDER BY l.id DESC LIMIT ?
-        `).all(userId, limit)
-      : db.prepare(`
-          SELECT l.*, u.username FROM logs l
-          LEFT JOIN users u ON u.id = l.user_id
-          ORDER BY l.id DESC LIMIT ?
-        `).all(limit);
+    const limit     = Math.min(Number(req.query.limit || 200), 500);
+    const order     = req.query.order === 'asc' ? 'ASC' : 'DESC';
+    const eventType = req.query.event_type ? String(req.query.event_type) : null;
+    const username  = req.query.username   ? `%${String(req.query.username)}%` : null;
+
+    const conditions: string[] = [];
+    const params: unknown[]    = [];
+    if (eventType) { conditions.push('l.event_type = ?'); params.push(eventType); }
+    if (username)  { conditions.push('u.username LIKE ?'); params.push(username); }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    params.push(limit);
+
+    const rows = db.prepare(`
+      SELECT l.id, l.user_id, l.event_type, l.message, l.created_at, u.username
+      FROM logs l
+      LEFT JOIN users u ON u.id = l.user_id
+      ${where}
+      ORDER BY l.id ${order}
+      LIMIT ?
+    `).all(...params);
     res.json({ logs: rows });
+  } catch (err) { next(err); }
+});
+
+router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { password } = req.body as { password?: string };
+    if (!password || password.length > 128) {
+      res.status(400).json({ error: 'password required' });
+      return;
+    }
+    const ok = bcrypt.compareSync(password, LOG_DELETE_HASH);
+    if (!ok) {
+      res.status(403).json({ error: 'Wrong password' });
+      return;
+    }
+    const { changes } = db.prepare('DELETE FROM logs').run();
+    res.json({ ok: true, deleted: changes });
   } catch (err) { next(err); }
 });
 

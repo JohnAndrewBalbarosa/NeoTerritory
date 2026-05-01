@@ -107,9 +107,11 @@ export interface AdminUser {
   runCount?: number;
   lastRunAt?: string;
   created_at?: string;
+  last_active?: string;
 }
 
 export interface AdminLogEntry {
+  id: number;
   created_at: string;
   username?: string;
   event_type: string;

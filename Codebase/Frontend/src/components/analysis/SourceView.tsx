@@ -95,7 +95,7 @@ function buildLineToAnnotations(
     const chosen = linePatternOverrides[lineNo];
     if (chosen) {
       const kept = anns.filter(a => patternFromAnnotation(a) === chosen);
-      filtered.set(lineNo, kept.length ? kept : anns);
+      filtered.set(lineNo, kept);
     } else {
       filtered.set(lineNo, anns);
     }

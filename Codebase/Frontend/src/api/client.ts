@@ -245,8 +245,25 @@ export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
 export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
   return apiFetch<{ reviews: AdminReview[] }>('/api/admin/reviews');
 }
-export async function fetchAdminLogs(limit = 80): Promise<{ logs: AdminLogEntry[] }> {
-  return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?limit=${limit}`);
+export async function fetchAdminLogs(
+  limit = 200,
+  opts?: { eventType?: string; username?: string; order?: 'asc' | 'desc' }
+): Promise<{ logs: AdminLogEntry[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (opts?.eventType) params.set('event_type', opts.eventType);
+  if (opts?.username)  params.set('username',   opts.username);
+  if (opts?.order)     params.set('order',       opts.order);
+  return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?${params}`);
+}
+export async function deleteAdminLogs(password: string): Promise<{ ok: boolean; deleted: number }> {
+  return apiFetch<{ ok: boolean; deleted: number }>('/api/admin/logs', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password })
+  });
+}
+export async function resetTesterSeats(): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>('/api/admin/tester-seats/reset', { method: 'POST' });
 }
 export async function fetchAdminSurveySummary(): Promise<SurveySummary> {
   return apiFetch<SurveySummary>('/api/admin/stats/survey-summary');
