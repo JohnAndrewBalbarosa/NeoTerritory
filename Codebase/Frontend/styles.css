@@ -433,6 +433,17 @@ body.login-active{overflow:hidden;}
 .scoring-explainer-line-chip:hover{background:var(--accent);color:#fff;}
 .scoring-explainer-meta{font-size:11px;color:var(--ink-dim);font-style:italic;}
 .multi-file-list{display:flex;flex-direction:column;gap:14px;margin-bottom:16px;}
+.file-tabs{display:flex;align-items:flex-end;gap:2px;border-bottom:1px solid var(--accent);padding:0 4px;margin-bottom:0;overflow-x:auto;}
+.file-tab{display:inline-flex;align-items:center;gap:6px;padding:7px 10px 7px 12px;border:1px solid var(--border);border-bottom:none;border-radius:8px 8px 0 0;background:var(--surface2);color:var(--ink-soft);cursor:pointer;font:inherit;font-size:12px;font-family:var(--code-font);max-width:240px;white-space:nowrap;flex-shrink:0;transition:background 120ms,color 120ms,border-color 120ms;user-select:none;}
+.file-tab:hover{background:var(--surface);color:var(--ink);}
+.file-tab.is-active{background:var(--surface);color:var(--ink);border-color:var(--accent);position:relative;z-index:1;margin-bottom:-1px;}
+.file-tab-name{overflow:hidden;text-overflow:ellipsis;}
+.file-tab-close{background:transparent;border:none;color:var(--ink-dim);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;border-radius:3px;}
+.file-tab-close:hover{color:var(--red);background:rgba(248,113,113,0.1);}
+.file-tab-add{background:transparent;border:1px dashed var(--border-bright);border-bottom:none;border-radius:8px 8px 0 0;color:var(--accent);cursor:pointer;font-size:16px;font-weight:700;padding:5px 12px;line-height:1;flex-shrink:0;}
+.file-tab-add:hover:not(:disabled){background:var(--accent-soft);border-color:var(--accent);}
+.file-tab-add:disabled{opacity:0.4;cursor:not-allowed;}
+.file-tab-pane{padding:12px 14px;border:1px solid var(--accent);border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);background:var(--surface);display:flex;flex-direction:column;gap:8px;margin-bottom:14px;}
 .file-slot{border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 12px;background:var(--surface);display:flex;flex-direction:column;gap:8px;}
 .file-slot-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .file-slot-eyebrow{font-size:10px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--accent);}

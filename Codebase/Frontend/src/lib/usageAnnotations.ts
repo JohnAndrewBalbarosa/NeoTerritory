@@ -19,17 +19,20 @@ export function synthesizeUsageAnnotations(
   detectedPatterns.forEach(p => {
     if (p.className && p.patternName) classToPatternName.set(p.className, p.patternName);
   });
+  // classResolvedPatterns intentionally NOT consulted here. The resolved
+  // pattern repaints the class's own declaration via SourceView's scope
+  // dominance short-circuit; it must NOT cascade onto usage lines in global
+  // functions (e.g. lines inside int main that reference QueryBuilder). Those
+  // standalone usage lines stay tagged with the structural-matcher verdict
+  // so the user's tag is confined to the class declaration scope only.
+  void classResolvedPatterns;  // kept on the signature for API stability
   const out: Annotation[] = [];
   let id = 1;
   Object.entries(bindings).forEach(([cls, rows]) => {
-    // Only emit usage annotations for classes that the matcher (or the user)
-    // actually tagged with a real pattern. Without this guard, every variable
-    // declared from an untagged class would scatter "Review" badges across
-    // global functions like int main — and those Review chips have no useful
-    // picker options because the source class itself was never classified.
-    const userResolved = classResolvedPatterns && classResolvedPatterns[cls];
-    const detected = classToPatternName.get(cls);
-    const patternName = userResolved || detected;
+    // Only emit usage annotations for classes the matcher actually tagged.
+    // Without this guard, declarations of an untagged class would scatter
+    // "Review" badges across global functions whose picker options are empty.
+    const patternName = classToPatternName.get(cls);
     if (!patternName) return;
     (rows || []).forEach(u => {
       const target = u.varName

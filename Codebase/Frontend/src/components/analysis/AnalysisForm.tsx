@@ -34,7 +34,10 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
     name: filename || 'snippet.cpp',
     text: sourceText || ''
   }]);
+  const [activeSlotId, setActiveSlotId] = useState<string>(() => slots[0]?.id || '');
   const [busy, setBusy] = useState(false);
+
+  const activeSlot = slots.find(s => s.id === activeSlotId) || slots[0];
 
   async function dispatchAnalyze(payloadFiles: FileSlot[]): Promise<void> {
     setBusy(true);
@@ -108,7 +111,9 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   }
 
   function onClear() {
-    setSlots([{ id: newSlotId(), name: 'snippet.cpp', text: '' }]);
+    const fresh = { id: newSlotId(), name: 'snippet.cpp', text: '' };
+    setSlots([fresh]);
+    setActiveSlotId(fresh.id);
     setSourceText('');
     setFilename('snippet.cpp');
     setCurrentRun(null);
@@ -120,11 +125,24 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
       setStatus({ kind: 'error', title: 'File cap', detail: `At most ${MAX_FILES} files per submission.` });
       return;
     }
-    setSlots(prev => [...prev, { id: newSlotId(), name: `file-${prev.length + 1}.cpp`, text: '' }]);
+    const id = newSlotId();
+    setSlots(prev => [...prev, { id, name: `file-${prev.length + 1}.cpp`, text: '' }]);
+    setActiveSlotId(id);
   }
 
   function removeSlot(id: string) {
-    setSlots(prev => prev.length <= 1 ? prev : prev.filter(s => s.id !== id));
+    setSlots(prev => {
+      if (prev.length <= 1) return prev;
+      const next = prev.filter(s => s.id !== id);
+      // If we removed the active tab, select its left neighbour (or the new
+      // first tab) so the editor stays mounted with a real slot behind it.
+      if (id === activeSlotId) {
+        const removedIdx = prev.findIndex(s => s.id === id);
+        const newActive = next[Math.max(0, removedIdx - 1)];
+        if (newActive) setActiveSlotId(newActive.id);
+      }
+      return next;
+    });
   }
 
   function patchSlot(id: string, patch: Partial<FileSlot>) {
@@ -144,57 +162,71 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
 
   return (
     <form id="analysis-form" className="analysis-form" onSubmit={onSubmit}>
-      <div className="multi-file-list">
-        {slots.map((slot, idx) => (
-          <div key={slot.id} className="file-slot" data-idx={idx + 1}>
-            <header className="file-slot-head">
-              <span className="file-slot-eyebrow">File {idx + 1}</span>
-              <input
-                type="text"
-                className="file-slot-name"
-                value={slot.name}
-                maxLength={256}
-                onChange={e => patchSlot(slot.id, { name: e.target.value })}
-                placeholder={`file-${idx + 1}.cpp`}
-                aria-label={`Filename for file ${idx + 1}`}
-              />
-              <input
-                type="file"
-                className="file-slot-picker"
-                accept={ACCEPTED_EXT}
-                onChange={e => onFileInput(slot.id, e.target.files)}
-                aria-label={`Upload file for slot ${idx + 1}`}
-              />
+      <div className="file-tabs" role="tablist" aria-label="Submission files">
+        {slots.map((slot) => {
+          const isActive = slot.id === activeSlotId;
+          return (
+            <div
+              key={slot.id}
+              role="tab"
+              aria-selected={isActive}
+              className={`file-tab ${isActive ? 'is-active' : ''}`}
+              onClick={() => setActiveSlotId(slot.id)}
+            >
+              <span className="file-tab-name" title={slot.name}>{slot.name || 'untitled.cpp'}</span>
               {slots.length > 1 && (
                 <button
                   type="button"
-                  className="ghost-btn file-slot-delete"
-                  onClick={() => removeSlot(slot.id)}
-                  aria-label={`Remove file ${idx + 1}`}
-                  title="Remove this file"
-                >× Remove</button>
+                  className="file-tab-close"
+                  aria-label={`Close ${slot.name}`}
+                  onClick={(e) => { e.stopPropagation(); removeSlot(slot.id); }}
+                >×</button>
               )}
-            </header>
-            <textarea
-              className="file-slot-textarea"
-              value={slot.text}
-              onChange={e => patchSlot(slot.id, { text: e.target.value })}
-              rows={10}
-              placeholder="Paste C++ source here…"
-              aria-label={`Source for file ${idx + 1}`}
-            />
-          </div>
-        ))}
+            </div>
+          );
+        })}
         <button
           type="button"
-          className="ghost-btn multi-file-add"
+          className="file-tab-add"
           onClick={addSlot}
           disabled={slots.length >= MAX_FILES}
+          aria-label="Add file"
           title={slots.length >= MAX_FILES ? `Cap is ${MAX_FILES} files` : 'Add another file'}
-        >
-          + Add file
-        </button>
+        >+</button>
       </div>
+
+      {activeSlot && (
+        <div className="file-tab-pane">
+          <header className="file-slot-head">
+            <span className="file-slot-eyebrow">Filename</span>
+            <input
+              type="text"
+              className="file-slot-name"
+              value={activeSlot.name}
+              maxLength={256}
+              onChange={e => patchSlot(activeSlot.id, { name: e.target.value })}
+              placeholder="snippet.cpp"
+              aria-label="Filename for this tab"
+            />
+            <input
+              type="file"
+              className="file-slot-picker"
+              accept={ACCEPTED_EXT}
+              onChange={e => onFileInput(activeSlot.id, e.target.files)}
+              aria-label="Upload a file into this tab"
+            />
+          </header>
+          <textarea
+            className="file-slot-textarea"
+            value={activeSlot.text}
+            onChange={e => patchSlot(activeSlot.id, { text: e.target.value })}
+            rows={14}
+            placeholder="Paste C++ source here…"
+            aria-label="Source for this tab"
+          />
+        </div>
+      )}
+
       <div className="form-actions">
         <button id="analyze-btn" className="primary-btn" type="submit" disabled={busy}>
           {busy ? 'Running...' : `Run analysis (${slots.filter(s => s.text.trim()).length} file${slots.filter(s => s.text.trim()).length === 1 ? '' : 's'})`}
