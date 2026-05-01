@@ -65,8 +65,22 @@ export default function MainLayout() {
   useAiCommentaryPoll();
   const {
     status, msState, msLabel, user, sessionRanAnalyze, sessionReviewedEnd,
-    token, activeTab, setActiveTab, consentAccepted, pretestSubmitted, setAiStatus
+    token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
+    setAiStatus, aiStatus, aiConfigured
   } = useAppStore();
+
+  const aiChipStatus = !aiConfigured ? 'offline'
+    : aiStatus === 'pending'  ? 'working'
+    : aiStatus === 'failed'   ? 'error'
+    : aiStatus === 'disabled' ? 'offline'
+    : 'ready';
+
+  const aiChipLabel = !aiConfigured  ? 'not configured'
+    : aiStatus === 'pending'  ? 'working…'
+    : aiStatus === 'failed'   ? 'failed'
+    : aiStatus === 'disabled' ? 'disabled'
+    : aiStatus === 'ready'    ? 'done'
+    : 'ready';
   const { signOut } = useAuth();
 
   const [ambiguity, setAmbiguity] = useState<AmbiguityState | null>(null);
@@ -151,6 +165,11 @@ export default function MainLayout() {
             <span className="ms-dot" aria-hidden="true"></span>
             <span className="ms-label">Microservice:</span>
             <strong id="ms-status">{msLabel}</strong>
+          </div>
+          <div id="ai-row" className="ai-row" data-status={aiChipStatus}>
+            <span className="ms-dot" aria-hidden="true"></span>
+            <span className="ms-label">AI:</span>
+            <strong id="ai-status-label">{aiChipLabel}</strong>
           </div>
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>

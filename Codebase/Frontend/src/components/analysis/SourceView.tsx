@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
 import { colorFor, patternFromAnnotation, PatternColor, AMBIGUOUS_COLOR, blendColor } from '../../lib/patterns';
+import { useAppStore } from '../../store/appState';
 import LinePopover from './LinePopover';
 
 interface SourceViewProps {
@@ -31,7 +32,8 @@ interface ClassDominance {
 interface RenderedLine {
   lineNo: number;
   text: string;
-  anns: Annotation[];
+  anns: Annotation[];     // overrides applied — drives color computation
+  rawAnns: Annotation[];  // original, unfiltered — drives popover display
   scope: ClassScope | null;
   isScopeStart: boolean;
 }
@@ -70,20 +72,36 @@ function buildLineToScope(scopes: ClassScope[], lineCount: number): Map<number, 
   return out;
 }
 
-function buildLineToAnnotations(annotations: Annotation[]): Map<number, Annotation[]> {
-  const map = new Map<number, Annotation[]>();
+function buildLineToAnnotations(
+  annotations: Annotation[],
+  linePatternOverrides: Record<number, string>
+): { raw: Map<number, Annotation[]>; filtered: Map<number, Annotation[]> } {
+  const raw = new Map<number, Annotation[]>();
   annotations.forEach(a => {
     if (a.scope === 'file') return;
     if (a.line == null) return;
     const start = a.line;
     const end   = a.lineEnd ?? a.line;
     for (let l = start; l <= end; l++) {
-      const list = map.get(l);
+      const list = raw.get(l);
       if (list) list.push(a);
-      else map.set(l, [a]);
+      else raw.set(l, [a]);
     }
   });
-  return map;
+
+  // Apply user overrides: for resolved lines keep only the chosen pattern.
+  const filtered = new Map<number, Annotation[]>();
+  raw.forEach((anns, lineNo) => {
+    const chosen = linePatternOverrides[lineNo];
+    if (chosen) {
+      const kept = anns.filter(a => patternFromAnnotation(a) === chosen);
+      filtered.set(lineNo, kept.length ? kept : anns);
+    } else {
+      filtered.set(lineNo, anns);
+    }
+  });
+
+  return { raw, filtered };
 }
 
 // For a given scope, determine which pattern "owns" the most annotated lines.
@@ -155,16 +173,17 @@ function styleFor(
 function buildRows(
   sourceText: string,
   annotations: Annotation[],
-  detectedPatterns: DetectedPatternFull[]
+  detectedPatterns: DetectedPatternFull[],
+  linePatternOverrides: Record<number, string>
 ): { rows: RenderedLine[]; scopeDominanceMap: Map<ClassScope, ClassDominance> } {
   const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
   const scopes = buildClassScopes(detectedPatterns);
   const lineToScope = buildLineToScope(scopes, lines.length);
-  const lineToAnns  = buildLineToAnnotations(annotations);
+  const { raw, filtered } = buildLineToAnnotations(annotations, linePatternOverrides);
 
   const scopeDominanceMap = new Map<ClassScope, ClassDominance>();
   for (const scope of scopes) {
-    scopeDominanceMap.set(scope, computeClassDominance(scope, lineToAnns));
+    scopeDominanceMap.set(scope, computeClassDominance(scope, filtered));
   }
 
   const rows: RenderedLine[] = lines.map((text, idx) => {
@@ -173,7 +192,8 @@ function buildRows(
     return {
       lineNo,
       text,
-      anns:         lineToAnns.get(lineNo) || [],
+      anns:         filtered.get(lineNo) || [],
+      rawAnns:      raw.get(lineNo) || [],
       scope,
       isScopeStart: !!scope && scope.min === lineNo
     };
@@ -183,44 +203,57 @@ function buildRows(
 }
 
 export default function SourceView({ sourceText, annotations, detectedPatterns, onLineClick }: SourceViewProps) {
+  const { linePatternOverrides, setLinePatternOverride, clearLinePatternOverride } = useAppStore();
+
   const { rows, scopeDominanceMap } = useMemo(
-    () => buildRows(sourceText, annotations, detectedPatterns),
-    [sourceText, annotations, detectedPatterns]
+    () => buildRows(sourceText, annotations, detectedPatterns, linePatternOverrides),
+    [sourceText, annotations, detectedPatterns, linePatternOverrides]
   );
   const width = String(rows.length).length;
   const [popover, setPopover] = useState<PopoverState | null>(null);
 
   function handleLineClick(row: RenderedLine, ev: React.MouseEvent<HTMLSpanElement>): void {
-    if (!row.anns.length) return;
+    if (!row.rawAnns.length) return;
     const rect = ev.currentTarget.getBoundingClientRect();
     if (popover && popover.line === row.lineNo) { setPopover(null); return; }
-    setPopover({ line: row.lineNo, annotations: row.anns, anchorRect: rect });
-    if (onLineClick) onLineClick(row.anns[0].id);
+    // Show all (raw) annotations in the popover so the user can pick or undo.
+    setPopover({ line: row.lineNo, annotations: row.rawAnns, anchorRect: rect });
+    if (onLineClick) onLineClick(row.rawAnns[0].id);
+  }
+
+  function handleResolve(line: number, patternKey: string): void {
+    setLinePatternOverride(line, patternKey);
+    setPopover(null);
+  }
+
+  function handleUnresolve(line: number): void {
+    clearLinePatternOverride(line);
+    setPopover(null);
   }
 
   return (
     <>
       <div id="source-view" className="source-view">
         {rows.map(row => {
-          const num          = String(row.lineNo).padStart(width, ' ');
-          const hasAnnotation = row.anns.length > 0;
-          const dominance    = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
-          const blendRatio   = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
-          const baseColor    = dominance?.color ?? null;
+          const num           = String(row.lineNo).padStart(width, ' ');
+          const hasAnnotation = row.rawAnns.length > 0;
+          const dominance     = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
+          const blendRatio    = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
+          const baseColor     = dominance?.color ?? null;
           // Badge is always solid — never blended — so the class chip reads clearly.
-          const badgeColor   = dominance?.color ?? null;
+          const badgeColor    = dominance?.color ?? null;
 
           const distinctPatternCount = hasAnnotation
-            ? new Set(row.anns.map(a => patternFromAnnotation(a))).size
+            ? new Set(row.rawAnns.map(a => patternFromAnnotation(a))).size
             : 0;
           const isAmbiguousLine = blendRatio > 0 && hasAnnotation;
 
           const classNames = [
             'src-line',
-            hasAnnotation   ? 'has-annotation' : '',
-            hasAnnotation   ? 'has-comment'    : '',
-            isAmbiguousLine ? 'has-ambiguous'  : '',
-            row.isScopeStart ? 'class-scope-start' : ''
+            hasAnnotation    ? 'has-annotation'    : '',
+            hasAnnotation    ? 'has-comment'        : '',
+            isAmbiguousLine  ? 'has-ambiguous'      : '',
+            row.isScopeStart ? 'class-scope-start'  : ''
           ].filter(Boolean).join(' ');
 
           const style = styleFor(baseColor, blendRatio, badgeColor);
@@ -250,6 +283,9 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           line={popover.line}
           annotations={popover.annotations}
           anchorRect={popover.anchorRect}
+          resolvedPattern={linePatternOverrides[popover.line]}
+          onResolve={handleResolve}
+          onUnresolve={handleUnresolve}
           onClose={() => setPopover(null)}
         />
       )}

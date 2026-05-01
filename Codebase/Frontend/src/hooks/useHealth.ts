@@ -5,7 +5,7 @@ import { fetchHealth } from '../api/client';
 const POLL_INTERVAL_MS = 15000;
 
 export function useHealth() {
-  const { setStatus, setMsStatus } = useAppStore();
+  const { setStatus, setMsStatus, setAiConfigured } = useAppStore();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function poll() {
@@ -18,6 +18,7 @@ export function useHealth() {
           const reason = !ms.binaryFound ? 'binary missing' : !ms.catalogFound ? 'catalog missing' : 'unreachable';
           setMsStatus('offline', `offline (${reason})`);
         }
+        setAiConfigured(h.aiProviderConfigured);
         setStatus({
           kind: 'ok',
           title: 'API ok',
