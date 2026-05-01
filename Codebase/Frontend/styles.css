@@ -717,13 +717,16 @@ body.login-active {
 /* Source view: dot indicator (no per-line backgrounds). */
 .src-line {
   display: flex; align-items: center; gap: 8px; padding: 2px 8px;
-  background: var(--scope-bg, transparent);
-  border-left: 3px solid var(--ann-border, transparent);
+  background-color: var(--scope-bg, transparent);
+  border-left: 4px solid var(--ann-border, transparent);
 }
 .src-line.has-comment { cursor: pointer; }
-.src-line.has-comment:hover { background: color-mix(in oklch, var(--scope-bg, transparent), black 4%); }
+.src-line.has-comment:hover {
+  background-color: var(--scope-bg-hover, var(--scope-bg, transparent));
+}
 .src-line.has-annotation {
-  background: color-mix(in oklch, var(--scope-bg, transparent), var(--ann-border) 8%);
+  background-color: var(--scope-bg, transparent);
+  box-shadow: inset 4px 0 0 0 var(--ann-border, transparent);
 }
 .src-line.class-scope-start::before {
   content: attr(data-class-name);
@@ -733,7 +736,8 @@ body.login-active {
   border-radius: 3px;
   font: 500 10px/1.4 ui-monospace, SFMono-Regular, monospace;
   color: var(--ann-border, var(--text-dim, #475569));
-  background: color-mix(in oklch, var(--ann-border, transparent), white 70%);
+  background-color: var(--scope-bg, transparent);
+  border: 1px solid var(--ann-border, transparent);
 }
 .src-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; opacity: 0.6; background: var(--ann-border, transparent); }
 .src-dot-active { opacity: 1; box-shadow: 0 0 0 2px rgba(255,255,255,0.6); }

@@ -230,7 +230,12 @@ export function analyzeClassDeclaration(input: { sourceName: string; code: strin
     ], sourceName);
   }
 
-  if (exec.exitCode !== 0) {
+  // Read the report first — the microservice writes it before exiting,
+  // and on some platforms it exits with a non-zero code (SIGSEGV / 139)
+  // after a successful analysis. Prefer a valid report over a clean exit.
+  const report = readReport(outputDir);
+
+  if (exec.exitCode !== 0 && !report) {
     return rejectWithDiagnostic('subtree', [
       {
         code: 'microservice_exit_nonzero',
@@ -239,7 +244,6 @@ export function analyzeClassDeclaration(input: { sourceName: string; code: strin
     ], sourceName);
   }
 
-  const report = readReport(outputDir);
   if (!report) {
     return rejectWithDiagnostic('output', [
       { code: 'report_missing', message: 'Microservice did not produce a report.json.' }

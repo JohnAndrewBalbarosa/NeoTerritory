@@ -137,3 +137,6 @@ Codebase/Backend/keys/jwt-private.pem
 # Test result artifacts (per-user analysis run outputs)
 /test/
 /Codebase/test/
+
+# Local playwright scratch (developer-only, never commit)
+/playwright-scratch/
