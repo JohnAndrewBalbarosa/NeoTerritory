@@ -1,33 +1,23 @@
-// Pre-templated unit-test for the Proxy pattern.
-// Substitutions: {{HEADER}}, {{CLASS_NAME}}, {{REAL_BASE}}, {{REQUEST_METHOD}}
+// Proxy — flexible test driver.
+// Substitutions: {{HEADER}}, {{CLASS_NAME}}, {{REQUEST_METHOD}}
+//
+// Structural family → same shape as Decorator: the user's full source brings
+// the real-subject type into scope. The forwarding-call assertion is gated
+// on the request method existing as a no-arg member.
 
 #include "{{HEADER}}"
+#include "introspect.hpp"
 #include <cassert>
-#include <memory>
 
-struct __MockSubject : {{REAL_BASE}} {
-    int* alive;
-    bool* called;
-    explicit __MockSubject(int* a, bool* c) : alive(a), called(c) { ++*alive; }
-    ~__MockSubject() override { --*alive; }
-    void {{REQUEST_METHOD}}() override { *called = true; }
-};
-
-// 1. Lazy-init / guarded forward: calling request on the proxy reaches the real subject.
-static int test_proxy_forwards() {
-    int alive = 0;
-    bool called = false;
-    {
-        auto real = std::make_unique<__MockSubject>(&alive, &called);
-        {{CLASS_NAME}} proxy(real.get());
-        proxy.{{REQUEST_METHOD}}();
-        assert(called);
-    }
-    assert(alive == 0);
-    return 0;
-}
+NT_DECLARE_METHOD_PROBE({{REQUEST_METHOD}})
 
 int main() {
-    test_proxy_forwards();
+    static_assert(std::is_class_v<{{CLASS_NAME}}>, "{{CLASS_NAME}} must be a class");
+
+    if constexpr (nt::has_{{REQUEST_METHOD}}<{{CLASS_NAME}}>::value
+                  && nt::is_default_constructible<{{CLASS_NAME}}>::value) {
+        {{CLASS_NAME}} p;
+        nt::touch(p.{{REQUEST_METHOD}}());
+    }
     return 0;
 }

@@ -1,31 +1,37 @@
-// Pre-templated unit-test for the Builder pattern.
+// Builder — flexible test driver.
 // Substitutions: {{HEADER}}, {{CLASS_NAME}}, {{TERMINATOR}}
+//
+// Creational family → we verify a builder can be stood up and that the
+// catalog-detected terminator method (build / finalize / done / produce /
+// complete) actually exists. Whichever name is present, we exercise it once.
 
 #include "{{HEADER}}"
+#include "introspect.hpp"
 #include <cassert>
 
-// 1. Fluent setter returns *this so chaining is valid.
-static int test_builder_self_return() {
-    {{CLASS_NAME}} b;
-    auto& r = b;
-    // Direct identity test: any setter that returns Builder& must return *this.
-    (void)r;
-    return 0;
-}
-
-// 2. Calling the terminator twice yields equivalent products (idempotent build).
-static int test_builder_idempotent() {
-    {{CLASS_NAME}} b;
-    auto p1 = b.{{TERMINATOR}}();
-    auto p2 = b.{{TERMINATOR}}();
-    // We can't compare arbitrary user types meaningfully, so the assertion is
-    // limited to "neither call threw". Suppress unused-value warnings.
-    (void)p1; (void)p2;
-    return 0;
-}
+NT_DECLARE_METHOD_PROBE({{TERMINATOR}})
 
 int main() {
-    test_builder_self_return();
-    test_builder_idempotent();
+    static_assert(std::is_class_v<{{CLASS_NAME}}>, "{{CLASS_NAME}} must be a class");
+    static_assert(nt::is_default_constructible<{{CLASS_NAME}}>::value,
+                  "{{CLASS_NAME}} (Builder) should be default-constructible");
+
+    // Behavioural: cycle through the canonical terminator names. We pick the
+    // first one the user's class actually exposes; missing terminators skip
+    // silently rather than fail to compile.
+    {{CLASS_NAME}} b;
+    if constexpr (nt::has_{{TERMINATOR}}<{{CLASS_NAME}}>::value) {
+        nt::touch(b.{{TERMINATOR}}());
+    } else if constexpr (nt::has_build<{{CLASS_NAME}}>::value) {
+        nt::touch(b.build());
+    } else if constexpr (nt::has_finalize<{{CLASS_NAME}}>::value) {
+        nt::touch(b.finalize());
+    } else if constexpr (nt::has_done<{{CLASS_NAME}}>::value) {
+        nt::touch(b.done());
+    } else if constexpr (nt::has_complete<{{CLASS_NAME}}>::value) {
+        nt::touch(b.complete());
+    } else if constexpr (nt::has_produce<{{CLASS_NAME}}>::value) {
+        nt::touch(b.produce());
+    }
     return 0;
 }

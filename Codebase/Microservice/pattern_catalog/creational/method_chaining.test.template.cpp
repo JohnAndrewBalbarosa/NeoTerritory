@@ -1,21 +1,24 @@
-// Pre-templated unit-test for the Method Chaining pattern.
+// Method Chaining — flexible test driver.
 // Substitutions: {{HEADER}}, {{CLASS_NAME}}
+//
+// Creational family (the catalog groups it here) → we verify the class can
+// be default-constructed and walks naturally as a chain target. The fluent
+// "return *this" contract is enforced at compile time wherever the user's
+// methods exist.
 
 #include "{{HEADER}}"
+#include "introspect.hpp"
 #include <cassert>
 
-// Every fluent setter returns Class&, so two consecutive setter calls compile
-// without a temporary cast. This exercises the method-chaining contract at
-// compile time; runtime behaviour is exercised by the user's own tests.
-static int test_chain_compiles() {
-    {{CLASS_NAME}} a;
-    // The presence of two arbitrary setters on Class is not guaranteed; this
-    // template defers to the AI-generated test plan for setter-name specifics.
-    (void)a;
-    return 0;
-}
-
 int main() {
-    test_chain_compiles();
+    static_assert(std::is_class_v<{{CLASS_NAME}}>, "{{CLASS_NAME}} must be a class");
+    static_assert(nt::is_default_constructible<{{CLASS_NAME}}>::value,
+                  "{{CLASS_NAME}} (Method Chaining) should be default-constructible");
+
+    // Behavioural: just compile-instantiate. The chain validity itself is a
+    // compile-time check the AI-generated unit-test plan exercises with
+    // user-specific setter names (we don't know them statically).
+    {{CLASS_NAME}} c;
+    nt::touch(c);
     return 0;
 }

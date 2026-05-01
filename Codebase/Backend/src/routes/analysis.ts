@@ -1104,7 +1104,10 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
   return (p.unitTestTargets || [])[0]?.function_name;
 }
 
-async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<TestResult[]> {
+async function dispatchPatternTests(
+  patterns: DetectedPatternResult[],
+  fullSource: string
+): Promise<TestResult[]> {
   const results: TestResult[] = [];
   for (const p of patterns) {
     if (!p.className || !p.classText) continue;
@@ -1115,6 +1118,10 @@ async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<
       patternName: p.patternName,
       className: p.className,
       classText: p.classText,
+      // Bundle the entire submission's source so the driver compiles against
+      // base classes, forward declarations, and stdlib headers the per-class
+      // snippet doesn't carry.
+      fullSource,
       forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
       factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
       terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
@@ -1132,7 +1139,8 @@ async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<
 async function handleRunTests(
   req: Request,
   res: Response,
-  patterns: DetectedPatternResult[]
+  patterns: DetectedPatternResult[],
+  fullSource: string
 ): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -1156,7 +1164,7 @@ async function handleRunTests(
     });
     return;
   }
-  const results = await dispatchPatternTests(patterns);
+  const results = await dispatchPatternTests(patterns, fullSource);
   res.json({
     results,
     rateLimit: {
@@ -1185,8 +1193,16 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    const analysis = JSON.parse(row.analysis_json) as { detectedPatterns?: DetectedPatternResult[] };
-    await handleRunTests(req, res, analysis.detectedPatterns || []);
+    const analysis = JSON.parse(row.analysis_json) as {
+      detectedPatterns?: DetectedPatternResult[];
+      files?: Array<{ name: string; sourceText: string }>;
+    };
+    // Saved-run full source = saved files joined when multi-file, else the
+    // legacy single source_text column.
+    const fullSource = (analysis.files && analysis.files.length > 0)
+      ? analysis.files.map(f => f.sourceText).join('\n\n')
+      : (row.source_text || '');
+    await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource);
   } catch (err) {
     next(err);
   }
@@ -1210,8 +1226,15 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
       res.status(403).json({ error: 'Forbidden' });
       return;
     }
-    const patterns = (pending.analysis as { detectedPatterns?: DetectedPatternResult[] }).detectedPatterns || [];
-    await handleRunTests(req, res, patterns);
+    const pendingAnalysis = pending.analysis as {
+      detectedPatterns?: DetectedPatternResult[];
+      files?: Array<{ name: string; sourceText: string }>;
+    };
+    const patterns = pendingAnalysis.detectedPatterns || [];
+    const fullSource = (pendingAnalysis.files && pendingAnalysis.files.length > 0)
+      ? pendingAnalysis.files.map(f => f.sourceText).join('\n\n')
+      : (pending.sourceText || '');
+    await handleRunTests(req, res, patterns, fullSource);
   } catch (err) {
     next(err);
   }

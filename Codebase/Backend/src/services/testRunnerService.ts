@@ -148,6 +148,10 @@ interface RunInputs {
   patternName: string;
   className: string;
   classText: string;
+  // Full source bundle (all files joined) so the driver compiles even when
+  // the targeted class depends on base classes / forward declarations / std
+  // headers that don't appear inside its own classText snippet.
+  fullSource?: string;
   forwardMethod?: string;
   factoryFn?: string;
   terminator?: string;
@@ -158,13 +162,61 @@ interface RunInputs {
   targetMethod?: string;
 }
 
-// Stub driver for the compile_run phase. Includes the user's class so any
-// header-level error surfaces, then exits cleanly. Kept tiny on purpose so a
-// pass means "the user's class is at least syntactically and semantically
-// reachable", not "the test passed".
+// Generous prelude — every common header users tend to assume is in scope.
+// Prepended to user_class.h before the user's source so missing #include
+// directives (very common when classText is a snippet, not a full file)
+// don't break compilation. Adding extra headers is cheap.
+const STANDARD_INCLUDES = `// --- NeoTerritory test runner: standard prelude ---
+#include <cassert>
+#include <cstdint>
+#include <cstddef>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
+#include <iostream>
+#include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
+#include <type_traits>
+#include <unordered_map>
+#include <unordered_set>
+#include <utility>
+#include <vector>
+// --- end prelude ---
+`;
+
+// The user's source may declare its own `int main(...)`. We rename it via
+// macro before including so it doesn't collide with the driver's main, then
+// undefine the macro so the driver's main keeps the real symbol.
+const MAIN_RENAME_OPEN = '#define main __neoterritory_user_main_disabled__\n';
+const MAIN_RENAME_CLOSE = '#undef main\n';
+
+function buildUserBundle(input: RunInputs): string {
+  const body = (input.fullSource && input.fullSource.trim().length > 0)
+    ? input.fullSource
+    : input.classText;
+  return `${STANDARD_INCLUDES}${MAIN_RENAME_OPEN}${body}\n${MAIN_RENAME_CLOSE}`;
+}
+
+// Stub driver for the compile_run phase. Includes the user's full source so
+// header-level errors surface; the bundle handles standard headers and
+// renames any `int main` the user submitted so it doesn't collide with ours.
 const COMPILE_RUN_DRIVER = `#include "user_class.h"
 int main() { return 0; }
 `;
+
+// Path to the introspection helper bundled with the catalog. We copy it into
+// each run dir so `#include "introspect.hpp"` from a template resolves.
+function introspectHeaderPath(): string | null {
+  const root = process.env.NEOTERRITORY_CATALOG
+    || path.join(__dirname, '..', '..', '..', 'Microservice', 'pattern_catalog');
+  const candidate = path.join(root, '_runtime', 'introspect.hpp');
+  return fs.existsSync(candidate) ? candidate : null;
+}
 
 function fillTemplate(tpl: string, input: RunInputs): string {
   return tpl
@@ -207,7 +259,13 @@ async function runPhase(
   // isolates phase 1 from phase 2 (so phase 2 cannot reuse phase 1's binary).
   const runDir = fs.mkdtempSync(path.join(os.tmpdir(), `nt-${phase}-`));
   try {
-    fs.writeFileSync(path.join(runDir, 'user_class.h'), input.classText, 'utf8');
+    fs.writeFileSync(path.join(runDir, 'user_class.h'), buildUserBundle(input), 'utf8');
+    // Drop the introspection middleman next to user_class.h. Templates
+    // `#include "introspect.hpp"` to use the nt::has_*<T> probes.
+    const introspect = introspectHeaderPath();
+    if (introspect) {
+      fs.copyFileSync(introspect, path.join(runDir, 'introspect.hpp'));
+    }
     fs.writeFileSync(path.join(runDir, 'driver.cpp'), phaseInputs.driverSource, 'utf8');
 
     const sandboxCmd = (process.env.TEST_RUNNER_SANDBOX || '')
