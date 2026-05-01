@@ -6,6 +6,9 @@ interface LinePopoverProps {
   line: number;
   annotations: Annotation[];
   anchorRect: DOMRect | null;
+  resolvedPattern?: string;
+  onResolve?: (line: number, patternKey: string) => void;
+  onUnresolve?: (line: number) => void;
   onClose: () => void;
 }
 
@@ -51,10 +54,23 @@ function AnnotationCard({ annotation: a }: CardProps): JSX.Element {
 
 interface RivalChipProps {
   patternKey: string;
+  onClick?: () => void;
 }
 
-function RivalChip({ patternKey }: RivalChipProps): JSX.Element {
+function RivalChip({ patternKey, onClick }: RivalChipProps): JSX.Element {
   const c = colorFor(patternKey);
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className="src-popover-rival src-popover-rival--btn"
+        style={{ borderColor: c.border, color: c.text, background: c.bg }}
+        onClick={onClick}
+      >
+        {patternKey}
+      </button>
+    );
+  }
   return (
     <span
       className="src-popover-rival"
@@ -65,7 +81,7 @@ function RivalChip({ patternKey }: RivalChipProps): JSX.Element {
   );
 }
 
-export default function LinePopover({ line, annotations, anchorRect, onClose }: LinePopoverProps): JSX.Element | null {
+export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -116,11 +132,30 @@ export default function LinePopover({ line, annotations, anchorRect, onClose }: 
       >
         ×
       </button>
-      {ambiguous && (
+      {resolvedPattern ? (
+        <div className="src-popover-ambiguous-badge src-popover-ambiguous-badge--resolved">
+          {(() => { const c = colorFor(resolvedPattern); return (
+            <span className="src-popover-rival" style={{ borderColor: c.border, color: c.text, background: c.bg }}>
+              {resolvedPattern}
+            </span>
+          ); })()}
+          {onUnresolve && (
+            <button type="button" className="src-popover-undo-btn" onClick={() => onUnresolve(line)}>
+              Undo
+            </button>
+          )}
+        </div>
+      ) : ambiguous && (
         <div className="src-popover-ambiguous-badge">
           {distinctPatterns.length} possible patterns at this line — pick the one that matches:
           <div className="src-popover-rivals">
-            {distinctPatterns.map(p => <RivalChip key={p} patternKey={p} />)}
+            {distinctPatterns.map(p => (
+              <RivalChip
+                key={p}
+                patternKey={p}
+                onClick={onResolve ? () => onResolve(line, p) : undefined}
+              />
+            ))}
           </div>
         </div>
       )}
