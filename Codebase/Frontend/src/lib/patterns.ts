@@ -83,6 +83,42 @@ export const USAGE_KIND_LABEL: Record<string, string> = {
   new_ctor:       'new'
 };
 
+// Neutral grey used when a class scope has tied or no dominant pattern.
+// rgba so blendColor() can interpolate without parsing oklch.
+export const AMBIGUOUS_COLOR: PatternColor = {
+  bg:     'rgba(100, 116, 139, 0.10)',
+  border: 'rgba(100, 116, 139, 1)',
+  text:   'rgba(71, 85, 105, 1)',
+};
+
+function parseRgba(s: string): [number, number, number, number] {
+  const m = s.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s\/]+([\d.]+))?\s*\)/);
+  if (!m) return [100, 116, 139, 0.15];
+  return [+m[1], +m[2], +m[3], m[4] != null ? +m[4] : 1];
+}
+
+function blendRgbaStr(a: string, b: string, t: number): string {
+  const [r1, g1, b1, a1] = parseRgba(a);
+  const [r2, g2, b2, a2] = parseRgba(b);
+  const r = Math.round(r1 + (r2 - r1) * t);
+  const g = Math.round(g1 + (g2 - g1) * t);
+  const bl = Math.round(b1 + (b2 - b1) * t);
+  const alpha = +(a1 + (a2 - a1) * t).toFixed(3);
+  return `rgba(${r}, ${g}, ${bl}, ${alpha})`;
+}
+
+// Linearly interpolate between two PatternColors.
+// t=0 → color a, t=1 → color b (AMBIGUOUS_COLOR in practice).
+export function blendColor(a: PatternColor, b: PatternColor, t: number): PatternColor {
+  if (t <= 0) return a;
+  if (t >= 1) return b;
+  return {
+    bg:     blendRgbaStr(a.bg, b.bg, t),
+    border: blendRgbaStr(a.border, b.border, t),
+    text:   blendRgbaStr(a.text, b.text, t),
+  };
+}
+
 export function fmtDate(value: string | undefined | null): string {
   if (!value) return '—';
   const d = new Date(String(value).replace(' ', 'T') + 'Z');

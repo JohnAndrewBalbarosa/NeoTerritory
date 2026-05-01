@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
-import { colorFor, patternFromAnnotation, PatternColor } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, PatternColor, AMBIGUOUS_COLOR, blendColor } from '../../lib/patterns';
 import LinePopover from './LinePopover';
 
 interface SourceViewProps {
@@ -21,6 +21,11 @@ interface ClassScope {
   patternKey: string;
   min: number;
   max: number;
+}
+
+interface ClassDominance {
+  dominantKey: string | null;  // null = tied → whole scope grey
+  color: PatternColor;         // solid dominant color, or AMBIGUOUS_COLOR if tied
 }
 
 interface RenderedLine {
@@ -45,12 +50,7 @@ function buildClassScopes(detectedPatterns: DetectedPatternFull[]): ClassScope[]
       if (t.line > max) max = t.line;
     });
     if (!Number.isFinite(min) || !Number.isFinite(max)) return;
-    scopes.push({
-      className:  p.className,
-      patternKey: p.patternName || 'Review',
-      min,
-      max
-    });
+    scopes.push({ className: p.className, patternKey: p.patternName || 'Review', min, max });
   });
   return scopes;
 }
@@ -63,10 +63,7 @@ function buildLineToScope(scopes: ClassScope[], lineCount: number): Map<number, 
     for (const s of scopes) {
       if (line < s.min || line > s.max) continue;
       const size = s.max - s.min;
-      if (size < bestSize) {
-        best = s;
-        bestSize = size;
-      }
+      if (size < bestSize) { best = s; bestSize = size; }
     }
     if (best) out.set(line, best);
   }
@@ -89,61 +86,104 @@ function buildLineToAnnotations(annotations: Annotation[]): Map<number, Annotati
   return map;
 }
 
+// For a given scope, determine which pattern "owns" the most annotated lines.
+// Ties (two patterns with equal coverage) → no dominant, whole scope is grey.
+function computeClassDominance(
+  scope: ClassScope,
+  lineToAnnotations: Map<number, Annotation[]>
+): ClassDominance {
+  const patternLineCounts = new Map<string, number>();
+  for (let line = scope.min; line <= scope.max; line++) {
+    const anns = lineToAnnotations.get(line) || [];
+    const seenKeys = new Set<string>();
+    for (const a of anns) {
+      const k = patternFromAnnotation(a);
+      if (!seenKeys.has(k)) {
+        seenKeys.add(k);
+        patternLineCounts.set(k, (patternLineCounts.get(k) || 0) + 1);
+      }
+    }
+  }
+  if (patternLineCounts.size === 0) {
+    return { dominantKey: scope.patternKey, color: colorFor(scope.patternKey) };
+  }
+  const maxCount = Math.max(...patternLineCounts.values());
+  const winners = [...patternLineCounts.entries()]
+    .filter(([, c]) => c === maxCount)
+    .map(([k]) => k);
+  if (winners.length === 1) {
+    return { dominantKey: winners[0], color: colorFor(winners[0]) };
+  }
+  return { dominantKey: null, color: AMBIGUOUS_COLOR };
+}
+
+// Blend ratio for a single line: 0 = solid dominant, 1 = full grey.
+// Scales with how many annotations on this line belong to non-dominant patterns.
+function computeLineBlendRatio(lineAnns: Annotation[], dominantKey: string | null): number {
+  if (dominantKey === null) return 1;
+  if (lineAnns.length === 0) return 0;
+  const dominantCount = lineAnns.filter(a => patternFromAnnotation(a) === dominantKey).length;
+  return (lineAnns.length - dominantCount) / lineAnns.length;
+}
+
+interface LineStyle extends React.CSSProperties {
+  '--scope-bg'?:    string;
+  '--ann-border'?:  string;
+  '--badge-color'?: string;
+  '--badge-bg'?:    string;
+}
+
+function styleFor(
+  baseColor: PatternColor | null,
+  blendRatio: number,
+  badgeColor: PatternColor | null
+): LineStyle {
+  const style: LineStyle = {};
+  if (baseColor) {
+    const effective = blendColor(baseColor, AMBIGUOUS_COLOR, blendRatio);
+    style['--scope-bg']   = effective.bg;
+    style['--ann-border'] = effective.border;
+  }
+  // Badge is always solid (dominant color, or AMBIGUOUS_COLOR for tied scope).
+  if (badgeColor) {
+    style['--badge-color'] = badgeColor.border;
+    style['--badge-bg']    = badgeColor.bg;
+  }
+  return style;
+}
+
 function buildRows(
   sourceText: string,
   annotations: Annotation[],
   detectedPatterns: DetectedPatternFull[]
-): { rows: RenderedLine[]; lineToScope: Map<number, ClassScope> } {
+): { rows: RenderedLine[]; scopeDominanceMap: Map<ClassScope, ClassDominance> } {
   const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
   const scopes = buildClassScopes(detectedPatterns);
   const lineToScope = buildLineToScope(scopes, lines.length);
-  const lineToAnns = buildLineToAnnotations(annotations);
+  const lineToAnns  = buildLineToAnnotations(annotations);
+
+  const scopeDominanceMap = new Map<ClassScope, ClassDominance>();
+  for (const scope of scopes) {
+    scopeDominanceMap.set(scope, computeClassDominance(scope, lineToAnns));
+  }
 
   const rows: RenderedLine[] = lines.map((text, idx) => {
     const lineNo = idx + 1;
-    const scope = lineToScope.get(lineNo) || null;
-    const isScopeStart = !!scope && scope.min === lineNo;
+    const scope  = lineToScope.get(lineNo) || null;
     return {
       lineNo,
       text,
-      anns: lineToAnns.get(lineNo) || [],
+      anns:         lineToAnns.get(lineNo) || [],
       scope,
-      isScopeStart
+      isScopeStart: !!scope && scope.min === lineNo
     };
   });
-  return { rows, lineToScope };
-}
 
-interface LineStyle extends React.CSSProperties {
-  '--scope-bg'?: string;
-  '--ann-border'?: string;
-}
-
-// Neutral grey used when multiple distinct patterns claim the same line.
-// We deliberately drop the per-pattern color so the user reads the line
-// as "ambiguous — pick one in the popover" instead of being misled by
-// whichever pattern happened to be first in the array.
-const AMBIGUOUS_COLOR: PatternColor = {
-  bg:       'oklch(75% 0 0 / 0.10)',
-  border:   'oklch(60% 0 0)',
-  text:     'oklch(45% 0 0)'
-};
-
-function styleFor(
-  scopeColor: PatternColor | null,
-  annColor: PatternColor | null,
-  ambiguous: boolean
-): LineStyle {
-  const style: LineStyle = {};
-  const effectiveScope = ambiguous ? AMBIGUOUS_COLOR : scopeColor;
-  const effectiveAnn   = ambiguous ? AMBIGUOUS_COLOR : annColor;
-  if (effectiveScope) style['--scope-bg'] = effectiveScope.bg;
-  if (effectiveAnn) style['--ann-border'] = effectiveAnn.border;
-  return style;
+  return { rows, scopeDominanceMap };
 }
 
 export default function SourceView({ sourceText, annotations, detectedPatterns, onLineClick }: SourceViewProps) {
-  const { rows } = useMemo(
+  const { rows, scopeDominanceMap } = useMemo(
     () => buildRows(sourceText, annotations, detectedPatterns),
     [sourceText, annotations, detectedPatterns]
   );
@@ -153,10 +193,7 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   function handleLineClick(row: RenderedLine, ev: React.MouseEvent<HTMLSpanElement>): void {
     if (!row.anns.length) return;
     const rect = ev.currentTarget.getBoundingClientRect();
-    if (popover && popover.line === row.lineNo) {
-      setPopover(null);
-      return;
-    }
+    if (popover && popover.line === row.lineNo) { setPopover(null); return; }
     setPopover({ line: row.lineNo, annotations: row.anns, anchorRect: rect });
     if (onLineClick) onLineClick(row.anns[0].id);
   }
@@ -165,23 +202,29 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
     <>
       <div id="source-view" className="source-view">
         {rows.map(row => {
-          const top = row.anns[0];
-          const scopeColor = row.scope ? colorFor(row.scope.patternKey) : null;
-          const annColor   = top ? colorFor(top.patternKey || patternFromAnnotation(top)) : null;
-          const num = String(row.lineNo).padStart(width, ' ');
+          const num          = String(row.lineNo).padStart(width, ' ');
           const hasAnnotation = row.anns.length > 0;
+          const dominance    = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
+          const blendRatio   = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
+          const baseColor    = dominance?.color ?? null;
+          // Badge is always solid — never blended — so the class chip reads clearly.
+          const badgeColor   = dominance?.color ?? null;
+
           const distinctPatternCount = hasAnnotation
-            ? new Set(row.anns.map(a => a.patternKey || patternFromAnnotation(a))).size
+            ? new Set(row.anns.map(a => patternFromAnnotation(a))).size
             : 0;
-          const ambiguous = distinctPatternCount > 1;
+          const isAmbiguousLine = blendRatio > 0 && hasAnnotation;
+
           const classNames = [
             'src-line',
-            hasAnnotation ? 'has-annotation' : '',
-            hasAnnotation ? 'has-comment' : '',
-            ambiguous ? 'has-ambiguous' : '',
+            hasAnnotation   ? 'has-annotation' : '',
+            hasAnnotation   ? 'has-comment'    : '',
+            isAmbiguousLine ? 'has-ambiguous'  : '',
             row.isScopeStart ? 'class-scope-start' : ''
           ].filter(Boolean).join(' ');
-          const style = styleFor(scopeColor, annColor, ambiguous);
+
+          const style = styleFor(baseColor, blendRatio, badgeColor);
+
           return (
             <span
               key={row.lineNo}
@@ -193,9 +236,9 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
             >
               <span className="src-gutter">{num}</span>
               <span className="src-code">{row.text || '​'}</span>
-              {hasAnnotation && (
+              {hasAnnotation && isAmbiguousLine && (
                 <span className="src-line-badge" aria-hidden="true">
-                  {ambiguous ? `${distinctPatternCount}×` : ''}
+                  {`${distinctPatternCount}×`}
                 </span>
               )}
             </span>

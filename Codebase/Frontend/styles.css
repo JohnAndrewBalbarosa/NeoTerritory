@@ -735,9 +735,12 @@ body.login-active {
   padding: 0 6px;
   border-radius: 3px;
   font: 500 10px/1.4 ui-monospace, SFMono-Regular, monospace;
-  color: var(--ann-border, var(--text-dim, #475569));
-  background-color: var(--scope-bg, transparent);
-  border: 1px solid var(--ann-border, transparent);
+  /* --badge-color and --badge-bg are always the solid dominant color,
+     never the blended line color, so the chip reads clearly even on
+     partially-grey ambiguous lines. */
+  color:            var(--badge-color, var(--ann-border, #475569));
+  background-color: var(--badge-bg,    var(--scope-bg, transparent));
+  border: 1px solid var(--badge-color, var(--ann-border, transparent));
 }
 .src-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; opacity: 0.6; background: var(--ann-border, transparent); }
 .src-dot-active { opacity: 1; box-shadow: 0 0 0 2px rgba(255,255,255,0.6); }
