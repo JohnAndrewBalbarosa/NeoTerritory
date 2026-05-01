@@ -38,12 +38,20 @@ function Write-Ok($msg)   { Write-Host "    $msg" -ForegroundColor Green }
 function Write-Warn($msg) { Write-Host "    $msg" -ForegroundColor Yellow }
 function Test-Tool($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 
-# ── 0. Requirements check (shared verifier) ──────────────────────────────────
+# ── 0. Requirements check (STRICT — fail fast on first miss) ────────────────
+# NeoTerritory is high-criticality; if a required tool is missing the
+# script aborts immediately rather than half-starting in a degraded
+# state. Pass -SkipPod to drop docker out of the requirement set when
+# you knowingly want to run with the local sandbox fallback.
 . (Join-Path $Root 'scripts\verify-requirements.ps1')
-# Pods profile when Docker is intended; soft-fail so the script continues
-# with a warning if Docker Desktop isn't running yet.
 $reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
-$report = Test-Requirements -Profile $reqProfile -Soft
+try {
+  $report = Test-Requirements -Profile $reqProfile
+} catch {
+  Write-Host ''
+  Write-Host '==> Aborting .\start.ps1 — requirements not met.' -ForegroundColor Red
+  exit 1
+}
 
 # ── 1. Pod image (one-time host build, tiny re-check on every start) ─────────
 

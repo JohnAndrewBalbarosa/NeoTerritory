@@ -1,8 +1,15 @@
-# NeoTerritory — shared requirements verifier.
+# NeoTerritory — shared requirements verifier (PowerShell side).
+#
+# STRICT BY DEFAULT, SEQUENTIAL. NeoTerritory is a high-criticality app;
+# scripts that run it stop the moment a required tool is missing. Each
+# check runs in dependency order and throws on the FIRST miss without
+# probing the rest — there's no point telling the operator about a
+# missing g++ when node isn't installed yet.
 #
 # Sourced by start.ps1, run-dev.ps1, deploy.ps1, etc. via dot-sourcing:
 #     . "$PSScriptRoot\scripts\verify-requirements.ps1"
-#     Test-Requirements -Profile dev
+#     Test-Requirements -Profile dev               # strict — throws on first miss
+#     Test-Requirements -Profile pods -Soft        # WARNINGS only — never throws
 #
 # Profiles:
 #   minimal     node, npm
@@ -10,10 +17,9 @@
 #   pods        dev + docker on PATH + docker daemon responding
 #   full        pods + git
 #
-# Returns a hashtable describing what was found / missing. Throws when a
-# required tool for the requested profile is absent. Use -Soft to log the
-# misses instead of throwing — useful for "build the image if Docker is
-# up, otherwise carry on with the local sandbox" scripts.
+# Soft mode is for orchestrators that legitimately need to keep going
+# with a degraded surface (bootstrap.ps1 for example, which installs
+# the missing tools itself). End-user scripts should use strict default.
 
 function Test-Requirements {
   param(
@@ -22,95 +28,96 @@ function Test-Requirements {
     [switch]$Soft
   )
 
+  $strict = -not $Soft
+
   function Has($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
   function Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
   function Ok($msg)   { Write-Host "    [OK] $msg" -ForegroundColor Green }
   function Warn($msg) { Write-Host "    [!!] $msg" -ForegroundColor Yellow }
   function Err($msg)  { Write-Host "    [XX] $msg" -ForegroundColor Red }
 
-  Step "Verifying requirements (profile: $Profile)"
+  # Sequential gate. On miss in strict mode we throw immediately; the
+  # script that called us prints nothing further about other tools.
+  function Require($name, $hint) {
+    if (Has $name) { Ok "$name found"; return }
+    if ($strict) {
+      Err "MISSING: $name"
+      Err "  fix: $hint"
+      Err 'Refusing to continue — install the requirement and re-run.'
+      throw "Required tool '$name' not found."
+    } else {
+      Warn "missing: $name ($hint) — continuing in soft mode"
+    }
+  }
+
+  $modeLabel = if ($strict) { 'strict' } else { 'soft' }
+  Step "Verifying requirements (profile: $Profile, mode: $modeLabel)"
 
   $report = @{
     profile      = $Profile
-    node         = $false
-    npm          = $false
-    cmake        = $false
-    cxx          = $false
+    strict       = $strict
     cxxKind      = $null
     docker       = $false
     dockerDaemon = $false
-    git          = $false
-    missing      = @()
   }
 
   # --- minimal ----------------------------------------------------------------
-
-  if (Has 'node') { $report.node = $true; Ok "node $((node --version) 2>&1)" }
-  else            { $report.missing += 'node (https://nodejs.org)'; Err 'node not found' }
-
-  if (Has 'npm')  { $report.npm = $true; Ok "npm $((npm --version) 2>&1)" }
-  else            { $report.missing += 'npm (bundled with node)'; Err 'npm not found' }
+  Require 'node' 'install Node.js — https://nodejs.org'
+  Require 'npm'  'reinstall Node.js (npm ships with it)'
 
   # --- dev / pods / full ------------------------------------------------------
-
   if ($Profile -in @('dev','pods','full')) {
-    if (Has 'cmake') { $report.cmake = $true; Ok "cmake present" }
-    else             { $report.missing += 'cmake (https://cmake.org)'; Err 'cmake not found' }
-
-    if (Has 'g++')        { $report.cxx = $true; $report.cxxKind = 'g++';     Ok 'g++ found' }
-    elseif (Has 'clang++'){ $report.cxx = $true; $report.cxxKind = 'clang++'; Ok 'clang++ found' }
-    elseif (Has 'cl')     { $report.cxx = $true; $report.cxxKind = 'cl';      Ok 'MSVC cl.exe found' }
-    else                  { $report.missing += 'a C++17 compiler (g++ / clang++ / MSVC cl)'; Err 'no C++17 compiler found' }
+    Require 'cmake' 'install CMake — https://cmake.org/download'
+    if     (Has 'g++')     { Ok 'g++ found';       $report.cxxKind = 'g++' }
+    elseif (Has 'clang++') { Ok 'clang++ found';   $report.cxxKind = 'clang++' }
+    elseif (Has 'cl')      { Ok 'MSVC cl.exe found'; $report.cxxKind = 'cl' }
+    else {
+      if ($strict) {
+        Err 'MISSING: g++ / clang++ / cl (C++17 compiler)'
+        Err '  fix: install Visual Studio Build Tools (MSVC) or MSYS2 (g++)'
+        Err 'Refusing to continue — install a C++17 compiler and re-run.'
+        throw 'No C++17 compiler found.'
+      } else {
+        Warn 'missing: C++17 compiler — continuing in soft mode'
+      }
+    }
   }
 
   # --- pods -------------------------------------------------------------------
-
   if ($Profile -in @('pods','full')) {
-    if (Has 'docker') {
-      $report.docker = $true
-      Ok 'docker on PATH'
-      # Daemon probe — `docker info` exits non-zero when Desktop is closed.
-      # Use a temp file for stdout/stderr capture; Start-Process's
-      # -RedirectStandard* params require real paths, not NUL.
-      $tmp = [System.IO.Path]::GetTempFileName()
-      try {
-        $proc = Start-Process -FilePath 'docker' -ArgumentList 'info','--format','{{.ServerVersion}}' `
-                  -NoNewWindow -PassThru -RedirectStandardOutput $tmp -RedirectStandardError $tmp
-        $proc.WaitForExit(5000) | Out-Null
-        if ($proc.HasExited -and $proc.ExitCode -eq 0) {
-          $report.dockerDaemon = $true
-          Ok 'docker daemon responding'
+    Require 'docker' 'install Docker Desktop — https://www.docker.com/products/docker-desktop'
+    $report.docker = $true
+
+    # Daemon probe — `docker info` exits non-zero when Desktop is closed.
+    $tmp = [System.IO.Path]::GetTempFileName()
+    try {
+      $proc = Start-Process -FilePath 'docker' -ArgumentList 'info','--format','{{.ServerVersion}}' `
+                -NoNewWindow -PassThru -RedirectStandardOutput $tmp -RedirectStandardError $tmp
+      $proc.WaitForExit(5000) | Out-Null
+      if ($proc.HasExited -and $proc.ExitCode -eq 0) {
+        $report.dockerDaemon = $true
+        Ok 'docker daemon responding'
+      } else {
+        try { $proc.Kill() } catch { }
+        if ($strict) {
+          Err 'MISSING: docker daemon (docker is installed but the daemon is not running)'
+          Err '  fix: open Docker Desktop and wait for the whale icon to turn solid'
+          Err 'Refusing to continue — start the Docker daemon and re-run.'
+          throw 'Docker daemon not responding.'
         } else {
-          try { $proc.Kill() } catch { }
-          Warn 'docker daemon not responding (start Docker Desktop)'
-          if (-not $Soft) { $report.missing += 'docker daemon (open Docker Desktop)' }
+          Warn 'docker daemon not responding — continuing in soft mode'
         }
-      } finally {
-        Remove-Item -ErrorAction SilentlyContinue -Path $tmp
       }
-    } else {
-      Warn 'docker not on PATH (per-user pod isolation will fall back to local sandbox)'
-      if (-not $Soft) { $report.missing += 'docker (https://www.docker.com/products/docker-desktop)' }
+    } finally {
+      Remove-Item -ErrorAction SilentlyContinue -Path $tmp
     }
   }
 
   # --- full -------------------------------------------------------------------
-
   if ($Profile -eq 'full') {
-    if (Has 'git') { $report.git = $true; Ok 'git found' }
-    else           { $report.missing += 'git'; Err 'git not found' }
+    Require 'git' 'install git — https://git-scm.com'
   }
 
-  if ($report.missing.Count -gt 0 -and -not $Soft) {
-    Err ''
-    Err 'Missing requirements:'
-    $report.missing | ForEach-Object { Err "  - $_" }
-    throw "Requirements check failed for profile '$Profile'."
-  } elseif ($report.missing.Count -gt 0) {
-    Warn 'Some optional requirements are missing — continuing in degraded mode.'
-  } else {
-    Ok 'All requirements satisfied.'
-  }
-
+  Ok 'All requirements satisfied.'
   return $report
 }

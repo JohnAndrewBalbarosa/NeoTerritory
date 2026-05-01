@@ -48,8 +48,10 @@ function Free-Port($port) {
 $verifierPath = Join-Path $ProjectRoot 'scripts\verify-requirements.ps1'
 if (Test-Path $verifierPath) {
   . $verifierPath
+  # STRICT — first missing tool aborts the script. dev profile only;
+  # docker is checked separately by start.ps1's pods profile.
   try { Test-Requirements -Profile dev | Out-Null }
-  catch { Write-Err $_.Exception.Message; exit 1 }
+  catch { Write-Err 'Aborting .\run-dev.ps1 — requirements not met.'; exit 1 }
 } else {
   # Fallback when the verifier script isn't present (older clones).
   Write-Step 'Checking tools'

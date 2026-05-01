@@ -45,12 +45,20 @@ step() { printf '\033[36m==> %s\033[0m\n' "$*"; }
 ok()   { printf '\033[32m    %s\033[0m\n' "$*"; }
 warn() { printf '\033[33m    %s\033[0m\n' "$*"; }
 
-# ── 0. Requirements check (shared verifier, soft-fails) ──────────────────────
+# ── 0. Requirements check (STRICT — fail fast on first miss) ────────────────
+# NeoTerritory is high-criticality; if a required tool is missing the
+# script aborts immediately rather than half-starting in a degraded
+# state. Pass --skip-pod to drop docker out of the requirement set when
+# you knowingly want to run with the local sandbox fallback.
 # shellcheck source=scripts/verify-requirements.sh
 source "$ROOT_DIR/scripts/verify-requirements.sh"
 REQ_PROFILE='pods'
 [[ $SKIP_POD -eq 1 ]] && REQ_PROFILE='dev'
-verify_requirements "$REQ_PROFILE" soft
+if ! verify_requirements "$REQ_PROFILE"; then
+  echo ''
+  echo '==> Aborting ./start.sh — requirements not met.'
+  exit 1
+fi
 
 # ── 1. One-time Docker pod image build ───────────────────────────────────────
 
