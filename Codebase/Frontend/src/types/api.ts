@@ -67,6 +67,11 @@ export interface ClassUsageBinding {
 
 // Per-line probability summary that drives the new scoring model. Mirrors
 // LineEvidence in patternRankingService.ts.
+//
+// References (cited inline in ScoringExplainer):
+//  - Wilson, E. B. (1927). JASA 22(158): 209-212.
+//  - Agresti & Coull (1998). Am. Stat. 52(2): 119-126.
+//  - z = 1.96: 97.5th percentile of N(0,1), the 95% CI standard.
 export interface PatternLineEvidence {
   totalLines: number;
   taggedLines: number;
@@ -75,9 +80,14 @@ export interface PatternLineEvidence {
   rivalHits: number;
   negativeHits: number;
   coverage: number;
-  odds: number;
-  probability: number;
-  byLine: Array<{ line: number; ownHits: number; rivalHits: number }>;
+  // Wilson score interval inputs and output
+  trials: number;
+  successes: number;
+  pHat: number;
+  z: number;
+  wilsonLowerBound: number;
+  probability: number; // alias for wilsonLowerBound
+  byLine: Array<{ line: number; ownHits: number; rivalHits: number; opposingWeight: number; win: boolean }>;
 }
 
 export interface PatternRankEntry {

@@ -43,11 +43,9 @@ function RowButton({ children, onClick }: { children: React.ReactNode; onClick: 
   return <button type="button" className="pattern-row" onClick={onClick}>{children}</button>;
 }
 
-// Expandable summary of how the two percentages on the rank bar were derived.
-// Reads the per-pattern weights and evidence from PatternRankEntry so the
-// explanation reflects the actual numbers shown above. When line-evidence is
-// present (new scoring model), we show the probability breakdown instead of
-// the legacy weighted-sum description.
+// Expandable breakdown of how the score was derived. When lineEvidence is
+// present, we show the Wilson score interval calculation with the actual
+// trial counts and a citation footer so the user can audit the math.
 function ScoringExplainer({ rank }: { rank: PatternRankEntry }) {
   const [open, setOpen] = useState(false);
   const conf = Math.round((rank.finalRank || 0) * 100);
@@ -63,31 +61,44 @@ function ScoringExplainer({ rank }: { rank: PatternRankEntry }) {
           {le ? (
             <>
               <p>
-                <strong>usage match ({fit}%)</strong> comes from a per-line probability:
-                we count how many signals from this pattern hit each line of the
-                class, then compare against rival patterns that hit the same lines.
+                <strong>Score = Wilson score interval, lower bound at 95% confidence</strong>
+                {' '}(<code>z = {le.z.toFixed(2)}</code>).
+                Each non-blank line in the class scope is one Bernoulli trial:
+                this pattern wins the line when its signal hits outweigh rival
+                hits plus the catalog-authored weight of any negative-signal hits
+                on the same line.
               </p>
               <p>
-                <strong>Counts for this class:</strong>
-                {' '}<code>own hits = {le.hitsTotal}</code> across <code>{le.taggedLines}/{le.totalLines}</code> lines
-                {' '}(coverage <code>{(le.coverage * 100).toFixed(0)}%</code>),
-                {' '}peak overlap <code>{le.hitsMax}</code> on a single line,
-                {' '}rival hits <code>{le.rivalHits}</code>,
-                {' '}negative hits <code>{le.negativeHits}</code>.
+                <strong>Numbers for this class:</strong>{' '}
+                <code>trials n = {le.trials}</code>,{' '}
+                <code>successes k = {le.successes}</code>,{' '}
+                <code>p̂ = k/n = {le.pHat.toFixed(3)}</code>,{' '}
+                <code>z = {le.z.toFixed(2)}</code>,{' '}
+                <code>Wilson lower bound = {(le.wilsonLowerBound * 100).toFixed(1)}%</code> →
+                shown as <strong>usage match {fit}%</strong>.
               </p>
               <p>
-                <strong>Formula.</strong>{' '}
-                <code>odds = (ownHits + 1) / (rivalHits + 1) = {le.odds.toFixed(2)}</code>;
-                {' '}<code>raw = odds / (odds + 1)</code>;
-                {' '}<code>prob = clamp01(raw × (0.5 + 0.5 × coverage) − 0.2 × negHits/ownHits)</code>.
-                {' '}The +1 smoothing keeps the score finite when a rival has zero hits;
-                coverage rewards spread, so a single hot line doesn&apos;t outscore
-                a pattern that matches the whole class evenly.
+                <strong>Why this formula.</strong> Wilson is the textbook
+                conservative estimator for a yes/no proportion when the sample
+                is small — wider margin of error when fewer lines have evidence,
+                narrower as more lines confirm. The <code>z²/n</code> correction
+                handles small samples automatically, so coverage and negative
+                signals do not need a hand-tuned dampener. Informational counts:
+                {' '}coverage <code>{(le.coverage * 100).toFixed(0)}%</code>,{' '}
+                rival hits <code>{le.rivalHits}</code>,{' '}
+                negative hits <code>{le.negativeHits}</code>,{' '}
+                peak overlap <code>{le.hitsMax}</code>.
               </p>
               <p>
-                <strong>confidence ({conf}%)</strong> blends class_fit (1.0 once the
-                structural matcher confirms the shape) with usage match using the
-                pattern&apos;s own ranking weights.
+                <strong>confidence ({conf}%)</strong> blends class_fit (1.0 once
+                the structural matcher confirms the shape) with usage match using
+                the pattern&apos;s own ranking weights from the catalog.
+              </p>
+              <p className="scoring-citation">
+                Wilson (1927), JASA 22(158); Agresti &amp; Coull (1998), Am. Stat
+                52(2). 95% confidence is the standard reporting convention. The
+                same lower-bound is widely cited as a ranking score — see Evan
+                Miller, <em>How Not to Sort by Average Rating</em> (2009).
               </p>
             </>
           ) : (

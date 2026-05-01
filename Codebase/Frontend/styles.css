@@ -434,6 +434,7 @@ body.login-active{overflow:hidden;}
 .scoring-explainer-body p{margin:0 0 6px 0;font-size:12px;line-height:1.5;color:var(--ink);}
 .scoring-explainer-body p:last-child{margin-bottom:0;}
 .scoring-explainer-body code{font-family:var(--code-font);font-size:11px;background:rgba(123,94,167,0.15);padding:1px 5px;border-radius:3px;color:var(--ink);}
+.scoring-citation{font-size:10.5px;color:var(--ink-dim);font-style:italic;border-top:1px dashed var(--border);padding-top:6px;margin-top:6px;line-height:1.5;}
 .discard-btn{margin-left:auto;color:var(--red);border-color:rgba(248,113,113,0.35);}
 .discard-btn:hover{background:rgba(248,113,113,0.08);border-color:var(--red);color:var(--red);}
 .review-action-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);flex-wrap:wrap;}

@@ -59,20 +59,35 @@ interface DetectedPatternRef {
   documentationTargets?: Array<{ line?: number }>;
 }
 
-// Line-coverage probability summary. Surfaced alongside the legacy
-// finalRank/implementationFit so the UI can show *why* the score is what it
-// is, on a per-line basis. See computeLineEvidence below for the formula.
+// Per-line Bernoulli-trial summary used to compute the Wilson score interval
+// lower bound. Surfaced as `lineEvidence` on PatternRankEntry so the UI can
+// audit the math against the named statistical sources.
+//
+// References (cited in the ScoringExplainer panel as well):
+//  - Wilson, E. B. (1927). "Probable Inference, the Law of Succession, and
+//    Statistical Inference." JASA 22(158): 209-212.
+//  - Agresti & Coull (1998). "Approximate is better than 'exact' for interval
+//    estimation of binomial proportions." Am. Statistician 52(2): 119-126.
+//  - Evan Miller (2009). "How Not to Sort by Average Rating."
+//    https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+//  - z = 1.96 is the 97.5th percentile of N(0,1) — the conventional 95% CI
+//    z-score (NIST/SEMATECH e-Handbook §1.3.6.7.1).
 interface LineEvidence {
-  totalLines: number;          // non-blank lines in [scope.min, scope.max]
-  taggedLines: number;         // distinct lines with ≥1 hit from THIS pattern
-  hitsTotal: number;           // sum of all signal hits for THIS pattern
-  hitsMax: number;             // peak overlap on a single line
-  rivalHits: number;           // hits on the same lines from OTHER patterns
-  negativeHits: number;        // negative-signal hits
-  coverage: number;            // taggedLines / totalLines
-  odds: number;                // (hitsTotal+1) / (rivalHits+1)
-  probability: number;         // computed score, 0-1, dominates UI display
-  byLine: Array<{ line: number; ownHits: number; rivalHits: number }>;
+  totalLines: number;          // non-blank lines in [scope.min, scope.max] = trial count n
+  taggedLines: number;         // distinct lines with ≥1 hit from THIS pattern (informational)
+  hitsTotal: number;           // sum of all signal hits for THIS pattern (informational)
+  hitsMax: number;             // peak overlap on a single line (informational)
+  rivalHits: number;           // hits on the same lines from OTHER patterns (informational)
+  negativeHits: number;        // count of negative-signal hits (informational)
+  coverage: number;            // taggedLines / totalLines (informational)
+  // Wilson score interval inputs and output
+  trials: number;              // = totalLines, exposed under stat-friendly name
+  successes: number;           // = lines where this pattern wins the per-line trial
+  pHat: number;                // successes / trials
+  z: number;                   // 1.96 (95% CI two-sided z-score)
+  wilsonLowerBound: number;    // the score, in [0, 1]
+  probability: number;         // alias for wilsonLowerBound — UI compatibility
+  byLine: Array<{ line: number; ownHits: number; rivalHits: number; opposingWeight: number; win: boolean }>;
 }
 
 interface PatternRankResult {
@@ -192,24 +207,27 @@ function countNonBlankLines(sourceText: string, fromLine: number, toLine: number
   return count;
 }
 
-// Discrete-probability scoring per line.
+// Wilson score interval — 95% CI lower bound. The only "magic" constant is
+// z = 1.96 (the 97.5th percentile of N(0,1)), which is the standard two-sided
+// 95%-confidence z-score.
 //
-// For each pattern P over a class scope [min, max]:
-//   ownHits[ℓ]   = signals from P that matched on line ℓ
-//   rivalHits[ℓ] = signals from any OTHER pattern Q that matched on line ℓ
-//   tagged       = |{ℓ : ownHits[ℓ] > 0}|
-//   total        = non-blank lines in [min, max]
-//   coverage     = tagged / total
-//   odds         = (Σ ownHits + 1) / (Σ rivalHits + 1)              ← Bayesian smoothing
-//   prob_raw     = odds / (odds + 1)                                  ← logistic
-//   penalty      = 0.2 × negativeHits / max(1, ownHits)
-//   probability  = clamp01(prob_raw × (0.5 + 0.5 × coverage) − penalty)
+//                  pHat + z^2/(2n)  -  z * sqrt( pHat*(1-pHat)/n + z^2/(4n^2) )
+//   wilsonLower = ----------------------------------------------------------
+//                                       1 + z^2/n
 //
-// Why these terms:
-//  - The +1 smoothing keeps the score finite when a rival has 0 hits.
-//  - Coverage scales the raw odds so a single hot line (high overlap) doesn't
-//    dominate over patterns that match more of the class evenly.
-//  - Negative signals subtract proportionally — they cap influence near 20%.
+// References: Wilson (1927) JASA 22(158); Agresti & Coull (1998) Am. Stat 52(2);
+// Evan Miller (2009) "How Not to Sort by Average Rating".
+const Z_95 = 1.96;
+function wilsonLowerBound(successes: number, trials: number, z: number = Z_95): number {
+  if (trials <= 0) return 0;
+  const pHat = successes / trials;
+  const z2   = z * z;
+  const num  = pHat + z2 / (2 * trials)
+             - z * Math.sqrt((pHat * (1 - pHat) + z2 / (4 * trials)) / trials);
+  const den  = 1 + z2 / trials;
+  return clamp01(num / den);
+}
+
 function computeLineEvidence(
   ownHits: SignalHit[],
   rivalAllHits: Map<number, number>,
@@ -218,6 +236,7 @@ function computeLineEvidence(
   scopeMax: number,
   sourceText: string
 ): LineEvidence {
+  // Aggregate own-pattern hits per line for the informational fields.
   const ownByLine = new Map<number, number>();
   for (const h of ownHits) {
     if (h.line < scopeMin || h.line > scopeMax) continue;
@@ -229,36 +248,61 @@ function computeLineEvidence(
     hitsTotal += c;
     if (c > hitsMax) hitsMax = c;
   }
+  // Catalog-authored absolute weight of negative-signal hits per line. A
+  // negative signal with weight -0.4 contributes 0.4 of opposing evidence on
+  // its hit line. Nothing is invented at scoring time.
+  const negWeightByLine = new Map<number, number>();
+  for (const h of negativeHits) {
+    if (h.line < scopeMin || h.line > scopeMax) continue;
+    const w = Math.abs(typeof h.weight === 'number' ? h.weight : 0);
+    negWeightByLine.set(h.line, (negWeightByLine.get(h.line) || 0) + w);
+  }
   let rivalHits = 0;
   for (const [line, c] of rivalAllHits.entries()) {
     if (line < scopeMin || line > scopeMax) continue;
     rivalHits += c;
   }
-  const totalLines = countNonBlankLines(sourceText, scopeMin, scopeMax) || 1;
-  const taggedLines = ownByLine.size;
-  const coverage = taggedLines / totalLines;
-  const odds = (hitsTotal + 1) / (rivalHits + 1);
-  const probRaw = odds / (odds + 1);
-  const negCount = negativeHits.length;
-  const penalty = hitsTotal > 0 ? 0.2 * (negCount / hitsTotal) : 0;
-  const probability = clamp01(probRaw * (0.5 + 0.5 * coverage) - penalty);
 
-  const byLine: Array<{ line: number; ownHits: number; rivalHits: number }> = [];
-  for (const [line, ownCount] of ownByLine.entries()) {
-    byLine.push({ line, ownHits: ownCount, rivalHits: rivalAllHits.get(line) || 0 });
+  // Trial set: every non-blank, non-comment line in scope is one Bernoulli
+  // trial. Walk the range, classify each line as a win/loss for this pattern.
+  const lines = sourceText.split('\n');
+  const byLine: Array<{ line: number; ownHits: number; rivalHits: number; opposingWeight: number; win: boolean }> = [];
+  let trials = 0;
+  let successes = 0;
+  for (let l = scopeMin; l <= scopeMax && l - 1 < lines.length; l += 1) {
+    const text = (lines[l - 1] || '').trim();
+    if (!text || text.startsWith('//')) continue;
+    trials += 1;
+    const own  = ownByLine.get(l) || 0;
+    const riv  = rivalAllHits.get(l) || 0;
+    const negW = negWeightByLine.get(l) || 0;
+    const opposing = riv + negW;
+    const win = own > opposing;
+    if (win) successes += 1;
+    if (own > 0 || riv > 0 || negW > 0) {
+      byLine.push({ line: l, ownHits: own, rivalHits: riv, opposingWeight: negW, win });
+    }
   }
-  byLine.sort((a, b) => a.line - b.line);
+  if (trials === 0) trials = 1;  // avoid divide-by-zero on degenerate scopes
+
+  const z = Z_95;
+  const wilson = wilsonLowerBound(successes, trials, z);
+  const taggedLines = ownByLine.size;
 
   return {
-    totalLines,
+    totalLines: trials,
     taggedLines,
     hitsTotal,
     hitsMax,
     rivalHits,
-    negativeHits: negCount,
-    coverage,
-    odds,
-    probability,
+    negativeHits: negativeHits.length,
+    coverage: taggedLines / trials,
+    trials,
+    successes,
+    pHat: successes / trials,
+    z,
+    wilsonLowerBound: wilson,
+    probability: wilson,
     byLine
   };
 }
