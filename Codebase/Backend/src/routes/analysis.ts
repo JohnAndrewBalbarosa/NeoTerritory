@@ -1060,6 +1060,7 @@ async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<
   for (const p of patterns) {
     if (!p.className || !p.classText) continue;
     const firstTargetName = (p.unitTestTargets || [])[0]?.function_name;
+    // runPatternTest now returns TWO results per pattern (compile_run + unit_test).
     const r = await runPatternTest({
       patternId: p.patternId,
       patternName: p.patternName,
@@ -1074,7 +1075,7 @@ async function dispatchPatternTests(patterns: DetectedPatternResult[]): Promise<
       targetBase: 'Target',
       targetMethod: firstTargetName
     });
-    results.push(r);
+    results.push(...r);
   }
   return results;
 }

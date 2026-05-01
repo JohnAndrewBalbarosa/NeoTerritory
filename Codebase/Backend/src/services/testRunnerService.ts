@@ -20,17 +20,25 @@ import path from 'path';
 import { spawn, spawnSync } from 'child_process';
 import os from 'os';
 
+// Each pattern is exercised in TWO sequential phases:
+//  - 'compile_run': compile the user's class against a stub `int main()` and
+//    run it. Tells the user "your class compiles and exits cleanly on its
+//    own" before we attempt the unit-test driver.
+//  - 'unit_test':   compile + run the per-pattern test template. Skipped
+//    automatically when the compile_run phase already failed.
+export type TestPhase = 'compile_run' | 'unit_test';
 export interface TestResult {
   patternId: string;
   patternName: string;
   className: string;
+  phase: TestPhase;
   passed: boolean;
   expected: string;
   actual: string;
   gdb?: string;
   exitCode: number;
   durationMs: number;
-  verdict: 'pass' | 'fail' | 'timeout' | 'segfault' | 'leak' | 'compile_error' | 'sandbox_disabled' | 'no_template';
+  verdict: 'pass' | 'fail' | 'timeout' | 'segfault' | 'leak' | 'compile_error' | 'sandbox_disabled' | 'no_template' | 'skipped';
   failingLine?: number;
   message?: string;
 }
@@ -150,40 +158,16 @@ interface RunInputs {
   targetMethod?: string;
 }
 
-export async function runPatternTest(input: RunInputs): Promise<TestResult> {
-  const t0 = Date.now();
-  const base = {
-    patternId: input.patternId,
-    patternName: input.patternName,
-    className: input.className,
-    expected: 'pass',
-    actual: '',
-    exitCode: 0,
-    durationMs: 0
-  };
+// Stub driver for the compile_run phase. Includes the user's class so any
+// header-level error surfaces, then exits cleanly. Kept tiny on purpose so a
+// pass means "the user's class is at least syntactically and semantically
+// reachable", not "the test passed".
+const COMPILE_RUN_DRIVER = `#include "user_class.h"
+int main() { return 0; }
+`;
 
-  if (!isTestRunnerEnabled()) {
-    return {
-      ...base,
-      passed: false,
-      verdict: 'sandbox_disabled',
-      message: `Test runner disabled. ${lastDisableReason}`,
-      durationMs: Date.now() - t0
-    };
-  }
-
-  const tplPath = templatePath(input.patternId);
-  if (!tplPath) {
-    return {
-      ...base,
-      passed: false,
-      verdict: 'no_template',
-      message: `No test template found for ${input.patternId}.`,
-      durationMs: Date.now() - t0
-    };
-  }
-
-  const tpl = fs.readFileSync(tplPath, 'utf8')
+function fillTemplate(tpl: string, input: RunInputs): string {
+  return tpl
     .replace(/{{HEADER}}/g, 'user_class.h')
     .replace(/{{CLASS_NAME}}/g, input.className)
     .replace(/{{FORWARD_METHOD}}/g, input.forwardMethod || 'execute')
@@ -195,22 +179,45 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult> {
     .replace(/{{TARGET_BASE}}/g, input.targetBase || 'Target')
     .replace(/{{REQUEST_METHOD}}/g, input.forwardMethod || 'request')
     .replace(/{{TARGET_METHOD}}/g, input.targetMethod || 'execute');
+}
 
-  // Stage the test materials in a per-run temp dir.
-  const runDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nt-test-'));
+interface PhaseInputs {
+  driverSource: string;
+  binaryName: string;
+}
+
+async function runPhase(
+  phase: TestPhase,
+  input: RunInputs,
+  phaseInputs: PhaseInputs
+): Promise<TestResult> {
+  const t0 = Date.now();
+  const base = {
+    patternId: input.patternId,
+    patternName: input.patternName,
+    className: input.className,
+    phase,
+    expected: 'pass',
+    actual: '',
+    exitCode: 0,
+    durationMs: 0
+  };
+
+  // Per-phase scratch dir keeps the user_class.h next to the driver but
+  // isolates phase 1 from phase 2 (so phase 2 cannot reuse phase 1's binary).
+  const runDir = fs.mkdtempSync(path.join(os.tmpdir(), `nt-${phase}-`));
   try {
     fs.writeFileSync(path.join(runDir, 'user_class.h'), input.classText, 'utf8');
-    fs.writeFileSync(path.join(runDir, 'driver.cpp'), tpl, 'utf8');
+    fs.writeFileSync(path.join(runDir, 'driver.cpp'), phaseInputs.driverSource, 'utf8');
 
-    // Compile and run inside the sandbox. Sandbox command may contain shell
-    // metacharacters; we split it on whitespace and resolve `<RUN_DIR>` /
-    // `<DRIVER>` placeholders.
     const sandboxCmd = (process.env.TEST_RUNNER_SANDBOX || '')
       .replace(/<RUN_DIR>/g, runDir);
+    const sandboxParts = sandboxCmd.split(/\s+/).filter(Boolean);
+    const binPath = path.join(runDir, phaseInputs.binaryName);
     const compileArgs = ['g++', '-std=c++17', '-O0', '-g',
                          path.join(runDir, 'driver.cpp'),
-                         '-o', path.join(runDir, 'driver')];
-    const compileOut = await runCmd([...sandboxCmd.split(/\s+/).filter(Boolean), ...compileArgs], TIMEOUT_MS);
+                         '-o', binPath];
+    const compileOut = await runCmd([...sandboxParts, ...compileArgs], TIMEOUT_MS);
     if (compileOut.exitCode !== 0) {
       return {
         ...base,
@@ -218,17 +225,24 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult> {
         verdict: 'compile_error',
         actual: compileOut.stderr || compileOut.stdout || 'compile failed',
         exitCode: compileOut.exitCode,
-        message: 'Driver did not compile against the user class.',
+        message: phase === 'compile_run'
+          ? 'Your class did not compile.'
+          : 'Unit-test driver did not compile against the user class.',
         durationMs: Date.now() - t0
       };
     }
-
-    const runOut = await runCmd([...sandboxCmd.split(/\s+/).filter(Boolean), path.join(runDir, 'driver')], TIMEOUT_MS);
+    const runOut = await runCmd([...sandboxParts, binPath], TIMEOUT_MS);
     const verdict: TestResult['verdict'] =
-      runOut.timedOut ? 'timeout' :
-      runOut.exitCode === 0 ? 'pass' :
+      runOut.timedOut         ? 'timeout' :
+      runOut.exitCode === 0   ? 'pass' :
       runOut.signal === 'SIGSEGV' ? 'segfault' :
       'fail';
+    const passMsg = phase === 'compile_run'
+      ? 'Your class compiled and exited cleanly.'
+      : 'All unit-test assertions held.';
+    const failMsg = phase === 'compile_run'
+      ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
+      : `Unit-test driver exited with ${runOut.exitCode}.`;
     return {
       ...base,
       passed: verdict === 'pass',
@@ -236,12 +250,69 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult> {
       actual: runOut.stdout + (runOut.stderr ? '\n--- stderr ---\n' + runOut.stderr : ''),
       exitCode: runOut.exitCode,
       durationMs: Date.now() - t0,
-      message: verdict === 'pass' ? 'All assertions held.' : `Driver exited with ${runOut.exitCode}.`
+      message: verdict === 'pass' ? passMsg : failMsg
     };
   } finally {
-    // Best-effort cleanup; sandbox may have already removed the dir.
     try { fs.rmSync(runDir, { recursive: true, force: true }); } catch { /* ignore */ }
   }
+}
+
+// Run both phases for one pattern. Phase 1 ('compile_run') always runs; phase
+// 2 ('unit_test') is skipped with verdict 'skipped' when phase 1 already
+// failed, so the user sees "we didn't even try the unit test because your
+// class won't compile" instead of two confusingly identical compile errors.
+export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
+  const t0 = Date.now();
+  const baseFor = (phase: TestPhase): TestResult => ({
+    patternId: input.patternId,
+    patternName: input.patternName,
+    className: input.className,
+    phase,
+    passed: false,
+    expected: 'pass',
+    actual: '',
+    exitCode: 0,
+    durationMs: Date.now() - t0,
+    verdict: 'skipped',
+    message: ''
+  });
+
+  if (!isTestRunnerEnabled()) {
+    const reason = `Test runner disabled. ${lastDisableReason}`;
+    return [
+      { ...baseFor('compile_run'), verdict: 'sandbox_disabled', message: reason },
+      { ...baseFor('unit_test'),   verdict: 'sandbox_disabled', message: reason }
+    ];
+  }
+
+  // Phase 1 — class-only compile + clean-exit run.
+  const compileRunResult = await runPhase('compile_run', input, {
+    driverSource: COMPILE_RUN_DRIVER,
+    binaryName: 'user_main'
+  });
+
+  if (!compileRunResult.passed) {
+    return [
+      compileRunResult,
+      { ...baseFor('unit_test'), verdict: 'skipped',
+        message: 'Skipped — your class did not compile or did not exit cleanly on its own.' }
+    ];
+  }
+
+  // Phase 2 — unit test driver, only if phase 1 passed.
+  const tplPath = templatePath(input.patternId);
+  if (!tplPath) {
+    return [
+      compileRunResult,
+      { ...baseFor('unit_test'), verdict: 'no_template',
+        message: `No unit-test template authored for ${input.patternId} yet.` }
+    ];
+  }
+  const unitTestResult = await runPhase('unit_test', input, {
+    driverSource: fillTemplate(fs.readFileSync(tplPath, 'utf8'), input),
+    binaryName: 'unit_driver'
+  });
+  return [compileRunResult, unitTestResult];
 }
 
 interface CmdResult {

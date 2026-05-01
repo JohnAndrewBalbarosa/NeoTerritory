@@ -10,7 +10,13 @@ const VERDICT_LABEL: Record<string, string> = {
   leak:              'memory leak',
   compile_error:     'compile error',
   sandbox_disabled:  'runner off',
-  no_template:       'no template'
+  no_template:       'no template',
+  skipped:           'skipped'
+};
+
+const PHASE_LABEL: Record<string, string> = {
+  compile_run: '1. Code compiles & runs',
+  unit_test:   '2. Unit-test verdict'
 };
 
 interface ApiError extends Error {
@@ -19,9 +25,72 @@ interface ApiError extends Error {
   retryAfterMs?: number;
 }
 
+interface PatternGroup {
+  patternId: string;
+  patternName: string;
+  className: string;
+  compileRun?: GdbTestResult;
+  unitTest?: GdbTestResult;
+}
+
+function groupResults(results: GdbTestResult[]): PatternGroup[] {
+  const map = new Map<string, PatternGroup>();
+  for (const r of results) {
+    const key = `${r.patternId}__${r.className}`;
+    const g = map.get(key) || {
+      patternId: r.patternId,
+      patternName: r.patternName,
+      className: r.className
+    };
+    if (r.phase === 'compile_run') g.compileRun = r;
+    else if (r.phase === 'unit_test') g.unitTest = r;
+    map.set(key, g);
+  }
+  return [...map.values()];
+}
+
+function PhaseRow({ phase, result, loading }: {
+  phase: 'compile_run' | 'unit_test';
+  result?: GdbTestResult;
+  loading: boolean;
+}) {
+  const label = PHASE_LABEL[phase];
+  const status = loading
+    ? 'loading'
+    : !result
+      ? 'idle'
+      : result.passed ? 'pass' : (result.verdict === 'skipped' ? 'skipped' : 'fail');
+  const verdictText = result ? VERDICT_LABEL[result.verdict] || result.verdict : 'idle';
+  return (
+    <div className={`gdb-phase-row gdb-phase-${status}`} data-status={status}>
+      <header className="gdb-phase-head">
+        <span className="gdb-phase-label">{label}</span>
+        {loading
+          ? <span className="gdb-phase-spinner" aria-hidden="true" />
+          : <span className="gdb-phase-pill">{verdictText}</span>}
+        {result && <span className="gdb-phase-duration">{result.durationMs} ms</span>}
+      </header>
+      {result?.message && <p className="gdb-phase-message">{result.message}</p>}
+      {result?.actual && (
+        <details className="gdb-result-pane">
+          <summary>actual / stderr</summary>
+          <pre>{result.actual}</pre>
+        </details>
+      )}
+      {result?.gdb && (
+        <details className="gdb-result-pane">
+          <summary>gdb output</summary>
+          <pre>{result.gdb}</pre>
+        </details>
+      )}
+    </div>
+  );
+}
+
 export default function GdbRunnerTab() {
   const { currentRun } = useAppStore();
   const [results, setResults] = useState<GdbTestResult[] | null>(null);
+  const [groups, setGroups] = useState<PatternGroup[]>([]);
   const [activeIdx, setActiveIdx] = useState(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +99,6 @@ export default function GdbRunnerTab() {
   const [now, setNow] = useState(Date.now());
   const [budgetRemaining, setBudgetRemaining] = useState<number | null>(null);
 
-  // Tick the cooldown countdown so the disabled button label refreshes.
   useEffect(() => {
     if (!cooldownUntil) return;
     const t = setInterval(() => setNow(Date.now()), 250);
@@ -45,7 +113,6 @@ export default function GdbRunnerTab() {
     );
   }
 
-  // GDB runner does NOT require a saved run; pendingId works too.
   const runId = currentRun.runId ?? null;
   const pendingId = currentRun.pendingId ?? null;
   const canRun = runId !== null || !!pendingId;
@@ -58,11 +125,23 @@ export default function GdbRunnerTab() {
     setBusy(true);
     setError(null);
     setUnavailable(null);
+    // Pre-populate group skeletons so the UI shows loading rows for every
+    // detected pattern before the first result lands.
+    const skeleton: PatternGroup[] = (currentRun?.detectedPatterns || [])
+      .filter(p => !!p.className)
+      .map(p => ({
+        patternId: p.patternId,
+        patternName: p.patternName || p.patternId,
+        className: p.className!
+      }));
+    setGroups(skeleton);
+    setResults(null);
     try {
       const data = await runPatternTests(
         runId !== null ? { runId } : { pendingId: pendingId! }
       );
       setResults(data.results);
+      setGroups(groupResults(data.results));
       setActiveIdx(0);
       setBudgetRemaining(data.rateLimit?.remaining ?? null);
     } catch (err) {
@@ -81,7 +160,7 @@ export default function GdbRunnerTab() {
     }
   }
 
-  const active = results && results.length > 0 ? results[activeIdx] : null;
+  const active = groups.length > 0 ? groups[activeIdx] : null;
 
   return (
     <section className="tab-panel tab-gdb">
@@ -110,65 +189,50 @@ export default function GdbRunnerTab() {
         <div className="gdb-unavailable">
           <strong>Test runner not configured.</strong>
           <p>{unavailable}</p>
-          <p>
-            See <code>docs/TODO/test-runner-gdb.md</code>. Set
-            {' '}<code>ENABLE_TEST_RUNNER=1</code> and <code>TEST_RUNNER_SANDBOX</code>
-            {' '}in the backend <code>.env</code> to enable.
-          </p>
         </div>
       )}
       {error && <div className="error-banner" role="alert">{error}</div>}
 
-      {results && results.length === 0 && (
+      {groups.length === 0 && !busy && results && (
         <p className="tab-empty">No detected patterns to test.</p>
       )}
 
-      {results && results.length > 0 && (
+      {groups.length > 0 && (
         <>
           <nav className="gdb-tab-bar" role="tablist" aria-label="Test results">
-            {results.map((r, i) => (
-              <button
-                key={i}
-                type="button"
-                role="tab"
-                aria-selected={i === activeIdx}
-                className={`gdb-tab ${i === activeIdx ? 'is-active' : ''}`}
-                data-passed={r.passed ? 'true' : 'false'}
-                onClick={() => setActiveIdx(i)}
-                title={`${r.patternName} · ${r.className} · ${VERDICT_LABEL[r.verdict] || r.verdict}`}
-              >
-                <span className="gdb-tab-dot" aria-hidden="true" />
-                <span className="gdb-tab-label">{r.className}</span>
-                <span className="gdb-tab-verdict">{VERDICT_LABEL[r.verdict] || r.verdict}</span>
-              </button>
-            ))}
+            {groups.map((g, i) => {
+              const overall =
+                !g.compileRun && !g.unitTest ? 'idle' :
+                g.compileRun && !g.compileRun.passed ? 'fail' :
+                g.unitTest?.passed ? 'pass' :
+                g.unitTest && !g.unitTest.passed ? 'fail' :
+                'loading';
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  role="tab"
+                  aria-selected={i === activeIdx}
+                  className={`gdb-tab ${i === activeIdx ? 'is-active' : ''}`}
+                  data-overall={overall}
+                  onClick={() => setActiveIdx(i)}
+                  title={`${g.patternName} · ${g.className}`}
+                >
+                  <span className="gdb-tab-dot" aria-hidden="true" />
+                  <span className="gdb-tab-label">{g.className}</span>
+                </button>
+              );
+            })}
           </nav>
 
           {active && (
-            <article
-              className="gdb-tab-pane"
-              data-verdict={active.verdict}
-              data-passed={active.passed ? 'true' : 'false'}
-            >
+            <article className="gdb-tab-pane gdb-pattern-pane">
               <header className="gdb-result-head">
                 <span className="gdb-result-class">{active.className}</span>
                 <span className="gdb-result-pattern">{active.patternName}</span>
-                <span className="gdb-result-pill">{VERDICT_LABEL[active.verdict] || active.verdict}</span>
-                <span className="gdb-result-duration">{active.durationMs} ms</span>
               </header>
-              {active.message && <p className="gdb-result-message">{active.message}</p>}
-              {active.actual && (
-                <details className="gdb-result-pane" open>
-                  <summary>actual / stderr</summary>
-                  <pre>{active.actual}</pre>
-                </details>
-              )}
-              {active.gdb && (
-                <details className="gdb-result-pane">
-                  <summary>gdb output</summary>
-                  <pre>{active.gdb}</pre>
-                </details>
-              )}
+              <PhaseRow phase="compile_run" result={active.compileRun} loading={busy && !active.compileRun} />
+              <PhaseRow phase="unit_test"   result={active.unitTest}   loading={busy && active.compileRun?.passed === true && !active.unitTest} />
             </article>
           )}
         </>

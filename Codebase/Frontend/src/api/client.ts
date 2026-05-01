@@ -343,10 +343,12 @@ export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
 // detail string when ENABLE_TEST_RUNNER is unset; the GdbRunnerTab catches
 // that and renders a "configure to enable" banner instead of an error toast.
 // 429 responses include retryAfterMs so the tab can show a live cooldown.
+export type GdbTestPhase = 'compile_run' | 'unit_test';
 export interface GdbTestResult {
   patternId: string;
   patternName: string;
   className: string;
+  phase: GdbTestPhase;
   passed: boolean;
   expected: string;
   actual: string;

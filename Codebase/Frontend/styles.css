@@ -492,6 +492,28 @@ body.login-active{overflow:hidden;}
 .gdb-tab-pane{padding:14px 16px;border:1px solid var(--accent);border-top:none;border-radius:0 0 var(--radius-md) var(--radius-md);background:var(--surface);}
 .gdb-tab-pane[data-passed="true"]{border-top:3px solid var(--green);border-bottom-color:var(--green);}
 .gdb-tab-pane[data-passed="false"]{border-top:3px solid var(--red);border-bottom-color:var(--red);}
+.gdb-tab[data-overall="idle"] .gdb-tab-dot{background:var(--border-bright);}
+.gdb-tab[data-overall="loading"] .gdb-tab-dot{background:var(--accent);animation:gdb-pulse 1.4s ease-in-out infinite;}
+.gdb-tab[data-overall="pass"] .gdb-tab-dot{background:var(--green);}
+.gdb-tab[data-overall="fail"] .gdb-tab-dot{background:var(--red);}
+@keyframes gdb-pulse{0%,100%{opacity:1;}50%{opacity:0.35;}}
+.gdb-pattern-pane{display:flex;flex-direction:column;gap:10px;}
+.gdb-phase-row{padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface2);}
+.gdb-phase-row[data-status="loading"]{border-color:var(--accent);background:var(--accent-soft);}
+.gdb-phase-row[data-status="pass"]{border-left:3px solid var(--green);}
+.gdb-phase-row[data-status="fail"]{border-left:3px solid var(--red);}
+.gdb-phase-row[data-status="skipped"]{opacity:0.7;border-style:dashed;}
+.gdb-phase-head{display:flex;align-items:center;gap:10px;}
+.gdb-phase-label{font-weight:600;font-size:12.5px;color:var(--ink);}
+.gdb-phase-pill{font-size:10px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;color:#fff;background:var(--ink-dim);}
+.gdb-phase-row[data-status="pass"] .gdb-phase-pill{background:var(--green);}
+.gdb-phase-row[data-status="fail"] .gdb-phase-pill{background:var(--red);}
+.gdb-phase-row[data-status="skipped"] .gdb-phase-pill{background:var(--ink-soft);}
+.gdb-phase-row[data-status="loading"] .gdb-phase-pill{background:var(--accent);}
+.gdb-phase-spinner{width:14px;height:14px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:gdb-spin 0.9s linear infinite;}
+@keyframes gdb-spin{to{transform:rotate(360deg);}}
+.gdb-phase-duration{margin-left:auto;font-family:var(--code-font);font-size:11px;color:var(--ink-dim);}
+.gdb-phase-message{margin:6px 0 0 0;font-size:12px;color:var(--ink-soft);}
 .discard-btn{margin-left:auto;color:var(--red);border-color:rgba(248,113,113,0.35);}
 .discard-btn:hover{background:rgba(248,113,113,0.08);border-color:var(--red);color:var(--red);}
 .review-action-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);flex-wrap:wrap;}
@@ -513,6 +535,9 @@ body.login-active{overflow:hidden;}
 .likert-chip:has(input:checked){border-color:var(--accent);background:var(--accent-soft);color:var(--ink);font-weight:600;}
 .likert-chip input[type="radio"]{appearance:none;width:0;height:0;margin:0;padding:0;}
 .likert-anchors{font-size:11px;color:var(--ink-dim);margin-left:8px;}
-.tag-progress{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 14px;margin:8px 0 14px 0;border:1px dashed var(--border);border-radius:var(--radius-md);font-size:13px;color:var(--ink-soft);}
+.tag-progress{display:flex;align-items:center;gap:8px;padding:10px 14px;margin:8px 0 14px 0;border:1px dashed var(--border);border-radius:var(--radius-md);font-size:13px;color:var(--ink-soft);flex-wrap:wrap;}
 .tag-progress[data-complete="true"]{border-style:solid;border-color:var(--green);background:rgba(74,222,128,0.06);color:var(--ink);}
-.tag-progress-cta{font-size:13px;}
+.tag-progress-pill{font-size:11px;font-weight:600;letter-spacing:0.04em;padding:3px 9px;border-radius:999px;border:1px solid;}
+.tag-progress-pill--tagged{color:var(--green);border-color:var(--green);background:rgba(74,222,128,0.08);}
+.tag-progress-pill--missing{color:var(--amber);border-color:var(--amber);background:rgba(251,191,36,0.08);cursor:help;}
+.tag-progress-cta{margin-left:auto;font-size:13px;}

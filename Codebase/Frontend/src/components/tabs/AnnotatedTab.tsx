@@ -56,16 +56,26 @@ export default function AnnotatedTab({
   const fileSuffix = files.length > 1 ? ` • ${files.length} files` : '';
   const summaryText = `${activeFile?.name || currentRun.sourceName || 'snippet.cpp'} • ${patternCount} pattern(s) • ${commentCount} comment(s)${fileSuffix}`;
 
-  // "Tagged" means the user explicitly resolved a pattern for this class via
-  // the Tag pattern… picker. Once every detected class has a resolution, we
-  // surface a CTA to move on to the Review tab.
-  const detectedClasses = (currentRun.detectedPatterns || [])
-    .map(p => p.className)
-    .filter((c): c is string => !!c);
-  const uniqueClasses = Array.from(new Set(detectedClasses));
+  // A class counts as "tagged" if EITHER the matcher already gave it a
+  // pattern (presence in detectedPatterns) OR the user explicitly resolved
+  // one via the popover/picker. The total population is the set of all
+  // classes the run knows about — detected patterns + class-usage bindings.
+  // "Missing tags" is the complement: classes that exist in source but have
+  // neither a matcher verdict nor a user resolution.
+  const detectedClassNames = new Set(
+    (currentRun.detectedPatterns || [])
+      .map(p => p.className)
+      .filter((c): c is string => !!c)
+  );
+  const bindingClassNames = new Set(Object.keys(currentRun.classUsageBindings || {}));
+  const allClassNames = new Set<string>([...detectedClassNames, ...bindingClassNames]);
   const resolvedMap = currentRun.classResolvedPatterns || {};
-  const taggedCount = uniqueClasses.filter(c => !!resolvedMap[c]).length;
-  const allTagged = uniqueClasses.length > 0 && taggedCount === uniqueClasses.length;
+  const taggedClassNames = [...allClassNames].filter(c => detectedClassNames.has(c) || !!resolvedMap[c]);
+  const missingClassNames = [...allClassNames].filter(c => !detectedClassNames.has(c) && !resolvedMap[c]);
+  const taggedCount = taggedClassNames.length;
+  const missingCount = missingClassNames.length;
+  const totalClasses = allClassNames.size;
+  const allTagged = totalClasses > 0 && missingCount === 0;
 
   return (
     <section className="tab-panel tab-annotated">
@@ -91,11 +101,16 @@ export default function AnnotatedTab({
           </button>
         )}
       </header>
-      {uniqueClasses.length > 0 && (
+      {totalClasses > 0 && (
         <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
-          <span className="tag-progress-label">
-            {taggedCount} / {uniqueClasses.length} class(es) tagged
+          <span className="tag-progress-pill tag-progress-pill--tagged">
+            {taggedCount} class{taggedCount === 1 ? '' : 'es'} tagged
           </span>
+          {missingCount > 0 && (
+            <span className="tag-progress-pill tag-progress-pill--missing" title={missingClassNames.join(', ')}>
+              {missingCount} class{missingCount === 1 ? '' : 'es'} with missing tags
+            </span>
+          )}
           {allTagged && onGoToReview && (
             <button
               type="button"
