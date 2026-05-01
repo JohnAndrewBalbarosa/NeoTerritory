@@ -47,6 +47,8 @@ interface AppState {
   setPendingRunSurvey: (key: string | null) => void;
   setLinePatternOverride: (line: number, patternKey: string) => void;
   clearLinePatternOverride: (line: number) => void;
+  bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
+  bulkClearLinePatternOverrides: (lines: number[]) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -138,6 +140,14 @@ export const useAppStore = create<AppState>((set) => ({
   clearLinePatternOverride: (line) => set((s) => {
     const next = { ...s.linePatternOverrides };
     delete next[line];
+    return { linePatternOverrides: next };
+  }),
+  bulkSetLinePatternOverrides: (overrides) => set((s) => ({
+    linePatternOverrides: { ...s.linePatternOverrides, ...overrides }
+  })),
+  bulkClearLinePatternOverrides: (lines) => set((s) => {
+    const next = { ...s.linePatternOverrides };
+    for (const l of lines) delete next[l];
     return { linePatternOverrides: next };
   }),
   mergeAiAnnotations: (aiAnnotations) => set((s) => {

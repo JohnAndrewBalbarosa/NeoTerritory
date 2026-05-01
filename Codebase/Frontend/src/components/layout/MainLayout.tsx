@@ -57,7 +57,7 @@ function flashComment(id: string) {
 const TABS: Array<{ id: StudioTab; label: string }> = [
   { id: 'submit',     label: 'Submit' },
   { id: 'annotated',  label: 'Annotated Source' },
-  { id: 'ambiguous',  label: 'Ambiguous Review' }
+  { id: 'ambiguous',  label: 'Validate Patterns' }
 ];
 
 export default function MainLayout() {

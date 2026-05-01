@@ -367,7 +367,7 @@ interface DetectedForLine { patternId?: string; patternName?: string }
 
 router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const decisions = db.prepare(`SELECT analysis_run_id, line_number, chosen_kind, chosen_pattern
+    const decisions = db.prepare(`SELECT run_id AS analysis_run_id, line AS line_number, chosen_kind, chosen_pattern
       FROM manual_pattern_decisions`).all() as ManualDecisionRow[];
 
     const runs = db.prepare(`SELECT id, analysis_json FROM analysis_runs`).all() as Array<{

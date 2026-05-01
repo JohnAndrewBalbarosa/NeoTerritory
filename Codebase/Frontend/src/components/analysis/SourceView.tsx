@@ -210,7 +210,11 @@ function buildRows(
 }
 
 export default function SourceView({ sourceText, annotations, detectedPatterns, onLineClick }: SourceViewProps) {
-  const { linePatternOverrides, setLinePatternOverride, clearLinePatternOverride } = useAppStore();
+  const {
+    linePatternOverrides,
+    setLinePatternOverride, clearLinePatternOverride,
+    bulkSetLinePatternOverrides, bulkClearLinePatternOverrides
+  } = useAppStore();
 
   const { rows, scopeDominanceMap } = useMemo(
     () => buildRows(sourceText, annotations, detectedPatterns, linePatternOverrides),
@@ -229,12 +233,29 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   }
 
   function handleResolve(line: number, patternKey: string): void {
-    setLinePatternOverride(line, patternKey);
+    const scope = rows.find(r => r.lineNo === line)?.scope ?? null;
+    if (scope) {
+      const bulk: Record<number, string> = {};
+      for (let l = scope.min; l <= scope.max; l++) {
+        const r = rows.find(r => r.lineNo === l);
+        if (r && r.rawAnns.length > 0) bulk[l] = patternKey;
+      }
+      bulkSetLinePatternOverrides(bulk);
+    } else {
+      setLinePatternOverride(line, patternKey);
+    }
     setPopover(null);
   }
 
   function handleUnresolve(line: number): void {
-    clearLinePatternOverride(line);
+    const scope = rows.find(r => r.lineNo === line)?.scope ?? null;
+    if (scope) {
+      const scopeLines: number[] = [];
+      for (let l = scope.min; l <= scope.max; l++) scopeLines.push(l);
+      bulkClearLinePatternOverrides(scopeLines);
+    } else {
+      clearLinePatternOverride(line);
+    }
     setPopover(null);
   }
 
