@@ -144,49 +144,41 @@ export default function ComplexityTab() {
         {fErr && <div className="empty-state admin-error" role="alert">{fErr}</div>}
         {f1 && (
           <>
-            <div className="f1-overall-cards">
-              <div className="stat-tile">
-                <span className="stat-tile-label">Precision</span>
-                <strong className="stat-tile-value"><F1Badge value={f1.overall.precision} /></strong>
-              </div>
-              <div className="stat-tile">
-                <span className="stat-tile-label">Recall</span>
-                <strong className="stat-tile-value"><F1Badge value={f1.overall.recall} /></strong>
-              </div>
-              <div className="stat-tile">
-                <span className="stat-tile-label">F1</span>
-                <strong className="stat-tile-value"><F1Badge value={f1.overall.f1} /></strong>
-              </div>
-              <div className="stat-tile">
-                <span className="stat-tile-label">TP / FP / FN</span>
-                <strong className="stat-tile-value">{f1.overall.tp} / {f1.overall.fp} / {f1.overall.fn}</strong>
-              </div>
-            </div>
-
-            {f1.perPattern.length > 0 && (
-              <table className="f1-pattern-table">
-                <thead>
-                  <tr>
-                    <th>Pattern</th>
-                    <th>Precision</th>
-                    <th>Recall</th>
-                    <th>F1</th>
-                    <th>TP</th><th>FP</th><th>FN</th>
+            <table className="f1-pattern-table f1-overall-table">
+              <thead>
+                <tr>
+                  <th>Scope</th>
+                  <th>Precision</th>
+                  <th>Recall</th>
+                  <th>F1</th>
+                  <th>TP</th>
+                  <th>FP</th>
+                  <th>FN</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr className="f1-overall-row">
+                  <td><strong>Overall</strong></td>
+                  <td><F1Badge value={f1.overall.precision} /></td>
+                  <td><F1Badge value={f1.overall.recall} /></td>
+                  <td><F1Badge value={f1.overall.f1} /></td>
+                  <td>{f1.overall.tp}</td>
+                  <td>{f1.overall.fp}</td>
+                  <td>{f1.overall.fn}</td>
+                </tr>
+                {f1.perPattern.map(p => (
+                  <tr key={p.pattern}>
+                    <td>{p.pattern}</td>
+                    <td><F1Badge value={p.precision} /></td>
+                    <td><F1Badge value={p.recall} /></td>
+                    <td><F1Badge value={p.f1} /></td>
+                    <td>{p.tp}</td>
+                    <td>{p.fp}</td>
+                    <td>{p.fn}</td>
                   </tr>
-                </thead>
-                <tbody>
-                  {f1.perPattern.map(p => (
-                    <tr key={p.pattern}>
-                      <td>{p.pattern}</td>
-                      <td><F1Badge value={p.precision} /></td>
-                      <td><F1Badge value={p.recall} /></td>
-                      <td><F1Badge value={p.f1} /></td>
-                      <td>{p.tp}</td><td>{p.fp}</td><td>{p.fn}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                ))}
+              </tbody>
+            </table>
 
             <p className="f1-integration-note">
               {f1.userAccuracyAvg !== null && <>User accuracy avg: <strong>{f1.userAccuracyAvg}/5</strong></>}

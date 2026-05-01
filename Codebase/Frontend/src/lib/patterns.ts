@@ -24,7 +24,11 @@ export const PATTERN_COLORS: Record<string, PatternColor> = {
   Visitor:        { bg: 'rgba(217, 70, 239, 0.20)', border: '#d946ef', text: '#a21caf' }, // fuchsia
   Command:        { bg: 'rgba(245, 158, 11, 0.20)', border: '#f59e0b', text: '#b45309' }, // amber-orange
   Pimpl:          { bg: 'rgba(202, 138, 4, 0.20)',  border: '#ca8a04', text: '#854d0e' }, // gold
-  Review:         { bg: 'rgba(100, 116, 139, 0.18)', border: '#64748b', text: '#475569' }
+  // Review is the "we don't know" bucket. Brighter mid-greys (slate-400/300)
+  // so the badge remains visible on both dark and light surfaces. The dark
+  // text variant is only swapped to a lighter slate at runtime when light
+  // mode is active (see colorFor() / AMBIGUOUS_COLOR theming).
+  Review:         { bg: 'rgba(148, 163, 184, 0.18)', border: '#94a3b8', text: '#cbd5e1' }
 };
 
 function hueFor(key: string): number {
@@ -84,12 +88,35 @@ export const USAGE_KIND_LABEL: Record<string, string> = {
 };
 
 // Neutral grey used when a class scope has tied or no dominant pattern.
-// rgba so blendColor() can interpolate without parsing oklch.
-export const AMBIGUOUS_COLOR: PatternColor = {
-  bg:     'rgba(100, 116, 139, 0.10)',
+// Two variants so the grey stays readable on both backgrounds: dark mode
+// gets a lighter slate that pops on the dark surface, light mode keeps the
+// classic darker slate. AMBIGUOUS_COLOR is a getter so it reflects the
+// current `<html data-theme>` at every call.
+const AMBIGUOUS_DARK: PatternColor = {
+  bg:     'rgba(148, 163, 184, 0.18)',
+  border: 'rgba(203, 213, 225, 1)',
+  text:   'rgba(226, 232, 240, 1)',
+};
+const AMBIGUOUS_LIGHT: PatternColor = {
+  bg:     'rgba(100, 116, 139, 0.12)',
   border: 'rgba(100, 116, 139, 1)',
   text:   'rgba(71, 85, 105, 1)',
 };
+function isLightMode(): boolean {
+  if (typeof document === 'undefined') return false;
+  return document.documentElement.getAttribute('data-theme') === 'light';
+}
+export function getAmbiguousColor(): PatternColor {
+  return isLightMode() ? AMBIGUOUS_LIGHT : AMBIGUOUS_DARK;
+}
+// Backwards-compatible export. Acts as a live proxy: every property read
+// resolves to the current theme's variant. Existing imports keep working
+// without code changes.
+export const AMBIGUOUS_COLOR: PatternColor = new Proxy({} as PatternColor, {
+  get(_target, prop: keyof PatternColor) {
+    return getAmbiguousColor()[prop];
+  }
+}) as PatternColor;
 
 function parseRgba(s: string): [number, number, number, number] {
   const m = s.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)(?:[,\s\/]+([\d.]+))?\s*\)/);

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/appState';
+import { useTheme } from '../hooks/useTheme';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -52,6 +53,7 @@ function ReviewsPanel() {
 
 export default function AdminApp() {
   const { token, user, clearAuth } = useAppStore();
+  const { theme, toggleTheme } = useTheme();
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -75,6 +77,15 @@ export default function AdminApp() {
         </div>
         <div className="admin-actions">
           <span id="admin-user-label">{user.username} · admin</span>
+          <button
+            className="ghost-btn theme-toggle-btn"
+            type="button"
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+          </button>
           <button id="admin-refresh-btn" className="ghost-btn" type="button" onClick={onRefresh}>
             Refresh
           </button>

@@ -4,6 +4,7 @@ import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
 import { useHeartbeat } from '../../hooks/useHeartbeat';
+import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
@@ -61,6 +62,7 @@ export default function MainLayout() {
   useHealth();
   useAiCommentaryPoll();
   useHeartbeat();
+  const { theme, toggleTheme } = useTheme();
   const {
     status, msState, msLabel, user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
@@ -167,7 +169,16 @@ export default function MainLayout() {
     setReview(null);
   }
 
-  // Gate: consent first.
+  // Admins skip the research-participant gates entirely. Their place is the
+  // /admin dashboard, not the studio. Send them there immediately.
+  useEffect(() => {
+    if (token && user?.role === 'admin' && !window.location.pathname.startsWith('/admin')) {
+      window.location.href = '/admin.html';
+    }
+  }, [token, user]);
+  if (token && user?.role === 'admin') return null;
+
+  // Gate: consent first (research participants only).
   if (token && user && !consentAccepted) {
     return <ConsentGate />;
   }
@@ -203,6 +214,15 @@ export default function MainLayout() {
           </div>
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>
+            <button
+              className="ghost-btn theme-toggle-btn"
+              type="button"
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            >
+              {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+            </button>
             <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
               Sign out
             </button>

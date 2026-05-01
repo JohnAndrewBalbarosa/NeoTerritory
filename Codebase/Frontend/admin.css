@@ -35,6 +35,33 @@
   --shadow: var(--shadow-md);
 }
 
+/* Light-mode overrides — see styles.css for the rationale. Mirrored here so
+   admin pages render identically when the user toggles the theme. */
+:root[data-theme="light"] {
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface2: #f0f1f5;
+  --border: #d8dae0;
+  --border-bright: #b8bbc4;
+  --ink: #15161c;
+  --ink-soft: #51546a;
+  --ink-dim: #8a8d9d;
+  --accent: #4f3c8a;
+  --accent-glow: rgba(79,60,138,0.18);
+  --accent-hover: #3b2c6e;
+  --green: #16a34a;
+  --green-glow: rgba(22,163,74,0.22);
+  --amber: #b45309;
+  --red: #dc2626;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --shadow-sm: 0 1px 4px rgba(15,23,42,0.06);
+  --shadow-md: 0 2px 12px rgba(15,23,42,0.08);
+  --shadow-lg: 0 8px 32px rgba(15,23,42,0.12);
+  --accent-soft: rgba(79,60,138,0.10);
+}
+:root[data-theme="light"] body { color-scheme: light; }
+
 *{box-sizing:border-box;margin:0;padding:0;}
 html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-size:14px;line-height:1.55;min-height:100vh;}
 ::-webkit-scrollbar{width:6px;height:6px;}
@@ -57,6 +84,7 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 .primary-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .ghost-btn{background:transparent;border-color:var(--border-bright);color:var(--ink-soft);}
 .ghost-btn:hover{background:var(--surface2);border-color:var(--accent);color:var(--accent);}
+.theme-toggle-btn{font-family:var(--code-font);font-size:11px;letter-spacing:0.06em;padding:6px 10px;}
 
 /* STAT CARDS */
 .admin-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;}
@@ -241,11 +269,13 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 .complexity-coef-table td:first-child{font-weight:600;color:var(--ink-soft);white-space:nowrap;width:140px;}
 
 /* F1 TABLE */
-.f1-overall-cards{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;}
 .f1-badge{font-weight:700;font-variant-numeric:tabular-nums;}
 .f1-pattern-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:12px;}
 .f1-pattern-table th,.f1-pattern-table td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);}
 .f1-pattern-table th{font-weight:600;font-size:11px;letter-spacing:0.05em;text-transform:uppercase;color:var(--ink-soft);}
+.f1-overall-table .f1-overall-row{background:rgba(123,94,167,0.06);}
+.f1-overall-table .f1-overall-row td{border-bottom:2px solid var(--accent);font-weight:600;color:var(--ink);}
+:root[data-theme="light"] .f1-overall-table .f1-overall-row{background:rgba(79,60,138,0.06);}
 .f1-integration-note{font-size:12px;color:var(--ink-soft);margin:0;padding:10px 0;border-top:1px solid var(--border);}
 .f1-integration-note strong{color:var(--ink);}
 .f1-note-footnote{font-style:italic;opacity:0.7;}
