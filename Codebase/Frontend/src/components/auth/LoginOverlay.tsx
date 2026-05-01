@@ -128,6 +128,7 @@ export default function LoginOverlay() {
                 type="text"
                 autoComplete="username"
                 required
+                maxLength={64}
                 value={username}
                 onChange={e => setUsername(e.target.value)}
               />
@@ -138,6 +139,7 @@ export default function LoginOverlay() {
                 type="password"
                 autoComplete="current-password"
                 required
+                maxLength={128}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
               />

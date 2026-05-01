@@ -106,6 +106,7 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
             className="other-input"
             value={decision.patternName}
             placeholder="e.g. Singleton"
+            maxLength={64}
             disabled={isSaved || decision.isPattern !== true}
             onChange={e => onPatternName(e.target.value)}
           />
