@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import {
   fetchAdminOverview, fetchAdminRunsPerDay, fetchAdminPatternFreq,
-  fetchAdminScoreDistribution
+  fetchAdminTestRunStats
 } from '../../api/client';
 import {
-  AdminOverview, RunsPerDayPoint, PatternFreqPoint, ScoreBucket
+  AdminOverview, RunsPerDayPoint, PatternFreqPoint
 } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
@@ -120,38 +120,18 @@ function RunsLineChart({ series }: { series: RunsPerDayPoint[] }) {
   );
 }
 
-// ── Score distribution grouped table ─────────────────────────────────────────
+// ── Test-run accuracy ────────────────────────────────────────────────────────
+//
+// Aggregated from the gdb.<phase>.pass / gdb.<phase>.fail event log. The
+// "accuracy" pill is just pass / (pass + fail) — a quick read of whether
+// the unit-test suite is broadly healthy across all submissions.
 
-function ScoreDistTable({ buckets }: { buckets: ScoreBucket[] }) {
-  if (!buckets.length) return <div className="empty-state">No scores.</div>;
-  const maxCount = Math.max(1, ...buckets.map(b => b.count));
-  return (
-    <table className="score-dist-table">
-      <thead>
-        <tr>
-          <th>Patterns found</th>
-          <th>Runs</th>
-          <th className="score-dist-bar-col">Distribution</th>
-        </tr>
-      </thead>
-      <tbody>
-        {buckets.map((b, i) => {
-          const pct = Math.round((b.count / maxCount) * 100);
-          return (
-            <tr key={b.range}>
-              <td>{b.range}</td>
-              <td><strong>{b.count}</strong></td>
-              <td className="score-dist-bar-col">
-                <div className="score-dist-bar-track">
-                  <div className="score-dist-bar-fill" style={{ width: `${pct}%`, background: PALETTE[i % PALETTE.length] }} />
-                </div>
-              </td>
-            </tr>
-          );
-        })}
-      </tbody>
-    </table>
-  );
+interface TestRunStats {
+  total: number;
+  passed: number;
+  failed: number;
+  passRate: number;
+  perPhase: Array<{ phase: string; passed: number; failed: number }>;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
@@ -160,7 +140,7 @@ export default function StatsCharts() {
   const overview    = useStat<AdminOverview>(fetchAdminOverview);
   const runsPerDay  = useStat<{ series: RunsPerDayPoint[] }>(() => fetchAdminRunsPerDay(30));
   const patternFreq = useStat<{ series: PatternFreqPoint[] }>(fetchAdminPatternFreq);
-  const scoreDist   = useStat<{ buckets: ScoreBucket[] }>(fetchAdminScoreDistribution);
+  const testRuns    = useStat<TestRunStats>(fetchAdminTestRunStats);
 
   const patternMax = Math.max(1, ...(patternFreq.data?.series || []).map(p => p.count));
 
@@ -186,7 +166,7 @@ export default function StatsCharts() {
       </section>
 
       <section className="stats-section">
-        <h3>Pattern frequency</h3>
+        <h3>Pattern frequency distribution</h3>
         {patternFreq.error && <ErrorRow message={patternFreq.error} />}
         {patternFreq.data && (patternFreq.data.series.length === 0
           ? <div className="empty-state">No patterns yet.</div>
@@ -196,9 +176,33 @@ export default function StatsCharts() {
       </section>
 
       <section className="stats-section">
-        <h3>Score distribution</h3>
-        {scoreDist.error && <ErrorRow message={scoreDist.error} />}
-        {scoreDist.data && <ScoreDistTable buckets={scoreDist.data.buckets} />}
+        <h3>Unit-test accuracy</h3>
+        {testRuns.error && <ErrorRow message={testRuns.error} />}
+        {testRuns.data && (testRuns.data.total === 0
+          ? <div className="empty-state">No GDB test runs recorded yet.</div>
+          : (
+            <div className="test-run-stats">
+              <div className="stats-overview">
+                <StatTile label="Total cases"  value={testRuns.data.total} />
+                <StatTile label="Passed"        value={testRuns.data.passed} />
+                <StatTile label="Failed"        value={testRuns.data.failed} />
+                <StatTile label="Pass rate"     value={`${(testRuns.data.passRate * 100).toFixed(1)}%`} />
+              </div>
+              {testRuns.data.perPhase.map(p => {
+                const total = p.passed + p.failed;
+                const rate = total > 0 ? p.passed / total : 0;
+                return (
+                  <BarRow
+                    key={p.phase}
+                    label={`${p.phase} (${p.passed}/${total})`}
+                    value={Math.round(rate * 100)}
+                    max={100}
+                    color={rate >= 0.8 ? '#10b981' : rate >= 0.5 ? '#f59e0b' : '#ef4444'}
+                  />
+                );
+              })}
+            </div>
+          ))}
       </section>
 
     </div>

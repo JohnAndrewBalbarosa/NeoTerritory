@@ -23,6 +23,12 @@ interface AppState {
   // the Annotated tab's CTA: "Run GDB tests" first, then "Review before
   // submission" after they pass.
   gdbAllPassedForRun: boolean;
+  // Cached GDB run results bound to the current run's identity (runId or
+  // pendingId). Persists across tab switches so the runner doesn't re-run
+  // on every visit; cleared when a new analysis is dispatched (see
+  // setCurrentRun) so a fresh submission is required to re-run.
+  lastGdbResults: import('../api/client').GdbTestResult[] | null;
+  lastGdbRunKey: string | null;
   activeTab: StudioTab;
   consentAccepted: boolean;
   pretestSubmitted: boolean;
@@ -50,6 +56,7 @@ interface AppState {
   setSessionRanAnalyze: (v: boolean) => void;
   setSessionReviewedEnd: (v: boolean) => void;
   setGdbAllPassedForRun: (v: boolean) => void;
+  setLastGdbResults: (results: import('../api/client').GdbTestResult[] | null, runKey: string | null) => void;
   setActiveTab: (tab: StudioTab) => void;
   setConsentAccepted: (v: boolean) => void;
   setPretestSubmitted: (v: boolean) => void;
@@ -85,6 +92,8 @@ export const useAppStore = create<AppState>((set) => ({
   sessionRanAnalyze: false,
   sessionReviewedEnd: false,
   gdbAllPassedForRun: false,
+  lastGdbResults: null,
+  lastGdbRunKey: null,
   activeTab: 'submit',
   consentAccepted: false,
   pretestSubmitted: false,
@@ -136,8 +145,11 @@ export const useAppStore = create<AppState>((set) => ({
   setCurrentRun: (run) => set({
     currentRun: run,
     activeTab: run ? 'annotated' : 'submit',
-    // Setting a fresh run invalidates any prior GDB pass state.
-    gdbAllPassedForRun: false
+    // A fresh run invalidates GDB pass state AND the cached results — the
+    // runner is bound to the run's identity, so new code = new session.
+    gdbAllPassedForRun: false,
+    lastGdbResults: null,
+    lastGdbRunKey: null
   }),
   patchCurrentRun: (patch) => set((s) => ({
     currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
@@ -149,6 +161,7 @@ export const useAppStore = create<AppState>((set) => ({
   setSessionRanAnalyze: (v) => set({ sessionRanAnalyze: v }),
   setSessionReviewedEnd: (v) => set({ sessionReviewedEnd: v }),
   setGdbAllPassedForRun: (v) => set({ gdbAllPassedForRun: v }),
+  setLastGdbResults: (results, runKey) => set({ lastGdbResults: results, lastGdbRunKey: runKey }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setConsentAccepted: (v) => set({ consentAccepted: v }),
   setPretestSubmitted: (v) => set({ pretestSubmitted: v }),

@@ -144,14 +144,11 @@ body.login-active{overflow:hidden;}
 
 /* === SOURCE PANE === */
 .source-pane{border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface2);overflow:hidden;max-height:680px;overflow-y:auto;}
-.source-view{margin:0;padding:0;font-family:var(--code-font);font-size:12px;line-height:1.6;white-space:pre;overflow-x:auto;}
-/* When the surrounding container is narrow (e.g. the side-by-side layout
-   pushes us against the sidebar), allow long lines to wrap rather than
-   spawn a horizontal scrollbar that fights the sidebar's own scroller. */
-.results-body{min-width:0;overflow:hidden;}
-@media (max-width: 1280px){
-  .source-view{white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
-}
+/* Always wrap inside .results-body — no horizontal scroll. Long lines
+   break on any character so they cannot push the layout sideways. */
+.source-view{margin:0;padding:0;font-family:var(--code-font);font-size:12px;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;}
+.results-body{min-width:0;overflow-x:hidden;}
+.src-line{flex-wrap:wrap;}
 .src-line{display:flex;align-items:center;gap:8px;padding:1px 8px;background-color:var(--scope-bg,transparent);border-left:3px solid var(--ann-border,transparent);transition:background 0.1s;}
 .src-line.has-comment{cursor:pointer;}
 .src-line.has-comment:hover{background-color:rgba(123,94,167,0.08);}
@@ -650,7 +647,11 @@ body.login-active{overflow:hidden;}
 .tag-progress-pill--tagged{color:var(--green);border-color:var(--green);background:rgba(74,222,128,0.08);}
 .tag-progress-pill--missing{color:var(--amber);border-color:var(--amber);background:rgba(251,191,36,0.08);cursor:help;}
 .tag-progress-cta{margin-left:auto;font-size:13px;}
-.class-nav-overlay{position:absolute;bottom:12px;right:12px;z-index:5;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--amber);box-shadow:var(--shadow-md),0 0 10px rgba(251,191,36,0.18);font-size:12px;max-width:calc(100% - 24px);overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;white-space:nowrap;}
+/* Anchored to the right edge of .results-body and sticky to the viewport
+   bottom so it stays visible while scrolling long source files. The
+   wrapper is `position: sticky` and offset by `bottom`; the overlay is
+   then absolute-positioned inside it on the right edge. */
+.class-nav-overlay{position:sticky;bottom:12px;float:right;clear:both;margin-left:auto;margin-right:8px;z-index:5;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--amber);box-shadow:var(--shadow-md),0 0 10px rgba(251,191,36,0.18);font-size:12px;max-width:calc(100% - 24px);overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;white-space:nowrap;width:max-content;}
 .class-nav-overlay::-webkit-scrollbar{height:4px;}
 .class-nav-overlay::-webkit-scrollbar-thumb{background:var(--amber);border-radius:2px;}
 .class-nav-count{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 7px;border-radius:999px;background:var(--amber);color:#1a1300;font-size:11px;font-weight:700;font-variant-numeric:tabular-nums;flex:0 0 auto;}

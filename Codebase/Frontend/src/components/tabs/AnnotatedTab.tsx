@@ -339,9 +339,8 @@ export default function AnnotatedTab({
             classUsageBindings={currentRun.classUsageBindings}
             onLineClick={onCommentFlash}
           />
-        </div>
-        {classNav.length >= 1 && navClass && (
-          <div className="class-nav-overlay" role="navigation" aria-label="Ambiguous class navigation">
+          {classNav.length >= 1 && navClass && (
+            <div className="class-nav-overlay" role="navigation" aria-label="Ambiguous class navigation">
             <span className="class-nav-eyebrow">Ambiguous</span>
             <span
               className="class-nav-count"
@@ -368,8 +367,9 @@ export default function AnnotatedTab({
               aria-label="Next class"
               title="Next class"
             >→</button>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </section>
       <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
         {/* ClassBindings (which renders .class-strip-row) goes first so the

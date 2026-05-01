@@ -432,6 +432,37 @@ router.post('/log/event', jwtAuth, (req: Request, res: Response) => {
   res.status(204).end();
 });
 
+// Per-user test-run accuracy. Mirrors /admin/stats/test-runs but filters
+// the logs table to the calling user's events. Drives the user-facing
+// pass/fail counter in the studio.
+router.get('/stats/my-test-runs', jwtAuth, (req: Request, res: Response) => {
+  if (!req.user) { res.status(401).json({ error: 'Unauthorized' }); return; }
+  interface Row { event_type: string; n: number }
+  const rows = db.prepare(
+    `SELECT event_type, COUNT(*) AS n
+     FROM logs
+     WHERE event_type LIKE 'gdb.%' AND user_id = ?
+     GROUP BY event_type`
+  ).all(req.user.id) as Row[];
+  let passed = 0, failed = 0;
+  const phaseMap = new Map<string, { passed: number; failed: number }>();
+  for (const r of rows) {
+    const m = r.event_type.match(/^gdb\.([^.]+)\.(pass|fail)$/);
+    if (!m) continue;
+    const [, phase, kind] = m;
+    const slot = phaseMap.get(phase) || { passed: 0, failed: 0 };
+    if (kind === 'pass') { slot.passed += r.n; passed += r.n; }
+    else                 { slot.failed += r.n; failed += r.n; }
+    phaseMap.set(phase, slot);
+  }
+  const total = passed + failed;
+  res.json({
+    total, passed, failed,
+    passRate: total > 0 ? passed / total : 0,
+    perPhase: [...phaseMap.entries()].map(([phase, v]) => ({ phase, ...v }))
+  });
+});
+
 router.get('/health', (_req: Request, res: Response) => {
   const totalRuns = (() => {
     try {

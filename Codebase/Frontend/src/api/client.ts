@@ -305,6 +305,20 @@ export async function fetchAdminPatternFreq(): Promise<{ series: PatternFreqPoin
 export async function fetchAdminScoreDistribution(): Promise<{ buckets: ScoreBucket[] }> {
   return apiFetch<{ buckets: ScoreBucket[] }>('/api/admin/stats/score-distribution');
 }
+export interface AdminTestRunStats {
+  total: number;
+  passed: number;
+  failed: number;
+  passRate: number;
+  perPhase: Array<{ phase: string; passed: number; failed: number }>;
+}
+export async function fetchAdminTestRunStats(): Promise<AdminTestRunStats> {
+  return apiFetch<AdminTestRunStats>('/api/admin/stats/test-runs');
+}
+// User-side variant: just my own GDB pass/fail tally for the studio sidebar.
+export async function fetchMyTestRunStats(): Promise<AdminTestRunStats> {
+  return apiFetch<AdminTestRunStats>('/api/stats/my-test-runs');
+}
 export async function fetchAdminPerUser(): Promise<{ series: PerUserPoint[] }> {
   return apiFetch<{ series: PerUserPoint[] }>('/api/admin/stats/per-user-activity');
 }

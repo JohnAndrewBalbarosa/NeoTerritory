@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
-import { runPatternTests, GdbTestResult } from '../../api/client';
+import { runPatternTests, fetchMyTestRunStats, GdbTestResult, AdminTestRunStats } from '../../api/client';
 import { logFrontendEvent } from '../../lib/frontendLog';
 
 const VERDICT_LABEL: Record<string, string> = {
@@ -149,9 +149,26 @@ function PhaseRow({ phase, result, loading }: {
 }
 
 export default function GdbRunnerTab() {
-  const { currentRun, setActiveTab, setGdbAllPassedForRun } = useAppStore();
-  const [groups, setGroups] = useState<PatternGroup[]>([]);
-  const [activeKey, setActiveKey] = useState<string>('');
+  const {
+    currentRun, setActiveTab, setGdbAllPassedForRun,
+    lastGdbResults, lastGdbRunKey, setLastGdbResults
+  } = useAppStore();
+  // Session key for the current run — id-based when saved, pendingId-based
+  // when unsaved. The cached GDB results in the store are only valid when
+  // this matches `lastGdbRunKey`; mismatch means the user has submitted
+  // new code and must re-run.
+  const sessionKey = currentRun
+    ? (currentRun.runId != null ? `run:${currentRun.runId}` : `pending:${currentRun.pendingId || ''}`)
+    : '';
+  const cachedValid = !!lastGdbResults && lastGdbRunKey === sessionKey && lastGdbResults.length > 0;
+  const [groups, setGroups] = useState<PatternGroup[]>(
+    cachedValid ? groupResults(lastGdbResults!) : []
+  );
+  const [activeKey, setActiveKey] = useState<string>(
+    cachedValid && groups.length === 0 && lastGdbResults && lastGdbResults.length > 0
+      ? `${lastGdbResults[0].patternId}__${lastGdbResults[0].className}`
+      : ''
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState<string | null>(null);
@@ -159,6 +176,14 @@ export default function GdbRunnerTab() {
   const [now, setNow] = useState(Date.now());
   const [budgetRemaining, setBudgetRemaining] = useState<number | null>(null);
   const [ambiguousBlock, setAmbiguousBlock] = useState<string[] | null>(null);
+  const [accuracy, setAccuracy] = useState<AdminTestRunStats | null>(null);
+
+  // Pull the user's lifetime test-pass-rate so the studio sidebar can show
+  // an accuracy chip. Refetched after every successful run via the same
+  // groups dependency below.
+  useEffect(() => {
+    fetchMyTestRunStats().then(setAccuracy).catch(() => setAccuracy(null));
+  }, [groups]);
 
   useEffect(() => {
     if (!cooldownUntil) return;
@@ -197,7 +222,14 @@ export default function GdbRunnerTab() {
 
   const runId = currentRun.runId ?? null;
   const pendingId = currentRun.pendingId ?? null;
-  const canRun = (runId !== null || !!pendingId) && localAmbiguous.length === 0;
+  // The runner is bound to the *session*: once results exist for this run,
+  // re-running requires submitting new code (which clears the cache via
+  // setCurrentRun). This makes the test history correspond 1:1 with code
+  // states the user actually shipped.
+  const alreadyRanForThisRun = cachedValid;
+  const canRun = (runId !== null || !!pendingId)
+              && localAmbiguous.length === 0
+              && !alreadyRanForThisRun;
 
   const cooldownLeftMs = cooldownUntil ? Math.max(0, cooldownUntil - now) : 0;
   const onCooldown = cooldownLeftMs > 0;
@@ -236,6 +268,10 @@ export default function GdbRunnerTab() {
         setActiveKey(`${grouped[0].patternId}__${grouped[0].className}`);
       }
       setBudgetRemaining(data.rateLimit?.remaining ?? null);
+      // Persist results in the session so a tab switch doesn't lose them.
+      // The runKey binds the cache to *this* run's identity — a new
+      // submission resets it via setCurrentRun, requiring a fresh run.
+      setLastGdbResults(data.results, sessionKey);
       const passed = data.results.filter(r => r.passed).length;
       // The Annotated tab's CTA gate: only allow advancing to Review once
       // every emitted test result passed for the current run.
@@ -272,21 +308,34 @@ export default function GdbRunnerTab() {
           {budgetRemaining !== null && (
             <span className="gdb-budget"> · {budgetRemaining} run(s) left this minute</span>
           )}
+          {accuracy && accuracy.total > 0 && (
+            <span className="gdb-accuracy" title={`${accuracy.passed} pass / ${accuracy.failed} fail across all your runs`}>
+              {' · '}
+              <strong>{(accuracy.passRate * 100).toFixed(0)}%</strong> accuracy
+              {' '}({accuracy.passed}✓/{accuracy.failed}✗)
+            </span>
+          )}
         </p>
         <button
           type="button"
           className="primary-btn"
           onClick={runAll}
           disabled={!canRun || busy || onCooldown}
-          title={localAmbiguous.length > 0
-            ? `Resolve ambiguity for: ${localAmbiguous.join(', ')}`
-            : undefined}
+          title={
+            localAmbiguous.length > 0
+              ? `Resolve ambiguity for: ${localAmbiguous.join(', ')}`
+              : alreadyRanForThisRun
+                ? 'These tests are bound to the current submission. Submit new code to re-run.'
+                : undefined
+          }
         >
           {busy
             ? 'Running…'
             : onCooldown
               ? `Cooldown ${Math.ceil(cooldownLeftMs / 1000)}s`
-              : groups.length > 0 ? 'Re-run all' : 'Run all tests'}
+              : alreadyRanForThisRun
+                ? 'Already ran for this submission'
+                : 'Run all tests'}
         </button>
       </header>
 

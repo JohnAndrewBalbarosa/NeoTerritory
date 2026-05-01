@@ -513,6 +513,38 @@ function olsRegression(points: Array<{ x: number; y: number }>): {
   return { slope: Number(slope.toFixed(4)), intercept: Number(intercept.toFixed(4)), r2, n, interpretation };
 }
 
+// Test-run pass/fail tally derived from the gdb.<phase>.<pass|fail> events
+// the runner emits to the logs table. Used by the admin "Unit-test
+// accuracy" panel and (with a user filter) by the studio sidebar.
+router.get('/stats/test-runs', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    interface Row { event_type: string; n: number }
+    const rows = db.prepare(
+      `SELECT event_type, COUNT(*) AS n
+       FROM logs
+       WHERE event_type LIKE 'gdb.%'
+       GROUP BY event_type`
+    ).all() as Row[];
+    let passed = 0, failed = 0;
+    const phaseMap = new Map<string, { passed: number; failed: number }>();
+    for (const r of rows) {
+      const m = r.event_type.match(/^gdb\.([^.]+)\.(pass|fail)$/);
+      if (!m) continue;
+      const [, phase, kind] = m;
+      const slot = phaseMap.get(phase) || { passed: 0, failed: 0 };
+      if (kind === 'pass') { slot.passed += r.n; passed += r.n; }
+      else                 { slot.failed += r.n; failed += r.n; }
+      phaseMap.set(phase, slot);
+    }
+    const total = passed + failed;
+    res.json({
+      total, passed, failed,
+      passRate: total > 0 ? passed / total : 0,
+      perPhase: [...phaseMap.entries()].map(([phase, v]) => ({ phase, ...v }))
+    });
+  } catch (err) { next(err); }
+});
+
 router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const rows = db.prepare(`SELECT id, source_text, analysis_json FROM analysis_runs`)
