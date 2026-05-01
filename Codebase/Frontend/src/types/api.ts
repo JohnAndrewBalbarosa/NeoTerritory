@@ -236,6 +236,7 @@ export interface HealthStatus {
     enabled: boolean;
     imageReady: boolean;
     livePods: number;
+    reason: 'env_off' | 'no_binary' | 'daemon_down' | null;
   };
   process?: {
     pid: number;

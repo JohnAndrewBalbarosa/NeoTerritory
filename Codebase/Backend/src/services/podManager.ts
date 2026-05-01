@@ -47,8 +47,23 @@ const POD_PIDS_LIMIT     = process.env.POD_PIDS_LIMIT            || '64';
 
 const pods = new Map<number, InternalPod>();
 
+// Diagnostic enum so the frontend can show a specific reason instead of
+// a generic "disabled" — "no docker on PATH" vs "daemon not responding"
+// vs env flag off each call for a different operator fix.
+export type PodDisabledReason =
+  | 'env_off'
+  | 'no_binary'
+  | 'daemon_down'
+  | null;
+
 export function isPodModeEnabled(): boolean {
-  return process.env.TEST_RUNNER_USE_DOCKER === '1' && hasDocker();
+  if (process.env.TEST_RUNNER_USE_DOCKER !== '1') return false;
+  return dockerStatus().ok;
+}
+
+export function podDisabledReason(): PodDisabledReason {
+  if (process.env.TEST_RUNNER_USE_DOCKER !== '1') return 'env_off';
+  return dockerStatus().reason;
 }
 
 // Check whether the pod image is already present on the local Docker host.
@@ -114,14 +129,34 @@ export async function ensurePodImageBuilt(): Promise<boolean> {
   });
 }
 
-let cachedDockerOk: boolean | null = null;
-function hasDocker(): boolean {
-  if (cachedDockerOk !== null) return cachedDockerOk;
-  const probe = process.platform === 'win32'
+// Cached Docker probe — refreshed every 30s so a quick burst of
+// health-checks doesn't spam the daemon, but the cache is short enough
+// that flipping Docker Desktop on without restarting the backend
+// recovers automatically. The probe checks BOTH that `docker` is on
+// PATH (PodDisabledReason='no_binary' otherwise) AND that `docker info`
+// answers (='daemon_down' when Desktop is closed).
+const DOCKER_PROBE_TTL_MS = 30_000;
+let cachedDockerOk: { ok: boolean; reason: PodDisabledReason; checkedAt: number } | null = null;
+
+function probeDocker(): { ok: boolean; reason: PodDisabledReason } {
+  const which = process.platform === 'win32'
     ? spawnSync('where.exe', ['docker'], { stdio: 'ignore' })
     : spawnSync('which', ['docker'], { stdio: 'ignore' });
-  cachedDockerOk = probe.status === 0;
-  return cachedDockerOk;
+  if (which.status !== 0) return { ok: false, reason: 'no_binary' };
+  const info = spawnSync('docker', ['info', '--format', '{{.ServerVersion}}'],
+    { stdio: 'ignore', timeout: 5_000 });
+  if (info.status !== 0) return { ok: false, reason: 'daemon_down' };
+  return { ok: true, reason: null };
+}
+
+function dockerStatus(): { ok: boolean; reason: PodDisabledReason } {
+  const now = Date.now();
+  if (cachedDockerOk && now - cachedDockerOk.checkedAt < DOCKER_PROBE_TTL_MS) {
+    return { ok: cachedDockerOk.ok, reason: cachedDockerOk.reason };
+  }
+  const r = probeDocker();
+  cachedDockerOk = { ...r, checkedAt: now };
+  return r;
 }
 
 function nowMs(): number { return Date.now(); }
@@ -273,11 +308,18 @@ export function registerShutdownHooks(): void {
 // Snapshot the manager's state for the /api/health endpoint. Lets the
 // frontend status card surface "Docker: online (N pods)" without polling
 // `docker ps` itself.
-export function podManagerStatus(): { enabled: boolean; imageReady: boolean; livePods: number } {
+export function podManagerStatus(): {
+  enabled: boolean;
+  imageReady: boolean;
+  livePods: number;
+  reason: PodDisabledReason;
+} {
+  const enabled = isPodModeEnabled();
   return {
-    enabled: isPodModeEnabled(),
-    imageReady: isPodModeEnabled() ? imageExists(POD_IMAGE) : false,
-    livePods: pods.size
+    enabled,
+    imageReady: enabled ? imageExists(POD_IMAGE) : false,
+    livePods: pods.size,
+    reason: enabled ? null : podDisabledReason()
   };
 }
 

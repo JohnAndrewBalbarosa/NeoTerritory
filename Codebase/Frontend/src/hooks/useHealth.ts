@@ -23,7 +23,16 @@ export function useHealth() {
         // resolves to a useful "offline (...)" reason on the status card.
         if (h.docker) {
           if (!h.docker.enabled) {
-            setDockerStatus('offline', 'disabled');
+            // Specific reason makes the operator fix obvious:
+            //   env_off       → flip TEST_RUNNER_USE_DOCKER=1 in .env
+            //   no_binary     → install Docker / put it on PATH
+            //   daemon_down   → start Docker Desktop
+            const reasonLabel =
+              h.docker.reason === 'env_off'     ? 'disabled (env)' :
+              h.docker.reason === 'no_binary'   ? 'disabled (docker not on PATH)' :
+              h.docker.reason === 'daemon_down' ? 'disabled (start Docker Desktop)' :
+              'disabled';
+            setDockerStatus('offline', reasonLabel);
           } else if (!h.docker.imageReady) {
             setDockerStatus('checking', 'building image…');
           } else {
