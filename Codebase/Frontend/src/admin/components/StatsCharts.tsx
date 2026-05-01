@@ -170,9 +170,14 @@ export default function StatsCharts() {
         {patternFreq.error && <ErrorRow message={patternFreq.error} />}
         {patternFreq.data && (patternFreq.data.series.length === 0
           ? <div className="empty-state">No patterns yet.</div>
-          : patternFreq.data.series.slice(0, 12).map((p, i) => (
-              <BarRow key={p.pattern} label={p.pattern} value={p.count} max={patternMax} color={PALETTE[i % PALETTE.length]} />
-            )))}
+          : [...patternFreq.data.series]
+              // Sort descending so the most frequent pattern paints the
+              // tallest bar at 100% and the rest scale proportionally.
+              .sort((a, b) => b.count - a.count)
+              .slice(0, 12)
+              .map((p, i) => (
+                <BarRow key={p.pattern} label={p.pattern} value={p.count} max={patternMax} color={PALETTE[i % PALETTE.length]} />
+              )))}
       </section>
 
       <section className="stats-section">

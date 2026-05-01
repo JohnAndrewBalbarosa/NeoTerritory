@@ -116,6 +116,8 @@ export default function AnnotatedTab({
     const firstLineByClass = new Map<string, number>();
     const inScopePatterns = new Map<string, Set<string>>();
     if (!run) return { patternCountByClass, firstLineByClass, inScopePatterns };
+
+    // Pass A — pattern documentation targets.
     for (const p of run.detectedPatterns || []) {
       if (p.className) {
         patternCountByClass.set(
@@ -143,8 +145,51 @@ export default function AnnotatedTab({
         }
       }
     }
+
+    // Pass B — annotations. The annotation stream often carries ambiguity
+    // signal the matcher's documentationTargets don't (e.g. ShapeFactory's
+    // body is single-pattern in detectedPatterns but the per-line
+    // annotations can carry two distinct patternKeys). Treat each
+    // annotation's (line, patternKey) as in-scope evidence for the class
+    // whose declaration scope contains that line. We also fold the class's
+    // own usage-binding lines in (so global helpers that reference it
+    // contribute to its ambiguity verdict).
+    for (const ann of allAnnotations) {
+      const line = typeof ann.line === 'number' ? ann.line : null;
+      const key = ann.patternKey;
+      if (!line || !key) continue;
+      for (const [name, loc] of classLocations.entries()) {
+        if (line >= loc.line && line <= loc.endLine) {
+          if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
+          inScopePatterns.get(name)!.add(key);
+        }
+      }
+    }
+    const usageBindings = run.classUsageBindings || {};
+    for (const [name, list] of Object.entries(usageBindings)) {
+      for (const b of list || []) {
+        const line = typeof b?.line === 'number' ? b.line : null;
+        if (!line) continue;
+        // For every detected pattern target on this usage line, log the
+        // pattern under the bound class so a global helper that touches
+        // multiple pattern signatures flags its referent class as ambiguous.
+        for (const p of run.detectedPatterns || []) {
+          const hit = (p.documentationTargets || []).some(t => t.line === line);
+          if (hit) {
+            if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
+            inScopePatterns.get(name)!.add(p.patternId);
+          }
+        }
+        for (const ann of allAnnotations) {
+          if (ann.line === line && ann.patternKey) {
+            if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
+            inScopePatterns.get(name)!.add(ann.patternKey);
+          }
+        }
+      }
+    }
     return { patternCountByClass, firstLineByClass, inScopePatterns };
-  }, [currentRun, classLocations]);
+  }, [currentRun, classLocations, allAnnotations]);
 
   const classNav = useMemo(() => {
     const run = currentRun;
@@ -179,7 +224,7 @@ export default function AnnotatedTab({
   // and the user has not picked a pattern via the popover. Picking a pattern
   // patches `currentRun.classResolvedPatterns`, which retriggers this memo
   // and updates the pill live without a re-fetch.
-  const { ambiguousClassNames, taggedClassNames, missingClassNames, allClassNames } = useMemo(() => {
+  const { taggedClassNames, missingClassNames, allClassNames } = useMemo(() => {
     const ambiguous = new Set<string>();
     const tagged: string[] = [];
     const missing: string[] = [];
@@ -195,6 +240,11 @@ export default function AnnotatedTab({
       ...bindingClassNames,
       ...ambiguousByScope
     ]);
+    // Missing == ambiguous, by design. A class is "missing a tag" precisely
+    // when it has competing pattern guesses (direct or in-scope) and the
+    // user hasn't picked one. Classes the matcher confidently single-tagged
+    // OR the user explicitly resolved are tagged; classes with neither
+    // detection nor ambiguity are left out of the count entirely.
     for (const c of all) {
       const directAmbiguous  = (patternCountByClass.get(c) || 0) > 1;
       const inScopeAmbiguous = (inScopePatterns.get(c)?.size || 0) > 1;
@@ -203,12 +253,8 @@ export default function AnnotatedTab({
       if (isAmbiguous) {
         ambiguous.add(c);
         missing.push(c);
-        continue;
-      }
-      if (detectedClassNames.has(c) || isResolved) {
+      } else if (detectedClassNames.has(c) || isResolved) {
         tagged.push(c);
-      } else {
-        missing.push(c);
       }
     }
     return {
@@ -223,7 +269,6 @@ export default function AnnotatedTab({
   const missingCount = missingClassNames.length;
   const totalClasses = allClassNames.size;
   const allTagged = totalClasses > 0 && missingCount === 0;
-  const ambiguousCount = ambiguousClassNames.size;
   const navClass = classNav[classNavIdx];
   // If the active class drops off the list (e.g. user resolved it), snap
   // the index back to a valid range so the overlay re-renders correctly.
@@ -280,11 +325,11 @@ export default function AnnotatedTab({
               {taggedCount} class{taggedCount === 1 ? '' : 'es'} tagged
             </span>
             {missingCount > 0 && (
-              <span className="tag-progress-pill tag-progress-pill--missing" title={missingClassNames.join(', ')}>
-                {missingCount} class{missingCount === 1 ? '' : 'es'} with missing tags
-                {ambiguousCount > 0 && (
-                  <small className="tag-progress-ambig"> · {ambiguousCount} ambiguous</small>
-                )}
+              <span
+                className="tag-progress-pill tag-progress-pill--missing"
+                title={missingClassNames.join(', ')}
+              >
+                {missingCount} ambiguous class{missingCount === 1 ? '' : 'es'} with missing tags
               </span>
             )}
             {ctaPhase !== 'tag' && (
@@ -339,38 +384,42 @@ export default function AnnotatedTab({
             classUsageBindings={currentRun.classUsageBindings}
             onLineClick={onCommentFlash}
           />
-          {classNav.length >= 1 && navClass && (
-            <div className="class-nav-overlay" role="navigation" aria-label="Ambiguous class navigation">
+        </div>
+      </section>
+      {/* Corner buttons fallback — viewport-fixed at bottom-left and
+          bottom-right. They disappear once every class is tagged
+          (classNav.length === 0) and re-appear if an undo brings back
+          ambiguity. The middle label between the two buttons sits at the
+          bottom-center so the user always sees what they're navigating to. */}
+      {classNav.length >= 1 && navClass && (
+        <>
+          <button
+            type="button"
+            className="class-nav-corner class-nav-corner--left"
+            onClick={() => gotoClass(classNavIdx - 1)}
+            aria-label="Previous ambiguous class"
+            title="Previous ambiguous class"
+          >←</button>
+          <div className="class-nav-center" role="status" aria-live="polite">
             <span className="class-nav-eyebrow">Ambiguous</span>
-            <span
-              className="class-nav-count"
-              title={`${classNav.length} class${classNav.length === 1 ? '' : 'es'} need a tag`}
-            >
+            <span className="class-nav-count" title={`${classNav.length} class${classNav.length === 1 ? '' : 'es'} need a tag`}>
               {classNav.length}
             </span>
-            <button
-              type="button"
-              className="class-nav-btn"
-              onClick={() => gotoClass(classNavIdx - 1)}
-              aria-label="Previous class"
-              title="Previous class"
-            >←</button>
             <span className="class-nav-label" title={navClass.className}>
               <span className="class-nav-position">{classNavIdx + 1} / {classNav.length}</span>
               <span className="class-nav-classname">{navClass.className}</span>
               <span className="class-nav-line">L{navClass.line}</span>
             </span>
-            <button
-              type="button"
-              className="class-nav-btn"
-              onClick={() => gotoClass(classNavIdx + 1)}
-              aria-label="Next class"
-              title="Next class"
-            >→</button>
-            </div>
-          )}
-        </div>
-      </section>
+          </div>
+          <button
+            type="button"
+            className="class-nav-corner class-nav-corner--right"
+            onClick={() => gotoClass(classNavIdx + 1)}
+            aria-label="Next ambiguous class"
+            title="Next ambiguous class"
+          >→</button>
+        </>
+      )}
       <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
         {/* ClassBindings (which renders .class-strip-row) goes first so the
             strip sits above the scoring-explainer-banner inside PatternCards. */}

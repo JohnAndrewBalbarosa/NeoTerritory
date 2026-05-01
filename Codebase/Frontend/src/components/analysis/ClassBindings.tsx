@@ -178,10 +178,16 @@ export default function ClassBindings({ bindings, detectedPatterns, classResolve
               className="class-chip"
               style={style}
               aria-pressed={openClass === cls}
+              title={`${cls} — ${usageCount} usage site${usageCount === 1 ? '' : 's'} (function calls or constructions referencing this class)`}
               onClick={(e) => openFor(cls, e)}
             >
               <span>{cls}</span>
-              <span className="class-chip-count">{usageCount}</span>
+              <span
+                className="class-chip-count"
+                title={`${usageCount} usage site${usageCount === 1 ? '' : 's'}`}
+              >
+                {usageCount}
+              </span>
             </button>
           );
         })}
