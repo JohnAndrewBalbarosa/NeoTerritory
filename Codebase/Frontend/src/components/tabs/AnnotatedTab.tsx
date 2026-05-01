@@ -203,11 +203,14 @@ export default function AnnotatedTab({
     ]);
     for (const className of considered) {
       if (resolvedMap[className]) continue;
-      // Only microservice-tagged classes can be in the ambiguous nav cycle.
-      // Untagged classes are surfaced separately and don't compete here.
-      if (!detectedClassNames.has(className)) continue;
+      // Microservice-tagged means: detected directly OR has at least one
+      // detection inside its scope. Same criterion the progress pill uses
+      // so the corner buttons cycle exactly the missing/ambiguous set.
+      const inScopeSize = inScopePatterns.get(className)?.size || 0;
+      const isTagged = detectedClassNames.has(className) || inScopeSize >= 1;
+      if (!isTagged) continue;
       const directAmbiguous  = (patternCountByClass.get(className) || 0) > 1;
-      const inScopeAmbiguous = (inScopePatterns.get(className)?.size  || 0) > 1;
+      const inScopeAmbiguous = inScopeSize > 1;
       if (!directAmbiguous && !inScopeAmbiguous) continue;
       const fallbackLine = firstLineByClass.get(className) ?? 1;
       const loc = classLocations.get(className);
@@ -245,10 +248,17 @@ export default function AnnotatedTab({
     // Classes with regex/binding evidence but zero microservice tags
     // become "untagged" — informational only, no CTA effect.
     for (const c of all) {
-      const isTaggedByMicroservice = detectedClassNames.has(c);
+      // A class is microservice-tagged if EITHER the detection carried its
+      // className directly OR at least one detection targeted a line inside
+      // its declaration scope. The second clause is the common case for
+      // classes whose head/body share lines with detected patterns but
+      // where the matcher didn't attach the className field — they're
+      // still meaningfully tagged from the user's point of view.
+      const inScopeCount = inScopePatterns.get(c)?.size || 0;
+      const isTaggedByMicroservice = detectedClassNames.has(c) || inScopeCount >= 1;
       const isResolved = !!resolvedMap[c];
       const directAmbiguous  = (patternCountByClass.get(c) || 0) > 1;
-      const inScopeAmbiguous = (inScopePatterns.get(c)?.size || 0) > 1;
+      const inScopeAmbiguous = inScopeCount > 1;
       const isAmbiguous = isTaggedByMicroservice
                        && (directAmbiguous || inScopeAmbiguous)
                        && !isResolved;

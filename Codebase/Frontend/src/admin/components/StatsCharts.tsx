@@ -10,50 +10,60 @@ import { isAuthError } from '../lib/silenceAuthErrors';
 
 const PALETTE = ['#2563eb', '#10b981', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#ef4444', '#f59e0b'];
 
-// Per-family colour map. The leading segment of patternId (`creational.X`,
-// `structural.X`, …) buckets the slice; we use a deliberate per-family
-// palette so the family pie reads consistently even as new patterns join
-// the catalog.
+// Per-family colour map. We only entertain the three design-pattern
+// families the catalog actually authors templates for — anything outside
+// those buckets gets dropped from the family pie rather than lumped into
+// a synthetic "Other" category the user explicitly didn't want.
 const FAMILY_COLOR: Record<string, string> = {
   creational:  '#2563eb',
   structural:  '#10b981',
-  behavioural: '#8b5cf6',
-  other:       '#94a3b8'
+  behavioural: '#8b5cf6'
 };
+const FAMILY_ORDER = ['creational', 'structural', 'behavioural'] as const;
 
 interface PieSlice { label: string; value: number; color: string }
 
 function PieChart({ slices, title, ariaLabel }: { slices: PieSlice[]; title: string; ariaLabel: string }) {
-  const total = slices.reduce((s, x) => s + x.value, 0);
+  const positive = slices.filter(s => s.value > 0);
+  const total = positive.reduce((s, x) => s + x.value, 0);
   if (total <= 0) return <div className="empty-state">{title}: no data.</div>;
   const cx = 70, cy = 70, r = 56;
+  // Pre-compute each slice's start/end angles so the path math doesn't
+  // accumulate FP drift inside JSX. A single full-circle slice is rendered
+  // as <circle> because SVG arc paths can't draw a 360° arc with a single
+  // command (start == end → empty path).
+  const computed: Array<{ slice: PieSlice; startAng: number; endAng: number; pct: number }> = [];
   let acc = 0;
-  // Single full-circle slice degenerates to one path with d="..."; we fall
-  // back to a bare circle so the renderer still shows something useful.
-  const isOnlySlice = slices.filter(s => s.value > 0).length === 1;
+  for (const s of positive) {
+    const startAng = (acc / total) * 2 * Math.PI - Math.PI / 2;
+    acc += s.value;
+    const endAng   = (acc / total) * 2 * Math.PI - Math.PI / 2;
+    computed.push({ slice: s, startAng, endAng, pct: (s.value / total) * 100 });
+  }
   return (
     <figure className="stats-pie">
       <svg viewBox="0 0 140 140" width="140" height="140" aria-label={ariaLabel}>
-        {isOnlySlice
-          ? <circle cx={cx} cy={cy} r={r} fill={slices.find(s => s.value > 0)!.color} />
-          : slices.map((s, i) => {
-              if (s.value <= 0) return null;
-              const startAng = (acc / total) * Math.PI * 2 - Math.PI / 2;
-              acc += s.value;
-              const endAng = (acc / total) * Math.PI * 2 - Math.PI / 2;
+        {positive.length === 1
+          ? (
+            <circle cx={cx} cy={cy} r={r} fill={positive[0].color}>
+              <title>{positive[0].label}: {positive[0].value} (100.0%)</title>
+            </circle>
+          )
+          : computed.map(({ slice, startAng, endAng, pct }, i) => {
               const x1 = cx + r * Math.cos(startAng), y1 = cy + r * Math.sin(startAng);
               const x2 = cx + r * Math.cos(endAng),   y2 = cy + r * Math.sin(endAng);
-              const large = s.value / total > 0.5 ? 1 : 0;
-              const pct = ((s.value / total) * 100).toFixed(1);
+              // Use ≥ 0.5 so the degenerate 180° slice (sweep angle exactly
+              // π) still picks the long arc and renders a clean half.
+              const large = slice.value / total >= 0.5 ? 1 : 0;
               return (
                 <path
                   key={i}
-                  d={`M ${cx} ${cy} L ${x1} ${y1} A ${r} ${r} 0 ${large} 1 ${x2} ${y2} Z`}
-                  fill={s.color}
+                  d={`M ${cx} ${cy} L ${x1.toFixed(3)} ${y1.toFixed(3)} A ${r} ${r} 0 ${large} 1 ${x2.toFixed(3)} ${y2.toFixed(3)} Z`}
+                  fill={slice.color}
                   stroke="var(--surface)"
                   strokeWidth="1"
                 >
-                  <title>{s.label}: {s.value} ({pct}%)</title>
+                  <title>{slice.label}: {slice.value} ({pct.toFixed(1)}%)</title>
                 </path>
               );
             })}
@@ -61,11 +71,11 @@ function PieChart({ slices, title, ariaLabel }: { slices: PieSlice[]; title: str
       <figcaption>
         <strong>{title}</strong>
         <ul className="stats-pie-legend">
-          {slices.filter(s => s.value > 0).map((s, i) => (
+          {computed.map(({ slice, pct }, i) => (
             <li key={i}>
-              <span className="stats-pie-swatch" style={{ background: s.color }} />
-              <span className="stats-pie-label">{s.label}</span>
-              <span className="stats-pie-value">{s.value}</span>
+              <span className="stats-pie-swatch" style={{ background: slice.color }} />
+              <span className="stats-pie-label">{slice.label}</span>
+              <span className="stats-pie-value">{slice.value} <small>({pct.toFixed(0)}%)</small></span>
             </li>
           ))}
         </ul>
@@ -248,17 +258,24 @@ export default function StatsCharts() {
               if (otherCount > 0) {
                 perPatternSlices.push({ label: 'Other', value: otherCount, color: '#94a3b8' });
               }
-              // Family bucketing: patternId is `<family>.<name>`.
+              // Family bucketing — patternId is `<family>.<name>`. Anything
+              // outside the catalog's three authored families (creational /
+              // structural / behavioural) is dropped from the pie, not
+              // lumped into a generic Other bucket the user explicitly did
+              // not want.
               const byFamily = new Map<string, number>();
               for (const p of sorted) {
-                const fam = (p.pattern.split('.')[0] || 'other').toLowerCase();
+                const fam = (p.pattern.split('.')[0] || '').toLowerCase();
+                if (!(fam in FAMILY_COLOR)) continue;
                 byFamily.set(fam, (byFamily.get(fam) || 0) + p.count);
               }
-              const familySlices: PieSlice[] = [...byFamily.entries()].map(([fam, value]) => ({
-                label: fam.charAt(0).toUpperCase() + fam.slice(1),
-                value,
-                color: FAMILY_COLOR[fam] || FAMILY_COLOR.other
-              }));
+              const familySlices: PieSlice[] = FAMILY_ORDER
+                .filter(fam => (byFamily.get(fam) || 0) > 0)
+                .map(fam => ({
+                  label: fam.charAt(0).toUpperCase() + fam.slice(1),
+                  value: byFamily.get(fam) || 0,
+                  color: FAMILY_COLOR[fam]
+                }));
               return (
                 <>
                   {top.map((p, i) => (

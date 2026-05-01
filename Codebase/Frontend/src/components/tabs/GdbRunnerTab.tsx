@@ -133,8 +133,14 @@ function PhaseRow({ phase, result, loading }: {
       {result?.message && <p className="gdb-phase-message">{result.message}</p>}
       <CriteriaList result={result} />
       {result?.actual && (
-        <details className="gdb-result-pane">
-          <summary>actual / stderr</summary>
+        // Failed phases auto-expand the stderr/stdout pane so the user
+        // sees the compile error or assertion-failure trace immediately.
+        // Passed phases keep it collapsed (signal-to-noise).
+        <details
+          className="gdb-result-pane"
+          open={result && !result.passed && result.verdict !== 'skipped'}
+        >
+          <summary>{result && !result.passed ? 'Error output (auto-expanded)' : 'actual / stderr'}</summary>
           <pre>{result.actual}</pre>
         </details>
       )}
