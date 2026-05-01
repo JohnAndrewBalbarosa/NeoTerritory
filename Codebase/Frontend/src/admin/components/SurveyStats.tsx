@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchAdminSurveySummary } from '../../api/client';
 import { SurveySummary, LikertMetric } from '../../types/api';
+import { isAuthError } from '../lib/silenceAuthErrors';
 
 function MiniDistribution({ dist }: { dist: number[] }) {
   const max = Math.max(1, ...dist);
@@ -55,7 +56,10 @@ export default function SurveyStats() {
   useEffect(() => {
     fetchAdminSurveySummary()
       .then(setData)
-      .catch(err => setError(err instanceof Error ? err.message : 'Failed to load'));
+      .catch(err => {
+        if (isAuthError(err)) { setData(null); return; }
+        setError(err instanceof Error ? err.message : 'Failed to load');
+      });
   }, []);
 
   if (error) return <div className="empty-state admin-error" role="alert">Survey error: {error}</div>;

@@ -6,6 +6,7 @@ import {
 import {
   AdminOverview, RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint
 } from '../../types/api';
+import { isAuthError } from '../lib/silenceAuthErrors';
 
 const PALETTE = ['#2563eb', '#10b981', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#ef4444', '#f59e0b'];
 
@@ -17,7 +18,11 @@ function useStat<T>(loader: () => Promise<T>): SectionState<T> {
     let cancelled = false;
     loader()
       .then(d => { if (!cancelled) setState({ data: d, error: null }); })
-      .catch(err => { if (!cancelled) setState({ data: null, error: err instanceof Error ? err.message : 'Failed to load' }); });
+      .catch(err => {
+        if (cancelled) return;
+        if (isAuthError(err)) { setState({ data: null, error: null }); return; }
+        setState({ data: null, error: err instanceof Error ? err.message : 'Failed to load' });
+      });
     return () => { cancelled = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

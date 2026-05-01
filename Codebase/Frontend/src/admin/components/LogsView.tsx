@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminLogs, fetchAdminReviews, deleteAdminLogs } from '../../api/client';
 import { AdminLogEntry, AdminReview } from '../../types/api';
 import { fmtDate } from '../../lib/patterns';
+import { isAuthError } from '../lib/silenceAuthErrors';
 
 // ─── Reviews (unchanged) ──────────────────────────────────────────────────────
 
@@ -35,7 +36,11 @@ function ReviewsList() {
     let cancelled = false;
     fetchAdminReviews()
       .then(d => { if (!cancelled) setReviews(d.reviews || []); })
-      .catch(err => { if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load reviews'); });
+      .catch(err => {
+        if (cancelled) return;
+        if (isAuthError(err)) { setReviews([]); return; }
+        setError(err instanceof Error ? err.message : 'Failed to load reviews');
+      });
     return () => { cancelled = true; };
   }, []);
 
@@ -147,7 +152,11 @@ function LogsList() {
     cancelledRef.current = false;
     fetchAdminLogs(200)
       .then(d => { if (!cancelledRef.current) setLogs(d.logs ?? []); })
-      .catch(err => { if (!cancelledRef.current) setError(err instanceof Error ? err.message : 'Failed to load logs'); });
+      .catch(err => {
+        if (cancelledRef.current) return;
+        if (isAuthError(err)) { setLogs([]); return; }
+        setError(err instanceof Error ? err.message : 'Failed to load logs');
+      });
   }
 
   useEffect(() => {

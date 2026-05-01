@@ -8,6 +8,7 @@ import LogsView from './components/LogsView';
 import { fetchAdminReviews } from '../api/client';
 import { AdminReview } from '../types/api';
 import { useAdminUsers } from './hooks/useAdminUsers';
+import { isAuthError } from './lib/silenceAuthErrors';
 
 type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'logs';
 
@@ -25,7 +26,11 @@ function ReviewsPanel() {
   useEffect(() => {
     fetchAdminReviews()
       .then(r => setReviews(r.reviews))
-      .catch(e => setError(e.message));
+      .catch(e => {
+        // Silence the pre-auth 401 race; treat as empty.
+        if (isAuthError(e)) { setReviews([]); return; }
+        setError(e.message);
+      });
   }, []);
   if (error) return <div className="empty-state admin-error" role="alert">{error}</div>;
   if (!reviews) return <div className="empty-state">Loading…</div>;

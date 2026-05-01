@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchAdminComplexityData, fetchAdminF1Metrics } from '../../api/client';
 import { ComplexityData, F1Metrics, ComplexityPoint } from '../../types/api';
+import { isAuthError } from '../lib/silenceAuthErrors';
 
 // ─── Line chart (LOC-sorted, with regression overlay) ────────────────────────
 
@@ -112,8 +113,12 @@ export default function ComplexityTab() {
   const [fErr, setFErr] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchAdminComplexityData().then(setComplexity).catch(e => setCErr(e.message));
-    fetchAdminF1Metrics().then(setF1).catch(e => setFErr(e.message));
+    fetchAdminComplexityData()
+      .then(setComplexity)
+      .catch(e => { if (!isAuthError(e)) setCErr(e.message); });
+    fetchAdminF1Metrics()
+      .then(setF1)
+      .catch(e => { if (!isAuthError(e)) setFErr(e.message); });
   }, []);
 
   return (
