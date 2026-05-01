@@ -53,6 +53,61 @@ const PATTERN_COLORS_CI: Record<string, PatternColor> = Object.fromEntries(
   Object.entries(PATTERN_COLORS).map(([k, v]) => [k.toLowerCase(), v])
 );
 
+// WCAG 2.1 relative luminance. Maps an sRGB triple to the perceived
+// luminance L ∈ [0, 1]. Used to test contrast ratios against the current
+// surface colour so badge/text stays legible regardless of theme.
+function srgbChannelToLinear(c: number): number {
+  const cs = c / 255;
+  return cs <= 0.03928 ? cs / 12.92 : Math.pow((cs + 0.055) / 1.055, 2.4);
+}
+function relativeLuminance(r: number, g: number, b: number): number {
+  return 0.2126 * srgbChannelToLinear(r)
+       + 0.7152 * srgbChannelToLinear(g)
+       + 0.0722 * srgbChannelToLinear(b);
+}
+function contrastRatio(l1: number, l2: number): number {
+  const a = Math.max(l1, l2);
+  const b = Math.min(l1, l2);
+  return (a + 0.05) / (b + 0.05);
+}
+function parseHex(hex: string): [number, number, number] | null {
+  const m = (hex || '').trim().match(/^#?([\da-f]{3}|[\da-f]{6})$/i);
+  if (!m) return null;
+  const h = m[1].length === 3
+    ? m[1].split('').map(c => c + c).join('')
+    : m[1];
+  return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+// Lift or darken an sRGB colour until contrast against the surface meets a
+// WCAG-AA threshold (3.0:1 for badges, 4.5:1 for body text).
+export function ensureReadableContrast(hex: string, target: number = 3.0): string {
+  const rgb = parseHex(hex);
+  if (!rgb) return hex;
+  const isLightTheme = typeof document !== 'undefined'
+    && document.documentElement.getAttribute('data-theme') === 'light';
+  // Surface: rough mid-tone for both themes. Exact bg-hex would be #0b0c10
+  // (dark) or #ffffff (light); we use the panel surface for badge contrast.
+  const bg = isLightTheme ? [255, 255, 255] : [19, 20, 26];
+  const bgL = relativeLuminance(bg[0], bg[1], bg[2]);
+  let [r, g, b] = rgb;
+  let safety = 0;
+  while (contrastRatio(relativeLuminance(r, g, b), bgL) < target && safety < 60) {
+    safety += 1;
+    if (isLightTheme) {
+      // Light surface: nudge toward darker.
+      r = Math.max(0, r - 4);
+      g = Math.max(0, g - 4);
+      b = Math.max(0, b - 4);
+    } else {
+      // Dark surface: nudge toward lighter.
+      r = Math.min(255, r + 4);
+      g = Math.min(255, g + 4);
+      b = Math.min(255, b + 4);
+    }
+  }
+  return `#${[r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
 export function colorFor(key: string): PatternColor {
   if (PATTERN_COLORS[key]) return PATTERN_COLORS[key];
   const lower = (key || '').toLowerCase();

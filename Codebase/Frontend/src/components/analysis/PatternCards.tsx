@@ -3,7 +3,7 @@ import {
   DetectedPatternFull, AmbiguityRanking, PatternRankEntry,
   ClassUsageBinding, DocumentationTarget, UnitTestTarget, PatternEducation
 } from '../../types/api';
-import { colorFor, USAGE_KIND_LABEL } from '../../lib/patterns';
+import { colorFor, USAGE_KIND_LABEL, ensureReadableContrast } from '../../lib/patterns';
 import { patternDefinitionFor, PatternDefinition } from '../../data/patternDefinitions';
 
 interface PatternCardsProps {
@@ -272,7 +272,13 @@ function TaggedUsagesSection({
 
 function PatternCard(props: CardProps) {
   const { pattern: p, rank, rankVerdict, resolved, taggedUsages, classUsageBindingSource, onLineFlash, retagCandidates } = props;
-  const colour = colorFor(p.patternName || 'default');
+  const baseColour = colorFor(p.patternName || 'default');
+  // Lift the badge text against the current surface so the label stays
+  // readable in dark mode without re-authoring the palette per theme.
+  const colour = {
+    ...baseColour,
+    text: ensureReadableContrast(baseColour.text, 4.5)
+  };
   const declarationLine = p.documentationTargets?.[0]?.line || null;
   const sourceTag = classUsageBindingSource === 'microservice' ? 'microservice-bound' : 'heuristic';
   const [expanded, setExpanded] = useState(false);
@@ -288,33 +294,33 @@ function PatternCard(props: CardProps) {
       className={`pattern-card ${expanded ? 'pattern-card--open' : 'pattern-card--collapsed'}`}
       data-resolved={resolved ? 'true' : undefined}
     >
-      <button
-        type="button"
-        className="pattern-card-toggle"
-        aria-expanded={expanded}
-        onClick={() => setExpanded(e => !e)}
-      >
-        <div className="pattern-card-head">
-          <span className="pattern-badge" style={{ borderColor: colour.border, background: colour.bg, color: colour.text }}>
-            {p.patternName || p.patternId}
-          </span>
-          <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
-          {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
-          {p.className && (
-            <span
-              role="button"
-              tabIndex={0}
-              className="pattern-card-retag"
-              title={`Re-tag pattern for ${p.className}`}
-              onClick={onRetagClick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onRetagClick(e as unknown as React.MouseEvent); }}
-            >
-              Tag pattern…
+      <div className="pattern-card-row">
+        <button
+          type="button"
+          className="pattern-card-toggle"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(e => !e)}
+        >
+          <div className="pattern-card-head">
+            <span className="pattern-badge" style={{ borderColor: colour.border, background: colour.bg, color: colour.text }}>
+              {p.patternName || p.patternId}
             </span>
-          )}
-        </div>
-        <span className="pattern-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
-      </button>
+            <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
+            {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
+          </div>
+          <span className="pattern-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
+        </button>
+        {p.className && (
+          <button
+            type="button"
+            className="pattern-card-retag"
+            title={`Open the pattern picker to tag or change the design pattern for ${p.className}.`}
+            onClick={onRetagClick}
+          >
+            Change pattern…
+          </button>
+        )}
+      </div>
 
       {expanded && (
         <div className="pattern-card-body">

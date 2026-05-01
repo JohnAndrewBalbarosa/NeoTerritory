@@ -22,11 +22,15 @@ export function synthesizeUsageAnnotations(
   const out: Annotation[] = [];
   let id = 1;
   Object.entries(bindings).forEach(([cls, rows]) => {
-    // Per-class user choice wins over the heuristic verdict so color
-    // propagation reaches every line that touches this class.
-    const patternName = (classResolvedPatterns && classResolvedPatterns[cls])
-      || classToPatternName.get(cls)
-      || 'Review';
+    // Only emit usage annotations for classes that the matcher (or the user)
+    // actually tagged with a real pattern. Without this guard, every variable
+    // declared from an untagged class would scatter "Review" badges across
+    // global functions like int main — and those Review chips have no useful
+    // picker options because the source class itself was never classified.
+    const userResolved = classResolvedPatterns && classResolvedPatterns[cls];
+    const detected = classToPatternName.get(cls);
+    const patternName = userResolved || detected;
+    if (!patternName) return;
     (rows || []).forEach(u => {
       const target = u.varName
         ? `${u.varName}${u.methodName ? '.' + u.methodName : ''}`
