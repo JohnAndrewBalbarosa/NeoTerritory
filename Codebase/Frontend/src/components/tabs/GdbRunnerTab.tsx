@@ -132,18 +132,39 @@ function PhaseRow({ phase, result, loading }: {
       </header>
       {result?.message && <p className="gdb-phase-message">{result.message}</p>}
       <CriteriaList result={result} />
-      {result?.actual && (
-        // Failed phases auto-expand the stderr/stdout pane so the user
-        // sees the compile error or assertion-failure trace immediately.
-        // Passed phases keep it collapsed (signal-to-noise).
-        <details
-          className="gdb-result-pane"
-          open={result && !result.passed && result.verdict !== 'skipped'}
-        >
-          <summary>{result && !result.passed ? 'Error output (auto-expanded)' : 'actual / stderr'}</summary>
-          <pre>{result.actual}</pre>
-        </details>
-      )}
+      {result?.actual && (() => {
+        // Split combined stdout+stderr stream into two panes so the user
+        // can see what their program PRINTED (stdout) separately from any
+        // compiler/runtime ERRORS (stderr). The runner concatenates them
+        // with a `--- stderr ---` divider; we split on it here.
+        const raw = result.actual;
+        const idx = raw.indexOf('\n--- stderr ---\n');
+        const stdout = idx >= 0 ? raw.slice(0, idx) : raw;
+        const stderr = idx >= 0 ? raw.slice(idx + '\n--- stderr ---\n'.length) : '';
+        const failedOrCompileError = result && !result.passed && result.verdict !== 'skipped';
+        return (
+          <>
+            {stdout.trim().length > 0 && (
+              <details className="gdb-result-pane" open={result?.passed === true || failedOrCompileError}>
+                <summary>Console output (stdout)</summary>
+                <pre>{stdout}</pre>
+              </details>
+            )}
+            {stderr.trim().length > 0 && (
+              <details className="gdb-result-pane gdb-result-pane--err" open={failedOrCompileError}>
+                <summary>{failedOrCompileError ? 'Error output (auto-expanded)' : 'stderr'}</summary>
+                <pre>{stderr}</pre>
+              </details>
+            )}
+            {stdout.trim().length === 0 && stderr.trim().length === 0 && (
+              <details className="gdb-result-pane">
+                <summary>Console output</summary>
+                <pre>(no output)</pre>
+              </details>
+            )}
+          </>
+        );
+      })()}
       {result?.gdb && (
         <details className="gdb-result-pane">
           <summary>gdb output</summary>

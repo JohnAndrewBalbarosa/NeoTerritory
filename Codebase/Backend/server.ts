@@ -133,6 +133,15 @@ initDb();
 // Load review questionnaire and watch for edits
 startReviewSchemaWatch();
 
+// Per-user Docker pod lifecycle. registerShutdownHooks subscribes
+// SIGINT/SIGTERM/beforeExit so live containers are torn down before the
+// process exits (the brief: "deallocate resources before dying"). The
+// sweep timer reaps pods past their TTL every 30s. Both are no-ops when
+// TEST_RUNNER_USE_DOCKER is not '1' or Docker isn't on PATH.
+import { startSweepTimer, registerShutdownHooks, isPodModeEnabled } from './src/services/podManager';
+registerShutdownHooks();
+if (isPodModeEnabled()) startSweepTimer();
+
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

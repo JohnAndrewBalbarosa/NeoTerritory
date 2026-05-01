@@ -1158,7 +1158,8 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
 async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
-  files?: Array<{ name: string; sourceText: string }>
+  files?: Array<{ name: string; sourceText: string }>,
+  userId?: number
 ): Promise<TestResult[]> {
   const eligible = patterns.filter(p => p.className && p.classText);
   if (eligible.length === 0) return [];
@@ -1174,7 +1175,8 @@ async function dispatchPatternTests(
     className:   probe.className!,
     classText:   probe.classText!,
     fullSource,
-    files
+    files,
+    userId
   });
 
   const compileResults: TestResult[] = eligible.map(p => ({
@@ -1214,6 +1216,7 @@ async function dispatchPatternTests(
       classText:        p.classText!,
       fullSource,
       files,
+      userId,
       forwardMethod:    pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
       factoryFn:        pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
       terminator:       pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
@@ -1317,7 +1320,7 @@ async function handleRunTests(
     return;
   }
   const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
-  const results = await dispatchPatternTests(taggedPatterns, fullSource, files);
+  const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id);
   // Validate the result set BEFORE logging anything — we only persist
   // outcomes when every test result has the fields downstream consumers
   // (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /

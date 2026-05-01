@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
+import { ensurePod, isPodModeEnabled } from '../services/podManager';
 import { revokeToken } from '../middleware/tokenRevocation';
 import type { UserRow } from '../types/db';
 
@@ -220,6 +221,13 @@ export const claimSeat = async (req: Request, res: Response, next: NextFunction)
     );
     logEvent(user.id, 'claim_seat', `Tester seat claimed: ${user.username}`);
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role } });
+    // Fire-and-forget: kick off the per-tester sandbox pod asynchronously
+    // so the JWT response isn't blocked on Docker startup. The runner
+    // falls back to the local sandbox if pod mode is off or pod start
+    // fails — see services/podManager.ts and testRunnerService.ts.
+    if (isPodModeEnabled()) {
+      void ensurePod(user.id, user.username).catch(() => { /* logged inside ensurePod */ });
+    }
   } catch (err) {
     next(err);
   }

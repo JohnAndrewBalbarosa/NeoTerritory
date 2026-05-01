@@ -161,6 +161,10 @@ interface RunInputs {
   // user's `#include "patterns.hpp"` resolves on disk; user_class.h then
   // becomes a thin shim that #include's each user file in submission order.
   files?: Array<{ name: string; sourceText: string }>;
+  // Owning user. When pod mode is on, the runner routes the compile + run
+  // into this user's per-tester Docker container (services/podManager.ts);
+  // otherwise this is a hint-only field. `undefined` falls back to local.
+  userId?: number;
   forwardMethod?: string;
   factoryFn?: string;
   terminator?: string;
@@ -315,10 +319,88 @@ async function runPhase(
     }
     fs.writeFileSync(path.join(runDir, 'driver.cpp'), phaseInputs.driverSource, 'utf8');
 
+    // Pod path — when the user has a per-tester container, compile and run
+    // INSIDE it. We copy the host runDir into /work/<basename>/ in the pod,
+    // then g++ and the binary execute under the pod's resource caps. The
+    // pod is reused across phases / runs for the same user (it persists
+    // for POD_TTL_MS); only the inner /work/<basename>/ scratch differs.
+    let pod: import('./podManager').PodHandle | null = null;
+    if (input.userId !== undefined) {
+      try {
+        const pm = await import('./podManager');
+        if (pm.isPodModeEnabled()) {
+          pod = pm.getPod(input.userId) ?? await pm.ensurePod(input.userId, `user-${input.userId}`);
+        }
+      } catch { /* fall through to local */ }
+    }
+
     const sandboxCmd = (process.env.TEST_RUNNER_SANDBOX || '')
       .replace(/<RUN_DIR>/g, runDir);
     const sandboxParts = sandboxCmd.split(/\s+/).filter(Boolean);
     const binPath = path.join(runDir, phaseInputs.binaryName);
+
+    if (pod) {
+      const pm = await import('./podManager');
+      const podRunDir = `/work/${path.basename(runDir)}`;
+      // Best-effort: create the dir + copy each file the phase needs.
+      await pm.execInPod(pod, ['mkdir', '-p', podRunDir], { timeoutMs: 5_000 });
+      // Bulk-copy the whole runDir into the pod's /work/<basename>.
+      const copyOk = await pm.copyIntoPod(pod, runDir, '/work/');
+      if (copyOk) {
+        const podDriver = `${podRunDir}/driver.cpp`;
+        const podBin    = `${podRunDir}/${phaseInputs.binaryName}`;
+        const compile = await pm.execInPod(pod,
+          ['g++', '-std=c++17', '-O0', '-g', podDriver, '-o', podBin],
+          { timeoutMs: TIMEOUT_MS });
+        if (compile.exitCode !== 0) {
+          return {
+            ...base,
+            passed: false,
+            verdict: 'compile_error',
+            actual: compile.stderr || compile.stdout || 'compile failed',
+            exitCode: compile.exitCode,
+            message: phase === 'compile_run'
+              ? 'Your class did not compile.'
+              : 'Unit-test driver did not compile against the user class.',
+            durationMs: Date.now() - t0
+          };
+        }
+        const runOut = await pm.execInPod(pod, [podBin], { timeoutMs: TIMEOUT_MS });
+        const verdictPod: TestResult['verdict'] =
+          runOut.timedOut       ? 'timeout' :
+          runOut.exitCode === 0 ? 'pass' :
+          runOut.exitCode === 139 ? 'segfault' :
+          'fail';
+        const criteriaPod: NonNullable<TestResult['criteria']> = [];
+        for (const ln of (runOut.stdout || '').split('\n')) {
+          if (!ln.startsWith('NT_CRITERION ')) continue;
+          const parts = ln.slice('NT_CRITERION '.length).split('|');
+          if (parts.length < 4) continue;
+          const status = parts[2] as 'pass' | 'skip' | 'fail';
+          if (status !== 'pass' && status !== 'skip' && status !== 'fail') continue;
+          criteriaPod.push({ status, description: parts.slice(3).join('|').trim() });
+        }
+        const cleanedStdoutPod = (runOut.stdout || '')
+          .split('\n').filter(ln => !ln.startsWith('NT_CRITERION ')).join('\n');
+        return {
+          ...base,
+          passed: verdictPod === 'pass',
+          verdict: verdictPod,
+          actual: cleanedStdoutPod + (runOut.stderr ? '\n--- stderr ---\n' + runOut.stderr : ''),
+          exitCode: runOut.exitCode,
+          durationMs: Date.now() - t0,
+          message: verdictPod === 'pass'
+            ? (phase === 'compile_run' ? 'Your class compiled and exited cleanly.' : 'All unit-test assertions held.')
+            : (phase === 'compile_run'
+                ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
+                : `Unit-test driver exited with ${runOut.exitCode}.`),
+          criteria: criteriaPod
+        };
+      }
+      // copy failed → fall through to local sandbox path so the user
+      // doesn't lose the run because Docker hiccupped.
+    }
+
     const compileArgs = ['g++', '-std=c++17', '-O0', '-g',
                          path.join(runDir, 'driver.cpp'),
                          '-o', binPath];
