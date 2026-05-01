@@ -18,7 +18,7 @@ import { rankAll } from '../services/patternRankingService';
 import { bindAll as bindClassUsages } from '../services/classUsageBinder';
 import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
-import { runPatternTest, isTestRunnerEnabled, TestResult } from '../services/testRunnerService';
+import { runPatternTest, isTestRunnerEnabled, getDisableReason, TestResult } from '../services/testRunnerService';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
@@ -1091,7 +1091,7 @@ async function handleRunTests(
   if (!isTestRunnerEnabled()) {
     res.status(503).json({
       error: 'Test runner not configured',
-      detail: 'Set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX in the backend .env to enable.'
+      detail: getDisableReason()
     });
     return;
   }

@@ -285,6 +285,14 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
         if (r && r.rawAnns.length > 0) bulk[l] = patternKey;
       }
       bulkSetLinePatternOverrides(bulk);
+      // Mark the class as tagged so the AnnotatedTab progress chip updates.
+      // patchCurrentRun shallow-merges, so we read the existing map first to
+      // preserve other classes' choices.
+      const prev = useAppStore.getState().currentRun?.classResolvedPatterns || {};
+      useAppStore.getState().patchCurrentRun({
+        classResolvedPatterns: { ...prev, [scope.className]: patternKey },
+        userResolvedPattern: patternKey
+      });
     } else {
       setLinePatternOverride(line, patternKey);
     }

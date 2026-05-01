@@ -36,7 +36,8 @@ export default function AnnotatedTab({
     const usage = synthesizeUsageAnnotations(
       currentRun.classUsageBindings || {},
       currentRun.detectedPatterns || [],
-      currentRun.classResolvedPatterns
+      currentRun.classResolvedPatterns,
+      currentRun.classUsageBindingSource || 'heuristic'
     );
     return [...(currentRun.annotations || []), ...usage];
   // Re-synthesize when retag updates classResolvedPatterns so colors propagate.

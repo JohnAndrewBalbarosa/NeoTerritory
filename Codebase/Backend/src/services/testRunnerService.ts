@@ -17,7 +17,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { spawn } from 'child_process';
+import { spawn, spawnSync } from 'child_process';
 import os from 'os';
 
 export interface TestResult {
@@ -38,9 +38,91 @@ export interface TestResult {
 const TIMEOUT_MS = 10_000;
 
 export function isTestRunnerEnabled(): boolean {
-  return process.env.ENABLE_TEST_RUNNER === '1'
-      && !!process.env.TEST_RUNNER_SANDBOX
-      && process.env.TEST_RUNNER_SANDBOX.trim().length > 0;
+  if (process.env.ENABLE_TEST_RUNNER !== '1') return false;
+  // Production refuses to run the compiled user code without an explicit
+  // sandbox command — empty TEST_RUNNER_SANDBOX is treated as "not configured"
+  // and the runner stays off so a misconfigured prod deployment cannot expose
+  // an RCE surface. In dev we accept an empty sandbox (autoconfig may have
+  // intentionally seeded it that way) and warn the developer once at boot.
+  if (process.env.NODE_ENV === 'production'
+      && (!process.env.TEST_RUNNER_SANDBOX || !process.env.TEST_RUNNER_SANDBOX.trim())) {
+    return false;
+  }
+  return true;
+}
+
+// Track *why* the runner is currently off so the 503 detail message can be
+// specific — "compiler not found on PATH" is far more actionable than the
+// generic "set ENABLE_TEST_RUNNER=1".
+let lastDisableReason: string =
+  'Set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX in the backend .env to enable.';
+export function getDisableReason(): string {
+  return lastDisableReason;
+}
+
+function hasOnPath(cmd: string): boolean {
+  // Use the platform's lookup tool. spawnSync avoids inheriting our shell.
+  const probe = process.platform === 'win32'
+    ? spawnSync('where.exe', [cmd], { stdio: 'ignore' })
+    : spawnSync('which', [cmd], { stdio: 'ignore' });
+  return probe.status === 0;
+}
+
+function defaultSandboxForPlatform(): { sandbox: string; warning?: string } {
+  if (process.platform === 'linux') {
+    if (hasOnPath('firejail')) {
+      return {
+        sandbox: 'firejail --quiet --net=none --noprofile --rlimit-as=268435456'
+      };
+    }
+    return {
+      sandbox: '',
+      warning: 'firejail not on PATH — runner enabled WITHOUT sandboxing. Dev only.'
+    };
+  }
+  return {
+    sandbox: '',
+    warning: 'No host-native sandbox configured — runner enabled WITHOUT sandboxing. Dev only.'
+  };
+}
+
+// One-shot autoconfig called once during server boot. Respects any explicit
+// env override (so a deliberate ENABLE_TEST_RUNNER=0 stays off) and refuses
+// to autoconfigure in production. Picks a g++ or clang++ off PATH and seeds
+// a sane default sandbox per OS.
+export function autoConfigureTestRunner(): void {
+  const explicit = process.env.ENABLE_TEST_RUNNER;
+  if (explicit === '0' || explicit === '1') {
+    // Honour the explicit decision; only update the disable reason for ops.
+    if (explicit === '0') lastDisableReason = 'ENABLE_TEST_RUNNER=0 in env.';
+    return;
+  }
+  if (process.env.NODE_ENV === 'production') {
+    lastDisableReason = 'Production mode — set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX explicitly.';
+    // eslint-disable-next-line no-console
+    console.log('[test-runner] disabled (production mode; explicit configuration required)');
+    return;
+  }
+  const compiler = ['g++', 'clang++'].find(hasOnPath);
+  if (!compiler) {
+    lastDisableReason = 'No C++ compiler (g++ or clang++) found on PATH. Install one and restart, or set ENABLE_TEST_RUNNER=1 manually.';
+    // eslint-disable-next-line no-console
+    console.log('[test-runner] disabled (no compiler found on PATH)');
+    return;
+  }
+  process.env.ENABLE_TEST_RUNNER = '1';
+  if (!process.env.TEST_RUNNER_SANDBOX) {
+    const { sandbox, warning } = defaultSandboxForPlatform();
+    process.env.TEST_RUNNER_SANDBOX = sandbox;
+    if (warning) {
+      // eslint-disable-next-line no-console
+      console.warn(`[test-runner] ${warning}`);
+    }
+  }
+  // eslint-disable-next-line no-console
+  console.log(
+    `[test-runner] enabled (compiler: ${compiler}, sandbox: ${process.env.TEST_RUNNER_SANDBOX || '(none)'})`
+  );
 }
 
 function templatePath(patternId: string): string | null {
@@ -85,7 +167,7 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult> {
       ...base,
       passed: false,
       verdict: 'sandbox_disabled',
-      message: 'Test runner disabled. Set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX in .env to enable.',
+      message: `Test runner disabled. ${lastDisableReason}`,
       durationMs: Date.now() - t0
     };
   }

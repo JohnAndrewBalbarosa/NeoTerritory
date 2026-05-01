@@ -25,6 +25,12 @@ if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
   );
 }
 
+// Probe for a C++ compiler and seed ENABLE_TEST_RUNNER + TEST_RUNNER_SANDBOX
+// when running outside production. Honours explicit env overrides; in prod
+// the runner stays off unless both vars are set deliberately.
+import { autoConfigureTestRunner } from './src/services/testRunnerService';
+autoConfigureTestRunner();
+
 import { errorHandler } from './src/middleware/errorHandler';
 import { initDb } from './src/db/initDb';
 

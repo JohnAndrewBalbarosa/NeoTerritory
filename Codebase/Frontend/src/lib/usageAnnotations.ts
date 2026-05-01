@@ -10,10 +10,26 @@ const KIND_HUMAN: Record<string, string> = {
   new_ctor:       'new'
 };
 
+// Whitelist of binding kinds the heuristic binder shares with the
+// authoritative microservice output. When the run's binding source is
+// 'heuristic', we accept only these kinds so the heuristic can't paint
+// lines the microservice would never have flagged. The microservice path
+// passes through unchanged because it's already authoritative.
+const HEURISTIC_KIND_WHITELIST: ReadonlySet<string> = new Set([
+  'declaration',
+  'member_call',
+  'arrow_call',
+  'qualified_call',
+  'make_unique',
+  'make_shared',
+  'new_ctor'
+]);
+
 export function synthesizeUsageAnnotations(
   bindings: Record<string, ClassUsageBinding[]>,
   detectedPatterns: DetectedPatternFull[],
-  classResolvedPatterns?: Record<string, string>
+  classResolvedPatterns?: Record<string, string>,
+  bindingSource: 'heuristic' | 'microservice' = 'heuristic'
 ): Annotation[] {
   const classToPatternName = new Map<string, string>();
   detectedPatterns.forEach(p => {
@@ -35,6 +51,9 @@ export function synthesizeUsageAnnotations(
     const patternName = classToPatternName.get(cls);
     if (!patternName) return;
     (rows || []).forEach(u => {
+      // Trim heuristic emissions to kinds the microservice would also tag.
+      // Microservice-source bindings are authoritative and pass through.
+      if (bindingSource === 'heuristic' && !HEURISTIC_KIND_WHITELIST.has(u.kind)) return;
       const target = u.varName
         ? `${u.varName}${u.methodName ? '.' + u.methodName : ''}`
         : (u.methodName ? `${cls}::${u.methodName}` : cls);
