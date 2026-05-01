@@ -1,37 +1,69 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/appState';
-import StatsCharts from './components/StatsCharts';
+import RunsTab from './components/RunsTab';
+import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
 import LogsView from './components/LogsView';
+import { fetchAdminReviews } from '../api/client';
+import { AdminReview } from '../types/api';
 
-/**
- * AdminApp — research dashboard.
- * Surfaces all errors visibly in the UI (P0 fix — prior code logged silently).
- */
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'logs';
+
+const TABS: Array<{ id: AdminTab; label: string }> = [
+  { id: 'runs',       label: 'Runs' },
+  { id: 'complexity', label: 'Complexity' },
+  { id: 'users',      label: 'Users' },
+  { id: 'reviews',    label: 'Reviews' },
+  { id: 'logs',       label: 'Logs' }
+];
+
+function ReviewsPanel() {
+  const [reviews, setReviews] = useState<AdminReview[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    fetchAdminReviews()
+      .then(r => setReviews(r.reviews))
+      .catch(e => setError(e.message));
+  }, []);
+  if (error) return <div className="empty-state admin-error" role="alert">{error}</div>;
+  if (!reviews) return <div className="empty-state">Loading…</div>;
+  if (reviews.length === 0) return <div className="empty-state">No reviews yet.</div>;
+  return (
+    <table className="f1-pattern-table">
+      <thead>
+        <tr>
+          <th>User</th><th>Scope</th><th>Source</th><th>Version</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {reviews.map((r, i) => (
+          <tr key={i}>
+            <td>{r.username ?? '—'}</td>
+            <td>{r.scope}</td>
+            <td>{r.sourceName ?? '—'}</td>
+            <td>{r.schemaVersion}</td>
+            <td>{r.createdAt?.slice(0, 10)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function AdminApp() {
   const { token, user, clearAuth } = useAppStore();
+  const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    if (!token || !user) {
-      window.location.href = '/';
-      return;
-    }
-    if (user.role !== 'admin') {
-      window.location.href = '/';
-    }
+    if (!token || !user) { window.location.href = '/'; return; }
+    if (user.role !== 'admin') window.location.href = '/';
   }, [token, user]);
 
   if (!token || !user || user.role !== 'admin') return null;
 
-  function onLogout() {
-    clearAuth();
-    window.location.href = '/';
-  }
-
-  function onRefresh() {
-    setRefreshKey(k => k + 1);
-  }
+  function onLogout() { clearAuth(); window.location.href = '/'; }
+  function onRefresh() { setRefreshKey(k => k + 1); }
 
   return (
     <div className="admin-shell">
@@ -52,17 +84,35 @@ export default function AdminApp() {
         </div>
       </header>
 
-      {/* refreshKey forces remount of subsections to re-fetch */}
+      <nav className="admin-tab-bar" aria-label="Admin sections">
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            className={`admin-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
       <main className="admin-main" key={refreshKey}>
-        <section className="admin-section">
-          <h2>Overview</h2>
-          <StatsCharts />
-        </section>
-        <section className="admin-section">
-          <h2>Users</h2>
-          <UserTable />
-        </section>
-        <LogsView />
+        {activeTab === 'runs'       && <RunsTab />}
+        {activeTab === 'complexity' && <ComplexityTab />}
+        {activeTab === 'users'      && (
+          <section className="admin-section">
+            <h2>Users</h2>
+            <UserTable />
+          </section>
+        )}
+        {activeTab === 'reviews' && (
+          <section className="admin-section">
+            <h2>Reviews</h2>
+            <ReviewsPanel />
+          </section>
+        )}
+        {activeTab === 'logs' && <LogsView />}
       </main>
     </div>
   );

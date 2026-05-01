@@ -135,6 +135,13 @@ function computeClassDominance(
   return { dominantKey: null, color: AMBIGUOUS_COLOR };
 }
 
+// For annotated lines that fall outside every class scope (e.g. int main, global functions):
+// single-pattern → that pattern's solid color; multiple patterns → AMBIGUOUS_COLOR.
+function computeStandaloneColor(anns: Annotation[]): PatternColor {
+  const keys = new Set(anns.map(a => patternFromAnnotation(a)));
+  return keys.size === 1 ? colorFor([...keys][0]) : AMBIGUOUS_COLOR;
+}
+
 // Blend ratio for a single line: 0 = solid dominant, 1 = full grey.
 // Scales with how many annotations on this line belong to non-dominant patterns.
 function computeLineBlendRatio(lineAnns: Annotation[], dominantKey: string | null): number {
@@ -237,11 +244,12 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
         {rows.map(row => {
           const num           = String(row.lineNo).padStart(width, ' ');
           const hasAnnotation = row.rawAnns.length > 0;
-          const dominance     = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
-          const blendRatio    = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
-          const baseColor     = dominance?.color ?? null;
+          const dominance       = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
+          const standaloneColor = (!dominance && row.anns.length > 0) ? computeStandaloneColor(row.anns) : null;
+          const blendRatio      = dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0;
+          const baseColor       = dominance?.color ?? standaloneColor;
           // Badge is always solid — never blended — so the class chip reads clearly.
-          const badgeColor    = dominance?.color ?? null;
+          const badgeColor      = dominance?.color ?? standaloneColor;
 
           const distinctPatternCount = hasAnnotation
             ? new Set(row.rawAnns.map(a => patternFromAnnotation(a))).size

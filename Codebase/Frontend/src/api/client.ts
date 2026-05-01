@@ -1,7 +1,8 @@
 import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
   ReviewSchema, AdminUser, AdminLogEntry, AdminReview, AdminOverview,
-  RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse
+  RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
+  SurveySummary, ComplexityData, F1Metrics
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -246,6 +247,15 @@ export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
 }
 export async function fetchAdminLogs(limit = 80): Promise<{ logs: AdminLogEntry[] }> {
   return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?limit=${limit}`);
+}
+export async function fetchAdminSurveySummary(): Promise<SurveySummary> {
+  return apiFetch<SurveySummary>('/api/admin/stats/survey-summary');
+}
+export async function fetchAdminComplexityData(): Promise<ComplexityData> {
+  return apiFetch<ComplexityData>('/api/admin/stats/complexity-data');
+}
+export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
+  return apiFetch<F1Metrics>('/api/admin/stats/f1-metrics');
 }
 
 // AI poll endpoint
