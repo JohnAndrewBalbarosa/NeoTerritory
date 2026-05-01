@@ -135,12 +135,20 @@ startReviewSchemaWatch();
 
 // Per-user Docker pod lifecycle. registerShutdownHooks subscribes
 // SIGINT/SIGTERM/beforeExit so live containers are torn down before the
-// process exits (the brief: "deallocate resources before dying"). The
-// sweep timer reaps pods past their TTL every 30s. Both are no-ops when
+// process exits ("deallocate before dying"). ensurePodImageBuilt builds
+// the cpp-pod image on first boot if it isn't already present, so the
+// operator never has to remember a manual `docker build`. The sweep
+// timer reaps pods past their TTL every 30s. All three are no-ops when
 // TEST_RUNNER_USE_DOCKER is not '1' or Docker isn't on PATH.
-import { startSweepTimer, registerShutdownHooks, isPodModeEnabled } from './src/services/podManager';
+import { startSweepTimer, registerShutdownHooks, isPodModeEnabled, ensurePodImageBuilt } from './src/services/podManager';
 registerShutdownHooks();
-if (isPodModeEnabled()) startSweepTimer();
+if (isPodModeEnabled()) {
+  // Fire-and-forget: image build can take 30–60s on first run; we don't
+  // want to block the HTTP listener. Sweep timer can start immediately —
+  // it has nothing to sweep until ensurePod creates the first pod.
+  void ensurePodImageBuilt();
+  startSweepTimer();
+}
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

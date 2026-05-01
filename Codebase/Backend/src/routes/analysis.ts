@@ -22,6 +22,7 @@ import {
   runSubmissionCompile, runPatternUnitTest,
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
+import { podManagerStatus } from '../services/podManager';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
@@ -506,6 +507,7 @@ router.get('/health', (_req: Request, res: Response) => {
     gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
     gdbCooldownMs: GDB_COOLDOWN_MS,
     microservice,
+    docker: podManagerStatus(),
     totalRuns,
     latestRun,
     process: {

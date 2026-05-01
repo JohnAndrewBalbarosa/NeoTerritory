@@ -228,6 +228,15 @@ export interface HealthStatus {
     binaryFound: boolean;
     catalogFound: boolean;
   };
+  // Per-tester Docker pod isolation status. `enabled` flips with the
+  // backend env flag; `imageReady` is true only after the cpp-pod image
+  // has finished its one-time build; `livePods` is the count currently
+  // attached to online testers.
+  docker?: {
+    enabled: boolean;
+    imageReady: boolean;
+    livePods: number;
+  };
   process?: {
     pid: number;
     hostname: string;

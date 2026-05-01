@@ -64,7 +64,7 @@ export default function MainLayout() {
   useHeartbeat();
   const { theme, toggleTheme } = useTheme();
   const {
-    status, msState, msLabel, user, sessionRanAnalyze, sessionReviewedEnd,
+    status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
     setAiStatus, aiStatus, aiConfigured, setStatus
   } = useAppStore();
@@ -212,6 +212,11 @@ export default function MainLayout() {
             <span className="ms-dot" aria-hidden="true"></span>
             <span className="ms-label">Microservice:</span>
             <strong id="ms-status">{msLabel}</strong>
+          </div>
+          <div id="docker-row" className="ms-row" data-state={dockerState}>
+            <span className="ms-dot" aria-hidden="true"></span>
+            <span className="ms-label">Docker service:</span>
+            <strong id="docker-status">{dockerLabel}</strong>
           </div>
           <div id="ai-row" className="ai-row" data-status={aiChipStatus}>
             <span className="ms-dot" aria-hidden="true"></span>

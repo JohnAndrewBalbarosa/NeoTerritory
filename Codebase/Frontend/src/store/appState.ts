@@ -16,6 +16,11 @@ interface AppState {
   status: AppStatus;
   msState: MsState;
   msLabel: string;
+  // Per-tester Docker pod status surfaced in the studio status card so
+  // the user can see whether their unit-test runs will execute inside an
+  // isolated container (online + image ready) or via the local fallback.
+  dockerState: MsState;
+  dockerLabel: string;
   sessionRanAnalyze: boolean;
   sessionReviewedEnd: boolean;
   // True after at least one GDB run completed for the *current* run with
@@ -57,6 +62,7 @@ interface AppState {
   setFilename: (name: string) => void;
   setStatus: (status: AppStatus) => void;
   setMsStatus: (state: MsState, label: string) => void;
+  setDockerStatus: (state: MsState, label: string) => void;
   setSessionRanAnalyze: (v: boolean) => void;
   setSessionReviewedEnd: (v: boolean) => void;
   setGdbAllPassedForRun: (v: boolean) => void;
@@ -94,6 +100,8 @@ export const useAppStore = create<AppState>((set) => ({
   status: { kind: 'idle', title: 'Checking...', detail: 'Waiting for API response.' },
   msState: 'checking',
   msLabel: 'checking...',
+  dockerState: 'checking',
+  dockerLabel: 'checking...',
   sessionRanAnalyze: false,
   sessionReviewedEnd: false,
   gdbAllPassedForRun: false,
@@ -165,6 +173,7 @@ export const useAppStore = create<AppState>((set) => ({
   setFilename: (name) => set({ filename: name }),
   setStatus: (status) => set({ status }),
   setMsStatus: (msState, msLabel) => set({ msState, msLabel }),
+  setDockerStatus: (dockerState, dockerLabel) => set({ dockerState, dockerLabel }),
   setSessionRanAnalyze: (v) => set({ sessionRanAnalyze: v }),
   setSessionReviewedEnd: (v) => set({ sessionReviewedEnd: v }),
   setGdbAllPassedForRun: (v) => set({ gdbAllPassedForRun: v }),

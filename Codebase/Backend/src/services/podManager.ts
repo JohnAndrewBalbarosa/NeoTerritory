@@ -19,6 +19,8 @@
 
 import { spawnSync, spawn } from 'child_process';
 import os from 'os';
+import path from 'path';
+import fs from 'fs';
 
 export interface PodHandle {
   podId: string;
@@ -47,6 +49,57 @@ const pods = new Map<number, InternalPod>();
 
 export function isPodModeEnabled(): boolean {
   return process.env.TEST_RUNNER_USE_DOCKER === '1' && hasDocker();
+}
+
+// Check whether the pod image is already present on the local Docker host.
+// `docker image inspect` exits non-zero when the image is unknown.
+function imageExists(image: string): boolean {
+  const probe = spawnSync('docker', ['image', 'inspect', image], { stdio: 'ignore' });
+  return probe.status === 0;
+}
+
+// One-shot best-effort build of the per-tester pod image so the operator
+// doesn't have to remember a manual `docker build`. Triggered on server
+// boot when pod mode is enabled. Idempotent — skipped when the image
+// already exists. Failures are logged but never fatal; the runner falls
+// back to the local sandbox if the build fails.
+export async function ensurePodImageBuilt(): Promise<boolean> {
+  if (!isPodModeEnabled()) return false;
+  if (imageExists(POD_IMAGE)) return true;
+  // The Dockerfile lives at Codebase/Backend/docker/cpp-pod.Dockerfile.
+  // We resolve relative to this file so it works whether the backend is
+  // run from src/ (ts-node) or dist/ (compiled).
+  const candidates = [
+    path.join(__dirname, '..', '..', 'docker', 'cpp-pod.Dockerfile'),
+    path.join(__dirname, '..', '..', '..', 'docker', 'cpp-pod.Dockerfile'),
+    path.join(process.cwd(), 'docker', 'cpp-pod.Dockerfile'),
+    path.join(process.cwd(), 'Codebase', 'Backend', 'docker', 'cpp-pod.Dockerfile')
+  ];
+  const dockerfile = candidates.find(p => { try { return fs.existsSync(p); } catch { return false; } });
+  if (!dockerfile) {
+    // eslint-disable-next-line no-console
+    console.warn('[pod-manager] cpp-pod.Dockerfile not found — pod build skipped; runner will use local sandbox');
+    return false;
+  }
+  const buildContext = path.dirname(dockerfile);
+  // eslint-disable-next-line no-console
+  console.log(`[pod-manager] building ${POD_IMAGE} from ${dockerfile} (this runs once per host)…`);
+  return new Promise<boolean>((resolve) => {
+    const proc = spawn('docker', ['build', '-f', dockerfile, '-t', POD_IMAGE, buildContext], {
+      stdio: 'inherit'
+    });
+    proc.on('close', (code) => {
+      const ok = code === 0;
+      // eslint-disable-next-line no-console
+      console.log(`[pod-manager] build ${ok ? 'succeeded' : 'failed (exit ' + code + ')'}`);
+      resolve(ok);
+    });
+    proc.on('error', (e) => {
+      // eslint-disable-next-line no-console
+      console.warn('[pod-manager] docker build error:', e.message || e);
+      resolve(false);
+    });
+  });
 }
 
 let cachedDockerOk: boolean | null = null;
@@ -94,6 +147,14 @@ function dockerRunArgs(containerName: string): string[] {
 // path in testRunnerService still works.
 export async function ensurePod(userId: number, username: string): Promise<PodHandle | null> {
   if (!isPodModeEnabled()) return null;
+  // Make sure the image exists before issuing `docker run` — the build
+  // call is idempotent (skipped when the image is present) and protects
+  // against the case where ensurePod is hit before server boot's
+  // background build finishes.
+  if (!imageExists(POD_IMAGE)) {
+    const built = await ensurePodImageBuilt();
+    if (!built) return null;
+  }
   const existing = pods.get(userId);
   if (existing && !existing.disposed && existing.expiresAt > nowMs()) {
     // Slide the deadline forward so an active user keeps their pod alive.
@@ -190,6 +251,17 @@ export function registerShutdownHooks(): void {
   process.on('SIGINT',  () => { void shutdown('SIGINT'); });
   process.on('SIGTERM', () => { void shutdown('SIGTERM'); });
   process.on('beforeExit', () => { void shutdown('beforeExit'); });
+}
+
+// Snapshot the manager's state for the /api/health endpoint. Lets the
+// frontend status card surface "Docker: online (N pods)" without polling
+// `docker ps` itself.
+export function podManagerStatus(): { enabled: boolean; imageReady: boolean; livePods: number } {
+  return {
+    enabled: isPodModeEnabled(),
+    imageReady: isPodModeEnabled() ? imageExists(POD_IMAGE) : false,
+    livePods: pods.size
+  };
 }
 
 // Helper used by testRunnerService to run a one-off command inside the
