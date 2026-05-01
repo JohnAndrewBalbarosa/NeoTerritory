@@ -27,6 +27,11 @@ interface AppState {
   maxFilesPerSubmission: number;
   pendingRunSurveyForRunKey: string | null;
   linePatternOverrides: Record<number, string>;
+  // Persistent multi-file submission slots; survive AnalysisForm unmount so
+  // tabbing away and back (or running an analysis) doesn't drop the user's
+  // other files. Empty array = legacy single-file mode (AnalysisForm seeds
+  // a single slot from sourceText/filename).
+  submissionFiles: Array<{ id: string; name: string; text: string }>;
 
   setAuth: (token: string, user: User) => void;
   clearAuth: () => void;
@@ -52,6 +57,7 @@ interface AppState {
   clearLinePatternOverride: (line: number) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
+  setSubmissionFiles: (files: Array<{ id: string; name: string; text: string }>) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -81,6 +87,7 @@ export const useAppStore = create<AppState>((set) => ({
   maxFilesPerSubmission: 3,
   pendingRunSurveyForRunKey: null,
   linePatternOverrides: {},
+  submissionFiles: [],
 
   setAuth: (token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
@@ -103,7 +110,8 @@ export const useAppStore = create<AppState>((set) => ({
       aiStatus: 'idle',
       aiJobId: null,
       pendingRunSurveyForRunKey: null,
-      linePatternOverrides: {}
+      linePatternOverrides: {},
+      submissionFiles: []
     });
   },
 
@@ -114,7 +122,8 @@ export const useAppStore = create<AppState>((set) => ({
     activeTab: 'submit',
     aiStatus: 'idle',
     aiJobId: null,
-    linePatternOverrides: {}
+    linePatternOverrides: {},
+    submissionFiles: []
   }),
 
   setCurrentRun: (run) => set({
@@ -177,4 +186,5 @@ export const useAppStore = create<AppState>((set) => ({
     return { currentRun: { ...s.currentRun, detectedPatterns: updated } };
   }),
   setPendingRunSurvey: (key) => set({ pendingRunSurveyForRunKey: key }),
+  setSubmissionFiles: (files) => set({ submissionFiles: files }),
 }));

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { submitAnalysis, fetchSample } from '../../api/client';
+import { logFrontendEvent } from '../../lib/frontendLog';
 import { AnalysisRun } from '../../types/api';
 
 interface AnalysisFormProps {
@@ -24,17 +25,27 @@ function newSlotId(): string {
 
 export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
-    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission } = useAppStore();
+    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission,
+    submissionFiles, setSubmissionFiles } = useAppStore();
   const MAX_FILES = Math.min(MAX_FILES_HARD_CAP, Math.max(1, maxFilesPerSubmission || 3));
 
-  // Initialise from the legacy single-file store fields so existing flows
-  // (Load sample, Clear, the old store hydration on mount) keep working.
-  const [slots, setSlots] = useState<FileSlot[]>(() => [{
-    id: newSlotId(),
-    name: filename || 'snippet.cpp',
-    text: sourceText || ''
-  }]);
+  // Slots are persisted in the store as `submissionFiles` so they survive
+  // unmount/remount of this form (e.g. after running an analysis the form
+  // unmounts; on return the user's other files were being lost). On first
+  // mount we hydrate from the store, falling back to a single seed slot
+  // synthesized from the legacy single-file store fields.
+  const [slots, setSlots] = useState<FileSlot[]>(() => {
+    if (submissionFiles && submissionFiles.length > 0) return submissionFiles;
+    return [{ id: newSlotId(), name: filename || 'snippet.cpp', text: sourceText || '' }];
+  });
   const [activeSlotId, setActiveSlotId] = useState<string>(() => slots[0]?.id || '');
+
+  // Mirror local slot state into the store on every change so the next mount
+  // (after running analysis or tabbing away) sees the full file set instead
+  // of a single seeded slot. Discard via Clear/resetSession explicitly empties.
+  useEffect(() => {
+    setSubmissionFiles(slots);
+  }, [slots, setSubmissionFiles]);
   const [busy, setBusy] = useState(false);
 
   const activeSlot = slots.find(s => s.id === activeSlotId) || slots[0];
@@ -42,6 +53,7 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   async function dispatchAnalyze(payloadFiles: FileSlot[]): Promise<void> {
     setBusy(true);
     setStatus({ kind: 'busy', title: 'Running analysis', detail: 'Spawning microservice...' });
+    logFrontendEvent('frontend.run_dispatch', `files=${payloadFiles.length}`);
     try {
       // The backend accepts either a JSON {files: [...]} body for paste-only
       // submissions or multipart/form-data with field name `files` repeated
@@ -73,9 +85,11 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
         detail: `${patternCount} pattern(s), ${commentCount} comment(s), ${payloadFiles.length} file(s). Verdict: ${verdict}.`
       });
       onAnalysisComplete(run);
+      logFrontendEvent('frontend.run_complete', `patterns=${patternCount} comments=${commentCount}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Analysis failed.';
       setStatus({ kind: 'error', title: 'Analysis failed', detail: msg });
+      logFrontendEvent('frontend.run_failed', msg.slice(0, 200));
     } finally {
       setBusy(false);
     }
@@ -117,6 +131,7 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
     setSourceText('');
     setFilename('snippet.cpp');
     setCurrentRun(null);
+    setSubmissionFiles([fresh]);
     setStatus({ kind: 'idle', title: 'Cleared', detail: 'Ready for new input.' });
   }
 

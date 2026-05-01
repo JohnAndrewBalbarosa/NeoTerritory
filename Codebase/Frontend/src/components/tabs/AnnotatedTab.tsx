@@ -84,6 +84,25 @@ export default function AnnotatedTab({
   // them yet (missing tag). Once a class is resolved or unambiguously
   // detected, it drops off the nav list — no point cycling through
   // already-decided classes.
+  // Locate each class's declaration site (file + line) by scanning source
+  // text for `class ClassName` / `struct ClassName`. Multi-file runs need
+  // this so the navigator can switch to the file the class actually lives
+  // in instead of pointing at a line in the wrong tab.
+  const classLocations = useMemo(() => {
+    const locs = new Map<string, { fileIdx: number; line: number }>();
+    for (let fi = 0; fi < files.length; fi++) {
+      const text = files[fi].sourceText || '';
+      const lines = text.split('\n');
+      for (let i = 0; i < lines.length; i++) {
+        const m = lines[i].match(/\b(?:class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
+        if (m && !locs.has(m[1])) {
+          locs.set(m[1], { fileIdx: fi, line: i + 1 });
+        }
+      }
+    }
+    return locs;
+  }, [files]);
+
   const classNav = useMemo(() => {
     const run = currentRun;
     if (!run) return [];
@@ -106,15 +125,23 @@ export default function AnnotatedTab({
       }
     }
     const resolvedMap = run.classResolvedPatterns || {};
-    const out: Array<{ className: string; line: number }> = [];
-    for (const [className, line] of firstLineByClass.entries()) {
-      if (resolvedMap[className]) continue; // user already picked
+    const out: Array<{ className: string; line: number; fileIdx: number }> = [];
+    for (const [className, fallbackLine] of firstLineByClass.entries()) {
+      if (resolvedMap[className]) continue;
       const ambiguous = (patternCountByClass.get(className) || 0) > 1;
-      if (!ambiguous) continue; // single confident detection
-      out.push({ className, line });
+      if (!ambiguous) continue;
+      // Prefer the class declaration line (so the navigator focuses on
+      // `class Foo {` instead of the first method impl). Fall back to the
+      // first documentation-target line when the declaration isn't found.
+      const loc = classLocations.get(className);
+      out.push({
+        className,
+        line: loc?.line ?? fallbackLine,
+        fileIdx: loc?.fileIdx ?? activeFileIdx,
+      });
     }
-    return out.sort((a, b) => a.line - b.line);
-  }, [currentRun]);
+    return out.sort((a, b) => (a.fileIdx - b.fileIdx) || (a.line - b.line));
+  }, [currentRun, classLocations, activeFileIdx]);
   const navClass = classNav[classNavIdx];
   // If the active class drops off the list (e.g. user resolved it), snap
   // the index back to a valid range so the overlay re-renders correctly.
@@ -125,8 +152,17 @@ export default function AnnotatedTab({
   function gotoClass(idx: number) {
     if (classNav.length === 0) return;
     const wrapped = ((idx % classNav.length) + classNav.length) % classNav.length;
+    const target = classNav[wrapped];
     setClassNavIdx(wrapped);
-    onLineFlash(classNav[wrapped].line);
+    // Switch tabs first if the class lives in another file, otherwise the
+    // line flash fires against the wrong source.
+    if (target.fileIdx !== activeFileIdx) {
+      setActiveFileIdx(target.fileIdx);
+      // Defer the flash a tick so SourceView has rerendered with the new file.
+      setTimeout(() => onLineFlash(target.line), 0);
+    } else {
+      onLineFlash(target.line);
+    }
   }
 
   return (

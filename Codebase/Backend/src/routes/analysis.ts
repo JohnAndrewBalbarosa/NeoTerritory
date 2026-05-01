@@ -412,6 +412,23 @@ function deriveAnnotations(analysis: { annotations?: AnnotationOut[]; detectedPa
 interface CountRow { count: number }
 interface LatestRunRow { source_name: string; findings_count: number; created_at: string }
 
+// Frontend-emitted event log. Anything that happens in the SPA the user
+// cares about (tab switches, run dispatch, sample loads, sign-out, errors)
+// posts here so it lands in the same `logs` table the backend writes to.
+// Keys are namespaced with `frontend.<verb>` so the admin LogsView can split
+// them into a dedicated tab without colliding with backend event types.
+const FRONTEND_EVENT_RE = /^frontend\.[a-z0-9_-]{1,64}$/i;
+router.post('/log/event', jwtAuth, (req: Request, res: Response) => {
+  const { eventType, message } = (req.body || {}) as { eventType?: string; message?: string };
+  if (typeof eventType !== 'string' || !FRONTEND_EVENT_RE.test(eventType)) {
+    res.status(400).json({ error: 'eventType must match frontend.<name>' });
+    return;
+  }
+  const safeMsg = typeof message === 'string' ? message.slice(0, 500) : '';
+  logEvent(req.user?.id ?? null, eventType, safeMsg);
+  res.status(204).end();
+});
+
 router.get('/health', (_req: Request, res: Response) => {
   const totalRuns = (() => {
     try {

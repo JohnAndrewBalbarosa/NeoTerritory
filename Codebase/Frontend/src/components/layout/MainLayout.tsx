@@ -279,7 +279,7 @@ export default function MainLayout() {
       </main>
 
       {analyzeReplace && (
-        <div className="modal" id="analyze-replace-modal">
+        <div className="modal-overlay" id="analyze-replace-modal" role="dialog" aria-modal="true">
           <div className="modal-card">
             <h3>Discard current results?</h3>
             <p className="modal-detail">Running a new analysis replaces the run on screen.</p>

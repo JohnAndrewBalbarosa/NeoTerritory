@@ -139,11 +139,39 @@ function DeleteModal({ onClose, onDeleted }: DeleteModalProps) {
   );
 }
 
+type LogCategory = 'all' | 'auth' | 'analysis' | 'survey' | 'frontend' | 'errors';
+
+const LOG_CATEGORY_TABS: Array<{ id: LogCategory; label: string }> = [
+  { id: 'all',      label: 'All' },
+  { id: 'auth',     label: 'Auth' },
+  { id: 'analysis', label: 'Analysis' },
+  { id: 'survey',   label: 'Survey' },
+  { id: 'frontend', label: 'Frontend' },
+  { id: 'errors',   label: 'Errors' }
+];
+
+// Bucket an event_type into one of the admin tab categories. Frontend events
+// are detected by the `frontend.` prefix; backend events are split by
+// hand-curated keyword matches against a small allow-list.
+function categoryOf(eventType: string): LogCategory {
+  if (!eventType) return 'all';
+  const t = eventType.toLowerCase();
+  if (t.startsWith('frontend.')) {
+    return t.includes('fail') || t.includes('error') ? 'errors' : 'frontend';
+  }
+  if (t.includes('login') || t.includes('register') || t.includes('claim') || t.includes('logout') || t.includes('disconnect')) return 'auth';
+  if (t.includes('survey') || t.includes('consent') || t.includes('review')) return 'survey';
+  if (t.includes('error') || t.includes('fail')) return 'errors';
+  if (t.includes('analy') || t.includes('save') || t.includes('upload') || t.includes('transform') || t.includes('manual_review') || t.includes('test')) return 'analysis';
+  return 'all';
+}
+
 function LogsList() {
   const [logs, setLogs]           = useState<AdminLogEntry[] | null>(null);
   const [error, setError]         = useState<string | null>(null);
   const [search, setSearch]       = useState('');
   const [eventFilter, setFilter]  = useState('');
+  const [category, setCategory]   = useState<LogCategory>('all');
   const [sortDesc, setSortDesc]   = useState(true);
   const [showDelete, setShowDelete] = useState(false);
   const cancelledRef = useRef(false);
@@ -177,16 +205,43 @@ function LogsList() {
     const q = search.toLowerCase();
     if (q) result = result.filter(l => (l.username ?? '').toLowerCase().includes(q));
     if (eventFilter) result = result.filter(l => l.event_type === eventFilter);
+    if (category !== 'all') result = result.filter(l => categoryOf(l.event_type) === category);
     return sortDesc
       ? [...result].sort((a, b) => b.id - a.id)
       : [...result].sort((a, b) => a.id - b.id);
-  }, [logs, search, eventFilter, sortDesc]);
+  }, [logs, search, eventFilter, category, sortDesc]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<LogCategory, number> = { all: 0, auth: 0, analysis: 0, survey: 0, frontend: 0, errors: 0 };
+    if (logs) {
+      counts.all = logs.length;
+      for (const l of logs) {
+        const c = categoryOf(l.event_type);
+        if (c !== 'all') counts[c] += 1;
+      }
+    }
+    return counts;
+  }, [logs]);
 
   if (error) return <div className="empty-state admin-error" role="alert">Failed to load logs: {error}</div>;
   if (logs === null) return <div className="empty-state">Loading logs…</div>;
 
   return (
     <>
+      <nav className="logs-cat-tabs" role="tablist" aria-label="Log categories">
+        {LOG_CATEGORY_TABS.map(t => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={category === t.id}
+            className={`logs-cat-tab${category === t.id ? ' is-active' : ''}`}
+            onClick={() => setCategory(t.id)}
+          >
+            {t.label} <span className="logs-cat-count">{categoryCounts[t.id]}</span>
+          </button>
+        ))}
+      </nav>
       <div className="logs-controls">
         <input
           type="search"
