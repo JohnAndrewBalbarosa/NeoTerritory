@@ -319,17 +319,24 @@ async function runPhase(
     }
     fs.writeFileSync(path.join(runDir, 'driver.cpp'), phaseInputs.driverSource, 'utf8');
 
-    // Pod path — when the user has a per-tester container, compile and run
-    // INSIDE it. We copy the host runDir into /work/<basename>/ in the pod,
-    // then g++ and the binary execute under the pod's resource caps. The
-    // pod is reused across phases / runs for the same user (it persists
-    // for POD_TTL_MS); only the inner /work/<basename>/ scratch differs.
+    // Pod path — only used when the per-tester container is ALREADY up
+    // (claimSeat fired ensurePod async on sign-in; the pod manager has had
+    // wall-clock to spin one). We never await pod creation inside the
+    // request path — that would let a slow Docker host block the GDB run
+    // for tens of seconds. If the pod isn't ready, we fall through to the
+    // local sandbox immediately and kick off ensurePod in the background
+    // so the *next* request gets the pod.
     let pod: import('./podManager').PodHandle | null = null;
     if (input.userId !== undefined) {
       try {
         const pm = await import('./podManager');
         if (pm.isPodModeEnabled()) {
-          pod = pm.getPod(input.userId) ?? await pm.ensurePod(input.userId, `user-${input.userId}`);
+          pod = pm.getPod(input.userId);
+          if (!pod) {
+            // Fire-and-forget pod warm-up; the local sandbox handles this
+            // request, the pod is ready by the next one.
+            void pm.ensurePod(input.userId, `user-${input.userId}`).catch(() => {});
+          }
         }
       } catch { /* fall through to local */ }
     }

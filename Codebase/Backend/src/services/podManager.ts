@@ -84,17 +84,29 @@ export async function ensurePodImageBuilt(): Promise<boolean> {
   const buildContext = path.dirname(dockerfile);
   // eslint-disable-next-line no-console
   console.log(`[pod-manager] building ${POD_IMAGE} from ${dockerfile} (this runs once per host)…`);
+  // Hard-cap at 5 minutes — fresh image pulls + apk add can take ~60s on
+  // slow networks, but anything beyond 5 min is daemon-stuck territory
+  // and we'd rather fall back than wedge the boot path.
+  const POD_BUILD_TIMEOUT_MS = Number(process.env.POD_BUILD_TIMEOUT_MS || 5 * 60_000);
   return new Promise<boolean>((resolve) => {
     const proc = spawn('docker', ['build', '-f', dockerfile, '-t', POD_IMAGE, buildContext], {
       stdio: 'inherit'
     });
+    const t = setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.warn('[pod-manager] docker build timed out — falling back to local sandbox for now');
+      try { proc.kill('SIGKILL'); } catch { /* ignore */ }
+      resolve(false);
+    }, POD_BUILD_TIMEOUT_MS);
     proc.on('close', (code) => {
+      clearTimeout(t);
       const ok = code === 0;
       // eslint-disable-next-line no-console
       console.log(`[pod-manager] build ${ok ? 'succeeded' : 'failed (exit ' + code + ')'}`);
       resolve(ok);
     });
     proc.on('error', (e) => {
+      clearTimeout(t);
       // eslint-disable-next-line no-console
       console.warn('[pod-manager] docker build error:', e.message || e);
       resolve(false);
@@ -164,10 +176,15 @@ export async function ensurePod(userId: number, username: string): Promise<PodHa
   if (existing) await disposePod(userId);
 
   const { podId, containerName } = newPodId(userId);
+  // Bound the `docker run` to 15s so a hung daemon never keeps a caller
+  // (or the seat-claim warm-up) alive indefinitely. On timeout we abort
+  // and the runner falls back to the local sandbox for this user.
+  const POD_RUN_TIMEOUT_MS = Number(process.env.POD_RUN_TIMEOUT_MS || 15_000);
   const ok = await new Promise<boolean>((resolve) => {
     const p = spawn('docker', dockerRunArgs(containerName), { stdio: 'ignore' });
-    p.on('close', (code) => resolve(code === 0));
-    p.on('error', () => resolve(false));
+    const t = setTimeout(() => { try { p.kill('SIGKILL'); } catch { /* ignore */ } resolve(false); }, POD_RUN_TIMEOUT_MS);
+    p.on('close', (code) => { clearTimeout(t); resolve(code === 0); });
+    p.on('error', () => { clearTimeout(t); resolve(false); });
   });
   if (!ok) {
     // eslint-disable-next-line no-console

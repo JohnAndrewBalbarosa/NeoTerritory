@@ -221,12 +221,17 @@ export const claimSeat = async (req: Request, res: Response, next: NextFunction)
     );
     logEvent(user.id, 'claim_seat', `Tester seat claimed: ${user.username}`);
     res.json({ token, user: { id: user.id, username: user.username, email: user.email, role } });
-    // Fire-and-forget: kick off the per-tester sandbox pod asynchronously
-    // so the JWT response isn't blocked on Docker startup. The runner
-    // falls back to the local sandbox if pod mode is off or pod start
-    // fails — see services/podManager.ts and testRunnerService.ts.
+    // Fire-and-forget pod warm-up. setImmediate detaches the docker call
+    // from the request's microtask queue entirely, so even an instant
+    // ensurePod cannot interleave with the next request handler. The
+    // runner has its own bounded ensurePod path with a 15s timeout
+    // (POD_RUN_TIMEOUT_MS) — Docker can never block annotated source,
+    // /api/analyze, or any other route. With pod mode off this is a
+    // no-op.
     if (isPodModeEnabled()) {
-      void ensurePod(user.id, user.username).catch(() => { /* logged inside ensurePod */ });
+      setImmediate(() => {
+        void ensurePod(user.id, user.username).catch(() => { /* logged inside */ });
+      });
     }
   } catch (err) {
     next(err);
