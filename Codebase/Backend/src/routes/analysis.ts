@@ -63,6 +63,12 @@ interface PipelineStageOut {
   detail: string;
 }
 
+interface PatternLexemeSet {
+  keywords: string[];
+  methods:  string[];
+  idioms:   string[];
+}
+
 interface AnnotationOut {
   id: string;
   order: number;
@@ -76,6 +82,33 @@ interface AnnotationOut {
   kind: string;
   patternKey?: string;
   className?: string;
+  lexemeHints?: string[];
+}
+
+const PATTERN_LEXEMES: Record<string, PatternLexemeSet> = {
+  factory:        { keywords: ['virtual', 'new', 'override'],        methods: ['create', 'make', 'build', 'produce', 'newInstance'],       idioms: ['return new', 'Product*', 'polymorphic construction'] },
+  singleton:      { keywords: ['static'],                            methods: ['getInstance', 'instance', 'sharedInstance'],               idioms: ['= delete', 'private constructor', 'static local variable'] },
+  builder:        { keywords: ['return'],                            methods: ['set', 'with', 'add', 'build', 'construct', 'reset'],       idioms: ['return *this', 'method chaining', 'fluent interface'] },
+  methodchaining: { keywords: ['return'],                            methods: ['set', 'with', 'add', 'enable', 'disable', 'configure'],    idioms: ['return *this', 'fluent API', 'return self'] },
+  adapter:        { keywords: ['override', 'virtual'],               methods: ['adapt', 'convert', 'wrap', 'translate', 'delegate'],       idioms: ['adaptee_', 'composition', 'interface bridging'] },
+  decorator:      { keywords: ['override', 'virtual'],               methods: ['decorate', 'wrap', 'augment', 'enhance'],                  idioms: ['wrappee_', 'component_', 'forward call', 'pointer to base'] },
+  proxy:          { keywords: ['override', 'virtual'],               methods: ['request', 'access', 'get', 'load', 'check'],              idioms: ['realSubject_', 'lazy initialization', 'access control'] },
+  strategy:       { keywords: ['virtual', 'override'],               methods: ['execute', 'perform', 'apply', 'run', 'sort', 'validate'],  idioms: ['strategy_', 'setStrategy', 'algorithm family'] },
+  observer:       { keywords: ['virtual', 'override'],               methods: ['update', 'notify', 'subscribe', 'attach', 'detach'],       idioms: ['observers_', 'notify()', 'event subscription'] },
+  composite:      { keywords: ['virtual', 'override'],               methods: ['add', 'remove', 'getChild', 'operation', 'display'],       idioms: ['children_', 'leaf', 'recursive operation'] },
+  iterator:       { keywords: ['override'],                          methods: ['next', 'hasNext', 'current', 'begin', 'end', 'reset'],     idioms: ['index_', 'current_', 'operator++', 'collection traversal'] },
+  visitor:        { keywords: ['virtual', 'override'],               methods: ['visit', 'accept'],                                         idioms: ['double dispatch', 'accept(visitor)', 'visitConcreteA'] },
+  command:        { keywords: ['virtual', 'override'],               methods: ['execute', 'undo', 'redo', 'perform'],                      idioms: ['receiver_', 'invoker_', 'action encapsulation'] },
+  pimpl:          { keywords: ['unique_ptr', 'forward'],             methods: ['impl_', 'd_ptr'],                                          idioms: ['struct Impl', 'unique_ptr<Impl>', 'opaque pointer'] },
+};
+
+function lexemesForPattern(patternName: string): PatternLexemeSet | null {
+  const normalized = (patternName || '').toLowerCase();
+  const fullKey = normalized.replace(/[^a-z]/g, '');
+  if (PATTERN_LEXEMES[fullKey]) return PATTERN_LEXEMES[fullKey];
+  const head = normalized.split(/[^a-z]+/).filter(Boolean)[0];
+  if (head && PATTERN_LEXEMES[head]) return PATTERN_LEXEMES[head];
+  return null;
 }
 
 // Conditional validator: skip when request is multipart (Multer handles upload).
@@ -238,6 +271,9 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
     const aiDocs   = aiResult.documentationByTarget || {};
     const aiTests  = aiResult.unitTestPlanByTarget || {};
 
+    const lset = lexemesForPattern(pattern.patternName || pattern.patternId);
+    const lexemeHints = lset ? [...lset.keywords, ...lset.methods, ...lset.idioms] : undefined;
+
     (pattern.documentationTargets || []).forEach((anchor) => {
       const lineText = anchor.line && anchor.line >= 1 && anchor.line <= lines.length
         ? (lines[anchor.line - 1] || '').trim()
@@ -254,7 +290,8 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         excerpt:  lineText,
         kind:     anchor.label,
         patternKey: pattern.patternName || pattern.patternId,
-        className:  pattern.className
+        className:  pattern.className,
+        lexemeHints
       });
     });
 
@@ -276,7 +313,8 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         excerpt:  lineText,
         kind:     `unit_test:${target.branch_kind}`,
         patternKey: pattern.patternName || pattern.patternId,
-        className:  pattern.className
+        className:  pattern.className,
+        lexemeHints
       });
     });
   });
@@ -468,6 +506,10 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     const structural: AnalysisResult = analyzeClassDeclaration({ sourceName, code: sourceText });
 
     const detectedPatterns = structural.detectedPatterns || [];
+    const enrichedPatterns = detectedPatterns.map(p => {
+      const lset = lexemesForPattern(p.patternName || p.patternId);
+      return lset ? { ...p, patternLexemes: lset } : p;
+    });
     const ranking = rankAll(detectedPatterns, sourceText);
     const classUsageBindings = bindClassUsages(sourceText, detectedPatterns);
     const aiEnabled = aiCommenterEnabled();
@@ -568,6 +610,7 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
 
     res.status(200).json({
       ...analysis,
+      detectedPatterns: enrichedPatterns,
       pendingId,
       saved:         false,
       sourceName,

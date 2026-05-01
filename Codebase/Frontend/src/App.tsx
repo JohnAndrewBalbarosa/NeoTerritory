@@ -5,10 +5,13 @@ import LoginOverlay from './components/auth/LoginOverlay';
 import MainLayout from './components/layout/MainLayout';
 
 export default function App() {
-  const { token, user, setStatus, setMsStatus } = useAppStore();
+  const { token, user, setStatus, setMsStatus, setAiConfigured, resetSession } = useAppStore();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
+    // Clear any leftover analysis state from the previous page load.
+    resetSession();
+
     // Redirect admin immediately
     if (token && user?.role === 'admin') {
       window.location.href = '/admin.html';
@@ -27,6 +30,7 @@ export default function App() {
           const reason = !ms.binaryFound ? 'binary missing' : !ms.catalogFound ? 'catalog missing' : 'unreachable';
           setMsStatus('offline', `offline (${reason})`);
         }
+        setAiConfigured(h.aiProviderConfigured);
         setStatus({
           kind: 'ok',
           title: 'API ok',

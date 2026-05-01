@@ -23,10 +23,13 @@ interface AppState {
   pretestSubmitted: boolean;
   aiStatus: AiCommentaryStatus;
   aiJobId: string | null;
+  aiConfigured: boolean;
   pendingRunSurveyForRunKey: string | null;
+  linePatternOverrides: Record<number, string>;
 
   setAuth: (token: string, user: User) => void;
   clearAuth: () => void;
+  resetSession: () => void;
   setCurrentRun: (run: AnalysisRun | null) => void;
   patchCurrentRun: (patch: Partial<AnalysisRun>) => void;
   setSourceText: (text: string) => void;
@@ -39,8 +42,11 @@ interface AppState {
   setConsentAccepted: (v: boolean) => void;
   setPretestSubmitted: (v: boolean) => void;
   setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
+  setAiConfigured: (v: boolean) => void;
   mergeAiAnnotations: (aiAnnotations: Annotation[]) => void;
   setPendingRunSurvey: (key: string | null) => void;
+  setLinePatternOverride: (line: number, patternKey: string) => void;
+  clearLinePatternOverride: (line: number) => void;
 }
 
 export const useAppStore = create<AppState>((set) => ({
@@ -66,7 +72,9 @@ export const useAppStore = create<AppState>((set) => ({
   pretestSubmitted: false,
   aiStatus: 'idle',
   aiJobId: null,
+  aiConfigured: false,
   pendingRunSurveyForRunKey: null,
+  linePatternOverrides: {},
 
   setAuth: (token, user) => {
     localStorage.setItem(TOKEN_KEY, token);
@@ -88,9 +96,20 @@ export const useAppStore = create<AppState>((set) => ({
       pretestSubmitted: false,
       aiStatus: 'idle',
       aiJobId: null,
-      pendingRunSurveyForRunKey: null
+      pendingRunSurveyForRunKey: null,
+      linePatternOverrides: {}
     });
   },
+
+  resetSession: () => set({
+    currentRun: null,
+    sourceText: '',
+    filename: 'snippet.cpp',
+    activeTab: 'submit',
+    aiStatus: 'idle',
+    aiJobId: null,
+    linePatternOverrides: {}
+  }),
 
   setCurrentRun: (run) => set({
     currentRun: run,
@@ -112,6 +131,15 @@ export const useAppStore = create<AppState>((set) => ({
     aiStatus: status,
     aiJobId: jobId === undefined ? s.aiJobId : jobId
   })),
+  setAiConfigured: (v) => set({ aiConfigured: v }),
+  setLinePatternOverride: (line, patternKey) => set((s) => ({
+    linePatternOverrides: { ...s.linePatternOverrides, [line]: patternKey }
+  })),
+  clearLinePatternOverride: (line) => set((s) => {
+    const next = { ...s.linePatternOverrides };
+    delete next[line];
+    return { linePatternOverrides: next };
+  }),
   mergeAiAnnotations: (aiAnnotations) => set((s) => {
     if (!s.currentRun) return {};
     const existing = s.currentRun.annotations || [];

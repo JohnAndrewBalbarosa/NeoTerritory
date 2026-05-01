@@ -20,7 +20,10 @@
       "PowerShell(wsl -d Ubuntu -- bash -lc 'kubectl get nodes -o wide; echo \"---\"; echo \"Switching to minikube docker daemon...\"; eval $\\(minikube -p neoterritory docker-env\\); docker info --format \"minikube docker daemon at: {{.Name}}, version {{.ServerVersion}}\"')",
       "PowerShell(wsl -d Ubuntu -- bash -c 'cat /etc/wsl.conf 2>/dev/null; echo \"---\"; systemctl is-system-running 2>&1; echo \"---\"; cat /proc/1/comm; echo \"---docker version---\"; docker version --format \"{{.Server.Version}}\"; echo \"---\"; ls /sys/fs/cgroup/ 2>&1 | head -5')",
       "PowerShell(head *)",
-      "PowerShell(wsl -d Ubuntu -- docker exec neoterritory bash -lc 'mkdir -p /tmp/probe-out && /app/Codebase/Microservice/build/NeoTerritory --catalog /app/Codebase/Microservice/pattern_catalog --output /tmp/probe-out /app/Codebase/Microservice/samples/integration/all_patterns.cpp; echo \"EXIT=$?\"')"
+      "PowerShell(wsl -d Ubuntu -- docker exec neoterritory bash -lc 'mkdir -p /tmp/probe-out && /app/Codebase/Microservice/build/NeoTerritory --catalog /app/Codebase/Microservice/pattern_catalog --output /tmp/probe-out /app/Codebase/Microservice/samples/integration/all_patterns.cpp; echo \"EXIT=$?\"')",
+      "PowerShell(wsl -e bash -lc \"docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}'\")",
+      "PowerShell(Stop-Process *)",
+      "WebFetch(domain:devcon.ph)"
     ]
   }
 }

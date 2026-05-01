@@ -32,6 +32,12 @@ export interface PatternRanking {
   scores: Record<string, number>;
 }
 
+export interface PatternLexemeSet {
+  keywords: string[];
+  methods:  string[];
+  idioms:   string[];
+}
+
 export interface Annotation {
   id: string;
   order: number;
@@ -46,6 +52,7 @@ export interface Annotation {
   patternKey?: string;
   className?: string;
   scope?: string;
+  lexemeHints?: string[];
 }
 
 export interface ClassUsageBinding {
@@ -74,6 +81,7 @@ export interface AmbiguityRanking extends PatternRanking {
 
 export interface DetectedPatternFull extends DetectedPattern {
   className?: string;
+  patternLexemes?: PatternLexemeSet;
 }
 
 export interface ReviewQuestion {
