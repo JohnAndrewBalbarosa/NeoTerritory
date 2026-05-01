@@ -6,7 +6,7 @@ const POLL_INTERVAL_MS = 1500;
 const MAX_TRIES = 60;
 
 export function useAiCommentaryPoll() {
-  const { aiJobId, aiStatus, setAiStatus, mergeAiAnnotations } = useAppStore();
+  const { aiJobId, aiStatus, setAiStatus, mergeAiAnnotations, mergeAiEducation } = useAppStore();
 
   useEffect(() => {
     if (!aiJobId || aiStatus !== 'pending') return;
@@ -22,6 +22,7 @@ export function useAiCommentaryPoll() {
         if (cancelled) return;
         if (res.status === 'ready') {
           if (res.annotations) mergeAiAnnotations(res.annotations);
+          if (res.educationByPatternKey) mergeAiEducation(res.educationByPatternKey);
           setAiStatus('ready');
           return;
         }
@@ -44,5 +45,5 @@ export function useAiCommentaryPoll() {
       cancelled = true;
       if (timer) clearTimeout(timer);
     };
-  }, [aiJobId, aiStatus, setAiStatus, mergeAiAnnotations]);
+  }, [aiJobId, aiStatus, setAiStatus, mergeAiAnnotations, mergeAiEducation]);
 }

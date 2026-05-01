@@ -3,8 +3,12 @@ const ANTHROPIC_VERSION = '2023-06-01';
 const DEFAULT_MODEL     = 'claude-sonnet-4-6';
 const DEFAULT_MAX_TOKENS = 4096;
 
+// "Educator" voice: optimized for novice C++ developers. The studio renders
+// these fields directly in PatternCards next to the rank bar, so the tone has
+// to be plain-English and the content has to be specific to *this* class —
+// not generic textbook copy.
 const SYSTEM_PROMPT = [
-  'You are a code-documentation reviewer for a structural pattern detector.',
+  'You are explaining a detected design pattern to a junior C++ developer who has never seen this codebase.',
   'You will receive: a structural verdict (pattern id) emitted by a deterministic C++ matcher,',
   'the class declaration + implementation text, captured documentation anchors, and unit-test targets.',
   '',
@@ -12,18 +16,32 @@ const SYSTEM_PROMPT = [
   '1. Confirm or reclassify the structural verdict. Several patterns are intentionally co-emit',
   '   (Builder vs Method Chaining; Adapter vs Proxy vs Decorator). Pick the most likely role',
   '   for this class given its full text. Set "verdict" to "confirmed" or "reclassified".',
-  '2. Write a concise documentation paragraph for each documentation anchor. Reference the',
-  '   anchor label and the line. Explain why that anchor matters for the chosen pattern.',
-  '3. Write a one-sentence test-design note for each unit-test target. Reference the function',
-  '   name and branch_kind. Describe what behavior the test should verify.',
+  '2. Write three short fields aimed at a beginner:',
+  '   - "explanation": 1-2 sentences in plain English saying what this pattern does. Avoid jargon.',
+  '     If a term is unavoidable (e.g. "polymorphism"), define it inline in parentheses.',
+  '   - "why_this_fired": one sentence pointing at the *specific* shape in their code that matched.',
+  '     Reference real identifiers from the class (member names, method names) so it feels concrete.',
+  '   - "study_hint": one sentence telling them which method or member to read first to "see" the pattern.',
+  '3. For each documentation anchor: write a one-paragraph note in beginner voice. Reference the',
+  '   anchor label and line. Explain why that line matters for the chosen pattern, in plain terms.',
+  '4. For each unit-test target: one beginner-voice sentence describing what behavior to verify.',
+  '   Reference the function name and branch_kind.',
+  '',
+  'Tone rules:',
+  '- Say "the class wraps another object" not "the class composes a delegate".',
+  '- Say "called from outside" not "exposed as a public ABI".',
+  '- Be concrete to *this* code; do not output generic textbook definitions.',
   '',
   'Return a single JSON object. No prose, no code fences. Schema:',
   '{',
   '  "verdict": "confirmed" | "reclassified",',
   '  "final_pattern_id": "<pattern id>",',
   '  "rationale": "<1-3 sentence justification>",',
-  '  "documentationByTarget": { "<anchor label>": "<documentation paragraph>" },',
-  '  "unitTestPlanByTarget": { "<function_hash as string>": "<test design note>" }',
+  '  "explanation": "<beginner-voice 1-2 sentence summary of the pattern>",',
+  '  "why_this_fired": "<one sentence referencing concrete identifiers from this class>",',
+  '  "study_hint": "<one sentence pointing at a specific method/member to read first>",',
+  '  "documentationByTarget": { "<anchor label>": "<beginner-voice paragraph>" },',
+  '  "unitTestPlanByTarget": { "<function_hash as string>": "<beginner-voice test note>" }',
   '}'
 ].join('\n');
 
@@ -67,12 +85,19 @@ interface ProviderMetadata {
   stop_reason?: string;
 }
 
+export interface PatternEducationOut {
+  explanation: string;
+  whyThisFired: string;
+  studyHint: string;
+}
+
 export interface AiResult {
   status: 'generated' | 'failed' | 'skipped' | 'pending_provider';
   reason?: string;
   verdict?: string | null;
   finalPatternId?: string | null;
   rationale?: string;
+  education?: PatternEducationOut | null;
   documentationByTarget: Record<string, string>;
   unitTestPlanByTarget: Record<string, string>;
   providerMetadata?: ProviderMetadata | null;
@@ -150,6 +175,9 @@ interface ParsedAi {
   verdict?: string;
   final_pattern_id?: string;
   rationale?: string;
+  explanation?: string;
+  why_this_fired?: string;
+  study_hint?: string;
   documentationByTarget?: Record<string, string>;
   unitTestPlanByTarget?: Record<string, string>;
 }
@@ -243,11 +271,21 @@ async function callAnthropicMessages(apiKey: string, model: string, payload: AiP
     };
   }
 
+  const education: PatternEducationOut | null =
+    (parsed.explanation || parsed.why_this_fired || parsed.study_hint)
+      ? {
+          explanation:  parsed.explanation || '',
+          whyThisFired: parsed.why_this_fired || '',
+          studyHint:    parsed.study_hint || ''
+        }
+      : null;
+
   return {
     status: 'generated',
     verdict: parsed.verdict || null,
     finalPatternId: parsed.final_pattern_id || payload.detectedPattern || null,
     rationale: parsed.rationale || '',
+    education,
     documentationByTarget: parsed.documentationByTarget || {},
     unitTestPlanByTarget: parsed.unitTestPlanByTarget || {},
     providerMetadata: { id: data.id, model: data.model, stop_reason: data.stop_reason }

@@ -112,6 +112,8 @@ interface RunDetailPayload {
     summary?: string;
     classUsageBindings?: AnalysisRun['classUsageBindings'];
     classUsageBindingSource?: AnalysisRun['classUsageBindingSource'];
+    userResolvedPattern?: string | null;
+    classResolvedPatterns?: Record<string, string>;
   };
 }
 
@@ -127,7 +129,9 @@ export async function fetchRun(id: number): Promise<AnalysisRun> {
     ranking: a.ranking || null,
     classUsageBindings: a.classUsageBindings || {},
     classUsageBindingSource: a.classUsageBindingSource || 'heuristic',
-    summary: a.summary || ''
+    summary: a.summary || '',
+    userResolvedPattern: a.userResolvedPattern || null,
+    classResolvedPatterns: a.classResolvedPatterns || undefined
   };
 }
 
@@ -139,10 +143,14 @@ export async function submitAnalysis(body: string | FormData): Promise<AnalysisR
   return apiFetch<AnalysisRun>('/api/analyze', { method: 'POST', body });
 }
 
-export async function saveRun(pendingId: string, userResolvedPattern?: string): Promise<{ runId: number }> {
+export async function saveRun(
+  pendingId: string,
+  userResolvedPattern?: string,
+  classResolvedPatterns?: Record<string, string>
+): Promise<{ runId: number }> {
   return apiFetch<{ runId: number }>('/api/runs/save', {
     method: 'POST',
-    body: JSON.stringify({ pendingId, userResolvedPattern })
+    body: JSON.stringify({ pendingId, userResolvedPattern, classResolvedPatterns })
   });
 }
 
@@ -286,6 +294,13 @@ export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
 export interface AiPollResponse {
   status: 'pending' | 'ready' | 'failed';
   annotations?: AnalysisRun['annotations'];
+  // Beginner-voice copy keyed by `${patternId}|${className}`. Used by the
+  // poll hook to graft education onto each detected pattern card.
+  educationByPatternKey?: Record<string, {
+    explanation: string;
+    whyThisFired: string;
+    studyHint: string;
+  }>;
   error?: string;
 }
 

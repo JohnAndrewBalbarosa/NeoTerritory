@@ -6,6 +6,7 @@ import { colorFor, USAGE_KIND_LABEL, PatternColor } from '../../lib/patterns';
 interface ClassBindingsProps {
   bindings: Record<string, ClassUsageBinding[]>;
   detectedPatterns?: DetectedPatternFull[];
+  classResolvedPatterns?: Record<string, string>;
   onLineFlash?: (line: number) => void;
 }
 
@@ -136,7 +137,7 @@ function ClassPopout({
   );
 }
 
-export default function ClassBindings({ bindings, detectedPatterns, onLineFlash }: ClassBindingsProps) {
+export default function ClassBindings({ bindings, detectedPatterns, classResolvedPatterns, onLineFlash }: ClassBindingsProps) {
   const annotations = useAppStore(s => s.currentRun?.annotations || []);
   const classNames = Object.keys(bindings || {});
 
@@ -149,6 +150,12 @@ export default function ClassBindings({ bindings, detectedPatterns, onLineFlash 
   (detectedPatterns || []).forEach(p => {
     if (p.className && p.patternName) classToPattern.set(p.className, p.patternName);
   });
+  // Layer the user's per-class choice on top of the heuristic verdict.
+  if (classResolvedPatterns) {
+    for (const [cls, pat] of Object.entries(classResolvedPatterns)) {
+      if (pat) classToPattern.set(cls, pat);
+    }
+  }
 
   function openFor(cls: string, ev: React.MouseEvent<HTMLButtonElement>) {
     if (openClass === cls) {

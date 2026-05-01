@@ -8,6 +8,7 @@ interface SourceViewProps {
   sourceText: string;
   annotations: Annotation[];
   detectedPatterns: DetectedPatternFull[];
+  classResolvedPatterns?: Record<string, string>;
   onLineClick?: (commentId: string) => void;
 }
 
@@ -38,7 +39,10 @@ interface RenderedLine {
   isScopeStart: boolean;
 }
 
-function buildClassScopes(detectedPatterns: DetectedPatternFull[]): ClassScope[] {
+function buildClassScopes(
+  detectedPatterns: DetectedPatternFull[],
+  classResolvedPatterns?: Record<string, string>
+): ClassScope[] {
   const scopes: ClassScope[] = [];
   detectedPatterns.forEach(p => {
     if (!p.className) return;
@@ -52,7 +56,11 @@ function buildClassScopes(detectedPatterns: DetectedPatternFull[]): ClassScope[]
       if (t.line > max) max = t.line;
     });
     if (!Number.isFinite(min) || !Number.isFinite(max)) return;
-    scopes.push({ className: p.className, patternKey: p.patternName || 'Review', min, max });
+    // User's per-class choice overrides the structural patternName so the
+    // scope tint flips immediately on retag.
+    const resolved = classResolvedPatterns && classResolvedPatterns[p.className];
+    const patternKey = resolved || p.patternName || 'Review';
+    scopes.push({ className: p.className, patternKey, min, max });
   });
   return scopes;
 }
@@ -181,10 +189,11 @@ function buildRows(
   sourceText: string,
   annotations: Annotation[],
   detectedPatterns: DetectedPatternFull[],
-  linePatternOverrides: Record<number, string>
+  linePatternOverrides: Record<number, string>,
+  classResolvedPatterns?: Record<string, string>
 ): { rows: RenderedLine[]; scopeDominanceMap: Map<ClassScope, ClassDominance> } {
   const lines = sourceText.replace(/\r\n/g, '\n').split('\n');
-  const scopes = buildClassScopes(detectedPatterns);
+  const scopes = buildClassScopes(detectedPatterns, classResolvedPatterns);
   const lineToScope = buildLineToScope(scopes, lines.length);
   const { raw, filtered } = buildLineToAnnotations(annotations, linePatternOverrides);
 
@@ -209,7 +218,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -217,8 +226,8 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   } = useAppStore();
 
   const { rows, scopeDominanceMap } = useMemo(
-    () => buildRows(sourceText, annotations, detectedPatterns, linePatternOverrides),
-    [sourceText, annotations, detectedPatterns, linePatternOverrides]
+    () => buildRows(sourceText, annotations, detectedPatterns, linePatternOverrides, classResolvedPatterns),
+    [sourceText, annotations, detectedPatterns, linePatternOverrides, classResolvedPatterns]
   );
   const width = String(rows.length).length;
   const [popover, setPopover] = useState<PopoverState | null>(null);

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
   DetectedPatternFull, AmbiguityRanking, PatternRankEntry,
-  ClassUsageBinding, DocumentationTarget, UnitTestTarget
+  ClassUsageBinding, DocumentationTarget, UnitTestTarget, PatternEducation
 } from '../../types/api';
 import { colorFor, USAGE_KIND_LABEL } from '../../lib/patterns';
+import { patternDefinitionFor, PatternDefinition } from '../../data/patternDefinitions';
 
 interface PatternCardsProps {
   detectedPatterns: DetectedPatternFull[];
@@ -42,11 +43,58 @@ function RowButton({ children, onClick }: { children: React.ReactNode; onClick: 
   return <button type="button" className="pattern-row" onClick={onClick}>{children}</button>;
 }
 
+function ExplainSection({
+  patternName, education, definition
+}: {
+  patternName: string;
+  education?: PatternEducation;
+  definition: PatternDefinition | null;
+}) {
+  // AI explanation wins over the static table when present. Static is the
+  // offline/fallback layer so cards always have something to teach.
+  const useAi = !!education;
+  if (!useAi && !definition) return null;
+  return (
+    <div className="pattern-card-section pattern-card-explain">
+      <h4>
+        What is {patternName}?
+        <span className={`explain-source-pill ${useAi ? 'is-ai' : 'is-static'}`}>
+          {useAi ? 'AI explanation' : 'Built-in guide'}
+        </span>
+      </h4>
+      {useAi ? (
+        <div className="explain-body">
+          <p>{education!.explanation}</p>
+          {education!.whyThisFired && (
+            <p><strong>Why this fired here:</strong> {education!.whyThisFired}</p>
+          )}
+          {education!.studyHint && (
+            <p><strong>Where to look first:</strong> {education!.studyHint}</p>
+          )}
+        </div>
+      ) : (
+        <div className="explain-body">
+          <p>{definition!.oneLiner}</p>
+          {definition!.whenToUse && (
+            <p><strong>When to use it:</strong> {definition!.whenToUse}</p>
+          )}
+          {definition!.realWorldAnalogy && (
+            <p><strong>Everyday analogy:</strong> {definition!.realWorldAnalogy}</p>
+          )}
+          {definition!.watchOuts && (
+            <p><strong>Watch out:</strong> {definition!.watchOuts}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function FunctionsSection({ fns, onLineFlash }: { fns: UnitTestTarget[]; onLineFlash?: (l: number) => void }) {
   if (!fns.length) return null;
   return (
     <div className="pattern-card-section">
-      <h4>Functions</h4>
+      <h4 title="Methods worth covering with unit tests">Methods to test</h4>
       <div className="pattern-row-list">
         {fns.map((t, i) => (
           <RowButton key={i} onClick={() => onLineFlash?.(t.line)}>
@@ -64,7 +112,7 @@ function AnchorsSection({ docs, onLineFlash }: { docs: DocumentationTarget[]; on
   if (!docs.length) return null;
   return (
     <div className="pattern-card-section">
-      <h4>Anchors</h4>
+      <h4 title="Specific code shapes that signaled this pattern">Key landmarks in the code</h4>
       <div className="pattern-row-list">
         {docs.map((d, i) => (
           <RowButton key={i} onClick={() => onLineFlash?.(d.line)}>
@@ -82,7 +130,7 @@ function UsagesSection({ rank, onLineFlash }: { rank?: PatternRankEntry; onLineF
   const cs = rank?.evidence?.callsites || [];
   return (
     <div className="pattern-card-section">
-      <h4>Where it's used</h4>
+      <h4 title="Lines where the class is actually used like this pattern">Where the pattern actually fires</h4>
       {cs.length ? (
         <div className="pattern-row-list">
           {cs.map((hit, i) => (
@@ -95,8 +143,8 @@ function UsagesSection({ rank, onLineFlash }: { rank?: PatternRankEntry; onLineF
       ) : (
         <div className="pattern-card-pending">
           {rank?.hasImplementationTemplate
-            ? 'No call-sites matched the implementation template in this source.'
-            : 'Pending: implementation template not yet authored for this pattern.'}
+            ? 'We can see the shape of the pattern in this class, but no usage of it in this file yet.'
+            : 'No usage examples are catalogued for this pattern yet — we matched it on structure only.'}
         </div>
       )}
     </div>
@@ -111,9 +159,15 @@ function TaggedUsagesSection({
   sourceTag: string;
   onLineFlash?: (l: number) => void;
 }) {
+  const sourceTitle = sourceTag === 'microservice'
+    ? 'Found by the structural matcher service'
+    : 'Found by the lightweight built-in matcher';
   return (
     <div className="pattern-card-section">
-      <h4>Tagged usages <span className="usage-source">[{sourceTag}]</span></h4>
+      <h4>
+        Where this class shows up in the code
+        <span className="usage-source-icon" title={sourceTitle} aria-label={sourceTitle}>i</span>
+      </h4>
       {taggedUsages.length ? (
         <div className="pattern-row-list">
           {taggedUsages.map((u, i) => {
@@ -132,7 +186,7 @@ function TaggedUsagesSection({
           })}
         </div>
       ) : (
-        <div className="pattern-card-pending">No tagged usages of {className} found in this source.</div>
+        <div className="pattern-card-pending">{className} is not used anywhere else in this file.</div>
       )}
     </div>
   );
@@ -188,16 +242,29 @@ function PatternCard(props: CardProps) {
         <div className="pattern-card-body">
           {rank && (
             <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
-              <span>rank</span>
+              <span title="How sure the matcher is that this class is this pattern">confidence</span>
               <div className="rank-bar-track">
                 <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
               </div>
               <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
               {rank.hasImplementationTemplate
-                ? <span title="implementation_fit">impl {Math.floor((rank.implementationFit || 0) * 100)}%</span>
-                : <span title="no implementation_template authored yet">class-only</span>}
+                ? (
+                  <span title="How well the class is actually used like this pattern, not just shaped like one">
+                    usage match {Math.floor((rank.implementationFit || 0) * 100)}%
+                  </span>
+                )
+                : (
+                  <span title="We can see the shape, but no usage examples are catalogued for this pattern yet">
+                    structure only
+                  </span>
+                )}
             </div>
           )}
+          <ExplainSection
+            patternName={p.patternName || p.patternId || 'this pattern'}
+            education={p.patternEducation}
+            definition={patternDefinitionFor(p.patternName || p.patternId || '')}
+          />
           <FunctionsSection fns={p.unitTestTargets || []} onLineFlash={onLineFlash} />
           <AnchorsSection docs={p.documentationTargets || []} onLineFlash={onLineFlash} />
           <UsagesSection rank={rank} onLineFlash={onLineFlash} />

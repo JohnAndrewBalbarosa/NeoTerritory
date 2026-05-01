@@ -20,11 +20,7 @@ interface PendingSave {
   patternCount: number;
   commentCount: number;
   userResolvedPattern: string | null;
-}
-
-interface AmbiguityState {
-  run: AnalysisRun;
-  pending: Omit<PendingSave, 'userResolvedPattern'>;
+  ambiguousVerdict: boolean;
 }
 
 interface ReviewState {
@@ -66,7 +62,7 @@ export default function MainLayout() {
   const {
     status, msState, msLabel, user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, aiStatus, aiConfigured
+    setAiStatus, aiStatus, aiConfigured, setStatus
   } = useAppStore();
 
   const aiChipStatus = !aiConfigured ? 'offline'
@@ -83,7 +79,6 @@ export default function MainLayout() {
     : 'ready';
   const { signOut } = useAuth();
 
-  const [ambiguity, setAmbiguity] = useState<AmbiguityState | null>(null);
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
   const [review, setReview] = useState<ReviewState | null>(null);
   const [showSignout, setShowSignout] = useState(false);
@@ -105,7 +100,11 @@ export default function MainLayout() {
   function onRetagResolved(patternId: string | null) {
     if (!retag) return;
     if (patternId) {
-      useAppStore.getState().patchCurrentRun({ userResolvedPattern: patternId });
+      const prevMap = useAppStore.getState().currentRun?.classResolvedPatterns || {};
+      useAppStore.getState().patchCurrentRun({
+        classResolvedPatterns: { ...prevMap, [retag.className]: patternId },
+        userResolvedPattern: patternId
+      });
     }
     setRetag(null);
   }
@@ -120,18 +119,26 @@ export default function MainLayout() {
     if (!run.pendingId) return;
     const patternCount = (run.detectedPatterns || []).length;
     const commentCount = (run.annotations || []).length;
-    const pending = { pendingId: run.pendingId, sourceName: run.sourceName, patternCount, commentCount };
-    if (run.ranking?.verdict === 'ambiguous' && (run.ranking.ambiguousCandidates || []).length) {
-      setAmbiguity({ run, pending });
-    } else {
-      setPendingSave({ ...pending, userResolvedPattern: null });
+    const ambiguous = run.ranking?.verdict === 'ambiguous'
+      && (run.ranking.ambiguousCandidates || []).length > 0;
+    // The auto-blocking AmbiguityModal was removed because PatternCards and
+    // the class popout already expose the same picker. Surface a non-blocking
+    // status nudge instead so the user knows there were tied candidates.
+    if (ambiguous) {
+      setStatus({
+        kind: 'busy',
+        title: 'Multiple patterns matched',
+        detail: 'Use "Tag pattern…" on a card or class chip to choose, or save to keep all.'
+      });
     }
-  }
-
-  function onAmbiguityResolved(patternId: string | null) {
-    if (!ambiguity) return;
-    setPendingSave({ ...ambiguity.pending, userResolvedPattern: patternId });
-    setAmbiguity(null);
+    setPendingSave({
+      pendingId: run.pendingId,
+      sourceName: run.sourceName,
+      patternCount,
+      commentCount,
+      userResolvedPattern: null,
+      ambiguousVerdict: ambiguous
+    });
   }
 
   function onSaved(runId: number) {
@@ -226,14 +233,6 @@ export default function MainLayout() {
         {activeTab === 'ambiguous' && <AmbiguousTab />}
       </main>
 
-      {ambiguity && ambiguity.run.ranking && (
-        <AmbiguityModal
-          ranking={ambiguity.run.ranking}
-          sourceName={ambiguity.run.sourceName}
-          onConfirm={onAmbiguityResolved}
-          onSkip={() => onAmbiguityResolved(null)}
-        />
-      )}
       {retag && useAppStore.getState().currentRun?.ranking && (
         <AmbiguityModal
           ranking={useAppStore.getState().currentRun!.ranking!}
@@ -243,7 +242,11 @@ export default function MainLayout() {
           candidatesOverride={retag.candidates}
           title={`Tag pattern for ${retag.className}`}
           detail={`Pick the design pattern that best matches ${retag.className}. Your choice replaces the current resolution and is persisted on the next save.`}
-          preselect={useAppStore.getState().currentRun?.userResolvedPattern || null}
+          preselect={
+            useAppStore.getState().currentRun?.classResolvedPatterns?.[retag.className]
+            ?? useAppStore.getState().currentRun?.userResolvedPattern
+            ?? null
+          }
         />
       )}
       {pendingSave && (
@@ -253,6 +256,7 @@ export default function MainLayout() {
           patternCount={pendingSave.patternCount}
           commentCount={pendingSave.commentCount}
           userResolvedPattern={pendingSave.userResolvedPattern}
+          ambiguousVerdict={pendingSave.ambiguousVerdict}
           onSaved={onSaved}
           onDiscard={() => setPendingSave(null)}
         />

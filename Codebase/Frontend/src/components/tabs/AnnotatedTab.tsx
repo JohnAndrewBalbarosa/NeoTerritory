@@ -18,9 +18,11 @@ export default function AnnotatedTab({ onLineFlash, onCommentFlash }: AnnotatedT
     if (!currentRun) return [];
     const usage = synthesizeUsageAnnotations(
       currentRun.classUsageBindings || {},
-      currentRun.detectedPatterns || []
+      currentRun.detectedPatterns || [],
+      currentRun.classResolvedPatterns
     );
     return [...(currentRun.annotations || []), ...usage];
+  // Re-synthesize when retag updates classResolvedPatterns so colors propagate.
   }, [currentRun]);
 
   if (!currentRun) {
@@ -54,6 +56,7 @@ export default function AnnotatedTab({ onLineFlash, onCommentFlash }: AnnotatedT
           sourceText={currentRun.sourceText || ''}
           annotations={allAnnotations}
           detectedPatterns={currentRun.detectedPatterns || []}
+          classResolvedPatterns={currentRun.classResolvedPatterns}
           onLineClick={onCommentFlash}
         />
       </div>
@@ -68,6 +71,7 @@ export default function AnnotatedTab({ onLineFlash, onCommentFlash }: AnnotatedT
       <ClassBindings
         bindings={currentRun.classUsageBindings || {}}
         detectedPatterns={currentRun.detectedPatterns || []}
+        classResolvedPatterns={currentRun.classResolvedPatterns}
         onLineFlash={onLineFlash}
       />
     </section>

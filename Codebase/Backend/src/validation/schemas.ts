@@ -18,7 +18,13 @@ export const analyzeBodySchema = z.object({
 
 export const saveRunSchema = z.object({
   pendingId: z.string().min(1).max(128),
-  userResolvedPattern: z.string().min(1).max(128).optional()
+  userResolvedPattern: z.string().min(1).max(128).optional(),
+  // Per-class user pattern resolution map. Keys are class names (typical C++
+  // identifier length), values are pattern keys.
+  classResolvedPatterns: z.record(
+    z.string().min(1).max(128),
+    z.string().min(1).max(128)
+  ).optional()
 });
 
 export const loginSchema = z.object({

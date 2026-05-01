@@ -12,7 +12,8 @@ const KIND_HUMAN: Record<string, string> = {
 
 export function synthesizeUsageAnnotations(
   bindings: Record<string, ClassUsageBinding[]>,
-  detectedPatterns: DetectedPatternFull[]
+  detectedPatterns: DetectedPatternFull[],
+  classResolvedPatterns?: Record<string, string>
 ): Annotation[] {
   const classToPatternName = new Map<string, string>();
   detectedPatterns.forEach(p => {
@@ -21,7 +22,11 @@ export function synthesizeUsageAnnotations(
   const out: Annotation[] = [];
   let id = 1;
   Object.entries(bindings).forEach(([cls, rows]) => {
-    const patternName = classToPatternName.get(cls) || 'Review';
+    // Per-class user choice wins over the heuristic verdict so color
+    // propagation reaches every line that touches this class.
+    const patternName = (classResolvedPatterns && classResolvedPatterns[cls])
+      || classToPatternName.get(cls)
+      || 'Review';
     (rows || []).forEach(u => {
       const target = u.varName
         ? `${u.varName}${u.methodName ? '.' + u.methodName : ''}`

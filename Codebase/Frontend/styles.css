@@ -383,3 +383,15 @@ body.login-active{overflow:hidden;}
 .checklist-chip .other-input{border:none;border-bottom:1px solid var(--border);outline:none;font-size:13px;padding:1px 4px;background:transparent;width:140px;color:var(--ink);}
 .checklist-chip .other-input:disabled{opacity:0.4;}
 .checklist-actions{display:flex;gap:8px;align-items:center;}
+
+/* ==== beginner-friendly pattern card explainer (added 2026-05) ==== */
+.usage-source-icon{display:inline-flex;align-items:center;justify-content:center;width:14px;height:14px;margin-left:6px;border-radius:50%;font-size:9px;font-weight:700;font-family:var(--code-font);background:var(--border);color:var(--ink-soft);cursor:help;user-select:none;text-transform:lowercase;letter-spacing:0;}
+.pattern-card-explain{background:rgba(123,94,167,0.06);border:1px solid rgba(123,94,167,0.18);border-radius:8px;padding:10px 12px;}
+.pattern-card-explain h4{display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;font-weight:600;color:var(--ink);}
+.explain-source-pill{font-size:9px;font-weight:600;letter-spacing:0.04em;padding:2px 6px;border-radius:999px;text-transform:uppercase;}
+.explain-source-pill.is-ai{color:var(--purple);background:rgba(167,139,250,0.15);border:1px solid rgba(167,139,250,0.35);}
+.explain-source-pill.is-static{color:var(--ink-soft);background:var(--border);border:1px solid transparent;}
+.explain-body p{margin:0 0 6px 0;font-size:13px;line-height:1.5;color:var(--ink);}
+.explain-body p:last-child{margin-bottom:0;}
+.explain-body strong{color:var(--ink);}
+.modal-hint{font-size:12px;color:var(--ink-soft);font-style:italic;margin:4px 0 0 0;}

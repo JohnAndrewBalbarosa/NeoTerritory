@@ -8,20 +8,37 @@ interface SavePromptProps {
   patternCount: number;
   commentCount: number;
   userResolvedPattern?: string | null;
+  ambiguousVerdict?: boolean;
   onSaved: (runId: number) => void;
   onDiscard: () => void;
 }
 
 export default function SavePrompt(props: SavePromptProps) {
-  const { pendingId, sourceName, patternCount, commentCount, userResolvedPattern, onSaved, onDiscard } = props;
+  const {
+    pendingId, sourceName, patternCount, commentCount,
+    userResolvedPattern, ambiguousVerdict, onSaved, onDiscard
+  } = props;
   const { setStatus } = useAppStore();
   const [busy, setBusy] = useState(false);
-  const choiceLine = userResolvedPattern ? ` Choice: ${userResolvedPattern}.` : '';
+
+  // Pull the latest per-class picks from the store at save time so anything
+  // tagged via the cards/popout while this prompt was open is included.
+  const classResolvedPatterns = useAppStore(s => s.currentRun?.classResolvedPatterns);
+  const tagged = classResolvedPatterns ? Object.keys(classResolvedPatterns) : [];
+  const choiceLine = userResolvedPattern
+    ? ` Choice: ${userResolvedPattern}.`
+    : (tagged.length ? ` Tagged: ${tagged.length} class(es).` : '');
 
   async function onConfirm() {
     setBusy(true);
     try {
-      const result = await saveRun(pendingId, userResolvedPattern || undefined);
+      const result = await saveRun(
+        pendingId,
+        userResolvedPattern || undefined,
+        classResolvedPatterns && Object.keys(classResolvedPatterns).length
+          ? classResolvedPatterns
+          : undefined
+      );
       setStatus({ kind: 'ok', title: 'Run saved', detail: `Saved as run #${result.runId}.` });
       onSaved(result.runId);
     } catch (err) {
@@ -44,6 +61,11 @@ export default function SavePrompt(props: SavePromptProps) {
         <p id="save-prompt-detail" className="modal-detail">
           {sourceName}: {patternCount} pattern(s), {commentCount} comment(s).{choiceLine} Save to your folder?
         </p>
+        {ambiguousVerdict && tagged.length === 0 && !userResolvedPattern && (
+          <p className="modal-hint">
+            Tip: tag patterns from the cards before saving for clearer history.
+          </p>
+        )}
         <div className="modal-actions">
           <button id="save-discard-btn" className="ghost-btn" type="button" onClick={onCancel} disabled={busy}>
             Discard

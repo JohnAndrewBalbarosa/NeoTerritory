@@ -79,9 +79,16 @@ export interface AmbiguityRanking extends PatternRanking {
   ambiguousCandidates?: string[];
 }
 
+export interface PatternEducation {
+  explanation: string;     // 1-2 sentences, plain English, no jargon
+  whyThisFired: string;    // What in the user's code triggered this match
+  studyHint: string;       // Where to look in the code first
+}
+
 export interface DetectedPatternFull extends DetectedPattern {
   className?: string;
   patternLexemes?: PatternLexemeSet;
+  patternEducation?: PatternEducation;
 }
 
 export interface ReviewQuestion {
@@ -153,6 +160,9 @@ export interface AnalysisRun {
   pendingId?: string;
   createdAt?: string;
   userResolvedPattern?: string | null;
+  // Per-class user pattern resolutions. When set for a class, color rendering
+  // and synthesized usage annotations prefer this over the heuristic verdict.
+  classResolvedPatterns?: Record<string, string>;
 }
 
 export interface RunListItem {

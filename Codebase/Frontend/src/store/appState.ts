@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { User, AnalysisRun, AppStatus, MsState, Annotation } from '../types/api';
+import { User, AnalysisRun, AppStatus, MsState, Annotation, PatternEducation } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
@@ -44,6 +44,7 @@ interface AppState {
   setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
   setAiConfigured: (v: boolean) => void;
   mergeAiAnnotations: (aiAnnotations: Annotation[]) => void;
+  mergeAiEducation: (educationByKey: Record<string, PatternEducation>) => void;
   setPendingRunSurvey: (key: string | null) => void;
   setLinePatternOverride: (line: number, patternKey: string) => void;
   clearLinePatternOverride: (line: number) => void;
@@ -160,6 +161,16 @@ export const useAppStore = create<AppState>((set) => ({
     return {
       currentRun: { ...s.currentRun, annotations: Array.from(byId.values()) }
     };
+  }),
+  mergeAiEducation: (educationByKey) => set((s) => {
+    if (!s.currentRun) return {};
+    if (!educationByKey || !Object.keys(educationByKey).length) return {};
+    const updated = (s.currentRun.detectedPatterns || []).map((p) => {
+      const key = `${p.patternId}|${p.className || ''}`;
+      const edu = educationByKey[key];
+      return edu ? { ...p, patternEducation: edu } : p;
+    });
+    return { currentRun: { ...s.currentRun, detectedPatterns: updated } };
   }),
   setPendingRunSurvey: (key) => set({ pendingRunSurveyForRunKey: key }),
 }));

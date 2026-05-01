@@ -45,6 +45,7 @@ interface AnalysisPayload {
   commentsOnly: string;
   transformedPreview: string;
   userResolvedPattern?: string;
+  classResolvedPatterns?: Record<string, string>;
 }
 
 interface PendingEntry {
@@ -127,9 +128,17 @@ const PENDING_TTL_MS = 10 * 60 * 1000;
 const pendingRuns = new Map<string, PendingEntry>();
 
 // Ephemeral AI commentary jobs spawned alongside structural analysis.
+interface PatternEducationOut {
+  explanation: string;
+  whyThisFired: string;
+  studyHint: string;
+}
 interface AiJobEntry {
   status: 'pending' | 'ready' | 'failed';
   annotations?: AnnotationOut[];
+  // Keyed by `${patternId}|${className}` so the frontend can attach the
+  // beginner-voice copy to the matching detected pattern card.
+  educationByPatternKey?: Record<string, PatternEducationOut>;
   error?: string;
   expiresAt: number;
 }
@@ -591,9 +600,22 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
         )
           .then((aiResults) => {
             const aiAnnotations = buildAiAnnotations(patternsForAi, aiResults, sourceForAi);
+            const educationByPatternKey: Record<string, PatternEducationOut> = {};
+            patternsForAi.forEach((pattern, idx) => {
+              const edu = aiResults[idx]?.education;
+              if (edu && (edu.explanation || edu.whyThisFired || edu.studyHint)) {
+                const key = `${pattern.patternId}|${pattern.className || ''}`;
+                educationByPatternKey[key] = {
+                  explanation:  edu.explanation || '',
+                  whyThisFired: edu.whyThisFired || '',
+                  studyHint:    edu.studyHint || ''
+                };
+              }
+            });
             aiJobs.set(jobId, {
               status: 'ready',
               annotations: aiAnnotations,
+              educationByPatternKey,
               expiresAt: Date.now() + AI_JOB_TTL_MS
             });
           })
@@ -625,7 +647,11 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
 
 router.post('/runs/save', jwtAuth, validateBody(saveRunSchema), (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { pendingId, userResolvedPattern } = req.body as { pendingId: string; userResolvedPattern?: string };
+    const { pendingId, userResolvedPattern, classResolvedPatterns } = req.body as {
+      pendingId: string;
+      userResolvedPattern?: string;
+      classResolvedPatterns?: Record<string, string>;
+    };
     const pending = takePending(pendingId, req.user?.id);
     if (!pending) {
       res.status(404).json({ error: 'Pending run not found or expired' });
@@ -633,6 +659,11 @@ router.post('/runs/save', jwtAuth, validateBody(saveRunSchema), (req: Request, r
     }
     if (userResolvedPattern && typeof userResolvedPattern === 'string') {
       pending.analysis.userResolvedPattern = userResolvedPattern;
+    }
+    if (classResolvedPatterns && typeof classResolvedPatterns === 'object') {
+      // Persist the per-class map alongside the legacy single-value field so
+      // reloading a saved run restores every class's chosen pattern.
+      pending.analysis.classResolvedPatterns = classResolvedPatterns;
     }
 
     const userDirName = safeUsername(req.user?.username);
@@ -795,7 +826,11 @@ router.get('/analyze/ai/:jobId', jwtAuth, (req: Request, res: Response) => {
     return;
   }
   if (entry.status === 'ready') {
-    res.json({ status: 'ready', annotations: entry.annotations || [] });
+    res.json({
+      status: 'ready',
+      annotations: entry.annotations || [],
+      educationByPatternKey: entry.educationByPatternKey || {}
+    });
     return;
   }
   if (entry.status === 'failed') {
