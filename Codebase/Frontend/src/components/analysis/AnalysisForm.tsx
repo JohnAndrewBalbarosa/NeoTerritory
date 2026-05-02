@@ -26,7 +26,8 @@ function newSlotId(): string {
 export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
     setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission,
-    submissionFiles, setSubmissionFiles } = useAppStore();
+    submissionFiles, setSubmissionFiles,
+    programStdin, setProgramStdin } = useAppStore();
   const MAX_FILES = Math.min(MAX_FILES_HARD_CAP, Math.max(1, maxFilesPerSubmission || 3));
 
   // Slots are persisted in the store as `submissionFiles` so they survive
@@ -241,6 +242,21 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
           />
         </div>
       )}
+
+      <div className="program-stdin-row">
+        <label htmlFor="program-stdin">
+          Program input <small>(stdin — newlines = Enter)</small>
+        </label>
+        <textarea
+          id="program-stdin"
+          className="program-stdin-textarea"
+          value={programStdin}
+          onChange={e => setProgramStdin(e.target.value)}
+          rows={3}
+          placeholder="If your program reads from cin/scanf/getline, type its input here. Each newline is one Enter press."
+          aria-label="Program standard input — sent to your binary on every unit-test run"
+        />
+      </div>
 
       <div className="form-actions">
         <button id="analyze-btn" className="primary-btn" type="submit" disabled={busy}>

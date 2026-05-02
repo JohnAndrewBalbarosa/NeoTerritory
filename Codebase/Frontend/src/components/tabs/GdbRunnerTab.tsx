@@ -158,8 +158,11 @@ function PhaseRow({ phase, result, loading }: {
             )}
             {stdout.trim().length === 0 && stderr.trim().length === 0 && (
               <details className="gdb-result-pane">
-                <summary>Console output</summary>
-                <pre>(no output)</pre>
+                <summary>Console output — no I/O terminal</summary>
+                <pre>
+(Your program ran but didn&apos;t print anything and didn&apos;t read from
+stdin — there&apos;s no terminal session to display.)
+                </pre>
               </details>
             )}
           </>
@@ -179,7 +182,8 @@ export default function GdbRunnerTab() {
   const {
     currentRun, setActiveTab, setGdbAllPassedForRun,
     lastGdbResults, lastGdbRunKey, setLastGdbResults,
-    pendingGdbAutoRun, setPendingGdbAutoRun
+    pendingGdbAutoRun, setPendingGdbAutoRun,
+    programStdin
   } = useAppStore();
   // Session key for the current run — id-based when saved, pendingId-based
   // when unsaved. The cached GDB results in the store are only valid when
@@ -302,8 +306,8 @@ export default function GdbRunnerTab() {
     try {
       const data = await runPatternTests(
         runId !== null
-          ? { runId, classResolvedPatterns: resolvedMap }
-          : { pendingId: pendingId!, classResolvedPatterns: resolvedMap }
+          ? { runId, classResolvedPatterns: resolvedMap, stdin: programStdin }
+          : { pendingId: pendingId!, classResolvedPatterns: resolvedMap, stdin: programStdin }
       );
       const grouped = groupResults(data.results);
       setGroups(grouped);

@@ -38,6 +38,10 @@ interface AppState {
   // it on mount and dispatches `runAll()` once, then resets it. Lets a
   // single click on the CTA both navigate and trigger the run.
   pendingGdbAutoRun: boolean;
+  // Program input — text streamed to the binary's stdin during GDB unit
+  // tests. Newlines act as the user's Enter key. Cleared on
+  // setCurrentRun / resetSession.
+  programStdin: string;
   activeTab: StudioTab;
   consentAccepted: boolean;
   pretestSubmitted: boolean;
@@ -68,6 +72,7 @@ interface AppState {
   setGdbAllPassedForRun: (v: boolean) => void;
   setLastGdbResults: (results: import('../api/client').GdbTestResult[] | null, runKey: string | null) => void;
   setPendingGdbAutoRun: (v: boolean) => void;
+  setProgramStdin: (text: string) => void;
   setActiveTab: (tab: StudioTab) => void;
   setConsentAccepted: (v: boolean) => void;
   setPretestSubmitted: (v: boolean) => void;
@@ -108,6 +113,7 @@ export const useAppStore = create<AppState>((set) => ({
   lastGdbResults: null,
   lastGdbRunKey: null,
   pendingGdbAutoRun: false,
+  programStdin: '',
   activeTab: 'submit',
   consentAccepted: false,
   pretestSubmitted: false,
@@ -164,7 +170,8 @@ export const useAppStore = create<AppState>((set) => ({
     gdbAllPassedForRun: false,
     lastGdbResults: null,
     lastGdbRunKey: null,
-    pendingGdbAutoRun: false
+    pendingGdbAutoRun: false,
+    programStdin: ''
   }),
   patchCurrentRun: (patch) => set((s) => ({
     currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
@@ -179,6 +186,7 @@ export const useAppStore = create<AppState>((set) => ({
   setGdbAllPassedForRun: (v) => set({ gdbAllPassedForRun: v }),
   setLastGdbResults: (results, runKey) => set({ lastGdbResults: results, lastGdbRunKey: runKey }),
   setPendingGdbAutoRun: (v) => set({ pendingGdbAutoRun: v }),
+  setProgramStdin: (text) => set({ programStdin: text }),
   setActiveTab: (tab) => set({ activeTab: tab }),
   setConsentAccepted: (v) => set({ consentAccepted: v }),
   setPretestSubmitted: (v) => set({ pretestSubmitted: v }),

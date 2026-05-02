@@ -807,7 +807,22 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
   }
 });
 
+// Single-button "Submit validation & save". Re-uses the same Zod schema
+// + the save handler so the studio can collapse its two-step flow into
+// one click without changing the underlying persistence path.
+router.post('/runs/submit-and-save', jwtAuth, validateBody(saveRunSchema), (req: Request, res: Response, next: NextFunction) => {
+  // Delegate to the same handler — validation already happened via the
+  // shared middleware. This route exists so the frontend can call a
+  // semantically-named endpoint and so future server-side validation
+  // can hang off it without touching /runs/save's contract.
+  return saveRunHandler(req, res, next);
+});
+
 router.post('/runs/save', jwtAuth, validateBody(saveRunSchema), (req: Request, res: Response, next: NextFunction) => {
+  return saveRunHandler(req, res, next);
+});
+
+function saveRunHandler(req: Request, res: Response, next: NextFunction): void {
   try {
     const { pendingId, userResolvedPattern, classResolvedPatterns } = req.body as {
       pendingId: string;
@@ -854,7 +869,7 @@ router.post('/runs/save', jwtAuth, validateBody(saveRunSchema), (req: Request, r
   } catch (err) {
     next(err);
   }
-});
+}
 
 interface AnalysisRunListRow {
   id: number;
@@ -1161,7 +1176,8 @@ async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
-  userId?: number
+  userId?: number,
+  stdin?: string
 ): Promise<TestResult[]> {
   const eligible = patterns.filter(p => p.className && p.classText);
   if (eligible.length === 0) return [];
@@ -1178,7 +1194,8 @@ async function dispatchPatternTests(
     classText:   probe.classText!,
     fullSource,
     files,
-    userId
+    userId,
+    stdin
   });
 
   const compileResults: TestResult[] = eligible.map(p => ({
@@ -1219,6 +1236,7 @@ async function dispatchPatternTests(
       fullSource,
       files,
       userId,
+      stdin,
       forwardMethod:    pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
       factoryFn:        pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
       terminator:       pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
@@ -1281,7 +1299,8 @@ async function handleRunTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
-  resolvedMap: Record<string, string> = {}
+  resolvedMap: Record<string, string> = {},
+  stdin?: string
 ): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -1322,7 +1341,7 @@ async function handleRunTests(
     return;
   }
   const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
-  const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id);
+  const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id, stdin);
   // Validate the result set BEFORE logging anything — we only persist
   // outcomes when every test result has the fields downstream consumers
   // (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
@@ -1387,8 +1406,11 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
     const fullSource = (analysis.files && analysis.files.length > 0)
       ? analysis.files.map(f => f.sourceText).join('\n\n')
       : (row.source_text || '');
+    const stdinText = typeof (req.body as { stdin?: unknown })?.stdin === 'string'
+      ? String((req.body as { stdin: string }).stdin).slice(0, 64_000)
+      : undefined;
     await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource, analysis.files,
-                         analysis.classResolvedPatterns || {});
+                         analysis.classResolvedPatterns || {}, stdinText);
   } catch (err) {
     next(err);
   }
@@ -1426,7 +1448,10 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
     const fullSource = (pendingAnalysis.files && pendingAnalysis.files.length > 0)
       ? pendingAnalysis.files.map(f => f.sourceText).join('\n\n')
       : (pending.sourceText || '');
-    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap);
+    const stdinText = typeof (req.body as { stdin?: unknown })?.stdin === 'string'
+      ? String((req.body as { stdin: string }).stdin).slice(0, 64_000)
+      : undefined;
+    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap, stdinText);
   } catch (err) {
     next(err);
   }

@@ -169,7 +169,12 @@ export interface AdminOverview {
 }
 
 export interface RunsPerDayPoint { date: string; count: number; }
-export interface PatternFreqPoint { pattern: string; count: number; }
+export interface PatternFreqPoint {
+  pattern: string;        // patternId, e.g. "creational.singleton"
+  count: number;
+  family?: string;        // catalog folder, e.g. "creational" — drives the family pie
+  displayName?: string;   // human label, e.g. "Singleton" — falls back to pattern when absent
+}
 export interface ScoreBucket { range: string; count: number; }
 export interface PerUserPoint { username: string; runs: number; }
 

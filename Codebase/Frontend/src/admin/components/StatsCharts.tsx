@@ -250,7 +250,7 @@ export default function StatsCharts() {
               // Per-pattern slices use the same palette index as the bars
               // above so the legend ↔ bar colour mapping is consistent.
               const perPatternSlices: PieSlice[] = top.map((p, i) => ({
-                label: p.pattern,
+                label: p.displayName || p.pattern,
                 value: p.count,
                 color: PALETTE[i % PALETTE.length]
               }));
@@ -258,14 +258,14 @@ export default function StatsCharts() {
               if (otherCount > 0) {
                 perPatternSlices.push({ label: 'Other', value: otherCount, color: '#94a3b8' });
               }
-              // Family bucketing — patternId is `<family>.<name>`. Anything
-              // outside the catalog's three authored families (creational /
-              // structural / behavioural) is dropped from the pie, not
-              // lumped into a generic Other bucket the user explicitly did
-              // not want.
+              // Family bucketing. The backend now sends an authoritative
+              // `family` field derived from the pattern_catalog folder
+              // name (microservice writes patternId as `<family>.<name>`),
+              // so we trust it directly and only fall back to splitting
+              // the patternId for runs predating the field.
               const byFamily = new Map<string, number>();
               for (const p of sorted) {
-                const fam = (p.pattern.split('.')[0] || '').toLowerCase();
+                const fam = ((p.family || (p.pattern.split('.')[0] || '')).toLowerCase());
                 if (!(fam in FAMILY_COLOR)) continue;
                 byFamily.set(fam, (byFamily.get(fam) || 0) + p.count);
               }
@@ -279,7 +279,7 @@ export default function StatsCharts() {
               return (
                 <>
                   {top.map((p, i) => (
-                    <BarRow key={p.pattern} label={p.pattern} value={p.count} max={patternMax} color={PALETTE[i % PALETTE.length]} />
+                    <BarRow key={p.pattern} label={p.displayName || p.pattern} value={p.count} max={patternMax} color={PALETTE[i % PALETTE.length]} />
                   ))}
                   <div className="stats-pies-row">
                     <PieChart slices={perPatternSlices} title="By pattern"  ariaLabel="Per-pattern frequency pie chart" />

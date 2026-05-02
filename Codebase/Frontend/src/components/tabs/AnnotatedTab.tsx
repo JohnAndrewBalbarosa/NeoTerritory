@@ -387,24 +387,48 @@ export default function AnnotatedTab({
     }
   }
 
-  // CTA state machine. The user must run the GDB tests and pass them all
-  // for the current run before being allowed to advance to the Review step.
-  // gdbAllPassedForRun is invalidated whenever a new analysis is dispatched
-  // (see store.setCurrentRun), so re-running an analysis re-blocks Review.
-  const ctaPhase: 'tag' | 'gdb' | 'review' =
-    !allTagged ? 'tag' : !gdbAllPassedForRun ? 'gdb' : 'review';
+  // CTA state machine. tag → gdb → submit (validation+save) → review.
+  // Submit-and-save replaces the old separate "Save run" flow: the
+  // single button collects validation + persistence into one API call,
+  // and only Review unblocks afterwards.
+  const ctaPhase: 'tag' | 'gdb' | 'submit' | 'review' =
+    !allTagged ? 'tag'
+    : !gdbAllPassedForRun ? 'gdb'
+    : !currentRun.runId ? 'submit'
+    : 'review';
 
-  function onCtaClick() {
+  const [submitting, setSubmitting] = useState(false);
+
+  async function onCtaClick() {
+    if (!currentRun) return;
     if (ctaPhase === 'gdb') {
-      // Single-click semantics: tell the GDB tab to auto-dispatch on mount
-      // and switch over so the user doesn't have to press "Run all tests"
-      // a second time. The flag is one-shot — GdbRunnerTab resets it
-      // immediately after honouring it.
       setPendingGdbAutoRun(true);
       setActiveTab('gdb');
-    } else if (ctaPhase === 'review' && onGoToReview) {
-      onGoToReview();
+      return;
     }
+    const pendingId = currentRun.pendingId;
+    if (ctaPhase === 'submit' && pendingId) {
+      setSubmitting(true);
+      try {
+        const { submitAndSaveRun } = await import('../../api/client');
+        const out = await submitAndSaveRun(
+          pendingId,
+          currentRun.userResolvedPattern || undefined,
+          currentRun.classResolvedPatterns || undefined
+        );
+        // Re-stamp the current run with the new server-side runId so
+        // the next CTA click goes straight to Review and the GDB tab's
+        // session lock pins to a saved-run identity.
+        useAppStore.getState().patchCurrentRun({ runId: out.runId });
+      } catch (err) {
+        const e = err as Error & { detail?: string };
+        alert(`Submit & save failed: ${e.detail || e.message}`);
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+    if (ctaPhase === 'review' && onGoToReview) onGoToReview();
   }
 
   return (
@@ -448,11 +472,15 @@ export default function AnnotatedTab({
                 type="button"
                 className="primary-btn tag-progress-cta"
                 onClick={onCtaClick}
-                disabled={ctaPhase === 'review' && !onGoToReview}
+                disabled={(ctaPhase === 'review' && !onGoToReview) || submitting}
               >
-                {ctaPhase === 'gdb'
-                  ? 'Next: Run unit tests →'
-                  : 'Next: Review before submission →'}
+                {submitting
+                  ? 'Submitting…'
+                  : ctaPhase === 'gdb'
+                    ? 'Next: Run unit tests →'
+                    : ctaPhase === 'submit'
+                      ? 'Submit validation & save →'
+                      : 'Next: Review before submission →'}
               </button>
             )}
             {/* Discard tucked into the tag-progress row, right-aligned via CSS,

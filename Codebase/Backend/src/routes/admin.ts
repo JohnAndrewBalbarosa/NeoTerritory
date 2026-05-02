@@ -214,18 +214,28 @@ interface AnalysisJsonRow { analysis_json: string }
 router.get('/stats/pattern-frequency', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const rows = db.prepare(`SELECT analysis_json FROM analysis_runs`).all() as AnalysisJsonRow[];
-    const counts = new Map<string, number>();
+    interface FreqRow { pattern: string; family: string; displayName: string; count: number }
+    const counts = new Map<string, FreqRow>();
     for (const row of rows) {
-      const a = safeParse(row.analysis_json) as { detectedPatterns?: Array<{ patternName?: string; patternId?: string }> } | null;
+      const a = safeParse(row.analysis_json) as {
+        detectedPatterns?: Array<{ patternName?: string; patternId?: string }>
+      } | null;
       const patterns = (a && a.detectedPatterns) || [];
       for (const p of patterns) {
-        const key = p.patternName || p.patternId || 'unknown';
-        counts.set(key, (counts.get(key) || 0) + 1);
+        // Prefer patternId because it carries the catalog folder name
+        // (`<family>.<name>` — derived from Microservice/pattern_catalog/<family>/),
+        // which is what the admin family pie needs to bucket. Fall back to
+        // patternName when the microservice didn't emit an id.
+        const id = p.patternId || p.patternName || 'unknown';
+        const family = id.includes('.') ? id.split('.')[0].toLowerCase() : 'other';
+        const display = p.patternName || id;
+        const key = id;
+        const existing = counts.get(key);
+        if (existing) existing.count += 1;
+        else counts.set(key, { pattern: key, family, displayName: display, count: 1 });
       }
     }
-    const series = [...counts.entries()]
-      .map(([pattern, count]) => ({ pattern, count }))
-      .sort((a, b) => b.count - a.count);
+    const series = [...counts.values()].sort((a, b) => b.count - a.count);
     res.json({ series });
   } catch (err) { next(err); }
 });

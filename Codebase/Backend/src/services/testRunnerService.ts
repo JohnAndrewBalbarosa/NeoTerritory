@@ -47,7 +47,14 @@ export interface TestResult {
   criteria?: Array<{ status: 'pass' | 'skip' | 'fail'; description: string }>;
 }
 
-const TIMEOUT_MS = 10_000;
+const COMPILE_TIMEOUT_MS = 10_000;
+// 1-minute hard cap on the binary-execution phase. Anything longer is
+// almost always either an infinite loop OR a program waiting on stdin
+// the user didn't provide. The verdict surfaces both possibilities so
+// the user knows where to look.
+const RUN_TIMEOUT_MS = 60_000;
+// Backwards-compat alias for the few callsites that still reference it.
+const TIMEOUT_MS = COMPILE_TIMEOUT_MS;
 
 export function isTestRunnerEnabled(): boolean {
   if (process.env.ENABLE_TEST_RUNNER !== '1') return false;
@@ -165,6 +172,10 @@ interface RunInputs {
   // into this user's per-tester Docker container (services/podManager.ts);
   // otherwise this is a hint-only field. `undefined` falls back to local.
   userId?: number;
+  // Optional stdin stream forwarded verbatim to the binary on the
+  // run-binary phase (compile is unaffected). Newlines act as the user's
+  // Enter key.
+  stdin?: string;
   forwardMethod?: string;
   factoryFn?: string;
   terminator?: string;
@@ -358,7 +369,7 @@ async function runPhase(
         const podBin    = `${podRunDir}/${phaseInputs.binaryName}`;
         const compile = await pm.execInPod(pod,
           ['g++', '-std=c++17', '-O0', '-g', podDriver, '-o', podBin],
-          { timeoutMs: TIMEOUT_MS });
+          { timeoutMs: COMPILE_TIMEOUT_MS });
         if (compile.exitCode !== 0) {
           return {
             ...base,
@@ -372,7 +383,17 @@ async function runPhase(
             durationMs: Date.now() - t0
           };
         }
-        const runOut = await pm.execInPod(pod, [podBin], { timeoutMs: TIMEOUT_MS });
+        const runOut = await pm.execInPod(pod, [podBin], {
+          timeoutMs: RUN_TIMEOUT_MS,
+          stdin: input.stdin
+        });
+        // If we hit the cap, kill the runaway process inside the pod —
+        // execInPod's SIGKILL only ends the docker exec wrapper, the
+        // binary keeps spinning. pkill is best-effort; if it itself
+        // times out the sweep timer / next disposePod will reap the pod.
+        if (runOut.timedOut) {
+          await pm.execInPod(pod, ['pkill', '-9', '-f', phaseInputs.binaryName], { timeoutMs: 3_000 }).catch(() => {});
+        }
         const verdictPod: TestResult['verdict'] =
           runOut.timedOut       ? 'timeout' :
           runOut.exitCode === 0 ? 'pass' :
@@ -398,9 +419,11 @@ async function runPhase(
           durationMs: Date.now() - t0,
           message: verdictPod === 'pass'
             ? (phase === 'compile_run' ? 'Your class compiled and exited cleanly.' : 'All unit-test assertions held.')
-            : (phase === 'compile_run'
-                ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
-                : `Unit-test driver exited with ${runOut.exitCode}.`),
+            : verdictPod === 'timeout'
+              ? `Process took too long (over ${RUN_TIMEOUT_MS / 1000}s). Check that your stdin is complete (the program may be waiting for input that wasn't provided), or that the code isn't spinning in a long loop.`
+              : (phase === 'compile_run'
+                  ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
+                  : `Unit-test driver exited with ${runOut.exitCode}.`),
           criteria: criteriaPod
         };
       }
@@ -411,7 +434,7 @@ async function runPhase(
     const compileArgs = ['g++', '-std=c++17', '-O0', '-g',
                          path.join(runDir, 'driver.cpp'),
                          '-o', binPath];
-    const compileOut = await runCmd([...sandboxParts, ...compileArgs], TIMEOUT_MS);
+    const compileOut = await runCmd([...sandboxParts, ...compileArgs], COMPILE_TIMEOUT_MS);
     if (compileOut.exitCode !== 0) {
       return {
         ...base,
@@ -425,7 +448,7 @@ async function runPhase(
         durationMs: Date.now() - t0
       };
     }
-    const runOut = await runCmd([...sandboxParts, binPath], TIMEOUT_MS);
+    const runOut = await runCmd([...sandboxParts, binPath], RUN_TIMEOUT_MS, input.stdin);
     const verdict: TestResult['verdict'] =
       runOut.timedOut         ? 'timeout' :
       runOut.exitCode === 0   ? 'pass' :
@@ -434,9 +457,11 @@ async function runPhase(
     const passMsg = phase === 'compile_run'
       ? 'Your class compiled and exited cleanly.'
       : 'All unit-test assertions held.';
-    const failMsg = phase === 'compile_run'
-      ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
-      : `Unit-test driver exited with ${runOut.exitCode}.`;
+    const failMsg = verdict === 'timeout'
+      ? `Process took too long (over ${RUN_TIMEOUT_MS / 1000}s). Check that your stdin is complete (the program may be waiting for input that wasn't provided), or that the code isn't spinning in a long loop.`
+      : phase === 'compile_run'
+        ? `Your class compiled but the binary exited with ${runOut.exitCode}.`
+        : `Unit-test driver exited with ${runOut.exitCode}.`;
     // Parse plain-English criteria emitted by the driver via nt::emit_criterion.
     // Each line: NT_CRITERION pattern_id|class|status|description
     const criteria: NonNullable<TestResult['criteria']> = [];
@@ -571,13 +596,17 @@ interface CmdResult {
   timedOut: boolean;
 }
 
-function runCmd(argv: string[], timeoutMs: number): Promise<CmdResult> {
+function runCmd(argv: string[], timeoutMs: number, stdin?: string): Promise<CmdResult> {
   return new Promise<CmdResult>((resolve) => {
     if (argv.length === 0) {
       resolve({ stdout: '', stderr: 'empty argv', exitCode: 127, signal: null, timedOut: false });
       return;
     }
-    const child = spawn(argv[0], argv.slice(1), { stdio: ['ignore', 'pipe', 'pipe'] });
+    // Pipe stdin so the binary can read from it. We always wire the
+    // input stream — if the caller didn't pass any stdin string we
+    // close it immediately so the program sees EOF instead of hanging
+    // on cin >> x with nothing to read.
+    const child = spawn(argv[0], argv.slice(1), { stdio: ['pipe', 'pipe', 'pipe'] });
     let stdout = '', stderr = '';
     child.stdout?.on('data', d => { stdout += d.toString(); });
     child.stderr?.on('data', d => { stderr += d.toString(); });
@@ -596,5 +625,7 @@ function runCmd(argv: string[], timeoutMs: number): Promise<CmdResult> {
       clearTimeout(t);
       resolve({ stdout: '', stderr: String(err), exitCode: 127, signal: null, timedOut: false });
     });
+    if (stdin && stdin.length > 0) child.stdin?.write(stdin);
+    child.stdin?.end();
   });
 }

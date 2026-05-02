@@ -215,6 +215,20 @@ export async function saveRun(
   });
 }
 
+// Single-button "Submit validation & save" flow. Hits the new
+// /api/runs/submit-and-save endpoint which re-validates the payload
+// server-side then persists the run. Same response shape as saveRun.
+export async function submitAndSaveRun(
+  pendingId: string,
+  userResolvedPattern?: string,
+  classResolvedPatterns?: Record<string, string>
+): Promise<{ runId: number }> {
+  return apiFetch<{ runId: number }>('/api/runs/submit-and-save', {
+    method: 'POST',
+    body: JSON.stringify({ pendingId, userResolvedPattern, classResolvedPatterns })
+  });
+}
+
 export interface TesterAccountInfo {
   username: string;
   claimed: boolean;
@@ -421,12 +435,16 @@ export async function runPatternTests(opts: {
   runId?: number;
   pendingId?: string;
   classResolvedPatterns?: Record<string, string>;
+  stdin?: string;
 }): Promise<GdbRunResponse> {
   if (opts.runId != null) {
     return apiFetch<GdbRunResponse>(`/api/analysis/${opts.runId}/run-tests`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ classResolvedPatterns: opts.classResolvedPatterns || {} })
+      body: JSON.stringify({
+        classResolvedPatterns: opts.classResolvedPatterns || {},
+        stdin: opts.stdin || ''
+      })
     });
   }
   if (!opts.pendingId) throw new Error('runId or pendingId required');
@@ -435,7 +453,8 @@ export async function runPatternTests(opts: {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       pendingId: opts.pendingId,
-      classResolvedPatterns: opts.classResolvedPatterns || {}
+      classResolvedPatterns: opts.classResolvedPatterns || {},
+      stdin: opts.stdin || ''
     })
   });
 }
