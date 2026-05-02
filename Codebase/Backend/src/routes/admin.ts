@@ -467,6 +467,69 @@ router.get('/reviews', (req: Request, res: Response, next: NextFunction) => {
 
 interface ReviewRow { scope: string; answers_json: string }
 
+// Full Questionnaire B export (CSV). One row per review submission;
+// each row carries the responder, scope (per-run / end-of-session),
+// the run id when scoped to a run, and EVERY answered question
+// (Likert + open-ended) as separate columns. Columns are derived
+// from the union of keys actually answered, so the header reflects
+// what was collected in the field.
+router.get('/stats/survey-export.csv', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    interface Row { id: number; user_id: number | null; username: string | null;
+                    scope: string; analysis_run_id: number | null;
+                    answers_json: string; created_at: string }
+    const rows = db.prepare(`
+      SELECT rv.id, rv.user_id, u.username, rv.scope, rv.analysis_run_id,
+             rv.answers_json, rv.created_at
+      FROM reviews rv
+      LEFT JOIN users u ON u.id = rv.user_id
+      ORDER BY rv.created_at ASC
+    `).all() as Row[];
+
+    // First pass — collect every answer key so the CSV header is the
+    // union of question ids present across all reviews. Stable order:
+    // reuse the questionnaire's section order when ids match the
+    // canonical pattern (e.g. B1, C11, D17, E20, F22), else append.
+    const SECTION_ORDER = ['B', 'C', 'D', 'E', 'F', 'G'];
+    const seenKeys = new Set<string>();
+    const parsed = rows.map(r => {
+      const a = (() => { try { return JSON.parse(r.answers_json) as Record<string, unknown>; }
+                        catch { return {}; } })();
+      Object.keys(a).forEach(k => seenKeys.add(k));
+      return { ...r, answers: a };
+    });
+    const orderedKeys = [...seenKeys].sort((a, b) => {
+      const ai = SECTION_ORDER.indexOf(a[0]); const bi = SECTION_ORDER.indexOf(b[0]);
+      if (ai !== bi) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+      const an = parseInt(a.slice(1), 10) || 0;
+      const bn = parseInt(b.slice(1), 10) || 0;
+      return an - bn;
+    });
+
+    function csvEscape(v: unknown): string {
+      if (v === null || v === undefined) return '';
+      const s = String(v);
+      if (/[",\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+      return s;
+    }
+    const header = ['review_id', 'user_id', 'username', 'scope', 'analysis_run_id', 'created_at', ...orderedKeys];
+    const lines: string[] = [header.map(csvEscape).join(',')];
+    for (const r of parsed) {
+      const cells = [
+        r.id, r.user_id ?? '', r.username ?? '', r.scope,
+        r.analysis_run_id ?? '', r.created_at,
+        ...orderedKeys.map(k => r.answers[k])
+      ];
+      lines.push(cells.map(csvEscape).join(','));
+    }
+
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="neoterritory-questionnaire-b-${stamp}.csv"`);
+    res.send(lines.join('\r\n') + '\r\n');
+  } catch (err) { next(err); }
+});
+
 router.get('/stats/survey-summary', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const rows = db.prepare(`SELECT scope, answers_json FROM reviews`).all() as ReviewRow[];
