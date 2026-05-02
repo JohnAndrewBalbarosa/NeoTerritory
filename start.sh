@@ -119,7 +119,12 @@ fi
 
 # ── 4. Start backend + Vite as background jobs ───────────────────────────────
 
-PORT="$BACKEND_PORT" \
+# tsx (used by `npm run dev`) opens an IPC pipe under $TEMP. When the
+# script runs in WSL with the Windows TEMP env leaking through (e.g.
+# C:\Users\…\AppData\Local\Temp), Linux cannot open a Unix socket on
+# that NTFS-backed path and tsx crashes with ENOTSUP. Force a Linux
+# TMPDIR so the pipe lands somewhere the kernel can serve.
+PORT="$BACKEND_PORT" TMPDIR=/tmp TMP=/tmp TEMP=/tmp \
   bash -c "cd '$BACKEND_DIR' && npm run dev" \
   >"$BACKEND_DIR/server.out.log" 2>"$BACKEND_DIR/server.err.log" &
 BACKEND_PID=$!
@@ -127,7 +132,8 @@ step "Backend started (pid $BACKEND_PID, port $BACKEND_PORT)"
 
 VITE_PID=""
 if [[ $BACKEND_ONLY -eq 0 ]]; then
-  bash -c "cd '$FRONTEND_DIR' && npm run dev -- --port $FRONTEND_PORT --strictPort" \
+  TMPDIR=/tmp TMP=/tmp TEMP=/tmp \
+    bash -c "cd '$FRONTEND_DIR' && npm run dev -- --port $FRONTEND_PORT --strictPort" \
     >"$FRONTEND_DIR/vite.out.log" 2>"$FRONTEND_DIR/vite.err.log" &
   VITE_PID=$!
   step "Vite started (pid $VITE_PID, port $FRONTEND_PORT)"
