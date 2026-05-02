@@ -38,12 +38,14 @@ ENV PORT=3001
 
 WORKDIR /app
 
-# Backend deps first — separate layer for cache reuse
+# Backend deps (include devDeps so tsc is available for the build step)
 COPY Codebase/Backend/package.json Codebase/Backend/package-lock.json ./Codebase/Backend/
-RUN cd Codebase/Backend && npm ci --omit=dev
+RUN cd Codebase/Backend && npm ci
 
-# Application code
+# Application code + TypeScript compile
 COPY Codebase/Backend  ./Codebase/Backend
+RUN cd Codebase/Backend && npm run build && npm prune --production
+
 COPY Codebase/Frontend ./Codebase/Frontend
 
 # Bake the microservice artifacts into the image at the canonical path
@@ -60,4 +62,4 @@ ENV NEOTERRITORY_CATALOG=/app/Codebase/Microservice/pattern_catalog
 EXPOSE 3001
 
 WORKDIR /app/Codebase/Backend
-CMD ["node", "server.js"]
+CMD ["node", "dist/server.js"]

@@ -7,6 +7,7 @@
 # Usage:
 #   .\start.ps1                              # dev (default)
 #   .\start.ps1 -Lan                         # dev, exposed to LAN
+# .\start.ps1 -BindHost [IP_ADDRESS]        # bind to exact IP
 #   .\start.ps1 dev -Lan -BackendPort 4000
 #   .\start.ps1 setup                        # first-time provision (was bootstrap.ps1)
 #   .\start.ps1 setup -Mode full -Lan        # unattended full provision (was deploy.ps1)
@@ -63,7 +64,7 @@ $BuildDir     = Join-Path $MicroserviceDir 'build'
 $BinaryName   = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'NeoTerritory.exe' } else { 'NeoTerritory' }
 $BinaryPath   = Join-Path $BuildDir $BinaryName
 $EnvFile      = Join-Path $BackendDir '.env'
-$Dockerfile   = Join-Path $BackendDir 'docker\cpp-pod.Dockerfile'
+$Dockerfile   = Join-Path $Root 'Codebase\Infrastructure\session-orchestration\docker\Dockerfile'
 $PodImage     = 'neoterritory/cpp-pod:latest'
 
 # -- Output helpers ----------------------------------------------------------
@@ -76,14 +77,21 @@ function Test-Tool($name) { return [bool](Get-Command $name -ErrorAction Silentl
 # -- LAN / host resolution ---------------------------------------------------
 function Get-LanIp {
   try {
-    $ip = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    $candidates = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
       Where-Object {
         $_.IPAddress -ne '127.0.0.1' -and
         $_.IPAddress -notlike '169.254.*' -and
+        $_.IPAddress -notlike '192.168.56.*' -and   # VirtualBox host-only
+        $_.IPAddress -notlike '192.168.99.*' -and   # Docker toolbox
         $_.PrefixOrigin -ne 'WellKnown' -and
-        ($_.InterfaceAlias -match 'Wi-?Fi' -or $_.InterfaceAlias -match 'Ethernet')
-      } | Select-Object -First 1 -ExpandProperty IPAddress
-    return $ip
+        ($_.InterfaceAlias -match 'Wi-?Fi' -or $_.InterfaceAlias -match 'Ethernet') -and
+        $_.InterfaceAlias -notmatch 'Virtual|vEthernet|VirtualBox|Hyper-V|WSL|Loopback'
+      }
+    # Prefer Wi-Fi over Ethernet
+    $ip = ($candidates | Where-Object { $_.InterfaceAlias -match 'Wi-?Fi' } | Select-Object -First 1)
+    if (-not $ip) { $ip = ($candidates | Select-Object -First 1) }
+    if ($ip) { return $ip.IPAddress }
+    return $null
   } catch { return $null }
 }
 
@@ -193,7 +201,7 @@ function Invoke-Dev {
   . (Join-Path $Root 'scripts\verify-requirements.ps1')
   $reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
   try { $report = Test-Requirements -Profile $reqProfile }
-  catch { Write-Err 'Aborting -- requirements not met.'; exit 1 }
+  catch { Write-Err "Aborting -- requirements not met: $($_.Exception.Message)"; exit 1 }
 
   $bind     = Resolve-BindHost
   $advert   = Resolve-AdvertiseHost
@@ -206,11 +214,12 @@ function Invoke-Dev {
     } elseif (-not $report.dockerDaemon) {
       Write-Warn 'docker daemon not responding -- start Docker Desktop and re-run.'
     } else {
-      $imageProbe = & docker image inspect $PodImage 2>$null
-      if ($LASTEXITCODE -ne 0) {
+      $imageExists = $false
+      try { & docker image inspect $PodImage *> $null; $imageExists = ($LASTEXITCODE -eq 0) } catch { }
+      if (-not $imageExists) {
         if (Test-Path $Dockerfile) {
           Write-Step "Building $PodImage from $Dockerfile (one-time, ~30-60s)"
-          & docker build -f $Dockerfile -t $PodImage (Split-Path $Dockerfile)
+          & docker build -f $Dockerfile -t $PodImage $Root
           if ($LASTEXITCODE -ne 0) { Write-Warn 'docker build failed -- falling back to local sandbox.' }
           else { Write-Ok "$PodImage ready." }
         } else {
@@ -232,7 +241,7 @@ function Invoke-Dev {
   Write-Step "Starting backend (bind=$bind, port=$BackendPort)"
   $env:PORT = "$BackendPort"
   $env:HOST = $bind
-  if ($Lan -and $advert -ne 'localhost') {
+  if (($Lan -or $BindHost) -and $advert -ne 'localhost') {
     $env:CORS_ORIGIN = "http://localhost:$BackendPort,http://localhost:$FrontendPort,http://${advert}:$BackendPort,http://${advert}:$FrontendPort"
   }
   Free-Port $BackendPort

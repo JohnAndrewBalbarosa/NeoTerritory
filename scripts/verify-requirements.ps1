@@ -1,4 +1,13 @@
-# NeoTerritory — shared requirements verifier (PowerShell side).
+# Run directly:  .\scripts\verify-requirements.ps1 [-Profile dev] [-Soft]
+# Dot-source:    . "$PSScriptRoot\scripts\verify-requirements.ps1"
+#                Test-Requirements -Profile dev
+param(
+  [ValidateSet('minimal','dev','pods','full')]
+  [string]$Profile = 'dev',
+  [switch]$Soft
+)
+
+# NeoTerritory - shared requirements verifier (PowerShell side).
 #
 # STRICT BY DEFAULT, SEQUENTIAL. NeoTerritory is a high-criticality app;
 # scripts that run it stop the moment a required tool is missing. Each
@@ -43,10 +52,10 @@ function Test-Requirements {
     if ($strict) {
       Err "MISSING: $name"
       Err "  fix: $hint"
-      Err 'Refusing to continue — install the requirement and re-run.'
+      Err 'Refusing to continue - install the requirement and re-run.'
       throw "Required tool '$name' not found."
     } else {
-      Warn "missing: $name ($hint) — continuing in soft mode"
+      Warn "missing: $name ($hint) - continuing in soft mode"
     }
   }
 
@@ -62,12 +71,12 @@ function Test-Requirements {
   }
 
   # --- minimal ----------------------------------------------------------------
-  Require 'node' 'install Node.js — https://nodejs.org'
+  Require 'node' 'install Node.js - https://nodejs.org'
   Require 'npm'  'reinstall Node.js (npm ships with it)'
 
   # --- dev / pods / full ------------------------------------------------------
   if ($Profile -in @('dev','pods','full')) {
-    Require 'cmake' 'install CMake — https://cmake.org/download'
+    Require 'cmake' 'install CMake - https://cmake.org/download'
     if     (Has 'g++')     { Ok 'g++ found';       $report.cxxKind = 'g++' }
     elseif (Has 'clang++') { Ok 'clang++ found';   $report.cxxKind = 'clang++' }
     elseif (Has 'cl')      { Ok 'MSVC cl.exe found'; $report.cxxKind = 'cl' }
@@ -75,49 +84,81 @@ function Test-Requirements {
       if ($strict) {
         Err 'MISSING: g++ / clang++ / cl (C++17 compiler)'
         Err '  fix: install Visual Studio Build Tools (MSVC) or MSYS2 (g++)'
-        Err 'Refusing to continue — install a C++17 compiler and re-run.'
+        Err 'Refusing to continue - install a C++17 compiler and re-run.'
         throw 'No C++17 compiler found.'
       } else {
-        Warn 'missing: C++17 compiler — continuing in soft mode'
+        Warn 'missing: C++17 compiler - continuing in soft mode'
       }
     }
   }
 
   # --- pods -------------------------------------------------------------------
   if ($Profile -in @('pods','full')) {
-    Require 'docker' 'install Docker Desktop — https://www.docker.com/products/docker-desktop'
+    Require 'docker' 'install Docker Desktop - https://www.docker.com/products/docker-desktop'
     $report.docker = $true
 
-    # Daemon probe — `docker info` exits non-zero when Desktop is closed.
-    $tmp = [System.IO.Path]::GetTempFileName()
-    try {
-      $proc = Start-Process -FilePath 'docker' -ArgumentList 'info','--format','{{.ServerVersion}}' `
-                -NoNewWindow -PassThru -RedirectStandardOutput $tmp -RedirectStandardError $tmp
-      $proc.WaitForExit(5000) | Out-Null
-      if ($proc.HasExited -and $proc.ExitCode -eq 0) {
-        $report.dockerDaemon = $true
-        Ok 'docker daemon responding'
+    # Quick daemon probe — direct invocation, no temp files (mirrors bootstrap_and_deploy.ps1).
+    function Invoke-DockerInfoProbe {
+      & docker info *> $null
+      return ($LASTEXITCODE -eq 0)
+    }
+
+    if (Invoke-DockerInfoProbe) {
+      $report.dockerDaemon = $true
+      Ok 'docker daemon responding'
+    } else {
+      # Docker Desktop implementation — detect the Desktop exe and auto-start it if not
+      # already running, then poll every 3 s until the daemon is ready (up to 180 s).
+      $desktopExe = Join-Path $env:ProgramFiles 'Docker\Docker\Docker Desktop.exe'
+      if (Test-Path $desktopExe) {
+        $alreadyRunning = [bool](Get-Process -Name 'Docker Desktop' -ErrorAction SilentlyContinue)
+        if ($alreadyRunning) {
+          Step 'Docker Desktop is already starting — waiting for daemon (up to 180 s)...'
+        } else {
+          Step 'docker daemon not running — launching Docker Desktop and waiting (up to 180 s)...'
+          Start-Process -FilePath $desktopExe | Out-Null
+        }
+        $deadline = (Get-Date).AddSeconds(180)
+        $ready    = $false
+        while ((Get-Date) -lt $deadline) {
+          if (Invoke-DockerInfoProbe) { $ready = $true; break }
+          Start-Sleep -Seconds 3
+        }
+        if ($ready) {
+          $report.dockerDaemon = $true
+          Ok 'docker daemon responding (started via Docker Desktop)'
+        } else {
+          if ($strict) {
+            Err 'Docker Desktop was launched but the daemon did not respond within 180 s.'
+            Err '  fix: wait for the whale icon to turn solid, then re-run.'
+            throw 'Docker daemon not responding after Docker Desktop launch.'
+          } else {
+            Warn 'docker daemon not ready after Docker Desktop launch - continuing in soft mode'
+          }
+        }
       } else {
-        try { $proc.Kill() } catch { }
         if ($strict) {
           Err 'MISSING: docker daemon (docker is installed but the daemon is not running)'
           Err '  fix: open Docker Desktop and wait for the whale icon to turn solid'
-          Err 'Refusing to continue — start the Docker daemon and re-run.'
+          Err 'Refusing to continue - start the Docker daemon and re-run.'
           throw 'Docker daemon not responding.'
         } else {
-          Warn 'docker daemon not responding — continuing in soft mode'
+          Warn 'docker daemon not responding - continuing in soft mode'
         }
       }
-    } finally {
-      Remove-Item -ErrorAction SilentlyContinue -Path $tmp
     }
   }
 
   # --- full -------------------------------------------------------------------
   if ($Profile -eq 'full') {
-    Require 'git' 'install git — https://git-scm.com'
+    Require 'git' 'install git - https://git-scm.com'
   }
 
   Ok 'All requirements satisfied.'
   return $report
+}
+
+# Auto-invoke when run directly (not dot-sourced).
+if ($MyInvocation.InvocationName -ne '.') {
+  Test-Requirements -Profile $Profile -Soft:$Soft
 }
