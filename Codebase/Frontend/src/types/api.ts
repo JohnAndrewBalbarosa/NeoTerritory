@@ -143,6 +143,34 @@ export interface AdminUser {
   last_active?: string;
 }
 
+export interface AdminPerRunFeedbackRow {
+  id: number;
+  runId: string;
+  runSourceName: string | null;
+  username: string | null;
+  ratings: Record<string, number>;
+  openEnded: Record<string, string>;
+  submittedAt: string;
+}
+export interface AdminPerSessionFeedbackRow {
+  id: number;
+  sessionUuid: string;
+  username: string | null;
+  ratings: Record<string, number>;
+  openEnded: Record<string, string>;
+  submittedAt: string;
+}
+export interface AdminOpenEndedRow {
+  id: number;
+  source: 'per-run' | 'per-session' | 'review';
+  username: string | null;
+  runId?: string;
+  sessionUuid?: string;
+  questionId: string;
+  text: string;
+  submittedAt: string;
+}
+
 export interface AdminLogEntry {
   id: number;
   created_at: string;

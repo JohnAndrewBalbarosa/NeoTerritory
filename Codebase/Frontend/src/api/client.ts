@@ -333,6 +333,15 @@ export async function fetchAdminTestRunStats(): Promise<AdminTestRunStats> {
 export async function fetchMyTestRunStats(): Promise<AdminTestRunStats> {
   return apiFetch<AdminTestRunStats>('/api/stats/my-test-runs');
 }
+export async function fetchAdminPerRunFeedback(): Promise<{ rows: import('../types/api').AdminPerRunFeedbackRow[] }> {
+  return apiFetch('/api/admin/stats/per-run-feedback');
+}
+export async function fetchAdminPerSessionFeedback(): Promise<{ rows: import('../types/api').AdminPerSessionFeedbackRow[] }> {
+  return apiFetch('/api/admin/stats/per-session-feedback');
+}
+export async function fetchAdminOpenEnded(): Promise<{ rows: import('../types/api').AdminOpenEndedRow[] }> {
+  return apiFetch('/api/admin/stats/open-ended');
+}
 export async function fetchAdminPerUser(): Promise<{ series: PerUserPoint[] }> {
   return apiFetch<{ series: PerUserPoint[] }>('/api/admin/stats/per-user-activity');
 }

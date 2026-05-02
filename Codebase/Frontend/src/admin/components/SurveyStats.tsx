@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminSurveySummary } from '../../api/client';
-import { SurveySummary, LikertMetric } from '../../types/api';
+import {
+  fetchAdminSurveySummary,
+  fetchAdminPerRunFeedback,
+  fetchAdminPerSessionFeedback,
+  fetchAdminOpenEnded
+} from '../../api/client';
+import {
+  SurveySummary, LikertMetric,
+  AdminPerRunFeedbackRow, AdminPerSessionFeedbackRow, AdminOpenEndedRow
+} from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 function MiniDistribution({ dist }: { dist: number[] }) {
@@ -79,6 +87,9 @@ function labelFor(key: string) {
 
 export default function SurveyStats() {
   const [data, setData] = useState<SurveySummary | null>(null);
+  const [perRunRows, setPerRunRows] = useState<AdminPerRunFeedbackRow[]>([]);
+  const [perSessRows, setPerSessRows] = useState<AdminPerSessionFeedbackRow[]>([]);
+  const [openRows, setOpenRows] = useState<AdminOpenEndedRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -88,6 +99,15 @@ export default function SurveyStats() {
         if (isAuthError(err)) { setData(null); return; }
         setError(err instanceof Error ? err.message : 'Failed to load');
       });
+    fetchAdminPerRunFeedback()
+      .then(d => setPerRunRows(d.rows || []))
+      .catch(err => { if (!isAuthError(err)) setError(err.message); });
+    fetchAdminPerSessionFeedback()
+      .then(d => setPerSessRows(d.rows || []))
+      .catch(err => { if (!isAuthError(err)) setError(err.message); });
+    fetchAdminOpenEnded()
+      .then(d => setOpenRows(d.rows || []))
+      .catch(err => { if (!isAuthError(err)) setError(err.message); });
   }, []);
 
   if (error) return <div className="empty-state admin-error" role="alert">Survey error: {error}</div>;
@@ -96,13 +116,31 @@ export default function SurveyStats() {
   const perRunKeys = Object.keys(data.perRun);
   const sessionKeys = Object.keys(data.endOfSession);
 
+  // Union of question ids actually present so the table headers reflect
+  // the live data, not a hard-coded list. Sorted by section letter +
+  // numeric suffix for stable order.
+  function unionRatingKeys(rows: Array<{ ratings: Record<string, number> }>): string[] {
+    const order = ['B', 'C', 'D', 'E', 'F', 'G'];
+    const seen = new Set<string>();
+    for (const r of rows) for (const k of Object.keys(r.ratings || {})) seen.add(k);
+    return [...seen].sort((a, b) => {
+      const ai = order.indexOf(a[0]); const bi = order.indexOf(b[0]);
+      if (ai !== bi) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+      const an = parseInt(a.replace(/\D+/g, ''), 10) || 0;
+      const bn = parseInt(b.replace(/\D+/g, ''), 10) || 0;
+      return an - bn;
+    });
+  }
+  const perRunCols = unionRatingKeys(perRunRows);
+  const perSessCols = unionRatingKeys(perSessRows);
+
   // Hit the backend's CSV export endpoint via a Bearer-authed fetch so
   // the file downloads with the admin's privileges. We can't use a raw
   // <a download> because that wouldn't carry the JWT.
   async function exportCsv() {
     try {
       const token = localStorage.getItem('nt_token') || '';
-      const resp = await fetch('/api/admin/stats/survey-export.csv', {
+      const resp = await fetch('/api/admin/stats/survey-export.xlsx', {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
@@ -111,7 +149,7 @@ export default function SurveyStats() {
       const a = document.createElement('a');
       const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
       a.href = url;
-      a.download = `neoterritory-questionnaire-b-${stamp}.csv`;
+      a.download = `neoterritory-questionnaire-b-${stamp}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -130,9 +168,111 @@ export default function SurveyStats() {
           onClick={exportCsv}
           title="Download every Questionnaire B response as a CSV file"
         >
-          ⤓ Export Questionnaire B as CSV
+          ⤓ Export Questionnaire B (XLSX, 3 sheets)
         </button>
       </div>
+
+      {/* === Per-run review submissions ===================================== */}
+      <section className="stats-section">
+        <h3>Per-run review submissions</h3>
+        {perRunRows.length === 0
+          ? <div className="empty-state">No per-run feedback submitted yet.</div>
+          : (
+            <div className="logs-table-wrap">
+              <table className="logs-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Run #</th>
+                    <th>Source</th>
+                    <th>Submitted</th>
+                    {perRunCols.map(k => <th key={k}>{k}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {perRunRows.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.username || '—'}</td>
+                      <td>{r.runId}</td>
+                      <td><code>{r.runSourceName || '—'}</code></td>
+                      <td className="logs-td-date">{r.submittedAt}</td>
+                      {perRunCols.map(k => <td key={k}>{r.ratings[k] ?? '—'}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </section>
+
+      {/* === Per-sign-out review submissions ================================ */}
+      <section className="stats-section">
+        <h3>Per-sign-out review submissions</h3>
+        {perSessRows.length === 0
+          ? <div className="empty-state">No sign-out feedback submitted yet.</div>
+          : (
+            <div className="logs-table-wrap">
+              <table className="logs-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Session</th>
+                    <th>Submitted</th>
+                    {perSessCols.map(k => <th key={k}>{k}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {perSessRows.map(r => (
+                    <tr key={r.id}>
+                      <td>{r.username || '—'}</td>
+                      <td><code>{r.sessionUuid}</code></td>
+                      <td className="logs-td-date">{r.submittedAt}</td>
+                      {perSessCols.map(k => <td key={k}>{r.ratings[k] ?? '—'}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </section>
+
+      {/* === Open-ended text answers ======================================== */}
+      <section className="stats-section">
+        <h3>Open-ended text answers</h3>
+        {openRows.length === 0
+          ? <div className="empty-state">No open-ended answers submitted yet.</div>
+          : (
+            <div className="logs-table-wrap">
+              <table className="logs-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Source</th>
+                    <th>Question</th>
+                    <th>Answer (click to expand)</th>
+                    <th>Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {openRows.map((r, i) => (
+                    <tr key={`${r.source}-${r.id}-${r.questionId}-${i}`}>
+                      <td>{r.username || '—'}</td>
+                      <td><code>{r.source}</code></td>
+                      <td>{r.questionId}</td>
+                      <td>
+                        <details>
+                          <summary>{r.text.slice(0, 80)}{r.text.length > 80 ? '…' : ''}</summary>
+                          <pre style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0', padding: 8, background: 'var(--surface2)', borderRadius: 4, fontFamily: 'inherit', fontSize: 12.5 }}>{r.text}</pre>
+                        </details>
+                      </td>
+                      <td className="logs-td-date">{r.submittedAt}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+      </section>
       {perRunKeys.length > 0 && (
         <section className="stats-section">
           <h3>Per-run ratings</h3>

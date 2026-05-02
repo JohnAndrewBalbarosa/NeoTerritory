@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcrypt';
+import ExcelJS from 'exceljs';
 import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
@@ -466,6 +467,298 @@ router.get('/reviews', (req: Request, res: Response, next: NextFunction) => {
 // ─── Survey summary ──────────────────────────────────────────────────────────
 
 interface ReviewRow { scope: string; answers_json: string }
+
+// ── Per-run feedback rows (run_feedback table) ───────────────────────────────
+// One row per submitted per-run review. Joins users for the username column
+// and analysis_runs for the source filename so the admin sees WHO rated WHICH
+// submission. The Likert ratings + open-ended answers come back as parsed
+// JSON maps so the frontend can render them directly.
+interface PerRunFeedbackRow {
+  id: number;
+  run_id: string;
+  user_id: number | null;
+  username: string | null;
+  source_name: string | null;
+  ratings_json: string;
+  open_json: string;
+  submitted_at: string;
+}
+router.get('/stats/per-run-feedback', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rows = db.prepare(`
+      SELECT rf.id, rf.run_id, rf.user_id, u.username,
+             ar.source_name,
+             rf.ratings_json, rf.open_json, rf.submitted_at
+      FROM run_feedback rf
+      LEFT JOIN users u ON u.id = rf.user_id
+      LEFT JOIN analysis_runs ar ON CAST(ar.id AS TEXT) = rf.run_id
+      ORDER BY rf.submitted_at DESC
+    `).all() as PerRunFeedbackRow[];
+    res.json({
+      rows: rows.map(r => ({
+        id:          r.id,
+        runId:       r.run_id,
+        runSourceName: r.source_name,
+        username:    r.username,
+        ratings:     safeParse(r.ratings_json) || {},
+        openEnded:   safeParse(r.open_json) || {},
+        submittedAt: r.submitted_at
+      }))
+    });
+  } catch (err) { next(err); }
+});
+
+// ── Per-sign-out feedback (session_feedback) ─────────────────────────────────
+interface PerSessionFeedbackRow {
+  id: number;
+  session_uuid: string;
+  user_id: number | null;
+  username: string | null;
+  ratings_json: string;
+  open_json: string;
+  submitted_at: string;
+}
+router.get('/stats/per-session-feedback', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rows = db.prepare(`
+      SELECT sf.id, sf.session_uuid, sf.user_id, u.username,
+             sf.ratings_json, sf.open_json, sf.submitted_at
+      FROM session_feedback sf
+      LEFT JOIN users u ON u.id = sf.user_id
+      ORDER BY sf.submitted_at DESC
+    `).all() as PerSessionFeedbackRow[];
+    res.json({
+      rows: rows.map(r => ({
+        id:          r.id,
+        sessionUuid: r.session_uuid,
+        username:    r.username,
+        ratings:     safeParse(r.ratings_json) || {},
+        openEnded:   safeParse(r.open_json) || {},
+        submittedAt: r.submitted_at
+      }))
+    });
+  } catch (err) { next(err); }
+});
+
+// ── Open-ended text answers (combined across all three sources) ──────────────
+// Walks every text-typed value out of run_feedback.open_json,
+// session_feedback.open_json, AND the legacy reviews.answers_json so the
+// admin can see EVERY free-text response in one list. Each row keeps its
+// origin so the operator knows whether the user wrote it during a run or
+// at sign-out.
+interface OpenEndedRow {
+  id: number;
+  source: 'per-run' | 'per-session' | 'review';
+  username: string | null;
+  runId?: string;
+  sessionUuid?: string;
+  questionId: string;
+  text: string;
+  submittedAt: string;
+}
+router.get('/stats/open-ended', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const out: OpenEndedRow[] = [];
+
+    function pushTextAnswers(
+      source: OpenEndedRow['source'],
+      meta: { id: number; username: string | null; runId?: string; sessionUuid?: string; submittedAt: string },
+      json: string | null | undefined
+    ): void {
+      const parsed = safeParse(json || '{}') as Record<string, unknown> | null;
+      if (!parsed) return;
+      for (const [qid, value] of Object.entries(parsed)) {
+        if (typeof value !== 'string' || value.trim().length === 0) continue;
+        out.push({
+          id: meta.id,
+          source,
+          username: meta.username,
+          runId: meta.runId,
+          sessionUuid: meta.sessionUuid,
+          questionId: qid,
+          text: value,
+          submittedAt: meta.submittedAt
+        });
+      }
+    }
+
+    const perRun = db.prepare(`
+      SELECT rf.id, rf.run_id, u.username, rf.open_json, rf.submitted_at
+      FROM run_feedback rf
+      LEFT JOIN users u ON u.id = rf.user_id
+    `).all() as Array<{ id: number; run_id: string; username: string | null; open_json: string; submitted_at: string }>;
+    for (const r of perRun) {
+      pushTextAnswers('per-run', { id: r.id, username: r.username, runId: r.run_id, submittedAt: r.submitted_at }, r.open_json);
+    }
+
+    const perSess = db.prepare(`
+      SELECT sf.id, sf.session_uuid, u.username, sf.open_json, sf.submitted_at
+      FROM session_feedback sf
+      LEFT JOIN users u ON u.id = sf.user_id
+    `).all() as Array<{ id: number; session_uuid: string; username: string | null; open_json: string; submitted_at: string }>;
+    for (const r of perSess) {
+      pushTextAnswers('per-session', { id: r.id, username: r.username, sessionUuid: r.session_uuid, submittedAt: r.submitted_at }, r.open_json);
+    }
+
+    const reviews = db.prepare(`
+      SELECT rv.id, u.username, rv.answers_json, rv.created_at
+      FROM reviews rv
+      LEFT JOIN users u ON u.id = rv.user_id
+    `).all() as Array<{ id: number; username: string | null; answers_json: string; created_at: string }>;
+    for (const r of reviews) {
+      pushTextAnswers('review', { id: r.id, username: r.username, submittedAt: r.created_at }, r.answers_json);
+    }
+
+    out.sort((a, b) => (b.submittedAt || '').localeCompare(a.submittedAt || ''));
+    res.json({ rows: out });
+  } catch (err) { next(err); }
+});
+
+// ── XLSX export — three sheets in one workbook ──────────────────────────────
+// Per-run Likert + Per-sign-out Likert + Open-ended. Sheets are SKIPPED
+// when their underlying table is empty so the operator never sees a
+// header row with no data. Filename is date-stamped so repeated exports
+// don't overwrite each other in the user's downloads folder.
+router.get('/stats/survey-export.xlsx', async (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'NeoTerritory admin';
+    workbook.created = new Date();
+
+    interface PerRunRow { id: number; run_id: string; username: string | null;
+                          source_name: string | null; ratings_json: string;
+                          open_json: string; submitted_at: string }
+    const perRunRows = db.prepare(`
+      SELECT rf.id, rf.run_id, u.username, ar.source_name,
+             rf.ratings_json, rf.open_json, rf.submitted_at
+      FROM run_feedback rf
+      LEFT JOIN users u ON u.id = rf.user_id
+      LEFT JOIN analysis_runs ar ON CAST(ar.id AS TEXT) = rf.run_id
+      ORDER BY rf.submitted_at ASC
+    `).all() as PerRunRow[];
+
+    if (perRunRows.length > 0) {
+      const sheet = workbook.addWorksheet('Per-run Likert');
+      const ratingKeys = collectKeys(perRunRows.map(r => safeParse(r.ratings_json) as Record<string, unknown> | null));
+      sheet.columns = [
+        { header: 'username',     key: 'username',     width: 16 },
+        { header: 'runId',        key: 'runId',        width: 10 },
+        { header: 'sourceName',   key: 'sourceName',   width: 24 },
+        { header: 'submittedAt',  key: 'submittedAt',  width: 22 },
+        ...ratingKeys.map(k => ({ header: k, key: k, width: 8 }))
+      ];
+      for (const r of perRunRows) {
+        const ratings = (safeParse(r.ratings_json) as Record<string, number>) || {};
+        sheet.addRow({
+          username: r.username || '',
+          runId: r.run_id,
+          sourceName: r.source_name || '',
+          submittedAt: r.submitted_at,
+          ...ratings
+        });
+      }
+    }
+
+    interface PerSessRow { id: number; session_uuid: string; username: string | null;
+                           ratings_json: string; open_json: string; submitted_at: string }
+    const perSessRows = db.prepare(`
+      SELECT sf.id, sf.session_uuid, u.username,
+             sf.ratings_json, sf.open_json, sf.submitted_at
+      FROM session_feedback sf
+      LEFT JOIN users u ON u.id = sf.user_id
+      ORDER BY sf.submitted_at ASC
+    `).all() as PerSessRow[];
+
+    if (perSessRows.length > 0) {
+      const sheet = workbook.addWorksheet('Per-sign-out Likert');
+      const ratingKeys = collectKeys(perSessRows.map(r => safeParse(r.ratings_json) as Record<string, unknown> | null));
+      sheet.columns = [
+        { header: 'username',    key: 'username',    width: 16 },
+        { header: 'sessionUuid', key: 'sessionUuid', width: 36 },
+        { header: 'submittedAt', key: 'submittedAt', width: 22 },
+        ...ratingKeys.map(k => ({ header: k, key: k, width: 8 }))
+      ];
+      for (const r of perSessRows) {
+        const ratings = (safeParse(r.ratings_json) as Record<string, number>) || {};
+        sheet.addRow({
+          username: r.username || '',
+          sessionUuid: r.session_uuid,
+          submittedAt: r.submitted_at,
+          ...ratings
+        });
+      }
+    }
+
+    // Open-ended sheet — combined across run_feedback, session_feedback,
+    // and the legacy reviews table. One row per (responder, question)
+    // pair so long-form text is the dominant column.
+    interface OpenEndedSheetRow { source: string; username: string; runOrSession: string;
+                                  questionId: string; text: string; submittedAt: string }
+    const openRows: OpenEndedSheetRow[] = [];
+    function harvest(source: string, raw: string | null | undefined,
+                     username: string | null, runOrSession: string, submittedAt: string): void {
+      const parsed = safeParse(raw || '{}') as Record<string, unknown> | null;
+      if (!parsed) return;
+      for (const [qid, value] of Object.entries(parsed)) {
+        if (typeof value !== 'string' || value.trim().length === 0) continue;
+        openRows.push({ source, username: username || '', runOrSession, questionId: qid, text: value, submittedAt });
+      }
+    }
+    for (const r of perRunRows) harvest('per-run', r.open_json, r.username, r.run_id, r.submitted_at);
+    for (const r of perSessRows) harvest('per-session', r.open_json, r.username, r.session_uuid, r.submitted_at);
+    interface ReviewOpenRow { id: number; username: string | null; answers_json: string; created_at: string; analysis_run_id: number | null }
+    const reviewRows = db.prepare(`
+      SELECT rv.id, u.username, rv.answers_json, rv.created_at, rv.analysis_run_id
+      FROM reviews rv
+      LEFT JOIN users u ON u.id = rv.user_id
+      ORDER BY rv.created_at ASC
+    `).all() as ReviewOpenRow[];
+    for (const r of reviewRows) harvest('review', r.answers_json, r.username, String(r.analysis_run_id ?? ''), r.created_at);
+
+    if (openRows.length > 0) {
+      const sheet = workbook.addWorksheet('Open-ended');
+      sheet.columns = [
+        { header: 'source',        key: 'source',        width: 14 },
+        { header: 'username',      key: 'username',      width: 16 },
+        { header: 'runOrSession',  key: 'runOrSession',  width: 36 },
+        { header: 'questionId',    key: 'questionId',    width: 12 },
+        { header: 'text',          key: 'text',          width: 80 },
+        { header: 'submittedAt',   key: 'submittedAt',   width: 22 }
+      ];
+      for (const r of openRows) sheet.addRow(r);
+    }
+
+    if (workbook.worksheets.length === 0) {
+      // Empty workbook — give the operator at least one sheet so Excel
+      // doesn't reject the file as malformed.
+      const empty = workbook.addWorksheet('No data');
+      empty.addRow(['No survey responses yet.']);
+    }
+
+    const buf = await workbook.xlsx.writeBuffer();
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="neoterritory-questionnaire-b-${stamp}.xlsx"`);
+    res.send(Buffer.from(buf));
+  } catch (err) { next(err); }
+});
+
+function collectKeys(maps: Array<Record<string, unknown> | null>): string[] {
+  const seen = new Set<string>();
+  for (const m of maps) {
+    if (!m) continue;
+    for (const k of Object.keys(m)) seen.add(k);
+  }
+  // Stable sort: section letter (B/C/D/E/F/G) then numeric suffix.
+  const order = ['B', 'C', 'D', 'E', 'F', 'G'];
+  return [...seen].sort((a, b) => {
+    const ai = order.indexOf(a[0]); const bi = order.indexOf(b[0]);
+    if (ai !== bi) return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    const an = parseInt(a.replace(/\D+/g, ''), 10) || 0;
+    const bn = parseInt(b.replace(/\D+/g, ''), 10) || 0;
+    return an - bn;
+  });
+}
 
 // Full Questionnaire B export (CSV). One row per review submission;
 // each row carries the responder, scope (per-run / end-of-session),
