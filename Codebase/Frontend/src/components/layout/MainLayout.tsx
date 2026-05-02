@@ -125,9 +125,12 @@ export default function MainLayout() {
     setPendingSave(null);
     setRunRefreshSignal(s => s + 1);
     // Stamp the runId on currentRun so the validation submit endpoint knows
-    // which row to attach manual-review answers to.
+    // which row to attach manual-review answers to. The "Quick rating for
+    // this run" modal that used to open here was per-run feedback NOT in
+    // Questionnaire A/B; the formal questionnaire lives on the Ambiguous /
+    // Validation tab and at sign-out, so this auto-popup was redundant
+    // and confusing — removed.
     useAppStore.getState().patchCurrentRun({ runId });
-    setReview({ scope: 'per-run', analysisRunId: runId, intro: 'Quick rating for this run (optional):' });
   }
 
   function discardCurrentRun(): void {

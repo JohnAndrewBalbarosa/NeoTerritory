@@ -61,16 +61,22 @@ function TaggedRow({ pattern, decision, isSaved, isSaving, onDecide, onSave }: T
           <span>No — false positive</span>
         </label>
       </div>
-      <div className="checklist-actions">
-        <button
-          type="button"
-          className="primary-btn"
-          disabled={decision.correct === null || isSaved || isSaving}
-          onClick={onSave}
-        >
-          {isSaved ? 'Saved ✓' : isSaving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+      {/* Once a row is saved its decision is locked; the Save button is
+          redundant noise. Show actions only while the user is still
+          deciding. The "Saved ✓" state is communicated by the row's
+          `.is-saved` styling and the disabled radios. */}
+      {!isSaved && (
+        <div className="checklist-actions">
+          <button
+            type="button"
+            className="primary-btn"
+            disabled={decision.correct === null || isSaving}
+            onClick={onSave}
+          >
+            {isSaving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      )}
     </li>
   );
 }
@@ -127,20 +133,22 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
           />
         </label>
       </div>
-      <div className="checklist-actions">
-        <button
-          type="button"
-          className="primary-btn"
-          disabled={
-            decision.isPattern === null ||
-            (decision.isPattern === true && !decision.patternName.trim()) ||
-            isSaved || isSaving
-          }
-          onClick={onSave}
-        >
-          {isSaved ? 'Saved ✓' : isSaving ? 'Saving…' : 'Save'}
-        </button>
-      </div>
+      {!isSaved && (
+        <div className="checklist-actions">
+          <button
+            type="button"
+            className="primary-btn"
+            disabled={
+              decision.isPattern === null ||
+              (decision.isPattern === true && !decision.patternName.trim()) ||
+              isSaving
+            }
+            onClick={onSave}
+          >
+            {isSaving ? 'Saving…' : 'Save'}
+          </button>
+        </div>
+      )}
     </li>
   );
 }
@@ -230,7 +238,41 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
   const { taggedClasses, untaggedClasses } = useMemo(() => {
     if (!currentRun) return { taggedClasses: [], untaggedClasses: [] };
 
-    const tagged = (currentRun.detectedPatterns || []).filter(p => !!p.className);
+    // ONE row per class — whichever pattern the user resolved during
+    // annotation wins (classResolvedPatterns), else the single detection
+    // for unambiguous classes. Multi-pattern unresolved classes are
+    // dropped from validation entirely because there's no defensible
+    // single tag to validate against — the Annotated tab is where the
+    // user disambiguates them, not here.
+    const detections = currentRun.detectedPatterns || [];
+    const resolved = currentRun.classResolvedPatterns || {};
+    const byClass = new Map<string, typeof detections[number]>();
+    for (const p of detections) {
+      if (!p.className) continue;
+      const list = byClass.get(p.className);
+      // For ambiguous classes, prefer the detection whose patternId
+      // matches the user's resolution. Fall back to the first detection
+      // when no resolution exists yet.
+      if (!list) {
+        byClass.set(p.className, p);
+        continue;
+      }
+      if (resolved[p.className] === p.patternId) {
+        byClass.set(p.className, p);
+      }
+    }
+    // Drop any class still ambiguous (more than one distinct patternId
+    // attached AND no resolution).
+    const detectionCountByClass = new Map<string, Set<string>>();
+    for (const p of detections) {
+      if (!p.className) continue;
+      if (!detectionCountByClass.has(p.className)) detectionCountByClass.set(p.className, new Set());
+      detectionCountByClass.get(p.className)!.add(p.patternId);
+    }
+    const tagged = [...byClass.values()].filter(p => {
+      const distinct = detectionCountByClass.get(p.className!)?.size || 0;
+      return distinct === 1 || !!resolved[p.className!];
+    });
 
     const taggedNames = new Set(tagged.map(p => p.className!));
     const allClasses  = Object.keys(currentRun.classUsageBindings || {});

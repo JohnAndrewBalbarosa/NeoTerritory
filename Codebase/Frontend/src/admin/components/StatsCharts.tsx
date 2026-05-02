@@ -10,16 +10,19 @@ import { isAuthError } from '../lib/silenceAuthErrors';
 
 const PALETTE = ['#2563eb', '#10b981', '#8b5cf6', '#f97316', '#ec4899', '#14b8a6', '#ef4444', '#f59e0b'];
 
-// Per-family colour map. We only entertain the three design-pattern
-// families the catalog actually authors templates for — anything outside
-// those buckets gets dropped from the family pie rather than lumped into
-// a synthetic "Other" category the user explicitly didn't want.
+// Per-family colour map. Mirrors the catalog folder layout under
+// Codebase/Microservice/pattern_catalog/ — `creational`, `structural`,
+// `behavioural`, and `idiom` are all real families with templates;
+// `_runtime` is the support folder (not a family) and is excluded.
+// Anything outside this set gets dropped from the family pie rather
+// than lumped into a synthetic "Other" the user explicitly didn't want.
 const FAMILY_COLOR: Record<string, string> = {
   creational:  '#2563eb',
   structural:  '#10b981',
-  behavioural: '#8b5cf6'
+  behavioural: '#8b5cf6',
+  idiom:       '#f59e0b'
 };
-const FAMILY_ORDER = ['creational', 'structural', 'behavioural'] as const;
+const FAMILY_ORDER = ['creational', 'structural', 'behavioural', 'idiom'] as const;
 
 interface PieSlice { label: string; value: number; color: string }
 
