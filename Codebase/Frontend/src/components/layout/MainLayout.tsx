@@ -66,8 +66,27 @@ export default function MainLayout() {
   const {
     status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, aiStatus, aiConfigured, setStatus
+    setAiStatus, aiStatus, aiConfigured, setStatus,
+    currentRun, gdbAllPassedForRun
   } = useAppStore();
+
+  // Sequential tab gating. Each tab unlocks only after the previous is
+  // complete, mirroring the natural workflow: submit → annotate → run
+  // tests → review. Clicking a locked tab is a no-op (the button is
+  // disabled with a tooltip explaining the prerequisite).
+  function tabUnlocked(id: StudioTab): boolean {
+    if (id === 'submit')    return true;
+    if (id === 'annotated') return !!currentRun;            // need a finished analysis
+    if (id === 'gdb')       return !!currentRun;            // need a finished analysis
+    if (id === 'ambiguous') return gdbAllPassedForRun;      // need GDB to have all-passed
+    return true;
+  }
+  function tabLockReason(id: StudioTab): string | undefined {
+    if (id === 'annotated' && !currentRun)        return 'Submit source code first.';
+    if (id === 'gdb'       && !currentRun)        return 'Submit source code and complete annotation first.';
+    if (id === 'ambiguous' && !gdbAllPassedForRun) return 'Run the GDB unit tests and pass them all first.';
+    return undefined;
+  }
 
   const aiChipStatus = !aiConfigured ? 'offline'
     : aiStatus === 'pending'  ? 'working'
@@ -245,18 +264,25 @@ export default function MainLayout() {
       </header>
 
       <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={activeTab === t.id}
-            className={`tab-btn ${activeTab === t.id ? 'is-active' : ''}`}
-            onClick={() => setActiveTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
+        {TABS.map((t) => {
+          const unlocked = tabUnlocked(t.id);
+          const lockReason = tabLockReason(t.id);
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === t.id}
+              aria-disabled={!unlocked}
+              disabled={!unlocked}
+              title={lockReason}
+              className={`tab-btn ${activeTab === t.id ? 'is-active' : ''}${unlocked ? '' : ' is-locked'}`}
+              onClick={() => unlocked && setActiveTab(t.id)}
+            >
+              {t.label}{unlocked ? '' : ' 🔒'}
+            </button>
+          );
+        })}
       </nav>
 
       <main className="content tab-content">

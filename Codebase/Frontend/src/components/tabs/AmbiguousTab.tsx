@@ -183,7 +183,7 @@ function LikertRow({
 }
 
 export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: AmbiguousTabProps) {
-  const { currentRun, setStatus } = useAppStore();
+  const { currentRun, setStatus, gdbAllPassedForRun } = useAppStore();
 
   const [taggedDecisions, setTaggedDecisions]   = useState<Record<string, TaggedDecision>>({});
   const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
@@ -521,7 +521,18 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
         })}
       </nav>
 
-      {activeSubTab === 'validation' && (
+      {activeSubTab === 'validation' && !gdbAllPassedForRun && (
+        <div className="empty-state">
+          <p><strong>Validation locked.</strong></p>
+          <p>
+            Finish the workflow first: submit source → tag any ambiguous
+            classes on the Annotated tab → run all unit tests on the
+            GDB Runner. The validation rows below populate automatically
+            once every step passes.
+          </p>
+        </div>
+      )}
+      {activeSubTab === 'validation' && gdbAllPassedForRun && (
         <>
           {taggedClasses.length > 0 && (
             <div className="checklist-section">

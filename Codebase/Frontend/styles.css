@@ -376,6 +376,8 @@ body.login-active{overflow:hidden;}
 .tab-btn{font-family:var(--ui-font);font-size:12px;font-weight:700;padding:9px 18px;background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink-dim);transition:color 0.15s,border-color 0.15s;letter-spacing:0.06em;text-transform:uppercase;}
 .tab-btn:hover{color:var(--ink-soft);}
 .tab-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}
+.tab-btn.is-locked,.tab-btn[disabled]{cursor:not-allowed;color:var(--ink-soft);opacity:0.55;}
+.tab-btn.is-locked:hover{color:var(--ink-soft);}
 .tab-content{min-height:180px;}
 
 /* === GDB BUTTON === */
