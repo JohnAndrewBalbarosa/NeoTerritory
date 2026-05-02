@@ -416,8 +416,8 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
   }
 
   // ── save run handler ─────────────────────────────────────────────────────
-  async function handleSaveRun(): Promise<void> {
-    if (!pendingSave) return;
+  async function handleSaveRun(): Promise<number | null> {
+    if (!pendingSave) return run.runId ?? null;
     setSavingRun(true);
     setError(null);
     try {
@@ -428,11 +428,27 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
       );
       setStatus({ kind: 'ok', title: 'Run saved', detail: `Saved as run #${result.runId}.` });
       onSaved(result.runId);
+      return result.runId;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Save failed');
+      return null;
     } finally {
       setSavingRun(false);
     }
+  }
+
+  // Combined save → submit. Single click for the user; the sequence
+  // saves the run if it isn't saved yet, waits for the runId, then
+  // streams every validation row through submitManualReview. Aborts at
+  // the first failure so the user sees one actionable error instead of
+  // a half-saved cascade.
+  async function handleSaveAndSubmit(): Promise<void> {
+    let id = run.runId ?? null;
+    if (!id) {
+      id = await handleSaveRun();
+      if (!id) return; // save failed; error already surfaced
+    }
+    await handleSubmitValidation();
   }
 
   // ── batch submit (validation) ────────────────────────────────────────────
@@ -529,16 +545,6 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
           )}
         </div>
         <div className="review-action-buttons">
-          {!isSaved && pendingSave && (
-            <button
-              type="button"
-              className="primary-btn"
-              disabled={savingRun}
-              onClick={handleSaveRun}
-            >
-              {savingRun ? 'Saving…' : 'Save run'}
-            </button>
-          )}
           {pendingSave && (
             <button
               type="button"
@@ -548,18 +554,26 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
               Discard run
             </button>
           )}
+          {/* One button: save (if needed) then submit. Sequence runs in
+              order; the user no longer has to click two buttons. */}
           <button
             type="button"
             className="primary-btn"
-            disabled={!isSaved || submitting || !completeness.ok}
-            onClick={handleSubmitValidation}
-            title={!isSaved
-              ? 'Save the run first'
-              : !completeness.ok
-                ? `Missing: ${completeness.missing.length} row(s)`
-                : 'Submit validation feedback'}
+            disabled={savingRun || submitting || !completeness.ok}
+            onClick={handleSaveAndSubmit}
+            title={!completeness.ok
+              ? `Missing: ${completeness.missing.length} row(s)`
+              : isSaved
+                ? 'Submit validation feedback'
+                : 'Save run, then submit validation'}
           >
-            {submitting ? 'Submitting…' : 'Submit validation'}
+            {savingRun
+              ? 'Saving…'
+              : submitting
+                ? 'Submitting…'
+                : isSaved
+                  ? 'Submit validation'
+                  : 'Save & submit validation'}
           </button>
         </div>
       </div>
@@ -680,15 +694,21 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
           <button
             type="button"
             className="primary-btn"
-            disabled={!isSaved || submitting || !completeness.ok}
-            onClick={handleSubmitValidation}
-            title={!isSaved
-              ? 'Save the run first'
-              : !completeness.ok
-                ? `Missing: ${completeness.missing.length} row(s)`
-                : 'Submit validation feedback'}
+            disabled={savingRun || submitting || !completeness.ok}
+            onClick={handleSaveAndSubmit}
+            title={!completeness.ok
+              ? `Missing: ${completeness.missing.length} row(s)`
+              : isSaved
+                ? 'Submit validation feedback'
+                : 'Save run, then submit validation'}
           >
-            {submitting ? 'Submitting…' : 'Submit validation'}
+            {savingRun
+              ? 'Saving…'
+              : submitting
+                ? 'Submitting…'
+                : isSaved
+                  ? 'Submit validation'
+                  : 'Save & submit validation'}
           </button>
         ) : (
           <button

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/appState';
-import { sendHeartbeat, sendDisconnectBeacon } from '../api/client';
+import { sendHeartbeat, sendDisconnectBeacon, fetchHealth } from '../api/client';
 
 // Beat once every 30s. Backend grace window is 90s, so even one missed beat
 // is fine, but two in a row will free the seat.
@@ -22,6 +22,34 @@ export function useHeartbeat() {
       // Beat even when tab is hidden: a backgrounded tab keeps its seat as
       // long as the browser keeps the timer alive.
       void sendHeartbeat();
+      // Piggy-back the health probe onto every heartbeat so the studio's
+      // status card (microservice / docker / livePods) stays fresh
+      // without a second polling timer. Errors are swallowed — the status
+      // card already handles offline states gracefully.
+      void fetchHealth().then(h => {
+        const s = useAppStore.getState();
+        if (h.docker) {
+          if (!h.docker.enabled) {
+            const reasonLabel =
+              h.docker.reason === 'env_off'     ? 'disabled (env)' :
+              h.docker.reason === 'no_binary'   ? 'disabled (docker not on PATH)' :
+              h.docker.reason === 'daemon_down' ? 'disabled (start Docker Desktop)' :
+              'disabled';
+            s.setDockerStatus('offline', reasonLabel);
+          } else if (!h.docker.imageReady) {
+            s.setDockerStatus('checking', 'building image…');
+          } else {
+            s.setDockerStatus(
+              'online',
+              h.docker.livePods > 0
+                ? `online (${h.docker.livePods} pod${h.docker.livePods === 1 ? '' : 's'})`
+                : 'online'
+            );
+          }
+        }
+        const ms = h.microservice;
+        if (ms?.connected) s.setMsStatus('online', 'online');
+      }).catch(() => { /* ignore — useHealth's separate poll surfaces errors */ });
     }
 
     void sendHeartbeat();
