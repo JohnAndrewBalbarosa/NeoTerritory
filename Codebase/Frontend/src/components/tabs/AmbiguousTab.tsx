@@ -26,12 +26,10 @@ interface TaggedRowProps {
   pattern: DetectedPatternFull;
   decision: TaggedDecision;
   isSaved: boolean;
-  isSaving: boolean;
   onDecide: (correct: boolean) => void;
-  onSave: () => void;
 }
 
-function TaggedRow({ pattern, decision, isSaved, isSaving, onDecide, onSave }: TaggedRowProps) {
+function TaggedRow({ pattern, decision, isSaved, onDecide }: TaggedRowProps) {
   return (
     <li className={`checklist-row ${isSaved ? 'is-saved' : ''}`}>
       <div className="checklist-meta">
@@ -46,7 +44,6 @@ function TaggedRow({ pattern, decision, isSaved, isSaving, onDecide, onSave }: T
             name={`tagged-${pattern.patternName}-${pattern.className}`}
             checked={decision.correct === true}
             onChange={() => onDecide(true)}
-            disabled={isSaved}
           />
           <span>Yes — correctly identified</span>
         </label>
@@ -56,27 +53,10 @@ function TaggedRow({ pattern, decision, isSaved, isSaving, onDecide, onSave }: T
             name={`tagged-${pattern.patternName}-${pattern.className}`}
             checked={decision.correct === false}
             onChange={() => onDecide(false)}
-            disabled={isSaved}
           />
           <span>No — false positive</span>
         </label>
       </div>
-      {/* Once a row is saved its decision is locked; the Save button is
-          redundant noise. Show actions only while the user is still
-          deciding. The "Saved ✓" state is communicated by the row's
-          `.is-saved` styling and the disabled radios. */}
-      {!isSaved && (
-        <div className="checklist-actions">
-          <button
-            type="button"
-            className="primary-btn"
-            disabled={decision.correct === null || isSaving}
-            onClick={onSave}
-          >
-            {isSaving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      )}
     </li>
   );
 }
@@ -89,13 +69,11 @@ interface UntaggedRowProps {
   className: string;
   decision: UntaggedDecision;
   isSaved: boolean;
-  isSaving: boolean;
   onDecide: (isPattern: boolean) => void;
   onPatternName: (name: string) => void;
-  onSave: () => void;
 }
 
-function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatternName, onSave }: UntaggedRowProps) {
+function UntaggedRow({ className, decision, isSaved, onDecide, onPatternName }: UntaggedRowProps) {
   return (
     <li className={`checklist-row ${isSaved ? 'is-saved' : ''}`}>
       <div className="checklist-meta">
@@ -109,7 +87,6 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
             name={`untagged-${className}`}
             checked={decision.isPattern === false}
             onChange={() => onDecide(false)}
-            disabled={isSaved}
           />
           <span>Correct — not a design pattern</span>
         </label>
@@ -119,7 +96,6 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
             name={`untagged-${className}`}
             checked={decision.isPattern === true}
             onChange={() => onDecide(true)}
-            disabled={isSaved}
           />
           <span>Wrong — this IS a:</span>
           <input
@@ -128,27 +104,11 @@ function UntaggedRow({ className, decision, isSaved, isSaving, onDecide, onPatte
             value={decision.patternName}
             placeholder="e.g. Singleton"
             maxLength={64}
-            disabled={isSaved || decision.isPattern !== true}
+            disabled={decision.isPattern !== true}
             onChange={e => onPatternName(e.target.value)}
           />
         </label>
       </div>
-      {!isSaved && (
-        <div className="checklist-actions">
-          <button
-            type="button"
-            className="primary-btn"
-            disabled={
-              decision.isPattern === null ||
-              (decision.isPattern === true && !decision.patternName.trim()) ||
-              isSaving
-            }
-            onClick={onSave}
-          >
-            {isSaving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
-      )}
     </li>
   );
 }
@@ -229,7 +189,6 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
   const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
   const [likert, setLikert] = useState<Record<string, number>>({});
   const [activeSubTab, setActiveSubTab] = useState<SubTabId>('validation');
-  const [saving, setSaving]   = useState<string | null>(null);
   const [saved, setSaved]     = useState<Set<string>>(new Set());
   const [savingRun, setSavingRun] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -238,42 +197,53 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
   const { taggedClasses, untaggedClasses } = useMemo(() => {
     if (!currentRun) return { taggedClasses: [], untaggedClasses: [] };
 
-    // ONE row per class — whichever pattern the user resolved during
-    // annotation wins (classResolvedPatterns), else the single detection
-    // for unambiguous classes. Multi-pattern unresolved classes are
-    // dropped from validation entirely because there's no defensible
-    // single tag to validate against — the Annotated tab is where the
-    // user disambiguates them, not here.
+    // ONE row per class. The Annotated source's popover writes the
+    // user's pick into `classResolvedPatterns[className] = patternKey`.
+    // The resolved string format isn't stable (sometimes patternId like
+    // `creational.singleton`, sometimes patternName like `Singleton`),
+    // so we match it against BOTH patternId and patternName,
+    // case-insensitively. First matching detection wins; if no resolved
+    // entry exists for an ambiguous class, the class is dropped from
+    // validation — the user must disambiguate on the Annotated tab.
     const detections = currentRun.detectedPatterns || [];
     const resolved = currentRun.classResolvedPatterns || {};
-    const byClass = new Map<string, typeof detections[number]>();
-    for (const p of detections) {
-      if (!p.className) continue;
-      const list = byClass.get(p.className);
-      // For ambiguous classes, prefer the detection whose patternId
-      // matches the user's resolution. Fall back to the first detection
-      // when no resolution exists yet.
-      if (!list) {
-        byClass.set(p.className, p);
-        continue;
-      }
-      if (resolved[p.className] === p.patternId) {
-        byClass.set(p.className, p);
-      }
+
+    function matchesResolved(p: typeof detections[number], tag: string | undefined): boolean {
+      if (!tag) return false;
+      const t = tag.toLowerCase();
+      if ((p.patternId   || '').toLowerCase() === t) return true;
+      if ((p.patternName || '').toLowerCase() === t) return true;
+      // Suffix match handles `creational.singleton` vs bare `singleton`.
+      if (t.endsWith('.' + (p.patternId   || '').toLowerCase().split('.').pop())) return true;
+      if (t.endsWith('.' + (p.patternName || '').toLowerCase())) return true;
+      return false;
     }
-    // Drop any class still ambiguous (more than one distinct patternId
-    // attached AND no resolution).
+
     const detectionCountByClass = new Map<string, Set<string>>();
     for (const p of detections) {
       if (!p.className) continue;
-      if (!detectionCountByClass.has(p.className)) detectionCountByClass.set(p.className, new Set());
-      detectionCountByClass.get(p.className)!.add(p.patternId);
+      const setForClass = detectionCountByClass.get(p.className) || new Set<string>();
+      setForClass.add(p.patternId || p.patternName || '');
+      detectionCountByClass.set(p.className, setForClass);
     }
-    const tagged = [...byClass.values()].filter(p => {
-      const distinct = detectionCountByClass.get(p.className!)?.size || 0;
-      return distinct === 1 || !!resolved[p.className!];
-    });
 
+    const byClass = new Map<string, typeof detections[number]>();
+    for (const p of detections) {
+      if (!p.className) continue;
+      const distinct = detectionCountByClass.get(p.className)?.size || 0;
+      if (distinct === 1) {
+        // Unambiguous → just take the single detection.
+        byClass.set(p.className, p);
+        continue;
+      }
+      // Ambiguous → only keep the detection that matches the user's pick.
+      const userPick = resolved[p.className];
+      if (matchesResolved(p, userPick)) {
+        byClass.set(p.className, p);
+      }
+    }
+
+    const tagged = [...byClass.values()];
     const taggedNames = new Set(tagged.map(p => p.className!));
     const allClasses  = Object.keys(currentRun.classUsageBindings || {});
     const untagged    = allClasses.filter(n => !taggedNames.has(n));
@@ -322,57 +292,9 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
     setSaved(prev => { const next = new Set(prev); next.add(key); return next; });
   }
 
-  // ── submit tagged (TP / FP) ───────────────────────────────────────────────
-
-  async function saveTagged(p: DetectedPatternFull): Promise<void> {
-    if (!run.runId) { setError('Save the run first.'); return; }
-    const key = taggedKey(p);
-    const dec = taggedDecisions[key];
-    if (!dec || dec.correct === null) { setError('Pick Yes or No first.'); return; }
-    const repLine = p.documentationTargets?.[0]?.line ?? 1;
-    setError(null);
-    setSaving(key);
-    try {
-      await submitManualReview(run.runId, {
-        line:          repLine,
-        candidates:    [p.patternName],
-        chosenPattern: dec.correct ? p.patternName : null,
-        chosenKind:    dec.correct ? 'pattern' : 'none'
-      });
-      markSaved(key);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save.');
-    } finally {
-      setSaving(null);
-    }
-  }
-
-  // ── submit untagged (TN / FN) ─────────────────────────────────────────────
-
-  async function saveUntagged(className: string): Promise<void> {
-    if (!run.runId) { setError('Save the run first.'); return; }
-    const dec = untaggedDecisions[className];
-    if (!dec || dec.isPattern === null) { setError('Make a selection first.'); return; }
-    if (dec.isPattern && !dec.patternName.trim()) { setError('Enter the pattern name.'); return; }
-
-    const bindings: ClassUsageBinding[] = run.classUsageBindings?.[className] || [];
-    const repLine = bindings[0]?.line ?? 0;
-    setError(null);
-    setSaving(className);
-    try {
-      await submitManualReview(run.runId, {
-        line:          repLine,
-        candidates:    [],
-        chosenPattern: dec.isPattern ? dec.patternName.trim() : null,
-        chosenKind:    dec.isPattern ? 'pattern' : 'none'
-      });
-      markSaved(className);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save.');
-    } finally {
-      setSaving(null);
-    }
-  }
+  // Per-row save was removed. Every row now contributes to a single
+  // bulk send when the user presses "Save & submit validation"; see
+  // handleSubmitValidation below for the streaming send loop.
 
   // ── completeness check ───────────────────────────────────────────────────
   // The submit button is gated until every tagged and untagged row has an
@@ -618,9 +540,7 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
                       pattern={p}
                       decision={taggedDecisions[key] || { correct: null }}
                       isSaved={saved.has(key)}
-                      isSaving={saving === key}
                       onDecide={correct => setTagged(key, { correct })}
-                      onSave={() => { void saveTagged(p); }}
                     />
                   );
                 })}
@@ -642,10 +562,8 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
                     className={className}
                     decision={untaggedDecisions[className] || { isPattern: null, patternName: '' }}
                     isSaved={saved.has(className)}
-                    isSaving={saving === className}
                     onDecide={isPattern => setUntagged(className, { isPattern })}
                     onPatternName={name => setUntagged(className, { patternName: name })}
-                    onSave={() => { void saveUntagged(className); }}
                   />
                 ))}
               </ul>
