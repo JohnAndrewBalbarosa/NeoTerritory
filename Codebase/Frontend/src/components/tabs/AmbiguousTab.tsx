@@ -478,6 +478,10 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
           )}
           {/* One button: save (if needed) then submit. Sequence runs in
               order; the user no longer has to click two buttons. */}
+          {/* One button, constant label, single user click. The
+              background sequence (save run → submit each validation
+              row) is invisible from the UI — the user just sees one
+              action. Disabled until every required row has an answer. */}
           <button
             type="button"
             className="primary-btn"
@@ -485,17 +489,11 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
             onClick={handleSaveAndSubmit}
             title={!completeness.ok
               ? `Missing: ${completeness.missing.length} row(s)`
-              : isSaved
-                ? 'Submit validation feedback'
-                : 'Save run, then submit validation'}
+              : 'Save the run, then submit validation feedback'}
           >
-            {savingRun
-              ? 'Saving…'
-              : submitting
-                ? 'Submitting…'
-                : isSaved
-                  ? 'Submit validation'
-                  : 'Save & submit validation'}
+            {savingRun || submitting
+              ? 'Working…'
+              : 'Save and submit for validation'}
           </button>
         </div>
       </div>
@@ -619,6 +617,10 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
             if (i > 0) setActiveSubTab(SUB_TABS[i - 1].id);
           }}
         >← Back</button>
+        {/* One button, constant label, single user click. The
+            background sequence (save run → submit each validation row)
+            is invisible from the UI — the user just sees one action.
+            Disabled until every required row has an answer. */}
         {SUB_TABS.findIndex(t => t.id === activeSubTab) === SUB_TABS.length - 1 ? (
           <button
             type="button"
@@ -627,17 +629,11 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
             onClick={handleSaveAndSubmit}
             title={!completeness.ok
               ? `Missing: ${completeness.missing.length} row(s)`
-              : isSaved
-                ? 'Submit validation feedback'
-                : 'Save run, then submit validation'}
+              : 'Save the run, then submit validation feedback'}
           >
-            {savingRun
-              ? 'Saving…'
-              : submitting
-                ? 'Submitting…'
-                : isSaved
-                  ? 'Submit validation'
-                  : 'Save & submit validation'}
+            {savingRun || submitting
+              ? 'Working…'
+              : 'Save and submit for validation'}
           </button>
         ) : (
           <button
