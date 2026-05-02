@@ -1099,17 +1099,35 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
       return;
     }
 
-    db.prepare(`INSERT INTO manual_pattern_decisions
-      (run_id, user_id, line, candidates_json, chosen_pattern, chosen_kind, other_text, decided_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`).run(
-      runIdNum,
-      req.user.id,
-      line,
-      JSON.stringify(candidates),
-      chosenPattern,
-      chosenKind,
-      otherText
-    );
+    // Idempotency — re-submitting the SAME (run, user, line, kind,
+    // pattern, otherText) tuple within 60s is treated as a no-op
+    // success rather than a duplicate INSERT. The validation flow
+    // streams every row in a tight loop; if the user double-clicks
+    // the Save & submit button (or the network retries the request)
+    // we don't want duplicate decision rows polluting the F1 metrics.
+    const dupe = db.prepare(`
+      SELECT id FROM manual_pattern_decisions
+       WHERE run_id = ? AND user_id = ? AND line = ?
+         AND COALESCE(chosen_pattern,'') = COALESCE(?, '')
+         AND chosen_kind = ?
+         AND COALESCE(other_text,'') = COALESCE(?, '')
+         AND decided_at >= datetime('now','-60 seconds')
+       LIMIT 1
+    `).get(runIdNum, req.user.id, line, chosenPattern, chosenKind, otherText);
+
+    if (!dupe) {
+      db.prepare(`INSERT INTO manual_pattern_decisions
+        (run_id, user_id, line, candidates_json, chosen_pattern, chosen_kind, other_text, decided_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`).run(
+        runIdNum,
+        req.user.id,
+        line,
+        JSON.stringify(candidates),
+        chosenPattern,
+        chosenKind,
+        otherText
+      );
+    }
 
     logEvent(req.user.id, 'manual_review', `runId=${runIdNum} line=${line} kind=${chosenKind}`);
 

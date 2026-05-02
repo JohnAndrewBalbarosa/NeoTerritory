@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { submitManualReview, saveRun } from '../../api/client';
 import { DetectedPatternFull, ClassUsageBinding } from '../../types/api';
@@ -193,6 +193,12 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
   const [savingRun, setSavingRun] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError]     = useState<string | null>(null);
+  // Submit-once lock + redirect state. Once the backend ack'd the
+  // payload, the button stays disabled (no double-submit) and we show
+  // a 3-second redirect overlay before resetting back to the source
+  // tab with a clean slate.
+  const [submitted, setSubmitted] = useState(false);
+  const [redirectIn, setRedirectIn] = useState<number | null>(null);
 
   const { taggedClasses, untaggedClasses } = useMemo(() => {
     if (!currentRun) return { taggedClasses: [], untaggedClasses: [] };
@@ -359,41 +365,71 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
     }
   }
 
-  // Combined save → submit. Single click for the user; the sequence
-  // saves the run if it isn't saved yet, waits for the runId, then
-  // streams every validation row through submitManualReview. Aborts at
-  // the first failure so the user sees one actionable error instead of
-  // a half-saved cascade.
+  // ONE click → save + submit, sequentially, in the background. Pass
+  // the freshly-saved id directly into the submit step so the React
+  // state snapshot doesn't bite us. After a successful submit the
+  // button locks (submitted=true), a 3-second redirect overlay starts
+  // counting down, then setCurrentRun(null) drops us back at the
+  // Source tab with a clean slate. Idempotent — re-clicking the
+  // disabled button is a no-op; backend also de-dupes by run identity.
   async function handleSaveAndSubmit(): Promise<void> {
+    if (submitted) return;
     let id = run.runId ?? null;
     if (!id) {
       id = await handleSaveRun();
-      if (!id) return; // save failed; error already surfaced
+      if (!id) return;
     }
-    await handleSubmitValidation();
+    const ok = await handleSubmitValidation(id);
+    if (!ok) return;
+    setSubmitted(true);
+    setRedirectIn(3);
   }
 
-  // ── batch submit (validation) ────────────────────────────────────────────
-  async function handleSubmitValidation(): Promise<void> {
-    if (!run.runId) {
-      setError('You must save the run first before submitting validation.');
+  // Redirect countdown — once submitted, tick every second; on hit-zero
+  // wipe the run (which the layout's tab-gating uses to lock the user
+  // back to Source) and reset every local form bit so a fresh
+  // submission starts cleanly.
+  useEffect(() => {
+    if (redirectIn === null) return;
+    if (redirectIn <= 0) {
+      useAppStore.getState().setCurrentRun(null);
+      setSubmitted(false);
+      setRedirectIn(null);
+      setTaggedDecisions({});
+      setUntaggedDecisions({});
+      setLikert({});
+      setSaved(new Set());
+      setActiveSubTab('validation');
       return;
+    }
+    const t = setTimeout(() => setRedirectIn(n => (n ?? 1) - 1), 1000);
+    return () => clearTimeout(t);
+  }, [redirectIn]);
+
+  // ── batch submit (validation) ────────────────────────────────────────────
+  // Accepts an explicit runId so handleSaveAndSubmit can pass the id
+  // it just received from the save call WITHOUT waiting for the React
+  // state snapshot to refresh. The previous version read from the
+  // closure's `run.runId` which was still null in the same tick the
+  // save returned, so the submit step silently no-op'd and the user
+  // had to click again.
+  async function handleSubmitValidation(runIdOverride?: number): Promise<boolean> {
+    const effectiveRunId = runIdOverride ?? run.runId;
+    if (!effectiveRunId) {
+      setError('You must save the run first before submitting validation.');
+      return false;
     }
     const check = isComplete();
     if (!check.ok) {
       setError(`Please answer every row before submitting. Missing: ${check.missing.slice(0, 4).join(', ')}${check.missing.length > 4 ? '…' : ''}`);
-      return;
+      return false;
     }
     setSubmitting(true);
     setError(null);
-    // Collect rejections so we surface ALL backend bounces, not just the first.
-    // The backend returns 422 for malformed payloads (e.g. chosenKind='pattern'
-    // without chosenPattern); we don't mark such rows as saved so the user can
-    // retry after fixing.
     const rejected: string[] = [];
     async function send(label: string, payload: Parameters<typeof submitManualReview>[1]): Promise<boolean> {
       try {
-        await submitManualReview(run.runId!, payload);
+        await submitManualReview(effectiveRunId!, payload);
         return true;
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -444,11 +480,12 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
     setSubmitting(false);
     if (rejected.length === 0) {
       setStatus({ kind: 'ok', title: 'Validation submitted', detail: 'Thanks for the feedback.' });
-    } else {
-      setError(
-        `Backend rejected ${rejected.length} row(s): ${rejected.slice(0, 3).join('; ')}${rejected.length > 3 ? '…' : ''}`
-      );
+      return true;
     }
+    setError(
+      `Backend rejected ${rejected.length} row(s): ${rejected.slice(0, 3).join('; ')}${rejected.length > 3 ? '…' : ''}`
+    );
+    return false;
   }
 
   // ── render ────────────────────────────────────────────────────────────────
@@ -458,6 +495,14 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
 
   return (
     <section className="tab-panel tab-ambiguous">
+      {redirectIn !== null && (
+        <div className="modal-overlay" role="status" aria-live="polite">
+          <div className="modal-card" style={{ maxWidth: 420, textAlign: 'center' }}>
+            <h2>Validation submitted ✓</h2>
+            <p>Thanks for the feedback. Redirecting to the source tab in <strong>{redirectIn}s</strong>…</p>
+          </div>
+        </div>
+      )}
       <div className="review-action-bar">
         <div className="review-action-status" data-saved={isSaved ? 'true' : undefined}>
           {isSaved ? (
@@ -485,15 +530,19 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
           <button
             type="button"
             className="primary-btn"
-            disabled={savingRun || submitting || !completeness.ok}
+            disabled={savingRun || submitting || submitted || !completeness.ok}
             onClick={handleSaveAndSubmit}
-            title={!completeness.ok
-              ? `Missing: ${completeness.missing.length} row(s)`
-              : 'Save the run, then submit validation feedback'}
+            title={submitted
+              ? 'Already submitted for this run.'
+              : !completeness.ok
+                ? `Missing: ${completeness.missing.length} row(s)`
+                : 'Save the run, then submit validation feedback'}
           >
-            {savingRun || submitting
-              ? 'Working…'
-              : 'Save and submit for validation'}
+            {submitted
+              ? 'Submitted ✓'
+              : savingRun || submitting
+                ? 'Working…'
+                : 'Save and submit for validation'}
           </button>
         </div>
       </div>
@@ -625,15 +674,19 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
           <button
             type="button"
             className="primary-btn"
-            disabled={savingRun || submitting || !completeness.ok}
+            disabled={savingRun || submitting || submitted || !completeness.ok}
             onClick={handleSaveAndSubmit}
-            title={!completeness.ok
-              ? `Missing: ${completeness.missing.length} row(s)`
-              : 'Save the run, then submit validation feedback'}
+            title={submitted
+              ? 'Already submitted for this run.'
+              : !completeness.ok
+                ? `Missing: ${completeness.missing.length} row(s)`
+                : 'Save the run, then submit validation feedback'}
           >
-            {savingRun || submitting
-              ? 'Working…'
-              : 'Save and submit for validation'}
+            {submitted
+              ? 'Submitted ✓'
+              : savingRun || submitting
+                ? 'Working…'
+                : 'Save and submit for validation'}
           </button>
         ) : (
           <button
