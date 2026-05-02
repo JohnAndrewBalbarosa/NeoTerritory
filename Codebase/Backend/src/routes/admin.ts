@@ -329,11 +329,13 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
     // reset together. The audit_log row below is the immutable record of
     // exactly what got purged.
     const tx = db.transaction(() => {
-      const r = { logs: 0, runs: 0, reviews: 0, surveys: 0 };
-      r.surveys = db.prepare('DELETE FROM survey_responses').run().changes;
-      r.reviews = db.prepare('DELETE FROM reviews').run().changes;
-      r.runs    = db.prepare('DELETE FROM analysis_runs').run().changes;
-      r.logs    = db.prepare('DELETE FROM logs').run().changes;
+      const r = { logs: 0, runs: 0, reviews: 0, surveys: 0, decisions: 0 };
+      r.surveys   = db.prepare('DELETE FROM survey_responses').run().changes;
+      // manual_pattern_decisions FKs analysis_runs(id); must wipe before runs.
+      r.decisions = db.prepare('DELETE FROM manual_pattern_decisions').run().changes;
+      r.reviews   = db.prepare('DELETE FROM reviews').run().changes;
+      r.runs      = db.prepare('DELETE FROM analysis_runs').run().changes;
+      r.logs      = db.prepare('DELETE FROM logs').run().changes;
       return r;
     });
     let changes = 0;
@@ -341,20 +343,21 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
     try {
       const r = tx();
       changes = r.logs;
-      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} surveys=${r.surveys}`;
+      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} surveys=${r.surveys} decisions=${r.decisions}`;
     } catch {
       // survey_responses may not exist on older DBs — fall back to the
       // narrower cascade so the operator's request still goes through.
       const tx2 = db.transaction(() => {
-        const r = { logs: 0, runs: 0, reviews: 0 };
-        r.reviews = db.prepare('DELETE FROM reviews').run().changes;
-        r.runs    = db.prepare('DELETE FROM analysis_runs').run().changes;
-        r.logs    = db.prepare('DELETE FROM logs').run().changes;
+        const r = { logs: 0, runs: 0, reviews: 0, decisions: 0 };
+        r.decisions = db.prepare('DELETE FROM manual_pattern_decisions').run().changes;
+        r.reviews   = db.prepare('DELETE FROM reviews').run().changes;
+        r.runs      = db.prepare('DELETE FROM analysis_runs').run().changes;
+        r.logs      = db.prepare('DELETE FROM logs').run().changes;
         return r;
       });
       const r = tx2();
       changes = r.logs;
-      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews}`;
+      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} decisions=${r.decisions}`;
     }
     logAudit({
       actorUserId:   req.user?.id ?? null,
@@ -381,8 +384,17 @@ router.delete('/runs/:id', (req: Request, res: Response, next: NextFunction) => 
     const row = db.prepare('SELECT id, source_name, user_id FROM analysis_runs WHERE id = ?').get(id) as
       { id: number; source_name: string; user_id: number | null } | undefined;
     if (!row) { res.status(404).json({ error: 'Run not found' }); return; }
-    db.prepare('DELETE FROM reviews WHERE analysis_run_id = ?').run(id);
-    db.prepare('DELETE FROM analysis_runs WHERE id = ?').run(id);
+    // Cascade in FK-dependency order. Every table that REFERENCES
+    // analysis_runs(id) has to be wiped before the parent row, or
+    // SQLite's FK enforcement throws "FOREIGN KEY constraint failed".
+    // Tables that point at analysis_runs: reviews.analysis_run_id +
+    // manual_pattern_decisions.run_id (the latter was the missed one).
+    const tx = db.transaction(() => {
+      db.prepare('DELETE FROM manual_pattern_decisions WHERE run_id = ?').run(id);
+      db.prepare('DELETE FROM reviews WHERE analysis_run_id = ?').run(id);
+      db.prepare('DELETE FROM analysis_runs WHERE id = ?').run(id);
+    });
+    tx();
     logAudit({
       actorUserId:   req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,
