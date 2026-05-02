@@ -328,37 +328,44 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
     // by those tables (run-count, pattern frequency, per-user activity)
     // reset together. The audit_log row below is the immutable record of
     // exactly what got purged.
+    // FULL CASCADE — every activity table the user could mean by "all
+    // logs". Walks the FK dependency order so SQLite never throws a
+    // FOREIGN KEY constraint failure. We deliberately keep `users`
+    // (sign-in identities) and `audit_log` (immutable accountability
+    // record of THIS very purge) — wiping either would break the
+    // session and erase the proof that the purge happened. Anything
+    // else activity-related goes.
+    const safeDelete = (sql: string): number => {
+      try { return db.prepare(sql).run().changes; }
+      catch { return 0; }   // table missing on older DBs / fresh installs
+    };
     const tx = db.transaction(() => {
-      const r = { logs: 0, runs: 0, reviews: 0, surveys: 0, decisions: 0 };
-      r.surveys   = db.prepare('DELETE FROM survey_responses').run().changes;
-      // manual_pattern_decisions FKs analysis_runs(id); must wipe before runs.
-      r.decisions = db.prepare('DELETE FROM manual_pattern_decisions').run().changes;
-      r.reviews   = db.prepare('DELETE FROM reviews').run().changes;
-      r.runs      = db.prepare('DELETE FROM analysis_runs').run().changes;
-      r.logs      = db.prepare('DELETE FROM logs').run().changes;
+      const r = {
+        logs: 0, runs: 0, reviews: 0, surveys: 0, decisions: 0,
+        consent: 0, pretest: 0, runFeedback: 0, sessionFeedback: 0, jobs: 0
+      };
+      // 1) Tables that REFERENCE analysis_runs(id) — must die first.
+      r.decisions       = safeDelete('DELETE FROM manual_pattern_decisions');
+      r.reviews         = safeDelete('DELETE FROM reviews');
+      // 2) Tables that REFERENCE users(id) but not analysis_runs.
+      r.consent         = safeDelete('DELETE FROM survey_consent');
+      r.pretest         = safeDelete('DELETE FROM survey_pretest');
+      r.runFeedback     = safeDelete('DELETE FROM run_feedback');
+      r.sessionFeedback = safeDelete('DELETE FROM session_feedback');
+      r.jobs            = safeDelete('DELETE FROM jobs');
+      // 3) Top-level activity tables (no FKs pointing at them now).
+      r.surveys         = safeDelete('DELETE FROM survey_responses');
+      r.runs            = safeDelete('DELETE FROM analysis_runs');
+      r.logs            = safeDelete('DELETE FROM logs');
       return r;
     });
-    let changes = 0;
-    let detail = '';
-    try {
-      const r = tx();
-      changes = r.logs;
-      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} surveys=${r.surveys} decisions=${r.decisions}`;
-    } catch {
-      // survey_responses may not exist on older DBs — fall back to the
-      // narrower cascade so the operator's request still goes through.
-      const tx2 = db.transaction(() => {
-        const r = { logs: 0, runs: 0, reviews: 0, decisions: 0 };
-        r.decisions = db.prepare('DELETE FROM manual_pattern_decisions').run().changes;
-        r.reviews   = db.prepare('DELETE FROM reviews').run().changes;
-        r.runs      = db.prepare('DELETE FROM analysis_runs').run().changes;
-        r.logs      = db.prepare('DELETE FROM logs').run().changes;
-        return r;
-      });
-      const r = tx2();
-      changes = r.logs;
-      detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} decisions=${r.decisions}`;
-    }
+    const r = tx();
+    const changes = r.logs;
+    const detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} `
+                 + `surveys=${r.surveys} decisions=${r.decisions} `
+                 + `consent=${r.consent} pretest=${r.pretest} `
+                 + `runFeedback=${r.runFeedback} sessionFeedback=${r.sessionFeedback} `
+                 + `jobs=${r.jobs}`;
     logAudit({
       actorUserId:   req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,
@@ -384,17 +391,13 @@ router.delete('/runs/:id', (req: Request, res: Response, next: NextFunction) => 
     const row = db.prepare('SELECT id, source_name, user_id FROM analysis_runs WHERE id = ?').get(id) as
       { id: number; source_name: string; user_id: number | null } | undefined;
     if (!row) { res.status(404).json({ error: 'Run not found' }); return; }
-    // Cascade in FK-dependency order. Every table that REFERENCES
-    // analysis_runs(id) has to be wiped before the parent row, or
-    // SQLite's FK enforcement throws "FOREIGN KEY constraint failed".
-    // Tables that point at analysis_runs: reviews.analysis_run_id +
-    // manual_pattern_decisions.run_id (the latter was the missed one).
-    const tx = db.transaction(() => {
-      db.prepare('DELETE FROM manual_pattern_decisions WHERE run_id = ?').run(id);
-      db.prepare('DELETE FROM reviews WHERE analysis_run_id = ?').run(id);
+    // The schema migration in initDb.ts gave reviews + manual_pattern_decisions
+    // an `ON DELETE CASCADE` to analysis_runs, so a single DELETE is
+    // enough — SQLite walks the dependents itself. We still keep an
+    // explicit transaction so this is atomic.
+    db.transaction(() => {
       db.prepare('DELETE FROM analysis_runs WHERE id = ?').run(id);
-    });
-    tx();
+    })();
     logAudit({
       actorUserId:   req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,

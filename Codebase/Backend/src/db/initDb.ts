@@ -186,6 +186,66 @@ export function initDb(): void {
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_manual_decisions_run ON manual_pattern_decisions(run_id)`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_manual_decisions_user ON manual_pattern_decisions(user_id)`).run();
 
+  // ── ON DELETE CASCADE migration ────────────────────────────────────────
+  // SQLite can't ALTER an existing foreign key to add CASCADE — we have
+  // to recreate the table. We do this once, idempotently, by checking
+  // whether the existing FK definition mentions "CASCADE". If it
+  // doesn't, we copy the data into a new table that does, then swap.
+  // Wrapped in a transaction so a partial failure rolls back.
+  function ensureCascade(table: string, recreateSql: string): void {
+    try {
+      const sqlRow = db.prepare(
+        `SELECT sql FROM sqlite_master WHERE type='table' AND name=?`
+      ).get(table) as { sql?: string } | undefined;
+      const sql = sqlRow?.sql || '';
+      if (sql.toUpperCase().includes('ON DELETE CASCADE')) return;
+      db.exec('PRAGMA foreign_keys = OFF;');
+      db.transaction(() => {
+        db.exec(`ALTER TABLE ${table} RENAME TO ${table}__old;`);
+        db.exec(recreateSql);
+        const colsRow = db.prepare(
+          `SELECT group_concat(name) AS cols FROM pragma_table_info(?)`
+        ).get(`${table}__old`) as { cols?: string } | undefined;
+        const cols = colsRow?.cols || '*';
+        db.exec(`INSERT INTO ${table} (${cols}) SELECT ${cols} FROM ${table}__old;`);
+        db.exec(`DROP TABLE ${table}__old;`);
+      })();
+      db.exec('PRAGMA foreign_keys = ON;');
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[initDb] cascade migration for ${table} skipped:`, err);
+    }
+  }
+
+  ensureCascade('reviews', `
+    CREATE TABLE reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      scope TEXT NOT NULL,
+      analysis_run_id INTEGER,
+      answers_json TEXT NOT NULL,
+      schema_version TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(analysis_run_id) REFERENCES analysis_runs(id) ON DELETE CASCADE
+    )
+  `);
+  ensureCascade('manual_pattern_decisions', `
+    CREATE TABLE manual_pattern_decisions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      run_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      line INTEGER NOT NULL,
+      candidates_json TEXT NOT NULL,
+      chosen_pattern TEXT,
+      chosen_kind TEXT NOT NULL,
+      other_text TEXT,
+      decided_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(run_id) REFERENCES analysis_runs(id) ON DELETE CASCADE
+    )
+  `);
+
   // TEST SEED — REMOVE FOR PRODUCTION
   seedDevconUsers(db);
   ensureTestFolders();
