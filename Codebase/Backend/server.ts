@@ -150,7 +150,12 @@ if (isPodModeEnabled()) {
   startSweepTimer();
 }
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+const PORT = Number(process.env.PORT || 3001);
+const HOST = process.env.HOST || '127.0.0.1';
+app.listen(PORT, HOST, () => {
+  if (HOST === '0.0.0.0') {
+    console.log(`Server running on http://localhost:${PORT} (also reachable on LAN at all interfaces)`);
+  } else {
+    console.log(`Server running on http://${HOST}:${PORT}`);
+  }
 });

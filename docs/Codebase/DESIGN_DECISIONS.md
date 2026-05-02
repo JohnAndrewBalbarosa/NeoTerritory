@@ -293,3 +293,30 @@ Per D20 the backend is the sole external-integration adapter. Admin dashboard ag
 **Frontend animation, not server-rendered images**: backend returns aggregate JSON; `Codebase/Frontend/admin.js` renders animated charts via Chart.js 4.x (CDN). User wanted "appealing" animation; Chart.js entrance animations + rAF count-up tweens + IntersectionObserver section reveals deliver this with no Python dependency.
 
 **Future Python offload (per user note)**: if richer statistical visualizations are needed later, the aggregation source can be swapped to a Python service that returns the **same JSON shape**. Chart.js stays in the browser. The contract worth preserving is the per-endpoint JSON shape (`runs-per-day`, `pattern-frequency`, `score-distribution`, `per-user-activity`), not the implementation language.
+
+## D28 — Single root entry point: `start.{ps1,sh}` with subcommands
+The root used to ship 13 overlapping scripts (`bootstrap`, `deploy`, `run-dev`, `start`, `setup`, `setup.cmd`, `clean-browser`, `test.sh`, …). Per user direction these collapse into **one cross-platform dispatcher** at the repo root.
+
+```
+start [dev|setup|k8s|browser|test] [flags]
+```
+
+`dev` is the default subcommand so the common case stays one keystroke (`./start.sh` or `.\start.ps1`). Flags are uniform across modes where they apply; mode-specific flags coexist on the same param block.
+
+**Universal flags** (apply wherever relevant):
+- `-Lan` / `--lan`: bind backend on `0.0.0.0`, run Vite with `--host 0.0.0.0`, auto-detect host LAN IPv4, append it to `CORS_ORIGIN`, and print the LAN URL alongside the loopback URL.
+- `-BindHost <ip>` / `--host <ip>`: explicit bind IP (overrides `-Lan` autodetect).
+- `-BackendPort <n>` / `--backend-port <n>` (default 3001), `-FrontendPort <n>` / `--frontend-port <n>` (default 5173).
+
+**Subcommand mapping** (replaces → consolidated into):
+- `dev` ← old `start.{ps1,sh}` + `run-dev.ps1`
+- `setup` ← `bootstrap.{ps1,sh}` + `deploy.ps1` + `setup.cmd`. `-Mode dev` (default) does the lightweight bootstrap; `-Mode full` does the full unattended provision (Anthropic prompts, DB warm, optional `-AutoStart`).
+- `k8s` ← old `setup.{ps1,sh}` (the misleadingly-named minikube entry).
+- `browser` ← `clean-browser.{ps1,sh}`. When `--lan`, defaults the URL to the LAN address.
+- `test` ← `test.sh` (k8s multi-user simulation).
+
+**WSL2 caveat**: WSL2's eth0 IP is not reachable from the LAN. When `--lan` runs under WSL2 the script prints a warning recommending `start.ps1 -Lan` from Windows PowerShell instead, or manual `netsh interface portproxy`. The script does not auto-configure portproxy.
+
+**Why one file per platform instead of shims**: user asked specifically for fewer top-level scripts. Backwards-compat shims would defeat that. Migration is a one-liner: `bootstrap` → `start setup`, `deploy` → `start setup -Mode full`, `run-dev` → `start` (or `start dev`), `clean-browser` → `start browser`.
+
+**Server-side coupling**: `Codebase/Backend/server.ts` honors `process.env.HOST` (defaulting to `127.0.0.1`); `Codebase/Frontend/vite.config.ts` honors `process.env.VITE_HOST` (defaulting to `127.0.0.1`). Without the script flag set, behavior is identical to before — no LAN exposure by default.

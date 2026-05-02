@@ -1,109 +1,118 @@
-# NeoTerritory — one-script run-all.
+﻿# NeoTerritory -- single root entry (Windows side).
 #
-# Replaces the manual ".\run-dev.ps1" then ".\clean-browser.ps1" two-step.
-# Also nudges the Docker pod image so the per-tester sandbox is ready
-# before the first tester signs in. The microservice (annotated-source
-# pattern detection) keeps using the local C++ build executable; only
-# code EXECUTION inside GDB unit tests routes through the per-user pod.
+# Replaces: bootstrap.ps1, deploy.ps1, run-dev.ps1, setup.cmd,
+#           setup.ps1 (k8s), clean-browser.ps1.
+# See docs/Codebase/DESIGN_DECISIONS.md (D28).
 #
 # Usage:
-#   .\start.ps1
-#   .\start.ps1 -Rebuild              # force microservice rebuild
-#   .\start.ps1 -BackendOnly          # skip Vite (serve legacy static from :3001)
-#   .\start.ps1 -NoBrowser            # don't open a clean Chromium
-#   .\start.ps1 -BackendPort 3055 -FrontendPort 5180
-#   .\start.ps1 -SkipPod              # don't pre-build the cpp-pod image (backend will lazy-build on first claim)
-#   .\start.ps1 -UseChrome            # use installed Chrome instead of Playwright Chromium
-#
-# Stop with Ctrl+C — backend, Vite, and the launched browser all exit.
+#   .\start.ps1                              # dev (default)
+#   .\start.ps1 -Lan                         # dev, exposed to LAN
+#   .\start.ps1 dev -Lan -BackendPort 4000
+#   .\start.ps1 setup                        # first-time provision (was bootstrap.ps1)
+#   .\start.ps1 setup -Mode full -Lan        # unattended full provision (was deploy.ps1)
+#   .\start.ps1 k8s                          # minikube/kubectl (was setup.ps1)
+#   .\start.ps1 browser -Lan                 # clean Chromium (was clean-browser.ps1)
+#   .\start.ps1 test -Users 5                # k8s multi-user sim (was test.sh)
 
 param(
+  [Parameter(Position = 0)]
+  [ValidateSet('dev','setup','k8s','browser','test','')]
+  [string]$Command = 'dev',
+
+  # Universal
+  [switch]$Lan,
+  [string]$BindHost = '',
+  [int]$BackendPort = 3001,
+  [int]$FrontendPort = 5173,
+
+  # dev
   [switch]$Rebuild,
-  [switch]$NoBrowser,
   [switch]$BackendOnly,
+  [switch]$NoBrowser,
   [switch]$SkipPod,
   [switch]$UseChrome,
-  [int]$BackendPort  = 3001,
-  [int]$FrontendPort = 5173
+
+  # setup
+  [ValidateSet('dev','full')][string]$Mode = 'dev',
+  [switch]$SkipMicroservice,
+  [switch]$AutoStart,
+  [string]$AnthropicKey = '',
+  [string]$AnthropicModel = 'claude-sonnet-4-6',
+
+  # k8s
+  [switch]$Reset,
+  [switch]$LegacyWslToolsInstall,
+
+  # browser
+  [string]$Url = '',
+  [switch]$Playwright,
+
+  # test
+  [int]$Users = 3,
+
+  # passthrough
+  [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest
 )
 
 $ErrorActionPreference = 'Stop'
 $Root         = $PSScriptRoot
 $BackendDir   = Join-Path $Root 'Codebase\Backend'
+$FrontendDir  = Join-Path $Root 'Codebase\Frontend'
+$MicroserviceDir = Join-Path $Root 'Codebase\Microservice'
+$BuildDir     = Join-Path $MicroserviceDir 'build'
+$BinaryName   = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'NeoTerritory.exe' } else { 'NeoTerritory' }
+$BinaryPath   = Join-Path $BuildDir $BinaryName
+$EnvFile      = Join-Path $BackendDir '.env'
 $Dockerfile   = Join-Path $BackendDir 'docker\cpp-pod.Dockerfile'
 $PodImage     = 'neoterritory/cpp-pod:latest'
 
+# -- Output helpers ----------------------------------------------------------
 function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
-function Write-Ok($msg)   { Write-Host "    $msg" -ForegroundColor Green }
-function Write-Warn($msg) { Write-Host "    $msg" -ForegroundColor Yellow }
+function Write-Ok($msg)   { Write-Host "    [ok] $msg" -ForegroundColor Green }
+function Write-Warn($msg) { Write-Host "    [!!] $msg" -ForegroundColor Yellow }
+function Write-Err($msg)  { Write-Host "    [xx] $msg" -ForegroundColor Red }
 function Test-Tool($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
 
-# ── 0. Requirements check (STRICT — fail fast on first miss) ────────────────
-# NeoTerritory is high-criticality; if a required tool is missing the
-# script aborts immediately rather than half-starting in a degraded
-# state. Pass -SkipPod to drop docker out of the requirement set when
-# you knowingly want to run with the local sandbox fallback.
-. (Join-Path $Root 'scripts\verify-requirements.ps1')
-$reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
-try {
-  $report = Test-Requirements -Profile $reqProfile
-} catch {
-  Write-Host ''
-  Write-Host '==> Aborting .\start.ps1 — requirements not met.' -ForegroundColor Red
-  exit 1
+# -- LAN / host resolution ---------------------------------------------------
+function Get-LanIp {
+  try {
+    $ip = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+      Where-Object {
+        $_.IPAddress -ne '127.0.0.1' -and
+        $_.IPAddress -notlike '169.254.*' -and
+        $_.PrefixOrigin -ne 'WellKnown' -and
+        ($_.InterfaceAlias -match 'Wi-?Fi' -or $_.InterfaceAlias -match 'Ethernet')
+      } | Select-Object -First 1 -ExpandProperty IPAddress
+    return $ip
+  } catch { return $null }
 }
 
-# ── 1. Pod image (one-time host build, tiny re-check on every start) ─────────
+function Resolve-BindHost {
+  if ($BindHost) { return $BindHost }
+  if ($Lan)      { return '0.0.0.0' }
+  return '127.0.0.1'
+}
 
-if (-not $SkipPod) {
-  Write-Step 'Checking Docker pod image (one-time per host)'
-  if (-not $report.docker) {
-    Write-Warn 'docker not on PATH — pod isolation skipped; backend will use local sandbox for GDB unit tests.'
-    Write-Warn 'Install Docker Desktop from https://www.docker.com/products/docker-desktop and re-run .\start.ps1.'
-  } elseif (-not $report.dockerDaemon) {
-    Write-Warn 'docker is installed but the daemon is not responding — start Docker Desktop and re-run .\start.ps1.'
-    Write-Warn 'Pod build skipped; backend will use local sandbox for GDB unit tests.'
-  } else {
-    $imageProbe = & docker image inspect $PodImage 2>$null
-    if ($LASTEXITCODE -ne 0) {
-      if (Test-Path $Dockerfile) {
-        Write-Step "Building $PodImage from $Dockerfile (one-time, ~30-60s)"
-        & docker build -f $Dockerfile -t $PodImage (Split-Path $Dockerfile)
-        if ($LASTEXITCODE -ne 0) {
-          Write-Warn 'docker build failed — backend will fall back to local sandbox for GDB unit tests.'
-        } else {
-          Write-Ok "$PodImage ready."
-        }
-      } else {
-        Write-Warn "Dockerfile not found at $Dockerfile — pod isolation unavailable."
-      }
-    } else {
-      Write-Ok "$PodImage already built."
-    }
+function Resolve-AdvertiseHost {
+  # Address printed to the user / used by clean-browser when -Lan.
+  if ($BindHost -and $BindHost -ne '0.0.0.0') { return $BindHost }
+  if ($Lan) {
+    $ip = Get-LanIp
+    if ($ip) { return $ip }
+    Write-Warn 'Could not detect a LAN IPv4 address -- falling back to localhost for the printed URL.'
+  }
+  return 'localhost'
+}
+
+# -- Tiny utilities ----------------------------------------------------------
+function Free-Port($port) {
+  $listener = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+  if ($listener) {
+    Write-Warn "Port $port already in use by PID $($listener.OwningProcess) -- killing it."
+    Stop-Process -Id $listener.OwningProcess -Force -ErrorAction SilentlyContinue
+    Start-Sleep -Seconds 1
   }
 }
-
-# ── 2. Hand off to run-dev.ps1 — backend + Vite + microservice + .env ────────
-# run-dev.ps1 is the source of truth for the dev pipeline. We invoke it as a
-# child job so its tail-stdout loop runs in the foreground and Ctrl+C still
-# tears everything down. Then we open a clean Chromium pointed at the studio
-# URL once it's confirmed ready.
-
-$runDevArgs = @()
-if ($Rebuild)     { $runDevArgs += '-Rebuild' }
-if ($BackendOnly) { $runDevArgs += '-BackendOnly' }
-$runDevArgs += @('-BackendPort', $BackendPort, '-FrontendPort', $FrontendPort)
-# We open the browser ourselves (clean profile) so always pass -NoBrowser to
-# run-dev to prevent it from launching the user's default browser too.
-$runDevArgs += '-NoBrowser'
-
-Write-Step "Launching backend + Vite via run-dev.ps1 ($(($runDevArgs -join ' ')))"
-$runDevPath = Join-Path $Root 'run-dev.ps1'
-$runDevProc = Start-Process -FilePath 'powershell.exe' `
-  -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $runDevPath, $runDevArgs) `
-  -PassThru -NoNewWindow
-
-# ── 3. Wait for the backend's /api/health, then for Vite's / ─────────────────
 
 function Wait-Url($url, $label, $tries = 120) {
   for ($i = 0; $i -lt $tries; $i++) {
@@ -117,37 +126,440 @@ function Wait-Url($url, $label, $tries = 120) {
   return $false
 }
 
-$openUrl = if ($BackendOnly) { "http://localhost:$BackendPort" } else { "http://localhost:$FrontendPort" }
-Write-Step "Waiting for studio at $openUrl"
-$ready = Wait-Url $openUrl 'Studio'
-if (-not $ready) {
-  Write-Warn 'Studio not ready — opening anyway; check the run-dev window for errors.'
-}
-
-# ── 4. Open a clean Chromium pointed at the studio ───────────────────────────
-
-if (-not $NoBrowser) {
-  $cleanArgs = @($openUrl)
-  if (-not $UseChrome) { $cleanArgs = @('-Playwright') + $cleanArgs }
-  Write-Step "Launching clean Chromium ($(if ($UseChrome) { 'Chrome' } else { 'Playwright' }))"
-  $cleanScript = Join-Path $Root 'clean-browser.ps1'
-  Start-Process -FilePath 'powershell.exe' `
-    -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $cleanScript, $cleanArgs) | Out-Null
-}
-
-Write-Host ''
-Write-Host "  Studio:       $openUrl"          -ForegroundColor White
-Write-Host "  Backend API:  http://localhost:$BackendPort" -ForegroundColor White
-Write-Host "  Health:       http://localhost:$BackendPort/api/health" -ForegroundColor White
-Write-Host ''
-Write-Host 'Ctrl+C in this window stops the backend, Vite, and the browser.' -ForegroundColor Gray
-
-# ── 5. Block on the run-dev child so Ctrl+C cascades ─────────────────────────
-
-try {
-  Wait-Process -Id $runDevProc.Id
-} finally {
-  if ($runDevProc -and -not $runDevProc.HasExited) {
-    Stop-Process -Id $runDevProc.Id -Force -ErrorAction SilentlyContinue
+function Write-DevEnv {
+  param([int]$Port, [int]$VitePort, [string]$AdvertiseHost)
+  if (Test-Path $EnvFile) {
+    Write-Ok '.env already exists -- leaving in place.'
+    return
   }
+  Write-Step 'Creating Backend\.env with defaults'
+  $cors = "http://localhost:$Port,http://localhost:$VitePort"
+  if ($AdvertiseHost -ne 'localhost') {
+    $cors += ",http://${AdvertiseHost}:$Port,http://${AdvertiseHost}:$VitePort"
+  }
+@"
+PORT=$Port
+CORS_ORIGIN=$cors
+DB_PATH=./src/db/database.sqlite
+
+# Anthropic Claude integration. Leave unset to run microservice-only mode.
+# ANTHROPIC_API_KEY=sk-ant-...
+# ANTHROPIC_MODEL=claude-sonnet-4-6
+
+# Microservice integration. Defaults derived from project layout.
+# NEOTERRITORY_BIN=$BinaryPath
+# NEOTERRITORY_CATALOG=$MicroserviceDir\pattern_catalog
+"@ | Set-Content -Path $EnvFile -Encoding utf8
+  Write-Ok ".env created at $EnvFile"
+}
+
+function Build-Microservice {
+  param([switch]$Force)
+  $needsBuild = $Force.IsPresent -or (-not (Test-Path $BinaryPath))
+  if (-not $needsBuild) {
+    Write-Ok "Microservice binary already built: $BinaryPath"
+    return
+  }
+  Write-Step 'Building microservice (CMake)'
+  if (-not (Test-Path $BuildDir)) { New-Item -ItemType Directory -Path $BuildDir | Out-Null }
+  $generator = $null
+  if (Test-Tool 'mingw32-make') { $generator = 'MinGW Makefiles' }
+  elseif (Test-Tool 'make')     { $generator = 'Unix Makefiles' }
+  Push-Location $MicroserviceDir
+  try {
+    if ($generator) { & cmake -S . -B build -G $generator } else { & cmake -S . -B build }
+    if ($LASTEXITCODE -ne 0) { throw 'cmake configure failed.' }
+    & cmake --build build --parallel
+    if ($LASTEXITCODE -ne 0) { throw 'cmake build failed.' }
+  } finally { Pop-Location }
+  Write-Ok "Microservice built: $BinaryPath"
+}
+
+function Ensure-NodeModules {
+  param([string]$Dir, [string]$Label)
+  $nm = Join-Path $Dir 'node_modules'
+  if (Test-Path $nm) { Write-Ok "$Label node_modules already present."; return }
+  Write-Step "Installing $Label npm dependencies"
+  Push-Location $Dir
+  try { & npm install } finally { Pop-Location }
+  if ($LASTEXITCODE -ne 0) { Write-Err "$Label npm install failed."; exit 1 }
+  Write-Ok "$Label node_modules installed."
+}
+
+# -----------------------------------------------------------------------------
+# Subcommand: dev  (replaces old start.ps1 + run-dev.ps1)
+# -----------------------------------------------------------------------------
+function Invoke-Dev {
+  . (Join-Path $Root 'scripts\verify-requirements.ps1')
+  $reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
+  try { $report = Test-Requirements -Profile $reqProfile }
+  catch { Write-Err 'Aborting -- requirements not met.'; exit 1 }
+
+  $bind     = Resolve-BindHost
+  $advert   = Resolve-AdvertiseHost
+
+  # Pod image (one-time host build)
+  if (-not $SkipPod) {
+    Write-Step 'Checking Docker pod image'
+    if (-not $report.docker) {
+      Write-Warn 'docker not on PATH -- pod isolation skipped; backend uses local sandbox.'
+    } elseif (-not $report.dockerDaemon) {
+      Write-Warn 'docker daemon not responding -- start Docker Desktop and re-run.'
+    } else {
+      $imageProbe = & docker image inspect $PodImage 2>$null
+      if ($LASTEXITCODE -ne 0) {
+        if (Test-Path $Dockerfile) {
+          Write-Step "Building $PodImage from $Dockerfile (one-time, ~30-60s)"
+          & docker build -f $Dockerfile -t $PodImage (Split-Path $Dockerfile)
+          if ($LASTEXITCODE -ne 0) { Write-Warn 'docker build failed -- falling back to local sandbox.' }
+          else { Write-Ok "$PodImage ready." }
+        } else {
+          Write-Warn "Dockerfile not found at $Dockerfile -- pod isolation unavailable."
+        }
+      } else {
+        Write-Ok "$PodImage already built."
+      }
+    }
+  }
+
+  Ensure-NodeModules -Dir $BackendDir -Label 'Backend'
+  if (-not $BackendOnly) { Ensure-NodeModules -Dir $FrontendDir -Label 'Frontend' }
+
+  Write-DevEnv -Port $BackendPort -VitePort $FrontendPort -AdvertiseHost $advert
+  Build-Microservice -Force:$Rebuild
+
+  # Backend
+  Write-Step "Starting backend (bind=$bind, port=$BackendPort)"
+  $env:PORT = "$BackendPort"
+  $env:HOST = $bind
+  if ($Lan -and $advert -ne 'localhost') {
+    $env:CORS_ORIGIN = "http://localhost:$BackendPort,http://localhost:$FrontendPort,http://${advert}:$BackendPort,http://${advert}:$FrontendPort"
+  }
+  Free-Port $BackendPort
+  $serverProc = Start-Process -FilePath 'npm.cmd' `
+    -ArgumentList @('run','dev') `
+    -WorkingDirectory $BackendDir `
+    -PassThru -NoNewWindow `
+    -RedirectStandardOutput (Join-Path $BackendDir 'server.out.log') `
+    -RedirectStandardError  (Join-Path $BackendDir 'server.err.log')
+
+  if (-not (Wait-Url "http://127.0.0.1:$BackendPort/api/health" 'Backend' 60)) {
+    Write-Err 'Backend did not become healthy within 30s. Last lines of server.err.log:'
+    if (Test-Path (Join-Path $BackendDir 'server.err.log')) {
+      Get-Content (Join-Path $BackendDir 'server.err.log') -Tail 30 | ForEach-Object { Write-Host "    $_" }
+    }
+    Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue
+    exit 1
+  }
+  Write-Ok 'Backend healthy.'
+
+  # Vite
+  $viteProc = $null
+  if (-not $BackendOnly) {
+    Write-Step "Starting Vite dev server (bind=$bind, port=$FrontendPort)"
+    Free-Port $FrontendPort
+    $env:VITE_HOST = $bind
+    $viteCmdArgs = @('run','dev','--','--port',"$FrontendPort",'--strictPort')
+    if ($bind -eq '0.0.0.0' -or $Lan) { $viteCmdArgs += @('--host','0.0.0.0') }
+    elseif ($BindHost) { $viteCmdArgs += @('--host', $BindHost) }
+    $viteProc = Start-Process -FilePath 'npm.cmd' `
+      -ArgumentList $viteCmdArgs `
+      -WorkingDirectory $FrontendDir `
+      -PassThru -NoNewWindow `
+      -RedirectStandardOutput (Join-Path $FrontendDir 'vite.out.log') `
+      -RedirectStandardError  (Join-Path $FrontendDir 'vite.err.log')
+
+    if (-not (Wait-Url "http://127.0.0.1:$FrontendPort/" 'Vite' 60)) {
+      Write-Err 'Vite did not start within 30s. Last lines of vite.err.log:'
+      if (Test-Path (Join-Path $FrontendDir 'vite.err.log')) {
+        Get-Content (Join-Path $FrontendDir 'vite.err.log') -Tail 30 | ForEach-Object { Write-Host "    $_" }
+      }
+      Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue
+      Stop-Process -Id $viteProc.Id   -Force -ErrorAction SilentlyContinue
+      exit 1
+    }
+    Write-Ok 'Vite ready.'
+  }
+
+  $studioPort = if ($BackendOnly) { $BackendPort } else { $FrontendPort }
+  $localUrl   = "http://localhost:$studioPort"
+  $lanUrl     = if ($advert -ne 'localhost') { "http://${advert}:$studioPort" } else { $null }
+  $openUrl    = if ($lanUrl) { $lanUrl } else { $localUrl }
+
+  Write-Host ''
+  Write-Host "  Studio:        $localUrl" -ForegroundColor White
+  if ($lanUrl) { Write-Host "  Studio (LAN):  $lanUrl"   -ForegroundColor White }
+  Write-Host "  Backend API:   http://localhost:$BackendPort" -ForegroundColor White
+  Write-Host "  Health:        http://localhost:$BackendPort/api/health" -ForegroundColor White
+  Write-Host "  Backend PID:   $($serverProc.Id)" -ForegroundColor White
+  if ($viteProc)  { Write-Host "  Vite PID:      $($viteProc.Id)" -ForegroundColor White }
+  Write-Host ''
+  Write-Host 'Ctrl+C stops the backend, Vite, and the browser.' -ForegroundColor Gray
+
+  if (-not $NoBrowser) {
+    Write-Step "Launching clean Chromium ($(if ($UseChrome) { 'Chrome' } else { 'Playwright' }))"
+    Invoke-Browser -OverrideUrl $openUrl
+  }
+
+  try {
+    Get-Content -Path (Join-Path $BackendDir 'server.out.log') -Wait -Tail 0
+  } finally {
+    Write-Host ''; Write-Step 'Shutting down'
+    if ($serverProc -and -not $serverProc.HasExited) { Stop-Process -Id $serverProc.Id -Force -ErrorAction SilentlyContinue }
+    if ($viteProc   -and -not $viteProc.HasExited)   { Stop-Process -Id $viteProc.Id   -Force -ErrorAction SilentlyContinue }
+    Write-Ok 'Stopped.'
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Subcommand: setup  (replaces bootstrap.ps1 + deploy.ps1 + setup.cmd)
+# -----------------------------------------------------------------------------
+function Invoke-Setup {
+  Set-Location $Root
+  $verifier = Join-Path $Root 'scripts\verify-requirements.ps1'
+  if (Test-Path $verifier) { . $verifier; Test-Requirements -Profile dev -Soft | Out-Null }
+
+  function Try-WingetInstall($id, $friendly) {
+    if (-not (Test-Tool 'winget')) { Write-Warn "$friendly missing and winget unavailable."; return $false }
+    Write-Step "Installing $friendly via winget ($id)"
+    & winget install --id $id --accept-source-agreements --accept-package-agreements -e --silent
+    return ($LASTEXITCODE -eq 0)
+  }
+
+  Write-Step "Setup mode: $Mode"
+
+  # Phase 1 -- prerequisites
+  Write-Step 'Phase 1: Verify prerequisites'
+  if (-not (Test-Tool 'node')) {
+    if ($Mode -eq 'full' -and (Try-WingetInstall 'OpenJS.NodeJS.LTS' 'Node.js LTS')) { Write-Ok 'Node.js installed.' }
+    else { Write-Err 'Node.js is required. Install from https://nodejs.org and rerun.'; exit 1 }
+  } else { Write-Ok "Node.js: $(node --version)" }
+  if (-not (Test-Tool 'npm')) { Write-Err 'npm not found.'; exit 1 }
+  if (-not $SkipMicroservice) {
+    if (-not (Test-Tool 'cmake')) {
+      if ($Mode -eq 'full' -and (Try-WingetInstall 'Kitware.CMake' 'CMake')) { Write-Ok 'CMake installed.' }
+      else { Write-Err 'CMake is required. Install from https://cmake.org and rerun.'; exit 1 }
+    } else { Write-Ok "CMake: $((cmake --version | Select-Object -First 1))" }
+    $cxxOk = (Test-Tool 'g++') -or (Test-Tool 'clang++') -or (Test-Tool 'cl')
+    if (-not $cxxOk) {
+      Write-Warn 'No C++ compiler detected.'
+      if ($Mode -eq 'full' -and (Try-WingetInstall 'MSYS2.MSYS2' 'MSYS2 (provides MinGW g++)')) {
+        Write-Ok 'MSYS2 installed. Open a fresh shell, run pacman to install gcc/make, and add C:\msys64\ucrt64\bin to PATH.'
+      } else { Write-Err 'A C++17 compiler is required.'; exit 1 }
+    }
+  }
+
+  # Phase 2 -- Backend deps
+  Write-Step 'Phase 2: Backend npm install'
+  Push-Location $BackendDir
+  try { & npm install; if ($LASTEXITCODE -ne 0) { throw 'npm install failed.' } } finally { Pop-Location }
+  Write-Ok 'Backend dependencies installed.'
+
+  # Phase 2b -- Frontend deps
+  Write-Step 'Phase 2b: Frontend npm install'
+  Push-Location $FrontendDir
+  try { & npm install; if ($LASTEXITCODE -ne 0) { throw 'npm install failed.' } } finally { Pop-Location }
+  Write-Ok 'Frontend dependencies installed.'
+
+  # Phase 3 -- Microservice
+  if (-not $SkipMicroservice) { Build-Microservice -Force:$false }
+
+  # Phase 4 -- .env
+  Write-Step 'Phase 4: Backend .env configuration'
+  $advert = Resolve-AdvertiseHost
+  $cors   = "http://localhost:$BackendPort"
+  if ($advert -ne 'localhost') { $cors += ",http://${advert}:$BackendPort,http://${advert}:$FrontendPort" }
+  $envLines = @(
+    "PORT=$BackendPort",
+    "CORS_ORIGIN=$cors",
+    'DB_PATH=./src/db/database.sqlite',
+    '',
+    '# Anthropic Claude integration. Leave unset to run microservice-only mode.'
+  )
+  if ($AnthropicKey) {
+    $envLines += "ANTHROPIC_API_KEY=$AnthropicKey"
+    $envLines += "ANTHROPIC_MODEL=$AnthropicModel"
+  } else {
+    $envLines += '# ANTHROPIC_API_KEY=sk-ant-...'
+    $envLines += "# ANTHROPIC_MODEL=$AnthropicModel"
+  }
+  $envLines += ''
+  $envLines += '# Microservice integration.'
+  $envLines += "NEOTERRITORY_BIN=$BinaryPath"
+  $envLines += "NEOTERRITORY_CATALOG=$(Join-Path $MicroserviceDir 'pattern_catalog')"
+
+  if (Test-Path $EnvFile) {
+    $backupName = ".env.backup-$(Get-Date -Format 'yyyyMMdd-HHmmss')"
+    Copy-Item $EnvFile (Join-Path $BackendDir $backupName)
+    Write-Warn "Existing .env backed up to $backupName"
+  }
+  $envLines | Set-Content -Path $EnvFile -Encoding utf8
+  Write-Ok ".env written at $EnvFile (port=$BackendPort, anthropic=$([bool]$AnthropicKey), lan=$($advert -ne 'localhost'))"
+
+  # Phase 5 -- DB warm (full mode only)
+  if ($Mode -eq 'full') {
+    Write-Step 'Phase 5: Database warm-up'
+    Push-Location $BackendDir
+    try {
+      & node -e "const { initDb } = require('./src/db/initDb'); initDb(); console.log('schema initialized');"
+      if ($LASTEXITCODE -ne 0) { throw 'DB init failed.' }
+      Write-Ok 'Database schema initialized.'
+    } finally { Pop-Location }
+  }
+
+  Write-Host ''
+  Write-Step 'Setup complete'
+  Write-Ok "Project root:  $Root"
+  Write-Ok "Studio UI:     http://localhost:$BackendPort (after start)"
+  Write-Ok "Run dev with:  .\start.ps1$(if ($Lan) { ' -Lan' } else { '' })"
+  if (-not $AnthropicKey) {
+    Write-Warn 'No ANTHROPIC_API_KEY set -- AI documentation will return "pending_provider".'
+  }
+
+  if ($AutoStart) {
+    Write-Host ''; Write-Step 'Starting dev server now (-AutoStart)'
+    & $PSCommandPath dev -BackendPort $BackendPort -FrontendPort $FrontendPort `
+        @(if ($Lan) { '-Lan' }) @(if ($BindHost) { @('-BindHost', $BindHost) })
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Subcommand: k8s  (replaces old setup.ps1 -- minikube/kubectl)
+# -----------------------------------------------------------------------------
+function Invoke-K8s {
+  $isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+  if (-not $isAdmin) {
+    Write-Warn 'k8s mode needs Administrator. Re-launching elevated…'
+    $argsList = @('-NoExit','-Command',"& '$PSCommandPath' k8s")
+    if ($Reset) { $argsList += '-Reset' }
+    if ($LegacyWslToolsInstall) { $argsList += '-LegacyWslToolsInstall' }
+    Start-Process -FilePath 'powershell.exe' -ArgumentList $argsList -Verb RunAs
+    exit 0
+  }
+  Write-Ok 'Running with Administrator privileges.'
+
+  if ($LegacyWslToolsInstall) {
+    Write-Step 'Installing Minikube + kubectl in WSL (legacy path)'
+    wsl bash -c 'curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube-linux-amd64'
+    wsl -u root bash -c 'install minikube-linux-amd64 /usr/local/bin/minikube'
+    wsl bash -c 'rm minikube-linux-amd64'
+    wsl bash -c 'curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"'
+    wsl -u root bash -c 'install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl'
+    wsl bash -c 'rm kubectl'
+    Write-Ok 'WSL tool installation complete.'
+    return
+  }
+
+  $bootstrapScript = Join-Path $Root 'Codebase\Infrastructure\session-orchestration\bootstrap_and_deploy.ps1'
+  if (-not (Test-Path $bootstrapScript)) { throw "Bootstrap script not found: $bootstrapScript" }
+
+  if ($Reset) {
+    Write-Step 'Tearing down minikube before re-deploy'
+    & minikube delete 2>$null | Out-Null
+  }
+
+  & $bootstrapScript
+  if (Get-Variable -Name LASTEXITCODE -Scope Global -ErrorAction SilentlyContinue) {
+    exit $global:LASTEXITCODE
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Subcommand: browser  (replaces clean-browser.ps1)
+# -----------------------------------------------------------------------------
+function Invoke-Browser {
+  param([string]$OverrideUrl = '')
+
+  $target = if ($OverrideUrl) { $OverrideUrl }
+            elseif ($Url)      { $Url }
+            else {
+              $advert = Resolve-AdvertiseHost
+              "http://${advert}:$FrontendPort"
+            }
+
+  $chrome = $null
+  if ($Playwright -or -not $UseChrome) {
+    $pwBase = "$env:LOCALAPPDATA\ms-playwright"
+    $builds = Get-ChildItem -Path $pwBase -Filter 'chromium-*' -Directory -ErrorAction SilentlyContinue |
+      Sort-Object Name | Select-Object -Last 1
+    if ($builds) {
+      foreach ($sub in @('chrome-win64\chrome.exe','chrome-win\chrome.exe')) {
+        $candidate = Join-Path $builds.FullName $sub
+        if (Test-Path $candidate) { $chrome = $candidate; break }
+      }
+    }
+  }
+  if (-not $chrome) {
+    foreach ($c in @(
+      'C:\Program Files\Google\Chrome\Application\chrome.exe',
+      'C:\Program Files (x86)\Google\Chrome\Application\chrome.exe',
+      'C:\Program Files\Chromium\Application\chrome.exe'
+    )) { if (Test-Path $c) { $chrome = $c; break } }
+  }
+  if (-not $chrome) { Write-Err 'No Chrome/Chromium found. Install Chrome or run: npx playwright install chromium'; exit 1 }
+
+  Write-Host "Browser : $chrome"
+  Write-Host "URL     : $target"
+
+  $profileDir = Join-Path $env:TEMP ('clean-chrome-' + [System.IO.Path]::GetRandomFileName())
+  New-Item -ItemType Directory -Path $profileDir | Out-Null
+  Write-Host "Profile : $profileDir  (deleted on exit)"
+
+  $chromeArgs = @(
+    "--user-data-dir=$profileDir",
+    '--no-first-run','--no-default-browser-check','--disable-extensions','--disable-default-apps',
+    '--disable-sync','--disable-translate','--disable-background-networking',
+    '--disable-background-timer-throttling','--disable-backgrounding-occluded-windows',
+    '--disable-client-side-phishing-detection','--disable-component-update','--disable-hang-monitor',
+    '--disable-ipc-flooding-protection','--disable-popup-blocking','--disable-prompt-on-repost',
+    '--disable-renderer-backgrounding','--disk-cache-size=0','--media-cache-size=0',
+    '--disable-application-cache','--password-store=basic','--use-mock-keychain',
+    '--metrics-recording-only','--safebrowsing-disable-auto-update','--incognito',
+    $target
+  )
+
+  if ($OverrideUrl) {
+    # Fire-and-forget: dev mode launches and continues tailing logs.
+    Start-Process -FilePath $chrome -ArgumentList $chromeArgs | Out-Null
+    return
+  }
+
+  try {
+    $proc = Start-Process -FilePath $chrome -ArgumentList $chromeArgs -PassThru
+    $proc.WaitForExit()
+  } finally {
+    Remove-Item -Recurse -Force -Path $profileDir -ErrorAction SilentlyContinue
+    Write-Host 'Profile cleaned up.'
+  }
+}
+
+# -----------------------------------------------------------------------------
+# Subcommand: test  (replaces test.sh -- k8s multi-user simulation)
+# -----------------------------------------------------------------------------
+function Invoke-Test {
+  if (-not (Test-Tool 'kubectl')) { Write-Err 'kubectl not on PATH. Run .\start.ps1 k8s first.'; exit 1 }
+  $tplDir = Join-Path $Root 'Codebase\Infrastructure\session-orchestration\k8s\templates'
+  $podTpl   = Join-Path $tplDir 'user-session-pod.yaml'
+  $routeTpl = Join-Path $tplDir 'user-routing.yaml'
+  if (-not (Test-Path $podTpl) -or -not (Test-Path $routeTpl)) {
+    Write-Err "k8s templates missing under $tplDir"; exit 1
+  }
+  Write-Step "Simulating $Users users requesting C++ isolated sessions"
+  for ($i = 1; $i -le $Users; $i++) {
+    $uid = "dev-student-$i"
+    Write-Host "  -> provisioning $uid"
+    (Get-Content $podTpl   -Raw).Replace('{{user_id}}', $uid) | & kubectl apply -f -
+    (Get-Content $routeTpl -Raw).Replace('{{user_id}}', $uid) | & kubectl apply -f -
+  }
+  Start-Sleep -Seconds 3
+  & kubectl get pods
+}
+
+# --- Dispatch ---------------------------------------------------------------
+switch ($Command) {
+  'setup'   { Invoke-Setup }
+  'k8s'     { Invoke-K8s }
+  'browser' { Invoke-Browser }
+  'test'    { Invoke-Test }
+  default   { Invoke-Dev }
 }

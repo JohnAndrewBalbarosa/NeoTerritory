@@ -84,10 +84,10 @@ These child folders continue the subsystem by covering Infrastructure automation
 - Infrastructure/ : Infrastructure automation and runtime environment assembly for local containerized execution.
 
 ## Documents By Logic
-### Bootstrap Scripts
-These documents explain the local implementation by covering Windows bootstrap wrapper that ensures elevation and delegates to infrastructure automation. and Shell bootstrap entrypoint for non-Windows setup flows.
-- setup.ps1.md : Windows bootstrap wrapper that ensures elevation and delegates to infrastructure automation.
-- setup.sh.md : Shell bootstrap entrypoint for non-Windows setup flows.
+### Root Entry Scripts
+The repo collapses all root scripts into a single cross-platform dispatcher. Subcommands: `dev` (default), `setup`, `k8s`, `browser`, `test`. Universal flags include `-Lan` / `--lan` for LAN exposure. See DESIGN_DECISIONS.md (D28).
+- start.ps1.md : Windows entry — dispatches dev / setup / k8s / browser / test.
+- start.sh.md  : POSIX entry — same subcommand surface as start.ps1.
 
 ### Project Notes
 These documents explain the local implementation by covering Keeps loose repository-level notes outside the formal docs set.
@@ -96,10 +96,6 @@ These documents explain the local implementation by covering Keeps loose reposit
 ### Repository Hygiene
 These documents explain which generated or machine-local artifacts must stay out of Git before normal pushes or force-push cleanups.
 - .gitignore.md : Keeps dependency caches, build output, generated frontend bundles, runtime logs, and local editor state out of version control.
-
-### Validation Scripts
-These documents explain the local implementation by covering Shell helper for local compile or execution checks.
-- test.sh.md : Shell helper for local compile or execution checks.
 
 ## Reading Hint
 - Start with the subsystem folder that owns the concern. Use `Microservice/` for C++ build, executable, module, and validation docs.

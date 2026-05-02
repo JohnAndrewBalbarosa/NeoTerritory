@@ -22,6 +22,7 @@ export default defineConfig({
   plugins: [react(), fullReloadOnChange()],
   server: {
     port: 5173,
+    host: process.env.VITE_HOST || '127.0.0.1',
     proxy: {
       '/api': 'http://localhost:3001',
       '/auth': 'http://localhost:3001',
