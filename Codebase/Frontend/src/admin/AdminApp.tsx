@@ -6,6 +6,7 @@ import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
 import PerUserActivity from './components/PerUserActivity';
 import LogsView from './components/LogsView';
+import SurveyStats from './components/SurveyStats';
 import { fetchAdminReviews } from '../api/client';
 import { AdminReview } from '../types/api';
 import { useAdminUsers } from './hooks/useAdminUsers';
@@ -153,10 +154,16 @@ export default function AdminApp() {
           </>
         )}
         {activeTab === 'reviews' && (
-          <section className="admin-section">
-            <h2>Reviews</h2>
-            <ReviewsPanel />
-          </section>
+          <>
+            <section className="admin-section">
+              <h2>Reviews</h2>
+              <ReviewsPanel />
+            </section>
+            <section className="admin-section">
+              <h2>Survey responses</h2>
+              <SurveyStats />
+            </section>
+          </>
         )}
         {activeTab === 'logs' && <LogsView />}
       </main>
