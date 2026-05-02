@@ -463,18 +463,26 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
       });
       if (ok) markSaved(cls);
     }
+    // Likert ratings go to the per-run survey endpoint (run_feedback
+    // table) — they're scoped to THIS run, distinct from the
+    // session-feedback collected at sign-out. We post them as ONE
+    // bulk call instead of row-by-row, so the network shape matches
+    // what the survey table expects (a `ratings` map per run).
+    const likertRatings: Record<string, number> = {};
     for (const group of PER_RUN_QUESTIONS) {
       for (const q of group.questions) {
         const rating = likert[q.id];
-        if (!rating || saved.has(`likert-${q.id}`)) continue;
-        const ok = await send(`Likert ${q.id}`, {
-          line: 0,
-          candidates: [],
-          chosenKind: 'other',
-          chosenPattern: null,
-          otherText: `likert:${q.id}=${rating}`
-        });
-        if (ok) markSaved(`likert-${q.id}`);
+        if (rating) likertRatings[q.id] = rating;
+      }
+    }
+    if (Object.keys(likertRatings).length > 0) {
+      try {
+        const { submitRunSurvey } = await import('../../api/client');
+        await submitRunSurvey(String(effectiveRunId), likertRatings, {});
+        for (const id of Object.keys(likertRatings)) markSaved(`likert-${id}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        rejected.push(`Per-run Likert: ${msg}`);
       }
     }
     setSubmitting(false);
@@ -505,10 +513,12 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
       )}
       <div className="review-action-bar">
         <div className="review-action-status" data-saved={isSaved ? 'true' : undefined}>
-          {isSaved ? (
+          {submitted ? (
+            <><strong>Saved and submitted</strong> · run #{run.runId} · waiting for response</>
+          ) : isSaved ? (
             <><strong>Run saved</strong> · run #{run.runId} · ready to submit validation</>
           ) : (
-            <><strong>Unsaved run</strong> · save before you can submit validation</>
+            <><strong>Unsaved run</strong> · save and submit in one click below</>
           )}
         </div>
         <div className="review-action-buttons">
