@@ -1,73 +1,83 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '../store/appState';
 import { fetchHealth } from '../api/client';
 
-const POLL_INTERVAL_MS = 15000;
-
+// One-shot mount probe + retry-on-failure poll. Steady-state polling
+// of microservice / docker / AI status now lives on the heartbeat
+// (useHeartbeat.ts) so we don't run two competing timers. This hook
+// only fires once on mount to seed the status card with data BEFORE
+// the first heartbeat lands, and keeps a short retry loop alive while
+// the backend is unreachable so the studio recovers without a reload.
 export function useHealth() {
-  const { setStatus, setMsStatus, setAiConfigured, setMaxFilesPerSubmission, setDockerStatus } = useAppStore();
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  function poll() {
-    fetchHealth()
-      .then(h => {
-        const ms = h.microservice;
-        if (ms.connected) {
-          setMsStatus('online', 'online');
-        } else {
-          const reason = !ms.binaryFound ? 'binary missing' : !ms.catalogFound ? 'catalog missing' : 'unreachable';
-          setMsStatus('offline', `offline (${reason})`);
-        }
-        // Docker pod isolation status. "online" requires the env flag,
-        // Docker on PATH, AND the cpp-pod image to be built. Anything else
-        // resolves to a useful "offline (...)" reason on the status card.
-        if (h.docker) {
-          if (!h.docker.enabled) {
-            // Specific reason makes the operator fix obvious:
-            //   env_off       → flip TEST_RUNNER_USE_DOCKER=1 in .env
-            //   no_binary     → install Docker / put it on PATH
-            //   daemon_down   → start Docker Desktop
-            const reasonLabel =
-              h.docker.reason === 'env_off'     ? 'disabled (env)' :
-              h.docker.reason === 'no_binary'   ? 'disabled (docker not on PATH)' :
-              h.docker.reason === 'daemon_down' ? 'disabled (start Docker Desktop)' :
-              'disabled';
-            setDockerStatus('offline', reasonLabel);
-          } else if (!h.docker.imageReady) {
-            setDockerStatus('checking', 'building image…');
-          } else {
-            setDockerStatus(
-              'online',
-              h.docker.livePods > 0 ? `online (${h.docker.livePods} pod${h.docker.livePods === 1 ? '' : 's'})` : 'online'
-            );
-          }
-        } else {
-          setDockerStatus('offline', 'unavailable');
-        }
-        setAiConfigured(h.aiProviderConfigured);
-        if (typeof h.maxFilesPerSubmission === 'number') {
-          setMaxFilesPerSubmission(h.maxFilesPerSubmission);
-        }
-        setStatus({
-          kind: 'ok',
-          title: 'API ok',
-          detail: `${h.service} • ${h.totalRuns} run(s)${h.aiProviderConfigured ? ' • AI on' : ' • AI off'}`
-        });
-        timerRef.current = setTimeout(poll, POLL_INTERVAL_MS);
-      })
-      .catch(err => {
-        const msg = err instanceof Error ? err.message : 'unreachable';
-        setMsStatus('offline', err?.name === 'AbortError' ? 'offline (timeout)' : 'offline (unreachable)');
-        setDockerStatus('offline', 'backend unreachable');
-        setStatus({ kind: 'error', title: 'API offline', detail: msg });
-        timerRef.current = setTimeout(poll, 3000);
-      });
-  }
+  const {
+    setStatus, setMsStatus, setAiConfigured, setMaxFilesPerSubmission, setDockerStatus
+  } = useAppStore();
 
   useEffect(() => {
-    timerRef.current = setTimeout(poll, POLL_INTERVAL_MS);
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
+
+    function probe(): void {
+      fetchHealth()
+        .then(h => {
+          if (cancelled) return;
+          const ms = h.microservice;
+          if (ms.connected) {
+            setMsStatus('online', 'online');
+          } else {
+            const reason = !ms.binaryFound ? 'binary missing'
+                         : !ms.catalogFound ? 'catalog missing'
+                         : 'unreachable';
+            setMsStatus('offline', `offline (${reason})`);
+          }
+          if (h.docker) {
+            if (!h.docker.enabled) {
+              const reasonLabel =
+                h.docker.reason === 'env_off'     ? 'disabled (env)' :
+                h.docker.reason === 'no_binary'   ? 'disabled (docker not on PATH)' :
+                h.docker.reason === 'daemon_down' ? 'disabled (start Docker Desktop)' :
+                'disabled';
+              setDockerStatus('offline', reasonLabel);
+            } else if (!h.docker.imageReady) {
+              setDockerStatus('checking', 'building image…');
+            } else {
+              const podSuffix = h.docker.livePods > 0
+                ? ` (${h.docker.livePods} pod${h.docker.livePods === 1 ? '' : 's'})`
+                : '';
+              const mineSuffix = h.docker.mine ? ' (your pod active)' : '';
+              setDockerStatus('online', `online${podSuffix}${mineSuffix}`);
+            }
+          } else {
+            setDockerStatus('offline', 'unavailable');
+          }
+          setAiConfigured(h.aiProviderConfigured);
+          if (typeof h.maxFilesPerSubmission === 'number') {
+            setMaxFilesPerSubmission(h.maxFilesPerSubmission);
+          }
+          setStatus({
+            kind: 'ok',
+            title: 'API ok',
+            detail: `${h.service} • ${h.totalRuns} run(s)${h.aiProviderConfigured ? ' • AI on' : ' • AI off'}`
+          });
+          // Probe succeeded — heartbeat takes over from here.
+        })
+        .catch(err => {
+          if (cancelled) return;
+          const msg = err instanceof Error ? err.message : 'unreachable';
+          setMsStatus('offline', err?.name === 'AbortError' ? 'offline (timeout)' : 'offline (unreachable)');
+          setDockerStatus('offline', 'backend unreachable');
+          setStatus({ kind: 'error', title: 'API offline', detail: msg });
+          // Backend down — retry every 3s until it answers; once it does,
+          // the heartbeat poll (every 30s) takes over.
+          retryTimer = setTimeout(probe, 3000);
+        });
+    }
+
+    probe();
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

@@ -241,6 +241,14 @@ export async function ensurePod(userId: number, username: string): Promise<PodHa
   return pod;
 }
 
+// Health-route helper: does the calling user already own a live pod?
+// Returns false (rather than throwing) for unknown userIds so the
+// /api/health endpoint can call it unconditionally.
+export function hasPodForUser(userId: number | null | undefined): boolean {
+  if (typeof userId !== 'number' || userId <= 0) return false;
+  return getPod(userId) !== null;
+}
+
 export function getPod(userId: number): PodHandle | null {
   const p = pods.get(userId);
   if (!p || p.disposed) return null;
@@ -308,18 +316,20 @@ export function registerShutdownHooks(): void {
 // Snapshot the manager's state for the /api/health endpoint. Lets the
 // frontend status card surface "Docker: online (N pods)" without polling
 // `docker ps` itself.
-export function podManagerStatus(): {
+export function podManagerStatus(callerUserId?: number | null): {
   enabled: boolean;
   imageReady: boolean;
   livePods: number;
   reason: PodDisabledReason;
+  mine: boolean;
 } {
   const enabled = isPodModeEnabled();
   return {
     enabled,
     imageReady: enabled ? imageExists(POD_IMAGE) : false,
     livePods: pods.size,
-    reason: enabled ? null : podDisabledReason()
+    reason: enabled ? null : podDisabledReason(),
+    mine: hasPodForUser(callerUserId)
   };
 }
 

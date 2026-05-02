@@ -28,6 +28,19 @@ export function useHeartbeat() {
       // card already handles offline states gracefully.
       void fetchHealth().then(h => {
         const s = useAppStore.getState();
+
+        // ── 1. Microservice — flip BOTH directions, not just online.
+        const ms = h.microservice;
+        if (ms?.connected) {
+          s.setMsStatus('online', 'online');
+        } else if (ms) {
+          const reason = !ms.binaryFound  ? 'binary missing'
+                       : !ms.catalogFound ? 'catalog missing'
+                       : 'unreachable';
+          s.setMsStatus('offline', `offline (${reason})`);
+        }
+
+        // ── 2. Docker service — pod count + per-user mine suffix.
         if (h.docker) {
           if (!h.docker.enabled) {
             const reasonLabel =
@@ -39,17 +52,18 @@ export function useHeartbeat() {
           } else if (!h.docker.imageReady) {
             s.setDockerStatus('checking', 'building image…');
           } else {
-            s.setDockerStatus(
-              'online',
-              h.docker.livePods > 0
-                ? `online (${h.docker.livePods} pod${h.docker.livePods === 1 ? '' : 's'})`
-                : 'online'
-            );
+            const podSuffix = h.docker.livePods > 0
+              ? ` (${h.docker.livePods} pod${h.docker.livePods === 1 ? '' : 's'})`
+              : '';
+            const mineSuffix = h.docker.mine ? ' (your pod active)' : '';
+            s.setDockerStatus('online', `online${podSuffix}${mineSuffix}`);
           }
         }
-        const ms = h.microservice;
-        if (ms?.connected) s.setMsStatus('online', 'online');
-      }).catch(() => { /* ignore — useHealth's separate poll surfaces errors */ });
+
+        // ── 3. AI configured — flip the chip when the operator sets the
+        //      key without restarting the studio.
+        s.setAiConfigured(h.aiProviderConfigured === true);
+      }).catch(() => { /* ignore — useHealth's mount probe surfaces backend-unreachable */ });
     }
 
     void sendHeartbeat();

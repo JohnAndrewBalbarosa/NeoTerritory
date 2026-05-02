@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
@@ -464,7 +465,21 @@ router.get('/stats/my-test-runs', jwtAuth, (req: Request, res: Response) => {
   });
 });
 
-router.get('/health', (_req: Request, res: Response) => {
+router.get('/health', (req: Request, res: Response) => {
+  // Health stays public so the boot screen / unauthenticated probes
+  // work, but if the caller does present a valid Bearer JWT we decode
+  // it to surface per-user pod status (`docker.mine`). Decoding failure
+  // is silent — the route still returns the public payload.
+  let callerUserId: number | null = null;
+  const auth = req.headers['authorization'];
+  if (auth && auth.startsWith('Bearer ')) {
+    const token = auth.slice('Bearer '.length);
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id?: number };
+      if (typeof decoded?.id === 'number') callerUserId = decoded.id;
+    } catch { /* invalid / expired — leave callerUserId null */ }
+  }
+
   const totalRuns = (() => {
     try {
       return (db.prepare('SELECT COUNT(*) AS count FROM analysis_runs').get() as CountRow).count;
@@ -507,7 +522,7 @@ router.get('/health', (_req: Request, res: Response) => {
     gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
     gdbCooldownMs: GDB_COOLDOWN_MS,
     microservice,
-    docker: podManagerStatus(),
+    docker: podManagerStatus(callerUserId),
     totalRuns,
     latestRun,
     process: {

@@ -242,6 +242,11 @@ export interface HealthStatus {
     imageReady: boolean;
     livePods: number;
     reason: 'env_off' | 'no_binary' | 'daemon_down' | null;
+    // True iff the JWT presented on this request maps to a live
+    // per-user pod. Lets the studio's status card append "(your pod
+    // active)" so the signed-in tester knows their seat is bound to
+    // a container.
+    mine: boolean;
   };
   process?: {
     pid: number;
