@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation, canonicalPatternName } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../lib/patterns';
 
 interface LinePopoverProps {
   line: number;
@@ -142,13 +142,16 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   })();
 
   // Distinct patterns now uses canonical names, so the dotted/short pair
-  // that previously rendered two chips collapses to one. Order preserved
-  // by first-seen in the deduped list.
+  // that previously rendered two chips collapses to one. The "Review"
+  // sentinel is dropped — it is commentary-only / no detected pattern,
+  // not a selectable alternative, so it must not appear as a rival chip.
   const linePatterns = (() => {
     const out: string[] = [];
     const seen = new Set<string>();
     for (const a of dedupedAnnotations) {
-      const canon = canonicalPatternName(a.patternKey || patternFromAnnotation(a));
+      const raw = a.patternKey || patternFromAnnotation(a);
+      if (!isRealPattern(raw)) continue;
+      const canon = canonicalPatternName(raw);
       if (seen.has(canon)) continue;
       seen.add(canon);
       out.push(canon);
@@ -159,7 +162,9 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   // Picker source: scope-union rivals win on class decl lines, otherwise
   // fall back to the canonical line-only set. Either way, ambiguous = >1.
   const distinctPatterns = (isClassDeclLine && scopeRivals && scopeRivals.length > 1)
-    ? Array.from(new Set(scopeRivals.map((p) => canonicalPatternName(p))))
+    ? Array.from(new Set(
+        scopeRivals.filter(isRealPattern).map((p) => canonicalPatternName(p))
+      ))
     : linePatterns;
   const ambiguous = distinctPatterns.length > 1;
 

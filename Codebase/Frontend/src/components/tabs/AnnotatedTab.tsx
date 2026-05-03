@@ -5,7 +5,7 @@ import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
-import { patternFromAnnotation, canonicalPatternName } from '../../lib/patterns';
+import { patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../lib/patterns';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -129,15 +129,18 @@ export default function AnnotatedTab({
   // exactly this signal so the missing pill, the corner-button nav, and
   // the popover all agree on what counts as ambiguous.
   const ambiguousLines = useMemo(() => {
-    // Count distinct CANONICAL pattern keys per line. Without canonical
-    // collapse, a line tagged with both "creational.factory" and
-    // "Factory" would falsely register as ambiguous — they are the same
-    // pattern under two names.
+    // Count distinct CANONICAL pattern keys per line, excluding the
+    // "Review" sentinel (commentary-only / no detected pattern). Without
+    // those two filters: (a) a line tagged with both "creational.factory"
+    // and "Factory" would falsely register as ambiguous because the same
+    // pattern appears under two names, and (b) a line carrying a real
+    // pattern + a Review annotation would falsely register as ambiguous
+    // because Review is treated as a rival.
     const byLine = new Map<number, Set<string>>();
     for (const a of allAnnotations) {
       if (typeof a.line !== 'number') continue;
       const raw = a.patternKey || patternFromAnnotation(a);
-      if (!raw) continue;
+      if (!raw || !isRealPattern(raw)) continue;
       const canon = canonicalPatternName(raw);
       if (!byLine.has(a.line)) byLine.set(a.line, new Set());
       byLine.get(a.line)!.add(canon);
@@ -215,9 +218,9 @@ export default function AnnotatedTab({
       if (targetLines.length === 0) continue;
       for (const [name, loc] of classLocations.entries()) {
         const hits = targetLines.some(l => l >= loc.line && l <= loc.endLine);
-        if (hits) {
+        if (hits && isRealPattern(p.patternId)) {
           if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-          inScopePatterns.get(name)!.add(p.patternId);
+          inScopePatterns.get(name)!.add(canonicalPatternName(p.patternId));
         }
       }
     }
@@ -229,15 +232,19 @@ export default function AnnotatedTab({
     // annotation's (line, patternKey) as in-scope evidence for the class
     // whose declaration scope contains that line. We also fold the class's
     // own usage-binding lines in (so global helpers that reference it
-    // contribute to its ambiguity verdict).
+    // contribute to its ambiguity verdict). The "Review" sentinel and
+    // dotted variants are normalised away so a line with both
+    // creational.factory + Factory contributes one canonical "Factory"
+    // entry, and a line tagged only Review contributes nothing.
     for (const ann of allAnnotations) {
       const line = typeof ann.line === 'number' ? ann.line : null;
       const key = ann.patternKey;
-      if (!line || !key) continue;
+      if (!line || !key || !isRealPattern(key)) continue;
+      const canon = canonicalPatternName(key);
       for (const [name, loc] of classLocations.entries()) {
         if (line >= loc.line && line <= loc.endLine) {
           if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-          inScopePatterns.get(name)!.add(key);
+          inScopePatterns.get(name)!.add(canon);
         }
       }
     }
@@ -251,15 +258,15 @@ export default function AnnotatedTab({
         // multiple pattern signatures flags its referent class as ambiguous.
         for (const p of run.detectedPatterns || []) {
           const hit = (p.documentationTargets || []).some(t => t.line === line);
-          if (hit) {
+          if (hit && isRealPattern(p.patternId)) {
             if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-            inScopePatterns.get(name)!.add(p.patternId);
+            inScopePatterns.get(name)!.add(canonicalPatternName(p.patternId));
           }
         }
         for (const ann of allAnnotations) {
-          if (ann.line === line && ann.patternKey) {
+          if (ann.line === line && ann.patternKey && isRealPattern(ann.patternKey)) {
             if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-            inScopePatterns.get(name)!.add(ann.patternKey);
+            inScopePatterns.get(name)!.add(canonicalPatternName(ann.patternKey));
           }
         }
       }

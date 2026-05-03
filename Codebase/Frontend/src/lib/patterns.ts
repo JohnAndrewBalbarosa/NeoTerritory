@@ -108,6 +108,17 @@ export function ensureReadableContrast(hex: string, target: number = 3.0): strin
   return `#${[r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
+// "Review" is a sentinel bucket for AI-only commentary / unrecognised
+// annotations — NOT a design pattern. Callers that count ambiguity or
+// render rival chips must exclude it via this helper. Otherwise a class
+// with one real pattern + one Review annotation would falsely register
+// as ambiguous and surface "Review" as a selectable alternative, which
+// makes no sense to the user.
+export function isRealPattern(key: string | null | undefined): boolean {
+  if (!key) return false;
+  return canonicalPatternName(key) !== 'Review';
+}
+
 // Variant -> canonical short name. Covers the common shapes the
 // microservice and AI layer emit: dotted family ids (creational.factory),
 // method-name suffixes (factory_method), structural-class suffixes

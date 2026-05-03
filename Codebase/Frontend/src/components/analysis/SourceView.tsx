@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
-import { colorFor, patternFromAnnotation, canonicalPatternName, PatternColor, AMBIGUOUS_COLOR } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern, PatternColor, AMBIGUOUS_COLOR } from '../../lib/patterns';
 import { useAppStore } from '../../store/appState';
 import LinePopover from './LinePopover';
 
@@ -218,10 +218,15 @@ function computeClassDominance(
 // names.
 function strictLineColor(anns: Annotation[]): { color: PatternColor | null; distinctCount: number } {
   if (anns.length === 0) return { color: null, distinctCount: 0 };
+  // Exclude the "Review" sentinel — it is commentary-only / no pattern,
+  // not a competing alternative, so it must not bump distinctCount.
   const canonKeys = new Set<string>();
   for (const a of anns) {
-    canonKeys.add(canonicalPatternName(patternFromAnnotation(a)));
+    const raw = patternFromAnnotation(a);
+    if (!isRealPattern(raw)) continue;
+    canonKeys.add(canonicalPatternName(raw));
   }
+  if (canonKeys.size === 0) return { color: null, distinctCount: 0 };
   if (canonKeys.size === 1) {
     return { color: colorFor([...canonKeys][0]), distinctCount: 1 };
   }
@@ -393,10 +398,17 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           const num           = String(row.lineNo).padStart(width, ' ');
           const hasAnnotation = row.rawAnns.length > 0;
 
-          // Strict per-line colour from canonical-key count.
+          // Strict per-line colour from canonical-key count, excluding
+          // the "Review" sentinel so a real pattern + Review commentary
+          // doesn't false-flag as ambiguous.
           const strict = strictLineColor(row.anns);
           const distinctPatternCount = hasAnnotation
-            ? new Set(row.rawAnns.map(a => canonicalPatternName(patternFromAnnotation(a)))).size
+            ? new Set(
+                row.rawAnns
+                  .map(a => patternFromAnnotation(a))
+                  .filter(isRealPattern)
+                  .map(canonicalPatternName)
+              ).size
             : 0;
           const lineKeysAmbiguous = distinctPatternCount > 1;
 
