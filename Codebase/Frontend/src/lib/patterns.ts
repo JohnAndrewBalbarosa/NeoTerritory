@@ -193,11 +193,19 @@ export function canonicalPatternName(rawKey: string | null | undefined): string 
   const condensed = stripped.replace(/[^a-z0-9]+/g, '');
   if (CANONICAL_LOOKUP[stripped])  return CANONICAL_LOOKUP[stripped];
   if (CANONICAL_LOOKUP[condensed]) return CANONICAL_LOOKUP[condensed];
-  // Token-level scan (left-to-right): the meaningful name in
-  // "creational.factory" is "factory" (right-side); but a stray
-  // "method_chaining" token-list also resolves cleanly because each
-  // token is also a CANONICAL_LOOKUP key.
-  for (const tok of stripped.split(/[^a-z0-9]+/).filter(Boolean)) {
+  // Tokenise on both non-alphanum AND CamelCase boundaries so subtype
+  // labels like "StrategyConcrete" / "FactoryProduct" / "BuilderClass"
+  // resolve cleanly via their leading word. The microservice and AI
+  // layer emit these subtype names freely; without CamelCase splitting
+  // they'd canonicalize to "Review" and the line would render with no
+  // colour even though its annotation cards correctly say "Strategy".
+  const camelSplit = raw.replace(/([a-z0-9])([A-Z])/g, '$1 $2');
+  const tokens = camelSplit
+    .toLowerCase()
+    .replace(/^[a-z]+\./, '')
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+  for (const tok of tokens) {
     if (CANONICAL_LOOKUP[tok]) return CANONICAL_LOOKUP[tok];
   }
   return 'Review';

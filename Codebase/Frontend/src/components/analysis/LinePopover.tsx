@@ -116,7 +116,11 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
     };
   }, [line, onClose]);
 
-  if (!annotations.length) return null;
+  // Render when we have annotations OR a stale override the user might
+  // want to undo. Without the resolvedPattern fallback, a line whose
+  // annotations were dropped (e.g. by a re-analysis) but whose override
+  // colour persists in the store would be dead-clicked.
+  if (!annotations.length && !resolvedPattern) return null;
 
   // Dedupe annotation cards: if the matcher emitted both "creational.factory"
   // and "Factory" against the same class+line, they are the same pattern —

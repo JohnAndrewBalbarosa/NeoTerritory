@@ -152,43 +152,6 @@ export default function AnnotatedTab({
     return set;
   }, [allAnnotations]);
 
-  // Narrower set used solely for chrome greying in SourceView and
-  // ClassBindings: classes whose declaration scope intersects
-  // `ambiguousLines` (= at least one body line has >1 canonical pattern
-  // keys). This is the `bodyAmbiguous` slice only — independent of the
-  // wider `ambiguousClassNames` set we already pass downstream for the
-  // rival picker (`directAmbiguous || bodyAmbiguous || scopeAmbiguous`).
-  // ShapeFactory (Factory@40, Strategy@42, no multi-tag line) does NOT
-  // qualify here, so its chrome stays Factory-coloured even though the
-  // rival picker on its decl line still fires.
-  const coloringAmbiguousClassNames = useMemo(() => {
-    const out = new Set<string>();
-    for (const [name, loc] of classLocations.entries()) {
-      for (const ln of ambiguousLines) {
-        if (ln >= loc.line && ln <= loc.endLine) { out.add(name); break; }
-      }
-    }
-    return out;
-  }, [classLocations, ambiguousLines]);
-
-  // Reverse index: which lines outside a class's declaration scope are
-  // recorded usages of an ambiguous class? Built from
-  // currentRun.classUsageBindings filtered to coloringAmbiguousClassNames.
-  // Lets SourceView grey out global helpers and call-sites that touch an
-  // ambiguous class without scanning the bindings on every row.
-  const usageLinesByAmbiguousClass = useMemo(() => {
-    const out = new Map<number, string>();
-    const bindings = currentRun?.classUsageBindings || {};
-    for (const [cls, list] of Object.entries(bindings)) {
-      if (!coloringAmbiguousClassNames.has(cls)) continue;
-      for (const b of list || []) {
-        const ln = typeof b?.line === 'number' ? b.line : null;
-        if (ln !== null && !out.has(ln)) out.set(ln, cls);
-      }
-    }
-    return out;
-  }, [currentRun, coloringAmbiguousClassNames]);
-
   const classDerivation = useMemo(() => {
     const run = currentRun;
     const patternCountByClass = new Map<string, number>();
@@ -273,6 +236,22 @@ export default function AnnotatedTab({
     }
     return { patternCountByClass, firstLineByClass, inScopePatterns };
   }, [currentRun, classLocations, allAnnotations]);
+
+  // Set used for chrome greying. Mirrors the popover's trigger
+  // condition exactly: a class is "ambiguous-for-coloring" when its
+  // scope's distinct canonical pattern keys exceed 1, AND the user has
+  // not yet resolved it. This is wider than the strict `ambiguousClassNames`
+  // (no `isTaggedByMicroservice` gate) so a class the picker fires on is
+  // ALSO greyed — even if the matcher didn't emit a detection with that
+  // class as its primary `className`.
+  const pickerEligibleClassNames = useMemo(() => {
+    const out = new Set<string>();
+    for (const [name, set] of classDerivation.inScopePatterns) {
+      if (resolvedMap[name]) continue;
+      if ((set?.size || 0) > 1) out.add(name);
+    }
+    return out;
+  }, [classDerivation, resolvedMap]);
 
   const classNav = useMemo(() => {
     const run = currentRun;
@@ -417,6 +396,24 @@ export default function AnnotatedTab({
       allClassNames:       all
     };
   }, [classDerivation, detectedClassNames, bindingClassNames, resolvedMap, classLocations, ambiguousLines, currentRun]);
+
+  // Reverse index keyed by line number: which picker-eligible class
+  // does this line reference (as an external usage)? Used by SourceView
+  // to grey global helpers and call-sites of any class with rival
+  // patterns so the chrome stays consistent inside and outside its
+  // declaration scope.
+  const usageLinesByAmbiguousClass = useMemo(() => {
+    const out = new Map<number, string>();
+    const bindings = currentRun?.classUsageBindings || {};
+    for (const [cls, list] of Object.entries(bindings)) {
+      if (!pickerEligibleClassNames.has(cls)) continue;
+      for (const b of list || []) {
+        const ln = typeof b?.line === 'number' ? b.line : null;
+        if (ln !== null && !out.has(ln)) out.set(ln, cls);
+      }
+    }
+    return out;
+  }, [currentRun, pickerEligibleClassNames]);
 
   const taggedCount = taggedClassNames.length;
   const missingCount = missingClassNames.length;
@@ -580,7 +577,7 @@ export default function AnnotatedTab({
             classResolvedPatterns={currentRun.classResolvedPatterns}
             classUsageBindings={currentRun.classUsageBindings}
             inScopePatternsByClass={classDerivation.inScopePatterns}
-            coloringAmbiguousClassNames={coloringAmbiguousClassNames}
+            coloringAmbiguousClassNames={pickerEligibleClassNames}
             usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
             onLineClick={onCommentFlash}
           />
@@ -616,7 +613,7 @@ export default function AnnotatedTab({
           bindings={currentRun.classUsageBindings || {}}
           detectedPatterns={currentRun.detectedPatterns || []}
           classResolvedPatterns={currentRun.classResolvedPatterns}
-          ambiguousClassNames={coloringAmbiguousClassNames}
+          ambiguousClassNames={pickerEligibleClassNames}
           onLineFlash={onLineFlash}
         />
         <PatternCards

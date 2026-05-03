@@ -304,12 +304,17 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   const [popover, setPopover] = useState<PopoverState | null>(null);
 
   function handleLineClick(row: RenderedLine, ev: React.MouseEvent<HTMLSpanElement>): void {
-    if (!row.rawAnns.length) return;
+    // Open the popover when there's something the user can act on:
+    // any annotation, or a stale line-pattern override they may want to
+    // undo (e.g. propagated from a class resolve whose source binding
+    // no longer applies). Without the override fallback, an
+    // override-coloured line with no annotations is dead-clicked.
+    const hasOverride = !!linePatternOverrides[row.lineNo];
+    if (!row.rawAnns.length && !hasOverride) return;
     const rect = ev.currentTarget.getBoundingClientRect();
     if (popover && popover.line === row.lineNo) { setPopover(null); return; }
-    // Show all (raw) annotations in the popover so the user can pick or undo.
     setPopover({ line: row.lineNo, annotations: row.rawAnns, anchorRect: rect });
-    if (onLineClick) onLineClick(row.rawAnns[0].id);
+    if (onLineClick && row.rawAnns[0]) onLineClick(row.rawAnns[0].id);
   }
 
   // Walk the in-memory binding map for `className` and return every source
