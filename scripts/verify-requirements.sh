@@ -83,18 +83,50 @@ verify_requirements() {
   case "$profile" in pods|full)
     # --- pods ---------------------------------------------------------------
     _require docker 'install Docker — https://www.docker.com/products/docker-desktop or `curl -fsSL https://get.docker.com | sh`' || return 1
+
+    # Try to reach the daemon. If it isn't responding, try to start it
+    # ourselves (WSL/Linux: `service docker start`) and retry up to
+    # NEOTERRITORY_DOCKER_WAIT seconds (default 30) before giving up.
+    # Override the wait via env: NEOTERRITORY_DOCKER_WAIT=60 ./start.sh
+    local wait_total="${NEOTERRITORY_DOCKER_WAIT:-30}"
+    local _docker_ok=0
     if timeout 5 docker info --format '{{.ServerVersion}}' >/dev/null 2>&1; then
-      _ok 'docker daemon responding'
+      _docker_ok=1
     else
-      if [[ $strict -eq 1 ]]; then
-        _err 'MISSING: docker daemon (docker is installed but the daemon is not running)'
-        _err '  fix: sudo service docker start    # WSL / Linux'
-        _err '       open Docker Desktop          # macOS / Windows'
-        _err 'Refusing to continue — start the Docker daemon and re-run.'
-        return 1
+      # Try a one-shot start on Linux/WSL where `service` is available.
+      if command -v service >/dev/null 2>&1 && [[ "$(uname -s)" != "Darwin" ]]; then
+        _warn 'docker daemon not responding — attempting `sudo service docker start`'
+        if sudo -n true 2>/dev/null; then
+          sudo service docker start >/dev/null 2>&1 || true
+        else
+          # No passwordless sudo — try without sudo (rootless / already root).
+          service docker start >/dev/null 2>&1 || true
+        fi
       else
-        _warn 'docker daemon not responding — continuing in soft mode'
+        _warn 'docker daemon not responding — waiting for Docker Desktop to come up'
       fi
+
+      # Poll until the daemon answers or we exhaust the budget.
+      local waited=0
+      while [[ $waited -lt $wait_total ]]; do
+        if timeout 3 docker info --format '{{.ServerVersion}}' >/dev/null 2>&1; then
+          _docker_ok=1; break
+        fi
+        sleep 2; waited=$((waited + 2))
+        printf '    [..] still waiting for docker daemon (%ss / %ss)\n' "$waited" "$wait_total"
+      done
+    fi
+
+    if [[ $_docker_ok -eq 1 ]]; then
+      _ok 'docker daemon responding'
+    elif [[ $strict -eq 1 ]]; then
+      _err "MISSING: docker daemon (still unreachable after ${wait_total}s)"
+      _err '  fix: sudo service docker start    # WSL / Linux'
+      _err '       open Docker Desktop          # macOS / Windows'
+      _err '  override wait budget: NEOTERRITORY_DOCKER_WAIT=60 ./start.sh ...'
+      return 1
+    else
+      _warn 'docker daemon not responding — continuing in soft mode'
     fi
   ;; esac
 
