@@ -31,8 +31,10 @@ RUN mkdir -p /build \
 # =========================================================================
 FROM node:20-bookworm-slim AS frontend-builder
 WORKDIR /fe
+# NODE_ENV is unset in this stage, so npm ci installs devDependencies
+# (vite, typescript, plugins) which are required to run `npm run build`.
 COPY Codebase/Frontend/package.json Codebase/Frontend/package-lock.json ./
-RUN npm ci
+RUN npm ci --include=dev
 COPY Codebase/Frontend ./
 RUN npm run build
 
@@ -55,13 +57,18 @@ RUN apt-get update \
 
 WORKDIR /app
 
-# Backend deps (include devDeps so tsc is available for the build step)
+# Backend deps. NODE_ENV=production is set on the runtime image, which makes
+# npm skip devDependencies by default — that strips typescript and breaks
+# `npm run build` (`sh: 1: tsc: not found`). Force-include dev deps for the
+# install + build, then prune them away before the image is finalized.
 COPY Codebase/Backend/package.json Codebase/Backend/package-lock.json ./Codebase/Backend/
-RUN cd Codebase/Backend && npm ci
+RUN cd Codebase/Backend && npm ci --include=dev
 
 # Application code + TypeScript compile
 COPY Codebase/Backend  ./Codebase/Backend
-RUN cd Codebase/Backend && npm run build && npm prune --production
+RUN cd Codebase/Backend \
+    && npm run build \
+    && npm prune --omit=dev
 
 # Frontend: copy SOURCE (so the served path keeps non-bundled assets like
 # /public, /admin.html, /scraper.html), then overlay the built dist/ on top
