@@ -131,7 +131,7 @@ is_wsl2() { grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; }
 wait_url() {
   local url="$1" tries="${2:-120}" i
   for ((i=0; i<tries; i++)); do
-    if curl -fsS -m 2 -o /dev/null "$url"; then return 0; fi
+    if curl -fs -m 2 -o /dev/null "$url" 2>/dev/null; then return 0; fi
     sleep 0.5
   done
   return 1
@@ -222,21 +222,24 @@ invoke_dev() {
   build_microservice "$REBUILD"
 
   step "Starting backend (bind=$bind, port=$BACKEND_PORT)"
-  local cors_override=''
+  local backend_env=(
+    PORT="$BACKEND_PORT"
+    HOST="$bind"
+    TMPDIR=/tmp TMP=/tmp TEMP=/tmp
+  )
   if [[ "$LAN" -eq 1 && "$advert" != 'localhost' ]]; then
-    cors_override="http://localhost:$BACKEND_PORT,http://localhost:$FRONTEND_PORT,http://$advert:$BACKEND_PORT,http://$advert:$FRONTEND_PORT"
+    backend_env+=(CORS_ORIGIN="http://localhost:$BACKEND_PORT,http://localhost:$FRONTEND_PORT,http://$advert:$BACKEND_PORT,http://$advert:$FRONTEND_PORT")
   fi
   # tsx unix socket workaround: force linux TMPDIR (see legacy comment in old start.sh).
-  PORT="$BACKEND_PORT" HOST="$bind" \
-    ${cors_override:+CORS_ORIGIN="$cors_override"} \
-    TMPDIR=/tmp TMP=/tmp TEMP=/tmp \
-    bash -c "cd '$BACKEND_DIR' && npm run dev" \
+  env "${backend_env[@]}" bash -c "cd '$BACKEND_DIR' && npm run dev" \
     >"$BACKEND_DIR/server.out.log" 2>"$BACKEND_DIR/server.err.log" &
   BACKEND_PID=$!
   step "Backend started (pid $BACKEND_PID)"
 
-  if ! wait_url "http://127.0.0.1:$BACKEND_PORT/api/health" 60; then
-    err 'Backend did not become healthy within 30s. Last lines of server.err.log:'
+  HEALTH_TRIES=120
+  if ! wait_url "http://127.0.0.1:$BACKEND_PORT/api/health" "$HEALTH_TRIES"; then
+    # wait_url polls every 0.5s, so HEALTH_TRIES * 0.5 = budget seconds.
+    err "Backend did not become healthy within $((HEALTH_TRIES / 2))s. Last lines of server.err.log:"
     [[ -f "$BACKEND_DIR/server.err.log" ]] && tail -30 "$BACKEND_DIR/server.err.log" || true
     kill "$BACKEND_PID" 2>/dev/null || true
     exit 1
@@ -246,12 +249,12 @@ invoke_dev() {
   VITE_PID=''
   if [[ "$BACKEND_ONLY" -eq 0 ]]; then
     step "Starting Vite dev server (bind=$bind, port=$FRONTEND_PORT)"
-    local vite_host_args=()
-    if [[ "$LAN" -eq 1 || "$bind" == '0.0.0.0' ]]; then vite_host_args=(--host 0.0.0.0)
-    elif [[ -n "$BIND_HOST" ]]; then vite_host_args=(--host "$BIND_HOST")
+    local vite_host_args=''
+    if [[ "$LAN" -eq 1 || "$bind" == '0.0.0.0' ]]; then vite_host_args='--host 0.0.0.0'
+    elif [[ -n "$BIND_HOST" ]]; then vite_host_args="--host $BIND_HOST"
     fi
-    VITE_HOST="$bind" TMPDIR=/tmp TMP=/tmp TEMP=/tmp \
-      bash -c "cd '$FRONTEND_DIR' && npm run dev -- --port $FRONTEND_PORT --strictPort ${vite_host_args[*]:-}" \
+    env VITE_HOST="$bind" TMPDIR=/tmp TMP=/tmp TEMP=/tmp \
+      bash -c "cd '$FRONTEND_DIR' && npm run dev -- --port $FRONTEND_PORT --strictPort $vite_host_args" \
       >"$FRONTEND_DIR/vite.out.log" 2>"$FRONTEND_DIR/vite.err.log" &
     VITE_PID=$!
     step "Vite started (pid $VITE_PID)"

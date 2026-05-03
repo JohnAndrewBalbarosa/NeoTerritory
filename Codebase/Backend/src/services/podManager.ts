@@ -68,9 +68,40 @@ export function podDisabledReason(): PodDisabledReason {
 
 // Check whether the pod image is already present on the local Docker host.
 // `docker image inspect` exits non-zero when the image is unknown.
-function imageExists(image: string): boolean {
+//
+// IMPORTANT: this lives on the request path of /api/health (via
+// podManagerStatus), so we cache the result. Under WSL2 the docker CLI
+// proxies to Windows Docker Desktop over a named pipe and a cold
+// `docker image inspect` can take several seconds — long enough that
+// start.sh's 2s curl health probe times out and the operator sees
+// "Backend did not become healthy within 30s" even though the listener
+// is up.
+//
+// Cache TTL mirrors DOCKER_PROBE_TTL_MS so behaviour is consistent: if
+// the image is rebuilt or removed externally, recovery happens within
+// 30s without a backend restart.
+const IMAGE_EXISTS_TTL_MS = 30_000;
+const imageExistsCache = new Map<string, { exists: boolean; checkedAt: number }>();
+
+function imageExistsUncached(image: string): boolean {
   const probe = spawnSync('docker', ['image', 'inspect', image], { stdio: 'ignore' });
   return probe.status === 0;
+}
+
+function imageExists(image: string): boolean {
+  const now = Date.now();
+  const hit = imageExistsCache.get(image);
+  if (hit && now - hit.checkedAt < IMAGE_EXISTS_TTL_MS) return hit.exists;
+  const exists = imageExistsUncached(image);
+  imageExistsCache.set(image, { exists, checkedAt: now });
+  return exists;
+}
+
+// Lets ensurePodImageBuilt seed the cache with a fresh ground-truth
+// answer, so the very first /api/health hit after a successful build
+// returns instantly instead of paying the spawnSync cost.
+function setImageExistsCache(image: string, exists: boolean): void {
+  imageExistsCache.set(image, { exists, checkedAt: Date.now() });
 }
 
 // One-shot best-effort build of the per-tester pod image so the operator
@@ -116,6 +147,9 @@ export async function ensurePodImageBuilt(): Promise<boolean> {
     proc.on('close', (code) => {
       clearTimeout(t);
       const ok = code === 0;
+      // Seed the cache so /api/health doesn't need to spawn `docker
+      // image inspect` to learn what we already know.
+      setImageExistsCache(POD_IMAGE, ok);
       // eslint-disable-next-line no-console
       console.log(`[pod-manager] build ${ok ? 'succeeded' : 'failed (exit ' + code + ')'}`);
       resolve(ok);
