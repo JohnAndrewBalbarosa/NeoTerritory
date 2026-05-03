@@ -348,15 +348,61 @@
   window.addEventListener('resize', pollViewport, { passive: true });
   setInterval(pollViewport, 250);
 
+  // Viewport re-pin loop. position:fixed is supposed to anchor to the
+  // viewport, but ANY ancestor with `transform`, `perspective`, `filter`,
+  // `backdrop-filter`, `contain: paint/layout`, or `will-change: transform`
+  // becomes the containing block instead — Facebook (and most modern
+  // SPAs) do this on <body> for GPU acceleration, which causes the panel
+  // to scroll away with the page. Detect that, and if the overlay's
+  // bounding box drifts from where it should be, compensate with a
+  // negative translate so it visually lands top-right of the viewport.
+  function repinOverlay() {
+    if (!overlay.isConnected) return;
+    const target = STATE.minimized
+      ? overlay.querySelector('#neo-expand') || overlay
+      : overlay.querySelector('[data-neo-panel-inner]') || overlay;
+    const r = target.getBoundingClientRect();
+    if (r.width === 0 || r.height === 0) return;
+    const desiredRight = 12;
+    const desiredTop = 12;
+    // Where the panel actually sits (right edge distance from viewport right):
+    const actualRightGap = window.innerWidth - r.right;
+    const actualTopGap = r.top;
+    const dx = desiredRight - actualRightGap;   // positive = need to shift LEFT
+    const dy = desiredTop - actualTopGap;       // positive = need to shift DOWN
+    if (Math.abs(dx) < 0.5 && Math.abs(dy) < 0.5) return;
+    // Read any existing translate so we compose, not overwrite.
+    const cs = overlay.style.transform || '';
+    const m = cs.match(/translate\(([-\d.]+)px,\s*([-\d.]+)px\)/);
+    const baseX = m ? parseFloat(m[1]) : 0;
+    const baseY = m ? parseFloat(m[2]) : 0;
+    overlay.style.transform = `translate(${baseX - dx}px, ${baseY + dy}px)`;
+  }
+  let repinRaf = 0;
+  function repinLoop() {
+    repinOverlay();
+    repinRaf = requestAnimationFrame(repinLoop);
+  }
+  // Also re-run on scroll just in case rAF is throttled in a hidden tab.
+  window.addEventListener('scroll', repinOverlay, { passive: true, capture: true });
+
   function attach() {
     if (!document.body) return;
-    document.body.appendChild(highlight);
-    document.body.appendChild(tag);
-    document.body.appendChild(overlay);
+    // Attach to <html>, NOT <body>. Many SPAs (FB, Instagram, X) put
+    // `transform: translateZ(0)` or `will-change: transform` on body for
+    // GPU compositing, which makes body the containing block for any
+    // descendant `position: fixed` element — i.e. our overlay would
+    // scroll with the body instead of staying pinned to the viewport.
+    // <html> almost never carries those properties.
+    const root = document.documentElement || document.body;
+    root.appendChild(highlight);
+    root.appendChild(tag);
+    root.appendChild(overlay);
     document.addEventListener('mousemove', onMouseMove, true);
     document.addEventListener('click', onClickCapture, true);
     renderRoot();
     pollViewport();
+    repinLoop();
   }
 
   if (document.readyState === 'loading') {
