@@ -90,6 +90,47 @@ export interface ClassNode {
   parentClassName?: string;
 }
 
+// Master-list entry per the explicit JSON shape requested by the user:
+//
+//   TaggedClassName: {
+//     patterns:      string[]    // 1+, canonical pattern names
+//     subclasses:    string[]    // 0+, child class names
+//     parent:        string|null // 0 or 1
+//     taggedLines:   {
+//       declaration: number[]    // 1+, lines INSIDE the class's declaration
+//                                //     range that the matcher tagged
+//       usage:       number[]    // 0+, usage lines OUTSIDE the declaration
+//     }
+//   }
+//
+// The masterlist is **only** for tagged classes — untagged source classes
+// are never included. Two parallel copies live on the model:
+//
+//   originalMasterlist  immutable snapshot from the API response. Every
+//                       cascade-undo / per-class revert reads from here.
+//   workingMasterlist   the UI's effective view. Cascade rules apply:
+//                         · pure-cascade subclass whose parent dropped the
+//                           propagating pattern → REMOVED from working
+//                           entirely (matches the user's "tanggalin na sya
+//                           sa subclass" rule).
+//                         · subclass with independent patterns of its own
+//                           keeps those independents, drops the propagated
+//                           pattern, and becomes a SIBLING (parent cleared,
+//                           parent's `subclasses` updated to drop it).
+//                         · per-class revert (caller-supplied `revertedClasses`
+//                           set) forces an entry back to its original shape
+//                           regardless of cascade.
+export interface TaggedClassEntry {
+  className: string;
+  patterns: string[];        // canonical names; 1+ in original, 1+ in working unless removed
+  subclasses: string[];      // child class names, 0+
+  parent: string | null;     // single parent or null
+  taggedLines: {
+    declaration: number[];   // lines inside the class scope that carry a tag (1+)
+    usage: number[];         // usage lines outside the scope (0+)
+  };
+}
+
 export interface AnnotatedModel {
   // Read-through metadata (computed once for downstream consumers).
   classLocations: Map<string, ClassLocation>;
@@ -102,6 +143,12 @@ export interface AnnotatedModel {
 
   // Per-class state — the centralised classification the UI works from.
   classes: Map<string, ClassNode>;
+
+  // Tagged-class masterlist (per the user's explicit JSON shape). Only
+  // tagged classes appear here. Working applies cascade + revert rules;
+  // original is the immutable snapshot for undo.
+  originalMasterlist: Map<string, TaggedClassEntry>;
+  workingMasterlist: Map<string, TaggedClassEntry>;
 
   // Convenience sets the existing components are wired against. Each is a
   // strict slice of `classes`.
@@ -142,6 +189,11 @@ interface DeriveInput {
   // but we ALSO accept an explicit override map so callers that keep their
   // own immutable copy of the original run can pass it in separately.
   classResolvedPatternsOverride?: Record<string, string>;
+  // Per-class undo: any class name listed here is forced back to its
+  // original masterlist entry, ignoring cascade. UI handlers wire this
+  // when the user clicks "revert" on a specific tagged class. Empty /
+  // undefined = no reverts.
+  revertedClasses?: ReadonlySet<string>;
 }
 
 const EMPTY_MODEL: AnnotatedModel = {
@@ -149,6 +201,8 @@ const EMPTY_MODEL: AnnotatedModel = {
   ambiguousLines: new Set(),
   inScopePatterns: new Map(),
   classes: new Map(),
+  originalMasterlist: new Map(),
+  workingMasterlist: new Map(),
   pickerEligibleClassNames: new Set(),
   resolvedClassNames: new Set(),
   unambiguousClassNames: new Set(),
@@ -499,11 +553,182 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     }
   }
 
+  // ---------- Tagged-class masterlist (original + working) ----------
+  //
+  // ORIGINAL: built straight off the API response — every tagged class
+  // gets one entry with its raw matcher patterns, the parent the
+  // microservice declared (if any), the subclasses we infer from the
+  // parent links, plus declaration/usage line lists. Frozen.
+  //
+  // WORKING: starts as a structural copy of original, then applies
+  // (a) cascade decisions already computed above and (b) the user's
+  // per-class revert overrides.
+
+  const originalMasterlist = new Map<string, TaggedClassEntry>();
+  const subclassesByParent = new Map<string, Set<string>>();
+  for (const [child, parent] of propagatedSubclassParent.entries()) {
+    if (!subclassesByParent.has(parent)) subclassesByParent.set(parent, new Set());
+    subclassesByParent.get(parent)!.add(child);
+  }
+
+  // Per-class declaration-line tags: any documentation-target line that
+  // falls inside the class's location range, plus annotation lines in
+  // that range, deduped and sorted.
+  function declarationLinesFor(name: string): number[] {
+    const loc = classLocations.get(name);
+    if (!loc) return [];
+    const lines = new Set<number>();
+    for (const p of detected) {
+      for (const t of p.documentationTargets || []) {
+        if (typeof t.line === 'number' && t.line >= loc.line && t.line <= loc.endLine) {
+          lines.add(t.line);
+        }
+      }
+    }
+    for (const a of annotations) {
+      if (typeof a.line === 'number' && a.line >= loc.line && a.line <= loc.endLine) {
+        lines.add(a.line);
+      }
+    }
+    return Array.from(lines).sort((x, y) => x - y);
+  }
+
+  // Per-class usage lines: classUsageBindings for that class, filtered
+  // to lines OUTSIDE the class's own declaration range (usage-of-class
+  // outside its body).
+  // The early `if (!run) return EMPTY_MODEL` guarantees non-null here,
+  // but TS does not preserve that narrowing into nested closures, so
+  // capture the run reference explicitly for the helpers below.
+  const runRef = run;
+  function usageLinesFor(name: string): number[] {
+    const loc = classLocations.get(name);
+    const list = (runRef.classUsageBindings || {})[name] || [];
+    const lines = new Set<number>();
+    for (const b of list) {
+      const ln = typeof b?.line === 'number' ? b.line : null;
+      if (ln === null) continue;
+      if (loc && ln >= loc.line && ln <= loc.endLine) continue;
+      lines.add(ln);
+    }
+    return Array.from(lines).sort((x, y) => x - y);
+  }
+
+  for (const className of taggedClassNames) {
+    const directs = directCandidates.get(className);
+    const patterns = directs ? Array.from(directs) : [];
+    if (patterns.length === 0) continue;
+    const decl = declarationLinesFor(className);
+    if (decl.length === 0) continue; // honour the "1+ declaration lines" rule
+    const subs = Array.from(subclassesByParent.get(className) ?? []);
+    const parent = propagatedSubclassParent.get(className) ?? null;
+    originalMasterlist.set(className, Object.freeze({
+      className,
+      patterns: Object.freeze(patterns.slice()) as string[],
+      subclasses: Object.freeze(subs.slice()) as string[],
+      parent,
+      taggedLines: Object.freeze({
+        declaration: Object.freeze(decl) as number[],
+        usage: Object.freeze(usageLinesFor(className)) as number[],
+      }) as TaggedClassEntry['taggedLines'],
+    }) as TaggedClassEntry);
+  }
+
+  // ---------- Build working masterlist ----------
+  const reverted = input.revertedClasses ?? new Set<string>();
+  const workingMasterlist = new Map<string, TaggedClassEntry>();
+
+  for (const [className, originalEntry] of originalMasterlist) {
+    // Per-class revert: copy original entry verbatim, ignore cascade.
+    if (reverted.has(className)) {
+      workingMasterlist.set(className, {
+        className,
+        patterns: originalEntry.patterns.slice(),
+        subclasses: originalEntry.subclasses.slice(),
+        parent: originalEntry.parent,
+        taggedLines: {
+          declaration: originalEntry.taggedLines.declaration.slice(),
+          usage: originalEntry.taggedLines.usage.slice(),
+        },
+      });
+      continue;
+    }
+
+    const node = classes.get(className);
+
+    // Pure-cascade subclass dropped by parent's pick → DELETE entirely.
+    // Matches the user's "tanggalin na sya sa subclass" rule for children
+    // whose only pattern was the propagated one.
+    if (node?.status === 'subclass_dropped') continue;
+
+    // Subclass that survived cascade (parent picked propagating, or child
+    // had independent tags). Recompute the entry shape:
+    //   - patterns: cascade result (`node.candidates` if effectively
+    //     decided, otherwise still the original set — the UI is what
+    //     renders pending state).
+    //   - parent: cleared if the propagated pattern was removed and the
+    //     class is now a sibling.
+    let patterns = originalEntry.patterns.slice();
+    let parent = originalEntry.parent;
+
+    if (node) {
+      if (node.status === 'unambiguous' || node.status === 'ambiguous_resolved') {
+        const eff = node.resolved ?? node.candidates[0];
+        if (eff) patterns = [eff];
+      } else if (node.candidates.length > 0) {
+        patterns = node.candidates.slice();
+      }
+
+      // If this is a propagated subclass whose parent's effective pick
+      // is NOT in the propagating set, the propagated pattern was
+      // stripped. The remaining patterns are the child's independents,
+      // and the parent link should be cleared (sibling status).
+      if (node.isPropagatedSubclass && parent) {
+        const parentNode = classes.get(parent);
+        const parentEff = parentNode?.resolved ?? (
+          parentNode?.candidates.length === 1 ? parentNode.candidates[0] : undefined
+        );
+        if (parentEff && !propagatingPatterns.has(parentEff)) {
+          parent = null;
+        }
+      }
+    }
+
+    if (patterns.length === 0) continue;
+
+    workingMasterlist.set(className, {
+      className,
+      patterns,
+      subclasses: originalEntry.subclasses.slice(),
+      parent,
+      taggedLines: {
+        declaration: originalEntry.taggedLines.declaration.slice(),
+        usage: originalEntry.taggedLines.usage.slice(),
+      },
+    });
+  }
+
+  // Reconcile parent → subclasses lists in the working masterlist: a
+  // parent that no longer cascades must drop the now-sibling children
+  // from its `subclasses[]`, and an entry whose parent was deleted from
+  // working should clear its parent link.
+  for (const entry of workingMasterlist.values()) {
+    if (entry.parent && !workingMasterlist.has(entry.parent)) {
+      entry.parent = null;
+    }
+    if (entry.subclasses.length === 0) continue;
+    entry.subclasses = entry.subclasses.filter((c) => {
+      const child = workingMasterlist.get(c);
+      return !!child && child.parent === entry.className;
+    });
+  }
+
   return {
     classLocations,
     ambiguousLines,
     inScopePatterns,
     classes,
+    originalMasterlist,
+    workingMasterlist,
     pickerEligibleClassNames,
     resolvedClassNames,
     unambiguousClassNames,
@@ -514,4 +739,38 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     legendPatterns,
     usageLinesByAmbiguousClass,
   };
+}
+
+// ---------- Helpers exported for UI handlers ----------
+
+// Pure utility: given the model + a class name, return the original
+// entry suitable for "revert this one class to its source-of-truth
+// shape". UI revert handlers can either mutate state to add the class
+// to `revertedClasses` (preferred — re-derives the whole model) OR
+// shallow-copy this entry into their working state.
+export function lookupOriginalEntry(
+  model: AnnotatedModel,
+  className: string,
+): TaggedClassEntry | null {
+  return model.originalMasterlist.get(className) ?? null;
+}
+
+// Cheap shape-equality check for "is this working entry already at
+// original?" — useful when the UI wants to disable an Undo button.
+export function isAtOriginal(model: AnnotatedModel, className: string): boolean {
+  const orig = model.originalMasterlist.get(className);
+  const work = model.workingMasterlist.get(className);
+  if (!orig || !work) return !orig && !work;
+  if (orig.parent !== work.parent) return false;
+  if (orig.patterns.length !== work.patterns.length) return false;
+  if (orig.subclasses.length !== work.subclasses.length) return false;
+  for (let i = 0; i < orig.patterns.length; i++) {
+    if (orig.patterns[i] !== work.patterns[i]) return false;
+  }
+  for (let i = 0; i < orig.subclasses.length; i++) {
+    if (orig.subclasses[i] !== work.subclasses[i]) return false;
+  }
+  if (orig.taggedLines.declaration.length !== work.taggedLines.declaration.length) return false;
+  if (orig.taggedLines.usage.length !== work.taggedLines.usage.length) return false;
+  return true;
 }

@@ -5,6 +5,7 @@ import {
 } from '../../types/api';
 import { colorFor, USAGE_KIND_LABEL, ensureReadableContrast } from '../../lib/patterns';
 import { patternDefinitionFor, PatternDefinition } from '../../data/patternDefinitions';
+import { TaggedClassEntry } from '../../lib/annotatedModel';
 
 export interface RecomputedRank {
   k: number;
@@ -21,6 +22,15 @@ interface PatternCardsProps {
   recomputedRanksByClass?: Record<string, RecomputedRank>;
   classUsageBindings: Record<string, ClassUsageBinding[]>;
   classUsageBindingSource: 'heuristic' | 'microservice';
+  // Tagged-class masterlist (per-class). When supplied alongside the
+  // revert handlers below, each card grows a small "↺ Revert" chip
+  // that toggles `revertedClasses` in the store. The card stays
+  // visible regardless of revert state — revert affects the model's
+  // resolved/cascade view, not whether a card renders.
+  workingMasterlist?: Map<string, TaggedClassEntry>;
+  originalMasterlist?: Map<string, TaggedClassEntry>;
+  revertedClasses?: Set<string>;
+  onToggleRevert?: (className: string) => void;
   onLineFlash?: (line: number) => void;
 }
 
@@ -39,6 +49,12 @@ interface CardProps {
   recomputed?: RecomputedRank;
   taggedUsages: ClassUsageBinding[];
   classUsageBindingSource: 'heuristic' | 'microservice';
+  // Per-class revert affordance. Provided when the parent component
+  // wires the masterlist; absent in legacy callers. The chip in the
+  // head reflects revert state and toggles via onToggleRevert.
+  isReverted?: boolean;
+  isDirty?: boolean;
+  onToggleRevert?: () => void;
   onLineFlash?: (line: number) => void;
 }
 
@@ -332,7 +348,11 @@ function TaggedUsagesSection({
 }
 
 function PatternCard(props: CardProps) {
-  const { pattern: p, rank, rankVerdict, resolved, isAmbiguousUnresolved, wasAmbiguousNowResolved, recomputed, taggedUsages, classUsageBindingSource, onLineFlash } = props;
+  const {
+    pattern: p, rank, rankVerdict, resolved, isAmbiguousUnresolved,
+    wasAmbiguousNowResolved, recomputed, taggedUsages,
+    classUsageBindingSource, isReverted, isDirty, onToggleRevert, onLineFlash,
+  } = props;
   // Accuracy rank-bar only renders when the class is genuinely
   // ambiguous (waiting for a pick) or has been resolved-after-ambiguity.
   // Never-ambiguous classes were locked in by the matcher from the start
@@ -366,6 +386,28 @@ function PatternCard(props: CardProps) {
           </span>
           <span className="pattern-card-class"><code>{p.className || 'unknown'}</code></span>
           {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
+          {onToggleRevert && (isReverted || isDirty) && (
+            <span
+              role="button"
+              tabIndex={0}
+              className={`pattern-card-revert${isReverted ? ' pattern-card-revert--on' : ''}`}
+              title={
+                isReverted
+                  ? 'This class is currently reverted to its original masterlist entry. Click to remove the revert and follow the live cascade again.'
+                  : 'Restore this class to its original masterlist entry (cancels picks and cascade-driven changes for this one class only).'
+              }
+              onClick={(e) => { e.stopPropagation(); onToggleRevert(); }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onToggleRevert();
+                }
+              }}
+            >
+              {isReverted ? '↺ Reverted' : '↺ Revert'}
+            </span>
+          )}
         </div>
         <span className="pattern-card-chevron" aria-hidden="true">{expanded ? '▲' : '▼'}</span>
       </button>
@@ -439,11 +481,26 @@ function PatternCard(props: CardProps) {
   );
 }
 
+// Compare two masterlist entries to decide whether the working entry
+// has diverged from original — drives whether the per-class Revert
+// chip is shown for non-reverted classes.
+function entriesDiffer(a: TaggedClassEntry | undefined, b: TaggedClassEntry | undefined): boolean {
+  if (!a || !b) return !!a !== !!b;
+  if (a.parent !== b.parent) return true;
+  if (a.patterns.length !== b.patterns.length) return true;
+  for (let i = 0; i < a.patterns.length; i += 1) if (a.patterns[i] !== b.patterns[i]) return true;
+  if (a.subclasses.length !== b.subclasses.length) return true;
+  for (let i = 0; i < a.subclasses.length; i += 1) if (a.subclasses[i] !== b.subclasses[i]) return true;
+  return false;
+}
+
 export default function PatternCards(props: PatternCardsProps) {
   const {
     detectedPatterns, ranking, userResolvedPattern, classResolvedPatterns,
     ambiguousClassNames, recomputedRanksByClass,
-    classUsageBindings, classUsageBindingSource, onLineFlash
+    classUsageBindings, classUsageBindingSource,
+    workingMasterlist, originalMasterlist, revertedClasses, onToggleRevert,
+    onLineFlash
   } = props;
   if (!detectedPatterns.length) return <div id="pattern-cards" />;
   const ranksById = new Map<string, PatternRankEntry>();
@@ -500,6 +557,13 @@ export default function PatternCards(props: PatternCardsProps) {
   function renderCard(p: DetectedPatternFull, opts: { isAmbiguousUnresolved: boolean; wasAmbiguousNowResolved: boolean }) {
     const cls = p.className || '';
     const recomputedRank = cls ? recomputed[cls] : undefined;
+    const isReverted = !!(cls && revertedClasses?.has(cls));
+    const isDirty = !!(
+      cls
+      && workingMasterlist
+      && originalMasterlist
+      && entriesDiffer(workingMasterlist.get(cls), originalMasterlist.get(cls))
+    );
     return (
       <PatternCard
         key={p.patternId + cls}
@@ -512,6 +576,9 @@ export default function PatternCards(props: PatternCardsProps) {
         recomputed={recomputedRank}
         taggedUsages={(p.className && classUsageBindings[p.className]) || []}
         classUsageBindingSource={classUsageBindingSource}
+        isReverted={isReverted}
+        isDirty={isDirty}
+        onToggleRevert={cls && onToggleRevert ? () => onToggleRevert(cls) : undefined}
         onLineFlash={onLineFlash}
       />
     );
