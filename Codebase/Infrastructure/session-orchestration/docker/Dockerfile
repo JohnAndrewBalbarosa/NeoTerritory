@@ -30,12 +30,19 @@ RUN mkdir -p /build \
 # Done in its own stage so the runtime image doesn't carry vite/devDeps.
 # =========================================================================
 FROM node:20-bookworm-slim AS frontend-builder
-WORKDIR /fe
+# Mirror the repo layout under /build so relative imports inside the
+# frontend that reach OUT of Frontend/ (e.g. PatternAtlas.tsx pulls
+# `../../../../Microservice/samples/.../*.cpp?raw`) resolve the same
+# way they do locally. Without this, Vite errors with
+# "Could not resolve ../../../../Microservice/samples/..." at build time.
+WORKDIR /build/Codebase/Frontend
 # NODE_ENV is unset in this stage, so npm ci installs devDependencies
 # (vite, typescript, plugins) which are required to run `npm run build`.
 COPY Codebase/Frontend/package.json Codebase/Frontend/package-lock.json ./
 RUN npm ci --include=dev
 COPY Codebase/Frontend ./
+# Bring in the C++ sample tree the marketing surface ?raw-imports.
+COPY Codebase/Microservice/samples /build/Codebase/Microservice/samples
 RUN npm run build
 
 # =========================================================================
@@ -75,7 +82,7 @@ RUN cd Codebase/Backend \
 # so index.html points at the hashed bundle. Express static-serves
 # Codebase/Frontend, so this layout matches existing behavior.
 COPY Codebase/Frontend ./Codebase/Frontend
-COPY --from=frontend-builder /fe/dist/ ./Codebase/Frontend/
+COPY --from=frontend-builder /build/Codebase/Frontend/dist/ ./Codebase/Frontend/
 
 # Bake the microservice artifacts into the image at the canonical path
 # the backend expects (Codebase/Microservice/build/NeoTerritory and
