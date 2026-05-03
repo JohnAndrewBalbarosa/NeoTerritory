@@ -1,6 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../../store/appState';
 import { useAuth } from '../../hooks/useAuth';
+import AuroraBackground from '../marketing/effects/AuroraBackground';
+import ShinyText from '../marketing/effects/ShinyText';
+import TiltCard from '../marketing/effects/TiltCard';
 import {
   fetchTesterAccounts,
   claimSeat,
@@ -95,11 +99,20 @@ export default function LoginOverlay() {
 
   return (
     <div className="login-overlay">
+      <AuroraBackground variant="cool" />
       <div className="login-wrap">
+        <AnimatePresence mode="wait" initial={false}>
         {mode === 'picker' && showPicker && (
-          <div className="login-card tester-chooser">
+          <motion.div
+            key="picker"
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+          <TiltCard className="login-card tester-chooser" maxTilt={4} scale={1.005}>
             <header className="tester-chooser-head">
-              <h2>Pick a tester seat</h2>
+              <h2><ShinyText text="Pick a tester seat" /></h2>
               <p className="tester-hint">Claim an open seat to sign in.</p>
             </header>
             {accountsError && <p className="login-error">{accountsError}</p>}
@@ -131,12 +144,21 @@ export default function LoginOverlay() {
                 Admin sign in
               </button>
             </p>
-          </div>
+          </TiltCard>
+          </motion.div>
         )}
 
         {(mode === 'admin' || !showPicker) && (
-          <form className="login-card" onSubmit={handleAdminSubmit}>
-            <h2>Admin sign in</h2>
+          <motion.form
+            key="admin"
+            className="login-card"
+            onSubmit={handleAdminSubmit}
+            initial={{ opacity: 0, y: 18, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -10, scale: 0.98 }}
+            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <h2><ShinyText text="Admin sign in" /></h2>
             <p className="login-hint">Enter administrator credentials.</p>
             <label className="field">
               <span>Username</span>
@@ -171,8 +193,9 @@ export default function LoginOverlay() {
                 </button>
               </p>
             )}
-          </form>
+          </motion.form>
         )}
+        </AnimatePresence>
       </div>
     </div>
   );

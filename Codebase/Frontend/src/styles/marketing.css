@@ -967,16 +967,19 @@ body[data-surface] #root {
 }
 .nt-atlas__grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.4rem;
 }
 @media (min-width: 1100px) {
   .nt-atlas__grid {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 }
 
 .nt-atlas__card {
+  /* min-width:0 lets long <pre> children scroll inside the card instead
+     of pushing the grid track wider than the viewport. */
+  min-width: 0;
   background: var(--nt-mkt-surface);
   border: 1px solid var(--nt-mkt-line);
   border-top: 3px solid var(--atlas-accent, oklch(72% 0.18 250));
@@ -1057,6 +1060,9 @@ body[data-surface] #root {
   border: 1px solid var(--nt-mkt-line);
   overflow: hidden;
   background: oklch(16% 0.01 260);
+  /* Critical: lets the inner <pre> respect the grid track width. */
+  max-width: 100%;
+  min-width: 0;
 }
 .nt-atlas__code-file {
   display: flex;
@@ -1125,6 +1131,15 @@ body[data-surface] #root {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.82rem;
+  display: block;
+  overflow-x: auto;
+}
+.nt-atlas__subs thead,
+.nt-atlas__subs tbody,
+.nt-atlas__subs tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
 }
 .nt-atlas__subs th,
 .nt-atlas__subs td {

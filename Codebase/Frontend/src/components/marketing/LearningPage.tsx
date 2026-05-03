@@ -1,4 +1,5 @@
 import { navigate } from '../../lib/router';
+import { useOverflowGuard } from '../../hooks/useOverflowGuard';
 import MagneticButton from './effects/MagneticButton';
 import ScrollReveal from './effects/ScrollReveal';
 import SplitText from './effects/SplitText';
@@ -73,6 +74,10 @@ const FAMILIES: Array<{
 ];
 
 export default function LearningPage() {
+  // Dev-only viewport overflow detector. Logs offending elements to the
+  // console with their delta in pixels. No-op in production builds.
+  useOverflowGuard({ rootSelector: '.nt-learn', tolerancePx: 2 });
+
   return (
     <main className="nt-learn" id="main">
       <section className="nt-learn__hero" aria-labelledby="learn-heading">

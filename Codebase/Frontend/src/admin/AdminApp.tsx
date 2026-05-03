@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/appState';
 import { useTheme } from '../hooks/useTheme';
+import { useOverflowGuard } from '../hooks/useOverflowGuard';
+import AuroraBackground from '../components/marketing/effects/AuroraBackground';
+import ShinyText from '../components/marketing/effects/ShinyText';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -73,6 +77,8 @@ export default function AdminApp() {
   const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
+  // Dev-only viewport overflow detector for the admin shell.
+  useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
   useEffect(() => {
     if (!token || !user) { window.location.href = '/'; return; }
@@ -89,10 +95,11 @@ export default function AdminApp() {
 
   return (
     <div className="admin-shell">
+      <AuroraBackground variant="warm" className="admin-aurora" />
       <header className="admin-topbar reveal">
         <div className="brand">
           <p className="eyebrow">NeoTerritory · Admin</p>
-          <h1>Research dashboard</h1>
+          <h1><ShinyText text="Research dashboard" speed={6} intensity={0.6} /></h1>
           <p className="lede">Activity, scoring, and qualitative reviews across all tester accounts.</p>
         </div>
         <div className="admin-actions">
@@ -139,33 +146,43 @@ export default function AdminApp() {
       </nav>
 
       <main className="admin-main" key={refreshKey}>
-        {activeTab === 'runs'       && <RunsTab />}
-        {activeTab === 'complexity' && <ComplexityTab />}
-        {activeTab === 'users'      && (
-          <>
-            <section className="admin-section">
-              <h2>Users</h2>
-              <UserTable />
-            </section>
-            <section className="admin-section">
-              <h2>Per-user activity</h2>
-              <PerUserActivity />
-            </section>
-          </>
-        )}
-        {activeTab === 'reviews' && (
-          <>
-            <section className="admin-section">
-              <h2>Reviews</h2>
-              <ReviewsPanel />
-            </section>
-            <section className="admin-section">
-              <h2>Survey responses</h2>
-              <SurveyStats />
-            </section>
-          </>
-        )}
-        {activeTab === 'logs' && <LogsView />}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {activeTab === 'runs'       && <RunsTab />}
+            {activeTab === 'complexity' && <ComplexityTab />}
+            {activeTab === 'users'      && (
+              <>
+                <section className="admin-section">
+                  <h2>Users</h2>
+                  <UserTable />
+                </section>
+                <section className="admin-section">
+                  <h2>Per-user activity</h2>
+                  <PerUserActivity />
+                </section>
+              </>
+            )}
+            {activeTab === 'reviews' && (
+              <>
+                <section className="admin-section">
+                  <h2>Reviews</h2>
+                  <ReviewsPanel />
+                </section>
+                <section className="admin-section">
+                  <h2>Survey responses</h2>
+                  <SurveyStats />
+                </section>
+              </>
+            )}
+            {activeTab === 'logs' && <LogsView />}
+          </motion.div>
+        </AnimatePresence>
       </main>
     </div>
   );

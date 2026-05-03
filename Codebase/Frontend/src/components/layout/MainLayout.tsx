@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, StudioTab } from '../../store/appState';
+import { useOverflowGuard } from '../../hooks/useOverflowGuard';
+import ShinyText from '../marketing/effects/ShinyText';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
@@ -62,6 +65,8 @@ export default function MainLayout() {
   useHealth();
   useAiCommentaryPoll();
   useHeartbeat();
+  // Dev-only viewport overflow detector for the studio shell.
+  useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
   const { theme, toggleTheme } = useTheme();
   const {
     status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
@@ -220,7 +225,7 @@ export default function MainLayout() {
       <header className="topbar">
         <div className="brand">
           <p className="eyebrow">NeoTerritory Studio</p>
-          <h1>Pattern detection &amp; annotation</h1>
+          <h1><ShinyText text="Pattern detection & annotation" speed={6} intensity={0.7} /></h1>
           <p className="lede">
             Paste C++ source or upload a file. The microservice detects design patterns
             and the studio shows comments side-by-side with the lines they reference.
@@ -286,30 +291,40 @@ export default function MainLayout() {
       </nav>
 
       <main className="content tab-content">
-        {activeTab === 'submit' && (
-          <SubmitTab
-            onAnalysisComplete={onAnalysisComplete}
-            refreshSignal={runRefreshSignal}
-            beforeAnalyze={beforeAnalyze}
-          />
-        )}
-        {activeTab === 'annotated' && (
-          <AnnotatedTab
-            onLineFlash={flashLine}
-            onCommentFlash={flashComment}
-            pendingSave={!!pendingSave}
-            onDiscard={discardCurrentRun}
-            onGoToReview={() => setActiveTab('ambiguous')}
-          />
-        )}
-        {activeTab === 'gdb' && <GdbRunnerTab />}
-        {activeTab === 'ambiguous' && (
-          <AmbiguousTab
-            pendingSave={pendingSave}
-            onSaved={onSaved}
-            onDiscard={discardCurrentRun}
-          />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {activeTab === 'submit' && (
+              <SubmitTab
+                onAnalysisComplete={onAnalysisComplete}
+                refreshSignal={runRefreshSignal}
+                beforeAnalyze={beforeAnalyze}
+              />
+            )}
+            {activeTab === 'annotated' && (
+              <AnnotatedTab
+                onLineFlash={flashLine}
+                onCommentFlash={flashComment}
+                pendingSave={!!pendingSave}
+                onDiscard={discardCurrentRun}
+                onGoToReview={() => setActiveTab('ambiguous')}
+              />
+            )}
+            {activeTab === 'gdb' && <GdbRunnerTab />}
+            {activeTab === 'ambiguous' && (
+              <AmbiguousTab
+                pendingSave={pendingSave}
+                onSaved={onSaved}
+                onDiscard={discardCurrentRun}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
 
       {analyzeReplace && (

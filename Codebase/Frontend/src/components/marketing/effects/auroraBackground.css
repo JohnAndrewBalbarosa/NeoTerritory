@@ -1,0 +1,77 @@
+.nt-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+  isolation: isolate;
+}
+.nt-aurora__blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.55;
+  mix-blend-mode: screen;
+}
+.nt-aurora--default .nt-aurora__blob--a { background: oklch(72% 0.18 250); }
+.nt-aurora--default .nt-aurora__blob--b { background: oklch(70% 0.2 320); }
+.nt-aurora--default .nt-aurora__blob--c { background: oklch(74% 0.18 200); }
+.nt-aurora--cool .nt-aurora__blob--a { background: oklch(72% 0.18 220); }
+.nt-aurora--cool .nt-aurora__blob--b { background: oklch(70% 0.18 260); }
+.nt-aurora--cool .nt-aurora__blob--c { background: oklch(74% 0.16 190); }
+.nt-aurora--warm .nt-aurora__blob--a { background: oklch(76% 0.18 30); }
+.nt-aurora--warm .nt-aurora__blob--b { background: oklch(72% 0.2 350); }
+.nt-aurora--warm .nt-aurora__blob--c { background: oklch(74% 0.16 60); }
+
+.nt-aurora__blob--a {
+  width: 60vw;
+  height: 60vw;
+  left: -15vw;
+  top: -10vw;
+  animation: nt-aurora-drift-a 18s ease-in-out infinite alternate;
+}
+.nt-aurora__blob--b {
+  width: 55vw;
+  height: 55vw;
+  right: -12vw;
+  top: 10vh;
+  animation: nt-aurora-drift-b 22s ease-in-out infinite alternate;
+}
+.nt-aurora__blob--c {
+  width: 50vw;
+  height: 50vw;
+  left: 20vw;
+  bottom: -20vw;
+  animation: nt-aurora-drift-c 26s ease-in-out infinite alternate;
+}
+.nt-aurora.is-static .nt-aurora__blob {
+  animation: none;
+}
+
+.nt-aurora__grain {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 4px 4px, 6px 6px;
+  opacity: 0.4;
+  mix-blend-mode: overlay;
+}
+
+@keyframes nt-aurora-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to   { transform: translate3d(8vw, 6vh, 0) scale(1.1); }
+}
+@keyframes nt-aurora-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.05); }
+  to   { transform: translate3d(-6vw, 8vh, 0) scale(0.95); }
+}
+@keyframes nt-aurora-drift-c {
+  from { transform: translate3d(0, 0, 0) scale(0.95); }
+  to   { transform: translate3d(4vw, -6vh, 0) scale(1.08); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nt-aurora__blob { animation: none !important; }
+}
