@@ -164,35 +164,61 @@ REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
 
 if [ "$SHIP_MODE" = 'source' ]; then
   echo "── Shipping SOURCE to $SSH_TARGET:$REMOTE_APP_DIR (remote will build) ──"
-  # Tar up the repo, excluding heavy / generated paths. Remote untars +
-  # docker-builds the same multi-stage Dockerfile we'd build locally.
+  # ALLOWLIST, not blacklist. Only paths the docker build actually needs
+  # leave the laptop. Anything outside this list (docs/, build/, out/,
+  # test-artifacts/, playwright-scratch/, tools/, root .pem, AGENTS.md,
+  # CLAUDE.md, Questionnaire*, root package.json, etc.) is by construction
+  # impossible to ship — no exclude needed.
+  TAR_INCLUDES=(
+    Codebase/Backend
+    Codebase/Frontend
+    Codebase/Microservice
+    Codebase/Infrastructure/session-orchestration/docker
+    scripts
+    # Root-level entry scripts — not used by the container, but handy for
+    # in-instance debugging if you SSH in and want dev-mode tools.
+    start.sh
+    start.ps1
+  )
+  # Inside the included paths, still strip generated / heavy / secret bits.
   TAR_EXCLUDES=(
-    --exclude='.git'
-    --exclude='node_modules'
-    --exclude='Codebase/Backend/node_modules'
-    --exclude='Codebase/Frontend/node_modules'
-    --exclude='Codebase/Frontend/dist'
-    --exclude='Codebase/Backend/dist'
+    --exclude='**/.git'
+    --exclude='**/node_modules'
+    --exclude='**/dist'
+    --exclude='**/build'
+    --exclude='**/build-linux'
+    --exclude='**/out'
+    --exclude='**/.next'
+    --exclude='**/.cache'
+    --exclude='**/coverage'
+    --exclude='**/__pycache__'
+    --exclude='**/*.log'
+    --exclude='**/*.tsbuildinfo'
+    --exclude='**/*.sqlite'
+    --exclude='**/*.sqlite-journal'
+    --exclude='**/.DS_Store'
+    --exclude='**/Thumbs.db'
+    # Secrets — never ship local creds; remote env-file carries them.
+    --exclude='**/*.pem'
+    --exclude='**/*.key'
+    --exclude='**/.env'
+    --exclude='**/.env.*'
+    --exclude='Codebase/Backend/uploads'
+    --exclude='Codebase/Backend/outputs'
+    --exclude='Codebase/Backend/server.out.log'
+    --exclude='Codebase/Backend/server.err.log'
+    --exclude='Codebase/Backend/keys'
+    # Microservice test inputs only — Runtime/ and samples/ are required
+    # by CMake and the Dockerfile respectively, so they MUST stay.
+    --exclude='Codebase/Microservice/Test'
     --exclude='Codebase/Microservice/build'
     --exclude='Codebase/Microservice/build-linux'
-    --exclude='build'
-    --exclude='out'
-    --exclude='test-artifacts'
-    --exclude='*.log'
-    --exclude='scripts/.env.deploy'
-    --exclude='*.pem'
-    --exclude='*.key'
-    # Kubernetes / minikube tooling — not used by the Docker deploy.
-    --exclude='Codebase/Infrastructure/minikube-linux-amd64'
-    --exclude='Codebase/Infrastructure/session-orchestration/k8s'
-    --exclude='Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy'
-    --exclude='Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy.ps1'
   )
   if [ $DRY_RUN -eq 1 ]; then
-    echo "→ tar source → ssh $SSH_TARGET 'untar + docker build $IMAGE_REF'"
+    echo "→ tar (allowlist: ${TAR_INCLUDES[*]}) → ssh $SSH_TARGET 'untar + docker build $IMAGE_REF'"
   else
     ssh $SSH_OPTS "$SSH_TARGET" "mkdir -p '$REMOTE_APP_DIR'"
-    tar -C "$ROOT_DIR" "${TAR_EXCLUDES[@]}" -czf - . \
+    tar -C "$ROOT_DIR" "${TAR_EXCLUDES[@]}" -czf - "${TAR_INCLUDES[@]}" \
       | ssh $SSH_OPTS "$SSH_TARGET" "tar -C '$REMOTE_APP_DIR' -xzf -"
     ssh $SSH_OPTS "$SSH_TARGET" bash -s <<EOF
 set -e

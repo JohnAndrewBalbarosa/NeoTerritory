@@ -138,20 +138,33 @@ if ($ShipMode -eq 'source') {
   } else {
     $tarTmp = New-TemporaryFile
     try {
+      # ALLOWLIST: only paths the docker build actually needs leave the laptop.
+      $includes = @(
+        'Codebase/Backend',
+        'Codebase/Frontend',
+        'Codebase/Microservice',
+        'Codebase/Infrastructure/session-orchestration/docker',
+        'scripts',
+        'start.sh',
+        'start.ps1'
+      )
       $excludes = @(
-        '--exclude=.git','--exclude=node_modules',
-        '--exclude=Codebase/Backend/node_modules','--exclude=Codebase/Frontend/node_modules',
-        '--exclude=Codebase/Frontend/dist','--exclude=Codebase/Backend/dist',
-        '--exclude=Codebase/Microservice/build','--exclude=Codebase/Microservice/build-linux',
-        '--exclude=build','--exclude=out','--exclude=test-artifacts','--exclude=*.log',
-        '--exclude=scripts/.env.deploy','--exclude=*.pem','--exclude=*.key',
-        '--exclude=Codebase/Infrastructure/minikube-linux-amd64',
-        '--exclude=Codebase/Infrastructure/session-orchestration/k8s',
-        '--exclude=Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy',
-        '--exclude=Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy.ps1'
+        '--exclude=**/.git','--exclude=**/node_modules',
+        '--exclude=**/dist','--exclude=**/build','--exclude=**/build-linux',
+        '--exclude=**/out','--exclude=**/.next','--exclude=**/.cache',
+        '--exclude=**/coverage','--exclude=**/__pycache__',
+        '--exclude=**/*.log','--exclude=**/*.tsbuildinfo',
+        '--exclude=**/*.sqlite','--exclude=**/*.sqlite-journal',
+        '--exclude=**/.DS_Store','--exclude=**/Thumbs.db',
+        '--exclude=**/*.pem','--exclude=**/*.key',
+        '--exclude=**/.env','--exclude=**/.env.*',
+        '--exclude=Codebase/Backend/uploads','--exclude=Codebase/Backend/outputs',
+        '--exclude=Codebase/Backend/server.out.log','--exclude=Codebase/Backend/server.err.log',
+        '--exclude=Codebase/Backend/keys',
+        '--exclude=Codebase/Microservice/Test'
       )
       Push-Location $RootDir
-      try { & tar @excludes -czf $tarTmp.FullName . } finally { Pop-Location }
+      try { & tar @excludes -czf $tarTmp.FullName @includes } finally { Pop-Location }
       if ($LASTEXITCODE -ne 0) { throw 'tar failed' }
       Invoke-Expression "ssh $SshOpts `"$SshTarget`" `"mkdir -p '$RemoteAppDir'`""
       Invoke-Expression "scp $SshOpts `"$($tarTmp.FullName)`" `"$($SshTarget):/tmp/neoterritory-src.tgz`""
