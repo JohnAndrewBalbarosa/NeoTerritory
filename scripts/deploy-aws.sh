@@ -4,14 +4,17 @@
 # microservice, packaged via Codebase/Infrastructure/session-orchestration/
 # docker/Dockerfile) to a running AWS EC2 instance over SSH.
 #
-# No AWS CLI / ECR dependency: cheap-spot-instance friendly. The flow is:
-#   1. Build chosen components locally (frontend / backend / microservice).
-#   2. docker build the multi-stage runtime image.
-#   3. docker save | ssh "docker load" → run container with env from
-#      scripts/.env.deploy.
+# No AWS CLI / ECR dependency: cheap-spot-instance friendly. Two ship modes:
+#
+#   --image  (default) Build everything locally, docker save | ssh docker load.
+#            Heavy upload (GBs) but the remote needs only docker.
+#   --source             Tar the repo, scp to remote, remote runs the same
+#            multi-stage docker build. Tiny upload, remote needs docker +
+#            ~2 min build time. Auto-installs docker if missing.
 #
 # Usage:
-#   scripts/deploy-aws.sh                 # build + push everything
+#   scripts/deploy-aws.sh                 # image mode, build + push everything
+#   scripts/deploy-aws.sh --source        # ship source, build on AWS side
 #   scripts/deploy-aws.sh --frontend      # only rebuild frontend layer + ship
 #   scripts/deploy-aws.sh --backend --microservice
 #   scripts/deploy-aws.sh --no-build      # skip local builds, only ship image
@@ -38,6 +41,7 @@ DO_PUSH=1
 USE_SUPABASE=1
 DRY_RUN=0
 ANY_COMPONENT=0
+SHIP_MODE='image'   # 'image' (default) | 'source'
 
 usage() { sed -n '2,30p' "$0"; exit "${1:-0}"; }
 
@@ -51,12 +55,19 @@ while [ $# -gt 0 ]; do
     --no-build)      DO_FRONTEND=0; DO_BACKEND=0; DO_MICROSERVICE=0 ;;
     --build-only)    DO_PUSH=0 ;;
     --no-supabase)   USE_SUPABASE=0 ;;
+    --source)        SHIP_MODE='source' ;;   # ship source, build on remote
+    --image)         SHIP_MODE='image' ;;    # build local, ship docker image
     --dry-run)       DRY_RUN=1 ;;
     -h|--help)       usage 0 ;;
     *) echo "unknown flag: $1" >&2; usage 1 ;;
   esac
   shift
 done
+
+# In source-ship mode, local builds are pointless — the remote does them.
+if [ "$SHIP_MODE" = 'source' ]; then
+  DO_FRONTEND=0; DO_BACKEND=0; DO_MICROSERVICE=0; DO_DOCKER=0
+fi
 
 # Default = build everything when no component flag was passed.
 if [ $ANY_COMPONENT -eq 0 ]; then
@@ -124,11 +135,54 @@ if [ $DO_PUSH -eq 0 ]; then
 fi
 
 # ── 3. Ship to AWS via SSH ──────────────────────────────────────────────────
-echo "── Shipping image to $SSH_TARGET ──"
-if [ $DRY_RUN -eq 1 ]; then
-  echo "→ docker save $IMAGE_REF | ssh $SSH_TARGET 'docker load'"
+REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
+
+if [ "$SHIP_MODE" = 'source' ]; then
+  echo "── Shipping SOURCE to $SSH_TARGET:$REMOTE_APP_DIR (remote will build) ──"
+  # Tar up the repo, excluding heavy / generated paths. Remote untars +
+  # docker-builds the same multi-stage Dockerfile we'd build locally.
+  TAR_EXCLUDES=(
+    --exclude='.git'
+    --exclude='node_modules'
+    --exclude='Codebase/Backend/node_modules'
+    --exclude='Codebase/Frontend/node_modules'
+    --exclude='Codebase/Frontend/dist'
+    --exclude='Codebase/Backend/dist'
+    --exclude='Codebase/Microservice/build'
+    --exclude='Codebase/Microservice/build-linux'
+    --exclude='build'
+    --exclude='out'
+    --exclude='test-artifacts'
+    --exclude='*.log'
+    --exclude='scripts/.env.deploy'
+    --exclude='*.pem'
+    --exclude='*.key'
+  )
+  if [ $DRY_RUN -eq 1 ]; then
+    echo "→ tar source → ssh $SSH_TARGET 'untar + docker build $IMAGE_REF'"
+  else
+    ssh $SSH_OPTS "$SSH_TARGET" "mkdir -p '$REMOTE_APP_DIR'"
+    tar -C "$ROOT_DIR" "${TAR_EXCLUDES[@]}" -czf - . \
+      | ssh $SSH_OPTS "$SSH_TARGET" "tar -C '$REMOTE_APP_DIR' -xzf -"
+    ssh $SSH_OPTS "$SSH_TARGET" bash -s <<EOF
+set -e
+cd "$REMOTE_APP_DIR"
+# Sanity-check Docker is installed; install if missing (Debian/Ubuntu).
+if ! command -v docker >/dev/null 2>&1; then
+  echo "→ installing docker on remote"
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker "\$USER" || true
+fi
+docker build -f "Codebase/Infrastructure/session-orchestration/docker/Dockerfile" -t "$IMAGE_REF" .
+EOF
+  fi
 else
-  docker save "$IMAGE_REF" | ssh $SSH_OPTS "$SSH_TARGET" 'docker load'
+  echo "── Shipping IMAGE to $SSH_TARGET ──"
+  if [ $DRY_RUN -eq 1 ]; then
+    echo "→ docker save $IMAGE_REF | ssh $SSH_TARGET 'docker load'"
+  else
+    docker save "$IMAGE_REF" | ssh $SSH_OPTS "$SSH_TARGET" 'docker load'
+  fi
 fi
 
 # Build remote env-file. We only forward keys the backend actually reads,

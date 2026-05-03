@@ -2,8 +2,14 @@
 # deploy-aws.ps1 — PowerShell mirror of deploy-aws.sh.
 # See scripts/.env.deploy.example for the required keys.
 #
+# Two ship modes:
+#   -Image  (default) Build locally, docker save | ssh docker load (heavy upload).
+#   -Source           Tar the repo, scp to remote, remote runs docker build
+#                     itself (tiny upload, auto-installs docker if missing).
+#
 # Usage:
-#   ./scripts/deploy-aws.ps1                 # build + push everything
+#   ./scripts/deploy-aws.ps1                 # image mode, build + push everything
+#   ./scripts/deploy-aws.ps1 -Source         # ship source, build on AWS side
 #   ./scripts/deploy-aws.ps1 -Frontend
 #   ./scripts/deploy-aws.ps1 -Backend -Microservice
 #   ./scripts/deploy-aws.ps1 -NoBuild
@@ -21,8 +27,11 @@ param(
   [switch]$NoBuild,
   [switch]$BuildOnly,
   [switch]$NoSupabase,
+  [switch]$Source,    # ship source, remote builds
+  [switch]$Image,     # ship pre-built image (default)
   [switch]$DryRun
 )
+$ShipMode = if ($Source) { 'source' } else { 'image' }
 
 $ErrorActionPreference = 'Stop'
 $RootDir   = Resolve-Path (Join-Path $PSScriptRoot '..')
@@ -55,6 +64,9 @@ $DoBackend      = if ($AnyComponent) { [bool]$Backend }      else { $true }
 $DoMicroservice = if ($AnyComponent) { [bool]$Microservice } else { $true }
 $DoDocker       = if ($NoDocker)     { $false } elseif ($AnyComponent) { [bool]$Docker } else { $true }
 if ($NoBuild) { $DoFrontend = $false; $DoBackend = $false; $DoMicroservice = $false }
+if ($ShipMode -eq 'source') {
+  $DoFrontend = $false; $DoBackend = $false; $DoMicroservice = $false; $DoDocker = $false
+}
 $DoPush         = -not $BuildOnly
 $UseSupabase    = -not $NoSupabase
 
@@ -110,16 +122,55 @@ if ($DoDocker) {
 if (-not $DoPush) { Write-Host "✓ build-only: skipping ship to $($env:AWS_HOST)"; return }
 
 # ── 3. Ship to AWS via SSH ──────────────────────────────────────────────────
-Write-Host "── Shipping image to $SshTarget ──"
-if ($DryRun) {
-  Write-Host "→ docker save $ImageRef | ssh $SshTarget 'docker load'"
+$RemoteAppDir = if ($env:REMOTE_APP_DIR) { $env:REMOTE_APP_DIR } else { "/home/$($env:AWS_USER)/neoterritory" }
+
+if ($ShipMode -eq 'source') {
+  Write-Host "── Shipping SOURCE to $SshTarget`:$RemoteAppDir (remote will build) ──"
+  if ($DryRun) {
+    Write-Host "→ tar source → ssh $SshTarget 'untar + docker build $ImageRef'"
+  } else {
+    $tarTmp = New-TemporaryFile
+    try {
+      $excludes = @(
+        '--exclude=.git','--exclude=node_modules',
+        '--exclude=Codebase/Backend/node_modules','--exclude=Codebase/Frontend/node_modules',
+        '--exclude=Codebase/Frontend/dist','--exclude=Codebase/Backend/dist',
+        '--exclude=Codebase/Microservice/build','--exclude=Codebase/Microservice/build-linux',
+        '--exclude=build','--exclude=out','--exclude=test-artifacts','--exclude=*.log',
+        '--exclude=scripts/.env.deploy','--exclude=*.pem','--exclude=*.key'
+      )
+      Push-Location $RootDir
+      try { & tar @excludes -czf $tarTmp.FullName . } finally { Pop-Location }
+      if ($LASTEXITCODE -ne 0) { throw 'tar failed' }
+      Invoke-Expression "ssh $SshOpts `"$SshTarget`" `"mkdir -p '$RemoteAppDir'`""
+      Invoke-Expression "scp $SshOpts `"$($tarTmp.FullName)`" `"$($SshTarget):/tmp/neoterritory-src.tgz`""
+      $remoteBuild = @"
+set -e
+cd "$RemoteAppDir"
+tar -xzf /tmp/neoterritory-src.tgz
+rm -f /tmp/neoterritory-src.tgz
+if ! command -v docker >/dev/null 2>&1; then
+  echo '→ installing docker on remote'
+  curl -fsSL https://get.docker.com | sh
+  sudo usermod -aG docker "\$USER" || true
+fi
+docker build -f "Codebase/Infrastructure/session-orchestration/docker/Dockerfile" -t "$ImageRef" .
+"@
+      $remoteBuild | & ssh $SshOpts.Split(' ') $SshTarget 'bash -s'
+    } finally { Remove-Item $tarTmp.FullName -Force -ErrorAction SilentlyContinue }
+  }
 } else {
-  $tmp = New-TemporaryFile
-  try {
-    docker save $ImageRef -o $tmp.FullName
-    if ($LASTEXITCODE -ne 0) { throw 'docker save failed' }
-    Invoke-Expression "ssh $SshOpts `"$SshTarget`" 'docker load' < `"$($tmp.FullName)`""
-  } finally { Remove-Item $tmp.FullName -Force -ErrorAction SilentlyContinue }
+  Write-Host "── Shipping IMAGE to $SshTarget ──"
+  if ($DryRun) {
+    Write-Host "→ docker save $ImageRef | ssh $SshTarget 'docker load'"
+  } else {
+    $tmp = New-TemporaryFile
+    try {
+      docker save $ImageRef -o $tmp.FullName
+      if ($LASTEXITCODE -ne 0) { throw 'docker save failed' }
+      Invoke-Expression "ssh $SshOpts `"$SshTarget`" 'docker load' < `"$($tmp.FullName)`""
+    } finally { Remove-Item $tmp.FullName -Force -ErrorAction SilentlyContinue }
+  }
 }
 
 # Build remote env file content.
