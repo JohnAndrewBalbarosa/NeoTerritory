@@ -1,11 +1,8 @@
-import builderSource from '../../../../Microservice/samples/builder/http_request_builder.cpp?raw';
-import strategySource from '../../../../Microservice/samples/strategy/strategy_basic.cpp?raw';
-import factorySource from '../../../../Microservice/samples/factory/shape_factory.cpp?raw';
 import { navigate } from '../../lib/router';
 import MagneticButton from './effects/MagneticButton';
 import ScrollReveal from './effects/ScrollReveal';
 import SplitText from './effects/SplitText';
-import SampleWalkthrough from './SampleWalkthrough';
+import PatternAtlas from './PatternAtlas';
 
 const VALUE_PROPS: Array<{
   id: 'readability' | 'ai-tokens' | 'unit-tests';
@@ -138,58 +135,20 @@ export default function LearningPage() {
         </div>
       </ScrollReveal>
 
-      <ScrollReveal as="section" className="nt-learn__samples">
+      <ScrollReveal as="section" className="nt-learn__atlas">
         <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Animated walkthrough</p>
-          <h2 className="nt-section-title">One sample per family, narrated</h2>
+          <p className="nt-section-eyebrow">Pattern atlas · static catalog</p>
+          <h2 className="nt-section-title">Tag → source → generated test</h2>
           <p className="nt-section-lede">
-            The pipeline highlights different line ranges per stage. These are real files from
-            <code> Codebase/Microservice/samples/</code>; nothing is mocked.
+            Six entries, one per detected pattern. Each shows the C++ sample the detector reads,
+            the test template it instantiates, the placeholder substitutions taken from the
+            detector&rsquo;s <code>unit_test_targets</code>, and a per-pattern explanation of what
+            the test asserts and why. Files are imported live from{' '}
+            <code>Codebase/Microservice/samples/</code> and{' '}
+            <code>Codebase/Microservice/pattern_catalog/</code> — nothing is mocked.
           </p>
         </header>
-        <div className="nt-learn__sample-stack">
-          <SampleWalkthrough
-            family="Creational"
-            patternId="creational.builder"
-            filename="samples/builder/http_request_builder.cpp"
-            source={builderSource}
-            highlights={[
-              { stage: 'Analysis', lines: [13, 13], note: 'Class introducer + identifier captured.' },
-              { stage: 'Trees', lines: [15, 28], note: 'Methods stitched under HttpRequestBuilder subtree.' },
-              { stage: 'Pattern dispatch', lines: [15, 28], note: 'Fluent return *this matches builder template.' },
-              { stage: 'Pattern dispatch', lines: [30, 36], note: 'build() terminator confirms Builder, not just Method Chaining.' },
-              { stage: 'Hashing', lines: [13, 41], note: 'class_hash binds setters + build() into one cluster.' },
-              { stage: 'Output', lines: [30, 36], note: 'Evidence slice + unit_test_target on build() emitted.' },
-            ]}
-          />
-          <SampleWalkthrough
-            family="Behavioural"
-            patternId="behavioural.strategy_interface"
-            filename="samples/strategy/strategy_basic.cpp"
-            source={strategySource}
-            highlights={[
-              { stage: 'Analysis', lines: [1, 12], note: 'Lex + parse the interface declaration.' },
-              { stage: 'Trees', lines: [1, 30], note: 'Concrete strategies attach as siblings of the interface.' },
-              { stage: 'Pattern dispatch', lines: [1, 12], note: 'Strategy interface template matches.' },
-              { stage: 'Pattern dispatch', lines: [13, 30], note: 'Inheritance cascade tags concrete strategies.' },
-              { stage: 'Hashing', lines: [1, 30], note: 'Each subclass gets its own class_hash, parent-tagged.' },
-              { stage: 'Output', lines: [13, 30], note: 'Per-strategy evidence slices emitted.' },
-            ]}
-          />
-          <SampleWalkthrough
-            family="Structural / Creational"
-            patternId="creational.factory"
-            filename="samples/factory/shape_factory.cpp"
-            source={factorySource}
-            highlights={[
-              { stage: 'Analysis', lines: [1, 20], note: 'Factory class + branching create() identified.' },
-              { stage: 'Trees', lines: [1, 30], note: 'Branches stitched under create() function subtree.' },
-              { stage: 'Pattern dispatch', lines: [1, 30], note: 'Factory template matches branching constructor calls.' },
-              { stage: 'Hashing', lines: [1, 30], note: 'Each branch produces a discrete class_hash bound to the factory.' },
-              { stage: 'Output', lines: [1, 30], note: 'Evidence slice + per-branch unit_test_target emitted.' },
-            ]}
-          />
-        </div>
+        <PatternAtlas />
       </ScrollReveal>
 
       <ScrollReveal as="section" className="nt-learn__cta">

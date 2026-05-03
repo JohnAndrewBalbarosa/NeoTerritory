@@ -938,3 +938,258 @@ body[data-surface] #root {
 .nt-learn__cta {
   text-align: center;
 }
+
+/* ── Pattern Atlas (static catalog on /learn) ───────────────────────── */
+.nt-learn__atlas {
+  margin-bottom: var(--nt-mkt-space-section);
+}
+.nt-atlas {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4rem;
+}
+.nt-atlas__intro {
+  background: color-mix(in oklch, var(--nt-mkt-surface) 88%, transparent);
+  border: 1px solid var(--nt-mkt-line);
+  border-left: 3px solid color-mix(in oklch, var(--nt-mkt-line) 30%, oklch(72% 0.18 250) 70%);
+  border-radius: 10px;
+  padding: 1rem 1.2rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.nt-atlas__intro code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: oklch(20% 0.02 260);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.nt-atlas__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.4rem;
+}
+@media (min-width: 1100px) {
+  .nt-atlas__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.nt-atlas__card {
+  background: var(--nt-mkt-surface);
+  border: 1px solid var(--nt-mkt-line);
+  border-top: 3px solid var(--atlas-accent, oklch(72% 0.18 250));
+  border-radius: 14px;
+  padding: 1.2rem 1.3rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+.nt-atlas__card-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.nt-atlas__family {
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin: 0;
+  font-weight: 600;
+}
+.nt-atlas__title {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.nt-atlas__id {
+  margin: 0;
+}
+.nt-atlas__id code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-atlas__tags {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.nt-atlas__tags li {
+  font-size: 0.7rem;
+  letter-spacing: 0.02em;
+  color: var(--nt-mkt-text);
+  background: color-mix(in oklch, var(--atlas-accent, oklch(72% 0.18 250)) 14%, transparent);
+  border: 1px solid color-mix(in oklch, var(--nt-mkt-line) 70%, var(--atlas-accent, oklch(72% 0.18 250)) 30%);
+  padding: 0.18rem 0.5rem;
+  border-radius: 999px;
+}
+.nt-atlas__summary {
+  margin: 0.4rem 0 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.nt-atlas__section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.nt-atlas__section-title {
+  margin: 0;
+  font-size: 0.78rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text);
+  border-bottom: 1px dashed var(--nt-mkt-line);
+  padding-bottom: 0.4rem;
+}
+
+.nt-atlas__code {
+  margin: 0;
+  border-radius: 8px;
+  border: 1px solid var(--nt-mkt-line);
+  overflow: hidden;
+  background: oklch(16% 0.01 260);
+}
+.nt-atlas__code-file {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  font-size: 0.75rem;
+  color: var(--nt-mkt-text-soft);
+  padding: 0.45rem 0.7rem;
+  background: oklch(20% 0.02 260);
+  border-bottom: 1px solid var(--nt-mkt-line);
+}
+.nt-atlas__code-file code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.nt-atlas__code-pre {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: oklch(88% 0.01 240);
+  max-height: 360px;
+  overflow: auto;
+  white-space: pre;
+  tab-size: 4;
+}
+.nt-atlas__code-pre code {
+  font-family: inherit;
+  background: none;
+  padding: 0;
+}
+
+.nt-atlas__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: oklch(78% 0.14 145);
+}
+.nt-atlas__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: oklch(78% 0.14 145);
+  box-shadow: 0 0 8px oklch(78% 0.14 145);
+}
+.nt-atlas__try {
+  align-self: flex-start;
+  background: linear-gradient(135deg, oklch(70% 0.16 240), oklch(60% 0.2 290));
+  color: oklch(12% 0.02 260);
+  border: 0;
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: transform 200ms var(--nt-mkt-ease), filter 200ms var(--nt-mkt-ease);
+}
+.nt-atlas__try:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.nt-atlas__subs {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.nt-atlas__subs th,
+.nt-atlas__subs td {
+  text-align: left;
+  padding: 0.42rem 0.55rem;
+  border-bottom: 1px solid var(--nt-mkt-line);
+  vertical-align: top;
+}
+.nt-atlas__subs th {
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-soft);
+  font-weight: 600;
+}
+.nt-atlas__subs code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  background: oklch(20% 0.02 260);
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+.nt-atlas__subs-src {
+  color: var(--nt-mkt-text-soft);
+  font-style: italic;
+}
+
+.nt-atlas__details {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 8px;
+  padding: 0.55rem 0.75rem;
+  background: color-mix(in oklch, var(--nt-mkt-surface) 92%, transparent);
+}
+.nt-atlas__details summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text);
+  list-style: none;
+  position: relative;
+  padding-left: 1.2rem;
+}
+.nt-atlas__details summary::-webkit-details-marker { display: none; }
+.nt-atlas__details summary::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  transition: transform 160ms var(--nt-mkt-ease);
+}
+.nt-atlas__details[open] summary::before {
+  transform: rotate(90deg);
+}
+.nt-atlas__details[open] .nt-atlas__code {
+  margin-top: 0.7rem;
+}
+
+.nt-atlas__asserts {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.nt-atlas__asserts li {
+  margin: 0;
+}
