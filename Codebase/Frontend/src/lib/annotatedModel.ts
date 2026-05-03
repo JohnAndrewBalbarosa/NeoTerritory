@@ -743,6 +743,80 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     });
   }
 
+  // Defensive cleanup pass — strip propagated tags from descendants
+  // whenever the parent's working entry no longer carries a propagating
+  // pattern. The cascade above already handles this for the standard
+  // pick path, but this pass also catches:
+  //
+  //   • the canonical-name mismatch case the user flagged: parent's
+  //     tag is "Strategy" (canonical of strategy_interface) and the
+  //     child's tag is "StrategyConcrete" / strategy_concrete. The
+  //     comparison here is canonical so the strip works regardless of
+  //     which raw form the matcher emitted.
+  //   • future "delete a tag" affordances that mutate the parent's
+  //     working patterns directly without going through the cascade
+  //     pass.
+  //
+  // Iterates top-down using BFS over original.subclasses so a chain of
+  // grandparents → parents → children all settle in one pass.
+  const stripQueue: string[] = [];
+  for (const entry of workingMasterlist.values()) {
+    if (entry.subclasses.length > 0) stripQueue.push(entry.className);
+  }
+  // Anchor the BFS at every working entry that has a parent in working
+  // too — single-level chains also need evaluation, not only roots.
+  for (const entry of workingMasterlist.values()) {
+    if (entry.parent && !stripQueue.includes(entry.className)) {
+      stripQueue.push(entry.className);
+    }
+  }
+  const stripVisited = new Set<string>();
+  while (stripQueue.length > 0) {
+    const cur = stripQueue.shift()!;
+    if (stripVisited.has(cur)) continue;
+    stripVisited.add(cur);
+    const curEntry = workingMasterlist.get(cur);
+    if (!curEntry) continue;
+
+    // Does the parent's working patterns still carry any propagating
+    // pattern? If not, every descendant whose tag came from one of
+    // those propagating patterns must lose it.
+    const parentHasPropagating = curEntry.patterns.some((p) =>
+      propagatingPatterns.has(canonicalPatternName(p)),
+    );
+
+    for (const childName of curEntry.subclasses) {
+      const childEntry = workingMasterlist.get(childName);
+      if (!childEntry) continue;
+
+      if (!parentHasPropagating) {
+        // Parent lost all propagating patterns — strip from child every
+        // pattern that originally came from propagation (as captured in
+        // propagatedPatternsByChild), compared by canonical name.
+        const propagatedTags = propagatedPatternsByChild.get(childName) ?? new Set<string>();
+        if (propagatedTags.size > 0) {
+          const before = childEntry.patterns.length;
+          childEntry.patterns = childEntry.patterns.filter(
+            (p) => !propagatedTags.has(canonicalPatternName(p)),
+          );
+          if (childEntry.patterns.length !== before) {
+            // Child was stripped — it no longer follows this parent.
+            childEntry.parent = null;
+          }
+        }
+      }
+
+      // Always recurse so deeper descendants reflect the parent's new
+      // working state, regardless of whether stripping happened.
+      stripQueue.push(childName);
+    }
+  }
+
+  // Drop entries whose patterns went to zero after the defensive strip.
+  for (const [name, entry] of Array.from(workingMasterlist)) {
+    if (entry.patterns.length === 0) workingMasterlist.delete(name);
+  }
+
   // Reconcile parent → subclasses lists in the working masterlist: a
   // parent that no longer cascades must drop the now-sibling children
   // from its `subclasses[]`, and an entry whose parent was deleted from
