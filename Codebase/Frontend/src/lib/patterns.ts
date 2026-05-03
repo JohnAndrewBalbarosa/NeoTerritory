@@ -108,15 +108,101 @@ export function ensureReadableContrast(hex: string, target: number = 3.0): strin
   return `#${[r, g, b].map(v => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
+// Variant -> canonical short name. Covers the common shapes the
+// microservice and AI layer emit: dotted family ids (creational.factory),
+// method-name suffixes (factory_method), structural-class suffixes
+// (adapter_class), and aliases (policy → Strategy, fluent_interface →
+// MethodChaining). Unrecognised values fall through to "Review".
+const CANONICAL_LOOKUP: Record<string, string> = {
+  // Creational
+  factory:           'Factory',
+  factories:         'Factory',
+  factory_method:    'Factory',
+  factorymethod:     'Factory',
+  abstract_factory:  'Factory',
+  abstractfactory:   'Factory',
+  simple_factory:    'Factory',
+  simplefactory:     'Factory',
+  static_factory:    'Factory',
+  staticfactory:     'Factory',
+  singleton:         'Singleton',
+  singletons:        'Singleton',
+  builder:           'Builder',
+  builders:          'Builder',
+  builder_class:     'Builder',
+  builderclass:      'Builder',
+  method_chaining:   'MethodChaining',
+  methodchaining:    'MethodChaining',
+  fluent:            'MethodChaining',
+  fluent_interface:  'MethodChaining',
+  fluentinterface:   'MethodChaining',
+  pimpl:             'Pimpl',
+  pointer_to_impl:   'Pimpl',
+  // Structural
+  adapter:           'Adapter',
+  adapter_class:     'Adapter',
+  adapterclass:      'Adapter',
+  decorator:         'Decorator',
+  decorator_class:   'Decorator',
+  decoratorclass:    'Decorator',
+  proxy:             'Proxy',
+  proxy_class:       'Proxy',
+  proxyclass:        'Proxy',
+  composite:         'Composite',
+  composite_class:   'Composite',
+  // Behavioural
+  strategy:          'Strategy',
+  policy:            'Strategy',
+  observer:          'Observer',
+  iterator:          'Iterator',
+  visitor:           'Visitor',
+  command:           'Command',
+};
+
+// Canonicalise any pattern identifier (raw dotted, snake_case, alias, …)
+// to one of the 14 short names in PATTERN_COLORS. Unknown → "Review".
+//
+// Used by LinePopover to dedupe annotation cards rendering the same
+// pattern under two different ids (e.g. "creational.factory" + "Factory"),
+// and as the second-chance lookup inside colorFor so dotted ids share
+// the canonical palette colour.
+export function canonicalPatternName(rawKey: string | null | undefined): string {
+  const raw = (rawKey || '').trim();
+  if (!raw) return 'Review';
+  // Already a palette short name? Done.
+  if (PATTERN_COLORS[raw]) return raw;
+  const lower = raw.toLowerCase();
+  if (PATTERN_COLORS_CI[lower]) {
+    // Recover the original-cased palette key (e.g. "factory" -> "Factory").
+    const match = Object.keys(PATTERN_COLORS).find((k) => k.toLowerCase() === lower);
+    if (match) return match;
+  }
+  // Drop the family prefix ("creational.", "structural.", "behavioural.").
+  const stripped  = lower.replace(/^[a-z]+\./, '');
+  const condensed = stripped.replace(/[^a-z0-9]+/g, '');
+  if (CANONICAL_LOOKUP[stripped])  return CANONICAL_LOOKUP[stripped];
+  if (CANONICAL_LOOKUP[condensed]) return CANONICAL_LOOKUP[condensed];
+  // Token-level scan (left-to-right): the meaningful name in
+  // "creational.factory" is "factory" (right-side); but a stray
+  // "method_chaining" token-list also resolves cleanly because each
+  // token is also a CANONICAL_LOOKUP key.
+  for (const tok of stripped.split(/[^a-z0-9]+/).filter(Boolean)) {
+    if (CANONICAL_LOOKUP[tok]) return CANONICAL_LOOKUP[tok];
+  }
+  return 'Review';
+}
+
 export function colorFor(key: string): PatternColor {
   if (PATTERN_COLORS[key]) return PATTERN_COLORS[key];
   const lower = (key || '').toLowerCase();
-  // Try exact lowercase match first, then strip non-alphanumerics so microservice
-  // ids like "factory_method" or "strategy (policy)" still resolve to "Factory"
-  // / "Strategy" palette entries via their leading token.
   if (PATTERN_COLORS_CI[lower]) return PATTERN_COLORS_CI[lower];
-  const head = lower.split(/[^a-z0-9]+/).filter(Boolean)[0] || lower;
-  if (PATTERN_COLORS_CI[head]) return PATTERN_COLORS_CI[head];
+  // Canonical lookup handles dotted forms (creational.factory → Factory)
+  // and variants (factory_method → Factory) so the colour stays stable
+  // regardless of which raw form the matcher emitted.
+  const canonical = canonicalPatternName(key);
+  if (canonical !== 'Review' && PATTERN_COLORS[canonical]) {
+    return PATTERN_COLORS[canonical];
+  }
   return generatedColor(key);
 }
 

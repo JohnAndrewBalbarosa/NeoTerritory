@@ -5,7 +5,7 @@ import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
-import { patternFromAnnotation } from '../../lib/patterns';
+import { patternFromAnnotation, canonicalPatternName } from '../../lib/patterns';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -129,13 +129,18 @@ export default function AnnotatedTab({
   // exactly this signal so the missing pill, the corner-button nav, and
   // the popover all agree on what counts as ambiguous.
   const ambiguousLines = useMemo(() => {
+    // Count distinct CANONICAL pattern keys per line. Without canonical
+    // collapse, a line tagged with both "creational.factory" and
+    // "Factory" would falsely register as ambiguous — they are the same
+    // pattern under two names.
     const byLine = new Map<number, Set<string>>();
     for (const a of allAnnotations) {
       if (typeof a.line !== 'number') continue;
-      const key = a.patternKey || patternFromAnnotation(a);
-      if (!key) continue;
+      const raw = a.patternKey || patternFromAnnotation(a);
+      if (!raw) continue;
+      const canon = canonicalPatternName(raw);
       if (!byLine.has(a.line)) byLine.set(a.line, new Set());
-      byLine.get(a.line)!.add(key);
+      byLine.get(a.line)!.add(canon);
     }
     const set = new Set<number>();
     for (const [line, keys] of byLine) {
@@ -143,6 +148,43 @@ export default function AnnotatedTab({
     }
     return set;
   }, [allAnnotations]);
+
+  // Narrower set used solely for chrome greying in SourceView and
+  // ClassBindings: classes whose declaration scope intersects
+  // `ambiguousLines` (= at least one body line has >1 canonical pattern
+  // keys). This is the `bodyAmbiguous` slice only — independent of the
+  // wider `ambiguousClassNames` set we already pass downstream for the
+  // rival picker (`directAmbiguous || bodyAmbiguous || scopeAmbiguous`).
+  // ShapeFactory (Factory@40, Strategy@42, no multi-tag line) does NOT
+  // qualify here, so its chrome stays Factory-coloured even though the
+  // rival picker on its decl line still fires.
+  const coloringAmbiguousClassNames = useMemo(() => {
+    const out = new Set<string>();
+    for (const [name, loc] of classLocations.entries()) {
+      for (const ln of ambiguousLines) {
+        if (ln >= loc.line && ln <= loc.endLine) { out.add(name); break; }
+      }
+    }
+    return out;
+  }, [classLocations, ambiguousLines]);
+
+  // Reverse index: which lines outside a class's declaration scope are
+  // recorded usages of an ambiguous class? Built from
+  // currentRun.classUsageBindings filtered to coloringAmbiguousClassNames.
+  // Lets SourceView grey out global helpers and call-sites that touch an
+  // ambiguous class without scanning the bindings on every row.
+  const usageLinesByAmbiguousClass = useMemo(() => {
+    const out = new Map<number, string>();
+    const bindings = currentRun?.classUsageBindings || {};
+    for (const [cls, list] of Object.entries(bindings)) {
+      if (!coloringAmbiguousClassNames.has(cls)) continue;
+      for (const b of list || []) {
+        const ln = typeof b?.line === 'number' ? b.line : null;
+        if (ln !== null && !out.has(ln)) out.set(ln, cls);
+      }
+    }
+    return out;
+  }, [currentRun, coloringAmbiguousClassNames]);
 
   const classDerivation = useMemo(() => {
     const run = currentRun;
@@ -531,6 +573,8 @@ export default function AnnotatedTab({
             classResolvedPatterns={currentRun.classResolvedPatterns}
             classUsageBindings={currentRun.classUsageBindings}
             inScopePatternsByClass={classDerivation.inScopePatterns}
+            coloringAmbiguousClassNames={coloringAmbiguousClassNames}
+            usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
             onLineClick={onCommentFlash}
           />
         </div>
@@ -565,6 +609,7 @@ export default function AnnotatedTab({
           bindings={currentRun.classUsageBindings || {}}
           detectedPatterns={currentRun.detectedPatterns || []}
           classResolvedPatterns={currentRun.classResolvedPatterns}
+          ambiguousClassNames={coloringAmbiguousClassNames}
           onLineFlash={onLineFlash}
         />
         <PatternCards

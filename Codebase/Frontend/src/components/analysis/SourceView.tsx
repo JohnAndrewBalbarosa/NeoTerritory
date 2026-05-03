@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
-import { colorFor, patternFromAnnotation, PatternColor, AMBIGUOUS_COLOR, blendColor } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, canonicalPatternName, PatternColor, AMBIGUOUS_COLOR } from '../../lib/patterns';
 import { useAppStore } from '../../store/appState';
 import LinePopover from './LinePopover';
 
@@ -20,6 +20,17 @@ interface SourceViewProps {
   // (e.g. ShapeFactory → {Factory, Strategy}, Factory at decl line,
   // Strategy at make()).
   inScopePatternsByClass?: Map<string, Set<string>>;
+  // Narrower set used solely for chrome greying: classes whose declaration
+  // scope has at least one line with >1 distinct canonical pattern keys
+  // (`bodyAmbiguous` only). When a class is in this set, its declaration
+  // line, class chip, and external usage lines render in AMBIGUOUS_COLOR,
+  // while single-tag body lines inside the class keep their own colour so
+  // the user can still see which lines belong to which candidate pattern.
+  coloringAmbiguousClassNames?: Set<string>;
+  // Reverse index keyed by line number: which ambiguous class does this
+  // line reference (as an external usage)? Used to grey out global helpers
+  // and call-sites that touch an ambiguous class.
+  usageLinesByAmbiguousClass?: Map<number, string>;
   onLineClick?: (commentId: string) => void;
 }
 
@@ -195,20 +206,26 @@ function computeClassDominance(
   return { dominantKey: null, color: AMBIGUOUS_COLOR };
 }
 
-// For annotated lines that fall outside every class scope (e.g. int main, global functions):
-// single-pattern → that pattern's solid color; multiple patterns → AMBIGUOUS_COLOR.
-function computeStandaloneColor(anns: Annotation[]): PatternColor {
-  const keys = new Set(anns.map(a => patternFromAnnotation(a)));
-  return keys.size === 1 ? colorFor([...keys][0]) : AMBIGUOUS_COLOR;
-}
-
-// Blend ratio for a single line: 0 = solid dominant, 1 = full grey.
-// Scales with how many annotations on this line belong to non-dominant patterns.
-function computeLineBlendRatio(lineAnns: Annotation[], dominantKey: string | null): number {
-  if (dominantKey === null) return 1;
-  if (lineAnns.length === 0) return 0;
-  const dominantCount = lineAnns.filter(a => patternFromAnnotation(a) === dominantKey).length;
-  return (lineAnns.length - dominantCount) / lineAnns.length;
+// Per-line colour under the strict rule: count distinct CANONICAL pattern
+// keys for the line. One canonical key → that pattern's solid colour.
+// Two or more → AMBIGUOUS_COLOR (no blending). Returns null when the line
+// has no annotations.
+//
+// Canonicalisation matters: the matcher and AI layer can emit both
+// "creational.factory" and "Factory" against the same line — those collapse
+// to one canonical key ("Factory"), so the line stays Factory-coloured
+// instead of being marked rival just because the same pattern wears two
+// names.
+function strictLineColor(anns: Annotation[]): { color: PatternColor | null; distinctCount: number } {
+  if (anns.length === 0) return { color: null, distinctCount: 0 };
+  const canonKeys = new Set<string>();
+  for (const a of anns) {
+    canonKeys.add(canonicalPatternName(patternFromAnnotation(a)));
+  }
+  if (canonKeys.size === 1) {
+    return { color: colorFor([...canonKeys][0]), distinctCount: 1 };
+  }
+  return { color: AMBIGUOUS_COLOR, distinctCount: canonKeys.size };
 }
 
 interface LineStyle extends React.CSSProperties {
@@ -220,16 +237,13 @@ interface LineStyle extends React.CSSProperties {
 
 function styleFor(
   baseColor: PatternColor | null,
-  blendRatio: number,
   badgeColor: PatternColor | null
 ): LineStyle {
   const style: LineStyle = {};
   if (baseColor) {
-    const effective = blendColor(baseColor, AMBIGUOUS_COLOR, blendRatio);
-    style['--scope-bg']   = effective.bg;
-    style['--ann-border'] = effective.border;
+    style['--scope-bg']   = baseColor.bg;
+    style['--ann-border'] = baseColor.border;
   }
-  // Badge is always solid (dominant color, or AMBIGUOUS_COLOR for tied scope).
   if (badgeColor) {
     style['--badge-color'] = badgeColor.border;
     style['--badge-bg']    = badgeColor.bg;
@@ -270,14 +284,14 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
     bulkSetLinePatternOverrides, bulkClearLinePatternOverrides
   } = useAppStore();
 
-  const { rows, scopeDominanceMap } = useMemo(
+  const { rows } = useMemo(
     () => buildRows(sourceText, annotations, detectedPatterns, linePatternOverrides, classResolvedPatterns),
     [sourceText, annotations, detectedPatterns, linePatternOverrides, classResolvedPatterns]
   );
@@ -378,28 +392,57 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
         {rows.map(row => {
           const num           = String(row.lineNo).padStart(width, ' ');
           const hasAnnotation = row.rawAnns.length > 0;
-          const dominance       = row.scope ? (scopeDominanceMap.get(row.scope) ?? null) : null;
-          const standaloneColor = (!dominance && row.anns.length > 0) ? computeStandaloneColor(row.anns) : null;
+
+          // Strict per-line colour from canonical-key count.
+          const strict = strictLineColor(row.anns);
+          const distinctPatternCount = hasAnnotation
+            ? new Set(row.rawAnns.map(a => canonicalPatternName(patternFromAnnotation(a)))).size
+            : 0;
+          const lineKeysAmbiguous = distinctPatternCount > 1;
+
           // Highest-priority colour source: an explicit per-line override.
           // Class-tag propagation writes one of these for every usage-binding
           // site of the resolved class, so they paint in the chosen pattern's
           // colour even when their original annotations belong to another
-          // pattern (or when they have no annotation at all). Falls through
-          // to dominance / standalone votes when no override is set.
-          const lineOverride    = linePatternOverrides[row.lineNo];
-          const overrideColor   = lineOverride ? colorFor(lineOverride) : null;
-          // When the user has resolved a class, lock every line in its scope
-          // to the chosen color — no per-line vote pulling toward grey.
-          const scopeResolved   = !!(row.scope && classResolvedPatterns && classResolvedPatterns[row.scope.className]);
-          const blendRatio      = (overrideColor || scopeResolved) ? 0 : (dominance ? computeLineBlendRatio(row.anns, dominance.dominantKey) : 0);
-          const baseColor       = overrideColor ?? dominance?.color ?? standaloneColor;
-          // Badge is always solid — never blended — so the class chip reads clearly.
-          const badgeColor      = overrideColor ?? dominance?.color ?? standaloneColor;
+          // pattern (or when they have no annotation at all). Overrides win
+          // over the chrome-greying rules below — once the user has
+          // resolved a class, the picked colour is authoritative.
+          const lineOverride  = linePatternOverrides[row.lineNo];
+          const overrideColor = lineOverride ? colorFor(lineOverride) : null;
+          const scopeResolved = !!(row.scope && classResolvedPatterns && classResolvedPatterns[row.scope.className]);
 
-          const distinctPatternCount = hasAnnotation
-            ? new Set(row.rawAnns.map(a => patternFromAnnotation(a))).size
-            : 0;
-          const isAmbiguousLine = blendRatio > 0 && hasAnnotation;
+          // Chrome greying: a class with at least one multi-tag line is
+          // "ambiguous-for-coloring". Its declaration line and every
+          // external usage of it render in AMBIGUOUS_COLOR. Single-tag
+          // body lines inside the class keep their own colour (handled
+          // implicitly: only the class decl line and binding lines are
+          // forced grey here; body lines fall through to `strict.color`).
+          const classChromeAmbiguous =
+            !overrideColor && !scopeResolved &&
+            !!row.isScopeStart && !!row.scope &&
+            !!coloringAmbiguousClassNames?.has(row.scope.className);
+          const usageOfAmbiguous =
+            !overrideColor && !scopeResolved &&
+            !!usageLinesByAmbiguousClass?.has(row.lineNo);
+
+          // Resolve the final colour. Order:
+          //   1. user override                         → that pattern's colour
+          //   2. class is in coloringAmbiguousClassNames AND this is its
+          //      declaration line / external usage     → AMBIGUOUS_COLOR
+          //   3. line itself has >1 canonical keys     → AMBIGUOUS_COLOR
+          //      (this is `strict.color` for keys.size > 1)
+          //   4. line has exactly 1 canonical key      → that pattern's colour
+          //      (`strict.color` for keys.size === 1)
+          //   5. no annotations                        → null (no fill)
+          const baseColor: PatternColor | null = overrideColor
+            ?? ((classChromeAmbiguous || usageOfAmbiguous) ? AMBIGUOUS_COLOR : null)
+            ?? strict.color;
+          const badgeColor = baseColor;
+
+          const isAmbiguousLine =
+            hasAnnotation &&
+            (lineKeysAmbiguous || classChromeAmbiguous || usageOfAmbiguous) &&
+            !overrideColor;
 
           const classNames = [
             'src-line',
@@ -409,7 +452,7 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
             row.isScopeStart ? 'class-scope-start'  : ''
           ].filter(Boolean).join(' ');
 
-          const style = styleFor(baseColor, blendRatio, badgeColor);
+          const style = styleFor(baseColor, badgeColor);
 
           return (
             <span

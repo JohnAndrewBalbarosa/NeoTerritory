@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { Annotation, ClassUsageBinding, DetectedPatternFull } from '../../types/api';
-import { colorFor, USAGE_KIND_LABEL, PatternColor } from '../../lib/patterns';
+import { colorFor, getAmbiguousColor, USAGE_KIND_LABEL, PatternColor } from '../../lib/patterns';
 
 interface ClassBindingsProps {
   bindings: Record<string, ClassUsageBinding[]>;
   detectedPatterns?: DetectedPatternFull[];
   classResolvedPatterns?: Record<string, string>;
+  // Classes whose declaration scope contains at least one multi-tag line
+  // (`bodyAmbiguous`). Their chips and popouts render in AMBIGUOUS_COLOR
+  // so the legend matches the source view's chrome greying.
+  ambiguousClassNames?: Set<string>;
   onLineFlash?: (line: number) => void;
 }
 
@@ -123,7 +127,7 @@ function ClassPopout({
   );
 }
 
-export default function ClassBindings({ bindings, detectedPatterns, classResolvedPatterns, onLineFlash }: ClassBindingsProps) {
+export default function ClassBindings({ bindings, detectedPatterns, classResolvedPatterns, ambiguousClassNames, onLineFlash }: ClassBindingsProps) {
   const annotations = useAppStore(s => s.currentRun?.annotations || []);
   const classNames = Object.keys(bindings || {});
 
@@ -157,7 +161,10 @@ export default function ClassBindings({ bindings, detectedPatterns, classResolve
   }
 
   const activePatternKey = openClass ? (classToPattern.get(openClass) || 'Review') : '';
-  const activeColor = openClass ? colorFor(activePatternKey) : null;
+  const activeIsAmbiguous = !!(openClass && ambiguousClassNames?.has(openClass));
+  const activeColor = openClass
+    ? (activeIsAmbiguous ? getAmbiguousColor() : colorFor(activePatternKey))
+    : null;
   const activeRows  = openClass ? (bindings[openClass] || []) : [];
   const activeNotes = openClass
     ? annotations.filter(a => a.className === openClass)
@@ -168,17 +175,19 @@ export default function ClassBindings({ bindings, detectedPatterns, classResolve
       <div className="class-strip-row" role="tablist">
         {classNames.map(cls => {
           const patternKey = classToPattern.get(cls) || 'Review';
-          const c = colorFor(patternKey);
+          const isAmbiguous = !!ambiguousClassNames?.has(cls);
+          const c = isAmbiguous ? getAmbiguousColor() : colorFor(patternKey);
           const style: ChipStyle = { '--chip-color': c.border };
           const usageCount = (bindings[cls] || []).length;
+          const titlePattern = isAmbiguous ? 'ambiguous (multiple patterns)' : patternKey;
           return (
             <button
               key={cls}
               type="button"
-              className="class-chip"
+              className={`class-chip${isAmbiguous ? ' class-chip--ambiguous' : ''}`}
               style={style}
               aria-pressed={openClass === cls}
-              title={`${cls} — ${usageCount} usage site${usageCount === 1 ? '' : 's'} (function calls or constructions referencing this class)`}
+              title={`${cls} — ${titlePattern} — ${usageCount} usage site${usageCount === 1 ? '' : 's'}`}
               onClick={(e) => openFor(cls, e)}
             >
               <span>{cls}</span>

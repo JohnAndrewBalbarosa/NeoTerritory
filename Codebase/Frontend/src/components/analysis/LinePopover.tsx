@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, canonicalPatternName } from '../../lib/patterns';
 
 interface LinePopoverProps {
   line: number;
@@ -118,13 +118,48 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
 
   if (!annotations.length) return null;
 
-  const linePatterns = Array.from(
-    new Set(annotations.map(a => a.patternKey || patternFromAnnotation(a)))
-  );
+  // Dedupe annotation cards: if the matcher emitted both "creational.factory"
+  // and "Factory" against the same class+line, they are the same pattern —
+  // collapse to one card. We key by (canonical pattern, className, line)
+  // and prefer annotations whose own patternKey is already canonical so the
+  // surviving card carries the cleaner label.
+  const dedupedAnnotations: Annotation[] = (() => {
+    const seen = new Map<string, Annotation>();
+    for (const a of annotations) {
+      const raw = a.patternKey || patternFromAnnotation(a);
+      const canon = canonicalPatternName(raw);
+      const id = `${canon}|${a.className || ''}|${a.line ?? 0}`;
+      const existing = seen.get(id);
+      if (!existing) {
+        seen.set(id, a);
+        continue;
+      }
+      // Prefer the entry whose raw key is already the canonical short form.
+      const existingRaw = existing.patternKey || patternFromAnnotation(existing);
+      if (raw === canon && existingRaw !== canon) seen.set(id, a);
+    }
+    return Array.from(seen.values());
+  })();
+
+  // Distinct patterns now uses canonical names, so the dotted/short pair
+  // that previously rendered two chips collapses to one. Order preserved
+  // by first-seen in the deduped list.
+  const linePatterns = (() => {
+    const out: string[] = [];
+    const seen = new Set<string>();
+    for (const a of dedupedAnnotations) {
+      const canon = canonicalPatternName(a.patternKey || patternFromAnnotation(a));
+      if (seen.has(canon)) continue;
+      seen.add(canon);
+      out.push(canon);
+    }
+    return out;
+  })();
+
   // Picker source: scope-union rivals win on class decl lines, otherwise
-  // fall back to the existing line-only set. Either way, ambiguous = >1.
+  // fall back to the canonical line-only set. Either way, ambiguous = >1.
   const distinctPatterns = (isClassDeclLine && scopeRivals && scopeRivals.length > 1)
-    ? scopeRivals
+    ? Array.from(new Set(scopeRivals.map((p) => canonicalPatternName(p))))
     : linePatterns;
   const ambiguous = distinctPatterns.length > 1;
 
@@ -177,7 +212,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
         </div>
       )}
       <div className="src-popover-body">
-        {annotations.map(a => <AnnotationCard key={a.id} annotation={a} />)}
+        {dedupedAnnotations.map(a => <AnnotationCard key={a.id} annotation={a} />)}
       </div>
     </div>
   );
