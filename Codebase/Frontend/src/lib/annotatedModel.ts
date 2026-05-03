@@ -538,9 +538,40 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     ...subclassPendingClassNames,
     ...droppedClassNames,
   ]);
-  const activePatterns = detected.filter((p) =>
-    p.className ? !droppedClassNames.has(p.className) : true,
-  );
+  // Per-(className, canonical-pattern) survival map. Without this, a
+  // sibling-promoted subclass like Truck (lost Strategy via cascade,
+  // kept Factory) would still see its stripped Strategy tag in
+  // activePatterns because the class itself isn't dropped.
+  //
+  // Derived from `classes` (post-cascade) rather than the not-yet-built
+  // workingMasterlist:
+  //   • subclass_dropped → not added (fall through filters via
+  //     droppedClassNames check below).
+  //   • subclass_pending → not added so existing behaviour is preserved
+  //     (pending classes keep their detected entries in activePatterns;
+  //     legend / chip strip filter them via subclassPendingClassNames).
+  //   • resolved (ambiguous_resolved or unambiguous-with-pick) → only
+  //     the resolved canonical name survives.
+  //   • unambiguous-no-pick / ambiguous_pending → node.candidates
+  //     survive (cascade may have already shrunk this).
+  const workingPatternsByClass = new Map<string, Set<string>>();
+  for (const node of classes.values()) {
+    if (node.status === 'subclass_dropped' || node.status === 'subclass_pending') continue;
+    const surviving = new Set<string>();
+    if (node.resolved) {
+      surviving.add(node.resolved);
+    } else {
+      for (const c of node.candidates) surviving.add(c);
+    }
+    workingPatternsByClass.set(node.className, surviving);
+  }
+  const activePatterns = detected.filter((p) => {
+    if (!p.className) return true;
+    if (droppedClassNames.has(p.className)) return false;
+    const surviving = workingPatternsByClass.get(p.className);
+    if (!surviving) return true;
+    return surviving.has(canonicalPatternName(p.patternId));
+  });
 
   // Legend = unambiguous + ambiguous_resolved. Subclass classes (pending
   // or dropped) contribute nothing — they have not earned a chip. A

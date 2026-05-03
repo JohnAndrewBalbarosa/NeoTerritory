@@ -6,6 +6,7 @@ import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
 import { deriveAnnotatedModel } from '../../lib/annotatedModel';
+import { canonicalPatternName } from '../../lib/patterns';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -59,15 +60,31 @@ export default function AnnotatedTab({
       currentRun.classResolvedPatterns,
       currentRun.classUsageBindingSource || 'heuristic'
     );
-    // Strip the microservice's own annotations for dropped subclass
-    // classes. Without this, picking Factory on Vehicle would still
-    // paint Car/Truck red because their strategy_concrete docTargets
-    // (override method, inheritance colon, etc.) remain in
-    // currentRun.annotations. Cascade-drop must remove those too — the
-    // child tag is gone, so its anchors should be invisible.
-    const direct = (currentRun.annotations || []).filter(a =>
-      !a.className || !model.droppedClassNames.has(a.className)
-    );
+    // Per-(className, canonical-pattern) strip: lifted from
+    // model.workingMasterlist so PARTIAL cascade strips also flow into
+    // the source view. Without this, a sibling-promoted subclass like
+    // Truck (lost Strategy via cascade, kept Factory) would still
+    // paint its strategy_concrete docTargets (override method,
+    // inheritance colon, etc.) because the class itself isn't dropped.
+    // Classes absent from working fall through to the legacy
+    // droppedClassNames check so untagged-but-annotated edge cases
+    // keep working.
+    const survivingByClass = new Map<string, Set<string>>();
+    for (const entry of model.workingMasterlist.values()) {
+      const canon = new Set<string>();
+      for (const p of entry.patterns) canon.add(canonicalPatternName(p));
+      survivingByClass.set(entry.className, canon);
+    }
+    const direct = (currentRun.annotations || []).filter(a => {
+      if (!a.className) return true;
+      if (model.droppedClassNames.has(a.className)) return false;
+      const surviving = survivingByClass.get(a.className);
+      if (!surviving) return true;
+      // Commentary-only annotations (no patternKey) ride along on the
+      // class's living state — they survive as long as the class does.
+      if (!a.patternKey) return true;
+      return surviving.has(canonicalPatternName(a.patternKey));
+    });
     return [...direct, ...usage];
   }, [currentRun, model]);
 
