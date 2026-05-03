@@ -128,6 +128,30 @@ if ($DoDocker) {
 
 if (-not $DoPush) { Write-Host "✓ build-only: skipping ship to $($env:AWS_HOST)"; return }
 
+# ── 2.5 Lightsail public firewall (best-effort via AWS CLI) ────────────────
+if ($env:AWS_LIGHTSAIL_INSTANCE_NAME) {
+  $awsExe = Get-Command aws -ErrorAction SilentlyContinue
+  if (-not $awsExe) {
+    Write-Warning "aws CLI not installed — skipping auto port-open. Open ${env:AWS_HOST_PORT}/tcp in Lightsail console manually."
+  } else {
+    $region = if ($env:AWS_LIGHTSAIL_REGION) { $env:AWS_LIGHTSAIL_REGION } else { 'ap-southeast-1' }
+    Write-Host "── Opening Lightsail public ports 22, $($env:AWS_HOST_PORT), 443 on '$($env:AWS_LIGHTSAIL_INSTANCE_NAME)' ($region) ──"
+    if (-not $DryRun) {
+      & aws lightsail put-instance-public-ports `
+        --region $region `
+        --instance-name $env:AWS_LIGHTSAIL_INSTANCE_NAME `
+        --port-infos "fromPort=22,toPort=22,protocol=tcp" `
+                     "fromPort=$($env:AWS_HOST_PORT),toPort=$($env:AWS_HOST_PORT),protocol=tcp" `
+                     "fromPort=443,toPort=443,protocol=tcp" 2>&1 | Out-Null
+      if ($LASTEXITCODE -eq 0) { Write-Host "✓ Lightsail firewall now allows 22, $($env:AWS_HOST_PORT), 443" }
+      else { Write-Warning 'put-instance-public-ports failed — open the port manually in the console' }
+    }
+  }
+} else {
+  Write-Host "ℹ AWS_LIGHTSAIL_INSTANCE_NAME not set — skipping auto port-open."
+  Write-Host "  Lightsail console → Instance → Networking → IPv4 Firewall → Add HTTP/$($env:AWS_HOST_PORT)"
+}
+
 # ── 3. Ship to AWS via SSH ──────────────────────────────────────────────────
 $RemoteAppDir = if ($env:REMOTE_APP_DIR) { $env:REMOTE_APP_DIR } else { "/home/$($env:AWS_USER)/neoterritory" }
 
@@ -199,6 +223,13 @@ docker build -f "Codebase/Infrastructure/session-orchestration/docker/Dockerfile
 
 # Build remote env file content.
 $envLines = @('PORT=3001','NODE_ENV=production')
+if ($env:CORS_ORIGIN) {
+  $envLines += "CORS_ORIGIN=$($env:CORS_ORIGIN)"
+} elseif ($env:AWS_HOST_PORT -eq '80') {
+  $envLines += "CORS_ORIGIN=http://$($env:AWS_HOST)"
+} else {
+  $envLines += "CORS_ORIGIN=http://$($env:AWS_HOST):$($env:AWS_HOST_PORT)"
+}
 foreach ($k in 'JWT_SECRET','GEMINI_API_KEY','GEMINI_MODEL','ANTHROPIC_API_KEY','ANTHROPIC_MODEL','AI_PROVIDER','ADMIN_USERNAME','ADMIN_PASSWORD') {
   $v = (Get-Item "Env:$k" -ErrorAction SilentlyContinue).Value
   if ($v) { $envLines += "$k=$v" }
@@ -239,4 +270,24 @@ docker ps --filter "name=$($env:CONTAINER_NAME)"
   $remoteScript | & ssh $SshOpts.Split(' ') $SshTarget 'bash -s'
 }
 
-Write-Host "✓ Deployed $ImageRef → http://$($env:AWS_HOST):$($env:AWS_HOST_PORT)"
+$publicUrl = if ($env:AWS_HOST_PORT -eq '80') { "http://$($env:AWS_HOST)" } else { "http://$($env:AWS_HOST):$($env:AWS_HOST_PORT)" }
+Write-Host "✓ Deployed $ImageRef → $publicUrl"
+
+if (-not $DryRun -and $DoPush) {
+  Write-Host "── Probing $publicUrl from this laptop (waits up to 60s) ──"
+  $ok = $false
+  for ($i = 1; $i -le 12; $i++) {
+    try {
+      $resp = Invoke-WebRequest -Uri "$publicUrl/" -Method Head -TimeoutSec 5 -UseBasicParsing -ErrorAction Stop
+      if ($resp.StatusCode -in 200,204,301,302,304) {
+        Write-Host "  ✓ HTTP $($resp.StatusCode) on attempt $i"
+        $ok = $true; break
+      }
+    } catch { Write-Host "  [..] attempt $i: $($_.Exception.Message.Split(`"`n`")[0]) (retrying in 5s)" }
+    Start-Sleep -Seconds 5
+  }
+  if (-not $ok) {
+    Write-Warning "External probe failed. Check Lightsail console -> Networking -> IPv4 Firewall and 'docker logs $($env:CONTAINER_NAME)' on the remote."
+    exit 2
+  }
+}

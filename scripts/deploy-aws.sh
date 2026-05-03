@@ -159,6 +159,41 @@ if [ $DO_PUSH -eq 0 ]; then
   echo "✓ build-only: skipping ship to $AWS_HOST"; exit 0
 fi
 
+# ── 2.5 Lightsail public port (best-effort, requires AWS CLI + creds) ──────
+# Lightsail keeps a SEPARATE firewall on top of the instance. UFW alone won't
+# expose anything publicly. If AWS_LIGHTSAIL_INSTANCE_NAME is set AND the
+# AWS CLI is installed AND credentials are configured (aws configure), we
+# open the port automatically; otherwise we print the manual one-liner.
+open_lightsail_port() {
+  if [ -z "${AWS_LIGHTSAIL_INSTANCE_NAME:-}" ]; then
+    echo "ℹ AWS_LIGHTSAIL_INSTANCE_NAME not set — skipping auto port-open." >&2
+    echo "  To open port ${AWS_HOST_PORT} manually:" >&2
+    echo "    Lightsail console → Instance → Networking → IPv4 Firewall → Add HTTP/${AWS_HOST_PORT}" >&2
+    return 0
+  fi
+  if ! command -v aws >/dev/null 2>&1; then
+    echo "ℹ aws CLI not installed — skipping auto port-open." >&2
+    echo "  install: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" >&2
+    return 0
+  fi
+  local region="${AWS_LIGHTSAIL_REGION:-ap-southeast-1}"
+  echo "── Opening Lightsail public port ${AWS_HOST_PORT} on '$AWS_LIGHTSAIL_INSTANCE_NAME' (${region}) ──"
+  if [ $DRY_RUN -eq 1 ]; then
+    echo "→ aws lightsail put-instance-public-ports --instance-name $AWS_LIGHTSAIL_INSTANCE_NAME --region $region ..."
+  else
+    aws lightsail put-instance-public-ports \
+      --region "$region" \
+      --instance-name "$AWS_LIGHTSAIL_INSTANCE_NAME" \
+      --port-infos "fromPort=22,toPort=22,protocol=tcp" \
+                   "fromPort=${AWS_HOST_PORT},toPort=${AWS_HOST_PORT},protocol=tcp" \
+                   "fromPort=443,toPort=443,protocol=tcp" \
+      >/dev/null 2>&1 \
+      && echo "✓ Lightsail firewall now allows 22, ${AWS_HOST_PORT}, 443" \
+      || echo "⚠ aws lightsail put-instance-public-ports failed — open the port manually in the console" >&2
+  fi
+}
+open_lightsail_port
+
 # ── 3. Ship to AWS via SSH ──────────────────────────────────────────────────
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
 
@@ -248,6 +283,18 @@ TMP_ENV="$(mktemp)"
 {
   echo "PORT=3001"
   echo "NODE_ENV=production"
+  # Public origin the browser will hit. Default = http://<AWS_HOST>:<port>.
+  # Override by setting CORS_ORIGIN in scripts/.env.deploy (e.g. once you
+  # put a domain + TLS in front, set CORS_ORIGIN=https://your.domain).
+  if [ -n "${CORS_ORIGIN:-}" ]; then
+    echo "CORS_ORIGIN=$CORS_ORIGIN"
+  else
+    if [ "${AWS_HOST_PORT}" = "80" ]; then
+      echo "CORS_ORIGIN=http://${AWS_HOST}"
+    else
+      echo "CORS_ORIGIN=http://${AWS_HOST}:${AWS_HOST_PORT}"
+    fi
+  fi
   [ -n "${JWT_SECRET:-}" ]         && echo "JWT_SECRET=$JWT_SECRET"
   [ -n "${GEMINI_API_KEY:-}" ]     && echo "GEMINI_API_KEY=$GEMINI_API_KEY"
   [ -n "${GEMINI_MODEL:-}" ]       && echo "GEMINI_MODEL=$GEMINI_MODEL"
@@ -288,4 +335,30 @@ docker ps --filter "name=$CONTAINER_NAME"
 EOF
 fi
 
-echo "✓ Deployed $IMAGE_REF → http://$AWS_HOST:$AWS_HOST_PORT"
+URL="http://$AWS_HOST"
+[ "$AWS_HOST_PORT" = "80" ] || URL="$URL:$AWS_HOST_PORT"
+echo "✓ Deployed $IMAGE_REF → $URL"
+
+# ── 4. Post-deploy reachability check (from THIS laptop, not from inside ──
+#       the box). Confirms the Lightsail public firewall + UFW + container
+#       port are all aligned. Skipped on --dry-run / --build-only.
+if [ $DRY_RUN -eq 0 ] && [ $DO_PUSH -eq 1 ]; then
+  echo "── Probing $URL from this laptop (waits up to 60s for first boot) ──"
+  ok=0
+  for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+    code=$(curl -s -o /dev/null -m 5 -w '%{http_code}' "$URL/" 2>/dev/null || echo '000')
+    if [ "$code" = "200" ] || [ "$code" = "204" ] || [ "$code" = "301" ] || [ "$code" = "302" ] || [ "$code" = "304" ]; then
+      echo "  ✓ HTTP $code from $URL on attempt $attempt"
+      ok=1; break
+    fi
+    echo "  [..] attempt $attempt: HTTP $code (retrying in 5s)"
+    sleep 5
+  done
+  if [ $ok -eq 0 ]; then
+    echo "⚠ External probe failed. The container may be running but the" >&2
+    echo "  Lightsail public firewall is not letting traffic through." >&2
+    echo "  Check: Lightsail console → Instance → Networking → IPv4 Firewall." >&2
+    echo "  And on the remote box: ssh $SSH_TARGET 'docker logs --tail 50 $CONTAINER_NAME'" >&2
+    exit 2
+  fi
+fi
