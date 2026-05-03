@@ -53,7 +53,16 @@ export default function AnnotatedTab({
       currentRun.classResolvedPatterns,
       currentRun.classUsageBindingSource || 'heuristic'
     );
-    return [...(currentRun.annotations || []), ...usage];
+    // Strip the microservice's own annotations for dropped subclass
+    // classes. Without this, picking Factory on Vehicle would still
+    // paint Car/Truck red because their strategy_concrete docTargets
+    // (override method, inheritance colon, etc.) remain in
+    // currentRun.annotations. Cascade-drop must remove those too — the
+    // child tag is gone, so its anchors should be invisible.
+    const direct = (currentRun.annotations || []).filter(a =>
+      !a.className || !model.droppedClassNames.has(a.className)
+    );
+    return [...direct, ...usage];
   }, [currentRun, model]);
 
   if (!currentRun) {
