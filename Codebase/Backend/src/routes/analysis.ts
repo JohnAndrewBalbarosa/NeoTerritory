@@ -62,6 +62,11 @@ interface AnalysisPayload {
   // restore every file when an old run is reopened. Single-file legacy runs
   // get back-filled with one entry mirroring sourceName + sourceText.
   files?: Array<{ name: string; sourceText: string }>;
+  // Family-keyed list of pattern short names that propagate to subclasses,
+  // mirrored from `pattern_catalog/inheritance_driven_patterns.json`. Sent
+  // verbatim so the frontend's annotated-source model can decide cascade
+  // behaviour without hardcoding pattern names.
+  inheritanceDrivenPatterns?: Record<string, string[]>;
 }
 
 interface PendingEntry {
@@ -120,6 +125,42 @@ const PATTERN_LEXEMES: Record<string, PatternLexemeSet> = {
   command:        { keywords: ['virtual', 'override'],               methods: ['execute', 'undo', 'redo', 'perform'],                      idioms: ['receiver_', 'invoker_', 'action encapsulation'] },
   pimpl:          { keywords: ['unique_ptr', 'forward'],             methods: ['impl_', 'd_ptr'],                                          idioms: ['struct Impl', 'unique_ptr<Impl>', 'opaque pointer'] },
 };
+
+// Cache the inheritance masterlist so repeated /analyze calls don't
+// hit the disk. Cleared via INHERITANCE_MASTERLIST_TTL_MS to pick up
+// catalog edits without a backend restart.
+let inheritanceMasterlistCache: { value: Record<string, string[]>; loadedAt: number } | null = null;
+const INHERITANCE_MASTERLIST_TTL_MS = 30_000;
+
+function loadInheritanceMasterlist(): Record<string, string[]> {
+  const now = Date.now();
+  if (inheritanceMasterlistCache && (now - inheritanceMasterlistCache.loadedAt) < INHERITANCE_MASTERLIST_TTL_MS) {
+    return inheritanceMasterlistCache.value;
+  }
+  const empty: Record<string, string[]> = {};
+  try {
+    const file = path.join(resolveCatalogPath(), 'inheritance_driven_patterns.json');
+    if (!fs.existsSync(file)) {
+      inheritanceMasterlistCache = { value: empty, loadedAt: now };
+      return empty;
+    }
+    const raw = fs.readFileSync(file, 'utf8');
+    const parsed = JSON.parse(raw) as { families?: Record<string, unknown> };
+    const out: Record<string, string[]> = {};
+    const fams = parsed?.families;
+    if (fams && typeof fams === 'object') {
+      for (const [family, list] of Object.entries(fams)) {
+        if (!Array.isArray(list)) continue;
+        out[family] = list.filter((s): s is string => typeof s === 'string');
+      }
+    }
+    inheritanceMasterlistCache = { value: out, loadedAt: now };
+    return out;
+  } catch {
+    inheritanceMasterlistCache = { value: empty, loadedAt: now };
+    return empty;
+  }
+}
 
 function lexemesForPattern(patternName: string): PatternLexemeSet | null {
   const normalized = (patternName || '').toLowerCase();
@@ -749,7 +790,8 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       transformedPreview: '',
       // Multi-file payload: every uploaded source travels through the saved
       // run so reopening it from the run-list restores all per-file tabs.
-      files: fileList.map(f => ({ name: f.name, sourceText: f.code }))
+      files: fileList.map(f => ({ name: f.name, sourceText: f.code })),
+      inheritanceDrivenPatterns: loadInheritanceMasterlist()
     };
 
     analysis.commentedCode      = buildCommentedCode(sourceText, annotations);

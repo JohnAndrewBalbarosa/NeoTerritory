@@ -31,14 +31,39 @@ import {
   isRealPattern,
 } from './patterns';
 
-// Canonical pattern names whose match propagates a subclass tag onto every
-// child class. Mirrors `pattern_catalog/inheritance_driven_patterns.json`
-// on the microservice side. When a parent of an inheritance-driven match
-// resolves to a NON-propagating pattern, the propagated children drop out
-// of the live set.
-const SUBCLASS_PROPAGATING_PATTERNS: ReadonlySet<string> = new Set([
+// Hardcoded fallback used only when the backend doesn't ship the
+// `inheritanceDrivenPatterns` masterlist (older runs, or a deployment
+// pre-dating that field). The live model derives its propagating set
+// from `run.inheritanceDrivenPatterns` if present — see
+// resolvePropagatingPatterns below — so adding patterns to
+// `pattern_catalog/inheritance_driven_patterns.json` ships end-to-end
+// without a frontend recompile.
+const FALLBACK_PROPAGATING_PATTERNS: ReadonlySet<string> = new Set([
   'Strategy',
 ]);
+
+// Build the canonical pattern-name set from the masterlist payload.
+// Each entry is a short pattern name (`strategy_interface`, etc.); we
+// canonicalise it (`Strategy`) so the model's cascade comparison aligns
+// with the canonical names everything else in the UI uses.
+function resolvePropagatingPatterns(
+  masterlist: Record<string, string[]> | undefined,
+): ReadonlySet<string> {
+  if (!masterlist) return FALLBACK_PROPAGATING_PATTERNS;
+  const out = new Set<string>();
+  for (const list of Object.values(masterlist)) {
+    if (!Array.isArray(list)) continue;
+    for (const shortName of list) {
+      if (typeof shortName !== 'string' || !shortName) continue;
+      const canon = canonicalPatternName(shortName);
+      if (canon && canon !== 'Review') out.add(canon);
+    }
+  }
+  // Empty masterlist (file existed but had no entries) = no propagation
+  // at all. Don't fall back to the hardcoded set in that case — the
+  // catalog explicitly said "nothing propagates."
+  return out;
+}
 
 export interface ClassLocation {
   fileIdx: number;
@@ -247,6 +272,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
   const run = input.run;
   if (!run) return EMPTY_MODEL;
 
+  const propagatingPatterns = resolvePropagatingPatterns(run.inheritanceDrivenPatterns);
+
   const annotations: Annotation[] = run.annotations || [];
   const detected = run.detectedPatterns || [];
   const taggedClassNames = new Set<string>(
@@ -379,7 +406,7 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
       continue;
     }
 
-    if (SUBCLASS_PROPAGATING_PATTERNS.has(parentEffective)) {
+    if (propagatingPatterns.has(parentEffective)) {
       node.candidates = [parentEffective];
       node.status = 'unambiguous';
       node.resolved = undefined;

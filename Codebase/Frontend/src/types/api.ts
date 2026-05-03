@@ -240,6 +240,14 @@ export interface AnalysisRun {
   // runs loaded from disk that predate multi-file get back-filled with a
   // single entry mirroring sourceName + sourceText.
   files?: AnalysisRunFile[];
+  // Family-keyed list of pattern short names that propagate to
+  // subclasses, mirrored from
+  // `pattern_catalog/inheritance_driven_patterns.json` on the
+  // microservice. Used by the annotated-source model to decide which
+  // parent picks cascade onto child classes. Empty/missing for runs
+  // produced before this field shipped — the model treats the
+  // subclass-cascade as inactive in that case.
+  inheritanceDrivenPatterns?: Record<string, string[]>;
 }
 
 export interface RunListItem {

@@ -169,6 +169,7 @@ interface RunDetailPayload {
     userResolvedPattern?: string | null;
     classResolvedPatterns?: Record<string, string>;
     files?: Array<{ name: string; sourceText: string }>;
+    inheritanceDrivenPatterns?: Record<string, string[]>;
   };
 }
 
@@ -187,6 +188,7 @@ export async function fetchRun(id: number): Promise<AnalysisRun> {
     summary: a.summary || '',
     userResolvedPattern: a.userResolvedPattern || null,
     classResolvedPatterns: a.classResolvedPatterns || undefined,
+    inheritanceDrivenPatterns: a.inheritanceDrivenPatterns || undefined,
     // Restore the multi-file payload when reopening a saved run; fall back
     // to a single-entry list mirroring sourceName + sourceText for legacy
     // pre-multi-file runs so AnnotatedTab can render uniformly.
