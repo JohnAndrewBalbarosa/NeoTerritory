@@ -6,6 +6,8 @@
 //   FluentLogger       -> creational.method_chaining (no build, so Builder excluded)
 //   CachedRepository   -> structural.adapter + structural.proxy + structural.decorator
 //   PlainHolder        -> NO matches (negative control)
+//   Repository         -> NO matches (negative control)
+
 
 #include <string>
 

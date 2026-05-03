@@ -27,6 +27,18 @@ struct PatternMatcherStep
     std::string                       document_as;
 };
 
+// Optional declaration that this pattern is an inheritance-driven parent.
+// Populated only when the pattern's JSON declares a `subclass_role` block;
+// otherwise `required` stays false and the matcher skips child propagation.
+struct SubclassRole
+{
+    bool        required = false;
+    std::string parent_role;
+    std::string child_role;
+    std::string child_pattern_id;
+    std::string child_catalog;       // filename relative to the parent's pattern folder, e.g. "subclass.json"
+};
+
 struct PatternTemplate
 {
     std::string                     pattern_id;
@@ -35,6 +47,7 @@ struct PatternTemplate
     bool                            enabled = true;
     std::vector<PatternMatcherStep> ordered_checks;
     std::unordered_map<std::string, std::vector<std::string>> lexeme_identifiers;
+    SubclassRole                    subclass_role;
     std::string                     source_file;
 };
 
@@ -43,6 +56,10 @@ struct PatternCatalog
     std::vector<PatternTemplate> patterns;
     std::string                  catalog_root;
     std::vector<std::string>     load_diagnostics;
+    // Family-keyed list of pattern short names (no family prefix) authored
+    // in pattern_catalog/inheritance_driven_patterns.json. Empty when the
+    // masterlist is missing or malformed.
+    std::unordered_map<std::string, std::vector<std::string>> inheritance_driven_patterns;
 };
 
 PatternCatalog load_pattern_catalog(const std::string& catalog_directory);

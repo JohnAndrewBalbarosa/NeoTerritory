@@ -26,14 +26,8 @@ interface ImplementationTemplate {
   negative_signals?: Signal[];
 }
 
-interface RankingWeights {
-  class_fit?: number;
-  implementation_fit?: number;
-}
-
 interface CatalogEntry {
   pattern_id: string;
-  ranking_weights?: RankingWeights;
   implementation_template?: ImplementationTemplate;
 }
 
@@ -95,7 +89,6 @@ interface PatternRankResult {
   classFit: number;
   implementationFit: number;
   finalRank: number;
-  weights: RankingWeights;
   evidence: {
     callsites: SignalHit[];
     collaborators: SignalHit[];
@@ -318,7 +311,6 @@ export function rankPattern(detectedPattern: DetectedPatternRef, sourceText: str
   const catalog = loadCatalog();
   const entry = catalog[detectedPattern.patternId];
 
-  const weights: RankingWeights = (entry && entry.ranking_weights) || { class_fit: 1.0, implementation_fit: 0.0 };
   const tmpl = entry && entry.implementation_template;
   const className = detectedPattern.className || '';
 
@@ -345,17 +337,17 @@ export function rankPattern(detectedPattern: DetectedPatternRef, sourceText: str
   }
 
   const implementationFit = clamp01(implScoreRaw);
-  const finalRank = clamp01(
-    (weights.class_fit || 0) * classFit +
-    (weights.implementation_fit || 0) * implementationFit
-  );
+  // Weights removed: scoring is fully discretised via the Wilson lower
+  // bound stitched onto each rank in rankAll(). finalRank starts as the
+  // raw implementation fit and is overwritten with lineEvidence.probability
+  // once rivals are scored.
+  const finalRank = implementationFit;
 
   return {
     patternId: detectedPattern.patternId,
     classFit,
     implementationFit,
     finalRank,
-    weights,
     evidence,
     hasImplementationTemplate: Boolean(tmpl)
   };
@@ -433,13 +425,11 @@ export function rankAll(detectedPatterns: DetectedPatternRef[] | undefined, sour
       scope.max,
       sourceText
     );
-    // Promote the line-evidence probability into implementationFit so the
-    // UI shows the new score by default. finalRank still combines weights.
+    // Promote the line-evidence probability into both implementationFit
+    // and finalRank. With ranking_weights removed, the Wilson lower bound
+    // is the score directly — no class_fit/implementation_fit blend.
     own.implementationFit = own.lineEvidence.probability;
-    own.finalRank = clamp01(
-      (own.weights.class_fit || 0) * own.classFit +
-      (own.weights.implementation_fit || 0) * own.lineEvidence.probability
-    );
+    own.finalRank = own.lineEvidence.probability;
   });
 
   const sorted = [...ranks].sort(compareRanks);

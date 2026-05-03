@@ -5,7 +5,7 @@ import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
-import { patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../lib/patterns';
+import { deriveAnnotatedModel } from '../../lib/annotatedModel';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -33,17 +33,28 @@ export default function AnnotatedTab({
   }, [currentRun]);
   const activeFile = files[activeFileIdx] || files[0];
 
+  // Single derivation surface. Everything below reads from `model` so all
+  // UIs stay in lockstep when the user picks a pattern. The model is pure
+  // and re-derived whenever currentRun's identity changes (the store
+  // already produces a new currentRun reference on every patch via
+  // patchCurrentRun's spread, so picks propagate automatically).
+  const model = useMemo(
+    () => deriveAnnotatedModel({ run: currentRun }),
+    [currentRun],
+  );
+
   const allAnnotations = useMemo(() => {
     if (!currentRun) return [];
+    // Synthesize usage annotations against the LIVE pattern set so cascade
+    // drops also strip the synthesized usage colours of the dropped class.
     const usage = synthesizeUsageAnnotations(
       currentRun.classUsageBindings || {},
-      currentRun.detectedPatterns || [],
+      model.activePatterns,
       currentRun.classResolvedPatterns,
       currentRun.classUsageBindingSource || 'heuristic'
     );
     return [...(currentRun.annotations || []), ...usage];
-  // Re-synthesize when retag updates classResolvedPatterns so colors propagate.
-  }, [currentRun]);
+  }, [currentRun, model]);
 
   if (!currentRun) {
     return (
@@ -86,172 +97,38 @@ export default function AnnotatedTab({
   // them yet (missing tag). Once a class is resolved or unambiguously
   // detected, it drops off the nav list — no point cycling through
   // already-decided classes.
-  // Locate each class's declaration site (file + line) AND a coarse line
-  // range so we can decide whether a given annotation falls "inside" a
-  // class scope. We approximate the range by finding the next class/struct
-  // declaration in the same file and using (decl_line, next_decl_line - 1)
-  // as the inclusive range — this is a heuristic, not a real C++ parser,
-  // but it's good enough to detect "ambiguous tag inside class Foo".
-  const classLocations = useMemo(() => {
-    const locs = new Map<string, { fileIdx: number; line: number; endLine: number }>();
-    for (let fi = 0; fi < files.length; fi++) {
-      const text = files[fi].sourceText || '';
-      const lines = text.split('\n');
-      const decls: Array<{ name: string; line: number }> = [];
-      for (let i = 0; i < lines.length; i++) {
-        const m = lines[i].match(/\b(?:class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
-        if (m) decls.push({ name: m[1], line: i + 1 });
-      }
-      for (let k = 0; k < decls.length; k++) {
-        const d = decls[k];
-        const next = decls[k + 1]?.line ?? lines.length + 1;
-        if (!locs.has(d.name)) {
-          locs.set(d.name, { fileIdx: fi, line: d.line, endLine: next - 1 });
-        }
-      }
-    }
-    return locs;
-  }, [files]);
-
-  // Shared per-class derivation feeding both the navigator and the
-  // tag-progress pill. We compute (a) how many distinct patterns the matcher
-  // attached directly to each class, (b) the first-line of each class's
-  // detected patterns (for fallback navigation), and (c) the set of
-  // patternIds whose targets fall inside each class's scope. The progress
-  // pill treats (c.size > 1) as ambiguous too — even one ambiguous line
-  // inside a class declaration marks the whole class.
-  // Per-line popover-ambiguity, computed with the EXACT same logic the
-  // LinePopover uses to decide when to render the
-  // "N possible patterns at this line — pick the one that matches" badge.
-  // We group annotations by line and flag any line whose distinct
-  // patternKeys (via the same `patternKey || patternFromAnnotation(a)`
-  // resolution) total >1. The class-ambiguity rule below then reuses
-  // exactly this signal so the missing pill, the corner-button nav, and
-  // the popover all agree on what counts as ambiguous.
-  const ambiguousLines = useMemo(() => {
-    // Count distinct CANONICAL pattern keys per line, excluding the
-    // "Review" sentinel (commentary-only / no detected pattern). Without
-    // those two filters: (a) a line tagged with both "creational.factory"
-    // and "Factory" would falsely register as ambiguous because the same
-    // pattern appears under two names, and (b) a line carrying a real
-    // pattern + a Review annotation would falsely register as ambiguous
-    // because Review is treated as a rival.
-    const byLine = new Map<number, Set<string>>();
-    for (const a of allAnnotations) {
-      if (typeof a.line !== 'number') continue;
-      const raw = a.patternKey || patternFromAnnotation(a);
-      if (!raw || !isRealPattern(raw)) continue;
-      const canon = canonicalPatternName(raw);
-      if (!byLine.has(a.line)) byLine.set(a.line, new Set());
-      byLine.get(a.line)!.add(canon);
-    }
-    const set = new Set<number>();
-    for (const [line, keys] of byLine) {
-      if (keys.size > 1) set.add(line);
-    }
-    return set;
-  }, [allAnnotations]);
+  // All derivation now lives in `model` (deriveAnnotatedModel). The locals
+  // below are thin views onto it so the JSX further down keeps reading
+  // familiar names. classDerivation also rebuilds firstLineByClass for the
+  // class navigator since the model doesn't track navigation-only data.
+  const classLocations = model.classLocations;
+  const ambiguousLines = model.ambiguousLines;
+  const pickerEligibleClassNames = model.pickerEligibleClassNames;
 
   const classDerivation = useMemo(() => {
-    const run = currentRun;
-    const patternCountByClass = new Map<string, number>();
     const firstLineByClass = new Map<string, number>();
-    const inScopePatterns = new Map<string, Set<string>>();
-    if (!run) return { patternCountByClass, firstLineByClass, inScopePatterns };
-
-    // Pass A — pattern documentation targets.
-    for (const p of run.detectedPatterns || []) {
-      if (p.className) {
-        patternCountByClass.set(
-          p.className,
-          (patternCountByClass.get(p.className) || 0) + 1
-        );
-        const firstLine = (p.documentationTargets || [])
-          .map(t => t.line)
-          .filter((l): l is number => typeof l === 'number')
-          .sort((a, b) => a - b)[0] ?? 1;
-        const prev = firstLineByClass.get(p.className);
-        if (prev === undefined || firstLine < prev) {
-          firstLineByClass.set(p.className, firstLine);
-        }
-      }
-      const targetLines = (p.documentationTargets || [])
+    const patternCountByClass = new Map<string, number>();
+    for (const p of currentRun?.detectedPatterns || []) {
+      if (!p.className) continue;
+      patternCountByClass.set(
+        p.className,
+        (patternCountByClass.get(p.className) || 0) + 1,
+      );
+      const firstLine = (p.documentationTargets || [])
         .map(t => t.line)
-        .filter((l): l is number => typeof l === 'number');
-      if (targetLines.length === 0) continue;
-      for (const [name, loc] of classLocations.entries()) {
-        const hits = targetLines.some(l => l >= loc.line && l <= loc.endLine);
-        if (hits && isRealPattern(p.patternId)) {
-          if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-          inScopePatterns.get(name)!.add(canonicalPatternName(p.patternId));
-        }
+        .filter((l): l is number => typeof l === 'number')
+        .sort((a, b) => a - b)[0] ?? 1;
+      const prev = firstLineByClass.get(p.className);
+      if (prev === undefined || firstLine < prev) {
+        firstLineByClass.set(p.className, firstLine);
       }
     }
-
-    // Pass B — annotations. The annotation stream often carries ambiguity
-    // signal the matcher's documentationTargets don't (e.g. ShapeFactory's
-    // body is single-pattern in detectedPatterns but the per-line
-    // annotations can carry two distinct patternKeys). Treat each
-    // annotation's (line, patternKey) as in-scope evidence for the class
-    // whose declaration scope contains that line. We also fold the class's
-    // own usage-binding lines in (so global helpers that reference it
-    // contribute to its ambiguity verdict). The "Review" sentinel and
-    // dotted variants are normalised away so a line with both
-    // creational.factory + Factory contributes one canonical "Factory"
-    // entry, and a line tagged only Review contributes nothing.
-    for (const ann of allAnnotations) {
-      const line = typeof ann.line === 'number' ? ann.line : null;
-      const key = ann.patternKey;
-      if (!line || !key || !isRealPattern(key)) continue;
-      const canon = canonicalPatternName(key);
-      for (const [name, loc] of classLocations.entries()) {
-        if (line >= loc.line && line <= loc.endLine) {
-          if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-          inScopePatterns.get(name)!.add(canon);
-        }
-      }
-    }
-    const usageBindings = run.classUsageBindings || {};
-    for (const [name, list] of Object.entries(usageBindings)) {
-      for (const b of list || []) {
-        const line = typeof b?.line === 'number' ? b.line : null;
-        if (!line) continue;
-        // For every detected pattern target on this usage line, log the
-        // pattern under the bound class so a global helper that touches
-        // multiple pattern signatures flags its referent class as ambiguous.
-        for (const p of run.detectedPatterns || []) {
-          const hit = (p.documentationTargets || []).some(t => t.line === line);
-          if (hit && isRealPattern(p.patternId)) {
-            if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-            inScopePatterns.get(name)!.add(canonicalPatternName(p.patternId));
-          }
-        }
-        for (const ann of allAnnotations) {
-          if (ann.line === line && ann.patternKey && isRealPattern(ann.patternKey)) {
-            if (!inScopePatterns.has(name)) inScopePatterns.set(name, new Set());
-            inScopePatterns.get(name)!.add(canonicalPatternName(ann.patternKey));
-          }
-        }
-      }
-    }
-    return { patternCountByClass, firstLineByClass, inScopePatterns };
-  }, [currentRun, classLocations, allAnnotations]);
-
-  // Set used for chrome greying. Mirrors the popover's trigger
-  // condition exactly: a class is "ambiguous-for-coloring" when its
-  // scope's distinct canonical pattern keys exceed 1, AND the user has
-  // not yet resolved it. This is wider than the strict `ambiguousClassNames`
-  // (no `isTaggedByMicroservice` gate) so a class the picker fires on is
-  // ALSO greyed — even if the matcher didn't emit a detection with that
-  // class as its primary `className`.
-  const pickerEligibleClassNames = useMemo(() => {
-    const out = new Set<string>();
-    for (const [name, set] of classDerivation.inScopePatterns) {
-      if (resolvedMap[name]) continue;
-      if ((set?.size || 0) > 1) out.add(name);
-    }
-    return out;
-  }, [classDerivation, resolvedMap]);
+    return {
+      patternCountByClass,
+      firstLineByClass,
+      inScopePatterns: model.inScopePatterns,
+    };
+  }, [currentRun, model]);
 
   const classNav = useMemo(() => {
     const run = currentRun;
@@ -397,23 +274,8 @@ export default function AnnotatedTab({
     };
   }, [classDerivation, detectedClassNames, bindingClassNames, resolvedMap, classLocations, ambiguousLines, currentRun]);
 
-  // Reverse index keyed by line number: which picker-eligible class
-  // does this line reference (as an external usage)? Used by SourceView
-  // to grey global helpers and call-sites of any class with rival
-  // patterns so the chrome stays consistent inside and outside its
-  // declaration scope.
-  const usageLinesByAmbiguousClass = useMemo(() => {
-    const out = new Map<number, string>();
-    const bindings = currentRun?.classUsageBindings || {};
-    for (const [cls, list] of Object.entries(bindings)) {
-      if (!pickerEligibleClassNames.has(cls)) continue;
-      for (const b of list || []) {
-        const ln = typeof b?.line === 'number' ? b.line : null;
-        if (ln !== null && !out.has(ln)) out.set(ln, cls);
-      }
-    }
-    return out;
-  }, [currentRun, pickerEligibleClassNames]);
+  // Reverse index keyed by line number — sourced directly from the model.
+  const usageLinesByAmbiguousClass = model.usageLinesByAmbiguousClass;
 
   const taggedCount = taggedClassNames.length;
   const missingCount = missingClassNames.length;
@@ -499,7 +361,7 @@ export default function AnnotatedTab({
           {aiStatus === 'failed' && (
             <span className="ai-pill ai-pill-failed">AI commentary failed</span>
           )}
-          <PatternLegend detectedPatterns={currentRun.detectedPatterns || []} />
+          <PatternLegend legendPatterns={model.legendPatterns} />
         </header>
         {totalClasses > 0 && (
           <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
@@ -573,11 +435,13 @@ export default function AnnotatedTab({
           <SourceView
             sourceText={activeFile?.sourceText || currentRun.sourceText || ''}
             annotations={allAnnotations}
-            detectedPatterns={currentRun.detectedPatterns || []}
+            detectedPatterns={model.activePatterns}
             classResolvedPatterns={currentRun.classResolvedPatterns}
             classUsageBindings={currentRun.classUsageBindings}
-            inScopePatternsByClass={classDerivation.inScopePatterns}
-            coloringAmbiguousClassNames={pickerEligibleClassNames}
+            inScopePatternsByClass={model.inScopePatterns}
+            coloringAmbiguousClassNames={model.greyClassNames}
+            subclassPendingClassNames={model.subclassPendingClassNames}
+            subclassDroppedClassNames={model.droppedClassNames}
             usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
             onLineClick={onCommentFlash}
           />
@@ -611,15 +475,25 @@ export default function AnnotatedTab({
             strip sits above the scoring-explainer-banner inside PatternCards. */}
         <ClassBindings
           bindings={currentRun.classUsageBindings || {}}
-          detectedPatterns={currentRun.detectedPatterns || []}
+          detectedPatterns={model.activePatterns}
           classResolvedPatterns={currentRun.classResolvedPatterns}
-          ambiguousClassNames={pickerEligibleClassNames}
+          ambiguousClassNames={model.greyClassNames}
+          subclassPendingClassNames={model.subclassPendingClassNames}
+          droppedClassNames={model.droppedClassNames}
           onLineFlash={onLineFlash}
         />
         <PatternCards
-          detectedPatterns={currentRun.detectedPatterns || []}
+          // Subclass-pending classes are filtered out at the card level —
+          // their tag is tentative until the parent picks. The chrome
+          // (chip strip, source view) still shows them as grey, but they
+          // do not earn a card or accuracy bar yet.
+          detectedPatterns={model.activePatterns.filter(p =>
+            !p.className || !model.subclassPendingClassNames.has(p.className)
+          )}
           ranking={currentRun.ranking}
           userResolvedPattern={currentRun.userResolvedPattern}
+          classResolvedPatterns={currentRun.classResolvedPatterns}
+          ambiguousClassNames={pickerEligibleClassNames}
           classUsageBindings={currentRun.classUsageBindings || {}}
           classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
           onLineFlash={onLineFlash}

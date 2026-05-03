@@ -102,7 +102,5 @@
         "describe": "No terminator method found — likely not a Builder"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+  }
 }

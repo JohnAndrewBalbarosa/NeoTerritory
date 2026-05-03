@@ -8,6 +8,24 @@
 #include <string>
 #include <vector>
 
+// Inheritance access specifier captured from a class header.
+// Defaults to Private to match C++ semantics for `class` (struct flips to
+// Public elsewhere — we keep the access value the parser actually saw,
+// so a missing access keyword on a `class` becomes Private).
+enum class BaseAccessKind
+{
+    Public,
+    Protected,
+    Private
+};
+
+struct BaseSpec
+{
+    std::string    name;
+    BaseAccessKind access  = BaseAccessKind::Private;
+    bool           virtual_inheritance = false;
+};
+
 struct ParseTreeNode
 {
     std::string                kind;
@@ -18,6 +36,7 @@ struct ParseTreeNode
     std::string                file_name;
     std::size_t                line        = 0;
     std::size_t                column      = 0;
+    std::vector<BaseSpec>      bases;          // populated only on ClassDecl/StructDecl
     std::vector<ParseTreeNode> children;
 };
 

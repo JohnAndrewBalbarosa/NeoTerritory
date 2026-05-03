@@ -45,6 +45,10 @@ export interface DetectedPatternResult {
   className: string;
   fileName: string;
   classText: string;
+  // Set when this tag was emitted via subclass propagation: names the
+  // tagged parent class whose inheritance-driven pattern triggered this
+  // child match. Empty string for regular per-class detections.
+  parentClassName: string;
   documentationTargets: DocumentationAnchor[];
   unitTestTargets: UnitTestTarget[];
 }
@@ -77,6 +81,7 @@ interface MicroserviceReport {
     class_name: string;
     file_name: string;
     class_text: string;
+    parent_class_name?: string;
     documentation_targets?: DocumentationAnchor[];
     unit_test_targets?: UnitTestTarget[];
   }>;
@@ -258,6 +263,7 @@ export function analyzeClassDeclaration(input: { sourceName: string; code: strin
     className:           tag.class_name,
     fileName:            tag.file_name,
     classText:           tag.class_text,
+    parentClassName:     tag.parent_class_name || '',
     documentationTargets: tag.documentation_targets || [],
     unitTestTargets:      tag.unit_test_targets || []
   }));

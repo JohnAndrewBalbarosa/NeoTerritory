@@ -113,7 +113,5 @@
         "describe": "No delegation via impl pointer found — not a Pimpl pattern"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+  }
 }

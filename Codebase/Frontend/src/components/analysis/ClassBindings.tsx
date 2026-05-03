@@ -7,10 +7,17 @@ interface ClassBindingsProps {
   bindings: Record<string, ClassUsageBinding[]>;
   detectedPatterns?: DetectedPatternFull[];
   classResolvedPatterns?: Record<string, string>;
-  // Classes whose declaration scope contains at least one multi-tag line
-  // (`bodyAmbiguous`). Their chips and popouts render in AMBIGUOUS_COLOR
-  // so the legend matches the source view's chrome greying.
+  // Greyed-chrome set. Includes both picker-eligible classes and
+  // subclass-pending classes. Both render with AMBIGUOUS_COLOR.
   ambiguousClassNames?: Set<string>;
+  // Subclass classes whose parent has not yet effectively resolved.
+  // Their chip is greyed and titled "depends on parent" — it remains
+  // clickable for inspecting usages but does not open a rival picker.
+  subclassPendingClassNames?: Set<string>;
+  // Subclass classes whose tag was dropped because their parent resolved
+  // to a non-propagating pattern. Skipped entirely from the chip strip
+  // — their tag no longer applies.
+  droppedClassNames?: Set<string>;
   onLineFlash?: (line: number) => void;
 }
 
@@ -127,9 +134,12 @@ function ClassPopout({
   );
 }
 
-export default function ClassBindings({ bindings, detectedPatterns, classResolvedPatterns, ambiguousClassNames, onLineFlash }: ClassBindingsProps) {
+export default function ClassBindings({ bindings, detectedPatterns, classResolvedPatterns, ambiguousClassNames, subclassPendingClassNames, droppedClassNames, onLineFlash }: ClassBindingsProps) {
   const annotations = useAppStore(s => s.currentRun?.annotations || []);
-  const classNames = Object.keys(bindings || {});
+  const dropped = droppedClassNames || new Set<string>();
+  // Strip dropped classes from the chip strip — their tag was cancelled
+  // by the parent's resolution.
+  const classNames = Object.keys(bindings || {}).filter(c => !dropped.has(c));
 
   const [openClass, setOpenClass] = useState<string | null>(null);
   const [position, setPosition] = useState<PopoutPosition>({ top: 0, left: 0 });
@@ -175,11 +185,16 @@ export default function ClassBindings({ bindings, detectedPatterns, classResolve
       <div className="class-strip-row" role="tablist">
         {classNames.map(cls => {
           const patternKey = classToPattern.get(cls) || 'Review';
+          const isSubclassPending = !!subclassPendingClassNames?.has(cls);
           const isAmbiguous = !!ambiguousClassNames?.has(cls);
           const c = isAmbiguous ? getAmbiguousColor() : colorFor(patternKey);
           const style: ChipStyle = { '--chip-color': c.border };
           const usageCount = (bindings[cls] || []).length;
-          const titlePattern = isAmbiguous ? 'ambiguous (multiple patterns)' : patternKey;
+          const titlePattern = isSubclassPending
+            ? 'depends on parent class — pick a pattern on the parent first'
+            : isAmbiguous
+              ? 'ambiguous (multiple patterns)'
+              : patternKey;
           return (
             <button
               key={cls}

@@ -1,33 +1,24 @@
-
-import { DetectedPatternFull } from '../../types/api';
 import { colorFor } from '../../lib/patterns';
 
 interface PatternLegendProps {
-  detectedPatterns: DetectedPatternFull[];
+  // Canonical pattern names the user has decided on. Sourced from
+  // `AnnotatedModel.legendPatterns` — only unambiguous classes plus
+  // ambiguous-resolved classes contribute. Ambiguous-pending classes
+  // contribute nothing (they have not earned a chip yet) and
+  // subclass-dropped tags contribute nothing (their parent picked a
+  // non-propagating pattern).
+  legendPatterns: string[];
 }
 
-/**
- * Renders pattern chips immediately from detected patterns.
- * P0 fix: does NOT wait for AI annotations — renders as soon as
- * pattern data arrives.
- */
-export default function PatternLegend({ detectedPatterns }: PatternLegendProps) {
-  if (!detectedPatterns.length) return <div id="pattern-legend" />;
-  const seen = new Set<string>();
-  const chips: Array<{ key: string; label: string }> = [];
-  detectedPatterns.forEach(p => {
-    const key = p.patternName || 'Review';
-    if (seen.has(key)) return;
-    seen.add(key);
-    chips.push({ key, label: key });
-  });
+export default function PatternLegend({ legendPatterns }: PatternLegendProps) {
+  if (!legendPatterns.length) return <div id="pattern-legend" />;
   return (
     <div id="pattern-legend" className="pattern-legend">
-      {chips.map(({ key, label }) => {
-        const c = colorFor(key);
+      {legendPatterns.map(label => {
+        const c = colorFor(label);
         return (
           <span
-            key={key}
+            key={label}
             className="legend-chip"
             style={{ background: c.bg, borderColor: c.border, color: c.text }}
           >

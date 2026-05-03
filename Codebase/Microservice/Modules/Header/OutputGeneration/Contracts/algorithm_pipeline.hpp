@@ -41,6 +41,10 @@ struct DesignPatternTag
     std::string                       class_name;
     std::string                       file_name;
     std::string                       class_text;
+    // Populated for tags emitted via inheritance-driven subclass
+    // propagation. Identifies the parent class whose pattern match
+    // produced this child tag. Empty on regular structural matches.
+    std::string                       parent_class_name;
     std::vector<DocumentationTarget>  documentation_targets;
     std::vector<UnitTestTarget>       unit_test_targets;
 };

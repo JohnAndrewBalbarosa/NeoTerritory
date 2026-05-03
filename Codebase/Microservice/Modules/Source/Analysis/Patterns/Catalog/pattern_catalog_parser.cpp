@@ -355,6 +355,29 @@ PatternTemplate template_from_json(const JsonValue& obj, const std::string& sour
             pattern.lexeme_identifiers.emplace(kv.first, std::move(lexemes));
         }
     }
+    if (const JsonValue* v = obj.find("subclass_role"); v && v->kind == JsonKind::Object)
+    {
+        if (const JsonValue* req = v->find("required"); req && req->kind == JsonKind::Bool)
+        {
+            pattern.subclass_role.required = req->boolean;
+        }
+        if (const JsonValue* pr = v->find("parent_role"); pr && pr->kind == JsonKind::String)
+        {
+            pattern.subclass_role.parent_role = pr->string;
+        }
+        if (const JsonValue* cr = v->find("child_role"); cr && cr->kind == JsonKind::String)
+        {
+            pattern.subclass_role.child_role = cr->string;
+        }
+        if (const JsonValue* cid = v->find("child_pattern_id"); cid && cid->kind == JsonKind::String)
+        {
+            pattern.subclass_role.child_pattern_id = cid->string;
+        }
+        if (const JsonValue* cc = v->find("child_catalog"); cc && cc->kind == JsonKind::String)
+        {
+            pattern.subclass_role.child_catalog = cc->string;
+        }
+    }
     return pattern;
 }
 
@@ -404,6 +427,51 @@ void load_one_file(const std::string& path, PatternCatalog& catalog)
 }
 } // namespace
 
+namespace
+{
+constexpr const char* kInheritanceMasterlistFilename = "inheritance_driven_patterns.json";
+
+// Parse the root inheritance_driven_patterns.json into the catalog's
+// family-keyed masterlist. Tolerates missing fields silently — the
+// masterlist is optional, and absence simply means "no pattern requires
+// subclass propagation in this build".
+void load_inheritance_masterlist(const std::string& path, PatternCatalog& catalog)
+{
+    const std::string text = read_file_contents(path);
+    if (text.empty())
+    {
+        catalog.load_diagnostics.push_back("inheritance_masterlist_missing:" + path);
+        return;
+    }
+    try
+    {
+        const JsonValue root = parse_root(text);
+        if (root.kind != JsonKind::Object)
+        {
+            catalog.load_diagnostics.push_back("inheritance_masterlist_root_not_object:" + path);
+            return;
+        }
+        const JsonValue* fams = root.find("families");
+        if (!fams || fams->kind != JsonKind::Object) return;
+        for (const auto& kv : fams->object)
+        {
+            if (kv.second.kind != JsonKind::Array) continue;
+            std::vector<std::string> short_names;
+            short_names.reserve(kv.second.array.size());
+            for (const JsonValue& entry : kv.second.array)
+            {
+                if (entry.kind == JsonKind::String) short_names.push_back(entry.string);
+            }
+            catalog.inheritance_driven_patterns.emplace(kv.first, std::move(short_names));
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        catalog.load_diagnostics.push_back(std::string(ex.what()) + ":" + path);
+    }
+}
+} // namespace
+
 PatternCatalog load_pattern_catalog(const std::string& catalog_directory)
 {
     PatternCatalog catalog;
@@ -417,11 +485,36 @@ PatternCatalog load_pattern_catalog(const std::string& catalog_directory)
         return catalog;
     }
 
+    // The recursive walk loads only top-level pattern files at depth
+    // {family}/{pattern}.json (depth 1 from the catalog root). Files
+    // nested deeper — child catalogs at {family}/{pattern}/subclass.json —
+    // are loaded on demand by the matcher's child-propagation pass, not
+    // by this scan. The root masterlist is parsed separately.
+    const std::filesystem::path root_path(catalog_directory);
     for (const auto& entry : std::filesystem::recursive_directory_iterator(catalog_directory, ec))
     {
         if (ec) break;
         if (!entry.is_regular_file()) continue;
         if (entry.path().extension() != ".json") continue;
+
+        // Distance from the catalog root: 0 = root-level files, 1 =
+        // family/file.json, 2+ = nested child catalogs.
+        const auto rel = std::filesystem::relative(entry.path(), root_path, ec);
+        if (ec) { ec.clear(); continue; }
+        const std::size_t depth = std::distance(rel.begin(), rel.end()) - 1;
+
+        if (depth == 0)
+        {
+            if (entry.path().filename() == kInheritanceMasterlistFilename)
+            {
+                load_inheritance_masterlist(entry.path().string(), catalog);
+            }
+            // Other root-level JSON files are ignored — patterns must live
+            // inside a family folder.
+            continue;
+        }
+        if (depth >= 2) continue; // child catalogs handled by the matcher
+
         load_one_file(entry.path().string(), catalog);
     }
     return catalog;

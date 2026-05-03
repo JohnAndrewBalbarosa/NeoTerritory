@@ -117,7 +117,5 @@
         "describe": "No static keyword anywhere in the class — not a singleton"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+  }
 }

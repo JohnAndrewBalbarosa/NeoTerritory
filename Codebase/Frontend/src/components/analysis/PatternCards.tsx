@@ -467,14 +467,34 @@ export default function PatternCards(props: PatternCardsProps) {
   // resolved set, since resolution removes a class from
   // ambiguousClassNames but the card should still live alongside the
   // other ambiguous cards (now showing its real accuracy).
-  const ambiguousCards: DetectedPatternFull[] = [];
+  // Collapse ambiguous-pending classes into a SINGLE "Review" card per
+  // class instead of one card per rival tag. The user has not committed
+  // to any of them, so showing N cards (one per pattern) creates
+  // duplicate-looking entries. Resolved classes still show one card —
+  // the chosen pattern. Unambiguous classes still show one card per
+  // distinct (className, patternId) tuple.
+  const ambiguousReviewByClass = new Map<string, DetectedPatternFull[]>();
+  const ambiguousResolvedCards: DetectedPatternFull[] = [];
   const unambiguousCards: DetectedPatternFull[] = [];
   for (const p of detectedPatterns) {
     const cls = p.className || '';
-    const isAmbiguousNow      = !!cls && ambiguous.has(cls);
-    const wasResolvedFromAmb  = !!cls && !!resolvedClasses[cls];
-    if (isAmbiguousNow || wasResolvedFromAmb) ambiguousCards.push(p);
-    else unambiguousCards.push(p);
+    const isAmbiguousNow     = !!cls && ambiguous.has(cls);
+    const resolvedChoice     = cls ? resolvedClasses[cls] : undefined;
+    const wasResolvedFromAmb = !!resolvedChoice;
+    if (wasResolvedFromAmb) {
+      const matchesPick =
+        p.patternId === resolvedChoice ||
+        p.patternName === resolvedChoice;
+      if (!matchesPick) continue;
+      ambiguousResolvedCards.push(p);
+      continue;
+    }
+    if (isAmbiguousNow) {
+      if (!ambiguousReviewByClass.has(cls)) ambiguousReviewByClass.set(cls, []);
+      ambiguousReviewByClass.get(cls)!.push(p);
+      continue;
+    }
+    unambiguousCards.push(p);
   }
 
   function renderCard(p: DetectedPatternFull, opts: { isAmbiguousUnresolved: boolean; wasAmbiguousNowResolved: boolean }) {
@@ -497,24 +517,34 @@ export default function PatternCards(props: PatternCardsProps) {
     );
   }
 
+  const reviewClasses = Array.from(ambiguousReviewByClass.keys());
+  const totalAmbiguous = reviewClasses.length + ambiguousResolvedCards.length;
+
   return (
     <div id="pattern-cards" className="pattern-cards">
       <ScoringExplainerBanner />
       <section className="pattern-cards-decided">
-        {ambiguousCards.length > 0 && (
+        {totalAmbiguous > 0 && (
           <>
             <h3 className="pattern-cards-section-head" title="Classes the matcher saw rival patterns for. Pick a pattern in the source view to surface a real accuracy number; until then the bar reads '?% awaiting pick'.">
-              Ambiguous — {ambiguousCards.filter(p => !resolvedClasses[p.className || '']).length} awaiting your tag
+              Ambiguous — {reviewClasses.length} awaiting your tag
             </h3>
-            {ambiguousCards.map(p => {
-              const cls = p.className || '';
-              const isStill = !!cls && ambiguous.has(cls) && !resolvedClasses[cls];
-              const wasResolved = !!cls && !!resolvedClasses[cls];
-              return renderCard(p, {
-                isAmbiguousUnresolved: isStill,
-                wasAmbiguousNowResolved: wasResolved,
-              });
+            {reviewClasses.map(cls => {
+              const rivals = ambiguousReviewByClass.get(cls) || [];
+              return (
+                <ReviewCard
+                  key={`review-${cls}`}
+                  className={cls}
+                  rivals={rivals}
+                />
+              );
             })}
+            {ambiguousResolvedCards.map(p =>
+              renderCard(p, {
+                isAmbiguousUnresolved: false,
+                wasAmbiguousNowResolved: true,
+              }),
+            )}
           </>
         )}
         {unambiguousCards.length > 0 && (
@@ -526,6 +556,47 @@ export default function PatternCards(props: PatternCardsProps) {
           </>
         )}
       </section>
+    </div>
+  );
+}
+
+// Single "Review" card per ambiguous-pending class. Replaces what used
+// to be N rival cards (one per tag) with a single placeholder until the
+// user picks. Lists the rivals so the user knows what they're choosing
+// between.
+function ReviewCard({ className, rivals }: { className: string; rivals: DetectedPatternFull[] }) {
+  const declarationLine = rivals[0]?.documentationTargets?.[0]?.line || null;
+  const rivalNames = Array.from(new Set(
+    rivals.map(p => p.patternName || p.patternId).filter(Boolean),
+  ));
+  return (
+    <div className="pattern-card pattern-card--collapsed pattern-card--review">
+      <div className="pattern-card-head">
+        <span
+          className="pattern-badge pattern-badge--review"
+          title="No pick yet — open the source view and choose a pattern on this class's declaration line"
+        >
+          Review
+        </span>
+        <span className="pattern-card-class"><code>{className}</code></span>
+        {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
+      </div>
+      <div className="pattern-card-body">
+        <div className="rank-bar rank-bar--unknown" data-verdict="unknown">
+          <span title="The user has not yet picked a pattern for this class">confidence</span>
+          <div className="rank-bar-track">
+            <div className="rank-bar-fill rank-bar-fill--unknown" style={{ width: '100%' }} />
+          </div>
+          <span>?%</span>
+          <span title="Pick a pattern on the class declaration line in the source view">awaiting pick</span>
+        </div>
+        <div className="pattern-card-section">
+          <h4>Rival patterns to choose between</h4>
+          <p className="pattern-card-pending">
+            {rivalNames.join(' · ')}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }

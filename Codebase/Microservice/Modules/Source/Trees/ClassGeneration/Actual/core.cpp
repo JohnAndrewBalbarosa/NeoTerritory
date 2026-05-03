@@ -114,6 +114,107 @@ std::size_t hash_function_identity(
     return key;
 }
 
+// Walk the optional `: access Base[, …]` clause that appears between the
+// class name and the opening brace. Stops at `{` or `;`. Tolerates
+// `class Foo final : public Bar`, virtual inheritance, qualified base
+// names (Ns::Bar), and templated bases (best-effort: stores the head
+// identifier of the base type, since the structural matcher only needs
+// the unqualified short name to resolve against the class registry).
+std::vector<BaseSpec> extract_base_specs(
+    const std::vector<LexicalToken>& tokens,
+    std::size_t                      after_name,
+    std::size_t                      brace_or_semi,
+    bool                             is_struct_default)
+{
+    std::vector<BaseSpec> bases;
+    std::size_t           i = after_name;
+    while (i < brace_or_semi &&
+           !token_is(tokens[i], LexicalTokenKind::Punctuation, ":"))
+    {
+        ++i;
+    }
+    if (i >= brace_or_semi) return bases;
+    ++i; // skip ':'
+
+    while (i < brace_or_semi)
+    {
+        BaseSpec spec;
+        spec.access = is_struct_default ? BaseAccessKind::Public : BaseAccessKind::Private;
+
+        // Access / virtual qualifiers can appear in any order before the name.
+        bool consuming_qualifiers = true;
+        while (consuming_qualifiers && i < brace_or_semi)
+        {
+            const LexicalToken& t = tokens[i];
+            if (t.kind == LexicalTokenKind::Keyword)
+            {
+                if      (t.lexeme == "public")    { spec.access = BaseAccessKind::Public;    ++i; continue; }
+                else if (t.lexeme == "protected") { spec.access = BaseAccessKind::Protected; ++i; continue; }
+                else if (t.lexeme == "private")   { spec.access = BaseAccessKind::Private;   ++i; continue; }
+                else if (t.lexeme == "virtual")   { spec.virtual_inheritance = true;         ++i; continue; }
+            }
+            consuming_qualifiers = false;
+        }
+
+        // Capture the base name. Resolve qualified names (A::B::Bar) by taking
+        // the trailing identifier — the structural matcher resolves bases
+        // against the file-local class registry, which keys on short names.
+        std::string base_name;
+        while (i < brace_or_semi)
+        {
+            const LexicalToken& t = tokens[i];
+            if (t.kind == LexicalTokenKind::Identifier)
+            {
+                base_name = t.lexeme;
+                ++i;
+                continue;
+            }
+            if (t.kind == LexicalTokenKind::Operator && t.lexeme == "::")
+            {
+                ++i;
+                continue;
+            }
+            break;
+        }
+
+        // Skip a templated tail `<…>` so we don't trip on its commas.
+        if (i < brace_or_semi &&
+            tokens[i].kind == LexicalTokenKind::Operator &&
+            tokens[i].lexeme == "<")
+        {
+            int depth = 0;
+            while (i < brace_or_semi)
+            {
+                const LexicalToken& t = tokens[i];
+                if (t.kind == LexicalTokenKind::Operator && t.lexeme == "<") ++depth;
+                else if (t.kind == LexicalTokenKind::Operator && t.lexeme == ">")
+                {
+                    --depth;
+                    ++i;
+                    if (depth == 0) break;
+                    continue;
+                }
+                ++i;
+            }
+        }
+
+        if (!base_name.empty())
+        {
+            spec.name = std::move(base_name);
+            bases.push_back(std::move(spec));
+        }
+
+        // Move past trailing comma to the next base, or stop at brace/semi.
+        while (i < brace_or_semi &&
+               !token_is(tokens[i], LexicalTokenKind::Punctuation, ","))
+        {
+            ++i;
+        }
+        if (i < brace_or_semi) ++i; // skip ','
+    }
+    return bases;
+}
+
 std::string slice_text(const std::vector<LexicalToken>& tokens, std::size_t from, std::size_t to)
 {
     std::string text;
@@ -244,6 +345,8 @@ ParseTreeNode build_file_unit_tree(const SourceFileUnit& source)
         class_node.hash        = hash_class_name_with_file(class_name, source.file_name);
         class_node.parent_hash = file_node.hash;
         class_node.text        = slice_text(tokens, i, close_brace + 1);
+        class_node.bases       = extract_base_specs(
+            tokens, name_index + 1, open_brace, token.lexeme == "struct");
 
         parse_class_body(tokens, open_brace, close_brace, class_node.hash, source.file_name, class_node);
         file_node.children.push_back(std::move(class_node));

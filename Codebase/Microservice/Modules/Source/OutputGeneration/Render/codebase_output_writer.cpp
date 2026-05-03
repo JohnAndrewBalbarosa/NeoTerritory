@@ -76,6 +76,7 @@ void write_design_pattern_tag(std::ostringstream& out, const DesignPatternTag& t
     out << ",\"class_name\":";       write_string(out, tag.class_name);
     out << ",\"file_name\":";        write_string(out, tag.file_name);
     out << ",\"class_text\":";       write_string(out, tag.class_text);
+    out << ",\"parent_class_name\":"; write_string(out, tag.parent_class_name);
 
     out << ",\"documentation_targets\":[";
     for (std::size_t i = 0; i < tag.documentation_targets.size(); ++i)

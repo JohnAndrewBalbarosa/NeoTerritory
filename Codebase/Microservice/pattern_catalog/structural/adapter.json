@@ -132,10 +132,5 @@
         "describe": "Nested constructors are a Decorator giveaway, not Adapter"
       }
     ]
-  },
-
-  "ranking_weights": {
-    "class_fit": 0.55,
-    "implementation_fit": 0.45
   }
 }

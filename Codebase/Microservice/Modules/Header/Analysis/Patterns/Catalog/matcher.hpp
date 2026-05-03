@@ -31,6 +31,10 @@ struct PatternMatchResult
     std::string                             pattern_family;
     std::string                             pattern_name;
     std::size_t                             class_hash = 0;
+    // Populated only on subclass-propagation matches (Step 5). Names the
+    // tagged parent class whose inheritance-driven pattern triggered the
+    // child match. Empty on regular per-class matches.
+    std::string                             parent_class_name;
     std::vector<PatternCapture>             captures;
     std::vector<PatternDocumentationAnchor> documentation_anchors;
 };

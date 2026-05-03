@@ -20,13 +20,19 @@ interface SourceViewProps {
   // (e.g. ShapeFactory → {Factory, Strategy}, Factory at decl line,
   // Strategy at make()).
   inScopePatternsByClass?: Map<string, Set<string>>;
-  // Narrower set used solely for chrome greying: classes whose declaration
-  // scope has at least one line with >1 distinct canonical pattern keys
-  // (`bodyAmbiguous` only). When a class is in this set, its declaration
-  // line, class chip, and external usage lines render in AMBIGUOUS_COLOR,
-  // while single-tag body lines inside the class keep their own colour so
-  // the user can still see which lines belong to which candidate pattern.
+  // Set of classes to render in AMBIGUOUS_COLOR (grey chrome). Includes
+  // both picker-eligible classes (the user owes a pick here) and
+  // subclass-pending classes (the parent owes a pick, child waits).
+  // Greying alone does NOT imply clickability; that's gated separately
+  // via `subclassPendingClassNames` and `subclassDroppedClassNames`.
   coloringAmbiguousClassNames?: Set<string>;
+  // Subclass classes whose parent has not yet effectively resolved.
+  // Their lines render grey but are NOT clickable — there is no rival
+  // picker to offer, the decision belongs to the parent.
+  subclassPendingClassNames?: Set<string>;
+  // Subclass classes whose parent picked a non-propagating pattern.
+  // Their tag is cancelled; lines render neutral and are not clickable.
+  subclassDroppedClassNames?: Set<string>;
   // Reverse index keyed by line number: which ambiguous class does this
   // line reference (as an external usage)? Used to grey out global helpers
   // and call-sites that touch an ambiguous class.
@@ -289,7 +295,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -304,6 +310,15 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   const [popover, setPopover] = useState<PopoverState | null>(null);
 
   function handleLineClick(row: RenderedLine, ev: React.MouseEvent<HTMLSpanElement>): void {
+    // Subclass-tag lines are non-decision lines: their pattern is purely
+    // a function of the parent's pick. Don't open a picker on them — it
+    // would either offer one option (pointless) or imply the user can
+    // override locally (they can't; the parent owns the call).
+    const cls = row.scope?.className ?? null;
+    if (cls) {
+      if (subclassPendingClassNames?.has(cls)) return;
+      if (subclassDroppedClassNames?.has(cls)) return;
+    }
     // Open the popover when there's something the user can act on:
     // any annotation, or a stale line-pattern override they may want to
     // undo (e.g. propagated from a class resolve whose source binding

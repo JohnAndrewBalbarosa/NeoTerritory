@@ -116,7 +116,5 @@
         "describe": "No forwarding arrow call inside class — pure pass-through is hard to call decoration"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.45, "implementation_fit": 0.55 }
+  }
 }

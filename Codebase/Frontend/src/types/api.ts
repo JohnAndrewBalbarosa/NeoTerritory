@@ -113,6 +113,11 @@ export interface PatternEducation {
 
 export interface DetectedPatternFull extends DetectedPattern {
   className?: string;
+  // Set when this pattern was emitted via subclass propagation. Names
+  // the parent class whose inheritance-driven match produced this child
+  // tag. UI may surface it (e.g. "← from Vehicle") but it does not
+  // drive coloring — the child carries its own canonical pattern key.
+  parentClassName?: string;
   patternLexemes?: PatternLexemeSet;
   patternEducation?: PatternEducation;
 }

@@ -3,6 +3,7 @@
   "pattern_family": "behavioural",
   "pattern_name": "StrategyConcrete",
   "pattern_role": "concrete",
+  "subclass_of": "behavioural.strategy_interface",
   "enabled": true,
   "lexeme_identifiers": {
     "policy_call":          ["->", "strategy_", "policy_", "algorithm_", "behavior_", "behaviour_"],
@@ -84,7 +85,5 @@
         "describe": "Class has product/entity name — this is a polymorphic entity, not a concrete Strategy"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.35, "implementation_fit": 0.65 }
+  }
 }

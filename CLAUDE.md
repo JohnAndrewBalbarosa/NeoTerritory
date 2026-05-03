@@ -40,3 +40,8 @@ Codex docs should define:
 
 Claude should implement the actual source changes after reviewing those docs.
 
+## Commit Cadence (Hard Rule)
+Every user prompt that produces a code or doc change MUST end with a `git commit` on the current branch. The rule applies to ANY non-trivial change — UI logic, model edits, microservice tweaks, doc updates, CSS. Use a conventional-commit subject (e.g. `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) and include a short body when the change spans multiple modules. Do not skip the commit even if the user did not explicitly ask for it; this is the durable record of per-prompt progress and enables backtracking.
+
+If a prompt produced ZERO file changes (pure question/discussion), no commit is required. If a prompt produced changes that fail type-check or build, fix forward in the same commit chain rather than leaving the tree dirty across prompts.
+

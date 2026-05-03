@@ -103,7 +103,5 @@
         "describe": "No `new`/make_* anywhere in the class — not a factory"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.4, "implementation_fit": 0.6 }
+  }
 }

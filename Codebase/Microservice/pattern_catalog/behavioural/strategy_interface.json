@@ -4,6 +4,13 @@
   "pattern_name": "Strategy",
   "pattern_role": "interface",
   "enabled": true,
+  "subclass_role": {
+    "required": true,
+    "parent_role": "interface",
+    "child_role": "concrete",
+    "child_pattern_id": "behavioural.strategy_concrete",
+    "child_catalog": "subclass.json"
+  },
   "lexeme_identifiers": {
     "policy_call":          ["->", "strategy_", "policy_", "algorithm_", "behavior_", "behaviour_"],
     "virtual_interface":    ["virtual", "= 0", "override", "final"],
@@ -86,7 +93,5 @@
         "describe": "Inheriting classes have product/entity names — this is a polymorphic hierarchy, not a Strategy family"
       }
     ]
-  },
-
-  "ranking_weights": { "class_fit": 0.25, "implementation_fit": 0.75 }
+  }
 }

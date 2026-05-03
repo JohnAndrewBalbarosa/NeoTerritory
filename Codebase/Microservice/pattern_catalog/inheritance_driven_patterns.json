@@ -1,0 +1,10 @@
+{
+  "schema": "neoterritory.inheritance_driven_patterns.v1",
+  "description": "Authoring index for design patterns that semantically require an inheritance relationship. Each entry names a pattern (short name, no family prefix) whose tagged class is treated as a parent role, and whose subclass.json sibling defines the child role's matcher. The microservice resolves child catalogs at pattern_catalog/{family}/{pattern}/subclass.json. Add a pattern's short name to the appropriate family list to enable parent→child tag propagation; remove it to stop propagating. Authoring entry point only — runtime never mutates this file.",
+  "families": {
+    "behavioural": ["strategy_interface"],
+    "creational":  [],
+    "structural":  [],
+    "idiom":       []
+  }
+}
