@@ -49,6 +49,13 @@ Get-Content $EnvFile | ForEach-Object {
   Set-Item -Path "Env:$($k.Trim())" -Value $v.Trim()
 }
 
+# Reject publishable / anon Supabase keys — RLS will silently drop every INSERT.
+if ($env:SUPABASE_SERVICE_KEY -and ($env:SUPABASE_SERVICE_KEY -match '^(sb_publishable_|sb_anon_)')) {
+  Write-Warning "SUPABASE_SERVICE_KEY looks like a publishable/anon key — admin-log mirror DISABLED."
+  Write-Warning "Get the service-role key from Supabase -> Settings -> API -> 'service_role secret'."
+  $env:SUPABASE_SERVICE_KEY = ''
+}
+
 # Defaults.
 if (-not $env:IMAGE_NAME)     { $env:IMAGE_NAME = 'neoterritory' }
 if (-not $env:IMAGE_TAG)      { $env:IMAGE_TAG  = 'latest' }
@@ -179,7 +186,7 @@ docker build -f "Codebase/Infrastructure/session-orchestration/docker/Dockerfile
 
 # Build remote env file content.
 $envLines = @('PORT=3001','NODE_ENV=production')
-foreach ($k in 'JWT_SECRET','ANTHROPIC_API_KEY','ADMIN_USERNAME','ADMIN_PASSWORD') {
+foreach ($k in 'JWT_SECRET','GEMINI_API_KEY','GEMINI_MODEL','ANTHROPIC_API_KEY','ANTHROPIC_MODEL','AI_PROVIDER','ADMIN_USERNAME','ADMIN_PASSWORD') {
   $v = (Get-Item "Env:$k" -ErrorAction SilentlyContinue).Value
   if ($v) { $envLines += "$k=$v" }
 }

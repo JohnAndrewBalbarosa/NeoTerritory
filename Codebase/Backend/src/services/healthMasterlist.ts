@@ -71,9 +71,15 @@ export function getMicroserviceStatus(): MicroserviceStatus {
 }
 
 export function getAiTranslatorStatus(): AiTranslatorStatus {
+  const gKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  const aKey = process.env.ANTHROPIC_API_KEY;
+  const explicit = (process.env.AI_PROVIDER || '').toLowerCase();
+  const useGemini = (explicit === 'gemini' && gKey) || (!explicit && gKey);
   return {
-    configured: Boolean(process.env.ANTHROPIC_API_KEY),
-    model: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+    configured: Boolean(gKey || aKey),
+    model: useGemini
+      ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+      : (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'),
   };
 }
 

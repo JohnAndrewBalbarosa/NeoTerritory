@@ -1,7 +1,12 @@
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
-const DEFAULT_MODEL     = 'claude-sonnet-4-6';
+const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-6';
+const DEFAULT_GEMINI_MODEL    = 'gemini-2.5-flash';
 const DEFAULT_MAX_TOKENS = 4096;
+
+// Gemini = Google AI Studio REST API. Same JSON contract as Anthropic from
+// the rest of the backend's POV — only the HTTP shape differs.
+const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
 // "Educator" voice: optimized for novice C++ developers. The studio renders
 // these fields directly in PatternCards next to the rank bar, so the tone has
@@ -292,41 +297,130 @@ async function callAnthropicMessages(apiKey: string, model: string, payload: AiP
   };
 }
 
+async function callGemini(apiKey: string, model: string, payload: AiPayload): Promise<AiResult> {
+  const url = `${GEMINI_API_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
+  const body = {
+    systemInstruction: { role: 'system', parts: [{ text: SYSTEM_PROMPT }] },
+    contents: [{ role: 'user', parts: [{ text: buildUserMessage(payload) }] }],
+    generationConfig: {
+      maxOutputTokens: DEFAULT_MAX_TOKENS,
+      responseMimeType: 'application/json',
+      temperature: 0.2
+    }
+  };
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 30000);
+
+  let response: Response;
+  try {
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: ctrl.signal
+      });
+    } catch (err: unknown) {
+      if (err && (err as { name?: string }).name === 'AbortError') {
+        return {
+          status: 'failed', reason: 'gemini_timeout',
+          providerError: 'Gemini request aborted after 30s timeout',
+          documentationByTarget: {}, unitTestPlanByTarget: {}
+        };
+      }
+      throw err;
+    }
+  } finally { clearTimeout(timer); }
+
+  if (!response.ok) {
+    const errorText = await response.text().catch(() => '');
+    return {
+      status: 'failed', reason: `gemini_http_${response.status}`,
+      providerError: errorText.slice(0, 500),
+      documentationByTarget: {}, unitTestPlanByTarget: {}
+    };
+  }
+
+  interface GeminiPart { text?: string }
+  interface GeminiCandidate { content?: { parts?: GeminiPart[] }; finishReason?: string }
+  interface GeminiResponse { candidates?: GeminiCandidate[]; modelVersion?: string }
+  const data = (await response.json()) as GeminiResponse;
+  const text = data.candidates?.[0]?.content?.parts?.map((p) => p.text || '').join('') || '';
+  const parsed = extractJsonFromContent([{ type: 'text', text }]);
+  if (!parsed) {
+    return {
+      status: 'failed', reason: 'unparseable_ai_response',
+      documentationByTarget: {}, unitTestPlanByTarget: {},
+      providerMetadata: { model: data.modelVersion || model, stop_reason: data.candidates?.[0]?.finishReason }
+    };
+  }
+
+  const education: PatternEducationOut | null =
+    (parsed.explanation || parsed.why_this_fired || parsed.study_hint)
+      ? { explanation: parsed.explanation || '', whyThisFired: parsed.why_this_fired || '', studyHint: parsed.study_hint || '' }
+      : null;
+
+  return {
+    status: 'generated',
+    verdict: parsed.verdict || null,
+    finalPatternId: parsed.final_pattern_id || payload.detectedPattern || null,
+    rationale: parsed.rationale || '',
+    education,
+    documentationByTarget: parsed.documentationByTarget || {},
+    unitTestPlanByTarget: parsed.unitTestPlanByTarget || {},
+    providerMetadata: { model: data.modelVersion || model, stop_reason: data.candidates?.[0]?.finishReason }
+  };
+}
+
+// Provider selection: explicit AI_PROVIDER env wins; otherwise Gemini if its
+// key is present, then Anthropic. Lets the same backend image serve either.
+type Provider = 'gemini' | 'anthropic';
+function pickProvider(): { provider: Provider; apiKey: string; model: string } | null {
+  const explicit = (process.env.AI_PROVIDER || '').toLowerCase();
+  const gKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
+  const aKey = process.env.ANTHROPIC_API_KEY || '';
+
+  if (explicit === 'gemini' && gKey) {
+    return { provider: 'gemini', apiKey: gKey, model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL };
+  }
+  if (explicit === 'anthropic' && aKey) {
+    return { provider: 'anthropic', apiKey: aKey, model: process.env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL };
+  }
+  if (gKey) return { provider: 'gemini', apiKey: gKey, model: process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL };
+  if (aKey) return { provider: 'anthropic', apiKey: aKey, model: process.env.ANTHROPIC_MODEL || DEFAULT_ANTHROPIC_MODEL };
+  return null;
+}
+
 export async function generateDocumentation(input: AiInput): Promise<AiResult> {
   const payload = buildAiPayload(input);
 
   if (!payload.documentationTargets.length && !payload.unitTestTargets.length) {
     return {
-      status: 'skipped',
-      reason: 'no_targets',
-      documentationByTarget: {},
-      unitTestPlanByTarget: {}
+      status: 'skipped', reason: 'no_targets',
+      documentationByTarget: {}, unitTestPlanByTarget: {}
     };
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
+  const choice = pickProvider();
+  if (!choice) {
     return {
-      status: 'pending_provider',
-      reason: 'ai_provider_not_configured',
-      payload,
-      documentationByTarget: {},
-      unitTestPlanByTarget: {}
+      status: 'pending_provider', reason: 'ai_provider_not_configured', payload,
+      documentationByTarget: {}, unitTestPlanByTarget: {}
     };
   }
-
-  const model = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
 
   try {
-    return await callAnthropicMessages(apiKey, model, payload);
+    return choice.provider === 'gemini'
+      ? await callGemini(choice.apiKey, choice.model, payload)
+      : await callAnthropicMessages(choice.apiKey, choice.model, payload);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     return {
       status: 'failed',
-      reason: 'anthropic_call_threw',
+      reason: `${choice.provider}_call_threw`,
       providerError: msg.slice(0, 500),
-      documentationByTarget: {},
-      unitTestPlanByTarget: {}
+      documentationByTarget: {}, unitTestPlanByTarget: {}
     };
   }
 }

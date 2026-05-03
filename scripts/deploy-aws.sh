@@ -84,8 +84,33 @@ if [ ! -f "$ENV_FILE" ]; then
   echo "ERROR: missing $ENV_FILE — copy scripts/.env.deploy.example and fill it in." >&2
   exit 1
 fi
+# Lock down anything sensitive on the local side before sourcing.
+chmod 600 "$ENV_FILE" 2>/dev/null || true
 # shellcheck disable=SC2046
 set -a; . "$ENV_FILE"; set +a
+if [ -n "${AWS_SSH_KEY:-}" ] && [ -f "$AWS_SSH_KEY" ]; then
+  chmod 600 "$AWS_SSH_KEY" 2>/dev/null || true
+fi
+
+# Supabase: only the SERVICE-ROLE key can write through RLS. The publishable
+# / anon keys (sb_publishable_*, sb_anon_*, eyJ...role":"anon") are client-side
+# and will silently fail every INSERT. Detect and refuse to forward those.
+if [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
+  case "$SUPABASE_SERVICE_KEY" in
+    sb_publishable_*|sb_anon_*)
+      echo "WARNING: SUPABASE_SERVICE_KEY looks like a publishable/anon key." >&2
+      echo "         Admin-log mirror will be DISABLED for this deploy." >&2
+      echo "         Get the service-role key from Supabase → Settings → API → 'service_role secret'." >&2
+      SUPABASE_SERVICE_KEY=''
+      ;;
+    sb_secret_*|eyJ*)
+      : # accepted: new-format secret OR legacy JWT-shaped service-role key
+      ;;
+    *)
+      echo "WARNING: SUPABASE_SERVICE_KEY shape not recognized — proceeding anyway." >&2
+      ;;
+  esac
+fi
 
 : "${IMAGE_NAME:=neoterritory}"
 : "${IMAGE_TAG:=latest}"
@@ -198,7 +223,11 @@ TMP_ENV="$(mktemp)"
   echo "PORT=3001"
   echo "NODE_ENV=production"
   [ -n "${JWT_SECRET:-}" ]         && echo "JWT_SECRET=$JWT_SECRET"
+  [ -n "${GEMINI_API_KEY:-}" ]     && echo "GEMINI_API_KEY=$GEMINI_API_KEY"
+  [ -n "${GEMINI_MODEL:-}" ]       && echo "GEMINI_MODEL=$GEMINI_MODEL"
   [ -n "${ANTHROPIC_API_KEY:-}" ]  && echo "ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY"
+  [ -n "${ANTHROPIC_MODEL:-}" ]    && echo "ANTHROPIC_MODEL=$ANTHROPIC_MODEL"
+  [ -n "${AI_PROVIDER:-}" ]        && echo "AI_PROVIDER=$AI_PROVIDER"
   [ -n "${ADMIN_USERNAME:-}" ]     && echo "ADMIN_USERNAME=$ADMIN_USERNAME"
   [ -n "${ADMIN_PASSWORD:-}" ]     && echo "ADMIN_PASSWORD=$ADMIN_PASSWORD"
   if [ $USE_SUPABASE -eq 1 ] && [ -n "${SUPABASE_URL:-}" ] && [ -n "${SUPABASE_SERVICE_KEY:-}" ]; then
