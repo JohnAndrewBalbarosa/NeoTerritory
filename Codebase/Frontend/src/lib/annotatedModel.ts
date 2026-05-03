@@ -303,14 +303,10 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     ?? run.classResolvedPatterns
     ?? {};
 
-  // Build per-class status. For propagated subclasses we classify on
-  // the INDEPENDENT candidate set (raw candidates minus
-  // propagated-from-parent tags). The remaining pool is what the child
-  // can decide on its own. If empty, the child has no independent
-  // signal and is purely cascade-driven (status flows from parent in
-  // the cascade pass below). If non-empty, the child is treated like
-  // any other class: 1 → unambiguous on that pattern, >1 → ambiguous
-  // pending.
+  // Build per-class status. Non-propagated classes classify normally on
+  // their full candidate set. Propagated subclasses are placeholders here
+  // — their status gets fully decided in the cascade pass below, since
+  // the rule depends on the parent's effective pattern.
   const classes = new Map<string, ClassNode>();
   const allClassNames = new Set<string>([
     ...taggedClassNames,
@@ -325,38 +321,21 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
 
     const isPropagatedSubclass = propagatedSubclassParent.has(className);
     const parentClassName = propagatedSubclassParent.get(className);
-    const propagatedTags = propagatedPatternsByChild.get(className);
-
-    // "Independent" candidates: what the child has tags for that did
-    // NOT come from parent propagation. For Car/Truck in the Strategy
-    // sample, the only tag is strategy_concrete (propagated), so the
-    // independent set is empty — the cascade pass below decides.
-    const independentSet = new Set<string>(candidates);
-    if (propagatedTags) {
-      for (const t of propagatedTags) independentSet.delete(t);
-    }
-
-    const candidatesList = isPropagatedSubclass
-      ? Array.from(independentSet)
-      : Array.from(candidates);
+    const candidatesList = Array.from(candidates);
 
     const userPick = resolvedTable[className];
-    const resolvedSet = isPropagatedSubclass ? independentSet : candidates;
-    const resolved = userPick && resolvedSet.has(userPick) ? userPick : undefined;
+    const resolved = userPick && candidates.has(userPick) ? userPick : undefined;
 
     let status: ClassStatus;
-    if (resolved) {
+    if (isPropagatedSubclass) {
+      // Placeholder; cascade pass below sets the real status.
+      status = 'subclass_pending';
+    } else if (resolved) {
       status = candidatesList.length > 1 ? 'ambiguous_resolved' : 'unambiguous';
     } else if (candidatesList.length > 1) {
       status = 'ambiguous_pending';
-    } else if (candidatesList.length === 1) {
-      status = 'unambiguous';
     } else {
-      // No independent candidates. Status is a placeholder until the
-      // cascade pass below decides based on parent. Non-propagated
-      // classes never reach here (they'd have at least one tag from
-      // directCandidates).
-      status = 'subclass_pending';
+      status = 'unambiguous';
     }
 
     classes.set(className, {
@@ -369,46 +348,67 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     });
   }
 
-  // Subclass cascade. Two-step rule:
+  // Subclass cascade. Three branches, in order:
   //
-  // 1. If the child has INDEPENDENT candidates (already classified
-  //    above as unambiguous/ambiguous_pending/ambiguous_resolved),
-  //    leave it alone — the child has its own decision space and the
-  //    parent does not override it. This is the user's "after
-  //    subtracting parent's tag, if anything remains the child can
-  //    pick or auto-take" rule.
-  //
-  // 2. If the child has NO independent candidates, its tag is purely
-  //    cascade-driven. Then:
-  //      - parent pending (multi-candidate, no pick) → subclass_pending
-  //      - parent's effective pick ∈ SUBCLASS_PROPAGATING_PATTERNS →
-  //        child stays unambiguous on the propagated pattern (we set
-  //        it explicitly below so the rest of the model can read
-  //        node.candidates as the cascaded pattern).
-  //      - parent's effective pick is anything else → subclass_dropped.
+  //   1) Parent pending (no effective pick yet) → child is
+  //      `subclass_pending`: grey + non-clickable. The child cannot
+  //      decide before its parent.
+  //   2) Parent picks a SUBCLASS_PROPAGATING_PATTERNS entry → child is
+  //      LOCKED to that pattern. Independent candidates are ignored
+  //      here on purpose (per spec: "lahat pati subclass nya na tagged
+  //      as strategy concrete, automatic na locked in"). Status =
+  //      unambiguous on parent's pattern.
+  //   3) Parent picks a non-propagating pattern → the parent-driven
+  //      tag is subtracted from the child's candidate set. What
+  //      remains decides:
+  //        - 0 → child has no tag at all → `subclass_dropped`.
+  //        - 1 → auto-take that pattern → unambiguous.
+  //        - >1 → child becomes its own decision: `ambiguous_pending`
+  //          (the user's "papa piliin ulit si user").
   for (const node of classes.values()) {
     if (!node.isPropagatedSubclass || !node.parentClassName) continue;
-    if (node.status === 'unambiguous'
-        || node.status === 'ambiguous_pending'
-        || node.status === 'ambiguous_resolved') {
-      continue; // independent candidates exist — child decides on its own.
-    }
     const parent = classes.get(node.parentClassName);
     if (!parent) continue;
     const parentEffective = parent.resolved
       ?? (parent.candidates.length === 1 ? parent.candidates[0] : undefined);
+
     if (!parentEffective) {
       node.status = 'subclass_pending';
+      node.candidates = [];
+      node.resolved = undefined;
       continue;
     }
+
     if (SUBCLASS_PROPAGATING_PATTERNS.has(parentEffective)) {
-      // Parent's pick propagates: child becomes unambiguous on the
-      // parent's pattern. The cascade pattern is what the child
-      // displays in legend chips and source colour.
       node.candidates = [parentEffective];
       node.status = 'unambiguous';
-    } else {
+      node.resolved = undefined;
+      continue;
+    }
+
+    // Non-propagating parent pick. Subtract the propagated tag(s) the
+    // microservice attached to this child and reclassify on the leftover.
+    const propagatedTags = propagatedPatternsByChild.get(node.className) ?? new Set<string>();
+    const fromDirect = directCandidates.get(node.className) ?? new Set<string>();
+    const fromScope  = inScopePatterns.get(node.className)  ?? new Set<string>();
+    const remaining = new Set<string>([...fromDirect, ...fromScope]);
+    for (const t of propagatedTags) remaining.delete(t);
+
+    const remainingList = Array.from(remaining);
+    node.candidates = remainingList;
+
+    const childPick = resolvedTable[node.className];
+    const childResolved = childPick && remaining.has(childPick) ? childPick : undefined;
+    node.resolved = childResolved;
+
+    if (remainingList.length === 0) {
       node.status = 'subclass_dropped';
+    } else if (childResolved) {
+      node.status = remainingList.length > 1 ? 'ambiguous_resolved' : 'unambiguous';
+    } else if (remainingList.length === 1) {
+      node.status = 'unambiguous';
+    } else {
+      node.status = 'ambiguous_pending';
     }
   }
 

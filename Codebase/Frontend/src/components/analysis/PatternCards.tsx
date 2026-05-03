@@ -570,7 +570,7 @@ function ReviewCard({ className, rivals }: { className: string; rivals: Detected
     rivals.map(p => p.patternName || p.patternId).filter(Boolean),
   ));
   return (
-    <div className="pattern-card pattern-card--collapsed pattern-card--review">
+    <div className="pattern-card pattern-card--review">
       <div className="pattern-card-head">
         <span
           className="pattern-badge pattern-badge--review"
@@ -581,20 +581,24 @@ function ReviewCard({ className, rivals }: { className: string; rivals: Detected
         <span className="pattern-card-class"><code>{className}</code></span>
         {declarationLine && <span className="pattern-card-line">line {declarationLine}</span>}
       </div>
-      <div className="pattern-card-body">
-        <div className="rank-bar rank-bar--unknown" data-verdict="unknown">
-          <span title="The user has not yet picked a pattern for this class">confidence</span>
-          <div className="rank-bar-track">
-            <div className="rank-bar-fill rank-bar-fill--unknown" style={{ width: '100%' }} />
-          </div>
-          <span>?%</span>
-          <span title="Pick a pattern on the class declaration line in the source view">awaiting pick</span>
-        </div>
-        <div className="pattern-card-section">
-          <h4>Rival patterns to choose between</h4>
-          <p className="pattern-card-pending">
-            {rivalNames.join(' · ')}
-          </p>
+      <div className="pattern-card-review-body">
+        <p className="pattern-card-review-hint">
+          Awaiting your pick. Open the source view and choose a pattern on this
+          class's declaration line.
+        </p>
+        <div className="pattern-card-review-rivals">
+          {rivalNames.map(name => {
+            const c = colorFor(name);
+            return (
+              <span
+                key={name}
+                className="pattern-card-review-rival"
+                style={{ borderColor: c.border, color: c.text, background: c.bg }}
+              >
+                {name}
+              </span>
+            );
+          })}
         </div>
       </div>
     </div>
