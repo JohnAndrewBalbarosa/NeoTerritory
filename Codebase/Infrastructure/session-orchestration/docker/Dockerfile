@@ -26,15 +26,32 @@ RUN mkdir -p /build \
     && make -j"$(nproc)"
 
 # =========================================================================
-# Stage 2: Node.js runtime + backend + frontend + microservice binary
+# Stage 2: build the frontend (Vite → static dist/)
+# Done in its own stage so the runtime image doesn't carry vite/devDeps.
+# =========================================================================
+FROM node:20-bookworm-slim AS frontend-builder
+WORKDIR /fe
+COPY Codebase/Frontend/package.json Codebase/Frontend/package-lock.json ./
+RUN npm ci
+COPY Codebase/Frontend ./
+RUN npm run build
+
+# =========================================================================
+# Stage 3: Node.js runtime + backend + frontend + microservice binary
 # =========================================================================
 FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3001
 
-# better-sqlite3 needs a libstdc++ runtime (provided by bookworm-slim already)
-# and the spawned C++ binary was statically linked at compile time.
+# better-sqlite3 ships prebuilt binaries via prebuild-install for linux-x64
+# and linux-arm64; if the prebuild fetch fails, npm falls back to
+# node-gyp compile, which requires python3 + make + g++. Install them so
+# `npm ci` succeeds on any Lightsail / EC2 architecture.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+         python3 make g++ ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -46,7 +63,12 @@ RUN cd Codebase/Backend && npm ci
 COPY Codebase/Backend  ./Codebase/Backend
 RUN cd Codebase/Backend && npm run build && npm prune --production
 
+# Frontend: copy SOURCE (so the served path keeps non-bundled assets like
+# /public, /admin.html, /scraper.html), then overlay the built dist/ on top
+# so index.html points at the hashed bundle. Express static-serves
+# Codebase/Frontend, so this layout matches existing behavior.
 COPY Codebase/Frontend ./Codebase/Frontend
+COPY --from=frontend-builder /fe/dist/ ./Codebase/Frontend/
 
 # Bake the microservice artifacts into the image at the canonical path
 # the backend expects (Codebase/Microservice/build/NeoTerritory and

@@ -45,6 +45,18 @@ IMAGE_REF="${IMAGE_REF:-neoterritory:latest}"
 CONTAINER_NAME="${CONTAINER_NAME:-neoterritory}"
 HOST_PORT="${HOST_PORT:-80}"
 
+# ── 0. Pre-flight ───────────────────────────────────────────────────────────
+# Multi-stage docker build needs ~3 GB free during the cmake/g++ stage.
+FREE_GB=$(df -BG --output=avail / | tail -1 | tr -dc '0-9')
+if [ "${FREE_GB:-0}" -lt 5 ]; then
+  echo "WARNING: only ${FREE_GB}G free on /. Multi-stage docker build needs ~3-5G." >&2
+fi
+
+# Sanity: this script installs DOCKER ONLY. No kubectl / minikube / k3s.
+# CMake is pulled inside the build container (debian:bookworm-slim) and
+# never touches the host. The C++ microservice compiles in-stage and only
+# the resulting binary lands in the runtime image.
+
 # ── 1. Base packages ────────────────────────────────────────────────────────
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y

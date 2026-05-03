@@ -137,7 +137,11 @@ if ($ShipMode -eq 'source') {
         '--exclude=Codebase/Frontend/dist','--exclude=Codebase/Backend/dist',
         '--exclude=Codebase/Microservice/build','--exclude=Codebase/Microservice/build-linux',
         '--exclude=build','--exclude=out','--exclude=test-artifacts','--exclude=*.log',
-        '--exclude=scripts/.env.deploy','--exclude=*.pem','--exclude=*.key'
+        '--exclude=scripts/.env.deploy','--exclude=*.pem','--exclude=*.key',
+        '--exclude=Codebase/Infrastructure/minikube-linux-amd64',
+        '--exclude=Codebase/Infrastructure/session-orchestration/k8s',
+        '--exclude=Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy',
+        '--exclude=Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy.ps1'
       )
       Push-Location $RootDir
       try { & tar @excludes -czf $tarTmp.FullName . } finally { Pop-Location }

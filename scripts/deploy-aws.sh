@@ -157,6 +157,11 @@ if [ "$SHIP_MODE" = 'source' ]; then
     --exclude='scripts/.env.deploy'
     --exclude='*.pem'
     --exclude='*.key'
+    # Kubernetes / minikube tooling — not used by the Docker deploy.
+    --exclude='Codebase/Infrastructure/minikube-linux-amd64'
+    --exclude='Codebase/Infrastructure/session-orchestration/k8s'
+    --exclude='Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy'
+    --exclude='Codebase/Infrastructure/session-orchestration/bootstrap_and_deploy.ps1'
   )
   if [ $DRY_RUN -eq 1 ]; then
     echo "→ tar source → ssh $SSH_TARGET 'untar + docker build $IMAGE_REF'"
