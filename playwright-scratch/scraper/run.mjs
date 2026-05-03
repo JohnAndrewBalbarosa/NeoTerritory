@@ -195,95 +195,183 @@ async function runExtract(p, payload) {
   const includeImages = !!payload?.includeImages;
   const sourceUrl = String(payload?.sourceUrl || '');
   const selectorPath = String(payload?.selectorPath || '');
+  const autoScroll = payload?.autoScroll !== false; // default on
+  const maxScrolls = Math.max(1, Math.min(2000, Number(payload?.maxScrolls) || 200));
+  const idleRoundsLimit = Math.max(1, Math.min(20, Number(payload?.idleRounds) || 5));
+  const settleMs = Math.max(200, Math.min(10000, Number(payload?.settleMs) || 1200));
 
   SESSION.postCounter += 1;
   const postDir = join(SESSION.runDir, String(SESSION.postCounter).padStart(3, '0'));
   mkdirSync(postDir, { recursive: true });
 
-  // Per-immediate-child extraction. The picked element is treated as a
-  // container; each direct child Element is one self-contained unit
-  // (one post / card / row). Text comes from that child's own innerText
-  // — DOM tags are already structurally balanced, so the browser's
-  // subtree boundary is the "depth-zero" stop we want, no manual
-  // <div>/</div> counter required.
-  const data = await p.evaluate((id) => {
-    const root = document.querySelector(`[data-neo-pick-id="${id}"]`);
-    if (!root) return null;
+  // Mark every child we've already captured with a data-neo attr so the
+  // next batch only returns new ones. The picked element is treated as a
+  // container; each direct child Element is one self-contained unit.
+  // DOM tags are already structurally balanced, so the browser subtree
+  // boundary is the depth-zero stop — no manual <div>/</div> counter
+  // required.
+  async function snapshotNewChildren() {
+    return p.evaluate((id) => {
+      const root = document.querySelector(`[data-neo-pick-id="${id}"]`);
+      if (!root) return null;
 
-    const collectImgs = (el) => Array.from(el.querySelectorAll('img,picture source'))
-      .map((node) => {
-        if (node.tagName === 'IMG') return node.currentSrc || node.src || '';
-        const ss = node.getAttribute('srcset') || '';
-        return ss.split(',')[0]?.trim().split(' ')[0] || '';
-      })
-      .filter(Boolean);
+      const collectImgs = (el) => Array.from(el.querySelectorAll('img,picture source'))
+        .map((node) => {
+          if (node.tagName === 'IMG') return node.currentSrc || node.src || '';
+          const ss = node.getAttribute('srcset') || '';
+          return ss.split(',')[0]?.trim().split(' ')[0] || '';
+        })
+        .filter(Boolean);
 
-    const dedupe = (arr) => Array.from(new Set(arr));
+      const dedupe = (arr) => Array.from(new Set(arr));
 
-    const childEls = Array.from(root.children).filter((c) => c.nodeType === 1);
-
-    const children = childEls.map((c, i) => {
-      const text = (c.innerText || '').trim();
-      const imgs = dedupe(collectImgs(c));
+      const childEls = Array.from(root.children).filter((c) => c.nodeType === 1);
+      const fresh = [];
+      for (const c of childEls) {
+        if (c.hasAttribute('data-neo-extracted')) continue;
+        c.setAttribute('data-neo-extracted', '1');
+        const text = (c.innerText || '').trim();
+        const imgs = dedupe(collectImgs(c));
+        if (text.length === 0 && imgs.length === 0) continue;
+        fresh.push({
+          tag: c.tagName.toLowerCase(),
+          class_name: (c.getAttribute('class') || '').slice(0, 200),
+          text,
+          text_length: text.length,
+          imgs,
+        });
+      }
       return {
-        child_index: i + 1,
-        tag: c.tagName.toLowerCase(),
-        class_name: (c.getAttribute('class') || '').slice(0, 200),
-        text,
-        text_length: text.length,
-        imgs,
+        root_child_count: childEls.length,
+        fresh,
       };
-    }).filter((c) => c.text.length > 0 || c.imgs.length > 0);
+    }, pickId);
+  }
 
-    return {
-      root_text_length: (root.innerText || '').trim().length,
-      root_child_count: childEls.length,
-      children,
-    };
-  }, pickId);
+  // Auto-scroll: prefer scrolling the picked container itself if it's
+  // the scrollable region; otherwise fall back to window scroll. After
+  // each scroll, wait `settleMs` for FB's lazy loader. Stop after
+  // `idleRoundsLimit` consecutive scrolls that yield zero new children,
+  // or after `maxScrolls` scrolls total.
+  async function scrollOnce() {
+    return p.evaluate((id) => {
+      const root = document.querySelector(`[data-neo-pick-id="${id}"]`);
+      if (!root) return { scrolled: false, atEnd: true };
 
-  if (!data) return { error: 'pick element vanished', outputDir: postDir };
+      // Find the nearest scrollable ancestor (overflow auto/scroll with
+      // real scrollHeight > clientHeight). If none, scroll the window.
+      let scroller = root;
+      let found = null;
+      while (scroller && scroller !== document.documentElement) {
+        const cs = getComputedStyle(scroller);
+        const oy = cs.overflowY;
+        if ((oy === 'auto' || oy === 'scroll') && scroller.scrollHeight > scroller.clientHeight + 4) {
+          found = scroller;
+          break;
+        }
+        scroller = scroller.parentElement;
+      }
+
+      if (found) {
+        const before = found.scrollTop;
+        found.scrollTop = found.scrollHeight;
+        const atEnd = (found.scrollTop + found.clientHeight) >= (found.scrollHeight - 4);
+        return { scrolled: found.scrollTop !== before || !atEnd, atEnd, mode: 'container' };
+      }
+
+      const before = window.scrollY;
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+      const atEnd = (window.scrollY + window.innerHeight) >= (document.documentElement.scrollHeight - 4);
+      return { scrolled: window.scrollY !== before, atEnd, mode: 'window' };
+    }, pickId);
+  }
 
   const childRecords = [];
-  for (let i = 0; i < data.children.length; i += 1) {
-    const c = data.children[i];
-    const folderName = String(c.child_index).padStart(2, '0');
-    const childDir = join(postDir, folderName);
-    mkdirSync(childDir, { recursive: true });
+  let nextChildIndex = 0;
+  let scrollCount = 0;
+  let idleRounds = 0;
+  let scrollMode = 'none';
 
-    const imagePaths = [];
-    if (includeImages) {
-      for (let j = 0; j < c.imgs.length; j += 1) {
-        const f = await downloadImage(p, c.imgs[j], childDir, j + 1);
-        if (f) imagePaths.push(f.replace(`${ROOT}\\`, '').replace(`${ROOT}/`, '').replace(/\\/g, '/'));
+  // First pass — capture whatever's already in DOM.
+  const captureBatch = async () => {
+    const snap = await snapshotNewChildren();
+    if (!snap) return { gone: true, added: 0 };
+    let added = 0;
+    for (const c of snap.fresh) {
+      nextChildIndex += 1;
+      const folderName = String(nextChildIndex).padStart(3, '0');
+      const childDir = join(postDir, folderName);
+      mkdirSync(childDir, { recursive: true });
+
+      const imagePaths = [];
+      if (includeImages) {
+        for (let j = 0; j < c.imgs.length; j += 1) {
+          const f = await downloadImage(p, c.imgs[j], childDir, j + 1);
+          if (f) imagePaths.push(f.replace(`${ROOT}\\`, '').replace(`${ROOT}/`, '').replace(/\\/g, '/'));
+        }
+      }
+
+      writeFileSync(join(childDir, 'text.txt'), c.text);
+      const childPost = {
+        post_index: SESSION.postCounter,
+        child_index: nextChildIndex,
+        person_slug: SESSION.personSlug,
+        person_name: SESSION.personName,
+        tag: c.tag,
+        class_name: c.class_name,
+        text: c.text,
+        text_length: c.text_length,
+        include_images: includeImages,
+        image_count: imagePaths.length,
+        image_paths: imagePaths,
+        source_url: sourceUrl,
+        selector_path: selectorPath,
+        captured_at: new Date().toISOString(),
+        scroll_round: scrollCount,
+      };
+      writeFileSync(join(childDir, 'post.json'), JSON.stringify(childPost, null, 2));
+      childRecords.push({
+        child_index: nextChildIndex,
+        tag: c.tag,
+        text_length: c.text_length,
+        image_count: imagePaths.length,
+        scroll_round: scrollCount,
+        dir: childDir.replace(`${ROOT}\\`, '').replace(`${ROOT}/`, '').replace(/\\/g, '/'),
+      });
+      added += 1;
+    }
+    emit('children-captured', {
+      postIndex: SESSION.postCounter,
+      scrollRound: scrollCount,
+      added,
+      total: nextChildIndex,
+      rootChildren: snap.root_child_count,
+    });
+    return { gone: false, added };
+  };
+
+  const first = await captureBatch();
+  if (first.gone) return { error: 'pick element vanished', outputDir: postDir };
+
+  if (autoScroll) {
+    while (scrollCount < maxScrolls && idleRounds < idleRoundsLimit) {
+      scrollCount += 1;
+      const res = await scrollOnce();
+      scrollMode = res?.mode || scrollMode;
+      // Settle wait for FB lazy-load. Two phases: a fixed pause, then a
+      // short re-poll if the DOM grew during the pause.
+      await new Promise((r) => setTimeout(r, settleMs));
+      const batch = await captureBatch();
+      if (batch.gone) break;
+      if (batch.added === 0) {
+        idleRounds += 1;
+        // If the scrollable region has reportedly hit the end AND we got
+        // nothing new, give it one more wait then break a round earlier.
+        if (res?.atEnd) idleRounds = Math.max(idleRounds, Math.floor(idleRoundsLimit / 2) + 1);
+      } else {
+        idleRounds = 0;
       }
     }
-
-    writeFileSync(join(childDir, 'text.txt'), c.text);
-    const childPost = {
-      post_index: SESSION.postCounter,
-      child_index: c.child_index,
-      person_slug: SESSION.personSlug,
-      person_name: SESSION.personName,
-      tag: c.tag,
-      class_name: c.class_name,
-      text: c.text,
-      text_length: c.text_length,
-      include_images: includeImages,
-      image_count: imagePaths.length,
-      image_paths: imagePaths,
-      source_url: sourceUrl,
-      selector_path: selectorPath,
-      picked_at: new Date().toISOString(),
-    };
-    writeFileSync(join(childDir, 'post.json'), JSON.stringify(childPost, null, 2));
-    childRecords.push({
-      child_index: c.child_index,
-      tag: c.tag,
-      text_length: c.text_length,
-      image_count: imagePaths.length,
-      dir: childDir.replace(`${ROOT}\\`, '').replace(`${ROOT}/`, '').replace(/\\/g, '/'),
-    });
   }
 
   const summary = {
@@ -291,7 +379,10 @@ async function runExtract(p, payload) {
     person_slug: SESSION.personSlug,
     person_name: SESSION.personName,
     mode: 'per-immediate-child',
-    root_child_count: data.root_child_count,
+    auto_scroll: autoScroll,
+    scroll_mode: scrollMode,
+    scroll_rounds: scrollCount,
+    idle_rounds_at_stop: idleRounds,
     extracted_child_count: childRecords.length,
     children: childRecords,
     include_images: includeImages,
@@ -305,6 +396,7 @@ async function runExtract(p, payload) {
     postIndex: SESSION.postCounter,
     outputDir: postDir,
     childCount: childRecords.length,
+    scrollRounds: scrollCount,
     imageCount: childRecords.reduce((s, r) => s + r.image_count, 0),
     person: SESSION.personSlug,
   };
