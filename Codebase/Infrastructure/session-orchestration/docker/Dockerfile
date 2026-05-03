@@ -41,8 +41,11 @@ WORKDIR /build/Codebase/Frontend
 COPY Codebase/Frontend/package.json Codebase/Frontend/package-lock.json ./
 RUN npm ci --include=dev
 COPY Codebase/Frontend ./
-# Bring in the C++ sample tree the marketing surface ?raw-imports.
-COPY Codebase/Microservice/samples /build/Codebase/Microservice/samples
+# Bring in the C++ trees that the marketing surface ?raw-imports:
+#   samples/         → PatternAtlas live source examples
+#   pattern_catalog/ → PatternAtlas generated unit-test templates
+COPY Codebase/Microservice/samples         /build/Codebase/Microservice/samples
+COPY Codebase/Microservice/pattern_catalog /build/Codebase/Microservice/pattern_catalog
 RUN npm run build
 
 # =========================================================================
