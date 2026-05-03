@@ -17,7 +17,7 @@
 
 param(
   [Parameter(Position = 0)]
-  [ValidateSet('dev','setup','k8s','browser','test','')]
+  [ValidateSet('dev','prod','setup','k8s','browser','test','')]
   [string]$Command = 'dev',
 
   # Universal
@@ -32,6 +32,8 @@ param(
   [switch]$NoBrowser,
   [switch]$SkipPod,
   [switch]$UseChrome,
+  [switch]$Prod,
+  [switch]$SkipBuild,
 
   # setup
   [ValidateSet('dev','full')][string]$Mode = 'dev',
@@ -237,8 +239,24 @@ function Invoke-Dev {
   Write-DevEnv -Port $BackendPort -VitePort $FrontendPort -AdvertiseHost $advert
   Build-Microservice -Force:$Rebuild
 
+  if ($Prod -and -not $SkipBuild) {
+    Write-Step 'Building Backend (npm run build)'
+    Push-Location $BackendDir
+    try { & npm.cmd run build; if ($LASTEXITCODE -ne 0) { throw 'Backend build failed.' } } finally { Pop-Location }
+    Write-Ok 'Backend build complete.'
+    if (-not $BackendOnly) {
+      Write-Step 'Building Frontend (npm run build)'
+      Push-Location $FrontendDir
+      try { & npm.cmd run build; if ($LASTEXITCODE -ne 0) { throw 'Frontend build failed.' } } finally { Pop-Location }
+      Write-Ok 'Frontend build complete.'
+    }
+  }
+
+  $backendScript = if ($Prod) { 'start' } else { 'dev' }
+  $modeLabel     = if ($Prod) { 'prod' } else { 'dev' }
+
   # Backend
-  Write-Step "Starting backend (bind=$bind, port=$BackendPort)"
+  Write-Step "Starting backend (bind=$bind, port=$BackendPort, mode=$modeLabel)"
   $env:PORT = "$BackendPort"
   $env:HOST = $bind
   if (($Lan -or $BindHost) -and $advert -ne 'localhost') {
@@ -246,7 +264,7 @@ function Invoke-Dev {
   }
   Free-Port $BackendPort
   $serverProc = Start-Process -FilePath 'npm.cmd' `
-    -ArgumentList @('run','dev') `
+    -ArgumentList @('run',$backendScript) `
     -WorkingDirectory $BackendDir `
     -PassThru -NoNewWindow `
     -RedirectStandardOutput (Join-Path $BackendDir 'server.out.log') `
@@ -265,10 +283,12 @@ function Invoke-Dev {
   # Vite
   $viteProc = $null
   if (-not $BackendOnly) {
-    Write-Step "Starting Vite dev server (bind=$bind, port=$FrontendPort)"
+    $viteScript = if ($Prod) { 'preview' } else { 'dev' }
+    $viteLabel  = if ($Prod) { 'Vite preview' } else { 'Vite dev server' }
+    Write-Step "Starting $viteLabel (bind=$bind, port=$FrontendPort)"
     Free-Port $FrontendPort
     $env:VITE_HOST = $bind
-    $viteCmdArgs = @('run','dev','--','--port',"$FrontendPort",'--strictPort')
+    $viteCmdArgs = @('run',$viteScript,'--','--port',"$FrontendPort",'--strictPort')
     if ($bind -eq '0.0.0.0' -or $Lan) { $viteCmdArgs += @('--host','0.0.0.0') }
     elseif ($BindHost) { $viteCmdArgs += @('--host', $BindHost) }
     $viteProc = Start-Process -FilePath 'npm.cmd' `
@@ -567,6 +587,7 @@ function Invoke-Test {
 # --- Dispatch ---------------------------------------------------------------
 switch ($Command) {
   'setup'   { Invoke-Setup }
+  'prod'    { $Prod = $true; Invoke-Dev }
   'k8s'     { Invoke-K8s }
   'browser' { Invoke-Browser }
   'test'    { Invoke-Test }

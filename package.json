@@ -5,7 +5,12 @@
     "setup": "node -e \"const p = process.platform; const cp = require('child_process'); const cmd = p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 setup' : 'bash start.sh setup'; cp.execSync(cmd, { stdio: 'inherit' });\"",
     "setup:full": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 setup -Mode full' : 'bash start.sh setup --mode full', { stdio: 'inherit' });\"",
     "dev": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1' : 'bash start.sh', { stdio: 'inherit' });\"",
-    "dev:lan": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 -Lan' : 'bash start.sh --lan', { stdio: 'inherit' });\""
+    "dev:lan": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 -Lan' : 'bash start.sh --lan', { stdio: 'inherit' });\"",
+    "dev:scraper": "node playwright-scratch/scraper/run.mjs",
+    "build": "node -e \"const cp = require('child_process'); cp.execSync('npm --prefix Codebase/Backend run build', { stdio: 'inherit' }); cp.execSync('npm --prefix Codebase/Frontend run build', { stdio: 'inherit' });\"",
+    "start": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 prod' : 'bash start.sh prod', { stdio: 'inherit' });\"",
+    "start:lan": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 prod -Lan' : 'bash start.sh prod --lan', { stdio: 'inherit' });\"",
+    "prod": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 prod -SkipBuild' : 'bash start.sh prod --skip-build', { stdio: 'inherit' });\""
   },
   "dependencies": {
     "npm-check-updates": "^21.0.3"

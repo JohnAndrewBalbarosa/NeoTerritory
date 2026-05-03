@@ -9,6 +9,8 @@
 #   ./start.sh                                 # dev (default)
 #   ./start.sh --lan                           # dev, exposed to LAN
 #   ./start.sh dev --lan --backend-port 4000
+#   ./start.sh prod                            # production build (npm run build + node dist + vite preview)
+#   ./start.sh prod --lan                      # production build, exposed to LAN
 #   ./start.sh setup                           # first-time provision
 #   ./start.sh setup --mode full --lan         # unattended full provision
 #   ./start.sh k8s                             # minikube/kubectl
@@ -35,8 +37,9 @@ BIND_HOST=''
 BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 
-# dev
-REBUILD=0; BACKEND_ONLY=0; NO_BROWSER=0; SKIP_POD=0; USE_CHROME=0
+# dev / prod
+REBUILD=0; BACKEND_ONLY=0; NO_BROWSER=0; SKIP_POD=0; USE_CHROME=0; PROD=0
+SKIP_BUILD=0
 
 # setup
 MODE='dev'; SKIP_MICRO=0; AUTO_START=0; ANTHROPIC_KEY=''; ANTHROPIC_MODEL='claude-sonnet-4-6'
@@ -53,7 +56,7 @@ USERS=3
 # ── Parse subcommand (first non-flag arg) and flags ────────────────────────
 if [[ $# -gt 0 ]]; then
   case "$1" in
-    dev|setup|k8s|browser|test) COMMAND="$1"; shift ;;
+    dev|prod|setup|k8s|browser|test) COMMAND="$1"; shift ;;
   esac
 fi
 
@@ -69,6 +72,8 @@ while [[ $# -gt 0 ]]; do
     --no-browser)     NO_BROWSER=1 ;;
     --skip-pod)       SKIP_POD=1 ;;
     --use-chrome)     USE_CHROME=1; USE_PW=0 ;;
+    --prod)           PROD=1 ;;
+    --skip-build)     SKIP_BUILD=1 ;;
     # setup
     --mode)           shift; MODE="${1:-dev}" ;;
     --skip-microservice) SKIP_MICRO=1 ;;
@@ -221,7 +226,21 @@ invoke_dev() {
   write_dev_env "$BACKEND_PORT" "$FRONTEND_PORT" "$advert"
   build_microservice "$REBUILD"
 
-  step "Starting backend (bind=$bind, port=$BACKEND_PORT)"
+  if [[ "$PROD" -eq 1 && "$SKIP_BUILD" -eq 0 ]]; then
+    step 'Building Backend (npm run build)'
+    ( cd "$BACKEND_DIR" && npm run build )
+    ok 'Backend build complete.'
+    if [[ "$BACKEND_ONLY" -eq 0 ]]; then
+      step 'Building Frontend (npm run build)'
+      ( cd "$FRONTEND_DIR" && npm run build )
+      ok 'Frontend build complete.'
+    fi
+  fi
+
+  local backend_cmd='npm run dev'
+  [[ "$PROD" -eq 1 ]] && backend_cmd='npm run start'
+
+  step "Starting backend (bind=$bind, port=$BACKEND_PORT, mode=$([[ "$PROD" -eq 1 ]] && echo prod || echo dev))"
   local backend_env=(
     PORT="$BACKEND_PORT"
     HOST="$bind"
@@ -231,7 +250,7 @@ invoke_dev() {
     backend_env+=(CORS_ORIGIN="http://localhost:$BACKEND_PORT,http://localhost:$FRONTEND_PORT,http://$advert:$BACKEND_PORT,http://$advert:$FRONTEND_PORT")
   fi
   # tsx unix socket workaround: force linux TMPDIR (see legacy comment in old start.sh).
-  env "${backend_env[@]}" bash -c "cd '$BACKEND_DIR' && npm run dev" \
+  env "${backend_env[@]}" bash -c "cd '$BACKEND_DIR' && $backend_cmd" \
     >"$BACKEND_DIR/server.out.log" 2>"$BACKEND_DIR/server.err.log" &
   BACKEND_PID=$!
   step "Backend started (pid $BACKEND_PID)"
@@ -248,13 +267,16 @@ invoke_dev() {
 
   VITE_PID=''
   if [[ "$BACKEND_ONLY" -eq 0 ]]; then
-    step "Starting Vite dev server (bind=$bind, port=$FRONTEND_PORT)"
+    local vite_label='Vite dev server'
+    local vite_script='dev'
+    if [[ "$PROD" -eq 1 ]]; then vite_label='Vite preview'; vite_script='preview'; fi
+    step "Starting $vite_label (bind=$bind, port=$FRONTEND_PORT)"
     local vite_host_args=''
     if [[ "$LAN" -eq 1 || "$bind" == '0.0.0.0' ]]; then vite_host_args='--host 0.0.0.0'
     elif [[ -n "$BIND_HOST" ]]; then vite_host_args="--host $BIND_HOST"
     fi
     env VITE_HOST="$bind" TMPDIR=/tmp TMP=/tmp TEMP=/tmp \
-      bash -c "cd '$FRONTEND_DIR' && npm run dev -- --port $FRONTEND_PORT --strictPort $vite_host_args" \
+      bash -c "cd '$FRONTEND_DIR' && npm run $vite_script -- --port $FRONTEND_PORT --strictPort $vite_host_args" \
       >"$FRONTEND_DIR/vite.out.log" 2>"$FRONTEND_DIR/vite.err.log" &
     VITE_PID=$!
     step "Vite started (pid $VITE_PID)"
@@ -488,6 +510,7 @@ invoke_test() {
 # ─── Dispatch ──────────────────────────────────────────────────────────────
 case "$COMMAND" in
   dev)     invoke_dev ;;
+  prod)    PROD=1; invoke_dev ;;
   setup)   invoke_setup ;;
   k8s)     invoke_k8s ;;
   browser) invoke_browser_inline ;;
