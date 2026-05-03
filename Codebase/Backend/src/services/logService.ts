@@ -1,8 +1,10 @@
 import db from '../db/database';
+import { mirrorLogEvent, mirrorAuditEvent } from './supabaseLogger';
 
 function logEvent(userId: number | null, eventType: string, message: string): void {
   db.prepare("INSERT INTO logs (user_id, event_type, message, created_at) VALUES (?, ?, ?, datetime('now'))")
     .run(userId ?? null, eventType, message);
+  mirrorLogEvent(userId, eventType, message);
 }
 
 // Append-only audit trail for destructive admin actions. Never exposed to
@@ -30,6 +32,7 @@ function logAudit(entry: AuditEntry): void {
     entry.targetId ?? null,
     entry.detail ?? null
   );
+  mirrorAuditEvent(entry);
 }
 
 export { logEvent, logAudit };
