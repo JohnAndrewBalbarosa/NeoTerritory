@@ -320,3 +320,109 @@ start [dev|setup|k8s|browser|test] [flags]
 **Why one file per platform instead of shims**: user asked specifically for fewer top-level scripts. Backwards-compat shims would defeat that. Migration is a one-liner: `bootstrap` → `start setup`, `deploy` → `start setup -Mode full`, `run-dev` → `start` (or `start dev`), `clean-browser` → `start browser`.
 
 **Server-side coupling**: `Codebase/Backend/server.ts` honors `process.env.HOST` (defaulting to `127.0.0.1`); `Codebase/Frontend/vite.config.ts` honors `process.env.VITE_HOST` (defaulting to `127.0.0.1`). Without the script flag set, behavior is identical to before — no LAN exposure by default.
+
+## D29 — Public marketing surface ("studio shell" split)
+The frontend is split into two surfaces that share the same Vite app:
+
+- **Public surface** (no auth): `/` (Hero), `/learn` (Learning), `/about` (Meet Your Coders). Does not call `/api/health` on mount, does not require a token, does not render `LoginOverlay`. SEO/marketing role.
+- **Studio surface** (auth-gated, unchanged behaviour): `/app` (Login → Consent → Pretest → Studio). This is where the existing `LoginOverlay` + `MainLayout` flow now lives. `/admin.html` admin entry untouched.
+
+**Routing model**: minimal hash-free in-app router living in `App.tsx`. Reads `window.location.pathname`, matches against a small route table (`/`, `/learn`, `/about`, `/app` with `/app/*` legacy aliases `/login`, `/consent`, `/pretest`, `/studio`), and renders the right surface. No `react-router-dom` dependency added — keeps bundle small and avoids new install-time risk on the research deployment. Internal navigation uses a `navigate(path)` helper that calls `history.pushState` and dispatches a custom event `nt:navigate` that the router listens to.
+
+**Why a path router instead of a hash router**: cleaner shareable URLs (`/learn` vs `/#/learn`) and matches the existing `replaceState` behavior already in `App.tsx` for `/login` ↔ `/studio`.
+
+**Server fallback**: Vite dev already serves `index.html` for unknown paths, so `/learn` and `/about` work in dev without extra config. Production preview uses Vite's SPA fallback; if a static-host migration ever happens, configure SPA fallback there too.
+
+**Backwards compat**: hitting `/login`, `/consent`, `/pretest`, or `/studio` directly is preserved — these all map to the studio surface. The previous "URL purely informational" contract is upgraded to "URL drives surface selection," but the existing studio-surface URL writes (replaceState to `/login`/`/studio`) keep working unchanged.
+
+## D30 — Default landing page is the Hero, not the Login overlay
+Per user direction, the entry point at `/` is now a marketing **Hero** (`components/marketing/HeroLanding.tsx`), not the `LoginOverlay`. The Hero has two CTAs:
+
+- **Learn now** → `/learn`
+- **Open studio** → `/app` (which boots the existing login → consent → pretest → studio chain)
+
+The "auto-redirect logged-in users to studio" behaviour from the previous root no longer applies at `/`. A logged-in visitor who explicitly returns to `/` sees the marketing Hero and must click "Open studio" to re-enter the gated app. This is intentional: the Hero is the project's public face for Devcon and similar showcases, and it must look the same regardless of session.
+
+**Admin auto-redirect** (per existing App.tsx behaviour) **only fires when the user lands on `/app` (or any studio alias)**. Hitting `/`, `/learn`, or `/about` as admin shows the public surface — admins have to navigate to `/admin.html` themselves. This avoids hijacking marketing routes.
+
+## D31 — Algorithm narrative on Hero is sourced from code, not docs
+Per `CLAUDE.md`: docs are the structural source of truth, but the freshness invariant currently leans toward code (per user note that docs are stale relative to code). For the Hero's "How the algorithm works" section the **code is treated as authoritative for narrative copy**, with the following pinned mapping (recorded here so future edits to the copy don't re-derive it differently):
+
+The pipeline displayed on the Hero is the five stages from `Codebase/Microservice/Modules/Source/core.cpp`:
+
+1. **Analysis** — lex + parse into `ParseTreeNode`s (`Modules/Source/Analysis/`), populates the binding/usage tables (D7/D8).
+2. **Trees** — builds the unified main tree + class tree (`Modules/Source/Trees/`), so every node knows its containing class/function.
+3. **Pattern dispatch** — Middleman (D10) walks each class subtree, loads pattern templates from `pattern_catalog/<family>/<pattern>.json` (D9, D21), and emits `DesignPatternTag`s with anchors + unit-test targets.
+4. **Hashing** — file→class→function hash chain (D2) plus `HashLinkIndex` (D4), enabling fast cross-reference and stable evidence file naming.
+5. **Output** — emits `report.json` (structural facts only) and per-class `evidence/<class_hash>__<pattern_id>.cpp` virtual-copy slices (D20). Backend then drives Claude (D22) for documentation + unit-test scaffolds.
+
+This list is the structural truth. Any prose on the Hero, Learning, or About pages MUST stay consistent with these stage names. When the C++ algorithm changes, update this section before editing the Hero copy.
+
+**Implication for animated pipeline visual**: the Hero's pipeline animation has exactly five steps in this order. Do not reorder, rename, or invent steps without a new D-decision.
+
+## D32 — Animation stack: Motion (Framer Motion) + Lenis, no GSAP, no reactbits direct dependency
+The frontend is React/TSX with a fixed dependency set (`react`, `react-dom`, `zustand`). Two animation goals:
+
+- "reactbits-like" effects (split text, magnetic CTAs, scroll-driven reveals, animated grids)
+- a deterministic algorithm-pipeline animation on the Hero and a sample-walkthrough animation on Learning
+
+**Decision**: add **`motion`** (the modern, smaller, framework-agnostic successor to `framer-motion`; same React API surface as `framer-motion@11`) and **`lenis`** for smooth scroll. Do **not** add `gsap`, `@reactbits/*`, or `@react-spring/*`. Reactbits patterns we want are reproduced in-house under `Frontend/src/components/marketing/effects/` (e.g. `SplitText.tsx`, `MagneticButton.tsx`, `ScrollReveal.tsx`) so the public surface remains a tight, auditable bundle and we don't pull in a fast-moving third-party component pack.
+
+**Rationale**:
+- Single animation library with a declarative React API → easier to keep effects readable (rule: clarity over cleverness).
+- `motion` is ~30KB gzipped vs GSAP+plugins ~60KB and still covers all the effects we need (variants, spring, scroll-linked, layout, gestures).
+- No new transitive risk from a component-pack dep that may publish breaking changes.
+- `prefers-reduced-motion` is one config switch on `motion`'s `MotionConfig`.
+
+**Bundle budget**: public marketing surface (Hero+Learn+About combined) target gzip JS ≤ 180KB. If `motion` + content blows past this, fall back to CSS-only animations on the lower-traffic pages (Learn, About) and keep `motion` only on the Hero.
+
+**Reduced motion**: every animated element on public pages MUST honour `prefers-reduced-motion`. Concretely: wrap the marketing app in `<MotionConfig reducedMotion="user">`, set Lenis `lerp: 1` (effectively native scroll) when reduced-motion is preferred, and skip the pipeline-stage animation in favour of static labelled cards.
+
+## D33 — Learning page IA: three pattern families × three value props
+The Learning page is structured as a **3 × 3 matrix** so the educational copy is consistent and unit-testable:
+
+**Rows (pattern families)**: Creational, Behavioural, Structural.
+**Columns (value props the user explicitly named)**:
+1. **Readability** — how the pattern reduces cognitive load by giving a shape a name.
+2. **AI documentation (token reduction)** — how a recognised pattern lets the AI describe a class in one tagged sentence instead of a paragraph of structural prose. Concrete: backend prompt sends `pattern_id` + evidence slice (D20) so the model doesn't re-derive structure from raw code → fewer input tokens, more deterministic output.
+3. **Unit-test templating** — how each pattern's `pattern_catalog/<family>/<pattern>.test.template.cpp` (already shipped, e.g. `creational/builder.test.template.cpp`) becomes a parameterised test scaffold. Concrete: detector emits `unit_test_targets`; backend feeds them into the matching `.test.template.cpp`; result is a generated GoogleTest file the user only fills in expected values for.
+
+**Sample walkthrough animation**: one sample per family is animated end-to-end, showing the five pipeline stages (D31) over the actual sample source. Defaults:
+- Creational → `samples/builder/http_request_builder.cpp` (matches `creational/builder.json`).
+- Behavioural → `samples/strategy/strategy_basic.cpp` (matches `behavioural/strategy_interface.json`).
+- Structural → `samples/wrapping/*` if present, else `samples/factory/shape_factory.cpp` as a fallback (factory is creational but the wrapping family is structural; pick the closest available).
+
+The samples are bundled at build time via Vite's `?raw` import so the animation displays the exact file shipped in the C++ catalog. No copy-paste: changing the sample file automatically updates the page.
+
+## D34 — About Us seeded from local JSON; public web enrichment is opt-in and offline-capable
+`Codebase/Frontend/src/data/team.json` ships with placeholder team entries (name, role, bio, photoPath, links: `{ github, linkedin, facebook, website }`). The About page renders from this JSON; nothing about the runtime page requires a network call.
+
+**Optional enrichment script**: `tools/enrich_team_from_github.mjs` (Node, no extra deps — uses built-in `fetch`) reads `team.json`, calls the unauthenticated GitHub REST API for any entry with a `github` handle, and writes back avatar URL + public bio. Rate-limited to ≤60 req/hour (GitHub anonymous limit); emits a warning and skips rather than failing the build if the limit is hit. Run manually (`node tools/enrich_team_from_github.mjs`); not part of CI.
+
+**Photos**: stored in `Codebase/Frontend/public/team/<slug>.jpg`. If a `photoPath` is missing the About card renders monogram initials over a deterministic gradient (no broken images, no third-party avatar service).
+
+**No FB/LinkedIn at this layer**: per D35 those sit in a deferred admin-only scraper, not in the public About page pipeline.
+
+## D35 — DEFERRED: in-browser scraper spec for FB / LinkedIn / generic websites
+**Status**: planned only. No implementation yet. Re-confirmation required from user before any code lands.
+
+**Risk acknowledgement** (recorded per user direction so it's not re-litigated each time):
+- Facebook and LinkedIn ToS prohibit automated scraping of their sites, including from a logged-in user's own browser. Account checkpointing or permanent suspension is a realistic outcome. The user has been told this and has accepted the risk for their own and consenting groupmates' accounts only.
+- Tooling will live behind an admin-only route (`/admin/scraper`, gated by `requireAdmin` middleware) and behind a `NEOTERRITORY_ENABLE_SCRAPER=1` env flag. Off by default, even for admins.
+
+**Spec captured for future implementation**:
+
+1. **Generic, not FB-only**: the tool is a "scrape any public webpage" utility. FB/LinkedIn are just the most common targets the user named. The same UX picks divs from any URL.
+2. **Manual sign-in, persistent storageState**: a Playwright Chromium window opens, user signs in **manually** to whatever site they want (we do not type their password). On user-clicked "Save session", `context.storageState()` is written to `playwright-scratch/scraper-state/<host>.json` (gitignored). Subsequent sessions reload that state.
+3. **Viewport realignment**: same trick used in `playwright-scratch/recorder.cjs` — pin viewport == window, lock DPR, wait for `document.fonts.ready` + 2× rAF, inject a stylesheet that zeroes animation/transition durations. Reuse that helper rather than reimplementing it.
+4. **Hover-to-pick UI**: the page injects a small overlay script (Playwright `page.addInitScript`) that on hover highlights the nearest semantically-grouped block (heuristic: nearest ancestor whose direct children include both text and image/media, or whose role/aria attributes mark it as `article`/`feed`/`list-item`). Hover shows a label like "Post · 4 children · 1 image". Click on a candidate → adds it to the picked-divs registry.
+5. **Checklist popup**: after the user has hovered + clicked a few candidates, a floating checklist on the page lists every picked div with a checkbox (default on), an "include images?" toggle per div, and an "add another" button to keep picking. The list is the scrape contract — only checked items are extracted.
+6. **Post grouping is enforced**: each picked div is treated as one **post**. Extraction emits one row per post: `{ post_index, text, image_paths[], source_url, picked_at }`. Image files (if "include images" is on) save to `playwright-scratch/scraper-output/<run_id>/<post_index>/<n>.jpg`. Text and image stay grouped by `post_index` so the user can never accidentally pair text from post A with image from post B.
+7. **Profile picture only by default**: when the user picks a "profile header" div, the tool downloads only the avatar image, not banner / cover / inline media — controlled by an "image scope" radio (`profile-only` | `all-images-in-post` | `none`). Default is `profile-only` for profile-header picks, `none` for feed-post picks.
+8. **Start scraping button**: the picker phase is read-only / preview-only. A separate "Start scraping" button exists exclusively on the scraper page — clicking it kicks off the actual extraction loop over the checklist with optional scroll-to-load-more. No background or auto-start. No usage from any other page.
+9. **Scroll-down support**: a `--max-scrolls <n>` knob (default 5) lets the user expand the feed. After each scroll the picker re-runs over newly loaded children before extraction.
+10. **Output**: one JSON file per run at `playwright-scratch/scraper-output/<run_id>/posts.json` with the array of post rows. Images alongside as described in (6). Optional Markdown rollup at `posts.md` for human review.
+
+**Out of scope**:
+- No automated login, no credential storage in code, no captcha solving, no IP rotation, no headless mode (interactive only — the user must visibly drive the browser).
+- Not part of the production deployment. The scraper UI is dev/admin-local only and is never exposed via the public Vite build.

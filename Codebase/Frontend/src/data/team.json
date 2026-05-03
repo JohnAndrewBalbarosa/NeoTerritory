@@ -1,0 +1,57 @@
+{
+  "$schema": "neoterritory.team.v1",
+  "members": [
+    {
+      "slug": "drew",
+      "name": "Drew",
+      "role": "Lead engineer · algorithm + microservice",
+      "bio": "Owns the C++ pipeline — parsing, hashing, pattern dispatch, evidence emission. Believes in deterministic structural detection before any AI step.",
+      "photoPath": "",
+      "links": {
+        "github": "",
+        "linkedin": "",
+        "facebook": "",
+        "website": ""
+      }
+    },
+    {
+      "slug": "teammate-2",
+      "name": "Teammate 2",
+      "role": "Frontend · studio + marketing surface",
+      "bio": "Replace this entry with real data, or run tools/enrich_team_from_github.mjs after filling in github handles.",
+      "photoPath": "",
+      "links": {
+        "github": "",
+        "linkedin": "",
+        "facebook": "",
+        "website": ""
+      }
+    },
+    {
+      "slug": "teammate-3",
+      "name": "Teammate 3",
+      "role": "Backend · adapter + AI orchestration",
+      "bio": "Replace this entry with real data.",
+      "photoPath": "",
+      "links": {
+        "github": "",
+        "linkedin": "",
+        "facebook": "",
+        "website": ""
+      }
+    },
+    {
+      "slug": "teammate-4",
+      "name": "Teammate 4",
+      "role": "Research · pattern catalog + study design",
+      "bio": "Replace this entry with real data.",
+      "photoPath": "",
+      "links": {
+        "github": "",
+        "linkedin": "",
+        "facebook": "",
+        "website": ""
+      }
+    }
+  ]
+}

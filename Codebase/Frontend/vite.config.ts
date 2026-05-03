@@ -20,15 +20,22 @@ function fullReloadOnChange(): PluginOption {
 
 export default defineConfig({
   plugins: [react(), fullReloadOnChange()],
+  // Allow importing C++ samples that live above the Frontend project root
+  // (e.g. `Codebase/Microservice/samples/...`) via the Vite `?raw` suffix
+  // so the marketing surface displays the exact files shipped to the engine.
   server: {
+    fs: {
+      allow: ['..', '../..', '../../..']
+    },
     port: 5173,
     host: process.env.VITE_HOST || '127.0.0.1',
     proxy: {
       '/api': 'http://localhost:3001',
       '/auth': 'http://localhost:3001',
       '/health': 'http://localhost:3001',
-    }
+    },
   },
+  assetsInclude: ['**/*.cpp'],
   build: {
     outDir: 'dist',
     rollupOptions: {
