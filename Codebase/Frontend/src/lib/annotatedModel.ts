@@ -573,6 +573,41 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     return surviving.has(canonicalPatternName(p.patternId));
   });
 
+  // Strip-aware rebuild of `ambiguousLines` and `inScopePatterns`. The
+  // initial pre-cascade copies fed the classification + cascade passes,
+  // but they still contain references to patterns the cascade has since
+  // stripped (e.g. Truck's strategy_concrete after Vehicle picks
+  // Factory). Without rebuilding, the source-view popover would still
+  // surface Strategy as a "scope rival" on Truck and the per-line
+  // popover-ambiguous trigger would still flash on lines whose only
+  // competing tag was the stripped one.
+  const stripFilteredAnnotations = annotations.filter((a) => {
+    if (!a.className) return true;
+    if (droppedClassNames.has(a.className)) return false;
+    const surviving = workingPatternsByClass.get(a.className);
+    if (!surviving) return true;
+    if (!a.patternKey) return true;
+    return surviving.has(canonicalPatternName(a.patternKey));
+  });
+  const filteredAmbiguousLines = buildAmbiguousLines(stripFilteredAnnotations);
+  // Replace the pre-cascade snapshot in place so consumers reading
+  // model.ambiguousLines / model.inScopePatterns get the strip-aware
+  // versions. Mutating the existing maps/sets keeps reference identity
+  // for callers that key on them.
+  ambiguousLines.clear();
+  for (const ln of filteredAmbiguousLines) ambiguousLines.add(ln);
+  for (const [className, patterns] of inScopePatterns.entries()) {
+    if (droppedClassNames.has(className)) {
+      patterns.clear();
+      continue;
+    }
+    const surviving = workingPatternsByClass.get(className);
+    if (!surviving) continue;
+    for (const p of Array.from(patterns)) {
+      if (!surviving.has(p)) patterns.delete(p);
+    }
+  }
+
   // Legend = unambiguous + ambiguous_resolved. Subclass classes (pending
   // or dropped) contribute nothing — they have not earned a chip. A
   // subclass that has been activated by parent confirmation is classified
