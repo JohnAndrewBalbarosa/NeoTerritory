@@ -49,6 +49,13 @@ function generatedColor(key: string): PatternColor {
   };
 }
 
+// Canonical pattern catalog the picker offers as override choices on every
+// class declaration line. `Review` is excluded because it's a meta bucket,
+// not a real pattern. Order matches PATTERN_COLORS so the chip row stays
+// stable across renders.
+export const CATALOG_PATTERNS: readonly string[] = Object.keys(PATTERN_COLORS)
+  .filter((k) => k !== 'Review');
+
 const PATTERN_COLORS_CI: Record<string, PatternColor> = Object.fromEntries(
   Object.entries(PATTERN_COLORS).map(([k, v]) => [k.toLowerCase(), v])
 );

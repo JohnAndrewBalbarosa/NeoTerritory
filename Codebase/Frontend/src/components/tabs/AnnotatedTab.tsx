@@ -2,10 +2,14 @@ import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import SourceView from '../analysis/SourceView';
 import PatternLegend from '../analysis/PatternLegend';
-import PatternCards from '../analysis/PatternCards';
+import PatternCards, { RecomputedRank } from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
-import { patternFromAnnotation } from '../../lib/patterns';
+import { wilsonLowerBound } from '../../lib/wilson';
+import {
+  buildClassLocations, buildAmbiguousLines, buildAmbiguousClassNames,
+  buildPickerEligibleClassNames, recomputeKn
+} from '../../lib/ambiguityModel';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -92,26 +96,7 @@ export default function AnnotatedTab({
   // declaration in the same file and using (decl_line, next_decl_line - 1)
   // as the inclusive range — this is a heuristic, not a real C++ parser,
   // but it's good enough to detect "ambiguous tag inside class Foo".
-  const classLocations = useMemo(() => {
-    const locs = new Map<string, { fileIdx: number; line: number; endLine: number }>();
-    for (let fi = 0; fi < files.length; fi++) {
-      const text = files[fi].sourceText || '';
-      const lines = text.split('\n');
-      const decls: Array<{ name: string; line: number }> = [];
-      for (let i = 0; i < lines.length; i++) {
-        const m = lines[i].match(/\b(?:class|struct)\s+([A-Za-z_][A-Za-z0-9_]*)\b/);
-        if (m) decls.push({ name: m[1], line: i + 1 });
-      }
-      for (let k = 0; k < decls.length; k++) {
-        const d = decls[k];
-        const next = decls[k + 1]?.line ?? lines.length + 1;
-        if (!locs.has(d.name)) {
-          locs.set(d.name, { fileIdx: fi, line: d.line, endLine: next - 1 });
-        }
-      }
-    }
-    return locs;
-  }, [files]);
+  const classLocations = useMemo(() => buildClassLocations(files), [files]);
 
   // Shared per-class derivation feeding both the navigator and the
   // tag-progress pill. We compute (a) how many distinct patterns the matcher
@@ -128,21 +113,45 @@ export default function AnnotatedTab({
   // resolution) total >1. The class-ambiguity rule below then reuses
   // exactly this signal so the missing pill, the corner-button nav, and
   // the popover all agree on what counts as ambiguous.
-  const ambiguousLines = useMemo(() => {
-    const byLine = new Map<number, Set<string>>();
-    for (const a of allAnnotations) {
-      if (typeof a.line !== 'number') continue;
-      const key = a.patternKey || patternFromAnnotation(a);
-      if (!key) continue;
-      if (!byLine.has(a.line)) byLine.set(a.line, new Set());
-      byLine.get(a.line)!.add(key);
+  const ambiguousLines = useMemo(() => buildAmbiguousLines(allAnnotations), [allAnnotations]);
+
+  // Top-level set the legend, source-view popover gating, and pattern-card
+  // splitter all read from. Resolves to "this class is still awaiting a pick"
+  // — one source of truth that re-renders for free when classResolvedPatterns
+  // updates via the popover's onResolve flow.
+  const ambiguousClassNames = useMemo(
+    () => buildAmbiguousClassNames(
+      currentRun?.detectedPatterns || [],
+      classLocations,
+      ambiguousLines,
+      currentRun?.classResolvedPatterns
+    ),
+    [currentRun, classLocations, ambiguousLines]
+  );
+
+  // Wider set used solely to gate the source-view rival picker. Includes
+  // every class with a known location (minus resolved ones) so the user
+  // can override even when the detector is fully confident — see Fix B
+  // / D23 discussion in the rival-picker plan.
+  const pickerEligibleClassNames = useMemo(
+    () => buildPickerEligibleClassNames(classLocations, currentRun?.classResolvedPatterns),
+    [classLocations, currentRun?.classResolvedPatterns]
+  );
+
+  // Per-class recompute. Whenever the user resolves an ambiguous class we
+  // count k = lines inside the class scope tagged with the chosen pattern,
+  // n = total lines in the scope, then surface the Wilson lower bound to
+  // PatternCards so the rank bar reflects the user's pick instead of the
+  // server-side ambiguous verdict.
+  const recomputedRanksByClass = useMemo<Record<string, RecomputedRank>>(() => {
+    const out: Record<string, RecomputedRank> = {};
+    const resolved = currentRun?.classResolvedPatterns || {};
+    for (const [className, chosenPatternKey] of Object.entries(resolved)) {
+      const { k, n } = recomputeKn(className, chosenPatternKey, classLocations, allAnnotations);
+      out[className] = { k, n, finalRank: wilsonLowerBound(k, n) };
     }
-    const set = new Set<number>();
-    for (const [line, keys] of byLine) {
-      if (keys.size > 1) set.add(line);
-    }
-    return set;
-  }, [allAnnotations]);
+    return out;
+  }, [currentRun, classLocations, allAnnotations]);
 
   const classDerivation = useMemo(() => {
     const run = currentRun;
@@ -444,7 +453,11 @@ export default function AnnotatedTab({
           {aiStatus === 'failed' && (
             <span className="ai-pill ai-pill-failed">AI commentary failed</span>
           )}
-          <PatternLegend detectedPatterns={currentRun.detectedPatterns || []} />
+          <PatternLegend
+            detectedPatterns={currentRun.detectedPatterns || []}
+            ambiguousClassNames={ambiguousClassNames}
+            classResolvedPatterns={currentRun.classResolvedPatterns}
+          />
         </header>
         {totalClasses > 0 && (
           <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
@@ -521,6 +534,8 @@ export default function AnnotatedTab({
             detectedPatterns={currentRun.detectedPatterns || []}
             classResolvedPatterns={currentRun.classResolvedPatterns}
             classUsageBindings={currentRun.classUsageBindings}
+            ambiguousClassNames={ambiguousClassNames}
+            pickerEligibleClassNames={pickerEligibleClassNames}
             onLineClick={onCommentFlash}
           />
         </div>
@@ -561,6 +576,9 @@ export default function AnnotatedTab({
           detectedPatterns={currentRun.detectedPatterns || []}
           ranking={currentRun.ranking}
           userResolvedPattern={currentRun.userResolvedPattern}
+          classResolvedPatterns={currentRun.classResolvedPatterns}
+          ambiguousClassNames={ambiguousClassNames}
+          recomputedRanksByClass={recomputedRanksByClass}
           classUsageBindings={currentRun.classUsageBindings || {}}
           classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
           onLineFlash={onLineFlash}
