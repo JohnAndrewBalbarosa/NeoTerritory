@@ -429,27 +429,30 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     });
   }
 
-  // Subclass cascade — exact spec from the user:
+  // Subclass cascade — fixed-point pass.
   //
-  //   - User picks Strategy on parent → all subclasses stay locked to
-  //     Strategy (concrete). Not clickable, no separate decision.
-  //   - User picks anything other than Strategy → strategy_concrete is
-  //     removed from each subclass. Per child, count the remaining
-  //     tags that the MATCHER actually attached to that child (not
-  //     scope-leaked patterns from other classes' annotations):
-  //        - 0 left → normal source line, no color, not clickable.
-  //        - 1 left → that one pattern is automatically the tag.
-  //        - 2+ left → child becomes its own ambiguous decision; the
-  //                    user picks among the remainder.
+  // Per-node rules (each child evaluates against its parent's CURRENT
+  // resolution, not the snapshot at iteration start):
+  //
   //   - Parent has no effective pick yet (multi-candidate, no user
-  //     pick) → child is `subclass_pending`: grey, non-clickable.
+  //     pick) → child is `subclass_pending` (grey, non-clickable).
+  //   - Parent picked a propagating pattern (e.g. Strategy) → child
+  //     locked to that pattern, not separately clickable.
+  //   - Parent picked a NON-propagating pattern → strip propagated
+  //     tags from the child and reclassify on the matcher's directly
+  //     attached candidates only.
   //
-  // Each child evaluates independently. Car and Truck can land on
-  // different statuses if they have different tag sets.
-  for (const node of classes.values()) {
-    if (!node.isPropagatedSubclass || !node.parentClassName) continue;
+  // We loop the pass until no node's `status`, `candidates`, or
+  // `resolved` change between iterations. This makes the cascade
+  // recursive — a grandchild reacts when its parent's status flips
+  // because the grandparent's pick rippled down on the previous
+  // iteration. `MAX_ITER` is a paranoid safety net; in practice the
+  // pass settles in `depth(tree) + 1` iterations.
+  const MAX_ITER = 32;
+  function evalSubclass(node: ClassNode): void {
+    if (!node.isPropagatedSubclass || !node.parentClassName) return;
     const parent = classes.get(node.parentClassName);
-    if (!parent) continue;
+    if (!parent) return;
     const parentEffective = parent.resolved
       ?? (parent.candidates.length === 1 ? parent.candidates[0] : undefined);
 
@@ -457,14 +460,14 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
       node.status = 'subclass_pending';
       node.candidates = [];
       node.resolved = undefined;
-      continue;
+      return;
     }
 
     if (propagatingPatterns.has(parentEffective)) {
       node.candidates = [parentEffective];
       node.status = 'unambiguous';
       node.resolved = undefined;
-      continue;
+      return;
     }
 
     // Non-propagating parent pick → remove the propagated tag from
@@ -490,6 +493,18 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     } else {
       node.status = 'ambiguous_pending';
     }
+  }
+  function snapshotNode(node: ClassNode): string {
+    return `${node.status}|${node.resolved ?? ''}|${node.candidates.join(',')}`;
+  }
+  for (let iter = 0; iter < MAX_ITER; iter += 1) {
+    let changed = false;
+    for (const node of classes.values()) {
+      const before = snapshotNode(node);
+      evalSubclass(node);
+      if (snapshotNode(node) !== before) changed = true;
+    }
+    if (!changed) break;
   }
 
   // Slice the result into the convenience sets the existing UI consumes.
@@ -634,7 +649,28 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
   }
 
   // ---------- Build working masterlist ----------
-  const reverted = input.revertedClasses ?? new Set<string>();
+  // Per-class undo is transitive: if the user reverts Vehicle, every
+  // descendant (Car, Truck, SportsCar, …) it reached through cascade
+  // is also restored to its original entry. The descendant set is
+  // computed against `originalMasterlist.subclasses[]` — that's the
+  // tree as the matcher saw it, before any user picks rearranged
+  // children into siblings. A BFS keeps it linear.
+  const explicitReverted = input.revertedClasses ?? new Set<string>();
+  const reverted = new Set<string>(explicitReverted);
+  if (explicitReverted.size > 0) {
+    const queue: string[] = Array.from(explicitReverted);
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      const entry = originalMasterlist.get(cur);
+      if (!entry) continue;
+      for (const childName of entry.subclasses) {
+        if (!reverted.has(childName)) {
+          reverted.add(childName);
+          queue.push(childName);
+        }
+      }
+    }
+  }
   const workingMasterlist = new Map<string, TaggedClassEntry>();
 
   for (const [className, originalEntry] of originalMasterlist) {
