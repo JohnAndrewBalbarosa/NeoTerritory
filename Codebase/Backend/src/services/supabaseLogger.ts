@@ -35,7 +35,7 @@ interface AuditRow {
   created_at: string;
 }
 
-async function postRow(table: string, row: LogRow | AuditRow): Promise<void> {
+async function postRow(table: string, row: Record<string, unknown>): Promise<void> {
   if (!enabled) return;
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
@@ -65,6 +65,31 @@ async function postRow(table: string, row: LogRow | AuditRow): Promise<void> {
 
 export function isSupabaseLoggerEnabled(): boolean {
   return enabled;
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Generic row mirror — used by domain INSERTs (analysis_runs, reviews,
+// surveys, manual_pattern_decisions, users, jobs) so the Supabase copy of
+// every admin-visible table stays in sync with local SQLite. Always
+// fire-and-forget; never blocks the caller.
+//
+// Conventions:
+//   - column names match the Supabase table (snake_case)
+//   - JSON columns (analysis_json, answers_json, …) are passed as JS objects
+//     so PostgREST stores them as jsonb
+//   - timestamps without explicit value default to now() in Supabase
+// ────────────────────────────────────────────────────────────────────────────
+export function mirrorRow(table: string, row: Record<string, unknown>): void {
+  if (!enabled) return;
+  void postRow(table, row);
+}
+
+// Best-effort small JSON parse for SQLite TEXT columns that we want stored
+// as proper jsonb in Supabase. Returns the raw string if parsing fails so
+// nothing is lost.
+export function parseJsonForMirror(text: string | null | undefined): unknown {
+  if (text == null || text === '') return null;
+  try { return JSON.parse(text); } catch { return text; }
 }
 
 export function mirrorLogEvent(userId: number | null, eventType: string, message: string): void {

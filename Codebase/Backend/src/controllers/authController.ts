@@ -3,6 +3,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
+import { mirrorRow } from '../services/supabaseLogger';
 import { ensurePod, isPodModeEnabled } from '../services/podManager';
 import { revokeToken } from '../middleware/tokenRevocation';
 import type { UserRow } from '../types/db';
@@ -39,7 +40,12 @@ export const register = async (req: Request, res: Response, next: NextFunction):
     const hash = await bcrypt.hash(password, 10);
     const stmt = db.prepare("INSERT INTO users (username, email, password_hash, role, created_at) VALUES (?, ?, ?, 'user', datetime('now'))");
     const info = stmt.run(username, email, hash);
-    logEvent(Number(info.lastInsertRowid), 'register', `User registered: ${email}`);
+    const newUserId = Number(info.lastInsertRowid);
+    logEvent(newUserId, 'register', `User registered: ${email}`);
+    mirrorRow('users', {
+      id: newUserId, username, email, role: 'user',
+      created_at: new Date().toISOString(),
+    });
     res.status(201).json({ message: 'User registered' });
   } catch (err) {
     next(err);

@@ -3,6 +3,7 @@ import fs from 'fs';
 import { Request, Response, NextFunction } from 'express';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
+import { mirrorRow } from '../services/supabaseLogger';
 import { sanitizeFilename, uniqueFilename } from '../utils/fileUtils';
 
 const allowedExt = ['.cpp', '.cc', '.cxx', '.rs'];
@@ -46,8 +47,15 @@ export const transform = (req: Request, res: Response, next: NextFunction): void
     // Insert job
     const stmt = db.prepare("INSERT INTO jobs (user_id, input_file_path, output_file_path, job_status, created_at) VALUES (?, ?, ?, ?, datetime('now'))");
     const info = stmt.run(req.user.id, inputPath, outputPath, 'completed_placeholder');
+    const jobId = Number(info.lastInsertRowid);
     logEvent(req.user.id, 'upload', `Uploaded file: ${inputPath}`);
     logEvent(req.user.id, 'transform', `Transformation placeholder created: ${outputPath}`);
+    mirrorRow('jobs', {
+      id: jobId, user_id: req.user.id,
+      input_file_path: inputPath, output_file_path: outputPath,
+      job_status: 'completed_placeholder',
+      created_at: new Date().toISOString(),
+    });
 
     res.status(201).json({
       job_id: info.lastInsertRowid,

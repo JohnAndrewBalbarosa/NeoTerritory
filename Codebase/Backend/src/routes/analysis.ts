@@ -19,6 +19,7 @@ import { rankAll } from '../services/patternRankingService';
 import { bindAll as bindClassUsages } from '../services/classUsageBinder';
 import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
+import { mirrorRow } from '../services/supabaseLogger';
 import {
   runSubmissionCompile, runPatternUnitTest,
   isTestRunnerEnabled, getDisableReason, TestResult
@@ -281,7 +282,24 @@ function saveRun(input: SaveRunInput): { id: number | bigint; createdAt: string 
     input.userId || null
   );
 
-  return { id: info.lastInsertRowid as number | bigint, createdAt: new Date().toISOString() };
+  const newId = Number(info.lastInsertRowid);
+  const createdAt = new Date().toISOString();
+  // Mirror the FULL run to Supabase so admin views (tagged patterns, stage
+  // metrics for time/memory, findings) survive a Lightsail spot termination.
+  // analysis is stored as jsonb so SQL filters/joins work on the Supabase side.
+  mirrorRow('analysis_runs', {
+    id: newId,
+    user_id: input.userId || null,
+    source_name: input.sourceName,
+    source_text: input.sourceText,
+    analysis: input.analysis,
+    artifact_path: input.artifactPath,
+    structure_score: 0,
+    modernization_score: 0,
+    findings_count: findingsCount,
+    created_at: createdAt,
+  });
+  return { id: info.lastInsertRowid as number | bigint, createdAt };
 }
 
 interface StageMetric {
@@ -1179,7 +1197,7 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
     `).get(runIdNum, req.user.id, line, chosenPattern, chosenKind, otherText);
 
     if (!dupe) {
-      db.prepare(`INSERT INTO manual_pattern_decisions
+      const mInfo = db.prepare(`INSERT INTO manual_pattern_decisions
         (run_id, user_id, line, candidates_json, chosen_pattern, chosen_kind, other_text, decided_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`).run(
         runIdNum,
@@ -1190,6 +1208,15 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
         chosenKind,
         otherText
       );
+      mirrorRow('manual_pattern_decisions', {
+        id: Number(mInfo.lastInsertRowid),
+        run_id: runIdNum, user_id: req.user.id, line,
+        candidates: candidates,
+        chosen_pattern: chosenPattern,
+        chosen_kind: chosenKind,
+        other_text: otherText,
+        decided_at: new Date().toISOString(),
+      });
     }
 
     logEvent(req.user.id, 'manual_review', `runId=${runIdNum} line=${line} kind=${chosenKind}`);

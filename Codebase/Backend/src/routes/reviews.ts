@@ -9,6 +9,7 @@ import {
 } from '../reviews/questionLoader';
 import { validateBody } from '../middleware/validateBody';
 import { reviewSubmitSchema } from '../validation/schemas';
+import { mirrorRow } from '../services/supabaseLogger';
 
 const router = express.Router();
 
@@ -80,13 +81,22 @@ router.post('/', validateBody(reviewSubmitSchema), (req: Request, res: Response,
       INSERT INTO reviews (user_id, scope, analysis_run_id, answers_json, schema_version, created_at)
       VALUES (?, ?, ?, ?, ?, datetime('now'))
     `);
+    const schemaVersion = getSchemaVersion();
     const info = stmt.run(
       req.user.id,
       scope,
       runId,
       JSON.stringify(validation.cleaned),
-      getSchemaVersion()
+      schemaVersion
     );
+    mirrorRow('reviews', {
+      id: Number(info.lastInsertRowid),
+      user_id: req.user.id,
+      scope, analysis_run_id: runId,
+      answers: validation.cleaned,
+      schema_version: schemaVersion,
+      created_at: new Date().toISOString(),
+    });
 
     res.status(201).json({ id: info.lastInsertRowid });
   } catch (err) { next(err); }

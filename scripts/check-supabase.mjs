@@ -80,21 +80,61 @@ async function probe(table, bodyMaker) {
   }
 }
 
+// Probe IDs are large random ints to avoid colliding with real rows
+// (the mirror tables use bigint primary keys, not bigserial — id is set
+// by the backend, matching the SQLite rowid).
+const probeId = () => Math.floor(9_000_000_000 + Math.random() * 1_000_000_000);
+const now = () => new Date().toISOString();
+
 console.log(`Probing ${URL}`);
-await probe(TLOG,  () => ({
-  user_id: null,
-  event_type: 'connectivity_probe',
-  message: 'pre-flight check from check-supabase.mjs',
-  created_at: new Date().toISOString(),
+
+await probe(TLOG, () => ({
+  user_id: null, event_type: 'connectivity_probe',
+  message: 'pre-flight check', created_at: now(),
 }));
 await probe(TAUD, () => ({
-  actor_user_id: null,
-  actor_username: 'connectivity-probe',
-  action: 'probe',
-  target_kind: 'pre-flight',
-  target_id: null,
-  detail: 'pre-flight check from check-supabase.mjs',
-  created_at: new Date().toISOString(),
+  actor_user_id: null, actor_username: 'connectivity-probe',
+  action: 'probe', target_kind: 'pre-flight', target_id: null,
+  detail: 'pre-flight check', created_at: now(),
+}));
+await probe('users', () => ({
+  id: probeId(), username: 'probe', email: 'probe@example.invalid',
+  role: 'user', created_at: now(),
+}));
+await probe('jobs', () => ({
+  id: probeId(), user_id: null, input_file_path: '/tmp/probe',
+  output_file_path: '/tmp/probe.out', job_status: 'probe', created_at: now(),
+}));
+await probe('analysis_runs', () => ({
+  id: probeId(), user_id: null,
+  source_name: 'probe.cpp', source_text: '// probe',
+  analysis: { findings: [], stageMetrics: [{ stage_name: 'probe', items_processed: 0, milliseconds: 0 }] },
+  artifact_path: '/tmp/probe-artifact',
+  structure_score: 0, modernization_score: 0, findings_count: 0,
+  created_at: now(),
+}));
+await probe('reviews', () => ({
+  id: probeId(), user_id: 0, scope: 'probe', analysis_run_id: null,
+  answers: { probe: true }, schema_version: 'probe', created_at: now(),
+}));
+await probe('manual_pattern_decisions', () => ({
+  id: probeId(), run_id: 0, user_id: 0, line: 1,
+  candidates: [], chosen_pattern: null, chosen_kind: 'probe',
+  other_text: null, decided_at: now(),
+}));
+await probe('survey_consent', () => ({
+  id: probeId(), user_id: 0, accepted_at: now(), version: 'probe',
+}));
+await probe('survey_pretest', () => ({
+  id: probeId(), user_id: 0, answers: { probe: true }, submitted_at: now(),
+}));
+await probe('run_feedback', () => ({
+  id: probeId(), run_id: 'probe', user_id: 0,
+  ratings: { probe: 5 }, open: { probe: 'pre-flight' }, submitted_at: now(),
+}));
+await probe('session_feedback', () => ({
+  id: probeId(), user_id: 0, session_uuid: 'probe',
+  ratings: { probe: 5 }, open: { probe: 'pre-flight' }, submitted_at: now(),
 }));
 
 if (failures > 0) {
