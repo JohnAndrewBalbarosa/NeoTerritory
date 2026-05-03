@@ -90,6 +90,23 @@ chmod 600 "$ENV_FILE" 2>/dev/null || true
 set -a; . "$ENV_FILE"; set +a
 if [ -n "${AWS_SSH_KEY:-}" ] && [ -f "$AWS_SSH_KEY" ]; then
   chmod 600 "$AWS_SSH_KEY" 2>/dev/null || true
+  # WSL gotcha: keys on /mnt/c (NTFS) ignore chmod and stay 0777, so ssh
+  # rejects them with "UNPROTECTED PRIVATE KEY FILE". Copy to a Linux
+  # filesystem under ~/.ssh and use that copy instead.
+  perms=$(stat -c '%a' "$AWS_SSH_KEY" 2>/dev/null || echo '600')
+  case "$AWS_SSH_KEY" in
+    /mnt/*)
+      if [ "$perms" != '600' ] && [ "$perms" != '400' ]; then
+        mkdir -p "$HOME/.ssh"
+        chmod 700 "$HOME/.ssh"
+        SAFE_KEY="$HOME/.ssh/$(basename "$AWS_SSH_KEY")"
+        cp "$AWS_SSH_KEY" "$SAFE_KEY"
+        chmod 600 "$SAFE_KEY"
+        echo "ℹ Copied SSH key to $SAFE_KEY (NTFS can't enforce 0600)" >&2
+        AWS_SSH_KEY="$SAFE_KEY"
+      fi
+      ;;
+  esac
 fi
 
 # Supabase: only the SERVICE-ROLE key can write through RLS. The publishable
