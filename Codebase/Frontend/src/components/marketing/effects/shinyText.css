@@ -1,11 +1,23 @@
+/* Theme-aware sheen colour. Dark theme: near-white sweep on top of
+   currentColor. Light theme: high-contrast accent sweep so the gradient
+   reads against pale text. */
+:root {
+  --nt-shiny-highlight: rgba(255, 255, 255, 0.95);
+  --nt-shiny-base: currentColor;
+}
+:root[data-theme="light"] {
+  --nt-shiny-highlight: oklch(38% 0.18 290);   /* deep accent for contrast on white */
+  --nt-shiny-base: oklch(20% 0.04 260);
+}
+
 .nt-shiny {
   background-image: linear-gradient(
     110deg,
-    currentColor 0%,
-    currentColor 38%,
-    rgba(255, 255, 255, calc(var(--shiny-alpha, 0.85))) 50%,
-    currentColor 62%,
-    currentColor 100%
+    var(--nt-shiny-base) 0%,
+    var(--nt-shiny-base) 38%,
+    color-mix(in oklch, var(--nt-shiny-highlight) calc(var(--shiny-alpha, 0.85) * 100%), transparent) 50%,
+    var(--nt-shiny-base) 62%,
+    var(--nt-shiny-base) 100%
   );
   background-size: 250% 100%;
   background-clip: text;

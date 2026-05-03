@@ -5,13 +5,32 @@
   pointer-events: none;
   z-index: 0;
   isolation: isolate;
+  --nt-aurora-blob-opacity: 0.55;
+  --nt-aurora-blend: screen;
+  --nt-aurora-blur: 80px;
+  --nt-aurora-grain-alpha-a: 0.03;
+  --nt-aurora-grain-alpha-b: 0.025;
+  --nt-aurora-grain-blend: overlay;
 }
+/* Light theme: aurora must NOT brighten an already-bright surface.
+   Switch to multiply (darken-style blend), drop blob opacity, soften
+   blur, suppress the grain. The animation still runs but the result
+   reads like a pastel watercolour wash instead of a screen-burned glow. */
+:root[data-theme="light"] .nt-aurora {
+  --nt-aurora-blob-opacity: 0.32;
+  --nt-aurora-blend: multiply;
+  --nt-aurora-blur: 110px;
+  --nt-aurora-grain-alpha-a: 0;
+  --nt-aurora-grain-alpha-b: 0;
+  --nt-aurora-grain-blend: normal;
+}
+
 .nt-aurora__blob {
   position: absolute;
   border-radius: 50%;
-  filter: blur(80px);
-  opacity: 0.55;
-  mix-blend-mode: screen;
+  filter: blur(var(--nt-aurora-blur));
+  opacity: var(--nt-aurora-blob-opacity);
+  mix-blend-mode: var(--nt-aurora-blend);
 }
 .nt-aurora--default .nt-aurora__blob--a { background: oklch(72% 0.18 250); }
 .nt-aurora--default .nt-aurora__blob--b { background: oklch(70% 0.2 320); }
@@ -22,6 +41,18 @@
 .nt-aurora--warm .nt-aurora__blob--a { background: oklch(76% 0.18 30); }
 .nt-aurora--warm .nt-aurora__blob--b { background: oklch(72% 0.2 350); }
 .nt-aurora--warm .nt-aurora__blob--c { background: oklch(74% 0.16 60); }
+
+/* Light-theme blob colours: keep hue, drop chroma + slightly raise
+   lightness so multiply blend results in pastel tints, not muddy stains. */
+:root[data-theme="light"] .nt-aurora--default .nt-aurora__blob--a { background: oklch(82% 0.10 250); }
+:root[data-theme="light"] .nt-aurora--default .nt-aurora__blob--b { background: oklch(82% 0.11 320); }
+:root[data-theme="light"] .nt-aurora--default .nt-aurora__blob--c { background: oklch(84% 0.09 200); }
+:root[data-theme="light"] .nt-aurora--cool    .nt-aurora__blob--a { background: oklch(82% 0.10 220); }
+:root[data-theme="light"] .nt-aurora--cool    .nt-aurora__blob--b { background: oklch(82% 0.10 260); }
+:root[data-theme="light"] .nt-aurora--cool    .nt-aurora__blob--c { background: oklch(84% 0.08 190); }
+:root[data-theme="light"] .nt-aurora--warm    .nt-aurora__blob--a { background: oklch(85% 0.10 30); }
+:root[data-theme="light"] .nt-aurora--warm    .nt-aurora__blob--b { background: oklch(83% 0.11 350); }
+:root[data-theme="light"] .nt-aurora--warm    .nt-aurora__blob--c { background: oklch(86% 0.08 60); }
 
 .nt-aurora__blob--a {
   width: 60vw;
@@ -52,11 +83,11 @@
   position: absolute;
   inset: 0;
   background-image:
-    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    radial-gradient(circle at 20% 30%, rgba(255, 255, 255, var(--nt-aurora-grain-alpha-a)) 1px, transparent 1px),
+    radial-gradient(circle at 70% 60%, rgba(255, 255, 255, var(--nt-aurora-grain-alpha-b)) 1px, transparent 1px);
   background-size: 4px 4px, 6px 6px;
   opacity: 0.4;
-  mix-blend-mode: overlay;
+  mix-blend-mode: var(--nt-aurora-grain-blend);
 }
 
 @keyframes nt-aurora-drift-a {

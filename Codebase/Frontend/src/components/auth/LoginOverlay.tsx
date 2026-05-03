@@ -105,10 +105,10 @@ export default function LoginOverlay() {
         {mode === 'picker' && showPicker && (
           <motion.div
             key="picker"
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
+            transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
           <TiltCard className="login-card tester-chooser" maxTilt={4} scale={1.005}>
             <header className="tester-chooser-head">
@@ -153,10 +153,10 @@ export default function LoginOverlay() {
             key="admin"
             className="login-card"
             onSubmit={handleAdminSubmit}
-            initial={{ opacity: 0, y: 18, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.98 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(8px)' }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
+            transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
             <h2><ShinyText text="Admin sign in" /></h2>
             <p className="login-hint">Enter administrator credentials.</p>

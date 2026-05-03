@@ -958,12 +958,20 @@ body[data-surface] #root {
   font-size: 0.92rem;
   line-height: 1.55;
 }
-.nt-atlas__intro code {
+.nt-atlas__intro code,
+.nt-atlas__id code,
+.nt-atlas__subs code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.85em;
-  background: oklch(20% 0.02 260);
+  background: color-mix(in oklch, var(--nt-mkt-surface) 60%, oklch(15% 0.02 260) 40%);
   padding: 1px 5px;
   border-radius: 4px;
+}
+:root[data-theme="light"] .nt-atlas__intro code,
+:root[data-theme="light"] .nt-atlas__id code,
+:root[data-theme="light"] .nt-atlas__subs code {
+  background: oklch(94% 0.02 260);
+  color: oklch(28% 0.10 290);
 }
 .nt-atlas__grid {
   display: grid;
@@ -1147,6 +1155,7 @@ body[data-surface] #root {
   padding: 0.42rem 0.55rem;
   border-bottom: 1px solid var(--nt-mkt-line);
   vertical-align: top;
+  word-break: break-word;
 }
 .nt-atlas__subs th {
   font-size: 0.7rem;
@@ -1155,13 +1164,7 @@ body[data-surface] #root {
   color: var(--nt-mkt-text-soft);
   font-weight: 600;
 }
-.nt-atlas__subs code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85em;
-  background: oklch(20% 0.02 260);
-  padding: 1px 5px;
-  border-radius: 4px;
-}
+/* (subs <code> styling moved to the shared .nt-atlas__intro/__id/__subs rule above so it stays theme-aware) */
 .nt-atlas__subs-src {
   color: var(--nt-mkt-text-soft);
   font-style: italic;

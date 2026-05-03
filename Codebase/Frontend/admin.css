@@ -72,6 +72,7 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 /* ADMIN SHELL */
 .admin-shell{max-width:1300px;margin:0 auto;padding:24px 28px;position:relative;z-index:1;}
 .admin-aurora{position:fixed!important;inset:0;z-index:-1;opacity:0.32;}
+:root[data-theme="light"] .admin-aurora{opacity:0.55;}  /* multiply blend on white needs a touch more presence */
 body{position:relative;}
 .admin-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
 .admin-brand{display:flex;align-items:center;gap:12px;}

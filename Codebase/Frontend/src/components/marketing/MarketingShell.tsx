@@ -1,4 +1,4 @@
-import { MotionConfig } from 'motion/react';
+import { MotionConfig, motion, AnimatePresence } from 'motion/react';
 import { useEffect } from 'react';
 import { Surface } from '../../lib/router';
 import { useLenis } from './effects/useLenis';
@@ -28,9 +28,19 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
         Skip to main content
       </a>
       <MarketingNav current={surface} />
-      {surface === 'hero' && <HeroLanding />}
-      {surface === 'learn' && <LearningPage />}
-      {surface === 'about' && <AboutPage />}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={surface}
+          initial={{ opacity: 0, y: 18, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
+          transition={{ type: 'spring', stiffness: 220, damping: 28, mass: 0.8 }}
+        >
+          {surface === 'hero' && <HeroLanding />}
+          {surface === 'learn' && <LearningPage />}
+          {surface === 'about' && <AboutPage />}
+        </motion.div>
+      </AnimatePresence>
       <footer className="nt-mkt-footer" role="contentinfo">
         <p>NeoTerritory Studio · C++ pattern analysis & AI documentation pipeline</p>
         <p className="nt-mkt-footer__small">

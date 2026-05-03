@@ -37,8 +37,11 @@ export default function TiltCard({
       node.style.transform =
         `perspective(900px) rotateX(${rx.toFixed(2)}deg) rotateY(${ry.toFixed(2)}deg) scale(${scale})`;
       if (glare && glareRef.current) {
+        // Glare colour comes from a CSS var so light/dark themes can
+        // each pick a tint that reads against their surface (white sheen
+        // on dark cards, soft purple wash on light cards).
         glareRef.current.style.background =
-          `radial-gradient(circle at ${(px * 100).toFixed(1)}% ${(py * 100).toFixed(1)}%, rgba(255,255,255,0.18), transparent 55%)`;
+          `radial-gradient(circle at ${(px * 100).toFixed(1)}% ${(py * 100).toFixed(1)}%, var(--nt-tilt-glare, rgba(255,255,255,0.18)), transparent 55%)`;
       }
     });
   }
