@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Annotation } from '../../types/api';
 import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../lib/patterns';
 
@@ -177,7 +178,15 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   // longer used for positioning; kept on the props for API stability.
   void anchorRect;
 
-  return (
+  // Portal to <body> so position:fixed actually anchors to the viewport.
+  // Any ancestor with `transform`, `filter`, `perspective`, `will-change`,
+  // `backdrop-filter`, or `contain: paint|layout` becomes the containing
+  // block for fixed descendants — and the AnimatePresence wrapper around
+  // the tab content uses `filter: blur(...)` for its enter transition,
+  // which silently breaks viewport pinning. Rendering through a portal
+  // sidesteps the whole ancestor chain.
+  if (typeof document === 'undefined') return null;
+  return createPortal(
     <div
       ref={popoverRef}
       id="src-popover"
@@ -223,6 +232,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
       <div className="src-popover-body">
         {dedupedAnnotations.map(a => <AnnotationCard key={a.id} annotation={a} />)}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
