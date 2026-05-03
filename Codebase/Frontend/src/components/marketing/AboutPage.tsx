@@ -5,12 +5,19 @@ import ScrollReveal from './effects/ScrollReveal';
 import SplitText from './effects/SplitText';
 import TeamCard from './TeamCard';
 
+interface Highlight {
+  image: string;
+  caption: string;
+}
+
 interface TeamMember {
   slug: string;
   name: string;
   role: string;
   bio: string;
   photoPath: string;
+  skills?: string[];
+  highlights?: Highlight[];
   links: {
     github?: string;
     linkedin?: string;

@@ -1,12 +1,19 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { useMemo } from 'react';
 
+interface Highlight {
+  image: string;
+  caption: string;
+}
+
 interface TeamMember {
   slug: string;
   name: string;
   role: string;
   bio: string;
   photoPath: string;
+  skills?: string[];
+  highlights?: Highlight[];
   links: {
     github?: string;
     linkedin?: string;
@@ -38,6 +45,8 @@ function initials(name: string): string {
 export default function TeamCard({ member, index }: TeamCardProps) {
   const reduce = useReducedMotion();
   const gradient = useMemo(() => gradientFromSlug(member.slug), [member.slug]);
+  const skills = member.skills ?? [];
+  const highlights = member.highlights ?? [];
 
   return (
     <motion.article
@@ -61,6 +70,37 @@ export default function TeamCard({ member, index }: TeamCardProps) {
         <p className="nt-team-card__role">{member.role}</p>
         <h3 className="nt-team-card__name">{member.name}</h3>
         <p className="nt-team-card__bio">{member.bio}</p>
+
+        {skills.length > 0 && (
+          <ul className="nt-team-card__skills" aria-label={`${member.name} — skills`}>
+            {skills.map((s) => (
+              <li key={s}>{s}</li>
+            ))}
+          </ul>
+        )}
+
+        {highlights.length > 0 && (
+          <figure className="nt-team-card__gallery" aria-label={`${member.name} — highlights`}>
+            <div className="nt-team-card__gallery-strip">
+              {highlights.map((h) => (
+                <a
+                  key={h.image}
+                  href={h.image}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="nt-team-card__gallery-item"
+                  title={h.caption}
+                >
+                  <img src={h.image} alt={h.caption} loading="lazy" />
+                </a>
+              ))}
+            </div>
+            <figcaption className="nt-team-card__gallery-caption">
+              {highlights.length} milestones · click to enlarge
+            </figcaption>
+          </figure>
+        )}
+
         <ul className="nt-team-card__links">
           {member.links.github && (
             <li>
@@ -73,6 +113,13 @@ export default function TeamCard({ member, index }: TeamCardProps) {
             <li>
               <a href={member.links.linkedin} target="_blank" rel="noreferrer noopener">
                 LinkedIn
+              </a>
+            </li>
+          )}
+          {member.links.facebook && (
+            <li>
+              <a href={member.links.facebook} target="_blank" rel="noreferrer noopener">
+                Facebook
               </a>
             </li>
           )}
