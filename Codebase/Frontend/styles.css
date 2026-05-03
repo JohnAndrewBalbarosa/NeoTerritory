@@ -268,10 +268,6 @@ body.login-active{overflow:hidden;}
 .pattern-card-title{font-size:13px;font-weight:600;color:var(--ink);}
 .pattern-card-class{font-family:var(--code-font);font-size:11px;color:var(--ink-soft);}
 .pattern-card-line{font-size:10px;color:var(--ink-dim);margin-left:auto;}
-.pattern-card-revert{display:inline-flex;align-items:center;gap:3px;font-size:10px;line-height:1;padding:3px 8px;margin-left:6px;border:1px solid var(--border);border-radius:999px;color:var(--ink-soft);background:transparent;cursor:pointer;user-select:none;transition:background 120ms ease, color 120ms ease, border-color 120ms ease;}
-.pattern-card-revert:hover{background:rgba(255,255,255,0.06);color:var(--ink);}
-.pattern-card-revert--on{border-color:var(--accent);color:var(--accent);background:rgba(120,219,255,0.08);}
-.pattern-card-revert--on:hover{background:rgba(120,219,255,0.16);}
 .rank-bar{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--ink-soft);}
 .rank-bar-track{flex:1;height:4px;background:var(--border);border-radius:999px;overflow:hidden;}
 .rank-bar-fill{height:100%;background:var(--accent);transition:width 300ms ease;}

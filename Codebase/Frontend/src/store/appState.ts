@@ -51,13 +51,6 @@ interface AppState {
   maxFilesPerSubmission: number;
   pendingRunSurveyForRunKey: string | null;
   linePatternOverrides: Record<number, string>;
-  // Per-class revert layer for the tagged-class masterlist. Any class
-  // name in this set is force-restored to its `originalMasterlist`
-  // entry by `deriveAnnotatedModel`, ignoring cascade. Stored as a
-  // plain string[] so a fresh reference is produced on every change
-  // (Zustand consumers re-render correctly on identity change). Cleared
-  // on resetSession / setCurrentRun / clearAuth.
-  revertedClasses: string[];
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
   // tabbing away and back (or running an analysis) doesn't drop the user's
   // other files. Empty array = legacy single-file mode (AnalysisForm seeds
@@ -93,12 +86,6 @@ interface AppState {
   clearLinePatternOverride: (line: number) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
-  // Tagged-class masterlist revert: revert/unrevert/clear. Toggle
-  // is the convenience action used by per-class Undo affordances.
-  revertClass: (className: string) => void;
-  unrevertClass: (className: string) => void;
-  toggleRevertedClass: (className: string) => void;
-  clearRevertedClasses: () => void;
   setSubmissionFiles: (files: Array<{ id: string; name: string; text: string }>) => void;
 }
 
@@ -136,7 +123,6 @@ export const useAppStore = create<AppState>((set) => ({
   maxFilesPerSubmission: 3,
   pendingRunSurveyForRunKey: null,
   linePatternOverrides: {},
-  revertedClasses: [],
   submissionFiles: [],
 
   setAuth: (token, user) => {
@@ -161,7 +147,6 @@ export const useAppStore = create<AppState>((set) => ({
       aiJobId: null,
       pendingRunSurveyForRunKey: null,
       linePatternOverrides: {},
-      revertedClasses: [],
       submissionFiles: []
     });
   },
@@ -174,7 +159,6 @@ export const useAppStore = create<AppState>((set) => ({
     aiStatus: 'idle',
     aiJobId: null,
     linePatternOverrides: {},
-    revertedClasses: [],
     submissionFiles: []
   }),
 
@@ -187,10 +171,7 @@ export const useAppStore = create<AppState>((set) => ({
     lastGdbResults: null,
     lastGdbRunKey: null,
     pendingGdbAutoRun: false,
-    programStdin: '',
-    // Per-class reverts are bound to the run too — a brand-new run has
-    // a brand-new masterlist, so any prior reverts are stale.
-    revertedClasses: []
+    programStdin: ''
   }),
   patchCurrentRun: (patch) => set((s) => ({
     currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
@@ -231,22 +212,6 @@ export const useAppStore = create<AppState>((set) => ({
     for (const l of lines) delete next[l];
     return { linePatternOverrides: next };
   }),
-  revertClass: (className) => set((s) => (
-    s.revertedClasses.includes(className)
-      ? {}
-      : { revertedClasses: [...s.revertedClasses, className] }
-  )),
-  unrevertClass: (className) => set((s) => (
-    s.revertedClasses.includes(className)
-      ? { revertedClasses: s.revertedClasses.filter((c) => c !== className) }
-      : {}
-  )),
-  toggleRevertedClass: (className) => set((s) => (
-    s.revertedClasses.includes(className)
-      ? { revertedClasses: s.revertedClasses.filter((c) => c !== className) }
-      : { revertedClasses: [...s.revertedClasses, className] }
-  )),
-  clearRevertedClasses: () => set({ revertedClasses: [] }),
   mergeAiAnnotations: (aiAnnotations) => set((s) => {
     if (!s.currentRun) return {};
     const existing = s.currentRun.annotations || [];

@@ -392,18 +392,53 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
     const scope = rows.find(r => r.lineNo === line)?.scope
                ?? (className ? (rows.map(r => r.scope).find(s => s?.className === className) ?? null) : null);
     if (className) {
+      // Transitive subtree undo (the masterlist revert behaviour, exposed
+      // through the existing Undo affordance instead of a separate chip).
+      // BFS over detectedPatterns' parentClassName edges to collect every
+      // descendant the matcher attached through inheritance — so undoing
+      // Vehicle also clears Car / Truck / SportsCar's picks and line
+      // overrides in one beat. Self is included.
+      const dets = useAppStore.getState().currentRun?.detectedPatterns || [];
+      const childrenByParent = new Map<string, Set<string>>();
+      for (const p of dets) {
+        if (!p.parentClassName || !p.className) continue;
+        if (!childrenByParent.has(p.parentClassName)) childrenByParent.set(p.parentClassName, new Set());
+        childrenByParent.get(p.parentClassName)!.add(p.className);
+      }
+      const subtree = new Set<string>([className]);
+      const queue: string[] = [className];
+      while (queue.length > 0) {
+        const cur = queue.shift()!;
+        for (const child of childrenByParent.get(cur) ?? []) {
+          if (!subtree.has(child)) {
+            subtree.add(child);
+            queue.push(child);
+          }
+        }
+      }
+
+      // Collect line ranges to clear: each class's declaration scope +
+      // its bound usage sites + the popover's anchor line.
       const scopeLines: number[] = [];
       if (scope) {
         for (let l = scope.min; l <= scope.max; l++) scopeLines.push(l);
       }
-      // Mirror handleResolve's reach — un-tagging a class also un-tags all
-      // of its bound usage sites so the source view stays consistent.
-      for (const usageLine of bindingLinesFor(className)) scopeLines.push(usageLine);
+      const rowScopes = rows.map(r => r.scope);
+      for (const c of subtree) {
+        const otherScope = rowScopes.find(s => s?.className === c);
+        if (otherScope) {
+          for (let l = otherScope.min; l <= otherScope.max; l++) scopeLines.push(l);
+        }
+        for (const usageLine of bindingLinesFor(c)) scopeLines.push(usageLine);
+      }
       scopeLines.push(line);
       bulkClearLinePatternOverrides(scopeLines);
+
+      // Drop every subtree class's pick from classResolvedPatterns in a
+      // single patch so the model re-derives once.
       const prev = useAppStore.getState().currentRun?.classResolvedPatterns || {};
       const next = { ...prev };
-      delete next[className];
+      for (const c of subtree) delete next[c];
       useAppStore.getState().patchCurrentRun({ classResolvedPatterns: next });
     } else {
       clearLinePatternOverride(line);

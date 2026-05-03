@@ -25,8 +25,6 @@ export default function AnnotatedTab({
     gdbAllPassedForRun,
     setActiveTab,
     setPendingGdbAutoRun,
-    revertedClasses,
-    toggleRevertedClass,
   } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
   const [classNavIdx, setClassNavIdx] = useState(0);
@@ -46,16 +44,9 @@ export default function AnnotatedTab({
   // and re-derived whenever currentRun's identity changes (the store
   // already produces a new currentRun reference on every patch via
   // patchCurrentRun's spread, so picks propagate automatically).
-  // The revertedClasses store slice is a string[] for stable reference
-  // semantics in Zustand; the model expects a Set<string>, so build a
-  // memoised set keyed on the array's identity.
-  const revertedClassesSet = useMemo(
-    () => new Set(revertedClasses),
-    [revertedClasses],
-  );
   const model = useMemo(
-    () => deriveAnnotatedModel({ run: currentRun, revertedClasses: revertedClassesSet }),
-    [currentRun, revertedClassesSet],
+    () => deriveAnnotatedModel({ run: currentRun }),
+    [currentRun],
   );
 
   const allAnnotations = useMemo(() => {
@@ -520,16 +511,6 @@ export default function AnnotatedTab({
           ambiguousClassNames={pickerEligibleClassNames}
           classUsageBindings={currentRun.classUsageBindings || {}}
           classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
-          // Tagged-class masterlist + per-class revert. The card renders
-          // an "Original" / "Reverted" chip on each class, lets the user
-          // toggle revert without leaving the tab, and shows the
-          // canonical pattern set straight from workingMasterlist when
-          // present. Cards for classes absent from working (subclass
-          // dropped) are filtered above by the activePatterns step.
-          workingMasterlist={model.workingMasterlist}
-          originalMasterlist={model.originalMasterlist}
-          revertedClasses={revertedClassesSet}
-          onToggleRevert={toggleRevertedClass}
           onLineFlash={onLineFlash}
         />
       </aside>
