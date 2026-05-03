@@ -6,10 +6,19 @@ import {
 import { colorFor, USAGE_KIND_LABEL, ensureReadableContrast } from '../../lib/patterns';
 import { patternDefinitionFor, PatternDefinition } from '../../data/patternDefinitions';
 
+export interface RecomputedRank {
+  k: number;
+  n: number;
+  finalRank: number;
+}
+
 interface PatternCardsProps {
   detectedPatterns: DetectedPatternFull[];
   ranking: AmbiguityRanking | null;
   userResolvedPattern?: string | null;
+  classResolvedPatterns?: Record<string, string>;
+  ambiguousClassNames?: Set<string>;
+  recomputedRanksByClass?: Record<string, RecomputedRank>;
   classUsageBindings: Record<string, ClassUsageBinding[]>;
   classUsageBindingSource: 'heuristic' | 'microservice';
   onLineFlash?: (line: number) => void;
@@ -20,6 +29,14 @@ interface CardProps {
   rank?: PatternRankEntry;
   rankVerdict?: string;
   resolved: boolean;
+  isAmbiguousUnresolved: boolean;
+  // True when this class was originally ambiguous and the user has now
+  // resolved it via the source-view rival picker. Drives whether the
+  // accuracy rank-bar is shown — per the user's rule, accuracy is only
+  // meaningful AFTER a human has committed to a tag for an ambiguous
+  // class. Cards for never-ambiguous classes hide the bar entirely.
+  wasAmbiguousNowResolved: boolean;
+  recomputed?: RecomputedRank;
   taggedUsages: ClassUsageBinding[];
   classUsageBindingSource: 'heuristic' | 'microservice';
   onLineFlash?: (line: number) => void;
@@ -315,7 +332,12 @@ function TaggedUsagesSection({
 }
 
 function PatternCard(props: CardProps) {
-  const { pattern: p, rank, rankVerdict, resolved, taggedUsages, classUsageBindingSource, onLineFlash } = props;
+  const { pattern: p, rank, rankVerdict, resolved, isAmbiguousUnresolved, wasAmbiguousNowResolved, recomputed, taggedUsages, classUsageBindingSource, onLineFlash } = props;
+  // Accuracy rank-bar only renders when the class is genuinely
+  // ambiguous (waiting for a pick) or has been resolved-after-ambiguity.
+  // Never-ambiguous classes were locked in by the matcher from the start
+  // — there is nothing to score against, so we hide the bar entirely.
+  const showAccuracy = isAmbiguousUnresolved || wasAmbiguousNowResolved;
   const baseColour = colorFor(p.patternName || 'default');
   // Lift the badge text against the current surface so the label stays
   // readable in dark mode without re-authoring the palette per theme.
@@ -350,28 +372,52 @@ function PatternCard(props: CardProps) {
 
       {expanded && (
         <div className="pattern-card-body">
-          {rank && (
+          {!showAccuracy ? null : isAmbiguousUnresolved ? (
+            <div className="rank-bar rank-bar--unknown" data-verdict="unknown">
+              <span title="The user has not yet picked a pattern for this class — the popover on the class declaration line offers the options">confidence</span>
+              <div className="rank-bar-track">
+                <div className="rank-bar-fill rank-bar-fill--unknown" style={{ width: '100%' }} />
+              </div>
+              <span>?%</span>
+              <span title="Pick a pattern in the source view to see numbers">awaiting pick</span>
+            </div>
+          ) : rank ? (
             <>
               <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
                 <span title="How sure the matcher is that this class is this pattern">confidence</span>
                 <div className="rank-bar-track">
-                  <div className="rank-bar-fill" style={{ width: `${Math.round((rank.finalRank || 0) * 100)}%` }} />
+                  <div className="rank-bar-fill" style={{ width: `${Math.round(((recomputed?.finalRank ?? rank.finalRank) || 0) * 100)}%` }} />
                 </div>
-                <span>{Math.round((rank.finalRank || 0) * 100)}%</span>
-                {rank.hasImplementationTemplate
+                <span>{Math.round(((recomputed?.finalRank ?? rank.finalRank) || 0) * 100)}%</span>
+                {recomputed
                   ? (
-                    <span title="How well the class is actually used like this pattern, not just shaped like one">
-                      usage match {Math.floor((rank.implementationFit || 0) * 100)}%
+                    <span title="Recomputed from your pick: k = lines inside the class declaration that match the chosen pattern, n = total lines in the class">
+                      k = {recomputed.k} / n = {recomputed.n}
                     </span>
                   )
-                  : (
-                    <span title="We can see the shape, but no usage examples are catalogued for this pattern yet">
-                      structure only
-                    </span>
-                  )}
+                  : rank.hasImplementationTemplate
+                    ? (
+                      <span title="How well the class is actually used like this pattern, not just shaped like one">
+                        usage match {Math.floor((rank.implementationFit || 0) * 100)}%
+                      </span>
+                    )
+                    : (
+                      <span title="We can see the shape, but no usage examples are catalogued for this pattern yet">
+                        structure only
+                      </span>
+                    )}
               </div>
               <ScoringExplainer rank={rank} pattern={p} onLineFlash={onLineFlash} />
             </>
+          ) : (
+            <div className="rank-bar" data-verdict="confident">
+              <span>confidence</span>
+              <div className="rank-bar-track">
+                <div className="rank-bar-fill" style={{ width: '100%' }} />
+              </div>
+              <span>100%</span>
+              <span title="No rival patterns were offered for this class — automatic 100%">unambiguous</span>
+            </div>
           )}
           <ExplainSection
             patternName={p.patternName || p.patternId || 'this pattern'}
@@ -394,26 +440,93 @@ function PatternCard(props: CardProps) {
 }
 
 export default function PatternCards(props: PatternCardsProps) {
-  const { detectedPatterns, ranking, userResolvedPattern, classUsageBindings, classUsageBindingSource, onLineFlash } = props;
+  const {
+    detectedPatterns, ranking, userResolvedPattern, classResolvedPatterns,
+    ambiguousClassNames, recomputedRanksByClass,
+    classUsageBindings, classUsageBindingSource, onLineFlash
+  } = props;
   if (!detectedPatterns.length) return <div id="pattern-cards" />;
-  // Banner explanation rendered once, before any cards.
   const ranksById = new Map<string, PatternRankEntry>();
   (ranking?.ranks || []).forEach(r => ranksById.set(r.patternId, r));
+  const ambiguous = ambiguousClassNames || new Set<string>();
+  const resolvedClasses = classResolvedPatterns || {};
+  const recomputed = recomputedRanksByClass || {};
+
+  // Three stacks:
+  //   - ambiguous (still): user hasn't picked yet — top of the page.
+  //   - resolved (was ambiguous, user picked): show accuracy from
+  //     recomputed Wilson rank. User explicitly asked: accuracy only
+  //     applies to classes that went through human disambiguation.
+  //   - unambiguous (never was ambiguous): matcher locked it in from
+  //     the start; no accuracy bar renders, since there was nothing to
+  //     score against.
+  // A class qualifies as "was ambiguous" iff it has an entry in
+  // classResolvedPatterns — the popover only writes there when the user
+  // commits a pick from the rival picker, which only fires for
+  // ambiguous classes.
+  const ambiguousCards: DetectedPatternFull[] = [];
+  const resolvedCards: DetectedPatternFull[] = [];
+  const unambiguousCards: DetectedPatternFull[] = [];
+  for (const p of detectedPatterns) {
+    const cls = p.className || '';
+    const isStillAmbiguous = !!cls && ambiguous.has(cls) && !resolvedClasses[cls];
+    const wasResolvedFromAmbiguous = !!cls && !!resolvedClasses[cls];
+    if (isStillAmbiguous) ambiguousCards.push(p);
+    else if (wasResolvedFromAmbiguous) resolvedCards.push(p);
+    else unambiguousCards.push(p);
+  }
+
+  function renderCard(p: DetectedPatternFull, opts: { isAmbiguousUnresolved: boolean; wasAmbiguousNowResolved: boolean }) {
+    const cls = p.className || '';
+    const recomputedRank = cls ? recomputed[cls] : undefined;
+    return (
+      <PatternCard
+        key={p.patternId + cls}
+        pattern={p}
+        rank={ranksById.get(p.patternId)}
+        rankVerdict={ranking?.verdict}
+        resolved={!!(userResolvedPattern && userResolvedPattern === p.patternId)}
+        isAmbiguousUnresolved={opts.isAmbiguousUnresolved}
+        wasAmbiguousNowResolved={opts.wasAmbiguousNowResolved}
+        recomputed={recomputedRank}
+        taggedUsages={(p.className && classUsageBindings[p.className]) || []}
+        classUsageBindingSource={classUsageBindingSource}
+        onLineFlash={onLineFlash}
+      />
+    );
+  }
+
   return (
     <div id="pattern-cards" className="pattern-cards">
       <ScoringExplainerBanner />
-      {detectedPatterns.map(p => (
-        <PatternCard
-          key={p.patternId + (p.className || '')}
-          pattern={p}
-          rank={ranksById.get(p.patternId)}
-          rankVerdict={ranking?.verdict}
-          resolved={!!(userResolvedPattern && userResolvedPattern === p.patternId)}
-          taggedUsages={(p.className && classUsageBindings[p.className]) || []}
-          classUsageBindingSource={classUsageBindingSource}
-          onLineFlash={onLineFlash}
-        />
-      ))}
+      {ambiguousCards.length > 0 && (
+        <section className="pattern-cards-ambiguous">
+          <h3 className="pattern-cards-section-head">
+            Ambiguous classes — pick a pattern in the source view
+          </h3>
+          {ambiguousCards.map(p => renderCard(p, { isAmbiguousUnresolved: true, wasAmbiguousNowResolved: false }))}
+        </section>
+      )}
+      {(resolvedCards.length > 0 || unambiguousCards.length > 0) && (
+        <section className="pattern-cards-decided">
+          {resolvedCards.length > 0 && (
+            <>
+              <h3 className="pattern-cards-section-head" title="Classes that were ambiguous on first scan and that you've since tagged. Accuracy is computed against your pick.">
+                Ambiguous (resolved by you)
+              </h3>
+              {resolvedCards.map(p => renderCard(p, { isAmbiguousUnresolved: false, wasAmbiguousNowResolved: true }))}
+            </>
+          )}
+          {unambiguousCards.length > 0 && (
+            <>
+              <h3 className="pattern-cards-section-head" title="Classes the matcher locked in from the start — no rival patterns were detected, so there's nothing to score against.">
+                Unambiguous
+              </h3>
+              {unambiguousCards.map(p => renderCard(p, { isAmbiguousUnresolved: false, wasAmbiguousNowResolved: false }))}
+            </>
+          )}
+        </section>
+      )}
     </div>
   );
 }
