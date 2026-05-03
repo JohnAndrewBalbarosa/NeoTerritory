@@ -80,6 +80,26 @@ coverage/
 .env.*
 !.env.example
 !.env.deploy.example
+scripts/.env.deploy
+
+# SSH / deploy credentials — never commit, even locally
+*.pem
+*.key
+*.ppk
+*.pfx
+*.p12
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+id_ecdsa
+id_ecdsa.*
+known_hosts
+authorized_keys
+.ssh/
+**/.ssh/
+# Explicit allow — JWT *public* key is intentionally tracked (safe to share).
+!Codebase/Backend/keys/jwt-public.pem
 *.log
 npm-debug.log*
 yarn-debug.log*
