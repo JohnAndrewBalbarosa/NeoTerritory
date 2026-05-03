@@ -41,7 +41,6 @@ import analysisRoutes from './src/routes/analysis';
 import adminRoutes from './src/routes/admin';
 import reviewRoutes from './src/routes/reviews';
 import surveyRoutes from './src/routes/survey';
-import scraperRoutes from './src/routes/scraper';
 import { startWatching as startReviewSchemaWatch } from './src/reviews/questionLoader';
 import { uploadsDir } from './src/config/paths';
 
@@ -87,11 +86,6 @@ app.use('/auth/claim', authLimiter);
 app.use('/auth', authRoutes);
 app.use('/api/transform', transformRoutes);
 app.use('/api/admin', adminLimiter, adminRoutes);
-// Deferred per D35 — only mounted when explicitly enabled. Admin-only.
-if (process.env.NEOTERRITORY_ENABLE_SCRAPER === '1') {
-  app.use('/api/admin/scraper', adminLimiter, scraperRoutes);
-  console.warn('[scraper] route enabled. Manual-login Playwright scraping is admin-only and respects target ToS at the operator\'s risk.');
-}
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/survey', surveyRoutes);
 app.use('/api', analysisRoutes);

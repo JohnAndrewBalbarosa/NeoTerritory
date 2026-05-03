@@ -451,6 +451,7 @@ export default function AnnotatedTab({
             coloringAmbiguousClassNames={model.greyClassNames}
             subclassPendingClassNames={model.subclassPendingClassNames}
             subclassDroppedClassNames={model.droppedClassNames}
+            inheritanceDrivenParentClassNames={model.inheritanceDrivenParentClassNames}
             usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
             onLineClick={onCommentFlash}
           />
