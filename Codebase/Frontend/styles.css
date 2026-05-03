@@ -336,7 +336,6 @@ body.login-active{overflow:hidden;}
 .src-popover-rival{font:500 10.5px/1.4 ui-monospace,monospace;padding:2px 7px;border-radius:999px;border:1px solid;white-space:nowrap;}
 .src-popover-rival--btn{cursor:pointer;transition:opacity 0.1s;}
 .src-popover-rival--btn:hover{opacity:0.75;}
-.src-popover-rival--clear{border-style:dashed;font-style:italic;}
 .src-popover-undo-btn{font:500 10.5px/1.4 ui-monospace,monospace;padding:2px 9px;border-radius:999px;border:1px solid var(--border-bright);background:var(--surface2);color:var(--ink-soft);cursor:pointer;transition:background 0.1s;}
 .src-popover-undo-btn:hover{background:var(--border);}
 .src-line.has-ambiguous{box-shadow:inset 3px 0 0 0 var(--amber);}

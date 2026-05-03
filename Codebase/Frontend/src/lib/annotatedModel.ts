@@ -31,13 +31,6 @@ import {
   isRealPattern,
 } from './patterns';
 
-// Sentinel written into `classResolvedPatterns[className]` when the user
-// explicitly clears an inheritance-driven parent's pattern via the
-// "Not this pattern" affordance. Treated by the cascade as a
-// non-propagating effective pick → propagated children drop. Distinct
-// from "no pick at all" (which is just the absence of an entry).
-export const CLASS_RESOLVED_NONE = '__none__';
-
 // Hardcoded fallback used only when the backend doesn't ship the
 // `inheritanceDrivenPatterns` masterlist (older runs, or a deployment
 // pre-dating that field). The live model derives its propagating set
@@ -118,12 +111,6 @@ export interface AnnotatedModel {
   subclassPendingClassNames: Set<string>;    // status === 'subclass_pending'
   droppedClassNames: Set<string>;            // status === 'subclass_dropped'
 
-  // Classes that hold at least one propagating pattern as a candidate.
-  // SourceView uses this set to ALWAYS allow opening the popover on
-  // their decl line (even when the class is auto-confirmed unambiguous)
-  // so the user can pick "Not this pattern" and break the cascade.
-  inheritanceDrivenParentClassNames: Set<string>;
-
   // Greyed chrome (no committed colour yet). Picker-eligible classes plus
   // subclass-pending classes — both render grey in the source view and
   // class-strip. Differs from pickerEligibleClassNames in that
@@ -167,7 +154,6 @@ const EMPTY_MODEL: AnnotatedModel = {
   unambiguousClassNames: new Set(),
   subclassPendingClassNames: new Set(),
   droppedClassNames: new Set(),
-  inheritanceDrivenParentClassNames: new Set(),
   greyClassNames: new Set(),
   activePatterns: [],
   legendPatterns: [],
@@ -353,20 +339,6 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     ...taggedClassNames,
     ...propagatedSubclassParent.keys(),
   ]);
-  // Inheritance-driven parents: any class whose direct candidates
-  // intersect the propagating set. They always need a re-pick affordance
-  // so the user can clear the parent role, even when the candidate set
-  // is just one pattern (auto-confirmed unambiguous).
-  const inheritanceDrivenParentClassNames = new Set<string>();
-  for (const [className, cands] of directCandidates.entries()) {
-    for (const c of cands) {
-      if (propagatingPatterns.has(c)) {
-        inheritanceDrivenParentClassNames.add(className);
-        break;
-      }
-    }
-  }
-
   for (const className of allClassNames) {
     const fromDirect = directCandidates.get(className);
     const fromScope  = inScopePatterns.get(className);
@@ -379,26 +351,12 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     const candidatesList = Array.from(candidates);
 
     const userPick = resolvedTable[className];
-    // Sentinel = "user explicitly cleared this parent." Stored separately
-    // from the resolved-pattern flow because it must survive the
-    // candidates-set check below (the sentinel isn't in candidates).
-    const isExplicitlyCleared =
-      userPick === CLASS_RESOLVED_NONE
-      && inheritanceDrivenParentClassNames.has(className);
-    const resolved = isExplicitlyCleared
-      ? CLASS_RESOLVED_NONE
-      : (userPick && candidates.has(userPick) ? userPick : undefined);
+    const resolved = userPick && candidates.has(userPick) ? userPick : undefined;
 
     let status: ClassStatus;
     if (isPropagatedSubclass) {
       // Placeholder; cascade pass below sets the real status.
       status = 'subclass_pending';
-    } else if (isExplicitlyCleared) {
-      // Cleared parent: the propagating pattern is no longer effective.
-      // Treat as ambiguous_pending so the picker stays open and the
-      // user can re-pick. Single-candidate parents would otherwise
-      // auto-confirm and the override would be invisible.
-      status = candidatesList.length > 1 ? 'ambiguous_pending' : 'ambiguous_pending';
     } else if (resolved) {
       status = candidatesList.length > 1 ? 'ambiguous_resolved' : 'unambiguous';
     } else if (candidatesList.length > 1) {
@@ -438,13 +396,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     if (!node.isPropagatedSubclass || !node.parentClassName) continue;
     const parent = classes.get(node.parentClassName);
     if (!parent) continue;
-    // CLASS_RESOLVED_NONE sentinel = user explicitly cleared the parent.
-    // It is NOT a real pattern; the cascade treats it as a non-propagating
-    // effective pick so the drop branch fires for all propagated children.
-    const parentClearedExplicitly = parent.resolved === CLASS_RESOLVED_NONE;
-    const parentEffective = parentClearedExplicitly
-      ? CLASS_RESOLVED_NONE
-      : (parent.resolved ?? (parent.candidates.length === 1 ? parent.candidates[0] : undefined));
+    const parentEffective = parent.resolved
+      ?? (parent.candidates.length === 1 ? parent.candidates[0] : undefined);
 
     if (!parentEffective) {
       node.status = 'subclass_pending';
@@ -453,16 +406,15 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
       continue;
     }
 
-    if (parentEffective !== CLASS_RESOLVED_NONE && propagatingPatterns.has(parentEffective)) {
+    if (propagatingPatterns.has(parentEffective)) {
       node.candidates = [parentEffective];
       node.status = 'unambiguous';
       node.resolved = undefined;
       continue;
     }
 
-    // Non-propagating parent pick (or explicit clear via sentinel).
-    // Subtract the propagated tag(s) the microservice attached to this
-    // child and reclassify on the leftover.
+    // Non-propagating parent pick. Subtract the propagated tag(s) the
+    // microservice attached to this child and reclassify on the leftover.
     const propagatedTags = propagatedPatternsByChild.get(node.className) ?? new Set<string>();
     const fromDirect = directCandidates.get(node.className) ?? new Set<string>();
     const fromScope  = inScopePatterns.get(node.className)  ?? new Set<string>();
@@ -558,7 +510,6 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     unambiguousClassNames,
     subclassPendingClassNames,
     droppedClassNames,
-    inheritanceDrivenParentClassNames,
     greyClassNames,
     activePatterns,
     legendPatterns,

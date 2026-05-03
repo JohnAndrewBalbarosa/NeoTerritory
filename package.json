@@ -5,8 +5,7 @@
     "setup": "node -e \"const p = process.platform; const cp = require('child_process'); const cmd = p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 setup' : 'bash start.sh setup'; cp.execSync(cmd, { stdio: 'inherit' });\"",
     "setup:full": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 setup -Mode full' : 'bash start.sh setup --mode full', { stdio: 'inherit' });\"",
     "dev": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1' : 'bash start.sh', { stdio: 'inherit' });\"",
-    "dev:lan": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 -Lan' : 'bash start.sh --lan', { stdio: 'inherit' });\"",
-    "dev:scraper": "node playwright-scratch/scraper/run.mjs"
+    "dev:lan": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 -Lan' : 'bash start.sh --lan', { stdio: 'inherit' });\""
   },
   "dependencies": {
     "npm-check-updates": "^21.0.3"

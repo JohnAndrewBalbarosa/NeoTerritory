@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
 import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern, PatternColor, AMBIGUOUS_COLOR } from '../../lib/patterns';
-import { CLASS_RESOLVED_NONE } from '../../lib/annotatedModel';
 import { useAppStore } from '../../store/appState';
 import LinePopover from './LinePopover';
 
@@ -34,11 +33,6 @@ interface SourceViewProps {
   // Subclass classes whose parent picked a non-propagating pattern.
   // Their tag is cancelled; lines render neutral and are not clickable.
   subclassDroppedClassNames?: Set<string>;
-  // Classes that hold a propagating pattern as a candidate. Their decl
-  // line ALWAYS opens a popover with a "Not this pattern" affordance,
-  // even when the class is auto-confirmed unambiguous. Lets the user
-  // break the cascade on parents that have no rivals.
-  inheritanceDrivenParentClassNames?: Set<string>;
   // Reverse index keyed by line number: which ambiguous class does this
   // line reference (as an external usage)? Used to grey out global helpers
   // and call-sites that touch an ambiguous class.
@@ -301,7 +295,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, inheritanceDrivenParentClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -363,21 +357,6 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
 
   function handleResolve(line: number, patternKey: string): void {
     const className = classForLine(line);
-    // CLASS_RESOLVED_NONE = "the user explicitly cleared this class's
-    // pattern." Skip the line-override propagation — the sentinel is not
-    // a paintable colour. The cascade in deriveAnnotatedModel reads the
-    // sentinel from classResolvedPatterns and drops propagated children
-    // through the existing non-propagating branch.
-    if (patternKey === CLASS_RESOLVED_NONE) {
-      if (className) {
-        const prev = useAppStore.getState().currentRun?.classResolvedPatterns || {};
-        useAppStore.getState().patchCurrentRun({
-          classResolvedPatterns: { ...prev, [className]: CLASS_RESOLVED_NONE }
-        });
-      }
-      setPopover(null);
-      return;
-    }
     if (className) {
       const scope = rows.find(r => r.lineNo === line)?.scope
                  ?? rows.map(r => r.scope).find(s => s?.className === className)
@@ -547,20 +526,9 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
             line={popover.line}
             annotations={popover.annotations}
             anchorRect={popover.anchorRect}
-            // Prefer the line-level override; fall back to the class-level
-            // resolution so the sentinel pick (which intentionally skips
-            // line-overrides) still surfaces an Undo button on the parent's
-            // decl line.
-            resolvedPattern={
-              linePatternOverrides[popover.line]
-              ?? (popScope ? classResolvedPatterns?.[popScope.className] : undefined)
-            }
+            resolvedPattern={linePatternOverrides[popover.line]}
             isClassDeclLine={isClassDeclLine}
             scopeRivals={scopeRivals}
-            isInheritanceDrivenParent={
-              isClassDeclLine && !!popScope &&
-              !!inheritanceDrivenParentClassNames?.has(popScope.className)
-            }
             onResolve={handleResolve}
             onUnresolve={handleUnresolve}
             onClose={() => setPopover(null)}

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern, getAmbiguousColor } from '../../lib/patterns';
-import { CLASS_RESOLVED_NONE } from '../../lib/annotatedModel';
+import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../lib/patterns';
 
 interface LinePopoverProps {
   line: number;
@@ -19,12 +18,6 @@ interface LinePopoverProps {
   // for picker rendering — so a class with Factory at decl + Strategy at
   // a method line still offers both as rivals.
   scopeRivals?: string[];
-  // True when the clicked line is the decl line of a class whose
-  // candidate set holds an inheritance-driven (propagating) pattern.
-  // The popover always renders a "Not this pattern" rival chip — letting
-  // the user explicitly clear an auto-confirmed parent so the cascade
-  // drops propagated children.
-  isInheritanceDrivenParent?: boolean;
   onResolve?: (line: number, patternKey: string) => void;
   onUnresolve?: (line: number) => void;
   onClose: () => void;
@@ -99,7 +92,7 @@ function RivalChip({ patternKey, onClick }: RivalChipProps): JSX.Element {
   );
 }
 
-export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, isClassDeclLine, scopeRivals, isInheritanceDrivenParent, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
+export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, isClassDeclLine, scopeRivals, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -177,11 +170,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
         scopeRivals.filter(isRealPattern).map((p) => canonicalPatternName(p))
       ))
     : linePatterns;
-  // Render the picker when there are genuine rivals OR when this is an
-  // inheritance-driven parent (always re-pickable so the user can break
-  // the cascade with the "Not this pattern" chip below).
-  const showRivals = distinctPatterns.length > 1 || !!isInheritanceDrivenParent;
-  const isClearedSentinel = resolvedPattern === CLASS_RESOLVED_NONE;
+  const ambiguous = distinctPatterns.length > 1;
 
   // Pinned to the top-right of the viewport — the source view stays visible
   // and the popover never covers the line being inspected. anchorRect is no
@@ -206,35 +195,20 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
       </button>
       {resolvedPattern ? (
         <div className="src-popover-ambiguous-badge src-popover-ambiguous-badge--resolved">
-          {isClearedSentinel ? (() => {
-            // Sentinel chip uses the AMBIGUOUS_COLOR palette so the user
-            // sees the cleared state as "neutral / no pattern" rather than
-            // some hash-coloured rectangle.
-            const c = getAmbiguousColor();
-            return (
-              <span className="src-popover-rival" style={{ borderColor: c.border, color: c.text, background: c.bg }}>
-                Not this pattern
-              </span>
-            );
-          })() : (() => {
-            const c = colorFor(resolvedPattern);
-            return (
-              <span className="src-popover-rival" style={{ borderColor: c.border, color: c.text, background: c.bg }}>
-                {resolvedPattern}
-              </span>
-            );
-          })()}
+          {(() => { const c = colorFor(resolvedPattern); return (
+            <span className="src-popover-rival" style={{ borderColor: c.border, color: c.text, background: c.bg }}>
+              {resolvedPattern}
+            </span>
+          ); })()}
           {onUnresolve && (
             <button type="button" className="src-popover-undo-btn" onClick={() => onUnresolve(line)}>
               Undo
             </button>
           )}
         </div>
-      ) : showRivals && (
+      ) : ambiguous && (
         <div className="src-popover-ambiguous-badge">
-          {distinctPatterns.length > 1
-            ? `${distinctPatterns.length} possible patterns at this line — pick the one that matches:`
-            : 'Confirm the pattern, or clear it so subclasses are not propagated:'}
+          {distinctPatterns.length} possible patterns at this line — pick the one that matches:
           <div className="src-popover-rivals">
             {distinctPatterns.map(p => (
               <RivalChip
@@ -243,22 +217,6 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
                 onClick={onResolve ? () => onResolve(line, p) : undefined}
               />
             ))}
-            {isInheritanceDrivenParent && (() => {
-              const c = getAmbiguousColor();
-              const onClick = onResolve ? () => onResolve(line, CLASS_RESOLVED_NONE) : undefined;
-              return (
-                <button
-                  type="button"
-                  key="__none__"
-                  className="src-popover-rival src-popover-rival--btn src-popover-rival--clear"
-                  style={{ borderColor: c.border, color: c.text, background: c.bg }}
-                  onClick={onClick}
-                  title="This class is not actually a Strategy parent — clear the tag so subclass propagation stops"
-                >
-                  Not this pattern
-                </button>
-              );
-            })()}
           </div>
         </div>
       )}

@@ -427,30 +427,19 @@ The samples are bundled at build time via Vite's `?raw` import so the animation 
 - No automated login, no credential storage in code, no captcha solving, no IP rotation, no headless mode (interactive only — the user must visibly drive the browser).
 - Not part of the production deployment. The scraper UI is dev/admin-local only and is never exposed via the public Vite build.
 
-## D35a — Scraper lives entirely under `playwright-scratch/`, NOT in the website (supersedes earlier "implementation map")
-Per explicit user direction (2026-05-04), the scraper is **not** part of the shipped website. The previous attempt to land backend routes (`/api/admin/scraper/*`), a Vite entry (`scraper.html`), and a React control panel was reverted in full. There must be no traces of scraper code under `Codebase/Backend/`, `Codebase/Frontend/`, `tools/`, or anywhere else that the production build touches.
+## D35a — Scraper landed: implementation map (supersedes the planning sections of D35)
+The deferred scraper from D35 is now implemented in code. D35's risk acknowledgement and out-of-scope rules still stand. Implementation map:
 
-**Final layout** (everything new lives here, nowhere else):
-```
-playwright-scratch/scraper/
-  README.md
-  package.json     (no deps; reuses Codebase/Frontend/node_modules/playwright like recorder.cjs)
-  run.mjs          host process — spawns headed Chromium, exposes bindings
-  overlay.js       injected picker UI (hover-to-pick, checklist, scopes, Save session, Start scraping)
-playwright-scratch/scraper-output/<run_id>/{posts.json, NNN/{post.json,*.jpg}}
-playwright-scratch/scraper-state/<host_key>/storageState.json
-```
+- **Spawned host process**: `tools/scraper/run.mjs`. Resolves Playwright from `Codebase/Frontend/node_modules/playwright` (same convention as `playwright-scratch/recorder.cjs` per the project's existing single-source-of-Playwright rule). Stdout is line-delimited JSON events; stderr captured as `stderr` events. Persistent storageState lives at `playwright-scratch/scraper-state/<host_key>/storageState.json`. Output at `playwright-scratch/scraper-output/<run_id>/<NNN>/post.json` plus image files. A `posts.json` summary lands at the run root.
+- **Injected overlay**: `tools/scraper/overlay.js`, attached via `addInitScript`. Pure DOM. Hover heuristic finds the nearest post-like ancestor (`<article>`, `[role=article|feed|listitem]`, or any element with both meaningful text and a media descendant within reasonable size). Click adds to picks. Floating panel ships the per-pick checkbox, image-scope radio (`none` | `profile` | `all`), max-scrolls input, and the two action buttons (`Save session`, `Start scraping`). Communication with the host is via `page.exposeBinding('__neoScraper', …)` wrapped to expose `saveState()` and `runExtract(payload)` shape.
+- **Backend service**: `Codebase/Backend/src/services/scraperService.ts`. Single in-memory active session (mutex). `startScraper`/`stopScraper`/`getScraperStatus`. Validates URL is http/https. Throws `403` with status code property when `NEOTERRITORY_ENABLE_SCRAPER!=1`.
+- **Backend route**: `Codebase/Backend/src/routes/scraper.ts`. Mounted only when the env flag is set, gated by `jwtAuth + requireAdmin + adminLimiter`. Endpoints: `GET /api/admin/scraper/status`, `POST /api/admin/scraper/start`, `POST /api/admin/scraper/stop`.
+- **Frontend control panel**: separate Vite entry `Codebase/Frontend/scraper.html` → `src/scraper-main.tsx` → `components/scraper/ScraperPanel.tsx`. Reuses the marketing CSS variables; no React Router (single page). Polls `/api/admin/scraper/status` every 2 s. Reads JWT from the existing `nt_token` localStorage key set by `LoginOverlay`. The page itself never injects scraping logic into other pages — the only path to extraction is the in-overlay button per D35 §8.
+- **Env flag**: `NEOTERRITORY_ENABLE_SCRAPER=1` in `Codebase/Backend/.env`. Documented in `.env.example`. Off by default; route is not mounted at all when off.
+- **Output paths**: `playwright-scratch/scraper-output/` and `playwright-scratch/scraper-state/`. Both already covered by the root `.gitignore` rule `/playwright-scratch/`. No risk of accidentally committing a session cookie or scraped post.
 
-The root `.gitignore` already excludes `/playwright-scratch/` so cookies and scraped content cannot be committed.
-
-**Two npm flags at the repo root** (per explicit user direction):
-- `npm run dev` — start the website (unchanged: dispatches to `start.ps1` / `start.sh`).
-- `npm run dev:scraper -- --url <url>` — run the local-only scraper. Forwards remaining args to `playwright-scratch/scraper/run.mjs`. The `--` is required so npm passes the URL through.
-
-**Reverted from the previous (incorrect) attempt**:
-- Deleted `Codebase/Backend/src/routes/scraper.ts` and `Codebase/Backend/src/services/scraperService.ts`.
-- Removed the route mount and the `NEOTERRITORY_ENABLE_SCRAPER` env-flag block from `Codebase/Backend/server.ts` and `.env.example`.
-- Deleted `Codebase/Frontend/scraper.html`, `src/scraper-main.tsx`, `src/components/scraper/`, `src/styles/scraper.css`, and the `scraper` Vite entry.
-- Deleted `tools/scraper/`. The website's `tools/` folder retains only the unrelated `enrich_team_from_github.mjs` from D34.
-
-**What still stands from D35**: the risk acknowledgement (FB/LinkedIn ToS, account checkpointing risk), the out-of-scope list (no automated login, no CAPTCHA bypass, no multi-session fan-out, no production deploy), and the picker behavioural spec (hover-to-pick, per-post checklist, image-scope radio, post grouping, optional scroll). These remain authoritative for any future edits to the local-only scraper.
+**What this does NOT do** (still planning-only or explicitly excluded):
+- No automated sign-in: the user manually authenticates inside the headed window. Storage state is read/written but never the password.
+- No CAPTCHA bypass, no anti-detection tricks beyond a single Chromium flag (`--disable-blink-features=AutomationControlled`) and the existing animation-zeroing init script borrowed from the recorder.
+- No multi-session fan-out. One Chromium window at a time, one URL at a time. Restart for the next host.
+- No production deployment. The scraper Vite entry is bundled but the backend route only mounts behind the env flag.
