@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation, CATALOG_PATTERNS } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation } from '../../lib/patterns';
 
 interface LinePopoverProps {
   line: number;
   annotations: Annotation[];
   anchorRect: DOMRect | null;
   resolvedPattern?: string;
-  isClassDeclLine?: boolean;
   onResolve?: (line: number, patternKey: string) => void;
   onUnresolve?: (line: number) => void;
   onClose: () => void;
@@ -56,45 +55,33 @@ function AnnotationCard({ annotation: a }: CardProps): JSX.Element {
 interface RivalChipProps {
   patternKey: string;
   onClick?: () => void;
-  // True when the C++ matcher actually fired this pattern for the class.
-  // Renders at full opacity with a ✓ marker. Undetected catalog options
-  // render at reduced emphasis but stay clickable so the user can override.
-  detected?: boolean;
 }
 
-function RivalChip({ patternKey, onClick, detected }: RivalChipProps): JSX.Element {
+function RivalChip({ patternKey, onClick }: RivalChipProps): JSX.Element {
   const c = colorFor(patternKey);
-  const baseStyle: React.CSSProperties = {
-    borderColor: c.border,
-    color: c.text,
-    background: c.bg,
-    opacity: detected ? 1 : 0.55,
-  };
-  const label = detected ? `✓ ${patternKey}` : patternKey;
   if (onClick) {
     return (
       <button
         type="button"
-        className={`src-popover-rival src-popover-rival--btn${detected ? ' src-popover-rival--detected' : ''}`}
-        style={baseStyle}
+        className="src-popover-rival src-popover-rival--btn"
+        style={{ borderColor: c.border, color: c.text, background: c.bg }}
         onClick={onClick}
-        title={detected ? `Detected: ${patternKey}` : `Override to ${patternKey}`}
       >
-        {label}
+        {patternKey}
       </button>
     );
   }
   return (
     <span
-      className={`src-popover-rival${detected ? ' src-popover-rival--detected' : ''}`}
-      style={baseStyle}
+      className="src-popover-rival"
+      style={{ borderColor: c.border, color: c.text, background: c.bg }}
     >
-      {label}
+      {patternKey}
     </span>
   );
 }
 
-export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, isClassDeclLine, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
+export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -123,15 +110,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   const distinctPatterns = Array.from(
     new Set(annotations.map(a => a.patternKey || patternFromAnnotation(a)))
   );
-  const detectedSet = new Set(distinctPatterns);
-  // Catalog ordering with detected patterns lifted to the front so the hot
-  // options stay scannable. Patterns the matcher fired but aren't in the
-  // canonical UI catalog (rare — generated colors) still render at the end.
-  const orderedRivals: string[] = [
-    ...CATALOG_PATTERNS.filter((p) => detectedSet.has(p)),
-    ...distinctPatterns.filter((p) => !CATALOG_PATTERNS.includes(p)),
-    ...CATALOG_PATTERNS.filter((p) => !detectedSet.has(p)),
-  ];
+  const ambiguous = distinctPatterns.length > 1;
 
   // Pinned to the top-right of the viewport — the source view stays visible
   // and the popover never covers the line being inspected. anchorRect is no
@@ -154,11 +133,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
       >
         ×
       </button>
-      {/* The rival picker / resolved chip lives on the class-declaration line
-          only — body lines of the same class still open the popover for
-          context, but routing every "pick a pattern" prompt through the class
-          name keeps the surface uniform. */}
-      {isClassDeclLine && resolvedPattern ? (
+      {resolvedPattern ? (
         <div className="src-popover-ambiguous-badge src-popover-ambiguous-badge--resolved">
           {(() => { const c = colorFor(resolvedPattern); return (
             <span className="src-popover-rival" style={{ borderColor: c.border, color: c.text, background: c.bg }}>
@@ -171,25 +146,20 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
             </button>
           )}
         </div>
-      ) : (isClassDeclLine && (
+      ) : ambiguous && (
         <div className="src-popover-ambiguous-badge">
-          {distinctPatterns.length === 0
-            ? 'Choose the pattern for this class:'
-            : distinctPatterns.length === 1
-              ? <>Detected: <strong>{distinctPatterns[0]}</strong>. Pick a different pattern to override:</>
-              : <>{distinctPatterns.length} patterns detected — pick the one that matches:</>}
+          {distinctPatterns.length} possible patterns at this line — pick the one that matches:
           <div className="src-popover-rivals">
-            {orderedRivals.map(p => (
+            {distinctPatterns.map(p => (
               <RivalChip
                 key={p}
                 patternKey={p}
-                detected={detectedSet.has(p)}
                 onClick={onResolve ? () => onResolve(line, p) : undefined}
               />
             ))}
           </div>
         </div>
-      ))}
+      )}
       <div className="src-popover-body">
         {annotations.map(a => <AnnotationCard key={a.id} annotation={a} />)}
       </div>

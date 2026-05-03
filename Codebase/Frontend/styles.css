@@ -267,11 +267,6 @@ body.login-active{overflow:hidden;}
 .rank-bar[data-verdict="ambiguous"] .rank-bar-fill{background:var(--amber);}
 .rank-bar[data-verdict="weak"] .rank-bar-fill{background:var(--amber);opacity:0.6;}
 .rank-bar[data-verdict="no_clear_pattern"] .rank-bar-fill{background:var(--red);}
-.rank-bar--unknown{opacity:0.95;}
-.rank-bar-fill--unknown{background:var(--red);width:100% !important;}
-.pattern-cards-section-head{margin:8px 0 4px;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-dim);}
-.pattern-cards-ambiguous{display:flex;flex-direction:column;gap:10px;padding-bottom:8px;border-bottom:1px dashed var(--border);}
-.pattern-cards-decided{display:flex;flex-direction:column;gap:10px;padding-top:4px;}
 .pattern-card-section h4{margin:0 0 5px;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--ink-dim);}
 .pattern-row-list{display:flex;flex-direction:column;gap:3px;}
 .pattern-row{display:flex;align-items:center;gap:7px;padding:3px 7px;border-radius:5px;font-size:11px;cursor:pointer;background:transparent;border:1px solid transparent;text-align:left;width:100%;color:var(--ink-soft);}
@@ -328,13 +323,8 @@ body.login-active{overflow:hidden;}
 .src-popover-ambiguous-badge{background:rgba(251,191,36,0.1);color:var(--amber);border:1px solid rgba(251,191,36,0.4);padding:5px 9px;border-radius:5px;font-size:11.5px;margin-bottom:7px;font-weight:600;}
 .src-popover-rivals{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;font-weight:500;}
 .src-popover-rival{font:500 10.5px/1.4 ui-monospace,monospace;padding:2px 7px;border-radius:999px;border:1px solid;white-space:nowrap;}
-.src-popover-rival--btn{cursor:pointer;transition:opacity 0.12s, transform 0.12s;}
-/* Undetected catalog chips render dim via inline opacity (~0.55). Hover
-   brings them up so the override affordance is obvious. Detected chips
-   ride at full opacity; hover lifts instead of dims. */
-.src-popover-rival--btn:hover{opacity:1 !important;}
-.src-popover-rival--btn.src-popover-rival--detected{box-shadow:inset 0 0 0 2px currentColor;font-weight:600;}
-.src-popover-rival--btn.src-popover-rival--detected:hover{transform:translateY(-1px);}
+.src-popover-rival--btn{cursor:pointer;transition:opacity 0.1s;}
+.src-popover-rival--btn:hover{opacity:0.75;}
 .src-popover-undo-btn{font:500 10.5px/1.4 ui-monospace,monospace;padding:2px 9px;border-radius:999px;border:1px solid var(--border-bright);background:var(--surface2);color:var(--ink-soft);cursor:pointer;transition:background 0.1s;}
 .src-popover-undo-btn:hover{background:var(--border);}
 .src-line.has-ambiguous{box-shadow:inset 3px 0 0 0 var(--amber);}

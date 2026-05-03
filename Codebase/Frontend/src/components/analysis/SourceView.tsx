@@ -13,15 +13,6 @@ interface SourceViewProps {
   // we also propagate the choice to every line listed here under that class
   // name, so global-function references inherit the same pattern.
   classUsageBindings?: Record<string, Array<{ line?: number; boundClass?: string }>>;
-  // Set of class names whose declaration line is the only place we surface
-  // the "N possible patterns" rival picker. Driven from AnnotatedTab's
-  // ambiguity model so legend, source view, and pattern cards stay in sync.
-  ambiguousClassNames?: Set<string>;
-  // Wider set: every class with a known location that hasn't been resolved.
-  // Used by the source-view popover gate so the picker is offered on every
-  // class declaration, not just the ones the detector disagreed on.
-  // Falls back to ambiguousClassNames when not provided.
-  pickerEligibleClassNames?: Set<string>;
   onLineClick?: (commentId: string) => void;
 }
 
@@ -272,7 +263,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, ambiguousClassNames, pickerEligibleClassNames, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -433,32 +424,17 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           );
         })}
       </div>
-      {popover && (() => {
-        const popoverRow = rows.find(r => r.lineNo === popover.line);
-        const popoverScope = popoverRow?.scope || null;
-        // Picker opens on every class declaration line that hasn't been
-        // resolved yet — wider than the strict "detector disagreed" set so
-        // the user can override even when only one pattern matched.
-        const pickerSet = pickerEligibleClassNames || ambiguousClassNames;
-        const isClassDeclLine = !!(
-          popoverRow?.isScopeStart &&
-          popoverScope &&
-          pickerSet &&
-          pickerSet.has(popoverScope.className)
-        );
-        return (
-          <LinePopover
-            line={popover.line}
-            annotations={popover.annotations}
-            anchorRect={popover.anchorRect}
-            resolvedPattern={linePatternOverrides[popover.line]}
-            isClassDeclLine={isClassDeclLine}
-            onResolve={handleResolve}
-            onUnresolve={handleUnresolve}
-            onClose={() => setPopover(null)}
-          />
-        );
-      })()}
+      {popover && (
+        <LinePopover
+          line={popover.line}
+          annotations={popover.annotations}
+          anchorRect={popover.anchorRect}
+          resolvedPattern={linePatternOverrides[popover.line]}
+          onResolve={handleResolve}
+          onUnresolve={handleUnresolve}
+          onClose={() => setPopover(null)}
+        />
+      )}
     </>
   );
 }
