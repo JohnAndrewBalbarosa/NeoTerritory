@@ -334,15 +334,24 @@ export default function AnnotatedTab({
       }
       const ownSet = ownPatternsByClass.get(c) || new Set<string>();
       // Step 1 — direct: matcher attached >1 distinct patterns to this
-      // class's head. (e.g. ShapeFactory tagged Factory + StrategyConcrete.)
+      // class's head. (e.g. CachedRepository tagged Adapter + Decorator
+      // both at the decl line.)
       const directAmbiguous = ownSet.size > 1;
       // Step 2 — popover-ambiguous body: any line inside the class scope
       // has the same popover badge the user sees ("N possible patterns at
-      // this line"). If the popover would offer a choice anywhere in the
-      // body, the class as a whole is ambiguous.
+      // this line"). Catches the case where one specific line has rival
+      // tags side-by-side.
       const bodyAmbiguous = !!classHasPopoverAmbiguousLine.get(c);
+      // Step 3 — scope-union ambiguity: distinct pattern keys across ALL
+      // annotations in the class's declaration scope > 1. Catches the
+      // ShapeFactory shape: Factory hit at the class decl line, Strategy
+      // hit at a method line — no single line is "ambiguous" but the
+      // class itself spans multiple patterns. Strict superset of step 2;
+      // needed because the matcher often spreads diversity across lines
+      // rather than stacking it on one line.
+      const scopeAmbiguous = (classDerivation.inScopePatterns.get(c)?.size || 0) > 1;
       const isAmbiguous = isTaggedByMicroservice
-                       && (directAmbiguous || bodyAmbiguous)
+                       && (directAmbiguous || bodyAmbiguous || scopeAmbiguous)
                        && !isResolved;
       if (isAmbiguous) {
         ambiguous.add(c);
@@ -521,6 +530,7 @@ export default function AnnotatedTab({
             detectedPatterns={currentRun.detectedPatterns || []}
             classResolvedPatterns={currentRun.classResolvedPatterns}
             classUsageBindings={currentRun.classUsageBindings}
+            inScopePatternsByClass={classDerivation.inScopePatterns}
             onLineClick={onCommentFlash}
           />
         </div>

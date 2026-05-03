@@ -7,6 +7,17 @@ interface LinePopoverProps {
   annotations: Annotation[];
   anchorRect: DOMRect | null;
   resolvedPattern?: string;
+  // True when the clicked line is the declaration line of a class scope.
+  // The class-decl line is the only place we surface scope-level rivals
+  // (the "Factory + Strategy across body" case). Body lines still use
+  // the line-only ambiguity rule.
+  isClassDeclLine?: boolean;
+  // Distinct pattern keys appearing anywhere inside the class scope of
+  // the clicked line. Provided only when isClassDeclLine and the union
+  // size is >1. Takes precedence over the line-only distinct-pattern set
+  // for picker rendering — so a class with Factory at decl + Strategy at
+  // a method line still offers both as rivals.
+  scopeRivals?: string[];
   onResolve?: (line: number, patternKey: string) => void;
   onUnresolve?: (line: number) => void;
   onClose: () => void;
@@ -81,7 +92,7 @@ function RivalChip({ patternKey, onClick }: RivalChipProps): JSX.Element {
   );
 }
 
-export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
+export default function LinePopover({ line, annotations, anchorRect, resolvedPattern, isClassDeclLine, scopeRivals, onResolve, onUnresolve, onClose }: LinePopoverProps): JSX.Element | null {
   const popoverRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -107,9 +118,14 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
 
   if (!annotations.length) return null;
 
-  const distinctPatterns = Array.from(
+  const linePatterns = Array.from(
     new Set(annotations.map(a => a.patternKey || patternFromAnnotation(a)))
   );
+  // Picker source: scope-union rivals win on class decl lines, otherwise
+  // fall back to the existing line-only set. Either way, ambiguous = >1.
+  const distinctPatterns = (isClassDeclLine && scopeRivals && scopeRivals.length > 1)
+    ? scopeRivals
+    : linePatterns;
   const ambiguous = distinctPatterns.length > 1;
 
   // Pinned to the top-right of the viewport — the source view stays visible

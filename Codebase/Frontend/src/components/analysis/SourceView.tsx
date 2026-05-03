@@ -13,6 +13,13 @@ interface SourceViewProps {
   // we also propagate the choice to every line listed here under that class
   // name, so global-function references inherit the same pattern.
   classUsageBindings?: Record<string, Array<{ line?: number; boundClass?: string }>>;
+  // Map of className -> distinct pattern keys hitting any line inside the
+  // class's declaration scope (the "scope union"). Used to populate the
+  // class-decl-line rival picker when the matcher detected diversity
+  // across the class body even though no single line is multi-tagged
+  // (e.g. ShapeFactory → {Factory, Strategy}, Factory at decl line,
+  // Strategy at make()).
+  inScopePatternsByClass?: Map<string, Set<string>>;
   onLineClick?: (commentId: string) => void;
 }
 
@@ -263,7 +270,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, onLineClick }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -424,17 +431,35 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           );
         })}
       </div>
-      {popover && (
-        <LinePopover
-          line={popover.line}
-          annotations={popover.annotations}
-          anchorRect={popover.anchorRect}
-          resolvedPattern={linePatternOverrides[popover.line]}
-          onResolve={handleResolve}
-          onUnresolve={handleUnresolve}
-          onClose={() => setPopover(null)}
-        />
-      )}
+      {popover && (() => {
+        // If the popover line is the START of a class scope AND the scope
+        // union has >1 distinct patterns, surface those as rivals — even
+        // when the clicked line itself only carries one annotation. This
+        // is what catches ShapeFactory: Factory at decl line, Strategy at
+        // make() — the decl line popover should still let the user pick.
+        const popRow = rows.find(r => r.lineNo === popover.line);
+        const popScope = popRow?.scope || null;
+        const isClassDeclLine = !!(popRow?.isScopeStart && popScope);
+        const scopeRivals: string[] | undefined = (() => {
+          if (!isClassDeclLine || !popScope || !inScopePatternsByClass) return undefined;
+          const set = inScopePatternsByClass.get(popScope.className);
+          if (!set || set.size <= 1) return undefined;
+          return Array.from(set);
+        })();
+        return (
+          <LinePopover
+            line={popover.line}
+            annotations={popover.annotations}
+            anchorRect={popover.anchorRect}
+            resolvedPattern={linePatternOverrides[popover.line]}
+            isClassDeclLine={isClassDeclLine}
+            scopeRivals={scopeRivals}
+            onResolve={handleResolve}
+            onUnresolve={handleUnresolve}
+            onClose={() => setPopover(null)}
+          />
+        );
+      })()}
     </>
   );
 }
