@@ -21,6 +21,11 @@ import { spawnSync, spawn } from 'child_process';
 import os from 'os';
 import path from 'path';
 import fs from 'fs';
+import {
+  registerPod   as masterlistRegisterPod,
+  unregisterPod as masterlistUnregisterPod,
+  setImageReady as masterlistSetImageReady,
+} from './healthMasterlist';
 
 export interface PodHandle {
   podId: string;
@@ -111,7 +116,10 @@ function setImageExistsCache(image: string, exists: boolean): void {
 // back to the local sandbox if the build fails.
 export async function ensurePodImageBuilt(): Promise<boolean> {
   if (!isPodModeEnabled()) return false;
-  if (imageExists(POD_IMAGE)) return true;
+  if (imageExists(POD_IMAGE)) {
+    masterlistSetImageReady(true);
+    return true;
+  }
   // The Dockerfile lives at Codebase/Backend/docker/cpp-pod.Dockerfile.
   // We resolve relative to this file so it works whether the backend is
   // run from src/ (ts-node) or dist/ (compiled).
@@ -147,9 +155,13 @@ export async function ensurePodImageBuilt(): Promise<boolean> {
     proc.on('close', (code) => {
       clearTimeout(t);
       const ok = code === 0;
-      // Seed the cache so /api/health doesn't need to spawn `docker
+      // Seed the cache so internal callers don't need to spawn `docker
       // image inspect` to learn what we already know.
       setImageExistsCache(POD_IMAGE, ok);
+      // Push the result to the health masterlist so /api/health
+      // immediately reflects the new state without waiting for the
+      // dockerWatcher's next tick.
+      masterlistSetImageReady(ok);
       // eslint-disable-next-line no-console
       console.log(`[pod-manager] build ${ok ? 'succeeded' : 'failed (exit ' + code + ')'}`);
       resolve(ok);
@@ -270,6 +282,9 @@ export async function ensurePod(userId: number, username: string): Promise<PodHa
     disposed: false
   };
   pods.set(userId, pod);
+  // Mirror to the health masterlist so /api/health surfaces the live
+  // pod count without any extra docker shellouts.
+  masterlistRegisterPod({ userId, containerName, expiresAt: pod.expiresAt });
   // eslint-disable-next-line no-console
   console.log(`[pod-manager] started ${containerName} for user ${userId} (${username})`);
   return pod;
@@ -295,6 +310,7 @@ export async function disposePod(userId: number): Promise<void> {
   if (!p || p.disposed) return;
   p.disposed = true;
   pods.delete(userId);
+  masterlistUnregisterPod(userId);
   await new Promise<void>((resolve) => {
     const proc = spawn('docker', ['rm', '-f', p.containerName], { stdio: 'ignore' });
     proc.on('close', () => resolve());

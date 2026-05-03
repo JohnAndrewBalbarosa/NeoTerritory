@@ -24,6 +24,11 @@ import {
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
 import { podManagerStatus } from '../services/podManager';
+import {
+  getMicroserviceStatus,
+  getAiTranslatorStatus,
+  getPrivateSnapshot as getMasterlistPrivateSnapshot,
+} from '../services/healthMasterlist';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
@@ -501,28 +506,44 @@ router.get('/health', (req: Request, res: Response) => {
     }
   })();
 
-  const binaryPath = resolveBinaryPath();
-  const catalogPath = resolveCatalogPath();
-  const microservice = {
-    binaryPath,
-    catalogPath,
-    binaryFound: fs.existsSync(binaryPath),
-    catalogFound: fs.existsSync(catalogPath),
-    connected: false
+  // Public masterlist values — checked synchronously at request time
+  // because they are cheap (filesystem existence + env-var presence)
+  // and the caller needs an authoritative answer immediately.
+  const microservice = getMicroserviceStatus();
+  const ai           = getAiTranslatorStatus();
+
+  // Private masterlist — Docker / pods. Read-only snapshot of state
+  // maintained by dockerWatcher (background prober) and podManager
+  // (event-driven on ensurePod / disposePod). /api/health never spawns
+  // a docker subprocess; if the watcher hasn't flipped Docker online
+  // yet, this returns "offline" and the frontend renders accordingly.
+  const masterlistPriv = getMasterlistPrivateSnapshot(callerUserId);
+  // Merge the existing podManager surface (still includes pod-mode
+  // enabled/disabled reasons that the watcher doesn't track) with the
+  // masterlist's authoritative live data, so frontend payload shape
+  // stays compatible. Anything time-sensitive comes from masterlist.
+  const dockerLegacy = podManagerStatus(callerUserId);
+  const docker = {
+    enabled:       dockerLegacy.enabled,
+    reason:        dockerLegacy.reason,
+    online:        masterlistPriv.docker.online,
+    imageReady:    masterlistPriv.docker.imageReady,
+    livePods:      masterlistPriv.docker.livePods,
+    mine:          masterlistPriv.docker.mine,
+    lastCheckedAt: masterlistPriv.docker.lastCheckedAt,
   };
-  microservice.connected = microservice.binaryFound && microservice.catalogFound;
 
   res.json({
     status: 'ok',
     service: 'NeoTerritory analysis api',
-    aiProviderConfigured: Boolean(process.env.ANTHROPIC_API_KEY),
-    aiModel: process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6',
+    aiProviderConfigured: ai.configured,
+    aiModel:              ai.model,
     maxFilesPerSubmission: Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3'))),
     testRunnerEnabled: isTestRunnerEnabled(),
     gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
     gdbCooldownMs: GDB_COOLDOWN_MS,
     microservice,
-    docker: podManagerStatus(callerUserId),
+    docker,
     totalRuns,
     latestRun,
     process: {

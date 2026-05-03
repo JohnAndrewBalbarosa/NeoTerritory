@@ -141,6 +141,7 @@ startReviewSchemaWatch();
 // timer reaps pods past their TTL every 30s. All three are no-ops when
 // TEST_RUNNER_USE_DOCKER is not '1' or Docker isn't on PATH.
 import { startSweepTimer, registerShutdownHooks, isPodModeEnabled, ensurePodImageBuilt } from './src/services/podManager';
+import { startDockerWatcher } from './src/services/dockerWatcher';
 registerShutdownHooks();
 if (isPodModeEnabled()) {
   // Fire-and-forget: image build can take 30–60s on first run; we don't
@@ -148,6 +149,11 @@ if (isPodModeEnabled()) {
   // it has nothing to sweep until ensurePod creates the first pod.
   void ensurePodImageBuilt();
   startSweepTimer();
+  // Background actor: probes the Docker daemon every few seconds and
+  // pushes the result into healthMasterlist. /api/health reads the
+  // masterlist instead of shelling out, so a slow Docker Desktop named
+  // pipe under WSL2 can never stall a health probe again.
+  startDockerWatcher();
 }
 
 const PORT = Number(process.env.PORT || 3001);
