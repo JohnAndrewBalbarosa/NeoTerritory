@@ -75,19 +75,48 @@ function nextPostIndexInPersonDir(personDir) {
 
 async function downloadImage(page, src, postDir, idx) {
   if (!src) return null;
+  // data: URIs — decode directly, no network round-trip.
+  if (src.startsWith('data:')) {
+    try {
+      const m = src.match(/^data:([^;,]+)(;base64)?,(.*)$/);
+      if (!m) return null;
+      const mime = m[1];
+      const isB64 = !!m[2];
+      const payload = m[3];
+      // Skip 1x1 svg placeholders (FB's lazy stubs) — they pollute output.
+      if (mime.includes('svg') && payload.length < 200) return null;
+      const buf = isB64 ? Buffer.from(payload, 'base64') : Buffer.from(decodeURIComponent(payload));
+      const ext = mime.split('/')[1]?.split('+')[0]?.toLowerCase() || 'bin';
+      const file = join(postDir, `${String(idx).padStart(2, '0')}.${ext === 'jpeg' ? 'jpg' : ext}`);
+      writeFileSync(file, buf);
+      return file;
+    } catch (err) {
+      emit('image-fail', { src: src.slice(0, 80) + '…', error: String(err.message || err) });
+      return null;
+    }
+  }
   try {
-    const buf = await page.evaluate(async (url) => {
-      const r = await fetch(url, { credentials: 'include' });
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const result = await page.evaluate(async (url) => {
+      const r = await fetch(url, { credentials: 'include', mode: 'cors' }).catch(() => null);
+      if (!r || !r.ok) {
+        // Retry without credentials (some scontent CDNs reject them).
+        const r2 = await fetch(url, { credentials: 'omit' });
+        if (!r2.ok) throw new Error(`HTTP ${r2.status}`);
+        const ab2 = await r2.arrayBuffer();
+        return { bytes: Array.from(new Uint8Array(ab2)), type: r2.headers.get('content-type') || '' };
+      }
       const ab = await r.arrayBuffer();
-      return Array.from(new Uint8Array(ab));
+      return { bytes: Array.from(new Uint8Array(ab)), type: r.headers.get('content-type') || '' };
     }, src);
-    const ext = (src.split('?')[0].match(/\.(jpe?g|png|webp|gif|avif)/i) || [, 'jpg'])[1].toLowerCase();
+    if (!result || !result.bytes || result.bytes.length === 0) throw new Error('empty body');
+    let ext = (src.split('?')[0].match(/\.(jpe?g|png|webp|gif|avif|svg)/i) || [, ''])[1].toLowerCase();
+    if (!ext && result.type) ext = result.type.split('/')[1]?.split(';')[0]?.split('+')[0] || '';
+    if (!ext) ext = 'jpg';
     const file = join(postDir, `${String(idx).padStart(2, '0')}.${ext === 'jpeg' ? 'jpg' : ext}`);
-    writeFileSync(file, Buffer.from(buf));
+    writeFileSync(file, Buffer.from(result.bytes));
     return file;
   } catch (err) {
-    emit('image-fail', { src, error: String(err.message || err) });
+    emit('image-fail', { src: src.slice(0, 120), error: String(err.message || err) });
     return null;
   }
 }
@@ -211,17 +240,97 @@ async function runExtract(p, payload) {
   // boundary is the depth-zero stop — no manual <div>/</div> counter
   // required.
   async function snapshotNewChildren() {
-    return p.evaluate((id) => {
+    return p.evaluate(async (id) => {
       const root = document.querySelector(`[data-neo-pick-id="${id}"]`);
       if (!root) return null;
 
-      const collectImgs = (el) => Array.from(el.querySelectorAll('img,picture source'))
-        .map((node) => {
-          if (node.tagName === 'IMG') return node.currentSrc || node.src || '';
-          const ss = node.getAttribute('srcset') || '';
-          return ss.split(',')[0]?.trim().split(' ')[0] || '';
-        })
-        .filter(Boolean);
+      const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+      // Pick the largest URL out of a srcset string.
+      // Format: "url1 320w, url2 640w, url3 1080w" or "url1 1x, url2 2x".
+      function pickFromSrcset(ss) {
+        if (!ss) return '';
+        const parts = ss.split(',').map((s) => s.trim()).filter(Boolean);
+        let best = '';
+        let bestScore = -1;
+        for (const p of parts) {
+          const [u, d] = p.split(/\s+/, 2);
+          if (!u) continue;
+          const m = (d || '').match(/^(\d+(?:\.\d+)?)([wx])$/);
+          const score = m ? parseFloat(m[1]) * (m[2] === 'w' ? 1 : 1000) : 0;
+          if (score >= bestScore) { bestScore = score; best = u; }
+        }
+        return best;
+      }
+
+      function isJunkUrl(u) {
+        if (!u) return true;
+        if (u.startsWith('blob:')) return true;
+        // FB's tiny SVG placeholders / 1x1 transparent stubs.
+        if (u.startsWith('data:image/svg+xml') && u.length < 200) return true;
+        if (u.startsWith('data:image/gif;base64,R0lGODlhAQABA')) return true; // 1x1 transparent gif
+        return false;
+      }
+
+      function abs(u) {
+        try { return new URL(u, document.baseURI).href; } catch { return u; }
+      }
+
+      function collectImgs(el) {
+        const out = [];
+
+        // <img> — try every src-ish attribute.
+        for (const node of el.querySelectorAll('img')) {
+          const srcset = node.getAttribute('srcset') || node.getAttribute('data-srcset') || '';
+          const fromSet = pickFromSrcset(srcset);
+          const candidates = [
+            node.currentSrc,
+            node.src,
+            fromSet,
+            node.getAttribute('data-src'),
+            node.getAttribute('data-original'),
+            node.getAttribute('data-lazy-src'),
+          ];
+          for (const c of candidates) {
+            if (c && !isJunkUrl(c)) { out.push(abs(c)); break; }
+          }
+        }
+
+        // <picture><source srcset="..."> — pick largest.
+        for (const node of el.querySelectorAll('picture source')) {
+          const u = pickFromSrcset(node.getAttribute('srcset') || '');
+          if (u && !isJunkUrl(u)) out.push(abs(u));
+        }
+
+        // SVG <image href="..."> — FB profile pics often live here.
+        for (const node of el.querySelectorAll('image')) {
+          const u = node.getAttribute('href') || node.getAttribute('xlink:href') || '';
+          if (u && !isJunkUrl(u)) out.push(abs(u));
+        }
+
+        // <video poster="...">
+        for (const node of el.querySelectorAll('video[poster]')) {
+          const u = node.getAttribute('poster');
+          if (u && !isJunkUrl(u)) out.push(abs(u));
+        }
+
+        // background-image on the child OR any descendant. Scan computed
+        // style — FB hides post images as div backgrounds frequently.
+        const all = [el, ...el.querySelectorAll('*')];
+        for (const node of all) {
+          if (!(node instanceof Element)) continue;
+          const cs = getComputedStyle(node);
+          const bg = cs.backgroundImage;
+          if (!bg || bg === 'none') continue;
+          // backgroundImage may contain multiple url(...) entries.
+          const urls = [...bg.matchAll(/url\((['"]?)([^'")]+)\1\)/g)].map((m) => m[2]);
+          for (const u of urls) {
+            if (!isJunkUrl(u)) out.push(abs(u));
+          }
+        }
+
+        return out;
+      }
 
       const dedupe = (arr) => Array.from(new Set(arr));
 
@@ -230,6 +339,18 @@ async function runExtract(p, payload) {
       for (const c of childEls) {
         if (c.hasAttribute('data-neo-extracted')) continue;
         c.setAttribute('data-neo-extracted', '1');
+
+        // Scroll the child into view to wake up FB's IntersectionObserver
+        // lazy-loader. Then settle briefly so <img> hydrates and
+        // background-image url() materialises.
+        try {
+          c.scrollIntoView({ block: 'center', inline: 'nearest' });
+        } catch { /* ignore */ }
+        await sleep(180);
+        // Second short wait to let any newly-observed image start
+        // populating its src/srcset attributes.
+        await sleep(120);
+
         const text = (c.innerText || '').trim();
         const imgs = dedupe(collectImgs(c));
         if (text.length === 0 && imgs.length === 0) continue;
