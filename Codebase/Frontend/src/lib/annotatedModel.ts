@@ -375,23 +375,23 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     });
   }
 
-  // Subclass cascade. Three branches, in order:
+  // Subclass cascade — exact spec from the user:
   //
-  //   1) Parent pending (no effective pick yet) → child is
-  //      `subclass_pending`: grey + non-clickable. The child cannot
-  //      decide before its parent.
-  //   2) Parent picks a SUBCLASS_PROPAGATING_PATTERNS entry → child is
-  //      LOCKED to that pattern. Independent candidates are ignored
-  //      here on purpose (per spec: "lahat pati subclass nya na tagged
-  //      as strategy concrete, automatic na locked in"). Status =
-  //      unambiguous on parent's pattern.
-  //   3) Parent picks a non-propagating pattern → the parent-driven
-  //      tag is subtracted from the child's candidate set. What
-  //      remains decides:
-  //        - 0 → child has no tag at all → `subclass_dropped`.
-  //        - 1 → auto-take that pattern → unambiguous.
-  //        - >1 → child becomes its own decision: `ambiguous_pending`
-  //          (the user's "papa piliin ulit si user").
+  //   - User picks Strategy on parent → all subclasses stay locked to
+  //     Strategy (concrete). Not clickable, no separate decision.
+  //   - User picks anything other than Strategy → strategy_concrete is
+  //     removed from each subclass. Per child, count the remaining
+  //     tags that the MATCHER actually attached to that child (not
+  //     scope-leaked patterns from other classes' annotations):
+  //        - 0 left → normal source line, no color, not clickable.
+  //        - 1 left → that one pattern is automatically the tag.
+  //        - 2+ left → child becomes its own ambiguous decision; the
+  //                    user picks among the remainder.
+  //   - Parent has no effective pick yet (multi-candidate, no user
+  //     pick) → child is `subclass_pending`: grey, non-clickable.
+  //
+  // Each child evaluates independently. Car and Truck can land on
+  // different statuses if they have different tag sets.
   for (const node of classes.values()) {
     if (!node.isPropagatedSubclass || !node.parentClassName) continue;
     const parent = classes.get(node.parentClassName);
@@ -413,19 +413,18 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
       continue;
     }
 
-    // Non-propagating parent pick. Subtract the propagated tag(s) the
-    // microservice attached to this child and reclassify on the leftover.
+    // Non-propagating parent pick → remove the propagated tag from
+    // this child. Count only what the matcher TAGGED on the child
+    // (directCandidates) — scope-leaked patterns are noise, not tags.
     const propagatedTags = propagatedPatternsByChild.get(node.className) ?? new Set<string>();
-    const fromDirect = directCandidates.get(node.className) ?? new Set<string>();
-    const fromScope  = inScopePatterns.get(node.className)  ?? new Set<string>();
-    const remaining = new Set<string>([...fromDirect, ...fromScope]);
-    for (const t of propagatedTags) remaining.delete(t);
+    const childTags = new Set<string>(directCandidates.get(node.className) ?? new Set<string>());
+    for (const t of propagatedTags) childTags.delete(t);
 
-    const remainingList = Array.from(remaining);
+    const remainingList = Array.from(childTags);
     node.candidates = remainingList;
 
     const childPick = resolvedTable[node.className];
-    const childResolved = childPick && remaining.has(childPick) ? childPick : undefined;
+    const childResolved = childPick && childTags.has(childPick) ? childPick : undefined;
     node.resolved = childResolved;
 
     if (remainingList.length === 0) {
