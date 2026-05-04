@@ -23,7 +23,9 @@
       "PowerShell(wsl -d Ubuntu -- docker exec neoterritory bash -lc 'mkdir -p /tmp/probe-out && /app/Codebase/Microservice/build/NeoTerritory --catalog /app/Codebase/Microservice/pattern_catalog --output /tmp/probe-out /app/Codebase/Microservice/samples/integration/all_patterns.cpp; echo \"EXIT=$?\"')",
       "PowerShell(wsl -e bash -lc \"docker ps --format '{{.Names}}|{{.Status}}|{{.Ports}}'\")",
       "PowerShell(Stop-Process *)",
-      "WebFetch(domain:devcon.ph)"
+      "WebFetch(domain:devcon.ph)",
+      "PowerShell(git add Codebase/Infrastructure/session-orchestration/docker/Dockerfile)",
+      "PowerShell(git add scripts/deploy-aws.sh)"
     ]
   }
 }

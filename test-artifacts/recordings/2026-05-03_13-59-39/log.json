@@ -1,0 +1,532 @@
+{
+  "startedAt": "2026-05-03T05:59:39.575Z",
+  "startUrl": "http://localhost:5173",
+  "steps": [
+    {
+      "index": 1,
+      "name": "Initial",
+      "dir": "C:\\Users\\Drew\\Desktop\\NeoTerritory\\test-artifacts\\recordings\\2026-05-03_13-59-39\\Step 1 - Initial",
+      "events": [
+        {
+          "ts": "2026-05-03T05:59:42.171Z",
+          "kind": "console-error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        },
+        {
+          "ts": "2026-05-03T05:59:42.174Z",
+          "kind": "console-error",
+          "text": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        },
+        {
+          "ts": "2026-05-03T05:59:44.037Z",
+          "kind": "navigate",
+          "url": "http://localhost:5173/",
+          "screenshot": "0001-nav.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:44.181Z",
+          "kind": "navigate",
+          "url": "http://localhost:5173/login",
+          "screenshot": "0002-nav.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:44.363Z",
+          "kind": "click",
+          "target": {
+            "tag": "button",
+            "id": null,
+            "classes": "tester-chip tester-tile",
+            "text": "Devcon1",
+            "role": "listitem",
+            "name": null,
+            "type": "button",
+            "href": null,
+            "x": 268,
+            "y": 221,
+            "url": "http://localhost:5173/login"
+          },
+          "screenshot": "0003-click-button.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:44.522Z",
+          "kind": "navigate",
+          "url": "http://localhost:5173/studio",
+          "screenshot": "0004-nav.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:44.529Z",
+          "kind": "navigate",
+          "url": "http://localhost:5173/consent",
+          "screenshot": "0005-nav.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:45.801Z",
+          "kind": "click",
+          "target": {
+            "tag": "span",
+            "id": null,
+            "classes": null,
+            "text": "I have read and understood this notice and voluntarily consent.",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 654,
+            "y": 544,
+            "url": "http://localhost:5173/consent"
+          },
+          "screenshot": "0006-click-span.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:45.886Z",
+          "kind": "click",
+          "target": {
+            "tag": "input",
+            "id": null,
+            "classes": null,
+            "text": "",
+            "role": null,
+            "name": null,
+            "type": "checkbox",
+            "href": null,
+            "x": 445,
+            "y": 544,
+            "url": "http://localhost:5173/consent"
+          },
+          "screenshot": "0007-click-input.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:47.174Z",
+          "kind": "click",
+          "target": {
+            "tag": "button",
+            "id": null,
+            "classes": "primary-btn",
+            "text": "Continue",
+            "role": null,
+            "name": null,
+            "type": "button",
+            "href": null,
+            "x": 956,
+            "y": 606,
+            "url": "http://localhost:5173/consent"
+          },
+          "screenshot": "0008-click-button.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 900,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:48.400Z",
+          "kind": "navigate",
+          "url": "http://localhost:5173/pretest",
+          "screenshot": "0009-nav.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 1079,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:48.574Z",
+          "kind": "navigate",
+          "url": "http://localhost:5173/studio",
+          "screenshot": "0010-nav.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 1079,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:50.416Z",
+          "kind": "click",
+          "target": {
+            "tag": "button",
+            "id": "load-sample-btn",
+            "classes": "ghost-btn",
+            "text": "Load sample",
+            "role": null,
+            "name": null,
+            "type": "button",
+            "href": null,
+            "x": 257,
+            "y": 858,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0011-click-load-sample-btn.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 1079,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:51.121Z",
+          "kind": "click",
+          "target": {
+            "tag": "button",
+            "id": "analyze-btn",
+            "classes": "primary-btn",
+            "text": "Run analysis (1 file)",
+            "role": null,
+            "name": null,
+            "type": "submit",
+            "href": null,
+            "x": 108,
+            "y": 858,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0012-click-analyze-btn.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 1079,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T05:59:58.175Z",
+          "kind": "click",
+          "target": {
+            "tag": "span",
+            "id": null,
+            "classes": "src-code",
+            "text": "class ShapeFactory {",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 599,
+            "y": 601,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0013-click-span.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:01.882Z",
+          "kind": "click",
+          "target": {
+            "tag": "span",
+            "id": null,
+            "classes": "src-code",
+            "text": "Vehicle* make(const std::string& kind) {",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 543,
+            "y": 644,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0014-click-span.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:06.663Z",
+          "kind": "click",
+          "target": {
+            "tag": "header",
+            "id": null,
+            "classes": "src-popover-head",
+            "text": "StrategyVehicledeclarationL42",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 1202,
+            "y": 143,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0015-click-header.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:14.905Z",
+          "kind": "click",
+          "target": {
+            "tag": "span",
+            "id": null,
+            "classes": "src-code",
+            "text": "class QueryBuilder {",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 587,
+            "y": 677,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0016-click-span.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:18.076Z",
+          "kind": "click",
+          "target": {
+            "tag": "article",
+            "id": null,
+            "classes": "src-popover-item",
+            "text": "BuilderQueryBuilderbuilder_classL53Structural anchor \"builder_class\" — AI documentation pending.class QueryBuilder {",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 1200,
+            "y": 190,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0017-click-article.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:18.453Z",
+          "kind": "click",
+          "target": {
+            "tag": "div",
+            "id": null,
+            "classes": "src-popover-body",
+            "text": "BuilderQueryBuilderbuilder_classL53Structural anchor \"builder_class\" — AI documentation pending.class QueryBuilder {Meth",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 1200,
+            "y": 237,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0018-click-div.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:23.282Z",
+          "kind": "click",
+          "target": {
+            "tag": "span",
+            "id": null,
+            "classes": "src-code",
+            "text": "class CachedRepository {",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 597,
+            "y": 624,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0019-click-span.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        },
+        {
+          "ts": "2026-05-03T06:00:26.466Z",
+          "kind": "click",
+          "target": {
+            "tag": "div",
+            "id": null,
+            "classes": "src-popover-body",
+            "text": "AdapterCachedRepositoryadapter_classL93Structural anchor \"adapter_class\" — AI documentation pending.class CachedReposito",
+            "role": null,
+            "name": null,
+            "type": null,
+            "href": null,
+            "x": 1200,
+            "y": 293,
+            "url": "http://localhost:5173/studio"
+          },
+          "screenshot": "0020-click-div.png",
+          "dims": {
+            "innerWidth": 1440,
+            "innerHeight": 900,
+            "dpr": 1,
+            "scrollW": 1440,
+            "scrollH": 3239,
+            "clientW": 1440,
+            "clientH": 900,
+            "hasScrollbar": false
+          },
+          "step": 1
+        }
+      ]
+    }
+  ],
+  "stoppedAt": "2026-05-03T06:12:48.013Z"
+}
