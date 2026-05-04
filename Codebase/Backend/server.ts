@@ -46,7 +46,7 @@ import { startWatching as startReviewSchemaWatch } from './src/reviews/questionL
 import { uploadsDir } from './src/config/paths';
 
 const app = express();
-const frontendDir = path.join(__dirname, '..', 'Frontend');
+const frontendDir = path.join(__dirname, '..', '..', 'Frontend');
 
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
