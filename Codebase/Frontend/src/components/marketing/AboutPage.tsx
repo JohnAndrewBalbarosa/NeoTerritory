@@ -62,10 +62,11 @@ export default function AboutPage() {
         </header>
         <ol className="nt-principles">
           <li>
-            <h3>Code wins over docs at the moment of truth.</h3>
+            <h3>The docs are the source of truth.</h3>
             <p>
-              Docs are the structural source of truth, but when the algorithm changes faster than
-              prose, the page you are reading reflects the algorithm — not a stale paragraph.
+              When the code and the docs disagree, the docs win — we move the code to match the
+              spec, not the other way around. The blueprint under <code>docs/Codebase/</code>
+              defines both the logic and the folder shape.
             </p>
           </li>
           <li>

@@ -6,43 +6,43 @@
       "name": "John Andrew Balbarosa",
       "role": "Lead engineer · algorithm + microservice",
       "bio": "Computer Science at FEU Tech. Owns the C++ pipeline — parsing, hashing, pattern dispatch, evidence emission. Believes in deterministic structural detection before any AI step. Spends his off-hours on CTF and certification grinds because he likes proof, not vibes.",
-      "photoPath": "team/andrew/01.jpg",
+      "photoPath": "team/andrew/portrait.jpg",
       "skills": [
         "TOPCIT Level 3 passer · aiming Level 5",
-        "Micro Trend CTF certified",
+        "Trend Micro University CTF — preliminary round participant",
         "NASA Space Apps Challenge participant",
         "FEU Tech ACM Student Chapter",
         "Thesis lead · NeoTerritory research team"
       ],
       "highlights": [
         {
-          "image": "team/andrew/02.jpg",
-          "caption": "TOPCIT Level 3 — Computer Science track, FEU Tech."
+          "image": "team/andrew/topcit.jpg",
+          "caption": "TOPCIT Level 3 passers list — Computer Science track, FEU Tech ACM."
         },
         {
-          "image": "team/andrew/03.jpg",
-          "caption": "Micro Trend CTF certification."
+          "image": "team/andrew/ctf.jpg",
+          "caption": "Trend Micro University CTF — preliminary round certificate, Aug 22 2025."
         },
         {
-          "image": "team/andrew/04.jpg",
-          "caption": "NASA Space Apps Challenge."
+          "image": "team/andrew/nasa.jpg",
+          "caption": "NASA International Space Apps Challenge 2024 — Galactic Problem Solver."
         },
         {
-          "image": "team/andrew/05.jpg",
-          "caption": "Hack & Yap with the Pizza & Friends Tech Community."
+          "image": "team/andrew/hackyap.jpg",
+          "caption": "Hack & Yap with the Pizza & Friends Tech Community at Coffee Chapters."
         },
         {
-          "image": "team/andrew/06.jpg",
-          "caption": "CS EXPO 2025 — research showcase."
+          "image": "team/andrew/research.jpg",
+          "caption": "Thesis working session with the research team and adviser."
         },
         {
-          "image": "team/andrew/07.jpg",
-          "caption": "Thesis working session with the research team."
+          "image": "team/andrew/thesis.jpg",
+          "caption": "Thesis title meeting with Collin Andrei Yapchulay and Josephine Santander."
         }
       ],
       "links": {
         "github": "",
-        "linkedin": "",
+        "linkedin": "https://www.linkedin.com/in/jbalbarosa/",
         "facebook": "https://www.facebook.com/johnandrew.balbarosa.58",
         "website": ""
       }
@@ -51,67 +51,20 @@
       "slug": "miryl",
       "name": "Miryl de Leon",
       "role": "Research · pattern catalog + study design",
-      "bio": "Computer Science at FEU Tech, also active across the multimedia and student-org side of campus (TAMbayan TV, FEU Central Student Organization). On the team she keeps the pattern catalog honest and runs the study-design loop — what gets measured, how readers actually behave, where the evidence lives.",
+      "bio": "Computer Science at FEU Tech. On the team she keeps the pattern catalog honest and runs the study-design loop — what gets measured, how readers actually behave, where the evidence lives.",
       "photoPath": "team/miryl/01.jpg",
       "skills": [
         "FEU Tech — Computer Science",
-        "Multimedia storytelling · TAMbayan TV",
-        "FEU Central Student Organization",
         "Pattern catalog curator",
         "Study design · qualitative + reading-speed instruments"
       ],
-      "highlights": [
-        {
-          "image": "team/miryl/02.jpg",
-          "caption": "TAMbayan TV — FEU Tech production work."
-        },
-        {
-          "image": "team/miryl/03.jpg",
-          "caption": "FEU Central Student Organization event."
-        },
-        {
-          "image": "team/miryl/04.jpg",
-          "caption": "Multimedia arts collaboration."
-        },
-        {
-          "image": "team/miryl/05.jpg",
-          "caption": "Cohort showcase."
-        },
-        {
-          "image": "team/miryl/06.jpg",
-          "caption": "Research synthesis with the team."
-        },
-        {
-          "image": "team/miryl/07.jpg",
-          "caption": "On-campus event capture."
-        }
-      ],
+      "highlights": [],
       "links": {
         "github": "",
         "linkedin": "",
         "facebook": "",
         "website": ""
       }
-    },
-    {
-      "slug": "teammate-3",
-      "name": "Teammate 3",
-      "role": "Frontend · studio + marketing surface",
-      "bio": "Replace this entry with real data, or run the scraper + distill pipeline and add a member entry above.",
-      "photoPath": "",
-      "skills": [],
-      "highlights": [],
-      "links": { "github": "", "linkedin": "", "facebook": "", "website": "" }
-    },
-    {
-      "slug": "teammate-4",
-      "name": "Teammate 4",
-      "role": "Backend · adapter + AI orchestration",
-      "bio": "Replace this entry with real data.",
-      "photoPath": "",
-      "skills": [],
-      "highlights": [],
-      "links": { "github": "", "linkedin": "", "facebook": "", "website": "" }
     }
   ]
 }
