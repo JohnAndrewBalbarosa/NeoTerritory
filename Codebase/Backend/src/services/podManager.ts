@@ -228,7 +228,11 @@ function dockerRunArgs(containerName: string): string[] {
     '--network', POD_NETWORK,
     '--pids-limit', POD_PIDS_LIMIT,
     '--read-only',
-    '--tmpfs', '/work:rw,size=16m,mode=1777',
+    // tmpfs default mount options include `noexec`, which silently prevents
+    // the just-compiled user binary from running ("exec: no such file or
+    // directory"). Add `exec` explicitly so g++ output is runnable; `nosuid`
+    // and `nodev` stay on for sandboxing.
+    '--tmpfs', '/work:rw,exec,nosuid,nodev,size=16m,mode=1777',
     '-w', '/work',
     POD_IMAGE,
     'sleep', String(ttlSec)
@@ -419,18 +423,58 @@ export async function execInPod(
   });
 }
 
-// Copy a file from the host into the pod's /work directory. Used by the
-// runner to deliver user_class.h, the per-file sources, the introspect
-// header, and the driver before each compile.
+// Copy a file or directory from the host into the pod. Used by the runner
+// to deliver user_class.h, per-file sources, the introspect header, and the
+// driver before each compile.
+//
+// IMPORTANT: `docker cp` is NOT used here. The pod runs with `--read-only`
+// rootfs, and the daemon refuses `docker cp` to a read-only container even
+// when the destination path is a writable tmpfs ("Error response from
+// daemon: container rootfs is marked read-only"). The fix is the standard
+// workaround: stream a tar archive of the source through `docker exec`'s
+// stdin and untar inside the pod into `podPath`. busybox `tar` (shipped in
+// the alpine cpp-pod image) reads from stdin with `-xf -`.
 export async function copyIntoPod(
   pod: PodHandle,
   hostPath: string,
   podPath: string
 ): Promise<boolean> {
   return new Promise((resolve) => {
-    const target = `${pod.containerName}:${podPath}`;
-    const proc = spawn('docker', ['cp', hostPath, target], { stdio: 'ignore' });
-    proc.on('close', (code) => resolve(code === 0));
-    proc.on('error', () => resolve(false));
+    let stat: fs.Stats;
+    try { stat = fs.statSync(hostPath); }
+    catch { return resolve(false); }
+
+    // tar from the parent dir using the basename so the archive contains
+    // just the leaf entry — matching `docker cp <src> <pod>:<podPath>`'s
+    // behaviour where the source's leaf name lands inside `podPath`.
+    const srcParent = stat.isDirectory() ? path.dirname(hostPath) : path.dirname(hostPath);
+    const srcLeaf   = path.basename(hostPath);
+
+    const tarProc = spawn('tar', ['-cf', '-', '-C', srcParent, srcLeaf], {
+      stdio: ['ignore', 'pipe', 'ignore']
+    });
+    const dockerProc = spawn(
+      'docker',
+      ['exec', '-i', pod.containerName, 'tar', '-xf', '-', '-C', podPath],
+      { stdio: ['pipe', 'ignore', 'ignore'] }
+    );
+
+    let resolved = false;
+    const finish = (ok: boolean): void => {
+      if (resolved) return;
+      resolved = true;
+      try { tarProc.kill('SIGKILL'); } catch { /* ignore */ }
+      try { dockerProc.kill('SIGKILL'); } catch { /* ignore */ }
+      resolve(ok);
+    };
+
+    tarProc.stdout.pipe(dockerProc.stdin);
+    tarProc.on('error', () => finish(false));
+    dockerProc.on('error', () => finish(false));
+    tarProc.on('close', (tarCode) => {
+      dockerProc.on('close', (dockerCode) => {
+        finish(tarCode === 0 && dockerCode === 0);
+      });
+    });
   });
 }
