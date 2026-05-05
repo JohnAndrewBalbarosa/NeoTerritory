@@ -12,9 +12,17 @@ export PATH=\$PATH:/usr/bin:/usr/local/bin:/snap/bin
 cd "$remote_dir"
 
 echo "-- Installing Backend dependencies (npm ci, lockfile-pinned) --"
+# Reclaim ownership of Backend node_modules/.bin in case a prior root-run
+# corrupted permissions (would surface as 'tsc: not found').
+sudo chown -R \$USER:\$USER Codebase/Backend 2>/dev/null || true
+sudo rm -rf Codebase/Backend/node_modules Codebase/Backend/dist
 ( cd Codebase/Backend && (npm ci --include=dev || npm install --include=dev) && npm run build )
 
 echo "-- Installing Frontend dependencies (npm ci, lockfile-pinned) --"
+# Previous deploys ran the server as root, leaving dist/ owned by root.
+# Reclaim ownership and clear it before vite tries to empty the out dir.
+sudo chown -R \$USER:\$USER Codebase/Frontend 2>/dev/null || true
+sudo rm -rf Codebase/Frontend/node_modules Codebase/Frontend/dist
 ( cd Codebase/Frontend && (npm ci || npm install) && npm run build )
 
 echo "-- Compiling Microservice (-j1, low-RAM Lightsail safe) --"
