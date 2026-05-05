@@ -11,7 +11,12 @@ export default function StudioApp() {
   useEffect(() => {
     resetSession();
 
-    if (token && user?.role === 'admin') {
+    // Admins land on the dedicated admin dashboard ONLY when they hit the
+    // admin sign-in entry (/app). On the tester picker (/login,
+    // /seat-selection) we let them stay so they can sign out or pick a
+    // seat without being yanked to /admin.html.
+    const here = typeof window !== 'undefined' ? window.location.pathname : '/';
+    if (token && user?.role === 'admin' && here === '/app') {
       window.location.href = '/admin.html';
       return;
     }
@@ -57,11 +62,15 @@ export default function StudioApp() {
 
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
+    const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app'];
     if (!isLoggedIn) {
-      if (path !== '/login' && path !== '/app') {
+      // Logged-out visitors landing on consent/pretest/studio go through
+      // the tester picker. /app stays at /app so admins can keep typing
+      // credentials there.
+      if (!SIGN_IN_PATHS.includes(path)) {
         window.history.replaceState(null, '', '/login');
       }
-    } else if (path === '/login' || path === '/app') {
+    } else if (SIGN_IN_PATHS.includes(path)) {
       window.history.replaceState(null, '', '/studio');
     }
   }

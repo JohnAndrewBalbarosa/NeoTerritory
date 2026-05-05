@@ -32,6 +32,7 @@ write_remote_env() {
     [ -n "${ANTHROPIC_MODEL:-}" ]   && echo "ANTHROPIC_MODEL=$ANTHROPIC_MODEL"
     [ -n "${ADMIN_USERNAME:-}" ]    && echo "ADMIN_USERNAME=$ADMIN_USERNAME"
     [ -n "${ADMIN_PASSWORD:-}" ]    && echo "ADMIN_PASSWORD=$ADMIN_PASSWORD"
+    [ -n "${SEED_TEST_USERS:-}" ]   && echo "SEED_TEST_USERS=$SEED_TEST_USERS"
     [ -n "${SUPABASE_URL:-}" ]      && echo "SUPABASE_URL=$SUPABASE_URL"
     [ -n "${SUPABASE_SERVICE_KEY:-}" ] && echo "SUPABASE_SERVICE_KEY=$SUPABASE_SERVICE_KEY"
     [ -n "${SUPABASE_LOGS_TABLE:-}" ]  && echo "SUPABASE_LOGS_TABLE=$SUPABASE_LOGS_TABLE"

@@ -1,0 +1,9 @@
+# Shell scripts must always be LF — they run in bash (WSL/Linux containers)
+# and CRLF causes `$'\r': command not found` errors.
+*.sh           text eol=lf
+*.bash         text eol=lf
+
+# PowerShell stays CRLF on Windows
+*.ps1          text eol=crlf
+*.psm1         text eol=crlf
+*.psd1         text eol=crlf

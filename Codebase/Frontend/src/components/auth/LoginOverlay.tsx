@@ -15,14 +15,25 @@ import { User } from '../../types/api';
 
 type Mode = 'picker' | 'admin';
 
+// /app is the admin sign-in entry point. /login and /seat-selection are
+// tester seat picker entry points. The path is the source of truth — the
+// overlay does not flip modes based on data availability, so an empty
+// picker stays as an empty picker (with a link to /app for admins) instead
+// of silently morphing into the admin form.
+function getPathMode(): Mode {
+  if (typeof window === 'undefined') return 'picker';
+  return window.location.pathname === '/app' ? 'admin' : 'picker';
+}
+
 export default function LoginOverlay() {
   const { signIn } = useAuth();
   const setAuth = useAppStore(s => s.setAuth);
 
-  const [mode, setMode] = useState<Mode>('picker');
+  const pathMode = getPathMode();
+  const [mode] = useState<Mode>(pathMode);
   const [accounts, setAccounts] = useState<TesterAccountInfo[]>([]);
   const [accountsError, setAccountsError] = useState('');
-  const [showPicker, setShowPicker] = useState(true);
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [claiming, setClaiming] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -31,21 +42,17 @@ export default function LoginOverlay() {
   const [busy, setBusy] = useState(false);
 
   const loadAccounts = useCallback(async () => {
+    if (mode !== 'picker') return;  // /app skips this entirely.
     try {
       const data = await fetchTesterAccounts();
       setAccounts(data.accounts);
-      // Hide picker entirely when backend reports no tester mode / no accounts.
-      setShowPicker(data.accounts.length > 0);
-      if (data.accounts.length === 0) {
-        setMode('admin');
-      }
       setAccountsError('');
     } catch (err) {
       setAccountsError(err instanceof Error ? err.message : 'Failed to load testers');
-      setShowPicker(false);
-      setMode('admin');
+    } finally {
+      setAccountsLoaded(true);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     void loadAccounts();
@@ -102,7 +109,7 @@ export default function LoginOverlay() {
       <AuroraBackground variant="cool" />
       <div className="login-wrap">
         <AnimatePresence mode="wait" initial={false}>
-        {mode === 'picker' && showPicker && (
+        {mode === 'picker' && (
           <motion.div
             key="picker"
             initial={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(8px)' }}
@@ -116,39 +123,44 @@ export default function LoginOverlay() {
               <p className="tester-hint">Claim an open seat to sign in.</p>
             </header>
             {accountsError && <p className="login-error">{accountsError}</p>}
-            <div className="tester-grid" role="list">
-              {accounts.map(acc => {
-                const isClaiming = claiming === acc.username;
-                const isClaimed = !!acc.claimed;
-                return (
-                  <button
-                    key={acc.username}
-                    type="button"
-                    role="listitem"
-                    className="tester-chip tester-tile"
-                    data-claimed={isClaimed ? 'true' : undefined}
-                    disabled={isClaiming || isClaimed}
-                    title={isClaimed ? 'Already claimed by another tester' : undefined}
-                    onClick={() => handleClaim(acc)}
-                  >
-                    {isClaiming ? 'Claiming…' : acc.username}
-                    {isClaimed && <span className="tester-chip-sub">in use</span>}
-                  </button>
-                );
-              })}
-            </div>
+            {accountsLoaded && !accountsError && accounts.length === 0 && (
+              <p className="login-hint">
+                No tester seats are available right now. Contact an administrator.
+              </p>
+            )}
+            {accounts.length > 0 && (
+              <div className="tester-grid" role="list">
+                {accounts.map(acc => {
+                  const isClaiming = claiming === acc.username;
+                  const isClaimed = !!acc.claimed;
+                  return (
+                    <button
+                      key={acc.username}
+                      type="button"
+                      role="listitem"
+                      className="tester-chip tester-tile"
+                      data-claimed={isClaimed ? 'true' : undefined}
+                      disabled={isClaiming || isClaimed}
+                      title={isClaimed ? 'Already claimed by another tester' : undefined}
+                      onClick={() => handleClaim(acc)}
+                    >
+                      {isClaiming ? 'Claiming…' : acc.username}
+                      {isClaimed && <span className="tester-chip-sub">in use</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {error && <p className="login-error">{error}</p>}
             <p className="login-toggle">
               Need admin access?{' '}
-              <button type="button" className="link-btn" onClick={() => { setMode('admin'); setError(''); }}>
-                Admin sign in
-              </button>
+              <a className="link-btn" href="/app">Admin sign in</a>
             </p>
           </TiltCard>
           </motion.div>
         )}
 
-        {(mode === 'admin' || !showPicker) && (
+        {mode === 'admin' && (
           <motion.form
             key="admin"
             className="login-card"
@@ -186,13 +198,10 @@ export default function LoginOverlay() {
               {busy ? 'Signing in…' : 'Sign in'}
             </button>
             {error && <p className="login-error">{error}</p>}
-            {showPicker && (
-              <p className="login-toggle">
-                <button type="button" className="link-btn" onClick={() => { setMode('picker'); setError(''); }}>
-                  Back to seat picker
-                </button>
-              </p>
-            )}
+            <p className="login-toggle">
+              Tester instead?{' '}
+              <a className="link-btn" href="/login">Pick a seat</a>
+            </p>
           </motion.form>
         )}
         </AnimatePresence>

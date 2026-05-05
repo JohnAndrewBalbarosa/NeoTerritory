@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 export type Surface = 'hero' | 'learn' | 'about' | 'studio';
 
-const STUDIO_ALIASES = ['/app', '/login', '/consent', '/pretest', '/studio'];
+const STUDIO_ALIASES = ['/app', '/login', '/seat-selection', '/consent', '/pretest', '/studio'];
 
 export function pathToSurface(path: string): Surface {
   if (path === '/' || path === '') return 'hero';
