@@ -9,7 +9,7 @@
  *   1. Delete this directory: Codebase/Backend/src/db/_testSeed/
  *   2. Remove the import + call in src/db/initDb.ts (search for "TEST SEED")
  */
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import fs from 'fs';
 import path from 'path';
 import type { Database as DatabaseType } from 'better-sqlite3';

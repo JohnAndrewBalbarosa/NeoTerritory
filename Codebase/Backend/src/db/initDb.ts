@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import db from './database';
 import { initEtlSchema } from './etlSchema';
 // TEST SEED — REMOVE FOR PRODUCTION (delete _testSeed/ + this import + the calls below)

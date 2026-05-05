@@ -152,24 +152,37 @@ import { startSweepTimer, registerShutdownHooks, isPodModeEnabled, ensurePodImag
 import { startDockerWatcher } from './src/services/dockerWatcher';
 registerShutdownHooks();
 if (isPodModeEnabled()) {
-  // Fire-and-forget: image build can take 30–60s on first run; we don't
-  // want to block the HTTP listener. Sweep timer can start immediately —
-  // it has nothing to sweep until ensurePod creates the first pod.
   void ensurePodImageBuilt();
   startSweepTimer();
-  // Background actor: probes the Docker daemon every few seconds and
-  // pushes the result into healthMasterlist. /api/health reads the
-  // masterlist instead of shelling out, so a slow Docker Desktop named
-  // pipe under WSL2 can never stall a health probe again.
   startDockerWatcher();
 }
 
 const PORT = Number(process.env.PORT || 3001);
+const SSL_PORT = Number(process.env.SSL_PORT || 443);
 const HOST = process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : '127.0.0.1');
-app.listen(PORT, HOST, () => {
+
+// Start HTTP server
+const httpServer = app.listen(PORT, HOST, () => {
   if (HOST === '0.0.0.0') {
-    console.log(`Server running on http://localhost:${PORT} (also reachable on LAN at all interfaces)`);
+    console.log(`HTTP Server running on http://localhost:${PORT}`);
   } else {
-    console.log(`Server running on http://${HOST}:${PORT}`);
+    console.log(`HTTP Server running on http://${HOST}:${PORT}`);
   }
 });
+
+// Optional HTTPS server if certificates are provided
+if (process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH) {
+  try {
+    const https = require('https');
+    const sslOptions = {
+      key: fs.readFileSync(process.env.SSL_KEY_PATH),
+      cert: fs.readFileSync(process.env.SSL_CERT_PATH)
+    };
+    https.createServer(sslOptions, app).listen(SSL_PORT, HOST, () => {
+      console.log(`HTTPS Server running on https://localhost:${SSL_PORT}`);
+    });
+  } catch (err) {
+    console.error('[SSL] Failed to start HTTPS server:', (err as Error).message);
+  }
+}
+

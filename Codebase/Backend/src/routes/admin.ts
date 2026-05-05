@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import ExcelJS from 'exceljs';
 import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
