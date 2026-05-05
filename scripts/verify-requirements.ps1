@@ -1,4 +1,4 @@
-# Run directly:  .\scripts\verify-requirements.ps1 [-Profile dev] [-Soft]
+﻿# Run directly:  .\scripts\verify-requirements.ps1 [-Profile dev] [-Soft]
 # Dot-source:    . "$PSScriptRoot\scripts\verify-requirements.ps1"
 #                Test-Requirements -Profile dev
 param(
@@ -48,6 +48,7 @@ function Test-Requirements {
     'git'    = @{ ID = 'Git.Git'; Friendly = 'Git' }
     'docker' = @{ ID = 'Docker.DockerDesktop'; Friendly = 'Docker Desktop' }
     'g++'    = @{ ID = 'MSYS2.MSYS2'; Friendly = 'MSYS2 (MinGW g++)' }
+    'aws'    = @{ ID = 'Amazon.AWSCLI'; Friendly = 'AWS CLI' }
   }
 
   function Has($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }

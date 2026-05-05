@@ -1,4 +1,4 @@
-# ─────────────────────────────────────────────────────────────────────────────
+﻿# ─────────────────────────────────────────────────────────────────────────────
 # deploy-aws.ps1 — PowerShell mirror of deploy-aws.sh.
 # See scripts/.env.deploy.example for the required keys.
 #
@@ -129,11 +129,46 @@ if ($DoDocker) {
 if (-not $DoPush) { Write-Host "✓ build-only: skipping ship to $($env:AWS_HOST)"; return }
 
 # ── 2.5 Lightsail public firewall (best-effort via AWS CLI) ────────────────
-if ($env:AWS_LIGHTSAIL_INSTANCE_NAME) {
+function Ensure-AwsReady {
+  if (-not $env:AWS_LIGHTSAIL_INSTANCE_NAME) { return $true }
+
+  # 1. Check if installed, try auto-install
   $awsExe = Get-Command aws -ErrorAction SilentlyContinue
   if (-not $awsExe) {
-    Write-Warning "aws CLI not installed — skipping auto port-open. Open 80/tcp and 443/tcp in Lightsail console manually."
-  } else {
+    Write-Host "ℹ AWS CLI not found. Attempting auto-install..." -ForegroundColor Cyan
+    . (Join-Path $PSScriptRoot 'verify-requirements.ps1')
+    try { Test-Requirements -Profile minimal -AutoInstall -Soft | Out-Null } catch { }
+    $awsExe = Get-Command aws -ErrorAction SilentlyContinue
+    if (-not $awsExe) {
+      Write-Warning "⚠ Auto-install failed. Please install AWS CLI manually."
+      return $false
+    }
+  }
+
+  # 2. Check if configured
+  & aws sts get-caller-identity *> $null
+  if ($LASTEXITCODE -ne 0) {
+    Write-Warning "⚠ AWS CLI is installed but NOT configured (no credentials found)."
+    $response = Read-Host "Would you like to run 'aws configure' now? [y/N]"
+    if ($response -match '^[yY]') {
+      # Run aws configure. Start-Process ensures it's interactive and visible.
+      Start-Process "aws" -ArgumentList "configure" -Wait
+      & aws sts get-caller-identity *> $null
+      if ($LASTEXITCODE -ne 0) {
+        Write-Warning "✗ AWS configuration failed or was cancelled. Firewall auto-open will be skipped."
+        return $false
+      }
+      Write-Host "✓ AWS CLI configured successfully." -ForegroundColor Green
+    } else {
+      Write-Host "ℹ Skipping AWS configuration. Firewall auto-open will be skipped." -ForegroundColor Yellow
+      return $false
+    }
+  }
+  return $true
+}
+
+if ($env:AWS_LIGHTSAIL_INSTANCE_NAME) {
+  if (Ensure-AwsReady) {
     $region = if ($env:AWS_LIGHTSAIL_REGION) { $env:AWS_LIGHTSAIL_REGION } else { 'ap-southeast-1' }
     Write-Host "── Opening Lightsail public ports 22, 80, 443 on '$($env:AWS_LIGHTSAIL_INSTANCE_NAME)' ($region) ──"
     if (-not $DryRun) {
@@ -146,6 +181,8 @@ if ($env:AWS_LIGHTSAIL_INSTANCE_NAME) {
       if ($LASTEXITCODE -eq 0) { Write-Host "✓ Lightsail firewall now allows 22, 80, 443" }
       else { Write-Warning 'put-instance-public-ports failed — open the ports manually in the console' }
     }
+  } else {
+    Write-Host "ℹ Skipping auto port-open due to AWS CLI setup issues." -ForegroundColor Yellow
   }
 } else {
   Write-Host "ℹ AWS_LIGHTSAIL_INSTANCE_NAME not set — skipping auto port-open."
@@ -305,7 +342,7 @@ if (-not $DryRun -and $DoPush) {
         Write-Host "  ✓ HTTP $($resp.StatusCode) on attempt $i"
         $ok = $true; break
       }
-    } catch { Write-Host "  [..] attempt $i: $($_.Exception.Message.Split(`"`n`")[0]) (retrying in 5s)" }
+    } catch { Write-Host "  [..] attempt ${i}: $($_.Exception.Message.Split(`"`n`")[0]) (retrying in 5s)" }
     Start-Sleep -Seconds 5
   }
   if (-not $ok) {
