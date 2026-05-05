@@ -1,7 +1,7 @@
 # Agent Operating Rules
 
 ## Always Commit
-After every change to the repository (code, docs, config, anything), the agent must stage and create a git commit immediately — no batching, no asking. One logical change = one commit. Use a conventional-commit message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`...). Do not push unless explicitly asked.
+After every change to the repository (code, docs, config, anything), the agent must stage and create a git commit immediately — no batching, no asking. **Every prompt that results in a file modification must be concluded with a commit.** One logical change = one commit. Use a conventional-commit message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`...). Do not push unless explicitly asked.
 
 ## Primary Boundary
 Codex works on documentation architecture only unless Drew explicitly says to edit actual code.
