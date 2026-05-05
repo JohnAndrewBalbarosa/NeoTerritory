@@ -1,8 +1,8 @@
 # Shared paths and environment-tagged build dir for the C++ microservice.
 # Dot-sourced by start.ps1 — runs in caller scope.
 
-# Resolve repo root from this lib file's location: scripts/start/lib/env.ps1 -> ../../..
-$Root            = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..')).Path
+# Resolve repo root from this lib file's location: ops/powershell/start/lib/env.ps1 -> ../../../..
+$Root            = (Resolve-Path (Join-Path $PSScriptRoot '..\..\..\..')).Path
 $BackendDir      = Join-Path $Root 'Codebase\Backend'
 $FrontendDir     = Join-Path $Root 'Codebase\Frontend'
 $MicroserviceDir = Join-Path $Root 'Codebase\Microservice'

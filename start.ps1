@@ -1,6 +1,6 @@
 # NeoTerritory -- single root entry (Windows side).
 #
-# Slim dispatcher. All real logic lives under scripts/start/{lib,commands}/.
+# Slim dispatcher. All real logic lives under ops/powershell/start/{lib,commands}/.
 # See docs/Codebase/DESIGN_DECISIONS.md (D28).
 #
 # Usage:
@@ -64,8 +64,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$LibDir = Join-Path $PSScriptRoot 'scripts\start\lib'
-$CmdDir = Join-Path $PSScriptRoot 'scripts\start\commands'
+$LibDir = Join-Path $PSScriptRoot 'ops\powershell\start\lib'
+$CmdDir = Join-Path $PSScriptRoot 'ops\powershell\start\commands'
 
 # Dot-source modules so functions + variables land in this script's scope.
 . (Join-Path $LibDir 'env.ps1')

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Shared paths and environment-tagged build dir for the C++ microservice.
-# Sourced by start.sh and every scripts/start/commands/*.sh module.
+# Sourced by start.sh and every ops/bash/start/commands/*.sh module.
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
 BACKEND_DIR="$ROOT_DIR/Codebase/Backend"
 FRONTEND_DIR="$ROOT_DIR/Codebase/Frontend"
 MS_DIR="$ROOT_DIR/Codebase/Microservice"

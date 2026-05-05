@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # NeoTerritory — single root entry (POSIX side).
 #
-# Slim dispatcher. All real logic lives under scripts/start/{lib,commands}/.
+# Slim dispatcher. All real logic lives under ops/bash/start/{lib,commands}/.
 # See docs/Codebase/DESIGN_DECISIONS.md (D28).
 #
 # Usage:
@@ -23,33 +23,33 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-LIB="$HERE/scripts/start/lib"
-CMD="$HERE/scripts/start/commands"
+LIB="$HERE/ops/bash/start/lib"
+CMD="$HERE/ops/bash/start/commands"
 
 print_help() { sed -n '2,21p' "$0"; }
 
-# shellcheck source=scripts/start/lib/env.sh
+# shellcheck source=ops/bash/start/lib/env.sh
 source "$LIB/env.sh"
-# shellcheck source=scripts/start/lib/output.sh
+# shellcheck source=ops/bash/start/lib/output.sh
 source "$LIB/output.sh"
-# shellcheck source=scripts/start/lib/host.sh
+# shellcheck source=ops/bash/start/lib/host.sh
 source "$LIB/host.sh"
-# shellcheck source=scripts/start/lib/build.sh
+# shellcheck source=ops/bash/start/lib/build.sh
 source "$LIB/build.sh"
-# shellcheck source=scripts/start/lib/args.sh
+# shellcheck source=ops/bash/start/lib/args.sh
 source "$LIB/args.sh"
 
-# shellcheck source=scripts/start/commands/dev.sh
+# shellcheck source=ops/bash/start/commands/dev.sh
 source "$CMD/dev.sh"
-# shellcheck source=scripts/start/commands/setup.sh
+# shellcheck source=ops/bash/start/commands/setup.sh
 source "$CMD/setup.sh"
-# shellcheck source=scripts/start/commands/k8s.sh
+# shellcheck source=ops/bash/start/commands/k8s.sh
 source "$CMD/k8s.sh"
-# shellcheck source=scripts/start/commands/browser.sh
+# shellcheck source=ops/bash/start/commands/browser.sh
 source "$CMD/browser.sh"
-# shellcheck source=scripts/start/commands/test.sh
+# shellcheck source=ops/bash/start/commands/test.sh
 source "$CMD/test.sh"
-# shellcheck source=scripts/start/commands/deploy.sh
+# shellcheck source=ops/bash/start/commands/deploy.sh
 source "$CMD/deploy.sh"
 
 init_arg_defaults
