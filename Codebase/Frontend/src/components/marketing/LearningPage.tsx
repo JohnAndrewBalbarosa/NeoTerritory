@@ -190,6 +190,14 @@ function familyById(id: string): Family | undefined {
   return FAMILIES.find((f) => f.id === id);
 }
 
+function findLesson(lessonId: string): { family: Family; lesson: Lesson } | undefined {
+  for (const family of FAMILIES) {
+    const lesson = family.lessons.find((l) => l.id === lessonId);
+    if (lesson) return { family, lesson };
+  }
+  return undefined;
+}
+
 interface Route {
   family?: Family;
   lesson?: Lesson;
@@ -198,6 +206,12 @@ interface Route {
 function parseLearnPath(path: string): Route {
   const parts = path.split('/').filter(Boolean);
   if (parts[0] !== 'learn' || parts.length < 2) return {};
+
+  // Each pattern has its own top-level route: /learn/<lessonId>
+  const direct = findLesson(parts[1]);
+  if (direct && parts.length === 2) return direct;
+
+  // Family hub and legacy nested route: /learn/<familyId>[/<lessonId>]
   const family = familyById(parts[1]);
   if (!family) return {};
   if (parts.length < 3) return { family };
@@ -316,7 +330,7 @@ function FamilyView({ family, lesson }: FamilyViewProps) {
                       'nt-family-sidebar__item' +
                       (active ? ' nt-family-sidebar__item--active' : '')
                     }
-                    onClick={() => navigate(`/learn/${family.id}/${l.id}`)}
+                    onClick={() => navigate(`/learn/${l.id}`)}
                     aria-current={active ? 'page' : undefined}
                   >
                     <span className="nt-family-sidebar__name">{l.name}</span>
