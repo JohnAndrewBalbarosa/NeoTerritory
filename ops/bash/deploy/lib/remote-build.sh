@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 # Remote build + PM2 restart driven by an inline heredoc.
 #
-# Speed strategy:
+# Speed strategy (1GB Lightsail — memory-constrained, so no parallel node builds):
 #   - npm ci only when package-lock.json hash changes (cached at .deploy-cache/<name>.lock.sha)
-#   - Backend + Frontend node builds run in parallel (& ... wait)
 #   - C++ build is incremental: keep build/ across deploys, re-run cmake only when
 #     CMakeCache.txt is missing; otherwise plain `make` picks up changed TUs
 #   - Permission reclaim only touches files actually owned by root
@@ -59,18 +58,9 @@ build_frontend() {
   ( cd Codebase/Frontend && npm run build )
 }
 
-# Run Backend and Frontend in parallel; capture exit codes.
-build_backend  > /tmp/deploy-backend.log  2>&1 &
-BPID=\$!
-build_frontend > /tmp/deploy-frontend.log 2>&1 &
-FPID=\$!
-
-wait \$BPID; BRC=\$?
-wait \$FPID; FRC=\$?
-echo "----- Backend log -----";  cat /tmp/deploy-backend.log  || true
-echo "----- Frontend log -----"; cat /tmp/deploy-frontend.log || true
-[ \$BRC -eq 0 ] || { echo "Backend build failed"; exit \$BRC; }
-[ \$FRC -eq 0 ] || { echo "Frontend build failed"; exit \$FRC; }
+# Sequential on purpose: 1GB Lightsail OOMs if vite + tsc + two npm ci run together.
+build_backend
+build_frontend
 
 echo "-- Microservice: incremental compile (-j1, low-RAM Lightsail safe) --"
 # Keep build/ across deploys so make can do incremental compilation.
