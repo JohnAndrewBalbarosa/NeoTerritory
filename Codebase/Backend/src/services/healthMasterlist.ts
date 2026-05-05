@@ -36,15 +36,16 @@ interface AiTranslatorStatus {
 }
 
 function resolveMicroserviceBinary(): string {
-  // Mirrors the existing resolveBinaryPath() used by /api/health today.
-  // Kept local so the masterlist has no upward dependency on analysis.ts.
-  const explicit = process.env.NEOTERRITORY_BINARY;
+  // Honour the same env var the analysis service uses (NEOTERRITORY_BIN).
+  const explicit = process.env.NEOTERRITORY_BIN || process.env.NEOTERRITORY_BINARY;
   if (explicit && fs.existsSync(explicit)) return explicit;
-  const root = path.resolve(__dirname, '..', '..', '..', '..');
+  // Compiled location: dist/src/services/healthMasterlist.js
+  //   up 5 → repo root → join 'Codebase/Microservice'.
+  const root = path.resolve(__dirname, '..', '..', '..', '..', '..');
   const candidates = [
-    path.join(root, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
     path.join(root, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
     path.join(root, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
+    path.join(root, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
   ];
   return candidates.find((p) => fs.existsSync(p)) || candidates[0];
 }
@@ -52,7 +53,7 @@ function resolveMicroserviceBinary(): string {
 function resolveMicroserviceCatalog(): string {
   const explicit = process.env.NEOTERRITORY_CATALOG;
   if (explicit && fs.existsSync(explicit)) return explicit;
-  const root = path.resolve(__dirname, '..', '..', '..', '..');
+  const root = path.resolve(__dirname, '..', '..', '..', '..', '..');
   return path.join(root, 'Codebase', 'Microservice', 'pattern_catalog');
 }
 

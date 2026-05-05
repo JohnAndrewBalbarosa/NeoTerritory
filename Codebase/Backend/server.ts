@@ -1,6 +1,9 @@
 import path from 'path';
 import dotenv from 'dotenv';
+// In ts-node dev mode __dirname is Backend/, in compiled prod mode it's
+// Backend/dist/. Try both so the .env at Backend/.env is found in either case.
 dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 import crypto from 'crypto';
 import express, { Request, Response } from 'express';

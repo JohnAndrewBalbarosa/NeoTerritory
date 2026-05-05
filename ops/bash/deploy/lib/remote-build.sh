@@ -42,7 +42,7 @@ cd Codebase/Backend
 # Ensure PM2 is installed globally on the host
 sudo npm install -g pm2 2>/dev/null || true
 sudo pm2 delete neoterritory 2>/dev/null || true
-sudo PORT=80 SSL_PORT=443 pm2 start dist/server.js --name neoterritory --update-env
+sudo PORT=80 SSL_PORT=443 HOST=0.0.0.0 NODE_ENV=production pm2 start dist/server.js --name neoterritory --update-env
 sudo pm2 save
 EOF
 }
