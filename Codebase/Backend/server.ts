@@ -44,6 +44,7 @@ import surveyRoutes from './src/routes/survey';
 import scraperRoutes from './src/routes/scraper';
 import { startWatching as startReviewSchemaWatch } from './src/reviews/questionLoader';
 import { uploadsDir } from './src/config/paths';
+import { httpsAdapter } from './src/middleware/httpsHandler';
 
 const app = express();
 const frontendDir = path.join(__dirname, '..', '..', 'Frontend');
@@ -51,6 +52,7 @@ const frontendDir = path.join(__dirname, '..', '..', 'Frontend');
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
+app.use(httpsAdapter);
 app.use(helmet());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

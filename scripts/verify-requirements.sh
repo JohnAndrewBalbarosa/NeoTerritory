@@ -22,6 +22,7 @@
 verify_requirements() {
   local profile="${1:-dev}"
   local soft="${2:-}"
+  local auto_install="${3:-}"
   local strict=1
   [[ "$soft" == 'soft' ]] && strict=0
 
@@ -30,6 +31,30 @@ verify_requirements() {
   _ok()   { printf '\033[32m    [OK] %s\033[0m\n' "$*"; }
   _warn() { printf '\033[33m    [!!] %s\033[0m\n' "$*"; }
   _err()  { printf '\033[31m    [XX] %s\033[0m\n' "$*"; }
+
+  _try_install() {
+    local name="$1"
+    [[ "$auto_install" != "auto" ]] && return 1
+    
+    local pkg_brew="$name"
+    local pkg_apt="$name"
+    
+    case "$name" in
+      node) pkg_apt="nodejs" ;;
+      npm)  pkg_apt="nodejs" ;; # npm usually comes with nodejs on apt too
+      g++)  pkg_brew="gcc"; pkg_apt="build-essential" ;;
+      docker) pkg_apt="docker.io" ;;
+    esac
+
+    if _has brew; then
+      _step "Attempting to install $name via brew ($pkg_brew)..."
+      brew install "$pkg_brew" && return 0
+    elif _has apt-get; then
+      _step "Attempting to install $name via apt-get ($pkg_apt)..."
+      sudo apt-get update && sudo apt-get install -y "$pkg_apt" && return 0
+    fi
+    return 1
+  }
 
   # _require <name> <fix-hint> — checks the tool and either:
   #   strict: prints [XX], the fix hint, and returns 1 from the function
@@ -40,6 +65,14 @@ verify_requirements() {
       _ok "$name found"
       return 0
     fi
+    
+    if _try_install "$name"; then
+      if _has "$name"; then
+        _ok "$name installed and found"
+        return 0
+      fi
+    fi
+
     if [[ $strict -eq 1 ]]; then
       _err "MISSING: $name"
       _err "  fix: $hint"
@@ -51,7 +84,10 @@ verify_requirements() {
     fi
   }
 
-  _step "Verifying requirements (profile: $profile, mode: $([ $strict -eq 1 ] && echo strict || echo soft))"
+  local mode_label="strict"
+  [[ "$soft" == "soft" ]] && mode_label="soft"
+  [[ "$auto_install" == "auto" ]] && mode_label="auto-install"
+  _step "Verifying requirements (profile: $profile, mode: $mode_label)"
 
   # --- minimal --------------------------------------------------------------
   _require node 'install Node.js — https://nodejs.org' || return 1

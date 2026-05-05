@@ -34,10 +34,21 @@ function Test-Requirements {
   param(
     [ValidateSet('minimal','dev','pods','full')]
     [string]$Profile = 'dev',
-    [switch]$Soft
+    [switch]$Soft,
+    [switch]$AutoInstall
   )
 
   $strict = -not $Soft
+
+  # Mapping for winget installations
+  $ToolMap = @{
+    'node'   = @{ ID = 'OpenJS.NodeJS.LTS'; Friendly = 'Node.js LTS' }
+    'npm'    = @{ ID = 'OpenJS.NodeJS.LTS'; Friendly = 'npm (via Node.js)' }
+    'cmake'  = @{ ID = 'Kitware.CMake'; Friendly = 'CMake' }
+    'git'    = @{ ID = 'Git.Git'; Friendly = 'Git' }
+    'docker' = @{ ID = 'Docker.DockerDesktop'; Friendly = 'Docker Desktop' }
+    'g++'    = @{ ID = 'MSYS2.MSYS2'; Friendly = 'MSYS2 (MinGW g++)' }
+  }
 
   function Has($name) { return [bool](Get-Command $name -ErrorAction SilentlyContinue) }
   function Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
@@ -45,10 +56,30 @@ function Test-Requirements {
   function Warn($msg) { Write-Host "    [!!] $msg" -ForegroundColor Yellow }
   function Err($msg)  { Write-Host "    [XX] $msg" -ForegroundColor Red }
 
+  function Try-Install($name) {
+    if (-not $AutoInstall) { return $false }
+    if (-not $ToolMap.ContainsKey($name)) { return $false }
+    if (-not (Has 'winget')) { Warn 'winget not found, cannot auto-install.'; return $false }
+
+    $tool = $ToolMap[$name]
+    Step "Attempting to install $($tool.Friendly) via winget ($($tool.ID))..."
+    & winget install --id $($tool.ID) --accept-source-agreements --accept-package-agreements -e --silent
+    if ($LASTEXITCODE -eq 0) {
+      Ok "$($tool.Friendly) installed successfully."
+      # Refresh path for the current session if possible
+      $env:Path = [System.Environment]::GetEnvironmentVariable('Path','Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path','User')
+      return (Has $name)
+    }
+    Warn "Failed to install $($tool.Friendly) via winget."
+    return $false
+  }
+
   # Sequential gate. On miss in strict mode we throw immediately; the
   # script that called us prints nothing further about other tools.
   function Require($name, $hint) {
     if (Has $name) { Ok "$name found"; return }
+    if (Try-Install $name) { return }
+
     if ($strict) {
       Err "MISSING: $name"
       Err "  fix: $hint"
@@ -59,7 +90,7 @@ function Test-Requirements {
     }
   }
 
-  $modeLabel = if ($strict) { 'strict' } else { 'soft' }
+  $modeLabel = if ($AutoInstall) { 'auto-install' } elseif ($strict) { 'strict' } else { 'soft' }
   Step "Verifying requirements (profile: $Profile, mode: $modeLabel)"
 
   $report = @{

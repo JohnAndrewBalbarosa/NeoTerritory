@@ -14,10 +14,11 @@
 #   .\start.ps1 k8s                          # minikube/kubectl (was setup.ps1)
 #   .\start.ps1 browser -Lan                 # clean Chromium (was clean-browser.ps1)
 #   .\start.ps1 test -Users 5                # k8s multi-user sim (was test.sh)
+#   .\start.ps1 deploy --source              # AWS ship-to-cloud (was deploy-aws.ps1)
 
 param(
   [Parameter(Position = 0)]
-  [ValidateSet('dev','prod','setup','k8s','browser','test','')]
+  [ValidateSet('dev','prod','setup','k8s','browser','test','deploy','')]
   [string]$Command = 'dev',
 
   # Universal
@@ -25,6 +26,8 @@ param(
   [string]$BindHost = '',
   [int]$BackendPort = 3001,
   [int]$FrontendPort = 5173,
+  [switch]$Deploy,
+  [switch]$Local,
 
   # dev
   [switch]$Rebuild,
@@ -202,7 +205,7 @@ function Ensure-NodeModules {
 function Invoke-Dev {
   . (Join-Path $Root 'scripts\verify-requirements.ps1')
   $reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
-  try { $report = Test-Requirements -Profile $reqProfile }
+  try { $report = Test-Requirements -Profile $reqProfile -AutoInstall }
   catch { Write-Err "Aborting -- requirements not met: $($_.Exception.Message)"; exit 1 }
 
   $bind     = Resolve-BindHost
@@ -346,37 +349,13 @@ function Invoke-Dev {
 function Invoke-Setup {
   Set-Location $Root
   $verifier = Join-Path $Root 'scripts\verify-requirements.ps1'
-  if (Test-Path $verifier) { . $verifier; Test-Requirements -Profile dev -Soft | Out-Null }
-
-  function Try-WingetInstall($id, $friendly) {
-    if (-not (Test-Tool 'winget')) { Write-Warn "$friendly missing and winget unavailable."; return $false }
-    Write-Step "Installing $friendly via winget ($id)"
-    & winget install --id $id --accept-source-agreements --accept-package-agreements -e --silent
-    return ($LASTEXITCODE -eq 0)
+  if (Test-Path $verifier) {
+    . $verifier
+    try { Test-Requirements -Profile dev -AutoInstall | Out-Null }
+    catch { Write-Err "Setup aborted -- requirements not met: $($_.Exception.Message)"; exit 1 }
   }
 
   Write-Step "Setup mode: $Mode"
-
-  # Phase 1 -- prerequisites
-  Write-Step 'Phase 1: Verify prerequisites'
-  if (-not (Test-Tool 'node')) {
-    if ($Mode -eq 'full' -and (Try-WingetInstall 'OpenJS.NodeJS.LTS' 'Node.js LTS')) { Write-Ok 'Node.js installed.' }
-    else { Write-Err 'Node.js is required. Install from https://nodejs.org and rerun.'; exit 1 }
-  } else { Write-Ok "Node.js: $(node --version)" }
-  if (-not (Test-Tool 'npm')) { Write-Err 'npm not found.'; exit 1 }
-  if (-not $SkipMicroservice) {
-    if (-not (Test-Tool 'cmake')) {
-      if ($Mode -eq 'full' -and (Try-WingetInstall 'Kitware.CMake' 'CMake')) { Write-Ok 'CMake installed.' }
-      else { Write-Err 'CMake is required. Install from https://cmake.org and rerun.'; exit 1 }
-    } else { Write-Ok "CMake: $((cmake --version | Select-Object -First 1))" }
-    $cxxOk = (Test-Tool 'g++') -or (Test-Tool 'clang++') -or (Test-Tool 'cl')
-    if (-not $cxxOk) {
-      Write-Warn 'No C++ compiler detected.'
-      if ($Mode -eq 'full' -and (Try-WingetInstall 'MSYS2.MSYS2' 'MSYS2 (provides MinGW g++)')) {
-        Write-Ok 'MSYS2 installed. Open a fresh shell, run pacman to install gcc/make, and add C:\msys64\ucrt64\bin to PATH.'
-      } else { Write-Err 'A C++17 compiler is required.'; exit 1 }
-    }
-  }
 
   # Phase 2 -- Backend deps
   Write-Step 'Phase 2: Backend npm install'
@@ -584,12 +563,25 @@ function Invoke-Test {
   & kubectl get pods
 }
 
+# -----------------------------------------------------------------------------
+# Subcommand: deploy (AWS)
+# -----------------------------------------------------------------------------
+function Invoke-Deploy {
+  $deployScript = Join-Path $Root 'scripts\deploy-aws.ps1'
+  if (-not (Test-Path $deployScript)) { Write-Err "Deploy script not found: $deployScript"; exit 1 }
+  & $deployScript @Rest
+}
+
 # --- Dispatch ---------------------------------------------------------------
+if ($Deploy) { $Command = 'deploy' }
+if ($Local)  { $Command = 'dev' }
+
 switch ($Command) {
   'setup'   { Invoke-Setup }
   'prod'    { $Prod = $true; Invoke-Dev }
   'k8s'     { Invoke-K8s }
   'browser' { Invoke-Browser }
   'test'    { Invoke-Test }
+  'deploy'  { Invoke-Deploy }
   default   { Invoke-Dev }
 }

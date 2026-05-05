@@ -1,0 +1,19 @@
+{
+  "name": "neoterritory-fastify-service",
+  "version": "1.0.0",
+  "description": "Decoupled auxiliary service using Fastify.",
+  "main": "server.js",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "fastify": "^4.26.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.7.0",
+    "typescript": "^5.4.0"
+  }
+}

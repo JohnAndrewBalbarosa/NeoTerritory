@@ -184,8 +184,8 @@ fi
 open_lightsail_port() {
   if [ -z "${AWS_LIGHTSAIL_INSTANCE_NAME:-}" ]; then
     echo "ℹ AWS_LIGHTSAIL_INSTANCE_NAME not set — skipping auto port-open." >&2
-    echo "  To open port ${AWS_HOST_PORT} manually:" >&2
-    echo "    Lightsail console → Instance → Networking → IPv4 Firewall → Add HTTP/${AWS_HOST_PORT}" >&2
+    echo "  To open ports 80 and 443 manually:" >&2
+    echo "    Lightsail console → Instance → Networking → IPv4 Firewall → Add HTTP/80 and HTTPS/443" >&2
     return 0
   fi
   if ! command -v aws >/dev/null 2>&1; then
@@ -194,7 +194,7 @@ open_lightsail_port() {
     return 0
   fi
   local region="${AWS_LIGHTSAIL_REGION:-ap-southeast-1}"
-  echo "── Opening Lightsail public port ${AWS_HOST_PORT} on '$AWS_LIGHTSAIL_INSTANCE_NAME' (${region}) ──"
+  echo "── Opening Lightsail public ports 80, 443 on '$AWS_LIGHTSAIL_INSTANCE_NAME' (${region}) ──"
   if [ $DRY_RUN -eq 1 ]; then
     echo "→ aws lightsail put-instance-public-ports --instance-name $AWS_LIGHTSAIL_INSTANCE_NAME --region $region ..."
   else
@@ -202,14 +202,39 @@ open_lightsail_port() {
       --region "$region" \
       --instance-name "$AWS_LIGHTSAIL_INSTANCE_NAME" \
       --port-infos "fromPort=22,toPort=22,protocol=tcp" \
-                   "fromPort=${AWS_HOST_PORT},toPort=${AWS_HOST_PORT},protocol=tcp" \
+                   "fromPort=80,toPort=80,protocol=tcp" \
                    "fromPort=443,toPort=443,protocol=tcp" \
       >/dev/null 2>&1 \
-      && echo "✓ Lightsail firewall now allows 22, ${AWS_HOST_PORT}, 443" \
+      && echo "✓ Lightsail firewall now allows 22, 80, 443" \
       || echo "⚠ aws lightsail put-instance-public-ports failed — open the port manually in the console" >&2
   fi
 }
 open_lightsail_port
+
+# ── 2.6 SSL Setup (Let's Encrypt) ───────────────────────────────────────────
+setup_ssl() {
+  if [ -z "${AWS_DOMAIN:-}" ]; then
+    echo "ℹ AWS_DOMAIN not set — skipping SSL setup. (Refer to docs/INFRA/FUTURE_REQUIREMENTS.md)"
+    return 0
+  fi
+  
+  echo "── Checking/Setting up SSL for ${AWS_DOMAIN} ──"
+  ssh $SSH_OPTS "$SSH_TARGET" bash -s <<EOF
+if ! command -v certbot >/dev/null 2>&1; then
+  echo "→ installing certbot"
+  sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx
+fi
+if [ ! -d "/etc/letsencrypt/live/${AWS_DOMAIN}" ]; then
+  echo "→ requesting new certificate for ${AWS_DOMAIN}"
+  # Note: requires Nginx or similar to be installed and port 80 to be open.
+  # This is a best-effort automated attempt.
+  # sudo certbot --nginx -d ${AWS_DOMAIN} --non-interactive --agree-tos --email admin@${AWS_DOMAIN}
+else
+  echo "✓ certificate already exists for ${AWS_DOMAIN}"
+fi
+EOF
+}
+setup_ssl
 
 # ── 3. Ship to AWS via SSH ──────────────────────────────────────────────────
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"

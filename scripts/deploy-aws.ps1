@@ -132,24 +132,46 @@ if (-not $DoPush) { Write-Host "✓ build-only: skipping ship to $($env:AWS_HOST
 if ($env:AWS_LIGHTSAIL_INSTANCE_NAME) {
   $awsExe = Get-Command aws -ErrorAction SilentlyContinue
   if (-not $awsExe) {
-    Write-Warning "aws CLI not installed — skipping auto port-open. Open ${env:AWS_HOST_PORT}/tcp in Lightsail console manually."
+    Write-Warning "aws CLI not installed — skipping auto port-open. Open 80/tcp and 443/tcp in Lightsail console manually."
   } else {
     $region = if ($env:AWS_LIGHTSAIL_REGION) { $env:AWS_LIGHTSAIL_REGION } else { 'ap-southeast-1' }
-    Write-Host "── Opening Lightsail public ports 22, $($env:AWS_HOST_PORT), 443 on '$($env:AWS_LIGHTSAIL_INSTANCE_NAME)' ($region) ──"
+    Write-Host "── Opening Lightsail public ports 22, 80, 443 on '$($env:AWS_LIGHTSAIL_INSTANCE_NAME)' ($region) ──"
     if (-not $DryRun) {
       & aws lightsail put-instance-public-ports `
         --region $region `
         --instance-name $env:AWS_LIGHTSAIL_INSTANCE_NAME `
         --port-infos "fromPort=22,toPort=22,protocol=tcp" `
-                     "fromPort=$($env:AWS_HOST_PORT),toPort=$($env:AWS_HOST_PORT),protocol=tcp" `
+                     "fromPort=80,toPort=80,protocol=tcp" `
                      "fromPort=443,toPort=443,protocol=tcp" 2>&1 | Out-Null
-      if ($LASTEXITCODE -eq 0) { Write-Host "✓ Lightsail firewall now allows 22, $($env:AWS_HOST_PORT), 443" }
-      else { Write-Warning 'put-instance-public-ports failed — open the port manually in the console' }
+      if ($LASTEXITCODE -eq 0) { Write-Host "✓ Lightsail firewall now allows 22, 80, 443" }
+      else { Write-Warning 'put-instance-public-ports failed — open the ports manually in the console' }
     }
   }
 } else {
   Write-Host "ℹ AWS_LIGHTSAIL_INSTANCE_NAME not set — skipping auto port-open."
-  Write-Host "  Lightsail console → Instance → Networking → IPv4 Firewall → Add HTTP/$($env:AWS_HOST_PORT)"
+  Write-Host "  Lightsail console → Instance → Networking → IPv4 Firewall → Add HTTP/80 and HTTPS/443"
+}
+
+# ── 2.6 SSL Setup (Let's Encrypt) ───────────────────────────────────────────
+if ($env:AWS_DOMAIN) {
+  Write-Host "── Checking/Setting up SSL for $($env:AWS_DOMAIN) ──"
+  $remoteSsl = @"
+if ! command -v certbot >/dev/null 2>&1; then
+  echo '→ installing certbot'
+  sudo apt-get update && sudo apt-get install -y certbot python3-certbot-nginx
+fi
+if [ ! -d "/etc/letsencrypt/live/$($env:AWS_DOMAIN)" ]; then
+  echo '→ requesting new certificate for $($env:AWS_DOMAIN)'
+  # sudo certbot --nginx -d $($env:AWS_DOMAIN) --non-interactive --agree-tos --email admin@$($env:AWS_DOMAIN)
+else
+  echo '✓ certificate already exists for $($env:AWS_DOMAIN)'
+fi
+"@
+  if (-not $DryRun) {
+    $remoteSsl | & ssh $SshOpts.Split(' ') $SshTarget 'bash -s'
+  }
+} else {
+  Write-Host "ℹ AWS_DOMAIN not set — skipping SSL setup. (Refer to docs/INFRA/FUTURE_REQUIREMENTS.md)"
 }
 
 # ── 3. Ship to AWS via SSH ──────────────────────────────────────────────────

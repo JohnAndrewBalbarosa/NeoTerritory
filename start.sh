@@ -16,6 +16,7 @@
 #   ./start.sh k8s                             # minikube/kubectl
 #   ./start.sh browser --lan                   # clean Chromium
 #   ./start.sh test --users 5                  # k8s multi-user sim
+#   ./start.sh deploy --source                 # AWS ship-to-cloud (was deploy-aws.sh)
 
 set -euo pipefail
 
@@ -36,6 +37,7 @@ LAN=0
 BIND_HOST=''
 BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+REST_ARGS=()
 
 # dev / prod
 REBUILD=0; BACKEND_ONLY=0; NO_BROWSER=0; SKIP_POD=0; USE_CHROME=0; PROD=0
@@ -56,7 +58,7 @@ USERS=3
 # ── Parse subcommand (first non-flag arg) and flags ────────────────────────
 if [[ $# -gt 0 ]]; then
   case "$1" in
-    dev|prod|setup|k8s|browser|test) COMMAND="$1"; shift ;;
+    dev|prod|setup|k8s|browser|test|deploy) COMMAND="$1"; shift ;;
   esac
 fi
 
@@ -66,6 +68,8 @@ while [[ $# -gt 0 ]]; do
     --host)           shift; BIND_HOST="${1:-}" ;;
     --backend-port)   shift; BACKEND_PORT="${1:-3001}" ;;
     --frontend-port)  shift; FRONTEND_PORT="${1:-5173}" ;;
+    --deploy)         COMMAND='deploy' ;;
+    --local)          COMMAND='dev' ;;
     # dev
     --rebuild)        REBUILD=1 ;;
     --backend-only)   BACKEND_ONLY=1 ;;
@@ -89,7 +93,7 @@ while [[ $# -gt 0 ]]; do
     --users)          shift; USERS="${1:-3}" ;;
     -h|--help)
       sed -n '2,18p' "$0"; exit 0 ;;
-    *) echo "Unknown flag: $1" >&2; exit 2 ;;
+    *) REST_ARGS+=("$1") ;;
   esac
   shift
 done
@@ -191,7 +195,7 @@ invoke_dev() {
   source "$ROOT_DIR/scripts/verify-requirements.sh"
   local req_profile='pods'
   [[ "$SKIP_POD" -eq 1 ]] && req_profile='dev'
-  if ! verify_requirements "$req_profile"; then
+  if ! verify_requirements "$req_profile" "" "auto"; then
     err 'Aborting — requirements not met.'; exit 1
   fi
 
@@ -328,21 +332,10 @@ invoke_setup() {
   if [[ -f "$ROOT_DIR/scripts/verify-requirements.sh" ]]; then
     # shellcheck source=scripts/verify-requirements.sh
     source "$ROOT_DIR/scripts/verify-requirements.sh"
-    verify_requirements dev soft || true
+    verify_requirements dev "" "auto" || true
   fi
 
   step "Setup mode: $MODE"
-
-  step 'Phase 1: Verify prerequisites'
-  has node  || { err 'Node.js is required. https://nodejs.org'; exit 1; }
-  has npm   || { err 'npm not found.'; exit 1; }
-  if [[ "$SKIP_MICRO" -eq 0 ]]; then
-    has cmake || { err 'CMake is required. https://cmake.org'; exit 1; }
-    if ! { has g++ || has clang++ || has cl.exe; }; then
-      err 'A C++17 compiler is required (g++ / clang++ / cl).'; exit 1
-    fi
-  fi
-  ok 'Prerequisites OK.'
 
   step 'Phase 2: Backend npm install'
   ( cd "$BACKEND_DIR" && npm install )
@@ -507,6 +500,15 @@ invoke_test() {
   kubectl get pods
 }
 
+# ─────────────────────────────────────────────────────────────────────────────
+# Subcommand: deploy (AWS)
+# ─────────────────────────────────────────────────────────────────────────────
+invoke_deploy() {
+  local deploy_script="$ROOT_DIR/scripts/deploy-aws.sh"
+  if [[ ! -f "$deploy_script" ]]; then err "Deploy script not found: $deploy_script"; exit 1; fi
+  bash "$deploy_script" "${REST_ARGS[@]}"
+}
+
 # ─── Dispatch ──────────────────────────────────────────────────────────────
 case "$COMMAND" in
   dev)     invoke_dev ;;
@@ -515,5 +517,6 @@ case "$COMMAND" in
   k8s)     invoke_k8s ;;
   browser) invoke_browser_inline ;;
   test)    invoke_test ;;
+  deploy)  invoke_deploy ;;
   *)       invoke_dev ;;
 esac
