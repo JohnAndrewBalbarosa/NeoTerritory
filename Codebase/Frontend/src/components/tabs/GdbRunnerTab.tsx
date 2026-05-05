@@ -183,7 +183,13 @@ export default function GdbRunnerTab() {
     currentRun, setActiveTab, setGdbAllPassedForRun,
     lastGdbResults, lastGdbRunKey, setLastGdbResults,
     pendingGdbAutoRun, setPendingGdbAutoRun,
-    programStdin
+    programStdin,
+    gdbBusy: busy, gdbBusyForKey, gdbInflightSkeleton,
+    gdbError: error, gdbUnavailable: unavailable,
+    gdbCooldownUntil: cooldownUntil, gdbBudgetRemaining: budgetRemaining,
+    gdbAmbiguousBlock: ambiguousBlock,
+    setGdbBusy, setGdbInflightSkeleton, setGdbError, setGdbUnavailable,
+    setGdbCooldownUntil, setGdbBudgetRemaining, setGdbAmbiguousBlock
   } = useAppStore();
   // Session key for the current run — id-based when saved, pendingId-based
   // when unsaved. The cached GDB results in the store are only valid when
@@ -193,21 +199,23 @@ export default function GdbRunnerTab() {
     ? (currentRun.runId != null ? `run:${currentRun.runId}` : `pending:${currentRun.pendingId || ''}`)
     : '';
   const cachedValid = !!lastGdbResults && lastGdbRunKey === sessionKey && lastGdbResults.length > 0;
-  const [groups, setGroups] = useState<PatternGroup[]>(
-    cachedValid ? groupResults(lastGdbResults!) : []
-  );
+  // Groups are now derived from store state on every render — while a run is
+  // in flight we render the skeleton from the store; otherwise we render the
+  // cached final results. This is what makes the runner survive a tab switch:
+  // the busy spinner / skeleton lives in the global store, not in local
+  // useState that gets blown away on unmount.
+  const groups: PatternGroup[] = useMemo(() => {
+    if (busy && gdbBusyForKey === sessionKey && gdbInflightSkeleton.length > 0) {
+      return gdbInflightSkeleton.map(s => ({ ...s }));
+    }
+    return cachedValid ? groupResults(lastGdbResults!) : [];
+  }, [busy, gdbBusyForKey, gdbInflightSkeleton, cachedValid, lastGdbResults, sessionKey]);
   const [activeKey, setActiveKey] = useState<string>(
-    cachedValid && groups.length === 0 && lastGdbResults && lastGdbResults.length > 0
+    cachedValid && lastGdbResults && lastGdbResults.length > 0
       ? `${lastGdbResults[0].patternId}__${lastGdbResults[0].className}`
       : ''
   );
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [unavailable, setUnavailable] = useState<string | null>(null);
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null);
   const [now, setNow] = useState(Date.now());
-  const [budgetRemaining, setBudgetRemaining] = useState<number | null>(null);
-  const [ambiguousBlock, setAmbiguousBlock] = useState<string[] | null>(null);
   const [accuracy, setAccuracy] = useState<AdminTestRunStats | null>(null);
 
   // Pull the user's lifetime test-pass-rate so the studio sidebar can show
@@ -285,23 +293,27 @@ export default function GdbRunnerTab() {
     if (!canRun || busy || onCooldown) return;
     if (!currentRun) return;
     if (localAmbiguous.length > 0) {
-      setAmbiguousBlock(localAmbiguous);
+      setGdbAmbiguousBlock(localAmbiguous);
       return;
     }
     const resolvedMap = currentRun.classResolvedPatterns || {};
-    setBusy(true);
-    setError(null);
-    setUnavailable(null);
-    setAmbiguousBlock(null);
+    setGdbError(null);
+    setGdbUnavailable(null);
+    setGdbAmbiguousBlock(null);
 
-    const skeleton: PatternGroup[] = (currentRun?.detectedPatterns || [])
+    const skeleton = (currentRun?.detectedPatterns || [])
       .filter(p => !!p.className)
       .map(p => ({
         patternId: p.patternId,
         patternName: p.patternName || p.patternId,
         className: p.className!
       }));
-    setGroups(skeleton);
+    // Push busy + skeleton into the GLOBAL store so a tab switch doesn't
+    // unmount this state. The component-local useState that used to live
+    // here got blown away on every navigation, making the in-flight run
+    // look like it was interrupted.
+    setGdbInflightSkeleton(skeleton);
+    setGdbBusy(true, sessionKey);
     logFrontendEvent('frontend.gdb_test', `dispatch patterns=${skeleton.length}`);
     try {
       const data = await runPatternTests(
@@ -310,11 +322,10 @@ export default function GdbRunnerTab() {
           : { pendingId: pendingId!, classResolvedPatterns: resolvedMap, stdin: programStdin }
       );
       const grouped = groupResults(data.results);
-      setGroups(grouped);
       if (grouped.length > 0) {
         setActiveKey(`${grouped[0].patternId}__${grouped[0].className}`);
       }
-      setBudgetRemaining(data.rateLimit?.remaining ?? null);
+      setGdbBudgetRemaining(data.rateLimit?.remaining ?? null);
       // Persist results in the session so a tab switch doesn't lose them.
       // The runKey binds the cache to *this* run's identity — a new
       // submission resets it via setCurrentRun, requiring a fresh run.
@@ -327,19 +338,19 @@ export default function GdbRunnerTab() {
     } catch (err) {
       const e = err as ApiError;
       if (e.status === 503) {
-        setUnavailable(e.detail || e.message || 'Test runner not configured.');
+        setGdbUnavailable(e.detail || e.message || 'Test runner not configured.');
       } else if (e.status === 429) {
         const ms = e.retryAfterMs || 60_000;
-        setCooldownUntil(Date.now() + ms);
-        setError(e.detail || `Rate limited. Try again in ${Math.ceil(ms / 1000)}s.`);
+        setGdbCooldownUntil(Date.now() + ms);
+        setGdbError(e.detail || `Rate limited. Try again in ${Math.ceil(ms / 1000)}s.`);
       } else if (e.status === 409 && Array.isArray(e.ambiguousClasses)) {
-        setAmbiguousBlock(e.ambiguousClasses);
+        setGdbAmbiguousBlock(e.ambiguousClasses);
       } else {
-        setError(e.message || 'Failed to run tests.');
+        setGdbError(e.message || 'Failed to run tests.');
         logFrontendEvent('frontend.gdb_test', `error ${(e.message || '').slice(0, 100)}`);
       }
     } finally {
-      setBusy(false);
+      setGdbBusy(false);
     }
   }
 

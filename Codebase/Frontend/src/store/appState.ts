@@ -34,6 +34,18 @@ interface AppState {
   // setCurrentRun) so a fresh submission is required to re-run.
   lastGdbResults: import('../api/client').GdbTestResult[] | null;
   lastGdbRunKey: string | null;
+  // In-flight GDB run state. Lifted into the store (was local useState in
+  // GdbRunnerTab) so a tab switch doesn't unmount the component and lose the
+  // running spinner / skeleton / cooldown / error banner. The runner is now
+  // session-based: it survives navigation between Annotated/Ambiguous/etc.
+  gdbBusy: boolean;
+  gdbBusyForKey: string | null;
+  gdbInflightSkeleton: Array<{ patternId: string; patternName: string; className: string }>;
+  gdbError: string | null;
+  gdbUnavailable: string | null;
+  gdbCooldownUntil: number | null;
+  gdbBudgetRemaining: number | null;
+  gdbAmbiguousBlock: string[] | null;
   // One-shot flag flipped by the Annotated tab CTA. The GDB tab observes
   // it on mount and dispatches `runAll()` once, then resets it. Lets a
   // single click on the CTA both navigate and trigger the run.
@@ -71,6 +83,13 @@ interface AppState {
   setSessionReviewedEnd: (v: boolean) => void;
   setGdbAllPassedForRun: (v: boolean) => void;
   setLastGdbResults: (results: import('../api/client').GdbTestResult[] | null, runKey: string | null) => void;
+  setGdbBusy: (busy: boolean, sessionKey?: string | null) => void;
+  setGdbInflightSkeleton: (skel: Array<{ patternId: string; patternName: string; className: string }>) => void;
+  setGdbError: (msg: string | null) => void;
+  setGdbUnavailable: (msg: string | null) => void;
+  setGdbCooldownUntil: (until: number | null) => void;
+  setGdbBudgetRemaining: (n: number | null) => void;
+  setGdbAmbiguousBlock: (classes: string[] | null) => void;
   setPendingGdbAutoRun: (v: boolean) => void;
   setProgramStdin: (text: string) => void;
   setActiveTab: (tab: StudioTab) => void;
@@ -112,6 +131,14 @@ export const useAppStore = create<AppState>((set) => ({
   gdbAllPassedForRun: false,
   lastGdbResults: null,
   lastGdbRunKey: null,
+  gdbBusy: false,
+  gdbBusyForKey: null,
+  gdbInflightSkeleton: [],
+  gdbError: null,
+  gdbUnavailable: null,
+  gdbCooldownUntil: null,
+  gdbBudgetRemaining: null,
+  gdbAmbiguousBlock: null,
   pendingGdbAutoRun: false,
   programStdin: '',
   activeTab: 'submit',
@@ -170,6 +197,14 @@ export const useAppStore = create<AppState>((set) => ({
     gdbAllPassedForRun: false,
     lastGdbResults: null,
     lastGdbRunKey: null,
+    gdbBusy: false,
+    gdbBusyForKey: null,
+    gdbInflightSkeleton: [],
+    gdbError: null,
+    gdbUnavailable: null,
+    gdbCooldownUntil: null,
+    gdbBudgetRemaining: null,
+    gdbAmbiguousBlock: null,
     pendingGdbAutoRun: false,
     programStdin: ''
   }),
@@ -185,6 +220,19 @@ export const useAppStore = create<AppState>((set) => ({
   setSessionReviewedEnd: (v) => set({ sessionReviewedEnd: v }),
   setGdbAllPassedForRun: (v) => set({ gdbAllPassedForRun: v }),
   setLastGdbResults: (results, runKey) => set({ lastGdbResults: results, lastGdbRunKey: runKey }),
+  setGdbBusy: (busy, sessionKey) => set({
+    gdbBusy: busy,
+    gdbBusyForKey: busy ? (sessionKey ?? null) : null,
+    // Clear the skeleton when the run finishes so display falls back to
+    // lastGdbResults; keep it while busy so the spinning rows stay visible.
+    ...(busy ? {} : { gdbInflightSkeleton: [] })
+  }),
+  setGdbInflightSkeleton: (skel) => set({ gdbInflightSkeleton: skel }),
+  setGdbError: (msg) => set({ gdbError: msg }),
+  setGdbUnavailable: (msg) => set({ gdbUnavailable: msg }),
+  setGdbCooldownUntil: (until) => set({ gdbCooldownUntil: until }),
+  setGdbBudgetRemaining: (n) => set({ gdbBudgetRemaining: n }),
+  setGdbAmbiguousBlock: (classes) => set({ gdbAmbiguousBlock: classes }),
   setPendingGdbAutoRun: (v) => set({ pendingGdbAutoRun: v }),
   setProgramStdin: (text) => set({ programStdin: text }),
   setActiveTab: (tab) => set({ activeTab: tab }),

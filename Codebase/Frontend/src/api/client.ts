@@ -11,12 +11,16 @@ function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
-export async function apiFetch<T>(url: string, options: RequestInit = {}): Promise<T> {
+export async function apiFetch<T>(url: string, options: RequestInit = {}, timeoutMs = 30000): Promise<T> {
   const token = getToken();
   const isForm = options.body instanceof FormData;
 
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 30000);
+  // Allow callers to override (or effectively disable with a very large value)
+  // the default 30s timeout — the GDB runner can legitimately take 60s+ per
+  // phase, and aborting mid-run mid-tab-switch makes it look like the backend
+  // crashed when really it's just the client cancelling.
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
 
   const headers: Record<string, string> = {
     Accept: 'application/json',
@@ -448,6 +452,11 @@ export async function runPatternTests(opts: {
   classResolvedPatterns?: Record<string, string>;
   stdin?: string;
 }): Promise<GdbRunResponse> {
+  // 10-minute client timeout — backend has its own per-phase caps (10s
+  // compile + 60s run × 2 phases × N patterns); we just need a ceiling that
+  // doesn't fire before the backend's own work is done. The default 30s
+  // here used to abort GDB runs mid-flight when the user tabbed away.
+  const GDB_TIMEOUT_MS = 600_000;
   if (opts.runId != null) {
     return apiFetch<GdbRunResponse>(`/api/analysis/${opts.runId}/run-tests`, {
       method: 'POST',
@@ -456,7 +465,7 @@ export async function runPatternTests(opts: {
         classResolvedPatterns: opts.classResolvedPatterns || {},
         stdin: opts.stdin || ''
       })
-    });
+    }, GDB_TIMEOUT_MS);
   }
   if (!opts.pendingId) throw new Error('runId or pendingId required');
   return apiFetch<GdbRunResponse>('/api/analysis/run-tests', {
@@ -467,7 +476,7 @@ export async function runPatternTests(opts: {
       classResolvedPatterns: opts.classResolvedPatterns || {},
       stdin: opts.stdin || ''
     })
-  });
+  }, GDB_TIMEOUT_MS);
 }
 
 // AI poll endpoint
