@@ -44,6 +44,7 @@ verify_requirements() {
       npm)  pkg_apt="nodejs" ;; # npm usually comes with nodejs on apt too
       g++)  pkg_brew="gcc"; pkg_apt="build-essential" ;;
       docker) pkg_apt="docker.io" ;;
+      aws)  pkg_brew="awscli"; pkg_apt="awscli" ;;
     esac
 
     if _has brew; then

@@ -61,7 +61,21 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -y
 apt-get install -y --no-install-recommends \
-  ca-certificates curl gnupg lsb-release ufw rsync git unattended-upgrades
+  ca-certificates curl gnupg lsb-release ufw rsync git unattended-upgrades \
+  build-essential cmake g++ make python3
+
+# ── 1.5 Node.js (v20 LTS) ───────────────────────────────────────────────────
+if ! command -v node >/dev/null 2>&1; then
+  echo "[lightsail-launch] installing node.js"
+  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+  apt-get install -y nodejs
+fi
+
+# ── 1.6 PM2 (Process Manager) ────────────────────────────────────────────────
+if ! command -v pm2 >/dev/null 2>&1; then
+  echo "[lightsail-launch] installing pm2"
+  npm install -g pm2
+fi
 
 # ── 2. Swap (1G) — small Lightsail plans OOM during docker builds ──────────
 if ! swapon --show | grep -q '/swapfile'; then

@@ -5,7 +5,9 @@
 # See docs/Codebase/DESIGN_DECISIONS.md (D28).
 #
 # Usage:
-#   .\start.ps1                              # dev (default)
+#   .\start.ps1 -Local                       # Local computer deployment (dev)
+#   .\start.ps1 -Aws                         # AWS Lightsail deployment only
+#   .\start.ps1 -Both                        # Both local and AWS deployment
 #   .\start.ps1 -Lan                         # dev, exposed to LAN
 # .\start.ps1 -BindHost [IP_ADDRESS]        # bind to exact IP
 #   .\start.ps1 dev -Lan -BackendPort 4000
@@ -28,6 +30,8 @@ param(
   [int]$FrontendPort = 5173,
   [switch]$Deploy,
   [switch]$Local,
+  [switch]$Aws,
+  [switch]$Both,
 
   # dev
   [switch]$Rebuild,
@@ -573,8 +577,15 @@ function Invoke-Deploy {
 }
 
 # --- Dispatch ---------------------------------------------------------------
-if ($Deploy) { $Command = 'deploy' }
-if ($Local)  { $Command = 'dev' }
+if ($Both) {
+    Write-Step 'Running BOTH Local and AWS deployment'
+    # Start local dev in a separate process so it doesn't block deployment
+    Start-Process powershell.exe -ArgumentList "-NoProfile -Command & '$PSCommandPath' dev -NoBrowser"
+    Invoke-Deploy
+    return
+}
+if ($Aws -or $Deploy) { Invoke-Deploy; return }
+if ($Local)           { Invoke-Dev; return }
 
 switch ($Command) {
   'setup'   { Invoke-Setup }

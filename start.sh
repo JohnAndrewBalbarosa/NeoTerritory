@@ -7,6 +7,9 @@
 #
 # Usage:
 #   ./start.sh                                 # dev (default)
+#   ./start.sh --local                         # Local computer deployment (dev)
+#   ./start.sh --aws                           # AWS Lightsail deployment only
+#   ./start.sh --both                          # Both local and AWS deployment
 #   ./start.sh --lan                           # dev, exposed to LAN
 #   ./start.sh dev --lan --backend-port 4000
 #   ./start.sh prod                            # production build (npm run build + node dist + vite preview)
@@ -37,6 +40,7 @@ LAN=0
 BIND_HOST=''
 BACKEND_PORT="${BACKEND_PORT:-3001}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
+BOTH=0
 REST_ARGS=()
 
 # dev / prod
@@ -68,8 +72,9 @@ while [[ $# -gt 0 ]]; do
     --host)           shift; BIND_HOST="${1:-}" ;;
     --backend-port)   shift; BACKEND_PORT="${1:-3001}" ;;
     --frontend-port)  shift; FRONTEND_PORT="${1:-5173}" ;;
-    --deploy)         COMMAND='deploy' ;;
+    --deploy|--aws)   COMMAND='deploy' ;;
     --local)          COMMAND='dev' ;;
+    --both)           BOTH=1 ;;
     # dev
     --rebuild)        REBUILD=1 ;;
     --backend-only)   BACKEND_ONLY=1 ;;
@@ -510,6 +515,17 @@ invoke_deploy() {
 }
 
 # ─── Dispatch ──────────────────────────────────────────────────────────────
+if [[ "$BOTH" -eq 1 ]]; then
+  step 'Running BOTH Local and AWS deployment'
+  # Start local dev in background without browser
+  NO_BROWSER=1 invoke_dev &
+  DEV_PID=$!
+  invoke_deploy
+  step "AWS Deployment triggered. Local dev is running in background (pid $DEV_PID)."
+  wait "$DEV_PID"
+  exit 0
+fi
+
 case "$COMMAND" in
   dev)     invoke_dev ;;
   prod)    PROD=1; invoke_dev ;;
