@@ -49,10 +49,57 @@ function Build-Microservice {
   Write-Ok "Microservice built: $BinaryPath"
 }
 
+function Get-NodePlatformTag {
+  # Returns "<os>-<arch>" matching @esbuild/* and @rollup/* native subpackages.
+  $os = $null
+  if ($IsWindows -or $env:OS -eq 'Windows_NT') { $os = 'win32' }
+  elseif ($IsMacOS)                            { $os = 'darwin' }
+  elseif ($IsLinux)                            { $os = 'linux' }
+  else { return $null }
+  $archEnv = $env:PROCESSOR_ARCHITECTURE
+  $arch = switch -Regex ($archEnv) {
+    'ARM64' { 'arm64' }
+    'AMD64' { 'x64' }
+    'x86'   { 'ia32' }
+    default { 'x64' }
+  }
+  return "$os-$arch"
+}
+
+function Test-NodeModulesPlatform {
+  # Returns $true when node_modules native binaries match current platform.
+  # Anchored on esbuild — that's where cross-platform copies blow up first.
+  param([string]$Dir)
+  $plat = Get-NodePlatformTag
+  if (-not $plat) { return $true }
+  $esbuild = Join-Path $Dir 'node_modules\esbuild'
+  if (Test-Path $esbuild) {
+    $expected = Join-Path $Dir "node_modules\@esbuild\$plat"
+    if (-not (Test-Path $expected)) { return $false }
+  }
+  $rollup = Join-Path $Dir 'node_modules\rollup'
+  if (Test-Path $rollup) {
+    $rollupRoot = Join-Path $Dir 'node_modules\@rollup'
+    if (Test-Path $rollupRoot) {
+      $any   = Get-ChildItem $rollupRoot -Directory -Filter 'rollup-*' -ErrorAction SilentlyContinue
+      $match = Get-ChildItem $rollupRoot -Directory -Filter "rollup-$plat*" -ErrorAction SilentlyContinue
+      if ($any -and -not $match) { return $false }
+    }
+  }
+  return $true
+}
+
 function Ensure-NodeModules {
   param([string]$Dir, [string]$Label)
   $nm = Join-Path $Dir 'node_modules'
-  if (Test-Path $nm) { Write-Ok "$Label node_modules already present."; return }
+  if (Test-Path $nm) {
+    if (Test-NodeModulesPlatform -Dir $Dir) {
+      Write-Ok "$Label node_modules already present."
+      return
+    }
+    Write-Warn "$Label node_modules built for a different platform -- reinstalling for $(Get-NodePlatformTag)."
+    Remove-Item -Recurse -Force $nm
+  }
   Write-Step "Installing $Label npm dependencies"
   Push-Location $Dir
   try { & npm install } finally { Pop-Location }

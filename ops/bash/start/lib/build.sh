@@ -1,9 +1,53 @@
 #!/usr/bin/env bash
 # Shared build/install helpers used by dev + setup subcommands.
 
+_detect_node_platform_tag() {
+  # Echoes "<os>-<arch>" matching @esbuild/* and @rollup/* native subpackages.
+  local os='' arch=''
+  case "$(uname -s)" in
+    Linux*)               os=linux ;;
+    Darwin*)              os=darwin ;;
+    MINGW*|MSYS*|CYGWIN*) os=win32 ;;
+    *)                    return 0 ;;
+  esac
+  case "$(uname -m)" in
+    x86_64|amd64)         arch=x64 ;;
+    aarch64|arm64)        arch=arm64 ;;
+    *)                    return 0 ;;
+  esac
+  printf '%s-%s' "$os" "$arch"
+}
+
+_node_modules_platform_ok() {
+  # Returns 0 if node_modules looks valid for current platform, 1 if mismatch.
+  # Anchored on esbuild because that's where cross-platform copies blow up
+  # first; same logic catches rollup native binaries when present.
+  local dir="$1" plat
+  plat="$(_detect_node_platform_tag)"
+  [[ -z "$plat" ]] && return 0
+  if [[ -d "$dir/node_modules/esbuild" && ! -d "$dir/node_modules/@esbuild/$plat" ]]; then
+    return 1
+  fi
+  if [[ -d "$dir/node_modules/rollup" ]]; then
+    if compgen -G "$dir/node_modules/@rollup/rollup-*" > /dev/null; then
+      if ! compgen -G "$dir/node_modules/@rollup/rollup-${plat}*" > /dev/null; then
+        return 1
+      fi
+    fi
+  fi
+  return 0
+}
+
 ensure_node_modules() {
   local dir="$1" label="$2"
-  if [[ -d "$dir/node_modules" ]]; then ok "$label node_modules already present."; return; fi
+  if [[ -d "$dir/node_modules" ]]; then
+    if _node_modules_platform_ok "$dir"; then
+      ok "$label node_modules already present."
+      return
+    fi
+    warn "$label node_modules built for a different platform — reinstalling for $(uname -s -m)."
+    rm -rf "$dir/node_modules"
+  fi
   step "Installing $label npm dependencies"
   ( cd "$dir" && npm install )
   ok "$label node_modules installed."
