@@ -38,6 +38,54 @@ _node_modules_platform_ok() {
   return 0
 }
 
+_to_windows_path() {
+  # Convert /mnt/c/foo/bar -> C:\foo\bar (best-effort, only used inside WSL).
+  local p="$1"
+  if has wslpath; then
+    wslpath -w "$p" 2>/dev/null && return 0
+  fi
+  if [[ "$p" =~ ^/mnt/([a-zA-Z])/(.*)$ ]]; then
+    local drive="${BASH_REMATCH[1]^^}" rest="${BASH_REMATCH[2]//\//\\}"
+    printf '%s:\\%s' "$drive" "$rest"
+    return 0
+  fi
+  return 1
+}
+
+_force_remove_node_modules() {
+  # Robust removal for node_modules, including the WSL-on-/mnt/c case where
+  # Windows-held file handles cause "Input/output error" from rm -rf.
+  local target="$1"
+  [[ -d "$target" ]] || return 0
+
+  # Rename first — frees the canonical path even if a few inner files refuse
+  # to delete, and surfaces lock errors before npm install starts writing.
+  local stash="${target}.stale.$$"
+  if ! mv "$target" "$stash" 2>/dev/null; then
+    stash="$target"
+  fi
+
+  if rm -rf "$stash" 2>/dev/null; then
+    return 0
+  fi
+
+  # /mnt/c path under WSL — let Windows do the delete; it can break locks
+  # that the 9P bridge can't touch.
+  if [[ "$stash" == /mnt/[a-zA-Z]/* ]] && command -v cmd.exe >/dev/null 2>&1; then
+    local winpath
+    if winpath="$(_to_windows_path "$stash")"; then
+      warn "rm failed on WSL/9P — retrying via Windows cmd.exe rmdir."
+      cmd.exe /c "rmdir /s /q \"$winpath\"" >/dev/null 2>&1 || true
+      [[ ! -d "$stash" ]] && return 0
+    fi
+  fi
+
+  err "Could not delete $stash."
+  err "Close any Windows process holding node_modules (VS Code, vite, node, antivirus scan)"
+  err "and either rerun this script or delete the directory manually from Windows."
+  return 1
+}
+
 ensure_node_modules() {
   local dir="$1" label="$2"
   if [[ -d "$dir/node_modules" ]]; then
@@ -46,7 +94,10 @@ ensure_node_modules() {
       return
     fi
     warn "$label node_modules built for a different platform — reinstalling for $(uname -s -m)."
-    rm -rf "$dir/node_modules"
+    if ! _force_remove_node_modules "$dir/node_modules"; then
+      err "$label node_modules reinstall aborted."
+      exit 1
+    fi
   fi
   step "Installing $label npm dependencies"
   ( cd "$dir" && npm install )
