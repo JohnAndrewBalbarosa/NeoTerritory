@@ -154,9 +154,15 @@ Shared build/install helpers used by dev + setup subcommands.
 - `_node_modules_platform_ok` (line 21)
 - `_to_windows_path` (line 41)
 - `_force_remove_node_modules` (line 55)
-- `ensure_node_modules` (line 89)
-- `build_microservice` (line 107)
-- `write_dev_env` (line 118)
+- `ensure_node_modules` (line 91)
+  Install npm deps for $dir if missing, or wipe + reinstall when the existing
+  node_modules was built for a different OS/arch (esbuild/rollup native bins).
+- `build_microservice` (line 111)
+  Configure + build the C++ microservice via CMake. Idempotent: skips the
+  whole pass when $BIN_PATH already exists unless $1 (force) is non-zero.
+- `write_dev_env` (line 124)
+  Write a development Backend/.env with the chosen ports + a CORS origin
+  list. No-op when $ENV_FILE already exists — never clobbers operator edits.
 
 ### `ops/bash/start/lib/env.sh`
 

@@ -86,6 +86,8 @@ _force_remove_node_modules() {
   return 1
 }
 
+# Install npm deps for $dir if missing, or wipe + reinstall when the existing
+# node_modules was built for a different OS/arch (esbuild/rollup native bins).
 ensure_node_modules() {
   local dir="$1" label="$2"
   if [[ -d "$dir/node_modules" ]]; then
@@ -104,6 +106,8 @@ ensure_node_modules() {
   ok "$label node_modules installed."
 }
 
+# Configure + build the C++ microservice via CMake. Idempotent: skips the
+# whole pass when $BIN_PATH already exists unless $1 (force) is non-zero.
 build_microservice() {
   local force="${1:-0}"
   if [[ "$force" -eq 0 && -f "$BIN_PATH" ]]; then
@@ -115,6 +119,8 @@ build_microservice() {
   ok "Microservice built: $BIN_PATH"
 }
 
+# Write a development Backend/.env with the chosen ports + a CORS origin
+# list. No-op when $ENV_FILE already exists — never clobbers operator edits.
 write_dev_env() {
   local port="$1" vite_port="$2" advert="$3"
   if [[ -f "$ENV_FILE" ]]; then ok '.env already exists — leaving in place.'; return; fi
