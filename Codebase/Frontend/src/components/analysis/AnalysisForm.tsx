@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { submitAnalysis, fetchSample } from '../../api/client';
+import { consumeStudioPrefill } from '../../lib/studioPrefill';
 import { logFrontendEvent } from '../../lib/frontendLog';
 import { AnalysisRun } from '../../types/api';
 
@@ -36,6 +37,13 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   // mount we hydrate from the store, falling back to a single seed slot
   // synthesized from the legacy single-file store fields.
   const [slots, setSlots] = useState<FileSlot[]>(() => {
+    // Marketing /learn lessons can stash a sample in sessionStorage and
+    // navigate here. Consume it before falling back to existing state so
+    // the user lands with the lesson's sample already loaded.
+    const prefill = consumeStudioPrefill();
+    if (prefill) {
+      return [{ id: newSlotId(), name: prefill.name, text: prefill.code }];
+    }
     if (submissionFiles && submissionFiles.length > 0) return submissionFiles;
     return [{ id: newSlotId(), name: filename || 'snippet.cpp', text: sourceText || '' }];
   });

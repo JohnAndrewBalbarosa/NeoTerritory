@@ -21,6 +21,25 @@ export function navigate(path: string): void {
   window.dispatchEvent(new CustomEvent(NAV_EVENT));
 }
 
+export function usePath(): string {
+  const initial = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const [path, setPath] = useState<string>(initial);
+
+  useEffect(() => {
+    const recompute = (): void => {
+      setPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', recompute);
+    window.addEventListener(NAV_EVENT, recompute);
+    return () => {
+      window.removeEventListener('popstate', recompute);
+      window.removeEventListener(NAV_EVENT, recompute);
+    };
+  }, []);
+
+  return path;
+}
+
 export function useSurface(): Surface {
   const initial = typeof window !== 'undefined' ? window.location.pathname : '/';
   const [surface, setSurface] = useState<Surface>(pathToSurface(initial));
