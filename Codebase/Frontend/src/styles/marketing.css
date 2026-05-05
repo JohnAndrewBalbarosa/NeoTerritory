@@ -1211,3 +1211,269 @@ body[data-surface] #root {
 .nt-atlas__asserts li {
   margin: 0;
 }
+
+/* ── Curriculum · pattern modules (on /learn) ─────────────────────────── */
+.nt-learn__curriculum {
+  margin-bottom: var(--nt-mkt-space-section);
+}
+.nt-curriculum {
+  display: grid;
+  gap: 1.6rem;
+  margin-top: 2.5rem;
+}
+@media (min-width: 1100px) {
+  .nt-curriculum {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nt-module--howto,
+  .nt-module--meta {
+    grid-column: 1 / -1;
+  }
+}
+.nt-module {
+  background: var(--nt-mkt-surface);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  padding: 1.75rem 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.nt-module::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2));
+  opacity: 0.7;
+}
+.nt-module--meta::before,
+.nt-module--howto::before {
+  background: linear-gradient(90deg, var(--nt-mkt-line-strong), transparent);
+  opacity: 1;
+}
+.nt-module__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.nt-module__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-mute);
+  margin: 0.2rem 0 0;
+  padding: 0.25rem 0.6rem;
+  border: 1px solid var(--nt-mkt-line-strong);
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.nt-module__heading {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+.nt-module__name {
+  margin: 0;
+  font-size: 1.4rem;
+  letter-spacing: -0.015em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.nt-module__tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--nt-mkt-accent-2) 22%, transparent);
+  color: var(--nt-mkt-text);
+  border: 1px solid color-mix(in oklch, var(--nt-mkt-accent-2) 50%, transparent);
+}
+.nt-module__path {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-module__path code {
+  font-family: 'JetBrains Mono', monospace;
+}
+.nt-module__tagline {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--nt-mkt-text);
+  font-weight: 500;
+}
+.nt-module__blurb {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.nt-lessons {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.nt-lesson {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  background: color-mix(in oklch, var(--nt-mkt-surface) 70%, oklch(15% 0.02 260) 30%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.nt-lesson__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+.nt-lesson__num {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--nt-mkt-accent);
+}
+.nt-lesson__name {
+  margin: 0;
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+.nt-lesson__file {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--nt-mkt-text-mute);
+  margin-left: auto;
+}
+.nt-lesson__intent {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.55;
+  font-size: 0.92rem;
+}
+.nt-lesson__meta {
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+}
+@media (min-width: 720px) {
+  .nt-lesson__meta {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+    gap: 1rem;
+  }
+}
+.nt-lesson__meta dt {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-mute);
+  margin: 0 0 0.4rem;
+}
+.nt-lesson__meta dd {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+.nt-lesson__tells {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.nt-lesson__tells li {
+  margin: 0;
+}
+.nt-lesson__tells code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  background: color-mix(in oklch, var(--nt-mkt-surface) 50%, oklch(15% 0.02 260) 50%);
+  color: var(--nt-mkt-text);
+  border: 1px solid var(--nt-mkt-line);
+}
+
+.nt-meta-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+@media (min-width: 720px) {
+  .nt-meta-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nt-meta-list__item {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  padding: 1rem 1.1rem;
+  background: color-mix(in oklch, var(--nt-mkt-surface) 70%, oklch(15% 0.02 260) 30%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.nt-meta-list__title {
+  margin: 0;
+  font-size: 0.95rem;
+}
+.nt-meta-list__title code {
+  font-family: 'JetBrains Mono', monospace;
+}
+.nt-meta-list__path {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-meta-list__blurb {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.nt-howto {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+.nt-howto code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: color-mix(in oklch, var(--nt-mkt-surface) 60%, oklch(15% 0.02 260) 40%);
+}
+:root[data-theme="light"] .nt-lesson,
+:root[data-theme="light"] .nt-meta-list__item {
+  background: color-mix(in oklch, var(--nt-mkt-surface) 92%, oklch(98% 0 0) 8%);
+}
+:root[data-theme="light"] .nt-lesson__tells code,
+:root[data-theme="light"] .nt-howto code {
+  background: oklch(94% 0.02 260);
+  color: oklch(28% 0.10 290);
+}
