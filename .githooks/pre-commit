@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Pre-commit hook — regenerate docs/auto/ when annotated source changes.
+#
+# Activated by `git config core.hooksPath .githooks` (the root package.json's
+# `prepare` script does this on `npm install`). To bypass for one commit:
+#   git commit --no-verify
+#
+# Logic:
+#   1. If no source files watched by tools/generate-ops-docs.mjs are staged,
+#      do nothing (avoids running node on every commit).
+#   2. Otherwise run `npm run docs:ops --silent`, then `git add docs/auto/`
+#      so the regenerated reference travels with the same commit.
+
+set -e
+
+# Files the auto-doc generator scans. Keep in sync with generate-ops-docs.mjs.
+WATCHED_PATTERN='^(start\.sh|start\.ps1|ops/(bash|powershell)/.*\.(sh|ps1)$|scripts/.*\.(sh|ps1|mjs)$)'
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+if [ -z "$staged" ]; then exit 0; fi
+
+if ! echo "$staged" | grep -qE "$WATCHED_PATTERN"; then
+  exit 0
+fi
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "[pre-commit] node not on PATH — skipping docs:ops regen." >&2
+  exit 0
+fi
+
+echo "[pre-commit] annotated source changed — regenerating docs/auto/..."
+npm run --silent docs:ops >/dev/null
+
+# Stage any docs that changed as a result. Only files inside docs/auto/.
+if ! git diff --quiet -- docs/auto/; then
+  git add docs/auto/
+  echo "[pre-commit] docs/auto/ updated and staged."
+fi
+
+exit 0

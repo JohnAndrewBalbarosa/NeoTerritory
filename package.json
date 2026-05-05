@@ -11,7 +11,8 @@
     "start": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 prod' : 'bash start.sh prod', { stdio: 'inherit' });\"",
     "start:lan": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 prod -Lan' : 'bash start.sh prod --lan', { stdio: 'inherit' });\"",
     "prod": "node -e \"const p = process.platform; const cp = require('child_process'); cp.execSync(p === 'win32' ? 'powershell -ExecutionPolicy Bypass -File start.ps1 prod -SkipBuild' : 'bash start.sh prod --skip-build', { stdio: 'inherit' });\"",
-    "docs:ops": "node tools/generate-ops-docs.mjs"
+    "docs:ops": "node tools/generate-ops-docs.mjs",
+    "prepare": "node -e \"const cp=require('child_process');try{cp.execSync('git config core.hooksPath .githooks',{stdio:'ignore'});}catch{}\""
   },
   "dependencies": {
     "npm-check-updates": "^21.0.3"
