@@ -34,6 +34,11 @@ write_remote_env() {
     [ -n "${ADMIN_PASSWORD:-}" ]    && echo "ADMIN_PASSWORD=$ADMIN_PASSWORD"
     [ -n "${SEED_TEST_USERS:-}" ]   && echo "SEED_TEST_USERS=$SEED_TEST_USERS"
     [ -n "${TEST_RUNNER_USE_DOCKER:-}" ] && echo "TEST_RUNNER_USE_DOCKER=$TEST_RUNNER_USE_DOCKER"
+    # Test runner gate. Both must be present in production (NODE_ENV=production
+    # rejects an empty TEST_RUNNER_SANDBOX) — otherwise /api/runs returns 503
+    # with "set ENABLE_TEST_RUNNER=1 and TEST_RUNNER_SANDBOX explicitly".
+    [ -n "${ENABLE_TEST_RUNNER:-}" ]    && echo "ENABLE_TEST_RUNNER=$ENABLE_TEST_RUNNER"
+    [ -n "${TEST_RUNNER_SANDBOX:-}" ]   && echo "TEST_RUNNER_SANDBOX=$TEST_RUNNER_SANDBOX"
     [ -n "${SUPABASE_URL:-}" ]      && echo "SUPABASE_URL=$SUPABASE_URL"
     [ -n "${SUPABASE_SERVICE_KEY:-}" ] && echo "SUPABASE_SERVICE_KEY=$SUPABASE_SERVICE_KEY"
     [ -n "${SUPABASE_LOGS_TABLE:-}" ]  && echo "SUPABASE_LOGS_TABLE=$SUPABASE_LOGS_TABLE"
