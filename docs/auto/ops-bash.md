@@ -59,9 +59,22 @@ Pre-deploy checks: SSH reachable, Lightsail firewall, remote Node.js.
 
 Remote build + PM2 restart driven by an inline heredoc.
 
+Speed strategy:
+  - npm ci only when package-lock.json hash changes (cached at .deploy-cache/<name>.lock.sha)
+  - Backend + Frontend node builds run in parallel (& ... wait)
+  - C++ build is incremental: keep build/ across deploys, re-run cmake only when
+    CMakeCache.txt is missing; otherwise plain `make` picks up changed TUs
+  - Permission reclaim only touches files actually owned by root
+
 **Functions**
 
-- `run_remote_build_and_start` (line 4)
+- `run_remote_build_and_start` (line 11)
+- `reclaim` (line 22)
+  Reclaim ownership only if anything is currently root-owned (cheap no-op otherwise).
+- `npm_install_if_changed` (line 30)
+  Hash-gated npm ci: only reinstall if package-lock.json changed.
+- `build_backend` (line 48)
+- `build_frontend` (line 55)
 
 ### `ops/bash/deploy/lib/ship.sh`
 
