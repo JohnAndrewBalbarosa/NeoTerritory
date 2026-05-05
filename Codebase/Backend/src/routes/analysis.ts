@@ -615,14 +615,20 @@ router.get('/health', (req: Request, res: Response) => {
 });
 
 router.get('/sample', (_req: Request, res: Response) => {
-  const samplePath = path.join(__dirname, '..', '..', 'uploads', 'sample.cpp');
-  const fallbackProjectSample = path.join(
-    __dirname, '..', '..', '..', '..',
-    'Codebase', 'Microservice', 'samples', 'integration', 'all_patterns.cpp'
-  );
-  const sourcePath = fs.existsSync(samplePath) ? samplePath
-                   : fs.existsSync(fallbackProjectSample) ? fallbackProjectSample
-                   : null;
+  // Try the canonical locations under both ts-node and compiled layouts.
+  // ts-node: __dirname = Backend/src/routes
+  // dist:    __dirname = Backend/dist/src/routes
+  const candidates = [
+    // Backend-local upload override (operator-customised sample).
+    path.join(__dirname, '..', '..', 'uploads', 'sample.cpp'),       // ts-node
+    path.join(__dirname, '..', '..', '..', 'uploads', 'sample.cpp'), // dist
+    // Repo-shipped reference sample.
+    path.join(__dirname, '..', '..', '..', '..',
+              'Codebase', 'Microservice', 'samples', 'integration', 'all_patterns.cpp'),  // ts-node
+    path.join(__dirname, '..', '..', '..', '..', '..',
+              'Codebase', 'Microservice', 'samples', 'integration', 'all_patterns.cpp'),  // dist
+  ];
+  const sourcePath = candidates.find((p) => fs.existsSync(p)) || null;
   if (!sourcePath) {
     res.status(404).json({ error: 'No sample source available.' });
     return;
