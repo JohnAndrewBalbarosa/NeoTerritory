@@ -4,8 +4,10 @@ import SourceView from '../analysis/SourceView';
 import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
+import ClassTreeView from '../analysis/ClassTreeView';
 import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
 import { deriveAnnotatedModel } from '../../lib/annotatedModel';
+import { buildClassTree } from '../../lib/classTreeModel';
 import { canonicalPatternName } from '../../lib/patterns';
 import { AnalysisRunFile } from '../../types/api';
 
@@ -49,6 +51,24 @@ export default function AnnotatedTab({
     () => deriveAnnotatedModel({ run: currentRun }),
     [currentRun],
   );
+
+  // Single class-rooted tree — one row per tagged class, status drives the
+  // click affordance (only review rows are clickable). Reads the same
+  // model so it stays in lockstep with SourceView, PatternCards, etc.
+  const classTree = useMemo(
+    () => buildClassTree({ model, run: currentRun }),
+    [model, currentRun],
+  );
+
+  const handlePickClass = (className: string, patternKey: string): void => {
+    if (!currentRun) return;
+    useAppStore.getState().patchCurrentRun({
+      classResolvedPatterns: {
+        ...(currentRun.classResolvedPatterns || {}),
+        [className]: patternKey,
+      },
+    });
+  };
 
   const allAnnotations = useMemo(() => {
     if (!currentRun) return [];
@@ -503,6 +523,16 @@ export default function AnnotatedTab({
         </>
       )}
       <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
+        {/* Class-rooted tree: one row per tagged class. Click-to-disambiguate
+            attaches only on `review` rows, so unambiguous classes render as
+            locked badges. Sits above ClassBindings/PatternCards but reads
+            the same memoized model so all three stay in lockstep. */}
+        <ClassTreeView
+          nodes={classTree}
+          pickerCandidatesByClass={model.inScopePatterns}
+          onPickClass={handlePickClass}
+          onLineFlash={onLineFlash}
+        />
         {/* ClassBindings (which renders .class-strip-row) goes first so the
             strip sits above the scoring-explainer-banner inside PatternCards. */}
         <ClassBindings
