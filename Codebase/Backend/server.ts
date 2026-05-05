@@ -50,7 +50,17 @@ import { uploadsDir } from './src/config/paths';
 import { httpsAdapter } from './src/middleware/httpsHandler';
 
 const app = express();
-const frontendDir = path.join(__dirname, '..', '..', 'Frontend');
+// Prefer the built Vite output. In production the compiled backend lives at
+// Backend/dist/, so we walk up to Codebase/ and look for Frontend/dist first.
+// Falls back to the raw Frontend/ source dir for ts-node dev runs where the
+// build hasn't happened yet (Vite dev server normally serves it instead).
+const frontendCandidates = [
+  path.join(__dirname, '..', '..', 'Frontend', 'dist'),  // dist mode
+  path.join(__dirname, '..', 'Frontend', 'dist'),         // ts-node mode
+  path.join(__dirname, '..', '..', 'Frontend'),
+  path.join(__dirname, '..', 'Frontend'),
+];
+const frontendDir = frontendCandidates.find((p) => fs.existsSync(path.join(p, 'index.html'))) || frontendCandidates[0];
 
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
