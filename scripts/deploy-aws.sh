@@ -7,6 +7,32 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 ENV_FILE="$ROOT_DIR/scripts/.env.deploy"
 
+ASSUME_YES=0
+for arg in "$@"; do
+  case "$arg" in
+    -y|--yes) ASSUME_YES=1 ;;
+    --source) : ;;  # consumed elsewhere / informational
+  esac
+done
+# Treat absent stdin TTY as "non-interactive" so prompts auto-accept.
+if [ ! -t 0 ]; then ASSUME_YES=1; fi
+
+ask_yes() {
+  # $1 = prompt
+  if [ "$ASSUME_YES" = 1 ]; then
+    echo "$1 [auto-yes]"
+    return 0
+  fi
+  printf '%s ' "$1"
+  local reply
+  if [ -r /dev/tty ]; then
+    read -r reply < /dev/tty
+  else
+    read -r reply
+  fi
+  [[ "$reply" =~ ^[yY]$ ]]
+}
+
 echo "── NeoTerritory Deploy Script (v2.2-FIX) ──"
 echo "Timestamp: $(date)"
 
@@ -30,7 +56,7 @@ echo "✓ Link established."
 # ── 2. AWS CLI Readiness (Laptop Side) ──
 if [ -n "${AWS_LIGHTSAIL_INSTANCE_NAME:-}" ]; then
   if command -v aws >/dev/null 2>&1; then
-    local region="${AWS_LIGHTSAIL_REGION:-ap-southeast-1}"
+    region="${AWS_LIGHTSAIL_REGION:-ap-southeast-1}"
     echo "── Opening Lightsail ports 80, 443 on '$AWS_LIGHTSAIL_INSTANCE_NAME' ──"
     aws lightsail put-instance-public-ports --region "$region" --instance-name "$AWS_LIGHTSAIL_INSTANCE_NAME" \
       --port-infos "fromPort=22,toPort=22,protocol=tcp" "fromPort=80,toPort=80,protocol=tcp" "fromPort=443,toPort=443,protocol=tcp" \
@@ -45,9 +71,7 @@ echo "── Verifying remote Node.js environment ──"
 # We force a login shell to ensure we see the installed node/npm
 if ! ssh $SSH_OPTS "$SSH_TARGET" "bash -l -c 'command -v node && command -v npm'" >/dev/null 2>&1; then
   echo "⚠ Remote server is missing Node.js or npm." >&2
-  printf "Would you like to run provisioning (lightsail-launch.sh) now? [y/N] "
-  read -r response < /dev/tty
-  if [[ "$response" =~ ^[yY]$ ]]; then
+  if ask_yes "Would you like to run provisioning (lightsail-launch.sh) now? [y/N]"; then
     echo "→ Provisioning $SSH_TARGET..."
     scp $SSH_OPTS "$ROOT_DIR/scripts/lightsail-launch.sh" "$SSH_TARGET:/tmp/lightsail-launch.sh"
     ssh $SSH_OPTS "$SSH_TARGET" "sudo bash /tmp/lightsail-launch.sh"
@@ -58,9 +82,9 @@ if ! ssh $SSH_OPTS "$SSH_TARGET" "bash -l -c 'command -v node && command -v npm'
 fi
 echo "✓ Remote Node.js environment OK."
 
-printf "Proceed with deployment to %s? [y/N] " "$AWS_HOST"
-read -r resp < /dev/tty
-[[ ! "$resp" =~ ^[yY]$ ]] && { echo "Cancelled."; exit 0; }
+if ! ask_yes "Proceed with deployment to $AWS_HOST? [y/N]"; then
+  echo "Cancelled."; exit 0
+fi
 
 # ── 4. Ship Source Code ──
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
@@ -96,15 +120,25 @@ export PATH=\$PATH:/usr/bin:/usr/local/bin:/snap/bin
 
 cd "$REMOTE_APP_DIR"
 
-echo "── Installing Backend dependencies ──"
-( cd Codebase/Backend && npm install --production=false && npm run build )
+echo "── Installing Backend dependencies (npm ci, lockfile-pinned) ──"
+( cd Codebase/Backend && (npm ci --include=dev || npm install --include=dev) && npm run build )
 
-echo "── Installing Frontend dependencies ──"
-( cd Codebase/Frontend && npm install && npm run build )
+echo "── Installing Frontend dependencies (npm ci, lockfile-pinned) ──"
+( cd Codebase/Frontend && (npm ci || npm install) && npm run build )
 
-echo "── Compiling Microservice ──"
+echo "── Compiling Microservice (-j1, low-RAM Lightsail safe) ──"
 mkdir -p Codebase/Microservice/build
-( cd Codebase/Microservice/build && cmake .. && make -j )
+# 1GB Lightsail instances OOM-kill cc1plus even on serial builds when a
+# single template-heavy translation unit needs >2GB. Combine:
+#   - serial make
+#   - -O0 (kills heavy optimizer memory)
+#   - --param ggc-min-heapsize=131072 (smaller GC heap)
+#   - 4G swapfile (set up by lightsail-launch.sh)
+( cd Codebase/Microservice/build \
+  && cmake -DCMAKE_BUILD_TYPE=Debug \
+           -DCMAKE_CXX_FLAGS="-O0 -g0 --param ggc-min-heapsize=131072 --param ggc-min-expand=10" \
+           .. \
+  && make -j1 )
 
 echo "── Freeing Ports 80/443 & Starting PM2 ──"
 sudo systemctl stop nginx apache2 2>/dev/null || true

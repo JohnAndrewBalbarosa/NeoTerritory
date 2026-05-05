@@ -4,7 +4,7 @@
 - Role: source-side navigation map for the flattened analysis subsystem
 
 ## Primary Entry
-- Start with [main.cpp.md](/C:/Users/Drew/Desktop/NeoTerritory/docs/Codebase/Microservice/Modules/Source/main.cpp.md).
+- Start with [main.cpp.md](../../../../docs/Codebase/Microservice/Modules/Source/main.cpp.md).
 
 ## Active Tree
 ```text

@@ -69,7 +69,12 @@ $Root         = $PSScriptRoot
 $BackendDir   = Join-Path $Root 'Codebase\Backend'
 $FrontendDir  = Join-Path $Root 'Codebase\Frontend'
 $MicroserviceDir = Join-Path $Root 'Codebase\Microservice'
-$BuildDir     = Join-Path $MicroserviceDir 'build'
+# Environment-tagged build dir so a Windows-native CMake cache cannot collide
+# with one produced under WSL2/MSYS2 (CMake rejects a cache whose absolute
+# source path style differs from the current invocation).
+$MsEnvTag     = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'win' } else { 'posix' }
+$BuildDirName = if ($env:MS_BUILD_DIR) { $env:MS_BUILD_DIR } else { "build-$MsEnvTag" }
+$BuildDir     = Join-Path $MicroserviceDir $BuildDirName
 $BinaryName   = if ($IsWindows -or $env:OS -eq 'Windows_NT') { 'NeoTerritory.exe' } else { 'NeoTerritory' }
 $BinaryPath   = Join-Path $BuildDir $BinaryName
 $EnvFile      = Join-Path $BackendDir '.env'
@@ -184,9 +189,9 @@ function Build-Microservice {
   elseif (Test-Tool 'make')     { $generator = 'Unix Makefiles' }
   Push-Location $MicroserviceDir
   try {
-    if ($generator) { & cmake -S . -B build -G $generator } else { & cmake -S . -B build }
+    if ($generator) { & cmake -S . -B $BuildDirName -G $generator } else { & cmake -S . -B $BuildDirName }
     if ($LASTEXITCODE -ne 0) { throw 'cmake configure failed.' }
-    & cmake --build build --parallel
+    & cmake --build $BuildDirName --parallel
     if ($LASTEXITCODE -ne 0) { throw 'cmake build failed.' }
   } finally { Pop-Location }
   Write-Ok "Microservice built: $BinaryPath"

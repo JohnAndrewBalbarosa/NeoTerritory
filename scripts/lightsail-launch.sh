@@ -59,28 +59,55 @@ fi
 
 # ── 1. Base packages ────────────────────────────────────────────────────────
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -y
-apt-get install -y --no-install-recommends \
+# Force IPv4 — Ubuntu's mirror IPv6 path has been intermittently returning
+# 503s, and apt-transport-https errors there cascade into NodeSource setup
+# failures further down. IPv4 is reliably reachable from Lightsail.
+echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99force-ipv4
+
+apt_retry() {
+  local i
+  for i in 1 2 3 4 5; do
+    if "$@"; then return 0; fi
+    echo "[lightsail-launch] apt attempt $i failed; sleeping $((i*5))s and retrying"
+    sleep $((i*5))
+  done
+  return 1
+}
+
+apt_retry apt-get update -y
+apt_retry apt-get install -y --no-install-recommends \
   ca-certificates curl gnupg lsb-release ufw rsync git unattended-upgrades \
+  apt-transport-https \
   build-essential cmake g++ make python3
 
-# ── 1.5 Node.js (v20 LTS) ───────────────────────────────────────────────────
-if ! command -v node >/dev/null 2>&1; then
-  echo "[lightsail-launch] installing node.js"
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-  apt-get install -y nodejs
+# ── 1.5 Node.js v20 LTS (must include npm) ─────────────────────────────────
+# Some Ubuntu AMIs preinstall the `nodejs` apt package without npm, so we
+# require BOTH binaries to skip the install. NodeSource bundles npm together.
+if ! command -v node >/dev/null 2>&1 || ! command -v npm >/dev/null 2>&1; then
+  echo "[lightsail-launch] installing node.js v20 + npm via NodeSource"
+  # Remove any partial / distro nodejs first to avoid version conflicts.
+  apt-get remove -y nodejs libnode-dev libnode72 npm 2>/dev/null || true
+  apt_retry bash -c 'curl -fsSL https://deb.nodesource.com/setup_20.x | bash -'
+  apt_retry apt-get install -y nodejs
 fi
 
 # ── 1.6 PM2 (Process Manager) ────────────────────────────────────────────────
 if ! command -v pm2 >/dev/null 2>&1; then
   echo "[lightsail-launch] installing pm2"
-  npm install -g pm2
+  npm install -g pm2 || npm install -g pm2 || npm install -g pm2
 fi
 
-# ── 2. Swap (1G) — small Lightsail plans OOM during docker builds ──────────
-if ! swapon --show | grep -q '/swapfile'; then
-  echo "[lightsail-launch] adding 1G swapfile"
-  fallocate -l 1G /swapfile
+# ── 2. Swap (4G) — heavy C++ template builds OOM-kill cc1plus on 1G plans ──
+SWAP_TARGET_BYTES=$((4 * 1024 * 1024 * 1024))
+SWAP_CURRENT_BYTES=0
+if swapon --show | grep -q '/swapfile'; then
+  SWAP_CURRENT_BYTES=$(stat -c%s /swapfile 2>/dev/null || echo 0)
+fi
+if [ "$SWAP_CURRENT_BYTES" -lt "$SWAP_TARGET_BYTES" ]; then
+  echo "[lightsail-launch] (re)sizing /swapfile to 4G (current: $SWAP_CURRENT_BYTES bytes)"
+  swapoff /swapfile 2>/dev/null || true
+  rm -f /swapfile
+  fallocate -l 4G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=4096
   chmod 600 /swapfile
   mkswap /swapfile
   swapon /swapfile

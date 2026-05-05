@@ -32,7 +32,19 @@ POD_IMAGE="neoterritory/cpp-pod:latest"
 ENV_FILE="$BACKEND_DIR/.env"
 
 case "${OS:-}" in *Windows*) BIN_NAME='NeoTerritory.exe' ;; *) BIN_NAME='NeoTerritory' ;; esac
-BIN_PATH="$MS_DIR/build/$BIN_NAME"
+
+# Environment-tagged build directory so a CMake cache produced inside WSL2
+# never collides with one produced by Windows-native cmake or MSYS2 (CMake
+# refuses to reuse a cache whose absolute source path style differs).
+case "$(uname -s 2>/dev/null)" in
+  Linux*)   if grep -qiE 'microsoft|wsl' /proc/version 2>/dev/null; then MS_ENV_TAG=wsl; else MS_ENV_TAG=linux; fi ;;
+  Darwin*)  MS_ENV_TAG=macos ;;
+  MINGW*|MSYS*)  MS_ENV_TAG=msys ;;
+  CYGWIN*)  MS_ENV_TAG=cygwin ;;
+  *)        MS_ENV_TAG=unknown ;;
+esac
+MS_BUILD_DIR="${MS_BUILD_DIR:-build-$MS_ENV_TAG}"
+BIN_PATH="$MS_DIR/$MS_BUILD_DIR/$BIN_NAME"
 
 # ── Defaults ────────────────────────────────────────────────────────────────
 COMMAND='dev'
@@ -165,8 +177,8 @@ build_microservice() {
     ok "Microservice binary already built: $BIN_PATH"
     return
   fi
-  step 'Building microservice (CMake)'
-  ( cd "$MS_DIR" && cmake -S . -B build && cmake --build build --parallel )
+  step "Building microservice (CMake → $MS_BUILD_DIR)"
+  ( cd "$MS_DIR" && cmake -S . -B "$MS_BUILD_DIR" && cmake --build "$MS_BUILD_DIR" --parallel )
   ok "Microservice built: $BIN_PATH"
 }
 
