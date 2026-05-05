@@ -66,7 +66,19 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
 // Middleware
 app.use(httpsAdapter);
-app.use(helmet());
+// While the public deployment is HTTP-only, drop the two directives that
+// assume HTTPS — `upgrade-insecure-requests` forces the browser to retry
+// every asset over https://… (which fails with CONNECTION_RESET, leaving
+// the SPA blank), and HSTS pins the host to HTTPS for 6 months. Once SSL
+// is provisioned (SSL_KEY_PATH/SSL_CERT_PATH), turn both back on.
+const httpsReady = Boolean(process.env.SSL_KEY_PATH && process.env.SSL_CERT_PATH);
+app.use(helmet({
+  contentSecurityPolicy: {
+    useDefaults: true,
+    directives: httpsReady ? {} : { 'upgrade-insecure-requests': null },
+  },
+  strictTransportSecurity: httpsReady,
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
