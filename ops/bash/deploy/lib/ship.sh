@@ -9,9 +9,38 @@ ship_source() {
   local excludes=( --exclude='**/.git' --exclude='**/node_modules' \
                    --exclude='**/dist' --exclude='**/build' --exclude='**/build-linux' \
                    --exclude='**/.env' )
+
+  # Pre-flight summary so the operator can see what's about to ship.
+  local file_count size_human
+  file_count=$(cd "$ROOT_DIR" && find "${includes[@]}" \
+      -path '*/.git' -prune -o -path '*/node_modules' -prune \
+      -o -path '*/dist' -prune -o -path '*/build' -prune -o -path '*/build-linux' -prune \
+      -o -name '.env' -prune -o -type f -print 2>/dev/null | wc -l)
+  size_human=$(cd "$ROOT_DIR" && du -sh --exclude=.git --exclude=node_modules \
+      --exclude=dist --exclude=build --exclude=build-linux \
+      "${includes[@]}" 2>/dev/null | awk '{ sum += $1 } END { print sum"~ (per-target sum)" }')
+  echo "   [ship] files=$file_count size=$size_human"
+  echo "   [ship] targets: ${includes[*]}"
+
   ssh $SSH_OPTS "$SSH_TARGET" "mkdir -p '$remote_dir'"
-  tar -C "$ROOT_DIR" "${excludes[@]}" -czf - "${includes[@]}" \
-    | ssh $SSH_OPTS "$SSH_TARGET" "tar -C '$remote_dir' -xzf -"
+
+  # Stream tar through pv if available so we get a live byte-rate progress bar;
+  # fall back to plain tar otherwise (still emits one summary at the end).
+  local started_at; started_at=$(date +%s)
+  if command -v pv >/dev/null 2>&1; then
+    tar -C "$ROOT_DIR" "${excludes[@]}" -czf - "${includes[@]}" \
+      | pv -bart -i 2 \
+      | ssh $SSH_OPTS "$SSH_TARGET" "tar -C '$remote_dir' -xzf -"
+  else
+    # GNU tar emits one checkpoint line per ~5MB of archive — a built-in heartbeat.
+    echo "   [ship] (install 'pv' locally for a richer progress bar; using tar --checkpoint)"
+    tar -C "$ROOT_DIR" "${excludes[@]}" \
+        --checkpoint=500 --checkpoint-action=echo='   [ship] %{}T processed (%ds)' \
+        -czf - "${includes[@]}" \
+      | ssh $SSH_OPTS "$SSH_TARGET" "tar -C '$remote_dir' -xzf -"
+  fi
+  local elapsed=$(( $(date +%s) - started_at ))
+  echo "   [ship] done in ${elapsed}s"
 }
 
 write_remote_env() {

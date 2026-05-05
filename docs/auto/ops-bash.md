@@ -65,15 +65,25 @@ Speed strategy (1GB Lightsail — memory-constrained, so no parallel node builds
     CMakeCache.txt is missing; otherwise plain `make` picks up changed TUs
   - Permission reclaim only touches files actually owned by root
 
+Visibility strategy:
+  - phase_start/phase_end print elapsed time and a banner per phase
+  - A background heartbeat prints "[alive] phase=X elapsed=Ys mem=YMB load=Z" every 20s
+    so the operator knows the box is breathing during silent phases (npm ci, cc1plus)
+  - Show dep counts before npm install, file counts before tar/cmake, etc.
+
 **Functions**
 
-- `run_remote_build_and_start` (line 10)
-- `reclaim` (line 21)
+- `run_remote_build_and_start` (line 16)
+- `human_secs` (line 31)
+- `heartbeat_loop` (line 36)
+- `phase_start` (line 47)
+- `phase_end` (line 59)
+- `reclaim` (line 81)
   Reclaim ownership only if anything is currently root-owned (cheap no-op otherwise).
-- `npm_install_if_changed` (line 29)
+- `print_dep_summary` (line 90)
+  Show dep summary from package.json so the operator sees what is about to install.
+- `npm_install_if_changed` (line 105)
   Hash-gated npm ci: only reinstall if package-lock.json changed.
-- `build_backend` (line 47)
-- `build_frontend` (line 54)
 
 ### `ops/bash/deploy/lib/ship.sh`
 
@@ -82,7 +92,7 @@ Tar + ssh-pipe the source tree to AWS, then write Backend/.env on the remote.
 **Functions**
 
 - `ship_source` (line 4)
-- `write_remote_env` (line 17)
+- `write_remote_env` (line 46)
 
 ## `ops/bash/start/commands/`
 
