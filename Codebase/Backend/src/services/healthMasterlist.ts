@@ -39,13 +39,22 @@ function resolveMicroserviceBinary(): string {
   // Honour the same env var the analysis service uses (NEOTERRITORY_BIN).
   const explicit = process.env.NEOTERRITORY_BIN || process.env.NEOTERRITORY_BINARY;
   if (explicit && fs.existsSync(explicit)) return explicit;
-  // Compiled location: dist/src/services/healthMasterlist.js
-  //   up 5 → repo root → join 'Codebase/Microservice'.
-  const root = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  // __dirname in tsx dev = src/services/ → up 4 → repo root.
+  // __dirname in compiled = dist/src/services/ → up 5 → repo root.
+  // Try both depths so we work in both modes.
+  const root4 = path.resolve(__dirname, '..', '..', '..', '..');
+  const root5 = path.resolve(__dirname, '..', '..', '..', '..', '..');
   const candidates = [
-    path.join(root, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
-    path.join(root, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
-    path.join(root, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
+    path.join(root4, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory.exe'),
+    path.join(root4, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory'),
+    path.join(root4, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
+    path.join(root4, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
+    path.join(root4, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
+    path.join(root5, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory.exe'),
+    path.join(root5, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory'),
+    path.join(root5, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
+    path.join(root5, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
+    path.join(root5, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
   ];
   return candidates.find((p) => fs.existsSync(p)) || candidates[0];
 }

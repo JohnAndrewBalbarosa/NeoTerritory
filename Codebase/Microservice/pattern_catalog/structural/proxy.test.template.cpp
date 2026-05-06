@@ -16,7 +16,7 @@ static int run_tests() {
     if constexpr (nt::has_{{REQUEST_METHOD}}<T>::value
                   && nt::is_default_constructible<T>::value) {
         T p;
-        nt::touch(p.{{REQUEST_METHOD}}());
+        p.{{REQUEST_METHOD}}();
         nt::emit_criterion("structural.proxy", "{{CLASS_NAME}}", "pass",
             "Request method '{{REQUEST_METHOD}}' is reachable through the proxy with no arguments.");
     } else {

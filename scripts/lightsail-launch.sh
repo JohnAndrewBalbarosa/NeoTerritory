@@ -78,7 +78,8 @@ apt_retry apt-get update -y
 apt_retry apt-get install -y --no-install-recommends \
   ca-certificates curl gnupg lsb-release ufw rsync git unattended-upgrades \
   apt-transport-https \
-  build-essential cmake g++ make python3
+  build-essential cmake g++ make python3 \
+  firejail
 
 # ── 1.5 Node.js v20 LTS (must include npm) ─────────────────────────────────
 # Some Ubuntu AMIs preinstall the `nodejs` apt package without npm, so we

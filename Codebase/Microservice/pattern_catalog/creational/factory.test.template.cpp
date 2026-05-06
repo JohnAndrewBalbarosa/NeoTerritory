@@ -16,7 +16,7 @@ static int run_tests() {
             "Factory is default-constructible.");
         T f;
         if constexpr (nt::has_{{FACTORY_FN}}<T>::value) {
-            nt::touch(f.{{FACTORY_FN}}());
+            (void)(f.{{FACTORY_FN}}());
             nt::emit_criterion("creational.factory", "{{CLASS_NAME}}", "pass",
                 "Factory method '{{FACTORY_FN}}' is callable with no arguments and produced a value.");
         } else {

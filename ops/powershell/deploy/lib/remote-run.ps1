@@ -10,7 +10,7 @@ function Build-RemoteEnvLines {
   } else {
     $lines += "CORS_ORIGIN=http://$($env:AWS_HOST):$($env:AWS_HOST_PORT)"
   }
-  foreach ($k in 'JWT_SECRET','GEMINI_API_KEY','GEMINI_MODEL','ANTHROPIC_API_KEY','ANTHROPIC_MODEL','AI_PROVIDER','ADMIN_USERNAME','ADMIN_PASSWORD') {
+  foreach ($k in 'JWT_SECRET','GEMINI_API_KEY','GEMINI_MODEL','ANTHROPIC_API_KEY','ANTHROPIC_MODEL','AI_PROVIDER','ADMIN_USERNAME','ADMIN_PASSWORD','TEST_RUNNER_USE_DOCKER','ENABLE_TEST_RUNNER','TEST_RUNNER_SANDBOX') {
     $v = (Get-Item "Env:$k" -ErrorAction SilentlyContinue).Value
     if ($v) { $lines += "$k=$v" }
   }

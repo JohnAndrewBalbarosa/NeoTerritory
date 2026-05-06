@@ -144,13 +144,22 @@ export function autoConfigureTestRunner(): void {
   );
 }
 
+function catalogRoot(): string {
+  if (process.env.NEOTERRITORY_CATALOG) return process.env.NEOTERRITORY_CATALOG;
+  // ts-node:  __dirname = Backend/src/services  (3 levels up → Codebase)
+  // dist:     __dirname = Backend/dist/src/services  (4 levels up → Codebase)
+  const candidates = [
+    path.join(__dirname, '..', '..', '..', 'Microservice', 'pattern_catalog'),
+    path.join(__dirname, '..', '..', '..', '..', 'Microservice', 'pattern_catalog'),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
+}
+
 function templatePath(patternId: string): string | null {
   // patternId is e.g. "structural.decorator" → catalog/structural/decorator.test.template.cpp
   const [family, name] = patternId.split('.');
   if (!family || !name) return null;
-  const root = process.env.NEOTERRITORY_CATALOG
-    || path.join(__dirname, '..', '..', '..', 'Microservice', 'pattern_catalog');
-  const candidate = path.join(root, family, `${name}.test.template.cpp`);
+  const candidate = path.join(catalogRoot(), family, `${name}.test.template.cpp`);
   return fs.existsSync(candidate) ? candidate : null;
 }
 
@@ -257,9 +266,7 @@ int main() { return 0; }
 // Path to the introspection helper bundled with the catalog. We copy it into
 // each run dir so `#include "introspect.hpp"` from a template resolves.
 function introspectHeaderPath(): string | null {
-  const root = process.env.NEOTERRITORY_CATALOG
-    || path.join(__dirname, '..', '..', '..', 'Microservice', 'pattern_catalog');
-  const candidate = path.join(root, '_runtime', 'introspect.hpp');
+  const candidate = path.join(catalogRoot(), '_runtime', 'introspect.hpp');
   return fs.existsSync(candidate) ? candidate : null;
 }
 

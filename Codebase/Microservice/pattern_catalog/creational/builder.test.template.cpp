@@ -5,7 +5,11 @@
 #include "introspect.hpp"
 #include <cassert>
 
-NT_DECLARE_METHOD_PROBE({{TERMINATOR}})
+NT_DECLARE_METHOD_PROBE(build)
+NT_DECLARE_METHOD_PROBE(finalize)
+NT_DECLARE_METHOD_PROBE(done)
+NT_DECLARE_METHOD_PROBE(complete)
+NT_DECLARE_METHOD_PROBE(produce)
 
 template <typename T = {{CLASS_NAME}}>
 static int run_tests() {
@@ -17,32 +21,32 @@ static int run_tests() {
         T b;
         bool exercised = false;
         if constexpr (nt::has_{{TERMINATOR}}<T>::value) {
-            nt::touch(b.{{TERMINATOR}}());
+            (void)(b.{{TERMINATOR}}());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Detected terminator method '{{TERMINATOR}}' callable with no arguments.");
             exercised = true;
         } else if constexpr (nt::has_build<T>::value) {
-            nt::touch(b.build());
+            (void)(b.build());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Builder exposes build() — the canonical terminator.");
             exercised = true;
         } else if constexpr (nt::has_finalize<T>::value) {
-            nt::touch(b.finalize());
+            (void)(b.finalize());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Builder exposes finalize() as its terminator.");
             exercised = true;
         } else if constexpr (nt::has_done<T>::value) {
-            nt::touch(b.done());
+            (void)(b.done());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Builder exposes done() as its terminator.");
             exercised = true;
         } else if constexpr (nt::has_complete<T>::value) {
-            nt::touch(b.complete());
+            (void)(b.complete());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Builder exposes complete() as its terminator.");
             exercised = true;
         } else if constexpr (nt::has_produce<T>::value) {
-            nt::touch(b.produce());
+            (void)(b.produce());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Builder exposes produce() as its terminator.");
             exercised = true;

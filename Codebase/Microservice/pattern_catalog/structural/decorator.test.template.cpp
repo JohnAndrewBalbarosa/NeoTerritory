@@ -16,7 +16,7 @@ static int run_tests() {
     if constexpr (nt::has_{{FORWARD_METHOD}}<T>::value
                   && nt::is_default_constructible<T>::value) {
         T d;
-        nt::touch(d.{{FORWARD_METHOD}}());
+        (void)(d.{{FORWARD_METHOD}}());
         nt::emit_criterion("structural.decorator", "{{CLASS_NAME}}", "pass",
             "Forwarding method '{{FORWARD_METHOD}}' is callable with no arguments.");
     } else {

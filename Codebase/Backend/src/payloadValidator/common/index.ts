@@ -11,8 +11,23 @@ export const filenameSchema = z
     message: 'filename contains path separators or control characters'
   });
 
+export const MAX_TOKENS_PER_FILE = 500;
+
+// Whitespace-split word count — simple, transparent, language-agnostic.
+// Keeps per-file AI payload small enough to avoid Gemini overload.
+export function estimateTokens(code: string): number {
+  return code.trim().split(/\s+/).filter(Boolean).length;
+}
+
 // Single C++ source file in the multi-file submission shape.
 export const fileEntrySchema = z.object({
-  code: z.string().min(1).max(1_000_000),
+  code: z
+    .string()
+    .min(1)
+    .max(1_000_000)
+    .refine(
+      (v) => estimateTokens(v) <= MAX_TOKENS_PER_FILE,
+      { message: `source file exceeds ${MAX_TOKENS_PER_FILE}-token limit` }
+    ),
   name: filenameSchema
 });

@@ -1799,6 +1799,33 @@ body[data-surface] #root {
   line-height: 1.7;
   max-width: 640px;
 }
+.nt-lesson-page__section--prereq {
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-left: 3px solid var(--nt-mkt-accent, #6c5ce7);
+  border-radius: 6px;
+  background: var(--nt-mkt-surface-soft, rgba(255, 255, 255, 0.02));
+}
+.nt-lesson-page__prereq-lede {
+  margin: 0 0 0.4rem 0;
+  color: var(--nt-mkt-text-mute);
+  font-size: 0.92rem;
+  line-height: 1.55;
+  max-width: 640px;
+}
+.nt-lesson-page__prereq-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-width: 640px;
+}
+.nt-lesson-page__prereq-item {
+  color: var(--nt-mkt-text);
+  font-size: 0.98rem;
+  line-height: 1.55;
+}
 .nt-lesson-page__footer {
   margin-top: 0.6rem;
   padding-top: 1.2rem;

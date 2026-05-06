@@ -230,10 +230,16 @@ function computeLineEvidence(
   sourceText: string
 ): LineEvidence {
   // Aggregate own-pattern hits per line for the informational fields.
-  const ownByLine = new Map<number, number>();
+  // ownByLine  = raw hit count per line (used for display: hitsTotal, hitsMax, byLine.ownHits)
+  // ownWeightByLine = sum of signal weights per line (used for win comparison — avoids mixing
+  //   integer counts against float weights, which let own=1 beat negW=0.8 incorrectly)
+  const ownByLine      = new Map<number, number>();
+  const ownWeightByLine = new Map<number, number>();
   for (const h of ownHits) {
     if (h.line < scopeMin || h.line > scopeMax) continue;
     ownByLine.set(h.line, (ownByLine.get(h.line) || 0) + 1);
+    const w = Math.abs(typeof h.weight === 'number' ? h.weight : 0);
+    ownWeightByLine.set(h.line, (ownWeightByLine.get(h.line) || 0) + w);
   }
   let hitsMax = 0;
   let hitsTotal = 0;
@@ -266,11 +272,12 @@ function computeLineEvidence(
     const text = (lines[l - 1] || '').trim();
     if (!text || text.startsWith('//')) continue;
     trials += 1;
-    const own  = ownByLine.get(l) || 0;
+    const own       = ownByLine.get(l) || 0;           // count — for display only
+    const ownWeight = ownWeightByLine.get(l) || 0;     // weight sum — used for win comparison
     const riv  = rivalAllHits.get(l) || 0;
     const negW = negWeightByLine.get(l) || 0;
     const opposing = riv + negW;
-    const win = own > opposing;
+    const win = ownWeight > opposing;
     if (win) successes += 1;
     if (own > 0 || riv > 0 || negW > 0) {
       byLine.push({ line: l, ownHits: own, rivalHits: riv, opposingWeight: negW, win });
