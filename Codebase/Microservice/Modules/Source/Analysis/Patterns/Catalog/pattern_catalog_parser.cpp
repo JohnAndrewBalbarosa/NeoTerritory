@@ -355,6 +355,24 @@ PatternTemplate template_from_json(const JsonValue& obj, const std::string& sour
             pattern.lexeme_identifiers.emplace(kv.first, std::move(lexemes));
         }
     }
+    if (const JsonValue* impl = obj.find("implementation_template"); impl && impl->kind == JsonKind::Object)
+    {
+        if (const JsonValue* neg = impl->find("negative_signals"); neg && neg->kind == JsonKind::Array)
+        {
+            for (const JsonValue& entry : neg->array)
+            {
+                if (entry.kind != JsonKind::Object) continue;
+                NegativeSignal sig;
+                if (const JsonValue* id = entry.find("id"); id && id->kind == JsonKind::String)
+                    sig.id = id->string;
+                if (const JsonValue* rx = entry.find("shape_regex"); rx && rx->kind == JsonKind::String)
+                    sig.shape_regex = rx->string;
+                if (const JsonValue* w = entry.find("weight"); w && w->kind == JsonKind::Number)
+                    sig.weight = static_cast<float>(w->number);
+                pattern.negative_signals.push_back(std::move(sig));
+            }
+        }
+    }
     if (const JsonValue* v = obj.find("subclass_role"); v && v->kind == JsonKind::Object)
     {
         if (const JsonValue* req = v->find("required"); req && req->kind == JsonKind::Bool)
