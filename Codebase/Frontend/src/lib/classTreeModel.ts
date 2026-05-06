@@ -46,6 +46,10 @@ export interface ClassTreeNode {
   mainDesignPattern: string | null;
   status: ClassNodeStatus;
   children: LineNode[];
+  // User-confirmed patterns after picker resolution + hierarchy propagation.
+  chosenPatterns: string[];
+  // True when the user has confirmed at least one pattern for this class.
+  isTagged: boolean;
 }
 
 interface BuildInput {
@@ -197,6 +201,8 @@ export function buildClassTree(input: BuildInput): ClassTreeNode[] {
       mainDesignPattern,
       status,
       children,
+      chosenPatterns: entry.chosenPatterns.slice(),
+      isTagged: entry.isTagged,
     });
   }
 
