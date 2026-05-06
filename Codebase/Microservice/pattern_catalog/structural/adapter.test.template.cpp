@@ -16,7 +16,7 @@ static int run_tests() {
     if constexpr (nt::has_{{TARGET_METHOD}}<T>::value
                   && nt::is_default_constructible<T>::value) {
         T a;
-        nt::touch(a.{{TARGET_METHOD}}());
+        a.{{TARGET_METHOD}}();
         nt::emit_criterion("structural.adapter", "{{CLASS_NAME}}", "pass",
             "Target-interface method '{{TARGET_METHOD}}' is reachable via the adapter.");
     } else {

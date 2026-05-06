@@ -27,7 +27,7 @@ static int run_tests() {
                   && nt::has_{{TARGET_METHOD}}<T>::value
                   && !std::is_abstract_v<T>) {
         T s;
-        nt::touch(s.{{TARGET_METHOD}}());
+        (void)(s.{{TARGET_METHOD}}());
         nt::emit_criterion("behavioural.strategy_concrete", "{{CLASS_NAME}}", "pass",
             "Target method '{{TARGET_METHOD}}' is callable on a default-constructed concrete strategy.");
     } else {
