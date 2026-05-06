@@ -61,10 +61,11 @@ export default function AnnotatedTab({
   );
 
   const handlePickClass = (className: string, patternKey: string): void => {
-    if (!currentRun) return;
+    const run = useAppStore.getState().currentRun;
+    if (!run) return;
     useAppStore.getState().patchCurrentRun({
       classResolvedPatterns: {
-        ...(currentRun.classResolvedPatterns || {}),
+        ...(run.classResolvedPatterns || {}),
         [className]: patternKey,
       },
     });

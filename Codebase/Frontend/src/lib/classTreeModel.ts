@@ -200,10 +200,14 @@ export function buildClassTree(input: BuildInput): ClassTreeNode[] {
     });
   }
 
-  // Stable order: parents before children, then alphabetical inside each
+  // Stable order: review nodes first (so they surface as a separate top
+  // section), then parents before children, then alphabetical within each
   // depth band. Falls back to insertion order if the parent map is
   // cyclic (shouldn't happen, but render must not hang).
   out.sort((a, b) => {
+    const aReview = a.status === 'review' ? 0 : 1;
+    const bReview = b.status === 'review' ? 0 : 1;
+    if (aReview !== bReview) return aReview - bReview;
     if ((a.parent ?? '') !== (b.parent ?? '')) {
       if (a.parent === null) return -1;
       if (b.parent === null) return 1;
