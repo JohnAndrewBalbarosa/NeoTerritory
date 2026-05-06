@@ -45,7 +45,7 @@ interface InternalPod extends PodHandle {
 const POD_TTL_MS         = Number(process.env.POD_TTL_MS         || 10 * 60_000);
 const POD_SWEEP_MS       = Number(process.env.POD_SWEEP_MS       || 30_000);
 const POD_IMAGE          = process.env.POD_IMAGE                 || 'neoterritory/cpp-pod:latest';
-const POD_MEMORY         = process.env.POD_MEMORY                || '48m';
+const POD_MEMORY         = process.env.POD_MEMORY                || '256m';
 const POD_CPUS           = process.env.POD_CPUS                  || '0.25';
 const POD_NETWORK        = process.env.POD_NETWORK               || 'none';
 const POD_PIDS_LIMIT     = process.env.POD_PIDS_LIMIT            || '64';
