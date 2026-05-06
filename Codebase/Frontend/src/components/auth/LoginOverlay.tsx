@@ -198,14 +198,14 @@ export default function LoginOverlay() {
                   </div>
                 )}
 
-                {/* Tester workflow steps */}
-                <div className="tester-steps">
+                {/* Tester workflow steps — 2×2 grid */}
+                <div className="workflow-steps-grid">
                   {TESTER_WORKFLOW_STEPS.map((step, idx) => (
-                    <div key={step.label} className="tester-step">
-                      <span className="tester-step-num">{idx + 1}</span>
-                      <div className="tester-step-text">
-                        <strong>{step.label}</strong>
-                        <span> — {step.desc}</span>
+                    <div key={step.label} className="workflow-step-card">
+                      <span className="workflow-step-num">{idx + 1}</span>
+                      <div className="workflow-step-body">
+                        <div className="workflow-step-label">{step.label}</div>
+                        <div className="workflow-step-desc">{step.desc}</div>
                       </div>
                     </div>
                   ))}
@@ -310,6 +310,11 @@ export default function LoginOverlay() {
                           title={isClaimed ? 'Already claimed by another tester' : `Select seat ${acc.username}`}
                           onClick={() => handleClaim(acc)}
                         >
+                          <svg className="tester-chip-icon" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                            <rect x="2" y="3" width="16" height="11" rx="2" />
+                            <path d="M7 18h6M10 14v4" />
+                            <path d="M6 8l2 2-2 2M11 10h3" strokeWidth="1.5" />
+                          </svg>
                           <span className="tester-chip-label">
                             {isClaiming ? 'Claiming…' : acc.username}
                           </span>
