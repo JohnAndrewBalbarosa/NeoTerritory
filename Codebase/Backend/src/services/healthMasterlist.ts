@@ -62,8 +62,13 @@ function resolveMicroserviceBinary(): string {
 function resolveMicroserviceCatalog(): string {
   const explicit = process.env.NEOTERRITORY_CATALOG;
   if (explicit && fs.existsSync(explicit)) return explicit;
-  const root = path.resolve(__dirname, '..', '..', '..', '..', '..');
-  return path.join(root, 'Codebase', 'Microservice', 'pattern_catalog');
+  const root4 = path.resolve(__dirname, '..', '..', '..', '..');
+  const root5 = path.resolve(__dirname, '..', '..', '..', '..', '..');
+  const candidates = [
+    path.join(root4, 'Codebase', 'Microservice', 'pattern_catalog'),
+    path.join(root5, 'Codebase', 'Microservice', 'pattern_catalog'),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
 }
 
 export function getMicroserviceStatus(): MicroserviceStatus {

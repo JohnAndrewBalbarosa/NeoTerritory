@@ -4,20 +4,37 @@ import os from 'os';
 import { spawnSync } from 'child_process';
 import { sanitizeFilename } from '../utils/fileUtils';
 
-const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-// Probe for the binary across build directories; build-wsl is the WSL2 cmake output.
+// __dirname in tsx dev = src/services/ (4 up → project root)
+// __dirname in compiled = dist/src/services/ (5 up → project root)
+const ROOT4 = path.resolve(__dirname, '..', '..', '..', '..');
+const ROOT5 = path.resolve(__dirname, '..', '..', '..', '..', '..');
+
 function resolveDefaultBin(): string {
   const candidates = [
-    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory.exe'),
-    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory'),
-    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
-    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
-    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
+    path.join(ROOT4, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory.exe'),
+    path.join(ROOT4, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory'),
+    path.join(ROOT4, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
+    path.join(ROOT4, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
+    path.join(ROOT4, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
+    path.join(ROOT5, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory.exe'),
+    path.join(ROOT5, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory'),
+    path.join(ROOT5, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
+    path.join(ROOT5, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
+    path.join(ROOT5, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
   ];
   return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
 }
+
+function resolveDefaultCatalog(): string {
+  const candidates = [
+    path.join(ROOT4, 'Codebase', 'Microservice', 'pattern_catalog'),
+    path.join(ROOT5, 'Codebase', 'Microservice', 'pattern_catalog'),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
+}
+
 const DEFAULT_BIN = resolveDefaultBin();
-const DEFAULT_CATALOG = path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'pattern_catalog');
+const DEFAULT_CATALOG = resolveDefaultCatalog();
 
 const STAGES = ['lexical', 'subtree', 'pattern_dispatch', 'hashing', 'output'];
 
