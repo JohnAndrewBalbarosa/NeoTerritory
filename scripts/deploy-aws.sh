@@ -19,9 +19,11 @@ source "$LIB/ship.sh"
 source "$LIB/remote-build.sh"
 
 ASSUME_YES=0
+RESTART_ONLY=0
 for arg in "$@"; do
   case "$arg" in
     -y|--yes) ASSUME_YES=1 ;;
+    --restart-only) RESTART_ONLY=1 ;;  # skip ship+build, just bounce pm2 on existing artifacts
     --source) : ;;  # consumed elsewhere / informational
   esac
 done
@@ -47,6 +49,14 @@ if ! ask_yes "Proceed with deployment to $AWS_HOST? [y/N]"; then
 fi
 
 REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
+
+if [ "$RESTART_ONLY" = "1" ]; then
+  echo "-- RESTART-ONLY MODE: skipping ship + build, bouncing pm2 only --"
+  run_remote_restart_only "$REMOTE_APP_DIR"
+  echo "Restart complete -> http://$AWS_HOST"
+  exit 0
+fi
+
 ship_source       "$REMOTE_APP_DIR"
 write_remote_env  "$REMOTE_APP_DIR"
 run_remote_build_and_start "$REMOTE_APP_DIR"

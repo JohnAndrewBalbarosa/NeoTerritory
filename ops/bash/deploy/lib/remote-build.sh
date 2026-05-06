@@ -185,6 +185,12 @@ for p in 80 443; do
 done
 
 cd Codebase/Backend
+if [ ! -f dist/server.js ]; then
+  echo "   [pm2] FATAL: dist/server.js missing — Backend build did not produce output"
+  exit 1
+fi
+echo "   [pm2] dist/server.js size: \$(stat -c%s dist/server.js 2>/dev/null || echo ?) bytes"
+
 sudo npm install -g pm2 2>/dev/null || true
 sudo pm2 delete neoterritory 2>/dev/null || true
 echo "   [pm2] starting neoterritory on :80/:443"
@@ -192,10 +198,82 @@ sudo PORT=80 SSL_PORT=443 HOST=0.0.0.0 NODE_ENV=production pm2 start dist/server
 sudo pm2 save
 phase_end 0
 
+# ---------- smoke test ----------
+# A "white page on TCP-but-no-HTTP-response" outage in the past was caused by
+# pm2 reporting "online" while server.js was actually wedged at startup. Probe
+# /health from inside the box and only declare success after a real 200.
+phase_start "smoke-test"
+SMOKE_OK=0
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+  CODE=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://127.0.0.1/health 2>/dev/null || echo 000)
+  if [ "\$CODE" = "200" ]; then
+    echo "   [smoke] /health -> 200 OK after \${i}s"
+    SMOKE_OK=1
+    break
+  fi
+  echo "   [smoke] attempt \$i/15: /health -> \$CODE (waiting...)"
+  sleep 2
+done
+if [ "\$SMOKE_OK" != "1" ]; then
+  echo "   [smoke] FAILED — server is not responding on :80. Last 80 lines of pm2 logs:"
+  sudo pm2 logs neoterritory --lines 80 --nostream || true
+  echo "   [smoke] pm2 status:"
+  sudo pm2 status || true
+  exit 1
+fi
+phase_end 0
+
 trap - EXIT
 echo ""
 echo "============================================================"
 echo ">> deploy complete"
 echo "============================================================"
+EOF
+}
+
+# Restart-only mode: bounces pm2 against the existing dist/ artifacts on the
+# remote box. Use this to recover quickly when a previous deploy died mid-build
+# and left pm2 in a wedged state — no rebuild, no shipping, just a clean restart
+# with the same smoke test as the full deploy.
+run_remote_restart_only() {
+  local remote_dir="$1"
+  echo "-- Restart-only: bouncing pm2 on existing artifacts --"
+  ssh $SSH_OPTS "$SSH_TARGET" "bash -l -s" <<EOF
+set -e
+export PATH=\$PATH:/usr/bin:/usr/local/bin:/snap/bin
+cd "$remote_dir/Codebase/Backend"
+
+if [ ! -f dist/server.js ]; then
+  echo "FATAL: dist/server.js missing on remote — cannot restart-only. Run a full deploy."
+  exit 1
+fi
+echo "dist/server.js size: \$(stat -c%s dist/server.js 2>/dev/null || echo ?) bytes"
+
+sudo systemctl stop nginx apache2 2>/dev/null || true
+for p in 80 443; do
+  PID=\$(sudo fuser \$p/tcp 2>/dev/null | awk '{print \$NF}' || true)
+  if [ -n "\$PID" ]; then
+    echo "freeing :\$p (pid=\$PID)"
+    sudo kill -9 \$PID && sleep 1
+  fi
+done
+
+sudo pm2 delete neoterritory 2>/dev/null || true
+sudo PORT=80 SSL_PORT=443 HOST=0.0.0.0 NODE_ENV=production pm2 start dist/server.js --name neoterritory --update-env
+sudo pm2 save
+
+for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+  CODE=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://127.0.0.1/health 2>/dev/null || echo 000)
+  if [ "\$CODE" = "200" ]; then
+    echo "[smoke] /health -> 200 OK after \${i}s"
+    exit 0
+  fi
+  echo "[smoke] attempt \$i/15: /health -> \$CODE"
+  sleep 2
+done
+echo "[smoke] FAILED — pm2 status + logs:"
+sudo pm2 status || true
+sudo pm2 logs neoterritory --lines 80 --nostream || true
+exit 1
 EOF
 }
