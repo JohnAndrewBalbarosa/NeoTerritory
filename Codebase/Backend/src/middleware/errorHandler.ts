@@ -14,6 +14,10 @@ const errorHandler = (err: HttpError, _req: Request, res: Response, _next: NextF
     res.status(413).json({ error: 'File too large (max 2MB)' });
     return;
   }
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    res.status(400).json({ error: 'Too many files (max 5 per upload)' });
+    return;
+  }
   res.status(err.status ?? 500).json({ error: err.message ?? 'Internal server error' });
 };
 
