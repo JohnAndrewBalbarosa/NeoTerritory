@@ -220,9 +220,14 @@ export default function LoginOverlay() {
                   onClick={handleProceedToSeats}
                   disabled={!!accountsError && !accountsLoaded}
                 >
-                  <span>🖥</span>
+                  <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="2" y="3" width="16" height="11" rx="2" />
+                    <path d="M7 18h6M10 14v4" />
+                  </svg>
                   Proceed to Seat Selection
-                  <span style={{ marginLeft: 'auto' }}>›</span>
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: 'auto' }} aria-hidden="true">
+                    <path d="M7 4l6 6-6 6" />
+                  </svg>
                 </button>
                 <p style={{ fontSize: '11px', color: 'var(--ink-dim)', textAlign: 'center', margin: 0 }}>
                   You will be prompted to read and acknowledge the consent letter before testing begins.
@@ -247,7 +252,7 @@ export default function LoginOverlay() {
               <TiltCard className="login-card tester-chooser" maxTilt={2} scale={1.002}>
                 {/* Step badge */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-                  <span className="step-badge">🖥 Step 1 of 3 — Seat Selection</span>
+                  <span className="step-badge">Step 1 of 3 — Seat Selection</span>
                   <button
                     type="button"
                     className="ghost-btn"

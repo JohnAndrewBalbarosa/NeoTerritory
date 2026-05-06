@@ -40,6 +40,19 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
   return (
     <div className="modal-overlay signout-survey signout-takeover" role="dialog" aria-modal="true" aria-labelledby="signout-title">
       <div className="modal-card signout-card">
+        <div className="codineo-brand-header">
+          <div className="codineo-brand-mark" aria-hidden>
+            <svg viewBox="0 0 20 20" width="20" height="20" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="2" y="3" width="16" height="11" rx="2" />
+              <path d="M7 18h6M10 14v4" />
+              <path d="M6 8l2 2-2 2M11 10h3" strokeWidth="1.5" />
+            </svg>
+          </div>
+          <div>
+            <div className="codineo-brand-name">CodiNeo</div>
+            <div className="codineo-brand-sub">DEVCON 1 · Code Intelligence</div>
+          </div>
+        </div>
         <h2 id="signout-title">Session feedback</h2>
         <p className="modal-lede">
           Before you sign out, please rate your overall experience with the system.

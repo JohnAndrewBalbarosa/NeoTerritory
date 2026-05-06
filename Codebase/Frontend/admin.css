@@ -69,18 +69,24 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 ::-webkit-scrollbar-thumb{background:var(--border-bright);border-radius:3px;}
 ::-webkit-scrollbar-thumb:hover{background:var(--accent);}
 
+/* BRAND SECTION (topbar left — shares class names with main studio for consistency) */
+.brand{flex:1;min-width:0;}
+.brand .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:3px;}
+.brand h1{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
+.brand .lede{margin-top:4px;color:var(--ink-soft);font-size:12px;max-width:640px;}
+
 /* ADMIN SHELL */
 .admin-shell{max-width:1300px;margin:0 auto;padding:24px 28px;position:relative;z-index:1;}
 .admin-aurora{position:fixed!important;inset:0;z-index:-1;opacity:0.32;}
-:root[data-theme="light"] .admin-aurora{opacity:0.55;}  /* multiply blend on white needs a touch more presence */
+:root[data-theme="light"] .admin-aurora{opacity:0.55;}
 body{position:relative;}
-.admin-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.admin-topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
 .admin-brand{display:flex;align-items:center;gap:12px;}
-.admin-brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);}
+.admin-brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);}
 .admin-brand h1{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
 .admin-brand .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:2px;}
-.admin-topbar-actions{display:flex;gap:8px;align-items:center;}
-.admin-user{font-size:12px;color:var(--ink-soft);}
+.admin-topbar-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.admin-user,#admin-user-label{font-size:12px;color:var(--ink-soft);padding:0 4px;}
 .primary-btn,.ghost-btn{font:600 13px/1 var(--ui-font);border-radius:var(--radius-sm);padding:8px 16px;cursor:pointer;border:1px solid transparent;transition:all 0.15s ease;letter-spacing:0.02em;}
 .primary-btn{background:var(--accent);color:#fff;}
 .primary-btn:hover:not(:disabled){background:var(--accent-hover);box-shadow:0 0 14px var(--accent-glow);}
@@ -243,13 +249,15 @@ body{position:relative;}
 @media(max-width:1100px){#run-drawer .drawer-card-wide{width:min(380px,calc(100vw - 20px));max-width:calc(100vw - 20px);height:min(64dvh,560px);}}
 @media(max-width:720px){.drawer-card,#run-drawer .drawer-card-wide{width:calc(100vw - 12px);max-width:calc(100vw - 12px);margin:6px;height:calc(100dvh - 12px);}}
 
+/* ADMIN ACTIONS (topbar right side) */
+.admin-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+
 /* ADMIN TAB BAR */
 .admin-tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px;gap:0;}
 .admin-tab-btn{font-family:var(--ui-font);font-weight:700;font-size:13px;padding:10px 20px;border:none;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink-soft);transition:color 200ms cubic-bezier(0.16,1,0.3,1),border-color 200ms cubic-bezier(0.16,1,0.3,1),transform 200ms cubic-bezier(0.16,1,0.3,1);letter-spacing:0.02em;position:relative;}
 .admin-tab-btn:hover{color:var(--accent);transform:translateY(-1px);}
 .admin-tab-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}
-.admin-tab-btn.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 14px var(--accent-glow);animation:nt-tab-glow 2.4s ease-in-out infinite;}
-@keyframes nt-tab-glow{0%,100%{opacity:0.65;}50%{opacity:1;}}
+.admin-tab-btn.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--accent);}
 
 /* ADMIN SECTIONS */
 .admin-section{margin-bottom:32px;}

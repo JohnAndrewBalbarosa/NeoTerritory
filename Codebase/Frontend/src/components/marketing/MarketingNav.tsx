@@ -22,9 +22,13 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         }}
       >
         <span className="nt-mkt-nav__brand-mark" aria-hidden>
-          NT
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="16" height="11" rx="2" />
+            <path d="M7 18h6M10 14v4" />
+            <path d="M6 8l2 2-2 2M11 10h3" strokeWidth="1.5" />
+          </svg>
         </span>
-        <span className="nt-mkt-nav__brand-name">NeoTerritory</span>
+        <span className="nt-mkt-nav__brand-name">CodiNeo</span>
       </a>
       <nav aria-label="Primary" className="nt-mkt-nav__links">
         {LINKS.map((l) => (

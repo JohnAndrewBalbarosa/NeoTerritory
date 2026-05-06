@@ -78,8 +78,7 @@ body.login-active{overflow:hidden;}
 .brand-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2D6BFF,#7B3FD4);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .brand-title{font-family:var(--heading-font);font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;margin:0;line-height:1.2;}
 .brand-title-accent{color:var(--accent);}
-.brand h1{font-family:var(--heading-font);font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;display:flex;align-items:center;gap:10px;}
-.brand h1::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.brand h1{font-family:var(--heading-font);font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
 .brand .lede{margin-top:4px;color:var(--ink-soft);font-size:13px;max-width:640px;}
 
 /* CodiNeo brand mark (login overlay) */
@@ -206,7 +205,7 @@ body.login-active{overflow:hidden;}
 .login-overlay > .nt-aurora{position:absolute;inset:0;z-index:1;opacity:0.6;}
 :root[data-theme="light"] .login-overlay > .nt-aurora{opacity:0.7;}
 .login-wrap{display:flex;flex-direction:column;align-items:center;width:min(82vw,1140px);max-width:82vw;gap:12px;}
-.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-lg),0 0 40px var(--accent-glow);transform-style:preserve-3d;}
+.login-card{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:var(--radius-lg);padding:28px;width:100%;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-lg);transform-style:preserve-3d;}
 .login-card h2{font-family:var(--heading-font);margin:0;font-size:18px;font-weight:700;color:var(--ink);}
 .login-hint{margin:0;color:var(--ink-soft);font-size:12px;}
 .login-hint code{background:rgba(123,94,167,0.15);color:var(--purple);padding:1px 5px;border-radius:3px;font-family:var(--code-font);}
@@ -314,6 +313,9 @@ body.login-active{overflow:hidden;}
 @media(max-width:900px){.login-wrap{width:92vw;max-width:92vw;}}
 @media(max-width:540px){.login-wrap{width:96vw;max-width:96vw;}.login-overlay{padding:10px;}.tester-grid{max-height:55vh;grid-template-columns:repeat(auto-fill,minmax(76px,1fr));gap:8px;}.tester-chip{min-height:68px;padding:12px 8px 10px;}}
 @media(max-width:400px){.tester-grid{grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:6px;}.tester-chip{min-height:60px;padding:10px 6px 8px;}}
+
+/* === ERROR BANNER === */
+.error-banner{padding:8px 11px;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-left:3px solid var(--red);color:var(--red);border-radius:var(--radius-sm);font-size:12px;line-height:1.5;}
 
 /* === SAVE PROMPT === */
 .save-prompt{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1100;backdrop-filter:blur(4px);}
@@ -483,8 +485,7 @@ body.login-active{overflow:hidden;}
 .tab-btn{font-family:var(--ui-font);font-size:12px;font-weight:700;padding:9px 18px;background:transparent;border:none;border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink-dim);transition:color 200ms cubic-bezier(0.16,1,0.3,1),border-color 200ms cubic-bezier(0.16,1,0.3,1),transform 200ms cubic-bezier(0.16,1,0.3,1);letter-spacing:0.06em;text-transform:uppercase;position:relative;}
 .tab-btn:hover:not([disabled]){color:var(--ink);transform:translateY(-1px);}
 .tab-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}
-.tab-btn.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 14px var(--accent-glow);animation:nt-tab-glow 2.4s ease-in-out infinite;}
-@keyframes nt-tab-glow{0%,100%{opacity:0.65;}50%{opacity:1;}}
+.tab-btn.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:2px;background:var(--accent);}
 .tab-btn.is-locked,.tab-btn[disabled]{cursor:not-allowed;color:var(--ink-soft);opacity:0.55;}
 .tab-btn.is-locked:hover{color:var(--ink-soft);}
 .tab-content{min-height:180px;}
@@ -615,7 +616,7 @@ body.login-active{overflow:hidden;}
 
 /* === Generic modal overlay/card (consent, pretest, run/signout survey) === */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.65);display:flex;align-items:center;justify-content:center;z-index:1200;backdrop-filter:blur(6px);padding:20px;}
-.modal-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:22px 26px;width:min(560px,94vw);max-height:88vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-lg),0 0 30px rgba(123,94,167,0.15);}
+.modal-card{background:var(--surface);border:1px solid var(--border);border-top:2px solid var(--accent);border-radius:var(--radius-lg);padding:22px 26px;width:min(560px,94vw);max-height:88vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:var(--shadow-lg);}
 .modal-card h2{margin:0;font-size:18px;font-weight:700;color:var(--ink);font-family:var(--heading-font);}
 .modal-card h3{margin:0;font-size:15px;color:var(--ink);}
 .modal-card p{margin:0;color:var(--ink-soft);font-size:13px;line-height:1.55;}

@@ -295,7 +295,7 @@ export default function MainLayout() {
               className={`tab-btn ${activeTab === t.id ? 'is-active' : ''}${unlocked ? '' : ' is-locked'}`}
               onClick={() => unlocked && setActiveTab(t.id)}
             >
-              {t.label}{unlocked ? '' : ' 🔒'}
+              {t.label}
             </button>
           );
         })}

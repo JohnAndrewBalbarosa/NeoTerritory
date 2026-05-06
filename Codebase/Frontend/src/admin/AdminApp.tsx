@@ -4,7 +4,6 @@ import { useAppStore } from '../store/appState';
 import { useTheme } from '../hooks/useTheme';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
 import AuroraBackground from '../components/marketing/effects/AuroraBackground';
-import ShinyText from '../components/marketing/effects/ShinyText';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -99,7 +98,7 @@ export default function AdminApp() {
       <header className="admin-topbar reveal">
         <div className="brand">
           <p className="eyebrow">NeoTerritory · Admin</p>
-          <h1><ShinyText text="Research dashboard" speed={6} intensity={0.6} /></h1>
+          <h1>Research dashboard</h1>
           <p className="lede">Activity, scoring, and qualitative reviews across all tester accounts.</p>
         </div>
         <div className="admin-actions">
