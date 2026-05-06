@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, StudioTab } from '../../store/appState';
 import { useOverflowGuard } from '../../hooks/useOverflowGuard';
-import ShinyText from '../marketing/effects/ShinyText';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
@@ -224,8 +223,20 @@ export default function MainLayout() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <p className="eyebrow">NeoTerritory Studio</p>
-          <h1><ShinyText text="Pattern detection & annotation" speed={6} intensity={0.7} /></h1>
+          {/* CodiNeo branded logo mark */}
+          <div className="brand-logo-row">
+            <div className="brand-logo-mark" aria-hidden>
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="3" width="16" height="11" rx="2" />
+                <path d="M7 18h6M10 14v4" />
+                <path d="M6 8l2 2-2 2M11 10h3" strokeWidth="1.5" />
+              </svg>
+            </div>
+            <div>
+              <p className="eyebrow">NeoTerritory Studio</p>
+              <h1 className="brand-title">CodiNeo <span className="brand-title-accent">Analysis</span></h1>
+            </div>
+          </div>
           <p className="lede">
             Paste C++ source or upload a file. The microservice detects design patterns
             and the studio shows comments side-by-side with the lines they reference.
