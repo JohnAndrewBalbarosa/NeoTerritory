@@ -5,9 +5,18 @@ import { spawnSync } from 'child_process';
 import { sanitizeFilename } from '../utils/fileUtils';
 
 const PROJECT_ROOT = path.resolve(__dirname, '..', '..', '..', '..');
-const DEFAULT_BIN = process.platform === 'win32'
-  ? path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe')
-  : path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build', 'NeoTerritory');
+// Probe for the binary across build directories; build-wsl is the WSL2 cmake output.
+function resolveDefaultBin(): string {
+  const candidates = [
+    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory.exe'),
+    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build-wsl', 'NeoTerritory'),
+    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build', 'NeoTerritory.exe'),
+    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build', 'NeoTerritory'),
+    path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'build-linux', 'NeoTerritory'),
+  ];
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[0];
+}
+const DEFAULT_BIN = resolveDefaultBin();
 const DEFAULT_CATALOG = path.join(PROJECT_ROOT, 'Codebase', 'Microservice', 'pattern_catalog');
 
 const STAGES = ['lexical', 'subtree', 'pattern_dispatch', 'hashing', 'output'];

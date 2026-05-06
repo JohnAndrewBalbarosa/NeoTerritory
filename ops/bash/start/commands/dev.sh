@@ -92,7 +92,7 @@ start_backend() {
   BACKEND_PID=$!
   step "Backend started (pid $BACKEND_PID)"
 
-  local tries=120
+  local tries=240
   if ! wait_url "http://127.0.0.1:$BACKEND_PORT/api/health" "$tries"; then
     err "Backend did not become healthy within $((tries / 2))s. Last lines of server.err.log:"
     [[ -f "$BACKEND_DIR/server.err.log" ]] && tail -30 "$BACKEND_DIR/server.err.log" || true
