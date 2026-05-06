@@ -163,3 +163,5 @@ Codebase/Backend/keys/jwt-private.pem
 
 # Local playwright scratch (developer-only, never commit)
 /playwright-scratch/
+.claude/scheduled_tasks.lock
+node_modules.stale*/
