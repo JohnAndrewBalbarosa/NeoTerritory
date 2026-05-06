@@ -57,7 +57,7 @@ export default function HeroLanding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
           >
-            NeoTerritory takes raw C++, lifts it into a structural model, tags every class with the
+            CodiNeo takes raw C++, lifts it into a structural model, tags every class with the
             design pattern it actually plays — Builder, Strategy, Decorator, more — and hands the
             AI a tiny evidence slice instead of a wall of source. Documentation gets shorter, more
             consistent, and far cheaper to generate.

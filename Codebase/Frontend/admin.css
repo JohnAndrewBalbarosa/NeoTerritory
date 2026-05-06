@@ -74,6 +74,8 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 .brand .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:3px;}
 .brand h1{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
 .brand .lede{margin-top:4px;color:var(--ink-soft);font-size:12px;max-width:640px;}
+.brand-logo-row{display:flex;align-items:center;gap:10px;margin-bottom:4px;}
+.brand-logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,#2D6BFF,#7B3FD4);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ADMIN SHELL */
 .admin-shell{max-width:1300px;margin:0 auto;padding:24px 28px;position:relative;z-index:1;}
@@ -260,8 +262,11 @@ body{position:relative;}
 .admin-tab-btn.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:var(--accent);}
 
 /* ADMIN SECTIONS */
-.admin-section{margin-bottom:32px;}
-.admin-section h2{font-size:18px;font-weight:700;margin:0 0 16px;color:var(--ink);}
+.admin-main{padding-top:8px;}
+.admin-section{margin-bottom:36px;}
+.admin-section h2{font-size:16px;font-weight:700;margin:0 0 14px;color:var(--ink);letter-spacing:-0.01em;display:flex;align-items:center;gap:8px;}
+.admin-section h2::before{content:'';display:inline-block;width:4px;height:16px;background:var(--accent);border-radius:2px;flex-shrink:0;}
+.admin-section-lede{margin:0 0 16px;font-size:12.5px;color:var(--ink-soft);line-height:1.55;}
 
 /* SURVEY STATS */
 .survey-stats{display:flex;flex-direction:column;gap:8px;}

@@ -41,7 +41,7 @@ export default function AboutPage() {
           <SplitText text="Built by a small research team." as="span" />
         </h1>
         <p className="nt-about__lede">
-          NeoTerritory began as a study tool: how do design patterns actually change reading speed,
+          CodiNeo began as a study tool: how do design patterns actually change reading speed,
           AI documentation cost, and unit-test maintenance? The team below carries the answer
           across C++, the backend adapter, the studio, and the research instrument.
         </p>
