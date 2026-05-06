@@ -5,7 +5,11 @@
 #include "introspect.hpp"
 #include <cassert>
 
-NT_DECLARE_METHOD_PROBE({{TERMINATOR}})
+NT_DECLARE_METHOD_PROBE(build)
+NT_DECLARE_METHOD_PROBE(finalize)
+NT_DECLARE_METHOD_PROBE(done)
+NT_DECLARE_METHOD_PROBE(complete)
+NT_DECLARE_METHOD_PROBE(produce)
 
 template <typename T = {{CLASS_NAME}}>
 static int run_tests() {

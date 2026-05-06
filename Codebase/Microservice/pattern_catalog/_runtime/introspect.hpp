@@ -34,22 +34,10 @@
     : std::true_type {};                                                       \
   }
 
-NT_DECLARE_METHOD_PROBE(build)
-NT_DECLARE_METHOD_PROBE(finalize)
-NT_DECLARE_METHOD_PROBE(done)
-NT_DECLARE_METHOD_PROBE(complete)
-NT_DECLARE_METHOD_PROBE(produce)
-NT_DECLARE_METHOD_PROBE(read)
-NT_DECLARE_METHOD_PROBE(write)
-NT_DECLARE_METHOD_PROBE(request)
-NT_DECLARE_METHOD_PROBE(execute)
-NT_DECLARE_METHOD_PROBE(run)
-NT_DECLARE_METHOD_PROBE(handle)
-NT_DECLARE_METHOD_PROBE(process)
-NT_DECLARE_METHOD_PROBE(perform)
-NT_DECLARE_METHOD_PROBE(operate)
-NT_DECLARE_METHOD_PROBE(get)
-NT_DECLARE_METHOD_PROBE(load)
+// Method probes are intentionally NOT pre-declared here.
+// Each test template calls NT_DECLARE_METHOD_PROBE for the specific method(s)
+// it needs. Pre-declaring them here causes redefinition errors when a template
+// calls NT_DECLARE_METHOD_PROBE for a name that overlaps (e.g. 'execute').
 
 // ---- Static-accessor probes -------------------------------------------------
 //
