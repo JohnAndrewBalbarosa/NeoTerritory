@@ -583,6 +583,8 @@ body.login-active{overflow:hidden;}
 .file-slot-delete:hover{background:rgba(248,113,113,0.08);border-color:var(--red);}
 .file-slot-textarea{width:100%;min-height:200px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);color:var(--ink);font-family:var(--code-font);font-size:12px;line-height:1.5;resize:vertical;}
 .file-slot-textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.token-counter{display:block;text-align:right;font-size:10px;font-family:var(--code-font);color:var(--ink-dim);margin-top:2px;}
+.token-counter--over{color:var(--red);font-weight:700;}
 .multi-file-add{align-self:flex-start;font-size:12px;padding:6px 12px;color:var(--accent);border-color:var(--accent);}
 .multi-file-add:hover{background:var(--accent);color:#fff;}
 .multi-file-add:disabled{opacity:0.5;cursor:not-allowed;}

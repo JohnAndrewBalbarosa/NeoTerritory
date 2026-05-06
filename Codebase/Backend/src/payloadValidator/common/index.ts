@@ -11,7 +11,7 @@ export const filenameSchema = z
     message: 'filename contains path separators or control characters'
   });
 
-export const MAX_TOKENS_PER_FILE = 200;
+export const MAX_TOKENS_PER_FILE = 500;
 
 // Whitespace-split word count — simple, transparent, language-agnostic.
 // Keeps per-file AI payload small enough to avoid Gemini overload.

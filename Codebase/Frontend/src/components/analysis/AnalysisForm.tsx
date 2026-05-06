@@ -16,9 +16,14 @@ interface FileSlot {
   text: string;
 }
 
-// Hard ceiling — backend clamps to this even if .env asks for more.
-const MAX_FILES_HARD_CAP = 16;
+// Hard ceiling — must match backend payloadValidator max(5).
+const MAX_FILES_HARD_CAP = 5;
+const MAX_TOKENS_PER_FILE = 500;
 const ACCEPTED_EXT = '.cpp,.cc,.cxx,.h,.hpp';
+
+function countTokens(code: string): number {
+  return code.trim().split(/\s+/).filter(Boolean).length;
+}
 
 function newSlotId(): string {
   return `slot-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -248,6 +253,15 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
             placeholder="Paste C++ source here…"
             aria-label="Source for this tab"
           />
+          {activeSlot.text.trim().length > 0 && (() => {
+            const t = countTokens(activeSlot.text);
+            const over = t > MAX_TOKENS_PER_FILE;
+            return (
+              <span className={`token-counter ${over ? 'token-counter--over' : ''}`}>
+                {t} / {MAX_TOKENS_PER_FILE} tokens{over ? ' — too large' : ''}
+              </span>
+            );
+          })()}
         </div>
       )}
 
