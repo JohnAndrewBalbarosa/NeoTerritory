@@ -132,13 +132,24 @@ npm_install_if_changed() {
   fi
 }
 
+# Cap V8 heap on the 416MB Lightsail box so tsc/vite don't OOM. Default heap
+# is ~50% of physical RAM (~256MB here); the build allocates on top, easily
+# exceeding RAM and triggering OOM-kill mid-build. That's exactly what
+# produced the "Frontend/dist missing -> backend serves source index.html ->
+# white page" outage.
+LOW_RAM_NODE_OPTS="--max-old-space-size=320"
+
 # ---------- backend ----------
 phase_start "backend"
 reclaim Codebase/Backend
 print_dep_summary Codebase/Backend
 npm_install_if_changed Codebase/Backend backend
-echo "   [tsc] compiling Backend (npm run build) ..."
-( cd Codebase/Backend && npm run build )
+echo "   [tsc] compiling Backend (NODE_OPTIONS=\$LOW_RAM_NODE_OPTS) ..."
+( cd Codebase/Backend && NODE_OPTIONS="\$LOW_RAM_NODE_OPTS" npm run build )
+if [ ! -f Codebase/Backend/dist/server.js ]; then
+  echo "   [tsc] FATAL: Backend/dist/server.js missing — tsc did not produce output"
+  exit 1
+fi
 echo "   [tsc] dist file count: \$(find Codebase/Backend/dist -type f 2>/dev/null | wc -l)"
 phase_end 0
 
@@ -147,9 +158,21 @@ phase_start "frontend"
 reclaim Codebase/Frontend
 print_dep_summary Codebase/Frontend
 npm_install_if_changed Codebase/Frontend frontend
-echo "   [vite] building Frontend (npm run build) ..."
-( cd Codebase/Frontend && npm run build )
-echo "   [vite] dist file count: \$(find Codebase/Frontend/dist -type f 2>/dev/null | wc -l) ($(du -sh Codebase/Frontend/dist 2>/dev/null | awk '{print \$1}'))"
+echo "   [vite] building Frontend (NODE_OPTIONS=\$LOW_RAM_NODE_OPTS) ..."
+( cd Codebase/Frontend && NODE_OPTIONS="\$LOW_RAM_NODE_OPTS" npm run build )
+if [ ! -f Codebase/Frontend/dist/index.html ]; then
+  echo "   [vite] FATAL: Frontend/dist/index.html missing — vite build produced no output (likely OOM)."
+  echo "   [vite] Without this, Backend will fall back to source index.html and the site will white-page."
+  exit 1
+fi
+# Sanity check: production index.html must reference hashed bundles in /assets/,
+# not the source /src/main.tsx entry. If we see /src/, vite emitted a dev-style
+# index.html which would still produce a white page in prod.
+if grep -q '/src/main.tsx' Codebase/Frontend/dist/index.html; then
+  echo "   [vite] FATAL: dist/index.html still references /src/main.tsx (looks like the source file). Build is broken."
+  exit 1
+fi
+echo "   [vite] dist file count: \$(find Codebase/Frontend/dist -type f 2>/dev/null | wc -l) (\$(du -sh Codebase/Frontend/dist 2>/dev/null | awk '{print \$1}'))"
 phase_end 0
 
 # ---------- microservice ----------
@@ -204,14 +227,16 @@ phase_end 0
 # /health from inside the box and only declare success after a real 200.
 phase_start "smoke-test"
 SMOKE_OK=0
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-  CODE=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://127.0.0.1/health 2>/dev/null || echo 000)
+# Each attempt waits up to 10s for /health (the box is RAM-starved, so a
+# healthy first request can take 5-10s). 30 attempts × ~12s ≈ 6min budget.
+for i in \$(seq 1 30); do
+  CODE=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://127.0.0.1/health 2>/dev/null || echo 000)
   if [ "\$CODE" = "200" ]; then
-    echo "   [smoke] /health -> 200 OK after \${i}s"
+    echo "   [smoke] /health -> 200 OK after attempt \$i"
     SMOKE_OK=1
     break
   fi
-  echo "   [smoke] attempt \$i/15: /health -> \$CODE (waiting...)"
+  echo "   [smoke] attempt \$i/30: /health -> \$CODE (waiting 2s...)"
   sleep 2
 done
 if [ "\$SMOKE_OK" != "1" ]; then
@@ -262,13 +287,13 @@ sudo pm2 delete neoterritory 2>/dev/null || true
 sudo PORT=80 SSL_PORT=443 HOST=0.0.0.0 NODE_ENV=production pm2 start dist/server.js --name neoterritory --update-env
 sudo pm2 save
 
-for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
-  CODE=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 2 http://127.0.0.1/health 2>/dev/null || echo 000)
+for i in $(seq 1 30); do
+  CODE=\$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 http://127.0.0.1/health 2>/dev/null || echo 000)
   if [ "\$CODE" = "200" ]; then
-    echo "[smoke] /health -> 200 OK after \${i}s"
+    echo "[smoke] /health -> 200 OK after attempt \$i"
     exit 0
   fi
-  echo "[smoke] attempt \$i/15: /health -> \$CODE"
+  echo "[smoke] attempt \$i/30: /health -> \$CODE"
   sleep 2
 done
 echo "[smoke] FAILED — pm2 status + logs:"
