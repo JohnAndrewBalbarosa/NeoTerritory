@@ -4,32 +4,32 @@ import { useEffect, useState } from 'react';
 const STAGES = [
   {
     id: 'analysis',
-    name: 'Analysis',
-    blurb: 'Lex + parse C++ source into ParseTreeNodes. Bind variables to class hashes.',
+    name: 'Read the Code',
+    blurb: 'The system receives the submitted C++ source and prepares it for checking.',
     icon: '∑',
   },
   {
     id: 'trees',
-    name: 'Trees',
-    blurb: 'Stitch every node to its enclosing class/function on a unified main tree.',
+    name: 'Organize the Structure',
+    blurb: 'It groups tokens, classes, and structural parts so the code can be reviewed by class.',
     icon: '⌥',
   },
   {
     id: 'pattern_dispatch',
-    name: 'Pattern dispatch',
-    blurb: 'Middleman walks subtrees, loads JSON pattern templates, emits structural tags.',
+    name: 'Check for Patterns',
+    blurb: 'It compares class structures with pattern rules from the catalog.',
     icon: '◇',
   },
   {
     id: 'hashing',
-    name: 'Hashing',
-    blurb: 'Three-tier hash chain (file → class → function) plus all-nodes pointer index.',
+    name: 'Link Evidence',
+    blurb: 'It connects detected classes, related code parts, and supporting evidence.',
     icon: '#',
   },
   {
     id: 'output',
-    name: 'Output',
-    blurb: 'Report + per-class evidence slices. Backend hands these to Claude for docs.',
+    name: 'Show the Report',
+    blurb: 'It returns annotations, detected patterns, documentation targets, and report artifacts.',
     icon: '→',
   },
 ];
@@ -77,6 +77,7 @@ export default function PipelineAnimation() {
               </motion.div>
               <div className="nt-pipeline__copy">
                 <p className="nt-pipeline__name">{stage.name}</p>
+                <p className="nt-pipeline__code">{stage.id}</p>
                 <p className="nt-pipeline__blurb">{stage.blurb}</p>
               </div>
             </li>

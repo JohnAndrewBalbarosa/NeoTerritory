@@ -47,7 +47,12 @@ if(MSVC)
     target_compile_options(NeoTerritory PRIVATE /W4 /permissive-)
 else()
     target_compile_options(NeoTerritory PRIVATE -Wall -Wextra -Wpedantic)
-    # Static-link runtime so the binary works without ucrt64 DLLs on PATH
-    # (required when the backend spawns the binary from Node child_process).
-    target_link_options(NeoTerritory PRIVATE -static-libgcc -static-libstdc++)
+
+    if(APPLE)
+        message(STATUS "Configuring NeoTerritory for macOS with AppleClang-compatible runtime linking")
+    elseif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        # Static-link runtime so the binary works without ucrt64 DLLs on PATH
+        # (required when the backend spawns the binary from Node child_process).
+        target_link_options(NeoTerritory PRIVATE -static-libgcc -static-libstdc++)
+    endif()
 endif()

@@ -6,6 +6,8 @@ import MarketingNav from './MarketingNav';
 import HeroLanding from './HeroLanding';
 import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
+import EntryChoice from './EntryChoice';
+import StudentLearningHub from './StudentLearningHub';
 
 interface MarketingShellProps {
   surface: Exclude<Surface, 'studio'>;
@@ -39,13 +41,15 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'hero' && <HeroLanding />}
           {surface === 'learn' && <LearningPage />}
           {surface === 'about' && <AboutPage />}
+          {surface === 'choose' && <EntryChoice />}
+          {surface === 'studentLearning' && <StudentLearningHub />}
         </motion.div>
       </AnimatePresence>
       <footer className="nt-mkt-footer" role="contentinfo">
-        <p>NeoTerritory Studio · C++ pattern analysis & AI documentation pipeline</p>
+        <p>NeoTerritory Studio · C++ pattern analysis and documentation-support system</p>
         <p className="nt-mkt-footer__small">
-          Marketing surface · public · the studio at <code>/app</code> still requires a tester
-          seat.
+          For thesis evaluation, learning, and research use. Admin access remains protected at{' '}
+          <code>/app</code>.
         </p>
       </footer>
     </MotionConfig>

@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../../store/appState';
 import { useAuth } from '../../hooks/useAuth';
+import { navigate } from '../../logic/router';
 import AuroraBackground from '../marketing/effects/AuroraBackground';
 import ShinyText from '../marketing/effects/ShinyText';
 import TiltCard from '../marketing/effects/TiltCard';
@@ -15,6 +16,11 @@ import { User } from '../../types/api';
 
 type Mode = 'picker' | 'admin';
 
+type EntryCopy = {
+  title: string;
+  hint: string;
+};
+
 // /app is the admin sign-in entry point. /login and /seat-selection are
 // tester seat picker entry points. The path is the source of truth — the
 // overlay does not flip modes based on data availability, so an empty
@@ -25,11 +31,54 @@ function getPathMode(): Mode {
   return window.location.pathname === '/app' ? 'admin' : 'picker';
 }
 
+function getEntryCopy(): EntryCopy {
+  if (typeof window === 'undefined') {
+    return {
+      title: 'Pick a tester seat',
+      hint: 'Claim an open seat to sign in.',
+    };
+  }
+
+  if (window.location.pathname === '/developer') {
+    return {
+      title: 'Open Developer Studio',
+      hint: 'Use an open seat to enter the existing C++ analysis studio.',
+    };
+  }
+
+  if (window.location.pathname === '/student-studio') {
+    const next = new URLSearchParams(window.location.search).get('next');
+    if (next === '/student-learning') {
+      return {
+        title: 'Start Student Learning',
+        hint: 'Claim an open seat before starting the learning path.',
+      };
+    }
+    return {
+      title: 'Open Student Studio',
+      hint: 'Use an open seat to try the analyzer after the learning modules.',
+    };
+  }
+
+  return {
+    title: 'Pick a tester seat',
+    hint: 'Claim an open seat to sign in.',
+  };
+}
+
+function getSafeReturnTarget(): string | null {
+  if (typeof window === 'undefined') return null;
+  const next = new URLSearchParams(window.location.search).get('next');
+  if (next === '/student-learning') return next;
+  return null;
+}
+
 export default function LoginOverlay() {
   const { signIn } = useAuth();
   const setAuth = useAppStore(s => s.setAuth);
 
   const pathMode = getPathMode();
+  const entryCopy = getEntryCopy();
   const [mode] = useState<Mode>(pathMode);
   const [accounts, setAccounts] = useState<TesterAccountInfo[]>([]);
   const [accountsError, setAccountsError] = useState('');
@@ -79,6 +128,10 @@ export default function LoginOverlay() {
       setAuth(token, user as User);
       // Mirror useAuth.signIn parallel warm-up.
       await Promise.all([fetchRuns(), fetchSample()]).catch(() => {});
+      const next = getSafeReturnTarget();
+      if (next) {
+        navigate(next);
+      }
     } catch (err) {
       const status = (err as Error & { status?: number }).status;
       const msg = err instanceof Error ? err.message : 'Claim failed.';
@@ -117,45 +170,84 @@ export default function LoginOverlay() {
             exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
-          <TiltCard className="login-card tester-chooser" maxTilt={4} scale={1.005}>
-            <header className="tester-chooser-head">
-              <h2><ShinyText text="Pick a tester seat" /></h2>
-              <p className="tester-hint">Claim an open seat to sign in.</p>
-            </header>
-            {accountsError && <p className="login-error">{accountsError}</p>}
-            {accountsLoaded && !accountsError && accounts.length === 0 && (
-              <p className="login-hint">
-                No tester seats are available right now. Contact an administrator.
+          <TiltCard className="login-card tester-chooser session-gateway" maxTilt={3} scale={1.002}>
+            <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
+              <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
+              <h2 id="session-gateway-heading">
+                <ShinyText text="Claim your session seat" />
+              </h2>
+              <p className="session-gateway__lede">
+                Choose an available seat to enter NeoTerritory Studio.
               </p>
-            )}
-            {accounts.length > 0 && (
-              <div className="tester-grid" role="list">
-                {accounts.map(acc => {
-                  const isClaiming = claiming === acc.username;
-                  const isClaimed = !!acc.claimed;
-                  return (
-                    <button
-                      key={acc.username}
-                      type="button"
-                      role="listitem"
-                      className="tester-chip tester-tile"
-                      data-claimed={isClaimed ? 'true' : undefined}
-                      disabled={isClaiming || isClaimed}
+              <p className="session-gateway__copy">
+                Each seat represents an available session environment for using the analyzer. Pick
+                one seat to continue.
+              </p>
+              <ul className="session-gateway__bullets" aria-label="Session notes">
+                <li>Use the real Studio</li>
+                <li>Keep one active session</li>
+                <li>Admin access stays protected</li>
+              </ul>
+              <button
+                type="button"
+                className="session-gateway__back"
+                onClick={() => navigate('/choose')}
+              >
+                Back to choices
+              </button>
+            </section>
+
+            <section className="session-gateway__picker" aria-label="Available session seats">
+              <header className="tester-chooser-head">
+                <p className="tester-chooser-head__label">Available seats</p>
+                <h3>{entryCopy.title}</h3>
+                <p className="tester-hint">{entryCopy.hint}</p>
+              </header>
+              {accountsError && <p className="login-error">{accountsError}</p>}
+              {accountsLoaded && !accountsError && accounts.length === 0 && (
+                <p className="login-hint">
+                  No tester seats are available right now. Contact an administrator.
+                </p>
+              )}
+              {accounts.length > 0 && (
+                <div className="tester-grid" role="list">
+                  {accounts.map(acc => {
+                    const isClaiming = claiming === acc.username;
+                    const isClaimed = !!acc.claimed;
+                    return (
+                      <button
+                        key={acc.username}
+                        type="button"
+                        role="listitem"
+                        className="tester-chip tester-tile"
+                        data-claimed={isClaimed ? 'true' : undefined}
+                        disabled={isClaiming || isClaimed}
                       title={isClaimed ? 'Already claimed by another tester' : undefined}
+                      aria-label={isClaimed ? `${acc.username} is already in use` : `Claim seat ${acc.username}`}
                       onClick={() => handleClaim(acc)}
                     >
-                      {isClaiming ? 'Claiming…' : acc.username}
+                      <span className="tester-seat-icon" aria-hidden>
+                        <svg viewBox="0 0 48 48" focusable="false">
+                          <rect x="8" y="10" width="32" height="23" rx="3.5" />
+                          <path d="M19 38h10" />
+                          <path d="M24 33v5" />
+                        </svg>
+                      </span>
+                      <span className="tester-seat-name">
+                        {isClaiming ? 'Claiming...' : acc.username}
+                      </span>
                       {isClaimed && <span className="tester-chip-sub">in use</span>}
                     </button>
-                  );
-                })}
-              </div>
-            )}
-            {error && <p className="login-error">{error}</p>}
-            <p className="login-toggle">
-              Need admin access?{' '}
-              <a className="link-btn" href="/app">Admin sign in</a>
-            </p>
+                    );
+                  })}
+                </div>
+              )}
+              {error && <p className="login-error">{error}</p>}
+              <p className="login-toggle">
+                Need admin access?{' '}
+                <a className="link-btn" href="/app">Admin sign in</a>
+              </p>
+            </section>
           </TiltCard>
           </motion.div>
         )}

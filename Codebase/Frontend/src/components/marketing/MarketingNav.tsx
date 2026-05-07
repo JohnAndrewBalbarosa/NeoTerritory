@@ -42,11 +42,11 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         ))}
       </nav>
       <a
-        href="/app"
+        href="/choose"
         className="nt-mkt-nav__cta"
         onClick={(e) => {
           e.preventDefault();
-          navigate('/app');
+          navigate('/choose');
         }}
       >
         Open studio
