@@ -48,6 +48,14 @@ invoke_dev() {
     fi
   fi
 
+  # Probe (or auto-free) the dev ports before binding. Without this, a
+  # stale tsx-watch / Vite from a prior session — or the long-running
+  # neoterritory Docker container that publishes :3001 — silently
+  # collides with the new backend, leading to confusing health-check
+  # failures or two listeners on the same port. See lib/ports.sh.
+  ensure_port_free "$BACKEND_PORT"  backend
+  [[ "$BACKEND_ONLY" -eq 0 ]] && ensure_port_free "$FRONTEND_PORT" vite
+
   start_backend "$bind" "$advert"
   start_vite    "$bind"
   install_cleanup_trap

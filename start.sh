@@ -29,6 +29,14 @@
 #   ./start.sh --rebuild=frontend,backend      # rebuild host bundles, then run
 #   ./start.sh --rebuild=all                   # rebuild every layer, then run
 #
+# Port kill switch — free :BACKEND_PORT / :FRONTEND_PORT before binding.
+# Without a flag, start.sh only WARNS when the port is held; it never kills.
+#
+#   ./start.sh --local --free-ports            # auto-stop our own holders
+#                                              #   (neoterritory* containers,
+#                                              #    user-owned tsx/vite/node)
+#   ./start.sh --local --free-ports=force      # also kill foreign holders
+#
 # Legacy passthrough (delegates to scripts/rebuild.sh, supports --skip-* too):
 #   ./start.sh rebuild
 #   ./start.sh rebuild --skip-microservice
@@ -40,7 +48,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HERE/ops/bash/start/lib"
 CMD="$HERE/ops/bash/start/commands"
 
-print_help() { sed -n '2,35p' "$0"; }
+print_help() { sed -n '2,44p' "$0"; }
 
 # shellcheck source=ops/bash/start/lib/env.sh
 source "$LIB/env.sh"
@@ -52,6 +60,8 @@ source "$LIB/host.sh"
 source "$LIB/build.sh"
 # shellcheck source=ops/bash/start/lib/rebuild.sh
 source "$LIB/rebuild.sh"
+# shellcheck source=ops/bash/start/lib/ports.sh
+source "$LIB/ports.sh"
 # shellcheck source=ops/bash/start/lib/args.sh
 source "$LIB/args.sh"
 

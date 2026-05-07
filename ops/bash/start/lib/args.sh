@@ -13,6 +13,7 @@ init_arg_defaults() {
   REBUILD=0; BACKEND_ONLY=0; NO_BROWSER=0; SKIP_POD=0; USE_CHROME=0; PROD=0
   SKIP_BUILD=0
   REBUILD_LIST=''  # csv of microservice,frontend,backend,docker,all (D-rebuild-split)
+  FREE_PORTS=0; FREE_PORTS_FORCE=0  # kill switch for stale port holders
 
   MODE='dev'; SKIP_MICRO=0; AUTO_START=0; ANTHROPIC_KEY=''; ANTHROPIC_MODEL='claude-sonnet-4-6'
 
@@ -41,6 +42,8 @@ parse_args() {
       --both)              BOTH=1 ;;
       --rebuild)           REBUILD=1; REBUILD_LIST='microservice' ;;
       --rebuild=*)         REBUILD_LIST="${1#--rebuild=}" ;;
+      --free-ports)        FREE_PORTS=1 ;;
+      --free-ports=force)  FREE_PORTS=1; FREE_PORTS_FORCE=1 ;;
       --backend-only)      BACKEND_ONLY=1 ;;
       --no-browser)        NO_BROWSER=1 ;;
       --skip-pod)          SKIP_POD=1 ;;
