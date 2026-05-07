@@ -98,14 +98,6 @@ const TECH_PARTS = [
   },
 ];
 
-const SCOPE = [
-  'It is a learning tool for design patterns.',
-  'It helps explain C++ code structure.',
-  'It is not a full C++ compiler.',
-  'It does not fully rewrite or refactor complete systems.',
-  'AI help is optional.',
-];
-
 export default function HeroLanding() {
   const reduce = useReducedMotion();
 
@@ -327,18 +319,6 @@ export default function HeroLanding() {
             </p>
           </div>
         </div>
-      </ScrollReveal>
-
-      <ScrollReveal as="section" className="nt-hero__scope">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Clear scope</p>
-          <h2 className="nt-section-title">What NeoTerritory is - and is not</h2>
-        </header>
-        <ul className="nt-scope-list">
-          {SCOPE.map((item) => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
       </ScrollReveal>
 
       <ScrollReveal as="section" className="nt-hero__cta-band">

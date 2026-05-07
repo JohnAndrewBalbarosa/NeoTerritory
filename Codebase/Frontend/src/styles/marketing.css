@@ -323,8 +323,7 @@ body[data-surface] #root {
 .nt-hero__architecture,
 .nt-hero__ai,
 .nt-hero__outputs,
-.nt-hero__research,
-.nt-hero__scope {
+.nt-hero__research {
   padding: var(--nt-mkt-space-section) clamp(1.25rem, 4vw, 3rem);
   max-width: 1200px;
   margin: 0 auto;
@@ -335,6 +334,9 @@ body[data-surface] #root {
 }
 .nt-hero__cta-band {
   text-align: center;
+}
+.nt-hero__ai + .nt-hero__cta-band {
+  padding-top: clamp(3rem, 2rem + 4vw, 6rem);
 }
 
 /* ---------- Pipeline animation ---------- */
@@ -698,35 +700,6 @@ body[data-surface] #root {
   margin: 0;
   color: var(--nt-mkt-text-soft);
   line-height: 1.6;
-}
-
-.nt-scope-list {
-  list-style: none;
-  padding: 0;
-  margin: 2rem auto 0;
-  max-width: 860px;
-  display: grid;
-  gap: 0.75rem;
-}
-.nt-scope-list li {
-  position: relative;
-  padding: 0.8rem 1rem 0.8rem 2.2rem;
-  border: 1px solid rgba(0, 209, 216, 0.13);
-  border-radius: 12px;
-  background: rgba(15, 27, 46, 0.52);
-  color: var(--nt-mkt-text-soft);
-  line-height: 1.5;
-}
-.nt-scope-list li::before {
-  content: '';
-  position: absolute;
-  left: 1rem;
-  top: 1.22rem;
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: var(--devcon-orange, var(--nt-mkt-accent-2));
-  box-shadow: 0 0 12px rgba(255, 179, 0, 0.5);
 }
 
 /* ---------- Footer ---------- */
