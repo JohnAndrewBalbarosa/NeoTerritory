@@ -117,7 +117,14 @@ if [[ "$SKIP_DOCKER" -eq 0 ]]; then
     kill -9 $STALE 2>/dev/null || true
     sleep 1
   fi
-  docker run -d --name neoterritory -p 3001:3001 "$IMAGE_TAG" >/dev/null
+  # Mount the host docker socket so the in-container CLI (installed in the
+  # runtime image) can reach the host daemon. podManager uses this to spawn
+  # sibling test-runner pods. Without the mount, TEST_RUNNER_USE_DOCKER=1
+  # falls back to "no_binary" and the runner uses the firejail sandbox only.
+  docker run -d --name neoterritory \
+    -p 3001:3001 \
+    -v /var/run/docker.sock:/var/run/docker.sock \
+    "$IMAGE_TAG" >/dev/null
   sleep 4
   docker ps --filter name=neoterritory --format "  {{.Names}}  {{.Status}}  {{.Ports}}"
 else

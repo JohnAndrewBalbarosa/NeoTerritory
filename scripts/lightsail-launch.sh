@@ -156,6 +156,7 @@ if [ -f "$ENV_FILE" ] && docker image inspect "$IMAGE_REF" >/dev/null 2>&1; then
     -p "${HOST_PORT}:3001" \
     --env-file "$ENV_FILE" \
     -v "${CONTAINER_NAME}-data:/app/Codebase/Backend/src/db" \
+    -v /var/run/docker.sock:/var/run/docker.sock \
     "$IMAGE_REF"
   docker ps --filter "name=$CONTAINER_NAME"
 else
