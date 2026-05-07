@@ -455,3 +455,61 @@ Backing this with schema-level guarantees:
 - **`survey_consent`** and **`survey_pretest`** are pre-session and similarly user-bound, not run-bound.
 
 **True Negative metric**: the `/api/admin/stats/f1-metrics` endpoint now returns `overall.tn` — the count of manual review decisions where the user said "no pattern here" AND the system also detected nothing. Per-pattern TN is intentionally NOT computed because every line where neither side mentions pattern X is a TN for X, which collapses to "every line in the corpus" and carries no information. The admin Complexity tab shows TN in the Overall row only; per-pattern rows render `—`.
+
+## D37 — AI auto-documentation pipeline (workshop-graduate persona, chunked, fallback)
+The microservice owns pattern detection and accuracy scoring; AI is **not** added to that path. AI is used **only** for auto-documentation of the already-tagged classes. The earlier, simpler spec at `docs/Codebase/Backend/src/services/aiDocumentationService.js.md` is now extended with the rules below; that file is the canonical contract for the request/response shape.
+
+**Trigger**: explicit user action only. A "Generate documentation" button on the studio fires `POST /api/runs/:runId/document`. No auto-fire on `/api/analyze` completion. While a job is running, all download buttons in the studio MUST be disabled and replaced with a "Waiting for AI to respond…" indicator.
+
+**Persona (system prompt)**: audience is workshop graduates who already recognize GoF patterns and have seen canonical UML — they need the bridge from "abstract pattern" to "this exact code", not a textbook re-introduction. Never re-teach the pattern, never start with "a Builder is…", never surface the persona description in the output. The persona is implicit; the output is a connection layer between recognized abstraction and concrete code.
+
+**Request shape (per chunk)**:
+```json
+{
+  "language": "cpp",
+  "classes": [{
+    "className": "...",
+    "file": "...",
+    "lineRange": [42, 71],
+    "code": "<exact source slice>",
+    "taggedPattern": "Builder",
+    "candidatePatterns": [{ "name": "Factory Method", "score": 0.62 }, …]
+  }]
+}
+```
+The `runId` is **NOT** in the AI payload — backend owns it via the route. `candidatePatterns` is what unlocks the comparative "why this won" narrative without touching the microservice scorer.
+
+**Response shape (per class, strict JSON, no prose, no markdown fences)**:
+```json
+{
+  "classes": [{
+    "name": "...",
+    "file": "...",
+    "taggedPattern": "Builder",
+    "patternRoleInThisClass": "Concrete Builder",
+    "patternLineRange": [44, 68],
+    "summary": "...",
+    "lineExplanations": [{ "line": 44, "note": "..." }],
+    "chosenRationale": "...",
+    "runnerUpComparison": { "name": "Factory Method", "gap": "..." }
+  }]
+}
+```
+
+**Per-line scope = salient only.** AI picks up to ~8 load-bearing lines per class; not every line in `patternLineRange`. Matches the workshop-graduate persona — reads like a senior dev highlighting what matters, not an exhaustive annotator.
+
+**Frontend-only accuracy story**: microservice scoring stays untouched. The "why X won over runner-up Y" narrative is rendered by the frontend next to the existing accuracy bar — pure explanation layer, never a re-scoring layer.
+
+**Chunking**: hard cap **5 chunks per run**, sequential with a delay between calls (avoids 429). `totalChunks` is computed and saved in job state BEFORE the first AI call so the frontend can show "1/5 done" progress. Job runs are non-blocking — kicked off via `setImmediate` after the POST returns 202.
+
+**Job state = in-memory `Map<runId, JobState>`**. Lost on backend restart by design; an interrupted job is re-triggered manually by the user. No DB schema change.
+
+**Static fallback location = catalog-side**: each pattern folder under `Codebase/Microservice/pattern_catalog/<pattern>/` ships a `fallback_doc.json` with role-shaped templates that the backend fills with annotated-source data (class name, line range, parameter list) when AI fails. Co-locating fallback with the pattern's existing rules + sample keeps a pattern's *everything* in one folder.
+
+**Timeout ladder**:
+1. **30s** (per chunk): a "Skip AI, use static" button appears in the studio. Clicking it cancels the job and renders the static fallback for every class in the run.
+2. **60s** (per chunk): hard cut-off. Job auto-flips to `failed`, frontend shows "AI did not respond — using static documentation", and the static fallback renders automatically.
+
+**Validation**: a chunk response must (a) be HTTP success from the AI provider AND (b) parse cleanly against the JSON schema above. Either failing flips the job to `failed` and triggers the static fallback. The frontend never receives a malformed AI body — backend rejects/retries server-side.
+
+**Frontend integration is a follow-up doc**. This entry locks the backend contract; the studio panel + polling hook spec lands once the backend doc is implemented.
