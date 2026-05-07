@@ -319,13 +319,19 @@ body[data-surface] #root {
   margin: 0 auto;
 }
 .nt-hero__workflow,
+.nt-hero__concept,
 .nt-hero__architecture,
 .nt-hero__ai,
+.nt-hero__outputs,
 .nt-hero__research,
 .nt-hero__scope {
   padding: var(--nt-mkt-space-section) clamp(1.25rem, 4vw, 3rem);
   max-width: 1200px;
   margin: 0 auto;
+}
+.nt-compact-section {
+  padding-top: clamp(2.5rem, 2rem + 3vw, 5rem);
+  padding-bottom: clamp(2.5rem, 2rem + 3vw, 5rem);
 }
 .nt-hero__cta-band {
   text-align: center;
@@ -475,6 +481,54 @@ body[data-surface] #root {
   position: relative;
 }
 
+.nt-concept-card {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(1.8rem, 1.2rem + 3vw, 3rem);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.92), rgba(11, 17, 29, 0.92));
+  box-shadow: var(--nt-mkt-shadow);
+}
+.nt-concept-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--nt-devcon-gradient, linear-gradient(90deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2)));
+}
+.nt-concept-card--compact {
+  max-width: 900px;
+  margin: 0 auto;
+}
+.nt-concept-copy {
+  max-width: 840px;
+  margin: 0 auto;
+  display: grid;
+  gap: 0.9rem;
+}
+.nt-concept-copy p {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: clamp(1rem, 0.94rem + 0.25vw, 1.12rem);
+  line-height: 1.65;
+}
+.nt-mini-chips {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.6rem;
+}
+.nt-mini-chips span {
+  padding: 0.45rem 0.8rem;
+  border: 1px solid rgba(0, 209, 216, 0.28);
+  border-radius: 999px;
+  background: rgba(0, 209, 216, 0.08);
+  color: var(--nt-mkt-text);
+  font-size: 0.88rem;
+}
+
 /* ---------- Thesis homepage cards ---------- */
 .nt-card-grid {
   display: grid;
@@ -602,6 +656,48 @@ body[data-surface] #root {
 }
 .nt-split-card article:last-child {
   border-top: 3px solid var(--devcon-purple, var(--nt-mkt-accent-2));
+}
+
+.nt-simple-steps {
+  display: grid;
+  gap: 1.4rem;
+  margin-top: 2.4rem;
+}
+@media (min-width: 860px) {
+  .nt-simple-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.nt-simple-step {
+  position: relative;
+  min-width: 0;
+  padding: 1.7rem 1.45rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.92), rgba(11, 17, 29, 0.92));
+  box-shadow: var(--nt-mkt-shadow);
+}
+.nt-simple-step__num {
+  display: inline-flex;
+  margin-bottom: 0.9rem;
+  padding: 0.25rem 0.65rem;
+  border: 1px solid rgba(166, 255, 0, 0.28);
+  border-radius: 999px;
+  color: var(--devcon-lime, var(--nt-mkt-accent));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.nt-simple-step h3 {
+  margin: 0 0 0.65rem;
+  color: var(--nt-mkt-text);
+  font-size: 1.12rem;
+}
+.nt-simple-step p {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
 }
 
 .nt-scope-list {
