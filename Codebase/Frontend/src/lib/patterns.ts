@@ -10,20 +10,20 @@ export interface PatternColor {
 // elsewhere (see SourceView's AMBIGUOUS_COLOR), so these are reserved for the
 // "we know exactly which pattern fired here" case.
 export const PATTERN_COLORS: Record<string, PatternColor> = {
-  Factory:        { bg: 'rgba(239, 68, 68, 0.20)',  border: '#ef4444', text: '#b91c1c' }, // red
-  Singleton:      { bg: 'rgba(59, 130, 246, 0.20)', border: '#3b82f6', text: '#1d4ed8' }, // blue
-  Builder:        { bg: 'rgba(139, 92, 246, 0.20)', border: '#8b5cf6', text: '#6d28d9' }, // violet
-  MethodChaining: { bg: 'rgba(20, 184, 166, 0.20)', border: '#14b8a6', text: '#0f766e' }, // teal
-  Adapter:        { bg: 'rgba(249, 115, 22, 0.22)', border: '#f97316', text: '#c2410c' }, // orange
-  Decorator:      { bg: 'rgba(236, 72, 153, 0.20)', border: '#ec4899', text: '#be185d' }, // pink
-  Proxy:          { bg: 'rgba(168, 85, 247, 0.20)', border: '#a855f7', text: '#7e22ce' }, // purple
-  Strategy:       { bg: 'rgba(34, 197, 94, 0.20)',  border: '#22c55e', text: '#15803d' }, // green
-  Observer:       { bg: 'rgba(234, 179, 8, 0.22)',  border: '#eab308', text: '#a16207' }, // amber
-  Composite:      { bg: 'rgba(6, 182, 212, 0.20)',  border: '#06b6d4', text: '#0e7490' }, // cyan
-  Iterator:       { bg: 'rgba(132, 204, 22, 0.22)', border: '#84cc16', text: '#4d7c0f' }, // lime
-  Visitor:        { bg: 'rgba(217, 70, 239, 0.20)', border: '#d946ef', text: '#a21caf' }, // fuchsia
-  Command:        { bg: 'rgba(245, 158, 11, 0.20)', border: '#f59e0b', text: '#b45309' }, // amber-orange
-  Pimpl:          { bg: 'rgba(202, 138, 4, 0.20)',  border: '#ca8a04', text: '#854d0e' }, // gold
+  Factory:        { bg: 'rgba(255, 179, 0, 0.16)',  border: '#ffb300', text: '#ffce4f' },
+  Singleton:      { bg: 'rgba(45, 107, 255, 0.18)', border: '#2d6bff', text: '#7fa4ff' },
+  Builder:        { bg: 'rgba(138, 43, 226, 0.20)', border: '#8a2be2', text: '#c18bff' },
+  MethodChaining: { bg: 'rgba(0, 209, 216, 0.16)',  border: '#00d1d8', text: '#69f7ff' },
+  Adapter:        { bg: 'rgba(255, 179, 0, 0.18)',  border: '#ffb300', text: '#ffd66b' },
+  Decorator:      { bg: 'rgba(166, 255, 0, 0.14)',  border: '#a6ff00', text: '#cbff72' },
+  Proxy:          { bg: 'rgba(138, 43, 226, 0.18)', border: '#8a2be2', text: '#bd8cff' },
+  Strategy:       { bg: 'rgba(166, 255, 0, 0.14)',  border: '#a6ff00', text: '#c8ff64' },
+  Observer:       { bg: 'rgba(0, 209, 216, 0.14)',  border: '#00d1d8', text: '#69f7ff' },
+  Composite:      { bg: 'rgba(45, 107, 255, 0.18)', border: '#2d6bff', text: '#89adff' },
+  Iterator:       { bg: 'rgba(166, 255, 0, 0.14)',  border: '#a6ff00', text: '#caff68' },
+  Visitor:        { bg: 'rgba(138, 43, 226, 0.20)', border: '#8a2be2', text: '#d1a3ff' },
+  Command:        { bg: 'rgba(255, 179, 0, 0.18)',  border: '#ffb300', text: '#ffd66b' },
+  Pimpl:          { bg: 'rgba(0, 209, 216, 0.14)',   border: '#00d1d8', text: '#7df8ff' },
   // Review is the "we don't know" bucket. Brighter mid-greys (slate-400/300)
   // so the badge remains visible on both dark and light surfaces. The dark
   // text variant is only swapped to a lighter slate at runtime when light

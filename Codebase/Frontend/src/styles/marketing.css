@@ -1,4 +1,11 @@
 :root {
+  --devcon-charcoal: #0d0f14;
+  --devcon-navy: #0f1b2e;
+  --devcon-blue: #2d6bff;
+  --devcon-cyan: #00d1d8;
+  --devcon-lime: #a6ff00;
+  --devcon-orange: #ffb300;
+  --devcon-purple: #8a2be2;
   --nt-mkt-bg: oklch(14% 0.02 260);
   --nt-mkt-bg-2: oklch(18% 0.04 260);
   --nt-mkt-surface: oklch(22% 0.04 260);
@@ -1817,4 +1824,160 @@ body[data-surface] #root {
   color: var(--nt-mkt-text-mute);
   font-size: 0.85rem;
   line-height: 1.5;
+}
+
+/* ---------- DEVCON-inspired brand refresh ---------- */
+:root {
+  --nt-mkt-bg: #0d0f14;
+  --nt-mkt-bg-2: #0f1b2e;
+  --nt-mkt-surface: rgba(15, 27, 46, 0.88);
+  --nt-mkt-text: #f7fbff;
+  --nt-mkt-text-soft: #b7c5df;
+  --nt-mkt-text-mute: #7c8aa6;
+  --nt-mkt-accent: var(--devcon-cyan);
+  --nt-mkt-accent-2: var(--devcon-purple);
+  --nt-mkt-line: rgba(0, 209, 216, 0.16);
+  --nt-mkt-line-strong: rgba(0, 209, 216, 0.34);
+  --nt-mkt-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.72), 0 0 36px rgba(45, 107, 255, 0.10);
+  --nt-devcon-gradient: linear-gradient(100deg, var(--devcon-cyan), var(--devcon-blue) 38%, var(--devcon-purple) 68%, var(--devcon-orange));
+}
+
+body[data-surface] {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(0, 209, 216, 0.13), transparent 30rem),
+    radial-gradient(circle at 88% 4%, rgba(138, 43, 226, 0.18), transparent 34rem),
+    radial-gradient(circle at 88% 78%, rgba(255, 179, 0, 0.09), transparent 30rem),
+    var(--devcon-charcoal);
+}
+
+.nt-mkt-nav {
+  background: rgba(13, 15, 20, 0.74);
+  border-bottom-color: rgba(0, 209, 216, 0.18);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.30);
+}
+.nt-mkt-nav::after {
+  content: '';
+  position: absolute;
+  left: clamp(1.25rem, 4vw, 3rem);
+  right: clamp(1.25rem, 4vw, 3rem);
+  bottom: 0;
+  height: 1px;
+  background: var(--nt-devcon-gradient);
+  opacity: 0.72;
+}
+.nt-mkt-nav__brand {
+  font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.nt-mkt-nav__brand-mark {
+  background: conic-gradient(from 20deg, var(--devcon-cyan), var(--devcon-lime), var(--devcon-orange), var(--devcon-purple), var(--devcon-blue), var(--devcon-cyan));
+  color: #061014;
+  box-shadow: 0 0 20px rgba(0, 209, 216, 0.42);
+}
+.nt-mkt-nav__links a[data-active='true']::after,
+.nt-module::before,
+.nt-family-card::before {
+  background: var(--nt-devcon-gradient);
+}
+.nt-mkt-nav__cta,
+.nt-magnetic--ghost .nt-magnetic__inner {
+  background: rgba(15, 27, 46, 0.72);
+  border-color: rgba(0, 209, 216, 0.28);
+}
+.nt-mkt-nav__cta:hover,
+.nt-magnetic--ghost:hover .nt-magnetic__inner {
+  background: rgba(0, 209, 216, 0.10);
+  border-color: var(--devcon-cyan);
+}
+.nt-magnetic--primary .nt-magnetic__inner {
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  color: #071014;
+  box-shadow: 0 20px 44px -18px rgba(0, 209, 216, 0.72);
+}
+.nt-magnetic--primary:hover .nt-magnetic__inner {
+  background: linear-gradient(135deg, var(--devcon-cyan), var(--devcon-blue));
+  color: #f7fbff;
+}
+.nt-section-title,
+.nt-hero__title,
+.nt-learn__title,
+.nt-family-hero__title,
+.nt-atlas__title,
+.nt-module__name,
+.nt-family-card__name,
+.nt-lesson-page__title {
+  font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.nt-section-eyebrow,
+.nt-hero__eyebrow,
+.nt-family-card__num,
+.nt-module__num,
+.nt-module__tag,
+.nt-lesson__num,
+.nt-lesson-page__family,
+.nt-lesson-page__h {
+  color: var(--devcon-cyan);
+}
+.nt-hero__above {
+  background:
+    radial-gradient(circle at 30% 0%, rgba(0, 209, 216, 0.18), transparent 34rem),
+    radial-gradient(circle at 80% 20%, rgba(138, 43, 226, 0.22), transparent 34rem),
+    linear-gradient(180deg, #0d0f14, #0f1b2e 120%);
+}
+.nt-hero__grain {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+.nt-hero__title-row--accent,
+.nt-prop-card__num,
+.docs-family-heading {
+  background: var(--nt-devcon-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.nt-pipeline__node,
+.nt-family-card,
+.nt-prop-card,
+.nt-matrix,
+.nt-sample,
+.nt-atlas__card,
+.nt-module,
+.nt-lesson,
+.nt-meta-list__item,
+.nt-family-sidebar,
+.nt-family-content {
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.92), rgba(11, 17, 29, 0.92));
+  border-color: rgba(0, 209, 216, 0.16);
+  box-shadow: var(--nt-mkt-shadow);
+}
+.nt-pipeline__node:hover,
+.nt-family-card:hover,
+.nt-prop-card:hover,
+.nt-atlas__card:hover,
+.nt-module:hover {
+  border-color: rgba(0, 209, 216, 0.42);
+  box-shadow: var(--nt-mkt-shadow), 0 0 26px rgba(0, 209, 216, 0.12);
+}
+.nt-pipeline__bubble {
+  background: var(--nt-devcon-gradient);
+  color: #071014;
+  box-shadow: 0 0 22px rgba(0, 209, 216, 0.28);
+}
+.nt-atlas__status,
+.nt-atlas__status-dot {
+  color: var(--devcon-lime);
+}
+.nt-atlas__status-dot {
+  background: var(--devcon-lime);
+  box-shadow: 0 0 10px rgba(166, 255, 0, 0.55);
+}
+.nt-atlas__try {
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  color: #071014;
 }
