@@ -9,6 +9,7 @@ import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
 import { deriveAnnotatedModel } from '../../lib/annotatedModel';
 import { buildClassTree } from '../../lib/classTreeModel';
 import { canonicalPatternName } from '../../lib/patterns';
+import { buildHierarchyMap, applyPatternTag } from '../../lib/patternPropagation';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -63,11 +64,21 @@ export default function AnnotatedTab({
   const handlePickClass = (className: string, patternKey: string): void => {
     const run = useAppStore.getState().currentRun;
     if (!run) return;
+    // Build hierarchy from the current memoised model so propagation
+    // operates on the live (post-cascade) class tree, not the raw API shape.
+    const hierarchy = buildHierarchyMap(model.workingMasterlist.values());
+    const updatedChosenPatterns = applyPatternTag(
+      className,
+      patternKey,
+      hierarchy,
+      run.classChosenPatterns ?? {},
+    );
     useAppStore.getState().patchCurrentRun({
       classResolvedPatterns: {
         ...(run.classResolvedPatterns || {}),
         [className]: patternKey,
       },
+      classChosenPatterns: updatedChosenPatterns,
     });
   };
 

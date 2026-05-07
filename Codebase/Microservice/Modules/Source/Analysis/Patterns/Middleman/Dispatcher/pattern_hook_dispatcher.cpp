@@ -1,6 +1,7 @@
 #include "OutputGeneration/Contracts/pipeline_state.hpp"
 
 #include "Analysis/ImplementationUse/Binding/Symbols/symbols.hpp"
+#include "Analysis/Input/source_reader.hpp"
 #include "Analysis/Lexical/token_stream.hpp"
 #include "Analysis/Patterns/Catalog/catalog.hpp"
 #include "Analysis/Patterns/Catalog/matcher.hpp"
@@ -9,6 +10,7 @@
 #include "Trees/Actual/parse_tree.hpp"
 
 #include <filesystem>
+#include <regex>
 #include <unordered_map>
 #include <utility>
 
@@ -94,6 +96,50 @@ const ClassTokenStream* find_class_stream(
     }
     return nullptr;
 }
+
+// Signals with weight <= this threshold suppress emission unconditionally.
+constexpr float kHardRejectThreshold = -0.5f;
+
+bool is_rejected_by_negative_signals(
+    const PatternTemplate&  pattern,
+    const ClassTokenStream& class_stream,
+    const std::string&      full_source_text)
+{
+    if (pattern.negative_signals.empty()) return false;
+
+    for (const NegativeSignal& sig : pattern.negative_signals)
+    {
+        if (sig.weight > kHardRejectThreshold) continue;
+        if (sig.shape_regex.empty()) continue;
+
+        // Signals whose original pattern references sibling class declarations
+        // or uses the {class_name} placeholder require a file-wide search.
+        const bool needs_full_file =
+            sig.shape_regex.find("class\\s+")   != std::string::npos ||
+            sig.shape_regex.find("{class_name}") != std::string::npos;
+
+        // Substitute {class_name} placeholder with the actual class name.
+        std::string rx_str = sig.shape_regex;
+        {
+            const std::string placeholder = "{class_name}";
+            std::size_t pos = 0;
+            while ((pos = rx_str.find(placeholder, pos)) != std::string::npos)
+            {
+                rx_str.replace(pos, placeholder.size(), class_stream.class_name);
+                pos += class_stream.class_name.size();
+            }
+        }
+
+        const std::string& search_text = needs_full_file ? full_source_text : class_stream.class_text;
+        try
+        {
+            const std::regex rx(rx_str, std::regex::ECMAScript);
+            if (std::regex_search(search_text, rx)) return true;
+        }
+        catch (const std::regex_error&) {}
+    }
+    return false;
+}
 } // namespace
 
 PatternDispatchOutput dispatch_patterns_against_subtrees(const PatternDispatchInput& input)
@@ -118,7 +164,8 @@ PatternDispatchOutput dispatch_patterns_against_subtrees(const PatternDispatchIn
             ++output.patterns_tried;
 
             PatternMatchResult result = match_pattern_against_class(pattern, class_stream);
-            if (result.matched)
+            if (result.matched &&
+                !is_rejected_by_negative_signals(pattern, class_stream, input.full_source_text))
             {
                 output.matches.push_back(std::move(result));
             }
@@ -233,6 +280,11 @@ void run_pattern_dispatch_stage(SourcePipelineState& state)
     input.catalog             = &state.pattern_catalog;
     input.class_token_streams = &state.class_token_streams;
     input.symbol_tables       = &state.symbol_tables;
+    for (const SourceFileUnit& unit : state.source_files)
+    {
+        input.full_source_text += unit.contents;
+        input.full_source_text += '\n';
+    }
 
     const PatternDispatchOutput output = dispatch_patterns_against_subtrees(input);
     state.pattern_matches = output.matches;

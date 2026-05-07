@@ -129,6 +129,13 @@ export interface TaggedClassEntry {
     declaration: number[];   // lines inside the class scope that carry a tag (1+)
     usage: number[];         // usage lines outside the scope (0+)
   };
+  // User-confirmed patterns after picker resolution + hierarchy propagation.
+  // Populated by applyPatternTag; multiple entries possible when the class
+  // participates in patterns confirmed at different hierarchy nodes.
+  chosenPatterns: string[];
+  // True when chosenPatterns.length > 0. Quick guard for renderers that
+  // want to skip unconfirmed classes during color/application passes.
+  isTagged: boolean;
 }
 
 export interface AnnotatedModel {
@@ -383,6 +390,10 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     input.classResolvedPatternsOverride
     ?? run.classResolvedPatterns
     ?? {};
+
+  // Per-class confirmed patterns after propagation. Populated externally by
+  // applyPatternTag; may be empty for classes the user has not yet tagged.
+  const classChosenPatterns: Record<string, string[]> = run.classChosenPatterns ?? {};
 
   // Build per-class status. Non-propagated classes classify normally on
   // their full candidate set. Propagated subclasses are placeholders here
@@ -702,6 +713,7 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     if (decl.length === 0) continue; // honour the "1+ declaration lines" rule
     const subs = Array.from(subclassesByParent.get(className) ?? []);
     const parent = propagatedSubclassParent.get(className) ?? null;
+    const chosenForClass = (classChosenPatterns[className] ?? []).slice();
     originalMasterlist.set(className, Object.freeze({
       className,
       patterns: Object.freeze(patterns.slice()) as string[],
@@ -711,6 +723,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
         declaration: Object.freeze(decl) as number[],
         usage: Object.freeze(usageLinesFor(className)) as number[],
       }) as TaggedClassEntry['taggedLines'],
+      chosenPatterns: Object.freeze(chosenForClass) as string[],
+      isTagged: chosenForClass.length > 0,
     }) as TaggedClassEntry);
   }
 
@@ -751,6 +765,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
           declaration: originalEntry.taggedLines.declaration.slice(),
           usage: originalEntry.taggedLines.usage.slice(),
         },
+        chosenPatterns: originalEntry.chosenPatterns.slice(),
+        isTagged: originalEntry.isTagged,
       });
       continue;
     }
@@ -797,6 +813,7 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
 
     if (patterns.length === 0) continue;
 
+    const workingChosen = (classChosenPatterns[className] ?? []).slice();
     workingMasterlist.set(className, {
       className,
       patterns,
@@ -806,6 +823,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
         declaration: originalEntry.taggedLines.declaration.slice(),
         usage: originalEntry.taggedLines.usage.slice(),
       },
+      chosenPatterns: workingChosen,
+      isTagged: workingChosen.length > 0,
     });
   }
 

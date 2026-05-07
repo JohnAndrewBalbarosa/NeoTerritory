@@ -236,6 +236,11 @@ export interface AnalysisRun {
   // Per-class user pattern resolutions. When set for a class, color rendering
   // and synthesized usage annotations prefer this over the heuristic verdict.
   classResolvedPatterns?: Record<string, string>;
+  // Per-class accumulated confirmed patterns after user resolution + hierarchy
+  // propagation. Populated by applyPatternTag whenever the user confirms a
+  // pattern via the picker. Multiple entries per class are possible when
+  // different hierarchy members contributed different patterns.
+  classChosenPatterns?: Record<string, string[]>;
   // Multi-file payload. Always non-empty for runs produced by /analyze; older
   // runs loaded from disk that predate multi-file get back-filled with a
   // single entry mirroring sourceName + sourceText.
