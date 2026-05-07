@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import SourceView from '../analysis/SourceView';
 import PatternLegend from '../analysis/PatternLegend';
@@ -61,9 +61,26 @@ export default function AnnotatedTab({
     [model, currentRun],
   );
 
+  // Observability: log the full class→candidates tree each time the model re-derives.
+  useEffect(() => {
+    if (model.classes.size === 0) return;
+    console.group('[NT] pattern tree (post-derive)');
+    for (const [cls, node] of model.classes) {
+      console.log(`  ${cls}  candidates=[${node.candidates.join(', ')}]  status=${node.status}`);
+    }
+    console.groupEnd();
+  }, [model]);
+
   const handlePickClass = (className: string, patternKey: string): void => {
     const run = useAppStore.getState().currentRun;
     if (!run) return;
+
+    // Verification: warn if the picked pattern has no structural detection for this class.
+    const node = model.classes.get(className);
+    if (node && !node.candidates.includes(patternKey)) {
+      console.warn(`[NT] verification failed: ${className} has no structural match for "${patternKey}". Candidates: [${node.candidates.join(', ')}]`);
+    }
+
     // Build hierarchy from the current memoised model so propagation
     // operates on the live (post-cascade) class tree, not the raw API shape.
     const hierarchy = buildHierarchyMap(model.workingMasterlist.values());
@@ -80,6 +97,7 @@ export default function AnnotatedTab({
       },
       classChosenPatterns: updatedChosenPatterns,
     });
+    console.log(`[NT] user tagged  class=${className}  pattern=${patternKey}`);
   };
 
   const allAnnotations = useMemo(() => {

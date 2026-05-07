@@ -17,7 +17,6 @@ struct PatternDispatchInput
     const std::vector<ClassTokenStream>*        class_token_streams = nullptr;
     const ParseTreeSymbolTables*                symbol_tables      = nullptr;
     std::vector<std::string>                    enabled_pattern_filter;
-    std::string                                 full_source_text;
 };
 
 struct PatternDispatchOutput
