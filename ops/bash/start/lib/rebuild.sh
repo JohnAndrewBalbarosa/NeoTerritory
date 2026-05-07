@@ -29,6 +29,12 @@ run_rebuild_list() {
   [[ "$do_front"  -eq 1 ]] && { step "Rebuilding frontend (--rebuild=frontend)";       bash "$REBUILD_SCRIPTS_DIR/frontend.sh"; }
   [[ "$do_back"   -eq 1 ]] && { step "Rebuilding backend (--rebuild=backend)";         bash "$REBUILD_SCRIPTS_DIR/backend.sh"; }
   [[ "$do_docker" -eq 1 ]] && { step "Rebuilding docker (--rebuild=docker)";           bash "$REBUILD_SCRIPTS_DIR/docker.sh"; }
+  # Force success exit. Without this, the function inherits the exit
+  # status of the LAST `[[ "$do_X" -eq 1 ]] && { ... }` statement, which
+  # is 1 whenever do_X=0 (the [[ ]] returned false). Callers running
+  # under `set -e` (start.sh) interpret that as a fatal failure and
+  # terminate silently right after the rebuild step.
+  return 0
 }
 
 # Verify the microservice binary is present without building it. Used by

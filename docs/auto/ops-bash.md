@@ -302,7 +302,7 @@ scripts under ops/bash/rebuild/. Sourced by start.sh.
 - `run_rebuild_list` (line 9)
   Run the rebuild scripts named in $1 (csv of microservice,frontend,backend,docker,all).
   Empty list → no-op.
-- `verify_microservice_binary` (line 37)
+- `verify_microservice_binary` (line 43)
   Verify the microservice binary is present without building it. Used by
   start.sh dev/prod so a clean checkout fails fast with a clear next step
   instead of silently triggering a long cmake build.
