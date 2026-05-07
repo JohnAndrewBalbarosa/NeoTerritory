@@ -354,10 +354,21 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
   // Distinct from inScopePatterns: this ignores body/scope leakage and
   // counts only patterns the matcher attached to the class HEAD.
   const directCandidates = new Map<string, Set<string>>();
+  // Class → canonical pattern names from entries that DID NOT come from
+  // parent cascade (parentClassName empty). Needed for case (e): a child
+  // can have its own Strategy detection separate from an inherited
+  // StrategyConcrete from the parent route. Without this, subtracting
+  // propagated tags from directCandidates loses the own one because
+  // they collapse to the same canonical bucket.
+  const ownDirectCandidates = new Map<string, Set<string>>();
   for (const p of detected) {
     if (!p.className || !isRealPattern(p.patternId)) continue;
     if (!directCandidates.has(p.className)) directCandidates.set(p.className, new Set());
     directCandidates.get(p.className)!.add(canonicalPatternName(p.patternId));
+    if (!p.parentClassName) {
+      if (!ownDirectCandidates.has(p.className)) ownDirectCandidates.set(p.className, new Set());
+      ownDirectCandidates.get(p.className)!.add(canonicalPatternName(p.patternId));
+    }
   }
 
   // Subclass propagation map: child class → first parent tag that
@@ -475,19 +486,51 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     }
 
     if (propagatingPatterns.has(parentEffective)) {
+      const parentCanonical = canonicalPatternName(parentEffective);
+      const childPriorPick  = resolvedTable[node.className];
+      const ownCanonicals   = ownDirectCandidates.get(node.className) ?? new Set<string>();
+
+      // Case (a): user already picked something for this subclass
+      // BEFORE parent decided. Respect — never overwrite. Even if the
+      // pick is canonically equal to parent's, we still preserve the
+      // user's explicit decision sa node.resolved.
+      if (childPriorPick) {
+        const priorCanonical = canonicalPatternName(childPriorPick);
+        if (priorCanonical !== parentCanonical) {
+          // User chose differently → standalone pick stands.
+          // Candidates show own_patterns only (no parent infection).
+          node.resolved = childPriorPick;
+          const ownList = Array.from(ownCanonicals);
+          node.candidates = ownList.length > 0 ? ownList : [childPriorPick];
+          node.status = node.candidates.length > 1 ? 'ambiguous_resolved' : 'unambiguous';
+          return;
+        }
+        // Aligned with parent canonically — fall through to (b)/(c)
+      }
+
+      // Case (b)/(e): subclass already has a canonical-equivalent own
+      // detection (e.g. StrategyConcrete or own Strategy) → no infection
+      // needed. Candidates collapse to parentEffective so the UI badges
+      // it the same as the parent's pick.
+      if (ownCanonicals.has(parentCanonical)) {
+        node.candidates = [parentEffective];
+        node.status = 'unambiguous';
+        if (childPriorPick) node.resolved = childPriorPick;
+        return;
+      }
+
+      // Case (c): empty-canvas → strict-follow-parent infection.
       node.candidates = [parentEffective];
       node.status = 'unambiguous';
       node.resolved = undefined;
       return;
     }
 
-    // Non-propagating parent pick → remove the propagated tag from
-    // this child. Count only what the matcher TAGGED on the child
-    // (directCandidates) — scope-leaked patterns are noise, not tags.
-    const propagatedTags = propagatedPatternsByChild.get(node.className) ?? new Set<string>();
-    const childTags = new Set<string>(directCandidates.get(node.className) ?? new Set<string>());
-    for (const t of propagatedTags) childTags.delete(t);
-
+    // Non-propagating parent pick (case d/f) → strip the propagated
+    // tag from this child. Use ownDirectCandidates so that own
+    // canonical-equivalent matches survive (case e: child kept its
+    // OWN Strategy even though parent picked Singleton).
+    const childTags  = new Set<string>(ownDirectCandidates.get(node.className) ?? new Set<string>());
     const remainingList = Array.from(childTags);
     node.candidates = remainingList;
 

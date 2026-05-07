@@ -27,16 +27,6 @@ struct PatternMatcherStep
     std::string                       document_as;
 };
 
-// A negative signal that, when its regex matches the class or file text,
-// penalises the match score. Signals with weight <= kHardRejectThreshold
-// act as hard-rejects and suppress emission entirely.
-struct NegativeSignal
-{
-    std::string id;
-    std::string shape_regex;  // may contain {class_name} placeholder
-    float       weight = 0.0f;
-};
-
 // Optional declaration that this pattern is an inheritance-driven parent.
 // Populated only when the pattern's JSON declares a `subclass_role` block;
 // otherwise `required` stays false and the matcher skips child propagation.
@@ -59,7 +49,6 @@ struct PatternTemplate
     std::unordered_map<std::string, std::vector<std::string>> lexeme_identifiers;
     SubclassRole                    subclass_role;
     std::string                     source_file;
-    std::vector<NegativeSignal>     negative_signals;
 };
 
 struct PatternCatalog

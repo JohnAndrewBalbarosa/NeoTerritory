@@ -358,6 +358,15 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   function handleResolve(line: number, patternKey: string): void {
     const className = classForLine(line);
     if (className) {
+      // Verification: warn if picked pattern has no structural detection for this class.
+      const detectedForClass = (useAppStore.getState().currentRun?.detectedPatterns || [])
+        .filter(p => p.className === className)
+        .map(p => canonicalPatternName(p.patternId || p.patternName));
+      const canonical = canonicalPatternName(patternKey);
+      if (!detectedForClass.includes(canonical)) {
+        console.warn(`[NT] verification failed (line popover): ${className} has no structural match for "${patternKey}". Detected: [${detectedForClass.join(', ')}]`);
+      }
+
       const scope = rows.find(r => r.lineNo === line)?.scope
                  ?? rows.map(r => r.scope).find(s => s?.className === className)
                  ?? null;
@@ -381,6 +390,7 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
         classResolvedPatterns: { ...prev, [className]: patternKey },
         userResolvedPattern: patternKey
       });
+      console.log(`[NT] user tagged (line popover)  class=${className}  pattern=${patternKey}  line=${line}`);
     } else {
       setLinePatternOverride(line, patternKey);
     }
