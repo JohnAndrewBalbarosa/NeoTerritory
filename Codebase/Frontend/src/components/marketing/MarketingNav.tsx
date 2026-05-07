@@ -6,7 +6,6 @@ interface MarketingNavProps {
 
 const LINKS: Array<{ path: string; label: string; surface: Surface }> = [
   { path: '/', label: 'Home', surface: 'hero' },
-  { path: '/choose', label: 'Choose', surface: 'choose' },
   { path: '/learn', label: 'Learn', surface: 'learn' },
   { path: '/about', label: 'About', surface: 'about' },
 ];

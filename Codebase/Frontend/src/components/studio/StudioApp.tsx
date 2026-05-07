@@ -1,8 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { fetchHealth, fetchRuns, fetchSample } from '../../api/client';
+import { navigate } from '../../lib/router';
 import LoginOverlay from '../auth/LoginOverlay';
 import MainLayout from '../layout/MainLayout';
+
+function getSafeReturnTarget(): string | null {
+  if (typeof window === 'undefined') return null;
+  const next = new URLSearchParams(window.location.search).get('next');
+  if (next === '/student-learning') return next;
+  return null;
+}
 
 export default function StudioApp() {
   const { token, user, setStatus, setMsStatus, setAiConfigured, resetSession } = useAppStore();
@@ -71,7 +79,12 @@ export default function StudioApp() {
         window.history.replaceState(null, '', '/login');
       }
     } else if (SIGN_IN_PATHS.includes(path)) {
-      window.history.replaceState(null, '', '/studio');
+      const next = getSafeReturnTarget();
+      if (path === '/student-studio' && next) {
+        navigate(next);
+      } else {
+        window.history.replaceState(null, '', '/studio');
+      }
     }
   }
 
