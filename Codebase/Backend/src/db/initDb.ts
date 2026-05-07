@@ -147,14 +147,20 @@ export function initDb(): void {
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_survey_pretest_user ON survey_pretest(user_id)`).run();
 
+  // Fresh-DB shape: run_id is INTEGER + FK CASCADE so a run delete also
+  // wipes its per-run survey rows. Older DBs created before this change
+  // still have run_id TEXT and no FK; they get migrated by the
+  // ensureCascade('run_feedback', …) call below. session_feedback is
+  // intentionally NOT linked to runs.
   db.prepare(`CREATE TABLE IF NOT EXISTS run_feedback (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    run_id TEXT NOT NULL,
+    run_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     ratings_json TEXT NOT NULL,
     open_json TEXT NOT NULL,
     submitted_at TEXT NOT NULL,
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY(run_id) REFERENCES analysis_runs(id) ON DELETE CASCADE
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_run_feedback_user ON run_feedback(user_id)`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_run_feedback_run ON run_feedback(run_id)`).run();
@@ -241,6 +247,24 @@ export function initDb(): void {
       chosen_kind TEXT NOT NULL,
       other_text TEXT,
       decided_at TEXT NOT NULL,
+      FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY(run_id) REFERENCES analysis_runs(id) ON DELETE CASCADE
+    )
+  `);
+  // run_feedback (per-run survey) — linked to the analysis_run record so a
+  // run delete cascades the feedback. Original schema stored run_id as
+  // TEXT (no FK); this migration converts to INTEGER + FK CASCADE. Existing
+  // numeric-string values coerce cleanly via INSERT…SELECT. session_feedback
+  // (signout survey) intentionally STAYS standalone — it is not run-bound
+  // and must survive run deletion.
+  ensureCascade('run_feedback', `
+    CREATE TABLE run_feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      run_id INTEGER NOT NULL,
+      user_id INTEGER NOT NULL,
+      ratings_json TEXT NOT NULL,
+      open_json TEXT NOT NULL,
+      submitted_at TEXT NOT NULL,
       FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY(run_id) REFERENCES analysis_runs(id) ON DELETE CASCADE
     )

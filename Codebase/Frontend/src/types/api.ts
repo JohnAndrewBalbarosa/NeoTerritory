@@ -366,8 +366,14 @@ export interface PatternF1 extends F1Score {
   pattern: string;
 }
 
+// Overall extends F1Score with TN (true negative). Per-pattern TN is
+// intentionally omitted — see D36 in DESIGN_DECISIONS for rationale.
+export interface F1Overall extends F1Score {
+  tn: number;
+}
+
 export interface F1Metrics {
-  overall:              F1Score;
+  overall:              F1Overall;
   perPattern:           PatternF1[];
   userAccuracyAvg:      number | null;
   likertF1Correlation:  number | null;

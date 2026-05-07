@@ -443,3 +443,15 @@ The deferred scraper from D35 is now implemented in code. D35's risk acknowledge
 - No CAPTCHA bypass, no anti-detection tricks beyond a single Chromium flag (`--disable-blink-features=AutomationControlled`) and the existing animation-zeroing init script borrowed from the recorder.
 - No multi-session fan-out. One Chromium window at a time, one URL at a time. Restart for the next host.
 - No production deployment. The scraper Vite entry is bundled but the backend route only mounts behind the env flag.
+
+## D36 — Per-run survey cascades with run; signout survey is standalone
+The original architecture rule: a saved run is a complete unit (run record + per-run survey together). The frontend flow enforces this by gating "submit & save" on the survey being submitted, so partial state never reaches the database under normal operation.
+
+Backing this with schema-level guarantees:
+
+- **`run_feedback.run_id`** is now `INTEGER` and a **`FOREIGN KEY … REFERENCES analysis_runs(id) ON DELETE CASCADE`**. Deleting a run automatically deletes its per-run survey. Existing TEXT-typed `run_id` rows are migrated in place by the existing `ensureCascade` helper in `Codebase/Backend/src/db/initDb.ts` (numeric strings coerce cleanly to integers via `INSERT … SELECT`).
+- **`reviews` (per-run scope)** and **`manual_pattern_decisions`** already cascade with `analysis_runs` (D-pre-existing migration).
+- **`session_feedback`** (sign-out survey) deliberately has NO foreign key to `analysis_runs`. It is bound to the user session, not to any individual run, and must survive run deletions. This stays standalone.
+- **`survey_consent`** and **`survey_pretest`** are pre-session and similarly user-bound, not run-bound.
+
+**True Negative metric**: the `/api/admin/stats/f1-metrics` endpoint now returns `overall.tn` — the count of manual review decisions where the user said "no pattern here" AND the system also detected nothing. Per-pattern TN is intentionally NOT computed because every line where neither side mentions pattern X is a TN for X, which collapses to "every line in the corpus" and carries no information. The admin Complexity tab shows TN in the Overall row only; per-pattern rows render `—`.

@@ -1002,7 +1002,7 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
     }
 
     const perPattern = new Map<string, { tp: number; fp: number; fn: number }>();
-    let totalTp = 0, totalFp = 0, totalFn = 0;
+    let totalTp = 0, totalFp = 0, totalFn = 0, totalTn = 0;
 
     function getOrAdd(key: string) {
       if (!perPattern.has(key)) perPattern.set(key, { tp: 0, fp: 0, fn: 0 });
@@ -1018,7 +1018,15 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       const detectedKeys = detectedAtLine.map(p => p.patternName || p.patternId || 'unknown');
 
       if (dec.chosen_kind === 'none') {
-        for (const k of detectedKeys) { getOrAdd(k).fp++; totalFp++; }
+        if (detectedKeys.length === 0) {
+          // True negative — user said "no pattern here" and the system also
+          // detected nothing. Tracked overall only; per-pattern TN is not
+          // meaningful (every line where neither side mentions pattern X is
+          // a TN for X, which collapses to "every line in the corpus").
+          totalTn++;
+        } else {
+          for (const k of detectedKeys) { getOrAdd(k).fp++; totalFp++; }
+        }
       } else if (dec.chosen_kind === 'pattern' && dec.chosen_pattern) {
         const correct = dec.chosen_pattern;
         if (detectedKeys.includes(correct)) {
@@ -1037,7 +1045,7 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       return { precision: Number(precision.toFixed(4)), recall: Number(recall.toFixed(4)), f1: Number(f.toFixed(4)), tp, fp, fn };
     }
 
-    const overall = f1(totalTp, totalFp, totalFn);
+    const overall = { ...f1(totalTp, totalFp, totalFn), tn: totalTn };
     const perPatternOut = [...perPattern.entries()].map(([pattern, s]) => ({
       pattern, ...f1(s.tp, s.fp, s.fn)
     })).sort((a, b) => b.f1 - a.f1);
