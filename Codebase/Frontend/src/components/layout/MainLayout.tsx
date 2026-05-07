@@ -18,6 +18,16 @@ import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
 import SignoutSurvey from '../survey/SignoutSurvey';
 import { AnalysisRun } from '../../types/api';
+import {
+  IconUpload,
+  IconLayers,
+  IconPlay,
+  IconBook,
+  IconCheckSquare,
+  IconLock,
+} from '../icons/Icons';
+import type { ComponentType } from 'react';
+import type { IconProps } from '../icons/Icons';
 
 interface PendingSave {
   pendingId: string;
@@ -55,12 +65,18 @@ function flashComment(id: string) {
   setTimeout(() => card.classList.remove('flash'), 1200);
 }
 
-const TABS: Array<{ id: StudioTab; label: string }> = [
-  { id: 'submit',     label: 'Submit' },
-  { id: 'annotated',  label: 'Annotated Source' },
-  { id: 'gdb',        label: 'GDB Runner' },
-  { id: 'docs',       label: 'Documentation' },
-  { id: 'ambiguous',  label: 'Review before submission' }
+interface TabDef {
+  id: StudioTab;
+  label: string;
+  icon: ComponentType<IconProps>;
+}
+
+const TABS: ReadonlyArray<TabDef> = [
+  { id: 'submit',     label: 'Submit',     icon: IconUpload },
+  { id: 'annotated',  label: 'Patterns',   icon: IconLayers },
+  { id: 'gdb',        label: 'Tests',      icon: IconPlay },
+  { id: 'docs',       label: 'Docs',       icon: IconBook },
+  { id: 'ambiguous',  label: 'Self-check', icon: IconCheckSquare },
 ];
 
 export default function MainLayout() {
@@ -274,22 +290,28 @@ export default function MainLayout() {
       </header>
 
       <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
-        {TABS.map((t) => {
+        {TABS.map((t, index) => {
           const unlocked = tabUnlocked(t.id);
           const lockReason = tabLockReason(t.id);
+          const isActive = activeTab === t.id;
+          const Icon = t.icon;
           return (
             <button
               key={t.id}
               type="button"
               role="tab"
-              aria-selected={activeTab === t.id}
+              aria-selected={isActive}
               aria-disabled={!unlocked}
               disabled={!unlocked}
               title={lockReason}
-              className={`tab-btn ${activeTab === t.id ? 'is-active' : ''}${unlocked ? '' : ' is-locked'}`}
+              className={`tab-btn ${isActive ? 'is-active' : ''}${unlocked ? '' : ' is-locked'}`}
               onClick={() => unlocked && setActiveTab(t.id)}
             >
-              {t.label}{unlocked ? '' : ' 🔒'}
+              <span className="tab-btn__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+              <span className="tab-btn__icon" aria-hidden="true">
+                {unlocked ? <Icon size={16} /> : <IconLock size={16} />}
+              </span>
+              <span className="tab-btn__label">{t.label}</span>
             </button>
           );
         })}

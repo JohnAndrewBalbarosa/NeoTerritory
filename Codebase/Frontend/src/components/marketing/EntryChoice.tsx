@@ -1,13 +1,32 @@
+import type { ComponentType } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
+import {
+  IconClipboard,
+  IconCode,
+  IconAcademicCap,
+  IconShield,
+  IconChevronRight,
+} from '../icons/Icons';
+import type { IconProps } from '../icons/Icons';
 
-const ENTRY_OPTIONS = [
+interface EntryOption {
+  title: string;
+  label: string;
+  text: string;
+  action: string;
+  path: string;
+  icon: ComponentType<IconProps>;
+}
+
+const ENTRY_OPTIONS: ReadonlyArray<EntryOption> = [
   {
     title: 'Tester',
     label: 'Thesis evaluation',
     text: 'Join the research testing flow and submit feedback.',
     action: 'Continue as tester',
     path: '/login',
+    icon: IconClipboard,
   },
   {
     title: 'Developer',
@@ -15,6 +34,7 @@ const ENTRY_OPTIONS = [
     text: 'Use the C++ pattern analyzer and documentation system.',
     action: 'Continue as developer',
     path: '/developer',
+    icon: IconCode,
   },
   {
     title: 'Student Learning',
@@ -22,6 +42,7 @@ const ENTRY_OPTIONS = [
     text: 'Claim a session seat, then learn design-pattern basics before using the analyzer.',
     action: 'Start learning',
     path: '/student-studio?next=/student-learning',
+    icon: IconAcademicCap,
   },
   {
     title: 'Admin',
@@ -29,6 +50,7 @@ const ENTRY_OPTIONS = [
     text: 'Manage tester seats, saved runs, feedback, logs, and exports.',
     action: 'Admin sign in',
     path: '/app',
+    icon: IconShield,
   },
 ];
 
@@ -48,22 +70,31 @@ export default function EntryChoice() {
           </header>
 
           <div className="nt-entry-grid" aria-label="NeoTerritory entry paths">
-            {ENTRY_OPTIONS.map((option) => (
-              <button
-                type="button"
-                key={option.title}
-                className="nt-entry-card"
-                data-role={option.title.toLowerCase().replace(/\s+/g, '-')}
-                onClick={() => navigate(option.path)}
-              >
-                <span className="nt-entry-card__content">
-                  <span className="nt-entry-card__label">{option.label}</span>
-                  <span className="nt-entry-card__title">{option.title}</span>
-                  <span className="nt-entry-card__text">{option.text}</span>
-                </span>
-                <span className="nt-entry-card__action">{option.action}</span>
-              </button>
-            ))}
+            {ENTRY_OPTIONS.map((option) => {
+              const Icon = option.icon;
+              return (
+                <button
+                  type="button"
+                  key={option.title}
+                  className="nt-entry-card"
+                  data-role={option.title.toLowerCase().replace(/\s+/g, '-')}
+                  onClick={() => navigate(option.path)}
+                >
+                  <span className="nt-entry-card__icon" aria-hidden="true">
+                    <Icon size={22} />
+                  </span>
+                  <span className="nt-entry-card__content">
+                    <span className="nt-entry-card__label">{option.label}</span>
+                    <span className="nt-entry-card__title">{option.title}</span>
+                    <span className="nt-entry-card__text">{option.text}</span>
+                  </span>
+                  <span className="nt-entry-card__action">
+                    {option.action}
+                    <IconChevronRight size={14} />
+                  </span>
+                </button>
+              );
+            })}
           </div>
 
           <p className="nt-entry__helper">
