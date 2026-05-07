@@ -2,7 +2,19 @@ import fs from 'fs';
 import path from 'path';
 import { XMLParser } from 'fast-xml-parser';
 
-const XML_PATH = path.join(__dirname, 'questions.xml');
+function resolveXmlPath(): string {
+  const candidates = [
+    path.join(__dirname, 'questions.xml'),
+    path.resolve(__dirname, '../../../src/reviews/questions.xml'),
+    path.resolve(__dirname, '../../src/reviews/questions.xml')
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return candidates[0]!;
+}
+
+const XML_PATH = resolveXmlPath();
 const SUPPORTED_TYPES = new Set(['rating', 'text', 'choice']);
 
 interface ChoiceOption { value: string; label: string }
