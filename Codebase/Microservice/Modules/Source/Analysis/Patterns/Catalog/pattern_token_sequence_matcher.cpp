@@ -142,6 +142,15 @@ PatternMatchResult match_pattern_against_class(
     MatchState state;
     state.tokens = &class_stream.tokens;
 
+    // A pattern with no ordered_checks cannot meaningfully match anything.
+    // Treat it as a non-match so a malformed or stripped catalog entry does
+    // not silently tag every class in the file.
+    if (pattern.ordered_checks.empty())
+    {
+        result.matched = false;
+        return result;
+    }
+
     for (const PatternMatcherStep& step : pattern.ordered_checks)
     {
         if (try_match_step(step, state)) continue;

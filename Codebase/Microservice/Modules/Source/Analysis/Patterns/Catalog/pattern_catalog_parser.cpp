@@ -515,6 +515,22 @@ PatternCatalog load_pattern_catalog(const std::string& catalog_directory)
         }
         if (depth >= 2) continue; // child catalogs handled by the matcher
 
+        // Sidecar documentation templates (e.g. singleton.fallback_doc.json)
+        // live alongside detection rules but carry no ordered_checks. They
+        // must NOT be loaded as detection patterns — doing so would emit a
+        // pattern with an empty check list, which the matcher treats as
+        // "always matches" and produces a universal false-positive tag for
+        // every class in the file.
+        {
+            const std::string fname = entry.path().filename().string();
+            const std::string suffix = ".fallback_doc.json";
+            if (fname.size() >= suffix.size() &&
+                fname.compare(fname.size() - suffix.size(), suffix.size(), suffix) == 0)
+            {
+                continue;
+            }
+        }
+
         load_one_file(entry.path().string(), catalog);
     }
     return catalog;
