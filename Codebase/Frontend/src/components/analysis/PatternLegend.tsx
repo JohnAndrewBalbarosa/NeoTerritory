@@ -1,4 +1,4 @@
-import { colorFor } from '../../lib/patterns';
+import { colorFor } from '../../logic/patterns';
 
 interface PatternLegendProps {
   // Canonical pattern names the user has decided on. Sourced from

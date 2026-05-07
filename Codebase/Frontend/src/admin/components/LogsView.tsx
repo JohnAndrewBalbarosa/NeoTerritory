@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminLogs, fetchAdminReviews, deleteAdminLogs } from '../../api/client';
 import { AdminLogEntry, AdminReview } from '../../types/api';
-import { fmtDate } from '../../lib/patterns';
+import { fmtDate } from '../../logic/patterns';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 // ─── Reviews (unchanged) ──────────────────────────────────────────────────────

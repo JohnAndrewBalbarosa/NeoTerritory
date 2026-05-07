@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { runPatternTests, fetchMyTestRunStats, GdbTestResult, AdminTestRunStats } from '../../api/client';
-import { logFrontendEvent } from '../../lib/frontendLog';
+import { logFrontendEvent } from '../../logic/frontendLog';
 
 const VERDICT_LABEL: Record<string, string> = {
   pass:              'pass',

@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { submitAnalysis, fetchSample } from '../../api/client';
-import { consumeStudioPrefill } from '../../lib/studioPrefill';
-import { logFrontendEvent } from '../../lib/frontendLog';
+import { consumeStudioPrefill } from '../../logic/studioPrefill';
+import { logFrontendEvent } from '../../logic/frontendLog';
 import { AnalysisRun } from '../../types/api';
 
 interface AnalysisFormProps {

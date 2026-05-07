@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Annotation, DetectedPatternFull } from '../../types/api';
-import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern, PatternColor, AMBIGUOUS_COLOR } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern, PatternColor, AMBIGUOUS_COLOR } from '../../logic/patterns';
 import { useAppStore } from '../../store/appState';
 import LinePopover from './LinePopover';
 

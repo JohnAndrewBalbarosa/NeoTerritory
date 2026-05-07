@@ -182,10 +182,19 @@ export function buildClassTree(input: BuildInput): ClassTreeNode[] {
     const resolvedPick = node?.resolved ?? resolvedMap[className];
     const hasReviewChild = children.some((c) => c.status === 'review');
 
+    // Sidebar must mirror the popup's view of "user owes a pick".
+    // The popup (ClassRootPicker / LinePopover) treats a class as
+    // pickable whenever the model marks it `ambiguous_pending` —
+    // i.e. its `candidates` (direct ∪ in-scope) has 2+ entries.
+    // Without consulting that, we miss cases where the union has
+    // multiple patterns but each individual child line carries only
+    // one tag and `classPatterns` collapses to 1.
+    const modelAmbiguous = node?.status === 'ambiguous_pending';
+
     if (resolvedPick) {
       status = 'resolved';
       mainDesignPattern = canonicalPatternName(resolvedPick);
-    } else if (hasReviewChild || classPatterns.length > 1) {
+    } else if (hasReviewChild || classPatterns.length > 1 || modelAmbiguous) {
       status = 'review';
       mainDesignPattern = null;
     } else {

@@ -9,8 +9,8 @@
 // visually decomposed; segments are display-only.
 
 import { useState, useRef } from 'react';
-import type { ClassTreeNode, LineNode } from '../../lib/classTreeModel';
-import { colorFor } from '../../lib/patterns';
+import type { ClassTreeNode, LineNode } from '../../logic/classTreeModel';
+import { colorFor } from '../../logic/patterns';
 import ClassRootPicker from './ClassRootPicker';
 
 interface ClassTreeViewProps {

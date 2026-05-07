@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react';
-import { navigate } from '../../lib/router';
+import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import ScrollReveal from './effects/ScrollReveal';
 import SplitText from './effects/SplitText';

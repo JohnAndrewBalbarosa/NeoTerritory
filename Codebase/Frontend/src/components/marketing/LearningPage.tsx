@@ -1,10 +1,10 @@
 import { useEffect, useMemo } from 'react';
-import { navigate, usePath } from '../../lib/router';
+import { navigate, usePath } from '../../logic/router';
 import { useOverflowGuard } from '../../hooks/useOverflowGuard';
 import MagneticButton from './effects/MagneticButton';
 import ScrollReveal from './effects/ScrollReveal';
 import SplitText from './effects/SplitText';
-import { stashStudioPrefill } from '../../lib/studioPrefill';
+import { stashStudioPrefill } from '../../logic/studioPrefill';
 
 import builderSrc from '../../../../Microservice/samples/builder/http_request_builder.cpp?raw';
 import factorySrc from '../../../../Microservice/samples/factory/shape_factory.cpp?raw';

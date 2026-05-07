@@ -5,11 +5,11 @@ import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import ClassTreeView from '../analysis/ClassTreeView';
-import { synthesizeUsageAnnotations } from '../../lib/usageAnnotations';
-import { deriveAnnotatedModel } from '../../lib/annotatedModel';
-import { buildClassTree } from '../../lib/classTreeModel';
-import { canonicalPatternName } from '../../lib/patterns';
-import { buildHierarchyMap, applyPatternTag } from '../../lib/patternPropagation';
+import { synthesizeUsageAnnotations } from '../../logic/usageAnnotations';
+import { deriveAnnotatedModel } from '../../logic/annotatedModel';
+import { buildClassTree } from '../../logic/classTreeModel';
+import { canonicalPatternName } from '../../logic/patterns';
+import { buildHierarchyMap, applyPatternTag } from '../../logic/patternPropagation';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {

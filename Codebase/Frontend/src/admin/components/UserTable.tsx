@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { resetTesterSeats } from '../../api/client';
 import { AdminUser } from '../../types/api';
-import { fmtDate } from '../../lib/patterns';
+import { fmtDate } from '../../logic/patterns';
 import { useAdminUsers, isOnline } from '../hooks/useAdminUsers';
 
 function isTesterRow(u: AdminUser): boolean {

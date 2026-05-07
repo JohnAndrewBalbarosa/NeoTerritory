@@ -1,6 +1,6 @@
 import { MotionConfig, motion, AnimatePresence } from 'motion/react';
 import { useEffect } from 'react';
-import { Surface } from '../../lib/router';
+import { Surface } from '../../logic/router';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
 import HeroLanding from './HeroLanding';

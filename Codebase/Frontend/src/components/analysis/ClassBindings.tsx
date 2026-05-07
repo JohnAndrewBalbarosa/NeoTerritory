@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { Annotation, ClassUsageBinding, DetectedPatternFull } from '../../types/api';
-import { colorFor, getAmbiguousColor, USAGE_KIND_LABEL, PatternColor } from '../../lib/patterns';
+import { colorFor, getAmbiguousColor, USAGE_KIND_LABEL, PatternColor } from '../../logic/patterns';
 
 interface ClassBindingsProps {
   bindings: Record<string, ClassUsageBinding[]>;

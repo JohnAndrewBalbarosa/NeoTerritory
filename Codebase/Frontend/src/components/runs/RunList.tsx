@@ -2,7 +2,7 @@ import React from 'react';
 import { useRuns } from '../../hooks/useRuns';
 import { fetchRun } from '../../api/client';
 import { useAppStore } from '../../store/appState';
-import { fmtDate } from '../../lib/patterns';
+import { fmtDate } from '../../logic/patterns';
 
 interface RunListProps {
   refreshSignal?: number;

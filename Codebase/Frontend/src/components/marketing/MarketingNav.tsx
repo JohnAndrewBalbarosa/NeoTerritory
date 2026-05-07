@@ -1,4 +1,4 @@
-import { navigate, Surface } from '../../lib/router';
+import { navigate, Surface } from '../../logic/router';
 
 interface MarketingNavProps {
   current: Surface;

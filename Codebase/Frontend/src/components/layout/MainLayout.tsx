@@ -6,7 +6,7 @@ import ShinyText from '../marketing/effects/ShinyText';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
-import { useHeartbeat } from '../../hooks/useHeartbeat';
+// import { useHeartbeat } from '../../hooks/useHeartbeat';  // TEMP: disabled, see useHeartbeat() call below
 import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import AnnotatedTab from '../tabs/AnnotatedTab';
@@ -66,7 +66,8 @@ const TABS: Array<{ id: StudioTab; label: string }> = [
 export default function MainLayout() {
   useHealth();
   useAiCommentaryPoll();
-  useHeartbeat();
+  // useHeartbeat();  // TEMP: disabled while debugging tagging/undo verification logs.
+                      // Heartbeat already verified working — re-enable after observability sweep.
   // Dev-only viewport overflow detector for the studio shell.
   useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
   const { theme, toggleTheme } = useTheme();

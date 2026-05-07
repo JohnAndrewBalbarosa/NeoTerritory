@@ -1,4 +1,4 @@
-import { useSurface } from './lib/router';
+import { useSurface } from './logic/router';
 import MarketingShell from './components/marketing/MarketingShell';
 import StudioApp from './components/studio/StudioApp';
 
