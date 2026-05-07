@@ -10,6 +10,26 @@ export interface Sample {
   code: string;
 }
 
+// Structural connotation rule for one design pattern as the NT detector
+// applies it. mustHave entries are token combos that MUST appear at least
+// once in the class body. mustNotHave entries are combos that, if present,
+// disqualify the class from this pattern. Entries are written as plain
+// token sequences (e.g. ["return", "*", "this"]) so the lesson reader can
+// match them against real source code with their eyes.
+export interface CorrectStructure {
+  mustHave: Array<{
+    label: string;
+    tokens: string[];
+    why: string;
+  }>;
+  mustNotHave?: Array<{
+    label: string;
+    tokens: string[];
+    why: string;
+  }>;
+  whyItWorks: string;
+}
+
 export interface Lesson {
   id: string;
   name: string;
@@ -21,6 +41,11 @@ export interface Lesson {
   // lesson lands.
   prerequisites: string[];
   sample?: Sample;
+  // The exact structural rule the NT detector enforces for this pattern.
+  // Lets students see "what makes the analyzer say this IS a Builder" in
+  // the same vocabulary the analyzer itself uses. Optional only because
+  // some lessons are too short for a structural section yet.
+  correctStructure?: CorrectStructure;
 }
 
 export interface Family {
@@ -56,6 +81,17 @@ export const FAMILIES: Family[] = [
           'Move semantics or a final build() that returns the finished object by value.',
         ],
         sample: { name: 'http_request_builder.cpp', code: builderSrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Self-return chain',
+              tokens: ['return', '*', 'this'],
+              why: 'The setter returns the same object so calls chain. Without this, it is just a normal class.',
+            },
+          ],
+          whyItWorks:
+            'Builder and Method Chaining look the same at this token level. The analyzer flags a class with `return *this` as both candidates at once and marks the result ambiguous. The reader picks the right one based on whether the class also has a separate finishing method that returns a finished product (Builder) or just keeps mutating (Method Chaining).',
+        },
       },
       {
         id: 'factory',
@@ -73,6 +109,22 @@ export const FAMILIES: Family[] = [
           'Polymorphism through a base-class pointer or reference.',
         ],
         sample: { name: 'shape_factory.cpp', code: factorySrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Object instantiation in return position',
+              tokens: ['return', 'new'],
+              why: 'A factory hands back a freshly created object. The combo "return new" is the most direct way to express that without naming the method.',
+            },
+            {
+              label: 'Or a stdlib instantiation symbol',
+              tokens: ['std::make_unique'],
+              why: 'Modern factories return smart pointers. The presence of `std::make_unique` (or `std::make_shared`) is enough on its own; no naming convention required.',
+            },
+          ],
+          whyItWorks:
+            'A factory is identified by the act of creating-and-returning, not by the method being named create() or make(). Token combos like `return new` or a bare `std::make_unique` are language-level evidence that does not depend on what the developer chose to call the method.',
+        },
       },
       {
         id: 'method-chaining',
@@ -90,6 +142,17 @@ export const FAMILIES: Family[] = [
           'Awareness of const-correctness so chains read predictably.',
         ],
         sample: { name: 'query_predicate.cpp', code: methodChainSrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Self-return chain',
+              tokens: ['return', '*', 'this'],
+              why: 'Each call leaves the caller pointed at the same instance, so the next call can hang off the previous one without naming the variable again.',
+            },
+          ],
+          whyItWorks:
+            'Method Chaining is structurally identical to Builder at the token level: both rely on `return *this`. The analyzer surfaces both as candidates and marks the class ambiguous. The reader resolves it by asking: is there a finishing method that produces a different product (Builder) or do all calls just mutate the same object (Method Chaining)?',
+        },
       },
       {
         id: 'singleton',
@@ -107,6 +170,17 @@ export const FAMILIES: Family[] = [
           'Function-local statics (Meyers singleton) for thread-safe one-time initialisation.',
         ],
         sample: { name: 'config_registry.cpp', code: singletonSrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Explicit deletion of copy/move',
+              tokens: ['=', 'delete'],
+              why: 'A Singleton actively prevents anyone from making a second instance. The `= delete` declaration on the copy constructor and copy assignment is the clearest language-level proof of that intent.',
+            },
+          ],
+          whyItWorks:
+            'Singletons are not identified by a method named getInstance() — that is a naming convention that varies across teams. The structural rule the analyzer enforces is "this class explicitly forbids being copied", which `= delete` says without ambiguity.',
+        },
       },
     ],
   },
@@ -134,6 +208,27 @@ export const FAMILIES: Family[] = [
           'Dependency injection through the constructor or a setter.',
         ],
         sample: { name: 'strategy_basic.cpp', code: strategySrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Virtual destructor declaration',
+              tokens: ['virtual', '~'],
+              why: 'A Strategy interface owns its derived classes through a base pointer; the virtual destructor is required so deletion runs the right destructor.',
+            },
+            {
+              label: 'Or override on a concrete strategy',
+              tokens: ['override', '{'],
+              why: 'A concrete strategy declares the override of the interface method. The combo `override {` (or `override const`) is enough to identify the concrete role.',
+            },
+            {
+              label: 'Or pure-virtual marker',
+              tokens: ['=', '0'],
+              why: 'On the interface itself, `= 0` after a method signature pins the class as abstract. No class with a pure-virtual method can be a value type.',
+            },
+          ],
+          whyItWorks:
+            'Strategy is identified by polymorphism, not by class names ending in "Strategy". The combos above (`virtual ~`, `override {`, `= 0`) are language-level signals that the class participates in a polymorphic family.',
+        },
       },
     ],
   },
@@ -161,6 +256,28 @@ export const FAMILIES: Family[] = [
           'Method forwarding and the difference between is-a and has-a relationships.',
         ],
         sample: { name: 'logging_proxy.cpp', code: wrappingSrc },
+        correctStructure: {
+          mustHave: [],
+          mustNotHave: [
+            {
+              label: 'No smart pointer ownership of the wrappee',
+              tokens: ['std::unique_ptr'],
+              why: 'A class that owns its wrappee via std::unique_ptr is doing composition with a strategy or pimpl shape — not Adapter. Adapter holds the wrappee through a plain pointer or reference.',
+            },
+            {
+              label: 'No virtual / override',
+              tokens: ['override', '{'],
+              why: 'A class that overrides a polymorphic interface is a Decorator candidate, not Adapter. Adapter does not extend behaviour through virtual dispatch — it translates between interfaces.',
+            },
+            {
+              label: 'No stdlib synchronization',
+              tokens: ['std::mutex'],
+              why: 'A class that uses `std::mutex`, `std::lock_guard`, etc. is wrapping for access control — that is Proxy, not Adapter.',
+            },
+          ],
+          whyItWorks:
+            'Adapter is the residual structural wrapper: it forwards calls to a held member without virtual dispatch, without ownership of the wrappee, and without access control. The analyzer expresses this by REJECTING anything that looks like Decorator, Proxy, or Pimpl rather than positively asserting Adapter shape.',
+        },
       },
       {
         id: 'decorator',
@@ -178,6 +295,17 @@ export const FAMILIES: Family[] = [
           'Recursive composition — a decorator can wrap another decorator.',
         ],
         sample: { name: 'logging_proxy.cpp', code: wrappingSrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Override of the wrapped interface',
+              tokens: ['override', '{'],
+              why: 'A Decorator IS-A the wrapped component. It overrides the same methods and adds work before or after delegating.',
+            },
+          ],
+          whyItWorks:
+            'A Decorator is identified by polymorphic override of the component interface. Without an override the class is just composition; with the override, the wrapper presents the same shape to the caller while adding its own layer.',
+        },
       },
       {
         id: 'proxy',
@@ -195,6 +323,17 @@ export const FAMILIES: Family[] = [
           'Method forwarding plus the discipline to add cross-cutting work before or after each call.',
         ],
         sample: { name: 'logging_proxy.cpp', code: wrappingSrc },
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Stdlib synchronization or access-control symbol',
+              tokens: ['std::lock_guard'],
+              why: 'A Proxy controls how and when the real subject is accessed. Stdlib symbols like `std::mutex`, `std::lock_guard`, `std::call_once`, `std::atomic`, or `std::condition_variable` are language-level proof of that control.',
+            },
+          ],
+          whyItWorks:
+            'Proxy is differentiated from plain wrapping by the presence of access control. The analyzer keys on stdlib symbols rather than method names like `cache` or `lock`, so a project that uses non-English variable names still gets the same answer.',
+        },
       },
     ],
   },
@@ -221,6 +360,17 @@ export const FAMILIES: Family[] = [
           'std::unique_ptr to an incomplete type, with the destructor defined in the .cpp file.',
           'Awareness of how header changes trigger downstream recompilation.',
         ],
+        correctStructure: {
+          mustHave: [
+            {
+              label: 'Smart-pointer handle to the inner type',
+              tokens: ['std::unique_ptr'],
+              why: 'Pimpl owns its hidden Impl through a smart pointer. The presence of `std::unique_ptr` (or `std::shared_ptr`) plus a forward-declared inner struct is the structural signature.',
+            },
+          ],
+          whyItWorks:
+            'Pimpl is identified by ownership of an incomplete inner type via stdlib smart pointers. There is no naming convention involved — the analyzer reads the stdlib symbol directly.',
+        },
       },
     ],
   },

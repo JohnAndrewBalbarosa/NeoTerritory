@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FAMILIES, Family, Lesson, Sample } from '../../data/learningContent';
+import { FAMILIES, Family, Lesson, Sample, CorrectStructure } from '../../data/learningContent';
 import { navigate } from '../../logic/router';
 import { stashStudioPrefill } from '../../logic/studioPrefill';
 import { useAppStore } from '../../store/appState';
@@ -138,12 +138,88 @@ public:
     ],
   },
   {
-    id: 'intro-try-neoterritory',
-    title: 'Try NeoTerritory',
+    id: 'intro-pattern-ambiguity',
+    title: 'Ambiguity is built in to design patterns',
     eyebrow: 'Lesson 9',
     body: [
-      'Now that you know the basics, continue through the required pattern library before opening the Studio.',
-      'You will review each pattern lesson, then practice with real C++ code.',
+      'Some design patterns look almost identical when you only read the code. Builder and Method Chaining both use return *this. Adapter, Decorator, and Proxy all wrap a held member and forward calls. This is not a bug in your code or in the analyzer — it is a property of the patterns themselves.',
+      'When two patterns share the same structural shape, no automatic tool can pick a single winner from the code alone. The honest answer is to surface BOTH candidates and tell the reader the class is ambiguous between them.',
+      'Ambiguity is not failure. It is information. It tells you the next decision (which pattern this really is) needs human judgment plus extra context the code does not yet carry.',
+    ],
+    bullets: [
+      'Builder vs Method Chaining — both rely on return *this.',
+      'Adapter vs Decorator vs Proxy — all forward calls to a wrapped member.',
+      'Strategy concrete vs Decorator — both override a polymorphic method.',
+    ],
+    analogy:
+      'Two siblings can look almost the same in a photograph. You cannot decide who is older from the photo alone. You need extra information — a birthday, a story — that the photo does not contain.',
+  },
+  {
+    id: 'intro-connotative-definition',
+    title: 'The connotative-definition rule',
+    eyebrow: 'Lesson 10',
+    body: [
+      'The way to reduce ambiguity is to add context to the definition itself, not to guess. This is exactly how connotative meaning works in language.',
+      'Lumalalim ang kahulugan (connotative): kapag nagdadagdag ka ng mga descriptions sa isang salita, mas espesipiko ang kahulugan. Mula sa "parent", kapag dinagdagan mo ng "female", nagiging "female parent" — mas tiyak na.',
+      'Nabawasan ang sakop (denotative): habang dumarami ang descriptions, nababawasan ang bilang ng bagay o tao na pasok sa depinisyon. Mas marami ang pumapasok sa "parent" kaysa sa "female parent".',
+      'NeoTerritory applies the same rule to design patterns. Each pattern is defined not by a single keyword but by a small SET of structural descriptions — token combos that, taken together, narrow what counts as that pattern. Adding the right set of descriptions reduces ambiguity without resorting to method names that vary by team.',
+    ],
+    bullets: [
+      'Connotation = adding descriptions to make meaning more specific.',
+      'A single keyword like virtual is too thin — many classes have it.',
+      'A combo like (virtual ~) or (override {) carries enough context to be a real signal.',
+      'The analyzer rejects bare keywords as basis and accepts only stdlib symbols or multi-token combos.',
+    ],
+  },
+  {
+    id: 'intro-pattern-structure-rules',
+    title: 'Each pattern has a structural rule',
+    eyebrow: 'Lesson 11',
+    body: [
+      'Each design pattern in this course comes with a "correct structure" section that lists the exact token combos the analyzer requires.',
+      'Read the must-have list as: at least one of these combos must appear in the class body.',
+      'Read the must-not-have list as: if any of these combos fires, the class is rejected for that pattern even if the rest matches.',
+      'These rules are not lookups for method names. They are language-level signals — keywords combined with their immediate neighbors, or stdlib symbols whose presence alone is structural evidence.',
+    ],
+    note: 'You will see "Correct structure" appear on every pattern lesson in this course.',
+  },
+  {
+    id: 'intro-patterns-vary-by-context',
+    title: 'Patterns vary by context and organisation',
+    eyebrow: 'Lesson 12',
+    body: [
+      'Two teams that both claim to use Builder can write code that looks different. One team may insist on a final build() method; another may just chain setters and return *this. Same pattern name, different conventions.',
+      'NeoTerritory does not pick one team’s convention as the universal truth. Instead, it standardises on language-level structure so that detection is consistent regardless of which team wrote the class. This is what makes automatic unit-test scaffolding feasible — the analyzer agrees with itself across every codebase, even when humans disagree.',
+      'The takeaway: if your team has stricter conventions, layer them on top. The analyzer answers the structural question. The conventions answer the cultural one.',
+    ],
+    bullets: [
+      'Same pattern name can mean different things in different orgs.',
+      'Standardising on language-level structure (not naming) is what enables tooling.',
+      'NT detection feeds into automatic unit-test generation, so a stable rule matters.',
+    ],
+  },
+  {
+    id: 'intro-postrequisite-questions',
+    title: 'Post-requisite open notes',
+    eyebrow: 'Lesson 13',
+    body: [
+      'Before the Studio unlocks, sit with the questions below. They are intentionally open-ended — there is no single right answer, but every working developer should have an opinion on each.',
+    ],
+    bullets: [
+      'Unit testing — when the analyzer flags a class as Builder, what unit tests would you write to confirm it behaves like a Builder rather than a Method Chain?',
+      'Value to a company — how does a shared vocabulary of patterns reduce onboarding cost for new hires? Where does it fail?',
+      'Readability — when does naming a pattern in code (a comment, a class name) help, and when does it just lock in the wrong abstraction?',
+      'Ambiguity in your own code — pick one class you have written. If a tool tagged it as two patterns at once, would you push back, or would you accept the ambiguity?',
+    ],
+    note: 'Bring your answers to your next code review. The course does not grade them — your team does.',
+  },
+  {
+    id: 'intro-try-neoterritory',
+    title: 'Try NeoTerritory',
+    eyebrow: 'Lesson 14',
+    body: [
+      'You now have the concept module behind you. Continue through the required pattern library and you will see the structural rule for each pattern you read about.',
+      'After the patterns, the practice step opens a real C++ sample in the Studio so you can see the analyzer fire.',
     ],
     note: 'Before using the analyzer, you may be asked to claim an available session seat.',
   },
@@ -565,6 +641,10 @@ function PatternLessonView({ family, lesson }: { family: Family; lesson: Lesson 
           <p>{lesson.example}</p>
         </section>
 
+        {lesson.correctStructure && (
+          <CorrectStructureSection structure={lesson.correctStructure} />
+        )}
+
         {lesson.sample ? (
           <div className="nt-student-sample-action">
             <button
@@ -586,6 +666,59 @@ function PatternLessonView({ family, lesson }: { family: Family; lesson: Lesson 
         )}
       </div>
     </>
+  );
+}
+
+function CorrectStructureSection({ structure }: { structure: CorrectStructure }) {
+  const hasMustHave = structure.mustHave.length > 0;
+  const hasMustNotHave = (structure.mustNotHave?.length ?? 0) > 0;
+  return (
+    <section className="nt-student-pattern-section nt-student-pattern-section--structure">
+      <h3>Correct structure</h3>
+      <p className="nt-student-pattern-section__lede">
+        These are the exact token combos the analyzer requires. Read them as language-level
+        structure, not as method names.
+      </p>
+
+      {hasMustHave && (
+        <div className="nt-structure-block">
+          <h4 className="nt-structure-block__h">Must have at least one of</h4>
+          <ul className="nt-structure-list">
+            {structure.mustHave.map((item) => (
+              <li key={item.label} className="nt-structure-item">
+                <p className="nt-structure-item__label">{item.label}</p>
+                <code className="nt-structure-item__tokens">{item.tokens.join(' ')}</code>
+                <p className="nt-structure-item__why">{item.why}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!hasMustHave && (
+        <p className="nt-structure-empty">
+          No positive combo is required for this pattern — the analyzer relies entirely on the
+          must-not-have list to identify it as the residual structural shape.
+        </p>
+      )}
+
+      {hasMustNotHave && (
+        <div className="nt-structure-block nt-structure-block--negative">
+          <h4 className="nt-structure-block__h">Must NOT have any of</h4>
+          <ul className="nt-structure-list">
+            {structure.mustNotHave!.map((item) => (
+              <li key={item.label} className="nt-structure-item">
+                <p className="nt-structure-item__label">{item.label}</p>
+                <code className="nt-structure-item__tokens">{item.tokens.join(' ')}</code>
+                <p className="nt-structure-item__why">{item.why}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="nt-structure-why">{structure.whyItWorks}</p>
+    </section>
   );
 }
 

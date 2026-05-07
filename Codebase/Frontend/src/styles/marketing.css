@@ -3061,3 +3061,147 @@ body[data-surface] {
   background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
   color: #071014;
 }
+
+/* Learn page — referral CTA between the marketing nav and the body. */
+.nt-learn-referral {
+  margin: 1.5rem auto 0;
+  max-width: 1100px;
+  padding: 0 clamp(1rem, 4vw, 3rem);
+}
+.nt-learn-referral__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.5rem clamp(1.25rem, 3vw, 2rem);
+  background: var(--nt-mkt-surface);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+}
+.nt-learn-referral__copy {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.nt-learn-referral__eyebrow {
+  margin: 0 0 0.4rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-learn-referral__lede {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--nt-mkt-text);
+}
+.nt-learn-referral__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+.nt-learn-referral__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--nt-mkt-text-soft);
+}
+
+/* Learn page — bullet note describing what the student path adds. */
+.nt-learn-overview-note {
+  margin: 0 auto var(--nt-mkt-space-section);
+  max-width: 880px;
+  padding: 2rem clamp(1.25rem, 3vw, 2rem);
+  background: var(--nt-mkt-surface);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+}
+.nt-learn-overview-note__h {
+  margin: 0 0 1rem;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+}
+.nt-learn-overview-note__list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+}
+.nt-learn-overview-note__list li + li {
+  margin-top: 0.4rem;
+}
+
+/* Student pattern lessons — Correct Structure section. */
+.nt-student-pattern-section--structure {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  padding: 1.5rem clamp(1rem, 2vw, 1.5rem);
+  background: var(--nt-mkt-surface);
+}
+.nt-student-pattern-section__lede {
+  margin: 0 0 1rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.95rem;
+}
+.nt-structure-block + .nt-structure-block {
+  margin-top: 1.25rem;
+}
+.nt-structure-block__h {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text);
+}
+.nt-structure-block--negative .nt-structure-block__h {
+  color: #c84d4d;
+}
+.nt-structure-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.nt-structure-item {
+  padding: 0.75rem 1rem;
+  border: 1px dashed var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-sm, 8px);
+  background: rgba(255, 255, 255, 0.02);
+}
+.nt-structure-item__label {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.nt-structure-item__tokens {
+  display: inline-block;
+  margin: 0 0 0.4rem;
+  padding: 0.15rem 0.45rem;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+.nt-structure-item__why {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.nt-structure-empty {
+  margin: 0 0 1rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.95rem;
+  font-style: italic;
+}
+.nt-structure-why {
+  margin: 1rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--nt-mkt-line);
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
