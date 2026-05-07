@@ -19,6 +19,9 @@
 #   ./start.sh browser --lan                   # clean Chromium
 #   ./start.sh test --users 5                  # k8s multi-user sim
 #   ./start.sh deploy --source                 # AWS ship-to-cloud (was deploy-aws.sh)
+#   ./start.sh rebuild                         # full local rebuild (canonical)
+#   ./start.sh rebuild --skip-microservice     # exclude C++ build
+#   ./start.sh rebuild --mode-a                # rebuild then hot-reload
 
 set -euo pipefail
 
@@ -51,6 +54,14 @@ source "$CMD/browser.sh"
 source "$CMD/test.sh"
 # shellcheck source=ops/bash/start/commands/deploy.sh
 source "$CMD/deploy.sh"
+
+# 'rebuild' bypasses the start-args parser entirely — its flags
+# (--skip-microservice, --skip-frontend, --skip-backend, --skip-docker,
+# --mode-a) are owned by scripts/rebuild.sh and must pass through unparsed.
+if [[ "${1:-}" == "rebuild" ]]; then
+  shift
+  exec "$HERE/scripts/rebuild.sh" "$@"
+fi
 
 init_arg_defaults
 parse_args "$@"

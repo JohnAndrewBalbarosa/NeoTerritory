@@ -28,10 +28,13 @@ Usage:
   ./start.sh browser --lan                   # clean Chromium
   ./start.sh test --users 5                  # k8s multi-user sim
   ./start.sh deploy --source                 # AWS ship-to-cloud (was deploy-aws.sh)
+  ./start.sh rebuild                         # full local rebuild (canonical)
+  ./start.sh rebuild --skip-microservice     # exclude C++ build
+  ./start.sh rebuild --mode-a                # rebuild then hot-reload
 
 **Functions**
 
-- `print_help` (line 29)
+- `print_help` (line 32)
 
 ## `ops/bash/deploy/lib/`
 

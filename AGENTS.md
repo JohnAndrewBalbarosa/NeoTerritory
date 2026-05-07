@@ -1,7 +1,6 @@
 # Agent Operating Rules
 
-## Always Commit
-After every change to the repository (code, docs, config, anything), the agent must stage and create a git commit immediately — no batching, no asking. **Every prompt that results in a file modification must be concluded with a commit.** One logical change = one commit. Use a conventional-commit message (`feat:`, `fix:`, `refactor:`, `docs:`, `chore:`...). Do not push unless explicitly asked.
+> Commit cadence is owned by `CLAUDE.md` ("Commit Cadence" section). Codex inherits it through this file; do not duplicate the rule here.
 
 ## Primary Boundary
 Codex works on documentation architecture only unless Drew explicitly says to edit actual code.
@@ -116,3 +115,6 @@ Do not edit code. Instead:
 2. Add a clear implementation note.
 3. Add acceptance checks for Claude.
 4. Stop at the docs boundary.
+
+## Rebuild Boundary
+Codex never invokes rebuild scripts (`scripts/rebuild.sh`, `start.sh rebuild`, or any of the legacy shims). If a doc change implies a rebuild is required for verification, say so in the doc and let Claude run it. The canonical rebuild surface is documented in `CLAUDE.md` under "Rebuild Decision Matrix" — link to that section instead of re-explaining flags here.
