@@ -11,6 +11,18 @@ function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
 }
 
+// Transient flag set by the admin dashboard's "Refresh" button. While true,
+// outgoing /api/admin/* requests get tagged with X-Admin-Refresh: 1 so the
+// backend can apply a tighter rate limiter (server.ts adminRefreshLimiter).
+// The flag auto-clears so background polling never accidentally inherits it.
+let adminRefreshFlag = false;
+let adminRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+export function markAdminRefresh(holdMs = 2000): void {
+  adminRefreshFlag = true;
+  if (adminRefreshTimer) clearTimeout(adminRefreshTimer);
+  adminRefreshTimer = setTimeout(() => { adminRefreshFlag = false; }, holdMs);
+}
+
 export async function apiFetch<T>(url: string, options: RequestInit = {}, timeoutMs = 30000): Promise<T> {
   const token = getToken();
   const isForm = options.body instanceof FormData;
@@ -26,6 +38,9 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}, timeou
     Accept: 'application/json',
     ...(isForm ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(adminRefreshFlag && url.startsWith('/api/admin')
+      ? { 'X-Admin-Refresh': '1' }
+      : {}),
     ...(options.headers as Record<string, string> || {})
   };
 

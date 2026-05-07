@@ -55,6 +55,10 @@ FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3001
+# Tester seat seeding — Devcon1..MAX_TEST_USERS rows are inserted on boot
+# so the LoginOverlay seat picker is populated. Remove for true production.
+ENV SEED_TEST_USERS=1
+ENV MAX_TEST_USERS=20
 
 # better-sqlite3 ships prebuilt binaries via prebuild-install for linux-x64
 # and linux-arm64; if the prebuild fetch fails, npm falls back to
