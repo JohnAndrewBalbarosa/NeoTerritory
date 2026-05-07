@@ -15,6 +15,11 @@ import { User } from '../../types/api';
 
 type Mode = 'picker' | 'admin';
 
+type EntryCopy = {
+  title: string;
+  hint: string;
+};
+
 // /app is the admin sign-in entry point. /login and /seat-selection are
 // tester seat picker entry points. The path is the source of truth — the
 // overlay does not flip modes based on data availability, so an empty
@@ -25,11 +30,40 @@ function getPathMode(): Mode {
   return window.location.pathname === '/app' ? 'admin' : 'picker';
 }
 
+function getEntryCopy(): EntryCopy {
+  if (typeof window === 'undefined') {
+    return {
+      title: 'Pick a tester seat',
+      hint: 'Claim an open seat to sign in.',
+    };
+  }
+
+  if (window.location.pathname === '/developer') {
+    return {
+      title: 'Open Developer Studio',
+      hint: 'Use an open seat to enter the existing C++ analysis studio.',
+    };
+  }
+
+  if (window.location.pathname === '/student-studio') {
+    return {
+      title: 'Open Student Studio',
+      hint: 'Use an open seat to try the analyzer after the learning modules.',
+    };
+  }
+
+  return {
+    title: 'Pick a tester seat',
+    hint: 'Claim an open seat to sign in.',
+  };
+}
+
 export default function LoginOverlay() {
   const { signIn } = useAuth();
   const setAuth = useAppStore(s => s.setAuth);
 
   const pathMode = getPathMode();
+  const entryCopy = getEntryCopy();
   const [mode] = useState<Mode>(pathMode);
   const [accounts, setAccounts] = useState<TesterAccountInfo[]>([]);
   const [accountsError, setAccountsError] = useState('');
@@ -119,8 +153,8 @@ export default function LoginOverlay() {
           >
           <TiltCard className="login-card tester-chooser" maxTilt={4} scale={1.005}>
             <header className="tester-chooser-head">
-              <h2><ShinyText text="Pick a tester seat" /></h2>
-              <p className="tester-hint">Claim an open seat to sign in.</p>
+              <h2><ShinyText text={entryCopy.title} /></h2>
+              <p className="tester-hint">{entryCopy.hint}</p>
             </header>
             {accountsError && <p className="login-error">{accountsError}</p>}
             {accountsLoaded && !accountsError && accounts.length === 0 && (

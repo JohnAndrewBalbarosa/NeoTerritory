@@ -702,6 +702,163 @@ body[data-surface] #root {
   line-height: 1.6;
 }
 
+/* ---------- Entry choice ---------- */
+.nt-entry,
+.nt-student {
+  padding: 0 clamp(1.25rem, 4vw, 3rem) var(--nt-mkt-space-section);
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.nt-entry__hero,
+.nt-student__hero {
+  padding: clamp(4rem, 3rem + 4vw, 7rem) 0 clamp(2rem, 1.5rem + 3vw, 4rem);
+  text-align: center;
+}
+.nt-entry__title,
+.nt-student__title {
+  max-width: 900px;
+  margin: 0 auto 1.3rem;
+  font-size: clamp(2.4rem, 1.2rem + 5vw, 5.2rem);
+  line-height: 0.98;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  background: linear-gradient(120deg, var(--nt-mkt-text), var(--devcon-cyan), var(--devcon-purple));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.nt-entry__lede,
+.nt-student__lede {
+  max-width: 680px;
+  margin: 0 auto;
+  color: var(--nt-mkt-text-soft);
+  font-size: clamp(1rem, 0.92rem + 0.35vw, 1.15rem);
+  line-height: 1.65;
+}
+.nt-entry-grid {
+  display: grid;
+  gap: 1.35rem;
+}
+@media (min-width: 760px) {
+  .nt-entry-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1120px) {
+  .nt-entry-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.nt-entry-card {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 270px;
+  padding: 1.55rem 1.35rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.94), rgba(11, 17, 29, 0.94));
+  box-shadow: var(--nt-mkt-shadow);
+  overflow: hidden;
+  transition: transform 220ms var(--nt-mkt-ease), border-color 220ms var(--nt-mkt-ease);
+}
+.nt-entry-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 3px;
+  background: linear-gradient(90deg, var(--devcon-cyan), var(--devcon-blue), var(--devcon-purple), var(--devcon-orange));
+}
+.nt-entry-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 209, 216, 0.36);
+}
+.nt-entry-card__label,
+.nt-module-card__num {
+  margin: 0 0 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-entry-card h2,
+.nt-module-card h2 {
+  margin: 0 0 0.75rem;
+  color: var(--nt-mkt-text);
+  font-size: 1.22rem;
+  line-height: 1.2;
+}
+.nt-entry-card p,
+.nt-module-card p {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+.nt-entry-card__actions {
+  margin-top: auto;
+  padding-top: 1.4rem;
+}
+.nt-entry-card__actions .nt-magnetic,
+.nt-entry-card__actions .nt-magnetic__inner {
+  width: 100%;
+}
+
+/* ---------- Student learning hub ---------- */
+.nt-module-grid {
+  display: grid;
+  gap: 1.35rem;
+}
+@media (min-width: 780px) {
+  .nt-module-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nt-module-card {
+  position: relative;
+  min-width: 0;
+  padding: 1.55rem 1.35rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  background: var(--nt-mkt-surface);
+  box-shadow: var(--nt-mkt-shadow);
+  overflow: hidden;
+}
+.nt-module-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--devcon-lime), var(--devcon-cyan), var(--devcon-purple));
+}
+.nt-module-card__chips {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nt-module-card__chips li {
+  padding: 0.32rem 0.68rem;
+  border: 1px solid rgba(0, 209, 216, 0.25);
+  border-radius: 999px;
+  background: rgba(0, 209, 216, 0.08);
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.84rem;
+}
+.nt-student__cta {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: clamp(2rem, 1.5rem + 3vw, 4rem);
+  padding-top: clamp(2rem, 1.5rem + 3vw, 4rem);
+  border-top: 1px solid var(--nt-mkt-line);
+}
+
 /* ---------- Footer ---------- */
 .nt-mkt-footer {
   padding: 3rem clamp(1.25rem, 4vw, 3rem);

@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
 
-export type Surface = 'hero' | 'learn' | 'about' | 'studio';
+export type Surface = 'hero' | 'learn' | 'about' | 'choose' | 'studentLearning' | 'studio';
 
-const STUDIO_ALIASES = ['/app', '/login', '/seat-selection', '/consent', '/pretest', '/studio'];
+const STUDIO_ALIASES = [
+  '/app',
+  '/login',
+  '/seat-selection',
+  '/consent',
+  '/pretest',
+  '/studio',
+  '/developer',
+  '/student-studio',
+];
 
 export function pathToSurface(path: string): Surface {
   if (path === '/' || path === '') return 'hero';
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
+  if (path === '/choose' || path.startsWith('/choose/')) return 'choose';
+  if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
   if (STUDIO_ALIASES.some((a) => path === a || path.startsWith(`${a}/`))) return 'studio';
   return 'hero';
 }

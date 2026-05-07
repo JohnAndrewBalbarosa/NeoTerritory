@@ -6,6 +6,7 @@ interface MarketingNavProps {
 
 const LINKS: Array<{ path: string; label: string; surface: Surface }> = [
   { path: '/', label: 'Home', surface: 'hero' },
+  { path: '/choose', label: 'Choose', surface: 'choose' },
   { path: '/learn', label: 'Learn', surface: 'learn' },
   { path: '/about', label: 'About', surface: 'about' },
 ];
@@ -42,11 +43,11 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         ))}
       </nav>
       <a
-        href="/app"
+        href="/choose"
         className="nt-mkt-nav__cta"
         onClick={(e) => {
           e.preventDefault();
-          navigate('/app');
+          navigate('/choose');
         }}
       >
         Open studio

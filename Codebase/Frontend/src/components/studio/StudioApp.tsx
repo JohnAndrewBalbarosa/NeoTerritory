@@ -62,7 +62,7 @@ export default function StudioApp() {
 
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app'];
+    const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app', '/developer', '/student-studio'];
     if (!isLoggedIn) {
       // Logged-out visitors landing on consent/pretest/studio go through
       // the tester picker. /app stays at /app so admins can keep typing
