@@ -66,9 +66,18 @@ bool pattern_passes_strict_filter(
     const std::vector<LexicalToken>&                                         tokens,
     const std::unordered_map<std::string, std::vector<std::vector<std::string>>>& dictionary)
 {
-    // Empty signature_categories = pattern not yet opted into the
-    // connotation rule. Pass through without extra filtering so the
-    // existing ordered_checks gate stands alone.
+    // Negative gate first — if any negative category fires, the pattern
+    // is rejected outright regardless of positive evidence. Encodes
+    // "this pattern explicitly does NOT carry shape X" (e.g. a pure-
+    // forwarder Adapter does NOT own its wrappee via a smart pointer).
+    for (const std::string& category : pattern.negative_signature_categories)
+    {
+        if (category_satisfied(category, tokens, dictionary)) return false;
+    }
+
+    // Positive AND filter. Empty signature_categories = pattern not yet
+    // opted into the connotation rule; pass through on ordered_checks
+    // alone (negative gate above still applies).
     if (pattern.signature_categories.empty()) return true;
 
     for (const std::string& category : pattern.signature_categories)

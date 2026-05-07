@@ -47,13 +47,16 @@ struct PatternTemplate
     bool                            enabled = true;
     std::vector<PatternMatcherStep> ordered_checks;
     std::unordered_map<std::string, std::vector<std::string>> lexeme_identifiers;
-    // Connotative ranking categories — see DESIGN_DECISIONS.md D38. The
-    // tournament-model ranker scores Round 1 as "how many of these
-    // signature categories show at least one hit in the class tokens".
-    // No weights — every category counted equally so the round is a
-    // category-presence headcount, not a frequency contest. Empty for
-    // patterns that have not opted into ranking yet.
+    // Connotative signature categories — see DESIGN_DECISIONS.md D38.
+    // Strict-AND filter: every category here must be satisfied by at
+    // least one combo window in the class for the match to survive.
     std::vector<std::string>                signature_categories;
+    // Negative signature categories — see DESIGN_DECISIONS.md D38.
+    // Strict-NOR filter: if ANY category here fires in the class, the
+    // pattern is rejected even if its positive signature_categories all
+    // pass. Used to encode "this pattern explicitly does NOT have shape
+    // X" without resorting to naming conventions.
+    std::vector<std::string>                negative_signature_categories;
     SubclassRole                    subclass_role;
     std::string                     source_file;
 };

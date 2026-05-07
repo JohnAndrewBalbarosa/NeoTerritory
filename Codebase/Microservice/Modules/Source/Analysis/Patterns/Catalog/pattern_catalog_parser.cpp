@@ -365,6 +365,16 @@ PatternTemplate template_from_json(const JsonValue& obj, const std::string& sour
             }
         }
     }
+    if (const JsonValue* v = obj.find("negative_signature_categories"); v && v->kind == JsonKind::Array)
+    {
+        for (const JsonValue& entry : v->array)
+        {
+            if (entry.kind == JsonKind::String)
+            {
+                pattern.negative_signature_categories.push_back(entry.string);
+            }
+        }
+    }
     if (const JsonValue* v = obj.find("subclass_role"); v && v->kind == JsonKind::Object)
     {
         if (const JsonValue* req = v->find("required"); req && req->kind == JsonKind::Bool)
