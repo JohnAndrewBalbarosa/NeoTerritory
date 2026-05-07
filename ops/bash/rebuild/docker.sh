@@ -54,8 +54,18 @@ if [[ -n "$STALE" ]]; then
   sleep 1
 fi
 
+ENV_FILE_ARG=()
+BACKEND_ENV="$REPO_ROOT/Codebase/Backend/.env"
+if [[ -f "$BACKEND_ENV" ]]; then
+  ENV_FILE_ARG+=(--env-file "$BACKEND_ENV")
+  echo "[rebuild:docker] passing env file : $BACKEND_ENV"
+else
+  echo "[rebuild:docker] note: $BACKEND_ENV not found — JWT_SECRET will be auto-generated per restart"
+fi
+
 docker run -d --name "$CONTAINER_NAME" \
   -p "$PORT":3001 \
+  "${ENV_FILE_ARG[@]}" \
   -v /var/run/docker.sock:/var/run/docker.sock \
   "$IMAGE_TAG" >/dev/null
 
