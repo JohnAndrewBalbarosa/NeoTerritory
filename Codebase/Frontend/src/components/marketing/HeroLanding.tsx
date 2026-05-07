@@ -7,89 +7,90 @@ import PipelineAnimation from './PipelineAnimation';
 
 const SYSTEM_STEPS = [
   {
-    title: 'Submit C++ Source',
-    text: 'Users paste or upload C++ files through the browser-based studio.',
+    title: 'Start with C++ Code',
+    text: 'Paste or upload a C++ file in the studio.',
   },
   {
-    title: 'Detect Pattern Evidence',
-    text: 'The C++ microservice checks class-level structures against catalog-defined design-pattern rules.',
+    title: 'Find Possible Patterns',
+    text: 'The system checks class structures for signs of patterns like Singleton, Factory, Builder, Adapter, Proxy, Decorator, and Strategy.',
   },
   {
-    title: 'Annotate the Source',
-    text: 'The frontend displays pattern-related line evidence and class-level annotations.',
+    title: 'See the Evidence',
+    text: 'NeoTerritory highlights the code lines and class parts that support each detection.',
   },
   {
-    title: 'Generate Documentation Support',
-    text: 'The system presents documentation anchors, explanation targets, optional unit-test targets, and optional AI commentary.',
+    title: 'Learn and Document',
+    text: 'The results help users understand the pattern and prepare clearer documentation.',
   },
 ];
 
 const ARCHITECTURE = [
   {
-    title: 'Frontend Layer',
+    title: 'Web Studio',
     label: 'React · TypeScript · Vite',
-    text: 'Handles source submission, annotated source display, documentation views, saved runs, and research workflow screens.',
+    text: 'This is where users submit C++ code and view the learning results.',
   },
   {
-    title: 'Backend Layer',
+    title: 'Backend Coordinator',
     label: 'Express · TypeScript · SQLite',
-    text: 'Validates input, coordinates the microservice, normalizes reports, manages saved runs, and supports research/admin APIs.',
+    text: 'This receives the request, runs the analyzer, saves results, and prepares data for the frontend.',
   },
   {
-    title: 'C++ Analysis Layer',
+    title: 'C++ Analyzer',
     label: 'C++17 Microservice',
-    text: 'Performs deterministic tokenization, parse-tree construction, pattern dispatch, hash linking, and report generation.',
+    text: 'This performs the main pattern detection and creates the analysis report.',
   },
 ];
 
 const FAMILIES = [
   {
-    family: 'Creational',
+    family: 'Creational Patterns',
     patterns: ['Singleton', 'Factory', 'Builder'],
-    blurb:
-      'Identifies object-creation structures and class responsibilities that may support creational pattern documentation.',
+    blurb: 'These patterns explain how objects are created.',
   },
   {
-    family: 'Structural',
+    family: 'Structural Patterns',
     patterns: ['Adapter', 'Proxy', 'Decorator'],
-    blurb:
-      'Highlights classes that wrap, forward, adapt, or compose behavior across related objects.',
+    blurb: 'These patterns explain how classes and objects are connected or wrapped.',
   },
   {
-    family: 'Behavioral',
+    family: 'Behavioral Patterns',
     patterns: ['Strategy Interface', 'Method Chaining'],
-    blurb:
-      'Detects coordination and interaction structures that explain how objects communicate at runtime.',
+    blurb: 'These patterns explain how objects communicate or choose behavior.',
   },
   {
-    family: 'Idioms',
+    family: 'C++ Idioms',
     patterns: ['Pimpl'],
-    blurb:
-      'Captures C++-specific implementation idioms that support maintainability and interface separation.',
+    blurb: 'These are C++-specific techniques that support cleaner and more maintainable code.',
   },
 ];
 
 const VALUES = [
   {
-    title: 'Code Understanding',
-    text: 'Helps users inspect unfamiliar C++ classes and see why a pattern may have been detected.',
+    title: 'Understand Unfamiliar Code',
+    text: 'Helps users explore classes and see how a pattern may appear in implementation.',
   },
   {
-    title: 'Documentation Support',
-    text: 'Produces documentation anchors and explanation targets that guide more consistent project documentation.',
+    title: 'Learn Through Evidence',
+    text: 'Shows why a pattern was detected by pointing to actual code structures.',
   },
   {
-    title: 'Review and Evaluation',
-    text: 'Supports saved runs, manual review, feedback collection, and research evaluation workflows.',
+    title: 'Prepare Better Documentation',
+    text: 'Gives documentation anchors and explanation targets that users can review and improve.',
+  },
+  {
+    title: 'Support Thesis Evaluation',
+    text: 'Saves runs, feedback, and review data for research evaluation.',
   },
 ];
 
 const SCOPE = [
-  'Not a full C++ compiler.',
-  'Not a complete automatic refactoring tool.',
-  'Uses a custom token-stream, parse-tree, and catalog-matching pipeline.',
-  'AI commentary is optional and provider-dependent.',
-  'Primary output is pattern evidence, annotations, documentation support, and review data.',
+  'It is a learning and documentation-support tool.',
+  'It is not a full C++ compiler.',
+  'It does not automatically refactor or rewrite full systems.',
+  'It uses custom token, class-structure, and pattern-rule analysis.',
+  'AI explanation is optional.',
+  'The main output is pattern evidence, annotations, documentation guidance, and review data.',
 ];
 
 export default function HeroLanding() {
@@ -106,12 +107,12 @@ export default function HeroLanding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            C++ pattern analysis · documentation support · DEVCON Luzon
+            Learn C++ design patterns through real code
           </motion.p>
           <h1 id="hero-heading" className="nt-hero__title">
-            <SplitText text="Understand C++ patterns." as="span" className="nt-hero__title-row" />
+            <SplitText text="See the pattern." as="span" className="nt-hero__title-row" />
             <SplitText
-              text="Document code with evidence."
+              text="Understand the code."
               as="span"
               className="nt-hero__title-row nt-hero__title-row--accent"
               delay={0.35}
@@ -123,9 +124,9 @@ export default function HeroLanding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
           >
-            NeoTerritory helps interns and novice developers understand unfamiliar C++ code by
-            detecting design-pattern evidence, highlighting related source lines, and generating
-            documentation-oriented outputs for review.
+            NeoTerritory helps interns and novice developers learn C++ design patterns by analyzing
+            source code, highlighting evidence, and turning detected structures into documentation
+            guidance.
           </motion.p>
           <motion.div
             className="nt-hero__ctas"
@@ -145,7 +146,7 @@ export default function HeroLanding() {
               onClick={() => navigate('/learn')}
               ariaLabel="View the NeoTerritory workflow"
             >
-              View workflow
+              How it works
             </MagneticButton>
           </motion.div>
           <motion.dl
@@ -155,16 +156,16 @@ export default function HeroLanding() {
             transition={{ duration: 0.8, delay: 1.0 }}
           >
             <div>
-              <dt>5</dt>
-              <dd>pipeline stages</dd>
+              <dt>Paste</dt>
+              <dd>C++ code</dd>
             </div>
             <div>
-              <dt>3</dt>
-              <dd>runtime layers</dd>
+              <dt>Detect</dt>
+              <dd>patterns</dd>
             </div>
             <div>
-              <dt>JSON</dt>
-              <dd>pattern catalog</dd>
+              <dt>Get</dt>
+              <dd>documentation help</dd>
             </div>
           </motion.dl>
         </div>
@@ -172,11 +173,11 @@ export default function HeroLanding() {
 
       <ScrollReveal as="section" className="nt-hero__workflow">
         <header className="nt-section-head">
-          <p className="nt-section-eyebrow">What the system does</p>
-          <h2 className="nt-section-title">What NeoTerritory does</h2>
+          <p className="nt-section-eyebrow">Evidence-based learning</p>
+          <h2 className="nt-section-title">How NeoTerritory helps you learn</h2>
           <p className="nt-section-lede">
-            A guided workflow for C++ code understanding, design-pattern evidence, and
-            documentation support.
+            Instead of only reading design-pattern definitions, users can connect each pattern to
+            actual C++ code evidence.
           </p>
         </header>
         <div className="nt-card-grid nt-card-grid--four">
@@ -190,13 +191,37 @@ export default function HeroLanding() {
         </div>
       </ScrollReveal>
 
+      <ScrollReveal as="section" className="nt-hero__families">
+        <header className="nt-section-head">
+          <p className="nt-section-eyebrow">Beginner-friendly patterns</p>
+          <h2 className="nt-section-title">Patterns you can learn from</h2>
+          <p className="nt-section-lede">
+            NeoTerritory focuses on common object-oriented patterns and C++ implementation idioms.
+            Each detected pattern is shown with evidence, not just a label.
+          </p>
+        </header>
+        <div className="nt-family-grid nt-family-grid--home">
+          {FAMILIES.map((f, idx) => (
+            <ScrollReveal as="article" key={f.family} className="nt-family-card" delay={idx * 0.08}>
+              <p className="nt-family-card__family">{f.family}</p>
+              <p className="nt-family-card__blurb">{f.blurb}</p>
+              <ul className="nt-family-card__patterns">
+                {f.patterns.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            </ScrollReveal>
+          ))}
+        </div>
+      </ScrollReveal>
+
       <ScrollReveal as="section" className="nt-hero__pipeline-section">
         <header className="nt-section-head">
-          <p className="nt-section-eyebrow">System workflow</p>
-          <h2 className="nt-section-title">Deterministic analysis pipeline</h2>
+          <p className="nt-section-eyebrow">Guided workflow</p>
+          <h2 className="nt-section-title">From code to explanation</h2>
           <p className="nt-section-lede">
-            The backend coordinates the request, while the C++ microservice performs the primary
-            structural analysis.
+            NeoTerritory follows a guided analysis flow so users can understand how a result was
+            produced.
           </p>
         </header>
         <PipelineAnimation />
@@ -204,11 +229,10 @@ export default function HeroLanding() {
 
       <ScrollReveal as="section" className="nt-hero__architecture">
         <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Architecture</p>
-          <h2 className="nt-section-title">Three-layer thesis architecture</h2>
+          <p className="nt-section-eyebrow">Behind the scenes</p>
+          <h2 className="nt-section-title">What happens behind the scenes</h2>
           <p className="nt-section-lede">
-            NeoTerritory separates the user interface, orchestration layer, and deterministic C++
-            analysis engine.
+            The system has three parts working together.
           </p>
         </header>
         <div className="nt-card-grid nt-card-grid--three">
@@ -221,78 +245,57 @@ export default function HeroLanding() {
           ))}
         </div>
         <p className="nt-flow-line">
-          <span>Browser</span>
-          <span>Express Backend</span>
-          <span>C++ Microservice</span>
-          <span>report.json</span>
-          <span>Annotated Results</span>
+          <span>User</span>
+          <span>Web Studio</span>
+          <span>Backend</span>
+          <span>C++ Analyzer</span>
+          <span>Results</span>
         </p>
-      </ScrollReveal>
-
-      <ScrollReveal as="section" className="nt-hero__families">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Pattern catalog</p>
-          <h2 className="nt-section-title">Catalog-based design-pattern detection</h2>
-          <p className="nt-section-lede">
-            Pattern rules are loaded from JSON catalog files, allowing the analyzer to compare C++
-            class structures against known implementation evidence.
-          </p>
-        </header>
-        <div className="nt-family-grid nt-family-grid--home">
-          {FAMILIES.map((f, idx) => (
-            <ScrollReveal as="article" key={f.family} className="nt-family-card" delay={idx * 0.08}>
-              <p className="nt-family-card__family">{f.family}</p>
-              <ul className="nt-family-card__patterns">
-                {f.patterns.map((p) => (
-                  <li key={p}>{p}</li>
-                ))}
-              </ul>
-              <p className="nt-family-card__blurb">{f.blurb}</p>
-            </ScrollReveal>
-          ))}
-        </div>
       </ScrollReveal>
 
       <ScrollReveal as="section" className="nt-hero__ai">
         <header className="nt-section-head">
-          <p className="nt-section-eyebrow">AI role clarification</p>
-          <h2 className="nt-section-title">AI explains. The microservice detects.</h2>
+          <p className="nt-section-eyebrow">Optional explanation</p>
+          <h2 className="nt-section-title">AI helps explain, but it does not decide alone</h2>
           <p className="nt-section-lede">
-            AI commentary is optional. The deterministic C++ analyzer remains the source of pattern
-            detection.
+            The main pattern detection comes from the C++ analyzer. AI is only used for extra
+            explanation when available.
           </p>
         </header>
         <div className="nt-split-card">
           <article>
-            <p className="nt-info-card__label">Deterministic Analyzer</p>
-            <h3>Primary detection</h3>
+            <p className="nt-info-card__label">Rule-based evidence</p>
+            <h3>C++ Analyzer</h3>
             <p>
-              Primary detection comes from the C++ microservice, including structural analysis,
-              annotations, pattern rankings, and documentation targets.
+              Finds possible design patterns using the system's rule-based analysis and code
+              evidence.
             </p>
           </article>
           <article>
-            <p className="nt-info-card__label">Optional AI Commentary</p>
-            <h3>Beginner-friendly explanation</h3>
+            <p className="nt-info-card__label">Provider-dependent</p>
+            <h3>Optional AI Explanation</h3>
             <p>
-              When Gemini or Anthropic is configured, AI can generate explanations. If AI is
-              unavailable, the system still returns deterministic analysis outputs.
+              Adds beginner-friendly notes to help users understand the detected pattern, if an AI
+              provider is configured.
             </p>
           </article>
         </div>
+        <p className="nt-section-note">
+          If AI is unavailable, NeoTerritory can still show pattern evidence and documentation
+          targets.
+        </p>
       </ScrollReveal>
 
       <ScrollReveal as="section" className="nt-hero__research">
         <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Research value</p>
-          <h2 className="nt-section-title">Built for onboarding and design-pattern learning</h2>
+          <p className="nt-section-eyebrow">For learners</p>
+          <h2 className="nt-section-title">Made for interns and beginner developers</h2>
           <p className="nt-section-lede">
-            NeoTerritory supports DEVCON Luzon's learning-oriented environment by helping interns
-            review unfamiliar code with visible evidence instead of relying only on manual
-            explanation.
+            NeoTerritory supports learning by connecting design-pattern theory with real source
+            code.
           </p>
         </header>
-        <div className="nt-card-grid nt-card-grid--three">
+        <div className="nt-card-grid nt-card-grid--four">
           {VALUES.map((item) => (
             <article key={item.title} className="nt-info-card">
               <h3>{item.title}</h3>
@@ -305,7 +308,7 @@ export default function HeroLanding() {
       <ScrollReveal as="section" className="nt-hero__scope">
         <header className="nt-section-head">
           <p className="nt-section-eyebrow">Honest scope</p>
-          <h2 className="nt-section-title">Current system scope</h2>
+          <h2 className="nt-section-title">What NeoTerritory is — and is not</h2>
         </header>
         <ul className="nt-scope-list">
           {SCOPE.map((item) => (
@@ -315,10 +318,10 @@ export default function HeroLanding() {
       </ScrollReveal>
 
       <ScrollReveal as="section" className="nt-hero__cta-band">
-        <h2 className="nt-section-title">Ready to analyze C++ code?</h2>
+        <h2 className="nt-section-title">Try it with your own C++ code</h2>
         <p className="nt-section-lede">
-          Open the studio, submit a C++ snippet, inspect detected pattern evidence, and review the
-          generated documentation targets.
+          Open the studio, paste a C++ snippet, and see which design-pattern evidence NeoTerritory
+          can find.
         </p>
         <div className="nt-hero__ctas">
           <MagneticButton variant="primary" onClick={() => navigate('/app')}>

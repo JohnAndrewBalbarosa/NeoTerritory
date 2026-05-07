@@ -4,32 +4,32 @@ import { useEffect, useState } from 'react';
 const STAGES = [
   {
     id: 'analysis',
-    name: 'Analysis',
-    blurb: 'Reads submitted C++ source files and loads the pattern catalog.',
+    name: 'Read the Code',
+    blurb: 'The system receives the submitted C++ source and prepares it for checking.',
     icon: '∑',
   },
   {
     id: 'trees',
-    name: 'Trees',
-    blurb: 'Tokenizes source and builds parse-tree, class-token, and symbol structures.',
+    name: 'Organize the Structure',
+    blurb: 'It groups tokens, classes, and structural parts so the code can be reviewed by class.',
     icon: '⌥',
   },
   {
     id: 'pattern_dispatch',
-    name: 'Pattern dispatch',
-    blurb: 'Matches catalog-defined pattern steps against detected class structures.',
+    name: 'Check for Patterns',
+    blurb: 'It compares class structures with pattern rules from the catalog.',
     icon: '◇',
   },
   {
     id: 'hashing',
-    name: 'Hashing',
-    blurb: 'Builds links between declarations, usage nodes, and structural references.',
+    name: 'Link Evidence',
+    blurb: 'It connects detected classes, related code parts, and supporting evidence.',
     icon: '#',
   },
   {
     id: 'output',
-    name: 'Output',
-    blurb: 'Writes report.json, evidence files, parse-tree HTML, and analysis artifacts.',
+    name: 'Show the Report',
+    blurb: 'It returns annotations, detected patterns, documentation targets, and report artifacts.',
     icon: '→',
   },
 ];
