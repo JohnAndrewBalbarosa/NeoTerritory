@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "idiom.pimpl",
+  "pattern_name": "PImpl",
+  "patternRoleByEvidence": {
+    "pimpl_outer_class":         "Outer (public) class",
+    "pimpl_inner_struct_keyword": "Inner implementation struct",
+    "pimpl_impl_forward_decl":    "Implementation forward declaration",
+    "pimpl_holder":               "Implementation holder pointer"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. The public class declares only a forward-declared implementation type and holds it through a smart pointer; the actual data members live in the inner struct in the .cpp file. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as PImpl because {{className}} carries the four structural fingerprints together: an outer class header, an inner Impl forward declaration, a holder pointer to that Impl, and the inner struct's actual definition kept off the header. The point is to keep the header surface stable so dependents do not recompile when private fields change — that's the load-bearing reason this idiom exists.",
+  "lineExplanationTemplates": {
+    "pimpl_outer_class": [
+      { "linePicker": "by_evidence_kind", "note": "Outer class — what the rest of the codebase sees and includes. Adding a member to this class would force every translation unit that includes the header to recompile; PImpl is the workaround." }
+    ],
+    "pimpl_inner_struct_keyword": [
+      { "linePicker": "by_evidence_kind", "note": "Inner struct keyword — names the implementation type that will hold the private data. The struct's *definition* deliberately lives in the .cpp, not here, which is what makes the recompile insulation work." }
+    ],
+    "pimpl_impl_forward_decl": [
+      { "linePicker": "by_evidence_kind", "note": "Forward declaration — tells the compiler the type exists without revealing its size or members. Replacing this with a full definition would defeat the idiom: the header would once again carry the private data layout." }
+    ],
+    "pimpl_holder": [
+      { "linePicker": "by_evidence_kind", "note": "Holder pointer — usually `std::unique_ptr<Impl>`. The size of a pointer is fixed and known regardless of what Impl contains, which is what lets the public class compile against just the forward declaration." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Proxy": "Proxy stands in for a separate real subject through the same interface, typically for access control. PImpl uses a similar holder shape but the inner Impl is *part of* the outer class's identity; callers cannot substitute their own Impl, and there is no access-control intent.",
+    "Bridge": "Bridge separates abstraction from implementation so both can vary independently and be paired at runtime. PImpl always pairs the outer class with its single Impl; the goal is compile-time decoupling of the header, not runtime polymorphism."
+  }
+}

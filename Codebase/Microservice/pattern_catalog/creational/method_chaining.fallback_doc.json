@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "pattern_id": "creational.method_chaining",
+  "pattern_name": "Method Chaining",
+  "patternRoleByEvidence": {
+    "fluent_class":         "Fluent class",
+    "fluent_setter_return": "Chainable setter",
+    "fluent_self_return":   "Self-return chaining"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. Setter methods return a reference to the same instance so calls can be linked into a single expression. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Method Chaining because {{className}} ships chainable setters that return *this by reference, with no terminator method that emits a separate product. The intent is ergonomic configuration of the same instance, not staged construction of a new one.",
+  "lineExplanationTemplates": {
+    "fluent_class": [
+      { "linePicker": "by_evidence_kind", "note": "Fluent class boundary — the methods on this class are designed to be called in sequence on the same instance. Reading code that uses this class will look like one expression with several dotted calls rather than several statements." }
+    ],
+    "fluent_setter_return": [
+      { "linePicker": "by_evidence_kind", "note": "Reference return — returning by reference (not by value) is the structural choice. Returning by value would copy the instance per call and make chained mutations no-ops on the original." }
+    ],
+    "fluent_self_return": [
+      { "linePicker": "by_evidence_kind", "note": "`return *this` — closes the loop. Each call ends pointing at the same instance, ready for the next dotted call. This is the syntactic feature that distinguishes Method Chaining from a regular setter." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Builder": "Builder also chains setters but adds a terminator that emits a finished product. {{className}} has no such terminator; the goal is configuring the instance you already have, not assembling a new one.",
+    "Decorator": "Decorator wraps an existing object to extend behavior. Method Chaining mutates the object's own state — there is no wrapping involved at lines {{lineStart}}-{{lineEnd}}."
+  }
+}

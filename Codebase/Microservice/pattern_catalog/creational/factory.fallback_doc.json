@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "creational.factory",
+  "pattern_name": "Factory",
+  "patternRoleByEvidence": {
+    "factory_class":             "Factory",
+    "factory_branch_decision":   "Selection branch",
+    "factory_concrete_creation": "Concrete product instantiation",
+    "factory_return":            "Product return point"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. A single creation method dispatches between concrete product types based on input, and returns the chosen product through a common type. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Factory because {{className}} centralises product selection: the creation method (lines {{lineStart}}-{{lineEnd}}) contains an explicit branching step, the branch bodies instantiate distinct concrete types, and all branches funnel into a return that exposes only the abstract product. The caller never names the concrete class — that's the Factory invariant the detector keys on.",
+  "lineExplanationTemplates": {
+    "factory_class": [
+      { "linePicker": "by_evidence_kind", "note": "Factory class boundary — the single point where the decision \"which concrete product\" is owned. Callers depend on this class instead of on individual product constructors." }
+    ],
+    "factory_branch_decision": [
+      { "linePicker": "by_evidence_kind", "note": "Selection branch — the input here is the user's intent expressed as a discriminator (kind, type, name). The Factory's job is to map that discriminator to a concrete class without exposing it to the caller." }
+    ],
+    "factory_concrete_creation": [
+      { "linePicker": "all", "note": "Concrete product construction — this is where the abstraction leaks intentionally: only inside the Factory does the codebase mention the specific concrete type. Anywhere else the type is referenced through the abstract product." }
+    ],
+    "factory_return": [
+      { "linePicker": "by_evidence_kind", "note": "Return point — emits the concrete product as the abstract product type. Replacing the return type with the concrete class would break the Factory invariant; callers would couple to specifics." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Builder": "Builder accumulates state across multiple step calls before emitting a product. {{className}} produces in a single call with branching (lines {{lineStart}}-{{lineEnd}}); there is no per-step state.",
+    "Singleton": "Singleton restricts a class to a single shared instance. {{className}} hands out a fresh product per call; the constraint is on *which class* to instantiate, not on uniqueness."
+  }
+}

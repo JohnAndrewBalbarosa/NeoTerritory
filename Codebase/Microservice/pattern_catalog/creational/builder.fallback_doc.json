@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "pattern_id": "creational.builder",
+  "pattern_name": "Builder",
+  "patternRoleByEvidence": {
+    "builder_class":             "Concrete Builder",
+    "fluent_setter_return":      "Step accumulator",
+    "fluent_self_return":        "Self-return chaining",
+    "builder_terminator_method": "Build terminator"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}} in this Builder implementation. The fluent step methods accumulate state across calls and the terminator emits the finished product. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Builder because {{className}} carries the three structural fingerprints together: a class scope (lines {{lineStart}}-{{lineEnd}}), at least one setter that returns *this by reference (chainable step), and a non-setter terminator method that returns the assembled product. A pure Factory Method or Method Chaining shape would be missing one of the three.",
+  "lineExplanationTemplates": {
+    "builder_class": [
+      { "linePicker": "by_evidence_kind", "note": "Builder class boundary — owns the partial product state that survives across step calls. The pattern is built around state accumulation here, not single-call construction." }
+    ],
+    "fluent_setter_return": [
+      { "linePicker": "by_evidence_kind", "note": "Step return signature — returning a reference (not a copy) is what makes step chaining safe; each step mutates the same builder instance instead of forking a new one per call." }
+    ],
+    "fluent_self_return": [
+      { "linePicker": "by_evidence_kind", "note": "`return *this` — this is the structural commitment to chaining. Without it, each step call would dead-end and the user would have to assign the builder to a fresh variable between steps." }
+    ],
+    "builder_terminator_method": [
+      { "linePicker": "by_evidence_kind", "note": "Terminator — separates the *accumulating* phase (setters) from the *emitting* phase (this method). Calling it before all required state is set is the typical Builder misuse the pattern is designed to flag." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Factory Method": "Factory Method also returns a constructed product, but it does so in a single call without step accumulation. {{className}} carries setter-then-terminator structure (lines {{lineStart}}-{{lineEnd}}); collapsing it to a Factory would lose the per-step configurability.",
+    "Method Chaining": "Method Chaining shares the `return *this` signature but does not require a distinct terminator that emits a product. {{className}} has the terminator, so the chain is purposeful rather than purely fluent.",
+    "Prototype": "Prototype clones an existing instance; Builder assembles a new one step by step. {{className}} accumulates state into a fresh product, which is the Builder distinction."
+  }
+}

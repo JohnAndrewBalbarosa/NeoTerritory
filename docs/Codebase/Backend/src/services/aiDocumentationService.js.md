@@ -220,7 +220,7 @@ Either check failing flips the job to `status: 'failed'` and triggers the static
 
 ### Static fallback (catalog-side)
 
-Each pattern folder under `Codebase/Microservice/pattern_catalog/<pattern>/` ships a `fallback_doc.json`. Shape:
+Each pattern ships a sibling `<pattern>.fallback_doc.json` under `Codebase/Microservice/pattern_catalog/<family>/` (alongside the existing `<pattern>.json` rule file and `<pattern>.test.template.cpp`). Shape:
 
 ```json
 {

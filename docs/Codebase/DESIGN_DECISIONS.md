@@ -504,7 +504,7 @@ The `runId` is **NOT** in the AI payload — backend owns it via the route. `can
 
 **Job state = in-memory `Map<runId, JobState>`**. Lost on backend restart by design; an interrupted job is re-triggered manually by the user. No DB schema change.
 
-**Static fallback location = catalog-side**: each pattern folder under `Codebase/Microservice/pattern_catalog/<pattern>/` ships a `fallback_doc.json` with role-shaped templates that the backend fills with annotated-source data (class name, line range, parameter list) when AI fails. Co-locating fallback with the pattern's existing rules + sample keeps a pattern's *everything* in one folder.
+**Static fallback location = catalog-side**: each pattern ships a sibling `<pattern>.fallback_doc.json` under `Codebase/Microservice/pattern_catalog/<family>/` (alongside the existing `<pattern>.json` rule file and `<pattern>.test.template.cpp`). The backend fills these templates with annotated-source data (class name, file, line range, evidence kind) when AI fails. Co-locating fallback with the pattern's existing rule file keeps a pattern's *everything* in one folder.
 
 **Timeout ladder**:
 1. **30s** (per chunk): a "Skip AI, use static" button appears in the studio. Clicking it cancels the job and renders the static fallback for every class in the run.

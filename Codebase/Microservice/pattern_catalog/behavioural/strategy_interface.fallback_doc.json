@@ -1,0 +1,43 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.strategy",
+  "pattern_name": "Strategy",
+  "patternRoleByEvidence": {
+    "strategy_interface_class": "Strategy interface",
+    "strategy_virtual_marker":  "Virtual dispatch marker",
+    "strategy_method":          "Strategy operation",
+    "strategy_concrete_class":  "Concrete Strategy",
+    "strategy_inheritance":     "Interface conformance",
+    "strategy_base_class":      "Base interface reference",
+    "strategy_override_method": "Strategy override"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. The interface declares a virtual operation that concrete strategies override; clients hold a base reference and dispatch through it without knowing which concrete strategy is active. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Strategy because {{className}} sits inside an interface-and-implementations shape: a base class with a virtual method (lines {{lineStart}}-{{lineEnd}}), and concrete subclasses that inherit and override that method. The variation point is *which algorithm runs*, decided by which concrete is plugged in at the call site.",
+  "lineExplanationTemplates": {
+    "strategy_interface_class": [
+      { "linePicker": "by_evidence_kind", "note": "Strategy interface — defines the contract every concrete strategy must satisfy. Callers depend on this class, never on any concrete subclass directly." }
+    ],
+    "strategy_virtual_marker": [
+      { "linePicker": "by_evidence_kind", "note": "`virtual` keyword — without it the override below would shadow rather than dispatch, and the runtime swap that makes Strategy useful would not happen." }
+    ],
+    "strategy_method": [
+      { "linePicker": "by_evidence_kind", "note": "Strategy operation — this is the *one thing* concrete strategies vary. Adding more methods here grows the contract every concrete must implement, so the interface usually stays narrow on purpose." }
+    ],
+    "strategy_concrete_class": [
+      { "linePicker": "by_evidence_kind", "note": "Concrete Strategy — one of possibly several implementations of the interface. The caller's code does not change when a different concrete is plugged in; only this class's behavior takes over at runtime." }
+    ],
+    "strategy_inheritance": [
+      { "linePicker": "by_evidence_kind", "note": "Inheritance — the structural commitment to the interface contract. The override below has to match the virtual signature exactly; mismatches are caught by the compiler thanks to this relationship." }
+    ],
+    "strategy_base_class": [
+      { "linePicker": "by_evidence_kind", "note": "Base reference — names the interface this concrete satisfies. Removing it would make the override an unrelated method and break the runtime swap." }
+    ],
+    "strategy_override_method": [
+      { "linePicker": "by_evidence_kind", "note": "Override — the concrete behavior for this strategy. Two different concretes can disagree completely on what this method does as long as both honor the signature; that disagreement is the value of the pattern." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Decorator": "Decorator also relies on an interface and inheritance, but it *wraps* an existing instance to add behavior. Strategy *replaces* behavior — there is no wrapped object at lines {{lineStart}}-{{lineEnd}}.",
+    "Adapter": "Adapter conforms an existing class to a new interface for compatibility. Strategy presents multiple peer implementations of one interface chosen at runtime; the goal is variability, not compatibility."
+  }
+}

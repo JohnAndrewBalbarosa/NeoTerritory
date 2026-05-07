@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.decorator",
+  "pattern_name": "Decorator",
+  "patternRoleByEvidence": {
+    "decorator_class":             "Decorator",
+    "decorator_wrapped_component": "Wrapped component",
+    "decorator_forwarding_op":     "Decorated operation",
+    "decorator_forwarded_call":    "Inner forwarding call"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It wraps an object that already satisfies the same interface and adds behavior around the forwarded call. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Decorator because {{className}} both *holds* an instance of the component interface AND *implements* the same interface itself. Each operation forwards into the wrapped component while leaving room to layer behavior before or after the inner call. That recursive shape — a component holding a component — is the Decorator structural fingerprint.",
+  "lineExplanationTemplates": {
+    "decorator_class": [
+      { "linePicker": "by_evidence_kind", "note": "Decorator class boundary — by satisfying the same interface as the thing it wraps, decorators can stack: `A(B(C))` is callable wherever a plain component is expected." }
+    ],
+    "decorator_wrapped_component": [
+      { "linePicker": "by_evidence_kind", "note": "Wrapped component — held by the same interface type, not a concrete one. That is what lets a decorator wrap *any* implementation, including another decorator." }
+    ],
+    "decorator_forwarding_op": [
+      { "linePicker": "by_evidence_kind", "note": "Decorated operation — the same signature as the wrapped component's operation. The decorator typically wraps the inner call with extra behavior (logging, caching, validation, formatting) without changing what the inner call does." }
+    ],
+    "decorator_forwarded_call": [
+      { "linePicker": "all", "note": "Inner forward — delegates to the wrapped component. If the lines around this call are empty, the decorator is acting as a pass-through; if they contain logic, that logic is the *added* behavior the decorator contributes." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Adapter": "Adapter wraps a class with a *different* interface to make it compatible. {{className}} wraps a class with the *same* interface to add behavior — same shape from the outside, expanded behavior on the inside.",
+    "Proxy": "Proxy also wraps the same interface, but its job is access control or substitution (lazy load, remote call, permission gate). Decorator's job is behavior augmentation; the difference is intent visible at lines {{lineStart}}-{{lineEnd}}."
+  }
+}
