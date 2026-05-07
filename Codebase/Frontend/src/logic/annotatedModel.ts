@@ -280,6 +280,16 @@ function buildInScopePatterns(
   };
 
   // Pass A — pattern documentation targets.
+  //
+  // Attribution rules, in order:
+  //   1. If the detected pattern carries an explicit `className`, trust it.
+  //      The matcher already decided which class owns the pattern; line-
+  //      range containment is not used to cross-pollinate other classes.
+  //      This is the load-bearing gate: without it, the LAST class in a
+  //      source file (whose `endLine` reaches end-of-file) swallows every
+  //      pattern docTarget that lands in `main()` or other free functions.
+  //   2. If `className` is absent (older runs / matchers that don't tag),
+  //      fall back to the legacy line-range containment heuristic.
   for (const p of run.detectedPatterns || []) {
     const targetLines = (p.documentationTargets || [])
       .map((t) => t.line)
@@ -287,45 +297,52 @@ function buildInScopePatterns(
     if (targetLines.length === 0) continue;
     if (!isRealPattern(p.patternId)) continue;
     const canon = canonicalPatternName(p.patternId);
+    if (p.className) {
+      // Trust the matcher's class tag — single attribution, no leakage.
+      add(p.className, canon);
+      continue;
+    }
     for (const [name, loc] of classLocations.entries()) {
       const hits = targetLines.some((l) => l >= loc.line && l <= loc.endLine);
       if (hits) add(name, canon);
     }
   }
 
-  // Pass B — annotation lines.
+  // Pass B — annotation lines. Same className-first rule as Pass A.
   for (const ann of annotations) {
     const line = typeof ann.line === 'number' ? ann.line : null;
     const key = ann.patternKey;
     if (!line || !key || !isRealPattern(key)) continue;
     const canon = canonicalPatternName(key);
+    if (ann.className) {
+      add(ann.className, canon);
+      continue;
+    }
     for (const [name, loc] of classLocations.entries()) {
       if (line >= loc.line && line <= loc.endLine) add(name, canon);
     }
   }
 
-  // Pass C — usage-binding lines, gated to tagged classes only (the binder
-  // emits bindings for every class declared in source, but only tagged
-  // classes can legitimately accrete in-scope patterns).
-  const usageBindings = run.classUsageBindings || {};
-  for (const [name, list] of Object.entries(usageBindings)) {
-    if (!taggedClassNames.has(name)) continue;
-    for (const b of list || []) {
-      const line = typeof b?.line === 'number' ? b.line : null;
-      if (!line) continue;
-      for (const p of run.detectedPatterns || []) {
-        const hit = (p.documentationTargets || []).some((t) => t.line === line);
-        if (hit && isRealPattern(p.patternId)) {
-          add(name, canonicalPatternName(p.patternId));
-        }
-      }
-      for (const ann of annotations) {
-        if (ann.line === line && ann.patternKey && isRealPattern(ann.patternKey)) {
-          add(name, canonicalPatternName(ann.patternKey));
-        }
-      }
-    }
-  }
+  // (Removed) Pass C — usage-binding cross-match.
+  //
+  // The previous Pass C iterated `classUsageBindings` and, for each
+  // binding line, attributed every detectedPattern whose docTarget shared
+  // that line to the bound class. That formulation is structurally
+  // unsound: usage bindings live at *call sites* (e.g. `factory.make()`
+  // inside `main()`), and several unrelated patterns commonly emit
+  // docTargets on the same call-site line. The result was that any class
+  // referenced from `main()` accreted the union of every pattern detected
+  // anywhere in `main()`, producing the same 9-candidate list for
+  // ConfigSingleton, Vehicle, ShapeFactory, QueryBuilder, FluentLogger,
+  // Repository, CachedRepository, and PlainHolder in `all_patterns.cpp`.
+  //
+  // Direct attribution via `directCandidates` (built from
+  // `p.className`) plus the in-body docTarget/annotation passes above
+  // already cover every legitimate case. Pass C had no formulation that
+  // didn't either (a) duplicate directCandidates, or (b) re-introduce the
+  // same cross-pollination. Deleted intentionally — do not restore
+  // without a concrete repro that directCandidates + Pass A/B can't
+  // satisfy.
   return inScope;
 }
 
