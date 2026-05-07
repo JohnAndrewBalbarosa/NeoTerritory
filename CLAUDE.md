@@ -44,7 +44,7 @@ Claude should implement the actual source changes after reviewing those docs.
 
 There is **one canonical rebuild entry**: `./scripts/rebuild.sh` (or `./start.sh rebuild`). Default behavior with no flags is **rebuild every layer locally** (C++ → Docker image → container restart on `:3001` → `/api/health` check). It never pushes to AWS.
 
-Flags are **EXCLUSIONS** — anything you pass is what gets skipped. The AI's job is to pick the smallest exclusion set that still covers what changed.
+Flags are **EXCLUSIONS** — anything you pass is what gets skipped. **The default is always a full rebuild.** Do NOT optimize by picking the smallest exclusion set; only pass `--skip-*` when the user explicitly asks to skip a layer, or when a flag is structurally required (e.g. `--mode-a` for hot reload). When in doubt, run `./scripts/rebuild.sh` with no flags.
 
 ### Flag surface
 
@@ -67,18 +67,24 @@ If `docker ps | grep neoterritory` shows a container, assume Mode B.
 
 ### What to run, by what changed (Mode B)
 
-| Files changed | Command |
-|---------------|---------|
-| `Codebase/Microservice/**/*.{cpp,hpp,h,cc,cmake}` only | `./scripts/rebuild.sh --skip-frontend --skip-backend` |
-| `Codebase/Microservice/pattern_catalog/**/*.json` only | `./scripts/rebuild.sh --skip-microservice --skip-frontend --skip-backend` |
-| `Codebase/Backend/src/**/*.{ts,tsx,js,json}` only | `./scripts/rebuild.sh --skip-microservice --skip-frontend` |
-| `Codebase/Frontend/src/**/*.{ts,tsx,css}` only | `./scripts/rebuild.sh --skip-microservice --skip-backend` |
-| Multiple layers in one session | `./scripts/rebuild.sh` (no flags — full rebuild) |
-| `package.json` / `package-lock.json` (Backend or Frontend) | `./scripts/rebuild.sh --skip-microservice` |
-| `Codebase/Infrastructure/session-orchestration/docker/Dockerfile` | `./scripts/rebuild.sh --skip-microservice` |
+The default is **always** `./scripts/rebuild.sh` (full rebuild) when any code layer changed. The AI does not pick `--skip-*` flags on its own. The table below is reference for the user — they can ask for a partial rebuild explicitly, but the AI will not propose one.
+
+| Files changed | Default command (AI uses this) |
+|---------------|-------------------------------|
+| Any of `Codebase/Microservice/**`, `Codebase/Backend/**`, `Codebase/Frontend/**`, `Codebase/Infrastructure/**`, `package.json` / `package-lock.json` | `./scripts/rebuild.sh` |
 | `docs/`, `*.md`, `.codex/instructions.md`, `CLAUDE.md`, `AGENTS.md` | NO rebuild needed |
 | `scripts/*`, `.gitattributes`, `.gitignore`, `.editorconfig` | NO rebuild needed |
 | `tests/`, `playwright-scratch/`, `test-artifacts/` | NO rebuild needed (unless tests are the feature) |
+
+User-driven optimizations (only when the user explicitly asks):
+
+| User wants to skip | Flag to add |
+|--------------------|-------------|
+| C++ microservice rebuild | `--skip-microservice` |
+| Frontend Vite stage | `--skip-frontend` |
+| Backend tsc stage | `--skip-backend` |
+| Image build + container restart | `--skip-docker` |
+| Run target → hot reload (`start.sh --local`) | `--mode-a` (implies `--skip-docker`) |
 
 ### What to run, by what changed (Mode A)
 
@@ -102,9 +108,9 @@ If a "rebuild" finished in under ~10s and didn't print a hash diff, that's the c
 
 ### How the AI uses this
 
-1. Track which files were edited in the current session.
-2. Pick the smallest matching row in the matrix above.
-3. Run **only** that command. Default to `./scripts/rebuild.sh` (no flags) only when truly multiple layers changed, or when unsure.
+1. If any code layer changed in this session, the AI's default proposal is **`./scripts/rebuild.sh`** (no flags — full rebuild).
+2. The AI does NOT add `--skip-*` flags on its own to "save time" or because only one layer was edited. Cache hits inside Docker already make untouched layers nearly free; the safety of a known-good full rebuild outweighs the marginal speedup.
+3. `--skip-*` flags are added ONLY when the user explicitly asks for them (e.g. "skip the microservice this time"), or when a flag is structurally required (`--mode-a` for hot reload).
 4. State explicitly which command you ran and why.
 5. Read the hash-diff lines. If you see `WARN: hash unchanged` for a layer you expected to change, stop and investigate — don't claim success.
 
