@@ -3,9 +3,7 @@
   "pattern_family": "structural",
   "pattern_name": "Adapter",
   "enabled": true,
-  "signature_categories": [
-    "delegation_forward"
-  ],
+  "signature_categories": [],
   "lexeme_identifiers": {
     "forwarding":           ["->", "."],
     "wrapped_member":       ["target", "wrappee", "adaptee", "adaptee_", "impl_",

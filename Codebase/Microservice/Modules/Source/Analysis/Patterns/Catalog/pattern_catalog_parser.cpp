@@ -462,13 +462,33 @@ void load_lexeme_categories(const std::string& path, PatternCatalog& catalog)
         for (const auto& kv : cats->object)
         {
             if (kv.second.kind != JsonKind::Array) continue;
-            std::vector<std::string> lexemes;
-            lexemes.reserve(kv.second.array.size());
+            std::vector<std::vector<std::string>> combos;
+            combos.reserve(kv.second.array.size());
             for (const JsonValue& entry : kv.second.array)
             {
-                if (entry.kind == JsonKind::String) lexemes.push_back(entry.string);
+                if (entry.kind == JsonKind::String)
+                {
+                    // Single-token entry — only meaningful for stdlib API
+                    // symbols. The connotation rule rejects bare reserved
+                    // keywords/operators here at the schema level too:
+                    // each entry is its own combo, so a one-keyword
+                    // category becomes a one-element combo and the
+                    // ranker treats it identically to a multi-token combo
+                    // of length 1.
+                    combos.push_back({ entry.string });
+                }
+                else if (entry.kind == JsonKind::Array)
+                {
+                    std::vector<std::string> combo;
+                    combo.reserve(entry.array.size());
+                    for (const JsonValue& tok : entry.array)
+                    {
+                        if (tok.kind == JsonKind::String) combo.push_back(tok.string);
+                    }
+                    if (!combo.empty()) combos.push_back(std::move(combo));
+                }
             }
-            catalog.lexeme_categories.emplace(kv.first, std::move(lexemes));
+            catalog.lexeme_categories.emplace(kv.first, std::move(combos));
         }
     }
     catch (const std::exception& ex)

@@ -1,190 +1,79 @@
 #include "Analysis/Patterns/Ranking/match_ranker.hpp"
 
-#include <algorithm>
 #include <cstddef>
 #include <string>
 #include <unordered_map>
-#include <unordered_set>
+#include <utility>
 #include <vector>
 
-// See DESIGN_DECISIONS.md D38 — single-round, strict-AND, grammar-aware
-// candidate filter. No scoring, no ranking. A pattern survives the pass
-// when ordered_checks said yes AND every entry in its
-// signature_categories is satisfied by at least one token in the class
-// whose surrounding token grammar matches the per-category rule. When
-// signature_categories is empty, the match passes through (legacy
-// patterns that have not opted into the connotation rule yet).
+// See DESIGN_DECISIONS.md D38 — single-round, strict-AND, combo-based
+// candidate filter. The connotation dictionary at lexeme_categories.json
+// stores each category as a list of *combos*. A combo is an ordered
+// sequence of consecutive token lexemes; a single-token combo is only
+// permitted when its lexeme is a well-known stdlib API symbol (bare
+// reserved keywords / operators are rejected at the dictionary level —
+// see DESIGN_DECISIONS.md D38).
 //
-// Surviving matches are equal candidates — multiple per class is
-// expected and they are not ordered. When two or more survive on the
-// same class, every survivor's `ambiguous` flag is set to true so
-// downstream consumers know the class fits multiple patterns.
+// A category is satisfied for a class when at least one of its combos
+// matches a window of consecutive tokens in the class. A pattern
+// survives the filter when ALL of its declared signature_categories are
+// satisfied (logical AND). Surviving matches are equal candidates; if
+// two or more survive on the same class, every survivor's `ambiguous`
+// flag is set true. No scoring, no ranking.
 
 namespace
 {
-using LexemeToCategories = std::unordered_map<std::string, std::vector<std::string>>;
-
-LexemeToCategories build_lexeme_to_categories(
-    const std::unordered_map<std::string, std::vector<std::string>>& categories)
-{
-    LexemeToCategories index;
-    for (const auto& kv : categories)
-    {
-        for (const std::string& lexeme : kv.second)
-        {
-            index[lexeme].push_back(kv.first);
-        }
-    }
-    return index;
-}
-
-bool token_in_category(
-    const LexicalToken&        token,
-    const std::string&         category,
-    const LexemeToCategories&  lexeme_to_categories)
-{
-    const auto it = lexeme_to_categories.find(token.lexeme);
-    if (it == lexeme_to_categories.end()) return false;
-    for (const std::string& c : it->second)
-    {
-        if (c == category) return true;
-    }
-    return false;
-}
-
-bool category_present_anywhere(
+bool combo_matches_at(
     const std::vector<LexicalToken>&  tokens,
-    const std::string&                category,
-    const LexemeToCategories&         lexeme_to_categories)
+    std::size_t                       start,
+    const std::vector<std::string>&   combo)
 {
-    for (const LexicalToken& tok : tokens)
+    if (combo.empty()) return false;
+    if (start + combo.size() > tokens.size()) return false;
+    for (std::size_t k = 0; k < combo.size(); ++k)
     {
-        if (token_in_category(tok, category, lexeme_to_categories)) return true;
+        if (tokens[start + k].lexeme != combo[k]) return false;
     }
-    return false;
+    return true;
 }
 
-// object_instantiation — a category-member token that actually appears
-// as the value being returned. Lookback up to 3 tokens for the `return`
-// keyword so we catch `return new T()`, `return std::make_unique<T>()`,
-// and `return make_shared<T>()`. Bare instantiation in a local
-// initializer fails the grammar.
-bool object_instantiation_in_return_position(
-    const std::vector<LexicalToken>&  tokens,
-    const LexemeToCategories&         lexeme_to_categories)
+bool any_combo_fires_in_class(
+    const std::vector<LexicalToken>&              tokens,
+    const std::vector<std::vector<std::string>>&  combos)
 {
-    for (std::size_t i = 0; i < tokens.size(); ++i)
+    for (const std::vector<std::string>& combo : combos)
     {
-        if (!token_in_category(tokens[i], "object_instantiation", lexeme_to_categories))
+        for (std::size_t i = 0; i + combo.size() <= tokens.size(); ++i)
         {
-            continue;
-        }
-        const std::size_t lookback_start = i >= 3 ? i - 3 : 0;
-        for (std::size_t j = lookback_start; j < i; ++j)
-        {
-            if (tokens[j].kind == LexicalTokenKind::Keyword &&
-                tokens[j].lexeme == "return")
-            {
-                return true;
-            }
-        }
-    }
-    return false;
-}
-
-// self_return — strictly `return *this`. Bare `this` does not count.
-bool self_return_grammar(const std::vector<LexicalToken>& tokens)
-{
-    for (std::size_t i = 2; i < tokens.size(); ++i)
-    {
-        if (tokens[i].lexeme != "this") continue;
-        if (tokens[i - 1].lexeme != "*") continue;
-        if (tokens[i - 2].kind == LexicalTokenKind::Keyword &&
-            tokens[i - 2].lexeme == "return")
-        {
-            return true;
-        }
-    }
-    return false;
-}
-
-// delegation_forward — `->` operator preceded by an Identifier, i.e.
-// member access through a held pointer. Trailing return type `() -> T`
-// (preceded by `)`) does not satisfy this shape.
-bool delegation_forward_grammar(const std::vector<LexicalToken>& tokens)
-{
-    for (std::size_t i = 1; i < tokens.size(); ++i)
-    {
-        if (tokens[i].lexeme != "->") continue;
-        if (tokens[i - 1].kind == LexicalTokenKind::Identifier) return true;
-    }
-    return false;
-}
-
-// destruction_signal — strictly `= delete` deletion. Bare `delete` (a
-// delete-expression) does not count.
-bool destruction_signal_grammar(const std::vector<LexicalToken>& tokens)
-{
-    for (std::size_t i = 1; i < tokens.size(); ++i)
-    {
-        if (!(tokens[i].kind == LexicalTokenKind::Keyword &&
-              tokens[i].lexeme == "delete"))
-        {
-            continue;
-        }
-        if (tokens[i - 1].kind == LexicalTokenKind::Operator &&
-            tokens[i - 1].lexeme == "=")
-        {
-            return true;
+            if (combo_matches_at(tokens, i, combo)) return true;
         }
     }
     return false;
 }
 
 bool category_satisfied(
-    const std::string&                category,
-    const std::vector<LexicalToken>&  tokens,
-    const LexemeToCategories&         lexeme_to_categories)
+    const std::string&                                                       category_name,
+    const std::vector<LexicalToken>&                                         tokens,
+    const std::unordered_map<std::string, std::vector<std::vector<std::string>>>& dictionary)
 {
-    if (category == "object_instantiation")
-    {
-        return object_instantiation_in_return_position(tokens, lexeme_to_categories);
-    }
-    if (category == "self_return")
-    {
-        return self_return_grammar(tokens);
-    }
-    if (category == "delegation_forward")
-    {
-        return delegation_forward_grammar(tokens);
-    }
-    if (category == "destruction_signal")
-    {
-        return destruction_signal_grammar(tokens);
-    }
-    // static_storage_access, interface_polymorphism, access_control_caching,
-    // ownership_handle, value_comparison — presence anywhere in the class
-    // is sufficient. The lexeme set for these categories is restricted to
-    // C++ keywords (already structural by construction) or stdlib API
-    // symbols whose mere appearance carries pattern meaning.
-    return category_present_anywhere(tokens, category, lexeme_to_categories);
+    const auto it = dictionary.find(category_name);
+    if (it == dictionary.end()) return false;
+    return any_combo_fires_in_class(tokens, it->second);
 }
 
 bool pattern_passes_strict_filter(
-    const PatternTemplate&            pattern,
-    const std::vector<LexicalToken>&  tokens,
-    const LexemeToCategories&         lexeme_to_categories)
+    const PatternTemplate&                                                   pattern,
+    const std::vector<LexicalToken>&                                         tokens,
+    const std::unordered_map<std::string, std::vector<std::vector<std::string>>>& dictionary)
 {
-    // Empty signature_categories = legacy pattern not yet opted into the
+    // Empty signature_categories = pattern not yet opted into the
     // connotation rule. Pass through without extra filtering so the
     // existing ordered_checks gate stands alone.
     if (pattern.signature_categories.empty()) return true;
 
-    // Strict AND — every declared signature category must be satisfied
-    // (lexeme membership AND grammar shape) by at least one token.
     for (const std::string& category : pattern.signature_categories)
     {
-        if (!category_satisfied(category, tokens, lexeme_to_categories)) return false;
+        if (!category_satisfied(category, tokens, dictionary)) return false;
     }
     return true;
 }
@@ -207,14 +96,11 @@ void rank_pattern_matches(
     const std::vector<ClassTokenStream>* class_token_streams,
     const ParseTreeSymbolTables*         symbol_tables)
 {
-    (void)symbol_tables; // grammar predicates are token-only at this revision
+    (void)symbol_tables; // grammar lives in the combos at this revision
     if (matches.empty()) return;
 
-    LexemeToCategories lexeme_to_categories;
-    if (catalog != nullptr)
-    {
-        lexeme_to_categories = build_lexeme_to_categories(catalog->lexeme_categories);
-    }
+    static const std::unordered_map<std::string, std::vector<std::vector<std::string>>> kEmptyDict;
+    const auto& dictionary = catalog ? catalog->lexeme_categories : kEmptyDict;
 
     std::unordered_map<std::string, const PatternTemplate*> pattern_by_id;
     if (catalog != nullptr)
@@ -225,7 +111,6 @@ void rank_pattern_matches(
         }
     }
 
-    // Strict-filter pass — drop matches that fail the connotation rule.
     std::vector<PatternMatchResult> survivors;
     survivors.reserve(matches.size());
     for (PatternMatchResult& match : matches)
@@ -239,14 +124,12 @@ void rank_pattern_matches(
         const auto pat_it = pattern_by_id.find(match.pattern_id);
         if (pat_it == pattern_by_id.end()) { survivors.push_back(std::move(match)); continue; }
 
-        if (pattern_passes_strict_filter(*pat_it->second, stream->tokens,
-                                         lexeme_to_categories))
+        if (pattern_passes_strict_filter(*pat_it->second, stream->tokens, dictionary))
         {
             survivors.push_back(std::move(match));
         }
     }
 
-    // Ambiguity flag — true on every match whose class has 2+ survivors.
     std::unordered_map<std::size_t, std::size_t> survivor_count_by_class;
     for (const PatternMatchResult& m : survivors)
     {

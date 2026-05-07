@@ -68,10 +68,16 @@ struct PatternCatalog
     // masterlist is missing or malformed.
     std::unordered_map<std::string, std::vector<std::string>> inheritance_driven_patterns;
     // Connotative lexeme dictionary loaded from pattern_catalog/
-    // lexeme_categories.json. category name -> list of lexemes that carry
-    // that connotation. Consumed by the ranking pass; empty when the
-    // file is missing or malformed (ranking degrades to score=0 for all).
-    std::unordered_map<std::string, std::vector<std::string>> lexeme_categories;
+    // lexeme_categories.json. category name -> list of combos. Each
+    // combo is an ordered sequence of consecutive token lexemes that
+    // together express the connotation. A single-token combo (size 1)
+    // is permitted only for entries that are well-known stdlib API
+    // symbols (`std::make_unique`, `std::lock_guard`, ...) where the
+    // bare presence carries pattern meaning. Lone C++ keywords like
+    // `this` or `->` MUST appear inside a multi-token combo (e.g.
+    // [`return`, `*`, `this`]) and never as a single-token entry.
+    // See DESIGN_DECISIONS.md D38.
+    std::unordered_map<std::string, std::vector<std::vector<std::string>>> lexeme_categories;
 };
 
 PatternCatalog load_pattern_catalog(const std::string& catalog_directory);

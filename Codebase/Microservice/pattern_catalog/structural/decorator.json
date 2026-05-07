@@ -4,7 +4,6 @@
   "pattern_name": "Decorator",
   "enabled": true,
   "signature_categories": [
-    "delegation_forward",
     "interface_polymorphism"
   ],
   "lexeme_identifiers": {

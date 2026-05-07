@@ -4,7 +4,6 @@
   "pattern_name": "Singleton",
   "enabled": true,
   "signature_categories": [
-    "static_storage_access",
     "destruction_signal"
   ],
   "lexeme_identifiers": {

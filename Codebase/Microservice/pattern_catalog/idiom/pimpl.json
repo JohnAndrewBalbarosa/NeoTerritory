@@ -4,8 +4,7 @@
   "pattern_name": "Pimpl",
   "enabled": true,
   "signature_categories": [
-    "ownership_handle",
-    "delegation_forward"
+    "ownership_handle"
   ],
   "lexeme_identifiers": {
     "impl_member":        ["pImpl", "pimpl", "impl_", "d_ptr", "d", "m_impl",

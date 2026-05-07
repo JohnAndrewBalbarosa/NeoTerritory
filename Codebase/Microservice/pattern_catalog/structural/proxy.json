@@ -4,7 +4,6 @@
   "pattern_name": "Proxy",
   "enabled": true,
   "signature_categories": [
-    "delegation_forward",
     "access_control_caching"
   ],
   "lexeme_identifiers": {

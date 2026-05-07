@@ -51,13 +51,6 @@
       "expected_kind": "Keyword",
       "expected_lexeme_any_of": ["this"],
       "document_as": "fluent_self_return"
-    },
-    {
-      "id": "build_terminator",
-      "expected_kind": "Identifier",
-      "expected_lexeme_any_of": ["build", "Build", "create", "make", "construct",
-                                  "finalize", "done", "complete", "produce"],
-      "document_as": "builder_terminator_method"
     }
   ],
 
