@@ -166,7 +166,10 @@ so a no-op build is visible.
 
 **Functions**
 
-- `hash_file` (line 28)
+- `resolve_bin_path` (line 35)
+  Visual Studio / multi-config generators drop the binary under a config
+  subdir (Debug/, Release/). Probe those if the top-level path is missing.
+- `hash_file` (line 50)
 
 ## `ops/bash/start/commands/`
 
