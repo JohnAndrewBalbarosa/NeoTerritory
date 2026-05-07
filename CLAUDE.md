@@ -116,8 +116,10 @@ If a "rebuild" finished in under ~10s and didn't print a hash diff, that's the c
 
 These scripts work identically across machines (any WSL2 + Docker Desktop setup) and must NEVER be patched with developer-specific paths.
 
-## Commit Cadence (Hard Rule)
-Every user prompt that produces a code or doc change MUST end with a `git commit` on the current branch. The rule applies to ANY non-trivial change — UI logic, model edits, microservice tweaks, doc updates, CSS. Use a conventional-commit subject (e.g. `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) and include a short body when the change spans multiple modules. Do not skip the commit even if the user did not explicitly ask for it; this is the durable record of per-prompt progress and enables backtracking.
+## Commit + Push Cadence (Hard Rule)
+Every user prompt that produces a code or doc change MUST end with a `git commit` AND a `git push` on the current branch. Commit alone is not enough — the push is part of the cadence so the remote is always the durable record of per-prompt progress. The rule applies to ANY non-trivial change — UI logic, model edits, microservice tweaks, doc updates, CSS. Use a conventional-commit subject (e.g. `feat:`, `fix:`, `refactor:`, `docs:`, `chore:`) and include a short body when the change spans multiple modules. Do not skip the commit or the push even if the user did not explicitly ask for it.
 
-If a prompt produced ZERO file changes (pure question/discussion), no commit is required. If a prompt produced changes that fail type-check or build, fix forward in the same commit chain rather than leaving the tree dirty across prompts.
+Order each prompt's tail as: `git add` → `git commit` → `git push`. If the push fails (auth, network, non-fast-forward), surface the error to the user instead of silently leaving the commit unpushed; do not force-push to shared branches.
+
+If a prompt produced ZERO file changes (pure question/discussion), no commit or push is required. If a prompt produced changes that fail type-check or build, fix forward in the same commit chain rather than leaving the tree dirty across prompts — then commit and push the fix.
 

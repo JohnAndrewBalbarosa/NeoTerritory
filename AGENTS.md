@@ -1,6 +1,6 @@
 # Agent Operating Rules
 
-> Commit cadence is owned by `CLAUDE.md` ("Commit Cadence" section). Codex inherits it through this file; do not duplicate the rule here.
+> Commit + push cadence is owned by `CLAUDE.md` ("Commit + Push Cadence" section): every prompt with code or doc changes must end with `git commit` AND `git push` on the current branch. Codex inherits the rule through this file; do not duplicate it here.
 
 ## Primary Boundary
 Codex works on documentation architecture only unless Drew explicitly says to edit actual code.
