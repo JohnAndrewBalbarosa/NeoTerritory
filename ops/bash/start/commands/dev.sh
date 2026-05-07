@@ -5,8 +5,10 @@ invoke_dev() {
   # shellcheck source=../../verify-requirements.sh
   source "$ROOT_DIR/scripts/verify-requirements.sh"
   local req_profile='pods'
+  local req_soft=''
   [[ "$SKIP_POD" -eq 1 ]] && req_profile='dev'
-  if ! verify_requirements "$req_profile" "" "auto"; then
+  [[ "$SKIP_POD" -eq 0 ]] && req_soft='soft'
+  if ! verify_requirements "$req_profile" "$req_soft" "auto"; then
     err 'Aborting — requirements not met.'; exit 1
   fi
 
