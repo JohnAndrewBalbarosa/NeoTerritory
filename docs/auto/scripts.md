@@ -148,41 +148,47 @@ Mirrors scripts/rebuild.sh exactly — this script just forwards into WSL.
 
 ### `scripts/rebuild.sh`
 
-scripts/rebuild.sh — canonical local rebuild entry for NeoTerritory.
+scripts/rebuild.sh — canonical local rebuild orchestrator for NeoTerritory.
 
-Default (no flags): rebuild ALL four layers and run locally on :3001 via
-Docker. No AWS push, no remote calls. Designed so a single command brings a
-clean checkout up to a working localhost stack.
+Thin shim. Each layer has its own per-component script under
+ops/bash/rebuild/, and this file just decides which ones to invoke.
 
-Flags are EXCLUSIONS — anything you pass is what gets skipped:
-  --skip-microservice   skip cmake build of the C++ microservice
-  --skip-frontend       trust docker layer cache for the Vite frontend layer
-  --skip-backend        trust docker layer cache for the backend tsc layer
-  --skip-docker         skip image build + container restart entirely
-  --mode-a              after rebuild, hand off to start.sh --local
-                        (hot reload). Mutually exclusive with --skip-docker.
-  -h | --help           show this help
+Default (no flags): rebuild the C++ microservice and the Docker image,
+then restart the runtime container on :3001. The host-side frontend
+(Vite) and backend (tsc) scripts are NOT run by default because the
+Docker image rebuilds them internally — they exist for dev/preview
+workflows where the host bundle is what gets served.
 
-Each rebuilt layer prints a before/after sha256. If the hash is unchanged
-after a "rebuild" step you'll see:
-  [rebuild.sh] WARN: <layer> hash unchanged — build may have been a no-op
-That's the canary for "did anything actually rebuild?"
+Two equivalent flag styles are accepted:
+  1. Inclusion list (NEW):
+       --rebuild=<list>     csv of {microservice,frontend,backend,docker,all}
+       --rebuild=all        run all four scripts
+       --rebuild=docker     docker only
+       --rebuild=microservice,docker  ← same as bare default
+  2. Exclusion flags (LEGACY — preserves CLAUDE.md hard-rule wording):
+       --skip-microservice  skip the cmake step
+       --skip-frontend      no-op (kept for legacy callers; host fe is
+                            opt-in via --rebuild=frontend)
+       --skip-backend       no-op (same reasoning)
+       --skip-docker        skip image build + container restart
 
-Examples:
-  ./scripts/rebuild.sh                              # full local rebuild
-  ./scripts/rebuild.sh --skip-microservice          # docker only
-  ./scripts/rebuild.sh --skip-frontend --skip-backend  # cpp + image (cached app layers)
-  ./scripts/rebuild.sh --skip-docker                # cpp build only
-  ./scripts/rebuild.sh --mode-a                     # rebuild then hot-reload
+  --mode-a                  after rebuild, hand off to start.sh --local
+                            (hot reload). Implies --skip-docker.
+  -h | --help               show this help
+
+Per-component scripts can also be invoked directly:
+  ./ops/bash/rebuild/microservice.sh
+  ./ops/bash/rebuild/frontend.sh
+  ./ops/bash/rebuild/backend.sh
+  ./ops/bash/rebuild/docker.sh
 
 **Functions**
 
-- `print_help` (line 40)
-- `ts` (line 59)
-- `banner` (line 60)
-- `warn` (line 61)
-- `hash_file` (line 63)
-- `hash_image` (line 66)
+- `print_help` (line 50)
+- `apply_inclusion_list` (line 52)
+- `ts` (line 88)
+- `banner` (line 89)
+- `run_step` (line 91)
 
 ### `scripts/verify-requirements.ps1`
 

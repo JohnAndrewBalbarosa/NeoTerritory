@@ -42,21 +42,52 @@ Claude should implement the actual source changes after reviewing those docs.
 
 ## Rebuild Decision Matrix (Hard Rule)
 
-There is **one canonical rebuild entry**: `./scripts/rebuild.sh` (or `./start.sh rebuild`). Default behavior with no flags is **rebuild every layer locally** (C++ → Docker image → container restart on `:3001` → `/api/health` check). It never pushes to AWS.
+Rebuilds are split into **four per-component scripts** under `ops/bash/rebuild/`. Each can be run directly:
 
-Flags are **EXCLUSIONS** — anything you pass is what gets skipped. **The default is always a full rebuild.** Do NOT optimize by picking the smallest exclusion set; only pass `--skip-*` when the user explicitly asks to skip a layer, or when a flag is structurally required (e.g. `--mode-a` for hot reload). When in doubt, run `./scripts/rebuild.sh` with no flags.
+| Script | Rebuilds |
+|--------|----------|
+| `ops/bash/rebuild/microservice.sh` | C++ binary via cmake |
+| `ops/bash/rebuild/frontend.sh` | Host-side Vite bundle (`Codebase/Frontend/dist/`) |
+| `ops/bash/rebuild/backend.sh` | Host-side backend tsc output (`Codebase/Backend/dist/`) |
+| `ops/bash/rebuild/docker.sh` | `neoterritory:latest` image + container restart on `:3001` + `/api/health` check |
 
-### Flag surface
+Two higher-level entry points dispatch to them:
+
+1. **`./scripts/rebuild.sh`** — orchestrator. Default with no flags = `microservice + docker` (the canonical "local rebuild & redeploy" path; the Docker image already rebuilds frontend and backend internally, so host fe/be are opt-in via `--rebuild=`).
+2. **`./start.sh --rebuild=<list>`** — runs the named rebuilds, then continues into the dev/prod stack. With no `--rebuild` flag, start.sh does **NOT** rebuild anything — it verifies the binary + node_modules and runs.
+
+### Flag surface — `./scripts/rebuild.sh`
+
+Inclusion list (preferred):
+
+| Flag | Effect |
+|------|--------|
+| `--rebuild=microservice` | C++ binary only |
+| `--rebuild=frontend` | Host Vite bundle only |
+| `--rebuild=backend` | Host backend tsc only |
+| `--rebuild=docker` | Image + container restart only |
+| `--rebuild=all` | All four scripts |
+| `--rebuild=microservice,docker` | Comma list — equivalent to bare default |
+
+Exclusion flags (legacy, preserved):
 
 | Flag | Skips |
 |------|-------|
-| `--skip-microservice` | `cmake --build` of the C++ microservice |
-| `--skip-frontend` | (relies on Docker layer cache for the Vite frontend stage) |
-| `--skip-backend` | (relies on Docker layer cache for the backend tsc stage) |
+| `--skip-microservice` | cmake build |
 | `--skip-docker` | image build + container restart |
-| `--mode-a` | switches the run target to `start.sh --local` (hot reload). Implies `--skip-docker`. |
+| `--skip-frontend` / `--skip-backend` | accepted but no-op (host fe/be are opt-in via `--rebuild=`) |
+| `--mode-a` | After rebuild, hand off to `start.sh --local` (hot reload). Implies `--skip-docker`. |
 
-PowerShell mirrors: `-SkipMicroservice`, `-SkipFrontend`, `-SkipBackend`, `-SkipDocker`, `-ModeA`.
+### Flag surface — `./start.sh`
+
+| Flag | Effect |
+|------|--------|
+| _(none)_ | Verify-and-run — no rebuild |
+| `--rebuild=<list>` | Run listed rebuilds before launching the dev/prod stack |
+| `--rebuild` (bare, legacy) | Alias for `--rebuild=microservice` |
+| `start.sh rebuild` | Pass-through to `scripts/rebuild.sh` (legacy, supports `--skip-*`) |
+
+PowerShell mirrors for the per-component scripts are not yet implemented; the existing `.\scripts\rebuild.ps1` legacy entry still works for the canonical micro+docker path.
 
 ### Run mode
 
@@ -67,24 +98,25 @@ If `docker ps | grep neoterritory` shows a container, assume Mode B.
 
 ### What to run, by what changed (Mode B)
 
-The default is **always** `./scripts/rebuild.sh` (full rebuild) when any code layer changed. The AI does not pick `--skip-*` flags on its own. The table below is reference for the user — they can ask for a partial rebuild explicitly, but the AI will not propose one.
+The AI's default proposal when any code layer changed is **`./scripts/rebuild.sh`** (no flags — micro+docker). The AI does not pick `--rebuild=` or `--skip-*` flags on its own. The table below is reference; users can ask for a narrower rebuild explicitly.
 
 | Files changed | Default command (AI uses this) |
 |---------------|-------------------------------|
 | Any of `Codebase/Microservice/**`, `Codebase/Backend/**`, `Codebase/Frontend/**`, `Codebase/Infrastructure/**`, `package.json` / `package-lock.json` | `./scripts/rebuild.sh` |
 | `docs/`, `*.md`, `.codex/instructions.md`, `CLAUDE.md`, `AGENTS.md` | NO rebuild needed |
-| `scripts/*`, `.gitattributes`, `.gitignore`, `.editorconfig` | NO rebuild needed |
+| `scripts/*`, `ops/bash/rebuild/*`, `.gitattributes`, `.gitignore`, `.editorconfig` | NO rebuild needed |
 | `tests/`, `playwright-scratch/`, `test-artifacts/` | NO rebuild needed (unless tests are the feature) |
 
-User-driven optimizations (only when the user explicitly asks):
+User-driven narrower runs (only when the user explicitly asks):
 
-| User wants to skip | Flag to add |
-|--------------------|-------------|
-| C++ microservice rebuild | `--skip-microservice` |
-| Frontend Vite stage | `--skip-frontend` |
-| Backend tsc stage | `--skip-backend` |
-| Image build + container restart | `--skip-docker` |
-| Run target → hot reload (`start.sh --local`) | `--mode-a` (implies `--skip-docker`) |
+| User wants | Command |
+|------------|---------|
+| Just the C++ binary | `./scripts/rebuild.sh --rebuild=microservice` or `./ops/bash/rebuild/microservice.sh` |
+| Just the Docker image + container restart | `./scripts/rebuild.sh --rebuild=docker` or `./ops/bash/rebuild/docker.sh` |
+| Host-side frontend dist | `./ops/bash/rebuild/frontend.sh` |
+| Host-side backend dist | `./ops/bash/rebuild/backend.sh` |
+| Every layer (incl. host fe/be) | `./scripts/rebuild.sh --rebuild=all` |
+| Run target → hot reload (`start.sh --local`) | `./scripts/rebuild.sh --mode-a` (implies `--skip-docker`) |
 
 ### What to run, by what changed (Mode A)
 
@@ -92,32 +124,28 @@ User-driven optimizations (only when the user explicitly asks):
 |---------------|---------|
 | `Codebase/Frontend/src/**` | Nothing — Vite HMR refreshes |
 | `Codebase/Backend/src/**` | Nothing — `tsx watch` restarts the backend |
-| `Codebase/Microservice/**/*.{cpp,hpp,h,cc}` | `./scripts/rebuild.sh --skip-frontend --skip-backend --skip-docker` (then restart your `start.sh --local` so the new binary loads) |
+| `Codebase/Microservice/**/*.{cpp,hpp,h,cc}` | `./ops/bash/rebuild/microservice.sh` (then restart your `start.sh --local` so the new binary loads) |
 | `Codebase/Microservice/**/CMakeLists.txt` | Re-run `start.sh --local` (full configure + build) |
 | `Codebase/Microservice/pattern_catalog/**/*.json` | Nothing — catalog is read fresh per analysis call |
 
 ### Build-actually-happened proof
 
-`scripts/rebuild.sh` prints **before/after sha256** for each rebuilt layer plus wall-clock timestamps. If a layer's hash didn't change, you'll see:
-
-```
-[rebuild.sh] WARN: <layer> hash unchanged — build may have been a no-op
-```
-
-If a "rebuild" finished in under ~10s and didn't print a hash diff, that's the canary: nothing actually rebuilt. Re-run with the right exclusion set, or check that the source files you think you changed are actually saved.
+Each per-component script prints a sha256 (file or image) before/after, so a no-op build is visible. If a "rebuild" finished suspiciously fast and the hash didn't change, that's the canary: nothing actually rebuilt. Re-check that the source files you think you changed are actually saved.
 
 ### How the AI uses this
 
-1. If any code layer changed in this session, the AI's default proposal is **`./scripts/rebuild.sh`** (no flags — full rebuild).
-2. The AI does NOT add `--skip-*` flags on its own to "save time" or because only one layer was edited. Cache hits inside Docker already make untouched layers nearly free; the safety of a known-good full rebuild outweighs the marginal speedup.
-3. `--skip-*` flags are added ONLY when the user explicitly asks for them (e.g. "skip the microservice this time"), or when a flag is structurally required (`--mode-a` for hot reload).
+1. If any code layer changed in this session, the AI's default proposal is **`./scripts/rebuild.sh`** (no flags — micro+docker).
+2. The AI does NOT add `--rebuild=` or `--skip-*` flags on its own to "save time" or because only one layer was edited. Cache hits inside Docker already make untouched layers nearly free; the safety of a known-good full rebuild outweighs the marginal speedup.
+3. Narrower commands are used ONLY when the user explicitly asks for them (e.g. "rebuild only the docker image"), or when a flag is structurally required (`--mode-a` for hot reload).
 4. State explicitly which command you ran and why.
-5. Read the hash-diff lines. If you see `WARN: hash unchanged` for a layer you expected to change, stop and investigate — don't claim success.
+5. Read the hash-diff lines printed by each per-component script. If you see "after sha" matching "before sha" for a layer you expected to change, stop and investigate.
 
 ### Available scripts
 
-- **Canonical**: `./scripts/rebuild.sh` (POSIX) / `.\scripts\rebuild.ps1` (PowerShell). Also reachable as `./start.sh rebuild` and `.\start.ps1 rebuild`.
-- **Legacy shims** (still work, print deprecation): `scripts/rebuild-and-deploy.{sh,ps1}` and `scripts/rebuild-microservice.{sh,ps1}`. Use the canonical entry in new code.
+- **Per-component (POSIX)**: `ops/bash/rebuild/{microservice,frontend,backend,docker}.sh` — runnable directly.
+- **Orchestrator (POSIX)**: `./scripts/rebuild.sh` — accepts `--rebuild=<list>` and legacy `--skip-*`. Also reachable as `./start.sh rebuild`.
+- **PowerShell**: `.\scripts\rebuild.ps1` legacy entry only (per-component PS1 mirrors not yet implemented).
+- **Legacy shims** (still work, print deprecation): `scripts/rebuild-and-deploy.{sh,ps1}` and `scripts/rebuild-microservice.{sh,ps1}`.
 - `start.sh --local` — Mode A entry point. Re-run when `CMakeLists.txt` changes or the dev environment must be reset.
 
 These scripts work identically across machines (any WSL2 + Docker Desktop setup) and must NEVER be patched with developer-specific paths.

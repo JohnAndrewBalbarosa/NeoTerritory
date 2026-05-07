@@ -5,7 +5,7 @@
 # See docs/Codebase/DESIGN_DECISIONS.md (D28).
 #
 # Usage:
-#   ./start.sh                                 # dev (default)
+#   ./start.sh                                 # verify + run (no rebuild)
 #   ./start.sh --local                         # Local computer deployment (dev)
 #   ./start.sh --aws                           # AWS Lightsail deployment only
 #   ./start.sh --both                          # Both local and AWS deployment
@@ -19,8 +19,19 @@
 #   ./start.sh browser --lan                   # clean Chromium
 #   ./start.sh test --users 5                  # k8s multi-user sim
 #   ./start.sh deploy --source                 # AWS ship-to-cloud (was deploy-aws.sh)
-#   ./start.sh rebuild                         # full local rebuild (canonical)
-#   ./start.sh rebuild --skip-microservice     # exclude C++ build
+#
+# Rebuilds are opt-in via --rebuild=<list>. Components: microservice,
+# frontend, backend, docker (or `all`). Each maps to ops/bash/rebuild/<name>.sh
+# and can also be invoked directly without going through start.sh.
+#
+#   ./start.sh --rebuild=microservice          # rebuild C++ binary, then run
+#   ./start.sh --rebuild=docker                # rebuild image + restart, then run
+#   ./start.sh --rebuild=frontend,backend      # rebuild host bundles, then run
+#   ./start.sh --rebuild=all                   # rebuild every layer, then run
+#
+# Legacy passthrough (delegates to scripts/rebuild.sh, supports --skip-* too):
+#   ./start.sh rebuild
+#   ./start.sh rebuild --skip-microservice
 #   ./start.sh rebuild --mode-a                # rebuild then hot-reload
 
 set -euo pipefail
@@ -29,7 +40,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HERE/ops/bash/start/lib"
 CMD="$HERE/ops/bash/start/commands"
 
-print_help() { sed -n '2,21p' "$0"; }
+print_help() { sed -n '2,35p' "$0"; }
 
 # shellcheck source=ops/bash/start/lib/env.sh
 source "$LIB/env.sh"
@@ -39,6 +50,8 @@ source "$LIB/output.sh"
 source "$LIB/host.sh"
 # shellcheck source=ops/bash/start/lib/build.sh
 source "$LIB/build.sh"
+# shellcheck source=ops/bash/start/lib/rebuild.sh
+source "$LIB/rebuild.sh"
 # shellcheck source=ops/bash/start/lib/args.sh
 source "$LIB/args.sh"
 

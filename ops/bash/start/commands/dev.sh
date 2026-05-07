@@ -19,11 +19,23 @@ invoke_dev() {
     warn '  Run .\start.ps1 -Lan from Windows PowerShell instead, or configure netsh portproxy.'
   fi
 
+  # Rebuilds are opt-in via --rebuild=<list>. Run them BEFORE the verify
+  # step so a fresh binary/dist is what gets verified.
+  if [[ -n "$REBUILD_LIST" ]]; then
+    step "Running requested rebuilds: $REBUILD_LIST"
+    run_rebuild_list "$REBUILD_LIST"
+  fi
+
   ensure_pod_image
   ensure_node_modules "$BACKEND_DIR" 'Backend'
   [[ "$BACKEND_ONLY" -eq 0 ]] && ensure_node_modules "$FRONTEND_DIR" 'Frontend'
   write_dev_env "$BACKEND_PORT" "$FRONTEND_PORT" "$advert"
-  build_microservice "$REBUILD"
+
+  # Verify-only by default. The microservice binary must already exist —
+  # start.sh no longer auto-builds C++. If it's missing, fail fast with the
+  # exact rebuild commands instead of silently triggering a long cmake.
+  step 'Verifying microservice binary'
+  if ! verify_microservice_binary; then exit 1; fi
 
   if [[ "$PROD" -eq 1 && "$SKIP_BUILD" -eq 0 ]]; then
     step 'Building Backend (npm run build)'
