@@ -1,6 +1,6 @@
 import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
-  ReviewSchema, AdminUser, AdminLogEntry, AdminReview, AdminOverview,
+  ReviewSchema, AdminUser, AdminLogEntry, AdminLogFilters, AdminReview, AdminOverview,
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
   SurveySummary, ComplexityData, F1Metrics
 } from '../types/api';
@@ -374,12 +374,21 @@ export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
 }
 export async function fetchAdminLogs(
   limit = 200,
-  opts?: { eventType?: string; username?: string; order?: 'asc' | 'desc' }
+  filters?: AdminLogFilters
 ): Promise<{ logs: AdminLogEntry[] }> {
   const params = new URLSearchParams({ limit: String(limit) });
-  if (opts?.eventType) params.set('event_type', opts.eventType);
-  if (opts?.username)  params.set('username',   opts.username);
-  if (opts?.order)     params.set('order',       opts.order);
+  if (filters?.eventType) params.set('event_type', filters.eventType);
+  if (filters?.username)  params.set('username',   filters.username);
+  if (filters?.order)     params.set('order',       filters.order);
+  if (filters?.tester === 'tester')      params.set('tester', 'true');
+  if (filters?.tester === 'non-tester')  params.set('tester', 'false');
+  if (filters?.dateFrom)  params.set('date_from',  filters.dateFrom);
+  if (filters?.dateTo)    params.set('date_to',    filters.dateTo);
+  if (filters?.online === 'online')   params.set('online', 'true');
+  if (filters?.online === 'offline')  params.set('online', 'false');
+  if (filters?.categories && filters.categories.length > 0) {
+    params.set('activity_categories', filters.categories.join(','));
+  }
   return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?${params}`);
 }
 export interface AdminRunRow {

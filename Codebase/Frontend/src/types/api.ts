@@ -184,6 +184,22 @@ export interface AdminLogEntry {
   message: string;
 }
 
+// Compound filter state for the admin logs view. Empty/undefined fields
+// mean "do not filter on that dimension". Categories are AND'd with the
+// rest, OR'd within themselves.
+export type AdminLogCategory = 'auth' | 'analysis' | 'survey' | 'frontend' | 'errors';
+
+export interface AdminLogFilters {
+  username?:    string;
+  eventType?:   string;
+  tester?:      'tester' | 'non-tester' | 'any';
+  dateFrom?:    string;          // ISO date (YYYY-MM-DD or full timestamp)
+  dateTo?:      string;
+  online?:      'online' | 'offline' | 'any';
+  categories?:  AdminLogCategory[];
+  order?:       'asc' | 'desc';
+}
+
 export interface AdminReview {
   username?: string;
   scope: string;

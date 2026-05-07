@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { fetchAdminLogs, fetchAdminReviews, deleteAdminLogs } from '../../api/client';
-import { AdminLogEntry, AdminReview } from '../../types/api';
+import { AdminLogEntry, AdminLogCategory, AdminLogFilters, AdminReview } from '../../types/api';
 import { fmtDate } from '../../logic/patterns';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
@@ -166,19 +166,161 @@ function categoryOf(eventType: string): LogCategory {
   return 'all';
 }
 
+// Compound filter dropdown. Drafted state lives here; "Apply" lifts the
+// committed filter up to the parent so the next fetch uses the SQL-side
+// filters. Date inputs use native <input type="date"> for cross-browser
+// reliability (no date-picker dep). The popover is intentionally simple —
+// no auto-apply on input change, so the operator can stage multiple
+// changes before triggering a refetch.
+const ALL_CATEGORIES: AdminLogCategory[] = ['auth', 'analysis', 'survey', 'frontend', 'errors'];
+
+interface FilterPanelProps {
+  initial: AdminLogFilters;
+  onApply: (next: AdminLogFilters) => void;
+  onClear: () => void;
+  onClose: () => void;
+}
+
+function FilterPanel({ initial, onApply, onClear, onClose }: FilterPanelProps) {
+  const [draft, setDraft] = useState<AdminLogFilters>(initial);
+
+  function toggleCategory(cat: AdminLogCategory) {
+    const cur = draft.categories ?? [];
+    setDraft({
+      ...draft,
+      categories: cur.includes(cat) ? cur.filter(c => c !== cat) : [...cur, cat]
+    });
+  }
+
+  return (
+    <div className="logs-filter-panel" role="dialog" aria-label="Log filters">
+      <header className="logs-filter-panel-head">
+        <strong>Filter logs</strong>
+        <button type="button" className="logs-filter-close" onClick={onClose} aria-label="Close filters">×</button>
+      </header>
+
+      <label className="logs-filter-field">
+        <span>Username contains</span>
+        <input
+          type="search"
+          value={draft.username ?? ''}
+          maxLength={64}
+          placeholder="e.g. Devcon01"
+          onChange={e => setDraft({ ...draft, username: e.target.value || undefined })}
+        />
+      </label>
+
+      <fieldset className="logs-filter-field logs-filter-fieldset">
+        <legend>User type</legend>
+        <label><input
+          type="radio" name="tester"
+          checked={(draft.tester ?? 'any') === 'any'}
+          onChange={() => setDraft({ ...draft, tester: 'any' })}
+        /> Any</label>
+        <label><input
+          type="radio" name="tester"
+          checked={draft.tester === 'tester'}
+          onChange={() => setDraft({ ...draft, tester: 'tester' })}
+        /> Testers only (Devcon*)</label>
+        <label><input
+          type="radio" name="tester"
+          checked={draft.tester === 'non-tester'}
+          onChange={() => setDraft({ ...draft, tester: 'non-tester' })}
+        /> Non-testers only</label>
+      </fieldset>
+
+      <div className="logs-filter-field logs-filter-row">
+        <label>
+          <span>From</span>
+          <input
+            type="date"
+            value={draft.dateFrom ?? ''}
+            onChange={e => setDraft({ ...draft, dateFrom: e.target.value || undefined })}
+          />
+        </label>
+        <label>
+          <span>To</span>
+          <input
+            type="date"
+            value={draft.dateTo ?? ''}
+            onChange={e => setDraft({ ...draft, dateTo: e.target.value || undefined })}
+          />
+        </label>
+      </div>
+
+      <fieldset className="logs-filter-field logs-filter-fieldset">
+        <legend>Activity status (heartbeat)</legend>
+        <label><input
+          type="radio" name="online"
+          checked={(draft.online ?? 'any') === 'any'}
+          onChange={() => setDraft({ ...draft, online: 'any' })}
+        /> Any</label>
+        <label><input
+          type="radio" name="online"
+          checked={draft.online === 'online'}
+          onChange={() => setDraft({ ...draft, online: 'online' })}
+        /> Online now</label>
+        <label><input
+          type="radio" name="online"
+          checked={draft.online === 'offline'}
+          onChange={() => setDraft({ ...draft, online: 'offline' })}
+        /> Offline</label>
+      </fieldset>
+
+      <fieldset className="logs-filter-field logs-filter-fieldset">
+        <legend>Activity types (any of)</legend>
+        <div className="logs-filter-chips">
+          {ALL_CATEGORIES.map(cat => {
+            const on = (draft.categories ?? []).includes(cat);
+            return (
+              <button
+                key={cat}
+                type="button"
+                className={`logs-filter-chip${on ? ' is-on' : ''}`}
+                onClick={() => toggleCategory(cat)}
+              >{cat}</button>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      <footer className="logs-filter-actions">
+        <button type="button" className="user-ctrl-btn" onClick={() => { onClear(); onClose(); }}>Clear all</button>
+        <button type="button" className="primary-btn" onClick={() => { onApply(draft); onClose(); }}>Apply</button>
+      </footer>
+    </div>
+  );
+}
+
+// Count how many dimensions are actively filtering (non-default values).
+function activeFilterCount(f: AdminLogFilters): number {
+  let n = 0;
+  if (f.username) n++;
+  if (f.eventType) n++;
+  if (f.tester && f.tester !== 'any') n++;
+  if (f.dateFrom) n++;
+  if (f.dateTo) n++;
+  if (f.online && f.online !== 'any') n++;
+  if (f.categories && f.categories.length > 0) n++;
+  return n;
+}
+
 function LogsList() {
   const [logs, setLogs]           = useState<AdminLogEntry[] | null>(null);
   const [error, setError]         = useState<string | null>(null);
-  const [search, setSearch]       = useState('');
-  const [eventFilter, setFilter]  = useState('');
+  // Server-side filters (compound, passed to /admin/logs as query params).
+  const [filters, setFilters]     = useState<AdminLogFilters>({});
+  // Client-side category tab — independent from the server-side category
+  // filter, kept for the existing tab UI's quick triage of fetched rows.
   const [category, setCategory]   = useState<LogCategory>('all');
   const [sortDesc, setSortDesc]   = useState(true);
   const [showDelete, setShowDelete] = useState(false);
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
   const cancelledRef = useRef(false);
 
   function load() {
     cancelledRef.current = false;
-    fetchAdminLogs(200)
+    fetchAdminLogs(200, { ...filters, order: sortDesc ? 'desc' : 'asc' })
       .then(d => { if (!cancelledRef.current) setLogs(d.logs ?? []); })
       .catch(err => {
         if (cancelledRef.current) return;
@@ -187,29 +329,32 @@ function LogsList() {
       });
   }
 
+  // Refetch whenever the committed filter set or sort order changes.
   useEffect(() => {
     cancelledRef.current = false;
     load();
     return () => { cancelledRef.current = true; };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [filters, sortDesc]);
 
   const allEventTypes = useMemo(() => {
     if (!logs) return [];
     return [...new Set(logs.map(l => l.event_type))].sort();
   }, [logs]);
 
+  // Server already applied the compound filters; this only narrows by
+  // the local category tab. Sort order is also already applied server-
+  // side via fetchAdminLogs(order=…), but we keep a local sort to react
+  // instantly when the user toggles the chevron without a refetch.
   const visible = useMemo(() => {
     if (!logs) return [];
-    let result = logs;
-    const q = search.toLowerCase();
-    if (q) result = result.filter(l => (l.username ?? '').toLowerCase().includes(q));
-    if (eventFilter) result = result.filter(l => l.event_type === eventFilter);
-    if (category !== 'all') result = result.filter(l => categoryOf(l.event_type) === category);
+    const result = category !== 'all'
+      ? logs.filter(l => categoryOf(l.event_type) === category)
+      : logs;
     return sortDesc
       ? [...result].sort((a, b) => b.id - a.id)
       : [...result].sort((a, b) => a.id - b.id);
-  }, [logs, search, eventFilter, category, sortDesc]);
+  }, [logs, category, sortDesc]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<LogCategory, number> = { all: 0, auth: 0, analysis: 0, survey: 0, frontend: 0, errors: 0 };
@@ -245,20 +390,32 @@ function LogsList() {
         ))}
       </nav>
       <div className="logs-controls">
-        <input
-          type="search"
-          className="user-search-input"
-          placeholder="Filter by username…"
-          value={search}
-          maxLength={64}
-          onChange={e => setSearch(e.target.value)}
-          aria-label="Search logs by username"
-        />
+        <div className="logs-filter-anchor">
+          <button
+            type="button"
+            className={`user-ctrl-btn${activeFilterCount(filters) > 0 ? ' user-ctrl-btn--active' : ''}`}
+            onClick={() => setShowFilterPanel(v => !v)}
+            aria-haspopup="dialog"
+            aria-expanded={showFilterPanel}
+            title="Compound filters: user, type, date range, online status, activity"
+          >
+            ⚙ Filter{activeFilterCount(filters) > 0 ? ` (${activeFilterCount(filters)})` : ''}
+          </button>
+          {showFilterPanel && (
+            <FilterPanel
+              initial={filters}
+              onApply={next => setFilters(next)}
+              onClear={() => setFilters({})}
+              onClose={() => setShowFilterPanel(false)}
+            />
+          )}
+        </div>
         <select
           className="logs-event-select"
-          value={eventFilter}
-          onChange={e => setFilter(e.target.value)}
+          value={filters.eventType ?? ''}
+          onChange={e => setFilters({ ...filters, eventType: e.target.value || undefined })}
           aria-label="Filter by event type"
+          title="Quick filter: exact event_type match"
         >
           <option value="">All events</option>
           {allEventTypes.map(t => <option key={t} value={t}>{t}</option>)}
@@ -278,7 +435,7 @@ function LogsList() {
       {visible.length === 0
         ? (
           <div className="empty-state">
-            No log entries{search || eventFilter ? ' matching filters' : ''}.
+            No log entries{activeFilterCount(filters) > 0 || category !== 'all' ? ' matching filters' : ''}.
           </div>
         )
         : (
