@@ -5,6 +5,7 @@
 #include "Analysis/Patterns/Catalog/catalog.hpp"
 #include "Analysis/Patterns/Catalog/matcher.hpp"
 #include "Analysis/Patterns/Middleman/dispatcher.hpp"
+#include "Analysis/Patterns/Ranking/match_ranker.hpp"
 #include "OutputGeneration/UnitTestGeneration/core.hpp"
 #include "Trees/Actual/parse_tree.hpp"
 
@@ -238,6 +239,15 @@ void run_pattern_dispatch_stage(SourcePipelineState& state)
     const PatternDispatchOutput output = dispatch_patterns_against_subtrees(input);
     state.pattern_matches = output.matches;
 
+    // Connotative-category scoring + structural tiebreak. See
+    // DESIGN_DECISIONS.md D38. Annotates each match with score + rank but
+    // never drops one — runners-up still surface for the AI doc service.
+    rank_pattern_matches(
+        state.pattern_matches,
+        &state.pattern_catalog,
+        &state.class_token_streams,
+        &state.symbol_tables);
+
     for (const std::string& diag : output.diagnostics)
     {
         state.report.diagnostics.push_back(diag);
@@ -251,6 +261,7 @@ void run_pattern_dispatch_stage(SourcePipelineState& state)
         tag.pattern_id        = match.pattern_id;
         tag.target_class_hash = match.class_hash;
         tag.parent_class_name = match.parent_class_name;
+        tag.ambiguous         = match.ambiguous;
 
         for (const ClassTokenStream& class_stream : state.class_token_streams)
         {

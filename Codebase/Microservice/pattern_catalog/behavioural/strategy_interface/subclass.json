@@ -5,6 +5,9 @@
   "pattern_role": "concrete",
   "subclass_of": "behavioural.strategy_interface",
   "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
   "lexeme_identifiers": {
     "policy_call":          ["->", "strategy_", "policy_", "algorithm_", "behavior_", "behaviour_"],
     "virtual_interface":    ["override", "virtual", "final"],

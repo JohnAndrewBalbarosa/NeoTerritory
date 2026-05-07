@@ -47,6 +47,13 @@ struct PatternTemplate
     bool                            enabled = true;
     std::vector<PatternMatcherStep> ordered_checks;
     std::unordered_map<std::string, std::vector<std::string>> lexeme_identifiers;
+    // Connotative ranking categories — see DESIGN_DECISIONS.md D38. The
+    // tournament-model ranker scores Round 1 as "how many of these
+    // signature categories show at least one hit in the class tokens".
+    // No weights — every category counted equally so the round is a
+    // category-presence headcount, not a frequency contest. Empty for
+    // patterns that have not opted into ranking yet.
+    std::vector<std::string>                signature_categories;
     SubclassRole                    subclass_role;
     std::string                     source_file;
 };
@@ -60,6 +67,11 @@ struct PatternCatalog
     // in pattern_catalog/inheritance_driven_patterns.json. Empty when the
     // masterlist is missing or malformed.
     std::unordered_map<std::string, std::vector<std::string>> inheritance_driven_patterns;
+    // Connotative lexeme dictionary loaded from pattern_catalog/
+    // lexeme_categories.json. category name -> list of lexemes that carry
+    // that connotation. Consumed by the ranking pass; empty when the
+    // file is missing or malformed (ranking degrades to score=0 for all).
+    std::unordered_map<std::string, std::vector<std::string>> lexeme_categories;
 };
 
 PatternCatalog load_pattern_catalog(const std::string& catalog_directory);

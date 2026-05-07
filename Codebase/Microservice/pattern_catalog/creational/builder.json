@@ -3,6 +3,9 @@
   "pattern_family": "creational",
   "pattern_name": "Builder",
   "enabled": true,
+  "signature_categories": [
+    "self_return"
+  ],
   "lexeme_identifiers": {
     "chain_return":      ["return", "*", "this", "&"],
     "setter_prefix":     ["set", "with", "add", "append", "configure", "enable",

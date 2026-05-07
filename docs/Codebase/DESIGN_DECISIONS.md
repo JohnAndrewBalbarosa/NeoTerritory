@@ -513,3 +513,38 @@ The `runId` is **NOT** in the AI payload — backend owns it via the route. `can
 **Validation**: a chunk response must (a) be HTTP success from the AI provider AND (b) parse cleanly against the JSON schema above. Either failing flips the job to `failed` and triggers the static fallback. The frontend never receives a malformed AI body — backend rejects/retries server-side.
 
 **Frontend integration is a follow-up doc**. This entry locks the backend contract; the studio panel + polling hook spec lands once the backend doc is implemented.
+
+
+## D38 — Single-round grammar-aware candidate filter (connotation rule, no scoring, no ranking, stdlib-only lexemes)
+The matcher answers yes/no per `ordered_checks`. A separate **candidate-filter pass** decides which yeses survive when several patterns light up the same class. There is **no scoring and no ranking** — explicit user direction was that surviving matches are equal candidates: "kung sino ang tumama, kasama sya". Every piece of evidence is **a lexeme category PLUS its surrounding token grammar** — never a bare lexeme match — and a pattern survives only when ALL of its declared signature categories are strictly satisfied (logical AND). When two or more patterns survive on the same class, every survivor's `ambiguous` flag is set so downstream consumers know the class fits multiple patterns and should not pretend one won.
+
+**One round — strict AND of (lexeme group ∧ grammar).** Each pattern JSON declares `signature_categories: [name, ...]` — a flat array, no weights, no ranks. For each declared category the filter walks the class's tokens and asks two questions at once: is this token a member of the category, AND does its surrounding token grammar match the structural shape that makes the category meaningful in that position? Both must be true for the category to be considered satisfied. A pattern survives only when every category in its `signature_categories` is satisfied. Empty `signature_categories` = pattern not yet opted into the connotation rule; it passes through on `ordered_checks` alone. Per-category grammar rules live in the ranker:
+
+- `object_instantiation` — token is in the category AND immediately preceded (within a small lookback) by the `return` keyword. Bare `make_unique` somewhere in the class does NOT count; `return std::make_unique<T>(…)` does.
+- `static_storage_access` — `static` keyword inside the class body. Keyword position is structural by construction.
+- `self_return` — `this` immediately preceded by `*` and `return` (i.e. `return *this`). Bare `this` does NOT count.
+- `interface_polymorphism` — `virtual`, `override`, or `final` keyword inside the class body.
+- `delegation_forward` — `->` operator preceded by an Identifier (forwarding through a member pointer; trailing-return-type `-> T` and unrelated arrows fail this shape).
+- `access_control_caching` — stdlib synchronization symbol (`std::mutex`, `std::lock_guard`, `std::call_once`, …) anywhere in the class. Presence of an stdlib symbol is itself structural; no further shape required.
+- `ownership_handle` — stdlib smart-pointer symbol (`std::unique_ptr`, `std::shared_ptr`, …) anywhere in the class. Same reasoning.
+- `destruction_signal` — `delete` keyword preceded by `=` (the `= delete` deletion declaration). Bare `delete` (a delete-expression) does NOT count.
+- `value_comparison` — operator `==`/`!=`/`<`/`>`/`<=`/`>=` inside the class body. Reserved for value-type patterns; not currently consumed by any signature.
+
+**Survival** is binary. A pattern's match on a class survives the filter when ALL of its `signature_categories` are satisfied. There is no number attached — no score, no rank, no count. Surviving matches are equal candidates.
+
+**Ambiguity.** When two or more matches survive on the same class, every survivor's `ambiguous` flag is set. The downstream AI doc service treats `ambiguous` as a signal to surface "this class fits multiple patterns" instead of pretending one won.
+
+**Lexeme dictionary discipline.** The connotation dictionary at `Codebase/Microservice/pattern_catalog/lexeme_categories.json` MUST contain only:
+1. C++ keywords (`static`, `virtual`, `override`, `final`, `delete`, `this`, ...).
+2. C++ operators / punctuation (`->`, `==`, `~`, ...).
+3. Symbols from well-known standard library APIs (`std::make_unique`, `std::lock_guard`, `std::call_once`, `std::shared_ptr`, ...).
+
+Variable names, naming conventions, and project-specific identifiers (`m_inner`, `inner`, `wrapped`, `target`, `wrappee`, `delegate`, `impl`, `m_impl`, `cache`, `cached`, `getInstance`, `sharedInstance`, `build`, `create`, `make`, `finalize`, `instance`, ...) are intentionally excluded. Reading those as pattern signals is the failure mode this design replaces — they are user choices, not language facts. If a real pattern signal cannot be expressed in keywords / operators / stdlib symbols, it belongs in Round 2 as a structural predicate, not in the lexeme dictionary.
+
+**Where it lives in the pipeline:** the candidate filter is module `Modules/{Header,Source}/Analysis/Patterns/Ranking/match_ranker.{hpp,cpp}`. It runs inside `run_pattern_dispatch_stage` after the existing dispatch passes, before tags are emitted. The directory is named `Ranking/` for path stability with prior commits, but the pass itself does no ranking — only filtering and an ambiguity flag. Each surviving `PatternMatchResult` gets `ambiguous` set; matches that fail the strict filter are dropped (this is the intended behavior — those are false positives the lexeme + grammar rule explicitly rejects).
+
+**Why filtering is acceptable here:** the matcher's `ordered_checks` is conservative by design, but it cannot tell `return *this` apart from a stray `this` token, or `return new T()` apart from a local-variable initialization. The connotation rule is exactly the layer that rejects "right token, wrong grammatical position". When it rejects, the match was a false positive; dropping it is the correct outcome, not a loss of signal.
+
+**Adding a new category** requires both (a) extending `lexeme_categories.json` with the lexeme list and (b) adding a per-category grammar predicate to `match_ranker.cpp`. A category without a grammar rule defaults to "presence anywhere in the class" — that is the fallback used for stdlib-symbol categories where presence already carries structural meaning.
+
+**Adding a new pattern**: declare its `signature_categories` in the new pattern JSON. If a needed signal cannot be expressed via an existing category + grammar predicate, extend `lexeme_categories.json` and `match_ranker.cpp` together. Do NOT tighten `ordered_checks` to mimic ranking — `ordered_checks` is yes/no, ranking is comparative.

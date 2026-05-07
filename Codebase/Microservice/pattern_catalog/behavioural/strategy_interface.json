@@ -4,6 +4,9 @@
   "pattern_name": "Strategy",
   "pattern_role": "interface",
   "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
   "subclass_role": {
     "required": true,
     "parent_role": "interface",

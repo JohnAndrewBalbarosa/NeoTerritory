@@ -3,6 +3,9 @@
   "pattern_family": "creational",
   "pattern_name": "Factory",
   "enabled": true,
+  "signature_categories": [
+    "object_instantiation"
+  ],
   "lexeme_identifiers": {
     "object_instantiation":  ["make_unique", "make_shared", "std::make_unique", "std::make_shared",
                               "allocate_shared", "new", "unique_ptr", "shared_ptr",

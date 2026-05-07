@@ -3,6 +3,10 @@
   "pattern_family": "idiom",
   "pattern_name": "Pimpl",
   "enabled": true,
+  "signature_categories": [
+    "ownership_handle",
+    "delegation_forward"
+  ],
   "lexeme_identifiers": {
     "impl_member":        ["pImpl", "pimpl", "impl_", "d_ptr", "d", "m_impl",
                            "m_d", "priv_", "private_impl", "mImpl", "m_pimpl",
