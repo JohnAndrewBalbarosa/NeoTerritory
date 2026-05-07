@@ -301,6 +301,15 @@ body[data-surface] #root {
   max-width: 1200px;
   margin: 0 auto;
 }
+.nt-hero__workflow,
+.nt-hero__architecture,
+.nt-hero__ai,
+.nt-hero__research,
+.nt-hero__scope {
+  padding: var(--nt-mkt-space-section) clamp(1.25rem, 4vw, 3rem);
+  max-width: 1200px;
+  margin: 0 auto;
+}
 .nt-hero__cta-band {
   text-align: center;
 }
@@ -372,6 +381,13 @@ body[data-surface] #root {
   font-weight: 600;
   font-size: 1rem;
 }
+.nt-pipeline__code {
+  margin: -0.15rem 0 0.55rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  color: var(--devcon-lime, var(--nt-mkt-accent));
+}
 .nt-pipeline__blurb {
   margin: 0;
   font-size: 0.88rem;
@@ -440,6 +456,164 @@ body[data-surface] #root {
   line-height: 1.6;
   font-size: 0.95rem;
   position: relative;
+}
+
+/* ---------- Thesis homepage cards ---------- */
+.nt-card-grid {
+  display: grid;
+  gap: 1.4rem;
+  margin-top: 2.4rem;
+}
+@media (min-width: 760px) {
+  .nt-card-grid--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .nt-card-grid--four {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1120px) {
+  .nt-card-grid--four {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.nt-info-card {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 1.5rem 1.35rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius);
+  background: var(--nt-mkt-surface);
+  box-shadow: var(--nt-mkt-shadow);
+}
+.nt-info-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: var(--nt-devcon-gradient, linear-gradient(90deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2)));
+  opacity: 0.8;
+}
+.nt-info-card__num,
+.nt-info-card__label {
+  margin: 0 0 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-info-card h3,
+.nt-split-card h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.1rem;
+  line-height: 1.2;
+  color: var(--nt-mkt-text);
+}
+.nt-info-card p,
+.nt-split-card p {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+  font-size: 0.94rem;
+}
+.nt-info-card--layer {
+  border-top: 3px solid color-mix(in oklch, var(--devcon-cyan, #00d1d8) 70%, var(--devcon-purple, #8a2be2));
+}
+
+.nt-flow-line {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.65rem;
+  margin: 2rem auto 0;
+  color: var(--nt-mkt-text-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+.nt-flow-line span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.42rem 0.75rem;
+  border: 1px solid var(--nt-mkt-line-strong);
+  border-radius: 999px;
+  background: rgba(15, 27, 46, 0.66);
+}
+.nt-flow-line span:not(:last-child)::after {
+  content: '>';
+  color: var(--devcon-orange, var(--nt-mkt-accent-2));
+}
+
+.nt-family-grid--home {
+  grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  .nt-family-grid--home {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1120px) {
+  .nt-family-grid--home {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.nt-split-card {
+  display: grid;
+  gap: 1px;
+  margin-top: 2.4rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  overflow: hidden;
+  background: var(--nt-mkt-line);
+  box-shadow: var(--nt-mkt-shadow);
+}
+@media (min-width: 820px) {
+  .nt-split-card {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nt-split-card article {
+  padding: clamp(1.5rem, 1.2rem + 1vw, 2.1rem);
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.94), rgba(11, 17, 29, 0.94));
+}
+.nt-split-card article:first-child {
+  border-top: 3px solid var(--devcon-lime, var(--nt-mkt-accent));
+}
+.nt-split-card article:last-child {
+  border-top: 3px solid var(--devcon-purple, var(--nt-mkt-accent-2));
+}
+
+.nt-scope-list {
+  list-style: none;
+  padding: 0;
+  margin: 2rem auto 0;
+  max-width: 860px;
+  display: grid;
+  gap: 0.75rem;
+}
+.nt-scope-list li {
+  position: relative;
+  padding: 0.8rem 1rem 0.8rem 2.2rem;
+  border: 1px solid rgba(0, 209, 216, 0.13);
+  border-radius: 12px;
+  background: rgba(15, 27, 46, 0.52);
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.5;
+}
+.nt-scope-list li::before {
+  content: '';
+  position: absolute;
+  left: 1rem;
+  top: 1.22rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--devcon-orange, var(--nt-mkt-accent-2));
+  box-shadow: 0 0 12px rgba(255, 179, 0, 0.5);
 }
 
 /* ---------- Footer ---------- */

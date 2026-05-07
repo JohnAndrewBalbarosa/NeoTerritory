@@ -5,31 +5,31 @@ const STAGES = [
   {
     id: 'analysis',
     name: 'Analysis',
-    blurb: 'Lex + parse C++ source into ParseTreeNodes. Bind variables to class hashes.',
+    blurb: 'Reads submitted C++ source files and loads the pattern catalog.',
     icon: '∑',
   },
   {
     id: 'trees',
     name: 'Trees',
-    blurb: 'Stitch every node to its enclosing class/function on a unified main tree.',
+    blurb: 'Tokenizes source and builds parse-tree, class-token, and symbol structures.',
     icon: '⌥',
   },
   {
     id: 'pattern_dispatch',
     name: 'Pattern dispatch',
-    blurb: 'Middleman walks subtrees, loads JSON pattern templates, emits structural tags.',
+    blurb: 'Matches catalog-defined pattern steps against detected class structures.',
     icon: '◇',
   },
   {
     id: 'hashing',
     name: 'Hashing',
-    blurb: 'Three-tier hash chain (file → class → function) plus all-nodes pointer index.',
+    blurb: 'Builds links between declarations, usage nodes, and structural references.',
     icon: '#',
   },
   {
     id: 'output',
     name: 'Output',
-    blurb: 'Report + per-class evidence slices. Backend hands these to Claude for docs.',
+    blurb: 'Writes report.json, evidence files, parse-tree HTML, and analysis artifacts.',
     icon: '→',
   },
 ];
@@ -77,6 +77,7 @@ export default function PipelineAnimation() {
               </motion.div>
               <div className="nt-pipeline__copy">
                 <p className="nt-pipeline__name">{stage.name}</p>
+                <p className="nt-pipeline__code">{stage.id}</p>
                 <p className="nt-pipeline__blurb">{stage.blurb}</p>
               </div>
             </li>

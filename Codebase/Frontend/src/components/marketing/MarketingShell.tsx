@@ -42,10 +42,10 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
         </motion.div>
       </AnimatePresence>
       <footer className="nt-mkt-footer" role="contentinfo">
-        <p>NeoTerritory Studio · C++ pattern analysis & AI documentation pipeline</p>
+        <p>NeoTerritory Studio · C++ pattern analysis and documentation-support system</p>
         <p className="nt-mkt-footer__small">
-          Marketing surface · public · the studio at <code>/app</code> still requires a tester
-          seat.
+          For thesis evaluation and research use. The studio at <code>/app</code> still requires
+          a tester seat.
         </p>
       </footer>
     </MotionConfig>
