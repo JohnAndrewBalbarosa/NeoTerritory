@@ -125,6 +125,13 @@ jobs:
       - name: Frontend build
         run: npm --prefix Codebase/Frontend run build
 
+      - name: Install Playwright Chromium
+        run: npm --prefix Codebase/Frontend exec playwright install --with-deps chromium
+
+      - name: Playwright smoke check (backend + website routes)
+        run: node scripts/ci-smoke.mjs
+        working-directory: Codebase/Frontend
+
       - name: Configure CMake
         run: cmake -S . -B build
 
