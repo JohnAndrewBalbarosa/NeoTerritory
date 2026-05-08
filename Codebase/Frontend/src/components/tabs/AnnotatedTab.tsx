@@ -619,10 +619,10 @@ export default function AnnotatedTab({
         <div className="analysis-result-card__status">
           <span className="analysis-result-card__icon" aria-hidden="true"><IconCheck size={24} /></span>
           <div>
-            <p className="results-kicker">NeoTerritory Studio</p>
+            <p className="results-kicker">CodiNeo Studio</p>
             <h3>Pattern Detection Result</h3>
             <p className="analysis-result-subtitle">
-              NeoTerritory found possible design-pattern evidence in your C++ code.
+              CodiNeo found possible design-pattern evidence in your C++ code.
             </p>
           </div>
           <span className={reviewComplete ? 'result-pill result-pill--matched' : 'result-pill result-pill--warning'}>
@@ -831,7 +831,7 @@ export default function AnnotatedTab({
                 <span className="review-side-icon" aria-hidden="true"><IconLayers size={18} /></span>
                 <div>
                   <p className="results-kicker">Quick Summary</p>
-                  <h3>What NeoTerritory found</h3>
+                  <h3>What CodiNeo found</h3>
                 </div>
               </div>
               <div className="summary-chip-row">
@@ -942,7 +942,7 @@ export default function AnnotatedTab({
                 <div className="review-column-head">
                   <p className="results-kicker">Code evidence</p>
                   <h4>Code evidence</h4>
-                  <p>These lines are why NeoTerritory marked this class as ambiguous.</p>
+                  <p>These lines are why CodiNeo marked this class as ambiguous.</p>
                 </div>
                 <p className="review-evidence-summary">{evidenceSummary}</p>
                 <div className="review-code-frame" aria-label={`Code evidence for ${currentReviewItem.className}`}>
