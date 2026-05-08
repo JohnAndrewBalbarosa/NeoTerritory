@@ -282,13 +282,23 @@ export default function MainLayout() {
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>
             <button
-              className="ghost-btn theme-toggle-btn"
+              className={`theme-switch theme-switch--${theme}`}
               type="button"
+              role="switch"
+              aria-checked={theme === 'light'}
               onClick={toggleTheme}
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+              <span className="ts-track" aria-hidden="true">
+                <span className="ts-stars">
+                  <span className="ts-star ts-s1" />
+                  <span className="ts-star ts-s2" />
+                  <span className="ts-star ts-s3" />
+                  <span className="ts-star ts-s4" />
+                </span>
+                <span className="ts-thumb" />
+              </span>
             </button>
             <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
               Sign out

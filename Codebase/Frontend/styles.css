@@ -132,9 +132,71 @@ body.login-active{overflow:hidden;}
 .primary-btn:disabled{opacity:0.5;cursor:not-allowed;}
 .ghost-btn{background:transparent;border-color:var(--border-bright);color:var(--ink-soft);}
 .ghost-btn:hover{background:var(--surface2);border-color:var(--accent);color:var(--accent);}
-.theme-toggle-btn{font-family:var(--code-font);font-size:11px;letter-spacing:0.06em;padding:6px 10px;position:relative;overflow:hidden;}
-.theme-toggle-btn:hover{transform:translateY(-1px) scale(1.02);box-shadow:0 4px 14px var(--accent-glow);}
-.theme-toggle-btn:active{transform:translateY(0) scale(0.98);}
+/* === THEME SWITCH TOGGLE ======================================= */
+.theme-switch{position:relative;display:inline-flex;align-items:center;width:62px;height:30px;border:none;padding:0;background:transparent;cursor:pointer;flex-shrink:0;vertical-align:middle;border-radius:999px;transition:box-shadow 0.38s ease;}
+.theme-switch:focus-visible{outline:2px solid var(--devcon-cyan);outline-offset:3px;}
+.theme-switch:active .ts-track{transform:scale(0.96);}
+
+/* Ambient glow around the whole switch per theme */
+.theme-switch--dark{box-shadow:0 0 16px rgba(123,94,167,0.28);}
+.theme-switch--light{box-shadow:0 0 16px rgba(0,209,216,0.32);}
+.theme-switch:hover.theme-switch--dark{box-shadow:0 0 22px rgba(123,94,167,0.45);}
+.theme-switch:hover.theme-switch--light{box-shadow:0 0 22px rgba(0,209,216,0.5);}
+
+/* Track */
+.ts-track{display:block;position:relative;width:100%;height:100%;border-radius:999px;overflow:hidden;transition:background 0.38s ease,border-color 0.38s ease,box-shadow 0.38s ease;}
+
+/* Dark mode track — deep navy with violet border */
+.theme-switch--dark .ts-track{
+  background:linear-gradient(130deg,#080c1e 0%,#0e1530 50%,#180a32 100%);
+  border:1.5px solid rgba(123,94,167,0.5);
+  box-shadow:inset 0 1px 4px rgba(0,0,0,0.6),inset 0 0 12px rgba(45,107,255,0.12);}
+
+/* Light mode track — bright cyan-teal gradient */
+.theme-switch--light .ts-track{
+  background:linear-gradient(130deg,#00c8d4 0%,#22d3ee 50%,#7ee8f0 100%);
+  border:1.5px solid rgba(0,209,216,0.55);
+  box-shadow:inset 0 1px 3px rgba(255,255,255,0.28),inset 0 0 10px rgba(0,209,216,0.2);}
+
+/* Stars — visible only in dark mode */
+.ts-stars{position:absolute;inset:0;pointer-events:none;}
+.ts-star{position:absolute;border-radius:50%;background:#fff;transition:opacity 0.32s ease,transform 0.38s cubic-bezier(0.34,1.56,0.64,1);}
+.theme-switch--dark .ts-star{opacity:1;transform:scale(1);}
+.theme-switch--light .ts-star{opacity:0;transform:scale(0);}
+/* Star positions — in the right half so sun-thumb covers them in light mode */
+.ts-s1{width:2px;height:2px;top:7px;left:33px;box-shadow:0 0 3px rgba(0,209,216,0.9);}
+.ts-s2{width:3px;height:3px;top:17px;left:26px;box-shadow:0 0 4px rgba(138,43,226,0.85);}
+.ts-s3{width:2px;height:2px;top:9px;left:45px;box-shadow:0 0 3px rgba(255,255,255,0.8);}
+.ts-s4{width:1.5px;height:1.5px;top:20px;left:42px;box-shadow:0 0 2px rgba(0,209,216,0.7);}
+
+/* Thumb — sliding circle */
+.ts-thumb{position:absolute;top:3px;width:22px;height:22px;border-radius:50%;transition:left 0.40s cubic-bezier(0.34,1.56,0.64,1),background 0.38s ease,box-shadow 0.38s ease;}
+
+/* DARK: moon on the right */
+.theme-switch--dark .ts-thumb{
+  left:calc(100% - 25px);
+  background:radial-gradient(circle at 36% 30%,#d4dff5 0%,#9aadce 48%,#637098 100%);
+  box-shadow:-2px 1px 0 1.5px rgba(8,12,30,0.9),0 0 12px rgba(123,94,167,0.5),inset 0 1px 2px rgba(255,255,255,0.2);}
+
+/* Moon craters */
+.theme-switch--dark .ts-thumb::before{content:'';position:absolute;width:7px;height:7px;border-radius:50%;background:rgba(70,90,140,0.5);top:10px;left:6px;transition:opacity 0.3s ease;}
+.theme-switch--dark .ts-thumb::after{content:'';position:absolute;width:4px;height:4px;border-radius:50%;background:rgba(70,90,140,0.4);top:4px;left:13px;transition:opacity 0.3s ease;}
+
+/* LIGHT: sun on the left */
+.theme-switch--light .ts-thumb{
+  left:3px;
+  background:radial-gradient(circle at 38% 32%,#ffe566 0%,#ffb300 58%,#ff8c00 100%);
+  box-shadow:0 0 18px rgba(255,179,0,0.8),0 0 8px rgba(255,140,0,0.45),inset 0 1px 2px rgba(255,255,255,0.35);}
+
+/* Sun corona pulse */
+.theme-switch--light .ts-thumb::before{content:'';position:absolute;inset:-5px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,0,0.35) 0%,transparent 70%);animation:ts-corona 2.2s ease-in-out infinite;}
+.theme-switch--light .ts-thumb::after{content:none;}
+.theme-switch--dark .ts-thumb::before,.theme-switch--dark .ts-thumb::after{content:'';}
+
+@keyframes ts-corona{0%,100%{opacity:0.55;transform:scale(1);}50%{opacity:1;transform:scale(1.25);}}
+
+/* Smooth track scale on click */
+.ts-track{transform:scale(1);transition:background 0.38s ease,border-color 0.38s ease,box-shadow 0.38s ease,transform 0.12s ease;}
 
 /* === COMPOSER === */
 .composer .form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-bottom:12px;}
@@ -2482,10 +2544,13 @@ body::before {
   border-color: rgba(192, 32, 48, 0.35);
   color: var(--red);
 }
-:root[data-theme="light"] .theme-toggle-btn {
-  color: var(--ink-soft);
-  border-color: rgba(15, 30, 60, 0.18);
-  background: #f4f6f9;
+/* Theme switch light-mode adjustments (both states already themed via class) */
+:root[data-theme="light"] .theme-switch--light .ts-track {
+  background: linear-gradient(130deg, #00b8c4 0%, #0dd8e6 50%, #62e4f0 100%);
+  border-color: rgba(0, 184, 196, 0.6);
+}
+:root[data-theme="light"] .theme-switch--dark .ts-track {
+  background: linear-gradient(130deg, #0c1030 0%, #131840 50%, #1c0e40 100%);
 }
 
 /* ── Panels / cards (hardcoded dark gradient backgrounds) ─────── */
