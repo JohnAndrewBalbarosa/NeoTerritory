@@ -79,8 +79,9 @@ export default function LoginOverlay() {
 
   const pathMode = getPathMode();
   const entryCopy = getEntryCopy();
-  const isDeveloperPicker =
-    typeof window !== 'undefined' && window.location.pathname === '/developer';
+  const useStaticPickerPanel =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/developer' || window.location.pathname === '/student-studio');
   const [mode] = useState<Mode>(pathMode);
   const [accounts, setAccounts] = useState<TesterAccountInfo[]>([]);
   const [accountsError, setAccountsError] = useState('');
@@ -172,7 +173,7 @@ export default function LoginOverlay() {
             exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
-          {isDeveloperPicker ? (
+          {useStaticPickerPanel ? (
           <div className="login-card tester-chooser session-gateway">
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
               <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
