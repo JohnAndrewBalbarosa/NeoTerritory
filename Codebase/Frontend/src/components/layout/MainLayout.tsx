@@ -25,7 +25,7 @@ import {
   IconCheckSquare,
   IconLock,
 } from '../icons/Icons';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { IconProps } from '../icons/Icons';
 
 interface PendingSave {
@@ -224,6 +224,38 @@ export default function MainLayout() {
   }, [token, user]);
   if (token && user?.role === 'admin') return null;
 
+  function renderTabBar(extraClassName = ''): ReactNode {
+    return (
+      <nav className={`tab-bar ${extraClassName}`.trim()} role="tablist" aria-label="Studio tabs">
+        {TABS.map((t, index) => {
+          const unlocked = tabUnlocked(t.id);
+          const lockReason = tabLockReason(t.id);
+          const isActive = activeTab === t.id;
+          const Icon = t.icon;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              aria-disabled={!unlocked}
+              disabled={!unlocked}
+              title={lockReason}
+              className={`tab-btn ${isActive ? 'is-active' : ''}${unlocked ? '' : ' is-locked'}`}
+              onClick={() => unlocked && setActiveTab(t.id)}
+            >
+              <span className="tab-btn__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+              <span className="tab-btn__icon" aria-hidden="true">
+                {unlocked ? <Icon size={16} /> : <IconLock size={16} />}
+              </span>
+              <span className="tab-btn__label">{t.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    );
+  }
+
   // Reflect each gate in the URL so the address bar distinguishes consent
   // and pretest from the studio home. replaceState avoids back-button noise.
   if (token && user && typeof window !== 'undefined') {
@@ -307,33 +339,7 @@ export default function MainLayout() {
         </div>
       </header>
 
-      <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
-        {TABS.map((t, index) => {
-          const unlocked = tabUnlocked(t.id);
-          const lockReason = tabLockReason(t.id);
-          const isActive = activeTab === t.id;
-          const Icon = t.icon;
-          return (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={isActive}
-              aria-disabled={!unlocked}
-              disabled={!unlocked}
-              title={lockReason}
-              className={`tab-btn ${isActive ? 'is-active' : ''}${unlocked ? '' : ' is-locked'}`}
-              onClick={() => unlocked && setActiveTab(t.id)}
-            >
-              <span className="tab-btn__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-              <span className="tab-btn__icon" aria-hidden="true">
-                {unlocked ? <Icon size={16} /> : <IconLock size={16} />}
-              </span>
-              <span className="tab-btn__label">{t.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      {activeTab !== 'annotated' && renderTabBar()}
 
       <main className="content tab-content">
         <AnimatePresence mode="wait" initial={false}>
@@ -363,6 +369,7 @@ export default function MainLayout() {
                 pendingSave={!!pendingSave}
                 onDiscard={discardCurrentRun}
                 onGoToReview={() => setActiveTab('ambiguous')}
+                stepNavigation={renderTabBar('tab-bar--in-results')}
               />
             )}
             {activeTab === 'gdb' && <GdbRunnerTab />}

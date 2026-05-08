@@ -38,6 +38,7 @@ interface SourceViewProps {
   // and call-sites that touch an ambiguous class.
   usageLinesByAmbiguousClass?: Map<number, string>;
   onLineClick?: (commentId: string) => void;
+  onReviewAmbiguousLine?: (className: string, line: number) => void;
 }
 
 interface PopoverState {
@@ -295,7 +296,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick, onReviewAmbiguousLine }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -308,6 +309,16 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
   );
   const width = String(rows.length).length;
   const [popover, setPopover] = useState<PopoverState | null>(null);
+  const [evidenceFilter, setEvidenceFilter] = useState('All highlights');
+  const [highlightPattern, setHighlightPattern] = useState('All patterns');
+  const highlightOptions = useMemo(() => {
+    const keys = new Set<string>();
+    for (const a of annotations) {
+      const key = canonicalPatternName(patternFromAnnotation(a));
+      if (isRealPattern(key)) keys.add(key);
+    }
+    return ['All patterns', ...Array.from(keys).sort()];
+  }, [annotations]);
 
   function handleLineClick(row: RenderedLine, ev: React.MouseEvent<HTMLSpanElement>): void {
     // Subclass-tag lines are non-decision lines: their pattern is purely
@@ -456,9 +467,44 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
     setPopover(null);
   }
 
+  function patternFamily(patternKey: string): string {
+    const key = canonicalPatternName(patternKey);
+    if (['Singleton', 'Factory', 'Builder', 'MethodChaining'].includes(key)) return 'Creational';
+    if (['Adapter', 'Proxy', 'Decorator', 'Composite', 'Pimpl'].includes(key)) return 'Structural';
+    if (['Strategy', 'Observer', 'Iterator', 'Visitor', 'Command'].includes(key)) return 'Behavioral';
+    return 'Other';
+  }
+
   return (
     <>
-      <div id="source-view" className="source-view">
+      <div className="source-toolbar" aria-label="Evidence filters">
+        <div className="source-filter-chips">
+          {['All highlights', 'Needs review', 'Selected pattern', 'Creational', 'Structural', 'Behavioral'].map(label => (
+            <button
+              key={label}
+              type="button"
+              className={`source-filter-chip ${evidenceFilter === label ? 'is-active' : ''}`}
+              onClick={() => setEvidenceFilter(label)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <label className="source-highlight-select">
+          <span>Highlight by pattern</span>
+          <select value={highlightPattern} onChange={event => setHighlightPattern(event.target.value)}>
+            {highlightOptions.map(option => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        </label>
+      </div>
+      <div
+        id="source-view"
+        className="source-view source-view--review"
+            data-filter={evidenceFilter}
+        data-highlight={highlightPattern}
+      >
         {rows.map(row => {
           const num           = String(row.lineNo).padStart(width, ' ');
           const hasAnnotation = row.rawAnns.length > 0;
@@ -521,11 +567,46 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
             (lineKeysAmbiguous || classChromeAmbiguous || usageOfAmbiguous) &&
             !overrideColor;
 
+          const patternTags = Array.from(new Set(
+            row.rawAnns
+              .map(a => canonicalPatternName(patternFromAnnotation(a)))
+              .filter(isRealPattern)
+          ));
+          const visiblePatternTags = patternTags.slice(0, 3);
+          const showNeedsReview = isAmbiguousLine || classChromeAmbiguous || usageOfAmbiguous;
+          const showMissingTags = !!row.isScopeStart
+            && !!row.scope
+            && !!coloringAmbiguousClassNames?.has(row.scope.className)
+            && !(classResolvedPatterns && classResolvedPatterns[row.scope.className]);
+
+          const matchesFamilyFilter =
+            !['Creational', 'Structural', 'Behavioral'].includes(evidenceFilter)
+            || patternTags.some(tag => patternFamily(tag) === evidenceFilter);
+          const matchesAmbiguousFilter =
+            evidenceFilter !== 'Needs review'
+            || isAmbiguousLine
+            || showNeedsReview
+            || showMissingTags;
+          const matchesSelectedFilter =
+            evidenceFilter !== 'Selected pattern'
+            || highlightPattern === 'All patterns'
+            || patternTags.includes(highlightPattern);
+          const matchesHighlight =
+            highlightPattern === 'All patterns'
+            || patternTags.includes(highlightPattern)
+            || !hasAnnotation;
+
+          if (!matchesFamilyFilter || !matchesAmbiguousFilter || !matchesSelectedFilter) {
+            return null;
+          }
+
+          const reviewClassName = classForLine(row.lineNo);
           const classNames = [
             'src-line',
             hasAnnotation    ? 'has-annotation'    : '',
             hasAnnotation    ? 'has-comment'        : '',
             isAmbiguousLine  ? 'has-ambiguous'      : '',
+            matchesHighlight ? '' : 'is-dimmed',
             row.isScopeStart ? 'class-scope-start'  : ''
           ].filter(Boolean).join(' ');
 
@@ -542,6 +623,40 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
             >
               <span className="src-gutter">{num}</span>
               <span className="src-code">{row.text || '​'}</span>
+              {(visiblePatternTags.length > 0 || showNeedsReview || showMissingTags) && (
+                <span className="src-tags" aria-label={`Evidence tags for line ${row.lineNo}`}>
+                  {visiblePatternTags.slice(0, showNeedsReview ? 2 : 3).map((tag) => {
+                    const color = colorFor(tag);
+                    return (
+                      <span
+                        key={`${row.lineNo}-${tag}`}
+                        className="src-tag"
+                        style={{ borderColor: color.border, color: color.text, background: color.bg }}
+                      >
+                        {tag}
+                      </span>
+                    );
+                  })}
+                  {showNeedsReview && reviewClassName && onReviewAmbiguousLine && (
+                    <button
+                      type="button"
+                      className="src-tag src-tag--review src-tag--button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onReviewAmbiguousLine(reviewClassName, row.lineNo);
+                      }}
+                    >
+                      Needs review
+                    </button>
+                  )}
+                  {showNeedsReview && (!reviewClassName || !onReviewAmbiguousLine) && (
+                    <span className="src-tag src-tag--review">Needs review</span>
+                  )}
+                  {showMissingTags && (
+                    <span className="src-tag src-tag--missing">Ambiguous</span>
+                  )}
+                </span>
+              )}
               {hasAnnotation && isAmbiguousLine && (
                 <span className="src-line-badge" aria-hidden="true">
                   {`${distinctPatternCount}×`}
