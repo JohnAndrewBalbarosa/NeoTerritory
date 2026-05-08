@@ -113,44 +113,46 @@ export default function RunList({ refreshSignal, variant = 'list' }: RunListProp
   }
 
   return (
-    <div className="run-list-wrap">
-      <div className="run-list-head">
-        <h3>Recent runs</h3>
-      </div>
-      <div id="run-list" className="run-list">
-        {loading && <div className="empty-state">Loading...</div>}
-        {error && <div className="empty-state">{error}</div>}
-        {!loading && !error && runs.length === 0 && (
-          <div className="empty-state">
-            <div className="studio-runs-empty-icon" aria-hidden="true">
-              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
-                <rect x="3" y="3" width="18" height="18" rx="3" />
-                <path d="M9 9h6M9 13h4" />
-                <circle cx="18" cy="18" r="4" fill="var(--surface)" stroke="currentColor" strokeWidth="1.4" />
-                <path d="M16.5 18h3M18 16.5v3" strokeWidth="1.4" />
-              </svg>
+    <>
+      <div className="run-list-wrap">
+        <div className="run-list-head">
+          <h3>Recent runs</h3>
+        </div>
+        <div id="run-list" className="run-list">
+          {loading && <div className="empty-state">Loading...</div>}
+          {error && <div className="empty-state">{error}</div>}
+          {!loading && !error && runs.length === 0 && (
+            <div className="empty-state">
+              <div className="studio-runs-empty-icon" aria-hidden="true">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" opacity="0.5">
+                  <rect x="3" y="3" width="18" height="18" rx="3" />
+                  <path d="M9 9h6M9 13h4" />
+                  <circle cx="18" cy="18" r="4" fill="var(--surface)" stroke="currentColor" strokeWidth="1.4" />
+                  <path d="M16.5 18h3M18 16.5v3" strokeWidth="1.4" />
+                </svg>
+              </div>
+              <span>No runs yet.</span>
+              <small>Run an analysis to see your history here.</small>
             </div>
-            <span>No runs yet.</span>
-            <small>Run an analysis to see your history here.</small>
-          </div>
-        )}
-        {!loading && !error && runs.map(run => (
-          <div key={run.id} className="run-item">
-            <div>
-              <strong>{run.source_name}</strong>
-              <p>{fmtDate(run.created_at)} • {run.findings_count || 0} finding(s)</p>
+          )}
+          {!loading && !error && runs.map(run => (
+            <div key={run.id} className="run-item">
+              <div>
+                <strong>{run.source_name}</strong>
+                <p>{fmtDate(run.created_at)} • {run.findings_count || 0} finding(s)</p>
+              </div>
+              <button className="ghost-btn" type="button" onClick={() => void openRun(run.id)}>
+                Open
+              </button>
             </div>
-            <button className="ghost-btn" type="button" onClick={() => void openRun(run.id)}>
-              Open
-            </button>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       <div className="run-list-actions">
         <button id="refresh-btn" className="ghost-btn" type="button" onClick={() => void refresh()}>
           Refresh
         </button>
       </div>
-    </div>
+    </>
   );
 }

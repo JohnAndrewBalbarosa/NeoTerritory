@@ -16,6 +16,12 @@ interface MarketingShellProps {
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
 
+  // Marketing pages are permanently dark — force the attribute so light-mode
+  // CSS variables never bleed through even if the user toggled light in studio.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
+
   useEffect(() => {
     document.body.dataset.surface = surface;
     window.scrollTo({ top: 0, behavior: 'auto' });
@@ -46,7 +52,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
         </motion.div>
       </AnimatePresence>
       <footer className="nt-mkt-footer" role="contentinfo">
-        <p>NeoTerritory Studio · C++ pattern analysis and documentation-support system</p>
+        <p>CodiNeo · C++ pattern analysis and documentation-support system</p>
         <p className="nt-mkt-footer__small">
           For thesis evaluation, learning, and research use. Admin access remains protected at{' '}
           <code>/app</code>.

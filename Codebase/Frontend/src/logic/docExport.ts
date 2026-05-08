@@ -73,7 +73,7 @@ export function generateMarkdown(run: AnalysisRun): string {
   const lines: string[] = [];
   const primaryFile = run.files?.[0]?.name ?? run.sourceName ?? 'source.cpp';
 
-  lines.push('# NeoTerritory Code Documentation');
+  lines.push('# CodiNeo Code Documentation');
   lines.push('');
   lines.push(`**File**: \`${primaryFile}\``);
   lines.push(`**Patterns detected**: ${run.detectedPatterns.length}`);

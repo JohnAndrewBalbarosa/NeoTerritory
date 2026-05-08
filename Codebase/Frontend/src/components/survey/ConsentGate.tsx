@@ -123,12 +123,12 @@ export default function ConsentGate() {
               <ConsentIcon kind="shield" />
             </div>
             <div className="consent-header__copy">
-              <p className="consent-header__eyebrow">NeoTerritory Research Consent</p>
+              <p className="consent-header__eyebrow">CodiNeo Research Consent</p>
               <h2 id="consent-title">Informed Consent &amp; Data Privacy Notice</h2>
               <p className="consent-header__subtitle">
                 <span>Tester Seat</span>
                 <span aria-hidden="true">|</span>
-                <span>NeoTerritory DEVCON Luzon</span>
+                <span>CodiNeo DEVCON Luzon</span>
                 <span className="consent-header__subnote">Please read carefully before proceeding</span>
               </p>
             </div>
@@ -161,7 +161,7 @@ export default function ConsentGate() {
                   3rd Year BS Computer Science students specializing in Software Engineering
                 </span>{' '}
                 from the <span className="consent-highlight consent-highlight--cyan">FEU Institute of Technology</span>. We are
-                currently conducting our research study on NeoTerritory as a{' '}
+                currently conducting our research study on CodiNeo as a{' '}
                 <span className="consent-highlight consent-highlight--cyan">
                   graph-based and AST-centered documentation generation system
                 </span>{' '}
@@ -188,7 +188,7 @@ export default function ConsentGate() {
               <p>
                 This research focuses on <span className="consent-highlight consent-highlight--purple">graph-based AST-centered documentation generation</span>,{' '}
                 <span className="consent-highlight consent-highlight--purple">design pattern learning</span>, and
-                internship-oriented code understanding support. NeoTerritory presents structural documentation, developer
+                internship-oriented code understanding support. CodiNeo presents structural documentation, developer
                 guidance, and pattern-learning signals inside a single environment so researchers can evaluate how well the
                 system supports first-contact onboarding tasks.
               </p>
@@ -210,7 +210,7 @@ export default function ConsentGate() {
             <div className="consent-section__body">
               <p>If you agree to participate, you will be asked to:</p>
               <ul className="consent-task-list">
-                <li>Interact with NeoTerritory and explore its features through guided tasks.</li>
+                <li>Interact with CodiNeo and explore its features through guided tasks.</li>
                 <li>Review generated documentation and design pattern learning outputs based on source code analysis.</li>
                 <li>Perform short code-understanding activities using the research prototype.</li>
                 <li>Answer a brief evaluation questionnaire regarding usability, clarity, and effectiveness.</li>
@@ -278,7 +278,7 @@ export default function ConsentGate() {
               </p>
               <p>
                 By proceeding, you acknowledge that this activity forms part of a structured evaluation involving selected
-                participants and contributes to validating NeoTerritory&apos;s effectiveness in supporting documentation
+                participants and contributes to validating CodiNeo&apos;s effectiveness in supporting documentation
                 generation and onboarding workflows within{' '}
                 <span className="consent-highlight consent-highlight--cyan">DEVCON Luzon</span>.
               </p>

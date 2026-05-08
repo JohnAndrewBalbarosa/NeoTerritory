@@ -176,12 +176,12 @@ export default function LoginOverlay() {
           {useStaticPickerPanel ? (
           <div className="login-card tester-chooser session-gateway">
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
-              <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
+              <p className="session-gateway__eyebrow">CodiNeo</p>
               <h2 id="session-gateway-heading">
                 Claim your session seat
               </h2>
               <p className="session-gateway__lede">
-                Choose an available seat to enter NeoTerritory Studio.
+                Choose an available seat to enter CodiNeo.
               </p>
               <p className="session-gateway__copy">
                 Each seat represents an available session environment for using the analyzer. Pick
@@ -256,12 +256,12 @@ export default function LoginOverlay() {
           ) : (
           <TiltCard className="login-card tester-chooser session-gateway" maxTilt={3} scale={1.002}>
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
-              <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
+              <p className="session-gateway__eyebrow">CodiNeo</p>
               <h2 id="session-gateway-heading">
                 <ShinyText text="Claim your session seat" />
               </h2>
               <p className="session-gateway__lede">
-                Choose an available seat to enter NeoTerritory Studio.
+                Choose an available seat to enter CodiNeo.
               </p>
               <p className="session-gateway__copy">
                 Each seat represents an available session environment for using the analyzer. Pick

@@ -11,7 +11,7 @@ const HELP_STEPS = [
   },
   {
     title: 'See possible patterns',
-    text: 'NeoTerritory checks whether your code looks like a known design pattern.',
+    text: 'CodiNeo checks whether your code looks like a known design pattern.',
   },
   {
     title: 'Find the important parts',
@@ -53,7 +53,7 @@ const SIMPLE_WORKFLOW = [
   },
   {
     title: 'See possible pattern matches',
-    text: 'NeoTerritory checks your code and looks for pattern-like structures.',
+    text: 'CodiNeo checks your code and looks for pattern-like structures.',
   },
   {
     title: 'Learn from the result',
@@ -129,7 +129,7 @@ export default function HeroLanding() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.6 }}
           >
-            NeoTerritory helps beginners learn design patterns by checking C++ code, showing
+            CodiNeo helps beginners learn design patterns by checking C++ code, showing
             possible pattern matches, and explaining them in a simpler way.
           </motion.p>
           <motion.div
@@ -148,7 +148,7 @@ export default function HeroLanding() {
             <MagneticButton
               variant="ghost"
               onClick={() => navigate('/learn')}
-              ariaLabel="See how NeoTerritory works"
+              ariaLabel="See how CodiNeo works"
             >
               See how it works
             </MagneticButton>
@@ -191,7 +191,7 @@ export default function HeroLanding() {
               help control how objects work together.
             </p>
             <p>
-              NeoTerritory helps you see these patterns in real C++ code so they are easier to
+              CodiNeo helps you see these patterns in real C++ code so they are easier to
               understand.
             </p>
           </div>
@@ -206,7 +206,7 @@ export default function HeroLanding() {
       <ScrollReveal as="section" className="nt-hero__workflow">
         <header className="nt-section-head">
           <p className="nt-section-eyebrow">Learning helper</p>
-          <h2 className="nt-section-title">How NeoTerritory helps you learn</h2>
+          <h2 className="nt-section-title">How CodiNeo helps you learn</h2>
           <p className="nt-section-lede">
             Instead of only reading definitions, you can connect patterns to actual code.
           </p>
@@ -227,7 +227,7 @@ export default function HeroLanding() {
           <p className="nt-section-eyebrow">Beginner pattern guide</p>
           <h2 className="nt-section-title">Patterns you can learn from</h2>
           <p className="nt-section-lede">
-            NeoTerritory focuses on common patterns that beginners often meet in object-oriented
+            CodiNeo focuses on common patterns that beginners often meet in object-oriented
             programming.
           </p>
         </header>
@@ -245,7 +245,7 @@ export default function HeroLanding() {
           ))}
         </div>
         <p className="nt-section-note">
-          NeoTerritory shows each pattern with code-based clues, not just a label.
+          CodiNeo shows each pattern with code-based clues, not just a label.
         </p>
       </ScrollReveal>
 
@@ -288,7 +288,7 @@ export default function HeroLanding() {
           <p className="nt-section-eyebrow">Behind the scenes</p>
           <h2 className="nt-section-title">Behind the scenes</h2>
           <p className="nt-section-lede">
-            NeoTerritory has three parts working together.
+            CodiNeo has three parts working together.
           </p>
         </header>
         <div className="nt-card-grid nt-card-grid--three">
@@ -310,7 +310,7 @@ export default function HeroLanding() {
           </header>
           <div className="nt-concept-copy">
             <p>
-              NeoTerritory mainly detects patterns using its C++ analyzer. If AI is available, it
+              CodiNeo mainly detects patterns using its C++ analyzer. If AI is available, it
               can add extra beginner-friendly explanations.
             </p>
             <p>
@@ -324,7 +324,7 @@ export default function HeroLanding() {
       <ScrollReveal as="section" className="nt-hero__cta-band">
         <h2 className="nt-section-title">Try it with your own C++ code</h2>
         <p className="nt-section-lede">
-          Open the studio, paste a C++ snippet, and see what design patterns NeoTerritory may find.
+          Open the studio, paste a C++ snippet, and see what design patterns CodiNeo may find.
         </p>
         <div className="nt-hero__ctas">
           <MagneticButton variant="primary" onClick={() => navigate('/choose')}>
