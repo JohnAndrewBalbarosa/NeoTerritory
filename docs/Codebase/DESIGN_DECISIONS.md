@@ -554,6 +554,8 @@ Variable names, naming conventions, and project-specific identifiers (`m_inner`,
 **Adding a new category** requires both (a) extending `lexeme_categories.json` with the lexeme list and (b) adding a per-category grammar predicate to `match_ranker.cpp`. A category without a grammar rule defaults to "presence anywhere in the class" — that is the fallback used for stdlib-symbol categories where presence already carries structural meaning.
 
 **Adding a new pattern**: declare its `signature_categories` in the new pattern JSON. If a needed signal cannot be expressed via an existing category + grammar predicate, extend `lexeme_categories.json` and `match_ranker.cpp` together. Do NOT tighten `ordered_checks` to mimic ranking — `ordered_checks` is yes/no, ranking is comparative.
+<<<<<<< HEAD
+=======
 
 ## D39 - Developer-only Step diagnostics with production no-leak enforcement
 Step 1 -> Step 2 orchestration diagnostics are required for developer troubleshooting and GitHub Actions assertions, but must never appear in deployed user-facing responses or UI.
@@ -576,3 +578,4 @@ Step 1 -> Step 2 orchestration diagnostics are required for developer troublesho
 **CI policy**:
 - Strict checks run with `DEV_TEST_MODE=true` and are merge-blocking (compile, unit, integration, GDB, AI async contract)
 - Same workflow includes a production-profile no-leak stage (`NODE_ENV=production`, `DEV_TEST_MODE=false`) that fails if internal diagnostics are visible
+>>>>>>> main

@@ -12,6 +12,8 @@ function getSafeReturnTarget(): string | null {
   return null;
 }
 
+const DEVELOPER_ENTRY_KEY = 'nt-entry-flow';
+
 export default function StudioApp() {
   const { token, user, setStatus, setMsStatus, setAiConfigured, resetSession } = useAppStore();
   const [ready, setReady] = useState(false);
@@ -71,6 +73,11 @@ export default function StudioApp() {
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
     const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app', '/developer', '/student-studio'];
+    if (path === '/developer') {
+      window.sessionStorage.setItem(DEVELOPER_ENTRY_KEY, 'developer');
+    } else if (!isLoggedIn) {
+      window.sessionStorage.removeItem(DEVELOPER_ENTRY_KEY);
+    }
     if (!isLoggedIn) {
       // Logged-out visitors landing on consent/pretest/studio go through
       // the tester picker. /app stays at /app so admins can keep typing

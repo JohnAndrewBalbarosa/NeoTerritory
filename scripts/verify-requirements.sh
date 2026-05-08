@@ -129,6 +129,8 @@ verify_requirements() {
     local _docker_ok=0
     if timeout 5 docker info --format '{{.ServerVersion}}' >/dev/null 2>&1; then
       _docker_ok=1
+    elif [[ $strict -eq 0 ]]; then
+      _warn 'docker daemon not responding — continuing in soft mode'
     else
       # Try a one-shot start on Linux/WSL where `service` is available.
       if command -v service >/dev/null 2>&1 && [[ "$(uname -s)" != "Darwin" ]]; then

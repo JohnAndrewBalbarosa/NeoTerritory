@@ -4,10 +4,12 @@ import { submitAnalysis, fetchSample } from '../../api/client';
 import { consumeStudioPrefill } from '../../logic/studioPrefill';
 import { logFrontendEvent } from '../../logic/frontendLog';
 import { AnalysisRun } from '../../types/api';
+import { IconUpload, IconPlay, IconCode, IconLayers, IconClipboard } from '../icons/Icons';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
   beforeSubmit?: (dispatch: () => void) => void;
+  aside?: React.ReactNode;
 }
 
 interface FileSlot {
@@ -29,11 +31,11 @@ function newSlotId(): string {
   return `slot-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
+export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
     setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission,
     submissionFiles, setSubmissionFiles,
-    programStdin, setProgramStdin } = useAppStore();
+    programStdin, setProgramStdin, currentRun } = useAppStore();
   const MAX_FILES = Math.min(MAX_FILES_HARD_CAP, Math.max(1, maxFilesPerSubmission || 3));
 
   // Slots are persisted in the store as `submissionFiles` so they survive
@@ -63,6 +65,12 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   const [busy, setBusy] = useState(false);
 
   const activeSlot = slots.find(s => s.id === activeSlotId) || slots[0];
+  const filledCount = slots.filter(s => s.text.trim()).length;
+
+  // Derive result preview values from currentRun
+  const topPattern = currentRun?.ranking?.topPattern ?? null;
+  const patternCount = currentRun?.detectedPatterns?.length ?? null;
+  const firstAnnotation = currentRun?.annotations?.[0]?.title ?? currentRun?.annotations?.[0]?.comment ?? null;
 
   async function dispatchAnalyze(payloadFiles: FileSlot[]): Promise<void> {
     setBusy(true);
@@ -90,16 +98,16 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
       if (primary?.name) setFilename(primary.name);
       else if (run.sourceName) setFilename(run.sourceName);
       setCurrentRun(run);
-      const patternCount = (run.detectedPatterns || []).length;
+      const detectedCount = (run.detectedPatterns || []).length;
       const commentCount = (run.annotations || []).length;
       const verdict = run.ranking?.verdict || 'no_clear_pattern';
       setStatus({
         kind: 'ok',
         title: 'Analysis ready (unsaved)',
-        detail: `${patternCount} pattern(s), ${commentCount} comment(s), ${payloadFiles.length} file(s). Verdict: ${verdict}.`
+        detail: `${detectedCount} pattern(s), ${commentCount} comment(s), ${payloadFiles.length} file(s). Verdict: ${verdict}.`
       });
       onAnalysisComplete(run);
-      logFrontendEvent('frontend.run_complete', `patterns=${patternCount} comments=${commentCount}`);
+      logFrontendEvent('frontend.run_complete', `patterns=${detectedCount} comments=${commentCount}`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Analysis failed.';
       setStatus({ kind: 'error', title: 'Analysis failed', detail: msg });
@@ -191,106 +199,190 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
 
   return (
     <form id="analysis-form" className="analysis-form" onSubmit={onSubmit}>
-      <div className="file-tabs" role="tablist" aria-label="Submission files">
-        {slots.map((slot) => {
-          const isActive = slot.id === activeSlotId;
-          return (
-            <div
-              key={slot.id}
-              role="tab"
-              aria-selected={isActive}
-              className={`file-tab ${isActive ? 'is-active' : ''}`}
-              onClick={() => setActiveSlotId(slot.id)}
-            >
-              <span className="file-tab-name" title={slot.name}>{slot.name || 'untitled.cpp'}</span>
-              {slots.length > 1 && (
-                <button
-                  type="button"
-                  className="file-tab-close"
-                  aria-label={`Close ${slot.name}`}
-                  onClick={(e) => { e.stopPropagation(); removeSlot(slot.id); }}
-                >×</button>
-              )}
-            </div>
-          );
-        })}
-        <button
-          type="button"
-          className="file-tab-add"
-          onClick={addSlot}
-          disabled={slots.length >= MAX_FILES}
-          aria-label="Add file"
-          title={slots.length >= MAX_FILES ? `Cap is ${MAX_FILES} files` : 'Add another file'}
-        >+</button>
-      </div>
+      <div className="studio-workspace">
 
-      {activeSlot && (
-        <div className="file-tab-pane">
-          <header className="file-slot-head">
-            <span className="file-slot-eyebrow">Filename</span>
-            <input
-              type="text"
-              className="file-slot-name"
-              value={activeSlot.name}
-              maxLength={256}
-              onChange={e => patchSlot(activeSlot.id, { name: e.target.value })}
-              placeholder="snippet.cpp"
-              aria-label="Filename for this tab"
-            />
-            <input
-              type="file"
-              className="file-slot-picker"
-              accept={ACCEPTED_EXT}
-              onChange={e => onFileInput(activeSlot.id, e.target.files)}
-              aria-label="Upload a file into this tab"
-            />
-          </header>
-          <textarea
-            className="file-slot-textarea"
-            value={activeSlot.text}
-            onChange={e => patchSlot(activeSlot.id, { text: e.target.value })}
-            rows={14}
-            placeholder="Paste C++ source here…"
-            aria-label="Source for this tab"
-          />
-          {activeSlot.text.trim().length > 0 && (() => {
-            const t = countTokens(activeSlot.text);
-            const over = t > MAX_TOKENS_PER_FILE;
-            return (
-              <span className={`token-counter ${over ? 'token-counter--over' : ''}`}>
-                {t} / {MAX_TOKENS_PER_FILE} tokens{over ? ' — too large' : ''}
-              </span>
-            );
-          })()}
+        {/* Workspace heading */}
+        <div className="studio-workspace__head">
+          <div className="studio-workspace__icon" aria-hidden="true">
+            &lt;/&gt;
+          </div>
+          <h2 className="studio-workspace__title">Add your C++ code</h2>
         </div>
-      )}
 
-      <div className="program-stdin-row">
-        <label htmlFor="program-stdin">
-          Program input <small>(stdin — newlines = Enter)</small>
-        </label>
-        <textarea
-          id="program-stdin"
-          className="program-stdin-textarea"
-          value={programStdin}
-          onChange={e => setProgramStdin(e.target.value)}
-          rows={3}
-          placeholder="If your program reads from cin/scanf/getline, type its input here. Each newline is one Enter press."
-          aria-label="Program standard input — sent to your binary on every unit-test run"
-        />
+        {/* File tabs — only shown when multi-file in use */}
+        <div className="file-tabs" role="tablist" aria-label="Submission files">
+          {slots.map((slot) => {
+            const isActive = slot.id === activeSlotId;
+            return (
+              <div
+                key={slot.id}
+                role="tab"
+                aria-selected={isActive}
+                className={`file-tab ${isActive ? 'is-active' : ''}`}
+                onClick={() => setActiveSlotId(slot.id)}
+              >
+                <span className="file-tab-name" title={slot.name}>{slot.name || 'untitled.cpp'}</span>
+                {slots.length > 1 && (
+                  <button
+                    type="button"
+                    className="file-tab-close"
+                    aria-label={`Close ${slot.name}`}
+                    onClick={(e) => { e.stopPropagation(); removeSlot(slot.id); }}
+                  >×</button>
+                )}
+              </div>
+            );
+          })}
+          <button
+            type="button"
+            className="file-tab-add"
+            onClick={addSlot}
+            disabled={slots.length >= MAX_FILES}
+            aria-label="Add file"
+            title={slots.length >= MAX_FILES ? `Cap is ${MAX_FILES} files` : 'Add another file'}
+          >+</button>
+        </div>
+
+        {/* Active file pane */}
+        {activeSlot && (
+          <div className="file-tab-pane">
+
+            {/* Filename + upload row */}
+            <div className="studio-filename-section">
+              <span className="studio-field-eyebrow">Filename (optional)</span>
+              <div className="studio-filename-row">
+                <input
+                  type="text"
+                  className="file-slot-name"
+                  value={activeSlot.name}
+                  maxLength={256}
+                  onChange={e => patchSlot(activeSlot.id, { name: e.target.value })}
+                  placeholder="e.g., all_patterns.cpp"
+                  aria-label="Filename for this tab"
+                />
+                <label className="ghost-btn studio-upload-btn">
+                  <IconUpload size={14} />
+                  Upload file
+                  <input
+                    type="file"
+                    className="studio-file-picker-hidden"
+                    accept={ACCEPTED_EXT}
+                    onChange={e => onFileInput(activeSlot.id, e.target.files)}
+                    aria-label="Upload a file into this tab"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Code editor */}
+            <div className="studio-editor-section">
+              <span className="studio-field-eyebrow">Code editor</span>
+              <textarea
+                className="file-slot-textarea"
+                value={activeSlot.text}
+                onChange={e => patchSlot(activeSlot.id, { text: e.target.value })}
+                rows={14}
+                placeholder={'Paste your C++ code here...\nYou can also upload one or more files.'}
+                aria-label="Source for this tab"
+              />
+              {activeSlot.text.trim().length > 0 && (() => {
+                const t = countTokens(activeSlot.text);
+                const over = t > MAX_TOKENS_PER_FILE;
+                return (
+                  <span className={`token-counter ${over ? 'token-counter--over' : ''}`}>
+                    {t} / {MAX_TOKENS_PER_FILE} tokens{over ? ' — too large' : ''}
+                  </span>
+                );
+              })()}
+            </div>
+
+            {/* Format hint */}
+            <p className="studio-format-hint">
+              <span aria-hidden="true">ⓘ</span>
+              Supports .cpp, .h, .hpp files. You can paste code or upload files.
+            </p>
+          </div>
+        )}
+
+        {/* Program stdin */}
+        <div className="studio-stdin-compact">
+          <label htmlFor="program-stdin">
+            Program input
+            <small>(stdin — newlines = Enter)</small>
+          </label>
+          <textarea
+            id="program-stdin"
+            className="program-stdin-textarea"
+            value={programStdin}
+            onChange={e => setProgramStdin(e.target.value)}
+            rows={3}
+            placeholder="If your program reads from cin/scanf/getline, type its input here."
+            aria-label="Program standard input — sent to your binary on every unit-test run"
+          />
+        </div>
+
+        {/* Action buttons */}
+        <div className="studio-actions">
+          <button id="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
+            Load sample
+          </button>
+          <button id="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
+            Clear
+          </button>
+          <button id="analyze-btn" className="primary-btn studio-run-btn" type="submit" disabled={busy}>
+            <IconPlay size={15} />
+            {busy ? 'Running...' : `Run analysis (${filledCount} file${filledCount === 1 ? '' : 's'})`}
+          </button>
+        </div>
+
+        {/* Result preview */}
+        <div className="studio-result-preview">
+          <div className="studio-result-preview__head">
+            <span className="studio-result-preview__title">
+              <span className="studio-result-preview__title-icon" aria-hidden="true">
+                <IconLayers size={16} />
+              </span>
+              Result Preview
+            </span>
+          </div>
+          {!currentRun && (
+            <p className="studio-result-preview__empty">Your analysis results will appear here.</p>
+          )}
+          <div className="studio-preview-cards">
+            <div className="studio-preview-card">
+              <span className="studio-preview-card__icon" aria-hidden="true">
+                <IconCode size={18} />
+              </span>
+              <span className="studio-preview-card__label">Pattern name</span>
+              <span className={`studio-preview-card__value${topPattern ? '' : ' studio-preview-card__value--dim'}`}>
+                {topPattern ?? '—'}
+              </span>
+            </div>
+            <div className="studio-preview-card">
+              <span className="studio-preview-card__icon" aria-hidden="true">
+                <IconLayers size={18} />
+              </span>
+              <span className="studio-preview-card__label">Code highlights</span>
+              <span className={`studio-preview-card__value${patternCount !== null ? '' : ' studio-preview-card__value--dim'}`}>
+                {patternCount !== null ? `${patternCount} pattern${patternCount === 1 ? '' : 's'}` : '—'}
+              </span>
+            </div>
+            <div className="studio-preview-card">
+              <span className="studio-preview-card__icon" aria-hidden="true">
+                <IconClipboard size={18} />
+              </span>
+              <span className="studio-preview-card__label">Simple explanation</span>
+              <span className={`studio-preview-card__value${firstAnnotation ? '' : ' studio-preview-card__value--dim'}`}>
+                {firstAnnotation ?? '—'}
+              </span>
+            </div>
+          </div>
+        </div>
+
       </div>
 
-      <div className="form-actions">
-        <button id="analyze-btn" className="primary-btn" type="submit" disabled={busy}>
-          {busy ? 'Running...' : `Run analysis (${slots.filter(s => s.text.trim()).length} file${slots.filter(s => s.text.trim()).length === 1 ? '' : 's'})`}
-        </button>
-        <button id="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
-          Load sample
-        </button>
-        <button id="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
-          Clear
-        </button>
-      </div>
+      {/* aside kept for backward compatibility — not used by SubmitTab */}
+      {aside ? <aside className="submit-side-panel submit-side-panel--runs">{aside}</aside> : null}
     </form>
   );
 }

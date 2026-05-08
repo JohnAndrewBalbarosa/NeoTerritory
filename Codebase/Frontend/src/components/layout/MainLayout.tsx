@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, StudioTab } from '../../store/appState';
 import { useOverflowGuard } from '../../hooks/useOverflowGuard';
-import ShinyText from '../marketing/effects/ShinyText';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
@@ -213,6 +212,9 @@ export default function MainLayout() {
     setReview(null);
   }
 
+  const isDeveloperEntryFlow =
+    typeof window !== 'undefined' && window.sessionStorage.getItem('nt-entry-flow') === 'developer';
+
   // Admins skip the research-participant gates entirely. Their place is the
   // /admin dashboard, not the studio. Send them there immediately.
   useEffect(() => {
@@ -226,18 +228,24 @@ export default function MainLayout() {
   // and pretest from the studio home. replaceState avoids back-button noise.
   if (token && user && typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const expected = !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
+    const expected = isDeveloperEntryFlow
+      ? '/studio'
+      : !consentAccepted
+        ? '/consent'
+        : !pretestSubmitted
+          ? '/pretest'
+          : '/studio';
     if (path !== expected && path !== '/admin.html') {
       window.history.replaceState(null, '', expected);
     }
   }
 
   // Gate: consent first (research participants only).
-  if (token && user && !consentAccepted) {
+  if (token && user && !isDeveloperEntryFlow && !consentAccepted) {
     return <ConsentGate />;
   }
   // Gate: pretest second (auto-skips when surveyQuestions.pretest is empty).
-  if (token && user && !pretestSubmitted) {
+  if (token && user && !isDeveloperEntryFlow && !pretestSubmitted) {
     return <PretestForm />;
   }
 
@@ -246,7 +254,7 @@ export default function MainLayout() {
       <header className="topbar">
         <div className="brand">
           <p className="eyebrow">NeoTerritory Studio</p>
-          <h1><ShinyText text="Pattern detection & annotation" speed={6} intensity={0.7} /></h1>
+          <h1>Pattern detection & annotation</h1>
           <p className="lede">
             Paste C++ source or upload a file. The microservice detects design patterns
             and the studio shows comments side-by-side with the lines they reference.
@@ -274,13 +282,23 @@ export default function MainLayout() {
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>
             <button
-              className="ghost-btn theme-toggle-btn"
+              className={`theme-switch theme-switch--${theme}`}
               type="button"
+              role="switch"
+              aria-checked={theme === 'light'}
               onClick={toggleTheme}
               title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
               aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             >
-              {theme === 'dark' ? '☀ Light' : '☾ Dark'}
+              <span className="ts-track" aria-hidden="true">
+                <span className="ts-stars">
+                  <span className="ts-star ts-s1" />
+                  <span className="ts-star ts-s2" />
+                  <span className="ts-star ts-s3" />
+                  <span className="ts-star ts-s4" />
+                </span>
+                <span className="ts-thumb" />
+              </span>
             </button>
             <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
               Sign out

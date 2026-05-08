@@ -131,13 +131,23 @@ function Test-Requirements {
 
     # Quick daemon probe — direct invocation, no temp files (mirrors bootstrap_and_deploy.ps1).
     function Invoke-DockerInfoProbe {
-      & docker info *> $null
-      return ($LASTEXITCODE -eq 0)
+      $prevErrorActionPreference = $ErrorActionPreference
+      try {
+        $ErrorActionPreference = 'Continue'
+        & docker info --format '{{.ServerVersion}}' 1>$null 2>$null
+        return ($LASTEXITCODE -eq 0)
+      } catch {
+        return $false
+      } finally {
+        $ErrorActionPreference = $prevErrorActionPreference
+      }
     }
 
     if (Invoke-DockerInfoProbe) {
       $report.dockerDaemon = $true
       Ok 'docker daemon responding'
+    } elseif (-not $strict) {
+      Warn 'docker daemon not responding - continuing in soft mode'
     } else {
       # Docker Desktop implementation — detect the Desktop exe and auto-start it if not
       # already running, then poll every 3 s until the daemon is ready (up to 180 s).
