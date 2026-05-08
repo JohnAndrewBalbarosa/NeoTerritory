@@ -206,7 +206,12 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
           <div className="studio-workspace__icon" aria-hidden="true">
             &lt;/&gt;
           </div>
-          <h2 className="studio-workspace__title">Add your C++ code</h2>
+          <div className="studio-workspace__title-group">
+            <h2 className="studio-workspace__title">Add your C++ code</h2>
+            <p className="studio-workspace__sub">
+              Upload or paste up to {MAX_FILES} .cpp files for pattern analysis.
+            </p>
+          </div>
         </div>
 
         {/* File tabs — only shown when multi-file in use */}

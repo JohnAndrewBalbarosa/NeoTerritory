@@ -3152,6 +3152,7 @@ body::before {
   font-weight: 700;
   flex-shrink: 0;
 }
+.studio-workspace__title-group { display: flex; flex-direction: column; gap: 3px; }
 .studio-workspace__title {
   margin: 0;
   font-family: var(--heading-font);
@@ -3159,6 +3160,13 @@ body::before {
   font-weight: 800;
   color: var(--ink);
   letter-spacing: -0.01em;
+}
+.studio-workspace__sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-weight: 400;
+  line-height: 1.4;
 }
 
 /* Field eyebrow labels */
