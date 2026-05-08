@@ -242,7 +242,7 @@ export default function MainLayout() {
       <header className="topbar">
         <div className="topbar-brand">
           <span className="topbar-brand__dot" aria-hidden="true" />
-          <span className="topbar-brand__name">CodiNeo</span>
+          <span className="topbar-brand__name">CodiNeo Studio</span>
         </div>
         <div className="topbar-actions">
           {user?.username && (
