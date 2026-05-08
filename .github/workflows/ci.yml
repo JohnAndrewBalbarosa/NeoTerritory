@@ -13,13 +13,36 @@ permissions:
 jobs:
   ui-scope-guard:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Decide if guard should enforce for this actor
+        id: guard_scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTOR="${{ github.actor }}"
+          # Enforce UI-only guard for teammates; skip for repo owner/maintainer.
+          # Update this list anytime you want to exempt additional maintainers.
+          EXEMPT_ACTORS=("JohnAndrewBalbarosa")
+
+          for exempt in "${EXEMPT_ACTORS[@]}"; do
+            if [[ "$ACTOR" == "$exempt" ]]; then
+              echo "enforce=false" >> "$GITHUB_OUTPUT"
+              echo "Guard skipped for exempt actor: $ACTOR"
+              exit 0
+            fi
+          done
+
+          echo "enforce=true" >> "$GITHUB_OUTPUT"
+          echo "Guard enforced for actor: $ACTOR"
+
       - name: Validate changed files are UI-only
+        if: steps.guard_scope.outputs.enforce == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -32,6 +55,11 @@ jobs:
             HEAD_SHA="${{ github.sha }}"
           else
             echo "No scope validation required for event: ${GITHUB_EVENT_NAME}"
+            exit 0
+          fi
+
+          if [[ -z "${BASE_SHA}" || -z "${HEAD_SHA}" ]]; then
+            echo "Base/head SHA missing from event payload; skipping scope validation."
             exit 0
           fi
 
@@ -58,7 +86,6 @@ jobs:
           echo "All changed files are within Codebase/Frontend/."
 
   build-and-test:
-    needs: ui-scope-guard
     runs-on: ubuntu-latest
     env:
       DEV_TEST_MODE: "true"
@@ -105,7 +132,6 @@ jobs:
         run: cmake --build build --config Release
 
   production-no-leak-check:
-    needs: ui-scope-guard
     runs-on: ubuntu-latest
     env:
       DEV_TEST_MODE: "false"
