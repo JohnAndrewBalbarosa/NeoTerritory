@@ -76,10 +76,10 @@ jobs:
             Codebase/Frontend/package-lock.json
 
       - name: Install backend dependencies
-        run: npm --prefix Codebase/Backend ci
+        run: npm --prefix Codebase/Backend ci --include=dev
 
       - name: Install frontend dependencies
-        run: npm --prefix Codebase/Frontend ci
+        run: npm --prefix Codebase/Frontend ci --include=dev
 
       - name: Build backend in production mode
         run: npm --prefix Codebase/Backend run build
