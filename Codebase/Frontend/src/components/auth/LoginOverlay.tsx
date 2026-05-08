@@ -14,6 +14,11 @@ import { User } from '../../types/api';
 
 type Mode = 'picker' | 'admin';
 
+function formatSeatLabel(username: string): string {
+  const m = username.match(/^devcon(\d+)$/i);
+  return m ? `Tester ${m[1]}` : username;
+}
+
 type EntryCopy = {
   title: string;
   hint: string;
@@ -236,7 +241,7 @@ export default function LoginOverlay() {
                         </svg>
                       </span>
                       <span className="tester-seat-name">
-                        {isClaiming ? 'Claiming...' : acc.username}
+                        {isClaiming ? 'Claiming...' : formatSeatLabel(acc.username)}
                       </span>
                       {isClaimed && <span className="tester-chip-sub">in use</span>}
                     </button>
@@ -316,7 +321,7 @@ export default function LoginOverlay() {
                         </svg>
                       </span>
                       <span className="tester-seat-name">
-                        {isClaiming ? 'Claiming...' : acc.username}
+                        {isClaiming ? 'Claiming...' : formatSeatLabel(acc.username)}
                       </span>
                       {isClaimed && <span className="tester-chip-sub">in use</span>}
                     </button>
