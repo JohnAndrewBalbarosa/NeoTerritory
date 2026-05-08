@@ -1671,12 +1671,16 @@ body::before {
   min-height: 46px;
 }
 .consent-actions__decline {
-  min-width: 136px;
+  flex: 0 0 168px;
+  min-width: 168px;
   border-radius: 14px;
   border-color: rgba(0, 209, 216, 0.26);
 }
 .consent-actions__continue {
-  flex: 1;
+  flex: 0 1 520px;
+  width: min(100%, 520px);
+  min-width: 0;
+  margin-left: auto;
   justify-content: center;
   border-radius: 14px;
   font-size: 13.5px;
@@ -1748,5 +1752,8 @@ body::before {
   .consent-actions__decline,
   .consent-actions__continue {
     width: 100%;
+    min-width: 0;
+    flex: 1 1 auto;
+    margin-left: 0;
   }
 }
