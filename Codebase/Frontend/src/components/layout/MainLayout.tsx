@@ -115,6 +115,21 @@ export default function MainLayout() {
 
   const { signOut } = useAuth();
 
+  function handleThemeToggle(e: React.MouseEvent<HTMLButtonElement>) {
+    const btn = e.currentTarget;
+    const rect = btn.getBoundingClientRect();
+    const x = Math.round(rect.left + rect.width / 2);
+    const y = Math.round(rect.top + rect.height / 2);
+    document.documentElement.style.setProperty('--theme-toggle-x', `${x}px`);
+    document.documentElement.style.setProperty('--theme-toggle-y', `${y}px`);
+    if (!('startViewTransition' in document)) {
+      toggleTheme();
+      return;
+    }
+    (document as Document & { startViewTransition: (cb: () => void) => void })
+      .startViewTransition(toggleTheme);
+  }
+
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
   const [review, setReview] = useState<ReviewState | null>(null);
   const [showSignout, setShowSignout] = useState(false);
@@ -287,7 +302,7 @@ export default function MainLayout() {
             type="button"
             role="switch"
             aria-checked={theme === 'light'}
-            onClick={toggleTheme}
+            onClick={handleThemeToggle}
             title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
           >

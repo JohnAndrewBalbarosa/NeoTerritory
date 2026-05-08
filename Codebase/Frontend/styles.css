@@ -200,6 +200,24 @@ body.login-active{overflow:hidden;}
 /* Smooth track scale on click */
 .ts-track{transform:scale(1);transition:background 0.38s ease,border-color 0.38s ease,box-shadow 0.38s ease,transform 0.12s ease;}
 
+/* === THEME SWITCH — VIEW TRANSITION CIRCLE WIPE === */
+/* New theme reveals as a circle expanding from the toggle button position.
+   Falls back to the browser's default cross-fade when startViewTransition
+   is unavailable. Disabled when the user prefers reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) {
+    animation: none;
+    z-index: -1;
+  }
+  ::view-transition-new(root) {
+    animation: theme-circle-in 0.48s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes theme-circle-in {
+    from { clip-path: circle(0% at var(--theme-toggle-x, 95vw) var(--theme-toggle-y, 32px)); }
+    to   { clip-path: circle(150% at var(--theme-toggle-x, 95vw) var(--theme-toggle-y, 32px)); }
+  }
+}
+
 /* === COMPOSER === */
 .composer .form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-bottom:12px;}
 .field{display:flex;flex-direction:column;gap:5px;}
