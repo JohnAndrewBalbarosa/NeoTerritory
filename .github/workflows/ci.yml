@@ -125,6 +125,26 @@ jobs:
       - name: Frontend build
         run: npm --prefix Codebase/Frontend run build
 
+      - name: Configure CMake
+        run: cmake -S . -B build
+
+      - name: Build microservice
+        run: cmake --build build --config Release
+
+      - name: Generate microservice output artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/microservice-output
+          ./build/NeoTerritory --output artifacts/microservice-output Codebase/Microservice/samples
+          test -f artifacts/microservice-output/report.json
+
+      - name: Upload microservice output artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: microservice-output
+          path: artifacts/microservice-output
+
       - name: Install Playwright Chromium
         run: npm --prefix Codebase/Frontend exec playwright install --with-deps chromium
 
@@ -132,11 +152,61 @@ jobs:
         run: node scripts/ci-smoke.mjs
         working-directory: Codebase/Frontend
 
-      - name: Configure CMake
-        run: cmake -S . -B build
+  pod-integration:
+    needs:
+      - build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: Build microservice
-        run: cmake --build build --config Release
+      - name: Download microservice output artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: microservice-output
+          path: artifacts/microservice-output
+
+      - name: Setup kind cluster
+        uses: helm/kind-action@v1
+
+      - name: Build runtime image for pod test
+        run: |
+          docker build -t neoterritory:ci -f Codebase/Infrastructure/session-orchestration/docker/Dockerfile .
+
+      - name: Load image into kind
+        run: kind load docker-image neoterritory:ci
+
+      - name: Render pod templates
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/k8s-rendered
+          sed -e 's/{{user_id}}/ci/g' -e 's|{{image}}|neoterritory:ci|g' \
+            Codebase/Infrastructure/session-orchestration/k8s/templates/user-session-pod.yaml > /tmp/k8s-rendered/pod.yaml
+          sed -e 's/{{user_id}}/ci/g' \
+            Codebase/Infrastructure/session-orchestration/k8s/templates/user-routing.yaml > /tmp/k8s-rendered/service.yaml
+
+      - name: Apply pod manifests
+        run: |
+          kubectl apply -f /tmp/k8s-rendered/pod.yaml
+          kubectl apply -f /tmp/k8s-rendered/service.yaml
+
+      - name: Wait for pod ready
+        run: kubectl wait --for=condition=Ready pod/neoterritory-session-ci --timeout=240s
+
+      - name: Pod health checks
+        run: |
+          kubectl port-forward pod/neoterritory-session-ci 3001:3001 >/tmp/pf.log 2>&1 &
+          PF_PID=$!
+          trap "kill ${PF_PID}" EXIT
+          sleep 8
+          curl -fsS http://127.0.0.1:3001/health
+          curl -fsS http://127.0.0.1:3001/api/health
+
+      - name: Collect pod logs
+        if: always()
+        run: kubectl logs pod/neoterritory-session-ci --tail=200 || true
 
   production-no-leak-check:
     runs-on: ubuntu-latest
@@ -176,6 +246,7 @@ jobs:
   deploy-aws:
     needs:
       - build-and-test
+      - pod-integration
       - production-no-leak-check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
