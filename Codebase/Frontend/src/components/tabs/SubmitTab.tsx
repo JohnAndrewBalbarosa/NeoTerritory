@@ -70,8 +70,11 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAna
     const btn = document.getElementById('load-sample-btn');
     if (!btn) return;
     btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    btn.classList.add('flash');
-    setTimeout(() => btn.classList.remove('flash'), 1200);
+    // Wait for scroll to settle before highlighting
+    setTimeout(() => {
+      btn.classList.add('load-sample-highlight');
+      setTimeout(() => btn.classList.remove('load-sample-highlight'), 1600);
+    }, 450);
   }
 
   // Derive step state

@@ -3232,6 +3232,17 @@ body::before {
   align-items: center;
   gap: 10px;
 }
+
+/* Load-sample highlight — fires after scroll settles, cyan pulse glow */
+@keyframes load-sample-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(0,209,216,0),   0 0  0px rgba(0,209,216,0);   border-color: var(--border-bright); background: transparent; }
+  22%  { box-shadow: 0 0 0 4px rgba(0,209,216,0.42), 0 0 22px rgba(0,209,216,0.22); border-color: rgba(0,209,216,0.85); background: rgba(0,209,216,0.08); }
+  60%  { box-shadow: 0 0 0 3px rgba(0,209,216,0.22), 0 0 16px rgba(0,209,216,0.12); border-color: rgba(0,209,216,0.5);  background: rgba(0,209,216,0.04); }
+  100% { box-shadow: 0 0 0 0 rgba(0,209,216,0),   0 0  0px rgba(0,209,216,0);   border-color: var(--border-bright); background: transparent; }
+}
+#load-sample-btn.load-sample-highlight {
+  animation: load-sample-pulse 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
 .studio-run-btn {
   display: inline-flex !important;
   align-items: center !important;
