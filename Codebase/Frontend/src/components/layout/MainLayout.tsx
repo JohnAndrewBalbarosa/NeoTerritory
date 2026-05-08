@@ -251,6 +251,7 @@ export default function MainLayout() {
 
   return (
     <div className="shell">
+      <div className="studio-chrome">
       <header className="topbar">
         <div className="brand">
           <p className="eyebrow">NeoTerritory Studio</p>
@@ -324,6 +325,7 @@ export default function MainLayout() {
           );
         })}
       </nav>
+      </div>{/* end .studio-chrome */}
 
       <main className="content tab-content">
         <AnimatePresence mode="wait" initial={false}>
