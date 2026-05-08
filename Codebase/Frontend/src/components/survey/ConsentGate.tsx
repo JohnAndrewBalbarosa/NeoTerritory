@@ -325,7 +325,12 @@ export default function ConsentGate() {
             }}
             disabled={!agree || busy}
           >
-            {busy ? 'Submitting...' : agree ? 'Continue' : 'Please check the consent box above'}
+            <span className="consent-actions__continue-inner">
+              <span className="consent-actions__continue-icon" aria-hidden="true">
+                <ConsentIcon kind="check" />
+              </span>
+              <span>{busy ? 'Submitting...' : 'I Agree & Proceed to Testing'}</span>
+            </span>
           </button>
         </div>
       </div>

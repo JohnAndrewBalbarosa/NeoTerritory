@@ -1677,13 +1677,38 @@ body::before {
   border-color: rgba(0, 209, 216, 0.26);
 }
 .consent-actions__continue {
-  flex: 0 1 520px;
-  width: min(100%, 520px);
+  flex: 0 1 620px;
+  width: min(100%, 620px);
   min-width: 0;
   margin-left: auto;
   justify-content: center;
   border-radius: 14px;
   font-size: 13.5px;
+  background: linear-gradient(135deg, #8b2cff, #3f6cff);
+  color: #f7fbff;
+  box-shadow: 0 0 0 1px rgba(139, 44, 255, 0.2), 0 16px 34px rgba(63, 108, 255, 0.22);
+}
+.consent-actions__continue:hover:not(:disabled) {
+  background: linear-gradient(135deg, #9f45ff, #4e7dff);
+  color: #ffffff;
+  box-shadow: 0 0 26px rgba(91, 95, 255, 0.34);
+}
+.consent-actions__continue-inner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+.consent-actions__continue-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+}
+.consent-actions__continue-icon svg {
+  width: 18px;
+  height: 18px;
 }
 @media (max-width: 860px) {
   .consent-header,
