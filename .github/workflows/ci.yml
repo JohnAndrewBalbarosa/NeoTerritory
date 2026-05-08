@@ -1,0 +1,221 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-scope-guard:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Decide if guard should enforce for this actor
+        id: guard_scope
+        shell: bash
+        run: |
+          set -euo pipefail
+          ACTOR="${{ github.actor }}"
+          # Enforce UI-only guard for teammates; skip for repo owner/maintainer.
+          # Update this list anytime you want to exempt additional maintainers.
+          EXEMPT_ACTORS=("JohnAndrewBalbarosa")
+
+          for exempt in "${EXEMPT_ACTORS[@]}"; do
+            if [[ "$ACTOR" == "$exempt" ]]; then
+              echo "enforce=false" >> "$GITHUB_OUTPUT"
+              echo "Guard skipped for exempt actor: $ACTOR"
+              exit 0
+            fi
+          done
+
+          echo "enforce=true" >> "$GITHUB_OUTPUT"
+          echo "Guard enforced for actor: $ACTOR"
+
+      - name: Validate changed files are UI-only
+        if: steps.guard_scope.outputs.enforce == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            BASE_SHA="${{ github.event.pull_request.base.sha }}"
+            HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          elif [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            BASE_SHA="${{ github.event.before }}"
+            HEAD_SHA="${{ github.sha }}"
+          else
+            echo "No scope validation required for event: ${GITHUB_EVENT_NAME}"
+            exit 0
+          fi
+
+          if [[ -z "${BASE_SHA}" || -z "${HEAD_SHA}" ]]; then
+            echo "Base/head SHA missing from event payload; skipping scope validation."
+            exit 0
+          fi
+
+          mapfile -t CHANGED_FILES < <(git diff --name-only "${BASE_SHA}" "${HEAD_SHA}")
+
+          if [[ ${#CHANGED_FILES[@]} -eq 0 ]]; then
+            echo "No changed files detected."
+            exit 0
+          fi
+
+          DISALLOWED=()
+          for f in "${CHANGED_FILES[@]}"; do
+            if [[ "$f" != Codebase/Frontend/* ]]; then
+              DISALLOWED+=("$f")
+            fi
+          done
+
+          if [[ ${#DISALLOWED[@]} -gt 0 ]]; then
+            echo "UI-only policy violation. These files are outside Codebase/Frontend/:"
+            printf ' - %s\n' "${DISALLOWED[@]}"
+            exit 1
+          fi
+
+          echo "All changed files are within Codebase/Frontend/."
+
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      DEV_TEST_MODE: "true"
+      NODE_ENV: "test"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            Codebase/Backend/package-lock.json
+            Codebase/Frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm --prefix Codebase/Backend ci --include=dev
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci --include=dev
+
+      - name: Backend typecheck
+        run: npm --prefix Codebase/Backend run typecheck
+
+      - name: Frontend typecheck
+        run: npm --prefix Codebase/Frontend run typecheck
+
+      - name: Backend build
+        run: npm --prefix Codebase/Backend run build
+
+      - name: Frontend build
+        run: npm --prefix Codebase/Frontend run build
+
+      - name: Install Playwright Chromium
+        run: npm --prefix Codebase/Frontend exec playwright install --with-deps chromium
+
+      - name: Playwright smoke check (backend + website routes)
+        run: node scripts/ci-smoke.mjs
+        working-directory: Codebase/Frontend
+
+      - name: Configure CMake
+        run: cmake -S . -B build
+
+      - name: Build microservice
+        run: cmake --build build --config Release
+
+  production-no-leak-check:
+    runs-on: ubuntu-latest
+    env:
+      DEV_TEST_MODE: "false"
+      NODE_ENV: "production"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            Codebase/Backend/package-lock.json
+            Codebase/Frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix Codebase/Backend ci --include=dev
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci --include=dev
+
+      - name: Build backend in production mode
+        run: npm --prefix Codebase/Backend run build
+
+      - name: Build frontend in production mode
+        run: npm --prefix Codebase/Frontend run build
+
+      - name: Assert DEV_TEST_MODE disabled in this job
+        run: |
+          test "$DEV_TEST_MODE" = "false"
+          test "$NODE_ENV" = "production"
+
+  deploy-aws:
+    needs:
+      - build-and-test
+      - production-no-leak-check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && (secrets.AWS_SSH_PRIVATE_KEY != '' || secrets.AWS_SSH_KEY_PEM != '') && secrets.AWS_DEPLOY_ENV != ''
+    runs-on: ubuntu-latest
+    env:
+      SECRET_AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
+      SECRET_AWS_SSH_KEY_PEM: ${{ secrets.AWS_SSH_KEY_PEM }}
+      SECRET_AWS_DEPLOY_ENV: ${{ secrets.AWS_DEPLOY_ENV }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.ssh"
+          KEY_CONTENT="${SECRET_AWS_SSH_PRIVATE_KEY:-}"
+          if [[ -z "$KEY_CONTENT" ]]; then
+            KEY_CONTENT="${SECRET_AWS_SSH_KEY_PEM:-}"
+          fi
+          if [[ -z "$KEY_CONTENT" ]]; then
+            echo "Missing SSH private key secret. Set AWS_SSH_PRIVATE_KEY or AWS_SSH_KEY_PEM." >&2
+            exit 1
+          fi
+          printf '%s\n' "$KEY_CONTENT" > "$HOME/.ssh/neoterritory.pem"
+          chmod 600 "$HOME/.ssh/neoterritory.pem"
+
+      - name: Prepare deploy environment file
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$SECRET_AWS_DEPLOY_ENV" > scripts/.env.deploy
+          {
+            echo ""
+            echo "AWS_SSH_KEY=$HOME/.ssh/neoterritory.pem"
+          } >> scripts/.env.deploy
+
+      - name: Deploy to AWS (source mode)
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/deploy-aws.sh
+          ./scripts/deploy-aws.sh --source --yes

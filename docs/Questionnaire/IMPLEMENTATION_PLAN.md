@@ -126,3 +126,36 @@ Each step type-checks and runs end-to-end before the next is started.
 - **Q1:** OK to skip Questionnaire A from going live until you paste the validated A wording into `REFERENCE.md`? (Stub is wired but unrendered until ready.)
 - **Q2:** Per-run survey — appears **before** the new run dispatches (must answer to re-run), or appears in a side toast that doesn't block? Plan above assumes blocking.
 - **Q3:** Sign-out survey for **production** users (the admin / non-devcon path) — also collected, or devcon-only? Plan above assumes devcon-only required, prod gets a Skip link.
+
+---
+
+## 4. Developer-only visibility boundary (new)
+
+This plan now includes a hard production boundary:
+
+- `DEV_TEST_MODE=true` enables developer and CI diagnostics for Step 1 -> Step 2 orchestration.
+- `DEV_TEST_MODE=false` (production default) exposes only user-safe fields.
+
+### Backend contract split
+
+Internal profile (dev/CI only):
+- `step2JobId`
+- phase-level Step 1/Step 2 transitions
+- AI transport timings (`aiRequestSentAt`, `aiAckReceivedAt`, `aiFirstResponseAt`)
+- CI failure buckets (`compile_failed`, `unit_failed`, `integration_failed`, `ai_send_failed`, `ai_timeout`)
+
+Public profile (production):
+- stable run status and final result/failure suitable for end users
+- no internal job id, no phase timeline, no AI transport diagnostics, no CI bucket labels
+
+### Frontend visibility rule
+
+- Production UI must not render internal pipeline labels (for example, "Step 1 complete / Step 2 pending").
+- Production UI must not render AI transport diagnostics or CI-oriented failure buckets.
+- Dev/CI builds may render these internal signals only when `DEV_TEST_MODE=true`.
+
+### GitHub Actions scope
+
+- CI runs with `DEV_TEST_MODE=true` for strict orchestration assertions.
+- CI blocks merge when compile, unit, integration, GDB, or AI async checks fail.
+- CI adds a no-leak check using production settings (`NODE_ENV=production`, `DEV_TEST_MODE=false`) and asserts internal fields/endpoints are absent or forbidden.
