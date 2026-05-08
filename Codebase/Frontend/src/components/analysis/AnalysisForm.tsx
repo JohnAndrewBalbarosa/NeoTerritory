@@ -246,17 +246,19 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
             aria-label="Add file"
             title={slots.length >= MAX_FILES ? `Cap is ${MAX_FILES} files` : 'Add another file'}
           >+</button>
+          <span
+            className="file-tab-limit-tip"
+            data-tooltip={`You can upload up to ${MAX_FILES} .cpp files per submission.`}
+            aria-label={`Upload limit: up to ${MAX_FILES} .cpp files`}
+            role="img"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 8v4" />
+              <circle cx="12" cy="16" r="0.5" fill="currentColor" />
+            </svg>
+          </span>
         </div>
-
-        {/* File upload limit hint */}
-        <p className="studio-file-limit-hint">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4" />
-            <circle cx="12" cy="16" r="0.5" fill="currentColor" />
-          </svg>
-          You can upload up to <strong>{MAX_FILES}</strong> .cpp files per submission.
-        </p>
 
         {/* Active file pane */}
         {activeSlot && (
