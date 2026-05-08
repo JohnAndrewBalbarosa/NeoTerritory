@@ -2361,13 +2361,17 @@ body::before {
 
 /* Recent runs panel */
 .studio-runs-section {
+  display: flex;
+  flex-direction: column;
+}
+.studio-runs-section .run-list-wrap {
+  height: auto;
   border: 1px solid rgba(0,209,216,0.18);
   border-radius: 18px;
   padding: 20px;
   background: linear-gradient(180deg, rgba(15,27,46,0.94), rgba(13,18,30,0.92));
   box-shadow: var(--devcon-panel-glow);
 }
-.studio-runs-section .run-list-wrap { height: auto; }
 .studio-runs-section .run-list { max-height: 340px; }
 .studio-runs-section .run-list-head h3 {
   font-family: var(--heading-font);
@@ -3043,7 +3047,7 @@ body::before {
 }
 
 /* Recent runs section */
-:root[data-theme="light"] .studio-runs-section {
+:root[data-theme="light"] .studio-runs-section .run-list-wrap {
   background: #ffffff;
   border-color: rgba(15, 30, 60, 0.10);
   box-shadow: 0 2px 12px rgba(15, 30, 60, 0.06);
