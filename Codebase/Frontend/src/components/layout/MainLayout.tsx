@@ -48,6 +48,15 @@ interface AnalyzeResponseLike extends AnalysisRun {
   aiStatus?: 'pending' | 'disabled';
 }
 
+function formatDisplayName(username: string): string {
+  const m = username.match(/^devcon(\d+)$/i);
+  return m ? `Tester ${m[1]}` : username;
+}
+
+function isTesterUser(username: string): boolean {
+  return /^devcon\d+$/i.test(username);
+}
+
 function flashLine(line: number) {
   const el = document.querySelector<HTMLElement>(`.src-line[data-line="${line}"]`);
   if (!el) return;
@@ -198,7 +207,8 @@ export default function MainLayout() {
   }
 
   function onSignOutClick() {
-    if (sessionRanAnalyze && !sessionReviewedEnd && token) {
+    const isTester = isTesterUser(user?.username ?? '');
+    if (isTester && sessionRanAnalyze && !sessionReviewedEnd && token) {
       setShowSignout(true);
       return;
     }
@@ -294,7 +304,7 @@ export default function MainLayout() {
         <div className="topbar-actions">
           {user?.username && (
             <span className="topbar-user-chip" aria-label="Signed in as">
-              {user.username}
+              {formatDisplayName(user.username)}
             </span>
           )}
           <button
