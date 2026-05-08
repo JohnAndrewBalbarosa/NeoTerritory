@@ -693,9 +693,9 @@ body.login-active{overflow:hidden;}
 }
 /* Secondary (Back) — pill outline */
 .signout-card__footer .ghost-btn{
-  min-width:148px;
-  padding:8px 28px;
-  font-size:0.875rem;
+  min-width:160px;
+  padding:11px 32px;
+  font-size:0.9375rem;
   font-weight:600;
   border-radius:9999px;
   border:1.5px solid var(--devcon-cyan,#22d3ee);
@@ -711,9 +711,9 @@ body.login-active{overflow:hidden;}
 }
 /* Primary (Submit & sign out) — green gradient pill */
 .signout-card__footer .primary-btn{
-  min-width:220px;
-  padding:8px 32px;
-  font-size:0.875rem;
+  min-width:240px;
+  padding:11px 36px;
+  font-size:0.9375rem;
   font-weight:700;
   border-radius:9999px;
   border:none;

@@ -64,7 +64,7 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
           {error && <div className="error-banner" role="alert">{error}</div>}
         </div>
 
-        <div className="signout-card__footer modal-actions">
+        <div className="signout-card__footer">
           <button className="ghost-btn" type="button" onClick={onCancel} disabled={busy}>
             Back
           </button>
