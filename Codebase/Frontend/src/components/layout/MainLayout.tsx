@@ -96,7 +96,7 @@ export default function MainLayout() {
   useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
   const { theme, toggleTheme } = useTheme();
   const {
-    user, sessionRanAnalyze, sessionReviewedEnd,
+    user, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
     setAiStatus, setStatus,
     currentRun, gdbAllPassedForRun
@@ -208,7 +208,7 @@ export default function MainLayout() {
 
   function onSignOutClick() {
     const isTester = isTesterUser(user?.username ?? '');
-    if (isTester && sessionRanAnalyze && !sessionReviewedEnd && token) {
+    if (isTester && !sessionReviewedEnd && token) {
       setShowSignout(true);
       return;
     }
