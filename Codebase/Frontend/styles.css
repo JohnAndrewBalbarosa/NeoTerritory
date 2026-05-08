@@ -2374,6 +2374,11 @@ body::before {
   font-size: 15px;
   font-weight: 800;
 }
+.studio-runs-section .run-list-actions {
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 0;
+}
 .studio-runs-section .empty-state {
   display: flex;
   flex-direction: column;
