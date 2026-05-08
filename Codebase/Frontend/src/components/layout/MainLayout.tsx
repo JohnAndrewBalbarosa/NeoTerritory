@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, StudioTab } from '../../store/appState';
 import { useOverflowGuard } from '../../hooks/useOverflowGuard';
-import ShinyText from '../marketing/effects/ShinyText';
 import { useHealth } from '../../hooks/useHealth';
 import { useAuth } from '../../hooks/useAuth';
 import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
@@ -255,7 +254,7 @@ export default function MainLayout() {
       <header className="topbar">
         <div className="brand">
           <p className="eyebrow">NeoTerritory Studio</p>
-          <h1><ShinyText text="Pattern detection & annotation" speed={6} intensity={0.7} /></h1>
+          <h1>Pattern detection & annotation</h1>
           <p className="lede">
             Paste C++ source or upload a file. The microservice detects design patterns
             and the studio shows comments side-by-side with the lines they reference.

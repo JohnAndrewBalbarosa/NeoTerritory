@@ -750,6 +750,7 @@ body.login-active{overflow:hidden;}
 .program-stdin-row label small{color:var(--ink-soft);font-weight:400;margin-left:4px;}
 .program-stdin-textarea{width:100%;min-height:64px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);font:inherit;font-family:var(--code-font);font-size:12.5px;resize:vertical;}
 .program-stdin-textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.form-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0 26px;}
 
 /* === Annotated tab loading skeleton (waiting on microservice tags) === */
 .annotated-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 24px;text-align:center;color:var(--ink-soft);}
@@ -886,7 +887,7 @@ body::before {
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(15, 27, 46, 0.86), rgba(13, 15, 20, 0.72));
   box-shadow: var(--devcon-panel-glow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: none;
   overflow: hidden;
 }
 .topbar::before {
