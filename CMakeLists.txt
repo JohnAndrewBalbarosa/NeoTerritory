@@ -36,6 +36,7 @@ add_executable(NeoTerritory
 )
 
 target_include_directories(NeoTerritory PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header"
     "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/SyntacticBrokenAST"
     "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/Creational"
     "${CMAKE_CURRENT_SOURCE_DIR}/${NEOTERRITORY_SOURCE_ROOT}/Modules/Header/Behavioural"
