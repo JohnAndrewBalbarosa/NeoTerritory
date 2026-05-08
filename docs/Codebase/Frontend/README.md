@@ -59,6 +59,10 @@ These child folders continue the subsystem by covering route-sized HTML fragment
 These documents explain the local implementation by covering Defines the shell document for the hash-routed frontend application.
 - index.html.md : Defines the persistent browser shell for the microservice analysis workflow.
 
+### Marketing Routes
+These documents explain route-level public-site surfaces without changing backend or analyzer ownership.
+- LearningPage.tsx.md : Documents the `/learn` overview card grid, including the UI-only removal of the public `Idiom` card and the responsive centering rules for the remaining three families.
+
 ## Reading Hint
 - Read the shell first, then the API boundary, then the pages in user workflow order. Any analysis result shown in this folder should trace back to backend or microservice output, not frontend-only inference.
 
