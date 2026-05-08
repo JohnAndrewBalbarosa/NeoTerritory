@@ -149,6 +149,7 @@ export default function MainLayout() {
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
   const [review, setReview] = useState<ReviewState | null>(null);
   const [showSignout, setShowSignout] = useState(false);
+  const [showThankYou, setShowThankYou] = useState(false);
   const [runRefreshSignal, setRunRefreshSignal] = useState(0);
   const [analyzeReplace, setAnalyzeReplace] = useState<{ run: () => void } | null>(null);
 
@@ -225,6 +226,11 @@ export default function MainLayout() {
   function onSignoutComplete() {
     useAppStore.getState().setSessionReviewedEnd(true);
     setShowSignout(false);
+    setShowThankYou(true);
+  }
+
+  function onThankYouDone() {
+    setShowThankYou(false);
     signOut();
   }
 
@@ -426,6 +432,23 @@ export default function MainLayout() {
           onComplete={onSignoutComplete}
           onCancel={() => setShowSignout(false)}
         />
+      )}
+      {showThankYou && (
+        <div className="modal-overlay thankyou-overlay" role="dialog" aria-modal="true" aria-labelledby="thankyou-title">
+          <div className="modal-card thankyou-card">
+            <div className="thankyou-card__icon" aria-hidden="true">
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            </div>
+            <h2 id="thankyou-title" className="thankyou-card__title">Thank you for participating in our survey.</h2>
+            <p className="thankyou-card__sub">Your feedback helps us improve CodiNeo for future users.</p>
+            <button className="primary-btn thankyou-card__btn" type="button" onClick={onThankYouDone}>
+              Continue
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
