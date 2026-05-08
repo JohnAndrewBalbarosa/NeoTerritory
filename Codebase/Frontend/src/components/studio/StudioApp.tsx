@@ -75,6 +75,8 @@ export default function StudioApp() {
     const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app', '/developer', '/student-studio'];
     if (path === '/developer') {
       window.sessionStorage.setItem(DEVELOPER_ENTRY_KEY, 'developer');
+    } else if (path === '/student-studio') {
+      window.sessionStorage.setItem(DEVELOPER_ENTRY_KEY, 'student');
     } else if (!isLoggedIn) {
       window.sessionStorage.removeItem(DEVELOPER_ENTRY_KEY);
     }

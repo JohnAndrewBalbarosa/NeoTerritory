@@ -50,7 +50,12 @@ interface AnalyzeResponseLike extends AnalysisRun {
 
 function formatDisplayName(username: string): string {
   const m = username.match(/^devcon(\d+)$/i);
-  return m ? `Tester ${m[1]}` : username;
+  if (!m) return username;
+  const n = m[1];
+  const flow = typeof window !== 'undefined' ? window.sessionStorage.getItem('nt-entry-flow') : null;
+  if (flow === 'developer') return `Developer ${n}`;
+  if (flow === 'student')   return `Student ${n}`;
+  return `Tester ${n}`;
 }
 
 function isTesterUser(username: string): boolean {

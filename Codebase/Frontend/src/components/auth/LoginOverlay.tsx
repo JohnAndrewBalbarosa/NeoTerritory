@@ -16,7 +16,13 @@ type Mode = 'picker' | 'admin';
 
 function formatSeatLabel(username: string): string {
   const m = username.match(/^devcon(\d+)$/i);
-  return m ? `Tester ${m[1]}` : username;
+  if (!m) return username;
+  const n = m[1];
+  if (typeof window !== 'undefined') {
+    if (window.location.pathname === '/developer') return `Developer ${n}`;
+    if (window.location.pathname === '/student-studio') return `Student ${n}`;
+  }
+  return `Tester ${n}`;
 }
 
 type EntryCopy = {
