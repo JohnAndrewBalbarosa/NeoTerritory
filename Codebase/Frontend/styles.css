@@ -3012,6 +3012,19 @@ body::before {
   max-width: 300px;
   box-shadow: var(--devcon-panel-glow);
   flex-shrink: 0;
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease;
+}
+.studio-new-here-card:hover {
+  border-color: rgba(0,209,216,0.55);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(0,209,216,0.14);
+}
+.studio-new-here-card:active { transform: translateY(0); }
+.studio-new-here-card:focus-visible {
+  outline: 2px solid var(--devcon-cyan);
+  outline-offset: 3px;
 }
 .studio-new-here-icon {
   display: grid;
@@ -3028,7 +3041,16 @@ body::before {
 .studio-new-here-title { margin: 0 0 2px; font-size: 13px; font-weight: 700; color: var(--ink); }
 .studio-new-here-text { margin: 0; font-size: 12px; color: var(--ink-soft); line-height: 1.4; }
 .studio-new-here-text strong { color: var(--devcon-cyan); }
-.studio-new-here-arrow { color: var(--ink-dim); font-size: 20px; flex-shrink: 0; }
+.studio-new-here-arrow {
+  color: var(--ink-dim);
+  font-size: 20px;
+  flex-shrink: 0;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.22s ease;
+}
+.studio-new-here-card:hover .studio-new-here-arrow {
+  transform: translateX(5px);
+  color: var(--devcon-cyan);
+}
 
 /* Step indicator */
 .studio-steps {

@@ -66,6 +66,14 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAna
     else dispatch();
   }
 
+  function scrollToLoadSample() {
+    const btn = document.getElementById('load-sample-btn');
+    if (!btn) return;
+    btn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    btn.classList.add('flash');
+    setTimeout(() => btn.classList.remove('flash'), 1200);
+  }
+
   // Derive step state
   const hasCode = (submissionFiles ?? []).some(f => f.text?.trim());
   const stepDone1 = hasCode;
@@ -89,7 +97,14 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAna
             </p>
           </div>
         </div>
-        <div className="studio-new-here-card" aria-label="Quick start tip">
+        <div
+          className="studio-new-here-card"
+          role="button"
+          tabIndex={0}
+          aria-label="Scroll to Load sample button"
+          onClick={scrollToLoadSample}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); scrollToLoadSample(); } }}
+        >
           <div className="studio-new-here-icon" aria-hidden="true">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="9" />
