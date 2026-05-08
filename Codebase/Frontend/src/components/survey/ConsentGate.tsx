@@ -91,11 +91,10 @@ function ConsentIcon({
 
 export default function ConsentGate() {
   const { setConsentAccepted } = useAppStore();
-  const { signOut, user } = useAuth();
+  const { signOut } = useAuth();
   const [agree, setAgree] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const seatLabel = user?.username ? user.username.toUpperCase() : 'D8';
 
   async function onAccept(): Promise<void> {
     if (!agree || busy) return;
@@ -127,11 +126,10 @@ export default function ConsentGate() {
               <p className="consent-header__eyebrow">NeoTerritory Research Consent</p>
               <h2 id="consent-title">Informed Consent &amp; Data Privacy Notice</h2>
               <p className="consent-header__subtitle">
-                <span>Tester Seat {seatLabel}</span>
+                <span>Tester Seat</span>
                 <span aria-hidden="true">|</span>
                 <span>NeoTerritory DEVCON Luzon</span>
-                <span aria-hidden="true">|</span>
-                <span>Please read carefully before proceeding</span>
+                <span className="consent-header__subnote">Please read carefully before proceeding</span>
               </p>
             </div>
           </div>
