@@ -213,6 +213,9 @@ export default function MainLayout() {
     setReview(null);
   }
 
+  const isDeveloperEntryFlow =
+    typeof window !== 'undefined' && window.sessionStorage.getItem('nt-entry-flow') === 'developer';
+
   // Admins skip the research-participant gates entirely. Their place is the
   // /admin dashboard, not the studio. Send them there immediately.
   useEffect(() => {
@@ -226,18 +229,24 @@ export default function MainLayout() {
   // and pretest from the studio home. replaceState avoids back-button noise.
   if (token && user && typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const expected = !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
+    const expected = isDeveloperEntryFlow
+      ? '/studio'
+      : !consentAccepted
+        ? '/consent'
+        : !pretestSubmitted
+          ? '/pretest'
+          : '/studio';
     if (path !== expected && path !== '/admin.html') {
       window.history.replaceState(null, '', expected);
     }
   }
 
   // Gate: consent first (research participants only).
-  if (token && user && !consentAccepted) {
+  if (token && user && !isDeveloperEntryFlow && !consentAccepted) {
     return <ConsentGate />;
   }
   // Gate: pretest second (auto-skips when surveyQuestions.pretest is empty).
-  if (token && user && !pretestSubmitted) {
+  if (token && user && !isDeveloperEntryFlow && !pretestSubmitted) {
     return <PretestForm />;
   }
 
