@@ -16,6 +16,12 @@ interface MarketingShellProps {
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
 
+  // Marketing pages are permanently dark — force the attribute so light-mode
+  // CSS variables never bleed through even if the user toggled light in studio.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
+
   useEffect(() => {
     document.body.dataset.surface = surface;
     window.scrollTo({ top: 0, behavior: 'auto' });

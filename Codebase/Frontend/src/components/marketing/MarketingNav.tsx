@@ -1,5 +1,4 @@
 import { navigate, Surface } from '../../logic/router';
-import { useTheme } from '../../hooks/useTheme';
 
 interface MarketingNavProps {
   current: Surface;
@@ -12,7 +11,6 @@ const LINKS: Array<{ path: string; label: string; surface: Surface }> = [
 ];
 
 export default function MarketingNav({ current }: MarketingNavProps) {
-  const { theme, toggleTheme } = useTheme();
   return (
     <header className="nt-mkt-nav" role="banner">
       <a
@@ -43,25 +41,6 @@ export default function MarketingNav({ current }: MarketingNavProps) {
           </a>
         ))}
       </nav>
-      <button
-        className={`theme-switch theme-switch--${theme} nt-mkt-nav__theme-switch`}
-        type="button"
-        role="switch"
-        aria-checked={theme === 'light'}
-        onClick={toggleTheme}
-        title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-        aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      >
-        <span className="ts-track" aria-hidden="true">
-          <span className="ts-stars">
-            <span className="ts-star ts-s1" />
-            <span className="ts-star ts-s2" />
-            <span className="ts-star ts-s3" />
-            <span className="ts-star ts-s4" />
-          </span>
-          <span className="ts-thumb" />
-        </span>
-      </button>
       <a
         href="/choose"
         className="nt-mkt-nav__cta"
