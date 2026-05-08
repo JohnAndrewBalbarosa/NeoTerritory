@@ -262,7 +262,7 @@ export default function LoginOverlay() {
             exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
-            <h2><ShinyText text="Admin sign in" /></h2>
+            <h2>Admin sign in</h2>
             <p className="login-hint">Enter administrator credentials.</p>
             <label className="field">
               <span>Username</span>

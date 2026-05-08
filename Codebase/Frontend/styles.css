@@ -140,8 +140,8 @@ body.login-active{overflow:hidden;}
 .composer .form-row{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-bottom:12px;}
 .field{display:flex;flex-direction:column;gap:5px;}
 .field span{font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--ink-dim);}
-.field input[type="text"],.field input[type="file"]{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font:inherit;font-size:13px;background:var(--surface2);color:var(--ink);}
-.field input[type="text"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);}
+.field input[type="text"],.field input[type="password"],.field input[type="file"]{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font:inherit;font-size:13px;background:var(--surface2);color:var(--ink);}
+.field input[type="text"]:focus,.field input[type="password"]:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);}
 #code-input{width:100%;min-height:260px;padding:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);font-family:var(--code-font);font-size:12.5px;line-height:1.6;resize:vertical;color:var(--ink);}
 #code-input:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-glow);}
 
@@ -1144,6 +1144,7 @@ body::before {
 }
 
 .field input[type="text"],
+.field input[type="password"],
 .field input[type="file"],
 .file-slot-name,
 .file-slot-textarea,
@@ -1161,6 +1162,7 @@ body::before {
   color: var(--ink);
 }
 .field input[type="text"]:focus,
+.field input[type="password"]:focus,
 .file-slot-name:focus,
 .file-slot-textarea:focus,
 .program-stdin-textarea:focus,
