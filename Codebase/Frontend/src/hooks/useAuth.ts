@@ -23,6 +23,7 @@ export function useAuth() {
     void signOutAndRevoke();
     clearAuth();
     setStatus({ kind: 'idle', title: 'Signed out', detail: '' });
+    window.location.href = '/';
   }
 
   return { token, user, signIn, signOut, isLoggedIn: !!(token && user) };
