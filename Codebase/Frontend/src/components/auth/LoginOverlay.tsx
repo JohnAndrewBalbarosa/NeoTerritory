@@ -291,8 +291,7 @@ export default function LoginOverlay() {
             </button>
             {error && <p className="login-error">{error}</p>}
             <p className="login-toggle">
-              Tester instead?{' '}
-              <a className="link-btn" href="/login">Pick a seat</a>
+              <a className="link-btn" href="/choose">Go back to choose</a>
             </p>
           </motion.form>
         )}
