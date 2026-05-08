@@ -4,8 +4,6 @@ import { useAppStore } from '../../store/appState';
 import { useAuth } from '../../hooks/useAuth';
 import { navigate } from '../../logic/router';
 import AuroraBackground from '../marketing/effects/AuroraBackground';
-import ShinyText from '../marketing/effects/ShinyText';
-import TiltCard from '../marketing/effects/TiltCard';
 import {
   fetchTesterAccounts,
   claimSeat,
@@ -254,11 +252,11 @@ export default function LoginOverlay() {
             </section>
           </div>
           ) : (
-          <TiltCard className="login-card tester-chooser session-gateway" maxTilt={3} scale={1.002}>
+          <div className="login-card tester-chooser session-gateway">
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
               <p className="session-gateway__eyebrow">CodiNeo</p>
               <h2 id="session-gateway-heading">
-                <ShinyText text="Claim your session seat" />
+                Claim your session seat
               </h2>
               <p className="session-gateway__lede">
                 Choose an available seat to enter CodiNeo.
@@ -332,7 +330,7 @@ export default function LoginOverlay() {
                 <a className="link-btn" href="/app">Admin sign in</a>
               </p>
             </section>
-          </TiltCard>
+          </div>
           )}
           </motion.div>
         )}
