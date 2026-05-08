@@ -355,6 +355,26 @@ PatternTemplate template_from_json(const JsonValue& obj, const std::string& sour
             pattern.lexeme_identifiers.emplace(kv.first, std::move(lexemes));
         }
     }
+    if (const JsonValue* v = obj.find("signature_categories"); v && v->kind == JsonKind::Array)
+    {
+        for (const JsonValue& entry : v->array)
+        {
+            if (entry.kind == JsonKind::String)
+            {
+                pattern.signature_categories.push_back(entry.string);
+            }
+        }
+    }
+    if (const JsonValue* v = obj.find("negative_signature_categories"); v && v->kind == JsonKind::Array)
+    {
+        for (const JsonValue& entry : v->array)
+        {
+            if (entry.kind == JsonKind::String)
+            {
+                pattern.negative_signature_categories.push_back(entry.string);
+            }
+        }
+    }
     if (const JsonValue* v = obj.find("subclass_role"); v && v->kind == JsonKind::Object)
     {
         if (const JsonValue* req = v->find("required"); req && req->kind == JsonKind::Bool)
@@ -430,6 +450,62 @@ void load_one_file(const std::string& path, PatternCatalog& catalog)
 namespace
 {
 constexpr const char* kInheritanceMasterlistFilename = "inheritance_driven_patterns.json";
+constexpr const char* kLexemeCategoriesFilename     = "lexeme_categories.json";
+
+// Parse pattern_catalog/lexeme_categories.json into the catalog's
+// connotation dictionary. Schema: { "categories": { name: [lexemes...] } }.
+// Missing or malformed → empty map (ranker degrades to score=0 silently).
+void load_lexeme_categories(const std::string& path, PatternCatalog& catalog)
+{
+    const std::string text = read_file_contents(path);
+    if (text.empty())
+    {
+        catalog.load_diagnostics.push_back("lexeme_categories_missing:" + path);
+        return;
+    }
+    try
+    {
+        const JsonValue root = parse_root(text);
+        if (root.kind != JsonKind::Object) return;
+        const JsonValue* cats = root.find("categories");
+        if (!cats || cats->kind != JsonKind::Object) return;
+        for (const auto& kv : cats->object)
+        {
+            if (kv.second.kind != JsonKind::Array) continue;
+            std::vector<std::vector<std::string>> combos;
+            combos.reserve(kv.second.array.size());
+            for (const JsonValue& entry : kv.second.array)
+            {
+                if (entry.kind == JsonKind::String)
+                {
+                    // Single-token entry — only meaningful for stdlib API
+                    // symbols. The connotation rule rejects bare reserved
+                    // keywords/operators here at the schema level too:
+                    // each entry is its own combo, so a one-keyword
+                    // category becomes a one-element combo and the
+                    // ranker treats it identically to a multi-token combo
+                    // of length 1.
+                    combos.push_back({ entry.string });
+                }
+                else if (entry.kind == JsonKind::Array)
+                {
+                    std::vector<std::string> combo;
+                    combo.reserve(entry.array.size());
+                    for (const JsonValue& tok : entry.array)
+                    {
+                        if (tok.kind == JsonKind::String) combo.push_back(tok.string);
+                    }
+                    if (!combo.empty()) combos.push_back(std::move(combo));
+                }
+            }
+            catalog.lexeme_categories.emplace(kv.first, std::move(combos));
+        }
+    }
+    catch (const std::exception& ex)
+    {
+        catalog.load_diagnostics.push_back(std::string(ex.what()) + ":" + path);
+    }
+}
 
 // Parse the root inheritance_driven_patterns.json into the catalog's
 // family-keyed masterlist. Tolerates missing fields silently — the
@@ -509,11 +585,31 @@ PatternCatalog load_pattern_catalog(const std::string& catalog_directory)
             {
                 load_inheritance_masterlist(entry.path().string(), catalog);
             }
+            else if (entry.path().filename() == kLexemeCategoriesFilename)
+            {
+                load_lexeme_categories(entry.path().string(), catalog);
+            }
             // Other root-level JSON files are ignored — patterns must live
             // inside a family folder.
             continue;
         }
         if (depth >= 2) continue; // child catalogs handled by the matcher
+
+        // Sidecar documentation templates (e.g. singleton.fallback_doc.json)
+        // live alongside detection rules but carry no ordered_checks. They
+        // must NOT be loaded as detection patterns — doing so would emit a
+        // pattern with an empty check list, which the matcher treats as
+        // "always matches" and produces a universal false-positive tag for
+        // every class in the file.
+        {
+            const std::string fname = entry.path().filename().string();
+            const std::string suffix = ".fallback_doc.json";
+            if (fname.size() >= suffix.size() &&
+                fname.compare(fname.size() - suffix.size(), suffix.size(), suffix) == 0)
+            {
+                continue;
+            }
+        }
 
         load_one_file(entry.path().string(), catalog);
     }

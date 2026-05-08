@@ -20,10 +20,12 @@ source "$LIB/remote-build.sh"
 
 ASSUME_YES=0
 RESTART_ONLY=0
+CLEAN=0
 for arg in "$@"; do
   case "$arg" in
     -y|--yes) ASSUME_YES=1 ;;
     --restart-only) RESTART_ONLY=1 ;;  # skip ship+build, just bounce pm2 on existing artifacts
+    --clean|--from-scratch) CLEAN=1 ;;  # wipe remote app dir + caches before ship → true from-scratch rebuild
     --source) : ;;  # consumed elsewhere / informational
   esac
 done
@@ -55,6 +57,21 @@ if [ "$RESTART_ONLY" = "1" ]; then
   run_remote_restart_only "$REMOTE_APP_DIR"
   echo "Restart complete -> http://$AWS_HOST"
   exit 0
+fi
+
+if [ "$CLEAN" = "1" ]; then
+  echo "-- CLEAN MODE: wiping remote app dir + build caches for from-scratch rebuild --"
+  # Stop pm2 first so it isn't holding open file handles in dist/.
+  ssh $SSH_OPTS "$SSH_TARGET" "sudo pm2 delete neoterritory 2>/dev/null || true"
+  ssh $SSH_OPTS "$SSH_TARGET" "set -e; \
+    if [ -d '$REMOTE_APP_DIR' ]; then \
+      echo '   [clean] wiping $REMOTE_APP_DIR contents (node_modules, dist, build, .deploy-cache, source)'; \
+      sudo rm -rf '$REMOTE_APP_DIR'/Codebase '$REMOTE_APP_DIR'/scripts '$REMOTE_APP_DIR'/start.sh '$REMOTE_APP_DIR'/.deploy-cache; \
+      echo '   [clean] remote dir is now empty:'; \
+      ls -la '$REMOTE_APP_DIR' || true; \
+    else \
+      echo '   [clean] $REMOTE_APP_DIR did not exist — skipping wipe'; \
+    fi"
 fi
 
 ship_source       "$REMOTE_APP_DIR"

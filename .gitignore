@@ -151,11 +151,19 @@ Desktop.ini
 
 # Project-specific
 .github/
+!.github/
+.github/*
+!.github/workflows/
+!.github/workflows/*.yml
 launch.vs.json
 NeoTerritory.slnx
 Setup/Setup.vdproj
 Codebase/Backend/keys/jwt-private.pem
-/Codebase/Backend/src/db
+# Only ignore the SQLite file inside src/db, NOT the source code that
+# defines the schema. The original `/Codebase/Backend/src/db` rule
+# accidentally hid initDb.ts, etlSchema.ts, etc. from new commits.
+/Codebase/Backend/src/db/*.sqlite
+/Codebase/Backend/src/db/*.sqlite-journal
 
 # Test result artifacts (per-user analysis run outputs)
 /test/
@@ -165,3 +173,4 @@ Codebase/Backend/keys/jwt-private.pem
 /playwright-scratch/
 .claude/scheduled_tasks.lock
 node_modules.stale*/
+Codebase/Backend/.env

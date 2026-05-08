@@ -25,7 +25,18 @@
       "PowerShell(Stop-Process *)",
       "WebFetch(domain:devcon.ph)",
       "PowerShell(git add Codebase/Infrastructure/session-orchestration/docker/Dockerfile)",
-      "PowerShell(git add scripts/deploy-aws.sh)"
+      "PowerShell(git add scripts/deploy-aws.sh)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(wsl -- bash -c \"ls /mnt/c/Users/Drew/Desktop/NeoTerritory/Codebase/Microservice/pattern_catalog/_runtime/ 2>&1\")",
+      "PowerShell(wsl -- bash -c $script)",
+      "PowerShell(wsl -- bash -c \"cd /mnt/c/Users/Drew/Desktop/NeoTerritory/Codebase/Microservice/pattern_catalog/_runtime && sed 's/{{HEADER}}/test_user_class.h/g; s/{{CLASS_NAME}}/MySingleton/g' /mnt/c/Users/Drew/Desktop/NeoTerritory/Codebase/Microservice/pattern_catalog/creational/singleton.test.template.cpp > /tmp/driver_singleton.cpp && g++ -std=c++17 -O0 -g -I. /tmp/driver_singleton.cpp -o /tmp/unit_driver_singleton 2>&1 && echo 'Exit: 0' || echo 'Exit: non-zero'\")",
+      "PowerShell(wsl -- bash -c \"/tmp/unit_driver_singleton 2>&1; echo 'Exit: '$?\")",
+      "PowerShell(Start-Sleep -Seconds 3; wsl -- curl -s http://127.0.0.1:3001/api/health)",
+      "PowerShell(Start-Sleep -Seconds 5; wsl -- curl -s http://127.0.0.1:3001/api/health | wsl -- python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('binary:', d['microservice']['binaryPath']\\); print\\('binaryFound:', d['microservice']['binaryFound']\\); print\\('catalog:', d['microservice']['catalogPath']\\); print\\('catalogFound:', d['microservice']['catalogFound']\\); print\\('pid:', d['process']['pid']\\)\")",
+      "PowerShell(wsl -- touch /mnt/c/Users/Drew/Desktop/NeoTerritory/Codebase/Backend/src/services/healthMasterlist.ts /mnt/c/Users/Drew/Desktop/NeoTerritory/Codebase/Backend/src/services/classDeclarationAnalysisService.ts; Start-Sleep -Seconds 4; wsl -- curl -s http://127.0.0.1:3001/api/health)",
+      "PowerShell(wsl -- bash -c \"cd /mnt/c/Users/Drew/Desktop/NeoTerritory && bash scripts/deploy-aws.sh -y\" 2>&1)",
+      "PowerShell(wsl -- bash -c \"ls -la ~/.ssh/lightsail_neoterritory 2>&1; ssh -i ~/.ssh/lightsail_neoterritory -o StrictHostKeyChecking=accept-new -o ConnectTimeout=10 ubuntu@122.248.192.49 'echo OK' 2>&1\")",
+      "PowerShell(wsl -e bash -c \"docker ps -a --format '{{.Names}} {{.Status}}'\" 2>&1)"
     ]
   }
 }

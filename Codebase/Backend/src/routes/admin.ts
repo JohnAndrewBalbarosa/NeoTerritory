@@ -286,17 +286,62 @@ router.get('/stats/per-user-activity', (_req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 });
 
+// Phase 2 compound filters: tester, date range, online status, activity
+// categories. Compounded as AND with the existing username/event_type
+// filters. Categories mirror the frontend's categoryOf() — keep in sync.
+// Heartbeat grace mirrors auth controller's HEARTBEAT_GRACE_SECONDS (90s).
+function logCategorySql(cat: string): string {
+  switch (cat) {
+    case 'auth':
+      return "(l.event_type LIKE '%login%' OR l.event_type LIKE '%register%' OR l.event_type LIKE '%claim%' OR l.event_type LIKE '%logout%' OR l.event_type LIKE '%disconnect%')";
+    case 'analysis':
+      return "(l.event_type LIKE '%analy%' OR l.event_type LIKE '%save%' OR l.event_type LIKE '%upload%' OR l.event_type LIKE '%transform%' OR l.event_type LIKE '%manual_review%' OR l.event_type LIKE '%test%')";
+    case 'survey':
+      return "(l.event_type LIKE '%survey%' OR l.event_type LIKE '%consent%' OR l.event_type LIKE '%review%')";
+    case 'frontend':
+      return "(l.event_type LIKE 'frontend.%' AND l.event_type NOT LIKE '%fail%' AND l.event_type NOT LIKE '%error%')";
+    case 'errors':
+      return "(l.event_type LIKE '%error%' OR l.event_type LIKE '%fail%')";
+    default:
+      return '1=0'; // unknown category → no match
+  }
+}
+const LOG_HEARTBEAT_GRACE_SECONDS = 90;
+
 router.get('/logs', (req: Request, res: Response, next: NextFunction) => {
   try {
     const limit     = Math.min(Number(req.query.limit || 200), 500);
     const order     = req.query.order === 'asc' ? 'ASC' : 'DESC';
     const eventType = req.query.event_type ? String(req.query.event_type) : null;
     const username  = req.query.username   ? `%${String(req.query.username)}%` : null;
+    const testerStr = req.query.tester ? String(req.query.tester) : null;
+    const dateFrom  = req.query.date_from ? String(req.query.date_from) : null;
+    const dateTo    = req.query.date_to   ? String(req.query.date_to)   : null;
+    const onlineStr = req.query.online ? String(req.query.online) : null;
+    const categories = req.query.activity_categories
+      ? String(req.query.activity_categories).split(',').map(s => s.trim()).filter(Boolean)
+      : [];
 
     const conditions: string[] = [];
     const params: unknown[]    = [];
     if (eventType) { conditions.push('l.event_type = ?'); params.push(eventType); }
     if (username)  { conditions.push('u.username LIKE ?'); params.push(username); }
+    if (testerStr === 'true')  conditions.push("u.username LIKE 'Devcon%'");
+    if (testerStr === 'false') conditions.push("(u.username IS NULL OR u.username NOT LIKE 'Devcon%')");
+    if (dateFrom) { conditions.push('l.created_at >= ?'); params.push(dateFrom); }
+    if (dateTo)   { conditions.push('l.created_at <= ?'); params.push(dateTo); }
+    if (onlineStr === 'true') {
+      conditions.push("strftime('%s','now') - strftime('%s', u.last_active) < ?");
+      params.push(LOG_HEARTBEAT_GRACE_SECONDS);
+    }
+    if (onlineStr === 'false') {
+      conditions.push("(u.last_active IS NULL OR strftime('%s','now') - strftime('%s', u.last_active) >= ?)");
+      params.push(LOG_HEARTBEAT_GRACE_SECONDS);
+    }
+    if (categories.length > 0) {
+      const orParts = categories.map(c => logCategorySql(c));
+      conditions.push(`(${orParts.join(' OR ')})`);
+    }
     const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
     params.push(limit);
 
@@ -1002,7 +1047,7 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
     }
 
     const perPattern = new Map<string, { tp: number; fp: number; fn: number }>();
-    let totalTp = 0, totalFp = 0, totalFn = 0;
+    let totalTp = 0, totalFp = 0, totalFn = 0, totalTn = 0;
 
     function getOrAdd(key: string) {
       if (!perPattern.has(key)) perPattern.set(key, { tp: 0, fp: 0, fn: 0 });
@@ -1018,7 +1063,15 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       const detectedKeys = detectedAtLine.map(p => p.patternName || p.patternId || 'unknown');
 
       if (dec.chosen_kind === 'none') {
-        for (const k of detectedKeys) { getOrAdd(k).fp++; totalFp++; }
+        if (detectedKeys.length === 0) {
+          // True negative — user said "no pattern here" and the system also
+          // detected nothing. Tracked overall only; per-pattern TN is not
+          // meaningful (every line where neither side mentions pattern X is
+          // a TN for X, which collapses to "every line in the corpus").
+          totalTn++;
+        } else {
+          for (const k of detectedKeys) { getOrAdd(k).fp++; totalFp++; }
+        }
       } else if (dec.chosen_kind === 'pattern' && dec.chosen_pattern) {
         const correct = dec.chosen_pattern;
         if (detectedKeys.includes(correct)) {
@@ -1037,7 +1090,7 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       return { precision: Number(precision.toFixed(4)), recall: Number(recall.toFixed(4)), f1: Number(f.toFixed(4)), tp, fp, fn };
     }
 
-    const overall = f1(totalTp, totalFp, totalFn);
+    const overall = { ...f1(totalTp, totalFp, totalFn), tn: totalTn };
     const perPatternOut = [...perPattern.entries()].map(([pattern, s]) => ({
       pattern, ...f1(s.tp, s.fp, s.fn)
     })).sort((a, b) => b.f1 - a.f1);

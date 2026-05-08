@@ -3,6 +3,12 @@
   "pattern_family": "structural",
   "pattern_name": "Adapter",
   "enabled": true,
+  "signature_categories": [],
+  "negative_signature_categories": [
+    "ownership_handle",
+    "interface_polymorphism",
+    "access_control_caching"
+  ],
   "lexeme_identifiers": {
     "forwarding":           ["->", "."],
     "wrapped_member":       ["target", "wrappee", "adaptee", "adaptee_", "impl_",

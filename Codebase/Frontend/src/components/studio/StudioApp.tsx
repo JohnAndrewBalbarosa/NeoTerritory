@@ -1,8 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { fetchHealth, fetchRuns, fetchSample } from '../../api/client';
+import { navigate } from '../../logic/router';
 import LoginOverlay from '../auth/LoginOverlay';
 import MainLayout from '../layout/MainLayout';
+
+function getSafeReturnTarget(): string | null {
+  if (typeof window === 'undefined') return null;
+  const next = new URLSearchParams(window.location.search).get('next');
+  if (next === '/student-learning') return next;
+  return null;
+}
+
+const DEVELOPER_ENTRY_KEY = 'nt-entry-flow';
 
 export default function StudioApp() {
   const { token, user, setStatus, setMsStatus, setAiConfigured, resetSession } = useAppStore();
@@ -62,7 +72,12 @@ export default function StudioApp() {
 
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app'];
+    const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app', '/developer', '/student-studio'];
+    if (path === '/developer') {
+      window.sessionStorage.setItem(DEVELOPER_ENTRY_KEY, 'developer');
+    } else if (!isLoggedIn) {
+      window.sessionStorage.removeItem(DEVELOPER_ENTRY_KEY);
+    }
     if (!isLoggedIn) {
       // Logged-out visitors landing on consent/pretest/studio go through
       // the tester picker. /app stays at /app so admins can keep typing
@@ -71,7 +86,12 @@ export default function StudioApp() {
         window.history.replaceState(null, '', '/login');
       }
     } else if (SIGN_IN_PATHS.includes(path)) {
-      window.history.replaceState(null, '', '/studio');
+      const next = getSafeReturnTarget();
+      if (path === '/student-studio' && next) {
+        navigate(next);
+      } else {
+        window.history.replaceState(null, '', '/studio');
+      }
     }
   }
 

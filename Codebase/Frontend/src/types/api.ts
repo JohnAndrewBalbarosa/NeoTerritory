@@ -184,6 +184,22 @@ export interface AdminLogEntry {
   message: string;
 }
 
+// Compound filter state for the admin logs view. Empty/undefined fields
+// mean "do not filter on that dimension". Categories are AND'd with the
+// rest, OR'd within themselves.
+export type AdminLogCategory = 'auth' | 'analysis' | 'survey' | 'frontend' | 'errors';
+
+export interface AdminLogFilters {
+  username?:    string;
+  eventType?:   string;
+  tester?:      'tester' | 'non-tester' | 'any';
+  dateFrom?:    string;          // ISO date (YYYY-MM-DD or full timestamp)
+  dateTo?:      string;
+  online?:      'online' | 'offline' | 'any';
+  categories?:  AdminLogCategory[];
+  order?:       'asc' | 'desc';
+}
+
 export interface AdminReview {
   username?: string;
   scope: string;
@@ -236,6 +252,11 @@ export interface AnalysisRun {
   // Per-class user pattern resolutions. When set for a class, color rendering
   // and synthesized usage annotations prefer this over the heuristic verdict.
   classResolvedPatterns?: Record<string, string>;
+  // Per-class accumulated confirmed patterns after user resolution + hierarchy
+  // propagation. Populated by applyPatternTag whenever the user confirms a
+  // pattern via the picker. Multiple entries per class are possible when
+  // different hierarchy members contributed different patterns.
+  classChosenPatterns?: Record<string, string[]>;
   // Multi-file payload. Always non-empty for runs produced by /analyze; older
   // runs loaded from disk that predate multi-file get back-filled with a
   // single entry mirroring sourceName + sourceText.
@@ -361,8 +382,14 @@ export interface PatternF1 extends F1Score {
   pattern: string;
 }
 
+// Overall extends F1Score with TN (true negative). Per-pattern TN is
+// intentionally omitted — see D36 in DESIGN_DECISIONS for rationale.
+export interface F1Overall extends F1Score {
+  tn: number;
+}
+
 export interface F1Metrics {
-  overall:              F1Score;
+  overall:              F1Overall;
   perPattern:           PatternF1[];
   userAccuracyAvg:      number | null;
   likertF1Correlation:  number | null;

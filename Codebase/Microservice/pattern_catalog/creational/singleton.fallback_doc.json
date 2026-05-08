@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "creational.singleton",
+  "pattern_name": "Singleton",
+  "patternRoleByEvidence": {
+    "singleton_class":          "Singleton",
+    "static_instance_accessor": "Static instance holder",
+    "instance_accessor_method": "Instance accessor",
+    "explicit_copy_deletion":   "Copy/move suppression"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. A single shared instance is reached through a static accessor, and copy/move operations are suppressed so the uniqueness invariant cannot be broken by accident. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Singleton because {{className}} carries the three structural fingerprints together: a class scope (lines {{lineStart}}-{{lineEnd}}), a static accessor method that returns the shared instance, and explicit deletion of the copy/move operations. Without the deletions, a Singleton's uniqueness invariant is one accidental copy away from breaking, so this evidence is load-bearing.",
+  "lineExplanationTemplates": {
+    "singleton_class": [
+      { "linePicker": "by_evidence_kind", "note": "Singleton class boundary — every reference to this class in the rest of the codebase goes through the accessor below. Direct construction is intentionally not how callers reach this object." }
+    ],
+    "static_instance_accessor": [
+      { "linePicker": "by_evidence_kind", "note": "Static instance — ownership of the unique instance lives on the class itself, not on a caller. The lifetime is tied to the program, which is the trade-off Singleton accepts in exchange for global access." }
+    ],
+    "instance_accessor_method": [
+      { "linePicker": "by_evidence_kind", "note": "Accessor method — the only legal entry point to the instance. Hiding the constructor and exposing this method is what makes the uniqueness invariant enforceable." }
+    ],
+    "explicit_copy_deletion": [
+      { "linePicker": "all", "note": "Copy/move suppression — `= delete` here is not stylistic; it's the line that prevents `auto x = Singleton::instance();` from silently producing a second copy. The Singleton invariant is mechanical, not by convention." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Factory": "Factory hands out fresh products per call. {{className}} hands out the same instance every time and explicitly deletes copy/move (lines {{lineStart}}-{{lineEnd}}); the invariant is uniqueness, not selection.",
+    "Method Chaining": "Method Chaining is about ergonomic mutation of the same instance through chained calls. Singleton is about *reaching* a single instance at all; chaining is unrelated."
+  }
+}

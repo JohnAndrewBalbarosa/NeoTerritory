@@ -726,6 +726,7 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     let primaryName = (mainCppMatch || intMainMatch || fileList[0]).name;
 
     for (const f of fileList) {
+      console.log(`[NT] analyzing  file=${f.name}`);
       const r: AnalysisResult = analyzeClassDeclaration({ sourceName: f.name, code: f.code });
       const stamped = (r.detectedPatterns || []).map(p => ({
         ...p,

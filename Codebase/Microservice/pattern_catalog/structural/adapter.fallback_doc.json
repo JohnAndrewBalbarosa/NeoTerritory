@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.adapter",
+  "pattern_name": "Adapter",
+  "patternRoleByEvidence": {
+    "adapter_class":          "Adapter",
+    "adapter_wrapped_target": "Adaptee",
+    "adapter_forwarding_op":  "Adapter operation",
+    "adapter_forwarded_call": "Adaptee invocation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It exposes the interface the caller expects and translates each call into one against the wrapped adaptee. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Adapter because {{className}} holds an instance of a different type and re-exposes its functionality through a different (caller-friendly) interface. The wrapper here exists for *compatibility* — to make an existing class usable where a different signature is expected — not to extend or replace its behavior.",
+  "lineExplanationTemplates": {
+    "adapter_class": [
+      { "linePicker": "by_evidence_kind", "note": "Adapter class — owns the mapping between two interfaces. Callers see only the target interface; the adaptee underneath is hidden." }
+    ],
+    "adapter_wrapped_target": [
+      { "linePicker": "by_evidence_kind", "note": "Adaptee field — the original class the adapter is translating for. The adapter never owns or modifies this class; it only routes calls into it." }
+    ],
+    "adapter_forwarding_op": [
+      { "linePicker": "by_evidence_kind", "note": "Adapter operation — what the *caller* sees. The signature here is shaped to match what the calling code expects, even when the adaptee underneath uses a different one." }
+    ],
+    "adapter_forwarded_call": [
+      { "linePicker": "all", "note": "Forwarded call — translates the caller's request into the adaptee's vocabulary. The translation may be a direct delegation or include argument reshaping; either way, no algorithmic change happens here." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Decorator": "Decorator wraps an object that already satisfies the target interface, in order to add behavior. Adapter wraps an object whose interface is *different* from the target; the goal is compatibility, not augmentation.",
+    "Proxy": "Proxy wraps an object behind the *same* interface to control access (lazy, remote, protected). Adapter wraps it behind a *different* interface; the visible signature changes, which is the Adapter signal."
+  }
+}

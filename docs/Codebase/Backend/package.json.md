@@ -42,7 +42,7 @@ Read this file as: Declares backend scripts and runtime dependencies.
 
 Where it sits in the run: This artifact participates in the repository flow according to the surrounding module or toolchain that loads it.
 
-Names worth recognizing while reading: name, version, description, main, type, and scripts.
+Names worth recognizing while reading: name, version, description, main, type, and scripts. The `dev` script uses `tsx watch server.ts`; the root launchers rely on that command for backend hot reload during `start.ps1` and `start.sh`.
 
 ## Documentation Note
 - This markdown file is part of the generated docs/Codebase mirror.

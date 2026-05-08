@@ -11,7 +11,7 @@
 
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { colorFor, canonicalPatternName } from '../../lib/patterns';
+import { colorFor, canonicalPatternName } from '../../logic/patterns';
 
 interface ClassRootPickerProps {
   className: string;

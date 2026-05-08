@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation, canonicalPatternName, isRealPattern } from '../../logic/patterns';
 
 interface LinePopoverProps {
   line: number;

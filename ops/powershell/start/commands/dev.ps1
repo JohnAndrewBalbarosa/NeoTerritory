@@ -3,7 +3,8 @@
 function Invoke-Dev {
   . (Join-Path $Root 'scripts\verify-requirements.ps1')
   $reqProfile = if ($SkipPod) { 'dev' } else { 'pods' }
-  try { $script:report = Test-Requirements -Profile $reqProfile -AutoInstall }
+  $softDocker = (-not $SkipPod)
+  try { $script:report = Test-Requirements -Profile $reqProfile -AutoInstall -Soft:$softDocker }
   catch { Write-Err "Aborting -- requirements not met: $($_.Exception.Message)"; exit 1 }
 
   $bind   = Resolve-BindHost

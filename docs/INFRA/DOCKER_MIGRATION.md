@@ -1,7 +1,7 @@
 # Docker pod isolation — current status and migration plan
 
 **Owner:** Drew
-**Status:** Local Docker disabled on Drew's Windows host (`TEST_RUNNER_USE_DOCKER=0` is the safe default for now). The runner falls back to the local sandbox; functionality is unaffected.
+**Status:** Production-default ON. The runtime image bakes `ENABLE_TEST_RUNNER=1`, `TEST_RUNNER_USE_DOCKER=1`, and a firejail `TEST_RUNNER_SANDBOX`. `scripts/rebuild.sh` and the deploy launchers bind-mount `/var/run/docker.sock` so the in-container CLI can spawn sibling pods. If pods can't reach the host daemon (e.g. socket missing, daemon down), the runner falls back to the local firejail sandbox automatically.
 **Intent:** Once the testing phase ends, move the Docker pod surface off the dev workstation onto a dedicated machine and re-enable per-tester containers.
 
 ---
@@ -12,7 +12,7 @@ Verified attempts:
 
 1. `wsl -l -v` from PowerShell + Bash both returned `The system cannot find the path specified.` — no WSL distro is registered on this host. Can't reach a Linux side from this session.
 2. Docker Desktop is not currently running on the Windows host either, so `docker info` fails the daemon probe (`scripts/verify-requirements.ps1` reports `daemon_down`).
-3. The status card in the studio (Docker service: row) reads "disabled (env)" because `TEST_RUNNER_USE_DOCKER=1` would just route to a non-responsive daemon.
+3. The status card previously read "disabled (env)" because `TEST_RUNNER_USE_DOCKER` was unset. As of the production-default flip, it is now baked to `1` in the image; if the host daemon isn't reachable the row will read "disabled (start Docker Desktop)" or "disabled (docker not on PATH)" instead — and the runner falls back to the local firejail sandbox.
 
 Net effect: the runner uses the local sandbox path inside `testRunnerService.runPhase`. Microservice (annotated source) is unaffected because it never touched Docker — it spawns the local C++ build executable directly.
 

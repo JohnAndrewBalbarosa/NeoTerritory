@@ -1,6 +1,6 @@
 
 import { Annotation } from '../../types/api';
-import { colorFor, patternFromAnnotation } from '../../lib/patterns';
+import { colorFor, patternFromAnnotation } from '../../logic/patterns';
 
 interface CommentsPaneProps {
   annotations: Annotation[];

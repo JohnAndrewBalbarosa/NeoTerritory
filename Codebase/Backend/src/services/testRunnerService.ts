@@ -270,19 +270,30 @@ function introspectHeaderPath(): string | null {
   return fs.existsSync(candidate) ? candidate : null;
 }
 
+// Templates splice these names into BOTH `nt::has_<name><T>` (the SFINAE
+// probe) AND `obj.<name>()` (the runtime call). Anything that isn't a plain
+// C++ identifier (e.g. "~Foo" for destructors, "operator()", "MyClass" for
+// a constructor reused as a method name) would either fail to declare a
+// trait or splice invalid syntax into the driver. Sanitize once here so
+// every template in the catalog inherits the safety net.
+function safeMember(name: string | undefined, fallback: string): string {
+  if (!name) return fallback;
+  return /^[A-Za-z_][A-Za-z0-9_]*$/.test(name) ? name : fallback;
+}
+
 function fillTemplate(tpl: string, input: RunInputs): string {
   return tpl
     .replace(/{{HEADER}}/g, 'user_class.h')
     .replace(/{{CLASS_NAME}}/g, input.className)
-    .replace(/{{FORWARD_METHOD}}/g, input.forwardMethod || 'execute')
-    .replace(/{{FACTORY_FN}}/g, input.factoryFn || 'create')
-    .replace(/{{TERMINATOR}}/g, input.terminator || 'build')
-    .replace(/{{INSTANCE_ACCESSOR}}/g, input.instanceAccessor || 'instance')
-    .replace(/{{COMPONENT_BASE}}/g, input.componentBase || 'Component')
-    .replace(/{{REAL_BASE}}/g, input.realBase || 'Subject')
-    .replace(/{{TARGET_BASE}}/g, input.targetBase || 'Target')
-    .replace(/{{REQUEST_METHOD}}/g, input.forwardMethod || 'request')
-    .replace(/{{TARGET_METHOD}}/g, input.targetMethod || 'execute');
+    .replace(/{{FORWARD_METHOD}}/g, safeMember(input.forwardMethod, 'execute'))
+    .replace(/{{FACTORY_FN}}/g, safeMember(input.factoryFn, 'create'))
+    .replace(/{{TERMINATOR}}/g, safeMember(input.terminator, 'build'))
+    .replace(/{{INSTANCE_ACCESSOR}}/g, safeMember(input.instanceAccessor, 'instance'))
+    .replace(/{{COMPONENT_BASE}}/g, safeMember(input.componentBase, 'Component'))
+    .replace(/{{REAL_BASE}}/g, safeMember(input.realBase, 'Subject'))
+    .replace(/{{TARGET_BASE}}/g, safeMember(input.targetBase, 'Target'))
+    .replace(/{{REQUEST_METHOD}}/g, safeMember(input.forwardMethod, 'request'))
+    .replace(/{{TARGET_METHOD}}/g, safeMember(input.targetMethod, 'execute'));
 }
 
 interface PhaseInputs {

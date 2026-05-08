@@ -5,8 +5,10 @@ invoke_dev() {
   # shellcheck source=../../verify-requirements.sh
   source "$ROOT_DIR/scripts/verify-requirements.sh"
   local req_profile='pods'
+  local req_soft=''
   [[ "$SKIP_POD" -eq 1 ]] && req_profile='dev'
-  if ! verify_requirements "$req_profile" "" "auto"; then
+  [[ "$SKIP_POD" -eq 0 ]] && req_soft='soft'
+  if ! verify_requirements "$req_profile" "$req_soft" "auto"; then
     err 'Aborting — requirements not met.'; exit 1
   fi
 
@@ -19,11 +21,23 @@ invoke_dev() {
     warn '  Run .\start.ps1 -Lan from Windows PowerShell instead, or configure netsh portproxy.'
   fi
 
+  # Rebuilds are opt-in via --rebuild=<list>. Run them BEFORE the verify
+  # step so a fresh binary/dist is what gets verified.
+  if [[ -n "$REBUILD_LIST" ]]; then
+    step "Running requested rebuilds: $REBUILD_LIST"
+    run_rebuild_list "$REBUILD_LIST"
+  fi
+
   ensure_pod_image
   ensure_node_modules "$BACKEND_DIR" 'Backend'
   [[ "$BACKEND_ONLY" -eq 0 ]] && ensure_node_modules "$FRONTEND_DIR" 'Frontend'
   write_dev_env "$BACKEND_PORT" "$FRONTEND_PORT" "$advert"
-  build_microservice "$REBUILD"
+
+  # Verify-only by default. The microservice binary must already exist —
+  # start.sh no longer auto-builds C++. If it's missing, fail fast with the
+  # exact rebuild commands instead of silently triggering a long cmake.
+  step 'Verifying microservice binary'
+  if ! verify_microservice_binary; then exit 1; fi
 
   if [[ "$PROD" -eq 1 && "$SKIP_BUILD" -eq 0 ]]; then
     step 'Building Backend (npm run build)'
@@ -35,6 +49,14 @@ invoke_dev() {
       ok 'Frontend build complete.'
     fi
   fi
+
+  # Probe (or auto-free) the dev ports before binding. Without this, a
+  # stale tsx-watch / Vite from a prior session — or the long-running
+  # neoterritory Docker container that publishes :3001 — silently
+  # collides with the new backend, leading to confusing health-check
+  # failures or two listeners on the same port. See lib/ports.sh.
+  ensure_port_free "$BACKEND_PORT"  backend
+  [[ "$BACKEND_ONLY" -eq 0 ]] && ensure_port_free "$FRONTEND_PORT" vite
 
   start_backend "$bind" "$advert"
   start_vite    "$bind"

@@ -9,8 +9,8 @@
 // visually decomposed; segments are display-only.
 
 import { useState, useRef } from 'react';
-import type { ClassTreeNode, LineNode } from '../../lib/classTreeModel';
-import { colorFor } from '../../lib/patterns';
+import type { ClassTreeNode, LineNode } from '../../logic/classTreeModel';
+import { colorFor } from '../../logic/patterns';
 import ClassRootPicker from './ClassRootPicker';
 
 interface ClassTreeViewProps {
@@ -125,16 +125,25 @@ function ClassRootRow({
 }: ClassRootRowProps): JSX.Element {
   const isReview = node.status === 'review';
   const isResolved = node.status === 'resolved';
-  const badgeColor = node.mainDesignPattern ? colorFor(node.mainDesignPattern) : null;
+
+  // When the user has confirmed patterns via the picker (isTagged), render
+  // the full chosen-patterns stack. Otherwise fall back to the single
+  // analysis-derived badge (existing behaviour for clean/resolved classes
+  // that have not gone through the propagation flow yet).
+  const showChosenBadges = node.isTagged && node.chosenPatterns.length > 0;
+  const fallbackBadgeColor = (!showChosenBadges && node.mainDesignPattern)
+    ? colorFor(node.mainDesignPattern)
+    : null;
 
   return (
     <div
-      className={`class-tree-root class-tree-root--${node.status}`}
+      className={`class-tree-root class-tree-root--${node.status}${node.isTagged ? ' class-tree-root--tagged' : ''}`}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '0.5rem',
         padding: '0.25rem 0',
+        flexWrap: 'wrap',
       }}
     >
       <button
@@ -159,7 +168,7 @@ function ClassRootRow({
           (parent: {node.parent})
         </span>
       )}
-      {isReview ? (
+      {isReview && (
         <button
           ref={rootBtnRef}
           type="button"
@@ -177,23 +186,49 @@ function ClassRootRow({
         >
           (review — {node.classPatterns.length} patterns)
         </button>
-      ) : (
-        badgeColor && (
-          <span
-            className="class-tree-badge"
-            style={{
-              border: `1px solid ${badgeColor.border}`,
-              background: badgeColor.bg,
-              color: badgeColor.text,
-              padding: '0.1rem 0.45rem',
-              borderRadius: 4,
-              fontSize: '0.85em',
-            }}
-          >
-            {node.mainDesignPattern}
-            {isResolved ? ' ✓' : ''}
-          </span>
-        )
+      )}
+      {!isReview && showChosenBadges && (
+        // Multi-pattern badge stack for confirmed (propagated) patterns
+        <span
+          className="class-tree-chosen-badges"
+          style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}
+        >
+          {node.chosenPatterns.map((p) => {
+            const c = colorFor(p);
+            return c ? (
+              <span
+                key={p}
+                className="class-tree-badge class-tree-badge--chosen"
+                style={{
+                  border: `1px solid ${c.border}`,
+                  background: c.bg,
+                  color: c.text,
+                  padding: '0.1rem 0.45rem',
+                  borderRadius: 4,
+                  fontSize: '0.85em',
+                }}
+              >
+                {p}
+              </span>
+            ) : null;
+          })}
+        </span>
+      )}
+      {!isReview && !showChosenBadges && fallbackBadgeColor && (
+        <span
+          className="class-tree-badge"
+          style={{
+            border: `1px solid ${fallbackBadgeColor.border}`,
+            background: fallbackBadgeColor.bg,
+            color: fallbackBadgeColor.text,
+            padding: '0.1rem 0.45rem',
+            borderRadius: 4,
+            fontSize: '0.85em',
+          }}
+        >
+          {node.mainDesignPattern}
+          {isResolved ? ' ✓' : ''}
+        </span>
       )}
     </div>
   );

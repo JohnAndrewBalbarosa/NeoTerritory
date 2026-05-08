@@ -294,6 +294,14 @@ export function analyzeClassDeclaration(input: { sourceName: string; code: strin
     unitTestTargets:      tag.unit_test_targets || []
   }));
 
+  if (detectedPatterns.length === 0) {
+    console.log(`[NT] detected  (none)  file=${sourceName}`);
+  } else {
+    for (const p of detectedPatterns) {
+      console.log(`[NT] detected  pattern=${p.patternName}  class=${p.className}  file=${p.fileName || sourceName}`);
+    }
+  }
+
   return {
     stage: 'output',
     diagnostics: report.diagnostics || [],

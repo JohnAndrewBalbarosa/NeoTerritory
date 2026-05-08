@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.proxy",
+  "pattern_name": "Proxy",
+  "patternRoleByEvidence": {
+    "proxy_class":          "Proxy",
+    "proxy_real_subject":   "Real subject",
+    "proxy_forwarding_op":  "Proxy operation",
+    "proxy_forwarded_call": "Real subject invocation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It exposes the same interface as the real subject and forwards calls to it, with room to gate, defer, or replace the call. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Proxy because {{className}} stands in for the real subject behind the same interface — callers can substitute one for the other. The structural fingerprint is the matching interface plus a held real-subject reference; the *intent* is access control, lazy initialization, or remote stand-in rather than behavior extension.",
+  "lineExplanationTemplates": {
+    "proxy_class": [
+      { "linePicker": "by_evidence_kind", "note": "Proxy class — drop-in replacement for the real subject from the caller's perspective. That signature equivalence is what makes the proxy invisible at the call site." }
+    ],
+    "proxy_real_subject": [
+      { "linePicker": "by_evidence_kind", "note": "Real subject reference — the proxy may construct it lazily, hold it forever, or replace it on demand. The choice of *when* to materialize this reference is usually where Proxy's value lives." }
+    ],
+    "proxy_forwarding_op": [
+      { "linePicker": "by_evidence_kind", "note": "Proxy operation — same signature as the real subject's. Anything the proxy adds (caching, permission checks, remote call, logging) wraps the forwarding line below." }
+    ],
+    "proxy_forwarded_call": [
+      { "linePicker": "all", "note": "Real subject invocation — the actual work happens here, not in the proxy. If the proxy short-circuits (e.g. returns cached data without forwarding), that decision is the proxy's job, not the real subject's." }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Decorator": "Decorator and Proxy share the wrap-with-same-interface shape. The difference is intent: Decorator *adds behavior* on top of the wrapped call; Proxy *controls access* to the wrapped call. {{className}} reads as the latter — gating or substituting rather than augmenting.",
+    "Adapter": "Adapter exposes a *different* interface than the wrapped class. Proxy preserves the interface so it can be substituted transparently; that signature equivalence at lines {{lineStart}}-{{lineEnd}} is the Proxy signal."
+  }
+}

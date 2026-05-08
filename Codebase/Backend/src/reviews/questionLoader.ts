@@ -5,15 +5,14 @@ import { XMLParser } from 'fast-xml-parser';
 function resolveXmlPath(): string {
   const candidates = [
     path.join(__dirname, 'questions.xml'),
-    path.join(__dirname, '..', '..', '..', 'src', 'reviews', 'questions.xml'),
-    path.join(process.cwd(), 'src', 'reviews', 'questions.xml'),
+    path.resolve(__dirname, '../../../src/reviews/questions.xml'),
+    path.resolve(__dirname, '../../src/reviews/questions.xml'),
+    path.resolve(process.cwd(), 'src/reviews/questions.xml')
   ];
-
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) return candidate;
   }
-
-  return candidates[0];
+  return candidates[0]!;
 }
 
 const XML_PATH = resolveXmlPath();

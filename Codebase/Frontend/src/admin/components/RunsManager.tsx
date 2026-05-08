@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   fetchAdminRuns, deleteAdminRun, AdminRunRow, apiFetch
 } from '../../api/client';
-import { fmtDate } from '../../lib/patterns';
+import { fmtDate } from '../../logic/patterns';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 interface AdminRunDetail {

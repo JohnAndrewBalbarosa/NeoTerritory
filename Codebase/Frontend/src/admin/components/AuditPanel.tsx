@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchAdminAudit, AdminAuditEntry } from '../../api/client';
-import { fmtDate } from '../../lib/patterns';
+import { fmtDate } from '../../logic/patterns';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 // Append-only feed of destructive admin actions (run deletions, log purges).

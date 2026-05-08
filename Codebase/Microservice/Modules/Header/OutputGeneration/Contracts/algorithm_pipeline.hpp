@@ -47,6 +47,9 @@ struct DesignPatternTag
     std::string                       parent_class_name;
     std::vector<DocumentationTarget>  documentation_targets;
     std::vector<UnitTestTarget>       unit_test_targets;
+    // True when this class has more than one surviving pattern candidate.
+    // See DESIGN_DECISIONS.md D38.
+    bool                              ambiguous      = false;
 };
 
 struct PipelineArtifacts
