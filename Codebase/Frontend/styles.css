@@ -187,10 +187,16 @@ body.login-active{overflow:hidden;}
 
 /* === RUN LIST === */
 .run-list{display:flex;flex-direction:column;gap:5px;}
-.run-item{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 12px;transition:border-color 0.15s;}
+.run-list-wrap{display:flex;flex-direction:column;gap:14px;margin-top:8px;}
+.run-list-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;}
+.run-list-head h3{margin:0;line-height:1.1;}
+.run-list{display:flex;flex-direction:column;gap:12px;}
+.run-item{display:flex;justify-content:space-between;align-items:center;gap:16px;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;transition:border-color 0.15s;}
 .run-item:hover{border-color:var(--border-bright);}
+.run-item > div{min-width:0;display:flex;flex-direction:column;gap:6px;}
 .run-item strong{font-family:var(--code-font);font-size:12px;color:var(--ink);}
 .run-item p{margin:0;font-size:11px;color:var(--ink-soft);}
+.run-item .ghost-btn{flex-shrink:0;}
 .empty-state{padding:16px;text-align:center;color:var(--ink-dim);font-size:12px;border:1px dashed var(--border);border-radius:var(--radius-md);}
 
 /* RESPONSIVE */
@@ -750,7 +756,8 @@ body.login-active{overflow:hidden;}
 .program-stdin-row label small{color:var(--ink-soft);font-weight:400;margin-left:4px;}
 .program-stdin-textarea{width:100%;min-height:64px;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);font:inherit;font-family:var(--code-font);font-size:12.5px;resize:vertical;}
 .program-stdin-textarea:focus{outline:2px solid var(--accent);outline-offset:1px;}
-.form-actions{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin:20px 0 26px;}
+.form-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-start;gap:14px;margin:24px 0 34px;}
+.form-actions > *{margin:0;}
 
 /* === Annotated tab loading skeleton (waiting on microservice tags) === */
 .annotated-loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:48px 24px;text-align:center;color:var(--ink-soft);}
