@@ -29,6 +29,10 @@ flowchart TD
 ```
 
 ## Child Folders By Logic
+### Continuous Integration
+These child folders continue the subsystem by covering developer-only and CI-only verification contracts, including Step 1 -> Step 2 orchestration checks and production no-leak assertions.
+- ContinuousIntegration/ : GitHub Actions workflow blueprint for developer diagnostics and production isolation checks.
+
 ### Session Orchestration
 These child folders continue the subsystem by covering Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders.
 - session-orchestration/ : Session bootstrap logic that prepares Docker, Minikube, runtime images, templates, and runtime folders.
