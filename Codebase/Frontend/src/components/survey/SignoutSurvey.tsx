@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store/appState';
-import { signoutStars, openEnded } from '../../data/surveyQuestions';
+import { signoutStars } from '../../data/surveyQuestions';
 import { submitSessionSurvey } from '../../api/client';
 import StarRating from '../ui/StarRating';
 
@@ -12,7 +12,7 @@ interface SignoutSurveyProps {
 export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyProps) {
   const { user } = useAppStore();
   const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [open, setOpen] = useState<Record<string, string>>({});
+  const [open] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,18 +60,7 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
               />
             </div>
           ))}
-          {openEnded.signout.map((q) => (
-            <div key={q.id} className="survey-question">
-              <p className="question-text">
-                <span className="question-id">{q.id}</span> {q.text}
-              </p>
-              <textarea
-                value={open[q.id] || ''}
-                onChange={(e) => setOpen((o) => ({ ...o, [q.id]: e.target.value }))}
-                rows={3}
-              />
-            </div>
-          ))}
+          {/* open-ended textarea questions hidden from visible UI; open state still submitted */}
           {error && <div className="error-banner" role="alert">{error}</div>}
         </div>
 
