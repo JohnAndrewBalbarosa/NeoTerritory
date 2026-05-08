@@ -172,3 +172,38 @@ jobs:
         run: |
           test "$DEV_TEST_MODE" = "false"
           test "$NODE_ENV" = "production"
+
+  deploy-aws:
+    needs:
+      - build-and-test
+      - production-no-leak-check
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && secrets.AWS_SSH_KEY_PEM != '' && secrets.AWS_DEPLOY_ENV != ''
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.ssh"
+          printf '%s\n' "${{ secrets.AWS_SSH_KEY_PEM }}" > "$HOME/.ssh/neoterritory.pem"
+          chmod 600 "$HOME/.ssh/neoterritory.pem"
+
+      - name: Prepare deploy environment file
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s\n' "${{ secrets.AWS_DEPLOY_ENV }}" > scripts/.env.deploy
+          {
+            echo ""
+            echo "AWS_SSH_KEY=$HOME/.ssh/neoterritory.pem"
+          } >> scripts/.env.deploy
+
+      - name: Deploy to AWS (source mode)
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/deploy-aws.sh
+          ./scripts/deploy-aws.sh --source --yes
