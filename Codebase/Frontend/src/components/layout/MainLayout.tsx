@@ -58,8 +58,10 @@ function formatDisplayName(username: string): string {
   return `Tester ${n}`;
 }
 
-function isTesterUser(username: string): boolean {
-  return /^devcon\d+$/i.test(username);
+function isTesterUser(_username: string): boolean {
+  if (typeof window === 'undefined') return true;
+  const flow = window.sessionStorage.getItem('nt-entry-flow');
+  return flow !== 'developer' && flow !== 'student';
 }
 
 function flashLine(line: number) {
@@ -232,6 +234,9 @@ export default function MainLayout() {
 
   const isDeveloperEntryFlow =
     typeof window !== 'undefined' && window.sessionStorage.getItem('nt-entry-flow') === 'developer';
+  const isStudentEntryFlow =
+    typeof window !== 'undefined' && window.sessionStorage.getItem('nt-entry-flow') === 'student';
+  const isResearchFlow = !isDeveloperEntryFlow && !isStudentEntryFlow;
 
   // Admins skip the research-participant gates entirely. Their place is the
   // /admin dashboard, not the studio. Send them there immediately.
@@ -278,7 +283,7 @@ export default function MainLayout() {
   // and pretest from the studio home. replaceState avoids back-button noise.
   if (token && user && typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const expected = isDeveloperEntryFlow
+    const expected = !isResearchFlow
       ? '/studio'
       : !consentAccepted
         ? '/consent'
@@ -290,12 +295,12 @@ export default function MainLayout() {
     }
   }
 
-  // Gate: consent first (research participants only).
-  if (token && user && !isDeveloperEntryFlow && !consentAccepted) {
+  // Gate: consent first (tester/research participants only).
+  if (token && user && isResearchFlow && !consentAccepted) {
     return <ConsentGate />;
   }
   // Gate: pretest second (auto-skips when surveyQuestions.pretest is empty).
-  if (token && user && !isDeveloperEntryFlow && !pretestSubmitted) {
+  if (token && user && isResearchFlow && !pretestSubmitted) {
     return <PretestForm />;
   }
 
