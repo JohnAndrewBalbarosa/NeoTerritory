@@ -1659,7 +1659,7 @@ body::before {
 .consent-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   justify-content: center;
   padding: 14px 26px 18px;
   margin-top: 0 !important;
@@ -1671,14 +1671,14 @@ body::before {
   min-height: 44px;
 }
 .consent-actions__decline {
-  flex: 0 0 148px;
-  min-width: 148px;
+  flex: 0 0 136px;
+  min-width: 136px;
   border-radius: 14px;
   border-color: rgba(0, 209, 216, 0.26);
 }
 .consent-actions__continue {
-  flex: 0 1 392px;
-  width: min(100%, 392px);
+  flex: 0 0 360px;
+  width: min(100%, 360px);
   min-width: 0;
   margin-left: 0;
   justify-content: center;
