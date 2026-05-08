@@ -1573,10 +1573,10 @@ body::before {
 .consent-highlight {
   font-weight: 800;
 }
-.consent-highlight--green { color: #aef533; }
-.consent-highlight--cyan { color: #18e1ff; }
-.consent-highlight--purple { color: #b56cff; }
-.consent-highlight--yellow { color: #ffd34d; }
+.consent-highlight--green,
+.consent-highlight--cyan,
+.consent-highlight--purple,
+.consent-highlight--yellow { color: #18e1ff; }
 .consent-task-list {
   list-style: none;
   display: grid;
@@ -1659,12 +1659,13 @@ body::before {
 .consent-actions {
   display: flex;
   align-items: center;
-  gap: 10px;
-  justify-content: center;
-  padding: 14px 26px 18px;
+  gap: 12px;
+  justify-content: center !important;
+  padding: 14px 32px 18px !important;
   margin-top: 0 !important;
   border-top: 1px solid rgba(0, 209, 216, 0.14);
-  background: rgba(12, 18, 30, 0.92);
+  background: rgba(12, 18, 30, 0.92) !important;
+  position: static !important;
 }
 .consent-actions__decline,
 .consent-actions__continue {
