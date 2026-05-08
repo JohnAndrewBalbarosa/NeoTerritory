@@ -6,18 +6,11 @@ function resolveXmlPath(): string {
   const candidates = [
     path.join(__dirname, 'questions.xml'),
     path.resolve(__dirname, '../../../src/reviews/questions.xml'),
-<<<<<<< HEAD
     path.resolve(__dirname, '../../src/reviews/questions.xml'),
     path.resolve(process.cwd(), 'src/reviews/questions.xml')
   ];
   for (const candidate of candidates) {
     if (fs.existsSync(candidate)) return candidate;
-=======
-    path.resolve(__dirname, '../../src/reviews/questions.xml')
-  ];
-  for (const p of candidates) {
-    if (fs.existsSync(p)) return p;
->>>>>>> main
   }
   return candidates[0]!;
 }

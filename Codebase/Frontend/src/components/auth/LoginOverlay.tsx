@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { navigate } from '../../logic/router';
 import AuroraBackground from '../marketing/effects/AuroraBackground';
 import ShinyText from '../marketing/effects/ShinyText';
+import TiltCard from '../marketing/effects/TiltCard';
 import {
   fetchTesterAccounts,
   claimSeat,
@@ -169,19 +170,12 @@ export default function LoginOverlay() {
             exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
-<<<<<<< HEAD
-          <div className="login-card tester-chooser session-gateway">
-            <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
-              <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
-              <h2 id="session-gateway-heading">Claim your session seat</h2>
-=======
           <TiltCard className="login-card tester-chooser session-gateway" maxTilt={3} scale={1.002}>
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
               <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
               <h2 id="session-gateway-heading">
                 <ShinyText text="Claim your session seat" />
               </h2>
->>>>>>> main
               <p className="session-gateway__lede">
                 Choose an available seat to enter NeoTerritory Studio.
               </p>
@@ -254,11 +248,7 @@ export default function LoginOverlay() {
                 <a className="link-btn" href="/app">Admin sign in</a>
               </p>
             </section>
-<<<<<<< HEAD
-          </div>
-=======
           </TiltCard>
->>>>>>> main
           </motion.div>
         )}
 
