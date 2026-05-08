@@ -63,6 +63,10 @@ These documents explain the local implementation by covering Defines the shell d
 These documents explain route-level public-site surfaces without changing backend or analyzer ownership.
 - LearningPage.tsx.md : Documents the `/learn` overview card grid, including the UI-only removal of the public `Idiom` card and the responsive centering rules for the remaining three families.
 
+### Participant Gates
+These documents explain participant-facing gated route surfaces that must preserve the existing backend and session flow.
+- ConsentGate.tsx.md : Documents the `/consent` redesign as a UI-only expansion from a small modal into a full informed-consent and data-privacy notice experience.
+
 ## Reading Hint
 - Read the shell first, then the API boundary, then the pages in user workflow order. Any analysis result shown in this folder should trace back to backend or microservice output, not frontend-only inference.
 
