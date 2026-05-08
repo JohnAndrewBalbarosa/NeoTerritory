@@ -87,9 +87,9 @@ export default function MainLayout() {
   useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
   const { theme, toggleTheme } = useTheme();
   const {
-    status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
+    user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, aiStatus, aiConfigured, setStatus,
+    setAiStatus, setStatus,
     currentRun, gdbAllPassedForRun
   } = useAppStore();
 
@@ -113,18 +113,6 @@ export default function MainLayout() {
     return undefined;
   }
 
-  const aiChipStatus = !aiConfigured ? 'offline'
-    : aiStatus === 'pending'  ? 'working'
-    : aiStatus === 'failed'   ? 'error'
-    : aiStatus === 'disabled' ? 'offline'
-    : 'ready';
-
-  const aiChipLabel = !aiConfigured  ? 'not configured'
-    : aiStatus === 'pending'  ? 'working…'
-    : aiStatus === 'failed'   ? 'failed'
-    : aiStatus === 'disabled' ? 'disabled'
-    : aiStatus === 'ready'    ? 'done'
-    : 'ready';
   const { signOut } = useAuth();
 
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
@@ -252,58 +240,38 @@ export default function MainLayout() {
   return (
     <div className="shell">
       <header className="topbar">
-        <div className="brand">
-          <p className="eyebrow">NeoTerritory Studio</p>
-          <h1>Pattern detection & annotation</h1>
-          <p className="lede">
-            Paste C++ source or upload a file. The microservice detects design patterns
-            and the studio shows comments side-by-side with the lines they reference.
-          </p>
+        <div className="topbar-brand">
+          <span className="topbar-brand__dot" aria-hidden="true" />
+          <span className="topbar-brand__name">NeoTerritory Studio</span>
         </div>
-        <div id="status-card" className="status-card" data-kind={status.kind}>
-          <span className="status-label">Backend</span>
-          <strong id="status-title">{status.title}</strong>
-          <span id="status-detail">{status.detail}</span>
-          <div id="ms-row" className="ms-row" data-state={msState}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">Microservice:</span>
-            <strong id="ms-status">{msLabel}</strong>
-          </div>
-          <div id="docker-row" className="ms-row" data-state={dockerState}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">Docker service:</span>
-            <strong id="docker-status">{dockerLabel}</strong>
-          </div>
-          <div id="ai-row" className="ai-row" data-status={aiChipStatus}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">AI:</span>
-            <strong id="ai-status-label">{aiChipLabel}</strong>
-          </div>
-          <div id="user-row" className="user-row">
-            <span id="user-label">{user?.username ?? ''}</span>
-            <button
-              className={`theme-switch theme-switch--${theme}`}
-              type="button"
-              role="switch"
-              aria-checked={theme === 'light'}
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              <span className="ts-track" aria-hidden="true">
-                <span className="ts-stars">
-                  <span className="ts-star ts-s1" />
-                  <span className="ts-star ts-s2" />
-                  <span className="ts-star ts-s3" />
-                  <span className="ts-star ts-s4" />
-                </span>
-                <span className="ts-thumb" />
+        <div className="topbar-actions">
+          {user?.username && (
+            <span className="topbar-user-chip" aria-label="Signed in as">
+              {user.username}
+            </span>
+          )}
+          <button
+            className={`theme-switch theme-switch--${theme}`}
+            type="button"
+            role="switch"
+            aria-checked={theme === 'light'}
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            <span className="ts-track" aria-hidden="true">
+              <span className="ts-stars">
+                <span className="ts-star ts-s1" />
+                <span className="ts-star ts-s2" />
+                <span className="ts-star ts-s3" />
+                <span className="ts-star ts-s4" />
               </span>
-            </button>
-            <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
-              Sign out
-            </button>
-          </div>
+              <span className="ts-thumb" />
+            </span>
+          </button>
+          <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
+            Sign out
+          </button>
         </div>
       </header>
 
