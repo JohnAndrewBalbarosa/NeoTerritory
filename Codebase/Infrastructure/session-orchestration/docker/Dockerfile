@@ -55,14 +55,23 @@ FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production
 ENV PORT=3001
+# Tester seat seeding — Devcon1..MAX_TEST_USERS rows are inserted on boot
+# so the LoginOverlay seat picker is populated. Remove for true production.
+ENV SEED_TEST_USERS=1
+ENV MAX_TEST_USERS=20
 
 # better-sqlite3 ships prebuilt binaries via prebuild-install for linux-x64
 # and linux-arm64; if the prebuild fetch fails, npm falls back to
 # node-gyp compile, which requires python3 + make + g++. Install them so
 # `npm ci` succeeds on any Lightsail / EC2 architecture.
+#
+# Also install firejail (local sandbox fallback) and docker.io (CLI only —
+# the actual daemon is reached via the host's /var/run/docker.sock mounted
+# into this container by scripts/rebuild.sh and the deploy launchers).
+# Both are required for the production-default test-runner config below.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-         python3 make g++ ca-certificates \
+         python3 make g++ ca-certificates firejail docker.io \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -97,6 +106,17 @@ COPY Codebase/Microservice/samples                            ./Codebase/Microse
 # Default env: backend resolves the binary + catalog from these.
 ENV NEOTERRITORY_BIN=/app/Codebase/Microservice/build/NeoTerritory
 ENV NEOTERRITORY_CATALOG=/app/Codebase/Microservice/pattern_catalog
+
+# Test runner — DEFAULT ON. Production refuses to autoconfigure (see
+# Codebase/Backend/src/services/testRunnerService.ts:119), so the three
+# vars below must be set explicitly. Pod mode (TEST_RUNNER_USE_DOCKER=1)
+# spawns sibling Docker pods via the host daemon — requires the host's
+# /var/run/docker.sock to be bind-mounted into this container at run time
+# (scripts/rebuild.sh and the deploy launchers do this). When pods aren't
+# reachable, the runner falls back to the local firejail sandbox.
+ENV ENABLE_TEST_RUNNER=1
+ENV TEST_RUNNER_USE_DOCKER=1
+ENV TEST_RUNNER_SANDBOX="firejail --quiet --net=none --noprofile --rlimit-as=268435456"
 
 EXPOSE 3001
 

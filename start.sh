@@ -5,7 +5,7 @@
 # See docs/Codebase/DESIGN_DECISIONS.md (D28).
 #
 # Usage:
-#   ./start.sh                                 # dev (default)
+#   ./start.sh                                 # verify + run (no rebuild)
 #   ./start.sh --local                         # Local computer deployment (dev)
 #   ./start.sh --aws                           # AWS Lightsail deployment only
 #   ./start.sh --both                          # Both local and AWS deployment
@@ -19,6 +19,28 @@
 #   ./start.sh browser --lan                   # clean Chromium
 #   ./start.sh test --users 5                  # k8s multi-user sim
 #   ./start.sh deploy --source                 # AWS ship-to-cloud (was deploy-aws.sh)
+#
+# Rebuilds are opt-in via --rebuild=<list>. Components: microservice,
+# frontend, backend, docker (or `all`). Each maps to ops/bash/rebuild/<name>.sh
+# and can also be invoked directly without going through start.sh.
+#
+#   ./start.sh --rebuild=microservice          # rebuild C++ binary, then run
+#   ./start.sh --rebuild=docker                # rebuild image + restart, then run
+#   ./start.sh --rebuild=frontend,backend      # rebuild host bundles, then run
+#   ./start.sh --rebuild=all                   # rebuild every layer, then run
+#
+# Port kill switch — free :BACKEND_PORT / :FRONTEND_PORT before binding.
+# Without a flag, start.sh only WARNS when the port is held; it never kills.
+#
+#   ./start.sh --local --free-ports            # auto-stop our own holders
+#                                              #   (neoterritory* containers,
+#                                              #    user-owned tsx/vite/node)
+#   ./start.sh --local --free-ports=force      # also kill foreign holders
+#
+# Legacy passthrough (delegates to scripts/rebuild.sh, supports --skip-* too):
+#   ./start.sh rebuild
+#   ./start.sh rebuild --skip-microservice
+#   ./start.sh rebuild --mode-a                # rebuild then hot-reload
 
 set -euo pipefail
 
@@ -26,7 +48,7 @@ HERE="$(cd "$(dirname "$0")" && pwd)"
 LIB="$HERE/ops/bash/start/lib"
 CMD="$HERE/ops/bash/start/commands"
 
-print_help() { sed -n '2,21p' "$0"; }
+print_help() { sed -n '2,44p' "$0"; }
 
 # shellcheck source=ops/bash/start/lib/env.sh
 source "$LIB/env.sh"
@@ -36,6 +58,10 @@ source "$LIB/output.sh"
 source "$LIB/host.sh"
 # shellcheck source=ops/bash/start/lib/build.sh
 source "$LIB/build.sh"
+# shellcheck source=ops/bash/start/lib/rebuild.sh
+source "$LIB/rebuild.sh"
+# shellcheck source=ops/bash/start/lib/ports.sh
+source "$LIB/ports.sh"
 # shellcheck source=ops/bash/start/lib/args.sh
 source "$LIB/args.sh"
 
@@ -51,6 +77,14 @@ source "$CMD/browser.sh"
 source "$CMD/test.sh"
 # shellcheck source=ops/bash/start/commands/deploy.sh
 source "$CMD/deploy.sh"
+
+# 'rebuild' bypasses the start-args parser entirely — its flags
+# (--skip-microservice, --skip-frontend, --skip-backend, --skip-docker,
+# --mode-a) are owned by scripts/rebuild.sh and must pass through unparsed.
+if [[ "${1:-}" == "rebuild" ]]; then
+  shift
+  exec "$HERE/scripts/rebuild.sh" "$@"
+fi
 
 init_arg_defaults
 parse_args "$@"

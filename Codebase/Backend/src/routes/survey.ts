@@ -63,7 +63,14 @@ router.post('/run/:runId', jwtAuth, validateBody(runFeedbackSchema), (req: Reque
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    const runId = String(req.params.runId).slice(0, 128);
+    // run_id column is now INTEGER + FK to analysis_runs(id). Coerce the
+    // path param accordingly; reject non-numeric so we never insert junk
+    // that the FK would reject silently on an older driver.
+    const runIdNum = Number(req.params.runId);
+    if (!Number.isFinite(runIdNum) || !Number.isInteger(runIdNum) || runIdNum <= 0) {
+      res.status(400).json({ error: 'Invalid runId' });
+      return;
+    }
     const { ratings, openEnded } = req.body as {
       ratings: Record<string, number>;
       openEnded: Record<string, string>;
@@ -71,14 +78,14 @@ router.post('/run/:runId', jwtAuth, validateBody(runFeedbackSchema), (req: Reque
     const rfInfo = db.prepare(
       `INSERT INTO run_feedback (run_id, user_id, ratings_json, open_json, submitted_at)
        VALUES (?, ?, ?, ?, datetime('now'))`
-    ).run(runId, req.user.id, JSON.stringify(ratings), JSON.stringify(openEnded));
+    ).run(runIdNum, req.user.id, JSON.stringify(ratings), JSON.stringify(openEnded));
     mirrorRow('run_feedback', {
       id: Number(rfInfo.lastInsertRowid),
-      run_id: runId, user_id: req.user.id,
+      run_id: runIdNum, user_id: req.user.id,
       ratings, open: openEnded,
       submitted_at: new Date().toISOString(),
     });
-    logEvent(req.user.id, 'survey_run', `runId=${runId}`);
+    logEvent(req.user.id, 'survey_run', `runId=${runIdNum}`);
     res.status(201).json({ ok: true });
   } catch (err) {
     next(err);

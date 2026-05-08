@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore } from '../store/appState';
 import { useTheme } from '../hooks/useTheme';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
@@ -11,7 +10,7 @@ import UserTable from './components/UserTable';
 import PerUserActivity from './components/PerUserActivity';
 import LogsView from './components/LogsView';
 import SurveyStats from './components/SurveyStats';
-import { fetchAdminReviews } from '../api/client';
+import { fetchAdminReviews, markAdminRefresh } from '../api/client';
 import { AdminReview } from '../types/api';
 import { useAdminUsers } from './hooks/useAdminUsers';
 import { isAuthError } from './lib/silenceAuthErrors';
@@ -89,6 +88,10 @@ export default function AdminApp() {
 
   function onLogout() { clearAuth(); window.location.href = '/'; }
   function onRefresh() {
+    // Tag the upcoming admin refresh batch so the backend's
+    // adminRefreshLimiter can hard-cap explicit refreshes (12/min/user).
+    // Background polling never sets this flag, so it stays unaffected.
+    markAdminRefresh(2000);
     setRefreshKey(k => k + 1);
     refreshAdminUsers();
   }
@@ -145,47 +148,44 @@ export default function AdminApp() {
         ))}
       </nav>
 
+      {/*
+       * Tabs are rendered once on AdminApp mount and kept in the DOM. Switching
+       * tabs only toggles `hidden`, so each tab's `useEffect(() => fetch(), [])`
+       * runs exactly once per refresh epoch. The top-right `Refresh` button is
+       * the only re-fetch trigger: bumping `refreshKey` remounts <main>, which
+       * forces every tab to re-run its initial fetch in lockstep. This stops
+       * the per-switch network spam without lifting state into a context.
+       */}
       <main className="admin-main" key={refreshKey}>
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={activeTab}
-            // Opacity-only — see MainLayout note. `filter`/`transform`
-            // both create a containing block for fixed descendants
-            // (modals, pinned popovers, etc.).
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {activeTab === 'runs'       && <RunsTab />}
-            {activeTab === 'complexity' && <ComplexityTab />}
-            {activeTab === 'users'      && (
-              <>
-                <section className="admin-section">
-                  <h2>Users</h2>
-                  <UserTable />
-                </section>
-                <section className="admin-section">
-                  <h2>Per-user activity</h2>
-                  <PerUserActivity />
-                </section>
-              </>
-            )}
-            {activeTab === 'reviews' && (
-              <>
-                <section className="admin-section">
-                  <h2>Reviews</h2>
-                  <ReviewsPanel />
-                </section>
-                <section className="admin-section">
-                  <h2>Survey responses</h2>
-                  <SurveyStats />
-                </section>
-              </>
-            )}
-            {activeTab === 'logs' && <LogsView />}
-          </motion.div>
-        </AnimatePresence>
+        <div hidden={activeTab !== 'runs'}>
+          <RunsTab />
+        </div>
+        <div hidden={activeTab !== 'complexity'}>
+          <ComplexityTab />
+        </div>
+        <div hidden={activeTab !== 'users'}>
+          <section className="admin-section">
+            <h2>Users</h2>
+            <UserTable />
+          </section>
+          <section className="admin-section">
+            <h2>Per-user activity</h2>
+            <PerUserActivity />
+          </section>
+        </div>
+        <div hidden={activeTab !== 'reviews'}>
+          <section className="admin-section">
+            <h2>Reviews</h2>
+            <ReviewsPanel />
+          </section>
+          <section className="admin-section">
+            <h2>Survey responses</h2>
+            <SurveyStats />
+          </section>
+        </div>
+        <div hidden={activeTab !== 'logs'}>
+          <LogsView />
+        </div>
       </main>
     </div>
   );

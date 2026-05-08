@@ -1,5 +1,12 @@
 // Builder — flexible test driver.
-// Substitutions: {{HEADER}}, {{CLASS_NAME}}, {{TERMINATOR}}
+// Substitutions: {{HEADER}}, {{CLASS_NAME}}
+//
+// We deliberately do NOT splice {{TERMINATOR}} into nt::has_* / b.* below.
+// The analyzer can hand back any method name (e.g. "assemble"); probing
+// nt::has_<that-name> blows up when we never declared it, and declaring it
+// via NT_DECLARE_METHOD_PROBE collides with the canonical five probes
+// (redefinition of struct has_build / has_finalize / ...). The canonical
+// fallback chain below already covers every Builder shape we care about.
 
 #include "{{HEADER}}"
 #include "introspect.hpp"
@@ -20,12 +27,7 @@ static int run_tests() {
             "Builder is default-constructible (a fresh builder can be created).");
         T b;
         bool exercised = false;
-        if constexpr (nt::has_{{TERMINATOR}}<T>::value) {
-            (void)(b.{{TERMINATOR}}());
-            nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
-                "Detected terminator method '{{TERMINATOR}}' callable with no arguments.");
-            exercised = true;
-        } else if constexpr (nt::has_build<T>::value) {
+        if constexpr (nt::has_build<T>::value) {
             (void)(b.build());
             nt::emit_criterion("creational.builder", "{{CLASS_NAME}}", "pass",
                 "Builder exposes build() — the canonical terminator.");

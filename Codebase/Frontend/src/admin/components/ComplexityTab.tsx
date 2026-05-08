@@ -159,6 +159,7 @@ export default function ComplexityTab() {
                   <th>TP</th>
                   <th>FP</th>
                   <th>FN</th>
+                  <th title="True negatives — user said 'no pattern here' AND the system also detected nothing. Overall only; per-pattern TN is not meaningful (see DESIGN_DECISIONS D36).">TN</th>
                 </tr>
               </thead>
               <tbody>
@@ -170,6 +171,7 @@ export default function ComplexityTab() {
                   <td>{f1.overall.tp}</td>
                   <td>{f1.overall.fp}</td>
                   <td>{f1.overall.fn}</td>
+                  <td>{f1.overall.tn}</td>
                 </tr>
                 {f1.perPattern.map(p => (
                   <tr key={p.pattern}>
@@ -180,6 +182,7 @@ export default function ComplexityTab() {
                     <td>{p.tp}</td>
                     <td>{p.fp}</td>
                     <td>{p.fn}</td>
+                    <td title="Per-pattern TN intentionally omitted — see DESIGN_DECISIONS D36">—</td>
                   </tr>
                 ))}
               </tbody>

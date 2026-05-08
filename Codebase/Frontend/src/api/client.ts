@@ -1,6 +1,6 @@
 import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
-  ReviewSchema, AdminUser, AdminLogEntry, AdminReview, AdminOverview,
+  ReviewSchema, AdminUser, AdminLogEntry, AdminLogFilters, AdminReview, AdminOverview,
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
   SurveySummary, ComplexityData, F1Metrics
 } from '../types/api';
@@ -9,6 +9,18 @@ const TOKEN_KEY = 'nt_token';
 
 function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY);
+}
+
+// Transient flag set by the admin dashboard's "Refresh" button. While true,
+// outgoing /api/admin/* requests get tagged with X-Admin-Refresh: 1 so the
+// backend can apply a tighter rate limiter (server.ts adminRefreshLimiter).
+// The flag auto-clears so background polling never accidentally inherits it.
+let adminRefreshFlag = false;
+let adminRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+export function markAdminRefresh(holdMs = 2000): void {
+  adminRefreshFlag = true;
+  if (adminRefreshTimer) clearTimeout(adminRefreshTimer);
+  adminRefreshTimer = setTimeout(() => { adminRefreshFlag = false; }, holdMs);
 }
 
 export async function apiFetch<T>(url: string, options: RequestInit = {}, timeoutMs = 30000): Promise<T> {
@@ -26,6 +38,9 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}, timeou
     Accept: 'application/json',
     ...(isForm ? {} : { 'Content-Type': 'application/json' }),
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    ...(adminRefreshFlag && url.startsWith('/api/admin')
+      ? { 'X-Admin-Refresh': '1' }
+      : {}),
     ...(options.headers as Record<string, string> || {})
   };
 
@@ -359,12 +374,21 @@ export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
 }
 export async function fetchAdminLogs(
   limit = 200,
-  opts?: { eventType?: string; username?: string; order?: 'asc' | 'desc' }
+  filters?: AdminLogFilters
 ): Promise<{ logs: AdminLogEntry[] }> {
   const params = new URLSearchParams({ limit: String(limit) });
-  if (opts?.eventType) params.set('event_type', opts.eventType);
-  if (opts?.username)  params.set('username',   opts.username);
-  if (opts?.order)     params.set('order',       opts.order);
+  if (filters?.eventType) params.set('event_type', filters.eventType);
+  if (filters?.username)  params.set('username',   filters.username);
+  if (filters?.order)     params.set('order',       filters.order);
+  if (filters?.tester === 'tester')      params.set('tester', 'true');
+  if (filters?.tester === 'non-tester')  params.set('tester', 'false');
+  if (filters?.dateFrom)  params.set('date_from',  filters.dateFrom);
+  if (filters?.dateTo)    params.set('date_to',    filters.dateTo);
+  if (filters?.online === 'online')   params.set('online', 'true');
+  if (filters?.online === 'offline')  params.set('online', 'false');
+  if (filters?.categories && filters.categories.length > 0) {
+    params.set('activity_categories', filters.categories.join(','));
+  }
   return apiFetch<{ logs: AdminLogEntry[] }>(`/api/admin/logs?${params}`);
 }
 export interface AdminRunRow {

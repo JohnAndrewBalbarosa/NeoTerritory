@@ -129,6 +129,13 @@ export interface TaggedClassEntry {
     declaration: number[];   // lines inside the class scope that carry a tag (1+)
     usage: number[];         // usage lines outside the scope (0+)
   };
+  // User-confirmed patterns after picker resolution + hierarchy propagation.
+  // Populated by applyPatternTag; multiple entries possible when the class
+  // participates in patterns confirmed at different hierarchy nodes.
+  chosenPatterns: string[];
+  // True when chosenPatterns.length > 0. Quick guard for renderers that
+  // want to skip unconfirmed classes during color/application passes.
+  isTagged: boolean;
 }
 
 export interface AnnotatedModel {
@@ -273,6 +280,16 @@ function buildInScopePatterns(
   };
 
   // Pass A — pattern documentation targets.
+  //
+  // Attribution rules, in order:
+  //   1. If the detected pattern carries an explicit `className`, trust it.
+  //      The matcher already decided which class owns the pattern; line-
+  //      range containment is not used to cross-pollinate other classes.
+  //      This is the load-bearing gate: without it, the LAST class in a
+  //      source file (whose `endLine` reaches end-of-file) swallows every
+  //      pattern docTarget that lands in `main()` or other free functions.
+  //   2. If `className` is absent (older runs / matchers that don't tag),
+  //      fall back to the legacy line-range containment heuristic.
   for (const p of run.detectedPatterns || []) {
     const targetLines = (p.documentationTargets || [])
       .map((t) => t.line)
@@ -280,45 +297,52 @@ function buildInScopePatterns(
     if (targetLines.length === 0) continue;
     if (!isRealPattern(p.patternId)) continue;
     const canon = canonicalPatternName(p.patternId);
+    if (p.className) {
+      // Trust the matcher's class tag — single attribution, no leakage.
+      add(p.className, canon);
+      continue;
+    }
     for (const [name, loc] of classLocations.entries()) {
       const hits = targetLines.some((l) => l >= loc.line && l <= loc.endLine);
       if (hits) add(name, canon);
     }
   }
 
-  // Pass B — annotation lines.
+  // Pass B — annotation lines. Same className-first rule as Pass A.
   for (const ann of annotations) {
     const line = typeof ann.line === 'number' ? ann.line : null;
     const key = ann.patternKey;
     if (!line || !key || !isRealPattern(key)) continue;
     const canon = canonicalPatternName(key);
+    if (ann.className) {
+      add(ann.className, canon);
+      continue;
+    }
     for (const [name, loc] of classLocations.entries()) {
       if (line >= loc.line && line <= loc.endLine) add(name, canon);
     }
   }
 
-  // Pass C — usage-binding lines, gated to tagged classes only (the binder
-  // emits bindings for every class declared in source, but only tagged
-  // classes can legitimately accrete in-scope patterns).
-  const usageBindings = run.classUsageBindings || {};
-  for (const [name, list] of Object.entries(usageBindings)) {
-    if (!taggedClassNames.has(name)) continue;
-    for (const b of list || []) {
-      const line = typeof b?.line === 'number' ? b.line : null;
-      if (!line) continue;
-      for (const p of run.detectedPatterns || []) {
-        const hit = (p.documentationTargets || []).some((t) => t.line === line);
-        if (hit && isRealPattern(p.patternId)) {
-          add(name, canonicalPatternName(p.patternId));
-        }
-      }
-      for (const ann of annotations) {
-        if (ann.line === line && ann.patternKey && isRealPattern(ann.patternKey)) {
-          add(name, canonicalPatternName(ann.patternKey));
-        }
-      }
-    }
-  }
+  // (Removed) Pass C — usage-binding cross-match.
+  //
+  // The previous Pass C iterated `classUsageBindings` and, for each
+  // binding line, attributed every detectedPattern whose docTarget shared
+  // that line to the bound class. That formulation is structurally
+  // unsound: usage bindings live at *call sites* (e.g. `factory.make()`
+  // inside `main()`), and several unrelated patterns commonly emit
+  // docTargets on the same call-site line. The result was that any class
+  // referenced from `main()` accreted the union of every pattern detected
+  // anywhere in `main()`, producing the same 9-candidate list for
+  // ConfigSingleton, Vehicle, ShapeFactory, QueryBuilder, FluentLogger,
+  // Repository, CachedRepository, and PlainHolder in `all_patterns.cpp`.
+  //
+  // Direct attribution via `directCandidates` (built from
+  // `p.className`) plus the in-body docTarget/annotation passes above
+  // already cover every legitimate case. Pass C had no formulation that
+  // didn't either (a) duplicate directCandidates, or (b) re-introduce the
+  // same cross-pollination. Deleted intentionally — do not restore
+  // without a concrete repro that directCandidates + Pass A/B can't
+  // satisfy.
   return inScope;
 }
 
@@ -347,10 +371,21 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
   // Distinct from inScopePatterns: this ignores body/scope leakage and
   // counts only patterns the matcher attached to the class HEAD.
   const directCandidates = new Map<string, Set<string>>();
+  // Class → canonical pattern names from entries that DID NOT come from
+  // parent cascade (parentClassName empty). Needed for case (e): a child
+  // can have its own Strategy detection separate from an inherited
+  // StrategyConcrete from the parent route. Without this, subtracting
+  // propagated tags from directCandidates loses the own one because
+  // they collapse to the same canonical bucket.
+  const ownDirectCandidates = new Map<string, Set<string>>();
   for (const p of detected) {
     if (!p.className || !isRealPattern(p.patternId)) continue;
     if (!directCandidates.has(p.className)) directCandidates.set(p.className, new Set());
     directCandidates.get(p.className)!.add(canonicalPatternName(p.patternId));
+    if (!p.parentClassName) {
+      if (!ownDirectCandidates.has(p.className)) ownDirectCandidates.set(p.className, new Set());
+      ownDirectCandidates.get(p.className)!.add(canonicalPatternName(p.patternId));
+    }
   }
 
   // Subclass propagation map: child class → first parent tag that
@@ -383,6 +418,10 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     input.classResolvedPatternsOverride
     ?? run.classResolvedPatterns
     ?? {};
+
+  // Per-class confirmed patterns after propagation. Populated externally by
+  // applyPatternTag; may be empty for classes the user has not yet tagged.
+  const classChosenPatterns: Record<string, string[]> = run.classChosenPatterns ?? {};
 
   // Build per-class status. Non-propagated classes classify normally on
   // their full candidate set. Propagated subclasses are placeholders here
@@ -464,19 +503,51 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     }
 
     if (propagatingPatterns.has(parentEffective)) {
+      const parentCanonical = canonicalPatternName(parentEffective);
+      const childPriorPick  = resolvedTable[node.className];
+      const ownCanonicals   = ownDirectCandidates.get(node.className) ?? new Set<string>();
+
+      // Case (a): user already picked something for this subclass
+      // BEFORE parent decided. Respect — never overwrite. Even if the
+      // pick is canonically equal to parent's, we still preserve the
+      // user's explicit decision sa node.resolved.
+      if (childPriorPick) {
+        const priorCanonical = canonicalPatternName(childPriorPick);
+        if (priorCanonical !== parentCanonical) {
+          // User chose differently → standalone pick stands.
+          // Candidates show own_patterns only (no parent infection).
+          node.resolved = childPriorPick;
+          const ownList = Array.from(ownCanonicals);
+          node.candidates = ownList.length > 0 ? ownList : [childPriorPick];
+          node.status = node.candidates.length > 1 ? 'ambiguous_resolved' : 'unambiguous';
+          return;
+        }
+        // Aligned with parent canonically — fall through to (b)/(c)
+      }
+
+      // Case (b)/(e): subclass already has a canonical-equivalent own
+      // detection (e.g. StrategyConcrete or own Strategy) → no infection
+      // needed. Candidates collapse to parentEffective so the UI badges
+      // it the same as the parent's pick.
+      if (ownCanonicals.has(parentCanonical)) {
+        node.candidates = [parentEffective];
+        node.status = 'unambiguous';
+        if (childPriorPick) node.resolved = childPriorPick;
+        return;
+      }
+
+      // Case (c): empty-canvas → strict-follow-parent infection.
       node.candidates = [parentEffective];
       node.status = 'unambiguous';
       node.resolved = undefined;
       return;
     }
 
-    // Non-propagating parent pick → remove the propagated tag from
-    // this child. Count only what the matcher TAGGED on the child
-    // (directCandidates) — scope-leaked patterns are noise, not tags.
-    const propagatedTags = propagatedPatternsByChild.get(node.className) ?? new Set<string>();
-    const childTags = new Set<string>(directCandidates.get(node.className) ?? new Set<string>());
-    for (const t of propagatedTags) childTags.delete(t);
-
+    // Non-propagating parent pick (case d/f) → strip the propagated
+    // tag from this child. Use ownDirectCandidates so that own
+    // canonical-equivalent matches survive (case e: child kept its
+    // OWN Strategy even though parent picked Singleton).
+    const childTags  = new Set<string>(ownDirectCandidates.get(node.className) ?? new Set<string>());
     const remainingList = Array.from(childTags);
     node.candidates = remainingList;
 
@@ -702,6 +773,7 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
     if (decl.length === 0) continue; // honour the "1+ declaration lines" rule
     const subs = Array.from(subclassesByParent.get(className) ?? []);
     const parent = propagatedSubclassParent.get(className) ?? null;
+    const chosenForClass = (classChosenPatterns[className] ?? []).slice();
     originalMasterlist.set(className, Object.freeze({
       className,
       patterns: Object.freeze(patterns.slice()) as string[],
@@ -711,6 +783,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
         declaration: Object.freeze(decl) as number[],
         usage: Object.freeze(usageLinesFor(className)) as number[],
       }) as TaggedClassEntry['taggedLines'],
+      chosenPatterns: Object.freeze(chosenForClass) as string[],
+      isTagged: chosenForClass.length > 0,
     }) as TaggedClassEntry);
   }
 
@@ -751,6 +825,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
           declaration: originalEntry.taggedLines.declaration.slice(),
           usage: originalEntry.taggedLines.usage.slice(),
         },
+        chosenPatterns: originalEntry.chosenPatterns.slice(),
+        isTagged: originalEntry.isTagged,
       });
       continue;
     }
@@ -797,6 +873,7 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
 
     if (patterns.length === 0) continue;
 
+    const workingChosen = (classChosenPatterns[className] ?? []).slice();
     workingMasterlist.set(className, {
       className,
       patterns,
@@ -806,6 +883,8 @@ export function deriveAnnotatedModel(input: DeriveInput): AnnotatedModel {
         declaration: originalEntry.taggedLines.declaration.slice(),
         usage: originalEntry.taggedLines.usage.slice(),
       },
+      chosenPatterns: workingChosen,
+      isTagged: workingChosen.length > 0,
     });
   }
 

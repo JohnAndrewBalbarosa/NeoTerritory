@@ -5,7 +5,7 @@ import {
   FAMILY_DESCRIPTIONS, FAMILY_ORDER,
   groupByFamily, annotationsForPattern, isAiAnnotation,
   downloadMarkdown, downloadDocx, triggerPdfPrint,
-} from '../../lib/docExport';
+} from '../../logic/docExport';
 import { DetectedPatternFull, Annotation } from '../../types/api';
 
 function AnnotationRow({ a }: { a: Annotation }) {

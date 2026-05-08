@@ -443,3 +443,114 @@ The deferred scraper from D35 is now implemented in code. D35's risk acknowledge
 - No CAPTCHA bypass, no anti-detection tricks beyond a single Chromium flag (`--disable-blink-features=AutomationControlled`) and the existing animation-zeroing init script borrowed from the recorder.
 - No multi-session fan-out. One Chromium window at a time, one URL at a time. Restart for the next host.
 - No production deployment. The scraper Vite entry is bundled but the backend route only mounts behind the env flag.
+
+## D36 — Per-run survey cascades with run; signout survey is standalone
+The original architecture rule: a saved run is a complete unit (run record + per-run survey together). The frontend flow enforces this by gating "submit & save" on the survey being submitted, so partial state never reaches the database under normal operation.
+
+Backing this with schema-level guarantees:
+
+- **`run_feedback.run_id`** is now `INTEGER` and a **`FOREIGN KEY … REFERENCES analysis_runs(id) ON DELETE CASCADE`**. Deleting a run automatically deletes its per-run survey. Existing TEXT-typed `run_id` rows are migrated in place by the existing `ensureCascade` helper in `Codebase/Backend/src/db/initDb.ts` (numeric strings coerce cleanly to integers via `INSERT … SELECT`).
+- **`reviews` (per-run scope)** and **`manual_pattern_decisions`** already cascade with `analysis_runs` (D-pre-existing migration).
+- **`session_feedback`** (sign-out survey) deliberately has NO foreign key to `analysis_runs`. It is bound to the user session, not to any individual run, and must survive run deletions. This stays standalone.
+- **`survey_consent`** and **`survey_pretest`** are pre-session and similarly user-bound, not run-bound.
+
+**True Negative metric**: the `/api/admin/stats/f1-metrics` endpoint now returns `overall.tn` — the count of manual review decisions where the user said "no pattern here" AND the system also detected nothing. Per-pattern TN is intentionally NOT computed because every line where neither side mentions pattern X is a TN for X, which collapses to "every line in the corpus" and carries no information. The admin Complexity tab shows TN in the Overall row only; per-pattern rows render `—`.
+
+## D37 — AI auto-documentation pipeline (workshop-graduate persona, chunked, fallback)
+The microservice owns pattern detection and accuracy scoring; AI is **not** added to that path. AI is used **only** for auto-documentation of the already-tagged classes. The earlier, simpler spec at `docs/Codebase/Backend/src/services/aiDocumentationService.js.md` is now extended with the rules below; that file is the canonical contract for the request/response shape.
+
+**Trigger**: explicit user action only. A "Generate documentation" button on the studio fires `POST /api/runs/:runId/document`. No auto-fire on `/api/analyze` completion. While a job is running, all download buttons in the studio MUST be disabled and replaced with a "Waiting for AI to respond…" indicator.
+
+**Persona (system prompt)**: audience is workshop graduates who already recognize GoF patterns and have seen canonical UML — they need the bridge from "abstract pattern" to "this exact code", not a textbook re-introduction. Never re-teach the pattern, never start with "a Builder is…", never surface the persona description in the output. The persona is implicit; the output is a connection layer between recognized abstraction and concrete code.
+
+**Request shape (per chunk)**:
+```json
+{
+  "language": "cpp",
+  "classes": [{
+    "className": "...",
+    "file": "...",
+    "lineRange": [42, 71],
+    "code": "<exact source slice>",
+    "taggedPattern": "Builder",
+    "candidatePatterns": [{ "name": "Factory Method", "score": 0.62 }, …]
+  }]
+}
+```
+The `runId` is **NOT** in the AI payload — backend owns it via the route. `candidatePatterns` is what unlocks the comparative "why this won" narrative without touching the microservice scorer.
+
+**Response shape (per class, strict JSON, no prose, no markdown fences)**:
+```json
+{
+  "classes": [{
+    "name": "...",
+    "file": "...",
+    "taggedPattern": "Builder",
+    "patternRoleInThisClass": "Concrete Builder",
+    "patternLineRange": [44, 68],
+    "summary": "...",
+    "lineExplanations": [{ "line": 44, "note": "..." }],
+    "chosenRationale": "...",
+    "runnerUpComparison": { "name": "Factory Method", "gap": "..." }
+  }]
+}
+```
+
+**Per-line scope = salient only.** AI picks up to ~8 load-bearing lines per class; not every line in `patternLineRange`. Matches the workshop-graduate persona — reads like a senior dev highlighting what matters, not an exhaustive annotator.
+
+**Frontend-only accuracy story**: microservice scoring stays untouched. The "why X won over runner-up Y" narrative is rendered by the frontend next to the existing accuracy bar — pure explanation layer, never a re-scoring layer.
+
+**Chunking**: hard cap **5 chunks per run**, sequential with a delay between calls (avoids 429). `totalChunks` is computed and saved in job state BEFORE the first AI call so the frontend can show "1/5 done" progress. Job runs are non-blocking — kicked off via `setImmediate` after the POST returns 202.
+
+**Job state = in-memory `Map<runId, JobState>`**. Lost on backend restart by design; an interrupted job is re-triggered manually by the user. No DB schema change.
+
+**Static fallback location = catalog-side**: each pattern ships a sibling `<pattern>.fallback_doc.json` under `Codebase/Microservice/pattern_catalog/<family>/` (alongside the existing `<pattern>.json` rule file and `<pattern>.test.template.cpp`). The backend fills these templates with annotated-source data (class name, file, line range, evidence kind) when AI fails. Co-locating fallback with the pattern's existing rule file keeps a pattern's *everything* in one folder.
+
+**Timeout ladder**:
+1. **30s** (per chunk): a "Skip AI, use static" button appears in the studio. Clicking it cancels the job and renders the static fallback for every class in the run.
+2. **60s** (per chunk): hard cut-off. Job auto-flips to `failed`, frontend shows "AI did not respond — using static documentation", and the static fallback renders automatically.
+
+**Validation**: a chunk response must (a) be HTTP success from the AI provider AND (b) parse cleanly against the JSON schema above. Either failing flips the job to `failed` and triggers the static fallback. The frontend never receives a malformed AI body — backend rejects/retries server-side.
+
+**Frontend integration is a follow-up doc**. This entry locks the backend contract; the studio panel + polling hook spec lands once the backend doc is implemented.
+
+
+## D38 — Single-round grammar-aware candidate filter (connotation rule, no scoring, no ranking, stdlib-only lexemes)
+The matcher answers yes/no per `ordered_checks`. A separate **candidate-filter pass** decides which yeses survive when several patterns light up the same class. There is **no scoring and no ranking** — explicit user direction was that surviving matches are equal candidates: "kung sino ang tumama, kasama sya". Every piece of evidence is **a lexeme category PLUS its surrounding token grammar** — never a bare lexeme match — and a pattern survives only when ALL of its declared signature categories are strictly satisfied (logical AND). When two or more patterns survive on the same class, every survivor's `ambiguous` flag is set so downstream consumers know the class fits multiple patterns and should not pretend one won.
+
+**One round — strict AND of category combos, plus optional negative gate.** Each pattern JSON declares `signature_categories: [name, ...]` (positive AND filter) and may also declare `negative_signature_categories: [name, ...]` (negative gate). The connotation dictionary at `pattern_catalog/lexeme_categories.json` stores each category as a list of *combos*. A combo is an ordered sequence of consecutive token lexemes that together carry the category's pattern meaning. A category is satisfied for a class when at least one of its combos matches a window of consecutive tokens in the class.
+
+A pattern survives the filter when ALL of its `signature_categories` are satisfied AND NONE of its `negative_signature_categories` are satisfied. Empty `signature_categories` = pattern relies on `ordered_checks` alone for positive evidence; the negative gate still applies. The negative gate exists to encode "this pattern explicitly does NOT carry shape X" without resorting to naming conventions — e.g. a pure-forwarder Adapter declares `negative_signature_categories: ["ownership_handle", "interface_polymorphism", "access_control_caching"]` so that classes using `std::unique_ptr` ownership (Strategy consumers), virtual dispatch (Decorator candidates), or stdlib synchronization (Proxy candidates) cannot collapse into Adapter as the residual.
+
+**Dictionary discipline (hard rule).** Single-token entries in the dictionary are permitted ONLY when the token is a well-known stdlib API symbol (`std::make_unique`, `std::lock_guard`, `std::unique_ptr`, ...). A bare reserved C++ keyword or operator (`static`, `this`, `->`, `virtual`, `new`, `delete`) MUST appear inside a multi-token combo, never as a single-token entry. Reasoning: one keyword carries far too little context — every class with `virtual` somewhere would tag as polymorphic, every class with `delete` would tag as a deletion signal. The combo (e.g. `["virtual", "~"]`, `["=", "delete"]`, `["return", "*", "this"]`) is what gives the connotation enough specificity to be a real signal. Convention-driven names (`m_inner`, `getInstance`, `build`, `cache`, ...) remain excluded entirely.
+
+Per-category combos shipped:
+
+- `object_instantiation` — stdlib singletons (`make_unique`, `make_shared`, `std::make_unique`, `std::make_shared`, `allocate_shared`) plus the combo `["return", "new"]`. Bare `new` is rejected.
+- `static_storage_access` — stdlib singletons (`call_once`, `std::call_once`, `once_flag`, `std::once_flag`).
+- `self_return` — combo `["return", "*", "this"]` only.
+- `interface_polymorphism` — combos `["virtual", "~"]`, `["virtual", "void"]`, `["virtual", "bool"]`, `["virtual", "int"]`, `["virtual", "std"]`, `["virtual", "auto"]`, `["override", "{"]`, `["override", ";"]`, `["override", "const"]`, `["final", "{"]`, `["=", "0"]` (pure-virtual marker). Bare `virtual` / `override` / `final` are rejected.
+- `access_control_caching` — stdlib synchronization symbols (`std::mutex`, `std::lock_guard`, `std::call_once`, ...). Presence anywhere in the class.
+- `ownership_handle` — stdlib smart pointer symbols (`std::unique_ptr`, `std::shared_ptr`, `std::weak_ptr`). Presence anywhere in the class.
+- `destruction_signal` — combo `["=", "delete"]` (the `= delete` declaration). Bare `delete` (a delete-expression) is rejected.
+
+`delegation_forward` and `value_comparison` were considered and dropped: the only available evidence reduced to a single operator (`->` or `==`), which the dictionary discipline forbids. Patterns that previously leaned on `delegation_forward` (Adapter, Decorator wrapping, Proxy forwarding, Pimpl indirection) now rely on the matcher's `ordered_checks` plus their other signature categories — Adapter ends up with empty `signature_categories`, which means "ordered_checks alone".
+
+**Survival** is binary. A pattern's match on a class survives the filter when ALL of its `signature_categories` are satisfied. There is no number attached — no score, no rank, no count. Surviving matches are equal candidates.
+
+**Ambiguity.** When two or more matches survive on the same class, every survivor's `ambiguous` flag is set. The downstream AI doc service treats `ambiguous` as a signal to surface "this class fits multiple patterns" instead of pretending one won.
+
+**Lexeme dictionary discipline.** The connotation dictionary at `Codebase/Microservice/pattern_catalog/lexeme_categories.json` MUST contain only:
+1. C++ keywords (`static`, `virtual`, `override`, `final`, `delete`, `this`, ...).
+2. C++ operators / punctuation (`->`, `==`, `~`, ...).
+3. Symbols from well-known standard library APIs (`std::make_unique`, `std::lock_guard`, `std::call_once`, `std::shared_ptr`, ...).
+
+Variable names, naming conventions, and project-specific identifiers (`m_inner`, `inner`, `wrapped`, `target`, `wrappee`, `delegate`, `impl`, `m_impl`, `cache`, `cached`, `getInstance`, `sharedInstance`, `build`, `create`, `make`, `finalize`, `instance`, ...) are intentionally excluded. Reading those as pattern signals is the failure mode this design replaces — they are user choices, not language facts. If a real pattern signal cannot be expressed in keywords / operators / stdlib symbols, it belongs in Round 2 as a structural predicate, not in the lexeme dictionary.
+
+**Where it lives in the pipeline:** the candidate filter is module `Modules/{Header,Source}/Analysis/Patterns/Ranking/match_ranker.{hpp,cpp}`. It runs inside `run_pattern_dispatch_stage` after the existing dispatch passes, before tags are emitted. The directory is named `Ranking/` for path stability with prior commits, but the pass itself does no ranking — only filtering and an ambiguity flag. Each surviving `PatternMatchResult` gets `ambiguous` set; matches that fail the strict filter are dropped (this is the intended behavior — those are false positives the lexeme + grammar rule explicitly rejects).
+
+**Why filtering is acceptable here:** the matcher's `ordered_checks` is conservative by design, but it cannot tell `return *this` apart from a stray `this` token, or `return new T()` apart from a local-variable initialization. The connotation rule is exactly the layer that rejects "right token, wrong grammatical position". When it rejects, the match was a false positive; dropping it is the correct outcome, not a loss of signal.
+
+**Adding a new category** requires both (a) extending `lexeme_categories.json` with the lexeme list and (b) adding a per-category grammar predicate to `match_ranker.cpp`. A category without a grammar rule defaults to "presence anywhere in the class" — that is the fallback used for stdlib-symbol categories where presence already carries structural meaning.
+
+**Adding a new pattern**: declare its `signature_categories` in the new pattern JSON. If a needed signal cannot be expressed via an existing category + grammar predicate, extend `lexeme_categories.json` and `match_ranker.cpp` together. Do NOT tighten `ordered_checks` to mimic ranking — `ordered_checks` is yes/no, ranking is comparative.

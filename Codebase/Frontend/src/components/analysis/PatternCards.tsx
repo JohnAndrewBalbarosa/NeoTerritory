@@ -3,7 +3,7 @@ import {
   DetectedPatternFull, AmbiguityRanking, PatternRankEntry,
   ClassUsageBinding, DocumentationTarget, UnitTestTarget, PatternEducation
 } from '../../types/api';
-import { colorFor, USAGE_KIND_LABEL, ensureReadableContrast } from '../../lib/patterns';
+import { colorFor, USAGE_KIND_LABEL, ensureReadableContrast } from '../../logic/patterns';
 import { patternDefinitionFor, PatternDefinition } from '../../data/patternDefinitions';
 
 export interface RecomputedRank {

@@ -3,6 +3,9 @@
   "pattern_family": "structural",
   "pattern_name": "Decorator",
   "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
   "lexeme_identifiers": {
     "wrappee_call":     ["->", "."],
     "wrappee_member":   ["inner", "decorated", "wrappee", "component_", "base_",

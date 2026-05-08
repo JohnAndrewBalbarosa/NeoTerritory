@@ -16,10 +16,13 @@
 #   .\start.ps1 browser -Lan                 # clean Chromium
 #   .\start.ps1 test -Users 5                # k8s multi-user sim
 #   .\start.ps1 deploy --source              # AWS ship-to-cloud
+#   .\start.ps1 rebuild                      # full local rebuild (canonical)
+#   .\start.ps1 rebuild -SkipMicroservice    # exclude C++ build
+#   .\start.ps1 rebuild -ModeA               # rebuild then hot-reload
 
 param(
   [Parameter(Position = 0)]
-  [ValidateSet('dev','prod','setup','k8s','browser','test','deploy','')]
+  [ValidateSet('dev','prod','setup','k8s','browser','test','deploy','rebuild','')]
   [string]$Command = 'dev',
 
   # Universal
@@ -82,6 +85,16 @@ $CmdDir = Join-Path $PSScriptRoot 'ops\powershell\start\commands'
 . (Join-Path $CmdDir 'deploy.ps1')
 
 # --- Dispatch ---------------------------------------------------------------
+if ($Command -eq 'rebuild') {
+    # Forward to canonical rebuild script. Pass through known rebuild switches
+    # (start.ps1 already declares -SkipMicroservice; the rest are forwarded as-is).
+    $rebuildArgs = @()
+    if ($SkipMicroservice) { $rebuildArgs += '-SkipMicroservice' }
+    if ($Rest) { $rebuildArgs += $Rest }
+    & (Join-Path $PSScriptRoot 'scripts\rebuild.ps1') @rebuildArgs
+    return
+}
+
 if ($Both) {
     Write-Step 'Running BOTH Local and AWS deployment'
     Start-Process powershell.exe -ArgumentList "-NoProfile -Command & '$PSCommandPath' dev -NoBrowser"

@@ -8,7 +8,7 @@
 // The page is fully static; the only dynamic surface is the
 // "Try in studio" button which routes to /app for an actual analyzer run.
 
-import { navigate } from '../../lib/router';
+import { navigate } from '../../logic/router';
 
 import builderSrc from '../../../../Microservice/samples/builder/http_request_builder.cpp?raw';
 import factorySrc from '../../../../Microservice/samples/factory/shape_factory.cpp?raw';

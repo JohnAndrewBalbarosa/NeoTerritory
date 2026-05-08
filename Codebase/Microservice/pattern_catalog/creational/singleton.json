@@ -3,6 +3,9 @@
   "pattern_family": "creational",
   "pattern_name": "Singleton",
   "enabled": true,
+  "signature_categories": [
+    "destruction_signal"
+  ],
   "lexeme_identifiers": {
     "static_storage":   ["static"],
     "accessor":         ["instance", "getInstance", "get_instance", "GetInstance",

@@ -46,6 +46,10 @@ export interface ClassTreeNode {
   mainDesignPattern: string | null;
   status: ClassNodeStatus;
   children: LineNode[];
+  // User-confirmed patterns after picker resolution + hierarchy propagation.
+  chosenPatterns: string[];
+  // True when the user has confirmed at least one pattern for this class.
+  isTagged: boolean;
 }
 
 interface BuildInput {
@@ -178,10 +182,19 @@ export function buildClassTree(input: BuildInput): ClassTreeNode[] {
     const resolvedPick = node?.resolved ?? resolvedMap[className];
     const hasReviewChild = children.some((c) => c.status === 'review');
 
+    // Sidebar must mirror the popup's view of "user owes a pick".
+    // The popup (ClassRootPicker / LinePopover) treats a class as
+    // pickable whenever the model marks it `ambiguous_pending` —
+    // i.e. its `candidates` (direct ∪ in-scope) has 2+ entries.
+    // Without consulting that, we miss cases where the union has
+    // multiple patterns but each individual child line carries only
+    // one tag and `classPatterns` collapses to 1.
+    const modelAmbiguous = node?.status === 'ambiguous_pending';
+
     if (resolvedPick) {
       status = 'resolved';
       mainDesignPattern = canonicalPatternName(resolvedPick);
-    } else if (hasReviewChild || classPatterns.length > 1) {
+    } else if (hasReviewChild || classPatterns.length > 1 || modelAmbiguous) {
       status = 'review';
       mainDesignPattern = null;
     } else {
@@ -197,6 +210,8 @@ export function buildClassTree(input: BuildInput): ClassTreeNode[] {
       mainDesignPattern,
       status,
       children,
+      chosenPatterns: entry.chosenPatterns.slice(),
+      isTagged: entry.isTagged,
     });
   }
 

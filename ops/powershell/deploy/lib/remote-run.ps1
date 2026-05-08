@@ -54,6 +54,7 @@ docker run -d \
   -p $($env:AWS_HOST_PORT):3001 \
   --env-file "$remoteEnv" \
   -v $($env:CONTAINER_NAME)-data:/app/Codebase/Backend/src/db \
+  -v /var/run/docker.sock:/var/run/docker.sock \
   "$ImageRef"
 shred -u "$remoteEnv" 2>/dev/null || rm -f "$remoteEnv"
 docker ps --filter "name=$($env:CONTAINER_NAME)"

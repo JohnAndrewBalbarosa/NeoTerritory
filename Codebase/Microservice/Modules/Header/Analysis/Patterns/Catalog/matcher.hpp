@@ -37,6 +37,13 @@ struct PatternMatchResult
     std::string                             parent_class_name;
     std::vector<PatternCapture>             captures;
     std::vector<PatternDocumentationAnchor> documentation_anchors;
+    // True when two or more patterns survived the ranking-pass strict
+    // filter on the same class — see DESIGN_DECISIONS.md D38. The
+    // ranking pass itself does no scoring or ranking; it only filters
+    // (every surviving match is an equal candidate) and flags multi-
+    // candidate classes via this bool so downstream consumers know the
+    // class fits multiple patterns and should not pretend one won.
+    bool                                    ambiguous      = false;
 };
 
 PatternMatchResult match_pattern_against_class(

@@ -1,0 +1,51 @@
+{
+  "schema_version": 2,
+  "description": "Connotative lexeme dictionary. Per DESIGN_DECISIONS.md D38, every entry must be EITHER (a) a well-known standard library API symbol (single string is allowed only for stdlib symbols), OR (b) a multi-token combo expressed as a JSON array of consecutive token lexemes. A bare reserved keyword or operator on its own (e.g. `static`, `this`, `->`, `virtual`) is NEVER acceptable as an entry — context is too thin and would re-introduce the over-tagging this rule replaces. Convention-driven names (m_inner, getInstance, build, cache, ...) remain excluded.",
+  "categories": {
+    "object_instantiation": [
+      "make_unique",       "std::make_unique",
+      "make_shared",       "std::make_shared",
+      "allocate_shared",   "std::allocate_shared",
+      ["return", "new"]
+    ],
+    "static_storage_access": [
+      "call_once",  "std::call_once",
+      "once_flag",  "std::once_flag"
+    ],
+    "self_return": [
+      ["return", "*", "this"]
+    ],
+    "interface_polymorphism": [
+      ["virtual", "~"],
+      ["virtual", "void"],
+      ["virtual", "bool"],
+      ["virtual", "int"],
+      ["virtual", "std"],
+      ["virtual", "auto"],
+      ["override", "{"],
+      ["override", ";"],
+      ["override", "const"],
+      ["final", "{"],
+      ["=", "0"]
+    ],
+    "access_control_caching": [
+      "mutex",            "std::mutex",
+      "recursive_mutex",  "std::recursive_mutex",
+      "shared_mutex",     "std::shared_mutex",
+      "lock_guard",       "std::lock_guard",
+      "unique_lock",      "std::unique_lock",
+      "scoped_lock",      "std::scoped_lock",
+      "shared_lock",      "std::shared_lock",
+      "condition_variable","std::condition_variable",
+      "atomic",           "std::atomic"
+    ],
+    "ownership_handle": [
+      "unique_ptr",  "std::unique_ptr",
+      "shared_ptr",  "std::shared_ptr",
+      "weak_ptr",    "std::weak_ptr"
+    ],
+    "destruction_signal": [
+      ["=", "delete"]
+    ]
+  }
+}

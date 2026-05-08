@@ -107,13 +107,36 @@ const adminLimiter = rateLimit({
   message: { error: 'Too many admin requests. Please slow down and retry shortly.' }
 });
 
+// Defense-in-depth: even if an admin token is compromised, the explicit
+// "Refresh" path on the dashboard is hard-capped well below what a manual
+// operator would ever need. The frontend tags each refresh batch with
+// X-Admin-Refresh: 1; without the header this limiter is a no-op so normal
+// admin traffic stays on `adminLimiter`. Keyed by user id when present
+// (falls back to IP) so a single compromised admin can't burn the budget
+// for legitimate co-admins on the same egress IP.
+const adminRefreshLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 12,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  skip: (req) => req.header('x-admin-refresh') !== '1',
+  keyGenerator: (req) => {
+    const uid = (req as Request & { user?: { id?: number } }).user?.id;
+    return uid != null ? `u:${uid}` : `ip:${req.ip}`;
+  },
+  message: { error: 'Refresh rate exceeded. Please wait a minute before refreshing again.' }
+});
+
 // Routes
 app.use('/health', healthRoutes);
 app.use('/auth/login', authLimiter);
 app.use('/auth/claim', authLimiter);
 app.use('/auth', authRoutes);
 app.use('/api/transform', transformRoutes);
-app.use('/api/admin', adminLimiter, adminRoutes);
+// Note ordering: adminRefreshLimiter is skipped unless X-Admin-Refresh: 1 is
+// set, so it never affects normal admin traffic. adminLimiter still applies
+// the broad per-IP ceiling on top.
+app.use('/api/admin', adminRefreshLimiter, adminLimiter, adminRoutes);
 // Deferred per D35 — only mounted when explicitly enabled. Admin-only.
 if (process.env.NEOTERRITORY_ENABLE_SCRAPER === '1') {
   app.use('/api/admin/scraper', adminLimiter, scraperRoutes);

@@ -26,6 +26,9 @@ Usage:
   .\start.ps1 browser -Lan                 # clean Chromium
   .\start.ps1 test -Users 5                # k8s multi-user sim
   .\start.ps1 deploy --source              # AWS ship-to-cloud
+  .\start.ps1 rebuild                      # full local rebuild (canonical)
+  .\start.ps1 rebuild -SkipMicroservice    # exclude C++ build
+  .\start.ps1 rebuild -ModeA               # rebuild then hot-reload
 
 ## `ops/powershell/deploy/lib/`
 

@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react';
-import { navigate } from '../../lib/router';
+import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import ScrollReveal from './effects/ScrollReveal';
 import SplitText from './effects/SplitText';
@@ -140,7 +140,7 @@ export default function HeroLanding() {
           >
             <MagneticButton
               variant="primary"
-              onClick={() => navigate('/app')}
+              onClick={() => navigate('/choose')}
               ariaLabel="Open the analysis studio"
             >
               Open studio
@@ -327,7 +327,7 @@ export default function HeroLanding() {
           Open the studio, paste a C++ snippet, and see what design patterns NeoTerritory may find.
         </p>
         <div className="nt-hero__ctas">
-          <MagneticButton variant="primary" onClick={() => navigate('/app')}>
+          <MagneticButton variant="primary" onClick={() => navigate('/choose')}>
             Open studio
           </MagneticButton>
           <MagneticButton variant="ghost" onClick={() => navigate('/learn')}>
