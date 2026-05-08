@@ -177,7 +177,7 @@ jobs:
     needs:
       - build-and-test
       - production-no-leak-check
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && (secrets.AWS_SSH_PRIVATE_KEY != '' || secrets.AWS_SSH_KEY_PEM != '') && secrets.AWS_DEPLOY_ENV != ''
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     env:
       SECRET_AWS_SSH_PRIVATE_KEY: ${{ secrets.AWS_SSH_PRIVATE_KEY }}
@@ -186,6 +186,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Validate deploy secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${SECRET_AWS_DEPLOY_ENV:-}" ]]; then
+            echo "Missing AWS_DEPLOY_ENV secret." >&2
+            exit 1
+          fi
+          if [[ -z "${SECRET_AWS_SSH_PRIVATE_KEY:-}" && -z "${SECRET_AWS_SSH_KEY_PEM:-}" ]]; then
+            echo "Missing SSH private key secret. Set AWS_SSH_PRIVATE_KEY or AWS_SSH_KEY_PEM." >&2
+            exit 1
+          fi
 
       - name: Prepare SSH key
         shell: bash
