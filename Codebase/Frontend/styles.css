@@ -139,9 +139,9 @@ body.login-active{overflow:hidden;}
 
 /* Ambient glow around the whole switch per theme */
 .theme-switch--dark{box-shadow:0 0 16px rgba(123,94,167,0.28);}
-.theme-switch--light{box-shadow:0 0 16px rgba(0,209,216,0.32);}
+.theme-switch--light{box-shadow:0 0 16px rgba(255,160,60,0.32);}
 .theme-switch:hover.theme-switch--dark{box-shadow:0 0 22px rgba(123,94,167,0.45);}
-.theme-switch:hover.theme-switch--light{box-shadow:0 0 22px rgba(0,209,216,0.5);}
+.theme-switch:hover.theme-switch--light{box-shadow:0 0 22px rgba(255,160,60,0.5);}
 
 /* Track */
 .ts-track{display:block;position:relative;width:100%;height:100%;border-radius:999px;overflow:hidden;transition:background 0.38s ease,border-color 0.38s ease,box-shadow 0.38s ease;}
@@ -154,9 +154,9 @@ body.login-active{overflow:hidden;}
 
 /* Light mode track — bright cyan-teal gradient */
 .theme-switch--light .ts-track{
-  background:linear-gradient(130deg,#00c8d4 0%,#22d3ee 50%,#7ee8f0 100%);
-  border:1.5px solid rgba(0,209,216,0.55);
-  box-shadow:inset 0 1px 3px rgba(255,255,255,0.28),inset 0 0 10px rgba(0,209,216,0.2);}
+  background:linear-gradient(130deg,#ffd4a3 0%,#ffb347 52%,#ff9a6c 100%);
+  border:1.5px solid rgba(255,160,70,0.52);
+  box-shadow:inset 0 1px 4px rgba(255,255,255,0.35),inset 0 0 10px rgba(255,150,50,0.16);}
 
 /* Stars — visible only in dark mode */
 .ts-stars{position:absolute;inset:0;pointer-events:none;}
@@ -2546,8 +2546,8 @@ body::before {
 }
 /* Theme switch light-mode adjustments (both states already themed via class) */
 :root[data-theme="light"] .theme-switch--light .ts-track {
-  background: linear-gradient(130deg, #00b8c4 0%, #0dd8e6 50%, #62e4f0 100%);
-  border-color: rgba(0, 184, 196, 0.6);
+  background: linear-gradient(130deg, #ffc98a 0%, #ffaa42 52%, #ff8e5a 100%);
+  border-color: rgba(255, 148, 60, 0.58);
 }
 :root[data-theme="light"] .theme-switch--dark .ts-track {
   background: linear-gradient(130deg, #0c1030 0%, #131840 50%, #1c0e40 100%);
