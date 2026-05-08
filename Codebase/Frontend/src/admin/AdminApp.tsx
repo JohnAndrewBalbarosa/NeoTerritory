@@ -101,7 +101,7 @@ export default function AdminApp() {
       <AuroraBackground variant="warm" className="admin-aurora" />
       <header className="admin-topbar reveal">
         <div className="brand">
-          <p className="eyebrow">NeoTerritory · Admin</p>
+          <p className="eyebrow">CodiNeo · Admin</p>
           <h1><ShinyText text="Research dashboard" speed={6} intensity={0.6} /></h1>
           <p className="lede">Activity, scoring, and qualitative reviews across all tester accounts.</p>
         </div>

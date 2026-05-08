@@ -52,7 +52,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
         </motion.div>
       </AnimatePresence>
       <footer className="nt-mkt-footer" role="contentinfo">
-        <p>NeoTerritory Studio · C++ pattern analysis and documentation-support system</p>
+        <p>CodiNeo · C++ pattern analysis and documentation-support system</p>
         <p className="nt-mkt-footer__small">
           For thesis evaluation, learning, and research use. Admin access remains protected at{' '}
           <code>/app</code>.

@@ -27,7 +27,7 @@ const GUIDE_ITEMS = [
     icon: <IconLayers size={22} />,
     content: (
       <>
-        <p>NeoTerritory's microservice scans your code for <strong>design patterns</strong> using static analysis and pattern matching.</p>
+        <p>CodiNeo's microservice scans your code for <strong>design patterns</strong> using static analysis and pattern matching.</p>
         <p><small>Results include confidence scores and line-by-line annotations.</small></p>
       </>
     ),
@@ -84,7 +84,7 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAna
           <div>
             <h2 className="studio-page-title">Analyze C++ Code</h2>
             <p className="studio-page-desc">
-              Paste your code or load a sample. NeoTerritory will help you
+              Paste your code or load a sample. CodiNeo will help you
               find patterns and explain them in simple terms.
             </p>
           </div>

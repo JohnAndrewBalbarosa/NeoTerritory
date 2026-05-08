@@ -60,7 +60,7 @@ export default function EntryChoice() {
       <section className="nt-entry-shell" aria-labelledby="entry-heading">
         <div className="nt-entry-panel">
           <header className="nt-entry__hero">
-            <p className="nt-section-eyebrow">Welcome to NeoTerritory</p>
+            <p className="nt-section-eyebrow">Welcome to CodiNeo</p>
             <h1 id="entry-heading" className="nt-entry__title">
               Choose how you want to enter
             </h1>
@@ -69,7 +69,7 @@ export default function EntryChoice() {
             </p>
           </header>
 
-          <div className="nt-entry-grid" aria-label="NeoTerritory entry paths">
+          <div className="nt-entry-grid" aria-label="CodiNeo entry paths">
             {ENTRY_OPTIONS.map((option) => {
               const Icon = option.icon;
               return (
