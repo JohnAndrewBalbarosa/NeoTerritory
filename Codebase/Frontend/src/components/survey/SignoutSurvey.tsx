@@ -40,36 +40,42 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
   return (
     <div className="modal-overlay signout-survey signout-takeover" role="dialog" aria-modal="true" aria-labelledby="signout-title">
       <div className="modal-card signout-card">
-        <h2 id="signout-title">Session feedback</h2>
-        <p className="modal-lede">
-          Before you sign out, please rate your overall experience with the system.
-        </p>
-        {signoutStars.map((q) => (
-          <div key={q.id} className="survey-question">
-            <p className="question-text">
-              <span className="question-id">{q.id}</span> {q.text}
-            </p>
-            <StarRating
-              value={ratings[q.id] || 0}
-              onChange={(v) => setRatings((r) => ({ ...r, [q.id]: v }))}
-              label={`${q.id} rating`}
-            />
-          </div>
-        ))}
-        {openEnded.signout.map((q) => (
-          <div key={q.id} className="survey-question">
-            <p className="question-text">
-              <span className="question-id">{q.id}</span> {q.text}
-            </p>
-            <textarea
-              value={open[q.id] || ''}
-              onChange={(e) => setOpen((o) => ({ ...o, [q.id]: e.target.value }))}
-              rows={3}
-            />
-          </div>
-        ))}
-        {error && <div className="error-banner" role="alert">{error}</div>}
-        <div className="modal-actions">
+        <div className="signout-card__header">
+          <h2 id="signout-title">Session feedback</h2>
+          <p className="modal-lede">
+            Before you sign out, please rate your overall experience with the system.
+          </p>
+        </div>
+
+        <div className="signout-card__body">
+          {signoutStars.map((q) => (
+            <div key={q.id} className="survey-question">
+              <p className="question-text">
+                <span className="question-id">{q.id}</span> {q.text}
+              </p>
+              <StarRating
+                value={ratings[q.id] || 0}
+                onChange={(v) => setRatings((r) => ({ ...r, [q.id]: v }))}
+                label={`${q.id} rating`}
+              />
+            </div>
+          ))}
+          {openEnded.signout.map((q) => (
+            <div key={q.id} className="survey-question">
+              <p className="question-text">
+                <span className="question-id">{q.id}</span> {q.text}
+              </p>
+              <textarea
+                value={open[q.id] || ''}
+                onChange={(e) => setOpen((o) => ({ ...o, [q.id]: e.target.value }))}
+                rows={3}
+              />
+            </div>
+          ))}
+          {error && <div className="error-banner" role="alert">{error}</div>}
+        </div>
+
+        <div className="signout-card__footer modal-actions">
           <button className="ghost-btn" type="button" onClick={onCancel} disabled={busy}>
             Back
           </button>
