@@ -151,6 +151,10 @@ Desktop.ini
 
 # Project-specific
 .github/
+!.github/
+.github/*
+!.github/workflows/
+!.github/workflows/*.yml
 launch.vs.json
 NeoTerritory.slnx
 Setup/Setup.vdproj

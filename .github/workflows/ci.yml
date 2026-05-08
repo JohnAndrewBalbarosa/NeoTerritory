@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    env:
+      DEV_TEST_MODE: "true"
+      NODE_ENV: "test"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            package-lock.json
+            Codebase/Backend/package-lock.json
+            Codebase/Frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm --prefix Codebase/Backend ci
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci
+
+      - name: Backend typecheck
+        run: npm --prefix Codebase/Backend run typecheck
+
+      - name: Frontend typecheck
+        run: npm --prefix Codebase/Frontend run typecheck
+
+      - name: Backend build
+        run: npm --prefix Codebase/Backend run build
+
+      - name: Frontend build
+        run: npm --prefix Codebase/Frontend run build
+
+      - name: Configure CMake
+        run: cmake -S . -B build
+
+      - name: Build microservice
+        run: cmake --build build --config Release
+
+  production-no-leak-check:
+    runs-on: ubuntu-latest
+    env:
+      DEV_TEST_MODE: "false"
+      NODE_ENV: "production"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            Codebase/Backend/package-lock.json
+            Codebase/Frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix Codebase/Backend ci
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci
+
+      - name: Build backend in production mode
+        run: npm --prefix Codebase/Backend run build
+
+      - name: Build frontend in production mode
+        run: npm --prefix Codebase/Frontend run build
+
+      - name: Assert DEV_TEST_MODE disabled in this job
+        run: |
+          test "$DEV_TEST_MODE" = "false"
+          test "$NODE_ENV" = "production"
