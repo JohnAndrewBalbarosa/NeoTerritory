@@ -1573,10 +1573,9 @@ body::before {
 .consent-highlight {
   font-weight: 800;
 }
-.consent-highlight--green,
-.consent-highlight--cyan,
-.consent-highlight--purple,
-.consent-highlight--yellow { color: #18e1ff; }
+.consent-highlight--cyan { color: #18e1ff; }
+.consent-highlight--purple { color: #b56cff; }
+.consent-highlight--green { color: #aef533; }
 .consent-task-list {
   list-style: none;
   display: grid;

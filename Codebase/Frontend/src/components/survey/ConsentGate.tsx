@@ -157,15 +157,15 @@ export default function ConsentGate() {
               <p className="consent-section__salute">Dear Participants,</p>
               <p>
                 We are{' '}
-                <span className="consent-highlight consent-highlight--yellow">
+                <span className="consent-highlight consent-highlight--cyan">
                   3rd Year BS Computer Science students specializing in Software Engineering
                 </span>{' '}
                 from the <span className="consent-highlight consent-highlight--cyan">FEU Institute of Technology</span>. We are
                 currently conducting our research study on NeoTerritory as a{' '}
-                <span className="consent-highlight consent-highlight--purple">
+                <span className="consent-highlight consent-highlight--cyan">
                   graph-based and AST-centered documentation generation system
                 </span>{' '}
-                for internship onboarding and <span className="consent-highlight consent-highlight--green">design pattern learning</span>{' '}
+                for internship onboarding and <span className="consent-highlight consent-highlight--cyan">design pattern learning</span>{' '}
                 in <span className="consent-highlight consent-highlight--cyan">DEVCON Luzon</span>.
               </p>
               <p>
@@ -187,7 +187,7 @@ export default function ConsentGate() {
             <div className="consent-section__body">
               <p>
                 This research focuses on <span className="consent-highlight consent-highlight--purple">graph-based AST-centered documentation generation</span>,{' '}
-                <span className="consent-highlight consent-highlight--green">design pattern learning</span>, and
+                <span className="consent-highlight consent-highlight--purple">design pattern learning</span>, and
                 internship-oriented code understanding support. NeoTerritory presents structural documentation, developer
                 guidance, and pattern-learning signals inside a single environment so researchers can evaluate how well the
                 system supports first-contact onboarding tasks.
@@ -195,7 +195,7 @@ export default function ConsentGate() {
               <p>
                 As part of the testing phase, you are one of the selected participants. Your interaction with this system
                 will help us evaluate clarity, usefulness, and practical onboarding value within the{' '}
-                <span className="consent-highlight consent-highlight--cyan">DEVCON Luzon</span> research context.
+                <span className="consent-highlight consent-highlight--purple">DEVCON Luzon</span> research context.
               </p>
             </div>
           </section>
@@ -266,13 +266,13 @@ export default function ConsentGate() {
             <div className="consent-section__body">
               <p>
                 Responses will be analyzed and presented only in summarized or aggregated form.{' '}
-                <span className="consent-highlight consent-highlight--yellow">
+                <span className="consent-highlight consent-highlight--cyan">
                   No personally identifiable data will be publicly disclosed
                 </span>{' '}
                 in the final paper, presentation, or any related academic output.
               </p>
               <p>
-                The collected data will <span className="consent-highlight consent-highlight--green">only be used for academic research purposes</span>{' '}
+                The collected data will <span className="consent-highlight consent-highlight--cyan">only be used for academic research purposes</span>{' '}
                 by authorized members of the research team. Submitted responses will not be sold, shared, or disclosed to
                 unauthorized persons or organizations.
               </p>
