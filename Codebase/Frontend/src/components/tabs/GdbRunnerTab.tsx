@@ -124,6 +124,28 @@ function PhaseRow({ phase, result, loading }: {
   return (
     <div className={`gdb-phase-row gdb-phase-${status}`} data-status={status}>
       <header className="gdb-phase-head">
+        <span className="gdb-phase-status-icon" aria-hidden="true">
+          {loading ? null : status === 'pass' ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="1.2"/>
+              <path d="M4.5 7.5l2 2 4-4" stroke="#10b981" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : status === 'fail' ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="rgba(239,68,68,0.1)" stroke="#ef4444" strokeWidth="1.2"/>
+              <path d="M5 5l5 5M10 5l-5 5" stroke="#ef4444" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          ) : status === 'skipped' ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="none" stroke="var(--border)" strokeWidth="1.2"/>
+              <path d="M5 7.5h5" stroke="var(--ink-soft)" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="none" stroke="var(--border)" strokeWidth="1.2"/>
+            </svg>
+          )}
+        </span>
         <span className="gdb-phase-label">{label}</span>
         {loading
           ? <span className="gdb-phase-spinner" aria-hidden="true" />
@@ -360,20 +382,54 @@ export default function GdbRunnerTab() {
 
   return (
     <section className="tab-panel tab-gdb">
-      <header className="results-header">
-        <p className="results-summary">
-          Pre-templated unit tests · {runId !== null ? `run #${runId}` : 'unsaved run'}
-          {budgetRemaining !== null && (
-            <span className="gdb-budget"> · {budgetRemaining} run(s) left this minute</span>
-          )}
-          {accuracy && accuracy.total > 0 && (
-            <span className="gdb-accuracy" title={`${accuracy.passed} pass / ${accuracy.failed} fail across all your runs`}>
-              {' · '}
-              <strong>{(accuracy.passRate * 100).toFixed(0)}%</strong> accuracy
-              {' '}({accuracy.passed}✓/{accuracy.failed}✗)
+      <header className="gdb-header">
+        <div className="gdb-header-left">
+          <div className="gdb-header-meta">
+            <span className="gdb-header-label">Pre-templated unit tests</span>
+            <span className="gdb-header-run">
+              {runId !== null ? `run #${runId}` : 'unsaved run'}
+              {budgetRemaining !== null && (
+                <span className="gdb-budget-chip">{budgetRemaining} run(s) left this minute</span>
+              )}
             </span>
-          )}
-        </p>
+          </div>
+          {accuracy && accuracy.total > 0 && (() => {
+            const pct = Math.round(accuracy.passRate * 100);
+            const scoreColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+            return (
+              <div
+                className="gdb-score-card"
+                title={`${accuracy.passed} passed / ${accuracy.failed} failed across all your runs`}
+              >
+                <div className="gdb-score-ring">
+                  <svg viewBox="0 0 36 36" className="gdb-score-svg" aria-hidden="true">
+                    <circle className="gdb-score-track" cx="18" cy="18" r="15.9" />
+                    <circle
+                      className="gdb-score-fill"
+                      cx="18" cy="18" r="15.9"
+                      strokeDasharray={`${pct} ${100 - pct}`}
+                      style={{ stroke: scoreColor }}
+                    />
+                  </svg>
+                  <span className="gdb-score-num" style={{ color: scoreColor }}>{pct}%</span>
+                </div>
+                <div className="gdb-score-info">
+                  <span className="gdb-score-label">Accuracy</span>
+                  <div className="gdb-score-badges">
+                    <span className="gdb-badge gdb-badge--pass">
+                      <span className="gdb-badge-dot" aria-hidden="true" />
+                      {accuracy.passed} passed
+                    </span>
+                    <span className="gdb-badge gdb-badge--fail">
+                      <span className="gdb-badge-dot" aria-hidden="true" />
+                      {accuracy.failed} failed
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
         <button
           type="button"
           className="primary-btn"
@@ -479,6 +535,21 @@ export default function GdbRunnerTab() {
               <header className="gdb-result-head">
                 <span className="gdb-result-class">{active.className}</span>
                 <span className="gdb-result-pattern">{active.patternName}</span>
+                {(() => {
+                  const hasResults = active.compileRun || active.unitTest;
+                  if (!hasResults || (busy && !active.compileRun && !active.unitTest)) return null;
+                  const compileFailed = active.compileRun && !active.compileRun.passed;
+                  const unitPassed = active.unitTest?.passed === true;
+                  const unitFailed = active.unitTest && !active.unitTest.passed;
+                  const passed = !compileFailed && (unitPassed || (!unitFailed && !!active.compileRun?.passed));
+                  return (
+                    <span className={`gdb-result-overall-badge gdb-result-overall-badge--${passed ? 'pass' : 'fail'}`}>
+                      {passed
+                        ? (active.unitTest ? 'All tests passed' : 'Compiled & ran')
+                        : 'Tests failed'}
+                    </span>
+                  );
+                })()}
               </header>
               <PhaseRow phase="compile_run" result={active.compileRun} loading={busy && !active.compileRun} />
               <PhaseRow phase="unit_test"   result={active.unitTest}   loading={busy && active.compileRun?.passed === true && !active.unitTest} />

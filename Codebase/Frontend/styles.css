@@ -722,6 +722,40 @@ body.login-active{overflow:hidden;}
 @keyframes gdb-spin{to{transform:rotate(360deg);}}
 .gdb-phase-duration{margin-left:auto;font-family:var(--code-font);font-size:11px;color:var(--ink-dim);}
 .gdb-phase-message{margin:6px 0 0 0;font-size:12px;color:var(--ink-soft);}
+.gdb-phase-status-icon{display:flex;align-items:center;flex-shrink:0;}
+
+/* === GDB Enhanced Scoring & Validation UI === */
+
+/* Header card */
+.gdb-header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 18px;margin-bottom:16px;}
+.gdb-header-left{display:flex;align-items:center;gap:18px;flex-wrap:wrap;flex:1;min-width:0;}
+.gdb-header-meta{display:flex;flex-direction:column;gap:3px;}
+.gdb-header-label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.07em;}
+.gdb-header-run{font-size:13px;color:var(--ink);font-family:var(--code-font);display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.gdb-budget-chip{font-size:11px;color:var(--ink-dim);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1px 9px;}
+
+/* Accuracy score ring card */
+.gdb-score-card{display:flex;align-items:center;gap:11px;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:8px 14px 8px 10px;flex-shrink:0;}
+.gdb-score-ring{position:relative;width:52px;height:52px;flex-shrink:0;}
+.gdb-score-svg{width:100%;height:100%;transform:rotate(-90deg);}
+.gdb-score-track{fill:none;stroke:var(--border);stroke-width:3;}
+.gdb-score-fill{fill:none;stroke-width:3;stroke-linecap:round;transition:stroke-dasharray 0.55s ease;}
+.gdb-score-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;line-height:1;font-family:var(--code-font);}
+.gdb-score-info{display:flex;flex-direction:column;gap:5px;}
+.gdb-score-label{font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:0.07em;}
+.gdb-score-badges{display:flex;gap:5px;flex-wrap:wrap;}
+
+/* Pass / fail badge chips */
+.gdb-badge{font-size:11px;font-weight:600;padding:3px 9px;border-radius:999px;display:inline-flex;align-items:center;gap:5px;letter-spacing:0.01em;white-space:nowrap;}
+.gdb-badge-dot{display:block;width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0;}
+.gdb-badge--pass{background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.28);}
+.gdb-badge--fail{background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.22);}
+
+/* Overall result badge in pattern pane header */
+.gdb-result-overall-badge{margin-left:auto;font-size:10.5px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding:3px 11px;border-radius:999px;white-space:nowrap;}
+.gdb-result-overall-badge--pass{background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.28);}
+.gdb-result-overall-badge--fail{background:rgba(239,68,68,0.10);color:#ef4444;border:1px solid rgba(239,68,68,0.22);}
+
 .discard-btn{margin-left:auto;color:var(--red);border-color:rgba(248,113,113,0.35);}
 .discard-btn:hover{background:rgba(248,113,113,0.08);border-color:var(--red);color:var(--red);}
 .review-action-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;margin-bottom:14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);flex-wrap:wrap;}
@@ -2619,6 +2653,39 @@ body::before {
   background: rgba(0, 125, 138, 0.08);
   border-color: var(--accent);
   color: var(--accent);
+}
+
+/* ── GDB enhanced scoring — light mode ───────────────────────── */
+:root[data-theme="light"] .gdb-header {
+  background: #ffffff;
+  border-color: rgba(15, 30, 60, 0.10);
+  box-shadow: 0 1px 4px rgba(15, 30, 60, 0.05);
+}
+:root[data-theme="light"] .gdb-score-card {
+  background: #f8f9fb;
+  border-color: rgba(15, 30, 60, 0.10);
+}
+:root[data-theme="light"] .gdb-score-track { stroke: rgba(15, 30, 60, 0.12); }
+:root[data-theme="light"] .gdb-budget-chip {
+  background: #f2f4f7;
+  border-color: rgba(15, 30, 60, 0.10);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .gdb-badge--pass {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+}
+:root[data-theme="light"] .gdb-badge--fail {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.24);
+}
+:root[data-theme="light"] .gdb-result-overall-badge--pass {
+  background: rgba(16, 185, 129, 0.10);
+  border-color: rgba(16, 185, 129, 0.30);
+}
+:root[data-theme="light"] .gdb-result-overall-badge--fail {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.24);
 }
 
 /* ── Docs toolbar & headings ─────────────────────────────────── */
