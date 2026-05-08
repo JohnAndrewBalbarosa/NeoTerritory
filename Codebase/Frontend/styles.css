@@ -931,41 +931,14 @@ body::before {
   padding: 24px clamp(16px, 3vw, 36px) 40px;
 }
 
-/* ── Sticky chrome: pins topbar + tab-bar to viewport top ────────── */
-.studio-chrome {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  /* Bleed the page background upward to cover the shell's top padding
-     as the chrome transitions into the sticky-fixed position. */
-  margin-top: -24px;
-  padding-top: 24px;
-  /* Bleed horizontally to match the shell's gutter so the bg is edge-to-edge */
-  margin-left: calc(-1 * clamp(16px, 3vw, 36px));
-  margin-right: calc(-1 * clamp(16px, 3vw, 36px));
-  padding-left: clamp(16px, 3vw, 36px);
-  padding-right: clamp(16px, 3vw, 36px);
-  background: var(--bg);
-  will-change: transform;
-  /* Bottom padding keeps a clean gap between tab-bar and scrolling content */
-  padding-bottom: 10px;
-  /* Depth shadow separates the anchored chrome from content below it */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.38), 0 2px 0 rgba(0, 209, 216, 0.07);
-  transition: box-shadow 240ms ease;
-}
-
 .topbar {
-  position: relative;
-  z-index: 1;
   align-items: stretch;
-  margin: 0 0 12px;
+  margin: 0 0 22px;
   padding: 18px;
   border: 1px solid rgba(0, 209, 216, 0.18);
   border-radius: 18px;
   background: linear-gradient(180deg, rgba(15, 27, 46, 0.86), rgba(13, 15, 20, 0.72));
   box-shadow: var(--devcon-panel-glow);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   overflow: hidden;
 }
 .topbar::before {
@@ -2392,19 +2365,11 @@ body::before {
   opacity: 0.5;
 }
 
-/* ── Studio chrome (sticky wrapper) ─────────────────────────── */
-:root[data-theme="light"] .studio-chrome {
-  background: #eef0f4;
-  box-shadow: 0 6px 24px rgba(15, 30, 60, 0.10), 0 1px 0 rgba(15, 30, 60, 0.06);
-}
-
 /* ── Topbar ──────────────────────────────────────────────────── */
 :root[data-theme="light"] .topbar {
-  background: rgba(255, 255, 255, 0.96);
+  background: rgba(255, 255, 255, 0.97);
   border-color: rgba(15, 30, 60, 0.10);
   box-shadow: 0 1px 0 rgba(15, 30, 60, 0.06), 0 4px 16px rgba(15, 30, 60, 0.05);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
 }
 :root[data-theme="light"] .topbar::before { opacity: 0.55; }
 
