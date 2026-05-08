@@ -127,6 +127,11 @@ body[data-surface] #root {
   background: oklch(28% 0.04 260);
   transform: translateY(-1px);
 }
+/* Theme switch in marketing nav */
+.nt-mkt-nav__theme-switch {
+  flex-shrink: 0;
+  /* inherits all .theme-switch styles from styles.css */
+}
 @media (max-width: 720px) {
   .nt-mkt-nav__links {
     display: none;

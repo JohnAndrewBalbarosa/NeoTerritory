@@ -185,8 +185,9 @@ body.login-active{overflow:hidden;}
 /* LIGHT: sun on the left */
 .theme-switch--light .ts-thumb{
   left:3px;
-  background:radial-gradient(circle at 38% 32%,#ffe566 0%,#ffb300 58%,#ff8c00 100%);
-  box-shadow:0 0 18px rgba(255,179,0,0.8),0 0 8px rgba(255,140,0,0.45),inset 0 1px 2px rgba(255,255,255,0.35);}
+  background:radial-gradient(circle at 36% 30%,#fff176 0%,#ffd600 42%,#ff8500 100%);
+  /* white separator ring keeps sun distinct from the warm amber track */
+  box-shadow:0 0 0 2px rgba(255,255,255,0.5),0 0 18px rgba(255,200,0,0.88),0 0 8px rgba(255,140,0,0.52),inset 0 1px 2px rgba(255,255,255,0.4);}
 
 /* Sun corona pulse */
 .theme-switch--light .ts-thumb::before{content:'';position:absolute;inset:-5px;border-radius:50%;background:radial-gradient(circle,rgba(255,200,0,0.35) 0%,transparent 70%);animation:ts-corona 2.2s ease-in-out infinite;}
