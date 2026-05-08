@@ -26,8 +26,6 @@ jobs:
         run: |
           set -euo pipefail
           ACTOR="${{ github.actor }}"
-          # Enforce UI-only guard for teammates; skip for repo owner/maintainer.
-          # Update this list anytime you want to exempt additional maintainers.
           EXEMPT_ACTORS=("JohnAndrewBalbarosa")
 
           for exempt in "${EXEMPT_ACTORS[@]}"; do
@@ -85,7 +83,7 @@ jobs:
 
           echo "All changed files are within Codebase/Frontend/."
 
-  build-and-test:
+  backend-microservice-build-and-test:
     runs-on: ubuntu-latest
     env:
       DEV_TEST_MODE: "true"
@@ -102,7 +100,6 @@ jobs:
           cache-dependency-path: |
             package-lock.json
             Codebase/Backend/package-lock.json
-            Codebase/Frontend/package-lock.json
 
       - name: Install root dependencies
         run: npm ci
@@ -110,20 +107,11 @@ jobs:
       - name: Install backend dependencies
         run: npm --prefix Codebase/Backend ci --include=dev
 
-      - name: Install frontend dependencies
-        run: npm --prefix Codebase/Frontend ci --include=dev
-
       - name: Backend typecheck
         run: npm --prefix Codebase/Backend run typecheck
 
-      - name: Frontend typecheck
-        run: npm --prefix Codebase/Frontend run typecheck
-
       - name: Backend build
         run: npm --prefix Codebase/Backend run build
-
-      - name: Frontend build
-        run: npm --prefix Codebase/Frontend run build
 
       - name: Configure CMake
         run: cmake -S . -B build
@@ -139,11 +127,76 @@ jobs:
           ./build/NeoTerritory --output artifacts/microservice-output Codebase/Microservice/samples
           test -f artifacts/microservice-output/report.json
 
+      - name: Upload backend build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-dist
+          path: Codebase/Backend/dist
+
       - name: Upload microservice output artifact
         uses: actions/upload-artifact@v4
         with:
           name: microservice-output
           path: artifacts/microservice-output
+
+  front-end-build-and-test:
+    needs:
+      - backend-microservice-build-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            Codebase/Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci --include=dev
+
+      - name: Frontend typecheck
+        run: npm --prefix Codebase/Frontend run typecheck
+
+      - name: Frontend build
+        run: npm --prefix Codebase/Frontend run build
+
+  playwright-annotated-source-testing:
+    needs:
+      - backend-microservice-build-and-test
+      - front-end-build-and-test
+    runs-on: ubuntu-latest
+    env:
+      DEV_TEST_MODE: "true"
+      NODE_ENV: "test"
+      CI_BACKEND_URL: "http://127.0.0.1:3001"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            Codebase/Backend/package-lock.json
+            Codebase/Frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix Codebase/Backend ci --include=dev
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci --include=dev
+
+      - name: Download backend build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: Codebase/Backend/dist
 
       - name: Install Playwright Chromium
         run: npm --prefix Codebase/Frontend exec playwright install --with-deps chromium
@@ -152,27 +205,26 @@ jobs:
         run: node scripts/ci-smoke.mjs
         working-directory: Codebase/Frontend
 
-  pod-integration:
+      - name: Annotated source API check
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const {spawn}=require('node:child_process');(async()=>{const base='http://127.0.0.1:3001';const p=spawn('node',['../Backend/dist/server.js'],{cwd:'Codebase/Frontend',stdio:'inherit',env:{...process.env,PORT:'3001',HOST:'127.0.0.1',NODE_ENV:'test'}});const stop=()=>{if(!p.killed)p.kill('SIGTERM');};process.on('exit',stop);for(let i=0;i<90;i++){try{const r=await fetch(base+'/health');if(r.ok)break;}catch{}await new Promise(r=>setTimeout(r,1000));if(i===89)throw new Error('backend not ready');}const acc=await fetch(base+'/auth/test-accounts').then(r=>r.json());if(!acc.accounts?.length)throw new Error('no tester accounts');const tokenRes=await fetch(base+'/auth/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:acc.accounts[0].username})});if(!tokenRes.ok)throw new Error('claim failed');const token=(await tokenRes.json()).token;const sample=await fetch(base+'/api/sample').then(r=>r.json());if(!sample.code)throw new Error('sample missing code');const analyze=await fetch(base+'/api/analyze',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({filename:sample.filename||'sample.cpp',code:sample.code})});if(!analyze.ok)throw new Error('analyze failed');const payload=await analyze.json();if(!payload.pendingId)throw new Error('pendingId missing');if(!Array.isArray(payload.annotations))throw new Error('annotations missing');console.log('Annotated source API check passed.');stop();})().catch(e=>{console.error(e);process.exit(1);});"
+
+  pod-build-and-test:
     needs:
-      - build-and-test
+      - playwright-annotated-source-testing
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download microservice output artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: microservice-output
-          path: artifacts/microservice-output
-
       - name: Setup kind cluster
         uses: helm/kind-action@v1
 
       - name: Build runtime image for pod test
-        run: |
-          docker build -t neoterritory:ci -f Codebase/Infrastructure/session-orchestration/docker/Dockerfile .
+        run: docker build -t neoterritory:ci -f Codebase/Infrastructure/session-orchestration/docker/Dockerfile .
 
       - name: Load image into kind
         run: kind load docker-image neoterritory:ci
@@ -207,6 +259,66 @@ jobs:
       - name: Collect pod logs
         if: always()
         run: kubectl logs pod/neoterritory-session-ci --tail=200 || true
+
+  gdb-runner-and-unit-tests:
+    needs:
+      - pod-build-and-test
+      - backend-microservice-build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    env:
+      DEV_TEST_MODE: "true"
+      NODE_ENV: "test"
+      ENABLE_TEST_RUNNER: "1"
+      TEST_RUNNER_USE_DOCKER: "1"
+      POD_IMAGE: "neoterritory/cpp-pod:latest"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: |
+            Codebase/Backend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm --prefix Codebase/Backend ci --include=dev
+
+      - name: Download backend build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-dist
+          path: Codebase/Backend/dist
+
+      - name: Run GDB runner and unit-test API flow
+        shell: bash
+        run: |
+          set -euo pipefail
+          node -e "const {spawn}=require('node:child_process');(async()=>{const base='http://127.0.0.1:3001';const p=spawn('node',['Codebase/Backend/dist/server.js'],{stdio:'inherit',env:{...process.env,PORT:'3001',HOST:'127.0.0.1'}});const stop=()=>{if(!p.killed)p.kill('SIGTERM');};process.on('exit',stop);for(let i=0;i<90;i++){try{const r=await fetch(base+'/health');if(r.ok)break;}catch{}await new Promise(r=>setTimeout(r,1000));if(i===89)throw new Error('backend not ready');}const acc=await fetch(base+'/auth/test-accounts').then(r=>r.json());if(!acc.accounts?.length)throw new Error('no tester accounts');const claim=await fetch(base+'/auth/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:acc.accounts[0].username})});if(!claim.ok)throw new Error('claim failed');const token=(await claim.json()).token;const sample=await fetch(base+'/api/sample').then(r=>r.json());const analyze=await fetch(base+'/api/analyze',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({filename:sample.filename||'sample.cpp',code:sample.code})});if(!analyze.ok)throw new Error('analyze failed');const payload=await analyze.json();const runTests=await fetch(base+'/api/analysis/run-tests',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({pendingId:payload.pendingId,classResolvedPatterns:payload.classResolvedPatterns||{},stdin:''})});if(!runTests.ok){const t=await runTests.text();throw new Error('run-tests failed: '+runTests.status+' '+t);}const result=await runTests.json();if(!Array.isArray(result.results))throw new Error('run-tests missing results');console.log('GDB runner API flow passed. result count=',result.results.length);stop();})().catch(e=>{console.error(e);process.exit(1);});"
+
+  check-output:
+    needs:
+      - gdb-runner-and-unit-tests
+      - backend-microservice-build-and-test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download microservice output artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: microservice-output
+          path: artifacts/microservice-output
+
+      - name: Validate output artifacts
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f artifacts/microservice-output/report.json
+          test -s artifacts/microservice-output/report.json
+          node -e "const fs=require('fs');const p='artifacts/microservice-output/report.json';const j=JSON.parse(fs.readFileSync(p,'utf8'));if(!j||typeof j!=='object')throw new Error('invalid report');console.log('output report valid');"
 
   production-no-leak-check:
     runs-on: ubuntu-latest
@@ -245,8 +357,7 @@ jobs:
 
   deploy-aws:
     needs:
-      - build-and-test
-      - pod-integration
+      - check-output
       - production-no-leak-check
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
