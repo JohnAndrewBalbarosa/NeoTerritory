@@ -3213,6 +3213,23 @@ body::before {
   line-height: 1.4;
 }
 
+/* File upload limit helper — sits below the file tabs */
+.studio-file-limit-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 0;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  background: rgba(0,209,216,0.05);
+  border: 1px solid rgba(0,209,216,0.14);
+  border-radius: 8px;
+  line-height: 1.4;
+}
+.studio-file-limit-hint svg { color: var(--devcon-cyan); flex-shrink: 0; opacity: 0.85; }
+.studio-file-limit-hint strong { color: var(--devcon-cyan); font-weight: 700; }
+
 /* Stdin section inside workspace */
 .studio-stdin-compact { display: flex; flex-direction: column; gap: 6px; }
 .studio-stdin-compact label {
