@@ -1785,3 +1785,7 @@ body::before {
 .nt-hero__cta-band .nt-hero__ctas {
   margin-top: clamp(0.9rem, 1.4vw, 1.15rem);
 }
+
+.nt-about__cta .nt-hero__ctas {
+  margin-top: clamp(0.9rem, 1.4vw, 1.15rem);
+}
