@@ -283,7 +283,7 @@ jobs:
       ENABLE_TEST_RUNNER: "1"
       TEST_RUNNER_USE_DOCKER: "1"
       POD_IMAGE: "neoterritory/cpp-pod:latest"
-      POD_WARMUP_ON_CLAIM: "1"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
