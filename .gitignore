@@ -82,6 +82,15 @@ coverage/
 !.env.deploy.example
 scripts/.env.deploy
 
+# Local secrets — never commit
+*.secret
+aws_deploy_env.secret
+
+# Local diagnostic probes
+test-artifacts/local-unittest-*.py
+test-artifacts/local-unittest-*.mjs
+test-artifacts/local-unittest-*.sh
+
 # SSH / deploy credentials — never commit, even locally
 *.pem
 *.key

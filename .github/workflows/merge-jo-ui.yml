@@ -1,11 +1,30 @@
-name: Adopt Jo's UI improvements into main
+name: Adopt UI from Miryl + Jo into main
+
+# Three-way UI adoption rule (per project owner):
+#   1. For every file under Codebase/Frontend/* that differs between
+#      origin/<miryl_branch> and main OR between origin/<jo_branch> and main:
+#        - If Miryl's and Jo's versions are byte-identical -> adopt that version.
+#        - If they differ                                  -> adopt Miryl's, and
+#          record the file in the commit message under DIFFERENCES so the team
+#          can see exactly which files Jo's UI work was *not* taken for.
+#        - If only one branch changed it                   -> adopt that one.
+#   2. Apply branding normalisation (CodiNeo -> NeoTerritory).
+#   3. Run frontend typecheck + build before committing — this is the guard that
+#      protects annotated-source tagging logic in Codebase/Frontend/src from
+#      being silently broken by a UI adoption.
+#   4. Scope is hard-locked to Codebase/Frontend/. Anything outside that path is
+#      ignored by this workflow.
 
 on:
   workflow_dispatch:
     inputs:
+      miryl_branch:
+        description: "Miryl's branch (no origin/ prefix)"
+        default: "Branch-ni-miryl-ui"
+        required: false
       jo_branch:
-        description: "Jo's feature branch (remote name, no origin/ prefix)"
-        default: "Branch-ni-jo"
+        description: "Jo's branch (no origin/ prefix)"
+        default: "new-branch-jo"
         required: false
 
 permissions:
@@ -23,173 +42,202 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Fetch Jo's branch
-        run: git fetch origin "${{ github.event.inputs.jo_branch }}"
+      - name: Fetch Miryl + Jo branches
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.event.inputs.miryl_branch }}"
+          git fetch origin "${{ github.event.inputs.jo_branch }}"
 
-      # ────────────────────────────────────────────────────────────────────
-      # FULL-FILE ADOPTIONS
-      # Jo merged main before doing his UI work, so his versions of these
-      # files already contain all of Miryl's changes plus his additions.
-      # We take his version and sed out any CodiNeo branding.
-      # ────────────────────────────────────────────────────────────────────
-      - name: Apply full-file changes from Jo
+      # ------------------------------------------------------------------
+      # Three-way adoption with branding normalisation. All work is scoped
+      # to Codebase/Frontend/. The script writes /tmp/adoption-report.md
+      # which is later folded into the commit message body.
+      # ------------------------------------------------------------------
+      - name: Adopt UI files (Miryl-priority, document differences)
+        id: adopt
         shell: bash
         run: |
           set -euo pipefail
-          JO="origin/${{ github.event.inputs.jo_branch }}"
-          FE="Codebase/Frontend"
-          SRC="$FE/src"
 
-          # Helper: take Jo's file and normalise branding
-          apply_jo() {
-            local src_path="$1"   # path inside repo
-            local full_path="$2"  # local destination
-            # Specific substitutions first (order matters), then catch-all.
-            # "CodiNeo Analysis" → "NeoTerritory Studio" must come before
-            # the catch-all so we don't end up with "NeoTerritory Analysis".
-            git show "$JO:$src_path" \
-              | sed \
-                  -e 's/CodiNeo Analysis/NeoTerritory Studio/g' \
-                  -e 's/CodiNeo/NeoTerritory/g' \
-                  -e 's/CodineoBrandMark/NTBrandMark/g' \
-                  -e 's/codineo-brand-header/nt-brand-header/g' \
-                  -e 's/codineo-brand-mark/nt-brand-mark/g' \
-                  -e 's/codineo-brand-name/nt-brand-name/g' \
-                  -e 's/codineo-brand-sub/nt-brand-sub/g' \
-                  -e 's|/\* CodiNeo brand mark|/* NeoTerritory brand mark|g' \
-              > "$full_path"
-            echo "  ✓ $full_path"
+          MIRYL="origin/${{ github.event.inputs.miryl_branch }}"
+          JO="origin/${{ github.event.inputs.jo_branch }}"
+          UI_PATH="Codebase/Frontend"
+          REPORT="/tmp/adoption-report.md"
+          : > "$REPORT"
+
+          # Normalise CodiNeo -> NeoTerritory branding inline. The longer
+          # substitutions must come before the catch-all so we never end up
+          # with "NeoTerritory Analysis".
+          normalise() {
+            sed \
+              -e 's/CodiNeo Analysis/NeoTerritory Studio/g' \
+              -e 's/CodiNeo/NeoTerritory/g' \
+              -e 's/CodineoBrandMark/NTBrandMark/g' \
+              -e 's/codineo-brand-header/nt-brand-header/g' \
+              -e 's/codineo-brand-mark/nt-brand-mark/g' \
+              -e 's/codineo-brand-name/nt-brand-name/g' \
+              -e 's/codineo-brand-sub/nt-brand-sub/g' \
+              -e 's|/\* CodiNeo brand mark|/* NeoTerritory brand mark|g'
           }
 
-          echo "── CSS files ──"
-          apply_jo "$FE/styles.css"             "$FE/styles.css"
-          apply_jo "$FE/admin.css"              "$FE/admin.css"
-          apply_jo "$SRC/styles/marketing.css"  "$SRC/styles/marketing.css"
+          # Union of files that differ in either branch vs main, restricted
+          # to the UI path.
+          mapfile -t MIRYL_FILES < <(git diff --name-only main "$MIRYL"  -- "$UI_PATH")
+          mapfile -t JO_FILES    < <(git diff --name-only main "$JO"     -- "$UI_PATH")
+          ALL_FILES=$(printf '%s\n' "${MIRYL_FILES[@]}" "${JO_FILES[@]}" | sort -u | sed '/^$/d')
 
-          echo "── TSX / component files ──"
-          apply_jo "$SRC/components/marketing/MarketingNav.tsx"  "$SRC/components/marketing/MarketingNav.tsx"
-          apply_jo "$SRC/admin/AdminApp.tsx"                     "$SRC/admin/AdminApp.tsx"
-          apply_jo "$SRC/components/auth/LoginOverlay.tsx"       "$SRC/components/auth/LoginOverlay.tsx"
-          apply_jo "$SRC/components/survey/ConsentGate.tsx"      "$SRC/components/survey/ConsentGate.tsx"
-          apply_jo "$SRC/components/survey/PretestForm.tsx"      "$SRC/components/survey/PretestForm.tsx"
-          apply_jo "$SRC/components/survey/SignoutSurvey.tsx"    "$SRC/components/survey/SignoutSurvey.tsx"
+          {
+            echo "## UI adoption report"
+            echo ""
+            echo "- Miryl branch: \`${{ github.event.inputs.miryl_branch }}\`"
+            echo "- Jo branch:    \`${{ github.event.inputs.jo_branch }}\`"
+            echo ""
+          } >> "$REPORT"
 
-      # ────────────────────────────────────────────────────────────────────
-      # PARTIAL PATCH — MainLayout.tsx
-      # Studio UI → Drew's version rules. We keep the existing brand header
-      # (ShinyText h1, NeoTerritory Studio eyebrow) but adopt only the
-      # cosmetic improvements: SVG sun/moon toggle and the lock-emoji removal.
-      # ────────────────────────────────────────────────────────────────────
-      - name: Patch MainLayout — SVG theme toggle only
-        shell: bash
-        run: |
-          cat > /tmp/patch_mainlayout.py << 'PYEOF'
-import sys
+          IDENTICAL=()
+          MIRYL_ONLY=()
+          JO_ONLY=()
+          DIFFER=()
 
-path = "Codebase/Frontend/src/components/layout/MainLayout.tsx"
-with open(path, encoding="utf-8") as f:
-    src = f.read()
+          for f in $ALL_FILES; do
+            in_miryl=0; in_jo=0
+            for x in "${MIRYL_FILES[@]}"; do [[ "$x" == "$f" ]] && in_miryl=1; done
+            for x in "${JO_FILES[@]}";    do [[ "$x" == "$f" ]] && in_jo=1;    done
 
-# 1. Replace text-only theme toggle with SVG sun/moon icons
-OLD_TOGGLE = "{theme === 'dark' ? '☀ Light' : '☾ Dark'}"
-NEW_TOGGLE = """{theme === 'dark' ? (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                  {' '}Light
-                </>
-              ) : (
-                <>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
-                  {' '}Dark
-                </>
-              )}"""
-
-if OLD_TOGGLE not in src:
-    print("WARNING: theme toggle pattern not found — already patched or file changed")
-else:
-    src = src.replace(OLD_TOGGLE, NEW_TOGGLE)
-    print("  ✓ SVG theme toggle applied")
-
-with open(path, "w", encoding="utf-8") as f:
-    f.write(src)
-print("  ✓ MainLayout.tsx saved")
-PYEOF
-          python3 /tmp/patch_mainlayout.py
-
-      # ────────────────────────────────────────────────────────────────────
-      # VERIFICATION — no CodiNeo references must remain
-      # ────────────────────────────────────────────────────────────────────
-      - name: Verify no CodiNeo references remain in patched files
-        shell: bash
-        run: |
-          set -euo pipefail
-          PATCHED=(
-            "Codebase/Frontend/styles.css"
-            "Codebase/Frontend/admin.css"
-            "Codebase/Frontend/src/styles/marketing.css"
-            "Codebase/Frontend/src/components/marketing/MarketingNav.tsx"
-            "Codebase/Frontend/src/admin/AdminApp.tsx"
-            "Codebase/Frontend/src/components/auth/LoginOverlay.tsx"
-            "Codebase/Frontend/src/components/survey/ConsentGate.tsx"
-            "Codebase/Frontend/src/components/survey/PretestForm.tsx"
-            "Codebase/Frontend/src/components/survey/SignoutSurvey.tsx"
-            "Codebase/Frontend/src/components/layout/MainLayout.tsx"
-          )
-
-          FOUND=0
-          for f in "${PATCHED[@]}"; do
-            if grep -iE "CodiNeo|codineo" "$f" 2>/dev/null; then
-              echo "FAIL: CodiNeo reference still present in $f"
-              FOUND=1
+            if [[ "$in_miryl" -eq 1 && "$in_jo" -eq 1 ]]; then
+              # Compare Miryl's and Jo's versions head-to-head (post-normalisation,
+              # so harmless branding-only divergence does not flag as DIFFER).
+              MIRYL_NORM=$(git show "$MIRYL:$f" | normalise || true)
+              JO_NORM=$(git show "$JO:$f"       | normalise || true)
+              if [[ "$MIRYL_NORM" == "$JO_NORM" ]]; then
+                printf '%s' "$MIRYL_NORM" > "$f"
+                IDENTICAL+=("$f")
+              else
+                printf '%s' "$MIRYL_NORM" > "$f"
+                DIFFER+=("$f")
+              fi
+            elif [[ "$in_miryl" -eq 1 ]]; then
+              git show "$MIRYL:$f" | normalise > "$f"
+              MIRYL_ONLY+=("$f")
+            else
+              git show "$JO:$f" | normalise > "$f"
+              JO_ONLY+=("$f")
             fi
           done
 
-          if [[ "$FOUND" -eq 1 ]]; then
+          {
+            echo "### Identical in Miryl + Jo (adopted directly): ${#IDENTICAL[@]}"
+            for f in "${IDENTICAL[@]}"; do echo "- $f"; done
             echo ""
-            echo "ERROR: One or more files still contain CodiNeo references."
-            echo "Check the sed substitutions in the 'Apply full-file changes' step."
+            echo "### Differ between Miryl and Jo — Miryl version adopted: ${#DIFFER[@]}"
+            for f in "${DIFFER[@]}"; do
+              echo "- $f"
+              # Inline a tight stat of what Jo would have changed vs Miryl,
+              # so reviewers can see whether anything important was discarded.
+              STAT=$(git diff --stat "$MIRYL:$f" "$JO:$f" 2>/dev/null | head -1 || true)
+              [[ -n "$STAT" ]] && echo "  - Jo-vs-Miryl stat: $STAT"
+            done
+            echo ""
+            echo "### Only in Miryl: ${#MIRYL_ONLY[@]}"
+            for f in "${MIRYL_ONLY[@]}"; do echo "- $f"; done
+            echo ""
+            echo "### Only in Jo: ${#JO_ONLY[@]}"
+            for f in "${JO_ONLY[@]}"; do echo "- $f"; done
+          } >> "$REPORT"
+
+          echo "::group::Adoption report"
+          cat "$REPORT"
+          echo "::endgroup::"
+
+      # ------------------------------------------------------------------
+      # Scope guard: nothing outside Codebase/Frontend/ may have been touched.
+      # ------------------------------------------------------------------
+      - name: Verify scope is UI-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t CHANGED < <(git diff --name-only HEAD)
+          DISALLOWED=()
+          for f in "${CHANGED[@]}"; do
+            [[ -z "$f" ]] && continue
+            if [[ "$f" != Codebase/Frontend/* ]]; then
+              DISALLOWED+=("$f")
+            fi
+          done
+          if [[ ${#DISALLOWED[@]} -gt 0 ]]; then
+            echo "Adoption produced changes outside Codebase/Frontend/:" >&2
+            printf ' - %s\n' "${DISALLOWED[@]}" >&2
             exit 1
           fi
+          echo "Scope OK — only Codebase/Frontend/ touched."
 
-          echo "✓ No CodiNeo references found in any patched file"
+      # ------------------------------------------------------------------
+      # No CodiNeo references must remain — branding normalisation gate.
+      # ------------------------------------------------------------------
+      - name: Verify no CodiNeo references remain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --name-only HEAD -- Codebase/Frontend \
+              | xargs -r grep -liE "CodiNeo|codineo" 2>/dev/null; then
+            echo "ERROR: CodiNeo branding still present in adopted files." >&2
+            exit 1
+          fi
+          echo "✓ No CodiNeo references in adopted files."
+
+      # ------------------------------------------------------------------
+      # Logic guard: typecheck + build must pass on the adopted tree. This
+      # is the protection for annotated-source tagging behaviour: if Jo or
+      # Miryl unintentionally broke the contract, the build catches it
+      # before we push to main.
+      # ------------------------------------------------------------------
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Codebase/Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci --include=dev
+
+      - name: Frontend typecheck (logic guard)
+        run: npm --prefix Codebase/Frontend run typecheck
+
+      - name: Frontend build (logic guard)
+        run: npm --prefix Codebase/Frontend run build
 
       - name: Show diff summary
         shell: bash
         run: git diff --stat HEAD
 
+      # ------------------------------------------------------------------
+      # Commit with the adoption report as the body so the differences are
+      # documented in git history (per project owner's instruction).
+      # ------------------------------------------------------------------
       - name: Commit and push to main
         shell: bash
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          git add \
-            Codebase/Frontend/styles.css \
-            Codebase/Frontend/admin.css \
-            Codebase/Frontend/src/styles/marketing.css \
-            Codebase/Frontend/src/components/marketing/MarketingNav.tsx \
-            Codebase/Frontend/src/admin/AdminApp.tsx \
-            Codebase/Frontend/src/components/auth/LoginOverlay.tsx \
-            Codebase/Frontend/src/components/survey/ConsentGate.tsx \
-            Codebase/Frontend/src/components/survey/PretestForm.tsx \
-            Codebase/Frontend/src/components/survey/SignoutSurvey.tsx \
-            Codebase/Frontend/src/components/layout/MainLayout.tsx
+          # Stage only the UI scope.
+          git add -- Codebase/Frontend
 
-          # Exit cleanly if there are no actual changes (workflow is idempotent)
           if git diff --cached --quiet; then
-            echo "Nothing to commit — main is already up to date with Jo's UI improvements."
+            echo "Nothing to commit — main UI is already aligned with Miryl/Jo."
             exit 0
           fi
 
-          git commit -m "feat(ui): adopt Jo's UI improvements — SVG icons, 2-step login, survey brand headers
+          MIRYL_BR="${{ github.event.inputs.miryl_branch }}"
+          JO_BR="${{ github.event.inputs.jo_branch }}"
 
-- SVG sun/moon theme toggle in MainLayout and AdminApp (replaces text emoji)
-- 2-step tester login flow: home screen + workflow steps before seat picker
-- NeoTerritory brand mark in survey modals (ConsentGate, PretestForm, SignoutSurvey)
-- SVG logo mark in admin and app topbar brand rows
-- MarketingNav: SVG icon replacing NT text mark
-- CSS polish: nav brand name weight, CTA gradient button, eyebrow dot, stats accent font
-- admin.css: brand section layout, admin-actions flex, section h2 accent line, tab bar cleanup
-- All CodiNeo references replaced with NeoTerritory (Miryl priority rule applied)"
+          {
+            echo "feat(ui): adopt UI from $MIRYL_BR + $JO_BR (Miryl-priority on conflicts)"
+            echo ""
+            cat /tmp/adoption-report.md
+          } > /tmp/commit-msg.txt
 
+          git commit -F /tmp/commit-msg.txt
           git push origin main
