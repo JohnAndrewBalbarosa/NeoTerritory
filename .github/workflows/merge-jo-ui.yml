@@ -1,0 +1,195 @@
+name: Adopt Jo's UI improvements into main
+
+on:
+  workflow_dispatch:
+    inputs:
+      jo_branch:
+        description: "Jo's feature branch (remote name, no origin/ prefix)"
+        default: "Branch-ni-jo"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  merge-ui:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch Jo's branch
+        run: git fetch origin "${{ github.event.inputs.jo_branch }}"
+
+      # ────────────────────────────────────────────────────────────────────
+      # FULL-FILE ADOPTIONS
+      # Jo merged main before doing his UI work, so his versions of these
+      # files already contain all of Miryl's changes plus his additions.
+      # We take his version and sed out any CodiNeo branding.
+      # ────────────────────────────────────────────────────────────────────
+      - name: Apply full-file changes from Jo
+        shell: bash
+        run: |
+          set -euo pipefail
+          JO="origin/${{ github.event.inputs.jo_branch }}"
+          FE="Codebase/Frontend"
+          SRC="$FE/src"
+
+          # Helper: take Jo's file and normalise branding
+          apply_jo() {
+            local src_path="$1"   # path inside repo
+            local full_path="$2"  # local destination
+            # Specific substitutions first (order matters), then catch-all.
+            # "CodiNeo Analysis" → "NeoTerritory Studio" must come before
+            # the catch-all so we don't end up with "NeoTerritory Analysis".
+            git show "$JO:$src_path" \
+              | sed \
+                  -e 's/CodiNeo Analysis/NeoTerritory Studio/g' \
+                  -e 's/CodiNeo/NeoTerritory/g' \
+                  -e 's/CodineoBrandMark/NTBrandMark/g' \
+                  -e 's/codineo-brand-header/nt-brand-header/g' \
+                  -e 's/codineo-brand-mark/nt-brand-mark/g' \
+                  -e 's/codineo-brand-name/nt-brand-name/g' \
+                  -e 's/codineo-brand-sub/nt-brand-sub/g' \
+                  -e 's|/\* CodiNeo brand mark|/* NeoTerritory brand mark|g' \
+              > "$full_path"
+            echo "  ✓ $full_path"
+          }
+
+          echo "── CSS files ──"
+          apply_jo "$FE/styles.css"             "$FE/styles.css"
+          apply_jo "$FE/admin.css"              "$FE/admin.css"
+          apply_jo "$SRC/styles/marketing.css"  "$SRC/styles/marketing.css"
+
+          echo "── TSX / component files ──"
+          apply_jo "$SRC/components/marketing/MarketingNav.tsx"  "$SRC/components/marketing/MarketingNav.tsx"
+          apply_jo "$SRC/admin/AdminApp.tsx"                     "$SRC/admin/AdminApp.tsx"
+          apply_jo "$SRC/components/auth/LoginOverlay.tsx"       "$SRC/components/auth/LoginOverlay.tsx"
+          apply_jo "$SRC/components/survey/ConsentGate.tsx"      "$SRC/components/survey/ConsentGate.tsx"
+          apply_jo "$SRC/components/survey/PretestForm.tsx"      "$SRC/components/survey/PretestForm.tsx"
+          apply_jo "$SRC/components/survey/SignoutSurvey.tsx"    "$SRC/components/survey/SignoutSurvey.tsx"
+
+      # ────────────────────────────────────────────────────────────────────
+      # PARTIAL PATCH — MainLayout.tsx
+      # Studio UI → Drew's version rules. We keep the existing brand header
+      # (ShinyText h1, NeoTerritory Studio eyebrow) but adopt only the
+      # cosmetic improvements: SVG sun/moon toggle and the lock-emoji removal.
+      # ────────────────────────────────────────────────────────────────────
+      - name: Patch MainLayout — SVG theme toggle only
+        shell: bash
+        run: |
+          cat > /tmp/patch_mainlayout.py << 'PYEOF'
+import sys
+
+path = "Codebase/Frontend/src/components/layout/MainLayout.tsx"
+with open(path, encoding="utf-8") as f:
+    src = f.read()
+
+# 1. Replace text-only theme toggle with SVG sun/moon icons
+OLD_TOGGLE = "{theme === 'dark' ? '☀ Light' : '☾ Dark'}"
+NEW_TOGGLE = """{theme === 'dark' ? (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                  {' '}Light
+                </>
+              ) : (
+                <>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79z"/></svg>
+                  {' '}Dark
+                </>
+              )}"""
+
+if OLD_TOGGLE not in src:
+    print("WARNING: theme toggle pattern not found — already patched or file changed")
+else:
+    src = src.replace(OLD_TOGGLE, NEW_TOGGLE)
+    print("  ✓ SVG theme toggle applied")
+
+with open(path, "w", encoding="utf-8") as f:
+    f.write(src)
+print("  ✓ MainLayout.tsx saved")
+PYEOF
+          python3 /tmp/patch_mainlayout.py
+
+      # ────────────────────────────────────────────────────────────────────
+      # VERIFICATION — no CodiNeo references must remain
+      # ────────────────────────────────────────────────────────────────────
+      - name: Verify no CodiNeo references remain in patched files
+        shell: bash
+        run: |
+          set -euo pipefail
+          PATCHED=(
+            "Codebase/Frontend/styles.css"
+            "Codebase/Frontend/admin.css"
+            "Codebase/Frontend/src/styles/marketing.css"
+            "Codebase/Frontend/src/components/marketing/MarketingNav.tsx"
+            "Codebase/Frontend/src/admin/AdminApp.tsx"
+            "Codebase/Frontend/src/components/auth/LoginOverlay.tsx"
+            "Codebase/Frontend/src/components/survey/ConsentGate.tsx"
+            "Codebase/Frontend/src/components/survey/PretestForm.tsx"
+            "Codebase/Frontend/src/components/survey/SignoutSurvey.tsx"
+            "Codebase/Frontend/src/components/layout/MainLayout.tsx"
+          )
+
+          FOUND=0
+          for f in "${PATCHED[@]}"; do
+            if grep -iE "CodiNeo|codineo" "$f" 2>/dev/null; then
+              echo "FAIL: CodiNeo reference still present in $f"
+              FOUND=1
+            fi
+          done
+
+          if [[ "$FOUND" -eq 1 ]]; then
+            echo ""
+            echo "ERROR: One or more files still contain CodiNeo references."
+            echo "Check the sed substitutions in the 'Apply full-file changes' step."
+            exit 1
+          fi
+
+          echo "✓ No CodiNeo references found in any patched file"
+
+      - name: Show diff summary
+        shell: bash
+        run: git diff --stat HEAD
+
+      - name: Commit and push to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add \
+            Codebase/Frontend/styles.css \
+            Codebase/Frontend/admin.css \
+            Codebase/Frontend/src/styles/marketing.css \
+            Codebase/Frontend/src/components/marketing/MarketingNav.tsx \
+            Codebase/Frontend/src/admin/AdminApp.tsx \
+            Codebase/Frontend/src/components/auth/LoginOverlay.tsx \
+            Codebase/Frontend/src/components/survey/ConsentGate.tsx \
+            Codebase/Frontend/src/components/survey/PretestForm.tsx \
+            Codebase/Frontend/src/components/survey/SignoutSurvey.tsx \
+            Codebase/Frontend/src/components/layout/MainLayout.tsx
+
+          # Exit cleanly if there are no actual changes (workflow is idempotent)
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — main is already up to date with Jo's UI improvements."
+            exit 0
+          fi
+
+          git commit -m "feat(ui): adopt Jo's UI improvements — SVG icons, 2-step login, survey brand headers
+
+- SVG sun/moon theme toggle in MainLayout and AdminApp (replaces text emoji)
+- 2-step tester login flow: home screen + workflow steps before seat picker
+- NeoTerritory brand mark in survey modals (ConsentGate, PretestForm, SignoutSurvey)
+- SVG logo mark in admin and app topbar brand rows
+- MarketingNav: SVG icon replacing NT text mark
+- CSS polish: nav brand name weight, CTA gradient button, eyebrow dot, stats accent font
+- admin.css: brand section layout, admin-actions flex, section h2 accent line, tab bar cleanup
+- All CodiNeo references replaced with NeoTerritory (Miryl priority rule applied)"
+
+          git push origin main
