@@ -101,7 +101,10 @@ export default function MainLayout() {
                       // Heartbeat already verified working — re-enable after observability sweep.
   // Dev-only viewport overflow detector for the studio shell.
   useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, setTheme } = useTheme();
+
+  // Always enter the Studio in dark mode regardless of any previously saved preference.
+  useEffect(() => { setTheme('dark'); }, []);
   const {
     user, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
