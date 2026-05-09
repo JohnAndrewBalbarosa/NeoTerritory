@@ -24,7 +24,7 @@ import {
   runSubmissionCompile, runPatternUnitTest,
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
-import { podManagerStatus } from '../services/podManager';
+import { ensurePod, isPodModeEnabled, podManagerStatus, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import {
   getMicroserviceStatus,
   getAiTranslatorStatus,
@@ -834,6 +834,17 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     });
 
     logEvent(req.user?.id ?? null, 'analysis', `Analyzed (unsaved): ${sourceName}`);
+
+    const warmupUser = req.user;
+    if (warmupUser && isPodModeEnabled() && shouldWarmupPods()) {
+      console.log('[pod-warmup] warmup scheduled (reason=submit)');
+      setImmediate(() => {
+        void ensurePod(warmupUser.id, warmupUser.username || `user-${warmupUser.id}`).catch(() => { /* logged inside */ });
+      });
+    } else if (warmupUser && isPodModeEnabled()) {
+      const reason = podWarmupDecision();
+      console.log(`[pod-warmup] warmup skipped (reason=${reason})`);
+    }
 
     let aiJobId: string | null = null;
     let aiStatus: 'pending' | 'disabled' = 'disabled';

@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
-import { ensurePod, isPodModeEnabled } from '../services/podManager';
+import { ensurePod, isPodModeEnabled, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import { revokeToken } from '../middleware/tokenRevocation';
 import type { UserRow } from '../types/db';
 
@@ -234,10 +234,14 @@ export const claimSeat = async (req: Request, res: Response, next: NextFunction)
     // (POD_RUN_TIMEOUT_MS) — Docker can never block annotated source,
     // /api/analyze, or any other route. With pod mode off this is a
     // no-op.
-    if (isPodModeEnabled()) {
+    if (isPodModeEnabled() && shouldWarmupPods()) {
+      console.log('[pod-warmup] warmup scheduled (reason=claim)');
       setImmediate(() => {
         void ensurePod(user.id, user.username).catch(() => { /* logged inside */ });
       });
+    } else if (isPodModeEnabled()) {
+      const reason = podWarmupDecision();
+      console.log(`[pod-warmup] warmup skipped (reason=${reason})`);
     }
   } catch (err) {
     next(err);

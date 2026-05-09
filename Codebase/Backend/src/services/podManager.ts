@@ -62,13 +62,31 @@ export type PodDisabledReason =
   | null;
 
 export function isPodModeEnabled(): boolean {
-  if (process.env.TEST_RUNNER_USE_DOCKER !== '1') return false;
-  return dockerStatus().ok;
+  return process.env.TEST_RUNNER_USE_DOCKER === '1';
+}
+
+export type PodWarmupDecisionReason =
+  | 'enabled'
+  | 'env_disabled'
+  | 'ci_mode';
+
+export function podWarmupDecision(): PodWarmupDecisionReason {
+  const warmupFlag = process.env.POD_WARMUP_ON_CLAIM;
+  if (warmupFlag === '0') return 'env_disabled';
+  if (process.env.CI === 'true' && warmupFlag !== '1') return 'ci_mode';
+  return 'enabled';
+}
+
+export function shouldWarmupPods(): boolean {
+  return podWarmupDecision() === 'enabled';
 }
 
 export function podDisabledReason(): PodDisabledReason {
   if (process.env.TEST_RUNNER_USE_DOCKER !== '1') return 'env_off';
-  return dockerStatus().reason;
+  // If it's enabled in env but the services haven't started or the watcher
+  // hasn't run, we don't know the real reason yet. Defer to the masterlist
+  // for the "daemon_down" or "no_binary" specifics.
+  return null;
 }
 
 // Check whether the pod image is already present on the local Docker host.
@@ -239,11 +257,36 @@ function dockerRunArgs(containerName: string): string[] {
   ];
 }
 
+// Lazy-start the background services (sweep timer, docker watcher, image
+// build). Called only when a pod is actually requested (ensurePod) or
+// explicitly during boot if not in test mode.
+let servicesStarted = false;
+export function lazyStartPodServices(): void {
+  if (servicesStarted || !isPodModeEnabled()) return;
+  servicesStarted = true;
+
+  // These two have their own internal "already started" guards.
+  startSweepTimer();
+  // We use a dynamic import/require for dockerWatcher to avoid circular
+  // dependencies if they arise, and because it's only needed now.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { startDockerWatcher } = require('./dockerWatcher');
+  startDockerWatcher();
+
+  // Trigger the idempotent image build in the background.
+  void ensurePodImageBuilt();
+}
+
 // Public — best-effort. Failures (Docker missing, image pull required, OOM)
 // are swallowed so the rest of the auth flow continues; the local fallback
 // path in testRunnerService still works.
 export async function ensurePod(userId: number, username: string): Promise<PodHandle | null> {
   if (!isPodModeEnabled()) return null;
+
+  // Trigger background services (watcher, sweep, image build) if this is
+  // the first time we've actually needed them.
+  lazyStartPodServices();
+
   // Make sure the image exists before issuing `docker run` — the build
   // call is idempotent (skipped when the image is present) and protects
   // against the case where ensurePod is hit before server boot's
@@ -380,9 +423,12 @@ export function podManagerStatus(callerUserId?: number | null): {
   const enabled = isPodModeEnabled();
   return {
     enabled,
-    imageReady: enabled ? imageExists(POD_IMAGE) : false,
+    // We no longer call imageExists() synchronously here. The analysis
+    // route merges this with the masterlist snapshot which carries the
+    // real (async-probed) readiness.
+    imageReady: false,
     livePods: pods.size,
-    reason: enabled ? null : podDisabledReason(),
+    reason: podDisabledReason(),
     mine: hasPodForUser(callerUserId)
   };
 }

@@ -88,6 +88,7 @@ jobs:
     env:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -173,6 +174,7 @@ jobs:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
       CI_BACKEND_URL: "http://127.0.0.1:3001"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -216,6 +218,8 @@ jobs:
       - playwright-annotated-source-testing
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      POD_WARMUP_ON_CLAIM: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -272,6 +276,7 @@ jobs:
       ENABLE_TEST_RUNNER: "1"
       TEST_RUNNER_USE_DOCKER: "1"
       POD_IMAGE: "neoterritory/cpp-pod:latest"
+      POD_WARMUP_ON_CLAIM: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -325,6 +330,7 @@ jobs:
     env:
       DEV_TEST_MODE: "false"
       NODE_ENV: "production"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
