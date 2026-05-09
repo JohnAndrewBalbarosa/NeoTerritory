@@ -1322,7 +1322,7 @@ async function dispatchPatternTests(
   userId?: number,
   stdin?: string
 ): Promise<TestResult[]> {
-  const eligible = patterns.filter(p => p.className && p.classText);
+  const eligible = patterns.filter(p => p.className);
   if (eligible.length === 0) return [];
 
   // The compile_run phase only depends on the submission's source, so we run
