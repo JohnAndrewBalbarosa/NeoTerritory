@@ -64,7 +64,7 @@ Loads scripts/.env.deploy and provides the y/N prompt helper.
 **Functions**
 
 - `load_deploy_env` (line 4)
-- `ask_yes` (line 14)
+- `ask_yes` (line 29)
   ASSUME_YES is set by the caller. ask_yes consults it before prompting.
 
 ### `ops/bash/deploy/lib/preflight.sh`
