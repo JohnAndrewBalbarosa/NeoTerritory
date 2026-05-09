@@ -229,6 +229,8 @@ jobs:
 
       - name: Setup kind cluster
         uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
 
       - name: Build runtime image for pod test
         run: docker build -t neoterritory:ci -f Codebase/Infrastructure/session-orchestration/docker/Dockerfile .
