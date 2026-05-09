@@ -173,6 +173,8 @@ jobs:
     env:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
+      JWT_SECRET: "ci-static-jwt-secret"
+      SEED_TEST_USERS: "1"
       CI_BACKEND_URL: "http://127.0.0.1:3001"
       POD_WARMUP_ON_CLAIM: "0"
       TEST_RUNNER_USE_DOCKER: "0"
@@ -274,6 +276,8 @@ jobs:
     env:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
+      JWT_SECRET: "ci-static-jwt-secret"
+      SEED_TEST_USERS: "1"
       ENABLE_TEST_RUNNER: "1"
       TEST_RUNNER_USE_DOCKER: "1"
       POD_IMAGE: "neoterritory/cpp-pod:latest"
