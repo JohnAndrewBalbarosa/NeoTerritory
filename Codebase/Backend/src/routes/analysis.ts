@@ -793,7 +793,9 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       sourceName,
       stage:               structural.stage,
       diagnostics:         structural.diagnostics || [],
-      detectedPatterns,
+      // Keep the same enriched shape in pending storage that we return to
+      // clients so /api/analysis/run-tests can consume className/classText.
+      detectedPatterns: enrichedPatterns,
       documentationTargets: structural.documentationTargets || [],
       unitTestTargets:      structural.unitTestTargets || [],
       aiByPattern,
