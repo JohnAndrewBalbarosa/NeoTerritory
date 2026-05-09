@@ -12,4 +12,5 @@ Developer-only quality gates for compile, unit, integration, GDB, and AI async o
 
 ## Read Order
 1. Read `github_actions_step_pipeline.md` for the Step 1 -> Step 2 test contract.
-2. Apply the no-leak policy in backend and frontend production profiles.
+2. Read the pod warmup separation contract in `pod_warmup_separation.md`.
+3. Apply the no-leak policy in backend and frontend production profiles.
