@@ -10,7 +10,7 @@ import { fetchHealth } from '../api/client';
 // the backend is unreachable so the studio recovers without a reload.
 export function useHealth() {
   const {
-    setStatus, setMsStatus, setAiConfigured, setMaxFilesPerSubmission, setDockerStatus
+    setStatus, setMsStatus, setAiConfigured, setMaxFilesPerSubmission, setMaxTokensPerFile, setDockerStatus
   } = useAppStore();
 
   useEffect(() => {
@@ -53,6 +53,9 @@ export function useHealth() {
           setAiConfigured(h.aiProviderConfigured);
           if (typeof h.maxFilesPerSubmission === 'number') {
             setMaxFilesPerSubmission(h.maxFilesPerSubmission);
+          }
+          if (typeof h.maxTokensPerFile === 'number') {
+            setMaxTokensPerFile(h.maxTokensPerFile);
           }
           setStatus({
             kind: 'ok',

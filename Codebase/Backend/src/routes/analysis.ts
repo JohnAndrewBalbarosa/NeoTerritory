@@ -39,6 +39,7 @@ import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
 import { uploadsDir, outputsDir } from '../config/paths';
+import { countCppTokens, resolveMaxTokensPerFile } from '../utils/tokenCounter';
 
 interface AnalysisPayload {
   sourceName: string;
@@ -603,6 +604,7 @@ router.get('/health', (req: Request, res: Response) => {
     aiProviderConfigured: ai.configured,
     aiModel:              ai.model,
     maxFilesPerSubmission: Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3'))),
+    maxTokensPerFile: resolveMaxTokensPerFile(),
     testRunnerEnabled: isTestRunnerEnabled(),
     gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
     gdbCooldownMs: GDB_COOLDOWN_MS,
@@ -712,6 +714,25 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       if (req.file) fs.unlink(req.file.path, () => {});
       res.status(400).json({ error: 'Combined source exceeds 4,000,000 character limit.' });
       return;
+    }
+
+    // Per-file lexical-token cap. Uses the same coarse C++-friendly tokenizer
+    // exposed via /api/health so the live counter the user sees in the form
+    // matches what the server accepts. Reject the whole submission if any
+    // single file is over.
+    const tokenCap = resolveMaxTokensPerFile();
+    for (const f of fileList) {
+      const tokenCount = countCppTokens(f.code);
+      if (tokenCount > tokenCap) {
+        if (req.file) fs.unlink(req.file.path, () => {});
+        res.status(400).json({
+          error: `File ${f.name} has ${tokenCount} tokens, which exceeds the ${tokenCap}-token per-file limit.`,
+          file: f.name,
+          tokens: tokenCount,
+          limit: tokenCap
+        });
+        return;
+      }
     }
 
     // Run the structural analyzer per-file and merge. Per-file annotations

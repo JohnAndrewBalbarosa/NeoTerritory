@@ -4,6 +4,7 @@ import { submitAnalysis, fetchSample } from '../../api/client';
 import { consumeStudioPrefill } from '../../logic/studioPrefill';
 import { logFrontendEvent } from '../../logic/frontendLog';
 import { AnalysisRun } from '../../types/api';
+import { countCppTokens, DEFAULT_MAX_TOKENS_PER_FILE } from '../../utils/tokenCounter';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
@@ -18,12 +19,7 @@ interface FileSlot {
 
 // Hard ceiling — must match backend payloadValidator max(5).
 const MAX_FILES_HARD_CAP = 5;
-const MAX_TOKENS_PER_FILE = 500;
 const ACCEPTED_EXT = '.cpp,.cc,.cxx,.h,.hpp';
-
-function countTokens(code: string): number {
-  return code.trim().split(/\s+/).filter(Boolean).length;
-}
 
 function newSlotId(): string {
   return `slot-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -31,10 +27,11 @@ function newSlotId(): string {
 
 export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
-    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission,
+    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission, maxTokensPerFile,
     submissionFiles, setSubmissionFiles,
     programStdin, setProgramStdin } = useAppStore();
   const MAX_FILES = Math.min(MAX_FILES_HARD_CAP, Math.max(1, maxFilesPerSubmission || 3));
+  const MAX_TOKENS = Math.max(100, maxTokensPerFile || DEFAULT_MAX_TOKENS_PER_FILE);
 
   // Slots are persisted in the store as `submissionFiles` so they survive
   // unmount/remount of this form (e.g. after running an analysis the form
@@ -116,10 +113,24 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
       setStatus({ kind: 'error', title: 'No input', detail: 'Paste code or load a file in at least one slot.' });
       return;
     }
+    const oversized = filled
+      .map(s => ({ name: s.name || 'snippet.cpp', tokens: countCppTokens(s.text) }))
+      .filter(x => x.tokens > MAX_TOKENS);
+    if (oversized.length > 0) {
+      const first = oversized[0];
+      setStatus({
+        kind: 'error',
+        title: 'File too large',
+        detail: `${first.name} has ${first.tokens} tokens (limit ${MAX_TOKENS}). Trim the file before submitting.`
+      });
+      return;
+    }
     const dispatch = () => { void dispatchAnalyze(filled); };
     if (beforeSubmit) beforeSubmit(dispatch);
     else dispatch();
   }
+
+  const submissionOverLimit = slots.some(s => countCppTokens(s.text) > MAX_TOKENS);
 
   async function onLoadSample() {
     try {
@@ -254,11 +265,11 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
             aria-label="Source for this tab"
           />
           {activeSlot.text.trim().length > 0 && (() => {
-            const t = countTokens(activeSlot.text);
-            const over = t > MAX_TOKENS_PER_FILE;
+            const t = countCppTokens(activeSlot.text);
+            const over = t > MAX_TOKENS;
             return (
               <span className={`token-counter ${over ? 'token-counter--over' : ''}`}>
-                {t} / {MAX_TOKENS_PER_FILE} tokens{over ? ' — too large' : ''}
+                {t} / {MAX_TOKENS} tokens{over ? ' — too large, the server will reject this' : ''}
               </span>
             );
           })()}
@@ -281,7 +292,7 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
       </div>
 
       <div className="form-actions">
-        <button id="analyze-btn" className="primary-btn" type="submit" disabled={busy}>
+        <button id="analyze-btn" className="primary-btn" type="submit" disabled={busy || submissionOverLimit}>
           {busy ? 'Running...' : `Run analysis (${slots.filter(s => s.text.trim()).length} file${slots.filter(s => s.text.trim()).length === 1 ? '' : 's'})`}
         </button>
         <button id="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>

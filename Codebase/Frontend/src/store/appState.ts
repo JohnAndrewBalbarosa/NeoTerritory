@@ -61,6 +61,7 @@ interface AppState {
   aiJobId: string | null;
   aiConfigured: boolean;
   maxFilesPerSubmission: number;
+  maxTokensPerFile: number;
   pendingRunSurveyForRunKey: string | null;
   linePatternOverrides: Record<number, string>;
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
@@ -98,6 +99,7 @@ interface AppState {
   setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
   setAiConfigured: (v: boolean) => void;
   setMaxFilesPerSubmission: (v: number) => void;
+  setMaxTokensPerFile: (v: number) => void;
   mergeAiAnnotations: (aiAnnotations: Annotation[]) => void;
   mergeAiEducation: (educationByKey: Record<string, PatternEducation>) => void;
   setPendingRunSurvey: (key: string | null) => void;
@@ -148,6 +150,7 @@ export const useAppStore = create<AppState>((set) => ({
   aiJobId: null,
   aiConfigured: false,
   maxFilesPerSubmission: 3,
+  maxTokensPerFile: 1000,
   pendingRunSurveyForRunKey: null,
   linePatternOverrides: {},
   submissionFiles: [],
@@ -244,6 +247,7 @@ export const useAppStore = create<AppState>((set) => ({
   })),
   setAiConfigured: (v) => set({ aiConfigured: v }),
   setMaxFilesPerSubmission: (v) => set({ maxFilesPerSubmission: Math.max(1, Math.min(16, v)) }),
+  setMaxTokensPerFile: (v) => set({ maxTokensPerFile: Math.max(100, Math.min(20_000, Math.floor(v))) }),
   setLinePatternOverride: (line, patternKey) => set((s) => ({
     linePatternOverrides: { ...s.linePatternOverrides, [line]: patternKey }
   })),

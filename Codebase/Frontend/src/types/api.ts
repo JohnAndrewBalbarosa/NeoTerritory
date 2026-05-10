@@ -287,6 +287,7 @@ export interface HealthStatus {
   totalRuns: number;
   aiProviderConfigured: boolean;
   maxFilesPerSubmission?: number;
+  maxTokensPerFile?: number;
   testRunnerEnabled?: boolean;
   gdbRunsPerWindow?: number;
   gdbCooldownMs?: number;
