@@ -1,6 +1,25 @@
 import { useEffect, useState } from 'react';
 
-export type Surface = 'hero' | 'learn' | 'about' | 'choose' | 'studentLearning' | 'studio' | 'googleCallback' | 'googleSignIn';
+// Per D43 (top-nav lock) + D46 (/mechanics naming) + D45 (tour) + Sprint 0
+// docs blueprints: /why, /mechanics, /patterns, /tour, /research are all
+// public marketing surfaces. They are not in the top nav (only Try it /
+// Features / Learn / About are) but they are real routes reachable from the
+// Home bento grid and contextual links.
+export type Surface =
+  | 'hero'
+  | 'learn'
+  | 'about'
+  | 'choose'
+  | 'studentLearning'
+  | 'studio'
+  | 'googleCallback'
+  | 'googleSignIn'
+  | 'why'
+  | 'mechanics'
+  | 'patterns'
+  | 'patternDetail'
+  | 'tour'
+  | 'research';
 
 const STUDIO_ALIASES = [
   '/app',
@@ -21,8 +40,26 @@ export function pathToSurface(path: string): Surface {
   if (path === '/auth/callback') return 'googleCallback';
   if (path === '/developer/login' || path === '/student-learning/login') return 'googleSignIn';
   if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
+  if (path === '/why' || path.startsWith('/why/')) return 'why';
+  if (path === '/mechanics' || path.startsWith('/mechanics/')) return 'mechanics';
+  // /patterns and /patterns/gof both render the index.
+  // /patterns/<slug> renders the detail page.
+  if (path === '/patterns' || path === '/patterns/gof') return 'patterns';
+  if (path.startsWith('/patterns/')) return 'patternDetail';
+  if (path === '/tour' || path.startsWith('/tour/')) return 'tour';
+  if (path === '/research' || path.startsWith('/research/')) return 'research';
   if (STUDIO_ALIASES.some((a) => path === a || path.startsWith(`${a}/`))) return 'studio';
   return 'hero';
+}
+
+// Slug helper for /patterns/<slug> detail pages. Returns the part after
+// '/patterns/' (and not 'gof'). Empty string when no slug. Use only when
+// pathToSurface returns 'patternDetail'.
+export function patternSlugFromPath(path: string): string {
+  if (!path.startsWith('/patterns/')) return '';
+  const slug = path.slice('/patterns/'.length).split('/')[0];
+  if (slug === 'gof' || !slug) return '';
+  return slug;
 }
 
 const NAV_EVENT = 'nt:navigate';

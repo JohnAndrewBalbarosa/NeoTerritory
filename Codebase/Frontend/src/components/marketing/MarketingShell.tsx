@@ -8,6 +8,12 @@ import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
 import EntryChoice from './EntryChoice';
 import StudentLearningHub from './StudentLearningHub';
+import WhyPage from './why/WhyPage';
+import MechanicsPage from './mechanics/MechanicsPage';
+import PatternsPage from './patterns/PatternsPage';
+import PatternDetailPage from './patterns/PatternDetailPage';
+import TourPage from './tour/TourPage';
+import ResearchPage from './research/ResearchPage';
 
 interface MarketingShellProps {
   surface: Exclude<Surface, 'studio'>;
@@ -44,6 +50,12 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'about' && <AboutPage />}
           {surface === 'choose' && <EntryChoice />}
           {surface === 'studentLearning' && <StudentLearningHub />}
+          {surface === 'why' && <WhyPage />}
+          {surface === 'mechanics' && <MechanicsPage />}
+          {surface === 'patterns' && <PatternsPage />}
+          {surface === 'patternDetail' && <PatternDetailPage />}
+          {surface === 'tour' && <TourPage />}
+          {surface === 'research' && <ResearchPage />}
         </motion.div>
       </AnimatePresence>
       <footer className="nt-mkt-footer" role="contentinfo">

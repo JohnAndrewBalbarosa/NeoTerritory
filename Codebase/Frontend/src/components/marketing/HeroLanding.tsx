@@ -1,340 +1,283 @@
-import { motion, useReducedMotion } from 'motion/react';
+import { useEffect } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
-import ScrollReveal from './effects/ScrollReveal';
-import SplitText from './effects/SplitText';
 
-const HELP_STEPS = [
+// Per D40 (audience reframe), D41 (effects budget), D42 (info offloading),
+// D43 (features-first hierarchy), and the doc blueprint at
+// docs/Codebase/Frontend/src/components/marketing/HeroLanding.tsx.md.
+//
+// Surface-level only. Nothing on this page goes deeper than two sentences.
+// Pattern names DO NOT appear in the Features grid. The page is a series of
+// silent doors to the surfaces that own the depth.
+
+interface FeatureTile {
+  title: string;
+  promise: string;
+  glyph: string;
+  surface: string;
+}
+
+const FEATURES: ReadonlyArray<FeatureTile> = [
   {
-    title: 'Paste your code',
-    text: 'Add a C++ snippet or file to the studio.',
+    title: 'Auto-documentation',
+    promise:
+      'Your code gets a README it didn’t have, generated from the pattern we detected.',
+    glyph: '¶',
+    surface: '/student-studio',
   },
   {
-    title: 'See possible patterns',
-    text: 'NeoTerritory checks whether your code looks like a known design pattern.',
+    title: 'Auto-integration tests',
+    promise: 'We write the tests your reviewer expects. You ship.',
+    glyph: '✓',
+    surface: '/student-studio',
   },
   {
-    title: 'Find the important parts',
-    text: 'The system points to the classes and code parts related to the pattern.',
+    title: 'Pattern detection',
+    promise: 'We tell you which design pattern your AI used — even when you didn’t know.',
+    glyph: '◇',
+    surface: '/student-studio',
   },
   {
-    title: 'Read a simpler explanation',
-    text: 'You get beginner-friendly explanations and documentation guidance.',
+    title: 'Readability score',
+    promise: 'See exactly which lines hurt the next reader. Fix them in one click.',
+    glyph: '⚖',
+    surface: '/student-studio',
+  },
+  {
+    title: 'Sample library',
+    promise: 'Stuck? Load a real-world sample for any pattern. Learn by example.',
+    glyph: '◐',
+    surface: '/student-studio',
+  },
+  {
+    title: 'Run history',
+    promise: 'Every analysis saved. Compare versions. Track your readability over time.',
+    glyph: '⏱',
+    surface: '/student-studio',
   },
 ];
 
-const FAMILIES = [
+interface BentoDoor {
+  title: string;
+  blurb: string;
+  path: string;
+  size: '1x1' | '2x1' | '1x2' | '2x2';
+}
+
+// Bento doors to the deeper surfaces. NEVER teach here — just invite.
+const DOORS: ReadonlyArray<BentoDoor> = [
   {
-    family: 'Creational Patterns',
-    patterns: ['Singleton', 'Factory', 'Builder'],
-    blurb: 'These patterns help explain how objects are created.',
+    title: 'See how it works',
+    blurb: 'Five stages from raw C++ to detected pattern. One page, deep.',
+    path: '/mechanics',
+    size: '2x1',
   },
   {
-    family: 'Structural Patterns',
-    patterns: ['Adapter', 'Proxy', 'Decorator'],
-    blurb: 'These patterns show how classes or objects are connected.',
+    title: 'Why this matters',
+    blurb: 'Four industries where unreadable code costs more than missed deadlines.',
+    path: '/why',
+    size: '1x1',
   },
   {
-    family: 'Behavioral Patterns',
-    patterns: ['Strategy', 'Method Chaining'],
-    blurb: 'These patterns show how objects communicate or choose behavior.',
+    title: 'Pattern catalog',
+    blurb: 'Every pattern we recognise, with intent, problem, solution.',
+    path: '/patterns',
+    size: '1x1',
   },
   {
-    family: 'C++ Idioms',
-    patterns: ['Pimpl'],
-    blurb: 'These are common C++ coding techniques that improve structure.',
+    title: 'Take the tour',
+    blurb: 'Eight steps through the studio. No sign-in.',
+    path: '/tour',
+    size: '1x1',
+  },
+  {
+    title: 'Research',
+    blurb: 'Books and prior art behind the algorithm.',
+    path: '/research',
+    size: '1x1',
+  },
+  {
+    title: 'About this thesis',
+    blurb: 'Research question, hypothesis, method, contribution.',
+    path: '/about',
+    size: '1x1',
   },
 ];
 
-const SIMPLE_WORKFLOW = [
-  {
-    title: 'Paste C++ code',
-    text: 'Start by adding a C++ snippet or file.',
-  },
-  {
-    title: 'See possible pattern matches',
-    text: 'NeoTerritory checks your code and looks for pattern-like structures.',
-  },
-  {
-    title: 'Learn from the result',
-    text: 'You can review the detected pattern, the related code parts, and the explanation.',
-  },
-];
+interface FaqItem {
+  q: string;
+  a: string;
+}
 
-const STUDIO_OUTPUTS = [
+const FAQ: ReadonlyArray<FaqItem> = [
   {
-    title: 'Pattern name',
-    text: 'The possible design pattern found in your code.',
+    q: 'Do I need to know design patterns already?',
+    a: 'No. We tell you which pattern your code uses; you do not need to recognise it first.',
   },
   {
-    title: 'Code highlights',
-    text: 'The lines or structures that helped the system detect it.',
+    q: 'Does it work on AI-written code?',
+    a: 'Yes. That is the primary use case.',
   },
   {
-    title: 'Simple explanation',
-    text: 'A beginner-friendly explanation of what the pattern does.',
+    q: 'What language do I paste?',
+    a: 'C++. Other languages are not supported in this iteration.',
   },
   {
-    title: 'Documentation help',
-    text: 'Notes that can help you write clearer documentation.',
-  },
-];
-
-const TECH_PARTS = [
-  {
-    title: 'Web studio',
-    label: 'React · TypeScript · Vite',
-    text: 'The page where you submit code and read the results.',
+    q: 'Do I have to sign in to read the site?',
+    a: 'No. Sign-in is only required to save runs and use the studio.',
   },
   {
-    title: 'Backend',
-    label: 'Express · TypeScript · SQLite',
-    text: 'The part that receives the request and prepares the saved result.',
-  },
-  {
-    title: 'C++ analyzer',
-    label: 'C++17',
-    text: 'The part that checks the C++ code and creates the report.',
+    q: 'Where does the documentation come from?',
+    a: 'A pattern-aware AI layer with a deterministic fallback. You always get docs, even when AI is offline.',
   },
 ];
 
 export default function HeroLanding() {
-  const reduce = useReducedMotion();
+  // Hash-anchor support: nav can route to /#features. On mount and on every
+  // hash change, scroll the matching anchor into view if present.
+  useEffect(() => {
+    function scrollToHash(): void {
+      const h = window.location.hash;
+      if (!h) return;
+      const id = h.replace(/^#/, '');
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
+    return () => window.removeEventListener('hashchange', scrollToHash);
+  }, []);
 
   return (
-    <main className="nt-hero" id="main">
-      <section className="nt-hero__above" aria-labelledby="hero-heading">
-        <div className="nt-hero__grain" aria-hidden />
-        <div className="nt-hero__above-inner">
-          <motion.p
-            className="nt-hero__eyebrow"
-            initial={reduce ? false : { opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+    <main className="nt-home" id="main">
+      <section className="nt-home__above" aria-labelledby="home-heading">
+        <p className="nt-home__eyebrow">Design pattern tutor</p>
+        <h1 id="home-heading" className="nt-home__title">
+          Design pattern tutor that auto-documents and auto-tests your code.
+        </h1>
+        <p className="nt-home__algo">
+          Powered by our own lexical-tagging + parse-tree algorithm. Fast. Efficient.
+        </p>
+
+        <div className="nt-home__demo" aria-label="30-second product demo">
+          {/*
+            Demo embed slot. While the real recording is pending, we render
+            a poster-only frame that gracefully replaces itself with a
+            looping <video> when the file lands. Per D43.
+          */}
+          <video
+            className="nt-home__demo-video"
+            poster="/demo/landing-30s.jpg"
+            autoPlay
+            muted
+            loop
+            playsInline
+            aria-label="A 30-second walkthrough of the studio: paste, analyze, get docs and tests"
           >
-            Learn design patterns with real C++ code
-          </motion.p>
-          <h1 id="hero-heading" className="nt-hero__title">
-            <SplitText text="See the pattern." as="span" className="nt-hero__title-row" />
-            <SplitText
-              text="Understand the code."
-              as="span"
-              className="nt-hero__title-row nt-hero__title-row--accent"
-              delay={0.35}
-            />
-          </h1>
-          <motion.p
-            className="nt-hero__lede"
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
-          >
-            NeoTerritory helps beginners learn design patterns by checking C++ code, showing
-            possible pattern matches, and explaining them in a simpler way.
-          </motion.p>
-          <motion.div
-            className="nt-hero__ctas"
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.8 }}
-          >
-            <MagneticButton
-              variant="primary"
-              onClick={() => navigate('/choose')}
-              ariaLabel="Open the analysis studio"
-            >
-              Open studio
-            </MagneticButton>
-            <MagneticButton
-              variant="ghost"
-              onClick={() => navigate('/learn')}
-              ariaLabel="See how NeoTerritory works"
-            >
-              See how it works
-            </MagneticButton>
-          </motion.div>
-          <motion.dl
-            className="nt-hero__stats"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1.0 }}
-          >
-            <div>
-              <dt>Paste</dt>
-              <dd>your C++ code</dd>
-            </div>
-            <div>
-              <dt>Find</dt>
-              <dd>possible patterns</dd>
-            </div>
-            <div>
-              <dt>Learn</dt>
-              <dd>what they mean</dd>
-            </div>
-          </motion.dl>
+            <source src="/demo/landing-30s.webm" type="video/webm" />
+          </video>
+          <div className="nt-home__demo-fallback" aria-hidden="true">
+            <p className="nt-home__demo-fallback-line">paste C++</p>
+            <p className="nt-home__demo-fallback-line">→ detect pattern</p>
+            <p className="nt-home__demo-fallback-line">→ docs + tests</p>
+          </div>
+        </div>
+
+        <ol className="nt-home__steps">
+          <li>
+            <span className="nt-home__step-num">1</span>
+            <span className="nt-home__step-text">Paste your C++ (or load a sample).</span>
+          </li>
+          <li>
+            <span className="nt-home__step-num">2</span>
+            <span className="nt-home__step-text">We detect the design pattern.</span>
+          </li>
+          <li>
+            <span className="nt-home__step-num">3</span>
+            <span className="nt-home__step-text">Get readable docs + integration tests, free.</span>
+          </li>
+        </ol>
+
+        <div className="nt-home__primary-cta">
+          <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+            Try it now
+          </MagneticButton>
         </div>
       </section>
 
-      <ScrollReveal as="section" className="nt-hero__concept">
-        <div className="nt-concept-card">
-          <header className="nt-section-head">
-            <p className="nt-section-eyebrow">Start here</p>
-            <h2 className="nt-section-title">What is a design pattern?</h2>
-          </header>
-          <div className="nt-concept-copy">
-            <p>
-              A design pattern is a common way of solving a programming problem. It is like a
-              reusable idea or structure that developers use when building software.
-            </p>
-            <p>
-              For example, some patterns help create objects, some help connect classes, and some
-              help control how objects work together.
-            </p>
-            <p>
-              NeoTerritory helps you see these patterns in real C++ code so they are easier to
-              understand.
-            </p>
-          </div>
-          <div className="nt-mini-chips" aria-label="Design pattern examples">
-            <span>Creating objects</span>
-            <span>Connecting classes</span>
-            <span>Organizing behavior</span>
-          </div>
-        </div>
-      </ScrollReveal>
-
-      <ScrollReveal as="section" className="nt-hero__workflow">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Learning helper</p>
-          <h2 className="nt-section-title">How NeoTerritory helps you learn</h2>
-          <p className="nt-section-lede">
-            Instead of only reading definitions, you can connect patterns to actual code.
-          </p>
+      <section className="nt-home__features" id="features" aria-labelledby="features-heading">
+        <header className="nt-home__features-head">
+          <p className="nt-section-eyebrow">Features</p>
+          <h2 id="features-heading" className="nt-home__features-title">
+            What you get.
+          </h2>
         </header>
-        <div className="nt-card-grid nt-card-grid--four">
-          {HELP_STEPS.map((step, idx) => (
-            <ScrollReveal as="article" key={step.title} className="nt-info-card" delay={idx * 0.06}>
-              <p className="nt-info-card__num">{(idx + 1).toString().padStart(2, '0')}</p>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
-            </ScrollReveal>
+        <div className="nt-home__features-grid">
+          {FEATURES.map((f) => (
+            <button
+              key={f.title}
+              type="button"
+              className="nt-home__feature"
+              onClick={() => navigate(f.surface)}
+            >
+              <span className="nt-home__feature-glyph" aria-hidden="true">
+                {f.glyph}
+              </span>
+              <h3 className="nt-home__feature-title">{f.title}</h3>
+              <p className="nt-home__feature-promise">{f.promise}</p>
+            </button>
           ))}
         </div>
-      </ScrollReveal>
+      </section>
 
-      <ScrollReveal as="section" className="nt-hero__families">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Beginner pattern guide</p>
-          <h2 className="nt-section-title">Patterns you can learn from</h2>
-          <p className="nt-section-lede">
-            NeoTerritory focuses on common patterns that beginners often meet in object-oriented
-            programming.
-          </p>
+      <section className="nt-home__bento" aria-labelledby="bento-heading">
+        <header className="nt-home__bento-head">
+          <p className="nt-section-eyebrow">More</p>
+          <h2 id="bento-heading" className="nt-home__bento-title">
+            Go deeper when you want.
+          </h2>
         </header>
-        <div className="nt-family-grid nt-family-grid--home">
-          {FAMILIES.map((f, idx) => (
-            <ScrollReveal as="article" key={f.family} className="nt-family-card" delay={idx * 0.08}>
-              <p className="nt-family-card__family">{f.family}</p>
-              <p className="nt-family-card__blurb">{f.blurb}</p>
-              <ul className="nt-family-card__patterns">
-                {f.patterns.map((p) => (
-                  <li key={p}>{p}</li>
-                ))}
-              </ul>
-            </ScrollReveal>
+        <div className="nt-home__bento-grid">
+          {DOORS.map((d) => (
+            <button
+              key={d.path}
+              type="button"
+              className="nt-home__door"
+              data-size={d.size}
+              onClick={() => navigate(d.path)}
+            >
+              <h3 className="nt-home__door-title">{d.title}</h3>
+              <p className="nt-home__door-blurb">{d.blurb}</p>
+              <span className="nt-home__door-arrow" aria-hidden="true">
+                →
+              </span>
+            </button>
           ))}
         </div>
-        <p className="nt-section-note">
-          NeoTerritory shows each pattern with code-based clues, not just a label.
-        </p>
-      </ScrollReveal>
+      </section>
 
-      <ScrollReveal as="section" className="nt-hero__pipeline-section">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Simple workflow</p>
-          <h2 className="nt-section-title">How it works</h2>
+      <section className="nt-home__faq" aria-labelledby="faq-heading">
+        <header className="nt-home__faq-head">
+          <p className="nt-section-eyebrow">FAQ</p>
+          <h2 id="faq-heading" className="nt-home__faq-title">
+            Quick answers.
+          </h2>
         </header>
-        <div className="nt-simple-steps">
-          {SIMPLE_WORKFLOW.map((step, idx) => (
-            <article key={step.title} className="nt-simple-step">
-              <span className="nt-simple-step__num">Step {idx + 1}</span>
-              <h3>{step.title}</h3>
-              <p>{step.text}</p>
-            </article>
+        <dl className="nt-home__faq-list">
+          {FAQ.map((item) => (
+            <div key={item.q} className="nt-home__faq-row">
+              <dt>{item.q}</dt>
+              <dd>{item.a}</dd>
+            </div>
           ))}
-        </div>
-        <p className="nt-section-note">
-          Want the technical view? See the full analysis workflow in the learning page.
-        </p>
-      </ScrollReveal>
+        </dl>
+      </section>
 
-      <ScrollReveal as="section" className="nt-hero__outputs">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Inside the studio</p>
-          <h2 className="nt-section-title">What you will see in the studio</h2>
-        </header>
-        <div className="nt-card-grid nt-card-grid--four">
-          {STUDIO_OUTPUTS.map((item) => (
-            <article key={item.title} className="nt-info-card">
-              <h3>{item.title}</h3>
-              <p>{item.text}</p>
-            </article>
-          ))}
-        </div>
-      </ScrollReveal>
-
-      <ScrollReveal as="section" className="nt-hero__architecture nt-compact-section">
-        <header className="nt-section-head">
-          <p className="nt-section-eyebrow">Behind the scenes</p>
-          <h2 className="nt-section-title">Behind the scenes</h2>
-          <p className="nt-section-lede">
-            NeoTerritory has three parts working together.
-          </p>
-        </header>
-        <div className="nt-card-grid nt-card-grid--three">
-          {TECH_PARTS.map((part) => (
-            <article key={part.title} className="nt-info-card nt-info-card--layer">
-              <p className="nt-info-card__label">{part.label}</p>
-              <h3>{part.title}</h3>
-              <p>{part.text}</p>
-            </article>
-          ))}
-        </div>
-      </ScrollReveal>
-
-      <ScrollReveal as="section" className="nt-hero__ai nt-compact-section">
-        <div className="nt-concept-card nt-concept-card--compact">
-          <header className="nt-section-head">
-            <p className="nt-section-eyebrow">Extra help</p>
-            <h2 className="nt-section-title">Optional AI explanation</h2>
-          </header>
-          <div className="nt-concept-copy">
-            <p>
-              NeoTerritory mainly detects patterns using its C++ analyzer. If AI is available, it
-              can add extra beginner-friendly explanations.
-            </p>
-            <p>
-              If AI is not available, the system can still show pattern matches and code
-              highlights.
-            </p>
-          </div>
-        </div>
-      </ScrollReveal>
-
-      <ScrollReveal as="section" className="nt-hero__cta-band">
-        <h2 className="nt-section-title">Try it with your own C++ code</h2>
-        <p className="nt-section-lede">
-          Open the studio, paste a C++ snippet, and see what design patterns NeoTerritory may find.
-        </p>
-        <div className="nt-hero__ctas">
-          <MagneticButton variant="primary" onClick={() => navigate('/choose')}>
-            Open studio
-          </MagneticButton>
-          <MagneticButton variant="ghost" onClick={() => navigate('/learn')}>
-            See how it works
-          </MagneticButton>
-        </div>
-      </ScrollReveal>
+      <section className="nt-home__final-cta">
+        <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+          Try it now
+        </MagneticButton>
+      </section>
     </main>
   );
 }
