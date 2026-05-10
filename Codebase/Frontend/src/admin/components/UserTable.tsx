@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { resetTesterSeats } from '../../api/client';
+import { useEffect, useState } from 'react';
+import { resetTesterSeats, fetchAdminSettings, setAdminSetting } from '../../api/client';
 import { AdminUser } from '../../types/api';
 import { fmtDate } from '../../logic/patterns';
 import { useAdminUsers, isOnline } from '../hooks/useAdminUsers';
@@ -49,6 +49,29 @@ export default function UserTable() {
   const [presence, setPresence] = useState<PresenceFilter>('all');
   const [resetting, setResetting] = useState<'all' | 'selected' | 'offline' | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  // Admin-controlled visibility of devcon* tester accounts on the public
+  // login picker. Flipping this OFF makes /auth/test-accounts return an
+  // empty list — useful when you want a clean signin surface for real
+  // users without dropping the seeded testers from the DB.
+  const [testersVisible, setTestersVisible] = useState<boolean | null>(null);
+  const [savingToggle, setSavingToggle] = useState(false);
+  useEffect(() => {
+    fetchAdminSettings()
+      .then(s => setTestersVisible(s.testers_visible_to_users))
+      .catch(() => setTestersVisible(null));
+  }, []);
+  async function handleToggleTesters(next: boolean) {
+    setSavingToggle(true);
+    try {
+      const res = await setAdminSetting('testers_visible_to_users', next);
+      setTestersVisible(res.value);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to save toggle');
+    } finally {
+      setSavingToggle(false);
+    }
+  }
 
   function cycleSort() {
     setSortKey(k => SORT_CYCLE[(SORT_CYCLE.indexOf(k) + 1) % SORT_CYCLE.length]);
@@ -122,6 +145,22 @@ export default function UserTable() {
 
   return (
     <div>
+      {testersVisible !== null && (
+        <div className="user-settings-row" style={{ marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <input
+              type="checkbox"
+              checked={testersVisible}
+              disabled={savingToggle}
+              onChange={(e) => handleToggleTesters(e.target.checked)}
+            />
+            <span>Show tester accounts on public login picker</span>
+          </label>
+          <span className="user-settings-hint" style={{ opacity: 0.65, fontSize: '0.85em' }}>
+            Off = /auth/test-accounts returns an empty list (real users only).
+          </span>
+        </div>
+      )}
       <div className="user-search-bar">
         <input
           type="search"

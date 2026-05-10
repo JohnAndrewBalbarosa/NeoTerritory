@@ -222,10 +222,12 @@ Usage:
 - `info` (line 26)
 - `warn` (line 27)
 - `err` (line 28)
-- `cmd_self_hosted` (line 30)
-- `cmd_cloud` (line 67)
-- `cmd_status` (line 89)
-- `main` (line 106)
+- `ensure_backup` (line 34)
+- `upsert_env` (line 42)
+- `cmd_self_hosted` (line 55)
+- `cmd_cloud` (line 130)
+- `cmd_status` (line 152)
+- `main` (line 169)
 
 ### `scripts/verify-requirements.ps1`
 

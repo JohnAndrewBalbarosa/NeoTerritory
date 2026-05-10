@@ -369,6 +369,24 @@ export async function fetchAdminPerUser(): Promise<{ series: PerUserPoint[] }> {
 export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
   return apiFetch<{ users: AdminUser[] }>('/api/admin/users');
 }
+
+// Runtime admin-controlled toggles.  Currently a single key —
+// testers_visible_to_users — that hides the devcon* picker on the
+// public login surface when flipped off. Adding new keys is a backend
+// change (admin.ts ALLOWED list + appSettings.ts SettingKey).
+export interface AdminSettings {
+  testers_visible_to_users: boolean;
+}
+export async function fetchAdminSettings(): Promise<AdminSettings> {
+  return apiFetch<AdminSettings>('/api/admin/settings');
+}
+export async function setAdminSetting(key: keyof AdminSettings, value: boolean): Promise<{ key: string; value: boolean }> {
+  return apiFetch<{ key: string; value: boolean }>(`/api/admin/settings/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ value })
+  });
+}
 export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
   return apiFetch<{ reviews: AdminReview[] }>('/api/admin/reviews');
 }
