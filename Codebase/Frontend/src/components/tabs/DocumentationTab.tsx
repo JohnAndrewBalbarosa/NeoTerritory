@@ -32,7 +32,6 @@ function PatternSection({ p, annotations }: { p: DetectedPatternFull; annotation
       <header className="docs-pattern-header">
         <h3 className="docs-pattern-name">{p.patternName}</h3>
         {p.className && <span className="docs-classname">{p.className}</span>}
-        <span className="docs-confidence">{Math.round(p.confidence * 100)}%</span>
         {p.parentClassName && (
           <span className="docs-inherited">inherited from {p.parentClassName}</span>
         )}
