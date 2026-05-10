@@ -887,7 +887,23 @@ body::before {
   background: linear-gradient(180deg, rgba(15, 27, 46, 0.86), rgba(13, 15, 20, 0.72));
   box-shadow: var(--devcon-panel-glow);
   backdrop-filter: blur(18px);
-  overflow: hidden;
+  /* If the topbar would otherwise exceed the viewport (narrow widths
+     where brand + status card stack), let the topbar scroll its own
+     content instead of pushing the studio off-screen. Without this,
+     sticky cannot pin reliably because the element is taller than the
+     viewport — the bottom slips out of frame and behavior reverts to
+     "scrolls with the page". 24px reserves space for the next sibling
+     (.tab-bar) to peek through. */
+  max-height: calc(100vh - 24px);
+  overflow: auto;
+}
+/* Below the 980px breakpoint, the topbar already collapses to a single
+   column (line 197). Hide the lede there so the topbar fits the
+   viewport without scrolling — the eyebrow + h1 already convey the
+   surface, and the lede is reference copy that adds height without
+   adding info on a phone. */
+@media (max-width: 980px) {
+  .topbar .brand .lede { display: none; }
 }
 .topbar::before {
   content: '';
