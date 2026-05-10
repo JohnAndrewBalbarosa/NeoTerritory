@@ -41,7 +41,10 @@ interface UserRow {
   username: string;
   email: string | null;
   role: string;
-  password: string;
+  // The schema's column name is `password_hash` (initDb.ts).
+  // Stored as an opaque "oauth:..." sentinel so the password-login
+  // path can never claim the row.
+  password_hash: string;
 }
 
 const SUPABASE_AUTH_URL = (
@@ -94,7 +97,7 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
   // accidentally collide with a Devcon seat or the seeded admin.
   if (email) {
     const existing = db.prepare(
-      `SELECT id, username, email, role, password FROM users
+      `SELECT id, username, email, role, password_hash FROM users
        WHERE lower(email) = ? AND role NOT IN ('admin')
        LIMIT 1`
     ).get(email) as UserRow | undefined;
@@ -128,22 +131,32 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
     if (attempt > 5) break;
   }
 
-  // Password column is NOT NULL in the existing schema; we store an
-  // unguessable random string so the password-login path can never
-  // claim this account. Auth is exclusively via Supabase for these
-  // rows.
-  const placeholderPw = `oauth:${supaUser.id}:${Math.random().toString(36).slice(2)}`;
+  // password_hash column is NOT NULL in the existing schema (see
+  // initDb.ts). We store an unguessable opaque sentinel so the
+  // password-login path's bcrypt.compare can never match this row —
+  // auth for OAuth users is exclusively via Supabase. The sentinel
+  // is never compared against; it only exists to satisfy the NOT NULL
+  // constraint.
+  const placeholderHash = `oauth:${supaUser.id}:${Math.random().toString(36).slice(2)}`;
+  // created_at: schema declares NOT NULL with no default; pass a
+  // fresh ISO timestamp.
+  // The schema declares email NOT NULL UNIQUE. Google sign-in always
+  // returns an email, but defensively synthesize a unique placeholder
+  // tied to the Supabase user id when one is somehow missing — better
+  // than rejecting the sign-in. The placeholder is non-deliverable so
+  // it cannot collide with a real user.
+  const safeEmail = email || `oauth_${supaUser.id}@nodelivery.local`;
   const info = db.prepare(
-    `INSERT INTO users (username, email, password, role)
-     VALUES (?, ?, ?, ?)`
-  ).run(username, email || null, placeholderPw, 'user');
+    `INSERT INTO users (username, email, password_hash, role, created_at)
+     VALUES (?, ?, ?, ?, datetime('now'))`
+  ).run(username, safeEmail, placeholderHash, 'user');
   const id = Number(info.lastInsertRowid);
 
   // Best-effort entry-flow audit so admin analytics can split developer
   // vs student onboarding without changing the role enum.
   logEvent(id, 'auth.google.signup', `role=${role} username=${username}`);
-  mirrorRow('users', { id, username, email: email || null, role: 'user', entry_flow: role });
-  return { id, username, email: email || null, role: 'user', password: placeholderPw };
+  mirrorRow('users', { id, username, email: safeEmail, role: 'user', entry_flow: role });
+  return { id, username, email: safeEmail, role: 'user', password_hash: placeholderHash };
 }
 
 router.post('/google/exchange', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
