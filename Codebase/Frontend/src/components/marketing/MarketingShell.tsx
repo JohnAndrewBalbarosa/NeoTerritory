@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Surface } from '../../logic/router';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
+import MarketingFooter from './MarketingFooter';
 import HeroLanding from './HeroLanding';
 import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
@@ -58,13 +59,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'research' && <ResearchPage />}
         </motion.div>
       </AnimatePresence>
-      <footer className="nt-mkt-footer" role="contentinfo">
-        <p>NeoTerritory Studio · C++ pattern analysis and documentation-support system</p>
-        <p className="nt-mkt-footer__small">
-          For thesis evaluation, learning, and research use. Admin access remains protected at{' '}
-          <code>/app</code>.
-        </p>
-      </footer>
+      <MarketingFooter />
       </div>
     </MotionConfig>
   );

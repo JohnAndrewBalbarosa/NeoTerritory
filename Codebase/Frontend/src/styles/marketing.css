@@ -295,7 +295,7 @@ body[data-surface] #root {
 }
 .nt-hero__above-inner {
   position: relative;
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
   text-align: center;
 }
@@ -1511,7 +1511,7 @@ body[data-surface] #root {
   line-height: 1.45;
 }
 .nt-student-pattern-section {
-  max-width: 880px;
+  max-width: 1320px;
   display: grid;
   gap: 0.65rem;
   padding: 1rem;
@@ -1525,7 +1525,7 @@ body[data-surface] #root {
   margin: 0;
 }
 .nt-student-sample-action {
-  max-width: 880px;
+  max-width: 1320px;
   display: grid;
   gap: 0.8rem;
   padding: 1rem;
@@ -3129,7 +3129,7 @@ body[data-surface] {
 /* Learn page â€” referral CTA between the marketing nav and the body. */
 .nt-learn-referral {
   margin: 1.5rem auto 0;
-  max-width: 1100px;
+  max-width: 1320px;
   padding: 0 clamp(1rem, 4vw, 3rem);
 }
 .nt-learn-referral__inner {
@@ -3175,7 +3175,7 @@ body[data-surface] {
 /* Learn page â€” bullet note describing what the student path adds. */
 .nt-learn-overview-note {
   margin: 0 auto var(--nt-mkt-space-section);
-  max-width: 880px;
+  max-width: 1320px;
   padding: 2rem clamp(1.25rem, 3vw, 2rem);
   background: var(--nt-mkt-surface);
   border: 1px solid var(--nt-mkt-line);
@@ -3350,7 +3350,7 @@ body[data-surface] {
   padding-bottom: clamp(2rem, 1.5rem + 2vw, 4rem);
 }
 .nt-home__above {
-  max-width: 1100px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: clamp(1.5rem, 1rem + 1.4vw, 2.75rem) clamp(1.25rem, 4vw, 3rem) clamp(1rem, 0.75rem + 1vw, 2rem);
   text-align: center;
@@ -3383,7 +3383,7 @@ body[data-surface] {
    video slot whose /demo/landing-30s.webm + .jpg did not exist. */
 .nt-home__demo {
   position: relative;
-  max-width: 920px;
+  max-width: 1480px;
   margin: 0 auto 1.5rem;
   padding: 0;
   border: 1px solid var(--nt-mkt-line);
@@ -3460,7 +3460,7 @@ body[data-surface] {
 
 .nt-home__features {
   scroll-margin-top: 90px;
-  max-width: 1180px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem) clamp(2rem, 1.5rem + 1.5vw, 3rem);
 }
@@ -3485,6 +3485,11 @@ body[data-surface] {
   }
 }
 @media (min-width: 1080px) {
+  .nt-home__features-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1480px) {
   .nt-home__features-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -3529,7 +3534,7 @@ body[data-surface] {
 }
 
 .nt-home__bento {
-  max-width: 1180px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: clamp(1.5rem, 1rem + 1vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -3614,7 +3619,7 @@ body[data-surface] {
 }
 
 .nt-home__faq {
-  max-width: 880px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: clamp(1.5rem, 1rem + 1vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -3649,7 +3654,7 @@ body[data-surface] {
 
 /* ---------- /why ---------- */
 .nt-why {
-  max-width: 1080px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -3719,7 +3724,7 @@ body[data-surface] {
 
 /* ---------- /mechanics ---------- */
 .nt-mech {
-  max-width: 880px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem) clamp(3rem, 2rem + 2vw, 5rem);
   position: relative;
@@ -3842,7 +3847,7 @@ body[data-surface] {
 
 /* ---------- /patterns and /patterns/<slug> ---------- */
 .nt-patterns {
-  max-width: 1180px;
+  max-width: 1480px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -3965,7 +3970,7 @@ body[data-surface] {
   outline: none;
 }
 .nt-pattern-detail {
-  max-width: 880px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -4030,7 +4035,7 @@ body[data-surface] {
 
 /* ---------- /tour ---------- */
 .nt-tour {
-  max-width: 880px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -4148,7 +4153,7 @@ body[data-surface] {
 
 /* ---------- /research ---------- */
 .nt-research {
-  max-width: 1080px;
+  max-width: 1380px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -4245,7 +4250,7 @@ body[data-surface] {
 
 /* ---------- /about (thesis rewrite) ---------- */
 .nt-about {
-  max-width: 880px;
+  max-width: 1320px;
   margin: 0 auto;
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
@@ -4463,4 +4468,318 @@ body[data-surface] {
   font-family: 'JetBrains Mono', monospace;
   font-size: 1.05rem;
   color: var(--nt-mkt-accent);
+}
+
+
+/* ---------- Standard multi-column footer (D65) ---------- */
+.nt-mkt-footer {
+  position: relative;
+  z-index: 2;
+  margin-top: clamp(2rem, 1.5rem + 2vw, 4rem);
+  padding: clamp(1.75rem, 1.25rem + 2vw, 3rem) clamp(1.25rem, 4vw, 3rem) 0;
+  background: oklch(11% 0.02 260);
+  border-top: 1px solid var(--nt-mkt-line);
+  color: var(--nt-mkt-text-soft);
+}
+:root[data-theme="light"] .nt-mkt-footer {
+  background: oklch(96% 0.01 250);
+  color: oklch(30% 0.02 260);
+}
+.nt-mkt-footer__inner {
+  max-width: 1480px;
+  margin: 0 auto;
+  display: grid;
+  gap: clamp(1.25rem, 1rem + 1.5vw, 2.5rem);
+  grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  .nt-mkt-footer__inner {
+    grid-template-columns: minmax(220px, 1fr) 2fr;
+  }
+}
+.nt-mkt-footer__brand {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+.nt-mkt-footer__brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: oklch(15% 0 0);
+  flex-shrink: 0;
+}
+.nt-mkt-footer__brand-name {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-mkt-footer__brand-tag {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.55;
+  max-width: 26ch;
+}
+.nt-mkt-footer__columns {
+  display: grid;
+  gap: clamp(1rem, 0.75rem + 1vw, 2rem);
+  grid-template-columns: 1fr 1fr;
+}
+@media (min-width: 760px) {
+  .nt-mkt-footer__columns {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.nt-mkt-footer__col-title {
+  margin: 0 0 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-accent);
+}
+.nt-mkt-footer__col ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.nt-mkt-footer__col a {
+  color: var(--nt-mkt-text-soft);
+  text-decoration: none;
+  font-size: 0.92rem;
+  transition: color 160ms ease;
+}
+.nt-mkt-footer__col a:hover,
+.nt-mkt-footer__col a:focus-visible {
+  color: var(--nt-mkt-text);
+  text-decoration: underline;
+  outline: none;
+}
+.nt-mkt-footer__ext {
+  color: var(--nt-mkt-accent);
+  font-family: 'JetBrains Mono', monospace;
+}
+.nt-mkt-footer__bottom {
+  max-width: 1480px;
+  margin: clamp(1.25rem, 1rem + 1vw, 2rem) auto 0;
+  padding: 1rem 0;
+  border-top: 1px solid var(--nt-mkt-line);
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.82rem;
+}
+.nt-mkt-footer__copy,
+.nt-mkt-footer__credit,
+.nt-mkt-footer__admin {
+  margin: 0;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-mkt-footer__credit a {
+  color: var(--nt-mkt-accent);
+  text-decoration: none;
+}
+.nt-mkt-footer__credit a:hover,
+.nt-mkt-footer__credit a:focus-visible {
+  text-decoration: underline;
+}
+.nt-mkt-footer__admin code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0, 209, 216, 0.08);
+  padding: 0 0.35rem;
+  border-radius: 4px;
+}
+
+/* About page additions (D64): developer grid + partnership panel */
+.nt-about__head .nt-about__subtitle {
+  margin-top: 0.6rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: clamp(1rem, 0.92rem + 0.3vw, 1.15rem);
+  line-height: 1.6;
+  max-width: 60ch;
+}
+.nt-about__section-lede {
+  margin: 0 0 1rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+.nt-about__dev-grid {
+  display: grid;
+  gap: var(--nt-bento-gap);
+  grid-template-columns: 1fr;
+  margin-top: 1rem;
+}
+@media (min-width: 720px) {
+  .nt-about__dev-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.nt-about__dev {
+  padding: 1rem 1.1rem 1.2rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  background: var(--nt-bento-tile-bg);
+  display: grid;
+  gap: 0.4rem;
+}
+.nt-about__dev-monogram {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--devcon-lime, oklch(85% 0.2 130)), var(--devcon-cyan, oklch(78% 0.16 220)));
+  color: #081018;
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 800;
+  font-size: 0.95rem;
+}
+.nt-about__dev-name {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-about__dev-role {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-about__dev-blurb {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.nt-about__partner {
+  background: linear-gradient(160deg, rgba(0,209,216,0.06), rgba(123,94,167,0.04));
+  border: 1px solid rgba(0, 209, 216, 0.25);
+  border-radius: 18px;
+  padding: 1.4rem 1.6rem;
+  margin-top: 1.75rem;
+}
+.nt-about__partner .nt-about__section-title {
+  color: var(--nt-mkt-text);
+}
+.nt-about__partner p {
+  color: var(--nt-mkt-text);
+  line-height: 1.7;
+  margin: 0 0 0.75rem;
+}
+
+/* Research page additions (D63) */
+.nt-research__meta {
+  margin: 0.5rem 0 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.84rem;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-research__section {
+  margin-top: 1.75rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--nt-mkt-line);
+}
+.nt-research__section-title {
+  margin: 0 0 0.65rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-research__section-lede {
+  margin: 0 0 0.85rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.65;
+}
+.nt-research__numbered {
+  margin: 0;
+  padding-left: 1.4rem;
+  display: grid;
+  gap: 0.55rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+}
+.nt-research__numbered li strong {
+  color: var(--nt-mkt-text);
+}
+.nt-research__method li {
+  color: var(--nt-mkt-text);
+}
+.nt-research__people {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+  .nt-research__people {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.nt-research__people-group h3 {
+  margin: 0 0 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-research__people-group ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+.nt-research__people-group strong {
+  color: var(--nt-mkt-text);
+}
+.nt-research__people-group span {
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.88rem;
+}
+
+/* Testing Trophy callout (D66) */
+.nt-research__trophy {
+  margin: 1.25rem 0 1rem;
+  padding: 1.15rem 1.35rem;
+  border: 1px solid rgba(166, 255, 0, 0.32);
+  border-radius: 14px;
+  background: linear-gradient(160deg, rgba(166,255,0,0.07), rgba(0,209,216,0.05));
+}
+.nt-research__trophy h3 {
+  margin: 0 0 0.4rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-research__trophy p {
+  margin: 0 0 0.4rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+.nt-research__trophy ul {
+  margin: 0.25rem 0 0 1.2rem;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.92rem;
+}
+.nt-research__trophy a {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
 }

@@ -144,6 +144,48 @@ export default function DocumentationTab() {
 
   return (
     <div className="docs-tab">
+      {/* Per D69 (this turn): "How to read this page" guide. One concise
+          explainer at the top of the Docs tab so the reader knows what
+          each section means before scrolling into the per-pattern body.
+          Collapsible so it stays out of the way after first read. */}
+      <details className="docs-read-guide">
+        <summary>How to read this page</summary>
+        <ol>
+          <li>
+            <strong>Banner at the top</strong> tells you whether AI documentation is included or
+            the page is showing only static pattern definitions. AI status appears once - not on
+            every line.
+          </li>
+          <li>
+            <strong>Pattern Documentation</strong> (per family) is the catalog-side definition of
+            the pattern (one-liner, when to use it, real-world analogy). Same vocabulary the
+            classroom uses; lifted from the pattern catalog.
+          </li>
+          <li>
+            <strong>AI Analysis of your code</strong> (when present) explains how the pattern
+            shows up in your specific class, why the detector fired, and a study hint pointing
+            at the lines that mattered.
+          </li>
+          <li>
+            <strong>Code Annotations</strong> are per-line callouts (line number + title +
+            note) tying the explanation back to your source. Static annotations come from the
+            microservice; AI annotations supplement them when AI is configured.
+          </li>
+          <li>
+            <strong>Unit Tests to Implement</strong> lists the function points the matcher flagged
+            as test-worthy. The Tests tab generates and runs scaffolds for these.
+          </li>
+          <li>
+            <strong>Documentation Targets</strong> are the structural anchors the microservice
+            emitted (class header, key method, constructor) so you know which lines are
+            load-bearing for the pattern verdict.
+          </li>
+        </ol>
+        <p className="docs-read-guide__foot">
+          Export buttons (MD / PDF / DOCX) ship the same content as the printable view. Nothing
+          is hidden from the export.
+        </p>
+      </details>
       {/* Toolbar */}
       <div className="docs-toolbar">
         <div className="docs-toolbar-info">

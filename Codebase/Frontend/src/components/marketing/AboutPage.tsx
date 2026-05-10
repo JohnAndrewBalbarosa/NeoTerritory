@@ -1,161 +1,143 @@
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 
-// Per Sprint 0 doc blueprint and per the actual thesis metadata sourced
-// from FINAL THESIS 3 PAPER.pdf at the repo root.
-//
-// This page is thesis-specific narrative, not a job-resume page.
+// Per D64 (this turn): /about is the developer team page and the DevCon
+// partnership story. Thesis methodology (research question, objectives,
+// scope, method, contribution, panel) has moved to /research where the
+// thesis content belongs.
 
-const AUTHORS: ReadonlyArray<{ name: string; role: string }> = [
-  { name: 'John Andrew Balbarosa', role: 'Researcher' },
-  { name: 'Miryl Z. De Leon', role: 'Researcher' },
-  { name: 'Josephine J. Santander', role: 'Researcher' },
-];
+interface Developer {
+  slug: string;
+  name: string;
+  role: string;
+  blurb: string;
+}
 
-const PANEL: ReadonlyArray<{ name: string; role: string }> = [
-  { name: 'Dr. Hadji Tejuco', role: 'Head Panelist' },
-  { name: 'Ms. May Florence San Pablo', role: 'Panelist' },
-  { name: 'Dr. Dennis B. Gonzales', role: 'Panelist' },
+const DEVELOPERS: ReadonlyArray<Developer> = [
+  {
+    slug: 'balbarosa',
+    name: 'John Andrew Balbarosa',
+    role: 'Algorithm + microservice',
+    blurb:
+      'Designed and implemented the C++ hash-based virtual structural-copy algorithm and the deterministic pattern-detection microservice that powers NeoTerritory.',
+  },
+  {
+    slug: 'de-leon',
+    name: 'Miryl Z. De Leon',
+    role: 'Studio + backend integration',
+    blurb:
+      'Built the Node backend that orchestrates the microservice, the AI documentation layer, and the studio UI surfaces.',
+  },
+  {
+    slug: 'santander',
+    name: 'Josephine J. Santander',
+    role: 'Research instrument + evaluation',
+    blurb:
+      'Designed the per-run reviews, end-of-session survey instruments, and the evaluation methodology for DEVCON Luzon intern testing.',
+  },
 ];
 
 export default function AboutPage() {
   return (
     <main className="nt-about" id="main">
       <header className="nt-about__head">
-        <p className="nt-section-eyebrow">About this thesis</p>
-        <h1 className="nt-about__title">CodiNeo.</h1>
+        <p className="nt-section-eyebrow">About us</p>
+        <h1 className="nt-about__title">Who built NeoTerritory, and for whom.</h1>
         <p className="nt-about__subtitle">
-          A documentation-generation system using a hash-based virtual structural-copy algorithm
-          for design-pattern learning in DEVCON Luzon.
-        </p>
-        <p className="nt-about__meta">
-          FEU Institute of Technology · BS Computer Science (Software Engineering) · March 2026
+          NeoTerritory is a thesis project from FEU Institute of Technology, built in partnership
+          with DEVCON Luzon to support intern and novice developer learning.
         </p>
       </header>
 
-      <section className="nt-about__section" aria-labelledby="about-rq">
-        <h2 id="about-rq" className="nt-about__section-title">
-          Research question
+      <section className="nt-about__section" aria-labelledby="ab-who">
+        <h2 id="ab-who" className="nt-about__section-title">
+          The team
         </h2>
-        <p>
-          Can a hash-based virtual structural-copy algorithm, paired with a JSON-driven pattern
-          catalog and a documentation-oriented AI layer, help interns and novice C++ developers
-          recognise design patterns in real source code, generate evidence-grounded documentation,
-          and bridge the gap between pattern theory and practical code understanding?
+        <p className="nt-about__section-lede">
+          We are three Computer Science students from FEU Institute of Technology, completing the
+          Bachelor of Science in Computer Science (Software Engineering) in March 2026. NeoTerritory
+          is our partial fulfilment of degree requirements - and a tool we genuinely want DEVCON
+          Luzon volunteers to use.
         </p>
-      </section>
-
-      <section className="nt-about__section" aria-labelledby="about-gap">
-        <h2 id="about-gap" className="nt-about__section-title">
-          Why existing tools fall short
-        </h2>
-        <ul className="nt-about__list">
-          <li>
-            Off-the-shelf static analysers do not name design patterns; they flag style violations
-            that a learner still has to interpret without the underlying vocabulary.
-          </li>
-          <li>
-            Pure large-language-model passes over source produce different verdicts on the same
-            file across runs; the structural ground truth keeps shifting (Hou et al., 2024).
-          </li>
-          <li>
-            Manual documentation drifts away from implementation as soon as the code moves on,
-            and the drift compounds the comprehension gap for new contributors (Romeo et al.,
-            2024).
-          </li>
-        </ul>
-      </section>
-
-      <section className="nt-about__section" aria-labelledby="about-hyp">
-        <h2 id="about-hyp" className="nt-about__section-title">
-          Hypothesis
-        </h2>
-        <p>
-          Separating &ldquo;what does this token mean in the language&rdquo; from &ldquo;does this
-          construct fit the program&rdquo; is the lever. If lexical categories are a fixed
-          language fact and pattern signatures are JSON, the catalog can grow without touching
-          the engine, the engine can stay deterministic, and the AI layer can do exactly one job
-          — describe an already-tagged class to a learner.
-        </p>
-      </section>
-
-      <section className="nt-about__section" aria-labelledby="about-method">
-        <h2 id="about-method" className="nt-about__section-title">
-          Method
-        </h2>
-        <p>
-          A C++ microservice performs lexical tagging, builds a virtual structural copy alongside
-          the actual parse tree, simultaneously hashes nodes during traversal, cross-references
-          usages per class, and matches each class against a JSON-driven pattern catalog grounded
-          in Nesteruk&rsquo;s <em>Design Patterns in Modern C++20</em> (2022). A Node backend
-          orchestrates a documentation-oriented AI pass, with deterministic static fallbacks per
-          pattern. A research studio collects per-run accuracy ratings and end-of-session reviews
-          so the catalog can be tuned against the data it actually meets in DEVCON Luzon
-          internships.
-        </p>
-      </section>
-
-      <section className="nt-about__section" aria-labelledby="about-contribution">
-        <h2 id="about-contribution" className="nt-about__section-title">
-          Expected contribution
-        </h2>
-        <p>
-          A reproducible, JSON-extensible C++ pattern detector with an integrated documentation
-          and unit-test-scaffold pipeline; a public dataset of structural-fact runs paired with
-          human accuracy ratings collected from DEVCON Luzon intern volunteers; and a study-grade
-          comparison of AI-only versus structural-plus-AI documentation against reading-speed and
-          design-pattern-recognition outcomes for novice C++ developers.
-        </p>
-      </section>
-
-      <section className="nt-about__section" aria-labelledby="about-authors">
-        <h2 id="about-authors" className="nt-about__section-title">
-          Authors
-        </h2>
-        <ul className="nt-about__team-strip">
-          {AUTHORS.map((a) => (
-            <li key={a.name} className="nt-about__team-chip">
-              <span className="nt-about__team-name">{a.name}</span>
-              <span className="nt-about__team-role">{a.role}</span>
-            </li>
+        <div className="nt-about__dev-grid">
+          {DEVELOPERS.map((d) => (
+            <article key={d.slug} className="nt-about__dev">
+              <span className="nt-about__dev-monogram" aria-hidden="true">
+                {d.name
+                  .split(' ')
+                  .map((s) => s[0])
+                  .slice(0, 2)
+                  .join('')}
+              </span>
+              <h3 className="nt-about__dev-name">{d.name}</h3>
+              <p className="nt-about__dev-role">{d.role}</p>
+              <p className="nt-about__dev-blurb">{d.blurb}</p>
+            </article>
           ))}
-        </ul>
+        </div>
       </section>
 
-      <section className="nt-about__section" aria-labelledby="about-advising">
-        <h2 id="about-advising" className="nt-about__section-title">
-          Advising and panel
+      <section className="nt-about__section" aria-labelledby="ab-for-whom">
+        <h2 id="ab-for-whom" className="nt-about__section-title">
+          Who this is for
         </h2>
-        <ul className="nt-about__team-strip">
-          <li className="nt-about__team-chip">
-            <span className="nt-about__team-name">Ms. Kim Giselle Bautista</span>
-            <span className="nt-about__team-role">Thesis Adviser</span>
-          </li>
-          <li className="nt-about__team-chip">
-            <span className="nt-about__team-name">Ms. Elisa Malasaga</span>
-            <span className="nt-about__team-role">Course Adviser</span>
-          </li>
-          <li className="nt-about__team-chip">
-            <span className="nt-about__team-name">Dr. Shaneth C. Ambat</span>
-            <span className="nt-about__team-role">Department Head</span>
-          </li>
-          {PANEL.map((p) => (
-            <li key={p.name} className="nt-about__team-chip">
-              <span className="nt-about__team-name">{p.name}</span>
-              <span className="nt-about__team-role">{p.role}</span>
-            </li>
-          ))}
-        </ul>
+        <p>
+          NeoTerritory is built for <strong>DEVCON Luzon interns, novice developers, and
+          chapter volunteers</strong> who write C++ as part of their training and want a faster way
+          to recognise design patterns in real code. The system is intended to bridge the gap
+          between learning design-pattern theory in lessons and recognising those patterns in actual
+          C++ source code.
+        </p>
+        <p>
+          Interns in DEVCON Luzon&rsquo;s internship program are usually recruited from chapter
+          volunteers and rotate through bootcamps, professional development projects, and
+          community-driven contributions. NeoTerritory targets the moment in that rotation where a
+          new contributor is reading an unfamiliar C++ codebase for the first time and needs
+          structural help to make sense of it.
+        </p>
       </section>
 
-      <section className="nt-about__section" aria-labelledby="about-ack">
-        <h2 id="about-ack" className="nt-about__section-title">
+      <section className="nt-about__section nt-about__partner" aria-labelledby="ab-partnership">
+        <h2 id="ab-partnership" className="nt-about__section-title">
+          In partnership with DEVCON Luzon
+        </h2>
+        <p>
+          <strong>DEVCON Philippines</strong> is the country&rsquo;s largest and longest-running
+          SEC-registered, BIR-compliant non-profit volunteer technology community, with eleven
+          regional chapters nationwide. Its Luzon chapters connect Filipino technology
+          enthusiasts to learning, mentorship, and community-driven projects.
+        </p>
+        <p>
+          NeoTerritory was developed with the partnership and blessing of{' '}
+          <strong>Sir Ghrassel Dungca</strong>, DEVCON co-lead, whose endorsement opened the door
+          for this thesis to land its evaluation inside DEVCON Luzon&rsquo;s internship program.
+          The research instruments, the testing cohort, and the contextualisation of the work in
+          the DEVCON learning environment all exist because of his support.
+        </p>
+        <p>
+          We are grateful to <strong>Sir Ghrassel</strong> and the DEVCON Luzon volunteers who
+          gave us fresh-eye reviews, intern feedback, and the operational grounding that turned an
+          academic prototype into a tool we can hand to actual learners.
+        </p>
+      </section>
+
+      <section className="nt-about__section" aria-labelledby="ab-acks">
+        <h2 id="ab-acks" className="nt-about__section-title">
           Acknowledgements
         </h2>
         <p>
-          We thank our adviser, panel, and the DEVCON Luzon community whose internship and
-          bootcamp programs are the audience this work is written for. The fresh-eye reviews
-          from devcon volunteers repeatedly forced the design back to the audience profile.
+          Our thanks to our thesis adviser <strong>Ms. Kim Giselle Bautista</strong>, course
+          adviser <strong>Ms. Elisa Malasaga</strong>, department head{' '}
+          <strong>Dr. Shaneth C. Ambat</strong>, and the panel of{' '}
+          <strong>Dr. Hadji Tejuco</strong> (head panelist),{' '}
+          <strong>Ms. May Florence San Pablo</strong>, and{' '}
+          <strong>Dr. Dennis B. Gonzales</strong> for the academic grounding and the rigorous
+          critique that shaped this work.
+        </p>
+        <p>
+          To the DEVCON Luzon intern volunteers who tested early drafts and the FEU classmates who
+          forced the design back to its audience repeatedly: thank you. The fresh-eye feedback in
+          group chats and over coffee is what made this presentable.
         </p>
       </section>
 

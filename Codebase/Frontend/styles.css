@@ -1774,3 +1774,158 @@ body::before {
   font-size: 0.74rem;
   color: var(--ink-dim);
 }
+
+/* ---------- Tests tab Trophy banner (D67) ---------- */
+.gdb-trophy-banner {
+  margin: 0 0 18px;
+  padding: 16px 18px 14px;
+  border: 1px solid rgba(166, 255, 0, 0.32);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(160deg, rgba(166, 255, 0, 0.05), rgba(0, 209, 216, 0.03));
+}
+.gdb-trophy-banner header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 12px;
+}
+.gdb-trophy-eyebrow {
+  font-family: var(--code-font);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--devcon-lime);
+}
+.gdb-trophy-title {
+  margin: 0;
+  font-family: var(--heading-font);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.gdb-trophy-phases {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+@media (min-width: 880px) {
+  .gdb-trophy-phases {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 14px;
+  }
+}
+.gdb-trophy-phase {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.gdb-trophy-phase--live {
+  border-color: rgba(0, 209, 216, 0.45);
+  background: rgba(0, 209, 216, 0.06);
+}
+.gdb-trophy-phase--planned {
+  opacity: 0.95;
+}
+.gdb-trophy-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  color: #081018;
+  font-family: var(--code-font);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.gdb-trophy-phase--planned .gdb-trophy-num {
+  background: rgba(123, 94, 167, 0.45);
+  color: #fff;
+}
+.gdb-trophy-phase-name {
+  margin: 0 0 2px;
+  font-family: var(--ui-font);
+  font-size: 0.94rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.gdb-trophy-phase-note {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+.gdb-trophy-foot {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+.gdb-trophy-foot a {
+  color: var(--devcon-cyan);
+  text-decoration: none;
+}
+.gdb-trophy-foot a:hover,
+.gdb-trophy-foot a:focus-visible {
+  text-decoration: underline;
+}
+
+/* ---------- Docs tab "How to read this page" guide (D69) ---------- */
+.docs-read-guide {
+  margin: 0 0 14px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+.docs-read-guide > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 10px 14px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--ui-font);
+}
+.docs-read-guide > summary::-webkit-details-marker { display: none; }
+.docs-read-guide > summary::before {
+  content: 'i';
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  border-radius: 999px;
+  background: var(--devcon-cyan);
+  color: #081018;
+  font-family: var(--code-font);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.docs-read-guide[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+.docs-read-guide ol {
+  margin: 10px 14px 4px 32px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.docs-read-guide li strong {
+  color: var(--ink);
+}
+.docs-read-guide__foot {
+  margin: 6px 14px 12px;
+  font-size: 0.84rem;
+  color: var(--ink-dim);
+}

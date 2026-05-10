@@ -91,31 +91,96 @@ const STEPS_BY_TAB: Record<StudioTab, TabSteps> = {
     },
     steps: [
       {
-        target: null,
-        title: 'Pattern cards',
-        body: 'Each card shows the pattern name, the class it was found in, the line range, and the evidence anchors. Cards are independent — read them in any order.',
-        takeaway: 'Read pattern by pattern, not file by file.',
+        // Top-level progress strip.
+        target: '.tag-progress',
+        title: 'Tag progress',
+        body: 'This strip shows how many classes are still ambiguous and how many you have already tagged. The count drops as you resolve each one.',
+        takeaway: 'Resolve classes left-to-right, top-to-bottom.',
       },
       {
-        target: null,
-        title: 'Co-emit and ambiguity',
-        body: 'When two patterns share the same shape — Adapter, Proxy, Decorator — both cards appear. The ambiguous flag marks them so you know neither won outright.',
-        takeaway: 'Multiple verdicts on the same class are honest, not noisy.',
+        // The Class Tree sidebar — root resolution lives here.
+        target: '.class-tree-view',
+        title: 'Class tree',
+        body: 'Every detected class lands here with its pattern verdict. A class marked "review" has two or more competing candidates and is waiting for your call.',
+        takeaway: 'Scan the tree to see which classes still need attention.',
+      },
+      {
+        // The per-class "(review - N patterns)" button opens the root picker.
+        target: '.class-tree-review-cta',
+        title: 'Resolve a class root',
+        body: 'Click the "(review - N patterns)" button on a class. A picker opens with each candidate; choose the pattern that fits. Your verdict propagates to every line under that class.',
+        takeaway: 'One click clears every ambiguous line under the class.',
+      },
+      {
+        // Per-line ambiguity: highlight an actual ambiguous source line.
+        target: '.src-line.has-ambiguous',
+        title: 'Or resolve line-by-line',
+        body: 'Each line with multiple candidate patterns shows a popover badge (".src-popover-ambiguous-badge"). Click the line to open the picker and disambiguate that line specifically — useful when one class hosts more than one pattern role.',
+        takeaway: 'Class-level OR line-level. Both feed the same review tally.',
+      },
+      {
+        // Jump-to-next-ambiguous control.
+        target: '.class-nav-corner--right',
+        title: 'Walk to the next ambiguity',
+        body: 'This arrow jumps to the next class whose ambiguity is unresolved. Combined with the resolution buttons above, you can clear an entire run in one pass.',
+        takeaway: 'Use the arrow to keep moving; the badge counter updates live.',
       },
     ],
   },
   gdb: {
     intro: {
       title: 'Tests',
-      body: 'Unit-test scaffolds for the detected patterns.',
-      takeaway: 'The detector knows which functions matter; the test scaffold runs them.',
+      body: 'Pre-templated tests for each detected pattern, following the Testing Trophy strategy.',
+      takeaway: 'Pass = green. Fail = red. The trophy banner explains each layer.',
     },
     steps: [
       {
-        target: null,
-        title: 'Generated test scaffolds',
-        body: 'Per detected pattern, the system emits a test scaffold targeting the unit-test points the detector found. You fill in expected values; the harness runs them.',
-        takeaway: 'Tests are pre-templated to the pattern.',
+        target: '.gdb-trophy-banner',
+        title: 'Testing Trophy strategy',
+        body: 'NeoTerritory tests in five layers (Kent C. Dodds Trophy). Today, Compile-and-run and Unit-test execute live; Integration, E2E, and Static analysis are planned and shown here so you know the full strategy.',
+        takeaway: 'Integration tests are the meat — they catch what unit tests cannot.',
+      },
+      {
+        target: '.gdb-trophy-phase[data-phase="compile_run"]',
+        title: 'Phase 1 — Compile & run',
+        body: 'This phase confirms your sample compiles cleanly and produces output. A green pill means the C++ compiler accepted it; a red pill means there was a compile error or the binary did not run.',
+        takeaway: 'Green here = your code is syntactically + runnably correct.',
+      },
+      {
+        target: '.gdb-trophy-phase[data-phase="unit_test"]',
+        title: 'Phase 2 — Unit test',
+        body: 'Per-pattern scaffolds. For each detected pattern (Builder, Singleton, etc.), a generated test verifies the specific functions the detector flagged. Pass = the function meets the contract the pattern implies.',
+        takeaway: 'Targets single classes / functions. Fast and surgical.',
+      },
+      {
+        target: '.gdb-trophy-phase[data-phase="integration"]',
+        title: 'Phase 3 — Integration test (planned)',
+        body: 'Exercises the FULL pipeline: real microservice + backend route + AI fallback path against curated samples. This is the bulk of the Trophy — the bugs that hurt users live at the seams between these processes.',
+        takeaway: 'Tests the seams. Not yet wired; UI labelled "planned".',
+      },
+      {
+        target: '.gdb-trophy-phase[data-phase="e2e"]',
+        title: 'Phase 4 — End-to-end (planned)',
+        body: 'Playwright drives the actual studio from sign-in through analyze to docs. Catches UI regressions and route changes that integration tests miss.',
+        takeaway: 'Tests what the user sees. Planned. CI workflow is ready.',
+      },
+      {
+        target: '.gdb-trophy-phase[data-phase="static"]',
+        title: 'Phase 5 — Static analysis (planned)',
+        body: 'The broad base of the Trophy: clang-tidy / cppcheck / ESLint scan every file every build. Catches style violations and unsafe patterns before runtime.',
+        takeaway: 'Cheapest tier. Runs on every commit.',
+      },
+      {
+        target: '.gdb-phase-pill',
+        title: 'Reading verdicts',
+        body: 'Green pill (or "pass") = the phase succeeded. Red pill (or "fail") = the phase rejected the code. The duration in milliseconds appears next to the pill so you can see slow tests.',
+        takeaway: 'Color tells the result at a glance.',
+      },
+      {
+        target: 'button:has-text("Run all tests")',
+        title: 'Re-run everything',
+        body: 'Click here to re-run all live phases (compile_run + unit_test) against the current submission. Cooldowns appear if you re-run too fast; the studio enforces a per-minute budget.',
+        takeaway: 'Re-run after edits to confirm the pattern still holds.',
       },
     ],
   },

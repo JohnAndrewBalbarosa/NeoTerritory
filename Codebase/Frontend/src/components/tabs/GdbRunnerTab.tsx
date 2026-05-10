@@ -15,9 +15,18 @@ const VERDICT_LABEL: Record<string, string> = {
   skipped:           'skipped'
 };
 
+// Per D67 (this turn): the studio surfaces NeoTerritory's full Testing
+// Trophy strategy. Today only compile_run + unit_test actually run; the
+// remaining phases (integration, e2e, static analysis) are visible as
+// planned so the test surface tells the truth about the strategy. As each
+// phase ships its real backend, its label flips from "(planned)" to a
+// running pill without UI rework.
 const PHASE_LABEL: Record<string, string> = {
   compile_run: '1. Code compiles & runs',
-  unit_test:   '2. Unit-test verdict'
+  unit_test:   '2. Unit-test verdict',
+  integration: '3. Integration test (planned)',
+  e2e:         '4. End-to-end (planned)',
+  static:      '5. Static analysis (planned)',
 };
 
 const FAMILY_LABEL: Record<string, string> = {
@@ -389,6 +398,69 @@ export default function GdbRunnerTab() {
 
   return (
     <section className="tab-panel tab-gdb">
+      {/* Per D67: Testing Trophy banner. Documents the testing strategy
+          in-line so the studio surface matches what /research describes.
+          Phases the backend already runs are linked-to from the per-pattern
+          breakdown below; planned phases are listed here as a roadmap. */}
+      <aside className="gdb-trophy-banner" aria-label="Testing Trophy strategy">
+        <header>
+          <span className="gdb-trophy-eyebrow">Testing Trophy</span>
+          <h2 className="gdb-trophy-title">How NeoTerritory tests your code</h2>
+        </header>
+        <ol className="gdb-trophy-phases">
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="compile_run">
+            <span className="gdb-trophy-num">01</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Compile &amp; run</p>
+              <p className="gdb-trophy-phase-note">Live: your code compiles and produces output.</p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="unit_test">
+            <span className="gdb-trophy-num">02</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Unit test</p>
+              <p className="gdb-trophy-phase-note">
+                Live: per-pattern scaffolds verify individual functions.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="integration">
+            <span className="gdb-trophy-num">03</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Integration test</p>
+              <p className="gdb-trophy-phase-note">
+                Planned: exercises real microservice + backend + AI fallback paths against curated
+                samples. The bulk of the Trophy lives here.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="e2e">
+            <span className="gdb-trophy-num">04</span>
+            <div>
+              <p className="gdb-trophy-phase-name">End-to-end (E2E)</p>
+              <p className="gdb-trophy-phase-note">
+                Planned: Playwright runs the studio start-to-finish on critical user flows.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="static">
+            <span className="gdb-trophy-num">05</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Static analysis</p>
+              <p className="gdb-trophy-phase-note">
+                Planned: clang-tidy / cppcheck / ESLint as the broad base of the Trophy.
+              </p>
+            </div>
+          </li>
+        </ol>
+        <p className="gdb-trophy-foot">
+          Strategy: <strong>Testing Trophy</strong> (Kent C. Dodds). Read more on{' '}
+          <a href="/research" onClick={(e) => { e.preventDefault(); window.history.pushState(null, '', '/research'); window.dispatchEvent(new CustomEvent('nt:navigate')); }}>
+            /research
+          </a>
+          .
+        </p>
+      </aside>
       <header className="results-header">
         <p className="results-summary">
           Pre-templated unit tests · {runId !== null ? `run #${runId}` : 'unsaved run'}
