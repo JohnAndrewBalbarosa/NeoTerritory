@@ -389,18 +389,36 @@ async function runPhase(
           ['g++', '-std=c++17', '-O0', '-g', podDriver, '-o', podBin],
           { timeoutMs: COMPILE_TIMEOUT_MS });
         if (compile.exitCode !== 0) {
-          return {
-            ...base,
-            passed: false,
-            verdict: 'compile_error',
-            actual: compile.stderr || compile.stdout || 'compile failed',
-            exitCode: compile.exitCode,
-            message: phase === 'compile_run'
-              ? 'Your class did not compile.'
-              : 'Unit-test driver did not compile against the user class.',
-            durationMs: Date.now() - t0
-          };
-        }
+          // Distinguish a real g++ compile error (stderr contains a
+          // diagnostic) from a docker/pod-side failure (empty stderr,
+          // SIGKILL exit codes, or the wrapper exited non-zero before
+          // g++ even ran). The latter is not the user's fault, and
+          // falling back to the local sandbox gives them actual gcc
+          // diagnostics instead of an opaque "compile failed".
+          const diagnostic = (compile.stderr || compile.stdout || '').trim();
+          const looksLikePodFailure =
+            compile.timedOut ||
+            compile.exitCode === 137 || compile.exitCode === 125 || compile.exitCode === -1 ||
+            diagnostic.length === 0;
+          if (!looksLikePodFailure) {
+            return {
+              ...base,
+              passed: false,
+              verdict: 'compile_error',
+              actual: diagnostic,
+              exitCode: compile.exitCode,
+              message: phase === 'compile_run'
+                ? 'Your class did not compile.'
+                : 'Unit-test driver did not compile against the user class.',
+              durationMs: Date.now() - t0
+            };
+          }
+          // Pod-side failure — let the local sandbox path below produce
+          // the real diagnostic. We deliberately do NOT return here.
+          // eslint-disable-next-line no-console
+          console.warn(`[test-runner] pod compile failed without diagnostic (exit=${compile.exitCode}, timedOut=${compile.timedOut}); falling back to local sandbox`);
+          // Skip the pod run path and fall through to the sandbox compile.
+        } else {
         const runOut = await pm.execInPod(pod, [podBin], {
           timeoutMs: RUN_TIMEOUT_MS,
           stdin: input.stdin
@@ -444,9 +462,12 @@ async function runPhase(
                   : `Unit-test driver exited with ${runOut.exitCode}.`),
           criteria: criteriaPod
         };
+        }
       }
-      // copy failed → fall through to local sandbox path so the user
-      // doesn't lose the run because Docker hiccupped.
+      // copy failed OR pod-side compile failure → fall through to local
+      // sandbox path so the user doesn't lose the run because Docker
+      // hiccupped, and so they get a real gcc diagnostic instead of an
+      // opaque "compile failed".
     }
 
     const compileArgs = ['g++', '-std=c++17', '-O0', '-g',
