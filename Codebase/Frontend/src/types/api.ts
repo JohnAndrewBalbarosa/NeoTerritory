@@ -289,6 +289,10 @@ export interface HealthStatus {
   maxFilesPerSubmission?: number;
   maxTokensPerFile?: number;
   testRunnerEnabled?: boolean;
+  // Admin-controlled toggle. Mirrors app_settings.reviews_required.
+  // Drives the Self-check tab visibility + the survey-gated finalize
+  // buffer.
+  reviewsRequired?: boolean;
   gdbRunsPerWindow?: number;
   gdbCooldownMs?: number;
   microservice: {

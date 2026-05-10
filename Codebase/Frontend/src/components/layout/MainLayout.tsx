@@ -90,8 +90,16 @@ export default function MainLayout() {
     status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
     setAiStatus, aiStatus, aiConfigured, setStatus,
-    currentRun, gdbAllPassedForRun
+    currentRun, gdbAllPassedForRun, reviewsRequired
   } = useAppStore();
+
+  // When the admin has flipped reviews_required OFF (post-thesis), the
+  // Self-check / survey tab disappears from the workflow and the survey
+  // gate is auto-flushed on the backend. Filter at render time so the
+  // tab list rebuilds on toggle change without a reload.
+  const visibleTabs = reviewsRequired
+    ? TABS
+    : TABS.filter(t => t.id !== 'ambiguous');
 
   // Sequential tab gating. Each tab unlocks only after the previous is
   // complete, mirroring the natural workflow: submit → annotate → run
@@ -221,22 +229,38 @@ export default function MainLayout() {
   }, [token, user]);
   if (token && user?.role === 'admin') return null;
 
+  // Real-account entry flow detection. GoogleCallback writes
+  // `nt-entry-flow` to sessionStorage as 'developer' or 'student'
+  // after a successful exchange. Devcon testers (claim-seat path)
+  // never set this — so the absence of the flag = research participant.
+  // Real-account users skip both ConsentGate and PretestForm; those
+  // are tester-only research-onboarding screens.
+  const entryFlow = typeof window !== 'undefined'
+    ? window.sessionStorage.getItem('nt-entry-flow')
+    : null;
+  const isRealAccountUser = entryFlow === 'developer' || entryFlow === 'student';
+
   // Reflect each gate in the URL so the address bar distinguishes consent
   // and pretest from the studio home. replaceState avoids back-button noise.
+  // Real-account users go straight to the studio; tester gates are skipped.
   if (token && user && typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const expected = !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
+    const expected = isRealAccountUser
+      ? '/studio'
+      : !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
     if (path !== expected && path !== '/admin.html') {
       window.history.replaceState(null, '', expected);
     }
   }
 
-  // Gate: consent first (research participants only).
-  if (token && user && !consentAccepted) {
+  // Gate: consent first (research participants only — Devcon flow).
+  // Real-account Google sign-in users (Developer / Student Learning)
+  // skip this entirely.
+  if (token && user && !isRealAccountUser && !consentAccepted) {
     return <ConsentGate />;
   }
-  // Gate: pretest second (auto-skips when surveyQuestions.pretest is empty).
-  if (token && user && !pretestSubmitted) {
+  // Gate: pretest second. Same skip rule applies.
+  if (token && user && !isRealAccountUser && !pretestSubmitted) {
     return <PretestForm />;
   }
 
@@ -292,7 +316,7 @@ export default function MainLayout() {
       </header>
 
       <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
-        {TABS.map((t, index) => {
+        {visibleTabs.map((t, index) => {
           const unlocked = tabUnlocked(t.id);
           const lockReason = tabLockReason(t.id);
           const isActive = activeTab === t.id;

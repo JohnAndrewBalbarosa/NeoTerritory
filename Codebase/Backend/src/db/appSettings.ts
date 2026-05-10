@@ -18,10 +18,19 @@ db.prepare(`
   )
 `).run();
 
-export type SettingKey = 'testers_visible_to_users';
+export type SettingKey =
+  | 'testers_visible_to_users'
+  // Self-check / review-survey gating. ON during the thesis testing
+  // window so per-run survey submission is the bagsakan that flushes
+  // run details to the DB (project owner's hard rule). OFF after the
+  // thesis is done so real-account Developer/Student users do not
+  // hit a survey wall after every run — admin flips this when the
+  // research period ends.
+  | 'reviews_required';
 
 const DEFAULTS: Record<SettingKey, string> = {
-  testers_visible_to_users: '1'
+  testers_visible_to_users: '1',
+  reviews_required: '1'
 };
 
 interface Row { value: string }

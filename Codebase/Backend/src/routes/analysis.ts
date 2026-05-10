@@ -29,6 +29,7 @@ import {
   pushPhaseEvent, markRunDone, subscribeRun, RunEvent
 } from '../services/runEventsStore';
 import { recordRun as bufferRunDetails, bindRunIdToPending } from '../services/pendingRunPersistence';
+import { getBoolSetting } from '../db/appSettings';
 import { ensurePod, isPodModeEnabled, podManagerStatus, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import {
   getMicroserviceStatus,
@@ -606,6 +607,11 @@ router.get('/health', (req: Request, res: Response) => {
     maxFilesPerSubmission: Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3'))),
     maxTokensPerFile: resolveMaxTokensPerFile(),
     testRunnerEnabled: isTestRunnerEnabled(),
+    // Admin-controlled toggle. ON during the thesis testing window;
+    // OFF after it ends so post-thesis users do not hit the survey
+    // wall after every run. The frontend uses this to hide the
+    // Self-check tab + skip the survey-gated finalize buffer.
+    reviewsRequired: getBoolSetting('reviews_required'),
     gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
     gdbCooldownMs: GDB_COOLDOWN_MS,
     microservice,
@@ -1676,13 +1682,44 @@ function finalizeRunLogs(
     rows.push({ eventType, message });
   }
 
-  bufferRunDetails({
-    userId,
-    pendingId: bufferKey.pendingId ?? null,
-    runId:     bufferKey.runId    ?? null,
-    rows,
-    summary: { total: passed + failed, passed, failed, taggedPatterns: [...taggedPatterns] }
+  const summary = { total: passed + failed, passed, failed, taggedPatterns: [...taggedPatterns] };
+
+  // Survey-gated mode (thesis testing window): buffer in memory until
+  // the user submits the run-feedback survey, which flushes via
+  // survey.ts -> flushForRunId().
+  // Auto-flush mode (post-thesis): write directly to the DB now, since
+  // the admin has turned off the review/survey requirement and we can't
+  // make a real-account user fill in a thesis survey to see their data.
+  if (getBoolSetting('reviews_required')) {
+    bufferRunDetails({
+      userId,
+      pendingId: bufferKey.pendingId ?? null,
+      runId:     bufferKey.runId    ?? null,
+      rows,
+      summary
+    });
+    return;
+  }
+
+  // Auto-flush path. Same single-transaction shape as flushForRunId,
+  // but routed through logEvent directly. We do not need the buffer
+  // bookkeeping because there is no survey to wait for.
+  const writeAll = db.transaction(() => {
+    for (const row of rows) {
+      logEvent(userId, row.eventType, row.message);
+    }
+    logEvent(userId, 'gdb.run.complete', JSON.stringify({
+      ...summary,
+      runId: bufferKey.runId ?? null,
+      autoFlush: true
+    }));
   });
+  try {
+    writeAll();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[run-tests] auto-flush failed', err);
+  }
 }
 
 function summarize(results: TestResult[]): { total: number; passed: number; failed: number } {

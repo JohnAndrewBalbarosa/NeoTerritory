@@ -21,7 +21,8 @@ router.use(jwtAuth, requireAdmin);
 router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
   try {
     res.json({
-      testers_visible_to_users: getBoolSetting('testers_visible_to_users')
+      testers_visible_to_users: getBoolSetting('testers_visible_to_users'),
+      reviews_required:         getBoolSetting('reviews_required')
     });
   } catch (err) { next(err); }
 });
@@ -29,7 +30,7 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
 router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) => {
   try {
     const key = req.params.key as SettingKey;
-    const ALLOWED: SettingKey[] = ['testers_visible_to_users'];
+    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required'];
     if (!ALLOWED.includes(key)) {
       res.status(400).json({ error: 'Unknown setting key' });
       return;

@@ -376,6 +376,7 @@ export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
 // change (admin.ts ALLOWED list + appSettings.ts SettingKey).
 export interface AdminSettings {
   testers_visible_to_users: boolean;
+  reviews_required: boolean;
 }
 export async function fetchAdminSettings(): Promise<AdminSettings> {
   return apiFetch<AdminSettings>('/api/admin/settings');
