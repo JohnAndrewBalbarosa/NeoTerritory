@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --devcon-charcoal: #0d0f14;
   --devcon-navy: #0f1b2e;
   --devcon-blue: #2d6bff;
@@ -19,11 +19,12 @@
   --nt-mkt-radius: 18px;
   --nt-mkt-radius-lg: 28px;
   --nt-mkt-shadow: 0 30px 80px -30px oklch(0% 0 0 / 0.6);
-  --nt-mkt-text-hero: clamp(2.4rem, 1rem + 5vw, 5.2rem);
-  --nt-mkt-text-section: clamp(1.5rem, 0.8rem + 2vw, 2.4rem);
-  /* Per D48: section spacing halved to remove the dead air Amiel flagged.
-     Original: clamp(4rem, 3rem + 6vw, 9rem). New: clamp(2rem, 1.5rem + 3vw, 4.5rem). */
-  --nt-mkt-space-section: clamp(2rem, 1.5rem + 3vw, 4.5rem);
+  --nt-mkt-text-hero: clamp(2.2rem, 1rem + 4.2vw, 4.4rem);
+  --nt-mkt-text-section: clamp(1.4rem, 0.8rem + 1.6vw, 2.1rem);
+  /* Per D49 (spacing tighten): air capped at ~15-20% of viewport. Original
+     halved per D48; tightened further here so sections feel deliberate, not
+     padded. */
+  --nt-mkt-space-section: clamp(1.4rem, 1rem + 2vw, 3rem);
   --nt-mkt-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -52,18 +53,24 @@ body[data-surface] #root {
 }
 
 /* ---------- Marketing nav ---------- */
+/* Per D49 (post-D43): top bar is no longer sticky. It sits at the top and
+   scrolls away with the rest of the page. The nav is also expanded to all
+   public surfaces (Home, How it works, Why, Patterns, Tour, Research,
+   Learn, About) plus the Try-it CTA. */
 .nt-mkt-nav {
-  position: sticky;
-  top: 0;
-  z-index: 50;
+  position: relative;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1.5rem;
-  padding: 1rem clamp(1.25rem, 4vw, 3rem);
-  backdrop-filter: blur(14px);
-  background: oklch(14% 0.02 260 / 0.7);
+  gap: 1rem;
+  padding: 0.7rem clamp(1.25rem, 4vw, 3rem);
+  background: oklch(14% 0.02 260 / 0.92);
   border-bottom: 1px solid var(--nt-mkt-line);
+}
+.nt-mkt-nav--static {
+  position: relative;
+  top: auto;
 }
 .nt-mkt-nav__brand {
   display: inline-flex;
@@ -87,7 +94,8 @@ body[data-surface] #root {
 }
 .nt-mkt-nav__links {
   display: flex;
-  gap: 1.75rem;
+  flex-wrap: wrap;
+  gap: 1rem;
   margin-left: auto;
   margin-right: 1rem;
 }
@@ -129,8 +137,46 @@ body[data-surface] #root {
   background: oklch(28% 0.04 260);
   transform: translateY(-1px);
 }
-@media (max-width: 720px) {
+.nt-mkt-nav__toggle {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.8rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nt-mkt-text);
+  font-family: inherit;
+  cursor: pointer;
+  font-size: 0.86rem;
+}
+.nt-mkt-nav__toggle-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+}
+@media (max-width: 880px) {
+  .nt-mkt-nav__toggle {
+    display: inline-flex;
+    margin-left: auto;
+  }
   .nt-mkt-nav__links {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.85rem clamp(1.25rem, 4vw, 3rem);
+    margin: 0;
+    background: oklch(14% 0.02 260 / 0.98);
+    border-bottom: 1px solid var(--nt-mkt-line);
+    display: none;
+  }
+  .nt-mkt-nav__links[data-open="true"] {
+    display: flex;
+  }
+  .nt-mkt-nav__cta {
     display: none;
   }
 }
@@ -233,10 +279,10 @@ body[data-surface] #root {
 }
 .nt-hero__above {
   position: relative;
-  min-height: clamp(480px, 70vh, 720px);
+  min-height: clamp(360px, 56vh, 600px);
   display: flex;
   align-items: center;
-  padding: clamp(3rem, 2rem + 3vw, 5rem) clamp(1.25rem, 4vw, 3rem) clamp(2.5rem, 2rem + 2vw, 4rem);
+  padding: clamp(2rem, 1.5rem + 2vw, 3.5rem) clamp(1.25rem, 4vw, 3rem) clamp(1.75rem, 1.25rem + 1.5vw, 3rem);
   overflow: hidden;
   background: radial-gradient(ellipse at top, var(--nt-mkt-bg-2), var(--nt-mkt-bg) 70%);
 }
@@ -2044,7 +2090,7 @@ body[data-surface] #root {
   text-align: center;
 }
 
-/* ── Pattern Atlas (static catalog on /learn) ───────────────────────── */
+/* â”€â”€ Pattern Atlas (static catalog on /learn) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nt-learn__atlas {
   margin-bottom: var(--nt-mkt-space-section);
 }
@@ -2291,7 +2337,7 @@ body[data-surface] #root {
 }
 .nt-atlas__details summary::-webkit-details-marker { display: none; }
 .nt-atlas__details summary::before {
-  content: '▸';
+  content: 'â–¸';
   position: absolute;
   left: 0;
   transition: transform 160ms var(--nt-mkt-ease);
@@ -2317,7 +2363,7 @@ body[data-surface] #root {
   margin: 0;
 }
 
-/* ── Curriculum · pattern modules (on /learn) ─────────────────────────── */
+/* â”€â”€ Curriculum Â· pattern modules (on /learn) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nt-learn__curriculum {
   margin-bottom: var(--nt-mkt-space-section);
 }
@@ -2583,7 +2629,7 @@ body[data-surface] #root {
   color: oklch(28% 0.10 290);
 }
 
-/* ── /learn v2 · multi-page lesson experience ────────────────────────── */
+/* â”€â”€ /learn v2 Â· multi-page lesson experience â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nt-learn--overview .nt-learn__hero,
 .nt-learn--family .nt-family-hero {
   text-align: center;
@@ -3080,7 +3126,7 @@ body[data-surface] {
   color: #071014;
 }
 
-/* Learn page — referral CTA between the marketing nav and the body. */
+/* Learn page â€” referral CTA between the marketing nav and the body. */
 .nt-learn-referral {
   margin: 1.5rem auto 0;
   max-width: 1100px;
@@ -3126,7 +3172,7 @@ body[data-surface] {
   color: var(--nt-mkt-text-soft);
 }
 
-/* Learn page — bullet note describing what the student path adds. */
+/* Learn page â€” bullet note describing what the student path adds. */
 .nt-learn-overview-note {
   margin: 0 auto var(--nt-mkt-space-section);
   max-width: 880px;
@@ -3150,7 +3196,7 @@ body[data-surface] {
   margin-top: 0.4rem;
 }
 
-/* Student pattern lessons — Correct Structure section. */
+/* Student pattern lessons â€” Correct Structure section. */
 .nt-student-pattern-section--structure {
   border: 1px solid var(--nt-mkt-line);
   border-radius: var(--nt-mkt-radius-lg);
@@ -3224,13 +3270,13 @@ body[data-surface] {
   line-height: 1.55;
 }
 
-/* ──────────────────────────────────────────────────────────────────────
+/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
  * Google sign-in screens (/developer/login, /student-learning/login,
  * /auth/callback). Reuses the entry-shell + entry-panel chrome so the
  * sign-in surface feels like a continuation of the choose page instead
  * of a bare auth form. Replaces the inline-style padding the original
  * GoogleSignInPage / GoogleCallback components used.
- * ──────────────────────────────────────────────────────────────────── */
+ * â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .nt-signin-shell {
   width: min(100%, 540px);
 }
@@ -3256,7 +3302,7 @@ body[data-surface] {
   justify-content: center;
 }
 /* Token-driven spinner for the OAuth verify phase. Keeps the user
- * oriented during the 1–3s round-trip without leaning on a third-party
+ * oriented during the 1â€“3s round-trip without leaning on a third-party
  * loader library. */
 .nt-signin-spinner {
   width: 32px;
@@ -3275,7 +3321,7 @@ body[data-surface] {
 }
 
 /* =========================================================================
-   Sprint 0-12 — new surfaces CSS
+   Sprint 0-12 â€” new surfaces CSS
    Per D40 (audience), D41 (effects budget = 1 per page), D42 (info offload),
    D43 (features-first), D45 (start here), D46 (mechanics), Sprint 0 docs.
    All motion below stays under prefers-reduced-motion via MotionConfig at
@@ -3306,7 +3352,7 @@ body[data-surface] {
 .nt-home__above {
   max-width: 1100px;
   margin: 0 auto;
-  padding: clamp(2.5rem, 2rem + 2vw, 4.5rem) clamp(1.25rem, 4vw, 3rem) clamp(2rem, 1.5rem + 1.5vw, 3rem);
+  padding: clamp(1.5rem, 1rem + 1.4vw, 2.75rem) clamp(1.25rem, 4vw, 3rem) clamp(1rem, 0.75rem + 1vw, 2rem);
   text-align: center;
 }
 .nt-home__eyebrow {
@@ -3340,7 +3386,7 @@ body[data-surface] {
   border: 1px solid var(--nt-mkt-line);
   border-radius: 22px;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
+  aspect-ratio: 21 / 9;
   background: rgba(13, 20, 34, 0.5);
 }
 .nt-home__demo-video {
@@ -3368,7 +3414,7 @@ body[data-surface] {
 .nt-home__demo-video[poster] + .nt-home__demo-fallback,
 .nt-home__demo:has(video[autoplay]) .nt-home__demo-fallback {
   /* When the video is actually playing, the fallback is purely a poster
-     supplement — keep it visible only when video src 404s. Browsers without
+     supplement â€” keep it visible only when video src 404s. Browsers without
      :has() simply show fallback under the video; that is acceptable. */
   opacity: 0.0001;
 }
@@ -3429,7 +3475,7 @@ body[data-surface] {
   scroll-margin-top: 90px;
   max-width: 1180px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem) clamp(2rem, 1.5rem + 1.5vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem) clamp(2rem, 1.5rem + 1.5vw, 3rem);
 }
 .nt-home__features-head {
   text-align: center;
@@ -3618,7 +3664,7 @@ body[data-surface] {
 .nt-why {
   max-width: 1080px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-why__head {
   text-align: center;
@@ -3647,7 +3693,7 @@ body[data-surface] {
   }
 }
 .nt-why__panel {
-  padding: clamp(1.25rem, 1rem + 0.6vw, 1.75rem);
+  padding: clamp(1rem, 0.85rem + 0.5vw, 1.35rem);
   border: 1px solid var(--nt-bento-tile-border);
   border-radius: var(--nt-bento-radius);
   background: var(--nt-bento-tile-bg);
@@ -3688,7 +3734,7 @@ body[data-surface] {
 .nt-mech {
   max-width: 880px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem) clamp(3rem, 2rem + 2vw, 5rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem) clamp(3rem, 2rem + 2vw, 5rem);
   position: relative;
 }
 .nt-mech__head {
@@ -3729,11 +3775,11 @@ body[data-surface] {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: clamp(1.5rem, 1rem + 1.5vw, 3rem);
+  gap: clamp(1rem, 0.75rem + 1vw, 1.75rem);
 }
 .nt-mech__stage {
   scroll-margin-top: 130px;
-  padding: clamp(1.25rem, 1rem + 0.7vw, 1.85rem);
+  padding: clamp(1rem, 0.85rem + 0.5vw, 1.4rem);
   border: 1px solid var(--nt-mkt-line);
   border-radius: var(--nt-bento-radius);
   background: var(--nt-bento-tile-bg);
@@ -3803,7 +3849,7 @@ body[data-surface] {
 .nt-patterns {
   max-width: 1180px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-patterns__head {
   text-align: left;
@@ -3926,7 +3972,7 @@ body[data-surface] {
 .nt-pattern-detail {
   max-width: 880px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-pattern-detail__head {
   margin-bottom: 1.75rem;
@@ -3991,7 +4037,7 @@ body[data-surface] {
 .nt-tour {
   max-width: 880px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-tour__head {
   margin-bottom: 1.75rem;
@@ -4027,11 +4073,11 @@ body[data-surface] {
   margin: 0;
   padding: 0;
   display: grid;
-  gap: clamp(1.25rem, 1rem + 1vw, 2.25rem);
+  gap: clamp(0.85rem, 0.7rem + 0.7vw, 1.5rem);
 }
 .nt-tour__step {
   scroll-margin-top: 130px;
-  padding: clamp(1.25rem, 1rem + 0.6vw, 1.75rem);
+  padding: clamp(1rem, 0.85rem + 0.5vw, 1.35rem);
   border: 1px solid var(--nt-mkt-line);
   border-radius: var(--nt-bento-radius);
   background: var(--nt-bento-tile-bg);
@@ -4109,7 +4155,7 @@ body[data-surface] {
 .nt-research {
   max-width: 1080px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-research__head {
   margin-bottom: 2rem;
@@ -4206,7 +4252,7 @@ body[data-surface] {
 .nt-about {
   max-width: 880px;
   margin: 0 auto;
-  padding: clamp(2rem, 1.5rem + 2vw, 4rem) clamp(1.25rem, 4vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-about__head {
   margin-bottom: 2rem;
@@ -4277,3 +4323,4 @@ body[data-surface] {
   justify-content: center;
   margin-top: 2.5rem;
 }
+

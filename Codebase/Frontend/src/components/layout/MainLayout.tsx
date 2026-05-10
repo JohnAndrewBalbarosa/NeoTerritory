@@ -8,6 +8,8 @@ import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
 // import { useHeartbeat } from '../../hooks/useHeartbeat';  // TEMP: disabled, see useHeartbeat() call below
 import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
+import StudioJoyrideTour, { dispatchStudioTourOpen } from '../studio/StudioJoyrideTour';
+import { dispatchStartHereOpen } from '../studio/StartHereRail';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
@@ -308,12 +310,25 @@ export default function MainLayout() {
             >
               {theme === 'dark' ? '☀ Light' : '☾ Dark'}
             </button>
+            <button
+              className="ghost-btn"
+              type="button"
+              title="Replay the studio tour"
+              aria-label="Replay the studio tour"
+              onClick={() => {
+                dispatchStudioTourOpen();
+                dispatchStartHereOpen();
+              }}
+            >
+              ? Tour
+            </button>
             <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
               Sign out
             </button>
           </div>
         </div>
       </header>
+      <StudioJoyrideTour />
 
       <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
         {visibleTabs.map((t, index) => {

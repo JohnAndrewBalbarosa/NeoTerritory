@@ -1,46 +1,39 @@
+import { useEffect, useState } from 'react';
 import { navigate, Surface } from '../../logic/router';
 
-// Per D43 (top-nav lock): exactly four items, in this order.
-//   Try it    → primary CTA on the right edge → /student-studio
-//   Features  → anchor to #features on the home page → /#features
-//   Learn     → /learn
-//   About     → /about
-//
-// Other surfaces (/why, /mechanics, /patterns, /tour, /research) are NOT in
-// the top nav. They are reached from the Home bento grid and from
-// contextual links inside Learn. Per D42 information offloading, top nav is
-// the only place that names other pages.
+// Updated per user feedback (post-D43): the bento doors on Home (See how
+// it works, Why this matters, Pattern catalog, Take the tour, Research,
+// About this thesis) are now also reachable from the top nav. Top bar is
+// no longer sticky — it stays at the very top and scrolls away with the
+// page. This is the new D49 (recorded in DESIGN_DECISIONS.md alongside
+// this change) overriding the four-item lock from D43.
 
 interface MarketingNavProps {
   current: Surface;
 }
 
-const LINKS: Array<{ path: string; label: string; surface: Surface | null }> = [
-  // Features is an anchor on the home page, not a separate route.
-  { path: '/#features', label: 'Features', surface: null },
+const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | null }> = [
+  { path: '/', label: 'Home', surface: 'hero' },
+  { path: '/mechanics', label: 'How it works', surface: 'mechanics' },
+  { path: '/why', label: 'Why', surface: 'why' },
+  { path: '/patterns', label: 'Patterns', surface: 'patterns' },
+  { path: '/tour', label: 'Tour', surface: 'tour' },
+  { path: '/research', label: 'Research', surface: 'research' },
   { path: '/learn', label: 'Learn', surface: 'learn' },
   { path: '/about', label: 'About', surface: 'about' },
 ];
 
-function navigateToFeatures(): void {
-  // If we're already on /, just scroll to #features. Otherwise navigate to
-  // /#features and let the hash trigger the scroll on the next render.
-  if (typeof window === 'undefined') return;
-  if (window.location.pathname === '/') {
-    const el = document.getElementById('features');
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
-  }
-  // Push the hash route; HeroLanding's useEffect picks up the hash on mount.
-  window.history.pushState(null, '', '/#features');
-  window.dispatchEvent(new CustomEvent('nt:navigate'));
-}
-
 export default function MarketingNav({ current }: MarketingNavProps) {
+  const [menuOpen, setMenuOpen] = useState<boolean>(false);
+
+  // Close mobile menu whenever the surface changes (i.e., the user picked
+  // a destination).
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [current]);
+
   return (
-    <header className="nt-mkt-nav" role="banner">
+    <header className="nt-mkt-nav nt-mkt-nav--static" role="banner">
       <a
         href="/"
         className="nt-mkt-nav__brand"
@@ -54,25 +47,45 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         </span>
         <span className="nt-mkt-nav__brand-name">NeoTerritory</span>
       </a>
-      <nav aria-label="Primary" className="nt-mkt-nav__links">
-        {LINKS.map((l) => (
-          <a
-            key={l.path}
-            href={l.path}
-            data-active={l.surface !== null && current === l.surface ? 'true' : undefined}
-            onClick={(e) => {
-              e.preventDefault();
-              if (l.path === '/#features') {
-                navigateToFeatures();
-              } else {
+
+      <button
+        type="button"
+        className="nt-mkt-nav__toggle"
+        aria-expanded={menuOpen}
+        aria-controls="nt-mkt-primary-links"
+        onClick={() => setMenuOpen((v) => !v)}
+      >
+        <span aria-hidden="true">{menuOpen ? '×' : '☰'}</span>
+        <span className="nt-mkt-nav__toggle-label">Menu</span>
+      </button>
+
+      <nav
+        id="nt-mkt-primary-links"
+        aria-label="Primary"
+        className="nt-mkt-nav__links"
+        data-open={menuOpen ? 'true' : undefined}
+      >
+        {PRIMARY_LINKS.map((l) => {
+          // 'patternDetail' surface should highlight the Patterns link.
+          const isPatternFamily =
+            l.surface === 'patterns' && (current === 'patterns' || current === 'patternDetail');
+          const isActive = isPatternFamily || (l.surface !== null && current === l.surface);
+          return (
+            <a
+              key={l.path}
+              href={l.path}
+              data-active={isActive ? 'true' : undefined}
+              onClick={(e) => {
+                e.preventDefault();
                 navigate(l.path);
-              }
-            }}
-          >
-            {l.label}
-          </a>
-        ))}
+              }}
+            >
+              {l.label}
+            </a>
+          );
+        })}
       </nav>
+
       <a
         href="/student-studio"
         className="nt-mkt-nav__cta"

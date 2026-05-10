@@ -712,3 +712,87 @@ Per Amiel and Jules, the existing site has visual-overload and dead-end issues t
 - `StudentLearningHub` session-gate removed per D47.
 
 These ship as one commit because the visible-quality lift only lands when the user is no longer staring at competing motion AND can begin in the studio without assistance. Splitting them forces a half-improved interim state that does not reflect the project's intent.
+
+## D49 — Top nav covers every public surface; top bar is non-sticky
+The four-item top-nav lock from D43 is replaced by an expanded nav that surfaces every public page. Reasoning (per user direction): the audience cannot be expected to remember that some surfaces are reachable only from the Home bento grid — the nav must be the single canonical map of the site.
+
+**New top-nav order** (eight links):
+1. **Home** → `/`
+2. **How it works** → `/mechanics`
+3. **Why** → `/why`
+4. **Patterns** → `/patterns`
+5. **Tour** → `/tour`
+6. **Research** → `/research`
+7. **Learn** → `/learn`
+8. **About** → `/about`
+
+Plus the **Try it now** CTA on the right edge → `/student-studio`.
+
+**Non-sticky behaviour**: the top bar is `position: relative` and scrolls away with the page. This was an explicit user request after the prior sticky bar covered too much screen real estate during reading.
+
+**Mobile**: at ≤880 px viewport width the link list collapses behind a hamburger toggle (`☰ Menu`) and the Try-it CTA disappears (the same destination is reachable via the menu's hidden Home + bento path; users on mobile generally tap the menu anyway).
+
+This supersedes D43's "four items, no more" rule on the nav specifically; the rest of D43 (features-first hierarchy, Features anchor on Home) stays in force.
+
+## D50 — Spacing tightened: 15-20% air target on marketing surfaces
+Per user direction after the prior triage-only commit: marketing pages still felt "spacy." The new rule: empty space caps at roughly 15-20% of the viewport unless a specific element earns more (a hero CTA, a single-quote callout, an in-progress demo embed).
+
+**Concrete token changes**:
+- `--nt-mkt-text-hero` clamped tighter: `clamp(2.2rem, 1rem + 4.2vw, 4.4rem)` (was `clamp(2.4rem, 1rem + 5vw, 5.2rem)`).
+- `--nt-mkt-space-section` halved again: `clamp(1.4rem, 1rem + 2vw, 3rem)` (was `clamp(2rem, 1.5rem + 3vw, 4.5rem)`).
+- Hero `min-height` clamped lower: `clamp(360px, 56vh, 600px)` (was `clamp(480px, 70vh, 720px)`).
+- Per-surface page paddings on `/why`, `/mechanics`, `/patterns`, `/tour`, `/research`, `/about` reduced to `clamp(1.25rem, 1rem + 1.2vw, 2.5rem)` (was `clamp(2rem, 1.5rem + 2vw, 4rem)`).
+- Demo embed aspect ratio changed to `21 / 9` (was `16 / 9`) so it occupies less vertical air.
+
+The bento grid token set (`--nt-bento-*`) and per-component element paddings stay unchanged because they were already tight; the issue was the section-level air, not the component-level.
+
+## D51 — Sample picker: GoF-split modal sourcing Nesteruk 2022
+The single "Load sample" button drops one fixed sample. Per user direction it now opens a **modal picker** that lists every sample bundled under `Codebase/Microservice/samples/` grouped by family.
+
+**Source of truth for pattern intents**: Nesteruk, D. (2022) *Design Patterns in Modern C++20*, Apress. The CodiNeo thesis cites this book as its design-pattern reference (Chapter 1.1, Chapter 2). One-line "intent" copy on each picker tile is paraphrased from Nesteruk's chapter on the corresponding pattern and explicitly cited in a footer line on the modal.
+
+**Bundling**: `import.meta.glob('../../../../Microservice/samples/**/*.cpp', { eager: true, query: '?raw' })` so changing a `.cpp` file under `Codebase/Microservice/samples/` automatically updates the modal at next build. No backend change.
+
+**Family mapping** (`META_BY_DIRECTORY` in `SamplePickerModal.tsx`):
+- `builder/` → Creational · Builder
+- `factory/` → Creational · Factory Method
+- `singleton/` → Creational · Singleton
+- `method_chaining/` → Behavioural · Method Chaining
+- `strategy/` → Behavioural · Strategy
+- `wrapping/` → Structural · Adapter / Proxy / Decorator
+- `pimpl/` → Idioms · PIMPL
+- `integration/`, `mixed/`, `negative/`, `usages/` → Idioms (utility)
+
+**Fallback**: the legacy `fetchSample()` backend endpoint is kept as a single-file fallback when the bundled raw samples are empty (build-time error on Vite's glob, etc.). The studio is never stuck.
+
+## D52 — In-studio popup tour uses react-joyride; same content as /tour
+Per user direction (React Joyride reference): the in-studio walkthrough is implemented with `react-joyride` providing overlay + spotlight + beacon + tooltip. Content comes from `tourSteps.ts` so the public `/tour` page and the in-studio popup tour cannot drift — both render the same step array.
+
+**Auto-trigger**: on first studio entry. `localStorage.nt_studio_tour_completed = '1'` blocks re-trigger after first completion.
+
+**Replay**: a `? Tour` button in the studio header dispatches a `nt:studio-tour:open` event, AND a `nt:start-here:open` event so both the Joyride overlay AND the StartHereRail re-expand together.
+
+**DOM targets** (Joyride `step.target`): the studio's existing IDs are the anchors:
+- `#load-sample-btn` → step "Load a sample"
+- `#analyze-btn` → step "Click Analyze"
+- `#analysis-form` → step "Read the result"
+
+Steps without a clean DOM target (`Sign in`, `Generate documentation`, `Save the run`, `Open run history`) render as centered modals via Joyride's `placement: 'center'`.
+
+**Why react-joyride and not a hand-rolled overlay**: the spotlight / portal / focus-trapping behaviour is non-trivial to get right (z-index management, scroll-locking, screen-reader announcements, keyboard navigation). react-joyride is a maintained, well-known package; the cost of pulling it in is one dependency for a visibly polished tour.
+
+**Bundle cost**: ≈ +25 KB gzipped main bundle. Acceptable given studio is auth-gated and not on the public marketing critical path.
+
+## D53 — Playwright auto-screenshot capture for /tour
+The public `/tour` page references `imagePath: '/tour/<slug>.png'` per step. The script `tools/capture-tour-screenshots.mjs` drives a real Chromium against the running studio and writes one PNG per step to `Codebase/Frontend/public/tour/`.
+
+**Run**: `node tools/capture-tour-screenshots.mjs`
+
+**Requirements**:
+- Studio dev server on `http://localhost:3001` (override with `TOUR_BASE_URL`).
+- Tester credentials in `NEOTERRITORY_TESTER_USER` / `NEOTERRITORY_TESTER_PASS` for auth-gated steps. Without them, the script captures the public-surface steps and skips the gated ones with a console warning rather than erroring.
+- Playwright resolved from `Codebase/Frontend/node_modules/playwright/index.mjs` (same convention the existing `playwright-scratch/recorder.cjs` follows — single source of Playwright in the repo).
+
+**Output**: `Codebase/Frontend/public/tour/<slug>.png`. After successful capture the script patches `tourSteps.ts` so `imagePath` points at the new files. The `/tour` page picks them up at next reload.
+
+**Why a script and not a hook**: capture is a deliberate, supervised action — the studio must be in a known state, and re-running it accidentally during CI would write screenshots from a non-representative state. The script is invoked manually when the user wants to refresh the tour images.

@@ -5,6 +5,7 @@ import { consumeStudioPrefill } from '../../logic/studioPrefill';
 import { logFrontendEvent } from '../../logic/frontendLog';
 import { AnalysisRun } from '../../types/api';
 import { countCppTokens, DEFAULT_MAX_TOKENS_PER_FILE } from '../../utils/tokenCounter';
+import SamplePickerModal from './SamplePickerModal';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
@@ -132,20 +133,40 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
 
   const submissionOverLimit = slots.some(s => countCppTokens(s.text) > MAX_TOKENS);
 
-  async function onLoadSample() {
+  // Sample-picker modal: replaces the old single-fetch behaviour. Clicking
+  // "Load sample" now opens a categorised picker (Creational / Structural /
+  // Behavioural / Idioms) and the user chooses one. The legacy fetchSample
+  // backend endpoint is kept as a fallback when the bundled raw samples are
+  // empty for some reason.
+  const [samplePickerOpen, setSamplePickerOpen] = useState<boolean>(false);
+
+  function applyLoadedSample(filename: string, code: string): void {
+    setSlots(prev => {
+      const next = [...prev];
+      next[0] = { ...next[0], name: filename, text: code };
+      return next;
+    });
+    setSourceText(code);
+    setFilename(filename);
+    setStatus({ kind: 'ok', title: 'Sample loaded', detail: `${filename} placed in slot 1.` });
+  }
+
+  function onLoadSample(): void {
+    setSamplePickerOpen(true);
+  }
+
+  async function onLoadSampleFallback(): Promise<void> {
+    // Used when the picker has no bundled samples — preserves the legacy
+    // single-sample behaviour so the studio is never stuck.
     try {
       const sample = await fetchSample();
-      // Drop the sample into the first slot.
-      setSlots(prev => {
-        const next = [...prev];
-        next[0] = { ...next[0], name: sample.filename || 'sample.cpp', text: sample.code || '' };
-        return next;
-      });
-      setSourceText(sample.code || '');
-      setFilename(sample.filename || 'sample.cpp');
-      setStatus({ kind: 'ok', title: 'Sample loaded', detail: `${sample.filename} placed in slot 1.` });
+      applyLoadedSample(sample.filename || 'sample.cpp', sample.code || '');
     } catch (err) {
-      setStatus({ kind: 'error', title: 'Sample failed', detail: err instanceof Error ? err.message : 'unknown' });
+      setStatus({
+        kind: 'error',
+        title: 'Sample failed',
+        detail: err instanceof Error ? err.message : 'unknown',
+      });
     }
   }
 
@@ -201,6 +222,20 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   }
 
   return (
+    <>
+    <SamplePickerModal
+      open={samplePickerOpen}
+      onClose={() => setSamplePickerOpen(false)}
+      onSelect={({ filename, code }) => {
+        if (!code) {
+          // Bundled raw samples returned an empty string — fall back to
+          // backend single-fetch so the user is never stuck.
+          void onLoadSampleFallback();
+          return;
+        }
+        applyLoadedSample(filename, code);
+      }}
+    />
     <form id="analysis-form" className="analysis-form" onSubmit={onSubmit}>
       <div className="file-tabs" role="tablist" aria-label="Submission files">
         {slots.map((slot) => {
@@ -303,5 +338,6 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
         </button>
       </div>
     </form>
+    </>
   );
 }
