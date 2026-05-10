@@ -98,7 +98,10 @@ jobs:
           # Codebase/Backend/src/db/_testSeed/devconUsers.ts, this env flag
           # gates seedDevconUsers().
           SEED_TEST_USERS: "1"
-          MAX_TEST_USERS: "5"
+          # 10 tests + buffer for re-runs. Each test claims a seat; the
+          # spec releases via /auth/disconnect in afterEach, but bumping
+          # the pool avoids exhaustion if a test fails before release.
+          MAX_TEST_USERS: "20"
           # Per testRunnerService.ts:117: NODE_ENV=production disables the
           # in-process compiler-based test runner unless ENABLE_TEST_RUNNER=1
           # is explicit. Without this, every Tests-tab assertion would fail
