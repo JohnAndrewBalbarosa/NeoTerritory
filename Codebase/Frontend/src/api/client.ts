@@ -503,6 +503,127 @@ export async function runPatternTests(opts: {
   }, GDB_TIMEOUT_MS);
 }
 
+// Same shape as the SSE events the backend emits — the FE consumes these
+// to render compile_run rows the moment they land, before unit_test
+// finishes. Mirror of RunPhaseEvent / RunDoneEvent in the backend
+// runEventsStore — kept in sync by hand for now since the two trees do
+// not share a published type package.
+export interface RunStreamPhaseEvent {
+  type: 'phase';
+  runId: string;
+  seq: number;
+  result: GdbTestResult;
+}
+export interface RunStreamDoneEvent {
+  type: 'done';
+  runId: string;
+  seq: number;
+  summary: { total: number; passed: number; failed: number };
+  rateLimit?: { window: number; cooldownMs: number; remaining: number };
+}
+export type RunStreamEvent = RunStreamPhaseEvent | RunStreamDoneEvent;
+
+export interface StreamingRunHandle {
+  runId: string;
+  // Resolves once the `done` event lands. Rejects if the stream errors
+  // out without a terminal event (e.g. network loss with no replay).
+  finished: Promise<{ summary: RunStreamDoneEvent['summary']; rateLimit?: RunStreamDoneEvent['rateLimit'] }>;
+  // Forcefully closes the EventSource. Safe to call after `finished`.
+  close: () => void;
+}
+
+function generateClientRunId(): string {
+  const ts = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 10);
+  return `run_${ts}_${rand}`;
+}
+
+/**
+ * Streaming variant of runPatternTests. Generates a fresh runId, kicks
+ * off the run via POST (returns 202), then opens an SSE connection and
+ * forwards each phase event to onEvent in real time. The same runId is
+ * reused for every event in this run — that is the idempotent run-id
+ * contract the project owner asked for: one id from FE through BE
+ * (and on out to a future pod) covering compile_run + unit_test, with
+ * each step distinguished by event metadata, not by a separate id.
+ */
+export async function runPatternTestsStreaming(opts: {
+  runId?: number;
+  pendingId?: string;
+  classResolvedPatterns?: Record<string, string>;
+  stdin?: string;
+  onEvent: (event: RunStreamEvent) => void;
+}): Promise<StreamingRunHandle> {
+  const clientRunId = generateClientRunId();
+  const payload = {
+    runId: clientRunId,
+    classResolvedPatterns: opts.classResolvedPatterns || {},
+    stdin: opts.stdin || '',
+    ...(opts.pendingId ? { pendingId: opts.pendingId } : {})
+  };
+  const url = opts.runId != null
+    ? `/api/analysis/${opts.runId}/run-tests`
+    : '/api/analysis/run-tests';
+  if (opts.runId == null && !opts.pendingId) {
+    throw new Error('runId or pendingId required');
+  }
+  // POST returns 202 with the canonical runId. If the server says the
+  // request is rejected because another run is already in flight, it
+  // hands back the existing runId — we honour that and resubscribe to
+  // the live stream rather than spawn a duplicate.
+  const ack = await apiFetch<{ runId: string; accepted: boolean; reason?: string }>(
+    url,
+    { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) },
+    30_000
+  );
+  const runId = ack.runId;
+
+  const token = getToken();
+  if (!token) throw new Error('not authenticated');
+  const sseUrl = `/api/analysis/run-events/${encodeURIComponent(runId)}?token=${encodeURIComponent(token)}`;
+  const source = new EventSource(sseUrl);
+
+  let resolveDone!: (v: { summary: RunStreamDoneEvent['summary']; rateLimit?: RunStreamDoneEvent['rateLimit'] }) => void;
+  let rejectDone!: (e: Error) => void;
+  const finished = new Promise<{ summary: RunStreamDoneEvent['summary']; rateLimit?: RunStreamDoneEvent['rateLimit'] }>((resolve, reject) => {
+    resolveDone = resolve;
+    rejectDone = reject;
+  });
+
+  source.addEventListener('phase', (ev: MessageEvent<string>) => {
+    try {
+      const parsed = JSON.parse(ev.data) as RunStreamPhaseEvent;
+      opts.onEvent(parsed);
+    } catch {
+      // Malformed event — drop it. The backend never emits non-JSON.
+    }
+  });
+  source.addEventListener('done', (ev: MessageEvent<string>) => {
+    try {
+      const parsed = JSON.parse(ev.data) as RunStreamDoneEvent;
+      opts.onEvent(parsed);
+      resolveDone({ summary: parsed.summary, rateLimit: parsed.rateLimit });
+    } catch (err) {
+      rejectDone(err instanceof Error ? err : new Error('done event parse failed'));
+    } finally {
+      source.close();
+    }
+  });
+  source.addEventListener('error', () => {
+    // EventSource auto-retries by default; treat a hard close (readyState
+    // CLOSED) as terminal and reject so callers can surface a banner.
+    if (source.readyState === EventSource.CLOSED) {
+      rejectDone(new Error('event stream closed before done'));
+    }
+  });
+
+  return {
+    runId,
+    finished,
+    close: () => source.close()
+  };
+}
+
 // AI poll endpoint
 export interface AiPollResponse {
   status: 'pending' | 'ready' | 'failed';

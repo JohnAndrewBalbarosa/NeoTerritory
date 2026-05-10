@@ -24,6 +24,10 @@ import {
   runSubmissionCompile, runPatternUnitTest,
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
+import {
+  reserveRun, findActiveRunFor, getRun,
+  pushPhaseEvent, markRunDone, subscribeRun, RunEvent
+} from '../services/runEventsStore';
 import { ensurePod, isPodModeEnabled, podManagerStatus, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import {
   getMicroserviceStatus,
@@ -1315,13 +1319,25 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
   return (p.unitTestTargets || [])[0]?.function_name;
 }
 
+// Optional per-phase callback. Fires the moment a single (phase, patternId)
+// pair resolves, so a streaming caller (the SSE endpoint) can forward the
+// verdict to the frontend before the rest of the batch is done. The
+// callback is best-effort — its exceptions are swallowed so an SSE
+// subscriber bug cannot break the rest of the run.
+type PhaseEmitter = (result: TestResult) => void;
+
 async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
   userId?: number,
-  stdin?: string
+  stdin?: string,
+  onPhase?: PhaseEmitter
 ): Promise<TestResult[]> {
+  const safeEmit: PhaseEmitter = onPhase
+    ? (r) => { try { onPhase(r); } catch { /* ignore subscriber errors */ } }
+    : () => { /* no-op */ };
+
   const eligible = patterns.filter(p => p.className);
   if (eligible.length === 0) return [];
 
@@ -1347,6 +1363,7 @@ async function dispatchPatternTests(
     patternName: p.patternName,
     className:   p.className!
   }));
+  for (const cr of compileResults) safeEmit(cr);
 
   // If the shared compile failed there is no point running any unit_test —
   // mark them all skipped at once with the same upstream message.
@@ -1364,11 +1381,14 @@ async function dispatchPatternTests(
       verdict:     'skipped',
       message:     'Skipped — your class did not compile or did not exit cleanly on its own.'
     }));
+    for (const sk of skips) safeEmit(sk);
     return [...compileResults, ...skips];
   }
 
   // Compile succeeded → run every unit_test driver in parallel. Each driver
-  // gets its own scratch dir so they cannot collide on disk.
+  // gets its own scratch dir so they cannot collide on disk. Emit each
+  // pattern's unit_test result as soon as its individual promise resolves —
+  // do not wait for the whole Promise.all to settle before forwarding.
   const unitResults = await Promise.all(eligible.map(p => {
     const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
     return runPatternUnitTest({
@@ -1388,7 +1408,7 @@ async function dispatchPatternTests(
       realBase:         'Subject',
       targetBase:       'Target',
       targetMethod:     fallbackTarget
-    });
+    }).then((r) => { safeEmit(r); return r; });
   }));
 
   return [...compileResults, ...unitResults];
@@ -1434,6 +1454,27 @@ function filterToTaggedPatterns(
     if (cnt === 1) return true;
     return resolvedMap[p.className] === p.patternId;
   });
+}
+
+// Build a fresh runId for a streaming invocation. Same shape pattern as
+// pendingId so logs are uniform across the analysis pipeline.
+function generateRunId(): string {
+  return `run_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Validate runId comes only from the controlled set of generators above.
+// Anything else is rejected so a malicious client cannot collide with an
+// existing run owned by another user.
+function isValidRunId(s: unknown): s is string {
+  return typeof s === 'string' && /^run_[a-z0-9]{1,16}_[a-z0-9]{1,16}$/i.test(s);
+}
+
+interface RunTestsOptions {
+  patterns: DetectedPatternResult[];
+  fullSource: string;
+  files?: Array<{ name: string; sourceText: string }>;
+  resolvedMap: Record<string, string>;
+  stdin?: string;
 }
 
 async function handleRunTests(
@@ -1484,13 +1525,76 @@ async function handleRunTests(
     return;
   }
   const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
+
+  // Streaming branch — when the client supplies a runId (or asks for one
+  // via ?stream=1), the work runs in the background and each phase result
+  // is emitted to the SSE channel keyed by that runId. The HTTP POST
+  // returns 202 immediately so the FE can open the EventSource and start
+  // rendering compile_run rows the moment they resolve.
+  const body = (req.body || {}) as { runId?: unknown };
+  const wantsStream = isValidRunId(body.runId) || req.query.stream === '1';
+  if (wantsStream) {
+    // Reject second run while one is already in flight for this user —
+    // hand back the existing runId so the FE re-subscribes instead of
+    // spawning a duplicate run.
+    const active = findActiveRunFor(req.user.id);
+    if (active) {
+      res.status(202).json({ runId: active, accepted: false, reason: 'already_running' });
+      return;
+    }
+    const runId = isValidRunId(body.runId) ? body.runId : generateRunId();
+    if (!reserveRun(runId, req.user.id)) {
+      res.status(409).json({ error: 'runId already in use', runId });
+      return;
+    }
+    res.status(202).json({ runId, accepted: true });
+
+    // Background dispatch. We deliberately do not await this — the
+    // response has already been sent. Any thrown error is funnelled into
+    // a synthetic done event so subscribers always see closure.
+    void (async () => {
+      try {
+        const results = await dispatchPatternTests(
+          taggedPatterns, fullSource, files, req.user?.id, stdin,
+          (r) => pushPhaseEvent(runId, r.phase, r)
+        );
+        finalizeRunLogs(req.user?.id ?? null, results);
+        markRunDone(runId, summarize(results), {
+          window: GDB_RUNS_PER_WINDOW,
+          cooldownMs: GDB_COOLDOWN_MS,
+          remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user!.id) || []).length)
+        });
+      } catch (err) {
+        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
+        // eslint-disable-next-line no-console
+        console.error('[run-tests] background dispatch failed', err);
+      }
+    })();
+    return;
+  }
+
+  // Legacy blocking path — the CI smoke test and the playwright check
+  // still rely on the single-response shape. Keeping this branch means
+  // older clients continue to work unchanged.
   const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id, stdin);
-  // Validate the result set BEFORE logging anything — we only persist
-  // outcomes when every test result has the fields downstream consumers
-  // (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
-  // no_template / sandbox_disabled) is a non-result, not a failure, and
-  // must not pollute the gdb.<phase>.fail log stream — that's what was
-  // showing up as phantom failures in the accuracy chip.
+  finalizeRunLogs(req.user?.id ?? null, results);
+  res.json({
+    results,
+    rateLimit: {
+      window: GDB_RUNS_PER_WINDOW,
+      cooldownMs: GDB_COOLDOWN_MS,
+      remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user.id) || []).length)
+    }
+  });
+}
+
+// Validate the result set BEFORE logging anything — we only persist
+// outcomes when every test result has the fields downstream consumers
+// (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
+// no_template / sandbox_disabled) is a non-result, not a failure, and
+// must not pollute the gdb.<phase>.fail log stream — that's what was
+// showing up as phantom failures in the accuracy chip.
+function finalizeRunLogs(userId: number | null, results: TestResult[]): void {
   const isCountableResult = (r: TestResult): boolean =>
     !!r.patternId && !!r.className && typeof r.phase === 'string'
     && r.verdict !== 'skipped'
@@ -1501,24 +1605,27 @@ async function handleRunTests(
     !!r.patternId && !!r.className && typeof r.phase === 'string'
     && typeof r.verdict === 'string'
   );
-  if (allComplete) {
-    for (const r of results) {
-      if (!isCountableResult(r)) continue;
-      const ok = r.passed;
-      const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
-      const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
-                   + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
-      logEvent(req.user?.id ?? null, ev, detail);
-    }
+  if (!allComplete) return;
+
+  for (const r of results) {
+    if (!isCountableResult(r)) continue;
+    const ok = r.passed;
+    const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
+    const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
+                 + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+    logEvent(userId, ev, detail);
   }
-  res.json({
-    results,
-    rateLimit: {
-      window: GDB_RUNS_PER_WINDOW,
-      cooldownMs: GDB_COOLDOWN_MS,
-      remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user.id) || []).length)
-    }
-  });
+}
+
+function summarize(results: TestResult[]): { total: number; passed: number; failed: number } {
+  let passed = 0;
+  let failed = 0;
+  for (const r of results) {
+    if (r.verdict === 'skipped' || r.verdict === 'no_template' || r.verdict === 'sandbox_disabled') continue;
+    if (r.passed) passed += 1;
+    else failed += 1;
+  }
+  return { total: passed + failed, passed, failed };
 }
 
 // Saved-run path (kept for parity with the old contract).
@@ -1598,6 +1705,79 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
   } catch (err) {
     next(err);
   }
+});
+
+// Server-Sent Events stream for a streaming run. The frontend opens this
+// after kicking off /api/analysis/run-tests with a runId — each phase
+// result lands as a discrete event, then a terminal `done` event closes
+// the stream. Reconnects replay the buffered events from seq=0 so no
+// verdict is lost across a flaky network drop.
+//
+// JWT is supplied via the `?token=` query parameter because the browser's
+// EventSource API cannot attach Authorization headers. The token is
+// validated with the same secret as jwtAuth — we do not accept it from
+// the body and we do not log it.
+router.get('/analysis/run-events/:runId', (req: Request, res: Response): void => {
+  const runId = String(req.params.runId || '');
+  if (!isValidRunId(runId)) {
+    res.status(400).json({ error: 'Invalid runId' });
+    return;
+  }
+  const tokenRaw = typeof req.query.token === 'string' ? req.query.token : '';
+  if (!tokenRaw) {
+    res.status(401).json({ error: 'token query param required' });
+    return;
+  }
+  let userId: number;
+  try {
+    const decoded = jwt.verify(tokenRaw, process.env.JWT_SECRET || 'dev-secret') as { sub?: number; id?: number };
+    const candidate = decoded.sub ?? decoded.id;
+    if (typeof candidate !== 'number') throw new Error('token missing user id');
+    userId = candidate;
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+  const rec = getRun(runId);
+  if (!rec) {
+    res.status(404).json({ error: 'Run not found or expired' });
+    return;
+  }
+  if (rec.userId !== userId) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  // Disable nginx response buffering on the AWS reverse proxy — without
+  // this the nginx default of buffering N bytes before flushing to the
+  // client makes SSE feel like polling.
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const writeEvent = (ev: RunEvent): void => {
+    res.write(`event: ${ev.type}\n`);
+    res.write(`id: ${ev.seq}\n`);
+    res.write(`data: ${JSON.stringify(ev)}\n\n`);
+    if (ev.type === 'done') {
+      res.end();
+    }
+  };
+
+  const heartbeat = setInterval(() => {
+    // Comment-only line keeps the connection alive through proxies that
+    // close idle TCP after ~30s. Browsers ignore SSE comments.
+    res.write(': ping\n\n');
+  }, 15_000);
+  heartbeat.unref?.();
+
+  const unsubscribe = subscribeRun(runId, writeEvent);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
 });
 
 export default router;

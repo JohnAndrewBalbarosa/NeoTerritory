@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
-import { runPatternTests, fetchMyTestRunStats, GdbTestResult, AdminTestRunStats } from '../../api/client';
+import { runPatternTestsStreaming, fetchMyTestRunStats, GdbTestResult, AdminTestRunStats } from '../../api/client';
 import { logFrontendEvent } from '../../logic/frontendLog';
 
 const VERDICT_LABEL: Record<string, string> = {
@@ -205,8 +205,17 @@ export default function GdbRunnerTab() {
   // the busy spinner / skeleton lives in the global store, not in local
   // useState that gets blown away on unmount.
   const groups: PatternGroup[] = useMemo(() => {
-    if (busy && gdbBusyForKey === sessionKey && gdbInflightSkeleton.length > 0) {
-      return gdbInflightSkeleton.map(s => ({ ...s }));
+    // While busy, prefer live partial results (compile_run rows that have
+    // already streamed in via SSE) over the skeleton — that way the user
+    // sees the compile verdict the moment it lands instead of staring at
+    // an empty placeholder until unit_test also finishes.
+    if (busy && gdbBusyForKey === sessionKey) {
+      if (cachedValid && lastGdbResults && lastGdbResults.length > 0) {
+        return groupResults(lastGdbResults);
+      }
+      if (gdbInflightSkeleton.length > 0) {
+        return gdbInflightSkeleton.map(s => ({ ...s }));
+      }
     }
     return cachedValid ? groupResults(lastGdbResults!) : [];
   }, [busy, gdbBusyForKey, gdbInflightSkeleton, cachedValid, lastGdbResults, sessionKey]);
@@ -316,25 +325,45 @@ export default function GdbRunnerTab() {
     setGdbBusy(true, sessionKey);
     logFrontendEvent('frontend.gdb_test', `dispatch patterns=${skeleton.length}`);
     try {
-      const data = await runPatternTests(
+      // Streaming variant: each phase result lands as a discrete SSE
+      // event, and we accumulate them into a single partial array that
+      // gets pushed to the store after every event. The store-driven
+      // re-render is what gives the user "compile pass" feedback the
+      // moment compile_run finishes, before unit_test runs.
+      const accumulated: GdbTestResult[] = [];
+      let firstActiveKeySet = false;
+      const handle = await runPatternTestsStreaming(
         runId !== null
-          ? { runId, classResolvedPatterns: resolvedMap, stdin: programStdin }
-          : { pendingId: pendingId!, classResolvedPatterns: resolvedMap, stdin: programStdin }
+          ? {
+              runId, classResolvedPatterns: resolvedMap, stdin: programStdin,
+              onEvent: (ev) => {
+                if (ev.type !== 'phase') return;
+                accumulated.push(ev.result);
+                if (!firstActiveKeySet) {
+                  setActiveKey(`${ev.result.patternId}__${ev.result.className}`);
+                  firstActiveKeySet = true;
+                }
+                setLastGdbResults([...accumulated], sessionKey);
+              }
+            }
+          : {
+              pendingId: pendingId!, classResolvedPatterns: resolvedMap, stdin: programStdin,
+              onEvent: (ev) => {
+                if (ev.type !== 'phase') return;
+                accumulated.push(ev.result);
+                if (!firstActiveKeySet) {
+                  setActiveKey(`${ev.result.patternId}__${ev.result.className}`);
+                  firstActiveKeySet = true;
+                }
+                setLastGdbResults([...accumulated], sessionKey);
+              }
+            }
       );
-      const grouped = groupResults(data.results);
-      if (grouped.length > 0) {
-        setActiveKey(`${grouped[0].patternId}__${grouped[0].className}`);
-      }
-      setGdbBudgetRemaining(data.rateLimit?.remaining ?? null);
-      // Persist results in the session so a tab switch doesn't lose them.
-      // The runKey binds the cache to *this* run's identity — a new
-      // submission resets it via setCurrentRun, requiring a fresh run.
-      setLastGdbResults(data.results, sessionKey);
-      const passed = data.results.filter(r => r.passed).length;
-      // The Annotated tab's CTA gate: only allow advancing to Review once
-      // every emitted test result passed for the current run.
-      setGdbAllPassedForRun(data.results.length > 0 && passed === data.results.length);
-      logFrontendEvent('frontend.gdb_test', `complete pass=${passed}/${data.results.length}`);
+      const final = await handle.finished;
+      setGdbBudgetRemaining(final.rateLimit?.remaining ?? null);
+      const passed = accumulated.filter(r => r.passed).length;
+      setGdbAllPassedForRun(accumulated.length > 0 && passed === accumulated.length);
+      logFrontendEvent('frontend.gdb_test', `complete pass=${passed}/${accumulated.length}`);
     } catch (err) {
       const e = err as ApiError;
       if (e.status === 503) {
