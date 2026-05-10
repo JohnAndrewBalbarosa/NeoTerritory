@@ -4783,3 +4783,85 @@ body[data-surface] {
 .nt-research__trophy a {
   color: var(--devcon-cyan, var(--nt-mkt-accent));
 }
+
+/* Mechanics: Trophy-vs-data-structure section (D73) */
+.nt-mech__trophy {
+  margin-top: clamp(1.5rem, 1rem + 1.5vw, 3rem);
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2rem);
+  border: 1px solid rgba(166, 255, 0, 0.32);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(166, 255, 0, 0.04), rgba(0, 209, 216, 0.03));
+}
+.nt-mech__trophy-title {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.25rem, 0.9rem + 1.2vw, 1.85rem);
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+  letter-spacing: -0.01em;
+}
+.nt-mech__trophy-lede {
+  margin: 0 0 1.25rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+.nt-mech__trophy-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 880px) {
+  .nt-mech__trophy-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.nt-mech__trophy-col {
+  padding: 1rem 1.1rem;
+  border-radius: 14px;
+  background: rgba(13, 20, 34, 0.5);
+  border: 1px solid var(--nt-mkt-line);
+}
+.nt-mech__trophy-col--pros {
+  border-color: rgba(0, 209, 216, 0.4);
+}
+.nt-mech__trophy-col--cons {
+  border-color: rgba(255, 138, 0, 0.32);
+}
+.nt-mech__trophy-col--limits {
+  border-color: rgba(123, 94, 167, 0.45);
+}
+.nt-mech__trophy-col h3 {
+  margin: 0 0 0.65rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.nt-mech__trophy-col--pros h3   { color: var(--devcon-cyan, oklch(78% 0.16 220)); }
+.nt-mech__trophy-col--cons h3   { color: oklch(78% 0.14 50); }
+.nt-mech__trophy-col--limits h3 { color: oklch(72% 0.15 300); }
+.nt-mech__trophy-col ul {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.55rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.55;
+  font-size: 0.9rem;
+}
+.nt-mech__trophy-col li strong {
+  color: var(--nt-mkt-text);
+}
+.nt-mech__trophy-foot {
+  margin: 1.25rem 0 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(0, 209, 216, 0.35);
+  border-radius: 12px;
+  background: rgba(0, 209, 216, 0.07);
+  color: var(--nt-mkt-text);
+  font-size: 0.94rem;
+  line-height: 1.6;
+}
+.nt-mech__trophy-foot strong {
+  color: var(--nt-mkt-text);
+}

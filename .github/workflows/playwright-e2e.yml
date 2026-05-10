@@ -93,6 +93,12 @@ jobs:
           # default (which assumes Windows .exe) doesn't apply on Linux.
           NEOTERRITORY_BIN: "${{ github.workspace }}/Codebase/Microservice/build/NeoTerritory"
           NEOTERRITORY_CATALOG: "${{ github.workspace }}/Codebase/Microservice/pattern_catalog"
+          # Seed test users so the Playwright tester picker has accounts to
+          # claim. Without this, /auth/test-accounts returns []. Per
+          # Codebase/Backend/src/db/_testSeed/devconUsers.ts, this env flag
+          # gates seedDevconUsers().
+          SEED_TEST_USERS: "1"
+          MAX_TEST_USERS: "5"
         run: |
           set -euo pipefail
           if [ -f dist/server.js ]; then
