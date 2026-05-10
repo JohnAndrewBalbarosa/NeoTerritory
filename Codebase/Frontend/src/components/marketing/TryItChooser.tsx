@@ -1,20 +1,29 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 
-// Per user direction (this turn): clicking "Try it now" on the Home page no
-// longer routes straight to the gated studio. Instead it opens this chooser
-// asking whether the visitor wants the Learning module (no auth) or the
-// Studio app (auth required). Sign-in is only triggered when the visitor
-// picks Studio.
+// Per D75 (this turn): two-step chooser.
+//   Step 1: Learning module (open, no auth) OR Studio app.
+//   Step 2 (only if user picked Studio): Tester seat (no account, devcon
+//   pool) OR Account holder (sign in / register, progress saves).
+// The "account holder saves progress" angle is a forward-looking pitch
+// per user direction; both /developer/login and /student-learning/login
+// land in flows that have account-bound state today.
 
 interface TryItChooserProps {
   open: boolean;
   onClose: () => void;
 }
 
+type Step = 'path' | 'studioSubChoice';
+
 export default function TryItChooser({ open, onClose }: TryItChooserProps) {
+  const [step, setStep] = useState<Step>('path');
+
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setStep('path');
+      return;
+    }
     function onKey(e: KeyboardEvent): void {
       if (e.key === 'Escape') onClose();
     }
@@ -29,9 +38,21 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
     navigate('/student-learning');
   }
 
-  function pickStudio(): void {
+  function pickStudioStart(): void {
+    setStep('studioSubChoice');
+  }
+
+  function pickTesterSeat(): void {
     onClose();
-    navigate('/student-studio');
+    // /login is the tester seat picker (LoginOverlay default mode).
+    navigate('/login');
+  }
+
+  function pickAccountHolder(): void {
+    onClose();
+    // /developer/login starts the Google-account sign-in flow; account
+    // holders can save their analysis history and learning progress.
+    navigate('/developer/login');
   }
 
   return (
@@ -43,48 +64,117 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
     >
       <div className="nt-tryit__backdrop" onClick={onClose} aria-hidden="true" />
       <div className="nt-tryit__panel" role="document">
-        <header className="nt-tryit__head">
-          <p className="nt-tryit__eyebrow">Pick your path</p>
-          <h2 id="tryit-title" className="nt-tryit__title">
-            How do you want to start?
-          </h2>
-          <p className="nt-tryit__lede">
-            Read first, or skip to running your own code. Sign-in only happens if you pick the
-            studio.
-          </p>
-          <button
-            type="button"
-            className="nt-tryit__close"
-            onClick={onClose}
-            aria-label="Close chooser"
-          >
-            ×
-          </button>
-        </header>
+        {step === 'path' ? (
+          <>
+            <header className="nt-tryit__head">
+              <p className="nt-tryit__eyebrow">Pick your path</p>
+              <h2 id="tryit-title" className="nt-tryit__title">
+                How do you want to start?
+              </h2>
+              <p className="nt-tryit__lede">
+                Read first, or skip to running your own code. Sign-in only happens if you pick the
+                studio.
+              </p>
+              <button
+                type="button"
+                className="nt-tryit__close"
+                onClick={onClose}
+                aria-label="Close chooser"
+              >
+                ×
+              </button>
+            </header>
 
-        <div className="nt-tryit__choices">
-          <button type="button" className="nt-tryit__choice" onClick={pickLearning}>
-            <span className="nt-tryit__choice-tag">Learning module</span>
-            <span className="nt-tryit__choice-title">Read first</span>
-            <span className="nt-tryit__choice-blurb">
-              Walk through the lessons, see the patterns, then come back later. No sign-in.
-            </span>
-            <span className="nt-tryit__choice-arrow" aria-hidden="true">
-              →
-            </span>
-          </button>
+            <div className="nt-tryit__choices">
+              <button type="button" className="nt-tryit__choice" onClick={pickLearning}>
+                <span className="nt-tryit__choice-tag">Learning modules</span>
+                <span className="nt-tryit__choice-title">Read first</span>
+                <span className="nt-tryit__choice-blurb">
+                  Walk through the lessons, see the patterns, then come back later. No sign-in.
+                </span>
+                <span className="nt-tryit__choice-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
 
-          <button type="button" className="nt-tryit__choice nt-tryit__choice--studio" onClick={pickStudio}>
-            <span className="nt-tryit__choice-tag">Studio app</span>
-            <span className="nt-tryit__choice-title">Run my own C++</span>
-            <span className="nt-tryit__choice-blurb">
-              Paste or upload a C++ file, click Analyze, get docs and tests. Sign-in required.
-            </span>
-            <span className="nt-tryit__choice-arrow" aria-hidden="true">
-              →
-            </span>
-          </button>
-        </div>
+              <button
+                type="button"
+                className="nt-tryit__choice nt-tryit__choice--studio"
+                onClick={pickStudioStart}
+              >
+                <span className="nt-tryit__choice-tag">Studio app</span>
+                <span className="nt-tryit__choice-title">Run my own C++</span>
+                <span className="nt-tryit__choice-blurb">
+                  Paste or upload a C++ file, click Analyze, get docs and tests. Sign-in required.
+                </span>
+                <span className="nt-tryit__choice-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <header className="nt-tryit__head">
+              <p className="nt-tryit__eyebrow">Studio sign-in</p>
+              <h2 id="tryit-title" className="nt-tryit__title">
+                Tester seat or your own account?
+              </h2>
+              <p className="nt-tryit__lede">
+                Testers borrow a shared seat; account holders get their saved runs and learning
+                progress back next time they sign in.
+              </p>
+              <button
+                type="button"
+                className="nt-tryit__close"
+                onClick={onClose}
+                aria-label="Close chooser"
+              >
+                ×
+              </button>
+            </header>
+
+            <div className="nt-tryit__choices">
+              <button type="button" className="nt-tryit__choice" onClick={pickTesterSeat}>
+                <span className="nt-tryit__choice-tag">Tester</span>
+                <span className="nt-tryit__choice-title">Claim a shared seat</span>
+                <span className="nt-tryit__choice-blurb">
+                  Pick one of the open Devcon test seats. No account, no saved history. Good for a
+                  one-time look around.
+                </span>
+                <span className="nt-tryit__choice-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
+
+              <button
+                type="button"
+                className="nt-tryit__choice nt-tryit__choice--studio"
+                onClick={pickAccountHolder}
+              >
+                <span className="nt-tryit__choice-tag">Account holder</span>
+                <span className="nt-tryit__choice-title">Sign in with Google</span>
+                <span className="nt-tryit__choice-blurb">
+                  Your analysis runs and learning progress are saved to your account. Come back
+                  later and pick up where you left off.
+                </span>
+                <span className="nt-tryit__choice-arrow" aria-hidden="true">
+                  →
+                </span>
+              </button>
+            </div>
+
+            <div className="nt-tryit__foot">
+              <button
+                type="button"
+                className="nt-tryit__back"
+                onClick={() => setStep('path')}
+              >
+                ← Back
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
