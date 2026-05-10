@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { navigate } from '../../logic/router';
+import { navigate, replaceUrl } from '../../logic/router';
 
 const TOKEN_KEY = 'nt_token';
 
@@ -55,11 +55,15 @@ export default function GoogleCallback() {
         // Stash the entry flow so MainLayout can branch developer vs
         // student rendering without a second backend round trip.
         try { window.sessionStorage.setItem('nt-entry-flow', data.entryFlow); } catch { /* ignore */ }
-        // Strip the fragment so a back-button + replay doesn't try to
-        // re-exchange the (now-stale) Supabase token.
-        window.history.replaceState(null, '', next);
+        // replaceUrl in one shot: drops the access_token fragment AND
+        // re-renders the surface to `next` (e.g. /studio). Using two
+        // separate calls (history.replaceState then navigate) used to
+        // race — replaceState changed the path so navigate's
+        // "skip if pathname matches" guard bailed without dispatching
+        // the surface-change event, leaving the user on the callback
+        // screen even though the URL already showed /studio.
         setPhase('success');
-        navigate(next);
+        replaceUrl(next);
       })
       .catch((err: Error) => {
         setPhase('error');

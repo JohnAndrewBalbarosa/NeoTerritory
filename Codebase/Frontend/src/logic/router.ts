@@ -34,6 +34,22 @@ export function navigate(path: string): void {
   window.dispatchEvent(new CustomEvent(NAV_EVENT));
 }
 
+// Replace-in-history variant. Used by GoogleCallback after a
+// successful token exchange: we want the URL to drop the
+// `#access_token=...` fragment AND the FE surface to re-render
+// against the new path. Plain `history.replaceState` does neither
+// the popstate nor the navigate event by itself, so without this the
+// surface stays stuck on `googleCallback` even though the address bar
+// already says `/studio`.
+export function replaceUrl(path: string): void {
+  if (typeof window === 'undefined') return;
+  const samePath = window.location.pathname === path;
+  const hasFragment = window.location.hash.length > 0;
+  if (samePath && !hasFragment) return;
+  window.history.replaceState(null, '', path);
+  window.dispatchEvent(new CustomEvent(NAV_EVENT));
+}
+
 export function usePath(): string {
   const initial = typeof window !== 'undefined' ? window.location.pathname : '/';
   const [path, setPath] = useState<string>(initial);
