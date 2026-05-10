@@ -10,6 +10,7 @@ import {
 } from '../validation/schemas';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
+import { flushForRunId } from '../services/pendingRunPersistence';
 
 const router = express.Router();
 
@@ -75,18 +76,25 @@ router.post('/run/:runId', jwtAuth, validateBody(runFeedbackSchema), (req: Reque
       ratings: Record<string, number>;
       openEnded: Record<string, string>;
     };
+    // Survey submission is the gate that flushes the buffered test-run
+    // verdicts (gdb.compile_run.* / gdb.unit_test.* / gdb.run.complete)
+    // to the DB. Both writes happen so admin queries cannot observe a
+    // run with feedback but no verdicts, or vice versa. Flush is
+    // idempotent — a second survey submit for the same runId is a no-op
+    // on the buffered side (already drained).
     const rfInfo = db.prepare(
       `INSERT INTO run_feedback (run_id, user_id, ratings_json, open_json, submitted_at)
        VALUES (?, ?, ?, ?, datetime('now'))`
     ).run(runIdNum, req.user.id, JSON.stringify(ratings), JSON.stringify(openEnded));
+    const flushResult = flushForRunId(runIdNum);
     mirrorRow('run_feedback', {
       id: Number(rfInfo.lastInsertRowid),
       run_id: runIdNum, user_id: req.user.id,
       ratings, open: openEnded,
       submitted_at: new Date().toISOString(),
     });
-    logEvent(req.user.id, 'survey_run', `runId=${runIdNum}`);
-    res.status(201).json({ ok: true });
+    logEvent(req.user.id, 'survey_run', `runId=${runIdNum} flushedRows=${flushResult.rowsWritten}`);
+    res.status(201).json({ ok: true, flushedRows: flushResult.rowsWritten });
   } catch (err) {
     next(err);
   }

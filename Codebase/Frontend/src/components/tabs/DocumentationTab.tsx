@@ -8,13 +8,13 @@ import {
 } from '../../logic/docExport';
 import { DetectedPatternFull, Annotation } from '../../types/api';
 
+// Per-row AI/Static badge removed (project owner: don't say "AI
+// pending" per line — show one banner at the top of the page when
+// AI annotations are absent so the user sees the documentation source
+// at a glance instead of N redundant pills).
 function AnnotationRow({ a }: { a: Annotation }) {
-  const isAi = isAiAnnotation(a);
   return (
     <li className="docs-ann-row">
-      <span className={`badge ${isAi ? 'badge-ai' : 'badge-static'}`}>
-        {isAi ? 'AI' : 'Static'}
-      </span>
       {a.line != null && <span className="docs-line-ref">L{a.line}</span>}
       <span className="docs-ann-title">{a.title}</span>
       {a.comment && <span className="docs-ann-body">{a.comment}</span>}
@@ -111,7 +111,7 @@ function PatternSection({ p, annotations }: { p: DetectedPatternFull; annotation
 }
 
 export default function DocumentationTab() {
-  const { currentRun } = useAppStore();
+  const { currentRun, aiStatus } = useAppStore();
   const contentRef = useRef<HTMLDivElement>(null);
 
   if (!currentRun) {
@@ -124,6 +124,19 @@ export default function DocumentationTab() {
 
   const groups = groupByFamily(currentRun.detectedPatterns);
   const primaryFile = currentRun.files?.[0]?.name ?? currentRun.sourceName ?? 'source.cpp';
+
+  // Top-of-page documentation-source banner. Replaces the per-row AI
+  // pending pill the project owner asked us to drop. We surface ONE of
+  // three messages once: AI ready, AI working, or static-only.
+  const allAnns = currentRun.annotations || [];
+  const hasAiAnnotations = allAnns.some(isAiAnnotation);
+  const docsBanner = hasAiAnnotations
+    ? { kind: 'ai-ready', label: 'AI documentation included for this run.' }
+    : aiStatus === 'pending'
+      ? { kind: 'ai-pending', label: 'Static documentation only (AI commentary still arriving — refresh shortly).' }
+      : aiStatus === 'failed'
+        ? { kind: 'ai-failed', label: 'Static documentation only (AI commentary failed for this run).' }
+        : { kind: 'static-only', label: 'Static documentation only.' };
 
   function handleDocx() {
     if (contentRef.current) downloadDocx(currentRun!, contentRef.current.innerHTML);
@@ -160,6 +173,9 @@ export default function DocumentationTab() {
           <strong>Patterns:</strong> {currentRun.detectedPatterns.length} &nbsp;·&nbsp;
           <strong>Generated:</strong> {new Date().toLocaleString()}
         </p>
+        <div className={`docs-source-banner docs-source-banner--${docsBanner.kind}`} role="status">
+          {docsBanner.label}
+        </div>
 
         {currentRun.detectedPatterns.length === 0 && (
           <p className="docs-no-patterns">No patterns were detected in this submission.</p>

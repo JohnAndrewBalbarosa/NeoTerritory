@@ -66,6 +66,31 @@ jobs:
           git fetch origin "${{ github.event.inputs.miryl_branch }}"
           git fetch origin "${{ github.event.inputs.jo_branch }}"
 
+      # Project owner's freshness signal: the right Miryl branch is the
+      # one whose latest commit is newer than main's. If the configured
+      # input has fallen behind main (i.e. merged + abandoned, or a
+      # stale spelling), bail loudly instead of adopting an outdated UI.
+      - name: Sanity-check Miryl branch is ahead of main
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIRYL="origin/${{ github.event.inputs.miryl_branch }}"
+          MAIN_TS=$(git log -1 --format=%ct main)
+          MIRYL_TS=$(git log -1 --format=%ct "$MIRYL")
+          MIRYL_AUTHOR=$(git log -1 --format='%an' "$MIRYL")
+          echo "main last commit:    $(date -u -d @$MAIN_TS --iso-8601=seconds)"
+          echo "${MIRYL} last commit: $(date -u -d @$MIRYL_TS --iso-8601=seconds) by $MIRYL_AUTHOR"
+          if [[ "$MIRYL_TS" -lt "$MAIN_TS" ]]; then
+            echo "FAIL: ${MIRYL} is older than main. The branch input is probably stale." >&2
+            echo "List of recent UI-author branches:" >&2
+            for b in $(git branch -r | grep -v HEAD | grep -v main); do
+              ts=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
+              au=$(git log -1 --format='%an' "$b" 2>/dev/null || echo '?')
+              echo "  $(date -u -d @$ts --iso-8601=seconds)  $b  ($au)" >&2
+            done | sort -r >&2
+            exit 1
+          fi
+
       # ------------------------------------------------------------------
       # Three-way adoption with branding normalisation, scoped to
       # Codebase/Frontend/ and gated by the include_studio + EXCLUDE rules.

@@ -28,6 +28,7 @@ import {
   reserveRun, findActiveRunFor, getRun,
   pushPhaseEvent, markRunDone, subscribeRun, RunEvent
 } from '../services/runEventsStore';
+import { recordRun as bufferRunDetails, bindRunIdToPending } from '../services/pendingRunPersistence';
 import { ensurePod, isPodModeEnabled, podManagerStatus, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import {
   getMicroserviceStatus,
@@ -978,6 +979,12 @@ function saveRunHandler(req: Request, res: Response, next: NextFunction): void {
       userId:     req.user?.id
     });
 
+    // If the user already finished a streaming run for this pendingId,
+    // re-key the buffered persistence under the new analysis_runs.id so
+    // the eventual survey-submit handler can find it. No DB write yet —
+    // that's gated on /survey/run/:runId.
+    bindRunIdToPending(pendingId, Number(run.id));
+
     logEvent(req.user?.id ?? null, 'save', `Saved run: ${pending.sourceName}`);
 
     res.status(201).json({
@@ -1484,7 +1491,12 @@ async function handleRunTests(
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
   resolvedMap: Record<string, string> = {},
-  stdin?: string
+  stdin?: string,
+  // Survey-gate buffer key — either pendingId (unsaved run) or numeric
+  // runId (saved analysis_runs row). finalizeRunLogs uses this to buffer
+  // the per-phase + summary log rows in memory until the user submits
+  // the run-feedback survey, at which point survey.ts flushes them.
+  bufferKey?: { pendingId?: string; runId?: number }
 ): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -1558,7 +1570,7 @@ async function handleRunTests(
           taggedPatterns, fullSource, files, req.user?.id, stdin,
           (r) => pushPhaseEvent(runId, r.phase, r)
         );
-        finalizeRunLogs(req.user?.id ?? null, results);
+        finalizeRunLogs(req.user?.id ?? null, results, bufferKey);
         markRunDone(runId, summarize(results), {
           window: GDB_RUNS_PER_WINDOW,
           cooldownMs: GDB_COOLDOWN_MS,
@@ -1577,7 +1589,7 @@ async function handleRunTests(
   // still rely on the single-response shape. Keeping this branch means
   // older clients continue to work unchanged.
   const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id, stdin);
-  finalizeRunLogs(req.user?.id ?? null, results);
+  finalizeRunLogs(req.user?.id ?? null, results, bufferKey);
   res.json({
     results,
     rateLimit: {
@@ -1594,20 +1606,20 @@ async function handleRunTests(
 // no_template / sandbox_disabled) is a non-result, not a failure, and
 // must not pollute the gdb.<phase>.fail log stream — that's what was
 // showing up as phantom failures in the accuracy chip.
-// Persist run results as ONE atomic bagsakan at the very end of the run.
-// All per-phase log rows + the run-level summary row are written inside a
-// single SQLite transaction, so admin queries (accuracy chip, run list,
-// reviews) cannot observe a half-written run where the per-phase counts
-// disagree with the summary count. Either every row from this run lands
-// or none of them do.
+// Buffer the run's per-phase rows + summary in memory. Per project
+// owner: NOTHING about a test-run's compile/unit verdicts may land in
+// the DB until the user submits the run-feedback survey. survey.ts
+// flushForRunId() drains this buffer in the same transaction as the
+// survey insert. If the user abandons the run without submitting the
+// survey, the entry evicts after FLUSH_TTL_MS (24h) without ever
+// touching the database — that's the survey-gate.
 //
-// The run-level summary row is the canonical "this test-run instance
-// happened" record — one row per click of "Run tests", carrying total /
-// passed / failed and the tagged-pattern set as a JSON detail. That is
-// the row admin and survey/review joins should count against, so the
-// "test instances vs design-pattern runs vs review runs" mismatch the
-// project owner flagged stops happening.
-function finalizeRunLogs(userId: number | null, results: TestResult[]): void {
+// finalizeRunLogs no longer writes to the DB at all.
+function finalizeRunLogs(
+  userId: number | null,
+  results: TestResult[],
+  bufferKey?: { pendingId?: string; runId?: number }
+): void {
   const isCountableResult = (r: TestResult): boolean =>
     !!r.patternId && !!r.className && typeof r.phase === 'string'
     && r.verdict !== 'skipped'
@@ -1619,11 +1631,17 @@ function finalizeRunLogs(userId: number | null, results: TestResult[]): void {
     && typeof r.verdict === 'string'
   );
   if (!allComplete) return;
+  // Without a buffer key we have no way for the survey-submit handler
+  // to find this entry later; bail rather than silently dropping the
+  // data into the void. The two route entry points always supply a
+  // key — this guards against future callers that forget.
+  if (!bufferKey || (!bufferKey.pendingId && bufferKey.runId == null)) {
+    // eslint-disable-next-line no-console
+    console.warn('[run-tests] finalizeRunLogs called without bufferKey; results NOT buffered');
+    return;
+  }
 
-  // Collect everything we want to persist BEFORE opening the transaction
-  // so the critical section is purely write work. Each row is written
-  // through logEvent so its existing supabase mirror still fires.
-  const perPhaseRows: Array<{ ev: string; detail: string }> = [];
+  const rows: Array<{ eventType: string; message: string }> = [];
   let passed = 0;
   let failed = 0;
   const taggedPatterns = new Set<string>();
@@ -1631,39 +1649,19 @@ function finalizeRunLogs(userId: number | null, results: TestResult[]): void {
     if (!isCountableResult(r)) continue;
     if (r.passed) passed += 1; else failed += 1;
     taggedPatterns.add(`${r.patternId}|${r.className}`);
-    const ev = r.passed ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
-    const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
-                 + (r.passed ? '' : ` — ${(r.message || '').slice(0, 200)}`);
-    perPhaseRows.push({ ev, detail });
+    const eventType = r.passed ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
+    const message = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
+                  + (r.passed ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+    rows.push({ eventType, message });
   }
 
-  const summary = {
-    total: passed + failed,
-    passed,
-    failed,
-    taggedPatterns: [...taggedPatterns]
-  };
-  const summaryDetail = JSON.stringify(summary);
-
-  // better-sqlite3 transactions run synchronously and commit/rollback as
-  // a unit. logEvent() writes to the local DB and best-effort mirrors to
-  // supabase; the supabase mirror is async/fire-and-forget, so it does
-  // not affect transactional atomicity here.
-  const writeAll = db.transaction(() => {
-    for (const row of perPhaseRows) {
-      logEvent(userId, row.ev, row.detail);
-    }
-    logEvent(userId, 'gdb.run.complete', summaryDetail);
+  bufferRunDetails({
+    userId,
+    pendingId: bufferKey.pendingId ?? null,
+    runId:     bufferKey.runId    ?? null,
+    rows,
+    summary: { total: passed + failed, passed, failed, taggedPatterns: [...taggedPatterns] }
   });
-  try {
-    writeAll();
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error('[run-tests] finalizeRunLogs transaction failed', err);
-    // Defensively re-raise so the streaming dispatcher can mark the run
-    // as failed instead of silently telling the FE everything was fine.
-    throw err;
-  }
 }
 
 function summarize(results: TestResult[]): { total: number; passed: number; failed: number } {
@@ -1709,7 +1707,8 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
       ? String((req.body as { stdin: string }).stdin).slice(0, 64_000)
       : undefined;
     await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource, analysis.files,
-                         analysis.classResolvedPatterns || {}, stdinText);
+                         analysis.classResolvedPatterns || {}, stdinText,
+                         { runId: runIdNum });
   } catch (err) {
     next(err);
   }
@@ -1750,7 +1749,8 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
     const stdinText = typeof (req.body as { stdin?: unknown })?.stdin === 'string'
       ? String((req.body as { stdin: string }).stdin).slice(0, 64_000)
       : undefined;
-    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap, stdinText);
+    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap, stdinText,
+                         { pendingId });
   } catch (err) {
     next(err);
   }
