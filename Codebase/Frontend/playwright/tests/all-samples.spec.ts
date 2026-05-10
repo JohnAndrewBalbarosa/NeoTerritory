@@ -100,44 +100,56 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
 ];
 
 async function signInAsTester(page: Page): Promise<void> {
-  // The tester picker exposes the shared 'devcon' password. The first
-  // account in /auth/test-accounts is reused by all CI runs.
+  // Login bypasses the UI entirely. Steps:
+  //   1. GET /auth/test-accounts to fetch seeded devcon1..N accounts.
+  //   2. POST /auth/claim with an unclaimed username -> { token, user }.
+  //   3. Pre-seed localStorage + sessionStorage via addInitScript:
+  //      - nt_token / nt_user so MainLayout treats us as authenticated.
+  //      - nt-entry-flow=developer so MainLayout's isRealAccountUser flag
+  //        is true and we skip ConsentGate + PretestForm
+  //        (MainLayout.tsx:238 - "Real-account users skip both").
+  //   4. Navigate to /studio.
   const accountsRes = await page.request.get('/auth/test-accounts');
   expect(accountsRes.ok(), 'tester accounts endpoint should answer').toBeTruthy();
   const body = (await accountsRes.json()) as {
-    accounts: Array<{ username: string }>;
-    password: string;
+    accounts: Array<{ username: string; claimed?: boolean }>;
   };
-  expect(body.accounts.length, 'at least one tester account must be available').toBeGreaterThan(0);
-  const username = body.accounts[0].username;
-  const password = body.password || 'devcon';
+  expect(
+    body.accounts.length,
+    'at least one tester account must be seeded (SEED_TEST_USERS=1 in CI env)',
+  ).toBeGreaterThan(0);
 
-  await page.goto('/login');
-  // The tester picker is the default sign-in surface. The form uses
-  // username + password inputs; we click the primary submit button.
-  const userField = page.locator('input[name="username"], input[type="text"]').first();
-  const passField = page.locator('input[type="password"]').first();
-  await userField.fill(username);
-  await passField.fill(password);
-  const submit = page.locator('button[type="submit"]').first();
-  await submit.click();
-  await page.waitForLoadState('networkidle');
-  // After login the studio replaceStates to /studio.
-  await expect(page).toHaveURL(/\/(studio|consent|pretest)/);
+  const target = body.accounts.find((a) => !a.claimed) ?? body.accounts[0];
+  const username = target.username;
 
-  // Accept consent + pretest if they appear (some tester accounts skip).
-  const consentBtn = page.locator('button:has-text("I agree"), button:has-text("Continue")').first();
-  if (await consentBtn.isVisible().catch(() => false)) {
-    await consentBtn.click();
-    await page.waitForLoadState('networkidle');
-  }
-  const skipPretest = page.locator('button:has-text("Submit")').first();
-  if (await page.url().match(/\/pretest/) && await skipPretest.isVisible().catch(() => false)) {
-    await skipPretest.click();
-    await page.waitForLoadState('networkidle');
-  }
+  const claimRes = await page.request.post('/auth/claim', {
+    headers: { 'Content-Type': 'application/json' },
+    data: { username },
+  });
+  expect(claimRes.ok(), `/auth/claim for ${username} should succeed`).toBeTruthy();
+  const claim = (await claimRes.json()) as {
+    token: string;
+    user: { id: number; username: string; role?: string };
+  };
+  expect(claim.token, 'claim response should include a token').toBeTruthy();
+  expect(claim.user, 'claim response should include a user object').toBeTruthy();
 
+  await page.addInitScript(
+    ({ token, user }) => {
+      try {
+        localStorage.setItem('nt_token', token);
+        localStorage.setItem('nt_user', JSON.stringify(user));
+        sessionStorage.setItem('nt-entry-flow', 'developer');
+      } catch {
+        /* private mode or quota; the URL assertion below will fail loudly */
+      }
+    },
+    { token: claim.token, user: claim.user },
+  );
+
+  await page.goto('/studio');
   await expect(page).toHaveURL(/\/studio/, { timeout: 15_000 });
+  await expect(page.locator('#load-sample-btn')).toBeVisible({ timeout: 15_000 });
 }
 
 async function loadSampleByFilename(page: Page, filename: string): Promise<void> {
