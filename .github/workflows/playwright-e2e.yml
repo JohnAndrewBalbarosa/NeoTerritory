@@ -99,6 +99,11 @@ jobs:
           # gates seedDevconUsers().
           SEED_TEST_USERS: "1"
           MAX_TEST_USERS: "5"
+          # Per testRunnerService.ts:117: NODE_ENV=production disables the
+          # in-process compiler-based test runner unless ENABLE_TEST_RUNNER=1
+          # is explicit. Without this, every Tests-tab assertion would fail
+          # with verdict=sandbox_disabled.
+          ENABLE_TEST_RUNNER: "1"
         run: |
           set -euo pipefail
           if [ -f dist/server.js ]; then
