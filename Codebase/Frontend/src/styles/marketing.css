@@ -19,9 +19,11 @@
   --nt-mkt-radius: 18px;
   --nt-mkt-radius-lg: 28px;
   --nt-mkt-shadow: 0 30px 80px -30px oklch(0% 0 0 / 0.6);
-  --nt-mkt-text-hero: clamp(2.6rem, 1rem + 6.5vw, 6.5rem);
-  --nt-mkt-text-section: clamp(1.6rem, 0.8rem + 2.5vw, 2.8rem);
-  --nt-mkt-space-section: clamp(4rem, 3rem + 6vw, 9rem);
+  --nt-mkt-text-hero: clamp(2.4rem, 1rem + 5vw, 5.2rem);
+  --nt-mkt-text-section: clamp(1.5rem, 0.8rem + 2vw, 2.4rem);
+  /* Per D48: section spacing halved to remove the dead air Amiel flagged.
+     Original: clamp(4rem, 3rem + 6vw, 9rem). New: clamp(2rem, 1.5rem + 3vw, 4.5rem). */
+  --nt-mkt-space-section: clamp(2rem, 1.5rem + 3vw, 4.5rem);
   --nt-mkt-ease: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -221,13 +223,20 @@ body[data-surface] #root {
   }
 }
 
-/* ---------- Hero ---------- */
+/* ---------- Hero ----------
+   Per D48 (Sprint -1a): hero size dropped from full-viewport to a clamped
+   range so it never eats more than ~70vh on tall monitors. The previous
+   padding clamp pushed the hero past 100vh on large screens, which Amiel
+   flagged as "1/4+ of the screen with nothing useful." */
 .nt-hero {
   position: relative;
 }
 .nt-hero__above {
   position: relative;
-  padding: clamp(5rem, 4rem + 6vw, 9rem) clamp(1.25rem, 4vw, 3rem) clamp(4rem, 3rem + 4vw, 7rem);
+  min-height: clamp(480px, 70vh, 720px);
+  display: flex;
+  align-items: center;
+  padding: clamp(3rem, 2rem + 3vw, 5rem) clamp(1.25rem, 4vw, 3rem) clamp(2.5rem, 2rem + 2vw, 4rem);
   overflow: hidden;
   background: radial-gradient(ellipse at top, var(--nt-mkt-bg-2), var(--nt-mkt-bg) 70%);
 }
@@ -793,6 +802,12 @@ body[data-surface] #root {
   display: grid;
   gap: 0.9rem;
   position: relative;
+  /* Per D48: lock all rows to identical height so a longer-text card
+     (e.g. Developer's two-sentence description) never visually offsets
+     its row neighbour. Cards inside use row-template auto/1fr/auto so
+     the CTA pill anchors to the bottom across the entire grid. */
+  grid-auto-rows: 1fr;
+  align-items: stretch;
 }
 @media (min-width: 760px) {
   .nt-entry-grid {
@@ -805,8 +820,11 @@ body[data-surface] #root {
   width: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1rem;
-  min-height: 150px;
+  /* Three rows: icon (auto), content (fills), action (auto bottom). */
+  grid-template-rows: auto 1fr auto;
+  gap: 0.9rem;
+  min-height: 180px;
+  height: 100%;
   padding: 1.1rem;
   border: 1px solid var(--nt-mkt-line);
   border-radius: 18px;

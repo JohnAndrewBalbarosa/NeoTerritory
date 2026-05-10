@@ -1380,3 +1380,197 @@ body::before {
     white-space: nowrap;
   }
 }
+
+/* ---------- Start Here rail (D45) ----------
+   First-run guide anchored above the analysis form on /studio* surfaces.
+   Three numbered steps. Collapses to a small pill once dismissed; the
+   pill stays as a re-open affordance. */
+.nt-start-here {
+  font-family: var(--ui-font);
+}
+
+.nt-start-here--expanded {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 209, 216, 0.06),
+    rgba(123, 94, 167, 0.04) 80%,
+    transparent
+  );
+  box-shadow: var(--shadow-sm);
+}
+
+.nt-start-here__head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: 8px 16px;
+  margin-bottom: 14px;
+}
+
+.nt-start-here__eyebrow {
+  grid-column: 1 / 2;
+  margin: 0;
+  font-family: var(--code-font);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan);
+}
+
+.nt-start-here__title {
+  grid-column: 1 / 2;
+  margin: 2px 0 0;
+  font-family: var(--heading-font);
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.nt-start-here__close {
+  grid-row: 1 / span 2;
+  grid-column: 2 / 3;
+  align-self: start;
+  justify-self: end;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.nt-start-here__close:hover,
+.nt-start-here__close:focus-visible {
+  border-color: var(--devcon-cyan);
+  color: var(--ink);
+  outline: none;
+}
+
+.nt-start-here__steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+@media (min-width: 760px) {
+  .nt-start-here__steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+  }
+}
+
+.nt-start-here__step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.nt-start-here__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  color: #081018;
+  font-family: var(--code-font);
+  font-size: 0.86rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.nt-start-here__step-body h3 {
+  margin: 0 0 4px;
+  font-family: var(--heading-font);
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.nt-start-here__step-body p {
+  margin: 0;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.nt-start-here__action {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 7px 14px;
+  border: 1px solid var(--devcon-cyan);
+  border-radius: 999px;
+  background: rgba(0, 209, 216, 0.08);
+  color: var(--ink);
+  font-family: var(--ui-font);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+.nt-start-here__action:hover,
+.nt-start-here__action:focus-visible {
+  background: rgba(0, 209, 216, 0.16);
+  outline: none;
+}
+.nt-start-here__action:active {
+  transform: translateY(1px);
+}
+
+.nt-start-here--pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 6px 14px 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  font-family: var(--ui-font);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.nt-start-here--pill:hover,
+.nt-start-here--pill:focus-visible {
+  border-color: var(--devcon-cyan);
+  color: var(--ink);
+  outline: none;
+}
+.nt-start-here__pill-dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--devcon-cyan);
+  color: #081018;
+  font-family: var(--code-font);
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}

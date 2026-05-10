@@ -576,3 +576,139 @@ Step 1 -> Step 2 orchestration diagnostics are required for developer troublesho
 **CI policy**:
 - Strict checks run with `DEV_TEST_MODE=true` and are merge-blocking (compile, unit, integration, GDB, AI async contract)
 - Same workflow includes a production-profile no-leak stage (`NODE_ENV=production`, `DEV_TEST_MODE=false`) that fails if internal diagnostics are visible
+
+## D40 — Audience reframe drives all marketing copy and information architecture
+The public-facing site is written for a specific reader profile, not for "developers" generically. The profile is a hard rule baked into copy, ordering, and feature prominence:
+
+- **Touched C++ once in 1st year, forgot most of it.** Cannot be assumed to read uncommented code.
+- **Ships working code via AI assistance.** Does not write C++ from scratch.
+- **Does not know GoF design patterns by name** and has not seen the canonical UML.
+- **Cannot be expected to memorize.** Every page must offload, never pile up.
+
+**Implication on copy**: never use a pattern term, framework name, or compiler concept without an inline definition on first appearance. One new vocabulary item per paragraph maximum. Code samples 15 lines or fewer. Never dump a full class.
+
+**Implication on positioning**: the hook is "your AI-written code passes deadline, will it pass review?" — not "learn design patterns." Patterns are the means; readability + auto-doc + auto-tests are the promised outcome.
+
+**Implication on industry hooks**: the `/why` surface frames result-based stakes per industry (quant trading, low-level AI / inference engineering, embedded firmware, students). One short panel per industry, one stat or quote, no theory. This page exists so the reader self-identifies before being asked to learn anything technical.
+
+This is an explicit reversal of the earlier `D31`-style "show the algorithm pipeline" landing. The pipeline still lives at `/mechanics`, but the landing surface is audience-first, not algorithm-first.
+
+## D41 — Effects budget: one motion or interaction effect per page (hard rule)
+The earlier marketing surface stacked aurora drift, shiny text sweep, magnetic cursor buttons, tilt cards, scroll-driven reveals, and split-text reveals on the same page. External fresh-eye review (Amiel, Jules) flagged this as visual overload, "too flashy," and "cannot read the upper-left animation in time."
+
+**Rule**: each page picks **at most one** motion or interaction effect, deliberately chosen to support the page's job. Stacking is banned, including in subtle combinations. The effects library at `Codebase/Frontend/src/components/marketing/effects/` is preserved (it has internal value for studio surfaces and future opt-in use), but on public marketing pages the import budget per page is one.
+
+**Concrete prohibitions on marketing pages** (Hero, Learn, About, Choose, Student Learning Hub, /why, /mechanics index, /patterns index, /tour, /research):
+- No cursor-magnetic CTAs (`MagneticButton`'s magnetic transform is disabled on marketing surfaces; the component remains importable for API stability but no longer translates with cursor position).
+- No spotlight / cursor-following highlight overlays.
+- No tilt-on-hover cards.
+- No animated multi-blob aurora background. A single static gradient panel is acceptable as visual identity; drifting blobs are not.
+- No shiny-text sweep on headlines or paragraphs. A 9 s+ sweep on a single short non-essential element (e.g., a CTA word) is the only allowed shiny use, and only when it's the page's chosen one effect.
+- No animation duration shorter than 300 ms on text or layout-affecting elements (the original 4.5 s upper-left sweep on a paragraph violated this in spirit by being unreadable in the time available).
+
+`prefers-reduced-motion` continues to disable all remaining motion globally via `MotionConfig reducedMotion="user"` per D32. The new rule layers on top: even with motion enabled, each page's surface area has one effect, not five.
+
+## D42 — Information offloading rule: one page = one job, minimal cross-reference
+Reader profile per D40 cannot memorize. Pages are organized so that each page is readable in isolation and nothing depends on having read another page first.
+
+**Rules**:
+- Each public page has exactly one job stated in a single sentence in its doc blueprint. If a page has two jobs, split it.
+- No "see also" sections, no "as we discussed in /mechanics…" cross-references, no breadcrumb chains that imply a reading order.
+- Top-level navigation is the ONLY way pages refer to each other. The nav itself is the door; pages do not name other pages in body copy.
+- When a concept needs context from another page to make sense, **inline a one-sentence stub** instead of linking. Duplication is cheaper than memorization.
+- The Home page is surface-level only. Nothing on Home goes deeper than two sentences. Depth always lives on the target page.
+
+**Implication on Home**: bento-style tile grid acts as silent doors. Each tile = one promise sentence + thumbnail. No tile teaches; tiles only invite.
+
+**Implication on docs**: per-page doc blueprints under `docs/Codebase/Frontend/src/components/<surface>/<page>/...` start with a literal `## Sole job` line. Reviewers reject any page whose body covers more than that one job.
+
+## D43 — Features-first hierarchy on landing (overrides earlier theory-first plans)
+External review (Choco) flagged that the prior landing led with GoF pattern theory. This loses the audience defined in D40. The landing now leads with **what the app does for the user**, not pattern taxonomy.
+
+**Top navigation lock** (4 items, no more, no less):
+1. **Try it** — primary CTA. Lands on `/student-studio` (gated; auth happens here per D45).
+2. **Features** — anchors to the Features grid on Home. Not a separate route. The grid lives on `/`.
+3. **Learn** — `/learn`. Pattern theory and reference content live here, not on Home.
+4. **About** — `/about`. Thesis rationale only.
+
+Other surfaces (`/why`, `/mechanics`, `/patterns`, `/tour`, `/research`) exist but are not in the top navigation. They are reached via the Home bento grid or contextual links inside Features / Learn. This intentionally demotes pattern theory from a navigational peer of "what the app does."
+
+**Features grid contract** (six tiles, in this order, on Home below the fold):
+1. **Auto-documentation** — "Your code gets a README it didn't have, generated from the pattern we detected."
+2. **Auto-integration tests** — "We write the tests your reviewer expects. You ship."
+3. **Pattern detection** — "We tell you which design pattern your AI used — even when you didn't know."
+4. **Readability score** — "See exactly which lines hurt the next reader. Fix them in one click."
+5. **Sample library** — "Stuck? Load a real-world sample for any pattern. Learn by example."
+6. **Run history** — "Every analysis saved. Compare versions. Track your readability over time."
+
+Each tile: 1 verb-led title, 1 promise sentence, 1 thumbnail. Zero pattern names in this section. Pattern names appear when the user clicks into `/learn`.
+
+**Above-the-fold contract on Home**:
+1. Hook headline (one line).
+2. Algorithm one-liner ("Powered by our own lexical-tagging + parse-tree algorithm. Fast. Efficient." — no depth on Home).
+3. **30-second demo embed** (looped silent video with captions; placeholder accepted while real recording is pending).
+4. **Three numbered steps** (1 paste, 2 we detect, 3 you ship docs + tests).
+5. Single primary CTA → Try it.
+
+## D44 — Testing Trophy is the test strategy (not unit-pyramid, not aspirational)
+External recommendation (Alpha Romer, Symflower's Testing Trophy article) lands as the project's actual testing posture, not an inline badge. The Testing Trophy is a deliberate inversion of the unit-pyramid: heavy on integration tests, lighter on units, E2E for critical user flows, with static analysis as the bottom-stable layer.
+
+**Layered budget** (target distribution; each layer is required to be non-empty before any release):
+- **Static analysis** (broad base): TypeScript strict mode, ESLint, `clang-tidy`/`clang-format` on the C++ microservice, `cppcheck` if available.
+- **Integration tests** (the meat): backend-route tests that spawn the real microservice binary against curated sample C++ files; pattern-catalog tests that load each catalog JSON and assert the matcher emits the expected signature on the catalog's own `samples/<pattern>/` files; AI-pipeline tests that stub the Claude HTTP client but exercise the real chunking / timeout / fallback logic per D37.
+- **E2E** (critical-flow): Playwright runs covering "open studio → load sample → analyze → see pattern card → request docs → see fallback or AI doc." One spec per critical flow. Quarantine flaky specs immediately rather than retrying.
+- **Unit tests** (small, surgical): only where the function has nontrivial branching that integration tests can't cheaply cover (e.g., the candidate-filter ambiguity logic per D38, the heuristic class-usage binder per D24).
+
+**Stress harness (Sprint R)**: AI-generated random-C++ test cases drive the analyzer through edge cases (nested templates, multi-inheritance, anonymous namespaces, Lambdas, etc.). Output to `test-artifacts/stress/<run-date>/` with detection-rate, false-positive, false-negative, and crash counters. Failing seeds are promoted into the regression integration suite. The "incremental testing using the algorithm's `usages` graph" idea earlier discussed in chat is parked here: only revisited if random fuzzing + curated regressions don't catch enough.
+
+**Doc location**: `docs/Research/testing-trophy.md` records this stance and links to the Symflower article as prior art. The harness scripts live under `tools/stress/` (not yet implemented).
+
+## D45 — Studio first-run "Start here" rail removes the post-sign-in dead-end
+External review (Jules) signed in successfully and did not know where to begin. The dead-end is not a content gap — it's a missing affordance. Studio surfaces (`/studio`, `/student-studio`, `/studio/analyze` once promoted) render a persistent first-run rail until the user has completed their first successful analysis.
+
+**Rail contract**:
+- Three numbered steps, each with the literal action wording the user must perform: ① "Load a sample" (button), ② "Click Analyze" (button reference), ③ "Read the result" (arrow pointing down).
+- Anchored above the analysis form on first entry.
+- Auto-collapses to a small "Start here" pill the moment a successful run lands. The pill stays for the rest of the session as a re-open affordance.
+- Replayable from a `?` button in the studio header.
+- Dismissibility: the user can dismiss the expanded rail with an explicit close button; dismissal sets `localStorage.nt_start_here_dismissed = '1'` and the rail does not re-expand on subsequent sessions. The `?` button still re-opens it on demand.
+
+**State lives in `localStorage`, not in the auth store or DB**. Justification: it is a UI affordance per surface, not a per-account preference, and per D44 we do not introduce DB schema for ephemeral UI state. Key: `nt_start_here_dismissed` (boolean as `'1'` or absent). Compatible with multiple users on the same browser; each browser session decides for itself.
+
+**Companion popup walkthrough** (`/tour` route + in-studio popups, planned): same content, two surfaces. The standalone `/tour` is public and auth-free for window-shopping; the in-studio popups are the same content gated to studio users. Both consume the same content source so they do not drift.
+
+## D46 — Page naming locked: `/mechanics` for the algorithm deep-dive
+The algorithm visualization page (per D31's pipeline) is locked to the route `/mechanics` and the navigational label "Mechanics." Alternates considered and rejected: `/anatomy` (medical-imagery fit was wrong for a code product), `/engine` (too generic, conflated with backend infra), `/pipeline` (too narrow — the page covers more than the pipeline diagram).
+
+**Rationale**: "Mechanics" reads correctly to the audience profile in D40 — it implies "how the moving parts work," fits both a curious student and a pragmatic dev, and is one word per the user's explicit constraint.
+
+The `/mechanics` page is **not** linked from the top navigation per D43. It is reached from the Home bento grid and from contextual links inside Features / Learn.
+
+## D47 — Marketing pages route + open-by-default for learning surfaces
+Per D40 + D43, the public learning surface must not gate on auth. Reading lessons, browsing pattern theory, and inspecting "correct structure" sections are all knowledge-acquisition flows that the audience cannot be asked to authenticate for.
+
+**Rule**: any URL whose primary verb is "read", "learn", or "browse" stays public. Login is triggered only when the verb becomes "save", "run", "submit", or "configure".
+
+**Implication on `StudentLearningHub`**: the previous session-gate panel that redirected to `/student-studio?next=/student-learning` is removed. The hub renders its lessons immediately for any visitor. The "Try this in the studio" sample-launch buttons inside the hub are the only points that may still trigger sign-in — and they do so by navigating to `/student-studio`, not by gating the surrounding lesson content.
+
+**Implication on session-bound features inside the hub**: progress-tracking that previously assumed a logged-in session (`completedStepIds`, etc.) continues to work in-memory for the current browser tab. Nothing is persisted server-side for an unauthenticated visitor; if persistence is later needed, it cascades only when the visitor signs in to claim a seat.
+
+## D48 — Triage-first sequencing: ship calmer ground before makeover
+Per Amiel and Jules, the existing site has visual-overload and dead-end issues that make it hostile to fresh eyes. The full audience-first restructure (Sprints 0 through 12) is multi-week. Triage Sprints `−1a` (visual-overload kill: motion effects, hero size, spacing, alignment) and `−1b` (Studio Start-Here rail) ship first as a single coherent commit so the project is presentable while the larger restructure proceeds.
+
+**Sprint `−1a` deliverables**:
+- `MagneticButton` becomes a non-magnetic button (cursor transform removed; API surface preserved so callsites do not change).
+- `AuroraBackground` reduces to a single static gradient (drift animations gone; component preserved).
+- Hero `min-height: 100vh` becomes `clamp(480px, 70vh, 720px)`.
+- `--nt-mkt-space-section` clamp halved.
+- `EntryChoice` grid uses `grid-auto-rows: 1fr` and each card uses `grid-template-rows: auto 1fr auto` so the action button anchors to a uniform baseline across all cards (Tester / Developer / Student Learning / Admin).
+
+**Sprint `−1b` deliverables**:
+- `StartHereRail` component injected at top of `SubmitTab` for studio first-run.
+- `localStorage.nt_start_here_dismissed` controls expanded vs collapsed.
+- `?` button in studio header re-opens.
+
+**Auth-gate fix** (companion to triage):
+- `StudentLearningHub` session-gate removed per D47.
+
+These ship as one commit because the visible-quality lift only lands when the user is no longer staring at competing motion AND can begin in the studio without assistance. Splitting them forces a half-improved interim state that does not reflect the project's intent.

@@ -26,6 +26,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
 
   return (
     <MotionConfig reducedMotion="user">
+      <div className="nt-marketing-surface" data-marketing-surface>
       <a href="#main" className="nt-skip-link">
         Skip to main content
       </a>
@@ -52,6 +53,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           <code>/app</code>.
         </p>
       </footer>
+      </div>
     </MotionConfig>
   );
 }
