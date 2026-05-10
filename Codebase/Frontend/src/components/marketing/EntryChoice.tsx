@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import {
@@ -55,6 +55,30 @@ const ENTRY_OPTIONS: ReadonlyArray<EntryOption> = [
 ];
 
 export default function EntryChoice() {
+  // Mirror the admin's tester-visibility toggle: when an admin has
+  // flipped testers off (admin -> Users tab -> "Show tester accounts"
+  // checkbox), the Tester card disappears from this page entirely so a
+  // public visitor only sees Developer / Student Learning / Admin.
+  // /auth/test-accounts already publishes `testersHidden` for this
+  // exact use, so we don't need a new endpoint.
+  const [testersHidden, setTestersHidden] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/auth/test-accounts', { headers: { Accept: 'application/json' } })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { testersHidden?: boolean } | null) => {
+        if (!cancelled && data && typeof data.testersHidden === 'boolean') {
+          setTestersHidden(data.testersHidden);
+        }
+      })
+      .catch(() => { /* network blip — leave default (visible) */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const visibleOptions = testersHidden
+    ? ENTRY_OPTIONS.filter(o => o.title !== 'Tester')
+    : ENTRY_OPTIONS;
+
   return (
     <main className="nt-entry" id="main">
       <section className="nt-entry-shell" aria-labelledby="entry-heading">
@@ -70,7 +94,7 @@ export default function EntryChoice() {
           </header>
 
           <div className="nt-entry-grid" aria-label="NeoTerritory entry paths">
-            {ENTRY_OPTIONS.map((option) => {
+            {visibleOptions.map((option) => {
               const Icon = option.icon;
               return (
                 <button
