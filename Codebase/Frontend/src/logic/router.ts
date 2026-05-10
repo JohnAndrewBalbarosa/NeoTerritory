@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-export type Surface = 'hero' | 'learn' | 'about' | 'choose' | 'studentLearning' | 'studio';
+export type Surface = 'hero' | 'learn' | 'about' | 'choose' | 'studentLearning' | 'studio' | 'googleCallback' | 'googleSignIn';
 
 const STUDIO_ALIASES = [
   '/app',
@@ -18,6 +18,8 @@ export function pathToSurface(path: string): Surface {
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
   if (path === '/choose' || path.startsWith('/choose/')) return 'choose';
+  if (path === '/auth/callback') return 'googleCallback';
+  if (path === '/developer/login' || path === '/student-learning/login') return 'googleSignIn';
   if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
   if (STUDIO_ALIASES.some((a) => path === a || path.startsWith(`${a}/`))) return 'studio';
   return 'hero';

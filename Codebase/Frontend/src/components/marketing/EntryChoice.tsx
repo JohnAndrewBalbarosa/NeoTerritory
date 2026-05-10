@@ -31,17 +31,17 @@ const ENTRY_OPTIONS: ReadonlyArray<EntryOption> = [
   {
     title: 'Developer',
     label: 'Documentation tool',
-    text: 'Use the C++ pattern analyzer and documentation system.',
-    action: 'Continue as developer',
-    path: '/developer',
+    text: 'Sign in with Google. Use the C++ pattern analyzer and documentation system on a real account.',
+    action: 'Sign in as developer',
+    path: '/developer/login',
     icon: IconCode,
   },
   {
     title: 'Student Learning',
     label: 'Beginner learning path',
-    text: 'Claim a session seat, then learn design-pattern basics before using the analyzer.',
-    action: 'Start learning',
-    path: '/student-studio?next=/student-learning',
+    text: 'Sign in with Google. Learn design-pattern basics before using the analyzer.',
+    action: 'Sign in to learn',
+    path: '/student-learning/login',
     icon: IconAcademicCap,
   },
   {

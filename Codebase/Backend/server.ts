@@ -39,6 +39,7 @@ import { initDb } from './src/db/initDb';
 
 import healthRoutes from './src/routes/health';
 import authRoutes from './src/routes/auth';
+import googleAuthRoutes from './src/routes/googleAuth';
 import transformRoutes from './src/routes/transform';
 import analysisRoutes from './src/routes/analysis';
 import adminRoutes from './src/routes/admin';
@@ -132,6 +133,7 @@ app.use('/health', healthRoutes);
 app.use('/auth/login', authLimiter);
 app.use('/auth/claim', authLimiter);
 app.use('/auth', authRoutes);
+app.use('/auth', googleAuthRoutes);
 app.use('/api/transform', transformRoutes);
 // Note ordering: adminRefreshLimiter is skipped unless X-Admin-Refresh: 1 is
 // set, so it never affects normal admin traffic. adminLimiter still applies
