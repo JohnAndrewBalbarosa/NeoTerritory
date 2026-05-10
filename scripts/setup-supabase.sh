@@ -149,6 +149,175 @@ cmd_cloud() {
 GUIDE
 }
 
+cmd_install_gcloud() {
+  if command -v gcloud >/dev/null 2>&1; then
+    info "gcloud already installed: $(gcloud --version 2>&1 | head -1)"
+    return 0
+  fi
+  info "Installing Google Cloud SDK (gcloud) into ~/google-cloud-sdk..."
+  if [[ "${OSTYPE:-}" == darwin* ]]; then
+    if command -v brew >/dev/null 2>&1; then
+      brew install --cask google-cloud-sdk
+      return 0
+    fi
+  fi
+  # Linux / WSL fallback — Google's official one-shot installer. Drops
+  # the SDK into $HOME/google-cloud-sdk and adds the binaries to the
+  # current shell via the install.sh prompt at the end.
+  if ! command -v curl >/dev/null 2>&1; then
+    err "curl not on PATH. Install curl first, then re-run."
+    exit 1
+  fi
+  curl -fsSL https://sdk.cloud.google.com | bash -s -- --disable-prompts --install-dir="$HOME"
+  # shellcheck disable=SC1091
+  if [[ -f "$HOME/google-cloud-sdk/path.bash.inc" ]]; then
+    source "$HOME/google-cloud-sdk/path.bash.inc"
+  fi
+  if ! command -v gcloud >/dev/null 2>&1; then
+    warn "gcloud installed but not on PATH for this shell."
+    warn "Add this to your ~/.bashrc:"
+    warn "  source \"\$HOME/google-cloud-sdk/path.bash.inc\""
+    warn "Then re-open the terminal and re-run this command."
+    exit 1
+  fi
+  info "gcloud ready: $(gcloud --version 2>&1 | head -1)"
+}
+
+# Google OAuth client provisioning. The OAuth 2.0 web-app client ID
+# Supabase needs (the "Sign in with Google" kind) cannot be CREATED via
+# `gcloud` today — Google's CLI only manages workload-identity OAuth
+# clients via `gcloud iam oauth-clients`. So this command does what CAN
+# be automated: install gcloud, log the user in, list / pick a project,
+# enable the IAM API, deep-link straight into the OAuth credentials
+# creation page WITH the redirect URI for the local Supabase stack
+# pre-baked, and on stdin-paste of the resulting client ID + secret it
+# writes them straight into supabase/config.toml so a single
+# `supabase stop && supabase start` enables Google sign-in end-to-end.
+cmd_google_oauth() {
+  cmd_install_gcloud
+
+  if ! gcloud auth list --format='value(account)' 2>/dev/null | grep -q .; then
+    info "Authenticating with Google..."
+    gcloud auth login --update-adc
+  fi
+
+  local project
+  project="$(gcloud config get-value project 2>/dev/null || true)"
+  if [[ -z "$project" || "$project" == "(unset)" ]]; then
+    info "No active gcloud project. Pick one (or 'q' to abort):"
+    gcloud projects list --format='table(projectId,name)' 2>&1 | head -20
+    read -r -p "Project ID: " project
+    if [[ -z "$project" || "$project" == "q" ]]; then
+      err "Aborted. Run: gcloud projects create <id> if you need a fresh one."
+      exit 1
+    fi
+    gcloud config set project "$project"
+  fi
+  info "Active gcloud project: $project"
+
+  info "Enabling required APIs (iam, oauth2, iamcredentials)..."
+  gcloud services enable iam.googleapis.com iamcredentials.googleapis.com 2>&1 | tail -3 || true
+
+  # Discover the local Supabase callback URL so we can pre-fill the
+  # redirect URI. supabase prints the API URL at status -o env; the
+  # GoTrue callback path is /auth/v1/callback under that base.
+  local SUPABASE_API CALLBACK
+  SUPABASE_API="$(supabase status -o env 2>/dev/null | awk -F= '/^API_URL=/{print $2}' | tr -d '"')"
+  if [[ -z "$SUPABASE_API" ]]; then
+    SUPABASE_API="$(grep -E '^AUTH_SUPABASE_SELF_HOSTED_URL=' "$ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2-)"
+  fi
+  if [[ -z "$SUPABASE_API" ]]; then
+    warn "Could not detect local Supabase API URL. Run 'self-hosted' first."
+    exit 1
+  fi
+  CALLBACK="${SUPABASE_API%/}/auth/v1/callback"
+  info "Supabase callback URI:  $CALLBACK"
+
+  cat <<EOM
+
+Manual step (Google won't expose web-app OAuth client creation via CLI):
+  1. Opening this URL in your browser:
+     https://console.cloud.google.com/apis/credentials/oauthclient?project=$project
+  2. Choose 'Web application'.
+  3. Authorised redirect URI:
+        $CALLBACK
+  4. Click Create.
+  5. Copy the Client ID and Client Secret it shows you.
+
+EOM
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "https://console.cloud.google.com/apis/credentials/oauthclient?project=$project" 2>/dev/null || true
+  elif command -v open >/dev/null 2>&1; then
+    open "https://console.cloud.google.com/apis/credentials/oauthclient?project=$project" 2>/dev/null || true
+  fi
+
+  read -r -p "Paste Client ID:     " GOOGLE_CLIENT_ID
+  read -r -s -p "Paste Client Secret: " GOOGLE_CLIENT_SECRET
+  echo ""
+  if [[ -z "$GOOGLE_CLIENT_ID" || -z "$GOOGLE_CLIENT_SECRET" ]]; then
+    err "Empty client ID or secret — aborting without changes."
+    exit 1
+  fi
+
+  # Patch supabase/config.toml so Google sign-in is enabled the next
+  # time `supabase start` boots. Idempotent: replaces an existing
+  # [auth.external.google] block in place; appends one when absent.
+  local CFG="$ROOT/supabase/config.toml"
+  if [[ ! -f "$CFG" ]]; then
+    err "$CFG missing — run \`./scripts/setup-supabase.sh self-hosted\` first."
+    exit 1
+  fi
+  # Append-or-replace pattern. We rewrite the whole [auth.external.google]
+  # block by deleting any existing one + appending fresh values.
+  python3 - "$CFG" "$GOOGLE_CLIENT_ID" "$GOOGLE_CLIENT_SECRET" <<'PYEOF'
+import re, sys
+path, cid, secret = sys.argv[1], sys.argv[2], sys.argv[3]
+with open(path, encoding='utf-8') as f:
+    cfg = f.read()
+block = (
+    "\n[auth.external.google]\n"
+    "enabled = true\n"
+    f'client_id = "{cid}"\n'
+    f'secret = "{secret}"\n'
+    'redirect_uri = ""\n'
+    'url = ""\n'
+    "skip_nonce_check = false\n"
+)
+# Drop any existing [auth.external.google] section and following keys
+# until the next [section] header.
+cfg = re.sub(
+    r"\n\[auth\.external\.google\][^\[]*", "\n", cfg, flags=re.DOTALL
+)
+cfg = cfg.rstrip() + "\n" + block
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(cfg)
+print(f"[setup-supabase] supabase/config.toml updated.")
+PYEOF
+
+  # Mirror the same values into Codebase/Backend/.env so the backend
+  # has them too (useful if a future server-side route ever needs the
+  # client_id, e.g. for ID-token verification).
+  upsert_env "GOOGLE_OAUTH_CLIENT_ID"     "$GOOGLE_CLIENT_ID"
+  upsert_env "GOOGLE_OAUTH_CLIENT_SECRET" "$GOOGLE_CLIENT_SECRET"
+  upsert_env "GOOGLE_OAUTH_REDIRECT_URI"  "$CALLBACK"
+
+  info "Restarting Supabase to apply Google OAuth..."
+  cd "$ROOT" && supabase stop || true
+  supabase start
+
+  info ""
+  info "Google sign-in should now work against the local Supabase stack."
+  info "Test by signing in via the studio URL printed above."
+}
+
+cmd_setup_all() {
+  info "Running full local auth stack setup (Supabase + Google OAuth)..."
+  cmd_self_hosted
+  cmd_google_oauth
+  info ""
+  info "Done. Run \`./scripts/setup-supabase.sh status\` to verify."
+}
+
 cmd_status() {
   if [[ ! -f "$ENV_FILE" ]]; then
     warn "No $ENV_FILE — copy .env.example to .env first."
@@ -168,19 +337,30 @@ cmd_status() {
 
 main() {
   case "${1:-help}" in
-    self-hosted) cmd_self_hosted ;;
-    cloud)       cmd_cloud ;;
-    status)      cmd_status ;;
+    self-hosted)    cmd_self_hosted ;;
+    cloud)          cmd_cloud ;;
+    google-oauth)   cmd_google_oauth ;;
+    install-gcloud) cmd_install_gcloud ;;
+    setup-all)      cmd_setup_all ;;
+    status)         cmd_status ;;
     *)
       cat <<'USAGE'
 Usage:
-  ./scripts/setup-supabase.sh self-hosted   # install CLI + supabase init + start
-  ./scripts/setup-supabase.sh cloud         # print 5-step cloud guide
-  ./scripts/setup-supabase.sh status        # check what's configured
+  ./scripts/setup-supabase.sh setup-all       # install everything + start
+                                              # supabase + provision Google
+                                              # OAuth in one go (recommended)
+  ./scripts/setup-supabase.sh self-hosted     # install supabase CLI + init
+                                              # + start + auto-write keys
+  ./scripts/setup-supabase.sh google-oauth    # install gcloud + walk through
+                                              # OAuth credential creation +
+                                              # auto-patch supabase/config.toml
+  ./scripts/setup-supabase.sh install-gcloud  # install just the gcloud CLI
+  ./scripts/setup-supabase.sh cloud           # print 5-step supabase.com guide
+  ./scripts/setup-supabase.sh status          # check what's configured
 
-The actual backend wiring (handlers under /auth/google, /auth/signup, etc)
-will land in a follow-up commit once keys are in place. This script
-prepares the local environment.
+The full local stack (Supabase Postgres + GoTrue auth + Google OAuth) is
+provisioned end-to-end by `setup-all`. Re-running is safe — every step
+is idempotent.
 USAGE
       ;;
   esac

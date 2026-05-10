@@ -226,8 +226,21 @@ Usage:
 - `upsert_env` (line 42)
 - `cmd_self_hosted` (line 55)
 - `cmd_cloud` (line 130)
-- `cmd_status` (line 152)
-- `main` (line 169)
+- `cmd_install_gcloud` (line 152)
+- `cmd_google_oauth` (line 196)
+  Google OAuth client provisioning. The OAuth 2.0 web-app client ID
+  Supabase needs (the "Sign in with Google" kind) cannot be CREATED via
+  `gcloud` today — Google's CLI only manages workload-identity OAuth
+  clients via `gcloud iam oauth-clients`. So this command does what CAN
+  be automated: install gcloud, log the user in, list / pick a project,
+  enable the IAM API, deep-link straight into the OAuth credentials
+  creation page WITH the redirect URI for the local Supabase stack
+  pre-baked, and on stdin-paste of the resulting client ID + secret it
+  writes them straight into supabase/config.toml so a single
+  `supabase stop && supabase start` enables Google sign-in end-to-end.
+- `cmd_setup_all` (line 313)
+- `cmd_status` (line 321)
+- `main` (line 338)
 
 ### `scripts/verify-requirements.ps1`
 
