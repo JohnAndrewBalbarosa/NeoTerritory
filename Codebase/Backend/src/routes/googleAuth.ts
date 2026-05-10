@@ -99,6 +99,19 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
        LIMIT 1`
     ).get(email) as UserRow | undefined;
     if (existing) {
+      // Re-mirror to Supabase Cloud on every login. The Supabase row
+      // may not exist yet (rows created before SUPABASE_URL was set)
+      // and a no-op upsert is cheap. PostgREST treats this as an
+      // INSERT; idx_users_username makes the duplicate-key handling
+      // fast. mirrorRow is fire-and-forget so a transient cloud blip
+      // never blocks login.
+      mirrorRow('users', {
+        id: existing.id,
+        username: existing.username,
+        email: existing.email,
+        role: existing.role,
+        entry_flow: role
+      });
       return existing;
     }
   }
@@ -129,7 +142,7 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
   // Best-effort entry-flow audit so admin analytics can split developer
   // vs student onboarding without changing the role enum.
   logEvent(id, 'auth.google.signup', `role=${role} username=${username}`);
-  mirrorRow('users', { id, username, email: email || null, role: 'user' });
+  mirrorRow('users', { id, username, email: email || null, role: 'user', entry_flow: role });
   return { id, username, email: email || null, role: 'user', password: placeholderPw };
 }
 
