@@ -42,8 +42,9 @@ export function pathToSurface(path: string): Surface {
   if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
   if (path === '/why' || path.startsWith('/why/')) return 'why';
   if (path === '/mechanics' || path.startsWith('/mechanics/')) return 'mechanics';
-  // /patterns and /patterns/gof both render the index.
-  // /patterns/<slug> renders the detail page.
+  // Per D59: the All/GoF filter is gone. /patterns renders the unified
+  // index; any deeper path is a detail page. /patterns/gof is preserved
+  // as an alias back to the index for any old bookmarks.
   if (path === '/patterns' || path === '/patterns/gof') return 'patterns';
   if (path.startsWith('/patterns/')) return 'patternDetail';
   if (path === '/tour' || path.startsWith('/tour/')) return 'tour';

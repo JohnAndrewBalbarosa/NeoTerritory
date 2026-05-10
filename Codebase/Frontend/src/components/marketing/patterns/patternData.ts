@@ -1,11 +1,17 @@
 // Pattern reference + learning data. Sources:
 //   - The CodiNeo thesis (FINAL THESIS 3 PAPER.pdf at the repo root).
-//   - Nesteruk, D. (2022) "Design Patterns in Modern C++20" (Apress) —
+//   - Nesteruk, D. (2022) "Design Patterns in Modern C++20" (Apress) -
 //     cited by the thesis Chapter 1.1 + Chapter 2.
 //   - The existing learning module content at
-//     Codebase/Frontend/src/data/learningContent.ts. Per user direction
-//     this turn, lesson content moves into pattern detail pages so /patterns
+//     Codebase/Frontend/src/data/learningContent.ts. Per user direction,
+//     lesson content lives on the per-pattern detail pages so /patterns
 //     is the single learning + reference surface.
+//
+// Per D59 (this turn): the focus is GoF. We do NOT distinguish "All" vs
+// "GoF" in the UI; the catalog below is the patterns we cover, period.
+// Method Chaining, Repository, and PIMPL are in the catalog because the
+// CodiNeo thesis explicitly lists them as supported detections — they are
+// not GoF but they are first-class members of OUR detection catalog.
 //
 // PatternEntry's learning fields are optional so a new pattern can ship
 // with reference-only content first and gain lesson content later.
@@ -32,7 +38,7 @@ export interface PatternEntry {
   codeSketch: string;
   detection: string;
   catalogFile: string | null;
-  // ---- Learning fields (merged from learningContent.ts on this turn) ----
+  // ---- Learning fields (merged from learningContent.ts) ----
   oneLiner?: string;
   whatItIs?: string;
   whenToUse?: string;
@@ -40,7 +46,7 @@ export interface PatternEntry {
   prerequisites?: string[];
   correctStructure?: PatternStructure;
   // ---- Source attribution ----
-  nesterukChapter?: string; // e.g. "Nesteruk 2022, Chapter on Builder"
+  nesterukChapter?: string;
 }
 
 const NESTERUK = 'Nesteruk, D. (2022). Design Patterns in Modern C++20. Apress.';
@@ -71,9 +77,9 @@ public:
     whatItIs:
       'A class that hands out the same instance every time you ask for it. The first call creates it; later calls return the same one.',
     whenToUse:
-      'When the object holds shared state that must not duplicate — a configuration registry, a logger, a database connection pool.',
+      'When the object holds shared state that must not duplicate: a configuration registry, a logger, a database connection pool.',
     everydayExample:
-      'The phone in the kitchen. There is one. Anyone in the house picks it up; everyone gets the same line. Adding a second phone in the same line would not change anything — it is still the one phone.',
+      'The phone in the kitchen. There is one. Anyone in the house picks it up; everyone gets the same line. Adding a second phone in the same line would not change anything - it is still the one phone.',
     prerequisites: [
       'Private constructors and access modifiers.',
       'Static member functions and static local variables (Meyer\'s singleton).',
@@ -134,7 +140,7 @@ public:
       'A vending machine. You press the button for soda. The machine decides whether to give you a bottle or a can. You do not pick the brand of plastic.',
     prerequisites: [
       'Inheritance and virtual functions (a base class with derived subtypes).',
-      'Smart pointers — std::unique_ptr<Base> as the factory return type.',
+      'Smart pointers: std::unique_ptr<Base> as the factory return type.',
       'Polymorphism through a base-class pointer or reference.',
     ],
     correctStructure: {
@@ -147,11 +153,11 @@ public:
         {
           label: 'Or a stdlib instantiation symbol',
           tokens: ['std::make_unique'],
-          why: 'Modern factories return smart pointers. The presence of `std::make_unique` (or `std::make_shared`) is enough on its own.',
+          why: 'Modern factories return smart pointers. The presence of std::make_unique (or std::make_shared) is enough on its own.',
         },
       ],
       whyItWorks:
-        'A factory is identified by the act of creating-and-returning, not by the method being named create() or make(). Token combos like `return new` or a bare `std::make_unique` are language-level evidence that does not depend on what the developer chose to call the method.',
+        'A factory is identified by the act of creating-and-returning, not by the method being named create() or make(). Token combos like "return new" or a bare "std::make_unique" are language-level evidence that does not depend on what the developer chose to call the method.',
     },
     nesterukChapter: 'Nesteruk 2022, Chapter on Factory + Abstract Factory',
   },
@@ -194,7 +200,7 @@ public:
         },
       ],
       whyItWorks:
-        'Builder and Method Chaining look the same at this token level. The analyzer flags a class with `return *this` as both candidates at once and marks the result ambiguous. The reader picks the right one based on whether the class also has a separate finishing method that returns a finished product (Builder) or just keeps mutating (Method Chaining).',
+        'Builder and Method Chaining look the same at this token level. The analyzer flags a class with "return *this" as both candidates at once and marks the result ambiguous. The reader picks the right one based on whether the class also has a separate finishing method that returns a finished product (Builder) or just keeps mutating (Method Chaining).',
     },
     nesterukChapter: 'Nesteruk 2022, Chapter on Builder',
   },
@@ -224,7 +230,7 @@ public:
       'Picking filters in a settings screen. You tap dark mode, then large text, then no notifications. Each tap leaves you on the same screen so the next tap can follow right away.',
     prerequisites: [
       'Member functions and the implicit this pointer.',
-      'Reference return types — return *this so the caller keeps the same object.',
+      'Reference return types: return *this so the caller keeps the same object.',
       'Awareness of const-correctness so chains read predictably.',
     ],
     correctStructure: {
@@ -236,7 +242,7 @@ public:
         },
       ],
       whyItWorks:
-        'Method Chaining is structurally identical to Builder at the token level: both rely on `return *this`. The analyzer surfaces both as candidates and marks the class ambiguous. The reader resolves it by asking: is there a finishing method that produces a different product (Builder) or do all calls just mutate the same object (Method Chaining)?',
+        'Method Chaining is structurally identical to Builder at the token level: both rely on "return *this". The analyzer surfaces both as candidates and marks the class ambiguous. The reader resolves it by asking: is there a finishing method that produces a different product (Builder) or do all calls just mutate the same object (Method Chaining)?',
     },
     nesterukChapter: 'Nesteruk 2022, Chapter on Fluent Interfaces',
   },
@@ -249,7 +255,7 @@ public:
     problem:
       'A new component fits the system everywhere except its method signatures do not match what the rest of the code calls. Rewriting either side is expensive and risky.',
     solution:
-      'Wrap the incompatible component in an Adapter that exposes the expected interface and forwards calls — possibly translating arguments — to the wrapped component.',
+      'Wrap the incompatible component in an Adapter that exposes the expected interface and forwards calls - possibly translating arguments - to the wrapped component.',
     codeSketch: `class JsonResponse {
   LegacyXml inner;
 public:
@@ -269,14 +275,14 @@ public:
       'A travel power adapter. The wall socket has one shape; your charger has another. The adapter sits between them and translates without either side knowing.',
     prerequisites: [
       'Class composition (a member of another class type).',
-      'Method forwarding through a member access (`.` or `->`).',
+      'Method forwarding through a member access (. or ->).',
     ],
     correctStructure: {
       mustHave: [
         {
           label: 'Class wraps a member and forwards',
           tokens: ['.', '('],
-          why: 'The forwarding call (`inner.method(...)` or `p->method(...)`) is the structural fingerprint of every wrapping pattern.',
+          why: 'The forwarding call (inner.method(...) or p->method(...)) is the structural fingerprint of every wrapping pattern.',
         },
       ],
       mustNotHave: [
@@ -386,7 +392,7 @@ public:
         },
       ],
       whyItWorks:
-        'Decorator differs from Adapter and Proxy by using interface_polymorphism — the wrapper itself is virtual so it can be stacked.',
+        'Decorator differs from Adapter and Proxy by using interface_polymorphism: the wrapper itself is virtual so it can be stacked.',
     },
     nesterukChapter: 'Nesteruk 2022, Chapter on Decorator',
   },
@@ -410,13 +416,13 @@ public:
   void run(Vec& v) { s->sort(v); }
 };`,
     detection:
-      'Catalog entry uses signature_categories: ["interface_polymorphism", "ownership_handle"]. Distinguishes from State by absence of state-transition methods.',
+      'Catalog entry (planned): signature_categories: ["interface_polymorphism", "ownership_handle"]. Distinguishes from State by absence of state-transition methods.',
     catalogFile: null,
     oneLiner: 'Swap the algorithm at runtime. The caller stays the same.',
     whatItIs:
       'A family of interchangeable algorithms with a shared interface. The host class delegates to a strategy reference and never names a concrete one.',
     whenToUse:
-      'When several algorithms could solve the same problem and you want to choose between them at runtime — sorting, compression, pricing, payment.',
+      'When several algorithms could solve the same problem and you want to choose between them at runtime: sorting, compression, pricing, payment.',
     everydayExample:
       'Picking a route on a map app. The destination is fixed; "fastest", "shortest", "avoid tolls" are strategies. You swap the strategy without changing where you are going.',
     prerequisites: [
@@ -449,7 +455,7 @@ public:
     intent:
       'Define a one-to-many dependency so that when one object changes state, all its dependents are notified automatically.',
     problem:
-      'Several objects need to react when something changes — an updated value, a new event, a network message. Letting the source poll every consumer or know about every consumer hardcodes the relationship.',
+      'Several objects need to react when something changes: an updated value, a new event, a network message. Letting the source poll every consumer or know about every consumer hardcodes the relationship.',
     solution:
       'A Subject keeps a list of Observers. State changes notify the list; observers update themselves. The Subject does not need to know what each Observer does with the notification.',
     codeSketch: `class Subject {
@@ -465,12 +471,12 @@ public:
     whatItIs:
       'A subject that maintains a list of observers and notifies them on every change. Each observer decides what to do with the notification.',
     whenToUse:
-      'When the source of a change does not know all its consumers — UI views, log subscribers, real-time dashboards.',
+      'When the source of a change does not know all its consumers: UI views, log subscribers, real-time dashboards.',
     everydayExample:
       'A group chat. One person posts; everyone in the chat sees the message. The poster does not need to send it individually.',
     prerequisites: [
       'Polymorphism (an Observer base interface).',
-      'Containers — std::vector or similar to hold the observer list.',
+      'Containers: std::vector or similar to hold the observer list.',
     ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Observer',
   },
@@ -564,7 +570,7 @@ public:
     whatItIs:
       'A pattern where a container of Components is itself a Component. Operations on the container recurse into children automatically.',
     whenToUse:
-      'When your data is naturally tree-shaped — file systems, GUI widgets, math expressions — and you want the same operations on a node and a subtree.',
+      'When your data is naturally tree-shaped: file systems, GUI widgets, math expressions, and you want the same operations on a node and a subtree.',
     everydayExample:
       'A folder on your computer. A folder can contain files or other folders. Asking "how big is this folder?" works the same whether it is a single file or a deep tree.',
     prerequisites: [
@@ -618,7 +624,7 @@ protected:
     intent:
       'Allow an object to alter its behaviour when its internal state changes. The object will appear to change its class.',
     problem:
-      'Your class has many `if (state == ...)` branches scattered across methods. Adding a new state means editing every method.',
+      'Your class has many if (state == ...) branches scattered across methods. Adding a new state means editing every method.',
     solution:
       'Pull each state into its own class implementing a shared interface. The host holds a pointer to the current state object and delegates. Transitions swap the pointer.',
     codeSketch: `class State { public: virtual std::unique_ptr<State> handle() = 0; };
@@ -637,9 +643,9 @@ public:
     whatItIs:
       'A pattern where each state of an object is its own class. The host delegates behaviour to its current state and switches state objects to change behaviour.',
     whenToUse:
-      'When an object has distinct modes that change which methods are valid or what they do — connection states, game phases, document workflow stages.',
+      'When an object has distinct modes that change which methods are valid or what they do: connection states, game phases, document workflow stages.',
     everydayExample:
-      'Traffic lights. Red / yellow / green are states. The intersection behaves differently depending on which state is active, but it is the same intersection.',
+      'Traffic lights. Red, yellow, green are states. The intersection behaves differently depending on which state is active, but it is the same intersection.',
     prerequisites: [
       'Polymorphism (a State base interface).',
       'Smart pointers for owning the current state.',
@@ -677,8 +683,8 @@ public:
       'Smart pointers for owning concrete repositories.',
       'Optional types (std::optional) for "not found" responses.',
     ],
-    nesterukChapter: 'Mentioned in CodiNeo Chapter 1.1; not a GoF pattern, ' +
-      'but widely used in modern C++ apps and discussed in Nesteruk 2022.',
+    nesterukChapter:
+      'Mentioned in CodiNeo Chapter 1.1; not a GoF pattern, but widely used in modern C++ apps and discussed in Nesteruk 2022.',
   },
   {
     slug: 'pimpl',

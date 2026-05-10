@@ -851,3 +851,41 @@ Per user direction (this turn): the studio topbar should be a "normal div sa taa
 **Kept**: `position: sticky; top: 0;` so the topbar pins to the top of the studio while content scrolls beneath it.
 
 Net effect: the topbar reads as a regular block at the top of the studio that happens to stay pinned; no special-overlay styling.
+
+## D59 — `/patterns` is unified; no All/GoF filter
+Per user direction (this turn): the previous All/GoF filter on `/patterns` and the `/patterns/gof` route variant are removed. The focus IS GoF, so distinguishing "All" from "GoF" in the UI was misleading. The page is now a single unified directory grouped by family.
+
+**Catalog scope**: Method Chaining, Repository, and PIMPL are kept in the catalog even though they are not strictly GoF — they are first-class members of OUR detection catalog per the CodiNeo thesis Chapter 1.1 + 1.7 (where Repository is named as a supported pattern) and Chapter on Idioms (where PIMPL belongs).
+
+**Route alias**: `/patterns/gof` still resolves (it routes to the unified index) so old links do not 404.
+
+**Schema impact**: the `isGoF` field briefly added in an earlier draft of this turn is gone — there is no UI that distinguishes GoF vs non-GoF, so the field would be dead data.
+
+## D60 — Home demo: inline SVG flow, no external file
+Per user direction (this turn): the previous Home demo slot referenced `/demo/landing-30s.webm` and `/demo/landing-30s.jpg`, neither of which existed. The result was a blank rectangle directly under the hero headline. Replaced with an inline SVG flow diagram showing the three-step pipeline (paste C++ → detect pattern → docs + tests).
+
+**Why SVG and not a captured PNG**: the diagram is conceptual (each "step" is illustrative), not a screenshot. SVG keeps it crisp at any size, ships zero asset weight, and lives next to the page that uses it. A real demo recording can replace the SVG later as a `<video>` slot; the SVG stays as the prefers-reduced-motion fallback.
+
+## D61 — `/mechanics`: ASCII pre-blocks replaced with inline SVG diagrams
+Per user direction (this turn): the five algorithm stages on `/mechanics` previously rendered as `<pre>` ASCII art. Replaced with inline SVG diagrams that render crisply on any viewport. Each diagram uses a shared palette (`COLOR_BG / PANEL / BORDER / ACCENT / LIME / PURPLE`) and the same `<StageSvg>` wrapper so the five diagrams share a single visual language.
+
+**Why SVG and not a Playwright-captured PNG**: the diagrams are illustrative explanations of the algorithm, not screenshots of running software. Their meaning is fixed by the algorithm description (D31), not by any UI state. SVG keeps them text-versionable, easy to edit per future D-decision, and crisp on every viewport.
+
+**Where Playwright IS used for `/mechanics` pictures**: the marketing-screenshot script (`tools/capture-marketing-screenshots.mjs`, D62) captures the rendered `/mechanics` page (i.e., the SVGs in context with the prose) to `public/preview/mechanics.png` for press-kit use.
+
+## D62 — Marketing-surface Playwright capture: no Docker needed
+Per user direction: use Playwright for pictures wherever possible. The full studio capture script (`tools/capture-tour-screenshots.mjs`, D53) needs Docker and auth credentials. To capture the PUBLIC marketing surfaces without that overhead, this turn adds `tools/capture-marketing-screenshots.mjs`.
+
+**How it works**:
+1. Spawns `npx vite preview` from `Codebase/Frontend/` so the built `dist/` is served at `http://127.0.0.1:4173` (override with `VITE_PREVIEW_PORT`).
+2. Waits for the preview server to answer.
+3. Drives Chromium (resolved from `Codebase/Frontend/node_modules/playwright`) to each public route at 1440x900 with `deviceScaleFactor: 2`.
+4. Writes one PNG per surface to `Codebase/Frontend/public/preview/`.
+5. Tears down the preview server.
+
+**Surfaces captured** (one PNG each):
+- `home.png`, `mechanics.png`, `why.png`, `patterns.png`, `patterns-singleton.png`, `tour.png`, `research.png`, `about.png`.
+
+**Why dist/ and not dev server**: dev mode emits HMR overlays and dev banners that should not appear in press-kit shots. The built `dist/` matches what production serves.
+
+**Run**: `npx vite build && node tools/capture-marketing-screenshots.mjs`. The captures land under `Codebase/Frontend/public/preview/` so they can be referenced from doc files or external press materials. They are not auto-displayed inside the marketing pages — those use the inline SVGs per D60 + D61 instead.

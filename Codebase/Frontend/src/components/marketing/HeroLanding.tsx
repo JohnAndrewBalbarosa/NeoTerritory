@@ -168,29 +168,97 @@ export default function HeroLanding() {
           Powered by our own lexical-tagging + parse-tree algorithm. Fast. Efficient.
         </p>
 
-        <div className="nt-home__demo" aria-label="30-second product demo">
-          {/*
-            Demo embed slot. While the real recording is pending, we render
-            a poster-only frame that gracefully replaces itself with a
-            looping <video> when the file lands. Per D43.
-          */}
-          <video
-            className="nt-home__demo-video"
-            poster="/demo/landing-30s.jpg"
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-label="A 30-second walkthrough of the studio: paste, analyze, get docs and tests"
+        {/*
+          Per D60 (this turn): the previous <video> slot referenced
+          /demo/landing-30s.webm and /demo/landing-30s.jpg, neither of which
+          exist. The result was a blank rectangle. Replaced with an inline
+          SVG flow diagram that shows the three-step pipeline crisply at any
+          size without any external file dependency.
+        */}
+        <figure
+          className="nt-home__demo"
+          aria-label="Three-step pipeline: paste C++, detect pattern, generate docs and tests"
+        >
+          <svg
+            className="nt-home__demo-svg"
+            viewBox="0 0 960 280"
+            role="img"
+            aria-hidden="true"
+            preserveAspectRatio="xMidYMid meet"
           >
-            <source src="/demo/landing-30s.webm" type="video/webm" />
-          </video>
-          <div className="nt-home__demo-fallback" aria-hidden="true">
-            <p className="nt-home__demo-fallback-line">paste C++</p>
-            <p className="nt-home__demo-fallback-line">→ detect pattern</p>
-            <p className="nt-home__demo-fallback-line">→ docs + tests</p>
-          </div>
-        </div>
+            <defs>
+              <linearGradient id="ntdemoFill" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stopColor="rgba(0, 209, 216, 0.18)" />
+                <stop offset="100%" stopColor="rgba(123, 94, 167, 0.14)" />
+              </linearGradient>
+              <linearGradient id="ntdemoAccent" x1="0" y1="0" x2="1" y2="0">
+                <stop offset="0%" stopColor="rgb(166, 255, 0)" />
+                <stop offset="100%" stopColor="rgb(0, 209, 216)" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="960" height="280" fill="url(#ntdemoFill)" rx="22" />
+
+            {/* Step 1: Paste C++ — a tile with code lines */}
+            <g transform="translate(40, 50)">
+              <rect x="0" y="0" width="240" height="180" rx="14" fill="rgba(13,20,34,0.72)" stroke="rgba(0,209,216,0.32)" />
+              <text x="20" y="30" fill="rgba(0,209,216,1)" fontFamily="JetBrains Mono, monospace" fontSize="11" letterSpacing="0.12em">STEP 01</text>
+              <text x="20" y="56" fill="#fff" fontFamily="Inter, sans-serif" fontSize="18" fontWeight="700">Paste C++</text>
+              <g fontFamily="JetBrains Mono, monospace" fontSize="11" fill="rgba(226,228,240,0.78)">
+                <text x="20" y="90">class Logger {'{'}</text>
+                <text x="32" y="108">Logger() = default;</text>
+                <text x="32" y="126">static Logger&amp;</text>
+                <text x="32" y="144">instance();</text>
+                <text x="20" y="162">{'}'};</text>
+              </g>
+            </g>
+
+            {/* Arrow 1 */}
+            <g transform="translate(290, 130)">
+              <line x1="0" y1="10" x2="60" y2="10" stroke="url(#ntdemoAccent)" strokeWidth="3" />
+              <polygon points="60,2 76,10 60,18" fill="rgb(0,209,216)" />
+            </g>
+
+            {/* Step 2: Detect pattern — a tile with a detected pattern chip */}
+            <g transform="translate(380, 50)">
+              <rect x="0" y="0" width="200" height="180" rx="14" fill="rgba(13,20,34,0.72)" stroke="rgba(0,209,216,0.32)" />
+              <text x="20" y="30" fill="rgba(0,209,216,1)" fontFamily="JetBrains Mono, monospace" fontSize="11" letterSpacing="0.12em">STEP 02</text>
+              <text x="20" y="56" fill="#fff" fontFamily="Inter, sans-serif" fontSize="18" fontWeight="700">Detect pattern</text>
+              <g transform="translate(20, 84)">
+                <rect x="0" y="0" width="160" height="36" rx="18" fill="rgba(166,255,0,0.12)" stroke="rgba(166,255,0,0.5)" />
+                <circle cx="22" cy="18" r="6" fill="rgb(166,255,0)" />
+                <text x="38" y="23" fill="#fff" fontFamily="Inter, sans-serif" fontSize="13" fontWeight="600">Singleton</text>
+              </g>
+              <text x="20" y="146" fill="rgba(226,228,240,0.7)" fontFamily="JetBrains Mono, monospace" fontSize="10">confidence: high</text>
+              <text x="20" y="162" fill="rgba(226,228,240,0.5)" fontFamily="JetBrains Mono, monospace" fontSize="10">evidence: 3 anchors</text>
+            </g>
+
+            {/* Arrow 2 */}
+            <g transform="translate(590, 130)">
+              <line x1="0" y1="10" x2="60" y2="10" stroke="url(#ntdemoAccent)" strokeWidth="3" />
+              <polygon points="60,2 76,10 60,18" fill="rgb(0,209,216)" />
+            </g>
+
+            {/* Step 3: Docs + Tests — split tile */}
+            <g transform="translate(680, 50)">
+              <rect x="0" y="0" width="240" height="180" rx="14" fill="rgba(13,20,34,0.72)" stroke="rgba(0,209,216,0.32)" />
+              <text x="20" y="30" fill="rgba(0,209,216,1)" fontFamily="JetBrains Mono, monospace" fontSize="11" letterSpacing="0.12em">STEP 03</text>
+              <text x="20" y="56" fill="#fff" fontFamily="Inter, sans-serif" fontSize="18" fontWeight="700">Docs + Tests</text>
+              <g transform="translate(20, 82)">
+                <rect x="0" y="0" width="200" height="42" rx="8" fill="rgba(123,94,167,0.18)" stroke="rgba(123,94,167,0.45)" />
+                <text x="14" y="18" fill="rgba(226,228,240,0.9)" fontFamily="Inter, sans-serif" fontSize="11" fontWeight="600">README.md generated</text>
+                <text x="14" y="34" fill="rgba(226,228,240,0.6)" fontFamily="JetBrains Mono, monospace" fontSize="10">## Logger</text>
+              </g>
+              <g transform="translate(20, 132)">
+                <rect x="0" y="0" width="200" height="32" rx="8" fill="rgba(0,209,216,0.10)" stroke="rgba(0,209,216,0.45)" />
+                <text x="14" y="20" fill="rgba(226,228,240,0.9)" fontFamily="Inter, sans-serif" fontSize="11" fontWeight="600">test_logger.cpp</text>
+              </g>
+            </g>
+          </svg>
+          <figcaption className="nt-home__demo-caption">
+            Paste C++. NeoTerritory tags the design pattern. You get a README and unit-test
+            scaffolds for free.
+          </figcaption>
+        </figure>
 
         <ol className="nt-home__steps">
           <li>

@@ -1,12 +1,10 @@
 import { useEffect, useState } from 'react';
 
-// Per D31 (5 stages, locked order) + D46 (route /mechanics) + Sprint 0 doc
-// blueprint at docs/Codebase/Frontend/src/components/marketing/mechanics/MechanicsPage.tsx.md.
-//
-// Five sequential stages of the algorithm. Each stage anchored. A sticky
-// "Stage N of 5" indicator updates on scroll via IntersectionObserver — pure
-// CSS sticky + IO, no animation library, satisfies the effects-budget rule
-// per D41.
+// Per D31 (5 stages, locked order) + D46 (route /mechanics) + D61 (this turn):
+// the previous ASCII pre-block diagrams are replaced with proper inline SVGs.
+// SVG is the right format for these because each stage is a small graph
+// that benefits from crisp rendering at any size and that does not need
+// any external asset file.
 
 interface Stage {
   num: number;
@@ -14,6 +12,43 @@ interface Stage {
   title: string;
   paragraph: string;
   diagram: JSX.Element;
+}
+
+// Common SVG palette + helpers so all five diagrams share a visual language.
+const COLOR_BG = 'rgba(13, 20, 34, 0.6)';
+const COLOR_PANEL = 'rgba(15, 27, 46, 0.85)';
+const COLOR_BORDER = 'rgba(0, 209, 216, 0.32)';
+const COLOR_ACCENT = 'rgb(0, 209, 216)';
+const COLOR_LIME = 'rgb(166, 255, 0)';
+const COLOR_PURPLE = 'rgba(123, 94, 167, 0.55)';
+const COLOR_TEXT = '#e2e4f0';
+const COLOR_TEXT_SOFT = 'rgba(226, 228, 240, 0.7)';
+const FONT_MONO = 'JetBrains Mono, monospace';
+const FONT_UI = 'Inter, system-ui, sans-serif';
+
+function StageSvg({
+  children,
+  width = 880,
+  height = 280,
+  label,
+}: {
+  children: React.ReactNode;
+  width?: number;
+  height?: number;
+  label: string;
+}) {
+  return (
+    <svg
+      className="nt-mech__svg"
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label={label}
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <rect x="0" y="0" width={width} height={height} rx="14" fill={COLOR_BG} />
+      {children}
+    </svg>
+  );
 }
 
 const STAGES: ReadonlyArray<Stage> = [
@@ -24,12 +59,74 @@ const STAGES: ReadonlyArray<Stage> = [
     paragraph:
       'Every token in your C++ source is assigned a category before any structural analysis. The categories live in lexeme_categories.json and are language facts (keywords, operators, stdlib symbols), never project-specific names. Categorising once means the matcher can operate on token-category windows instead of raw text.',
     diagram: (
-      <pre className="nt-mech__code" aria-label="Token categories example">
-        {`std::unique_ptr<Foo> p = std::make_unique<Foo>();
-└──┬──┘ └──┬─────┘ ├─┘  ├   ├──┬──┘   ├──┬─────┘ ├─┘
- stdlib   handle  type  =     stdlib   inst   type
- (ownership_handle)          (object_instantiation)`}
-      </pre>
+      <StageSvg label="Token chips categorised by lexeme category">
+        {/* Source code rendered as a sequence of chips, with the category
+            label sitting beneath each chip. */}
+        <g fontFamily={FONT_MONO} fontSize="14">
+          <text x="40" y="40" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em">
+            SOURCE
+          </text>
+          <text x="40" y="68" fill={COLOR_TEXT}>
+            std::unique_ptr&lt;Foo&gt; p = std::make_unique&lt;Foo&gt;();
+          </text>
+        </g>
+        {/* Token chips, paired below */}
+        {[
+          { x: 40, w: 140, label: 'std::unique_ptr', cat: 'ownership_handle' },
+          { x: 190, w: 50, label: '<Foo>', cat: 'type' },
+          { x: 250, w: 30, label: 'p', cat: 'ident' },
+          { x: 290, w: 20, label: '=', cat: 'op' },
+          { x: 320, w: 170, label: 'std::make_unique', cat: 'object_instantiation' },
+          { x: 500, w: 50, label: '<Foo>', cat: 'type' },
+          { x: 560, w: 30, label: '()', cat: 'call' },
+        ].map((t) => {
+          const accent = t.cat === 'ownership_handle' || t.cat === 'object_instantiation';
+          return (
+            <g key={`${t.x}-${t.label}`}>
+              <rect
+                x={t.x}
+                y="100"
+                width={t.w}
+                height="32"
+                rx="8"
+                fill={accent ? 'rgba(0,209,216,0.14)' : COLOR_PANEL}
+                stroke={accent ? COLOR_ACCENT : COLOR_BORDER}
+              />
+              <text
+                x={t.x + t.w / 2}
+                y="121"
+                fill={COLOR_TEXT}
+                fontFamily={FONT_MONO}
+                fontSize="11"
+                textAnchor="middle"
+              >
+                {t.label}
+              </text>
+              <text
+                x={t.x + t.w / 2}
+                y="160"
+                fill={accent ? COLOR_LIME : COLOR_TEXT_SOFT}
+                fontFamily={FONT_MONO}
+                fontSize="10"
+                textAnchor="middle"
+                letterSpacing="0.06em"
+              >
+                {t.cat}
+              </text>
+            </g>
+          );
+        })}
+        <text
+          x="40"
+          y="210"
+          fill={COLOR_TEXT_SOFT}
+          fontFamily={FONT_UI}
+          fontSize="12"
+        >
+          Categories from <tspan fontFamily={FONT_MONO}>lexeme_categories.json</tspan>. Only stdlib symbols
+          and grammar combos qualify — bare keywords do not.
+        </text>
+      </StageSvg>
     ),
   },
   {
@@ -39,22 +136,56 @@ const STAGES: ReadonlyArray<Stage> = [
     paragraph:
       'We build two trees side by side. The actual tree mirrors the original source and stays immutable — that is the audit trail. The virtual tree is a working copy attached to the main tree. Tagging, cross-referencing, and pattern checks all happen on the virtual tree so we can never accidentally rewrite your real source.',
     diagram: (
-      <div className="nt-mech__split" aria-label="Actual versus virtual parse tree">
-        <div>
-          <p className="nt-mech__split-label">Actual tree (immutable)</p>
-          <pre className="nt-mech__code">{`File
-├── class Foo
-│   └── method Foo()
-└── function main`}</pre>
-        </div>
-        <div>
-          <p className="nt-mech__split-label">Virtual tree (tagged)</p>
-          <pre className="nt-mech__code">{`File*
-├── class Foo*  [Singleton?]
-│   └── method Foo()*  [private ctor]
-└── function main*  [usage of Foo]`}</pre>
-        </div>
-      </div>
+      <StageSvg label="Actual and virtual parse trees side by side">
+        {/* Left: Actual tree (immutable) */}
+        <g fontFamily={FONT_UI} fontSize="13">
+          <text x="40" y="32" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            ACTUAL TREE (immutable)
+          </text>
+          {/* Nodes */}
+          <g>
+            <rect x="40" y="50" width="120" height="32" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+            <text x="100" y="71" fill={COLOR_TEXT} textAnchor="middle">File</text>
+            <line x1="100" y1="82" x2="80" y2="110" stroke={COLOR_BORDER} />
+            <line x1="100" y1="82" x2="220" y2="110" stroke={COLOR_BORDER} />
+            <rect x="20" y="110" width="120" height="32" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+            <text x="80" y="131" fill={COLOR_TEXT} textAnchor="middle">class Foo</text>
+            <rect x="160" y="110" width="120" height="32" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+            <text x="220" y="131" fill={COLOR_TEXT} textAnchor="middle">fn main</text>
+            <line x1="80" y1="142" x2="80" y2="170" stroke={COLOR_BORDER} />
+            <rect x="20" y="170" width="120" height="32" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+            <text x="80" y="191" fill={COLOR_TEXT} textAnchor="middle">Foo()</text>
+          </g>
+        </g>
+
+        {/* Right: Virtual tree (tagged) */}
+        <g fontFamily={FONT_UI} fontSize="13">
+          <text x="500" y="32" fill={COLOR_ACCENT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            VIRTUAL TREE (tagged)
+          </text>
+          <g>
+            <rect x="500" y="50" width="120" height="32" rx="8" fill="rgba(0,209,216,0.14)" stroke={COLOR_ACCENT} />
+            <text x="560" y="71" fill={COLOR_TEXT} textAnchor="middle">File*</text>
+            <line x1="560" y1="82" x2="540" y2="110" stroke={COLOR_ACCENT} />
+            <line x1="560" y1="82" x2="680" y2="110" stroke={COLOR_ACCENT} />
+            <rect x="480" y="110" width="140" height="32" rx="8" fill="rgba(0,209,216,0.14)" stroke={COLOR_ACCENT} />
+            <text x="550" y="131" fill={COLOR_TEXT} textAnchor="middle">class Foo* [tag]</text>
+            <rect x="640" y="110" width="120" height="32" rx="8" fill="rgba(0,209,216,0.14)" stroke={COLOR_ACCENT} />
+            <text x="700" y="131" fill={COLOR_TEXT} textAnchor="middle">fn main*</text>
+            <line x1="550" y1="142" x2="550" y2="170" stroke={COLOR_ACCENT} />
+            <rect x="480" y="170" width="140" height="32" rx="8" fill="rgba(0,209,216,0.14)" stroke={COLOR_ACCENT} />
+            <text x="550" y="191" fill={COLOR_TEXT} textAnchor="middle">Foo()* [private]</text>
+          </g>
+        </g>
+
+        {/* Arrow between */}
+        <g>
+          <line x1="290" y1="125" x2="480" y2="125" stroke={COLOR_PURPLE} strokeWidth="2" strokeDasharray="6 4" />
+          <text x="385" y="118" fill={COLOR_PURPLE} fontFamily={FONT_MONO} fontSize="11" textAnchor="middle">
+            mirrored
+          </text>
+        </g>
+      </StageSvg>
     ),
   },
   {
@@ -64,12 +195,41 @@ const STAGES: ReadonlyArray<Stage> = [
     paragraph:
       'For each class, the binder walks the function bodies in the program and records who uses what. The result is a reverse index: given a class, list every function that touches it. This is the foundation for "did anyone actually call build()?" and "is this class instantiated anywhere outside the file it lives in?"',
     diagram: (
-      <pre className="nt-mech__code" aria-label="Class usage table example">
-        {`class_usage_table:
-  Foo  → [main()  line 42 (constructor),
-          run()   line 81 (method call)]
-  Bar  → [main()  line 43 (member access)]`}
-      </pre>
+      <StageSvg label="Class usage table mapping classes to function bodies">
+        <g fontFamily={FONT_UI}>
+          {/* Class nodes (left) */}
+          <text x="40" y="32" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            CLASSES
+          </text>
+          <rect x="40" y="60" width="120" height="36" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="100" y="84" fill={COLOR_TEXT} textAnchor="middle">Foo</text>
+          <rect x="40" y="120" width="120" height="36" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="100" y="144" fill={COLOR_TEXT} textAnchor="middle">Bar</text>
+
+          {/* Function nodes (right) */}
+          <text x="600" y="32" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            FUNCTIONS
+          </text>
+          <rect x="600" y="50" width="200" height="36" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="700" y="68" fill={COLOR_TEXT} textAnchor="middle" fontSize="12">main()</text>
+          <text x="700" y="82" fill={COLOR_TEXT_SOFT} textAnchor="middle" fontFamily={FONT_MONO} fontSize="10">line 42 — constructs Foo</text>
+          <rect x="600" y="100" width="200" height="36" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="700" y="118" fill={COLOR_TEXT} textAnchor="middle" fontSize="12">run()</text>
+          <text x="700" y="132" fill={COLOR_TEXT_SOFT} textAnchor="middle" fontFamily={FONT_MONO} fontSize="10">line 81 — Foo::method</text>
+          <rect x="600" y="150" width="200" height="36" rx="8" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="700" y="168" fill={COLOR_TEXT} textAnchor="middle" fontSize="12">main()</text>
+          <text x="700" y="182" fill={COLOR_TEXT_SOFT} textAnchor="middle" fontFamily={FONT_MONO} fontSize="10">line 43 — Bar member access</text>
+
+          {/* Edges */}
+          <line x1="160" y1="78" x2="600" y2="68" stroke={COLOR_ACCENT} strokeWidth="2" />
+          <line x1="160" y1="78" x2="600" y2="118" stroke={COLOR_ACCENT} strokeWidth="2" />
+          <line x1="160" y1="138" x2="600" y2="168" stroke={COLOR_LIME} strokeWidth="2" />
+
+          <text x="440" y="240" fill={COLOR_TEXT_SOFT} fontFamily={FONT_UI} fontSize="12" textAnchor="middle">
+            Given any class, the table lists every function body that touches it.
+          </text>
+        </g>
+      </StageSvg>
     ),
   },
   {
@@ -79,13 +239,53 @@ const STAGES: ReadonlyArray<Stage> = [
     paragraph:
       'Once the virtual tree is built and tagged, every subsequent pass reads only the virtual copy. The actual class is already affected — its tags are computed and attached — so there is nothing more to add by re-walking the original source. This is what keeps the algorithm linear in source size and reproducible.',
     diagram: (
-      <pre className="nt-mech__code" aria-label="Virtual-only access example">
-        {`pass.detectSingleton(virtual_tree)  // OK
-pass.detectBuilder  (virtual_tree)  // OK
-pass.detectAdapter  (virtual_tree)  // OK
-//                  ^^^^^^^^^^^^^^
-// No pass touches the actual tree after stage 2.`}
-      </pre>
+      <StageSvg label="Detector passes read only the virtual tree">
+        {/* Detector passes column */}
+        <g fontFamily={FONT_UI}>
+          <text x="40" y="32" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            DETECTOR PASSES
+          </text>
+          {[
+            { y: 60, label: 'detectSingleton' },
+            { y: 105, label: 'detectBuilder' },
+            { y: 150, label: 'detectAdapter' },
+            { y: 195, label: 'detectStrategy' },
+          ].map((p) => (
+            <g key={p.label}>
+              <rect x="40" y={p.y} width="190" height="32" rx="8" fill="rgba(0,209,216,0.10)" stroke={COLOR_ACCENT} />
+              <text x="60" y={p.y + 21} fill={COLOR_TEXT} fontFamily={FONT_MONO} fontSize="12">
+                {p.label}()
+              </text>
+            </g>
+          ))}
+        </g>
+
+        {/* Virtual tree on the right (highlighted as the one source they read) */}
+        <g>
+          <text x="500" y="32" fill={COLOR_ACCENT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            VIRTUAL TREE (read-only here)
+          </text>
+          <rect x="500" y="60" width="320" height="180" rx="14" fill="rgba(0,209,216,0.10)" stroke={COLOR_ACCENT} />
+          <text x="660" y="155" fill={COLOR_TEXT} fontFamily={FONT_UI} fontSize="14" textAnchor="middle">
+            virtual_tree
+          </text>
+        </g>
+
+        {/* Arrows from each pass to the virtual tree */}
+        {[76, 121, 166, 211].map((y) => (
+          <g key={y}>
+            <line x1="230" y1={y} x2="498" y2="150" stroke={COLOR_ACCENT} strokeWidth="1.5" opacity="0.7" />
+          </g>
+        ))}
+
+        {/* "actual_tree" greyed out */}
+        <g opacity="0.45">
+          <rect x="280" y="240" width="160" height="28" rx="6" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="360" y="259" fill={COLOR_TEXT_SOFT} fontFamily={FONT_MONO} fontSize="11" textAnchor="middle">
+            actual_tree (untouched)
+          </text>
+        </g>
+      </StageSvg>
     ),
   },
   {
@@ -95,17 +295,71 @@ pass.detectAdapter  (virtual_tree)  // OK
     paragraph:
       'Each design pattern is a JSON file describing the structural shape NeoTerritory expects to see. Adding a new pattern is dropping a JSON file in pattern_catalog/<family>/ and rerunning. No C++ recompile. Because templates are pre-known, generating tests is cheap: every detected pattern carries a list of unit-test targets the test scaffold consumes.',
     diagram: (
-      <pre className="nt-mech__code" aria-label="Catalog entry example">
-        {`// pattern_catalog/creational/builder.json
-{
-  "id": "creational.builder",
-  "signature_categories": ["self_return"],
-  "ordered_checks": [
-    { "kind": "method_chain_returns_this" },
-    { "kind": "build_method_present"      }
-  ]
-}`}
-      </pre>
+      <StageSvg label="A pattern catalog JSON drives the matcher" height={280}>
+        {/* Folder column */}
+        <g fontFamily={FONT_UI}>
+          <text x="40" y="32" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
+            pattern_catalog/
+          </text>
+          {[
+            { y: 60, label: 'creational/builder.json', accent: true },
+            { y: 95, label: 'creational/singleton.json' },
+            { y: 130, label: 'structural/adapter.json' },
+            { y: 165, label: 'structural/proxy.json' },
+            { y: 200, label: 'behavioural/strategy.json' },
+          ].map((p) => (
+            <g key={p.label}>
+              <rect
+                x="40"
+                y={p.y}
+                width="280"
+                height="26"
+                rx="6"
+                fill={p.accent ? 'rgba(166,255,0,0.10)' : COLOR_PANEL}
+                stroke={p.accent ? COLOR_LIME : COLOR_BORDER}
+              />
+              <text x="56" y={p.y + 18} fill={COLOR_TEXT} fontFamily={FONT_MONO} fontSize="11">
+                {p.label}
+              </text>
+            </g>
+          ))}
+        </g>
+
+        {/* Selected JSON detail */}
+        <g>
+          <rect x="380" y="50" width="450" height="200" rx="12" fill={COLOR_PANEL} stroke={COLOR_LIME} />
+          <text x="400" y="76" fill={COLOR_LIME} fontFamily={FONT_MONO} fontSize="11" letterSpacing="0.06em">
+            creational/builder.json
+          </text>
+          {[
+            '{',
+            '  "id": "creational.builder",',
+            '  "signature_categories": ["self_return"],',
+            '  "ordered_checks": [',
+            '    { "kind": "method_chain_returns_this" },',
+            '    { "kind": "build_method_present" }',
+            '  ]',
+            '}',
+          ].map((line, i) => (
+            <text
+              key={i}
+              x="400"
+              y={102 + i * 17}
+              fill={COLOR_TEXT}
+              fontFamily={FONT_MONO}
+              fontSize="12"
+            >
+              {line}
+            </text>
+          ))}
+        </g>
+
+        {/* Arrow */}
+        <g>
+          <line x1="320" y1="73" x2="380" y2="73" stroke={COLOR_LIME} strokeWidth="2" />
+          <polygon points="380,73 372,69 372,77" fill={COLOR_LIME} />
+        </g>
+      </StageSvg>
     ),
   },
 ];
@@ -121,8 +375,6 @@ export default function MechanicsPage() {
 
     const io = new IntersectionObserver(
       (entries) => {
-        // Pick the most-visible stage. When several are intersecting, the
-        // largest intersectionRatio wins. Falls back to whichever is in view.
         const visible = entries
           .filter((e) => e.isIntersecting)
           .sort((a, b) => b.intersectionRatio - a.intersectionRatio);

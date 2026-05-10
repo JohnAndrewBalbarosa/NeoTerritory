@@ -3379,44 +3379,31 @@ body[data-surface] {
   margin: 0 0 2rem;
   letter-spacing: 0.01em;
 }
+/* Home demo: inline SVG flow diagram (D60). Replaces the previous empty
+   video slot whose /demo/landing-30s.webm + .jpg did not exist. */
 .nt-home__demo {
   position: relative;
-  max-width: 880px;
-  margin: 0 auto 1.75rem;
+  max-width: 920px;
+  margin: 0 auto 1.5rem;
+  padding: 0;
   border: 1px solid var(--nt-mkt-line);
   border-radius: 22px;
   overflow: hidden;
-  aspect-ratio: 21 / 9;
-  background: rgba(13, 20, 34, 0.5);
+  background: linear-gradient(160deg, rgba(0,209,216,0.05), rgba(123,94,167,0.03));
 }
-.nt-home__demo-video {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.nt-home__demo-svg {
   display: block;
+  width: 100%;
+  height: auto;
 }
-.nt-home__demo-fallback {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: clamp(0.95rem, 0.8rem + 0.5vw, 1.2rem);
+.nt-home__demo-caption {
+  display: block;
+  padding: 0.5rem 1rem 0.75rem;
+  margin: 0;
+  font-size: 0.86rem;
   color: var(--nt-mkt-text-soft);
-  pointer-events: none;
-  background: linear-gradient(160deg, rgba(0,209,216,0.06), rgba(123,94,167,0.04));
-}
-.nt-home__demo-video[poster] + .nt-home__demo-fallback,
-.nt-home__demo:has(video[autoplay]) .nt-home__demo-fallback {
-  /* When the video is actually playing, the fallback is purely a poster
-     supplement â€” keep it visible only when video src 404s. Browsers without
-     :has() simply show fallback under the video; that is acceptable. */
-  opacity: 0.0001;
+  text-align: center;
+  line-height: 1.5;
 }
 .nt-home__steps {
   display: grid;
@@ -3810,6 +3797,14 @@ body[data-surface] {
 }
 .nt-mech__diagram {
   margin-top: 0.5rem;
+}
+.nt-mech__svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid var(--nt-mkt-line);
+  background: rgba(13, 20, 34, 0.45);
 }
 .nt-mech__code {
   display: block;
