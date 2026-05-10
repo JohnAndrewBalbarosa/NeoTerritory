@@ -69,28 +69,38 @@ export default function GoogleCallback() {
 
   return (
     <main className="nt-entry" id="main">
-      <section className="nt-entry-shell" aria-live="polite">
-        <div className="nt-entry-panel" style={{ textAlign: 'center', padding: '4rem 2rem' }}>
-          {phase === 'verifying' && (
-            <>
-              <h1>Signing you in…</h1>
-              <p>Verifying your Google session with NeoTerritory.</p>
-            </>
-          )}
-          {phase === 'success' && (
-            <>
-              <h1>Signed in</h1>
-              <p>Redirecting…</p>
-            </>
-          )}
+      <section className="nt-entry-shell nt-signin-shell" aria-live="polite">
+        <div className="nt-entry-panel nt-signin-panel">
+          <header className="nt-entry__hero">
+            <p className="nt-section-eyebrow">Google sign-in</p>
+            {phase === 'verifying' && (
+              <>
+                <div className="nt-signin-spinner" aria-hidden="true" />
+                <h1 className="nt-entry__title nt-signin__title">Signing you in</h1>
+                <p className="nt-entry__lede">
+                  Verifying your Google session with NeoTerritory.
+                </p>
+              </>
+            )}
+            {phase === 'success' && (
+              <>
+                <h1 className="nt-entry__title nt-signin__title">Signed in</h1>
+                <p className="nt-entry__lede">Redirecting you to the studio…</p>
+              </>
+            )}
+            {phase === 'error' && (
+              <>
+                <h1 className="nt-entry__title nt-signin__title">Sign-in failed</h1>
+                <p className="nt-entry__lede" role="alert">{errorMsg}</p>
+              </>
+            )}
+          </header>
           {phase === 'error' && (
-            <>
-              <h1>Sign-in failed</h1>
-              <p>{errorMsg}</p>
+            <footer className="nt-signin-foot">
               <button type="button" className="ghost-btn" onClick={() => navigate('/choose')}>
                 Back to entry choices
               </button>
-            </>
+            </footer>
           )}
         </div>
       </section>

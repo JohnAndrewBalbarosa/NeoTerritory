@@ -3205,3 +3205,53 @@ body[data-surface] {
   font-size: 0.9rem;
   line-height: 1.55;
 }
+
+/* ──────────────────────────────────────────────────────────────────────
+ * Google sign-in screens (/developer/login, /student-learning/login,
+ * /auth/callback). Reuses the entry-shell + entry-panel chrome so the
+ * sign-in surface feels like a continuation of the choose page instead
+ * of a bare auth form. Replaces the inline-style padding the original
+ * GoogleSignInPage / GoogleCallback components used.
+ * ──────────────────────────────────────────────────────────────────── */
+.nt-signin-shell {
+  width: min(100%, 540px);
+}
+.nt-signin-panel {
+  padding: clamp(2rem, 1.4rem + 3vw, 3.4rem) clamp(1.4rem, 1rem + 2vw, 2.6rem);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(1.2rem, 0.8rem + 1.5vw, 2rem);
+  text-align: center;
+}
+.nt-signin__title {
+  font-size: clamp(1.6rem, 1rem + 2vw, 2.4rem);
+  margin-bottom: 0.6rem;
+}
+.nt-signin-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+.nt-signin-foot {
+  display: flex;
+  justify-content: center;
+}
+/* Token-driven spinner for the OAuth verify phase. Keeps the user
+ * oriented during the 1–3s round-trip without leaning on a third-party
+ * loader library. */
+.nt-signin-spinner {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 209, 216, 0.18);
+  border-top-color: var(--devcon-cyan);
+  animation: nt-signin-spin 0.9s linear infinite;
+}
+@keyframes nt-signin-spin {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-signin-spinner { animation: none; opacity: 0.6; }
+}

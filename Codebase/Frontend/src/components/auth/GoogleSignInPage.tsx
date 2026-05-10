@@ -13,25 +13,29 @@ export default function GoogleSignInPage() {
 
   return (
     <main className="nt-entry" id="main">
-      <section className="nt-entry-shell" aria-labelledby="signin-heading">
-        <div className="nt-entry-panel" style={{ maxWidth: '480px', textAlign: 'center', padding: '4rem 2rem' }}>
-          <p className="nt-section-eyebrow">
-            {role === 'student' ? 'Student learning' : 'Developer access'}
-          </p>
-          <h1 id="signin-heading" className="nt-entry__title" style={{ marginBottom: '0.75rem' }}>
-            Sign in to continue
-          </h1>
-          <p className="nt-entry__lede" style={{ marginBottom: '2rem' }}>
-            {role === 'student'
-              ? 'Your progress through the learning path is tied to your Google account.'
-              : 'Documentation runs and saved analyses are tied to your Google account.'}
-          </p>
-          <GoogleSignInButton role={role} redirectAfter={next} />
-          <div style={{ marginTop: '2rem' }}>
+      <section className="nt-entry-shell nt-signin-shell" aria-labelledby="signin-heading">
+        <div className="nt-entry-panel nt-signin-panel">
+          <header className="nt-entry__hero">
+            <p className="nt-section-eyebrow">
+              {role === 'student' ? 'Student learning' : 'Developer access'}
+            </p>
+            <h1 id="signin-heading" className="nt-entry__title nt-signin__title">
+              Sign in to continue
+            </h1>
+            <p className="nt-entry__lede">
+              {role === 'student'
+                ? 'Your progress through the learning path is tied to your Google account.'
+                : 'Documentation runs and saved analyses are tied to your Google account.'}
+            </p>
+          </header>
+          <div className="nt-signin-action">
+            <GoogleSignInButton role={role} redirectAfter={next} />
+          </div>
+          <footer className="nt-signin-foot">
             <button type="button" className="ghost-btn" onClick={() => navigate('/choose')}>
               Back to entry choices
             </button>
-          </div>
+          </footer>
         </div>
       </section>
     </main>

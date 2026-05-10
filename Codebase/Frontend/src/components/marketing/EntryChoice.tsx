@@ -122,8 +122,9 @@ export default function EntryChoice() {
           </div>
 
           <p className="nt-entry__helper">
-            Not sure which one to choose? Start with Student Learning if you are new to design
-            patterns.
+            {testersHidden
+              ? 'Developer and Student Learning sign in with a Google account. Admin uses the protected dashboard credentials.'
+              : 'Not sure which one to choose? Start with Student Learning if you are new to design patterns.'}
           </p>
 
           <div className="nt-entry__back">
