@@ -12,6 +12,10 @@ interface MarketingNavProps {
   current: Surface;
 }
 
+// Per user direction (this turn): /learn is dropped from the nav. Lesson
+// content moved into /patterns/<slug> detail pages so /patterns is the
+// single learning + reference surface. /learn still routes (back-compat for
+// anyone who bookmarked it) but is not advertised.
 const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | null }> = [
   { path: '/', label: 'Home', surface: 'hero' },
   { path: '/mechanics', label: 'How it works', surface: 'mechanics' },
@@ -19,7 +23,6 @@ const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | nul
   { path: '/patterns', label: 'Patterns', surface: 'patterns' },
   { path: '/tour', label: 'Tour', surface: 'tour' },
   { path: '/research', label: 'Research', surface: 'research' },
-  { path: '/learn', label: 'Learn', surface: 'learn' },
   { path: '/about', label: 'About', surface: 'about' },
 ];
 

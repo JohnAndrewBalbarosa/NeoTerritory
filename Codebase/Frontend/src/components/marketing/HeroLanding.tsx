@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
+import TryItChooser from './TryItChooser';
 
 // Per D40 (audience reframe), D41 (effects budget), D42 (info offloading),
 // D43 (features-first hierarchy), and the doc blueprint at
@@ -133,6 +134,12 @@ const FAQ: ReadonlyArray<FaqItem> = [
 ];
 
 export default function HeroLanding() {
+  // Try-it chooser: clicking the primary CTA opens this instead of routing
+  // straight to the gated studio. Picking "Learning" goes to the open
+  // /student-learning surface; picking "Studio" goes to /student-studio
+  // where sign-in is triggered.
+  const [chooserOpen, setChooserOpen] = useState<boolean>(false);
+
   // Hash-anchor support: nav can route to /#features. On mount and on every
   // hash change, scroll the matching anchor into view if present.
   useEffect(() => {
@@ -149,6 +156,8 @@ export default function HeroLanding() {
   }, []);
 
   return (
+    <>
+    <TryItChooser open={chooserOpen} onClose={() => setChooserOpen(false)} />
     <main className="nt-home" id="main">
       <section className="nt-home__above" aria-labelledby="home-heading">
         <p className="nt-home__eyebrow">Design pattern tutor</p>
@@ -199,7 +208,7 @@ export default function HeroLanding() {
         </ol>
 
         <div className="nt-home__primary-cta">
-          <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+          <MagneticButton variant="primary" onClick={() => setChooserOpen(true)}>
             Try it now
           </MagneticButton>
         </div>
@@ -274,10 +283,11 @@ export default function HeroLanding() {
       </section>
 
       <section className="nt-home__final-cta">
-        <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+        <MagneticButton variant="primary" onClick={() => setChooserOpen(true)}>
           Try it now
         </MagneticButton>
       </section>
     </main>
+    </>
   );
 }

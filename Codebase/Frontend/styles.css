@@ -875,27 +875,24 @@ body::before {
   padding: 24px clamp(16px, 3vw, 36px) 40px;
 }
 
+/* Per refinement turn (this commit): topbar simplified to a sticky-top
+   block. The earlier "self-scroll fallback" (max-height + overflow: auto)
+   is removed because it created a nested scrollbar inside the topbar
+   itself when the page got tall, which competed with the page scroll. The
+   user's direction was "normal na div sa taas ng mga component, ayaw kong
+   nasama sya sa scrolling" — translated: pinned to the top of the studio,
+   not part of the page scroll, but rendered as a plain block, not a
+   floating overlay with backdrop blur. */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 50;
   align-items: stretch;
-  margin: -10px 0 22px;
-  padding: 18px;
+  margin: 0 0 18px;
+  padding: 16px 18px;
   border: 1px solid rgba(0, 209, 216, 0.18);
-  border-radius: 18px;
-  background: linear-gradient(180deg, rgba(15, 27, 46, 0.86), rgba(13, 15, 20, 0.72));
-  box-shadow: var(--devcon-panel-glow);
-  backdrop-filter: blur(18px);
-  /* If the topbar would otherwise exceed the viewport (narrow widths
-     where brand + status card stack), let the topbar scroll its own
-     content instead of pushing the studio off-screen. Without this,
-     sticky cannot pin reliably because the element is taller than the
-     viewport — the bottom slips out of frame and behavior reverts to
-     "scrolls with the page". 24px reserves space for the next sibling
-     (.tab-bar) to peek through. */
-  max-height: calc(100vh - 24px);
-  overflow: auto;
+  border-radius: 14px;
+  background: var(--surface);
 }
 /* Below the 980px breakpoint, the topbar already collapses to a single
    column (line 197). Hide the lede there so the topbar fits the

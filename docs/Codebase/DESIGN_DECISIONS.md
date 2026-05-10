@@ -796,3 +796,58 @@ The public `/tour` page references `imagePath: '/tour/<slug>.png'` per step. The
 **Output**: `Codebase/Frontend/public/tour/<slug>.png`. After successful capture the script patches `tourSteps.ts` so `imagePath` points at the new files. The `/tour` page picks them up at next reload.
 
 **Why a script and not a hook**: capture is a deliberate, supervised action — the studio must be in a known state, and re-running it accidentally during CI would write screenshots from a non-representative state. The script is invoked manually when the user wants to refresh the tour images.
+
+## D54 — Joyride is tab-aware; sign-in step removed
+External feedback (this turn): the previous in-studio Joyride tour was a single 8-step monolith that included a "Sign in" step the user had already cleared by the time they reached the studio. The tour also rendered the same 8 steps regardless of which studio tab the user was viewing.
+
+**New behaviour**:
+- Five distinct tab-scoped tours: `submit`, `annotated` (Patterns), `gdb` (Tests), `docs`, `ambiguous` (Self-check). Each is short — one to three steps — focused on what the current tab actually lets the user do.
+- The "Sign in" step is gone. Joyride only mounts inside `MainLayout`, which only mounts after authentication, so the sign-in advisory was always redundant by the time it ran.
+- Auto-trigger reads `localStorage.nt_studio_tour_completed__<tab>` so each tab tour fires once on its first visit and never again unless replayed.
+- Replay button (`? Tour` in the studio header) re-runs the CURRENT tab's tour from step 1, not the global tour.
+- Switching tabs cancels any running tour for the previous tab and starts (or skips, if already completed) the new tab's tour.
+
+**Implementation**: `StudioJoyrideTour.tsx` reads `activeTab` from the app store; a `STEPS_BY_TAB` map provides the per-tab step set; the `<Joyride>` component is keyed by `tourTab` so React tears down and remounts when the tab changes (forces Joyride to reset its own internal step index).
+
+**DOM targets** by tab:
+- `submit`: `#load-sample-btn`, `#analyze-btn`, `#analysis-form`.
+- `annotated`, `gdb`, `docs`, `ambiguous`: centered modals (no DOM target needed yet — content is informational rather than pointing).
+
+This supersedes D52's "single tour from sign-in to history" model. The same `tourSteps.ts` content remains the source of truth for the public `/tour` page.
+
+## D55 — Try-it chooser on Home: Learning vs. Studio
+Per user direction (this turn): clicking "Try it now" on the Home page must not jump straight to the gated studio. The visitor first picks between two paths:
+
+- **Learning module** → `/student-learning`. Open, no auth (per D47).
+- **Studio app** → `/student-studio`. Auth required.
+
+Sign-in is only triggered when the visitor picks Studio. This protects the audience profile from D40 (rusty-C++-via-AI users) from being blocked by an auth wall before they have any sense of what the product does.
+
+**Implementation**: `TryItChooser.tsx` modal opened from both Home CTAs (above the fold and final). The modal is dismissable with Escape and backdrop click. No-op until the user picks a path, at which point it closes and navigates.
+
+## D56 — /learn merged into /patterns
+Per user direction (this turn): the lesson content previously housed on `/learn` (whatItIs / whenToUse / everydayExample / prerequisites / correctStructure) moves onto the per-pattern detail pages at `/patterns/<slug>`. `/patterns` becomes the single learning + reference surface; `/learn` is dropped from the top nav (route still resolves for back-compat with bookmarks).
+
+**Why**: the audience cannot be expected to remember two separate learning surfaces. Pattern detail pages are the canonical "everything about this pattern" destination — including how to learn it.
+
+**Schema impact**: `PatternEntry` in `patternData.ts` gains optional fields `oneLiner`, `whatItIs`, `whenToUse`, `everydayExample`, `prerequisites`, `correctStructure`, `nesterukChapter`. `PatternDetailPage.tsx` renders these as a "Learn it" section above Problem/Solution and a "Correct structure" section after Detection.
+
+**Catalog expansion**: 7 additional patterns from Nesteruk 2022 added to `patternData.ts` — Observer, Iterator, Command, Composite, Template Method, State, Repository (the last is from the CodiNeo thesis Chapter 1.1 list of patterns DEVCON Luzon learners are expected to recognise; Nesteruk covers it under "patterns in modern application architectures"). PIMPL is also promoted from "samples-only" to a full reference entry.
+
+## D57 — Research bibliography reflects the actual thesis paper
+Per user direction (this turn): the research bibliography must use the actual CodiNeo thesis at `FINAL THESIS 3 PAPER.pdf` (root) as its anchor, with citations consistent with the thesis bibliography.
+
+**Primary book**: Nesteruk, D. (2022) *Design Patterns in Modern C++20*, Apress. The thesis cites this in Chapter 1.1 + 2 as the design-pattern reference. The Refactoring.Guru entry from Sprint 10 is removed — it was a guess made before the thesis PDF was inspected; Nesteruk 2022 is what the paper actually cites.
+
+**Thesis paper itself**: `docs/Research/codineo-thesis.md` — the authors, school, year, adviser, panel, and a summary of which design decisions in this `DESIGN_DECISIONS.md` correspond to which thesis chapter.
+
+**Thesis-cited papers** added: Romeo et al. (2024), Rukmono et al. (2021), Park et al. (2021), Nguyen Quang Do et al. (2020), Hou et al. (2024). Each entry's "Why it matters for this thesis" section names the thesis chapter that cites it.
+
+## D58 — Studio topbar simplified to plain sticky-top
+Per user direction (this turn): the studio topbar should be a "normal div sa taas ng mga component" but "ayaw kong nasama sya sa scrolling" — translated, a plain sticky-top block, not a floating overlay with backdrop blur and self-scroll fallback.
+
+**Removed**: the previous `max-height: calc(100vh - 24px); overflow: auto` self-scroll trick (which created a nested scrollbar inside the topbar when the page got tall) and the `backdrop-filter: blur(18px)` glass effect.
+
+**Kept**: `position: sticky; top: 0;` so the topbar pins to the top of the studio while content scrolls beneath it.
+
+Net effect: the topbar reads as a regular block at the top of the studio that happens to stay pinned; no special-overlay styling.
