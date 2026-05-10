@@ -120,13 +120,21 @@ export function getRun(runId: string): { userId: number; done: boolean } | null 
 
 /**
  * Append a phase result to the run's event log. De-duped by
- * (phase, patternId) — emitting the same key twice is a no-op so a
- * retrying pod cannot duplicate UI rows.
+ * (phase, patternId, className) — the className is part of the key
+ * because the same patternId can legitimately apply to multiple
+ * classes in a single submission (e.g. behavioural.strategy_concrete
+ * matched on both Truck and Car). De-duping on patternId alone
+ * silently dropped the second class's events, so the FE saw the
+ * pattern row stuck at "idle" forever.
+ *
+ * Emitting the same (runId, phase, patternId, className) tuple twice
+ * is still a no-op — that's the idempotency guarantee a retrying
+ * out-of-process pod relies on.
  */
 export function pushPhaseEvent(runId: string, phase: TestPhase, result: TestResult): void {
   const rec = runs.get(runId);
   if (!rec || rec.done) return;
-  const key = `${phase}:${result.patternId}`;
+  const key = `${phase}:${result.patternId}:${result.className}`;
   if (rec.seenKeys.has(key)) return;
   rec.seenKeys.add(key);
   const event: RunPhaseEvent = {

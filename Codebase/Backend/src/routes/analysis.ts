@@ -1594,6 +1594,19 @@ async function handleRunTests(
 // no_template / sandbox_disabled) is a non-result, not a failure, and
 // must not pollute the gdb.<phase>.fail log stream — that's what was
 // showing up as phantom failures in the accuracy chip.
+// Persist run results as ONE atomic bagsakan at the very end of the run.
+// All per-phase log rows + the run-level summary row are written inside a
+// single SQLite transaction, so admin queries (accuracy chip, run list,
+// reviews) cannot observe a half-written run where the per-phase counts
+// disagree with the summary count. Either every row from this run lands
+// or none of them do.
+//
+// The run-level summary row is the canonical "this test-run instance
+// happened" record — one row per click of "Run tests", carrying total /
+// passed / failed and the tagged-pattern set as a JSON detail. That is
+// the row admin and survey/review joins should count against, so the
+// "test instances vs design-pattern runs vs review runs" mismatch the
+// project owner flagged stops happening.
 function finalizeRunLogs(userId: number | null, results: TestResult[]): void {
   const isCountableResult = (r: TestResult): boolean =>
     !!r.patternId && !!r.className && typeof r.phase === 'string'
@@ -1607,13 +1620,49 @@ function finalizeRunLogs(userId: number | null, results: TestResult[]): void {
   );
   if (!allComplete) return;
 
+  // Collect everything we want to persist BEFORE opening the transaction
+  // so the critical section is purely write work. Each row is written
+  // through logEvent so its existing supabase mirror still fires.
+  const perPhaseRows: Array<{ ev: string; detail: string }> = [];
+  let passed = 0;
+  let failed = 0;
+  const taggedPatterns = new Set<string>();
   for (const r of results) {
     if (!isCountableResult(r)) continue;
-    const ok = r.passed;
-    const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
+    if (r.passed) passed += 1; else failed += 1;
+    taggedPatterns.add(`${r.patternId}|${r.className}`);
+    const ev = r.passed ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
     const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
-                 + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
-    logEvent(userId, ev, detail);
+                 + (r.passed ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+    perPhaseRows.push({ ev, detail });
+  }
+
+  const summary = {
+    total: passed + failed,
+    passed,
+    failed,
+    taggedPatterns: [...taggedPatterns]
+  };
+  const summaryDetail = JSON.stringify(summary);
+
+  // better-sqlite3 transactions run synchronously and commit/rollback as
+  // a unit. logEvent() writes to the local DB and best-effort mirrors to
+  // supabase; the supabase mirror is async/fire-and-forget, so it does
+  // not affect transactional atomicity here.
+  const writeAll = db.transaction(() => {
+    for (const row of perPhaseRows) {
+      logEvent(userId, row.ev, row.detail);
+    }
+    logEvent(userId, 'gdb.run.complete', summaryDetail);
+  });
+  try {
+    writeAll();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[run-tests] finalizeRunLogs transaction failed', err);
+    // Defensively re-raise so the streaming dispatcher can mark the run
+    // as failed instead of silently telling the FE everything was fine.
+    throw err;
   }
 }
 
