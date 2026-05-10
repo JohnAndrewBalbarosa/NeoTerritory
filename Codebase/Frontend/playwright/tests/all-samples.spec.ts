@@ -140,6 +140,15 @@ async function signInAsTester(page: Page): Promise<void> {
         localStorage.setItem('nt_token', token);
         localStorage.setItem('nt_user', JSON.stringify(user));
         sessionStorage.setItem('nt-entry-flow', 'developer');
+        // Suppress the StartHereRail (D45) and every tab-scoped Joyride
+        // tour (D54). Both overlay the studio with click-blocking layers
+        // that would intercept Playwright's interactions. Marking each as
+        // already-dismissed/completed keeps them out of the way without
+        // disabling their production behaviour.
+        localStorage.setItem('nt_start_here_dismissed', '1');
+        for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
+          localStorage.setItem(`nt_studio_tour_completed__${tab}`, '1');
+        }
       } catch {
         /* private mode or quota; the URL assertion below will fail loudly */
       }
