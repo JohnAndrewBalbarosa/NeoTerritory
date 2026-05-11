@@ -237,51 +237,79 @@ const STAGES: ReadonlyArray<Stage> = [
     id: 'stage-4',
     title: 'Virtual-only inspection',
     paragraph:
-      'Once the virtual tree is built and tagged, every subsequent pass reads only the virtual copy. The actual class is already affected — its tags are computed and attached — so there is nothing more to add by re-walking the original source. This is what keeps the algorithm linear in source size and reproducible.',
+      'There is one detector. Patterns are not hardcoded as separate passes - the detector loads pattern definitions from JSON files in the catalog (one JSON per pattern) and runs the same structural checks against the virtual tree. Adding a new pattern means dropping a JSON file; the engine never recompiles. This keeps the algorithm extensible and the inspection deterministic.',
     diagram: (
-      <StageSvg label="Detector passes read only the virtual tree">
-        {/* Detector passes column */}
+      <StageSvg label="One detector loads JSON pattern files and inspects the virtual tree" height={300}>
+        {/* JSON catalog column (left) */}
         <g fontFamily={FONT_UI}>
           <text x="40" y="32" fill={COLOR_TEXT_SOFT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
-            DETECTOR PASSES
+            pattern_catalog/ (JSON files)
           </text>
           {[
-            { y: 60, label: 'detectSingleton' },
-            { y: 105, label: 'detectBuilder' },
-            { y: 150, label: 'detectAdapter' },
-            { y: 195, label: 'detectStrategy' },
+            { y: 56, label: 'creational/singleton.json' },
+            { y: 92, label: 'creational/builder.json' },
+            { y: 128, label: 'structural/adapter.json' },
+            { y: 164, label: 'behavioural/strategy.json' },
+            { y: 200, label: 'idiom/pimpl.json' },
           ].map((p) => (
             <g key={p.label}>
-              <rect x="40" y={p.y} width="190" height="32" rx="8" fill="rgba(0,209,216,0.10)" stroke={COLOR_ACCENT} />
-              <text x="60" y={p.y + 21} fill={COLOR_TEXT} fontFamily={FONT_MONO} fontSize="12">
-                {p.label}()
+              <rect x="40" y={p.y} width="230" height="28" rx="6" fill={COLOR_PANEL} stroke={COLOR_LIME} />
+              <text x="56" y={p.y + 19} fill={COLOR_TEXT} fontFamily={FONT_MONO} fontSize="11">
+                {p.label}
               </text>
             </g>
           ))}
+          <text x="155" y="248" fill={COLOR_TEXT_SOFT} fontFamily={FONT_UI} fontSize="11" textAnchor="middle">
+            Drop a JSON; no recompile.
+          </text>
         </g>
 
-        {/* Virtual tree on the right (highlighted as the one source they read) */}
+        {/* JSON parser in the middle */}
         <g>
-          <text x="500" y="32" fill={COLOR_ACCENT} fontSize="11" letterSpacing="0.12em" fontFamily={FONT_MONO}>
-            VIRTUAL TREE (read-only here)
+          <line x1="270" y1="135" x2="340" y2="135" stroke={COLOR_LIME} strokeWidth="2" />
+          <polygon points="340,135 332,131 332,139" fill={COLOR_LIME} />
+          <rect x="340" y="105" width="160" height="64" rx="12" fill={COLOR_PANEL} stroke={COLOR_LIME} />
+          <text x="420" y="128" fill={COLOR_LIME} fontFamily={FONT_MONO} fontSize="11" textAnchor="middle" letterSpacing="0.06em">
+            JSON PARSER
           </text>
-          <rect x="500" y="60" width="320" height="180" rx="14" fill="rgba(0,209,216,0.10)" stroke={COLOR_ACCENT} />
-          <text x="660" y="155" fill={COLOR_TEXT} fontFamily={FONT_UI} fontSize="14" textAnchor="middle">
+          <text x="420" y="148" fill={COLOR_TEXT} fontFamily={FONT_UI} fontSize="12" textAnchor="middle">
+            structure rules
+          </text>
+          <text x="420" y="164" fill={COLOR_TEXT_SOFT} fontFamily={FONT_MONO} fontSize="10" textAnchor="middle">
+            tokens · ordered_checks
+          </text>
+        </g>
+
+        {/* Single detector */}
+        <g>
+          <line x1="500" y1="135" x2="560" y2="135" stroke={COLOR_ACCENT} strokeWidth="2" />
+          <polygon points="560,135 552,131 552,139" fill={COLOR_ACCENT} />
+          <rect x="560" y="100" width="160" height="72" rx="12" fill="rgba(0,209,216,0.12)" stroke={COLOR_ACCENT} />
+          <text x="640" y="124" fill={COLOR_ACCENT} fontFamily={FONT_MONO} fontSize="11" textAnchor="middle" letterSpacing="0.08em">
+            ONE DETECTOR
+          </text>
+          <text x="640" y="146" fill={COLOR_TEXT} fontFamily={FONT_UI} fontSize="13" textAnchor="middle">
+            inspect(virtual)
+          </text>
+          <text x="640" y="164" fill={COLOR_TEXT_SOFT} fontFamily={FONT_MONO} fontSize="10" textAnchor="middle">
+            same code, every pattern
+          </text>
+        </g>
+
+        {/* Virtual tree at the far right */}
+        <g>
+          <line x1="720" y1="135" x2="780" y2="135" stroke={COLOR_ACCENT} strokeWidth="2" />
+          <polygon points="780,135 772,131 772,139" fill={COLOR_ACCENT} />
+          <rect x="780" y="80" width="60" height="112" rx="10" fill="rgba(0,209,216,0.10)" stroke={COLOR_ACCENT} />
+          <text x="810" y="142" fill={COLOR_TEXT} fontFamily={FONT_UI} fontSize="11" textAnchor="middle" transform="rotate(-90 810 142)">
             virtual_tree
           </text>
         </g>
 
-        {/* Arrows from each pass to the virtual tree */}
-        {[76, 121, 166, 211].map((y) => (
-          <g key={y}>
-            <line x1="230" y1={y} x2="498" y2="150" stroke={COLOR_ACCENT} strokeWidth="1.5" opacity="0.7" />
-          </g>
-        ))}
-
-        {/* "actual_tree" greyed out */}
-        <g opacity="0.45">
-          <rect x="280" y="240" width="160" height="28" rx="6" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
-          <text x="360" y="259" fill={COLOR_TEXT_SOFT} fontFamily={FONT_MONO} fontSize="11" textAnchor="middle">
+        {/* actual_tree greyed-out below */}
+        <g opacity="0.42">
+          <rect x="560" y="252" width="160" height="28" rx="6" fill={COLOR_PANEL} stroke={COLOR_BORDER} />
+          <text x="640" y="271" fill={COLOR_TEXT_SOFT} fontFamily={FONT_MONO} fontSize="11" textAnchor="middle">
             actual_tree (untouched)
           </text>
         </g>

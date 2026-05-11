@@ -111,7 +111,7 @@ function PatternSection({ p, annotations }: { p: DetectedPatternFull; annotation
 }
 
 export default function DocumentationTab() {
-  const { currentRun, aiStatus } = useAppStore();
+  const { currentRun } = useAppStore();
   const contentRef = useRef<HTMLDivElement>(null);
 
   if (!currentRun) {
@@ -125,18 +125,15 @@ export default function DocumentationTab() {
   const groups = groupByFamily(currentRun.detectedPatterns);
   const primaryFile = currentRun.files?.[0]?.name ?? currentRun.sourceName ?? 'source.cpp';
 
-  // Top-of-page documentation-source banner. Replaces the per-row AI
-  // pending pill the project owner asked us to drop. We surface ONE of
-  // three messages once: AI ready, AI working, or static-only.
+  // Per user direction: drop the AI-pending banner entirely. The Docs tab
+  // shows only two states - AI documentation included, or static-only. A
+  // pending banner would re-introduce the noisy "refresh shortly" message
+  // the user explicitly asked us to remove from the docs surface.
   const allAnns = currentRun.annotations || [];
   const hasAiAnnotations = allAnns.some(isAiAnnotation);
   const docsBanner = hasAiAnnotations
     ? { kind: 'ai-ready', label: 'AI documentation included for this run.' }
-    : aiStatus === 'pending'
-      ? { kind: 'ai-pending', label: 'Static documentation only (AI commentary still arriving — refresh shortly).' }
-      : aiStatus === 'failed'
-        ? { kind: 'ai-failed', label: 'Static documentation only (AI commentary failed for this run).' }
-        : { kind: 'static-only', label: 'Static documentation only.' };
+    : { kind: 'static-only', label: 'Static documentation only.' };
 
   function handleDocx() {
     if (contentRef.current) downloadDocx(currentRun!, contentRef.current.innerHTML);

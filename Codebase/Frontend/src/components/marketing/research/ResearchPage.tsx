@@ -261,6 +261,27 @@ export default function ResearchPage() {
             </li>
           ))}
         </ol>
+        <div className="nt-research__method-note">
+          <h3>Why pre-templated tests work here</h3>
+          <p>
+            Structural analysis on arbitrary source code does not produce semantic meaning by
+            itself - a tree of class declarations is just shape. Design patterns are what bridge
+            that gap. Because every supported pattern is a named, idiomatic arrangement of
+            classes, methods, and ownership, recognising the structure recognises the meaning at
+            the same time. A class that matches the Builder shape <em>is</em> a Builder; a class
+            that matches the wrapping signature is some flavour of Adapter/Proxy/Decorator.
+          </p>
+          <p>
+            That semantic-from-structure equivalence is what lets the system ship{' '}
+            <strong>pre-templated unit tests</strong>. Each pattern in{' '}
+            <code>pattern_catalog/&lt;family&gt;/&lt;pattern&gt;.test.template.cpp</code> is a
+            GoogleTest scaffold targeting the contract the pattern implies (e.g. Singleton:
+            &ldquo;the second call returns the same address as the first&rdquo;). The detector
+            tags the class, the scaffold fills in the class name and load-bearing methods, and
+            the resulting test exercises behaviour the structure alone tells us must hold. No
+            data-flow analysis required - the pattern <em>is</em> the meaning.
+          </p>
+        </div>
       </section>
 
       <section className="nt-research__section" aria-labelledby="rp-contribution">

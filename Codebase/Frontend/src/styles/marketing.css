@@ -5056,3 +5056,32 @@ body[data-surface] {
   border-color: var(--nt-mkt-accent);
   outline: none;
 }
+
+/* Research method note (semantic-from-structure) */
+.nt-research__method-note {
+  margin-top: 1rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(166, 255, 0, 0.32);
+  border-radius: 12px;
+  background: linear-gradient(160deg, rgba(166, 255, 0, 0.06), rgba(0, 209, 216, 0.04));
+}
+.nt-research__method-note h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-research__method-note p {
+  margin: 0 0 0.55rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.65;
+  font-size: 0.94rem;
+}
+.nt-research__method-note p:last-child { margin-bottom: 0; }
+.nt-research__method-note code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0, 209, 216, 0.10);
+  padding: 0 4px;
+  border-radius: 3px;
+  font-size: 0.84rem;
+}
