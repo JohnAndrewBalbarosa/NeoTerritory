@@ -1,0 +1,115 @@
+%% CodiNeo — Use Case Diagram (Mermaid mirror of use_case.puml)
+%% Render: paste into https://mermaid.live  OR  any markdown viewer with Mermaid support.
+%% Mermaid does not have a native UML use-case shape, so this is rendered as a labelled
+%% graph: rounded nodes = use cases, square boxes = actors, dashed arrows = include/extend.
+
+flowchart LR
+    %% ---------- Actors ----------
+    Learner[Learner]:::actor
+    Developer[Developer]:::actor
+    Admin[Admin]:::actor
+
+    subgraph LP[Learner Pathway]
+        UC_Auth([Authenticate to the System])
+        UC_Browse([Browse Learning Catalogue])
+        UC_OpenModule([Open a Design-Pattern Module])
+        UC_StudyModule([Study Module Content])
+        UC_ModuleSelfCheck([Take the Module Self-Check])
+        UC_CrossOver([Cross Over to the Developer Studio])
+    end
+
+    subgraph DP[Developer Pathway]
+        UC_Submit([Submit C++ Source Code])
+        UC_Paste([Paste Source Snippet])
+        UC_UploadSingle([Upload Single File])
+        UC_UploadMulti([Upload Multiple Files])
+
+        UC_Analyse([Run Structural Analysis])
+        UC_Lex([Lexical Scan])
+        UC_VSC([Build Virtual Structural Copy])
+        UC_Dispatch([Dispatch Pattern Catalog])
+        UC_Bind([Bind Evidence to Code Units])
+        UC_Hash([Compute Hash & Link Analysis])
+
+        UC_ViewEvidence([View Detected Pattern Evidence])
+        UC_Highlight([Inspect Highlighted Code Units])
+        UC_GenDocs([Generate Documentation Output])
+        UC_GenTests([Generate Templated Unit Tests])
+        UC_RunTests([Run Templated Unit Tests])
+        UC_SaveRun([Save Analysis Run])
+        UC_Validate([Submit Self-Check / Validation])
+        UC_Feedback([Submit Post-Session Feedback])
+    end
+
+    subgraph AP[Admin Pathway]
+        UC_AdminAuth([Authenticate as Admin])
+        UC_ManageAccts([Manage Tester Accounts])
+        UC_Monitor([Monitor Active Sessions])
+        UC_ViewRuns([View Saved Analysis Runs])
+        UC_ViewReviews([Inspect Reviews & Self-Check])
+        UC_ViewSurveys([View Survey Responses])
+        UC_Logs([View Logs & Audit Records])
+        UC_FreqStats([View Pattern-Frequency Stats])
+        UC_KPI([View KPI Records])
+        UC_Confusion([View Confusion-Matrix Outcomes])
+        UC_Export([Export Evaluation Data])
+    end
+
+    %% ---------- Learner edges ----------
+    Learner --> UC_Auth
+    Learner --> UC_Browse
+    Learner --> UC_OpenModule
+    Learner --> UC_StudyModule
+    Learner --> UC_ModuleSelfCheck
+    Learner --> UC_CrossOver
+
+    %% ---------- Developer edges ----------
+    Developer --> UC_Auth
+    Developer --> UC_Submit
+    Developer --> UC_Analyse
+    Developer --> UC_ViewEvidence
+    Developer --> UC_Highlight
+    Developer --> UC_GenDocs
+    Developer --> UC_GenTests
+    Developer --> UC_RunTests
+    Developer --> UC_SaveRun
+    Developer --> UC_Validate
+    Developer --> UC_Feedback
+
+    %% ---------- Admin edges ----------
+    Admin --> UC_AdminAuth
+    Admin --> UC_ManageAccts
+    Admin --> UC_Monitor
+    Admin --> UC_ViewRuns
+    Admin --> UC_ViewReviews
+    Admin --> UC_ViewSurveys
+    Admin --> UC_Logs
+    Admin --> UC_FreqStats
+    Admin --> UC_KPI
+    Admin --> UC_Confusion
+    Admin --> UC_Export
+
+    %% ---------- include / extend ----------
+    UC_Submit  -. include .-> UC_Paste
+    UC_Submit  -. include .-> UC_UploadSingle
+    UC_Submit  -. include .-> UC_UploadMulti
+
+    UC_Analyse -. include .-> UC_Lex
+    UC_Analyse -. include .-> UC_VSC
+    UC_Analyse -. include .-> UC_Dispatch
+    UC_Analyse -. include .-> UC_Bind
+    UC_Analyse -. include .-> UC_Hash
+
+    UC_ViewEvidence -. extend .-> UC_Analyse
+    UC_Highlight    -. extend .-> UC_ViewEvidence
+    UC_GenDocs      -. extend .-> UC_ViewEvidence
+    UC_GenTests     -. extend .-> UC_ViewEvidence
+    UC_RunTests     -. extend .-> UC_GenTests
+    UC_SaveRun      -. extend .-> UC_Analyse
+
+    UC_CrossOver  -. extend .-> UC_Submit
+    UC_AdminAuth  -. extend .-> UC_Auth
+    UC_Confusion  -. extend .-> UC_KPI
+    UC_FreqStats  -. extend .-> UC_ViewRuns
+
+    classDef actor fill:#FFFFFF,stroke:#2F2F2F,stroke-width:2px,color:#000;

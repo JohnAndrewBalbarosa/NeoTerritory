@@ -1,0 +1,134 @@
+@startuml CodiNeo_UseCase
+' CodiNeo — Use Case Diagram (Chapter 3.4.4)
+' Render: plantuml use_case.puml   OR   paste into https://www.planttext.com
+
+skinparam handwritten false
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #FFFFFF
+  BorderColor    #2F2F2F
+  ArrowColor     #2F2F2F
+}
+left to right direction
+title CodiNeo — Use Case Diagram
+
+actor "Learner"   as Learner
+actor "Developer" as Developer
+actor "Admin"     as Admin
+
+rectangle "CodiNeo System" {
+
+  package "Learner Pathway" {
+    usecase "Authenticate to the System"            as UC_Auth
+    usecase "Browse Learning Catalogue"             as UC_Browse
+    usecase "Open a Design-Pattern Module"          as UC_OpenModule
+    usecase "Study Module Content"                  as UC_StudyModule
+    usecase "Take the Module Self-Check"            as UC_ModuleSelfCheck
+    usecase "Cross Over to the Developer Studio"    as UC_CrossOver
+  }
+
+  package "Developer Pathway" {
+    usecase "Submit C++ Source Code"                as UC_Submit
+    usecase "Paste Source Snippet"                  as UC_Paste
+    usecase "Upload Single File"                    as UC_UploadSingle
+    usecase "Upload Multiple Files"                 as UC_UploadMulti
+
+    usecase "Run Structural Analysis"               as UC_Analyse
+    usecase "Lexical Scan"                          as UC_Lex
+    usecase "Build Virtual Structural Copy"         as UC_VSC
+    usecase "Dispatch Pattern Catalog"              as UC_Dispatch
+    usecase "Bind Evidence to Code Units"           as UC_Bind
+    usecase "Compute Hash and Link Analysis"        as UC_Hash
+
+    usecase "View Detected Pattern Evidence"        as UC_ViewEvidence
+    usecase "Inspect Highlighted Code Units"        as UC_Highlight
+    usecase "Generate Documentation Output"         as UC_GenDocs
+    usecase "Generate Templated Unit Tests"         as UC_GenTests
+    usecase "Run Templated Unit Tests"              as UC_RunTests
+    usecase "Save Analysis Run"                     as UC_SaveRun
+    usecase "Submit Self-Check / Validation"        as UC_Validate
+    usecase "Submit Post-Session Feedback"          as UC_Feedback
+  }
+
+  package "Admin Pathway" {
+    usecase "Authenticate as Admin"                 as UC_AdminAuth
+    usecase "Manage Tester Accounts"                as UC_ManageAccts
+    usecase "Monitor Active Sessions"               as UC_Monitor
+    usecase "View Saved Analysis Runs"              as UC_ViewRuns
+    usecase "Inspect Reviews & Self-Check"          as UC_ViewReviews
+    usecase "View Survey Responses"                 as UC_ViewSurveys
+    usecase "View Logs & Audit Records"             as UC_Logs
+    usecase "View Pattern-Frequency Stats"          as UC_FreqStats
+    usecase "View KPI Records"                      as UC_KPI
+    usecase "View Confusion-Matrix Outcomes"        as UC_Confusion
+    usecase "Export Evaluation Data"                as UC_Export
+  }
+}
+
+' --- Learner edges -----------------------------------------------------
+Learner --> UC_Auth
+Learner --> UC_Browse
+Learner --> UC_OpenModule
+Learner --> UC_StudyModule
+Learner --> UC_ModuleSelfCheck
+Learner --> UC_CrossOver
+
+' --- Developer edges ---------------------------------------------------
+Developer --> UC_Auth
+Developer --> UC_Submit
+Developer --> UC_Analyse
+Developer --> UC_ViewEvidence
+Developer --> UC_Highlight
+Developer --> UC_GenDocs
+Developer --> UC_GenTests
+Developer --> UC_RunTests
+Developer --> UC_SaveRun
+Developer --> UC_Validate
+Developer --> UC_Feedback
+
+' --- Admin edges -------------------------------------------------------
+Admin --> UC_AdminAuth
+Admin --> UC_ManageAccts
+Admin --> UC_Monitor
+Admin --> UC_ViewRuns
+Admin --> UC_ViewReviews
+Admin --> UC_ViewSurveys
+Admin --> UC_Logs
+Admin --> UC_FreqStats
+Admin --> UC_KPI
+Admin --> UC_Confusion
+Admin --> UC_Export
+
+' --- include / extend relationships ------------------------------------
+' Submit C++ Source Code includes the three concrete submission modes
+UC_Submit         ..> UC_Paste        : <<include>>
+UC_Submit         ..> UC_UploadSingle : <<include>>
+UC_Submit         ..> UC_UploadMulti  : <<include>>
+
+' Run Structural Analysis includes the five internal pipeline steps
+UC_Analyse        ..> UC_Lex          : <<include>>
+UC_Analyse        ..> UC_VSC          : <<include>>
+UC_Analyse        ..> UC_Dispatch     : <<include>>
+UC_Analyse        ..> UC_Bind         : <<include>>
+UC_Analyse        ..> UC_Hash         : <<include>>
+
+' View / Inspect / GenDocs / GenTests extend Run Structural Analysis
+UC_ViewEvidence   ..> UC_Analyse      : <<extend>>
+UC_Highlight      ..> UC_ViewEvidence : <<extend>>
+UC_GenDocs        ..> UC_ViewEvidence : <<extend>>
+UC_GenTests       ..> UC_ViewEvidence : <<extend>>
+UC_RunTests       ..> UC_GenTests     : <<extend>>
+UC_SaveRun        ..> UC_Analyse      : <<extend>>
+
+' Inter-actor hand-off: Learner -> Developer pathway
+UC_CrossOver      ..> UC_Submit       : <<extend>>
+
+' Admin authentication shares the user-authentication use case
+UC_AdminAuth      ..> UC_Auth         : <<extend>>
+
+' Admin KPI views build on the confusion-matrix outcomes
+UC_Confusion      ..> UC_KPI          : <<extend>>
+UC_FreqStats      ..> UC_ViewRuns     : <<extend>>
+
+@enduml
