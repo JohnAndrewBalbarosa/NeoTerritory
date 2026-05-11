@@ -21,7 +21,7 @@ import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
 import {
-  runSubmissionCompile, runPatternUnitTest,
+  runSubmissionCompile, runPatternUnitTest, runStaticAnalysis,
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
 import {
@@ -1439,11 +1439,32 @@ async function dispatchPatternTests(
   const eligible = patterns.filter(p => p.className);
   if (eligible.length === 0) return [];
 
-  // The compile_run phase only depends on the submission's source, so we run
-  // it once and replay the same TestResult under every eligible pattern's
-  // (patternId, className) keys. Cuts a 5-pattern submission from 10 compile
-  // calls to 6, and each unit_test then runs in parallel below.
+  // Static analysis + compile_run both only depend on the submission's
+  // source, so we run each once and replay the same TestResult under every
+  // eligible pattern's (patternId, className) keys. Cuts a 5-pattern
+  // submission from 10 compile calls to 6 (and adds 1 static-analysis call,
+  // not 5). Each unit_test then runs in parallel below.
   const probe = eligible[0];
+
+  // Phase 0 — static analysis (cppcheck). Cheap, always runs, never blocks.
+  const sharedStatic = await runStaticAnalysis({
+    patternId:   probe.patternId,
+    patternName: probe.patternName,
+    className:   probe.className!,
+    classText:   probe.classText!,
+    fullSource,
+    files,
+    userId,
+    stdin
+  });
+  const staticResults: TestResult[] = eligible.map(p => ({
+    ...sharedStatic,
+    patternId:   p.patternId,
+    patternName: p.patternName,
+    className:   p.className!,
+  }));
+  for (const sr of staticResults) safeEmit(sr);
+
   const sharedCompile = await runSubmissionCompile({
     patternId:   probe.patternId,
     patternName: probe.patternName,
@@ -1480,7 +1501,7 @@ async function dispatchPatternTests(
       message:     'Skipped — your class did not compile or did not exit cleanly on its own.'
     }));
     for (const sk of skips) safeEmit(sk);
-    return [...compileResults, ...skips];
+    return [...staticResults, ...compileResults, ...skips];
   }
 
   // Compile succeeded → run every unit_test driver in parallel. Each driver
@@ -1509,7 +1530,7 @@ async function dispatchPatternTests(
     }).then((r) => { safeEmit(r); return r; });
   }));
 
-  return [...compileResults, ...unitResults];
+  return [...staticResults, ...compileResults, ...unitResults];
 }
 
 // A class is "ambiguous" when the matcher emitted two-or-more competing

@@ -15,18 +15,14 @@ const VERDICT_LABEL: Record<string, string> = {
   skipped:           'skipped'
 };
 
-// Per D67 (this turn): the studio surfaces NeoTerritory's full Testing
-// Trophy strategy. Today only compile_run + unit_test actually run; the
-// remaining phases (integration, e2e, static analysis) are visible as
-// planned so the test surface tells the truth about the strategy. As each
-// phase ships its real backend, its label flips from "(planned)" to a
-// running pill without UI rework.
+// Phase order on the studio Tests tab. Three live phases, applied to the
+// user's submitted C++ source. Integration and E2E are NOT phases here —
+// see the trophy explainer banner for why a class declaration does not
+// have those layers to exercise.
 const PHASE_LABEL: Record<string, string> = {
-  compile_run: '1. Code compiles & runs',
-  unit_test:   '2. Unit-test verdict',
-  integration: '3. Integration test (planned)',
-  e2e:         '4. End-to-end (planned)',
-  static:      '5. Static analysis (planned)',
+  static_analysis: '1. Static analysis (cppcheck)',
+  compile_run:     '2. Code compiles & runs',
+  unit_test:       '3. Unit-test verdict',
 };
 
 const FAMILY_LABEL: Record<string, string> = {
@@ -46,6 +42,7 @@ interface PatternGroup {
   patternId: string;
   patternName: string;
   className: string;
+  staticAnalysis?: GdbTestResult;
   compileRun?: GdbTestResult;
   unitTest?: GdbTestResult;
 }
@@ -64,7 +61,8 @@ function groupResults(results: GdbTestResult[]): PatternGroup[] {
       patternName: r.patternName,
       className: r.className
     };
-    if (r.phase === 'compile_run') g.compileRun = r;
+    if (r.phase === 'static_analysis') g.staticAnalysis = r;
+    else if (r.phase === 'compile_run') g.compileRun = r;
     else if (r.phase === 'unit_test') g.unitTest = r;
     map.set(key, g);
   }
@@ -119,7 +117,7 @@ function CriteriaList({ result }: { result?: GdbTestResult }) {
 }
 
 function PhaseRow({ phase, result, loading }: {
-  phase: 'compile_run' | 'unit_test';
+  phase: 'static_analysis' | 'compile_run' | 'unit_test';
   result?: GdbTestResult;
   loading: boolean;
 }) {
@@ -404,59 +402,63 @@ export default function GdbRunnerTab() {
           breakdown below; planned phases are listed here as a roadmap. */}
       <aside className="gdb-trophy-banner" aria-label="Testing Trophy strategy">
         <header>
-          <span className="gdb-trophy-eyebrow">Testing Trophy</span>
+          <span className="gdb-trophy-eyebrow">Testing Trophy &mdash; applied to your submission</span>
           <h2 className="gdb-trophy-title">How NeoTerritory tests your code</h2>
         </header>
         <ol className="gdb-trophy-phases">
-          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="compile_run">
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="static_analysis">
             <span className="gdb-trophy-num">01</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Compile &amp; run</p>
-              <p className="gdb-trophy-phase-note">Live: your code compiles and produces output.</p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="unit_test">
-            <span className="gdb-trophy-num">02</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Unit test</p>
-              <p className="gdb-trophy-phase-note">
-                Live: per-pattern scaffolds verify individual functions.
-              </p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="integration">
-            <span className="gdb-trophy-num">03</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Integration test</p>
-              <p className="gdb-trophy-phase-note">
-                Planned: exercises real microservice + backend + AI fallback paths against curated
-                samples. The bulk of the Trophy lives here.
-              </p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="e2e">
-            <span className="gdb-trophy-num">04</span>
-            <div>
-              <p className="gdb-trophy-phase-name">End-to-end (E2E)</p>
-              <p className="gdb-trophy-phase-note">
-                Planned: Playwright runs the studio start-to-finish on critical user flows.
-              </p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="static">
-            <span className="gdb-trophy-num">05</span>
             <div>
               <p className="gdb-trophy-phase-name">Static analysis</p>
               <p className="gdb-trophy-phase-note">
-                Planned: clang-tidy / cppcheck / ESLint as the broad base of the Trophy.
+                Live: cppcheck scans your source for likely defects and style issues. Runs first
+                because static findings are the cheapest to surface. Findings never block the
+                downstream phases.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="compile_run">
+            <span className="gdb-trophy-num">02</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Compile &amp; run</p>
+              <p className="gdb-trophy-phase-note">
+                Live: your class compiles under g++ and exits cleanly on its own.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="unit_test">
+            <span className="gdb-trophy-num">03</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Unit / contract test</p>
+              <p className="gdb-trophy-phase-note">
+                Live: per-pattern scaffolds exercise the contract the pattern implies (Singleton:
+                identity stability; Builder: terminal product; etc).
               </p>
             </div>
           </li>
         </ol>
+        <div className="gdb-trophy-explainer">
+          <p className="gdb-trophy-explainer-title">Why no integration or E2E here?</p>
+          <p>
+            The Trophy&rsquo;s upper layers exist on the NeoTerritory <strong>product</strong>, not
+            on your submission. A class declaration has no multi-service surface to integrate
+            against and no user-facing flow to run end-to-end, so applying those labels to your
+            code would be a category error. NeoTerritory&rsquo;s own integration + E2E tests live
+            under <code>Codebase/Frontend/playwright/</code> and exercise the studio itself; you
+            see them in CI, not on this tab.
+          </p>
+        </div>
         <p className="gdb-trophy-foot">
           Strategy: <strong>Testing Trophy</strong> (Kent C. Dodds). Read more on{' '}
-          <a href="/research" onClick={(e) => { e.preventDefault(); window.history.pushState(null, '', '/research'); window.dispatchEvent(new CustomEvent('nt:navigate')); }}>
-            /research
+          <a
+            href="/docs"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState(null, '', '/docs');
+              window.dispatchEvent(new CustomEvent('nt:navigate'));
+            }}
+          >
+            /docs
           </a>
           .
         </p>
@@ -597,8 +599,9 @@ export default function GdbRunnerTab() {
                 <span className="gdb-result-class">{active.className}</span>
                 <span className="gdb-result-pattern">{active.patternName}</span>
               </header>
-              <PhaseRow phase="compile_run" result={active.compileRun} loading={busy && !active.compileRun} />
-              <PhaseRow phase="unit_test"   result={active.unitTest}   loading={busy && active.compileRun?.passed === true && !active.unitTest} />
+              <PhaseRow phase="static_analysis" result={active.staticAnalysis} loading={busy && !active.staticAnalysis} />
+              <PhaseRow phase="compile_run"     result={active.compileRun}     loading={busy && !active.compileRun} />
+              <PhaseRow phase="unit_test"       result={active.unitTest}       loading={busy && active.compileRun?.passed === true && !active.unitTest} />
             </article>
           )}
         </div>

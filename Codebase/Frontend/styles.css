@@ -1888,6 +1888,31 @@ body::before {
   color: var(--ink-soft);
   line-height: 1.5;
 }
+.gdb-trophy-explainer {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm, 4px);
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 0.82rem;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.gdb-trophy-explainer-title {
+  margin: 0 0 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.gdb-trophy-explainer code {
+  font-family: var(--code-font);
+  font-size: 0.74rem;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
 .gdb-trophy-foot {
   margin: 12px 0 0;
   font-size: 0.82rem;
