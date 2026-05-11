@@ -4481,6 +4481,61 @@ body::before {
   background: linear-gradient(135deg, #6e20d8, #3870f0);
 }
 
+/* ── Evidence / Code Highlights main panel ───────────────────── */
+:root[data-theme="light"] .pattern-review-page .tab-panel.tab-annotated {
+  background: #ffffff;
+  border-color: rgba(15, 30, 60, 0.10);
+  box-shadow: 0 2px 12px rgba(15, 30, 60, 0.07);
+}
+
+/* ── Highlight-by-pattern select dropdown ────────────────────── */
+:root[data-theme="light"] .source-highlight-select select {
+  background: #ffffff;
+  border-color: rgba(15, 30, 60, 0.16);
+  color: var(--ink);
+}
+:root[data-theme="light"] .source-highlight-select {
+  color: var(--ink-soft);
+}
+
+/* ── Source view border (code pane) ─────────────────────────── */
+:root[data-theme="light"] .source-view--review {
+  border-color: rgba(15, 30, 60, 0.11);
+}
+
+/* ── Code Structure list items ───────────────────────────────── */
+:root[data-theme="light"] .structure-item-detail,
+:root[data-theme="light"] .structure-item {
+  background: #f7f9fc;
+  border-color: rgba(15, 30, 60, 0.10);
+}
+:root[data-theme="light"] .structure-item-detail--warning,
+:root[data-theme="light"] .structure-item--warning {
+  background: rgba(176, 96, 0, 0.05);
+  border-color: rgba(176, 96, 0, 0.22);
+}
+:root[data-theme="light"] .structure-item-detail summary small,
+:root[data-theme="light"] .structure-item div span {
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .structure-item__abbr {
+  background: rgba(0, 125, 138, 0.08);
+  border-color: rgba(0, 125, 138, 0.22);
+  color: var(--accent);
+}
+:root[data-theme="light"] .structure-detail-body button,
+:root[data-theme="light"] .review-evidence-box button {
+  background: rgba(0, 125, 138, 0.05);
+  border-color: rgba(0, 125, 138, 0.18);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .structure-detail-body button:hover,
+:root[data-theme="light"] .review-evidence-box button:hover {
+  background: rgba(0, 125, 138, 0.10);
+  border-color: rgba(0, 125, 138, 0.30);
+  color: var(--accent);
+}
+
 /* ── Suppress any remaining neon glows on white surfaces ─────── */
 :root[data-theme="light"] .legend-chip,
 :root[data-theme="light"] .pattern-badge,
