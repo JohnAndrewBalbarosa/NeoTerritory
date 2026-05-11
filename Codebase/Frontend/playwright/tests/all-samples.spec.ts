@@ -628,11 +628,18 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
       }
 
       // Phase C structural assertion: the detected pattern on the named
-      // class must match expectedPatternNameRegex. We scan all badge
-      // data-pattern attributes on the page rather than scoping to a
-      // single row (mixed/usages samples can host multiple matching
-      // classes; we only need one to satisfy the catalog contract).
-      if (sample.expectedPatternNameRegex) {
+      // class must match expectedPatternNameRegex. We auto-resolve any
+      // ambiguous classes first (picking the matcher's first candidate)
+      // because data-pattern is populated only on rendered badges, and
+      // ambiguous classes show a `review` CTA instead of a badge until
+      // the user picks. Resolving lifts the candidates into chosen
+      // badges so the structural assertion can read what the matcher
+      // actually proposed. We scan all badges page-wide rather than
+      // scoping to one row (mixed/usages samples host multiple classes;
+      // any one matching the regex satisfies the catalog contract).
+      if (sample.expectedPatternNameRegex || sample.kind === 'integration') {
+        await resolveAllAmbiguousClasses(page);
+        // resolveAllAmbiguousClasses leaves us on the Patterns tab.
         const badges = page.getByTestId('class-tree-badge');
         const seenPatterns: string[] = [];
         const count = await badges.count();
@@ -640,28 +647,21 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
           const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
           if (p) seenPatterns.push(p);
         }
-        const matched = seenPatterns.some((p) => sample.expectedPatternNameRegex!.test(p));
-        expect(
-          matched,
-          `${sample.filename} expected pattern matching ${sample.expectedPatternNameRegex} on some class; saw: ${seenPatterns.join(', ') || '(none)'}`,
-        ).toBeTruthy();
-      }
-
-      // Integration sample also asserts EVERY catalog pattern appears.
-      if (sample.kind === 'integration' && sample.expectedAllCatalogPatterns) {
-        const badges = page.getByTestId('class-tree-badge');
-        const seenPatterns: string[] = [];
-        const count = await badges.count();
-        for (let i = 0; i < count; i += 1) {
-          const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
-          if (p) seenPatterns.push(p);
-        }
-        for (const rx of sample.expectedAllCatalogPatterns) {
-          const present = seenPatterns.some((p) => rx.test(p));
+        if (sample.expectedPatternNameRegex) {
+          const matched = seenPatterns.some((p) => sample.expectedPatternNameRegex!.test(p));
           expect(
-            present,
-            `integration sample must surface a pattern matching ${rx}; saw: ${seenPatterns.join(', ') || '(none)'}`,
+            matched,
+            `${sample.filename} expected pattern matching ${sample.expectedPatternNameRegex} on some class; saw: ${seenPatterns.join(', ') || '(none)'}`,
           ).toBeTruthy();
+        }
+        if (sample.kind === 'integration' && sample.expectedAllCatalogPatterns) {
+          for (const rx of sample.expectedAllCatalogPatterns) {
+            const present = seenPatterns.some((p) => rx.test(p));
+            expect(
+              present,
+              `integration sample must surface a pattern matching ${rx}; saw: ${seenPatterns.join(', ') || '(none)'}`,
+            ).toBeTruthy();
+          }
         }
       }
 
