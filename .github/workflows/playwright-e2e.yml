@@ -130,7 +130,15 @@ jobs:
           # Iterates Codebase/Microservice/samples/ via the spec's
           # SAMPLES array. Fails if any sample breaks the
           # load -> analyze -> tag -> tests pipeline.
-          npx playwright test --reporter=list,html
+          #
+          # studio-screenshots.spec.ts is INTENTIONALLY excluded from this
+          # gate (per the plan): it captures thesis-figure screenshots and
+          # asserts nothing about correctness. Running it as a gate is
+          # noise — the spec tries to click locked tabs (e.g. Self-check
+          # before GDB completes) which is a legitimate UI state but a
+          # spec failure. Capture it manually with
+          #   npx playwright test playwright/tests/studio-screenshots.spec.ts
+          npx playwright test playwright/tests/all-samples.spec.ts --reporter=list,html
 
       - name: Upload Playwright HTML report on failure
         if: failure()
