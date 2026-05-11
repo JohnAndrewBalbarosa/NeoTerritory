@@ -146,25 +146,60 @@ async function ensureDir(dir) {
 }
 
 async function loginIfPossible(page) {
-  if (!TESTER_USER || !TESTER_PASS) return false;
-  await page.goto(`${BASE_URL}/login`, { waitUntil: 'networkidle' });
-  const userField = page
-    .locator('input[name="username"], input[type="text"]')
-    .first();
-  const passField = page.locator('input[type="password"]').first();
-  if (
-    !(await userField.isVisible().catch(() => false)) ||
-    !(await passField.isVisible().catch(() => false))
-  ) {
+  // Tester picker is a tile click, not a username/password form. Bypass the
+  // UI entirely: hit /auth/test-accounts -> pick the first unclaimed seat
+  // -> POST /auth/claim -> seed localStorage + sessionStorage via
+  // addInitScript so /studio sees us as authenticated.
+  try {
+    const accountsRes = await page.request.get(`${BASE_URL}/auth/test-accounts`);
+    if (!accountsRes.ok()) return false;
+    const body = await accountsRes.json();
+    const accounts = Array.isArray(body.accounts) ? body.accounts : [];
+    if (accounts.length === 0) return false;
+
+    // Prefer the env-specified username if it matches an unclaimed seat.
+    const target =
+      (TESTER_USER && accounts.find((a) => a.username === TESTER_USER && !a.claimed)) ||
+      accounts.find((a) => !a.claimed) ||
+      accounts[0];
+
+    const claimRes = await page.request.post(`${BASE_URL}/auth/claim`, {
+      headers: { 'Content-Type': 'application/json' },
+      data: { username: target.username },
+    });
+    if (!claimRes.ok()) {
+      console.warn(`[capture-tour] /auth/claim for ${target.username} failed:`, await claimRes.text().catch(() => ''));
+      return false;
+    }
+    const claim = await claimRes.json();
+    if (!claim.token || !claim.user) return false;
+
+    await page.addInitScript(({ token, user }) => {
+      try {
+        localStorage.setItem('nt_token', token);
+        localStorage.setItem('nt_user', JSON.stringify(user));
+        // Skip consent + pretest surveys; capture wants the studio surface.
+        sessionStorage.setItem('nt-entry-flow', 'developer');
+        // Suppress overlays that block screenshots (StartHereRail + Joyride).
+        localStorage.setItem('nt_start_here_dismissed', '1');
+        for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
+          localStorage.setItem(`nt_studio_tour_completed__${tab}`, '1');
+        }
+      } catch {
+        /* storage blocked */
+      }
+    }, { token: claim.token, user: claim.user });
+    console.log(`[capture-tour] authed as ${target.username} via /auth/claim`);
+    return true;
+  } catch (err) {
+    console.warn('[capture-tour] auth bypass failed:', err.message);
     return false;
   }
-  await userField.fill(TESTER_USER);
-  await passField.fill(TESTER_PASS);
-  const submit = page.locator('button[type="submit"]').first();
-  await submit.click();
-  await page.waitForLoadState('networkidle', { timeout: 10000 }).catch(() => {});
-  return true;
 }
+// Hint to the linter: TESTER_PASS is still consumed indirectly (logged in
+// the help text); silence unused-var warnings in environments where it's
+// noticed.
+void TESTER_PASS;
 
 async function patchTourStepsFile(slugs) {
   const raw = await fs.readFile(TOUR_STEPS_FILE, 'utf8');
