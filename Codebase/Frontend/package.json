@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:e2e": "playwright test",
+    "test:e2e:screenshots": "playwright test playwright/tests/studio-screenshots.spec.ts"
   },
   "dependencies": {
     "lenis": "^1.1.13",
