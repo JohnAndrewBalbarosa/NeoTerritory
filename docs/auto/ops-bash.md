@@ -96,17 +96,17 @@ Visibility strategy:
 **Functions**
 
 - `run_remote_build_and_start` (line 16)
-- `human_secs` (line 31)
-- `heartbeat_loop` (line 36)
-- `phase_start` (line 47)
-- `phase_end` (line 59)
-- `reclaim` (line 81)
+- `human_secs` (line 33)
+- `heartbeat_loop` (line 38)
+- `phase_start` (line 49)
+- `phase_end` (line 61)
+- `reclaim` (line 83)
   Reclaim ownership only if anything is currently root-owned (cheap no-op otherwise).
-- `print_dep_summary` (line 90)
+- `print_dep_summary` (line 92)
   Show dep summary from package.json so the operator sees what is about to install.
-- `npm_install_if_changed` (line 105)
+- `npm_install_if_changed` (line 107)
   Hash-gated npm ci: only reinstall if package-lock.json changed.
-- `run_remote_restart_only` (line 263)
+- `run_remote_restart_only` (line 270)
   Restart-only mode: bounces pm2 against the existing dist/ artifacts on the
   remote box. Use this to recover quickly when a previous deploy died mid-build
   and left pm2 in a wedged state — no rebuild, no shipping, just a clean restart
