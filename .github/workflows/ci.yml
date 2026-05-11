@@ -468,3 +468,39 @@ jobs:
           chmod +x scripts/deploy-aws.sh
           ./scripts/deploy-aws.sh --source --yes
 
+  post-deploy-smoke:
+    needs:
+      - deploy-aws
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    env:
+      # AWS_PUBLIC_URL is the base URL of the live deployment. Set this
+      # as a repo Actions variable (NOT a secret — it's the public IP /
+      # hostname) so the smoke script can hit /api/health and friends.
+      AWS_PUBLIC_URL: ${{ vars.AWS_PUBLIC_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Wait for deployment to settle (15s)
+        # pm2 restart takes a moment to bind on :80. Give the new process
+        # a small window before we probe — the smoke script's first health
+        # check would otherwise race the restart and surface as a flaky
+        # ECONNREFUSED.
+        run: sleep 15
+
+      - name: Run AWS post-deploy smoke
+        # Asserts the live deployment satisfies the same Testing-Trophy
+        # contract the CI gdb-runner job exercises locally. Verifies
+        # microservice connectivity, runner enablement, docker online,
+        # singleton detection on a known snippet, compile_run=pass, and
+        # static_analysis verdict !== 'sandbox_disabled'. Failure means
+        # production drifted from CI and the deploy must be rolled back
+        # or fixed forward immediately.
+        shell: bash
+        run: node scripts/ci-aws-post-deploy-smoke.mjs
