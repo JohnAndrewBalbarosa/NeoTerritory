@@ -1,8 +1,8 @@
 # Local Feature Sweep
-Run: 2026-05-11T08:40:53.970Z
+Run: 2026-05-11T08:51:38.094Z
 Backend: http://127.0.0.1:3001
 
-Summary: 12 OK | 3 WARN | 0 FAIL
+Summary: 14 OK | 1 WARN | 0 FAIL
 
 | Status | Area | Note |
 |--------|------|------|
@@ -17,7 +17,7 @@ Summary: 12 OK | 3 WARN | 0 FAIL
 | OK | Auth/test-accounts | 100 seats |
 | OK | Auth/claim | claimed Devcon1 |
 | OK | Studio/entry |  |
-| WARN | Studio/analyze | Analysis returned 0 classes (microservice likely unavailable locally) |
+| OK | Studio/analyze | 1 class(es) tagged |
 | OK | Studio/Tests tab | tab opened (no trophy banner) |
 | WARN | Studio/Docs tab | docs guide not visible |
-| WARN | Studio/Patterns tab | class tree empty (no tagged classes) |
+| OK | Studio/Patterns tab |  |

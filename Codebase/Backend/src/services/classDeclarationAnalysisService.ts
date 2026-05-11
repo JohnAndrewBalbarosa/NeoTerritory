@@ -172,24 +172,55 @@ interface MicroserviceExec {
   stderr: string;
 }
 
-function runMicroservice(opts: { binaryPath: string; catalogPath: string; outputDir: string; sourcePath: string }): MicroserviceExec {
-  const args = [
-    '--catalog', opts.catalogPath,
-    '--output',  opts.outputDir,
-    opts.sourcePath
-  ];
+// Windows-host path -> WSL /mnt/<drive>/... translation. Only used when
+// the operator opts into WSL via NEOTERRITORY_BIN_WSL=1, typically because
+// the only available Linux ELF microservice binary sits under build-wsl/
+// and cannot execute natively on Windows.
+function toWslPath(p: string): string {
+  const m = /^([A-Za-z]):[\\/](.*)$/.exec(p);
+  if (!m) return p;
+  return `/mnt/${m[1].toLowerCase()}/${m[2].replace(/\\/g, '/')}`;
+}
 
-  const result = spawnSync(opts.binaryPath, args, {
+function runMicroservice(opts: { binaryPath: string; catalogPath: string; outputDir: string; sourcePath: string }): MicroserviceExec {
+  const useWsl =
+    process.env.NEOTERRITORY_BIN_WSL === '1' ||
+    /[\\/]build-wsl[\\/]NeoTerritory($|[^.])/i.test(opts.binaryPath);
+
+  let cmd: string;
+  let args: string[];
+
+  if (useWsl) {
+    // Spawn wsl.exe and invoke the Linux binary inside Ubuntu. All
+    // Windows paths are wslpath-translated so the binary sees /mnt/c/...
+    const wslBin = toWslPath(opts.binaryPath);
+    cmd = 'wsl.exe';
+    args = [
+      wslBin,
+      '--catalog', toWslPath(opts.catalogPath),
+      '--output',  toWslPath(opts.outputDir),
+      toWslPath(opts.sourcePath),
+    ];
+  } else {
+    cmd = opts.binaryPath;
+    args = [
+      '--catalog', opts.catalogPath,
+      '--output',  opts.outputDir,
+      opts.sourcePath,
+    ];
+  }
+
+  const result = spawnSync(cmd, args, {
     encoding: 'utf8',
     timeout:  30000,
-    windowsHide: true
+    windowsHide: true,
   });
 
   return {
     spawnError: result.error || null,
     exitCode:   result.status,
     stdout:     result.stdout || '',
-    stderr:     result.stderr || ''
+    stderr:     result.stderr || '',
   };
 }
 
