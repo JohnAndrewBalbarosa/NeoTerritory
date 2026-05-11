@@ -445,7 +445,19 @@ export default function GdbRunnerTab() {
             against and no user-facing flow to run end-to-end, so applying those labels to your
             code would be a category error. NeoTerritory&rsquo;s own integration + E2E tests live
             under <code>Codebase/Frontend/playwright/</code> and exercise the studio itself; you
-            see them in CI, not on this tab.
+            see them in CI, not on this tab. The exact commands the product runs on its own
+            source are listed on the{' '}
+            <a
+              href="/docs"
+              onClick={(e) => {
+                e.preventDefault();
+                window.history.pushState(null, '', '/docs');
+                window.dispatchEvent(new CustomEvent('nt:navigate'));
+              }}
+            >
+              Docs &rarr; Testing Trophy
+            </a>{' '}
+            section.
           </p>
         </div>
         <p className="gdb-trophy-foot">
