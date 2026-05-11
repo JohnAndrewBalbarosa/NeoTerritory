@@ -4224,6 +4224,137 @@ body[data-surface] {
   grid-row: span 1 !important;
 }
 
+/* ---------- Docs sidebar TOC nav + inline section list ---------- */
+/* New /docs layout per user direction this turn: sidebar of anchor
+   links on the left, inline long-form sections on the right (no bento
+   tile grid, no click-to-popup). */
+.nt-docs__sidebar-eyebrow {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #94a3b8);
+}
+.nt-docs__sidebar-nav ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.nt-docs__sidebar-nav li {
+  margin: 0;
+}
+.nt-docs__sidebar-link {
+  display: block;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  color: var(--ink, #e2e4f0);
+  text-decoration: none;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  border-left: 2px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.nt-docs__sidebar-link:hover,
+.nt-docs__sidebar-link:focus-visible {
+  background: rgba(148, 163, 184, 0.08);
+  border-left-color: var(--accent, #818cf8);
+  outline: none;
+}
+.nt-docs__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* Anchor-jump offset so sticky topbar doesn't cover the heading. */
+  scroll-margin-top: 90px;
+}
+.nt-docs__section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.nt-docs__section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.nt-docs__section-lede {
+  margin: 0;
+  color: var(--ink-dim, #94a3b8);
+  max-width: 64ch;
+}
+.nt-docs__inline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.nt-docs__inline-tile {
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.2));
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  background: var(--surface, rgba(15, 23, 42, 0.35));
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.nt-docs__inline-tile-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.nt-docs__inline-tile-hook {
+  margin: 0;
+  color: var(--ink-dim, #94a3b8);
+  font-size: 0.92rem;
+}
+.nt-docs__inline-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.nt-docs__inline-tile-body p {
+  margin: 0;
+}
+.nt-docs__inline-tile-sources {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border, rgba(148, 163, 184, 0.2));
+  font-size: 0.82rem;
+}
+.nt-docs__inline-tile-sources-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #94a3b8);
+}
+.nt-docs__inline-tile-sources ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.nt-docs__inline-tile-source-kind {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--accent, #818cf8);
+}
+.nt-docs__inline-tile-pending {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--warn, #f0b429);
+}
+.nt-docs__inline-tile[data-pending="true"] {
+  border-style: dashed;
+}
+
 /* ---------- Home study-summary block ---------- */
 .nt-home__study {
   max-width: 1480px;

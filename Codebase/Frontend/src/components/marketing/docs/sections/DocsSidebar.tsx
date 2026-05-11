@@ -1,27 +1,34 @@
-// Sidebar rail on /docs. Renders Scope and Design rationale as stacked
-// click-to-popup tiles. Lives in its own file per user direction:
-// "have a folder where all the UI / HTML lives, called from one component."
+// Left sidebar on /docs. Per user direction this turn: replace the
+// stacked-bento rail with a TOC of anchor links. Each link jumps to a
+// <section id> rendered by DocsMain / DocsInlineSection. The sidebar
+// is sticky on wide viewports and collapses inline on narrow ones via
+// styles.css.
 
-import ResearchBento from '../ResearchBento';
-import { RESEARCH_TILES } from '../docsTiles';
+const TOC: ReadonlyArray<{ href: string; label: string }> = [
+  { href: '#dp-scope', label: 'Scope and delimitations' },
+  { href: '#dp-rationale', label: 'Design rationale' },
+  { href: '#dp-method', label: 'Algorithmic analysis pipeline' },
+  { href: '#dp-tradeoffs', label: 'Trade-offs and limitations' },
+  { href: '#dp-contribution', label: 'Expected contribution' },
+  { href: '#dp-trophy', label: 'Testing Trophy' },
+  { href: '#dp-bibliography', label: 'Bibliography' },
+];
 
 export default function DocsSidebar() {
   return (
-    <aside className="nt-docs__sidebar" aria-label="Sidebar — scope and rationale">
-      <ResearchBento
-        eyebrow="Scope"
-        title="Scope and delimitations"
-        ariaId="dp-scope"
-        layout="stack"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'scope')}
-      />
-      <ResearchBento
-        eyebrow="Why this approach"
-        title="Design rationale"
-        ariaId="dp-rationale"
-        layout="stack"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'rationale')}
-      />
+    <aside className="nt-docs__sidebar" aria-label="Docs section navigation">
+      <p className="nt-docs__sidebar-eyebrow">On this page</p>
+      <nav className="nt-docs__sidebar-nav" aria-label="Table of contents">
+        <ol>
+          {TOC.map((item) => (
+            <li key={item.href}>
+              <a className="nt-docs__sidebar-link" href={item.href}>
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
     </aside>
   );
 }

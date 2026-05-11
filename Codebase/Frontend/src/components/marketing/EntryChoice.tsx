@@ -79,6 +79,20 @@ export default function EntryChoice() {
     ? ENTRY_OPTIONS.filter(o => o.title !== 'Tester')
     : ENTRY_OPTIONS;
 
+  // Required-gate per user direction this turn: clicking an entry card
+  // stamps the user's chosen flow into sessionStorage. StudioApp reads
+  // that key on next render and lets the sign-in path through. Without
+  // it, sign-in paths bounce back here.
+  function selectFlow(option: EntryOption): void {
+    try {
+      const flow = option.title.toLowerCase().replace(/\s+/g, '-');
+      sessionStorage.setItem('nt-entry-flow', flow);
+    } catch {
+      /* private mode or quota — gate degrades to "always show /choose first" */
+    }
+    navigate(option.path);
+  }
+
   return (
     <main className="nt-entry" id="main">
       <section className="nt-entry-shell" aria-labelledby="entry-heading">
@@ -102,7 +116,7 @@ export default function EntryChoice() {
                   key={option.title}
                   className="nt-entry-card"
                   data-role={option.title.toLowerCase().replace(/\s+/g, '-')}
-                  onClick={() => navigate(option.path)}
+                  onClick={() => selectFlow(option)}
                 >
                   <span className="nt-entry-card__icon" aria-hidden="true">
                     <Icon size={22} />

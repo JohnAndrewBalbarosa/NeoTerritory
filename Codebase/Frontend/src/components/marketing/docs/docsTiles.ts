@@ -388,11 +388,11 @@ export const RESEARCH_TILES: ReadonlyArray<BentoTile> = [
   {
     id: 'trophy-static',
     group: 'trophy',
-    title: 'Static base',
-    hook: 'Type-check, lint, structural sanity. Catches whole classes of bugs before runtime.',
+    title: 'Static base — cppcheck (shipped)',
+    hook: 'The only Trophy layer the studio actually runs against each user submission.',
     size: '1x1',
     body: [
-      'The Testing Trophy starts wider at the base than the traditional unit-test pyramid. Static analysis (TypeScript strict, ESLint, the C++ compiler’s own warnings) is the cheapest layer and catches whole categories of defects with zero runtime cost.',
+      'The shipped product surfaces ONE Trophy layer per submission: static analysis via cppcheck. The Testing-Trophy framing (Dodds 2021) widens the base because lint-class defects are the cheapest to catch; for NeoTerritory the realistic per-submission base is cppcheck plus the per-pattern compile + unit-test scaffolds that run alongside it. TypeScript strict and ESLint apply to the codebase itself (alpha-testing methodology), not to user submissions.',
     ],
     sources: [
       {
@@ -406,11 +406,11 @@ export const RESEARCH_TILES: ReadonlyArray<BentoTile> = [
   {
     id: 'trophy-integration',
     group: 'trophy',
-    title: 'Integration spine',
-    hook: 'The biggest tier. NeoTerritory lives at the seams between frontend, backend, microservice, and AI.',
+    title: 'Integration tier (alpha-testing only)',
+    hook: 'Methodology layer documented for the thesis. The shipped product does not run integration tests on user submissions.',
     size: '2x1',
     body: [
-      'The system is a multi-process pipeline (frontend ↔ backend ↔ C++ microservice ↔ AI provider), so the bugs that hurt users live at the seams between processes — exactly where integration tests catch them and where unit tests do not.',
+      'In the thesis evaluation, the Testing Trophy describes a tier where multi-process seam coverage would sit (frontend ↔ backend ↔ C++ microservice ↔ AI provider). That layer is a methodology construct for the alpha-testing chapter — it is NOT a runtime test loop the shipped studio executes on user code. The studio surfaces static analysis (cppcheck) plus per-pattern compile + unit-test scaffolds; cross-process integration coverage is held by the test suite we run on the codebase itself, not on submissions.',
     ],
     sources: [
       {
@@ -423,11 +423,11 @@ export const RESEARCH_TILES: ReadonlyArray<BentoTile> = [
   {
     id: 'trophy-e2e',
     group: 'trophy',
-    title: 'E2E top',
-    hook: 'Playwright walks real flows: submit → analyse → render. Fewer tests, highest signal per failure.',
+    title: 'E2E tier (alpha-testing only)',
+    hook: 'Playwright runs the studio pipeline against curated samples during alpha testing — it is not part of what the user sees per submission.',
     size: '1x1',
     body: [
-      'The end-to-end layer is intentionally narrow — small numbers of high-confidence flows that exercise the full pipeline (submission to render). Each failure here is load-bearing because it means a real user journey is broken.',
+      'For the thesis alpha-testing chapter we run Playwright across every sample under Codebase/Microservice/samples/ as the studio-pipeline regression gate (D68). This produces a small number of high-signal failures for the research evaluation. The shipped product does NOT expose an end-to-end test layer to the user on their own submission — the per-submission verdicts the studio renders are the static-analysis (cppcheck) and compile/unit-test phases of the test runner. Treat E2E as alpha-testing methodology, not as a runtime feature.',
     ],
     sources: [
       {

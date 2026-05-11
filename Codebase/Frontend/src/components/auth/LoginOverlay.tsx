@@ -5,7 +5,10 @@ import { useAuth } from '../../hooks/useAuth';
 import { navigate } from '../../logic/router';
 import AuroraBackground from '../marketing/effects/AuroraBackground';
 import ShinyText from '../marketing/effects/ShinyText';
-import TiltCard from '../marketing/effects/TiltCard';
+// TiltCard intentionally not imported: tester picker is rendered as a
+// static card per user direction this turn. Animation is reserved for
+// the admin form so the seat-claim flow doesn't move under the user's
+// cursor while they read seat names.
 import {
   fetchTesterAccounts,
   claimSeat,
@@ -163,19 +166,15 @@ export default function LoginOverlay() {
       <div className="login-wrap">
         <AnimatePresence mode="wait" initial={false}>
         {mode === 'picker' && (
-          <motion.div
-            key="picker"
-            initial={{ opacity: 0, y: 24, scale: 0.96, filter: 'blur(8px)' }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-            exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
-            transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
-          >
-          <TiltCard className="login-card tester-chooser session-gateway" maxTilt={3} scale={1.002}>
+          // Static (non-animated) tester-picker card per user direction:
+          // the seat-claim flow should not move under the cursor while
+          // the user reads seat names. Visual treatment kept identical
+          // to the prior motion/Tilt/ShinyText version — only the motion
+          // wrappers were stripped.
+          <div key="picker" className="login-card tester-chooser session-gateway login-card--static">
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
               <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
-              <h2 id="session-gateway-heading">
-                <ShinyText text="Claim your session seat" />
-              </h2>
+              <h2 id="session-gateway-heading">Claim your session seat</h2>
               <p className="session-gateway__lede">
                 Choose an available seat to enter NeoTerritory Studio.
               </p>
@@ -248,8 +247,7 @@ export default function LoginOverlay() {
                 <a className="link-btn" href="/app">Admin sign in</a>
               </p>
             </section>
-          </TiltCard>
-          </motion.div>
+          </div>
         )}
 
         {mode === 'admin' && (

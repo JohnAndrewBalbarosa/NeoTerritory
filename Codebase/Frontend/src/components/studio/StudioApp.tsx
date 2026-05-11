@@ -71,12 +71,26 @@ export default function StudioApp() {
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
     const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app', '/developer', '/student-studio'];
+    // /choose is required BEFORE any sign-in path per user direction this
+    // turn: "Choose how you want to enter" must come before the
+    // tester/login/consent flow. When EntryChoice navigates to a sign-in
+    // path it stamps sessionStorage['nt-entry-flow'] so the gate below
+    // lets the request through. /app stays whitelisted because admins
+    // know exactly where they're going.
+    const entryFlow = (() => {
+      try { return sessionStorage.getItem('nt-entry-flow'); } catch { return null; }
+    })();
     if (!isLoggedIn) {
-      // Logged-out visitors landing on consent/pretest/studio go through
-      // the tester picker. /app stays at /app so admins can keep typing
-      // credentials there.
       if (!SIGN_IN_PATHS.includes(path)) {
-        window.history.replaceState(null, '', '/login');
+        // Consent/pretest/studio on a logged-out visitor — funnel
+        // through the entry chooser first.
+        window.history.replaceState(null, '', '/choose');
+      } else if (path !== '/app' && !entryFlow) {
+        // Sign-in path reached without going through /choose. Bounce
+        // back to /choose; the user picks a role first, then the
+        // EntryChoice click sets the entry-flow flag and forwards to
+        // the right sign-in surface.
+        window.history.replaceState(null, '', '/choose');
       }
     } else if (SIGN_IN_PATHS.includes(path)) {
       const next = getSafeReturnTarget();

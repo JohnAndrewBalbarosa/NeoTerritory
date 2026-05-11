@@ -258,8 +258,19 @@ const REQUIRED_STEPS: CourseStep[] = [
 ];
 
 function openSampleInStudentStudio(sample: Sample): void {
+  // Per user direction this turn: Student Learning does NOT require
+  // sign-in to read lessons. Sign-in is only required when the learner
+  // wants to try the studio. The studio entry for student-learning
+  // routes through the Developer Google sign-in flow (NOT the tester
+  // picker), so the learner ends up on the same authenticated studio a
+  // developer uses. The prefill stays in sessionStorage and is picked
+  // up after the Google callback lands the user in /studio.
   stashStudioPrefill(sample);
-  navigate('/student-studio');
+  // EntryChoice's sessionStorage gate would otherwise bounce the
+  // learner to /choose; stamp it ourselves so the redirect goes
+  // straight to /developer/login.
+  try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
+  navigate('/developer/login');
 }
 
 export default function StudentLearningHub() {
@@ -333,8 +344,8 @@ export default function StudentLearningHub() {
             Studio.
           </p>
           <p className="nt-course-hero__audience">
-            You already have a session seat. Continue through the modules, then open Studio to try
-            the analyzer.
+            Reading the lessons is free — no sign-in needed. Continue through the modules, then
+            sign in with Google when you are ready to try the analyzer in Studio.
           </p>
         </div>
         <div className="nt-course-progress" aria-label={`Course progress ${progress}%`}>
@@ -452,7 +463,17 @@ export default function StudentLearningHub() {
             )}
 
             {isPractice && isPracticeComplete && (
-              <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+              <MagneticButton
+                variant="primary"
+                onClick={() => {
+                  // Same gate as openSampleInStudentStudio: route the
+                  // "Proceed to Studio" click through the Developer
+                  // Google sign-in. Reading lessons stays free; running
+                  // code requires the developer flow.
+                  try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
+                  navigate('/developer/login');
+                }}
+              >
                 Proceed to Studio
               </MagneticButton>
             )}
