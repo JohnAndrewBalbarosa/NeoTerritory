@@ -90,7 +90,7 @@ export default function MainLayout() {
   const {
     user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, setStatus,
+    setAiStatus, setStatus, status,
     currentRun, gdbAllPassedForRun, reviewsRequired
   } = useAppStore();
 
@@ -273,6 +273,16 @@ export default function MainLayout() {
           </p>
         </div>
         <div id="status-card" className="status-card status-card--slim">
+          {/* Screen-reader + Playwright status hook. The visual chrome was
+              intentionally stripped by the layout-flatten refactor, but the
+              appStore.status still tracks the run state. Keep the title +
+              detail in the DOM as a sr-only aria-live region so assistive
+              tech announces "Analysis ready" and the all-samples spec can
+              still wait on `#status-title`. */}
+          <div className="sr-only" aria-live="polite" aria-atomic="true">
+            <strong id="status-title">{status?.title ?? ''}</strong>
+            <span id="status-detail">{status?.detail ?? ''}</span>
+          </div>
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>
             <button
