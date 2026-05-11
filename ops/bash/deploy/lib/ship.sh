@@ -72,6 +72,17 @@ write_remote_env() {
     [ -n "${SUPABASE_SERVICE_KEY:-}" ] && echo "SUPABASE_SERVICE_KEY=$SUPABASE_SERVICE_KEY"
     [ -n "${SUPABASE_LOGS_TABLE:-}" ]  && echo "SUPABASE_LOGS_TABLE=$SUPABASE_LOGS_TABLE"
     [ -n "${SUPABASE_AUDIT_TABLE:-}" ] && echo "SUPABASE_AUDIT_TABLE=$SUPABASE_AUDIT_TABLE"
+    # Google sign-in path. AUTH_PROVIDER defaults to "dev" when unset
+    # (the existing devcon flow). Set to "supabase_cloud" on AWS so the
+    # /auth/google/* handlers in googleAuth.ts read the cloud Supabase
+    # project. The anon key is what the FE button + the backend
+    # token-verify call use; the OAuth client values flow through to
+    # GoTrue if AWS ever runs Supabase locally (no-op for cloud).
+    [ -n "${AUTH_PROVIDER:-}" ]            && echo "AUTH_PROVIDER=$AUTH_PROVIDER"
+    [ -n "${AUTH_SUPABASE_ANON_KEY:-}" ]   && echo "AUTH_SUPABASE_ANON_KEY=$AUTH_SUPABASE_ANON_KEY"
+    [ -n "${GOOGLE_OAUTH_CLIENT_ID:-}" ]     && echo "GOOGLE_OAUTH_CLIENT_ID=$GOOGLE_OAUTH_CLIENT_ID"
+    [ -n "${GOOGLE_OAUTH_CLIENT_SECRET:-}" ] && echo "GOOGLE_OAUTH_CLIENT_SECRET=$GOOGLE_OAUTH_CLIENT_SECRET"
+    [ -n "${GOOGLE_OAUTH_REDIRECT_URI:-}" ]  && echo "GOOGLE_OAUTH_REDIRECT_URI=$GOOGLE_OAUTH_REDIRECT_URI"
     echo "NEOTERRITORY_BIN=$remote_dir/Codebase/Microservice/build/NeoTerritory"
     echo "NEOTERRITORY_CATALOG=$remote_dir/Codebase/Microservice/pattern_catalog"
   } > "$tmp_env"

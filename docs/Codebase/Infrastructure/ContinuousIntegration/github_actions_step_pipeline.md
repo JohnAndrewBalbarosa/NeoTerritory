@@ -3,6 +3,8 @@
 ## Story
 This document defines a developer-only orchestration contract for Step 1 -> Step 2 and the GitHub Actions checks that enforce it. The contract is strict in CI but hidden from production users.
 
+For pod warmup separation across CI and production flow, read `pod_warmup_separation.md`.
+
 ## Step flow model
 - Step 1: backend returns structural result immediately.
 - Step 2: backend runs asynchronous follow-up work and AI commentary job.

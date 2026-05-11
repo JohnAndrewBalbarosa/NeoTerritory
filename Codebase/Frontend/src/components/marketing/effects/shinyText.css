@@ -24,7 +24,17 @@
   -webkit-background-clip: text;
   color: transparent;
   -webkit-text-fill-color: transparent;
-  animation: nt-shiny-sweep var(--shiny-duration, 4.5s) linear infinite;
+  animation: nt-shiny-sweep var(--shiny-duration, 9s) linear infinite;
+}
+/* Per D41: shiny sweep on text inside marketing surfaces is suppressed.
+   The login overlay (a non-marketing surface) is the only intended host;
+   its parent does not carry .nt-marketing-surface so this selector does
+   not apply there. */
+.nt-marketing-surface .nt-shiny {
+  animation: none;
+  color: inherit;
+  background: none;
+  -webkit-text-fill-color: currentColor;
 }
 .nt-shiny.is-static {
   animation: none;

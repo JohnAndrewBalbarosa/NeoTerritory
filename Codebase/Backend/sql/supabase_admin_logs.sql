@@ -62,9 +62,19 @@ create table if not exists public.users (
   username    text not null,
   email       text,
   role        text not null default 'user',
+  -- entry_flow: 'developer' | 'student' | 'tester' | 'admin' | null
+  -- recorded for Google sign-in users so the dashboard can split
+  -- developer vs student-learning onboarding without changing the
+  -- role enum.
+  entry_flow  text,
   created_at  timestamptz not null default now()
 );
-create index if not exists idx_users_username on public.users (username);
+create index if not exists idx_users_username   on public.users (username);
+create index if not exists idx_users_email      on public.users (lower(email));
+create index if not exists idx_users_entry_flow on public.users (entry_flow);
+-- Re-running the schema after the entry_flow column was added (older
+-- deployments won't have it yet).
+alter table public.users add column if not exists entry_flow text;
 
 create table if not exists public.jobs (
   id                 bigint primary key,

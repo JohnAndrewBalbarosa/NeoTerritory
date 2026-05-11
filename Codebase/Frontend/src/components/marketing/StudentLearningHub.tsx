@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { FAMILIES, Family, Lesson, Sample, CorrectStructure } from '../../data/learningContent';
 import { navigate } from '../../logic/router';
 import { stashStudioPrefill } from '../../logic/studioPrefill';
-import { useAppStore } from '../../store/appState';
 import MagneticButton from './effects/MagneticButton';
 
 type IntroLesson = {
@@ -264,40 +263,19 @@ function openSampleInStudentStudio(sample: Sample): void {
 }
 
 export default function StudentLearningHub() {
-  const { token, user } = useAppStore();
+  // Per D47 (Sprint -1a auth-gate fix): the session-gate panel that
+  // previously redirected unauthenticated visitors to /student-studio is
+  // removed. Lessons render immediately for any visitor. The "Try this in
+  // the studio" sample-launch buttons inside the lessons remain the only
+  // points that may trigger sign-in — they navigate to /student-studio,
+  // which gates itself. Reading is free; running code requires a seat.
+  //
+  // Progress state (`completedStepIds`) stays in-memory for the current
+  // browser tab. Nothing is persisted server-side for an unauthenticated
+  // visitor.
   const [activeStepIndex, setActiveStepIndex] = useState(0);
   const [completedStepIds, setCompletedStepIds] = useState<Set<string>>(() => new Set());
   const [lockedMessage, setLockedMessage] = useState('');
-
-  const hasSession = !!(token && user);
-
-  if (!hasSession) {
-    return (
-      <main className="nt-student nt-student-course" id="main">
-        <section className="nt-student-session-gate" aria-labelledby="student-session-heading">
-          <p className="nt-section-eyebrow">Student learning</p>
-          <h1 id="student-session-heading" className="nt-student__title">
-            Claim a session seat to start learning
-          </h1>
-          <p className="nt-student__lede">
-            Your learning session uses an available seat. Claim one first, then complete the
-            modules under the same session.
-          </p>
-          <div className="nt-student-session-gate__actions">
-            <MagneticButton
-              variant="primary"
-              onClick={() => navigate('/student-studio?next=/student-learning')}
-            >
-              Claim a seat
-            </MagneticButton>
-            <MagneticButton variant="ghost" onClick={() => navigate('/choose')}>
-              Back to choices
-            </MagneticButton>
-          </div>
-        </section>
-      </main>
-    );
-  }
 
   const activeStep = REQUIRED_STEPS[activeStepIndex];
   const isFirst = activeStepIndex === 0;

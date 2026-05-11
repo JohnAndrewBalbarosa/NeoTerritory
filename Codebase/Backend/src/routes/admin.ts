@@ -5,6 +5,7 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { logAudit } from '../services/logService';
+import { getBoolSetting, setSetting, SettingKey } from '../db/appSettings';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
 const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
@@ -13,6 +14,42 @@ const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
 const router = express.Router();
 
 router.use(jwtAuth, requireAdmin);
+
+// ── Admin-controlled runtime settings ─────────────────────────────────────
+// One row per key in app_settings. Keep this list narrow; heavy config
+// belongs in env, not in a UI toggle.
+router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({
+      testers_visible_to_users: getBoolSetting('testers_visible_to_users'),
+      reviews_required:         getBoolSetting('reviews_required')
+    });
+  } catch (err) { next(err); }
+});
+
+router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const key = req.params.key as SettingKey;
+    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required'];
+    if (!ALLOWED.includes(key)) {
+      res.status(400).json({ error: 'Unknown setting key' });
+      return;
+    }
+    const body = (req.body || {}) as { value?: unknown };
+    const raw = body.value;
+    const value = (raw === true || raw === 1 || raw === '1' || raw === 'true') ? '1' : '0';
+    setSetting(key, value);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'settings.update',
+      targetKind: 'app_setting',
+      targetId: key,
+      detail: `value=${value}`
+    });
+    res.json({ key, value: value === '1' });
+  } catch (err) { next(err); }
+});
 
 function safeParse(json: string): unknown {
   try { return JSON.parse(json); } catch { return null; }

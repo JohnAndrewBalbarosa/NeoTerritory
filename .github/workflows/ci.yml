@@ -88,6 +88,7 @@ jobs:
     env:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -139,6 +140,12 @@ jobs:
           name: microservice-output
           path: artifacts/microservice-output
 
+      - name: Upload microservice binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neoterritory-binary
+          path: build/NeoTerritory
+
   front-end-build-and-test:
     needs:
       - backend-microservice-build-and-test
@@ -172,7 +179,11 @@ jobs:
     env:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
+      JWT_SECRET: "ci-static-jwt-secret"
+      SEED_TEST_USERS: "1"
       CI_BACKEND_URL: "http://127.0.0.1:3001"
+      POD_WARMUP_ON_CLAIM: "0"
+      TEST_RUNNER_USE_DOCKER: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -198,8 +209,20 @@ jobs:
           name: backend-dist
           path: Codebase/Backend/dist
 
-      - name: Install Playwright Chromium
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ hashFiles('Codebase/Frontend/package-lock.json') }}
+
+      - name: Install Playwright Chromium (cache miss — browser + system deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         run: npm --prefix Codebase/Frontend exec playwright install --with-deps chromium
+
+      - name: Install Playwright system deps (cache hit — skip browser download)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npm --prefix Codebase/Frontend exec playwright install-deps chromium
 
       - name: Playwright smoke check (backend + website routes)
         run: node scripts/ci-smoke.mjs
@@ -216,12 +239,16 @@ jobs:
       - playwright-annotated-source-testing
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    env:
+      POD_WARMUP_ON_CLAIM: "1"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup kind cluster
         uses: helm/kind-action@v1
+        with:
+          cluster_name: kind
 
       - name: Build runtime image for pod test
         run: docker build -t neoterritory:ci -f Codebase/Infrastructure/session-orchestration/docker/Dockerfile .
@@ -269,9 +296,11 @@ jobs:
     env:
       DEV_TEST_MODE: "true"
       NODE_ENV: "test"
+      JWT_SECRET: "ci-static-jwt-secret"
+      SEED_TEST_USERS: "1"
       ENABLE_TEST_RUNNER: "1"
-      TEST_RUNNER_USE_DOCKER: "1"
-      POD_IMAGE: "neoterritory/cpp-pod:latest"
+      TEST_RUNNER_USE_DOCKER: "0"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -293,11 +322,20 @@ jobs:
           name: backend-dist
           path: Codebase/Backend/dist
 
+      - name: Download microservice binary artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: neoterritory-binary
+          path: Codebase/Microservice/build
+
+      - name: Make microservice binary executable
+        run: chmod +x Codebase/Microservice/build/NeoTerritory
+
       - name: Run GDB runner and unit-test API flow
         shell: bash
         run: |
           set -euo pipefail
-          node -e "const {spawn}=require('node:child_process');(async()=>{const base='http://127.0.0.1:3001';const p=spawn('node',['Codebase/Backend/dist/server.js'],{stdio:'inherit',env:{...process.env,PORT:'3001',HOST:'127.0.0.1'}});const stop=()=>{if(!p.killed)p.kill('SIGTERM');};process.on('exit',stop);for(let i=0;i<90;i++){try{const r=await fetch(base+'/health');if(r.ok)break;}catch{}await new Promise(r=>setTimeout(r,1000));if(i===89)throw new Error('backend not ready');}const acc=await fetch(base+'/auth/test-accounts').then(r=>r.json());if(!acc.accounts?.length)throw new Error('no tester accounts');const claim=await fetch(base+'/auth/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:acc.accounts[0].username})});if(!claim.ok)throw new Error('claim failed');const token=(await claim.json()).token;const sample=await fetch(base+'/api/sample').then(r=>r.json());const analyze=await fetch(base+'/api/analyze',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({filename:sample.filename||'sample.cpp',code:sample.code})});if(!analyze.ok)throw new Error('analyze failed');const payload=await analyze.json();const runTests=await fetch(base+'/api/analysis/run-tests',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({pendingId:payload.pendingId,classResolvedPatterns:payload.classResolvedPatterns||{},stdin:''})});if(!runTests.ok){const t=await runTests.text();throw new Error('run-tests failed: '+runTests.status+' '+t);}const result=await runTests.json();if(!Array.isArray(result.results))throw new Error('run-tests missing results');console.log('GDB runner API flow passed. result count=',result.results.length);stop();})().catch(e=>{console.error(e);process.exit(1);});"
+          node -e "const {spawn}=require('node:child_process');(async()=>{const base='http://127.0.0.1:3001';const p=spawn('node',['Codebase/Backend/dist/server.js'],{stdio:'inherit',env:{...process.env,PORT:'3001',HOST:'127.0.0.1'}});const stop=()=>{if(!p.killed)p.kill('SIGTERM');};process.on('exit',stop);for(let i=0;i<90;i++){try{const r=await fetch(base+'/health');if(r.ok)break;}catch{}await new Promise(r=>setTimeout(r,1000));if(i===89)throw new Error('backend not ready');}const acc=await fetch(base+'/auth/test-accounts').then(r=>r.json());if(!acc.accounts?.length)throw new Error('no tester accounts');const claim=await fetch(base+'/auth/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:acc.accounts[0].username})});if(!claim.ok)throw new Error('claim failed');const token=(await claim.json()).token;const ciCode='#include <string>\nclass CiTestSingleton {\npublic:\n    static CiTestSingleton& getInstance() {\n        static CiTestSingleton instance;\n        return instance;\n    }\n    CiTestSingleton(const CiTestSingleton&) = delete;\n    CiTestSingleton& operator=(const CiTestSingleton&) = delete;\nprivate:\n    CiTestSingleton() = default;\n};';const analyze=await fetch(base+'/api/analyze',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({filename:'ci_singleton.cpp',code:ciCode})});if(!analyze.ok){const t=await analyze.text();throw new Error('analyze failed: '+analyze.status+' '+t);}const payload=await analyze.json();if(!payload.pendingId)throw new Error('pendingId missing from analyze response');const countByClass={};for(const p of(payload.detectedPatterns||[])){if(p.className)countByClass[p.className]=(countByClass[p.className]||0)+1;}const classResolvedPatterns={};for(const p of(payload.detectedPatterns||[])){if(p.className&&countByClass[p.className]>1&&!classResolvedPatterns[p.className])classResolvedPatterns[p.className]=p.patternId;}const runTests=await fetch(base+'/api/analysis/run-tests',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({pendingId:payload.pendingId,classResolvedPatterns,stdin:''})});if(!runTests.ok){const t=await runTests.text();throw new Error('run-tests failed: '+runTests.status+' '+t);}const result=await runTests.json();if(!Array.isArray(result.results))throw new Error('run-tests missing results array');if(result.results.length===0)throw new Error('run-tests returned zero results — microservice may have detected no patterns from the CI singleton class');for(const r of result.results){console.log('[result] phase='+r.phase+' verdict='+r.verdict+' passed='+r.passed);if(!r.passed&&r.actual)console.log('[result] actual: '+String(r.actual).substring(0,500));}const compileRun=result.results.find(r=>r&&r.phase==='compile_run');if(!compileRun)throw new Error('run-tests did not execute compile_run phase');if(!compileRun.passed)throw new Error('compile_run phase failed (verdict='+compileRun.verdict+'): '+(compileRun.actual||compileRun.message||''));console.log('GDB runner API flow passed. result count=',result.results.length);stop();})().catch(e=>{console.error(e);process.exit(1);});"
 
   check-output:
     needs:
@@ -325,6 +363,7 @@ jobs:
     env:
       DEV_TEST_MODE: "false"
       NODE_ENV: "production"
+      POD_WARMUP_ON_CLAIM: "0"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -414,3 +453,4 @@ jobs:
           set -euo pipefail
           chmod +x scripts/deploy-aws.sh
           ./scripts/deploy-aws.sh --source --yes
+

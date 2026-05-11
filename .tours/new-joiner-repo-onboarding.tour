@@ -1,0 +1,87 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "NeoTerritory — New Joiner Onboarding",
+  "description": "End-to-end orientation for a new contributor. Walks the docs-first contract, the three runtime layers (Frontend, Backend, C++ Microservice), the pattern-detection catalog, the rebuild flow, and the eval harness — in the order you'll actually need them.",
+  "ref": "main",
+  "steps": [
+    {
+      "file": "CLAUDE.md",
+      "line": 6,
+      "title": "Hard rule #1 — docs are the source of truth",
+      "description": "Situation: the project is split across three implementation layers, but the *contract* lives in Markdown.\nMechanism: every file under `Codebase/<path>/<name>.<ext>` has a matching `docs/Codebase/<path>/<name>.<ext>.md` that describes its purpose, flow, and collaborators.\nImplication: when you start work on any feature, read the doc *before* the code. If the two disagree, the doc wins — regenerate or move the code, never the other way around.\nGotcha: do NOT run `tools/generate_codebase_docs.ps1` to 'fix' a mismatch. That tool walks code → docs and would erase the blueprint."
+    },
+    {
+      "file": "docs/Codebase/DESIGN_DECISIONS.md",
+      "title": "Hard rule #2 — durable design decisions",
+      "description": "Situation: design calls made mid-implementation are easy to lose to context compression.\nMechanism: every cross-cutting decision (D1, D2, …) is captured here with an ID, the rule, and the reason. New decisions land here BEFORE any dependent code is written.\nImplication: when you see a constraint that 'feels arbitrary' in the code, search this file by ID — usually there's a 1-paragraph justification waiting for you.\nGotcha: D38 governs the lexeme dictionary; do not loosen its 'no bare keyword/operator entries' rule without a follow-up D-entry."
+    },
+    {
+      "directory": "Codebase",
+      "title": "The three runtime layers",
+      "description": "Situation: production NeoTerritory is one Docker container that bakes in three layers.\nMechanism: `Frontend/` is a Vite/React SPA, `Backend/` is an Express/TypeScript API, `Microservice/` is a C++ analyzer the backend shells out to. `Infrastructure/` holds the Dockerfile and ops glue, `FastifyService/` is an experimental adapter, `test/` holds shared fixtures.\nImplication: a 'feature' often touches all three — UI form → backend route → C++ analyzer → response → UI render. Get used to walking that spine.\nGotcha: `node_modules/` and `dist/` exist under each layer because each runs its own build. Don't edit anything inside them."
+    },
+    {
+      "file": "Codebase/Frontend/src/main.tsx",
+      "line": 6,
+      "title": "Frontend entry — React mount",
+      "description": "Situation: Vite serves `index.html`, which loads this module to mount the app.\nMechanism: `ReactDOM.createRoot(...).render(<App/>)` is the only thing here — everything else is composition inside `App.tsx` and the routed pages.\nImplication: when a UI bug reproduces only in production, suspect the Vite `dist/` bundle baked into the Docker image, not this file.\nGotcha: there's also `scraper-main.tsx` for the admin scraper page; not every entry mounts here."
+    },
+    {
+      "file": "Codebase/Backend/server.ts",
+      "line": 149,
+      "title": "Backend — where /api routes are mounted",
+      "description": "Situation: this is where the analysis surface — `/api/analyze`, `/api/runs`, `/api/health` — gets attached to the Express app.\nMechanism: `app.use('/api', analysisRoutes)` mounts a router that lives in `src/routes/analysis.ts`. Other routers (`auth`, `admin`, `reviews`, `survey`) are mounted on sibling paths above and below.\nImplication: if a request returns 404, check first whether the path was mounted here. Order matters — `app.use(express.static(frontendDir))` near the top serves the SPA, and the catch-all at the bottom routes unknown URLs back to `index.html` so client-side routing works.\nGotcha: rate limiters (`adminRefreshLimiter`, `adminLimiter`) wrap the admin router specifically; copying that pattern naively to other routers will silently throttle your endpoint."
+    },
+    {
+      "file": "Codebase/Backend/src/routes/analysis.ts",
+      "line": 648,
+      "title": "POST /api/analyze — the spine of the product",
+      "description": "Situation: this handler is the single entrypoint that ingests user-submitted C++ source and returns detected design patterns.\nMechanism: it accepts three input shapes (multipart `file`, `{code, filename}`, `{files: [...]}`), validates each filename and total byte budget, then iterates `analyzeClassDeclaration(...)` per file and merges results. The C++ microservice is invoked from inside that service call.\nImplication: every accuracy bug you'll chase eventually surfaces here — either bad input shaping, wrong file routing, or a microservice response the merger doesn't expect.\nGotcha: the `MAX_FILES_PER_SUBMISSION` env var is clamped server-side to 16 regardless of what you set; the cap is a structural floor, not a configuration knob."
+    },
+    {
+      "file": "Codebase/Microservice/main.cpp",
+      "line": 7,
+      "title": "Microservice — minimal entry, real work elsewhere",
+      "description": "Situation: this file is intentionally trivial.\nMechanism: `main` calls `run_syntactic_broken_ast(argc, argv)` — the actual analyzer is composed in the `Modules/` tree.\nImplication: don't search here for the algorithm. The analysis pipeline lives in `Modules/Source/Analysis/`, the lexer in `Modules/Header/Analysis/Lexical/`, and the rule catalog in JSON under `pattern_catalog/`.\nGotcha: the CMake target produces a binary that's invoked by the backend over a child-process boundary; you can also run it directly on a `.cpp` file for ad-hoc testing — see `Codebase/Microservice/README.md`."
+    },
+    {
+      "file": "Codebase/Microservice/Modules/Source/Analysis/core.cpp",
+      "line": 30,
+      "title": "Analyzer pipeline — read source, load catalog, run rules",
+      "description": "Situation: `run_analysis_stage` is the orchestrator the entry function calls into.\nMechanism: it reads the input source files, resolves the catalog directory (CWD `pattern_catalog/`, then a sibling of the output path), loads the JSON rules, and pushes any load diagnostics back onto the report. Downstream stages (matching, ranking) read from the same `SourcePipelineState`.\nImplication: if the binary returns 'catalog_not_found', the working directory is wrong — almost always a deployment/launch issue, not a code bug.\nGotcha: the catalog discovery is positional — there's no env var fallback. Keep `pattern_catalog/` next to the binary."
+    },
+    {
+      "directory": "Codebase/Microservice/pattern_catalog",
+      "title": "Pattern catalog — the rules live in JSON",
+      "description": "Situation: every detectable design pattern is a JSON file here, grouped by `creational/`, `structural/`, `behavioural/`, and `idiom/`.\nMechanism: each rule file declares `signature_categories` (lexeme gates), `ordered_checks` (token-sequence patterns), and an `implementation_template` with weighted regex callsites. `lexeme_categories.json` is the shared connotative dictionary; `inheritance_driven_patterns.json` wires parent/child pattern relationships (e.g. strategy_interface ⇒ strategy_concrete).\nImplication: most accuracy work is JSON-only — you rarely need to recompile the C++ to tighten or relax a rule.\nGotcha: regex with `{class_name}` placeholders gets substituted at match time; raw regex without that token will not be class-anchored."
+    },
+    {
+      "file": "Codebase/Microservice/pattern_catalog/lexeme_categories.json",
+      "line": 3,
+      "title": "Connotative dictionary — D38 boundary",
+      "description": "Situation: the lexeme categories are the *only* place where bare tokens get connotative meaning.\nMechanism: each entry is either a single stdlib symbol (e.g. `make_unique`) or a multi-token combo expressed as an array (e.g. `[\"return\", \"*\", \"this\"]`). Bare keywords like `static` or operators like `->` are forbidden by D38 — context is too thin and over-tags.\nImplication: when you want to add a new signal (say, lazy-init detection), choose between extending this dictionary OR adding a structural-wrapping check in the rule JSON. The plan at `~/.claude/plans/para-dito-hanggang-structural-fizzy-stonebraker.md` walks through that decision per fix.\nGotcha: convention-driven names like `m_inner`, `getInstance`, `build` are intentionally NOT in this file — they live in the per-pattern `lexeme_identifiers` so they stay scoped to one pattern."
+    },
+    {
+      "file": "scripts/rebuild.sh",
+      "line": 1,
+      "title": "Canonical rebuild — full default, narrower on request",
+      "description": "Situation: this orchestrator is the way you redeploy locally after a code change.\nMechanism: with no flags it runs `microservice + docker` (the C++ binary and the runtime container). Per-component scripts under `ops/bash/rebuild/{microservice,frontend,backend,docker}.sh` can also be invoked directly. Each script prints sha256 before/after — your canary that something actually rebuilt.\nImplication: trust the default. The Docker image rebuilds the frontend and backend internally, and CLAUDE.md treats the full rebuild as the safe baseline. Narrower flags (`--rebuild=docker`, `--mode-a`, etc.) are for explicit user requests, not 'time-saving' guesses.\nGotcha: if a 'rebuild' completes suspiciously fast and the after-sha matches the before-sha, your edit didn't actually save — re-check the source files."
+    },
+    {
+      "file": "start.sh",
+      "line": 1,
+      "title": "Run target — verify-and-run vs. dev modes",
+      "description": "Situation: this is the dispatcher that boots the stack.\nMechanism: with no flags it verifies the binary + node_modules and runs the existing build. `--local` boots Mode A (Vite HMR + tsx watch, no Docker). `--rebuild=<list>` chains rebuild before run. Production deploys go through `start.sh deploy --source` to AWS Lightsail.\nImplication: `start.sh` does NOT rebuild by default — that's intentional. If your changes don't appear, you didn't rebuild; if you don't want Docker, use `--local`.\nGotcha: PowerShell mirrors exist for Windows-native flow (`start.ps1`, `scripts/rebuild.ps1`), but the per-component PS1 mirrors aren't implemented yet — bash is the canonical surface."
+    },
+    {
+      "file": "test-artifacts/accuracy-eval/probe.py",
+      "line": 1,
+      "title": "Eval harness — measure accuracy, don't guess",
+      "description": "Situation: a 15-case hand-labelled C++ snippet battery that hits `/api/analyze` and reports TP/TN/FP/FN.\nMechanism: claim a tester seat (`POST /auth/claim` with `devcon99/devcon`), pass the JWT as `TOKEN`, and the script POSTs each case and classifies the response. Result lands in `result.txt` next to the script.\nImplication: every accuracy change you make to the catalog should be validated against this harness — a regression in TN (the false-positive bait set) is the single biggest risk when relaxing rules.\nGotcha: the namespaced `pattern_id` returned by the analyzer (e.g. `creational.singleton`) gets normalized to short names by stripping the prefix; if you add a new family, update the suffix-matcher accordingly."
+    },
+    {
+      "title": "What you can do now",
+      "description": "You can now (a) trace a request from UI form through `/api/analyze` into the C++ binary and back, (b) edit any pattern rule under `pattern_catalog/` without touching C++, (c) rebuild safely with `./scripts/rebuild.sh`, and (d) measure accuracy via the probe before/after a change. Your next read should be `~/.claude/plans/para-dito-hanggang-structural-fizzy-stonebraker.md` — the active plan that explains which detection bugs are token-level (lexeme-dictionary) fixes and which need structural-wrapping (block-scope) fixes via `ParseTreeSymbolTables`."
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import { useEffect, useState, type ComponentType } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import {
@@ -31,17 +31,17 @@ const ENTRY_OPTIONS: ReadonlyArray<EntryOption> = [
   {
     title: 'Developer',
     label: 'Documentation tool',
-    text: 'Use the C++ pattern analyzer and documentation system.',
-    action: 'Continue as developer',
-    path: '/developer',
+    text: 'Sign in with Google. Use the C++ pattern analyzer and documentation system on a real account.',
+    action: 'Sign in as developer',
+    path: '/developer/login',
     icon: IconCode,
   },
   {
     title: 'Student Learning',
     label: 'Beginner learning path',
-    text: 'Claim a session seat, then learn design-pattern basics before using the analyzer.',
-    action: 'Start learning',
-    path: '/student-studio?next=/student-learning',
+    text: 'Sign in with Google. Learn design-pattern basics before using the analyzer.',
+    action: 'Sign in to learn',
+    path: '/student-learning/login',
     icon: IconAcademicCap,
   },
   {
@@ -55,12 +55,36 @@ const ENTRY_OPTIONS: ReadonlyArray<EntryOption> = [
 ];
 
 export default function EntryChoice() {
+  // Mirror the admin's tester-visibility toggle: when an admin has
+  // flipped testers off (admin -> Users tab -> "Show tester accounts"
+  // checkbox), the Tester card disappears from this page entirely so a
+  // public visitor only sees Developer / Student Learning / Admin.
+  // /auth/test-accounts already publishes `testersHidden` for this
+  // exact use, so we don't need a new endpoint.
+  const [testersHidden, setTestersHidden] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/auth/test-accounts', { headers: { Accept: 'application/json' } })
+      .then(r => r.ok ? r.json() : null)
+      .then((data: { testersHidden?: boolean } | null) => {
+        if (!cancelled && data && typeof data.testersHidden === 'boolean') {
+          setTestersHidden(data.testersHidden);
+        }
+      })
+      .catch(() => { /* network blip — leave default (visible) */ });
+    return () => { cancelled = true; };
+  }, []);
+
+  const visibleOptions = testersHidden
+    ? ENTRY_OPTIONS.filter(o => o.title !== 'Tester')
+    : ENTRY_OPTIONS;
+
   return (
     <main className="nt-entry" id="main">
       <section className="nt-entry-shell" aria-labelledby="entry-heading">
         <div className="nt-entry-panel">
           <header className="nt-entry__hero">
-            <p className="nt-section-eyebrow">Welcome to CodiNeo</p>
+            <p className="nt-section-eyebrow">Welcome to NeoTerritory</p>
             <h1 id="entry-heading" className="nt-entry__title">
               Choose how you want to enter
             </h1>
@@ -69,8 +93,8 @@ export default function EntryChoice() {
             </p>
           </header>
 
-          <div className="nt-entry-grid" aria-label="CodiNeo entry paths">
-            {ENTRY_OPTIONS.map((option) => {
+          <div className="nt-entry-grid" aria-label="NeoTerritory entry paths">
+            {visibleOptions.map((option) => {
               const Icon = option.icon;
               return (
                 <button
@@ -98,8 +122,9 @@ export default function EntryChoice() {
           </div>
 
           <p className="nt-entry__helper">
-            Not sure which one to choose? Start with Student Learning if you are new to design
-            patterns.
+            {testersHidden
+              ? 'Developer and Student Learning sign in with a Google account. Admin uses the protected dashboard credentials.'
+              : 'Not sure which one to choose? Start with Student Learning if you are new to design patterns.'}
           </p>
 
           <div className="nt-entry__back">

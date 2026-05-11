@@ -35,16 +35,31 @@ interface AuditRow {
   created_at: string;
 }
 
-async function postRow(table: string, row: Record<string, unknown>): Promise<void> {
+// Optional onConflict + merge mode for tables where the same row may be
+// re-mirrored across logins (e.g. users on every Google sign-in). When
+// `onConflict` is set we tell PostgREST to upsert by issuing the same
+// POST with Prefer: resolution=merge-duplicates and on_conflict=<col>.
+// Tables without an onConflict still use plain INSERT.
+async function postRow(
+  table: string,
+  row: Record<string, unknown>,
+  opts: { onConflict?: string } = {}
+): Promise<void> {
   if (!enabled) return;
   try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}`, {
+    const url = opts.onConflict
+      ? `${SUPABASE_URL}/rest/v1/${table}?on_conflict=${encodeURIComponent(opts.onConflict)}`
+      : `${SUPABASE_URL}/rest/v1/${table}`;
+    const prefer = opts.onConflict
+      ? 'return=minimal,resolution=merge-duplicates'
+      : 'return=minimal';
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_KEY,
         'Authorization': `Bearer ${SUPABASE_KEY}`,
         'Content-Type': 'application/json',
-        'Prefer': 'return=minimal',
+        'Prefer': prefer,
       },
       body: JSON.stringify(row),
     });
@@ -79,9 +94,17 @@ export function isSupabaseLoggerEnabled(): boolean {
 //     so PostgREST stores them as jsonb
 //   - timestamps without explicit value default to now() in Supabase
 // ────────────────────────────────────────────────────────────────────────────
+// Per-table upsert hints. Tables not listed here are plain INSERTs.
+// Add a new entry when a table can legitimately be re-mirrored (login
+// rebroadcasts, replays). The conflict column must be a unique
+// constraint or PK on the Supabase side.
+const UPSERT_BY_PK: Record<string, string> = {
+  users: 'id'
+};
+
 export function mirrorRow(table: string, row: Record<string, unknown>): void {
   if (!enabled) return;
-  void postRow(table, row);
+  void postRow(table, row, { onConflict: UPSERT_BY_PK[table] });
 }
 
 // Best-effort small JSON parse for SQLite TEXT columns that we want stored

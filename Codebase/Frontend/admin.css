@@ -74,12 +74,26 @@ html,body{background:var(--bg);color:var(--ink);font-family:var(--ui-font);font-
 .admin-aurora{position:fixed!important;inset:0;z-index:-1;opacity:0.32;}
 :root[data-theme="light"] .admin-aurora{opacity:0.55;}  /* multiply blend on white needs a touch more presence */
 body{position:relative;}
-.admin-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);}
+.admin-topbar{display:flex;justify-content:space-between;align-items:start;gap:24px;margin-bottom:28px;padding-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap;}
+/* .brand mirrors styles.css so the admin shell uses the same brand row
+   as the studio (eyebrow + accent-dot title + lede). admin.css does
+   not import styles.css, so each .brand * rule has to live here too. */
+.brand .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);margin-bottom:4px;}
+.brand h1{font-family:var(--ui-font);font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;display:flex;align-items:center;gap:10px;}
+.brand h1::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);}
+.brand .lede{margin-top:6px;color:var(--ink-soft);font-size:13px;max-width:560px;}
+/* Legacy .admin-brand classes kept for any consumers still on the old
+   markup. Safe to remove in a future pass once nothing references them. */
 .admin-brand{display:flex;align-items:center;gap:12px;}
 .admin-brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);}
 .admin-brand h1{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
 .admin-brand .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:2px;}
 .admin-topbar-actions{display:flex;gap:8px;align-items:center;}
+/* Admin action row — sign out / refresh / theme toggle / ops pills.
+   flex-wrap so the ops pills line wraps below the auth buttons on
+   narrow viewports instead of overflowing the topbar. gap:10px gives
+   pill groups room without cramping the buttons. */
+.admin-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:flex-end;}
 .admin-user{font-size:12px;color:var(--ink-soft);}
 .primary-btn,.ghost-btn{font:600 13px/1 var(--ui-font);border-radius:var(--radius-sm);padding:8px 16px;cursor:pointer;border:1px solid transparent;transition:all 0.15s ease;letter-spacing:0.02em;}
 .primary-btn{background:var(--accent);color:#fff;}
@@ -266,17 +280,54 @@ body{position:relative;}
 @media(max-width:1100px){#run-drawer .drawer-card-wide{width:min(380px,calc(100vw - 20px));max-width:calc(100vw - 20px);height:min(64dvh,560px);}}
 @media(max-width:720px){.drawer-card,#run-drawer .drawer-card-wide{width:calc(100vw - 12px);max-width:calc(100vw - 12px);margin:6px;height:calc(100dvh - 12px);}}
 
-/* ADMIN TAB BAR */
-.admin-tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px;gap:0;}
-.admin-tab-btn{font-family:var(--ui-font);font-weight:700;font-size:13px;padding:10px 20px;border:none;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink-soft);transition:color 200ms cubic-bezier(0.16,1,0.3,1),border-color 200ms cubic-bezier(0.16,1,0.3,1),transform 200ms cubic-bezier(0.16,1,0.3,1);letter-spacing:0.02em;position:relative;}
+/* ADMIN TAB BAR — adds index + icon slots so tabs scan as fast as the
+   studio tabs. Underline animation kept (existing pattern). */
+.admin-tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px;gap:0;flex-wrap:wrap;}
+.admin-tab-btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--ui-font);font-weight:700;font-size:13px;padding:11px 18px;border:none;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink-soft);transition:color 200ms cubic-bezier(0.16,1,0.3,1),border-color 200ms cubic-bezier(0.16,1,0.3,1),transform 200ms cubic-bezier(0.16,1,0.3,1);letter-spacing:0.02em;position:relative;}
 .admin-tab-btn:hover{color:var(--accent);transform:translateY(-1px);}
 .admin-tab-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}
 .admin-tab-btn.is-active::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,transparent,var(--accent),transparent);box-shadow:0 0 14px var(--accent-glow);animation:nt-tab-glow 2.4s ease-in-out infinite;}
+.admin-tab-btn__index{font-family:var(--code-font);font-size:10px;font-weight:600;letter-spacing:0.08em;color:var(--ink-dim);}
+.admin-tab-btn.is-active .admin-tab-btn__index{color:var(--accent);}
+.admin-tab-btn__icon{display:inline-flex;align-items:center;color:currentColor;opacity:0.85;}
+.admin-tab-btn__label{font-weight:700;}
 @keyframes nt-tab-glow{0%,100%{opacity:0.65;}50%{opacity:1;}}
 
-/* ADMIN SECTIONS */
-.admin-section{margin-bottom:32px;}
-.admin-section h2{font-size:18px;font-weight:700;margin:0 0 16px;color:var(--ink);}
+/* ADMIN SECTIONS — bare and card variants. Bare keeps backward
+   compatibility for tabs that already render their own framing
+   (RunsTab, ComplexityTab, LogsView). Card adds a panel chrome around
+   the section header so Users + Reviews tabs feel consistent with the
+   chart-panel rhythm used elsewhere in the dashboard. */
+.admin-section{margin-bottom:24px;}
+.admin-section h2{font-size:18px;font-weight:700;margin:0 0 16px;color:var(--ink);letter-spacing:-0.01em;}
+.admin-section--card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 22px;box-shadow:var(--shadow-sm);}
+.admin-section--card + .admin-section--card{margin-top:0;}
+.admin-section__head{margin-bottom:14px;display:flex;flex-direction:column;gap:4px;}
+.admin-section__head h2{margin:0;font-size:16px;font-weight:700;letter-spacing:-0.005em;}
+.admin-section__hint{margin:0;font-size:12px;color:var(--ink-soft);line-height:1.5;}
+
+/* OPS STATUS PILLS — admin topbar surfaces backend / microservice /
+   docker state so the operator sees the same ops health the studio
+   header shows. Compact pills, color-coded by data-state attribute
+   (matches the values setMsStatus / setDockerStatus emit in
+   useHealth). */
+.admin-ops-pills{display:inline-flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.admin-ops-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;font-size:11px;font-weight:500;border-radius:999px;border:1px solid var(--border);background:var(--surface);color:var(--ink-soft);white-space:nowrap;}
+.admin-ops-pill .admin-ops-label{font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink-dim);}
+.admin-ops-pill strong{font-weight:600;color:var(--ink);font-size:11.5px;}
+.admin-ops-dot{width:6px;height:6px;border-radius:50%;background:var(--ink-dim);flex-shrink:0;}
+.admin-ops-pill[data-state="ok"],
+.admin-ops-pill[data-state="online"]{border-color:rgba(74,222,128,0.32);background:rgba(74,222,128,0.06);}
+.admin-ops-pill[data-state="ok"] .admin-ops-dot,
+.admin-ops-pill[data-state="online"] .admin-ops-dot{background:var(--green);box-shadow:0 0 6px var(--green-glow);}
+.admin-ops-pill[data-state="busy"],
+.admin-ops-pill[data-state="checking"]{border-color:rgba(251,191,36,0.32);background:rgba(251,191,36,0.06);}
+.admin-ops-pill[data-state="busy"] .admin-ops-dot,
+.admin-ops-pill[data-state="checking"] .admin-ops-dot{background:var(--amber);}
+.admin-ops-pill[data-state="error"],
+.admin-ops-pill[data-state="offline"]{border-color:rgba(248,113,113,0.32);background:rgba(248,113,113,0.06);color:var(--ink-soft);}
+.admin-ops-pill[data-state="error"] .admin-ops-dot,
+.admin-ops-pill[data-state="offline"] .admin-ops-dot{background:var(--red);}
 
 /* SURVEY STATS */
 .survey-stats{display:flex;flex-direction:column;gap:8px;}

@@ -60,7 +60,13 @@ interface AppState {
   aiStatus: AiCommentaryStatus;
   aiJobId: string | null;
   aiConfigured: boolean;
+  // Admin-controlled toggle. ON during the thesis testing window so
+  // the Self-check / review-survey tab is part of the workflow. OFF
+  // after the thesis ends so post-thesis Developer / Student users do
+  // not hit a survey wall after every run. Seeded from /api/health.
+  reviewsRequired: boolean;
   maxFilesPerSubmission: number;
+  maxTokensPerFile: number;
   pendingRunSurveyForRunKey: string | null;
   linePatternOverrides: Record<number, string>;
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
@@ -97,7 +103,9 @@ interface AppState {
   setPretestSubmitted: (v: boolean) => void;
   setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
   setAiConfigured: (v: boolean) => void;
+  setReviewsRequired: (v: boolean) => void;
   setMaxFilesPerSubmission: (v: number) => void;
+  setMaxTokensPerFile: (v: number) => void;
   mergeAiAnnotations: (aiAnnotations: Annotation[]) => void;
   mergeAiEducation: (educationByKey: Record<string, PatternEducation>) => void;
   setPendingRunSurvey: (key: string | null) => void;
@@ -147,7 +155,12 @@ export const useAppStore = create<AppState>((set) => ({
   aiStatus: 'idle',
   aiJobId: null,
   aiConfigured: false,
+  // Default true so a network blip on the initial /api/health probe
+  // does not accidentally hide the Self-check tab from in-flight
+  // research participants.
+  reviewsRequired: true,
   maxFilesPerSubmission: 3,
+  maxTokensPerFile: 1000,
   pendingRunSurveyForRunKey: null,
   linePatternOverrides: {},
   submissionFiles: [],
@@ -243,7 +256,9 @@ export const useAppStore = create<AppState>((set) => ({
     aiJobId: jobId === undefined ? s.aiJobId : jobId
   })),
   setAiConfigured: (v) => set({ aiConfigured: v }),
+  setReviewsRequired: (v) => set({ reviewsRequired: v }),
   setMaxFilesPerSubmission: (v) => set({ maxFilesPerSubmission: Math.max(1, Math.min(16, v)) }),
+  setMaxTokensPerFile: (v) => set({ maxTokensPerFile: Math.max(100, Math.min(20_000, Math.floor(v))) }),
   setLinePatternOverride: (line, patternKey) => set((s) => ({
     linePatternOverrides: { ...s.linePatternOverrides, [line]: patternKey }
   })),
