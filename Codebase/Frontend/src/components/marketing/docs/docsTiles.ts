@@ -384,24 +384,15 @@ export const RESEARCH_TILES: ReadonlyArray<BentoTile> = [
     sources: [THESIS_CH('Chapter 4 — Expected Contribution'), HOU_2024],
   },
 
-  // ---------- TROPHY (tests on the NeoTerritory product itself) ----------
-  // Note: these tiles describe what the WEBSITE/PRODUCT runs on its own
-  // source. They are intentionally separate from the studio Tests tab,
-  // which runs tests on the USER'S submitted C++ code (static_analysis +
-  // compile_run + unit_test). Same trophy idea, different subject under
-  // test. Every tile names a concrete command + spec file so a reader can
-  // reproduce the run.
+  // ---------- TROPHY ----------
   {
-    id: 'trophy-tsc',
+    id: 'trophy-static',
     group: 'trophy',
-    title: 'Static base · TypeScript strict',
-    hook: 'npx tsc --noEmit on the frontend + backend. Catches whole categories of bugs at zero runtime cost.',
+    title: 'Static base',
+    hook: 'Type-check, lint, structural sanity. Catches whole classes of bugs before runtime.',
     size: '1x1',
     body: [
-      'TypeScript strict mode runs over the entire React frontend and the Express backend. Every CI run gates on a clean tsc pass.',
-      'Commands:',
-      '  cd Codebase/Frontend && npx tsc --noEmit',
-      '  cd Codebase/Backend  && npx tsc --noEmit',
+      'The Testing Trophy starts wider at the base than the traditional unit-test pyramid. Static analysis (TypeScript strict, ESLint, the C++ compiler’s own warnings) is the cheapest layer and catches whole categories of defects with zero runtime cost.',
     ],
     sources: [
       {
@@ -409,48 +400,17 @@ export const RESEARCH_TILES: ReadonlyArray<BentoTile> = [
         citation: 'Dodds, K. C. (2021). Write tests. Not too many. Mostly integration.',
         chapter: 'docs/Research/papers/dodds-2021-testing-trophy.md',
       },
-    ],
-  },
-  {
-    id: 'trophy-cpp-static',
-    group: 'trophy',
-    title: 'Static base · C++ compiler warnings + cppcheck',
-    hook: 'g++ -Wall -Wextra and cppcheck on both the microservice source and on every snippet a learner submits.',
-    size: '1x1',
-    body: [
-      'The C++ microservice is built with the compiler warning set the build/install scripts configure. Cppcheck is a separate static-analysis pass and runs in two places:',
-      '  1. On the studio Tests tab, against the learner\'s submitted source as the first phase of every run.',
-      '  2. In CI, against the microservice source before the build artifact is published.',
-      'See Codebase/Backend/src/services/testRunnerService.ts::runStaticAnalysis.',
-    ],
-    sources: [
       JOHNSON_2022,
     ],
   },
   {
-    id: 'trophy-eslint',
+    id: 'trophy-integration',
     group: 'trophy',
-    title: 'Static base · ESLint + Prettier',
-    hook: 'Lint + format checks on every frontend + backend file. Catches dead imports, unused vars, console.log leakage.',
-    size: '1x1',
-    body: [
-      'ESLint runs the @typescript-eslint recommended rule set plus a small NeoTerritory-specific ruleset around mutation patterns and console.log usage. Prettier enforces formatting so diffs stay clean.',
-      'Command:',
-      '  cd Codebase/Frontend && npx eslint .',
-    ],
-  },
-  {
-    id: 'trophy-e2e-gate',
-    group: 'trophy',
-    title: 'Integration / E2E · Playwright pipeline gate',
-    hook: 'all-samples.spec.ts walks every design-pattern sample end-to-end: load → analyse → tag → run tests → compile pass.',
+    title: 'Integration spine',
+    hook: 'The biggest tier. NeoTerritory lives at the seams between frontend, backend, microservice, and AI.',
     size: '2x1',
     body: [
-      'The single spec at Codebase/Frontend/playwright/tests/all-samples.spec.ts iterates every sample under Codebase/Microservice/samples/ and exercises the full multi-process pipeline (frontend ↔ backend ↔ C++ microservice ↔ AI provider). This is the GitHub Actions blocker — if any sample stops working, the build fails.',
-      'It is both an integration test (real microservice binary spawned, real SSE channel, real DB writes) AND an E2E test (Playwright driving the real studio UI), which is why the Trophy collapses the two layers into one spec for this product.',
-      'Commands:',
-      '  cd Codebase/Frontend && npm run test:e2e',
-      '  PLAYWRIGHT_BASE_URL=https://example pnpm run test:e2e  # against a preview',
+      'The system is a multi-process pipeline (frontend ↔ backend ↔ C++ microservice ↔ AI provider), so the bugs that hurt users live at the seams between processes — exactly where integration tests catch them and where unit tests do not.',
     ],
     sources: [
       {
@@ -458,25 +418,23 @@ export const RESEARCH_TILES: ReadonlyArray<BentoTile> = [
         citation: 'Garousi, V., & Felderer, M. (2021). Integration testing in service-oriented and microservice systems: a survey.',
         chapter: 'docs/Research/papers/garousi-2021-integration-testing-survey.md',
       },
+    ],
+  },
+  {
+    id: 'trophy-e2e',
+    group: 'trophy',
+    title: 'E2E top',
+    hook: 'Playwright walks real flows: submit → analyse → render. Fewer tests, highest signal per failure.',
+    size: '1x1',
+    body: [
+      'The end-to-end layer is intentionally narrow — small numbers of high-confidence flows that exercise the full pipeline (submission to render). Each failure here is load-bearing because it means a real user journey is broken.',
+    ],
+    sources: [
       {
         kind: 'paper',
         citation: 'Barbosa, R., et al. (2023). End-to-end web testing with Playwright: empirical evaluation.',
         chapter: 'docs/Research/papers/barbosa-2023-e2e-playwright.md',
       },
-    ],
-  },
-  {
-    id: 'trophy-screenshots',
-    group: 'trophy',
-    title: 'E2E walkthrough · dynamic-aware screenshots',
-    hook: 'studio-screenshots.spec.ts walks every studio tab and snaps each step with a 3-signal stability wait.',
-    size: '2x1',
-    body: [
-      'A second Playwright spec at Codebase/Frontend/playwright/tests/studio-screenshots.spec.ts is built for visual evidence rather than pass/fail gating. It uses the StudioPage POM (playwright/pages/StudioPage.ts) to walk Submit → Patterns → Tests → Docs → Self-check in narrative order and writes 12 numbered PNGs.',
-      'Every shot is preceded by playwright/helpers/waitForStable.ts, which only resolves when DOM mutations, running CSS animations, and in-flight network requests have all been quiet for the configured window — no magic-number sleeps, so the screenshots never land mid-transition.',
-      'Output: Codebase/Frontend/playwright/screenshots/studio-walkthrough/',
-      'Command:',
-      '  cd Codebase/Frontend && npm run test:e2e:screenshots',
     ],
   },
 ];

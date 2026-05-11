@@ -29,8 +29,8 @@ export default function DocsMain() {
 
       <ResearchBento
         eyebrow="Testing strategy"
-        title="The Testing Trophy — applied to NeoTerritory itself"
-        lede="What this page describes is what the website runs on its OWN source. It is intentionally separate from the studio Tests tab, which runs cppcheck + compile + unit tests on the USER'S submitted C++ code. Same trophy idea, different subject under test."
+        title="The Testing Trophy"
+        lede="Wide static base, fat integration spine, narrow E2E top. Click a layer to read why."
         ariaId="dp-trophy"
         tiles={RESEARCH_TILES.filter((t) => t.group === 'trophy')}
       />
