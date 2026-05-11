@@ -4281,3 +4281,43 @@ body::before {
 :root[data-theme="light"] .bento-tabs__list { border-bottom-color: var(--border-bright); }
 :root[data-theme="light"] .bento-tabs__tab { border-color: var(--border-bright); }
 :root[data-theme="light"] .bento-tabs__tab--active { color: var(--accent); }
+
+/* SubmitTab Help tab content — replaces Miryl's Quick Guide accordion */
+.submit-help {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.submit-help__item {
+  display: flex;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface2);
+}
+
+.submit-help__item-icon {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.submit-help__item-body { min-width: 0; }
+.submit-help__item-body p { margin: 0 0 6px; line-height: 1.45; }
+.submit-help__item-body p:last-child { margin-bottom: 0; }
+.submit-help__item-body small { color: color-mix(in oklab, currentColor 70%, transparent); }
+
+.submit-help__item-title {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+}

@@ -5,6 +5,7 @@ import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
 import ClassBindings from '../analysis/ClassBindings';
 import ClassTreeView from '../analysis/ClassTreeView';
+import InBentoTabs from '../ui/InBentoTabs';
 import { synthesizeUsageAnnotations } from '../../logic/usageAnnotations';
 import { deriveAnnotatedModel } from '../../logic/annotatedModel';
 import { buildClassTree } from '../../logic/classTreeModel';
@@ -525,21 +526,74 @@ export default function AnnotatedTab({
             ))}
           </nav>
         )}
-        <div className="results-body">
-          <SourceView
-            sourceText={activeFile?.sourceText || currentRun.sourceText || ''}
-            annotations={allAnnotations}
-            detectedPatterns={model.activePatterns}
-            classResolvedPatterns={currentRun.classResolvedPatterns}
-            classUsageBindings={currentRun.classUsageBindings}
-            inScopePatternsByClass={model.inScopePatterns}
-            coloringAmbiguousClassNames={model.greyClassNames}
-            subclassPendingClassNames={model.subclassPendingClassNames}
-            subclassDroppedClassNames={model.droppedClassNames}
-            usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
-            onLineClick={onCommentFlash}
-          />
-        </div>
+        <InBentoTabs
+          ariaLabel="Annotated source views"
+          className="annotated-bento"
+          tabs={[
+            {
+              id: 'review',
+              label: 'Review',
+              content: (
+                <div className="annotated-review-pane">
+                  <div className="results-body">
+                    <SourceView
+                      sourceText={activeFile?.sourceText || currentRun.sourceText || ''}
+                      annotations={allAnnotations}
+                      detectedPatterns={model.activePatterns}
+                      classResolvedPatterns={currentRun.classResolvedPatterns}
+                      classUsageBindings={currentRun.classUsageBindings}
+                      inScopePatternsByClass={model.inScopePatterns}
+                      coloringAmbiguousClassNames={model.greyClassNames}
+                      subclassPendingClassNames={model.subclassPendingClassNames}
+                      subclassDroppedClassNames={model.droppedClassNames}
+                      usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
+                      onLineClick={onCommentFlash}
+                    />
+                  </div>
+                  <ClassBindings
+                    bindings={currentRun.classUsageBindings || {}}
+                    detectedPatterns={model.activePatterns}
+                    classResolvedPatterns={currentRun.classResolvedPatterns}
+                    ambiguousClassNames={model.greyClassNames}
+                    subclassPendingClassNames={model.subclassPendingClassNames}
+                    droppedClassNames={model.droppedClassNames}
+                    onLineFlash={onLineFlash}
+                  />
+                </div>
+              ),
+            },
+            {
+              id: 'patterns',
+              label: 'Patterns',
+              content: (
+                <PatternCards
+                  detectedPatterns={model.activePatterns.filter(p =>
+                    !p.className || !model.subclassPendingClassNames.has(p.className)
+                  )}
+                  ranking={currentRun.ranking}
+                  userResolvedPattern={currentRun.userResolvedPattern}
+                  classResolvedPatterns={currentRun.classResolvedPatterns}
+                  ambiguousClassNames={pickerEligibleClassNames}
+                  classUsageBindings={currentRun.classUsageBindings || {}}
+                  classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
+                  onLineFlash={onLineFlash}
+                />
+              ),
+            },
+            {
+              id: 'classtree',
+              label: 'Class tree',
+              content: (
+                <ClassTreeView
+                  nodes={classTree}
+                  pickerCandidatesByClass={model.inScopePatterns}
+                  onPickClass={handlePickClass}
+                  onLineFlash={onLineFlash}
+                />
+              ),
+            },
+          ]}
+        />
       </section>
       {/* Two viewport-corner buttons. The middle label that previously sat
           between them was redundant with the popover/source flash, so it
@@ -564,45 +618,6 @@ export default function AnnotatedTab({
           >→</button>
         </>
       )}
-      <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
-        {/* Class-rooted tree: one row per tagged class. Click-to-disambiguate
-            attaches only on `review` rows, so unambiguous classes render as
-            locked badges. Sits above ClassBindings/PatternCards but reads
-            the same memoized model so all three stay in lockstep. */}
-        <ClassTreeView
-          nodes={classTree}
-          pickerCandidatesByClass={model.inScopePatterns}
-          onPickClass={handlePickClass}
-          onLineFlash={onLineFlash}
-        />
-        {/* ClassBindings (which renders .class-strip-row) goes first so the
-            strip sits above the scoring-explainer-banner inside PatternCards. */}
-        <ClassBindings
-          bindings={currentRun.classUsageBindings || {}}
-          detectedPatterns={model.activePatterns}
-          classResolvedPatterns={currentRun.classResolvedPatterns}
-          ambiguousClassNames={model.greyClassNames}
-          subclassPendingClassNames={model.subclassPendingClassNames}
-          droppedClassNames={model.droppedClassNames}
-          onLineFlash={onLineFlash}
-        />
-        <PatternCards
-          // Subclass-pending classes are filtered out at the card level —
-          // their tag is tentative until the parent picks. The chrome
-          // (chip strip, source view) still shows them as grey, but they
-          // do not earn a card or accuracy bar yet.
-          detectedPatterns={model.activePatterns.filter(p =>
-            !p.className || !model.subclassPendingClassNames.has(p.className)
-          )}
-          ranking={currentRun.ranking}
-          userResolvedPattern={currentRun.userResolvedPattern}
-          classResolvedPatterns={currentRun.classResolvedPatterns}
-          ambiguousClassNames={pickerEligibleClassNames}
-          classUsageBindings={currentRun.classUsageBindings || {}}
-          classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
-          onLineFlash={onLineFlash}
-        />
-      </aside>
     </div>
   );
 }
