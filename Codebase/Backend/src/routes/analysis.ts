@@ -1591,6 +1591,41 @@ async function handleRunTests(
     // Background dispatch. We deliberately do not await this — the
     // response has already been sent. Any thrown error is funnelled into
     // a synthetic done event so subscribers always see closure.
+    // Surface "no eligible patterns" as a visible diagnostic instead of
+    // silently closing the SSE stream with done(0/0/0). Without this, the
+    // studio's Run-All click looks like nothing happened: the spinner
+    // flashes for one render, then the panel resets because no phase
+    // events ever landed (eligible=0 means dispatchPatternTests returns
+    // [] immediately). This is the exact symptom users hit when the
+    // microservice isn't running locally so /api/analyze finds zero
+    // patterns. Emit a single synthetic row so the UI can render
+    // something the user can read.
+    if (taggedPatterns.filter(p => p.className).length === 0) {
+      void (async () => {
+        const message = patterns.length === 0
+          ? 'No patterns were detected during analysis. Re-run analysis (the C++ microservice may have been unavailable) or load a different sample.'
+          : 'No tagged patterns remain after resolving ambiguities. Re-tag at least one class on the Patterns tab before running tests.';
+        for (const phase of ['compile_run', 'unit_test'] as const) {
+          const r: TestResult = {
+            patternId: 'meta.no_patterns',
+            patternName: 'No patterns to test',
+            className: '(none)',
+            phase,
+            passed: false,
+            expected: 'pass',
+            actual: '',
+            exitCode: 0,
+            durationMs: 0,
+            verdict: 'no_template',
+            message
+          };
+          pushPhaseEvent(runId, phase, r);
+        }
+        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
+      })();
+      return;
+    }
+
     void (async () => {
       try {
         const results = await dispatchPatternTests(
@@ -1604,9 +1639,41 @@ async function handleRunTests(
           remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user!.id) || []).length)
         });
       } catch (err) {
-        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
+        // The dispatch raised before any phase result could land. Without
+        // synthetic events the SSE stream would close with `done(0/0/0)`
+        // and the studio would render an empty panel - the exact "spinner
+        // flashes, nothing happens" symptom users see when Docker/the
+        // local compiler/the sandbox is misconfigured. Emit one
+        // `sandbox_disabled` row per tagged pattern so the failure
+        // surfaces as a visible diagnostic instead of a silent reset.
+        const message =
+          err instanceof Error && err.message
+            ? `Test runner failed: ${err.message}`
+            : 'Test runner failed before any phase ran. Check the backend log; the sandbox or compiler likely is not available on this host.';
         // eslint-disable-next-line no-console
         console.error('[run-tests] background dispatch failed', err);
+        const synth: TestResult[] = [];
+        for (const p of taggedPatterns) {
+          if (!p.className) continue;
+          for (const phase of ['compile_run', 'unit_test'] as const) {
+            const r: TestResult = {
+              patternId: p.patternId,
+              patternName: p.patternName,
+              className: p.className,
+              phase,
+              passed: false,
+              expected: 'pass',
+              actual: '',
+              exitCode: 0,
+              durationMs: 0,
+              verdict: 'sandbox_disabled',
+              message
+            };
+            pushPhaseEvent(runId, phase, r);
+            synth.push(r);
+          }
+        }
+        markRunDone(runId, summarize(synth));
       }
     })();
     return;
