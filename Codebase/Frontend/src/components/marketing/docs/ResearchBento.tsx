@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import type { BentoTile } from './researchTiles';
+import type { BentoTile } from './docsTiles';
 
 // Bento renderer + click-to-popup for /research. The grid mirrors the
 // HeroLanding bento (`data-size` 1x1 / 2x1 / 1x2 / 2x2) so the visual
@@ -15,10 +15,16 @@ interface ResearchBentoProps {
   tiles: ReadonlyArray<BentoTile>;
   /** Stable id for the section landmark (used for aria-labelledby). */
   ariaId: string;
+  /**
+   * 'grid' (default) renders tiles in the bento with their authored
+   * data-size (1x1 / 2x1 / 1x2 / 2x2). 'stack' forces every tile to a
+   * single-column compact card for use inside a narrow sidebar rail.
+   */
+  layout?: 'grid' | 'stack';
 }
 
 export default function ResearchBento(props: ResearchBentoProps) {
-  const { eyebrow, title, lede, tiles, ariaId } = props;
+  const { eyebrow, title, lede, tiles, ariaId, layout = 'grid' } = props;
   const [openId, setOpenId] = useState<string | null>(null);
   const triggerRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
 
@@ -63,13 +69,16 @@ export default function ResearchBento(props: ResearchBentoProps) {
       </h2>
       {lede ? <p className="nt-research__section-lede">{lede}</p> : null}
 
-      <div className="nt-research__bento-grid">
+      <div
+        className="nt-research__bento-grid"
+        data-layout={layout}
+      >
         {tiles.map((tile) => (
           <button
             key={tile.id}
             type="button"
             className="nt-research__bento-tile"
-            data-size={tile.size}
+            data-size={layout === 'stack' ? '1x1' : tile.size}
             data-pending={tile.citationPending ? 'true' : undefined}
             onClick={() => setOpenId(tile.id)}
             ref={(el) => {

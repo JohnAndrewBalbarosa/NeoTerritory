@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import TryItChooser from './TryItChooser';
+import HomeStudySummary from './sections/HomeStudySummary';
 
 // Per D40 (audience reframe), D41 (effects budget), D42 (info offloading),
 // D43 (features-first hierarchy), and the doc blueprint at
@@ -112,9 +113,9 @@ const DOORS: ReadonlyArray<BentoDoor> = [
     size: '1x1',
   },
   {
-    title: 'Research',
-    blurb: 'Books and prior art behind the algorithm.',
-    path: '/research',
+    title: 'Docs',
+    blurb: 'Methods, design rationale, trade-offs, and references.',
+    path: '/docs',
     size: '1x1',
   },
   {
@@ -326,6 +327,8 @@ export default function HeroLanding() {
           ))}
         </div>
       </section>
+
+      <HomeStudySummary />
 
       <section className="nt-home__bento" aria-labelledby="bento-heading">
         <header className="nt-home__bento-head">

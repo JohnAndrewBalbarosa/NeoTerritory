@@ -14,7 +14,7 @@ import MechanicsPage from './mechanics/MechanicsPage';
 import PatternsPage from './patterns/PatternsPage';
 import PatternDetailPage from './patterns/PatternDetailPage';
 import TourPage from './tour/TourPage';
-import ResearchPage from './research/ResearchPage';
+import DocsPage from './docs/DocsPage';
 
 interface MarketingShellProps {
   surface: Exclude<Surface, 'studio'>;
@@ -56,7 +56,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'patterns' && <PatternsPage />}
           {surface === 'patternDetail' && <PatternDetailPage />}
           {surface === 'tour' && <TourPage />}
-          {surface === 'research' && <ResearchPage />}
+          {surface === 'docs' && <DocsPage />}
         </motion.div>
       </AnimatePresence>
       <MarketingFooter />

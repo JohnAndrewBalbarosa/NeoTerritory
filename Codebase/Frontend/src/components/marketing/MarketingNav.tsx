@@ -22,7 +22,7 @@ const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | nul
   { path: '/why', label: 'Why', surface: 'why' },
   { path: '/patterns', label: 'Patterns', surface: 'patterns' },
   { path: '/tour', label: 'Tour', surface: 'tour' },
-  { path: '/research', label: 'Research', surface: 'research' },
+  { path: '/docs', label: 'Docs', surface: 'docs' },
   { path: '/about', label: 'About', surface: 'about' },
 ];
 

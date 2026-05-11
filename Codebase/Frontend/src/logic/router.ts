@@ -19,7 +19,7 @@ export type Surface =
   | 'patterns'
   | 'patternDetail'
   | 'tour'
-  | 'research';
+  | 'docs';
 
 const STUDIO_ALIASES = [
   '/app',
@@ -48,7 +48,14 @@ export function pathToSurface(path: string): Surface {
   if (path === '/patterns' || path === '/patterns/gof') return 'patterns';
   if (path.startsWith('/patterns/')) return 'patternDetail';
   if (path === '/tour' || path.startsWith('/tour/')) return 'tour';
-  if (path === '/research' || path.startsWith('/research/')) return 'research';
+  // /research is the previous name; redirect-by-match so old bookmarks still land.
+  if (
+    path === '/docs' ||
+    path.startsWith('/docs/') ||
+    path === '/research' ||
+    path.startsWith('/research/')
+  )
+    return 'docs';
   if (STUDIO_ALIASES.some((a) => path === a || path.startsWith(`${a}/`))) return 'studio';
   return 'hero';
 }
