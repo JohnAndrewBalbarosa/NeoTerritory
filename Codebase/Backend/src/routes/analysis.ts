@@ -349,6 +349,64 @@ function buildAiAnnotations(detectedPatterns: DetectedPatternResult[], aiByPatte
   return buildAnnotations(detectedPatterns, aiByPattern, sourceText);
 }
 
+// Beginner-friendly fallback descriptions per structural-anchor label.
+// Used when AI documentation is unavailable for that anchor so the docs
+// page never says "AI documentation pending" — the reader sees a plain,
+// useful one-liner instead. Keep these as one sentence, plain words,
+// no jargon. New anchor labels added to the catalog should get an entry
+// here; missing labels fall back to a pattern-name sentence.
+const ANCHOR_FALLBACKS: Record<string, string> = {
+  // Singleton
+  singleton_class: 'This is the singleton class — the one and only shared object.',
+  static_instance_accessor: 'Call this static accessor to get the shared instance. Every call returns the same object.',
+  instance_accessor_method: 'This method hands out the single shared instance.',
+  // Factory
+  factory_class: 'This is the factory class. It builds objects so callers do not need to call `new` directly.',
+  factory_branch_decision: 'This branch picks which kind of object to build.',
+  factory_concrete_creation: 'This is where a specific object is actually constructed.',
+  factory_return: 'The factory returns the new object here.',
+  // Builder / Method Chaining
+  builder_class: 'This is the builder. It assembles an object step by step.',
+  fluent_class: 'This class supports method chaining — each setter returns the object itself so calls can stack.',
+  fluent_setter_return: 'This setter returns `*this` so you can chain calls like `obj.setA(...).setB(...)`.',
+  fluent_self_return: 'Returning `*this` is what makes method chaining work.',
+  // Strategy
+  strategy_interface_class: 'This is the strategy interface — it lists the operation every concrete strategy must implement.',
+  strategy_virtual_marker: 'The `virtual` keyword marks the operation that subclasses will override.',
+  strategy_method: 'This is the operation each strategy is required to implement.',
+  strategy_concrete_class: 'This is one concrete strategy — a specific implementation of the interface.',
+  strategy_inheritance: 'The `:` shows this class inherits from the strategy interface above.',
+  strategy_base_class: 'This is the strategy interface being inherited from.',
+  strategy_override_method: 'This method overrides the interface operation with concrete behaviour.',
+  // Adapter
+  adapter_class: 'This is the adapter — it makes one type usable where a different type is expected.',
+  adapter_wrapped_target: 'This holds the object being adapted. The adapter forwards work to it.',
+  adapter_forwarding_op: 'This call forwards the request to the wrapped object.',
+  adapter_forwarded_call: 'The wrapped object does the real work here.',
+  // Decorator
+  decorator_class: 'This is the decorator — it adds behaviour around an existing object without changing it.',
+  decorator_wrapped_component: 'This holds the wrapped object whose behaviour is being extended.',
+  decorator_forwarding_op: 'This call delegates to the wrapped object, with extra behaviour added before or after.',
+  decorator_forwarded_call: 'This is the wrapped object\'s call that the decorator wraps.',
+  // Proxy
+  proxy_class: 'This is the proxy — a stand-in that controls access to the real object.',
+  proxy_real_subject: 'This holds the real object the proxy stands in for.',
+  proxy_forwarding_op: 'This call passes the request through to the real object.',
+  proxy_forwarded_call: 'This is the real object\'s call that the proxy guards.',
+  // PIMPL
+  pimpl_outer_class: 'This is the public class users of the library see.',
+  pimpl_inner_struct_keyword: 'This declares a private implementation struct, hidden from the public header.',
+  pimpl_holder: 'This pointer holds the hidden implementation, keeping internal details out of the header.',
+  pimpl_impl_forward_decl: 'A forward declaration so the header can refer to the impl without exposing its definition.',
+  // Misc
+  explicit_copy_deletion: 'Copy is deleted with `= delete`, so this object cannot be duplicated by accident.',
+};
+
+function anchorFallback(label: string, patternName: string): string {
+  if (ANCHOR_FALLBACKS[label]) return ANCHOR_FALLBACKS[label];
+  return `This line is part of the ${patternName} pattern in your code.`;
+}
+
 function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern: AiResult[], sourceText: string): AnnotationOut[] {
   const normalized = (sourceText || '').replace(/\r\n/g, '\n');
   const lines = normalized.split('\n');
@@ -371,6 +429,7 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
       const lineText = anchor.line && anchor.line >= 1 && anchor.line <= lines.length
         ? (lines[anchor.line - 1] || '').trim()
         : '';
+      const patternLabel = pattern.patternName || pattern.patternId;
       annotations.push({
         id:       `comment-${counter}`,
         order:    counter++,
@@ -378,21 +437,27 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         severity: aiResult.verdict === 'reclassified' ? 'high' : 'medium',
         line:     anchor.line || null,
         lineEnd:  anchor.line || null,
-        title:    `${pattern.patternName || pattern.patternId} :: ${anchor.label}`,
-        comment:  aiDocs[anchor.label] || `Structural anchor "${anchor.label}" — AI documentation pending.`,
+        title:    `${patternLabel} :: ${anchor.label}`,
+        comment:  aiDocs[anchor.label] || anchorFallback(anchor.label, patternLabel),
         excerpt:  lineText,
         kind:     anchor.label,
-        patternKey: pattern.patternName || pattern.patternId,
+        patternKey: patternLabel,
         className:  pattern.className,
         lexemeHints
       });
     });
 
+    // Per project owner: when no AI test plan was produced for this target,
+    // do NOT push a placeholder "AI test plan pending" annotation. The docs
+    // surface is for beginners — empty rows are confusing and out of place.
+    // Render unit-test annotations only when there is a real plan to show.
     (pattern.unitTestTargets || []).forEach((target) => {
+      const planKey = String(target.function_hash || '');
+      const aiPlan = aiTests[planKey];
+      if (!aiPlan) return;
       const lineText = target.line && target.line >= 1 && target.line <= lines.length
         ? (lines[target.line - 1] || '').trim()
         : '';
-      const planKey = String(target.function_hash || '');
       annotations.push({
         id:       `comment-${counter}`,
         order:    counter++,
@@ -401,8 +466,7 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         line:     target.line || null,
         lineEnd:  target.line || null,
         title:    `${pattern.patternName || pattern.patternId} :: ${target.function_name || target.branch_kind}`,
-        comment:  aiTests[planKey]
-          || `Unit-test target (${target.branch_kind}) — AI test plan pending.`,
+        comment:  aiPlan,
         excerpt:  lineText,
         kind:     `unit_test:${target.branch_kind}`,
         patternKey: pattern.patternName || pattern.patternId,
