@@ -1,0 +1,64 @@
+@startuml CodiNeo_Activity
+' CodiNeo — Activity Diagram (Chapter 3.5 Diagrams)
+skinparam handwritten false
+skinparam shadowing false
+skinparam ActivityBackgroundColor #FFFFFF
+skinparam ActivityBorderColor      #2F2F2F
+skinparam ArrowColor               #2F2F2F
+skinparam ActivityDiamondBackgroundColor #F4F6FA
+skinparam ActivityDiamondBorderColor     #4F9CF5
+
+title CodiNeo — Activity Diagram
+
+start
+:Open CodiNeo;
+:Authenticate / Log in;
+
+if (Role / Pathway?) then (Learner)
+  :Open Learning Catalogue;
+  :Select a Design-Pattern Module;
+  :Study Module Content;
+  :Take Module Self-Check;
+  if (Ready to apply concept?) then (yes)
+    :Cross Over to Developer Studio;
+  else (no)
+    stop
+  endif
+elseif (Developer) then ()
+  :Open Developer Studio;
+else (Admin)
+  :Open Admin Dashboard;
+  :Review Runs / KPI / Logs;
+  :Export Evaluation Data;
+  stop
+endif
+
+:Submit C++ Source Code
+(paste / single file / multi-file);
+:Backend validates input;
+if (Valid input?) then (yes)
+  :Forward to C++ microservice;
+  :Lexical scan;
+  :Build virtual structural copy;
+  :Dispatch pattern catalog;
+  :Bind evidence to code units;
+  :Compute hash and links;
+  :Prepare documentation targets;
+  :Generate templated unit tests;
+  :Emit structured JSON report;
+  :Frontend renders verdicts +
+  bound evidence + docs + tests;
+  if (Run templated tests?) then (yes)
+    :Compile & run tests in sandbox;
+    :Show pass / fail per contract;
+  else (no)
+  endif
+  :Save analysis run;
+  :Submit self-check / feedback;
+else (no)
+  :Show validation error;
+  stop
+endif
+
+stop
+@enduml
