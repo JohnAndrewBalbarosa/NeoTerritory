@@ -667,11 +667,13 @@ export async function runStaticAnalysis(input: RunInputs): Promise<TestResult> {
     };
   }
 
-  // Pipe the user's source via stdin so the analyser does not need a
-  // temp file. `--language=c++` is required because cppcheck would
-  // otherwise infer the language from a filename extension that doesn't
-  // exist when we feed via stdin.
+  // cppcheck 2.x rejects `-` as a stdin pseudo-filename, so we write the
+  // submission to a tmp .cpp file and let the analyser pick up the extension.
+  // The temp file is unlinked in `finally` regardless of cppcheck's outcome.
   const source = input.fullSource && input.fullSource.length > 0 ? input.fullSource : input.classText;
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cppcheck-'));
+  const tmpFile = path.join(tmpDir, 'submission.cpp');
+  fs.writeFileSync(tmpFile, source, 'utf8');
   const argv = [
     CPPCHECK_BIN,
     '--enable=warning,style,performance,portability',
@@ -680,9 +682,15 @@ export async function runStaticAnalysis(input: RunInputs): Promise<TestResult> {
     '--std=c++17',
     '--quiet',
     "--template={severity}|{line}|{message}",
-    '-',
+    tmpFile,
   ];
-  const cmd = await runCmd(argv, CPPCHECK_TIMEOUT_MS, source);
+  let cmd;
+  try {
+    cmd = await runCmd(argv, CPPCHECK_TIMEOUT_MS);
+  } finally {
+    try { fs.unlinkSync(tmpFile); } catch { /* best-effort */ }
+    try { fs.rmdirSync(tmpDir); } catch { /* best-effort */ }
+  }
   const findings = parseCppcheckOutput(cmd.stdout, cmd.stderr);
   const errorFindings = findings.filter((f) => f.severity === 'error');
   const passed = errorFindings.length === 0;

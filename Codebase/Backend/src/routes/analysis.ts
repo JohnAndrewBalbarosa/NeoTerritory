@@ -1687,9 +1687,11 @@ async function handleRunTests(
     // something the user can read.
     if (taggedPatterns.filter(p => p.className).length === 0) {
       void (async () => {
-        const message = patterns.length === 0
-          ? 'No patterns were detected during analysis. Re-run analysis (the C++ microservice may have been unavailable) or load a different sample.'
-          : 'No tagged patterns remain after resolving ambiguities. Re-tag at least one class on the Patterns tab before running tests.';
+        // Keep this message terse: the FE row is just a placeholder so the
+        // panel doesn't reset to blank. Long-form guidance about tagging /
+        // resolving ambiguities lives in the docs + thesis chapter, not in
+        // the runner UI. Empty string suppresses the .gdb-phase-message <p>.
+        const message = '';
         for (const phase of ['compile_run', 'unit_test'] as const) {
           const r: TestResult = {
             patternId: 'meta.no_patterns',
