@@ -3356,6 +3356,14 @@ body[data-surface] {
   padding: clamp(1.5rem, 1rem + 1.4vw, 2.75rem) clamp(1.25rem, 4vw, 3rem) clamp(1rem, 0.75rem + 1vw, 2rem);
   text-align: center;
 }
+.nt-home__above-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: clamp(1.25rem, 1rem + 1vw, 2rem);
+}
 .nt-home__eyebrow {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
