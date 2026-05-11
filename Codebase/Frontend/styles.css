@@ -4495,6 +4495,193 @@ body::before {
 :root[data-theme="light"] .ai-badge {
   box-shadow: none;
 }
+
+/* ─────────────────────────────────────────────────────────────
+   ANNOTATED TAB — light mode hardcoded-dark overrides
+   ───────────────────────────────────────────────────────────── */
+
+/* Analysis result banner (top summary card after a run) */
+:root[data-theme="light"] .analysis-result-card {
+  background: #ffffff;
+  border-color: rgba(0, 125, 138, 0.18);
+  box-shadow: 0 2px 16px rgba(15, 30, 60, 0.08), 0 1px 3px rgba(15, 30, 60, 0.04);
+}
+:root[data-theme="light"] .analysis-result-card__icon {
+  background: linear-gradient(135deg, #00a090, #0068b0);
+  box-shadow: 0 0 18px rgba(0, 125, 138, 0.22);
+  color: #ffffff;
+}
+:root[data-theme="light"] .summary-metrics span {
+  background: #f4f6f9;
+  border-color: rgba(15, 30, 60, 0.12);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .summary-metrics strong {
+  color: var(--green);
+  font-size: 16px;
+}
+:root[data-theme="light"] .summary-pattern-chip--detected {
+  color: var(--accent);
+  background: rgba(0, 125, 138, 0.08);
+  border-color: rgba(0, 125, 138, 0.28);
+  box-shadow: none;
+}
+:root[data-theme="light"] .result-pill {
+  color: var(--ink-soft);
+  background: rgba(15, 30, 60, 0.05);
+  border-color: rgba(15, 30, 60, 0.14);
+}
+:root[data-theme="light"] .result-pill--matched {
+  color: var(--green);
+  background: rgba(42, 140, 52, 0.08);
+  border-color: rgba(42, 140, 52, 0.28);
+}
+:root[data-theme="light"] .result-pill--warning {
+  color: var(--amber);
+  background: rgba(176, 96, 0, 0.08);
+  border-color: rgba(176, 96, 0, 0.28);
+}
+
+/* Source toolbar (filter chip row above code pane) */
+:root[data-theme="light"] .source-toolbar {
+  background: #f4f6f9;
+  border-color: rgba(15, 30, 60, 0.11);
+}
+:root[data-theme="light"] .source-filter-chip {
+  background: #ffffff;
+  border-color: rgba(15, 30, 60, 0.14);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .source-filter-chip:hover,
+:root[data-theme="light"] .source-filter-chip.is-active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+/* Highlight-by-pattern colour picker */
+:root[data-theme="light"] .highlight-by-pattern-btn {
+  background: #f4f6f9;
+  border-color: rgba(15, 30, 60, 0.14);
+  color: var(--ink-soft);
+}
+
+/* Right-side review card (Quick Summary / Code Structure / Help panel) */
+:root[data-theme="light"] .review-side-card {
+  background: #ffffff;
+  border-color: rgba(15, 30, 60, 0.10);
+  box-shadow: 0 2px 12px rgba(15, 30, 60, 0.07);
+}
+:root[data-theme="light"] .side-tabs {
+  background: #f0f2f6;
+  border-bottom-color: rgba(15, 30, 60, 0.10);
+}
+:root[data-theme="light"] .side-tab {
+  color: var(--ink-soft);
+  background: transparent;
+  border-color: transparent;
+}
+:root[data-theme="light"] .side-tab:hover {
+  color: var(--accent);
+  background: rgba(0, 125, 138, 0.07);
+  border-color: rgba(0, 125, 138, 0.18);
+}
+:root[data-theme="light"] .side-tab.is-active {
+  color: #ffffff;
+  background: linear-gradient(135deg, #009ea8, #0068b0);
+  border-color: transparent;
+  box-shadow: 0 2px 10px rgba(0, 125, 138, 0.22);
+}
+:root[data-theme="light"] .review-side-icon {
+  color: var(--accent);
+  background: rgba(0, 125, 138, 0.08);
+  border-color: rgba(0, 125, 138, 0.18);
+}
+:root[data-theme="light"] .side-next-step {
+  background: rgba(176, 96, 0, 0.05);
+  border-color: rgba(176, 96, 0, 0.20);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .selected-pattern-card__section {
+  border-top-color: rgba(15, 30, 60, 0.09);
+}
+:root[data-theme="light"] .selected-pattern-card__section h4 {
+  color: var(--accent);
+}
+
+/* "Next: Run unit tests →" primary CTA inside the side panel */
+:root[data-theme="light"] .beginner-side-panel .primary-btn {
+  background: linear-gradient(135deg, #009ea8, #0068b0);
+  box-shadow: 0 2px 14px rgba(0, 125, 138, 0.22);
+  color: #ffffff;
+}
+
+/* Ambiguous match CTA card */
+:root[data-theme="light"] .ambiguous-cta-card {
+  background: #ffffff;
+  border-color: rgba(176, 96, 0, 0.22);
+  box-shadow: 0 2px 12px rgba(15, 30, 60, 0.07);
+}
+:root[data-theme="light"] .ambiguous-cta-card h3 { color: var(--ink); }
+:root[data-theme="light"] .ambiguous-cta-card p { color: var(--ink-soft); }
+:root[data-theme="light"] .ambiguous-cta-card strong { color: var(--amber); }
+
+/* Review warning bar */
+:root[data-theme="light"] .review-warning-bar {
+  background: rgba(176, 96, 0, 0.06);
+  border-color: rgba(176, 96, 0, 0.24);
+  color: var(--amber);
+  box-shadow: none;
+}
+:root[data-theme="light"] .review-warning-bar span {
+  background: var(--amber);
+  color: #ffffff;
+}
+
+/* "READY TO CONTINUE" label / tag */
+:root[data-theme="light"] .ready-to-continue-tag,
+:root[data-theme="light"] [class*="ready-to-continue"],
+:root[data-theme="light"] .status-tag--ready {
+  color: var(--green);
+  background: rgba(42, 140, 52, 0.09);
+  border-color: rgba(42, 140, 52, 0.26);
+}
+
+/* Pattern evidence tags (class chips on the source pane) */
+:root[data-theme="light"] .src-tag {
+  background: rgba(0, 125, 138, 0.07);
+  border-color: rgba(0, 125, 138, 0.22);
+  color: var(--accent);
+}
+:root[data-theme="light"] .src-tag--ambiguous {
+  background: rgba(176, 96, 0, 0.07);
+  border-color: rgba(176, 96, 0, 0.22);
+  color: var(--amber);
+}
+
+/* Review drawer */
+:root[data-theme="light"] .review-drawer {
+  background: #ffffff;
+  border-color: rgba(15, 30, 60, 0.12);
+  box-shadow: 0 8px 32px rgba(15, 30, 60, 0.14);
+}
+:root[data-theme="light"] .review-drawer-backdrop {
+  background: rgba(220, 224, 234, 0.62);
+  backdrop-filter: blur(10px);
+}
+:root[data-theme="light"] .review-drawer__head {
+  border-bottom-color: rgba(15, 30, 60, 0.10);
+}
+:root[data-theme="light"] .review-evidence-panel,
+:root[data-theme="light"] .review-evidence-notes {
+  background: #f7f9fc;
+  border-color: rgba(15, 30, 60, 0.09);
+}
+
+/* Topbar accent pulse dot */
+:root[data-theme="light"] .topbar-brand__dot {
+  box-shadow: 0 0 6px rgba(0, 125, 138, 0.5);
+}
 /* ---------- Start Here rail (D45) ----------
    First-run guide anchored above the analysis form on /studio* surfaces.
    Three numbered steps. Collapses to a small pill once dismissed; the
