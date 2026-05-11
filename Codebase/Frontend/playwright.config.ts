@@ -8,6 +8,10 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './playwright/tests',
+  // Safety-net release of any seat the spec persisted via the SEAT_FILE
+  // contract. Survives worker crashes that skip test.afterAll — the
+  // exact cascade that broke /auth/claim on the previous CI run.
+  globalTeardown: require.resolve('./playwright/global-teardown.ts'),
   // The full-pipeline test loads a sample, runs analyze, runs tests, and
   // waits for backend responses. Generous timeout per test.
   timeout: 180_000,

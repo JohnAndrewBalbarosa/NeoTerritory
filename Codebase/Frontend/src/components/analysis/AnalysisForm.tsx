@@ -327,13 +327,13 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
       </div>
 
       <div className="form-actions">
-        <button id="analyze-btn" className="primary-btn" type="submit" disabled={busy || submissionOverLimit}>
+        <button id="analyze-btn" data-testid="analyze-btn" className="primary-btn" type="submit" disabled={busy || submissionOverLimit}>
           {busy ? 'Running...' : `Run analysis (${slots.filter(s => s.text.trim()).length} file${slots.filter(s => s.text.trim()).length === 1 ? '' : 's'})`}
         </button>
-        <button id="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
+        <button id="load-sample-btn" data-testid="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
           Load sample
         </button>
-        <button id="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
+        <button id="clear-btn" data-testid="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
           Clear
         </button>
       </div>

@@ -156,7 +156,7 @@ async function signInWithSharedSeat(page: Page): Promise<void> {
 
   await page.goto('/studio');
   await expect(page).toHaveURL(/\/studio/, { timeout: 15_000 });
-  await expect(page.locator('#load-sample-btn')).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId('load-sample-btn')).toBeVisible({ timeout: 15_000 });
 }
 
 async function loadSampleByFilename(page: Page, filename: string): Promise<void> {
@@ -179,52 +179,59 @@ async function loadSampleByFilename(page: Page, filename: string): Promise<void>
 
   // Confirm the slot has content (the Run-analysis button text is bound
   // to the number of non-empty slots).
-  await expect(page.locator('#analyze-btn')).toContainText(/Run analysis \(1 file/i, {
+  await expect(page.getByTestId('analyze-btn')).toContainText(/Run analysis \(1 file/i, {
     timeout: 5_000,
   });
 }
 
 async function runAnalysis(page: Page): Promise<void> {
-  const analyze = page.locator('#analyze-btn');
+  const analyze = page.getByTestId('analyze-btn');
   await expect(analyze).toBeEnabled();
   await analyze.click();
 
   // Wait for the run to complete: the status card transitions from
   // "Analyzing..." to "Analysis ready" (the title is set by the store).
-  await expect(page.locator('#status-title')).toHaveText(/Analysis ready/i, { timeout: 60_000 });
+  // The status-title node lives in a sr-only aria-live region after the
+  // layout-flatten refactor; we still wait on it via the stable data-testid.
+  await expect(page.getByTestId('status-title')).toHaveText(/Analysis ready/i, { timeout: 60_000 });
 }
 
 async function assertTaggingHappened(
   page: Page,
   classNameRegex: RegExp,
-): Promise<{ tagged: boolean; reason: string }> {
-  // Switch to the Patterns tab (its label text in MainLayout).
-  await page.locator('button[role="tab"]:has-text("Patterns")').click();
+): Promise<{ tagged: boolean; reason: string; emptyTree: boolean }> {
+  // Switch to the Patterns tab via the stable data-testid (the visible
+  // label is layout-dependent and would silently drift on a tab-bar rename).
+  await page.getByTestId('tab-annotated').click();
 
-  // The class tree only renders when the detector emits at least one
-  // verdict. Samples like usages_basic intentionally exercise the binder
-  // without firing any pattern, so the tree may legitimately stay hidden.
-  // We treat "no class tree" as a soft pass (analysis ran, the pipeline
-  // works, just no patterns) and surface it via the returned reason.
-  const tree = page.locator('.class-tree-view');
+  // The class tree always renders the section; data-empty="true" signals
+  // an explicit "no pattern matches" verdict (negative samples). The
+  // legacy "tree not visible at all" path remains for full pipeline
+  // failures (analyze never produced a run).
+  const tree = page.getByTestId('class-tree-view');
   const treeVisible = await tree.isVisible({ timeout: 8_000 }).catch(() => false);
   if (!treeVisible) {
-    return { tagged: false, reason: 'No class tree rendered (sample produced no pattern matches).' };
+    return { tagged: false, reason: 'No class tree rendered (analyze never landed).', emptyTree: false };
+  }
+  const isEmpty = (await tree.getAttribute('data-empty')) === 'true';
+  if (isEmpty) {
+    return { tagged: false, reason: 'Class tree rendered empty (no patterns detected).', emptyTree: true };
   }
 
-  const classNode = page.locator('.class-tree-name').filter({ hasText: classNameRegex }).first();
+  const classNode = page.getByTestId('class-tree-name').filter({ hasText: classNameRegex }).first();
   const classVisible = await classNode.isVisible({ timeout: 8_000 }).catch(() => false);
   if (!classVisible) {
     // The tree rendered but no class matched the expected regex - log all
     // class names we saw so the diagnostic is useful when this triggers.
-    const names = await page.locator('.class-tree-name').allTextContents();
+    const names = await page.getByTestId('class-tree-name').allTextContents();
     return {
       tagged: false,
       reason: `Tree rendered but no class matched ${classNameRegex}. Saw: ${names.join(', ') || '(none)'}`,
+      emptyTree: false,
     };
   }
 
-  return { tagged: true, reason: '' };
+  return { tagged: true, reason: '', emptyTree: false };
 }
 
 async function resolveAllAmbiguousClasses(page: Page): Promise<number> {
@@ -232,8 +239,8 @@ async function resolveAllAmbiguousClasses(page: Page): Promise<number> {
   // candidate pattern in the resulting popover. Returns the number of
   // classes resolved. The order does not matter for the spec  -  we only
   // need every class tagged so Run All is no longer blocked.
-  await page.locator('button[role="tab"]:has-text("Patterns")').click();
-  await expect(page.locator('.class-tree-view')).toBeVisible({ timeout: 10_000 });
+  await page.getByTestId('tab-annotated').click();
+  await expect(page.getByTestId('class-tree-view')).toBeVisible({ timeout: 10_000 });
 
   let resolved = 0;
   for (let i = 0; i < 50; i += 1) {
@@ -256,11 +263,11 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
   skipReason: string;
   ambiguityResolved: number;
 }> {
-  // Switch to the Tests tab.
-  await page.locator('button[role="tab"]:has-text("Tests")').click();
+  // Switch to the Tests tab via stable data-testid.
+  await page.getByTestId('tab-gdb').click();
   await expect(page.locator('.gdb-trophy-banner')).toBeVisible({ timeout: 10_000 });
 
-  const runAll = page.locator('button:has-text("Run all tests")').first();
+  const runAll = page.getByTestId('run-all-tests-btn');
   await expect(runAll).toBeVisible({ timeout: 10_000 });
 
   // If Run All is blocked by ambiguity, walk over to the Patterns tab and
@@ -272,7 +279,7 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
     const title = (await runAll.getAttribute('title')) ?? '';
     if (/Resolve ambiguity/i.test(title) || /ambiguity/i.test(title)) {
       ambiguityResolved = await resolveAllAmbiguousClasses(page);
-      await page.locator('button[role="tab"]:has-text("Tests")').click();
+      await page.getByTestId('tab-gdb').click();
       await expect(runAll).toBeVisible({ timeout: 10_000 });
       disabled = await runAll.isDisabled().catch(() => false);
     }
@@ -292,10 +299,13 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
 
   // Wait for compile_run verdicts to land. If the runner is slow or
   // sandbox-disabled, no rows appear  -  soft-skip with annotation rather
-  // than failing the spec.
+  // than failing the spec. The phase row carries data-phase + data-verdict
+  // (verdict reflects pass/fail/sandbox_disabled/no_template/skipped) while
+  // data-status collapses to pass/fail/skipped/loading. Filter on verdict
+  // for the sandbox-disabled check so the soft-skip path actually fires.
   try {
     await page
-      .locator('.gdb-phase-row[data-phase="compile_run"]')
+      .locator('[data-testid="gdb-phase-row"][data-phase="compile_run"]')
       .first()
       .waitFor({ state: 'attached', timeout: 60_000 });
   } catch {
@@ -309,7 +319,7 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
 
   await page.waitForTimeout(2_000);
 
-  const compileRows = page.locator('.gdb-phase-row[data-phase="compile_run"]');
+  const compileRows = page.locator('[data-testid="gdb-phase-row"][data-phase="compile_run"]');
   const compileCount = await compileRows.count();
   if (compileCount === 0) {
     return {
@@ -324,10 +334,10 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
   // actually compiled the sample." Sandbox-disabled rows count as a soft
   // skip rather than a hard fail.
   const passingCompiles = await page
-    .locator('.gdb-phase-row[data-phase="compile_run"][data-status="pass"]')
+    .locator('[data-testid="gdb-phase-row"][data-phase="compile_run"][data-status="pass"]')
     .count();
   const sandboxDisabled = await page
-    .locator('.gdb-phase-row[data-phase="compile_run"][data-status="sandbox_disabled"]')
+    .locator('[data-testid="gdb-phase-row"][data-phase="compile_run"][data-verdict="sandbox_disabled"]')
     .count();
 
   if (passingCompiles === 0 && sandboxDisabled > 0) {
@@ -345,7 +355,7 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
   ).toBeGreaterThan(0);
 
   const unitFailures = await page
-    .locator('.gdb-phase-row[data-phase="unit_test"][data-status="fail"]')
+    .locator('[data-testid="gdb-phase-row"][data-phase="unit_test"][data-status="fail"]')
     .count();
   return { unitFailures, skipped: false, skipReason: '', ambiguityResolved };
 }
@@ -354,12 +364,32 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
 // test claimed its own seat and afterEach released; with 10 tests + retries
 // the release didn't keep up and the pool ran dry by test 11. One seat for
 // the whole spec sidesteps the seat-management problem entirely  -  the seat
-// is released in test.afterAll.
+// is released in test.afterAll, AND the seat info is persisted to
+// SEAT_FILE so playwright/global-teardown.ts can release it even when a
+// worker crashes before afterAll runs.
 const SHARED_SEAT: { username: string; token: string; user: unknown } = {
   username: '',
   token: '',
   user: null,
 };
+const SEAT_FILE = path.resolve(__dirname, '..', '..', '.playwright-seat.json');
+
+function persistSeat(): void {
+  try {
+    fs.writeFileSync(
+      SEAT_FILE,
+      JSON.stringify({ username: SHARED_SEAT.username, token: SHARED_SEAT.token }),
+      'utf8',
+    );
+  } catch {
+    // Disk write failure is non-fatal: the test.afterAll path still runs
+    // on clean exit. We just lose the crash-safety net.
+  }
+}
+
+function clearSeatFile(): void {
+  try { fs.unlinkSync(SEAT_FILE); } catch { /* missing is fine */ }
+}
 
 async function claimSharedSeat(apiRequest: APIRequestContext): Promise<void> {
   if (SHARED_SEAT.token) return;
@@ -383,10 +413,14 @@ async function claimSharedSeat(apiRequest: APIRequestContext): Promise<void> {
   SHARED_SEAT.username = target.username;
   SHARED_SEAT.token = claim.token;
   SHARED_SEAT.user = claim.user;
+  persistSeat();
 }
 
 async function releaseSharedSeat(apiRequest: APIRequestContext): Promise<void> {
-  if (!SHARED_SEAT.token) return;
+  if (!SHARED_SEAT.token) {
+    clearSeatFile();
+    return;
+  }
   try {
     await apiRequest.post('/auth/disconnect', {
       headers: { Authorization: `Bearer ${SHARED_SEAT.token}` },
@@ -394,6 +428,8 @@ async function releaseSharedSeat(apiRequest: APIRequestContext): Promise<void> {
     });
   } catch {
     /* best-effort */
+  } finally {
+    clearSeatFile();
   }
 }
 

@@ -57,7 +57,12 @@ export default function ClassTreeView({
   }
 
   return (
-    <section className="class-tree-view" aria-label="Class-rooted design pattern tree">
+    <section
+      className="class-tree-view"
+      data-testid="class-tree-view"
+      data-empty={nodes.length === 0 ? 'true' : 'false'}
+      aria-label="Class-rooted design pattern tree"
+    >
       <header className="class-tree-header">
         <h3 style={{ margin: '0 0 0.5rem 0', fontSize: '0.95rem' }}>
           Class tree
@@ -162,7 +167,7 @@ function ClassRootRow({
       >
         {isCollapsed ? '▸' : '▾'}
       </button>
-      <strong className="class-tree-name">{node.className}</strong>
+      <strong className="class-tree-name" data-testid="class-tree-name">{node.className}</strong>
       {node.parent && (
         <span className="class-tree-parent" style={{ opacity: 0.6, fontSize: '0.85em' }}>
           (parent: {node.parent})
@@ -199,6 +204,8 @@ function ClassRootRow({
               <span
                 key={p}
                 className="class-tree-badge class-tree-badge--chosen"
+                data-testid="class-tree-badge"
+                data-pattern={p}
                 style={{
                   border: `1px solid ${c.border}`,
                   background: c.bg,
@@ -217,6 +224,8 @@ function ClassRootRow({
       {!isReview && !showChosenBadges && fallbackBadgeColor && (
         <span
           className="class-tree-badge"
+          data-testid="class-tree-badge"
+          data-pattern={node.mainDesignPattern ?? ''}
           style={{
             border: `1px solid ${fallbackBadgeColor.border}`,
             background: fallbackBadgeColor.bg,

@@ -280,8 +280,8 @@ export default function MainLayout() {
               tech announces "Analysis ready" and the all-samples spec can
               still wait on `#status-title`. */}
           <div className="sr-only" aria-live="polite" aria-atomic="true">
-            <strong id="status-title">{status?.title ?? ''}</strong>
-            <span id="status-detail">{status?.detail ?? ''}</span>
+            <strong id="status-title" data-testid="status-title">{status?.title ?? ''}</strong>
+            <span id="status-detail" data-testid="status-detail">{status?.detail ?? ''}</span>
           </div>
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>
@@ -322,6 +322,7 @@ export default function MainLayout() {
               key={t.id}
               type="button"
               role="tab"
+              data-testid={`tab-${t.id}`}
               aria-selected={isActive}
               aria-disabled={!unlocked}
               disabled={!unlocked}

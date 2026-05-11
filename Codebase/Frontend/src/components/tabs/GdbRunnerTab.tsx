@@ -129,7 +129,13 @@ function PhaseRow({ phase, result, loading }: {
       : result.passed ? 'pass' : (result.verdict === 'skipped' ? 'skipped' : 'fail');
   const verdictText = result ? VERDICT_LABEL[result.verdict] || result.verdict : 'idle';
   return (
-    <div className={`gdb-phase-row gdb-phase-${status}`} data-status={status}>
+    <div
+      className={`gdb-phase-row gdb-phase-${status}`}
+      data-testid="gdb-phase-row"
+      data-phase={phase}
+      data-status={status}
+      data-verdict={result?.verdict ?? ''}
+    >
       <header className="gdb-phase-head">
         <span className="gdb-phase-label">{label}</span>
         {loading
@@ -480,6 +486,7 @@ export default function GdbRunnerTab() {
         <button
           type="button"
           className="primary-btn"
+          data-testid="run-all-tests-btn"
           onClick={runAll}
           disabled={!canRun || busy || onCooldown}
           title={

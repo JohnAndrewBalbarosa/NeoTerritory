@@ -139,13 +139,21 @@ export class StudioPage {
 
     await this.page.goto('/studio');
     await expect(this.page).toHaveURL(/\/studio/, { timeout: 15_000 });
-    await expect(this.page.locator('#load-sample-btn')).toBeVisible({ timeout: 15_000 });
+    await expect(this.page.getByTestId('load-sample-btn')).toBeVisible({ timeout: 15_000 });
   }
 
   /** Click a studio tab. Waits for the page to settle before returning. */
   async tab(id: StudioTabId): Promise<void> {
-    const label = STUDIO_TAB_LABELS[id];
-    await this.page.locator(`button[role="tab"]:has-text("${label}")`).click();
+    // Tab buttons carry data-testid="tab-<id>" — stable across layout
+    // refactors and label/i18n changes. Falls back to the label-by-text
+    // matcher only if the testid isn't found (legacy stack).
+    const byTestId = this.page.getByTestId(`tab-${id}`);
+    if (await byTestId.count() > 0) {
+      await byTestId.click();
+    } else {
+      const label = STUDIO_TAB_LABELS[id];
+      await this.page.locator(`button[role="tab"]:has-text("${label}")`).click();
+    }
     await waitForStable(this.page);
   }
 
@@ -160,18 +168,20 @@ export class StudioPage {
     const editor = this.page.locator('textarea').first();
     await expect(editor).toBeVisible({ timeout: 10_000 });
     await editor.fill(source);
-    await expect(this.page.locator('#analyze-btn')).toContainText(/Run analysis \(1 file/i, {
+    await expect(this.page.getByTestId('analyze-btn')).toContainText(/Run analysis \(1 file/i, {
       timeout: 5_000,
     });
   }
 
   /** Click Analyze and wait for the run-complete signal. */
   async analyze(): Promise<void> {
-    const analyze = this.page.locator('#analyze-btn');
+    const analyze = this.page.getByTestId('analyze-btn');
     await expect(analyze).toBeEnabled();
     await analyze.click();
     // The status card transitions to "Analysis ready" when the run lands.
-    await expect(this.page.locator('#status-title')).toHaveText(/Analysis ready/i, {
+    // The status-title lives in a sr-only aria-live region — data-testid
+    // stays stable across the layout-flatten refactor.
+    await expect(this.page.getByTestId('status-title')).toHaveText(/Analysis ready/i, {
       timeout: 60_000,
     });
     await waitForStable(this.page);
