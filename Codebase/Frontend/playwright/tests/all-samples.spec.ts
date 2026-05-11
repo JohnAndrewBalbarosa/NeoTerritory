@@ -23,6 +23,13 @@ const SAMPLE_DIR_BY_FILENAME: Record<string, string> = {
   'pimpl_basic.cpp': 'pimpl',
   'mixed_classes.cpp': 'mixed',
   'usages_basic.cpp': 'usages',
+  // Phase B (D21 regression contract): integration sample +
+  // false-positive contract (negative/) + extended usages coverage.
+  'all_patterns.cpp': 'integration',
+  'plain_class_no_pattern.cpp': 'negative',
+  'plain_widget.cpp': 'negative',
+  'usages_adapter_trace.cpp': 'usages',
+  'usages_smart_pointers.cpp': 'usages',
 };
 function readSampleSource(filename: string): string {
   const dir = SAMPLE_DIR_BY_FILENAME[filename];
@@ -51,6 +58,8 @@ function readSampleSource(filename: string): string {
 // the pipeline. That gate is the contract: if any sample stops working,
 // the system is broken and the build must fail.
 
+type SampleKind = 'positive' | 'negative' | 'integration';
+
 interface SampleSpec {
   // Display name shown in the test title.
   name: string;
@@ -58,9 +67,29 @@ interface SampleSpec {
   // the .cpp filename below the pattern label).
   filename: string;
   // Family heading the sample lives under in the picker.
-  family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
+  family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms' | 'Regression';
+  // What kind of contract this sample exercises:
+  //  - 'positive'    — single canonical pattern must be detected on the
+  //                    named class. Phase C: expectedPatternNameRegex is
+  //                    required.
+  //  - 'negative'    — false-positive contract from D21. The class tree
+  //                    must render in its empty state (data-empty="true")
+  //                    OR not render a known catalog pattern badge.
+  //  - 'integration' — regression contract from D21. Every locked-catalog
+  //                    pattern must surface on at least one class.
+  kind: SampleKind;
   // The class name the sample defines (used for the Patterns-tab assertion).
-  expectedClassNameRegex: RegExp;
+  // Optional for negative samples (no class assertion needed; empty tree
+  // is the assertion).
+  expectedClassNameRegex?: RegExp;
+  // Phase C (D68 structural assertion): which pattern badge must appear
+  // on the named class for positive samples. Catalog from D21:
+  //   creational  — singleton | factory | builder | method_chaining
+  //   structural  — adapter | proxy | decorator
+  expectedPatternNameRegex?: RegExp;
+  // Phase C (D21 integration contract): every catalog pattern in this
+  // list must appear at least once anywhere in the class tree.
+  expectedAllCatalogPatterns?: RegExp[];
 }
 
 // Mirrors Codebase/Microservice/samples/  -  keep in sync when samples are
@@ -71,62 +100,136 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
     name: 'Builder  -  http_request_builder',
     filename: 'http_request_builder.cpp',
     family: 'Creational',
+    kind: 'positive',
     expectedClassNameRegex: /HttpRequestBuilder/,
+    expectedPatternNameRegex: /builder/i,
   },
   {
     name: 'Factory  -  shape_factory',
     filename: 'shape_factory.cpp',
     family: 'Creational',
+    kind: 'positive',
     expectedClassNameRegex: /ShapeFactory|Shape/,
+    expectedPatternNameRegex: /factory/i,
   },
   {
     name: 'Singleton  -  config_registry',
     filename: 'config_registry.cpp',
     family: 'Creational',
+    kind: 'positive',
     expectedClassNameRegex: /ConfigRegistry|Config/,
+    expectedPatternNameRegex: /singleton/i,
   },
   {
     name: 'Method Chaining  -  query_predicate',
     filename: 'query_predicate.cpp',
     family: 'Behavioural',
+    kind: 'positive',
     expectedClassNameRegex: /QueryPredicate|Query/,
+    expectedPatternNameRegex: /method.?chain|chaining/i,
   },
   {
     name: 'Strategy  -  strategy_basic',
     filename: 'strategy_basic.cpp',
     family: 'Behavioural',
+    kind: 'positive',
     // Actual classes: Compressor, ZipCompressor, GzipCompressor, Archiver.
     expectedClassNameRegex: /Compressor|Archiver/,
+    // Strategy is NOT in the locked D21 creational/structural catalog —
+    // expect a behavioural detector to surface SOMETHING rather than
+    // hardcoding a specific name the catalog may rename.
+    expectedPatternNameRegex: /strategy|behaviour|polymorph/i,
   },
   {
     name: 'Strategy  -  strategy_with_pimpl',
     filename: 'strategy_with_pimpl.cpp',
     family: 'Behavioural',
+    kind: 'positive',
     expectedClassNameRegex: /Strategy|Pimpl/,
+    expectedPatternNameRegex: /strategy|pimpl/i,
   },
   {
     name: 'Wrapping  -  logging_proxy',
     filename: 'logging_proxy.cpp',
     family: 'Structural',
+    kind: 'positive',
     expectedClassNameRegex: /Logging|Proxy/,
+    expectedPatternNameRegex: /proxy|decorator|wrap/i,
   },
   {
     name: 'PIMPL  -  pimpl_basic',
     filename: 'pimpl_basic.cpp',
     family: 'Idioms',
+    kind: 'positive',
     expectedClassNameRegex: /Pimpl|Widget|Impl/,
+    expectedPatternNameRegex: /pimpl|opaque|impl/i,
   },
   {
     name: 'Mixed  -  mixed_classes',
     filename: 'mixed_classes.cpp',
     family: 'Idioms',
+    kind: 'positive',
     expectedClassNameRegex: /[A-Z]\w+/,
+    // Multi-class sample; any catalog pattern landing on at least one
+    // class is enough for the structural assertion (D24 binder coverage).
+    expectedPatternNameRegex: /singleton|factory|builder|method.?chain|adapter|proxy|decorator|strategy/i,
   },
   {
     name: 'Usages  -  usages_basic',
     filename: 'usages_basic.cpp',
     family: 'Idioms',
+    kind: 'positive',
     expectedClassNameRegex: /[A-Z]\w+/,
+    expectedPatternNameRegex: /singleton|factory|builder|method.?chain|adapter|proxy|decorator|strategy/i,
+  },
+  // ---- Phase B regression contract (D21) ----
+  {
+    name: 'Regression  -  integration/all_patterns',
+    filename: 'all_patterns.cpp',
+    family: 'Regression',
+    kind: 'integration',
+    expectedClassNameRegex: /ConfigSingleton|ShapeFactory|QueryBuilder|FluentLogger|Repository/,
+    // Per D21 locked catalog: every entry must show up somewhere in the
+    // tree. Strategy is included because the integration sample also
+    // exercises behavioural detection.
+    expectedAllCatalogPatterns: [
+      /singleton/i,
+      /factory/i,
+      /builder/i,
+      /method.?chain/i,
+      /adapter|proxy|decorator/i,
+    ],
+  },
+  {
+    name: 'Negative  -  plain_class_no_pattern',
+    filename: 'plain_class_no_pattern.cpp',
+    family: 'Regression',
+    kind: 'negative',
+    // No class assertion — empty-tree (or "no catalog badge") is the
+    // contract. The class IS named Person; if a future detector mis-fires
+    // we'll see a known catalog pattern appear and the spec fails.
+  },
+  {
+    name: 'Negative  -  plain_widget',
+    filename: 'plain_widget.cpp',
+    family: 'Regression',
+    kind: 'negative',
+  },
+  {
+    name: 'Usages  -  usages_adapter_trace',
+    filename: 'usages_adapter_trace.cpp',
+    family: 'Idioms',
+    kind: 'positive',
+    expectedClassNameRegex: /SocketLib|HttpClient|Adapter/,
+    expectedPatternNameRegex: /adapter|wrap|proxy/i,
+  },
+  {
+    name: 'Usages  -  usages_smart_pointers',
+    filename: 'usages_smart_pointers.cpp',
+    family: 'Idioms',
+    kind: 'positive',
+    expectedClassNameRegex: /Engine|Car|Owner/,
+    expectedPatternNameRegex: /singleton|factory|builder|smart.?pointer|raii/i,
   },
 ];
 
@@ -450,16 +553,98 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
     test(sample.name, async ({ page }, testInfo) => {
       await loadSampleByFilename(page, sample.filename);
       await runAnalysis(page);
-      const tagging = await assertTaggingHappened(page, sample.expectedClassNameRegex);
+
+      // --- Negative samples (D21 false-positive contract) ---
+      if (sample.kind === 'negative') {
+        // Switch to Patterns tab and assert the tree either rendered
+        // empty OR did not surface any locked-catalog pattern badge.
+        // Either way, the sample produced no false positive.
+        await page.getByTestId('tab-annotated').click();
+        const tree = page.getByTestId('class-tree-view');
+        await expect(tree, 'class tree must render for the negative sample').toBeVisible({ timeout: 8_000 });
+        const empty = (await tree.getAttribute('data-empty')) === 'true';
+        if (empty) {
+          // Empty tree is the strongest signal. No further assertions.
+          return;
+        }
+        // Tree non-empty: assert no badge carries a locked-catalog
+        // pattern name. The catalog list is intentionally narrow per
+        // D21 — strategy/pimpl are NOT in scope here.
+        const badges = page.getByTestId('class-tree-badge');
+        const count = await badges.count();
+        const seenPatterns: string[] = [];
+        for (let i = 0; i < count; i += 1) {
+          const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
+          if (p) seenPatterns.push(p);
+        }
+        const catalogHit = seenPatterns.find((p) =>
+          /singleton|factory|builder|method.?chain|adapter|proxy|decorator/i.test(p),
+        );
+        expect(
+          catalogHit,
+          `negative sample ${sample.filename} must not surface a locked-catalog pattern; saw: ${seenPatterns.join(', ') || '(none)'}`,
+        ).toBeUndefined();
+        return;
+      }
+
+      // --- Positive + integration samples ---
+      const tagging = await assertTaggingHappened(page, sample.expectedClassNameRegex!);
       if (!tagging.tagged) {
+        // For integration samples an empty tree IS a hard failure — the
+        // regression contract requires every locked-catalog pattern to
+        // surface. For positive samples we keep the legacy soft-skip
+        // (the analyze pipeline still ran; the detector just had nothing
+        // to say).
+        if (sample.kind === 'integration') {
+          throw new Error(
+            `${sample.filename}: integration regression contract failed — ${tagging.reason}`,
+          );
+        }
         testInfo.annotations.push({
           type: 'soft-skip',
           description: `${sample.filename}: ${tagging.reason}`,
         });
-        // No class tree => no patterns detected => no tests to run.
-        // The pipeline (load + analyze) still worked, so the test passes.
         return;
       }
+
+      // Phase C structural assertion: the detected pattern on the named
+      // class must match expectedPatternNameRegex. We scan all badge
+      // data-pattern attributes on the page rather than scoping to a
+      // single row (mixed/usages samples can host multiple matching
+      // classes; we only need one to satisfy the catalog contract).
+      if (sample.expectedPatternNameRegex) {
+        const badges = page.getByTestId('class-tree-badge');
+        const seenPatterns: string[] = [];
+        const count = await badges.count();
+        for (let i = 0; i < count; i += 1) {
+          const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
+          if (p) seenPatterns.push(p);
+        }
+        const matched = seenPatterns.some((p) => sample.expectedPatternNameRegex!.test(p));
+        expect(
+          matched,
+          `${sample.filename} expected pattern matching ${sample.expectedPatternNameRegex} on some class; saw: ${seenPatterns.join(', ') || '(none)'}`,
+        ).toBeTruthy();
+      }
+
+      // Integration sample also asserts EVERY catalog pattern appears.
+      if (sample.kind === 'integration' && sample.expectedAllCatalogPatterns) {
+        const badges = page.getByTestId('class-tree-badge');
+        const seenPatterns: string[] = [];
+        const count = await badges.count();
+        for (let i = 0; i < count; i += 1) {
+          const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
+          if (p) seenPatterns.push(p);
+        }
+        for (const rx of sample.expectedAllCatalogPatterns) {
+          const present = seenPatterns.some((p) => rx.test(p));
+          expect(
+            present,
+            `integration sample must surface a pattern matching ${rx}; saw: ${seenPatterns.join(', ') || '(none)'}`,
+          ).toBeTruthy();
+        }
+      }
+
       const result = await runTestsAndAssertCompile(page);
       if (result.skipped) {
         testInfo.annotations.push({
