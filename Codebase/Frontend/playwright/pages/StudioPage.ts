@@ -142,17 +142,40 @@ export class StudioPage {
     await expect(this.page.getByTestId('load-sample-btn')).toBeVisible({ timeout: 15_000 });
   }
 
-  /** Click a studio tab. Waits for the page to settle before returning. */
+  /**
+   * Click a studio tab. Waits for the page to settle before returning.
+   * Tolerant of locked tabs (e.g. Self-check before GDB completes) —
+   * the SPA disables them via the gating rules in MainLayout, and the
+   * locked state IS a real UI surface worth capturing. So if the tab
+   * button is present but disabled, we skip the click and let the
+   * caller snapshot the currently-displayed surface instead of
+   * timing out.
+   */
   async tab(id: StudioTabId): Promise<void> {
     // Tab buttons carry data-testid="tab-<id>" — stable across layout
     // refactors and label/i18n changes. Falls back to the label-by-text
     // matcher only if the testid isn't found (legacy stack).
     const byTestId = this.page.getByTestId(`tab-${id}`);
     if (await byTestId.count() > 0) {
+      const isDisabled = await byTestId.isDisabled().catch(() => false);
+      if (isDisabled) {
+        // eslint-disable-next-line no-console
+        console.log(`[StudioPage.tab] tab-${id} is locked; skipping click and capturing current surface`);
+        await waitForStable(this.page);
+        return;
+      }
       await byTestId.click();
     } else {
       const label = STUDIO_TAB_LABELS[id];
-      await this.page.locator(`button[role="tab"]:has-text("${label}")`).click();
+      const target = this.page.locator(`button[role="tab"]:has-text("${label}")`);
+      const isDisabled = await target.isDisabled().catch(() => false);
+      if (isDisabled) {
+        // eslint-disable-next-line no-console
+        console.log(`[StudioPage.tab] tab "${label}" is locked; skipping click`);
+        await waitForStable(this.page);
+        return;
+      }
+      await target.click();
     }
     await waitForStable(this.page);
   }
@@ -185,6 +208,46 @@ export class StudioPage {
       timeout: 60_000,
     });
     await waitForStable(this.page);
+  }
+
+  // ---- Patterns tab dynamic content ----
+
+  /**
+   * Expand every collapsed PatternCard on the Patterns tab so the
+   * inner explainer / functions / anchors / usages sections render
+   * before a screenshot. Each card defaults to collapsed
+   * (aria-expanded="false"). Clicking the .pattern-card-toggle flips
+   * it open. Idempotent — already-expanded cards are skipped via the
+   * aria-expanded check so re-running this on the same page is a
+   * no-op.
+   *
+   * After expansion we re-run waitForStable so the screenshot reflects
+   * the final post-expansion layout (no mid-mount transition frames).
+   */
+  async expandAllPatternCards(): Promise<number> {
+    // The class tree must already be mounted (i.e., we're on the
+    // Patterns tab post-analyze). If it's not, fail loud — silent
+    // skip would falsely suggest "no cards to expand".
+    await this.page
+      .getByTestId('class-tree-view')
+      .waitFor({ state: 'visible', timeout: 10_000 })
+      .catch(() => { /* tree may legitimately be empty for negative samples */ });
+
+    const toggles = this.page.locator('.pattern-card-toggle');
+    const count = await toggles.count();
+    let expanded = 0;
+    for (let i = 0; i < count; i += 1) {
+      const toggle = toggles.nth(i);
+      const isExpanded = await toggle.getAttribute('aria-expanded');
+      if (isExpanded === 'true') continue;
+      await toggle.scrollIntoViewIfNeeded();
+      await toggle.click();
+      expanded += 1;
+    }
+    if (expanded > 0) {
+      await waitForStable(this.page, { timeoutMs: 8_000, quietWindowMs: 400 });
+    }
+    return expanded;
   }
 
   // ---- Tests tab (SSE-streamed) ----

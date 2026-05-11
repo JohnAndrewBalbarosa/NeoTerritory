@@ -79,8 +79,22 @@ test.describe('Studio screenshot walkthrough', () => {
     await studio.tab('annotated');
     await studio.snapshot('patterns-tab-classtree');
 
-    // Full-page so the deeper pattern card layout below the fold is captured.
-    await studio.snapshot('patterns-tab-fullpage', { fullPage: true });
+    // Patterns tab — collapsed pattern-card state (default). Full-page so
+    // the card headers below the fold are captured.
+    await studio.snapshot('patterns-tab-fullpage-collapsed', { fullPage: true });
+
+    // 4b. PatternCard inner content. Each card on the Patterns tab is
+    // collapsed by default — its .pattern-card-toggle hides the
+    // ExplainSection, FunctionsSection, AnchorsSection, UsagesSection,
+    // and TaggedUsagesSection. Click every toggle so the inner content
+    // is captured (per user direction: the capture script must drive
+    // the dynamic content inside SPA components, not just the outer
+    // tab bar).
+    const expandedCount = await studio.expandAllPatternCards();
+    await studio.snapshot('patterns-tab-cards-expanded');
+    await studio.snapshot('patterns-tab-fullpage-expanded', { fullPage: true });
+    // eslint-disable-next-line no-console
+    console.log(`[studio-screenshots] expanded ${expandedCount} pattern card(s)`);
 
     // 5. Tests tab — capture the BEFORE state (button enabled, no rows yet),
     //    then run the SSE stream and capture the AFTER state once every

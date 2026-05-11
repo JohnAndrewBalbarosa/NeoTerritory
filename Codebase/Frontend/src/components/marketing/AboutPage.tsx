@@ -14,27 +14,32 @@ interface Developer {
   blurb: string;
 }
 
+// Role delegation (not task delegation) per user direction this turn:
+// each teammate is described by the ROLE they hold across the project,
+// not the discrete tasks they ticked off. Andrew owns every
+// system-side surface that is not UI; Miryl carries project management
+// alongside UI and docs; Jo holds UI and docs.
 const DEVELOPERS: ReadonlyArray<Developer> = [
   {
     slug: 'balbarosa',
     name: 'John Andrew Balbarosa',
-    role: 'Algorithm + microservice',
+    role: 'Systems lead — algorithm, microservice, backend & infrastructure',
     blurb:
-      'Designed and implemented the C++ hash-based virtual structural-copy algorithm and the deterministic pattern-detection microservice that powers NeoTerritory.',
+      'Owns every non-UI system surface: the C++ hash-based virtual structural-copy algorithm and detection microservice, the Node backend that orchestrates it, the test runner, AWS deployment, and the CI pipelines that keep the studio shippable.',
   },
   {
     slug: 'de-leon',
     name: 'Miryl Z. De Leon',
-    role: 'Studio + backend integration',
+    role: 'Project manager — UI & documentation',
     blurb:
-      'Built the Node backend that orchestrates the microservice, the AI documentation layer, and the studio UI surfaces.',
+      'Holds the project-management role for the team, drives the studio and marketing-surface UI alongside Jo, and curates the thesis and user-facing documentation. Keeps the build, the writing, and the schedule moving in lockstep.',
   },
   {
     slug: 'santander',
     name: 'Josephine J. Santander',
-    role: 'Research instrument + evaluation',
+    role: 'UI & documentation',
     blurb:
-      'Designed the per-run reviews, end-of-session survey instruments, and the evaluation methodology for DEVCON Luzon intern testing.',
+      'Co-owns the studio and marketing UI with Miryl and carries the documentation work end-to-end — thesis chapters, in-product copy, and the public docs surface that grounds the algorithm and testing strategy.',
   },
 ];
 
@@ -52,7 +57,7 @@ export default function AboutPage() {
 
       <section className="nt-about__section" aria-labelledby="ab-who">
         <h2 id="ab-who" className="nt-about__section-title">
-          The team
+          Role delegation
         </h2>
         <p className="nt-about__section-lede">
           We are three Computer Science students from FEU Institute of Technology, completing the
