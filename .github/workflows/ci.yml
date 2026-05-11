@@ -111,6 +111,12 @@ jobs:
       - name: Backend typecheck
         run: npm --prefix Codebase/Backend run typecheck
 
+      - name: Backend unit tests (vitest)
+        # Phase D of the CI requirement-compliance plan. Pure-function
+        # tests for candidateFilter (D38 ambiguity resolution) and
+        # aiDocumentationService envelope shape (D44). Fast; no network.
+        run: npm --prefix Codebase/Backend run test:unit
+
       - name: Backend build
         run: npm --prefix Codebase/Backend run build
 
@@ -331,11 +337,19 @@ jobs:
       - name: Make microservice binary executable
         run: chmod +x Codebase/Microservice/build/NeoTerritory
 
+      - name: Install cppcheck (Testing Trophy base layer)
+        # Phase D: the static_analysis phase of /api/analysis/run-tests
+        # shells out to cppcheck. Without this install the CI runner
+        # reports sandbox_disabled and the new assertion in
+        # scripts/ci-gdb-runner-flow.mjs hard-fails. This is the canary
+        # the cppcheck-stdin regression should have lit up before AWS.
+        run: sudo apt-get update -qq && sudo apt-get install -y cppcheck
+
       - name: Run GDB runner and unit-test API flow
         shell: bash
         run: |
           set -euo pipefail
-          node -e "const {spawn}=require('node:child_process');(async()=>{const base='http://127.0.0.1:3001';const p=spawn('node',['Codebase/Backend/dist/server.js'],{stdio:'inherit',env:{...process.env,PORT:'3001',HOST:'127.0.0.1'}});const stop=()=>{if(!p.killed)p.kill('SIGTERM');};process.on('exit',stop);for(let i=0;i<90;i++){try{const r=await fetch(base+'/health');if(r.ok)break;}catch{}await new Promise(r=>setTimeout(r,1000));if(i===89)throw new Error('backend not ready');}const acc=await fetch(base+'/auth/test-accounts').then(r=>r.json());if(!acc.accounts?.length)throw new Error('no tester accounts');const claim=await fetch(base+'/auth/claim',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({username:acc.accounts[0].username})});if(!claim.ok)throw new Error('claim failed');const token=(await claim.json()).token;const ciCode='#include <string>\nclass CiTestSingleton {\npublic:\n    static CiTestSingleton& getInstance() {\n        static CiTestSingleton instance;\n        return instance;\n    }\n    CiTestSingleton(const CiTestSingleton&) = delete;\n    CiTestSingleton& operator=(const CiTestSingleton&) = delete;\nprivate:\n    CiTestSingleton() = default;\n};';const analyze=await fetch(base+'/api/analyze',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({filename:'ci_singleton.cpp',code:ciCode})});if(!analyze.ok){const t=await analyze.text();throw new Error('analyze failed: '+analyze.status+' '+t);}const payload=await analyze.json();if(!payload.pendingId)throw new Error('pendingId missing from analyze response');const countByClass={};for(const p of(payload.detectedPatterns||[])){if(p.className)countByClass[p.className]=(countByClass[p.className]||0)+1;}const classResolvedPatterns={};for(const p of(payload.detectedPatterns||[])){if(p.className&&countByClass[p.className]>1&&!classResolvedPatterns[p.className])classResolvedPatterns[p.className]=p.patternId;}const runTests=await fetch(base+'/api/analysis/run-tests',{method:'POST',headers:{'content-type':'application/json','authorization':'Bearer '+token},body:JSON.stringify({pendingId:payload.pendingId,classResolvedPatterns,stdin:''})});if(!runTests.ok){const t=await runTests.text();throw new Error('run-tests failed: '+runTests.status+' '+t);}const result=await runTests.json();if(!Array.isArray(result.results))throw new Error('run-tests missing results array');if(result.results.length===0)throw new Error('run-tests returned zero results — microservice may have detected no patterns from the CI singleton class');for(const r of result.results){console.log('[result] phase='+r.phase+' verdict='+r.verdict+' passed='+r.passed);if(!r.passed&&r.actual)console.log('[result] actual: '+String(r.actual).substring(0,500));}const compileRun=result.results.find(r=>r&&r.phase==='compile_run');if(!compileRun)throw new Error('run-tests did not execute compile_run phase');if(!compileRun.passed)throw new Error('compile_run phase failed (verdict='+compileRun.verdict+'): '+(compileRun.actual||compileRun.message||''));console.log('GDB runner API flow passed. result count=',result.results.length);stop();})().catch(e=>{console.error(e);process.exit(1);});"
+          node scripts/ci-gdb-runner-flow.mjs
 
   check-output:
     needs:

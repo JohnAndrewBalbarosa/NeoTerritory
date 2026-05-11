@@ -8,7 +8,8 @@
     "dev": "tsx watch server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:unit": "vitest run --reporter=default"
   },
   "dependencies": {
     "axios": "^1.16.0",
@@ -37,6 +38,7 @@
     "@types/node": "^20.0.0",
     "nodemon": "^3.0.3",
     "tsx": "^4.7.0",
-    "typescript": "^5.4.0"
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0"
   }
 }

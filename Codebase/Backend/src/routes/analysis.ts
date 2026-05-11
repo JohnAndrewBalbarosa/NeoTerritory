@@ -17,6 +17,7 @@ import {
 import { generateDocumentation, AiResult } from '../services/aiDocumentationService';
 import { rankAll } from '../services/patternRankingService';
 import { bindAll as bindClassUsages } from '../services/classUsageBinder';
+import { findAmbiguousClasses, filterToTaggedPatterns } from '../services/candidateFilter';
 import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
@@ -1533,47 +1534,9 @@ async function dispatchPatternTests(
   return [...staticResults, ...compileResults, ...unitResults];
 }
 
-// A class is "ambiguous" when the matcher emitted two-or-more competing
-// patterns for it AND the user has not explicitly resolved one via
-// classResolvedPatterns. The runner refuses to run unit tests in that
-// state — there's no defensible single pattern to test against, so we
-// bounce the user back to the annotated view to disambiguate.
-function findAmbiguousClasses(
-  patterns: DetectedPatternResult[],
-  resolvedMap: Record<string, string>
-): string[] {
-  const countByClass = new Map<string, number>();
-  for (const p of patterns) {
-    if (!p.className) continue;
-    countByClass.set(p.className, (countByClass.get(p.className) || 0) + 1);
-  }
-  const out: string[] = [];
-  for (const [name, count] of countByClass) {
-    if (count > 1 && !resolvedMap[name]) out.push(name);
-  }
-  return out.sort();
-}
-
-// Keep only the patterns the user actually committed to: either the matcher
-// gave a single confident detection for the class (no ambiguity), or the
-// user picked one via classResolvedPatterns. Anything else is dropped so
-// we don't waste compile cycles testing a hypothesis the user rejected.
-function filterToTaggedPatterns(
-  patterns: DetectedPatternResult[],
-  resolvedMap: Record<string, string>
-): DetectedPatternResult[] {
-  const countByClass = new Map<string, number>();
-  for (const p of patterns) {
-    if (!p.className) continue;
-    countByClass.set(p.className, (countByClass.get(p.className) || 0) + 1);
-  }
-  return patterns.filter(p => {
-    if (!p.className) return false;
-    const cnt = countByClass.get(p.className) || 0;
-    if (cnt === 1) return true;
-    return resolvedMap[p.className] === p.patternId;
-  });
-}
+// findAmbiguousClasses + filterToTaggedPatterns moved to
+// services/candidateFilter.ts so they can be exercised by unit tests
+// without spinning up the express app. See that module for the contract.
 
 // Build a fresh runId for a streaming invocation. Same shape pattern as
 // pendingId so logs are uniform across the analysis pipeline.
