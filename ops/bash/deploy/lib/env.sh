@@ -7,7 +7,22 @@ load_deploy_env() {
     echo "ERROR: missing $env_file" >&2; return 1
   fi
   chmod 600 "$env_file" 2>/dev/null || true
-  set -a; . "$env_file"; set +a
+  # Safe line-by-line parser — handles unquoted multi-word values like
+  #   TEST_RUNNER_SANDBOX=firejail --quiet --net=none ...
+  # which `set -a; source` would misparse (bash treats each space-separated
+  # word after the first as a command to execute, producing "command not found").
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*) ]]; then
+      local key="${BASH_REMATCH[1]}"
+      local val="${BASH_REMATCH[2]}"
+      # Strip surrounding double or single quotes if present.
+      if [[ "$val" =~ ^\"(.*)\"$ ]] || [[ "$val" =~ ^\'(.*)\'$ ]]; then
+        val="${BASH_REMATCH[1]}"
+      fi
+      export "$key"="$val"
+    fi
+  done < "$env_file"
 }
 
 # ASSUME_YES is set by the caller. ask_yes consults it before prompting.

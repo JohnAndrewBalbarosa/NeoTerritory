@@ -1,4 +1,3 @@
-import { useReducedMotion } from 'motion/react';
 import './auroraBackground.css';
 
 interface AuroraBackgroundProps {
@@ -6,22 +5,22 @@ interface AuroraBackgroundProps {
   className?: string;
 }
 
-// Slowly drifting radial-gradient blobs behind content. Blurred + soft so
-// it never competes with foreground text. Pure CSS animation; no canvas.
+// Per D41 (effects-budget rule): the previous three drifting blobs created
+// distracting container movement and competed with foreground text. The
+// component now renders a single static gradient panel — same visual identity
+// role, no motion. The `is-static` class is kept so existing CSS selectors
+// continue to apply, and the `useReducedMotion` hook is no longer needed
+// because there is nothing to disable.
 export default function AuroraBackground({
   variant = 'default',
   className = '',
 }: AuroraBackgroundProps) {
-  const reduce = useReducedMotion();
   return (
     <div
       aria-hidden
-      className={`nt-aurora nt-aurora--${variant} ${reduce ? 'is-static' : ''} ${className}`}
+      className={`nt-aurora nt-aurora--${variant} is-static nt-aurora--single ${className}`}
     >
-      <span className="nt-aurora__blob nt-aurora__blob--a" />
-      <span className="nt-aurora__blob nt-aurora__blob--b" />
-      <span className="nt-aurora__blob nt-aurora__blob--c" />
-      <span className="nt-aurora__grain" />
+      <span className="nt-aurora__blob nt-aurora__blob--single" />
     </div>
   );
 }

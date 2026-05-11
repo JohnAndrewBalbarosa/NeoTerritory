@@ -98,8 +98,6 @@ export function generateMarkdown(run: AnalysisRun): string {
       const classPart = p.className ? ` — \`${p.className}\`` : '';
       lines.push(`### ${p.patternName}${classPart}`);
       lines.push('');
-      lines.push(`**Confidence**: ${Math.round(p.confidence * 100)}%`);
-      lines.push('');
 
       const def = patternDefinitionFor(p.patternName);
       if (def) {

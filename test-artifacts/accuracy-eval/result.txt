@@ -1,0 +1,23 @@
+case                  expected               detected                         verdict
+------------------------------------------------------------------------------------------
+tp_singleton          singleton              creational.singleton             TP
+tp_builder            builder                creational.builder,creational.method_chaining,structural.adapter TP+FP
+tp_factory            factory                behavioural.strategy_interface,creational.factory TP+FP
+tp_strategy           strategy_interface     behavioural.strategy_interface   TP
+tp_decorator          decorator              behavioural.strategy_interface,structural.decorator TP+FP
+tp_adapter            adapter                behavioural.strategy_concrete,behavioural.strategy_interface,structural.decorator FN+FP
+tp_proxy              proxy                  behavioural.strategy_concrete,behavioural.strategy_interface,structural.decorator FN+FP
+tn_plain_struct       NONE                   (none)                           TN
+tn_free_funcs         NONE                   (none)                           TN
+tn_math_utils         NONE                   (none)                           TN
+fp_fake_singleton     NONE                   (none)                           TN
+fp_fake_factory       NONE                   (none)                           TN
+fp_fake_builder       NONE                   (none)                           TN
+fn_strategy_function  strategy_interface     (none)                           FN
+fn_builder_aggregate  builder                (none)                           FN
+
+Cases: 15
+TP=5  TN=6  FP=5  FN=4
+Accuracy: 11/15 = 73%
+Precision: 50%
+Recall: 56%

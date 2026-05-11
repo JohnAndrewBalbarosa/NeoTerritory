@@ -24,7 +24,13 @@ import {
   runSubmissionCompile, runPatternUnitTest,
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
-import { podManagerStatus } from '../services/podManager';
+import {
+  reserveRun, findActiveRunFor, getRun,
+  pushPhaseEvent, markRunDone, subscribeRun, RunEvent
+} from '../services/runEventsStore';
+import { recordRun as bufferRunDetails, bindRunIdToPending } from '../services/pendingRunPersistence';
+import { getBoolSetting } from '../db/appSettings';
+import { ensurePod, isPodModeEnabled, podManagerStatus, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import {
   getMicroserviceStatus,
   getAiTranslatorStatus,
@@ -34,6 +40,7 @@ import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
 import { uploadsDir, outputsDir } from '../config/paths';
+import { countCppTokens, resolveMaxTokensPerFile } from '../utils/tokenCounter';
 
 interface AnalysisPayload {
   sourceName: string;
@@ -598,7 +605,13 @@ router.get('/health', (req: Request, res: Response) => {
     aiProviderConfigured: ai.configured,
     aiModel:              ai.model,
     maxFilesPerSubmission: Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3'))),
+    maxTokensPerFile: resolveMaxTokensPerFile(),
     testRunnerEnabled: isTestRunnerEnabled(),
+    // Admin-controlled toggle. ON during the thesis testing window;
+    // OFF after it ends so post-thesis users do not hit the survey
+    // wall after every run. The frontend uses this to hide the
+    // Self-check tab + skip the survey-gated finalize buffer.
+    reviewsRequired: getBoolSetting('reviews_required'),
     gdbRunsPerWindow: GDB_RUNS_PER_WINDOW,
     gdbCooldownMs: GDB_COOLDOWN_MS,
     microservice,
@@ -709,6 +722,25 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       return;
     }
 
+    // Per-file lexical-token cap. Uses the same coarse C++-friendly tokenizer
+    // exposed via /api/health so the live counter the user sees in the form
+    // matches what the server accepts. Reject the whole submission if any
+    // single file is over.
+    const tokenCap = resolveMaxTokensPerFile();
+    for (const f of fileList) {
+      const tokenCount = countCppTokens(f.code);
+      if (tokenCount > tokenCap) {
+        if (req.file) fs.unlink(req.file.path, () => {});
+        res.status(400).json({
+          error: `File ${f.name} has ${tokenCount} tokens, which exceeds the ${tokenCap}-token per-file limit.`,
+          file: f.name,
+          tokens: tokenCount,
+          limit: tokenCap
+        });
+        return;
+      }
+    }
+
     // Run the structural analyzer per-file and merge. Per-file annotations
     // carry line numbers relative to that file, which is what the per-file
     // source view needs to render. Detected patterns get their `fileName`
@@ -793,7 +825,9 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
       sourceName,
       stage:               structural.stage,
       diagnostics:         structural.diagnostics || [],
-      detectedPatterns,
+      // Keep the same enriched shape in pending storage that we return to
+      // clients so /api/analysis/run-tests can consume className/classText.
+      detectedPatterns: enrichedPatterns,
       documentationTargets: structural.documentationTargets || [],
       unitTestTargets:      structural.unitTestTargets || [],
       aiByPattern,
@@ -834,6 +868,17 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     });
 
     logEvent(req.user?.id ?? null, 'analysis', `Analyzed (unsaved): ${sourceName}`);
+
+    const warmupUser = req.user;
+    if (warmupUser && isPodModeEnabled() && shouldWarmupPods()) {
+      console.log('[pod-warmup] warmup scheduled (reason=submit)');
+      setImmediate(() => {
+        void ensurePod(warmupUser.id, warmupUser.username || `user-${warmupUser.id}`).catch(() => { /* logged inside */ });
+      });
+    } else if (warmupUser && isPodModeEnabled()) {
+      const reason = podWarmupDecision();
+      console.log(`[pod-warmup] warmup skipped (reason=${reason})`);
+    }
 
     let aiJobId: string | null = null;
     let aiStatus: 'pending' | 'disabled' = 'disabled';
@@ -960,6 +1005,12 @@ function saveRunHandler(req: Request, res: Response, next: NextFunction): void {
       artifactPath,
       userId:     req.user?.id
     });
+
+    // If the user already finished a streaming run for this pendingId,
+    // re-key the buffered persistence under the new analysis_runs.id so
+    // the eventual survey-submit handler can find it. No DB write yet —
+    // that's gated on /survey/run/:runId.
+    bindRunIdToPending(pendingId, Number(run.id));
 
     logEvent(req.user?.id ?? null, 'save', `Saved run: ${pending.sourceName}`);
 
@@ -1302,14 +1353,26 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
   return (p.unitTestTargets || [])[0]?.function_name;
 }
 
+// Optional per-phase callback. Fires the moment a single (phase, patternId)
+// pair resolves, so a streaming caller (the SSE endpoint) can forward the
+// verdict to the frontend before the rest of the batch is done. The
+// callback is best-effort — its exceptions are swallowed so an SSE
+// subscriber bug cannot break the rest of the run.
+type PhaseEmitter = (result: TestResult) => void;
+
 async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
   userId?: number,
-  stdin?: string
+  stdin?: string,
+  onPhase?: PhaseEmitter
 ): Promise<TestResult[]> {
-  const eligible = patterns.filter(p => p.className && p.classText);
+  const safeEmit: PhaseEmitter = onPhase
+    ? (r) => { try { onPhase(r); } catch { /* ignore subscriber errors */ } }
+    : () => { /* no-op */ };
+
+  const eligible = patterns.filter(p => p.className);
   if (eligible.length === 0) return [];
 
   // The compile_run phase only depends on the submission's source, so we run
@@ -1334,6 +1397,7 @@ async function dispatchPatternTests(
     patternName: p.patternName,
     className:   p.className!
   }));
+  for (const cr of compileResults) safeEmit(cr);
 
   // If the shared compile failed there is no point running any unit_test —
   // mark them all skipped at once with the same upstream message.
@@ -1351,11 +1415,14 @@ async function dispatchPatternTests(
       verdict:     'skipped',
       message:     'Skipped — your class did not compile or did not exit cleanly on its own.'
     }));
+    for (const sk of skips) safeEmit(sk);
     return [...compileResults, ...skips];
   }
 
   // Compile succeeded → run every unit_test driver in parallel. Each driver
-  // gets its own scratch dir so they cannot collide on disk.
+  // gets its own scratch dir so they cannot collide on disk. Emit each
+  // pattern's unit_test result as soon as its individual promise resolves —
+  // do not wait for the whole Promise.all to settle before forwarding.
   const unitResults = await Promise.all(eligible.map(p => {
     const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
     return runPatternUnitTest({
@@ -1375,7 +1442,7 @@ async function dispatchPatternTests(
       realBase:         'Subject',
       targetBase:       'Target',
       targetMethod:     fallbackTarget
-    });
+    }).then((r) => { safeEmit(r); return r; });
   }));
 
   return [...compileResults, ...unitResults];
@@ -1423,6 +1490,27 @@ function filterToTaggedPatterns(
   });
 }
 
+// Build a fresh runId for a streaming invocation. Same shape pattern as
+// pendingId so logs are uniform across the analysis pipeline.
+function generateRunId(): string {
+  return `run_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+// Validate runId comes only from the controlled set of generators above.
+// Anything else is rejected so a malicious client cannot collide with an
+// existing run owned by another user.
+function isValidRunId(s: unknown): s is string {
+  return typeof s === 'string' && /^run_[a-z0-9]{1,16}_[a-z0-9]{1,16}$/i.test(s);
+}
+
+interface RunTestsOptions {
+  patterns: DetectedPatternResult[];
+  fullSource: string;
+  files?: Array<{ name: string; sourceText: string }>;
+  resolvedMap: Record<string, string>;
+  stdin?: string;
+}
+
 async function handleRunTests(
   req: Request,
   res: Response,
@@ -1430,7 +1518,12 @@ async function handleRunTests(
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
   resolvedMap: Record<string, string> = {},
-  stdin?: string
+  stdin?: string,
+  // Survey-gate buffer key — either pendingId (unsaved run) or numeric
+  // runId (saved analysis_runs row). finalizeRunLogs uses this to buffer
+  // the per-phase + summary log rows in memory until the user submits
+  // the run-feedback survey, at which point survey.ts flushes them.
+  bufferKey?: { pendingId?: string; runId?: number }
 ): Promise<void> {
   if (!req.user) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -1471,13 +1564,89 @@ async function handleRunTests(
     return;
   }
   const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
+
+  // Streaming branch — when the client supplies a runId (or asks for one
+  // via ?stream=1), the work runs in the background and each phase result
+  // is emitted to the SSE channel keyed by that runId. The HTTP POST
+  // returns 202 immediately so the FE can open the EventSource and start
+  // rendering compile_run rows the moment they resolve.
+  const body = (req.body || {}) as { runId?: unknown };
+  const wantsStream = isValidRunId(body.runId) || req.query.stream === '1';
+  if (wantsStream) {
+    // Reject second run while one is already in flight for this user —
+    // hand back the existing runId so the FE re-subscribes instead of
+    // spawning a duplicate run.
+    const active = findActiveRunFor(req.user.id);
+    if (active) {
+      res.status(202).json({ runId: active, accepted: false, reason: 'already_running' });
+      return;
+    }
+    const runId = isValidRunId(body.runId) ? body.runId : generateRunId();
+    if (!reserveRun(runId, req.user.id)) {
+      res.status(409).json({ error: 'runId already in use', runId });
+      return;
+    }
+    res.status(202).json({ runId, accepted: true });
+
+    // Background dispatch. We deliberately do not await this — the
+    // response has already been sent. Any thrown error is funnelled into
+    // a synthetic done event so subscribers always see closure.
+    void (async () => {
+      try {
+        const results = await dispatchPatternTests(
+          taggedPatterns, fullSource, files, req.user?.id, stdin,
+          (r) => pushPhaseEvent(runId, r.phase, r)
+        );
+        finalizeRunLogs(req.user?.id ?? null, results, bufferKey);
+        markRunDone(runId, summarize(results), {
+          window: GDB_RUNS_PER_WINDOW,
+          cooldownMs: GDB_COOLDOWN_MS,
+          remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user!.id) || []).length)
+        });
+      } catch (err) {
+        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
+        // eslint-disable-next-line no-console
+        console.error('[run-tests] background dispatch failed', err);
+      }
+    })();
+    return;
+  }
+
+  // Legacy blocking path — the CI smoke test and the playwright check
+  // still rely on the single-response shape. Keeping this branch means
+  // older clients continue to work unchanged.
   const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id, stdin);
-  // Validate the result set BEFORE logging anything — we only persist
-  // outcomes when every test result has the fields downstream consumers
-  // (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
-  // no_template / sandbox_disabled) is a non-result, not a failure, and
-  // must not pollute the gdb.<phase>.fail log stream — that's what was
-  // showing up as phantom failures in the accuracy chip.
+  finalizeRunLogs(req.user?.id ?? null, results, bufferKey);
+  res.json({
+    results,
+    rateLimit: {
+      window: GDB_RUNS_PER_WINDOW,
+      cooldownMs: GDB_COOLDOWN_MS,
+      remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user.id) || []).length)
+    }
+  });
+}
+
+// Validate the result set BEFORE logging anything — we only persist
+// outcomes when every test result has the fields downstream consumers
+// (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
+// no_template / sandbox_disabled) is a non-result, not a failure, and
+// must not pollute the gdb.<phase>.fail log stream — that's what was
+// showing up as phantom failures in the accuracy chip.
+// Buffer the run's per-phase rows + summary in memory. Per project
+// owner: NOTHING about a test-run's compile/unit verdicts may land in
+// the DB until the user submits the run-feedback survey. survey.ts
+// flushForRunId() drains this buffer in the same transaction as the
+// survey insert. If the user abandons the run without submitting the
+// survey, the entry evicts after FLUSH_TTL_MS (24h) without ever
+// touching the database — that's the survey-gate.
+//
+// finalizeRunLogs no longer writes to the DB at all.
+function finalizeRunLogs(
+  userId: number | null,
+  results: TestResult[],
+  bufferKey?: { pendingId?: string; runId?: number }
+): void {
   const isCountableResult = (r: TestResult): boolean =>
     !!r.patternId && !!r.className && typeof r.phase === 'string'
     && r.verdict !== 'skipped'
@@ -1488,24 +1657,80 @@ async function handleRunTests(
     !!r.patternId && !!r.className && typeof r.phase === 'string'
     && typeof r.verdict === 'string'
   );
-  if (allComplete) {
-    for (const r of results) {
-      if (!isCountableResult(r)) continue;
-      const ok = r.passed;
-      const ev = ok ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
-      const detail = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
-                   + (ok ? '' : ` — ${(r.message || '').slice(0, 200)}`);
-      logEvent(req.user?.id ?? null, ev, detail);
-    }
+  if (!allComplete) return;
+  // Without a buffer key we have no way for the survey-submit handler
+  // to find this entry later; bail rather than silently dropping the
+  // data into the void. The two route entry points always supply a
+  // key — this guards against future callers that forget.
+  if (!bufferKey || (!bufferKey.pendingId && bufferKey.runId == null)) {
+    // eslint-disable-next-line no-console
+    console.warn('[run-tests] finalizeRunLogs called without bufferKey; results NOT buffered');
+    return;
   }
-  res.json({
-    results,
-    rateLimit: {
-      window: GDB_RUNS_PER_WINDOW,
-      cooldownMs: GDB_COOLDOWN_MS,
-      remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user.id) || []).length)
+
+  const rows: Array<{ eventType: string; message: string }> = [];
+  let passed = 0;
+  let failed = 0;
+  const taggedPatterns = new Set<string>();
+  for (const r of results) {
+    if (!isCountableResult(r)) continue;
+    if (r.passed) passed += 1; else failed += 1;
+    taggedPatterns.add(`${r.patternId}|${r.className}`);
+    const eventType = r.passed ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
+    const message = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
+                  + (r.passed ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+    rows.push({ eventType, message });
+  }
+
+  const summary = { total: passed + failed, passed, failed, taggedPatterns: [...taggedPatterns] };
+
+  // Survey-gated mode (thesis testing window): buffer in memory until
+  // the user submits the run-feedback survey, which flushes via
+  // survey.ts -> flushForRunId().
+  // Auto-flush mode (post-thesis): write directly to the DB now, since
+  // the admin has turned off the review/survey requirement and we can't
+  // make a real-account user fill in a thesis survey to see their data.
+  if (getBoolSetting('reviews_required')) {
+    bufferRunDetails({
+      userId,
+      pendingId: bufferKey.pendingId ?? null,
+      runId:     bufferKey.runId    ?? null,
+      rows,
+      summary
+    });
+    return;
+  }
+
+  // Auto-flush path. Same single-transaction shape as flushForRunId,
+  // but routed through logEvent directly. We do not need the buffer
+  // bookkeeping because there is no survey to wait for.
+  const writeAll = db.transaction(() => {
+    for (const row of rows) {
+      logEvent(userId, row.eventType, row.message);
     }
+    logEvent(userId, 'gdb.run.complete', JSON.stringify({
+      ...summary,
+      runId: bufferKey.runId ?? null,
+      autoFlush: true
+    }));
   });
+  try {
+    writeAll();
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('[run-tests] auto-flush failed', err);
+  }
+}
+
+function summarize(results: TestResult[]): { total: number; passed: number; failed: number } {
+  let passed = 0;
+  let failed = 0;
+  for (const r of results) {
+    if (r.verdict === 'skipped' || r.verdict === 'no_template' || r.verdict === 'sandbox_disabled') continue;
+    if (r.passed) passed += 1;
+    else failed += 1;
+  }
+  return { total: passed + failed, passed, failed };
 }
 
 // Saved-run path (kept for parity with the old contract).
@@ -1540,7 +1765,8 @@ router.post('/analysis/:runId/run-tests', jwtAuth, async (req: Request, res: Res
       ? String((req.body as { stdin: string }).stdin).slice(0, 64_000)
       : undefined;
     await handleRunTests(req, res, analysis.detectedPatterns || [], fullSource, analysis.files,
-                         analysis.classResolvedPatterns || {}, stdinText);
+                         analysis.classResolvedPatterns || {}, stdinText,
+                         { runId: runIdNum });
   } catch (err) {
     next(err);
   }
@@ -1581,10 +1807,84 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
     const stdinText = typeof (req.body as { stdin?: unknown })?.stdin === 'string'
       ? String((req.body as { stdin: string }).stdin).slice(0, 64_000)
       : undefined;
-    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap, stdinText);
+    await handleRunTests(req, res, patterns, fullSource, pendingAnalysis.files, resolvedMap, stdinText,
+                         { pendingId });
   } catch (err) {
     next(err);
   }
+});
+
+// Server-Sent Events stream for a streaming run. The frontend opens this
+// after kicking off /api/analysis/run-tests with a runId — each phase
+// result lands as a discrete event, then a terminal `done` event closes
+// the stream. Reconnects replay the buffered events from seq=0 so no
+// verdict is lost across a flaky network drop.
+//
+// JWT is supplied via the `?token=` query parameter because the browser's
+// EventSource API cannot attach Authorization headers. The token is
+// validated with the same secret as jwtAuth — we do not accept it from
+// the body and we do not log it.
+router.get('/analysis/run-events/:runId', (req: Request, res: Response): void => {
+  const runId = String(req.params.runId || '');
+  if (!isValidRunId(runId)) {
+    res.status(400).json({ error: 'Invalid runId' });
+    return;
+  }
+  const tokenRaw = typeof req.query.token === 'string' ? req.query.token : '';
+  if (!tokenRaw) {
+    res.status(401).json({ error: 'token query param required' });
+    return;
+  }
+  let userId: number;
+  try {
+    const decoded = jwt.verify(tokenRaw, process.env.JWT_SECRET || 'dev-secret') as { sub?: number; id?: number };
+    const candidate = decoded.sub ?? decoded.id;
+    if (typeof candidate !== 'number') throw new Error('token missing user id');
+    userId = candidate;
+  } catch {
+    res.status(401).json({ error: 'Invalid token' });
+    return;
+  }
+  const rec = getRun(runId);
+  if (!rec) {
+    res.status(404).json({ error: 'Run not found or expired' });
+    return;
+  }
+  if (rec.userId !== userId) {
+    res.status(403).json({ error: 'Forbidden' });
+    return;
+  }
+
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  // Disable nginx response buffering on the AWS reverse proxy — without
+  // this the nginx default of buffering N bytes before flushing to the
+  // client makes SSE feel like polling.
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const writeEvent = (ev: RunEvent): void => {
+    res.write(`event: ${ev.type}\n`);
+    res.write(`id: ${ev.seq}\n`);
+    res.write(`data: ${JSON.stringify(ev)}\n\n`);
+    if (ev.type === 'done') {
+      res.end();
+    }
+  };
+
+  const heartbeat = setInterval(() => {
+    // Comment-only line keeps the connection alive through proxies that
+    // close idle TCP after ~30s. Browsers ignore SSE comments.
+    res.write(': ping\n\n');
+  }, 15_000);
+  heartbeat.unref?.();
+
+  const unsubscribe = subscribeRun(runId, writeEvent);
+  req.on('close', () => {
+    clearInterval(heartbeat);
+    unsubscribe();
+  });
 });
 
 export default router;

@@ -46,141 +46,15 @@ function RowButton({ children, onClick }: { children: React.ReactNode; onClick: 
   return <button type="button" className="pattern-row" onClick={onClick}>{children}</button>;
 }
 
-// Top-of-list banner shown ONCE above all PatternCards. Holds the formula
-// prose and citations so each card can stay terse and only show its own
-// numbers. Defined in module scope so it does not re-mount per card.
-function ScoringExplainerBanner() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="scoring-explainer-banner">
-      <div className="scoring-explainer-banner-head">
-        <strong>How is the accuracy calculated?</strong>
-        <span className="scoring-explainer-banner-summary">
-          Wilson 95%-confidence lower bound on per-line wins. Each non-blank
-          line in a class is one Bernoulli trial; the pattern wins the line
-          when its signal hits outweigh rival hits plus negative-signal weight.
-        </span>
-        <button
-          type="button"
-          className="scoring-explainer-toggle"
-          onClick={() => setOpen(o => !o)}
-        >
-          {open ? '▾ Hide formula' : '▸ Show formula'}
-        </button>
-      </div>
-      {open && (
-        <div className="scoring-explainer-body">
-          <p>
-            <code>n</code> = number of non-blank, non-comment lines in the
-            class&apos;s scope. <code>k</code> = how many of those lines this
-            pattern won. <code>p̂ = k / n</code>. With <code>z = 1.96</code>
-            (the 95% confidence z-score):
-          </p>
-          <p>
-            <code>
-              wilsonLower = ( p̂ + z²/(2n) − z·√(p̂(1−p̂)/n + z²/(4n²)) ) / (1 + z²/n)
-            </code>
-          </p>
-          <p>
-            Wilson is the textbook conservative estimator for a yes/no proportion
-            when the sample is small — wider margin of error when fewer lines
-            have evidence, narrower as more lines confirm.
-            <strong> confidence</strong> blends class_fit (1.0 once the structural
-            matcher confirms the shape) with this Wilson score using the
-            pattern&apos;s authored ranking weights.
-          </p>
-          <p className="scoring-citation">
-            Wilson (1927), JASA 22(158); Agresti &amp; Coull (1998), Am. Stat 52(2).
-            95% confidence is the standard reporting convention. The same lower-bound
-            is widely cited as a ranking score — see Evan Miller,{' '}
-            <em>How Not to Sort by Average Rating</em> (2009).
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
+// Confidence-level banner removed: per project owner, the percentage was
+// "pampalubag-loob" and not actionable for students. The matcher still
+// computes Wilson lower-bound and class_fit internally for ranking — only
+// the user-facing display is gone.
 
-// Per-card numeric trace. Shows the live n/k/p̂/Wilson values, names the
-// class, and lists the winning lines as clickable chips that flash to the
-// matched source line through the existing onLineFlash callback. No formula
-// prose here — that lives in the banner above.
-function ScoringExplainer({
-  rank, pattern, onLineFlash
-}: {
-  rank: PatternRankEntry;
-  pattern: DetectedPatternFull;
-  onLineFlash?: (line: number) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const conf = Math.round((rank.finalRank || 0) * 100);
-  const fit  = Math.round((rank.implementationFit || 0) * 100);
-  const le = rank.lineEvidence;
-  const className = pattern.className || 'this class';
-  const docLines = (pattern.documentationTargets || [])
-    .map(t => t.line)
-    .filter((l): l is number => typeof l === 'number');
-  const minLine = docLines.length ? Math.min(...docLines) : null;
-  const maxLine = docLines.length ? Math.max(...docLines) : null;
-  const wins = (le?.byLine || []).filter(b => b.win);
-  return (
-    <div className="scoring-explainer">
-      <button type="button" className="scoring-explainer-toggle" onClick={() => setOpen(o => !o)}>
-        {open ? '▾' : '▸'} Show numbers
-      </button>
-      {open && (
-        <div className="scoring-explainer-body scoring-explainer-body--compact">
-          {le ? (
-            <>
-              <p>
-                <strong>For {className}</strong>
-                {minLine && maxLine ? (minLine === maxLine
-                  ? <> on line {minLine}</>
-                  : <> across lines {minLine}–{maxLine}</>) : null}:
-                {' '}<code>n = {le.trials}</code> non-blank lines,{' '}
-                <code>k = {le.successes}</code> won by this pattern,{' '}
-                <code>p̂ = {le.pHat.toFixed(3)}</code>,{' '}
-                <code>z = {le.z.toFixed(2)}</code>,{' '}
-                <code>Wilson = {(le.wilsonLowerBound * 100).toFixed(1)}%</code>{' '}
-                → shown as <strong>usage match {fit}%</strong>.{' '}
-                <strong>confidence {conf}%</strong> blends Wilson with class_fit
-                under the pattern&apos;s authored weights.
-              </p>
-              {wins.length > 0 && (
-                <p className="scoring-explainer-wins">
-                  Winning lines (own / rival / opposing weight):{' '}
-                  {wins.map((b, i) => (
-                    <button
-                      key={b.line}
-                      type="button"
-                      className="scoring-explainer-line-chip"
-                      onClick={() => onLineFlash?.(b.line)}
-                      title={`Line ${b.line} — ownHits ${b.ownHits} / rival ${b.rivalHits} / negW ${b.opposingWeight.toFixed(2)}`}
-                    >
-                      L{b.line}
-                      {i < wins.length - 1 ? '' : ''}
-                    </button>
-                  ))}
-                </p>
-              )}
-              {le.negativeHits > 0 && (
-                <p className="scoring-explainer-meta">
-                  Negative signals fired: {le.negativeHits} (catalog-authored opposing weight reduced k by that line count).
-                </p>
-              )}
-            </>
-          ) : (
-            <p>
-              <strong>structure only</strong> — the pattern has no
-              implementation_template authored yet, so we matched on class
-              shape without per-line wins. <strong>confidence {conf}%</strong>.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
+// Per-card numeric explainer removed alongside the banner — the
+// underlying lineEvidence / Wilson computation still ships in the
+// API payload, so a future developer-facing diagnostic surface can
+// be reintroduced without backend changes if needed.
 
 function ExplainSection({
   patternName, education, definition
@@ -376,53 +250,21 @@ function PatternCard(props: CardProps) {
 
       {expanded && (
         <div className="pattern-card-body">
+          {/* Confidence rank-bar + numeric explainer removed (project owner
+              decision: percentage was "pampalubag-loob" and not actionable
+              for students). Ambiguity state is still surfaced as a single
+              chip so the user knows when a pick is required. */}
           {!showAccuracy ? null : isAmbiguousUnresolved ? (
-            <div className="rank-bar rank-bar--unknown" data-verdict="unknown">
-              <span title="The user has not yet picked a pattern for this class — the popover on the class declaration line offers the options">confidence</span>
-              <div className="rank-bar-track">
-                <div className="rank-bar-fill rank-bar-fill--unknown" style={{ width: '100%' }} />
-              </div>
-              <span>?%</span>
-              <span title="Pick a pattern in the source view to see numbers">awaiting pick</span>
+            <div className="pattern-status-chip pattern-status-chip--awaiting" data-verdict="unknown">
+              awaiting your tag — pick a pattern in the source view
             </div>
           ) : rank ? (
-            <>
-              <div className="rank-bar" data-verdict={rankVerdict || 'no_clear_pattern'}>
-                <span title="How sure the matcher is that this class is this pattern">confidence</span>
-                <div className="rank-bar-track">
-                  <div className="rank-bar-fill" style={{ width: `${Math.round(((recomputed?.finalRank ?? rank.finalRank) || 0) * 100)}%` }} />
-                </div>
-                <span>{Math.round(((recomputed?.finalRank ?? rank.finalRank) || 0) * 100)}%</span>
-                {recomputed
-                  ? (
-                    <span title="Recomputed from your pick: k = lines inside the class declaration that match the chosen pattern, n = total lines in the class">
-                      k = {recomputed.k} / n = {recomputed.n}
-                    </span>
-                  )
-                  : rank.hasImplementationTemplate
-                    ? (
-                      <span title="How well the class is actually used like this pattern, not just shaped like one">
-                        usage match {Math.floor((rank.implementationFit || 0) * 100)}%
-                      </span>
-                    )
-                    : (
-                      <span title="We can see the shape, but no usage examples are catalogued for this pattern yet">
-                        structure only
-                      </span>
-                    )}
+            recomputed ? (
+              <div className="pattern-status-chip pattern-status-chip--resolved" data-verdict={rankVerdict || 'resolved'}>
+                tagged by you
               </div>
-              <ScoringExplainer rank={rank} pattern={p} onLineFlash={onLineFlash} />
-            </>
-          ) : (
-            <div className="rank-bar" data-verdict="confident">
-              <span>confidence</span>
-              <div className="rank-bar-track">
-                <div className="rank-bar-fill" style={{ width: '100%' }} />
-              </div>
-              <span>100%</span>
-              <span title="No rival patterns were offered for this class — automatic 100%">unambiguous</span>
-            </div>
-          )}
+            ) : null
+          ) : null}
           <ExplainSection
             patternName={p.patternName || p.patternId || 'this pattern'}
             education={p.patternEducation}
@@ -526,7 +368,6 @@ export default function PatternCards(props: PatternCardsProps) {
 
   return (
     <div id="pattern-cards" className="pattern-cards">
-      <ScoringExplainerBanner />
       <section className="pattern-cards-decided">
         {totalAmbiguous > 0 && (
           <>

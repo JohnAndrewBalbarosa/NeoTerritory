@@ -1,0 +1,345 @@
+name: Adopt UI from Miryl + Jo into main
+
+# Authority rules encoded in this workflow (per project owner):
+#   - Main owns logic INSIDE the studio (analyzer pipeline, test runner,
+#     streaming run-id contract, annotated source tagging).
+#   - Jo + Miryl own everything OUTSIDE the studio (marketing, navbar,
+#     CSS, consent forms, sign-in, survey copy).
+#   - For THIS one-time run, include_studio=true also adopts the studio's
+#     non-logic UI (StudioApp.tsx, tabs/*) so the visual refresh lands in
+#     one batch. Set include_studio=false in future runs to revert to the
+#     normal outside-studio-only rule.
+#   - Codebase/Frontend/src/components/tabs/GdbRunnerTab.tsx is HARD-
+#     EXCLUDED in every mode — it carries the SSE streaming integration
+#     for the test runner and main has final say. Its diff against
+#     Miryl's version is uploaded as a workflow artifact so the project
+#     owner can review and cherry-pick visual tweaks manually.
+#   - Codebase/Frontend/src/api/client.ts is HARD-EXCLUDED for the same
+#     reason (carries runPatternTestsStreaming + EventSource glue).
+#
+# Three-way per-file rule (post branding-normalisation):
+#   - Identical in Miryl + Jo                          -> adopt
+#   - Differ between Miryl and Jo                       -> adopt Miryl,
+#     record under DIFFERENCES so reviewers see what was dropped
+#   - Only Miryl changed it                             -> adopt Miryl
+#   - Only Jo changed it                                -> adopt Jo
+#
+# Logic guard: typecheck + frontend build run BEFORE the commit. If the
+# adoption breaks studio behaviour (e.g. a tab adopted from Miryl no
+# longer compiles against the streaming client API), the workflow fails
+# without pushing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      miryl_branch:
+        description: "Miryl's branch (no origin/ prefix)"
+        default: "Branch-ni-miryl-ui"
+        required: false
+      jo_branch:
+        description: "Jo's branch (no origin/ prefix)"
+        default: "new-branch-jo"
+        required: false
+      include_studio:
+        description: "Adopt studio + tabs + analysis (true for this round)"
+        default: "true"
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  merge-ui:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Fetch Miryl + Jo branches
+        run: |
+          set -euo pipefail
+          git fetch origin "${{ github.event.inputs.miryl_branch }}"
+          git fetch origin "${{ github.event.inputs.jo_branch }}"
+
+      # Project owner's freshness signal: the right Miryl branch is the
+      # one whose latest commit is newer than main's. If the configured
+      # input has fallen behind main (i.e. merged + abandoned, or a
+      # stale spelling), bail loudly instead of adopting an outdated UI.
+      - name: Sanity-check Miryl branch is ahead of main
+        shell: bash
+        run: |
+          set -euo pipefail
+          MIRYL="origin/${{ github.event.inputs.miryl_branch }}"
+          MAIN_TS=$(git log -1 --format=%ct main)
+          MIRYL_TS=$(git log -1 --format=%ct "$MIRYL")
+          MIRYL_AUTHOR=$(git log -1 --format='%an' "$MIRYL")
+          echo "main last commit:    $(date -u -d @$MAIN_TS --iso-8601=seconds)"
+          echo "${MIRYL} last commit: $(date -u -d @$MIRYL_TS --iso-8601=seconds) by $MIRYL_AUTHOR"
+          if [[ "$MIRYL_TS" -lt "$MAIN_TS" ]]; then
+            echo "FAIL: ${MIRYL} is older than main. The branch input is probably stale." >&2
+            echo "List of recent UI-author branches:" >&2
+            for b in $(git branch -r | grep -v HEAD | grep -v main); do
+              ts=$(git log -1 --format=%ct "$b" 2>/dev/null || echo 0)
+              au=$(git log -1 --format='%an' "$b" 2>/dev/null || echo '?')
+              echo "  $(date -u -d @$ts --iso-8601=seconds)  $b  ($au)" >&2
+            done | sort -r >&2
+            exit 1
+          fi
+
+      # ------------------------------------------------------------------
+      # Three-way adoption with branding normalisation, scoped to
+      # Codebase/Frontend/ and gated by the include_studio + EXCLUDE rules.
+      # ------------------------------------------------------------------
+      - name: Adopt UI files (Miryl-priority, document differences)
+        id: adopt
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          MIRYL="origin/${{ github.event.inputs.miryl_branch }}"
+          JO="origin/${{ github.event.inputs.jo_branch }}"
+          UI_PATH="Codebase/Frontend"
+          INCLUDE_STUDIO="${{ github.event.inputs.include_studio }}"
+          REPORT="/tmp/adoption-report.md"
+          GDBRUNNER_DIFF="/tmp/gdbrunner-miryl-vs-main.diff"
+          : > "$REPORT"
+          : > "$GDBRUNNER_DIFF"
+
+          # Hard-exclude list: files where MAIN has final say. Adoption
+          # never overwrites these regardless of include_studio. Keep the
+          # list narrow — only files that carry compile/test-runner logic
+          # main owns.
+          HARD_EXCLUDE=(
+            "Codebase/Frontend/src/components/tabs/GdbRunnerTab.tsx"
+            "Codebase/Frontend/src/api/client.ts"
+          )
+
+          is_hard_excluded() {
+            local f="$1"
+            for x in "${HARD_EXCLUDE[@]}"; do [[ "$x" == "$f" ]] && return 0; done
+            return 1
+          }
+
+          # Studio-only paths. Adopted only when include_studio=true.
+          is_studio_only() {
+            local f="$1"
+            [[ "$f" == Codebase/Frontend/src/components/studio/* ]] && return 0
+            [[ "$f" == Codebase/Frontend/src/components/tabs/* ]] && return 0
+            [[ "$f" == Codebase/Frontend/src/components/analysis/* ]] && return 0
+            return 1
+          }
+
+          # Branding sed: longer substitutions first so the catch-all does
+          # not produce "NeoTerritory Analysis".
+          normalise() {
+            sed \
+              -e 's/CodiNeo Analysis/NeoTerritory Studio/g' \
+              -e 's/CodiNeo/NeoTerritory/g' \
+              -e 's/CodineoBrandMark/NTBrandMark/g' \
+              -e 's/codineo-brand-header/nt-brand-header/g' \
+              -e 's/codineo-brand-mark/nt-brand-mark/g' \
+              -e 's/codineo-brand-name/nt-brand-name/g' \
+              -e 's/codineo-brand-sub/nt-brand-sub/g' \
+              -e 's|/\* CodiNeo brand mark|/* NeoTerritory brand mark|g'
+          }
+
+          mapfile -t MIRYL_FILES < <(git diff --name-only main "$MIRYL"  -- "$UI_PATH")
+          mapfile -t JO_FILES    < <(git diff --name-only main "$JO"     -- "$UI_PATH")
+          ALL_FILES=$(printf '%s\n' "${MIRYL_FILES[@]}" "${JO_FILES[@]}" | sort -u | sed '/^$/d')
+
+          {
+            echo "## UI adoption report"
+            echo ""
+            echo "- Miryl branch: \`${{ github.event.inputs.miryl_branch }}\`"
+            echo "- Jo branch:    \`${{ github.event.inputs.jo_branch }}\`"
+            echo "- include_studio: \`$INCLUDE_STUDIO\`"
+            echo ""
+          } >> "$REPORT"
+
+          IDENTICAL=()
+          MIRYL_ONLY=()
+          JO_ONLY=()
+          DIFFER=()
+          SKIPPED_HARD=()
+          SKIPPED_STUDIO=()
+
+          for f in $ALL_FILES; do
+            if is_hard_excluded "$f"; then
+              SKIPPED_HARD+=("$f")
+              # For GdbRunnerTab specifically, record Miryl's diff against
+              # main so the project owner can manually cherry-pick visuals.
+              if [[ "$f" == "Codebase/Frontend/src/components/tabs/GdbRunnerTab.tsx" ]]; then
+                {
+                  echo "## GdbRunnerTab.tsx — Miryl vs main"
+                  echo "(diff captured because main owns the streaming logic; review manually)"
+                  echo ""
+                  echo '```diff'
+                  git diff "main:$f" "$MIRYL:$f" 2>/dev/null || true
+                  echo '```'
+                } > "$GDBRUNNER_DIFF"
+              fi
+              continue
+            fi
+            if [[ "$INCLUDE_STUDIO" != "true" ]] && is_studio_only "$f"; then
+              SKIPPED_STUDIO+=("$f")
+              continue
+            fi
+
+            in_miryl=0; in_jo=0
+            for x in "${MIRYL_FILES[@]}"; do [[ "$x" == "$f" ]] && in_miryl=1; done
+            for x in "${JO_FILES[@]}";    do [[ "$x" == "$f" ]] && in_jo=1;    done
+
+            if [[ "$in_miryl" -eq 1 && "$in_jo" -eq 1 ]]; then
+              MIRYL_NORM=$(git show "$MIRYL:$f" | normalise || true)
+              JO_NORM=$(git show "$JO:$f"       | normalise || true)
+              if [[ "$MIRYL_NORM" == "$JO_NORM" ]]; then
+                printf '%s' "$MIRYL_NORM" > "$f"
+                IDENTICAL+=("$f")
+              else
+                printf '%s' "$MIRYL_NORM" > "$f"
+                DIFFER+=("$f")
+              fi
+            elif [[ "$in_miryl" -eq 1 ]]; then
+              git show "$MIRYL:$f" | normalise > "$f"
+              MIRYL_ONLY+=("$f")
+            else
+              git show "$JO:$f" | normalise > "$f"
+              JO_ONLY+=("$f")
+            fi
+          done
+
+          {
+            echo "### Identical in Miryl + Jo (adopted): ${#IDENTICAL[@]}"
+            for f in "${IDENTICAL[@]}"; do echo "- $f"; done
+            echo ""
+            echo "### Differ — Miryl version adopted: ${#DIFFER[@]}"
+            for f in "${DIFFER[@]}"; do
+              echo "- $f"
+              STAT=$(git diff --stat "$MIRYL:$f" "$JO:$f" 2>/dev/null | head -1 || true)
+              [[ -n "$STAT" ]] && echo "  - Jo-vs-Miryl stat: $STAT"
+            done
+            echo ""
+            echo "### Only in Miryl: ${#MIRYL_ONLY[@]}"
+            for f in "${MIRYL_ONLY[@]}"; do echo "- $f"; done
+            echo ""
+            echo "### Only in Jo: ${#JO_ONLY[@]}"
+            for f in "${JO_ONLY[@]}"; do echo "- $f"; done
+            echo ""
+            echo "### Hard-excluded (main owns the logic): ${#SKIPPED_HARD[@]}"
+            for f in "${SKIPPED_HARD[@]}"; do echo "- $f"; done
+            echo ""
+            if [[ "${#SKIPPED_STUDIO[@]}" -gt 0 ]]; then
+              echo "### Skipped because include_studio=false: ${#SKIPPED_STUDIO[@]}"
+              for f in "${SKIPPED_STUDIO[@]}"; do echo "- $f"; done
+              echo ""
+            fi
+          } >> "$REPORT"
+
+          echo "::group::Adoption report"
+          cat "$REPORT"
+          echo "::endgroup::"
+
+      - name: Upload GdbRunnerTab diff for manual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gdbrunner-miryl-diff
+          path: /tmp/gdbrunner-miryl-vs-main.diff
+          if-no-files-found: ignore
+
+      - name: Verify scope is UI-only
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t CHANGED < <(git diff --name-only HEAD)
+          DISALLOWED=()
+          for f in "${CHANGED[@]}"; do
+            [[ -z "$f" ]] && continue
+            if [[ "$f" != Codebase/Frontend/* ]]; then
+              DISALLOWED+=("$f")
+            fi
+          done
+          if [[ ${#DISALLOWED[@]} -gt 0 ]]; then
+            echo "Adoption produced changes outside Codebase/Frontend/:" >&2
+            printf ' - %s\n' "${DISALLOWED[@]}" >&2
+            exit 1
+          fi
+          echo "Scope OK — only Codebase/Frontend/ touched."
+
+      - name: Verify hard-exclude list was respected
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --name-only HEAD | grep -E '^Codebase/Frontend/src/components/tabs/GdbRunnerTab\.tsx$|^Codebase/Frontend/src/api/client\.ts$' >/dev/null; then
+            echo "FAIL: adoption attempted to modify a hard-excluded file." >&2
+            exit 1
+          fi
+          echo "✓ hard-excluded files untouched."
+
+      - name: Verify no CodiNeo references remain
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --name-only HEAD -- Codebase/Frontend \
+              | xargs -r grep -liE "CodiNeo|codineo" 2>/dev/null; then
+            echo "ERROR: CodiNeo branding still present in adopted files." >&2
+            exit 1
+          fi
+          echo "✓ No CodiNeo references in adopted files."
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: Codebase/Frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        run: npm --prefix Codebase/Frontend ci --include=dev
+
+      - name: Frontend typecheck (logic guard)
+        run: npm --prefix Codebase/Frontend run typecheck
+
+      - name: Frontend build (logic guard)
+        run: npm --prefix Codebase/Frontend run build
+
+      - name: Show diff summary
+        shell: bash
+        run: git diff --stat HEAD
+
+      - name: Commit and push to main
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -- Codebase/Frontend
+
+          if git diff --cached --quiet; then
+            echo "Nothing to commit — main UI is already aligned with Miryl/Jo."
+            exit 0
+          fi
+
+          MIRYL_BR="${{ github.event.inputs.miryl_branch }}"
+          JO_BR="${{ github.event.inputs.jo_branch }}"
+          STUDIO="${{ github.event.inputs.include_studio }}"
+
+          {
+            echo "feat(ui): adopt UI from $MIRYL_BR + $JO_BR (Miryl-priority; include_studio=$STUDIO)"
+            echo ""
+            cat /tmp/adoption-report.md
+            echo ""
+            echo "Hard-excluded files preserved (main owns the streaming test runner logic):"
+            echo "  - Codebase/Frontend/src/components/tabs/GdbRunnerTab.tsx"
+            echo "  - Codebase/Frontend/src/api/client.ts"
+            echo ""
+            echo "GdbRunnerTab diff against Miryl is uploaded as the gdbrunner-miryl-diff artifact for manual review."
+          } > /tmp/commit-msg.txt
+
+          git commit -F /tmp/commit-msg.txt
+          git push origin main

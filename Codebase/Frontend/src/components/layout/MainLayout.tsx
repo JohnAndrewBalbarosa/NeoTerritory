@@ -8,6 +8,8 @@ import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
 // import { useHeartbeat } from '../../hooks/useHeartbeat';  // TEMP: disabled, see useHeartbeat() call below
 import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
+import StudioJoyrideTour, { dispatchStudioTourOpen } from '../studio/StudioJoyrideTour';
+import { dispatchStartHereOpen } from '../studio/StartHereRail';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
@@ -108,9 +110,17 @@ export default function MainLayout() {
   const {
     user, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, setStatus,
-    currentRun, gdbAllPassedForRun
+    setAiStatus, aiStatus, aiConfigured, setStatus,
+    currentRun, gdbAllPassedForRun, reviewsRequired
   } = useAppStore();
+
+  // When the admin has flipped reviews_required OFF (post-thesis), the
+  // Self-check / survey tab disappears from the workflow and the survey
+  // gate is auto-flushed on the backend. Filter at render time so the
+  // tab list rebuilds on toggle change without a reload.
+  const visibleTabs = reviewsRequired
+    ? TABS
+    : TABS.filter(t => t.id !== 'ambiguous');
 
   // Sequential tab gating. Each tab unlocks only after the previous is
   // complete, mirroring the natural workflow: submit → annotate → run
@@ -259,7 +269,7 @@ export default function MainLayout() {
   function renderTabBar(extraClassName = ''): ReactNode {
     return (
       <nav className={`tab-bar ${extraClassName}`.trim()} role="tablist" aria-label="Studio tabs">
-        {TABS.map((t, index) => {
+        {visibleTabs.map((t, index) => {
           const unlocked = tabUnlocked(t.id);
           const lockReason = tabLockReason(t.id);
           const isActive = activeTab === t.id;
@@ -350,6 +360,8 @@ export default function MainLayout() {
           </button>
         </div>
       </header>
+
+      <StudioJoyrideTour />
 
       {activeTab !== 'annotated' && renderTabBar()}
 

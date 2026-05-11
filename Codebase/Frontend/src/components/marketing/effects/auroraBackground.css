@@ -79,6 +79,65 @@
   animation: none;
 }
 
+/* Per D41: single static gradient panel replaces the previous three
+   drifting blobs. Sized to cover the parent surface, centered, no motion. */
+.nt-aurora__blob--single {
+  width: 110%;
+  height: 110%;
+  left: -5%;
+  top: -5%;
+  border-radius: 50%;
+  opacity: calc(var(--nt-aurora-blob-opacity) * 0.7);
+}
+.nt-aurora--default .nt-aurora__blob--single {
+  background: radial-gradient(
+    circle at 35% 30%,
+    oklch(72% 0.16 250) 0%,
+    oklch(70% 0.18 320) 45%,
+    transparent 75%
+  );
+}
+.nt-aurora--cool .nt-aurora__blob--single {
+  background: radial-gradient(
+    circle at 35% 30%,
+    oklch(72% 0.16 220) 0%,
+    oklch(72% 0.16 260) 50%,
+    transparent 78%
+  );
+}
+.nt-aurora--warm .nt-aurora__blob--single {
+  background: radial-gradient(
+    circle at 35% 30%,
+    oklch(76% 0.16 30) 0%,
+    oklch(72% 0.18 350) 50%,
+    transparent 78%
+  );
+}
+:root[data-theme="light"] .nt-aurora--default .nt-aurora__blob--single {
+  background: radial-gradient(
+    circle at 35% 30%,
+    oklch(84% 0.09 250) 0%,
+    oklch(82% 0.10 320) 45%,
+    transparent 75%
+  );
+}
+:root[data-theme="light"] .nt-aurora--cool .nt-aurora__blob--single {
+  background: radial-gradient(
+    circle at 35% 30%,
+    oklch(84% 0.08 220) 0%,
+    oklch(82% 0.09 260) 50%,
+    transparent 78%
+  );
+}
+:root[data-theme="light"] .nt-aurora--warm .nt-aurora__blob--single {
+  background: radial-gradient(
+    circle at 35% 30%,
+    oklch(85% 0.09 30) 0%,
+    oklch(83% 0.10 350) 50%,
+    transparent 78%
+  );
+}
+
 .nt-aurora__grain {
   position: absolute;
   inset: 0;

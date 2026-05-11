@@ -64,6 +64,13 @@ source "$LIB/rebuild.sh"
 source "$LIB/ports.sh"
 # shellcheck source=ops/bash/start/lib/args.sh
 source "$LIB/args.sh"
+# shellcheck source=ops/bash/start/lib/sync.sh
+source "$LIB/sync.sh"
+
+# Local-vs-origin sync guard. Runs before any rebuild work so devs see the
+# "git pull required" warning early. Soft-fail: never blocks the run, set
+# NT_SYNC_GUARD=0 to silence in CI / scripted contexts.
+check_local_origin_sync
 
 # shellcheck source=ops/bash/start/commands/dev.sh
 source "$CMD/dev.sh"

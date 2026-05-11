@@ -82,6 +82,23 @@ coverage/
 !.env.deploy.example
 scripts/.env.deploy
 
+# Local secrets — never commit
+*.secret
+aws_deploy_env.secret
+# Designated drop zone for downloaded credential JSON, SSH keys, etc.
+# Tracked exception: secrets/README.md so the folder stays self-documenting.
+secrets/*
+!secrets/README.md
+# Defensive: catch downloaded Google OAuth client JSON anywhere in the
+# tree, in case someone forgets to drop it into secrets/.
+client_secret_*.json
+client_secret_*.apps.googleusercontent.com*
+
+# Local diagnostic probes
+test-artifacts/local-unittest-*.py
+test-artifacts/local-unittest-*.mjs
+test-artifacts/local-unittest-*.sh
+
 # SSH / deploy credentials — never commit, even locally
 *.pem
 *.key

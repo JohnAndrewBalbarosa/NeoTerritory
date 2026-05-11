@@ -5,6 +5,8 @@ import { consumeStudioPrefill } from '../../logic/studioPrefill';
 import { logFrontendEvent } from '../../logic/frontendLog';
 import { AnalysisRun } from '../../types/api';
 import { IconUpload, IconPlay, IconCode, IconLayers, IconClipboard } from '../icons/Icons';
+import { countCppTokens, DEFAULT_MAX_TOKENS_PER_FILE } from '../../utils/tokenCounter';
+import SamplePickerModal from './SamplePickerModal';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
@@ -20,12 +22,7 @@ interface FileSlot {
 
 // Hard ceiling — must match backend payloadValidator max(5).
 const MAX_FILES_HARD_CAP = 5;
-const MAX_TOKENS_PER_FILE = 500;
 const ACCEPTED_EXT = '.cpp,.cc,.cxx,.h,.hpp';
-
-function countTokens(code: string): number {
-  return code.trim().split(/\s+/).filter(Boolean).length;
-}
 
 function newSlotId(): string {
   return `slot-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -33,10 +30,11 @@ function newSlotId(): string {
 
 export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
-    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission,
+    setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission, maxTokensPerFile,
     submissionFiles, setSubmissionFiles,
     programStdin, setProgramStdin, currentRun } = useAppStore();
   const MAX_FILES = Math.min(MAX_FILES_HARD_CAP, Math.max(1, maxFilesPerSubmission || 3));
+  const MAX_TOKENS = Math.max(100, maxTokensPerFile || DEFAULT_MAX_TOKENS_PER_FILE);
 
   // Slots are persisted in the store as `submissionFiles` so they survive
   // unmount/remount of this form (e.g. after running an analysis the form
@@ -124,25 +122,59 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
       setStatus({ kind: 'error', title: 'No input', detail: 'Paste code or load a file in at least one slot.' });
       return;
     }
+    const oversized = filled
+      .map(s => ({ name: s.name || 'snippet.cpp', tokens: countCppTokens(s.text) }))
+      .filter(x => x.tokens > MAX_TOKENS);
+    if (oversized.length > 0) {
+      const first = oversized[0];
+      setStatus({
+        kind: 'error',
+        title: 'File too large',
+        detail: `${first.name} has ${first.tokens} tokens (limit ${MAX_TOKENS}). Trim the file before submitting.`
+      });
+      return;
+    }
     const dispatch = () => { void dispatchAnalyze(filled); };
     if (beforeSubmit) beforeSubmit(dispatch);
     else dispatch();
   }
 
-  async function onLoadSample() {
+  const submissionOverLimit = slots.some(s => countCppTokens(s.text) > MAX_TOKENS);
+
+  // Sample-picker modal: replaces the old single-fetch behaviour. Clicking
+  // "Load sample" now opens a categorised picker (Creational / Structural /
+  // Behavioural / Idioms) and the user chooses one. The legacy fetchSample
+  // backend endpoint is kept as a fallback when the bundled raw samples are
+  // empty for some reason.
+  const [samplePickerOpen, setSamplePickerOpen] = useState<boolean>(false);
+
+  function applyLoadedSample(filename: string, code: string): void {
+    setSlots(prev => {
+      const next = [...prev];
+      next[0] = { ...next[0], name: filename, text: code };
+      return next;
+    });
+    setSourceText(code);
+    setFilename(filename);
+    setStatus({ kind: 'ok', title: 'Sample loaded', detail: `${filename} placed in slot 1.` });
+  }
+
+  function onLoadSample(): void {
+    setSamplePickerOpen(true);
+  }
+
+  async function onLoadSampleFallback(): Promise<void> {
+    // Used when the picker has no bundled samples — preserves the legacy
+    // single-sample behaviour so the studio is never stuck.
     try {
       const sample = await fetchSample();
-      // Drop the sample into the first slot.
-      setSlots(prev => {
-        const next = [...prev];
-        next[0] = { ...next[0], name: sample.filename || 'sample.cpp', text: sample.code || '' };
-        return next;
-      });
-      setSourceText(sample.code || '');
-      setFilename(sample.filename || 'sample.cpp');
-      setStatus({ kind: 'ok', title: 'Sample loaded', detail: `${sample.filename} placed in slot 1.` });
+      applyLoadedSample(sample.filename || 'sample.cpp', sample.code || '');
     } catch (err) {
-      setStatus({ kind: 'error', title: 'Sample failed', detail: err instanceof Error ? err.message : 'unknown' });
+      setStatus({
+        kind: 'error',
+        title: 'Sample failed',
+        detail: err instanceof Error ? err.message : 'unknown',
+      });
     }
   }
 
@@ -198,6 +230,20 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
   }
 
   return (
+    <>
+    <SamplePickerModal
+      open={samplePickerOpen}
+      onClose={() => setSamplePickerOpen(false)}
+      onSelect={({ filename, code }) => {
+        if (!code) {
+          // Bundled raw samples returned an empty string — fall back to
+          // backend single-fetch so the user is never stuck.
+          void onLoadSampleFallback();
+          return;
+        }
+        applyLoadedSample(filename, code);
+      }}
+    />
     <form id="analysis-form" className="analysis-form" onSubmit={onSubmit}>
       <div className="studio-workspace">
 
@@ -303,11 +349,11 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
                 aria-label="Source for this tab"
               />
               {activeSlot.text.trim().length > 0 && (() => {
-                const t = countTokens(activeSlot.text);
-                const over = t > MAX_TOKENS_PER_FILE;
+                const t = countCppTokens(activeSlot.text);
+                const over = t > MAX_TOKENS;
                 return (
                   <span className={`token-counter ${over ? 'token-counter--over' : ''}`}>
-                    {t} / {MAX_TOKENS_PER_FILE} tokens{over ? ' — too large' : ''}
+                    {t} / {MAX_TOKENS} tokens{over ? ' — too large' : ''}
                   </span>
                 );
               })()}
@@ -346,7 +392,7 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
           <button id="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
             Clear
           </button>
-          <button id="analyze-btn" className="primary-btn studio-run-btn" type="submit" disabled={busy}>
+          <button id="analyze-btn" className="primary-btn studio-run-btn" type="submit" disabled={busy || submissionOverLimit}>
             <IconPlay size={15} />
             {busy ? 'Running...' : `Run analysis (${filledCount} file${filledCount === 1 ? '' : 's'})`}
           </button>
@@ -401,5 +447,6 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
       {/* aside kept for backward compatibility — not used by SubmitTab */}
       {aside ? <aside className="submit-side-panel submit-side-panel--runs">{aside}</aside> : null}
     </form>
+    </>
   );
 }

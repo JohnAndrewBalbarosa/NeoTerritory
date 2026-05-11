@@ -1,5 +1,4 @@
-import { motion, useMotionValue, useSpring, useReducedMotion } from 'motion/react';
-import React, { useCallback, useRef } from 'react';
+import React from 'react';
 
 interface MagneticButtonProps {
   children: React.ReactNode;
@@ -10,6 +9,13 @@ interface MagneticButtonProps {
   ariaLabel?: string;
 }
 
+// Per D41 (effects-budget rule): magnetic cursor-tracking is removed from
+// public marketing surfaces. The component name and prop surface are preserved
+// so existing callsites continue to work, but the underlying element is now a
+// plain button/anchor with focus styling carried by `nt-magnetic--<variant>`.
+// To re-enable cursor magnetism in the future for a non-marketing surface,
+// branch on a dedicated prop (e.g. `magnetic={true}`) — never reintroduce the
+// global behaviour without a new D-decision.
 export default function MagneticButton({
   children,
   onClick,
@@ -18,43 +24,13 @@ export default function MagneticButton({
   className,
   ariaLabel,
 }: MagneticButtonProps) {
-  const ref = useRef<HTMLAnchorElement | HTMLButtonElement | null>(null);
-  const reduce = useReducedMotion();
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-  const sx = useSpring(x, { stiffness: 220, damping: 18, mass: 0.4 });
-  const sy = useSpring(y, { stiffness: 220, damping: 18, mass: 0.4 });
-
-  const handleMove = useCallback(
-    (e: React.MouseEvent<HTMLElement>) => {
-      if (reduce || !ref.current) return;
-      const r = ref.current.getBoundingClientRect();
-      const dx = e.clientX - (r.left + r.width / 2);
-      const dy = e.clientY - (r.top + r.height / 2);
-      x.set(dx * 0.25);
-      y.set(dy * 0.35);
-    },
-    [reduce, x, y]
-  );
-
-  const handleLeave = useCallback(() => {
-    x.set(0);
-    y.set(0);
-  }, [x, y]);
-
   const classes = `nt-magnetic nt-magnetic--${variant} ${className ?? ''}`.trim();
 
   if (href) {
     return (
-      <motion.a
-        ref={(el) => {
-          ref.current = el;
-        }}
+      <a
         href={href}
         className={classes}
-        style={{ x: sx, y: sy }}
-        onMouseMove={handleMove}
-        onMouseLeave={handleLeave}
         onClick={(e) => {
           if (onClick) {
             e.preventDefault();
@@ -64,24 +40,13 @@ export default function MagneticButton({
         aria-label={ariaLabel}
       >
         <span className="nt-magnetic__inner">{children}</span>
-      </motion.a>
+      </a>
     );
   }
 
   return (
-    <motion.button
-      ref={(el) => {
-        ref.current = el;
-      }}
-      type="button"
-      className={classes}
-      style={{ x: sx, y: sy }}
-      onMouseMove={handleMove}
-      onMouseLeave={handleLeave}
-      onClick={onClick}
-      aria-label={ariaLabel}
-    >
+    <button type="button" className={classes} onClick={onClick} aria-label={ariaLabel}>
       <span className="nt-magnetic__inner">{children}</span>
-    </motion.button>
+    </button>
   );
 }

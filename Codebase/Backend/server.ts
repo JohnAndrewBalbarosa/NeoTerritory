@@ -39,6 +39,7 @@ import { initDb } from './src/db/initDb';
 
 import healthRoutes from './src/routes/health';
 import authRoutes from './src/routes/auth';
+import googleAuthRoutes from './src/routes/googleAuth';
 import transformRoutes from './src/routes/transform';
 import analysisRoutes from './src/routes/analysis';
 import adminRoutes from './src/routes/admin';
@@ -132,6 +133,7 @@ app.use('/health', healthRoutes);
 app.use('/auth/login', authLimiter);
 app.use('/auth/claim', authLimiter);
 app.use('/auth', authRoutes);
+app.use('/auth', googleAuthRoutes);
 app.use('/api/transform', transformRoutes);
 // Note ordering: adminRefreshLimiter is skipped unless X-Admin-Refresh: 1 is
 // set, so it never affects normal admin traffic. adminLimiter still applies
@@ -191,18 +193,16 @@ startReviewSchemaWatch();
 
 // Per-user Docker pod lifecycle. registerShutdownHooks subscribes
 // SIGINT/SIGTERM/beforeExit so live containers are torn down before the
-// process exits ("deallocate before dying"). ensurePodImageBuilt builds
-// the cpp-pod image on first boot if it isn't already present, so the
-// operator never has to remember a manual `docker build`. The sweep
-// timer reaps pods past their TTL every 30s. All three are no-ops when
-// TEST_RUNNER_USE_DOCKER is not '1' or Docker isn't on PATH.
-import { startSweepTimer, registerShutdownHooks, isPodModeEnabled, ensurePodImageBuilt } from './src/services/podManager';
-import { startDockerWatcher } from './src/services/dockerWatcher';
-registerShutdownHooks();
+// process exits ("deallocate before dying"). lazyStartPodServices triggers
+// the sweep timer, docker watcher, and image builder asynchronously.
+// In DEV_TEST_MODE we defer this entirely until the first pod is actually
+// requested (ensurePod), making the boot path significantly faster.
+import { registerShutdownHooks, isPodModeEnabled, lazyStartPodServices } from './src/services/podManager';
 if (isPodModeEnabled()) {
-  void ensurePodImageBuilt();
-  startSweepTimer();
-  startDockerWatcher();
+  registerShutdownHooks();
+}
+if (isPodModeEnabled() && process.env.DEV_TEST_MODE !== 'true') {
+  lazyStartPodServices();
 }
 
 const PORT = Number(process.env.PORT || 3001);

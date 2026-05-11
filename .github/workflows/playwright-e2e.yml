@@ -1,0 +1,149 @@
+name: Playwright E2E — all design-pattern samples
+
+# Per D68 (DESIGN_DECISIONS.md): this workflow is the gate the entire
+# system stands behind. If any design-pattern sample under
+# Codebase/Microservice/samples/ stops passing the full studio pipeline
+# (load -> analyze -> tag -> tests pass), the build fails. Without this
+# check, the system's value proposition is broken.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+  workflow_dispatch:
+
+concurrency:
+  group: playwright-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-all-samples:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: "true"
+      # The studio defaults to 127.0.0.1:3001 once the stack is up.
+      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001"
+      # Use the legacy CJS Vite path for `vite preview` to keep noise low.
+      NODE_NO_WARNINGS: "1"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install system build prerequisites
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y build-essential cmake ninja-build
+
+      - name: Install Frontend dependencies
+        working-directory: Codebase/Frontend
+        run: |
+          npm ci --no-audit --no-fund
+
+      - name: Install Backend dependencies
+        working-directory: Codebase/Backend
+        run: |
+          npm ci --no-audit --no-fund
+
+      - name: Install Playwright browsers (Chromium only, with deps)
+        working-directory: Codebase/Frontend
+        run: |
+          npx playwright install --with-deps chromium
+
+      - name: Build the C++ microservice
+        run: |
+          cmake -S Codebase/Microservice -B Codebase/Microservice/build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          cmake --build Codebase/Microservice/build --target NeoTerritory --parallel
+
+      - name: Build Frontend (production)
+        working-directory: Codebase/Frontend
+        run: |
+          npx tsc --noEmit
+          npx vite build
+
+      - name: Build Backend (TypeScript)
+        working-directory: Codebase/Backend
+        run: |
+          npm run build || echo "Backend has no build step or it failed; continuing if dist/ exists"
+
+      - name: Start the studio stack (backend serves built frontend)
+        working-directory: Codebase/Backend
+        env:
+          PORT: "3001"
+          HOST: "127.0.0.1"
+          NODE_ENV: "production"
+          DEV_TEST_MODE: "true"
+          # No real AI key in CI; the AI documentation pipeline must
+          # gracefully fall back per D37. The Playwright spec does not
+          # assert AI annotations; it asserts compile_run + unit_test.
+          ANTHROPIC_API_KEY: ""
+          # Microservice binary the backend spawns. Set via env so the
+          # default (which assumes Windows .exe) doesn't apply on Linux.
+          NEOTERRITORY_BIN: "${{ github.workspace }}/Codebase/Microservice/build/NeoTerritory"
+          NEOTERRITORY_CATALOG: "${{ github.workspace }}/Codebase/Microservice/pattern_catalog"
+          # Seed test users so the Playwright tester picker has accounts to
+          # claim. Without this, /auth/test-accounts returns []. Per
+          # Codebase/Backend/src/db/_testSeed/devconUsers.ts, this env flag
+          # gates seedDevconUsers().
+          SEED_TEST_USERS: "1"
+          # 10 tests + buffer for re-runs. Each test claims a seat; the
+          # spec releases via /auth/disconnect in afterEach, but bumping
+          # the pool avoids exhaustion if a test fails before release.
+          MAX_TEST_USERS: "20"
+          # Per testRunnerService.ts:117: NODE_ENV=production disables the
+          # in-process compiler-based test runner unless ENABLE_TEST_RUNNER=1
+          # is explicit. Without this, every Tests-tab assertion would fail
+          # with verdict=sandbox_disabled.
+          ENABLE_TEST_RUNNER: "1"
+        run: |
+          set -euo pipefail
+          if [ -f dist/server.js ]; then
+            node dist/server.js &
+          else
+            npx tsx src/server.ts &
+          fi
+          echo "Started backend, waiting for /api/health..."
+          for i in $(seq 1 60); do
+            if curl -fsS "http://127.0.0.1:3001/api/health" > /dev/null; then
+              echo "Studio is up after ${i} attempt(s)."
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS "http://127.0.0.1:3001/api/health"
+
+      - name: Run Playwright spec — all-samples.spec.ts
+        working-directory: Codebase/Frontend
+        run: |
+          # Iterates Codebase/Microservice/samples/ via the spec's
+          # SAMPLES array. Fails if any sample breaks the
+          # load -> analyze -> tag -> tests pipeline.
+          npx playwright test --reporter=list,html
+
+      - name: Upload Playwright HTML report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: Codebase/Frontend/playwright-report
+          retention-days: 7
+
+      - name: Upload test traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: Codebase/Frontend/test-results
+          retention-days: 7
