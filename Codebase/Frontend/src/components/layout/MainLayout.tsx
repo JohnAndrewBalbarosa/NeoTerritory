@@ -8,8 +8,6 @@ import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
 // import { useHeartbeat } from '../../hooks/useHeartbeat';  // TEMP: disabled, see useHeartbeat() call below
 import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
-import StudioJoyrideTour, { dispatchStudioTourOpen } from '../studio/StudioJoyrideTour';
-import { dispatchStartHereOpen } from '../studio/StartHereRail';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
@@ -27,7 +25,7 @@ import {
   IconCheckSquare,
   IconLock,
 } from '../icons/Icons';
-import type { ComponentType } from 'react';
+import type { ComponentType, ReactNode } from 'react';
 import type { IconProps } from '../icons/Icons';
 
 interface PendingSave {
@@ -89,19 +87,11 @@ export default function MainLayout() {
   useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
   const { theme, toggleTheme } = useTheme();
   const {
-    status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
+    user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, aiStatus, aiConfigured, setStatus,
-    currentRun, gdbAllPassedForRun, reviewsRequired
+    setAiStatus, setStatus,
+    currentRun, gdbAllPassedForRun
   } = useAppStore();
-
-  // When the admin has flipped reviews_required OFF (post-thesis), the
-  // Self-check / survey tab disappears from the workflow and the survey
-  // gate is auto-flushed on the backend. Filter at render time so the
-  // tab list rebuilds on toggle change without a reload.
-  const visibleTabs = reviewsRequired
-    ? TABS
-    : TABS.filter(t => t.id !== 'ambiguous');
 
   // Sequential tab gating. Each tab unlocks only after the previous is
   // complete, mirroring the natural workflow: submit → annotate → run
@@ -123,18 +113,6 @@ export default function MainLayout() {
     return undefined;
   }
 
-  const aiChipStatus = !aiConfigured ? 'offline'
-    : aiStatus === 'pending'  ? 'working'
-    : aiStatus === 'failed'   ? 'error'
-    : aiStatus === 'disabled' ? 'offline'
-    : 'ready';
-
-  const aiChipLabel = !aiConfigured  ? 'not configured'
-    : aiStatus === 'pending'  ? 'working…'
-    : aiStatus === 'failed'   ? 'failed'
-    : aiStatus === 'disabled' ? 'disabled'
-    : aiStatus === 'ready'    ? 'done'
-    : 'ready';
   const { signOut } = useAuth();
 
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
@@ -222,6 +200,9 @@ export default function MainLayout() {
     setReview(null);
   }
 
+  const isDeveloperEntryFlow =
+    typeof window !== 'undefined' && window.sessionStorage.getItem('nt-entry-flow') === 'developer';
+
   // Admins skip the research-participant gates entirely. Their place is the
   // /admin dashboard, not the studio. Send them there immediately.
   useEffect(() => {
@@ -231,107 +212,10 @@ export default function MainLayout() {
   }, [token, user]);
   if (token && user?.role === 'admin') return null;
 
-  // Real-account entry flow detection. GoogleCallback writes
-  // `nt-entry-flow` to sessionStorage as 'developer' or 'student'
-  // after a successful exchange. Devcon testers (claim-seat path)
-  // never set this — so the absence of the flag = research participant.
-  // Real-account users skip both ConsentGate and PretestForm; those
-  // are tester-only research-onboarding screens.
-  const entryFlow = typeof window !== 'undefined'
-    ? window.sessionStorage.getItem('nt-entry-flow')
-    : null;
-  const isRealAccountUser = entryFlow === 'developer' || entryFlow === 'student';
-
-  // Reflect each gate in the URL so the address bar distinguishes consent
-  // and pretest from the studio home. replaceState avoids back-button noise.
-  // Real-account users go straight to the studio; tester gates are skipped.
-  if (token && user && typeof window !== 'undefined') {
-    const path = window.location.pathname;
-    const expected = isRealAccountUser
-      ? '/studio'
-      : !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
-    if (path !== expected && path !== '/admin.html') {
-      window.history.replaceState(null, '', expected);
-    }
-  }
-
-  // Gate: consent first (research participants only — Devcon flow).
-  // Real-account Google sign-in users (Developer / Student Learning)
-  // skip this entirely.
-  if (token && user && !isRealAccountUser && !consentAccepted) {
-    return <ConsentGate />;
-  }
-  // Gate: pretest second. Same skip rule applies.
-  if (token && user && !isRealAccountUser && !pretestSubmitted) {
-    return <PretestForm />;
-  }
-
-  return (
-    <div className="shell">
-      <header className="topbar">
-        <div className="brand">
-          <p className="eyebrow">NeoTerritory Studio</p>
-          {/* Solid-color title (project owner aligned with Miryl's branch:
-              the ShinyText shimmer made the hero look like a marketing
-              effect on a working tool). Plain h1 = solid theme accent. */}
-          <h1 className="brand-title">Pattern detection &amp; annotation</h1>
-          <p className="lede">
-            Paste C++ source or upload a file. The microservice detects design patterns
-            and the studio shows comments side-by-side with the lines they reference.
-          </p>
-        </div>
-        <div id="status-card" className="status-card" data-kind={status.kind}>
-          <span className="status-label">Backend</span>
-          <strong id="status-title">{status.title}</strong>
-          <span id="status-detail">{status.detail}</span>
-          <div id="ms-row" className="ms-row" data-state={msState}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">Microservice:</span>
-            <strong id="ms-status">{msLabel}</strong>
-          </div>
-          <div id="docker-row" className="ms-row" data-state={dockerState}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">Docker service:</span>
-            <strong id="docker-status">{dockerLabel}</strong>
-          </div>
-          <div id="ai-row" className="ai-row" data-status={aiChipStatus}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">AI:</span>
-            <strong id="ai-status-label">{aiChipLabel}</strong>
-          </div>
-          <div id="user-row" className="user-row">
-            <span id="user-label">{user?.username ?? ''}</span>
-            <button
-              className="ghost-btn theme-toggle-btn"
-              type="button"
-              onClick={toggleTheme}
-              title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            >
-              {theme === 'dark' ? '☀ Light' : '☾ Dark'}
-            </button>
-            <button
-              className="ghost-btn"
-              type="button"
-              title="Replay the studio tour"
-              aria-label="Replay the studio tour"
-              onClick={() => {
-                dispatchStudioTourOpen();
-                dispatchStartHereOpen();
-              }}
-            >
-              ? Tour
-            </button>
-            <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
-      <StudioJoyrideTour />
-
-      <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
-        {visibleTabs.map((t, index) => {
+  function renderTabBar(extraClassName = ''): ReactNode {
+    return (
+      <nav className={`tab-bar ${extraClassName}`.trim()} role="tablist" aria-label="Studio tabs">
+        {TABS.map((t, index) => {
           const unlocked = tabUnlocked(t.id);
           const lockReason = tabLockReason(t.id);
           const isActive = activeTab === t.id;
@@ -357,6 +241,73 @@ export default function MainLayout() {
           );
         })}
       </nav>
+    );
+  }
+
+  // Reflect each gate in the URL so the address bar distinguishes consent
+  // and pretest from the studio home. replaceState avoids back-button noise.
+  if (token && user && typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    const expected = isDeveloperEntryFlow
+      ? '/studio'
+      : !consentAccepted
+        ? '/consent'
+        : !pretestSubmitted
+          ? '/pretest'
+          : '/studio';
+    if (path !== expected && path !== '/admin.html') {
+      window.history.replaceState(null, '', expected);
+    }
+  }
+
+  // Gate: consent first (research participants only).
+  if (token && user && !isDeveloperEntryFlow && !consentAccepted) {
+    return <ConsentGate />;
+  }
+  // Gate: pretest second (auto-skips when surveyQuestions.pretest is empty).
+  if (token && user && !isDeveloperEntryFlow && !pretestSubmitted) {
+    return <PretestForm />;
+  }
+
+  return (
+    <div className="shell">
+      <header className="topbar">
+        <div className="topbar-brand">
+          <span className="topbar-brand__dot" aria-hidden="true" />
+          <span className="topbar-brand__name">CodiNeo Studio</span>
+        </div>
+        <div className="topbar-actions">
+          {user?.username && (
+            <span className="topbar-user-chip" aria-label="Signed in as">
+              {user.username}
+            </span>
+          )}
+          <button
+            className={`theme-switch theme-switch--${theme}`}
+            type="button"
+            role="switch"
+            aria-checked={theme === 'light'}
+            onClick={toggleTheme}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            <span className="ts-track" aria-hidden="true">
+              <span className="ts-stars">
+                <span className="ts-star ts-s1" />
+                <span className="ts-star ts-s2" />
+                <span className="ts-star ts-s3" />
+                <span className="ts-star ts-s4" />
+              </span>
+              <span className="ts-thumb" />
+            </span>
+          </button>
+          <button id="logout-btn" className="ghost-btn" type="button" onClick={onSignOutClick}>
+            Sign out
+          </button>
+        </div>
+      </header>
+
+      {activeTab !== 'annotated' && renderTabBar()}
 
       <main className="content tab-content">
         <AnimatePresence mode="wait" initial={false}>
@@ -386,6 +337,7 @@ export default function MainLayout() {
                 pendingSave={!!pendingSave}
                 onDiscard={discardCurrentRun}
                 onGoToReview={() => setActiveTab('ambiguous')}
+                stepNavigation={renderTabBar('tab-bar--in-results')}
               />
             )}
             {activeTab === 'gdb' && <GdbRunnerTab />}

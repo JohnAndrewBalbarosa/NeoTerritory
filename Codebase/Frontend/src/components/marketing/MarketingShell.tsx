@@ -3,18 +3,11 @@ import { useEffect } from 'react';
 import { Surface } from '../../logic/router';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
-import MarketingFooter from './MarketingFooter';
 import HeroLanding from './HeroLanding';
 import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
 import EntryChoice from './EntryChoice';
 import StudentLearningHub from './StudentLearningHub';
-import WhyPage from './why/WhyPage';
-import MechanicsPage from './mechanics/MechanicsPage';
-import PatternsPage from './patterns/PatternsPage';
-import PatternDetailPage from './patterns/PatternDetailPage';
-import TourPage from './tour/TourPage';
-import ResearchPage from './research/ResearchPage';
 
 interface MarketingShellProps {
   surface: Exclude<Surface, 'studio'>;
@@ -22,6 +15,12 @@ interface MarketingShellProps {
 
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
+
+  // Marketing pages are permanently dark — force the attribute so light-mode
+  // CSS variables never bleed through even if the user toggled light in studio.
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }, []);
 
   useEffect(() => {
     document.body.dataset.surface = surface;
@@ -33,7 +32,6 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="nt-marketing-surface" data-marketing-surface>
       <a href="#main" className="nt-skip-link">
         Skip to main content
       </a>
@@ -51,16 +49,15 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'about' && <AboutPage />}
           {surface === 'choose' && <EntryChoice />}
           {surface === 'studentLearning' && <StudentLearningHub />}
-          {surface === 'why' && <WhyPage />}
-          {surface === 'mechanics' && <MechanicsPage />}
-          {surface === 'patterns' && <PatternsPage />}
-          {surface === 'patternDetail' && <PatternDetailPage />}
-          {surface === 'tour' && <TourPage />}
-          {surface === 'research' && <ResearchPage />}
         </motion.div>
       </AnimatePresence>
-      <MarketingFooter />
-      </div>
+      <footer className="nt-mkt-footer" role="contentinfo">
+        <p>CodiNeo · C++ pattern analysis and documentation-support system</p>
+        <p className="nt-mkt-footer__small">
+          For thesis evaluation, learning, and research use. Admin access remains protected at{' '}
+          <code>/app</code>.
+        </p>
+      </footer>
     </MotionConfig>
   );
 }

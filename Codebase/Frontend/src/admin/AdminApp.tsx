@@ -1,41 +1,70 @@
-import { useEffect, useState, ComponentType } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../store/appState';
 import { useTheme } from '../hooks/useTheme';
-import { useHealth } from '../hooks/useHealth';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
 import AuroraBackground from '../components/marketing/effects/AuroraBackground';
+import ShinyText from '../components/marketing/effects/ShinyText';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
 import PerUserActivity from './components/PerUserActivity';
 import LogsView from './components/LogsView';
 import SurveyStats from './components/SurveyStats';
-import ReviewsPanel from './components/ReviewsPanel';
-import { markAdminRefresh } from '../api/client';
-import {
-  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard
-} from '../components/icons/Icons';
-import type { IconProps } from '../components/icons/Icons';
+import { fetchAdminReviews, markAdminRefresh } from '../api/client';
+import { AdminReview } from '../types/api';
 import { useAdminUsers } from './hooks/useAdminUsers';
+import { isAuthError } from './lib/silenceAuthErrors';
 
 type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'logs';
 
-const TABS: Array<{ id: AdminTab; label: string; icon: ComponentType<IconProps> }> = [
-  { id: 'runs',       label: 'Runs',       icon: IconLayers },
-  { id: 'complexity', label: 'Complexity', icon: IconBeaker },
-  { id: 'users',      label: 'Users',      icon: IconShield },
-  { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare },
-  { id: 'logs',       label: 'Logs',       icon: IconClipboard }
+const TABS: Array<{ id: AdminTab; label: string }> = [
+  { id: 'runs',       label: 'Runs' },
+  { id: 'complexity', label: 'Complexity' },
+  { id: 'users',      label: 'Users' },
+  { id: 'reviews',    label: 'Reviews' },
+  { id: 'logs',       label: 'Logs' }
 ];
 
+function ReviewsPanel() {
+  const [reviews, setReviews] = useState<AdminReview[] | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  useEffect(() => {
+    fetchAdminReviews()
+      .then(r => setReviews(r.reviews))
+      .catch(e => {
+        // Silence the pre-auth 401 race; treat as empty.
+        if (isAuthError(e)) { setReviews([]); return; }
+        setError(e.message);
+      });
+  }, []);
+  if (error) return <div className="empty-state admin-error" role="alert">{error}</div>;
+  if (!reviews) return <div className="empty-state">Loading…</div>;
+  if (reviews.length === 0) return <div className="empty-state">No reviews yet.</div>;
+  return (
+    <table className="f1-pattern-table">
+      <thead>
+        <tr>
+          <th>User</th><th>Scope</th><th>Source</th><th>Version</th><th>Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {reviews.map((r, i) => (
+          <tr key={i}>
+            <td>{r.username ?? '—'}</td>
+            <td>{r.scope}</td>
+            <td>{r.sourceName ?? '—'}</td>
+            <td>{r.schemaVersion}</td>
+            <td>{r.createdAt?.slice(0, 10)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default function AdminApp() {
-  const { token, user, clearAuth, status, msState, msLabel, dockerState, dockerLabel } = useAppStore();
+  const { token, user, clearAuth } = useAppStore();
   const { theme, toggleTheme } = useTheme();
-  // Seed backend / microservice / docker status on mount so the topbar
-  // shows the same ops state the studio header surfaces. Admin is the
-  // operations dashboard — without this, an operator could not see at
-  // a glance whether the analyzer is healthy.
-  useHealth();
   // Topbar online pill — pulled from the same shared hook UserTable uses, so
   // both surfaces refresh together. Errors (incl. the pre-auth 401 race)
   // surface as 0 online instead of a red banner.
@@ -72,35 +101,11 @@ export default function AdminApp() {
       <AuroraBackground variant="warm" className="admin-aurora" />
       <header className="admin-topbar reveal">
         <div className="brand">
-          <p className="eyebrow">NeoTerritory · Admin</p>
-          {/* Solid-color title — same call as studio: a marketing
-              shimmer on a working operations dashboard reads as
-              decorative noise. Plain h1 = solid theme accent. */}
-          <h1 className="brand-title">Research dashboard</h1>
+          <p className="eyebrow">CodiNeo · Admin</p>
+          <h1><ShinyText text="Research dashboard" speed={6} intensity={0.6} /></h1>
           <p className="lede">Activity, scoring, and qualitative reviews across all tester accounts.</p>
         </div>
         <div className="admin-actions">
-          {/* Operations status row — backend health + microservice +
-              docker. Admin is the ops dashboard, so it should see the
-              same status the studio header shows. Compact pills, not
-              full status card. */}
-          <div className="admin-ops-pills" role="status" aria-live="polite">
-            <span className="admin-ops-pill" data-state={status.kind}>
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">API</span>
-              <strong>{status.title}</strong>
-            </span>
-            <span className="admin-ops-pill" data-state={msState}>
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">Microservice</span>
-              <strong>{msLabel}</strong>
-            </span>
-            <span className="admin-ops-pill" data-state={dockerState}>
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">Docker</span>
-              <strong>{dockerLabel}</strong>
-            </span>
-          </div>
           <span
             className="admin-online-pill"
             data-empty={onlineCount === 0 ? 'true' : undefined}
@@ -131,23 +136,16 @@ export default function AdminApp() {
       </header>
 
       <nav className="admin-tab-bar" aria-label="Admin sections">
-        {TABS.map((tab, index) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              className={`admin-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="admin-tab-btn__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-              <span className="admin-tab-btn__icon" aria-hidden="true">
-                <Icon size={15} />
-              </span>
-              <span className="admin-tab-btn__label">{tab.label}</span>
-            </button>
-          );
-        })}
+        {TABS.map(tab => (
+          <button
+            key={tab.id}
+            className={`admin-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
+            type="button"
+            onClick={() => setActiveTab(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
       </nav>
 
       {/*
@@ -166,34 +164,22 @@ export default function AdminApp() {
           <ComplexityTab />
         </div>
         <div hidden={activeTab !== 'users'}>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Users</h2>
-              <p className="admin-section__hint">Tester accounts, online presence, and seat reset controls.</p>
-            </header>
+          <section className="admin-section">
+            <h2>Users</h2>
             <UserTable />
           </section>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Per-user activity</h2>
-              <p className="admin-section__hint">Run counts and recent activity per tester.</p>
-            </header>
+          <section className="admin-section">
+            <h2>Per-user activity</h2>
             <PerUserActivity />
           </section>
         </div>
         <div hidden={activeTab !== 'reviews'}>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Reviews</h2>
-              <p className="admin-section__hint">Per-pattern reviewer answers submitted from the studio.</p>
-            </header>
+          <section className="admin-section">
+            <h2>Reviews</h2>
             <ReviewsPanel />
           </section>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Survey responses</h2>
-              <p className="admin-section__hint">Per-run + end-of-session feedback ratings and free-text answers.</p>
-            </header>
+          <section className="admin-section">
+            <h2>Survey responses</h2>
             <SurveyStats />
           </section>
         </div>

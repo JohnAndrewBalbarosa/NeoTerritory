@@ -14,7 +14,7 @@ Cross-cutting orchestrator. Anyone working on NeoTerritory hits this script firs
 
 ### What To Watch While Reading
 - `Resolve-BindHost` / `Resolve-AdvertiseHost` / `Get-LanIp` — the LAN-mode plumbing. `-Lan` binds backend to `0.0.0.0` and tells Vite `--host 0.0.0.0`; the advertised host (printed URL, CORS origin) is the detected LAN IPv4.
-- `Invoke-Dev` — re-uses helpers `Ensure-NodeModules`, `Build-Microservice`, `Free-Port`, `Wait-Url`. Sets `$env:HOST` and `$env:VITE_HOST` so `server.ts` and `vite.config.ts` honor the bind address.
+- `Invoke-Dev` — re-uses helpers `Ensure-NodeModules`, `Build-Microservice`, `Free-Port`, `Wait-Url`. Sets `$env:HOST` and `$env:VITE_HOST` so `server.ts` and `vite.config.ts` honor the bind address. When pod mode is enabled, the Docker daemon probe is soft-gated so startup can fall back to the local sandbox instead of aborting before `Ensure-PodImage`.
 - `Invoke-Setup` — `-Mode dev` (default) is bootstrap-equivalent; `-Mode full` adds winget auto-install attempts, `.env` Anthropic prompts, and DB warm-up.
 - `Invoke-K8s` — self-elevates; delegates to `Codebase\Infrastructure\session-orchestration\bootstrap_and_deploy.ps1`.
 - `Invoke-Browser` — temp profile Chromium; defaults its URL to the studio LAN/local URL when called from `dev`.

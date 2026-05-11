@@ -298,20 +298,8 @@ async function openUserDrawer(userId, username) {
 }
 
 async function openRunDrawer(runId) {
-<<<<<<< Updated upstream
-=======
   if (RUN_INSPECT_DISABLED) return;
-  state.runDrawerRequestId += 1;
-  const requestId = state.runDrawerRequestId;
-  if (state.runDrawerAbort) state.runDrawerAbort.abort();
-  const controller = new AbortController();
-  state.runDrawerAbort = controller;
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
-
-  // Run detail should replace the blocking user drawer context.
-  if (els.userDrawer) els.userDrawer.hidden = true;
   els.runDrawerTitle.textContent = 'Run detail';
->>>>>>> Stashed changes
   els.runDrawerBody.innerHTML = '<div class="empty-state">Loading...</div>';
   els.runDrawer.hidden = false;
   try {
@@ -348,20 +336,11 @@ async function openRunDrawer(runId) {
   }
 }
 
-<<<<<<< Updated upstream
-=======
 function closeRunDrawer() {
-  state.runDrawerRequestId += 1;
-  if (state.runDrawerAbort) {
-    state.runDrawerAbort.abort();
-    state.runDrawerAbort = null;
-  }
   if (els.runDrawer) els.runDrawer.hidden = true;
   if (els.runDrawerBody) els.runDrawerBody.innerHTML = '<div class="empty-state">Loading...</div>';
   if (els.runDrawerTitle) els.runDrawerTitle.textContent = 'Run detail';
 }
-
->>>>>>> Stashed changes
 function renderStars(value, max = 5) {
   const v = Math.max(0, Math.min(max, Number(value) || 0));
   return '★'.repeat(v) + '☆'.repeat(max - v);
@@ -450,15 +429,6 @@ function bind() {
     localStorage.removeItem(USER_KEY);
     window.location.href = '/';
   });
-<<<<<<< Updated upstream
-  els.drawerCloseBtn.addEventListener('click', () => { els.userDrawer.hidden = true; });
-  els.runDrawerCloseBtn.addEventListener('click', () => { els.runDrawer.hidden = true; });
-  [els.userDrawer, els.runDrawer].forEach(drawer => {
-    drawer.addEventListener('click', (e) => {
-      if (e.target === drawer) drawer.hidden = true;
-    });
-  });
-=======
   if (!RUN_INSPECT_DISABLED) {
     els.drawerCloseBtn.addEventListener('click', () => { els.userDrawer.hidden = true; });
     if (els.runDrawerCloseBtn) {
@@ -478,7 +448,6 @@ function bind() {
       });
     }
   }
->>>>>>> Stashed changes
 }
 
 (function init() {

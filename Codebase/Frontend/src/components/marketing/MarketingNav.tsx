@@ -48,7 +48,7 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         <span className="nt-mkt-nav__brand-mark" aria-hidden>
           NT
         </span>
-        <span className="nt-mkt-nav__brand-name">NeoTerritory</span>
+        <span className="nt-mkt-nav__brand-name">CodiNeo</span>
       </a>
 
       <button

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
-import { runPatternTestsStreaming, fetchMyTestRunStats, GdbTestResult, AdminTestRunStats } from '../../api/client';
+import { runPatternTests, fetchMyTestRunStats, GdbTestResult, AdminTestRunStats } from '../../api/client';
 import { logFrontendEvent } from '../../logic/frontendLog';
 
 const VERDICT_LABEL: Record<string, string> = {
@@ -15,18 +15,9 @@ const VERDICT_LABEL: Record<string, string> = {
   skipped:           'skipped'
 };
 
-// Per D67 (this turn): the studio surfaces NeoTerritory's full Testing
-// Trophy strategy. Today only compile_run + unit_test actually run; the
-// remaining phases (integration, e2e, static analysis) are visible as
-// planned so the test surface tells the truth about the strategy. As each
-// phase ships its real backend, its label flips from "(planned)" to a
-// running pill without UI rework.
 const PHASE_LABEL: Record<string, string> = {
   compile_run: '1. Code compiles & runs',
-  unit_test:   '2. Unit-test verdict',
-  integration: '3. Integration test (planned)',
-  e2e:         '4. End-to-end (planned)',
-  static:      '5. Static analysis (planned)',
+  unit_test:   '2. Unit-test verdict'
 };
 
 const FAMILY_LABEL: Record<string, string> = {
@@ -133,6 +124,28 @@ function PhaseRow({ phase, result, loading }: {
   return (
     <div className={`gdb-phase-row gdb-phase-${status}`} data-status={status}>
       <header className="gdb-phase-head">
+        <span className="gdb-phase-status-icon" aria-hidden="true">
+          {loading ? null : status === 'pass' ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="1.2"/>
+              <path d="M4.5 7.5l2 2 4-4" stroke="#10b981" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          ) : status === 'fail' ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="rgba(239,68,68,0.1)" stroke="#ef4444" strokeWidth="1.2"/>
+              <path d="M5 5l5 5M10 5l-5 5" stroke="#ef4444" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          ) : status === 'skipped' ? (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="none" stroke="var(--border)" strokeWidth="1.2"/>
+              <path d="M5 7.5h5" stroke="var(--ink-soft)" strokeWidth="1.4" strokeLinecap="round"/>
+            </svg>
+          ) : (
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="7.5" cy="7.5" r="7" fill="none" stroke="var(--border)" strokeWidth="1.2"/>
+            </svg>
+          )}
+        </span>
         <span className="gdb-phase-label">{label}</span>
         {loading
           ? <span className="gdb-phase-spinner" aria-hidden="true" />
@@ -214,17 +227,8 @@ export default function GdbRunnerTab() {
   // the busy spinner / skeleton lives in the global store, not in local
   // useState that gets blown away on unmount.
   const groups: PatternGroup[] = useMemo(() => {
-    // While busy, prefer live partial results (compile_run rows that have
-    // already streamed in via SSE) over the skeleton — that way the user
-    // sees the compile verdict the moment it lands instead of staring at
-    // an empty placeholder until unit_test also finishes.
-    if (busy && gdbBusyForKey === sessionKey) {
-      if (cachedValid && lastGdbResults && lastGdbResults.length > 0) {
-        return groupResults(lastGdbResults);
-      }
-      if (gdbInflightSkeleton.length > 0) {
-        return gdbInflightSkeleton.map(s => ({ ...s }));
-      }
+    if (busy && gdbBusyForKey === sessionKey && gdbInflightSkeleton.length > 0) {
+      return gdbInflightSkeleton.map(s => ({ ...s }));
     }
     return cachedValid ? groupResults(lastGdbResults!) : [];
   }, [busy, gdbBusyForKey, gdbInflightSkeleton, cachedValid, lastGdbResults, sessionKey]);
@@ -334,45 +338,25 @@ export default function GdbRunnerTab() {
     setGdbBusy(true, sessionKey);
     logFrontendEvent('frontend.gdb_test', `dispatch patterns=${skeleton.length}`);
     try {
-      // Streaming variant: each phase result lands as a discrete SSE
-      // event, and we accumulate them into a single partial array that
-      // gets pushed to the store after every event. The store-driven
-      // re-render is what gives the user "compile pass" feedback the
-      // moment compile_run finishes, before unit_test runs.
-      const accumulated: GdbTestResult[] = [];
-      let firstActiveKeySet = false;
-      const handle = await runPatternTestsStreaming(
+      const data = await runPatternTests(
         runId !== null
-          ? {
-              runId, classResolvedPatterns: resolvedMap, stdin: programStdin,
-              onEvent: (ev) => {
-                if (ev.type !== 'phase') return;
-                accumulated.push(ev.result);
-                if (!firstActiveKeySet) {
-                  setActiveKey(`${ev.result.patternId}__${ev.result.className}`);
-                  firstActiveKeySet = true;
-                }
-                setLastGdbResults([...accumulated], sessionKey);
-              }
-            }
-          : {
-              pendingId: pendingId!, classResolvedPatterns: resolvedMap, stdin: programStdin,
-              onEvent: (ev) => {
-                if (ev.type !== 'phase') return;
-                accumulated.push(ev.result);
-                if (!firstActiveKeySet) {
-                  setActiveKey(`${ev.result.patternId}__${ev.result.className}`);
-                  firstActiveKeySet = true;
-                }
-                setLastGdbResults([...accumulated], sessionKey);
-              }
-            }
+          ? { runId, classResolvedPatterns: resolvedMap, stdin: programStdin }
+          : { pendingId: pendingId!, classResolvedPatterns: resolvedMap, stdin: programStdin }
       );
-      const final = await handle.finished;
-      setGdbBudgetRemaining(final.rateLimit?.remaining ?? null);
-      const passed = accumulated.filter(r => r.passed).length;
-      setGdbAllPassedForRun(accumulated.length > 0 && passed === accumulated.length);
-      logFrontendEvent('frontend.gdb_test', `complete pass=${passed}/${accumulated.length}`);
+      const grouped = groupResults(data.results);
+      if (grouped.length > 0) {
+        setActiveKey(`${grouped[0].patternId}__${grouped[0].className}`);
+      }
+      setGdbBudgetRemaining(data.rateLimit?.remaining ?? null);
+      // Persist results in the session so a tab switch doesn't lose them.
+      // The runKey binds the cache to *this* run's identity — a new
+      // submission resets it via setCurrentRun, requiring a fresh run.
+      setLastGdbResults(data.results, sessionKey);
+      const passed = data.results.filter(r => r.passed).length;
+      // The Annotated tab's CTA gate: only allow advancing to Review once
+      // every emitted test result passed for the current run.
+      setGdbAllPassedForRun(data.results.length > 0 && passed === data.results.length);
+      logFrontendEvent('frontend.gdb_test', `complete pass=${passed}/${data.results.length}`);
     } catch (err) {
       const e = err as ApiError;
       if (e.status === 503) {
@@ -398,83 +382,54 @@ export default function GdbRunnerTab() {
 
   return (
     <section className="tab-panel tab-gdb">
-      {/* Per D67: Testing Trophy banner. Documents the testing strategy
-          in-line so the studio surface matches what /research describes.
-          Phases the backend already runs are linked-to from the per-pattern
-          breakdown below; planned phases are listed here as a roadmap. */}
-      <aside className="gdb-trophy-banner" aria-label="Testing Trophy strategy">
-        <header>
-          <span className="gdb-trophy-eyebrow">Testing Trophy</span>
-          <h2 className="gdb-trophy-title">How NeoTerritory tests your code</h2>
-        </header>
-        <ol className="gdb-trophy-phases">
-          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="compile_run">
-            <span className="gdb-trophy-num">01</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Compile &amp; run</p>
-              <p className="gdb-trophy-phase-note">Live: your code compiles and produces output.</p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="unit_test">
-            <span className="gdb-trophy-num">02</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Unit test</p>
-              <p className="gdb-trophy-phase-note">
-                Live: per-pattern scaffolds verify individual functions.
-              </p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="integration">
-            <span className="gdb-trophy-num">03</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Integration test</p>
-              <p className="gdb-trophy-phase-note">
-                Planned: exercises real microservice + backend + AI fallback paths against curated
-                samples. The bulk of the Trophy lives here.
-              </p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="e2e">
-            <span className="gdb-trophy-num">04</span>
-            <div>
-              <p className="gdb-trophy-phase-name">End-to-end (E2E)</p>
-              <p className="gdb-trophy-phase-note">
-                Planned: Playwright runs the studio start-to-finish on critical user flows.
-              </p>
-            </div>
-          </li>
-          <li className="gdb-trophy-phase gdb-trophy-phase--planned" data-phase="static">
-            <span className="gdb-trophy-num">05</span>
-            <div>
-              <p className="gdb-trophy-phase-name">Static analysis</p>
-              <p className="gdb-trophy-phase-note">
-                Planned: clang-tidy / cppcheck / ESLint as the broad base of the Trophy.
-              </p>
-            </div>
-          </li>
-        </ol>
-        <p className="gdb-trophy-foot">
-          Strategy: <strong>Testing Trophy</strong> (Kent C. Dodds). Read more on{' '}
-          <a href="/research" onClick={(e) => { e.preventDefault(); window.history.pushState(null, '', '/research'); window.dispatchEvent(new CustomEvent('nt:navigate')); }}>
-            /research
-          </a>
-          .
-        </p>
-      </aside>
-      <header className="results-header">
-        <p className="results-summary">
-          Pre-templated unit tests · {runId !== null ? `run #${runId}` : 'unsaved run'}
-          {budgetRemaining !== null && (
-            <span className="gdb-budget"> · {budgetRemaining} run(s) left this minute</span>
-          )}
-          {accuracy && accuracy.total > 0 && (
-            <span className="gdb-accuracy" title={`${accuracy.passed} pass / ${accuracy.failed} fail across all your runs`}>
-              {' · '}
-              <strong>{(accuracy.passRate * 100).toFixed(0)}%</strong> accuracy
-              {' '}({accuracy.passed}✓/{accuracy.failed}✗)
+      <header className="gdb-header">
+        <div className="gdb-header-left">
+          <div className="gdb-header-meta">
+            <span className="gdb-header-label">Pre-templated unit tests</span>
+            <span className="gdb-header-run">
+              {runId !== null ? `run #${runId}` : 'unsaved run'}
+              {budgetRemaining !== null && (
+                <span className="gdb-budget-chip">{budgetRemaining} run(s) left this minute</span>
+              )}
             </span>
-          )}
-        </p>
+          </div>
+          {accuracy && accuracy.total > 0 && (() => {
+            const pct = Math.round(accuracy.passRate * 100);
+            const scoreColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
+            return (
+              <div
+                className="gdb-score-card"
+                title={`${accuracy.passed} passed / ${accuracy.failed} failed across all your runs`}
+              >
+                <div className="gdb-score-ring">
+                  <svg viewBox="0 0 36 36" className="gdb-score-svg" aria-hidden="true">
+                    <circle className="gdb-score-track" cx="18" cy="18" r="15.9" />
+                    <circle
+                      className="gdb-score-fill"
+                      cx="18" cy="18" r="15.9"
+                      strokeDasharray={`${pct} ${100 - pct}`}
+                      style={{ stroke: scoreColor }}
+                    />
+                  </svg>
+                  <span className="gdb-score-num" style={{ color: scoreColor }}>{pct}%</span>
+                </div>
+                <div className="gdb-score-info">
+                  <span className="gdb-score-label">Accuracy</span>
+                  <div className="gdb-score-badges">
+                    <span className="gdb-badge gdb-badge--pass">
+                      <span className="gdb-badge-dot" aria-hidden="true" />
+                      {accuracy.passed} passed
+                    </span>
+                    <span className="gdb-badge gdb-badge--fail">
+                      <span className="gdb-badge-dot" aria-hidden="true" />
+                      {accuracy.failed} failed
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
         <button
           type="button"
           className="primary-btn"
@@ -496,22 +451,6 @@ export default function GdbRunnerTab() {
                 ? 'Already ran for this submission'
                 : 'Run all tests'}
         </button>
-        {/* Visible disabled-reason chip so the click is never a black hole.
-            Shows only when the button is disabled and we are not actively
-            running. Matches the disabled-state precedence order from runAll(). */}
-        {!busy && (!canRun || onCooldown) && (
-          <p className="gdb-disabled-reason" role="status" aria-live="polite">
-            {onCooldown
-              ? `Cooldown active — retry in ${Math.ceil(cooldownLeftMs / 1000)}s.`
-              : runId === null && !pendingId
-                ? 'Start an analysis run first — then come back to test it.'
-                : localAmbiguous.length > 0
-                  ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
-                  : alreadyRanForThisRun
-                    ? 'Tests already ran for this submission. Submit new code to re-run.'
-                    : 'Tests are not available for this run.'}
-          </p>
-        )}
       </header>
 
       {(localAmbiguous.length > 0 || ambiguousBlock) && (
@@ -596,6 +535,21 @@ export default function GdbRunnerTab() {
               <header className="gdb-result-head">
                 <span className="gdb-result-class">{active.className}</span>
                 <span className="gdb-result-pattern">{active.patternName}</span>
+                {(() => {
+                  const hasResults = active.compileRun || active.unitTest;
+                  if (!hasResults || (busy && !active.compileRun && !active.unitTest)) return null;
+                  const compileFailed = active.compileRun && !active.compileRun.passed;
+                  const unitPassed = active.unitTest?.passed === true;
+                  const unitFailed = active.unitTest && !active.unitTest.passed;
+                  const passed = !compileFailed && (unitPassed || (!unitFailed && !!active.compileRun?.passed));
+                  return (
+                    <span className={`gdb-result-overall-badge gdb-result-overall-badge--${passed ? 'pass' : 'fail'}`}>
+                      {passed
+                        ? (active.unitTest ? 'All tests passed' : 'Compiled & ran')
+                        : 'Tests failed'}
+                    </span>
+                  );
+                })()}
               </header>
               <PhaseRow phase="compile_run" result={active.compileRun} loading={busy && !active.compileRun} />
               <PhaseRow phase="unit_test"   result={active.unitTest}   loading={busy && active.compileRun?.passed === true && !active.unitTest} />

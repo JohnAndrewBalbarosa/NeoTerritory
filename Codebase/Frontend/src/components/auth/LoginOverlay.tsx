@@ -79,6 +79,9 @@ export default function LoginOverlay() {
 
   const pathMode = getPathMode();
   const entryCopy = getEntryCopy();
+  const useStaticPickerPanel =
+    typeof window !== 'undefined' &&
+    (window.location.pathname === '/developer' || window.location.pathname === '/student-studio');
   const [mode] = useState<Mode>(pathMode);
   const [accounts, setAccounts] = useState<TesterAccountInfo[]>([]);
   const [accountsError, setAccountsError] = useState('');
@@ -170,14 +173,95 @@ export default function LoginOverlay() {
             exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
+          {useStaticPickerPanel ? (
+          <div className="login-card tester-chooser session-gateway">
+            <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
+              <p className="session-gateway__eyebrow">CodiNeo</p>
+              <h2 id="session-gateway-heading">
+                Claim your session seat
+              </h2>
+              <p className="session-gateway__lede">
+                Choose an available seat to enter CodiNeo.
+              </p>
+              <p className="session-gateway__copy">
+                Each seat represents an available session environment for using the analyzer. Pick
+                one seat to continue.
+              </p>
+              <ul className="session-gateway__bullets" aria-label="Session notes">
+                <li>Use the real Studio</li>
+                <li>Keep one active session</li>
+                <li>Admin access stays protected</li>
+              </ul>
+              <button
+                type="button"
+                className="session-gateway__back"
+                onClick={() => navigate('/choose')}
+              >
+                Back to choices
+              </button>
+            </section>
+
+            <section className="session-gateway__picker" aria-label="Available session seats">
+              <header className="tester-chooser-head">
+                <p className="tester-chooser-head__label">Available seats</p>
+                <h3>{entryCopy.title}</h3>
+                <p className="tester-hint">{entryCopy.hint}</p>
+              </header>
+              {accountsError && <p className="login-error">{accountsError}</p>}
+              {accountsLoaded && !accountsError && accounts.length === 0 && (
+                <p className="login-hint">
+                  No tester seats are available right now. Contact an administrator.
+                </p>
+              )}
+              {accounts.length > 0 && (
+                <div className="tester-grid" role="list">
+                  {accounts.map(acc => {
+                    const isClaiming = claiming === acc.username;
+                    const isClaimed = !!acc.claimed;
+                    return (
+                      <button
+                        key={acc.username}
+                        type="button"
+                        role="listitem"
+                        className="tester-chip tester-tile"
+                        data-claimed={isClaimed ? 'true' : undefined}
+                        disabled={isClaiming || isClaimed}
+                      title={isClaimed ? 'Already claimed by another tester' : undefined}
+                      aria-label={isClaimed ? `${acc.username} is already in use` : `Claim seat ${acc.username}`}
+                      onClick={() => handleClaim(acc)}
+                    >
+                      <span className="tester-seat-icon" aria-hidden>
+                        <svg viewBox="0 0 48 48" focusable="false">
+                          <rect x="8" y="10" width="32" height="23" rx="3.5" />
+                          <path d="M19 38h10" />
+                          <path d="M24 33v5" />
+                        </svg>
+                      </span>
+                      <span className="tester-seat-name">
+                        {isClaiming ? 'Claiming...' : acc.username}
+                      </span>
+                      {isClaimed && <span className="tester-chip-sub">in use</span>}
+                    </button>
+                    );
+                  })}
+                </div>
+              )}
+              {error && <p className="login-error">{error}</p>}
+              <p className="login-toggle">
+                Need admin access?{' '}
+                <a className="link-btn" href="/app">Admin sign in</a>
+              </p>
+            </section>
+          </div>
+          ) : (
           <TiltCard className="login-card tester-chooser session-gateway" maxTilt={3} scale={1.002}>
             <section className="session-gateway__intro" aria-labelledby="session-gateway-heading">
-              <p className="session-gateway__eyebrow">NeoTerritory Studio</p>
+              <p className="session-gateway__eyebrow">CodiNeo</p>
               <h2 id="session-gateway-heading">
                 <ShinyText text="Claim your session seat" />
               </h2>
               <p className="session-gateway__lede">
-                Choose an available seat to enter NeoTerritory Studio.
+                Choose an available seat to enter CodiNeo.
               </p>
               <p className="session-gateway__copy">
                 Each seat represents an available session environment for using the analyzer. Pick
@@ -249,6 +333,7 @@ export default function LoginOverlay() {
               </p>
             </section>
           </TiltCard>
+          )}
           </motion.div>
         )}
 
@@ -262,7 +347,7 @@ export default function LoginOverlay() {
             exit={{ opacity: 0, y: -14, scale: 0.97, filter: 'blur(6px)' }}
             transition={{ type: 'spring', stiffness: 220, damping: 26, mass: 0.7 }}
           >
-            <h2><ShinyText text="Admin sign in" /></h2>
+            <h2>Admin sign in</h2>
             <p className="login-hint">Enter administrator credentials.</p>
             <label className="field">
               <span>Username</span>
@@ -291,8 +376,7 @@ export default function LoginOverlay() {
             </button>
             {error && <p className="login-error">{error}</p>}
             <p className="login-toggle">
-              Tester instead?{' '}
-              <a className="link-btn" href="/login">Pick a seat</a>
+              <a className="link-btn" href="/choose">Go back to choose</a>
             </p>
           </motion.form>
         )}
