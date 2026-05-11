@@ -9,7 +9,6 @@ import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
 import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
 import StudioJoyrideTour, { dispatchStudioTourOpen } from '../studio/StudioJoyrideTour';
-import { dispatchStartHereOpen } from '../studio/StartHereRail';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
@@ -290,10 +289,7 @@ export default function MainLayout() {
               type="button"
               title="Replay the studio tour"
               aria-label="Replay the studio tour"
-              onClick={() => {
-                dispatchStudioTourOpen();
-                dispatchStartHereOpen();
-              }}
+              onClick={() => dispatchStudioTourOpen()}
             >
               ? Tour
             </button>

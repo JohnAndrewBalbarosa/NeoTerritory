@@ -143,6 +143,7 @@ async function signInWithSharedSeat(page: Page): Promise<void> {
         localStorage.setItem('nt_user', JSON.stringify(user));
         sessionStorage.setItem('nt-entry-flow', 'developer');
         localStorage.setItem('nt_start_here_dismissed', '1');
+        localStorage.setItem('nt_studio_tour_completed', '1');
         for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
           localStorage.setItem(`nt_studio_tour_completed__${tab}`, '1');
         }
