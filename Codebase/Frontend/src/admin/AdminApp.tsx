@@ -4,6 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useHealth } from '../hooks/useHealth';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
 import AuroraBackground from '../components/marketing/effects/AuroraBackground';
+import ShinyText from '../components/marketing/effects/ShinyText';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';

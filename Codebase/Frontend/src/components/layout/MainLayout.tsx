@@ -8,8 +8,7 @@ import { useAiCommentaryPoll } from '../../hooks/useAiCommentaryPoll';
 // import { useHeartbeat } from '../../hooks/useHeartbeat';  // TEMP: disabled, see useHeartbeat() call below
 import { useTheme } from '../../hooks/useTheme';
 import SubmitTab from '../tabs/SubmitTab';
-import StudioJoyrideTour, { dispatchStudioTourOpen } from '../studio/StudioJoyrideTour';
-import { dispatchStartHereOpen } from '../studio/StartHereRail';
+import StudioJoyrideTour from '../studio/StudioJoyrideTour';
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
@@ -110,7 +109,7 @@ export default function MainLayout() {
   const {
     user, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, aiStatus, aiConfigured, setStatus,
+    setAiStatus, setStatus,
     currentRun, gdbAllPassedForRun, reviewsRequired
   } = useAppStore();
 

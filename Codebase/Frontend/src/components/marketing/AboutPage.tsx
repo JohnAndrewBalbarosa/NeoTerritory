@@ -6,44 +6,13 @@ import MagneticButton from './effects/MagneticButton';
 // scope, method, contribution, panel) has moved to /research where the
 // thesis content belongs.
 
-interface Developer {
-  slug: string;
-  name: string;
-  role: string;
-  blurb: string;
-}
-
-const DEVELOPERS: ReadonlyArray<Developer> = [
-  {
-    slug: 'balbarosa',
-    name: 'John Andrew Balbarosa',
-    role: 'Algorithm + microservice',
-    blurb:
-      'Designed and implemented the C++ hash-based virtual structural-copy algorithm and the deterministic pattern-detection microservice that powers NeoTerritory.',
-  },
-  {
-    slug: 'de-leon',
-    name: 'Miryl Z. De Leon',
-    role: 'Studio + backend integration',
-    blurb:
-      'Built the Node backend that orchestrates the microservice, the AI documentation layer, and the studio UI surfaces.',
-  },
-  {
-    slug: 'santander',
-    name: 'Josephine J. Santander',
-    role: 'Research instrument + evaluation',
-    blurb:
-      'Designed the per-run reviews, end-of-session survey instruments, and the evaluation methodology for DEVCON Luzon intern testing.',
-  },
-];
-
 export default function AboutPage() {
   return (
     <main className="nt-about" id="main">
       <section className="nt-about__hero" aria-labelledby="about-heading">
         <p className="nt-section-eyebrow">Meet your coders</p>
         <h1 id="about-heading" className="nt-about__title">
-          <SplitText text="Built by a small research team." as="span" />
+          Built by a small research team.
         </h1>
         <p className="nt-about__lede">
           CodiNeo began as a study tool: how do design patterns actually change reading speed,

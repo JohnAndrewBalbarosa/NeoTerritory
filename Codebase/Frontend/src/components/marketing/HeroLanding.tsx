@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import TryItChooser from './TryItChooser';
+import ScrollReveal from './effects/ScrollReveal';
 
 // Per D40 (audience reframe), D41 (effects budget), D42 (info offloading),
 // D43 (features-first hierarchy), and the doc blueprint at
@@ -25,10 +26,6 @@ const FEATURES: ReadonlyArray<FeatureTile> = [
       'Your code gets a README it didn’t have, generated from the pattern we detected.',
     glyph: '¶',
     surface: '/student-studio',
-  },
-  {
-    title: 'See possible patterns',
-    text: 'CodiNeo checks whether your code looks like a known design pattern.',
   },
   {
     title: 'Pattern detection',
@@ -100,21 +97,6 @@ const DOORS: ReadonlyArray<BentoDoor> = [
     blurb: 'Research question, hypothesis, method, contribution.',
     path: '/about',
     size: '1x1',
-  },
-];
-
-const SIMPLE_WORKFLOW = [
-  {
-    title: 'Paste C++ code',
-    text: 'Start by adding a C++ snippet or file.',
-  },
-  {
-    title: 'See possible pattern matches',
-    text: 'CodiNeo checks your code and looks for pattern-like structures.',
-  },
-  {
-    title: 'Learn from the result',
-    text: 'You can review the detected pattern, the related code parts, and the explanation.',
   },
 ];
 
@@ -199,66 +181,40 @@ export default function HeroLanding() {
             aria-hidden="true"
             preserveAspectRatio="xMidYMid meet"
           >
-            Learn design patterns with real C++ code
-          </motion.p>
-          <h1 id="hero-heading" className="nt-hero__title">
-            <SplitText text="See the pattern." as="span" className="nt-hero__title-row" />
-            <SplitText
-              text="Understand the code."
-              as="span"
-              className="nt-hero__title-row nt-hero__title-row--accent"
-              delay={0.35}
-            />
-          </h1>
-          <motion.p
-            className="nt-hero__lede"
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.6 }}
+            <title>Three-step pipeline: paste C++, detect pattern, generate docs and tests</title>
+            <rect width="960" height="280" fill="#0a0f1c" rx="16"/>
+            <rect x="40" y="80" width="220" height="120" rx="12" fill="#0f1b2e" stroke="#00d1d8" strokeWidth="1.5" strokeOpacity="0.5"/>
+            <text x="150" y="128" textAnchor="middle" fill="#e2e4f0" fontSize="14" fontFamily="monospace">Paste C++</text>
+            <text x="150" y="150" textAnchor="middle" fill="#9aa3b0" fontSize="11" fontFamily="monospace">source code</text>
+            <path d="M260 140 L340 140" stroke="#00d1d8" strokeWidth="2" markerEnd="url(#arr)" strokeOpacity="0.8"/>
+            <defs><marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#00d1d8"/></marker></defs>
+            <rect x="340" y="80" width="280" height="120" rx="12" fill="#0f1b2e" stroke="#78b815" strokeWidth="1.5" strokeOpacity="0.5"/>
+            <text x="480" y="128" textAnchor="middle" fill="#e2e4f0" fontSize="14" fontFamily="monospace">Detect pattern</text>
+            <text x="480" y="150" textAnchor="middle" fill="#9aa3b0" fontSize="11" fontFamily="monospace">lexical + parse-tree algorithm</text>
+            <path d="M620 140 L700 140" stroke="#78b815" strokeWidth="2" markerEnd="url(#arr2)" strokeOpacity="0.8"/>
+            <defs><marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#78b815"/></marker></defs>
+            <rect x="700" y="80" width="220" height="120" rx="12" fill="#0f1b2e" stroke="#9b59f5" strokeWidth="1.5" strokeOpacity="0.5"/>
+            <text x="810" y="120" textAnchor="middle" fill="#e2e4f0" fontSize="14" fontFamily="monospace">Generate docs</text>
+            <text x="810" y="142" textAnchor="middle" fill="#9aa3b0" fontSize="11" fontFamily="monospace">+ tests</text>
+            <text x="810" y="164" textAnchor="middle" fill="#9b59f5" fontSize="11" fontFamily="monospace">pattern-aware AI</text>
+          </svg>
+        </figure>
+
+        <div className="nt-home__above-ctas">
+          <MagneticButton
+            variant="primary"
+            onClick={() => setChooserOpen(true)}
+            ariaLabel="Try CodiNeo now"
           >
-            CodiNeo helps beginners learn design patterns by checking C++ code, showing
-            possible pattern matches, and explaining them in a simpler way.
-          </motion.p>
-          <motion.div
-            className="nt-hero__ctas"
-            initial={reduce ? false : { opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7, delay: 0.8 }}
+            Try it now
+          </MagneticButton>
+          <MagneticButton
+            variant="ghost"
+            onClick={() => navigate('/mechanics')}
+            ariaLabel="See how CodiNeo works"
           >
-            <MagneticButton
-              variant="primary"
-              onClick={() => navigate('/choose')}
-              ariaLabel="Open the analysis studio"
-            >
-              Open studio
-            </MagneticButton>
-            <MagneticButton
-              variant="ghost"
-              onClick={() => navigate('/learn')}
-              ariaLabel="See how CodiNeo works"
-            >
-              See how it works
-            </MagneticButton>
-          </motion.div>
-          <motion.dl
-            className="nt-hero__stats"
-            initial={reduce ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 1.0 }}
-          >
-            <div>
-              <dt>Paste</dt>
-              <dd>your C++ code</dd>
-            </div>
-            <div>
-              <dt>Find</dt>
-              <dd>possible patterns</dd>
-            </div>
-            <div>
-              <dt>Learn</dt>
-              <dd>what they mean</dd>
-            </div>
-          </motion.dl>
+            See how it works
+          </MagneticButton>
         </div>
       </section>
 
@@ -314,7 +270,7 @@ export default function HeroLanding() {
             </button>
           ))}
         </div>
-      </section>
+      </ScrollReveal>
 
       <section className="nt-home__bento" aria-labelledby="bento-heading">
         <header className="nt-home__bento-head">
