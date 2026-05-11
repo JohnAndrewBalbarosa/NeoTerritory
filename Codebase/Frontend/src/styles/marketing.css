@@ -3557,7 +3557,8 @@ body[data-surface] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     grid-auto-rows: minmax(140px, auto);
   }
-  .nt-home__door[data-size="2x1"] {
+  .nt-home__door[data-size="2x1"],
+  .nt-home__door[data-size="3x1"] {
     grid-column: span 2;
   }
 }
@@ -3574,6 +3575,9 @@ body[data-surface] {
   }
   .nt-home__door[data-size="1x2"] {
     grid-row: span 2;
+  }
+  .nt-home__door[data-size="3x1"] {
+    grid-column: span 3;
   }
 }
 .nt-home__door {

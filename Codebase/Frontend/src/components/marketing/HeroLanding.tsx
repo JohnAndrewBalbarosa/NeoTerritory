@@ -58,11 +58,31 @@ const FEATURES: ReadonlyArray<FeatureTile> = [
   },
 ];
 
+type BentoSize = '1x1' | '2x1' | '1x2' | '2x2' | '3x1';
+
 interface BentoDoor {
   title: string;
   blurb: string;
   path: string;
-  size: '1x1' | '2x1' | '1x2' | '2x2';
+  size: BentoSize;
+}
+
+// The bento grid renders 3 columns at desktop. To guarantee the doors
+// always form a clean rectangle (no missing cells), the first tile
+// expands based on count % 3:
+//   - remainder 0 → all 1x1, perfect 3-col rectangle (e.g. count=6 → 3x2).
+//   - remainder 1 → first tile spans 3 cols (full row), rest 1x1
+//                   (e.g. count=4 → row of 3 + row of 3 = 2 rows).
+//   - remainder 2 → first tile spans 2 cols, rest 1x1
+//                   (e.g. count=5 → first row 2+1+1+1 ... actually 2+1 then 1+1+1 = 2 rows of 3).
+// Author-specified sizes on tile 0 are overridden by this rule; sizes
+// on other tiles are preserved so feature-tiles can still vary if needed.
+function packFirstTileSize(index: number, count: number, baseSize: BentoSize): BentoSize {
+  if (index !== 0) return baseSize;
+  const remainder = count % 3;
+  if (remainder === 1) return '3x1';
+  if (remainder === 2) return '2x1';
+  return '1x1';
 }
 
 // Bento doors to the deeper surfaces. NEVER teach here — just invite.
@@ -315,12 +335,12 @@ export default function HeroLanding() {
           </h2>
         </header>
         <div className="nt-home__bento-grid">
-          {DOORS.map((d) => (
+          {DOORS.map((d, i) => (
             <button
               key={d.path}
               type="button"
               className="nt-home__door"
-              data-size={d.size}
+              data-size={packFirstTileSize(i, DOORS.length, d.size)}
               onClick={() => navigate(d.path)}
             >
               <h3 className="nt-home__door-title">{d.title}</h3>
