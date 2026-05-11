@@ -337,7 +337,6 @@ export default function MainLayout() {
                 pendingSave={!!pendingSave}
                 onDiscard={discardCurrentRun}
                 onGoToReview={() => setActiveTab('ambiguous')}
-                stepNavigation={renderTabBar('tab-bar--in-results')}
               />
             )}
             {activeTab === 'gdb' && <GdbRunnerTab />}
