@@ -496,6 +496,22 @@ export default function GdbRunnerTab() {
                 ? 'Already ran for this submission'
                 : 'Run all tests'}
         </button>
+        {/* Visible disabled-reason chip so the click is never a black hole.
+            Shows only when the button is disabled and we are not actively
+            running. Matches the disabled-state precedence order from runAll(). */}
+        {!busy && (!canRun || onCooldown) && (
+          <p className="gdb-disabled-reason" role="status" aria-live="polite">
+            {onCooldown
+              ? `Cooldown active — retry in ${Math.ceil(cooldownLeftMs / 1000)}s.`
+              : runId === null && !pendingId
+                ? 'Start an analysis run first — then come back to test it.'
+                : localAmbiguous.length > 0
+                  ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
+                  : alreadyRanForThisRun
+                    ? 'Tests already ran for this submission. Submit new code to re-run.'
+                    : 'Tests are not available for this run.'}
+          </p>
+        )}
       </header>
 
       {(localAmbiguous.length > 0 || ambiguousBlock) && (

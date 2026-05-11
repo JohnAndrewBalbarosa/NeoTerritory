@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { navigate, patternSlugFromPath } from '../../../logic/router';
-import { findPattern, PATTERN_BOOK_CITATION } from './patternData';
+import { findPattern, PATTERN_BOOK_CITATION, type PatternSource } from './patternData';
+
+function formatSource(s: PatternSource): string {
+  const chapter = s.chapter ? ` — ${s.chapter}` : '';
+  return `${s.citation}${chapter}`;
+}
 
 // Per Sprint 0 doc blueprint plus this turn's merge of learning content
 // from learningContent.ts: sections render in fixed order:
@@ -100,6 +105,11 @@ export default function PatternDetailPage() {
         <pre className="nt-pattern-detail__code" aria-label="Code sketch">
           {pattern.codeSketch}
         </pre>
+        {pattern.readabilityBenefit ? (
+          <p className="nt-pattern-detail__readability">
+            <strong>Readability benefit:</strong> {pattern.readabilityBenefit}
+          </p>
+        ) : null}
       </section>
 
       <section className="nt-pattern-detail__section">
@@ -161,12 +171,40 @@ export default function PatternDetailPage() {
         </section>
       ) : null}
 
-      <section className="nt-pattern-detail__section nt-pattern-detail__cite">
-        <p>
-          <strong>Reference:</strong> {pattern.nesterukChapter ?? PATTERN_BOOK_CITATION}
-        </p>
-        <p className="nt-pattern-detail__cite-book">{PATTERN_BOOK_CITATION}</p>
-      </section>
+      {(() => {
+        const sources = pattern.sources && pattern.sources.length > 0
+          ? pattern.sources
+          : ([{ kind: 'book', citation: PATTERN_BOOK_CITATION, chapter: pattern.nesterukChapter }] as ReadonlyArray<PatternSource>);
+
+        const isOnlyGlobalBook =
+          sources.length === 1 &&
+          sources[0].citation === PATTERN_BOOK_CITATION &&
+          !sources[0].chapter;
+
+        return (
+          <section className="nt-pattern-detail__section nt-pattern-detail__cite">
+            <h2>Sources</h2>
+            {isOnlyGlobalBook ? (
+              <p className="nt-pattern-detail__cite-book">{PATTERN_BOOK_CITATION}</p>
+            ) : (
+              <ol className="nt-pattern-detail__sources">
+                {sources.map((s, i) => (
+                  <li key={`${s.citation}-${i}`} className="nt-pattern-detail__source">
+                    <span className="nt-pattern-detail__source-kind">[{s.kind}]</span>{' '}
+                    {s.url ? (
+                      <a href={s.url} target="_blank" rel="noopener noreferrer">
+                        {formatSource(s)}
+                      </a>
+                    ) : (
+                      formatSource(s)
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+        );
+      })()}
 
       <button
         type="button"

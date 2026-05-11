@@ -661,6 +661,7 @@ body.login-active{overflow:hidden;}
 .file-tab-btn{background:transparent;border:none;padding:6px 12px;font:inherit;font-size:12px;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;font-family:var(--code-font);}
 .file-tab-btn:hover{color:var(--ink);}
 .file-tab-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}
+.gdb-disabled-reason{margin:8px 0 0 0;padding:8px 12px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);border-radius:var(--radius-sm,4px);font-size:12.5px;line-height:1.5;color:var(--ink-soft,inherit);}
 .gdb-unavailable{padding:14px 16px;background:rgba(251,191,36,0.08);border:1px dashed var(--amber);border-radius:var(--radius-md);font-size:13px;line-height:1.55;}
 .gdb-unavailable strong{display:block;margin-bottom:4px;color:var(--amber);}
 .gdb-unavailable code{font-family:var(--code-font);font-size:11px;background:rgba(251,191,36,0.12);padding:1px 5px;border-radius:3px;}
@@ -870,25 +871,33 @@ body::before {
   z-index: -1;
 }
 
+/* D80 (this turn): topbar fully removed from the scroll. The studio is now
+   a flex-column with three regions:
+     1. .topbar       - flex-shrink: 0, pinned at top, never moves.
+     2. .tab-bar      - flex-shrink: 0, sits below the topbar.
+     3. .tab-panel    - flex: 1; overflow-y: auto - the only scroll
+                        container. Content NEVER goes under the topbar
+                        because it scrolls within its own region.
+   This replaces the prior position: sticky approach which was technically
+   pinned but still allowed content to render under the topbar during
+   scroll, covering components per user complaint
+   ("natatabunan yung mga ibang components"). */
 .shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
   max-width: 1480px;
-  padding: 24px clamp(16px, 3vw, 36px) 40px;
+  padding: 0 clamp(16px, 3vw, 36px);
+  margin: 0 auto;
+  overflow: hidden;
 }
 
-/* Per refinement turn (this commit): topbar simplified to a sticky-top
-   block. The earlier "self-scroll fallback" (max-height + overflow: auto)
-   is removed because it created a nested scrollbar inside the topbar
-   itself when the page got tall, which competed with the page scroll. The
-   user's direction was "normal na div sa taas ng mga component, ayaw kong
-   nasama sya sa scrolling" — translated: pinned to the top of the studio,
-   not part of the page scroll, but rendered as a plain block, not a
-   floating overlay with backdrop blur. */
 .topbar {
-  position: sticky;
-  top: 0;
+  position: relative;
+  flex-shrink: 0;
   z-index: 50;
   align-items: stretch;
-  margin: 0 0 18px;
+  margin: 18px 0 14px;
   padding: 16px 18px;
   border: 1px solid rgba(0, 209, 216, 0.18);
   border-radius: 14px;
@@ -1015,7 +1024,10 @@ body::before {
   background: var(--devcon-orange);
 }
 
+/* D80: tab-bar is the second fixed region in the studio flex column.
+   flex-shrink:0 keeps it from collapsing when the panel area grows. */
 .tab-bar {
+  flex-shrink: 0;
   gap: 8px;
   padding: 8px;
   border: 1px solid rgba(0, 209, 216, 0.14);
@@ -1023,6 +1035,19 @@ body::before {
   background: rgba(15, 27, 46, 0.62);
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24);
   overflow-x: auto;
+}
+/* The single scroll container: tab content lives here.
+   .content is the <main> element wrapping AnimatePresence in
+   MainLayout.tsx. .tab-panel is the inner section rendered by each tab
+   component; the scroll lives at the outer container so panel content
+   can size naturally. */
+.shell .content,
+.shell main.tab-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 2px 24px;
+  min-height: 0;
 }
 .tab-btn {
   border: 1px solid transparent;

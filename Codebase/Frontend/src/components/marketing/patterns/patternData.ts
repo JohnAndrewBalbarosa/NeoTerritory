@@ -28,6 +28,15 @@ export interface PatternStructure {
   whyItWorks: string;
 }
 
+export type PatternSourceKind = 'book' | 'paper' | 'article' | 'repo' | 'thesis';
+
+export interface PatternSource {
+  kind: PatternSourceKind;
+  citation: string;
+  chapter?: string;
+  url?: string;
+}
+
 export interface PatternEntry {
   slug: string;
   name: string;
@@ -45,11 +54,32 @@ export interface PatternEntry {
   everydayExample?: string;
   prerequisites?: string[];
   correctStructure?: PatternStructure;
-  // ---- Source attribution ----
+  // ---- Required ----
+  readabilityBenefit?: string;
+  sources?: ReadonlyArray<PatternSource>;
+  // ---- Source attribution (legacy; kept for backward compat) ----
+  /** @deprecated Use `sources` instead. Still rendered when `sources` is absent. */
   nesterukChapter?: string;
 }
 
 const NESTERUK = 'Nesteruk, D. (2022). Design Patterns in Modern C++20. Apress.';
+const GOF = 'Gamma, E., Helm, R., Johnson, R., & Vlissides, J. (1994). Design Patterns: Elements of Reusable Object-Oriented Software. Addison-Wesley.';
+
+const nesterukSource = (chapter: string): PatternSource => ({
+  kind: 'book',
+  citation: NESTERUK,
+  chapter,
+});
+
+const gofSource = (chapter: string): PatternSource => ({
+  kind: 'book',
+  citation: GOF,
+  chapter,
+});
+
+export const WHY_GOF_EXPLAINER =
+  'The catalog is anchored on the four "Gang of Four" patterns first codified by Gamma, Helm, Johnson, and Vlissides in 1994. Their book named the recurring object-oriented arrangements that working engineers kept reinventing - Singleton, Factory, Adapter, Strategy and the rest - and gave each shape a vocabulary item that survives across languages. Nesteruk 2022 modernises those same patterns for C++20 (smart pointers, deduction, ranges) without changing what the patterns are. We anchor on GoF because the names are the lingua franca every reviewer already knows, and because the structural fingerprints (virtual interfaces, ownership handles, self-returning setters) translate cleanly into the token-level checks our analyser runs. A handful of non-GoF entries (Method Chaining, Repository, PIMPL) sit alongside them because the CodiNeo thesis explicitly lists them as detection targets.';
+
 
 export const PATTERNS: ReadonlyArray<PatternEntry> = [
   {
@@ -108,6 +138,12 @@ public:
       whyItWorks:
         'The combination of a private constructor and a static accessor is structural evidence the class can have only one instance. The detector confirms with object_instantiation + static_storage_access categories.',
     },
+    readabilityBenefit:
+      'Following Singleton makes the code more readable because the moment a reader sees `Logger::instance()`, they know there is exactly one logger, full stop - no hunting for a second constructor call.',
+    sources: [
+      nesterukSource('Chapter on Singleton'),
+      gofSource('Singleton (Creational Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Singleton',
   },
   {
@@ -159,6 +195,12 @@ public:
       whyItWorks:
         'A factory is identified by the act of creating-and-returning, not by the method being named create() or make(). Token combos like "return new" or a bare "std::make_unique" are language-level evidence that does not depend on what the developer chose to call the method.',
     },
+    readabilityBenefit:
+      'Following Factory Method makes the code more readable because the calling site asks for an abstract product and never names a concrete subclass - reviewers stop scanning for which subtype was hardcoded where.',
+    sources: [
+      nesterukSource('Chapter on Factory + Abstract Factory'),
+      gofSource('Factory Method (Creational Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Factory + Abstract Factory',
   },
   {
@@ -202,6 +244,12 @@ public:
       whyItWorks:
         'Builder and Method Chaining look the same at this token level. The analyzer flags a class with "return *this" as both candidates at once and marks the result ambiguous. The reader picks the right one based on whether the class also has a separate finishing method that returns a finished product (Builder) or just keeps mutating (Method Chaining).',
     },
+    readabilityBenefit:
+      'Following Builder makes the code more readable because each optional knob lands on its own line with its own name, instead of being a nameless positional argument inside an eight-parameter constructor.',
+    sources: [
+      nesterukSource('Chapter on Builder'),
+      gofSource('Builder (Creational Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Builder',
   },
   {
@@ -244,6 +292,22 @@ public:
       whyItWorks:
         'Method Chaining is structurally identical to Builder at the token level: both rely on "return *this". The analyzer surfaces both as candidates and marks the class ambiguous. The reader resolves it by asking: is there a finishing method that produces a different product (Builder) or do all calls just mutate the same object (Method Chaining)?',
     },
+    readabilityBenefit:
+      'Following Method Chaining makes the code more readable because related configuration calls collapse into one fluent expression that reads top-to-bottom like a sentence, with no repeated variable name in between.',
+    sources: [
+      nesterukSource('Chapter on Fluent Interfaces'),
+      {
+        kind: 'article',
+        citation:
+          'Fowler, M. (2005). FluentInterface. martinfowler.com.',
+        url: 'https://martinfowler.com/bliki/FluentInterface.html',
+      },
+      {
+        kind: 'thesis',
+        citation:
+          'CodiNeo thesis (2026), Chapter 1.1 - lists Method Chaining as a first-class detection target outside the GoF set.',
+      },
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Fluent Interfaces',
   },
   {
@@ -295,6 +359,12 @@ public:
       whyItWorks:
         'Adapter, Proxy, and Decorator share the same wrapping signature at the token level. The detector emits all three as candidates and uses negative gates to disambiguate; the AI doc layer picks the role based on context.',
     },
+    readabilityBenefit:
+      'Following Adapter makes the code more readable because the rest of the codebase keeps speaking one shape - the translation between incompatible APIs is isolated to one wrapper class, not sprinkled across call sites.',
+    sources: [
+      nesterukSource('Chapter on Adapter'),
+      gofSource('Adapter (Structural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Adapter',
   },
   {
@@ -348,6 +418,12 @@ public:
       whyItWorks:
         'The wrapping signature alone is ambiguous; the access_control_caching category is what tilts the verdict toward Proxy.',
     },
+    readabilityBenefit:
+      'Following Proxy makes the code more readable because cross-cutting concerns (cache, mutex, auth) live in one named class rather than being scattered across every call site that touches the real subject.',
+    sources: [
+      nesterukSource('Chapter on Proxy'),
+      gofSource('Proxy (Structural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Proxy',
   },
   {
@@ -394,6 +470,12 @@ public:
       whyItWorks:
         'Decorator differs from Adapter and Proxy by using interface_polymorphism: the wrapper itself is virtual so it can be stacked.',
     },
+    readabilityBenefit:
+      'Following Decorator makes the code more readable because optional behaviours stack as named wrappers (`Logging(Retry(Cached(inner)))`) instead of exploding into a combinatorial set of subclasses or boolean flag parameters.',
+    sources: [
+      nesterukSource('Chapter on Decorator'),
+      gofSource('Decorator (Structural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Decorator',
   },
   {
@@ -446,6 +528,12 @@ public:
       whyItWorks:
         'Strategy and State look similar because both inject a polymorphic collaborator. Strategy lacks state-transition methods; that absence is the differentiator.',
     },
+    readabilityBenefit:
+      'Following Strategy makes the code more readable because the host class shrinks to one delegate call - the long if/else ladder that used to switch on a kind tag is replaced by the name of the chosen algorithm.',
+    sources: [
+      nesterukSource('Chapter on Strategy'),
+      gofSource('Strategy (Behavioural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Strategy',
   },
   {
@@ -478,6 +566,12 @@ public:
       'Polymorphism (an Observer base interface).',
       'Containers: std::vector or similar to hold the observer list.',
     ],
+    readabilityBenefit:
+      'Following Observer makes the code more readable because the Subject expresses "something happened" once, and every reaction lives in its own named class - reviewers stop chasing a fan-out of direct method calls from the change site.',
+    sources: [
+      nesterukSource('Chapter on Observer'),
+      gofSource('Observer (Behavioural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Observer',
   },
   {
@@ -506,6 +600,12 @@ public:
     prerequisites: [
       'Operator overloading (++, *, !=).',
       'The C++ standard library iterator concept.',
+    ],
+    readabilityBenefit:
+      'Following Iterator makes the code more readable because the traversal shape is the same for every collection - readers learn one idiom (`for (auto it = c.begin(); it != c.end(); ++it)`) and never have to relearn how to walk a new container.',
+    sources: [
+      nesterukSource('Chapter on Iterator'),
+      gofSource('Iterator (Behavioural Patterns)'),
     ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Iterator',
   },
@@ -539,6 +639,12 @@ public:
     prerequisites: [
       'Polymorphism (a Command base interface).',
       'Capturing state in member fields.',
+    ],
+    readabilityBenefit:
+      'Following Command makes the code more readable because every action carries a name and a record - `UndoLastMove()` is more obvious than reverse-engineering an inverse-call sequence from history.',
+    sources: [
+      nesterukSource('Chapter on Command'),
+      gofSource('Command (Behavioural Patterns)'),
     ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Command',
   },
@@ -576,6 +682,12 @@ public:
     prerequisites: [
       'Inheritance and virtual functions.',
       'Recursive containers (std::vector<std::unique_ptr<Base>>).',
+    ],
+    readabilityBenefit:
+      'Following Composite makes the code more readable because operations on a single node and operations on a whole subtree share the same call - readers stop tracking which arm of a leaf-vs-container if/else they are in.',
+    sources: [
+      nesterukSource('Chapter on Composite'),
+      gofSource('Composite (Structural Patterns)'),
     ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Composite',
   },
@@ -615,6 +727,12 @@ protected:
       'Inheritance and virtual / pure-virtual functions.',
       'Discipline to keep the template method itself non-virtual.',
     ],
+    readabilityBenefit:
+      'Following Template Method makes the code more readable because the algorithm sits in one obvious place at the top of the base class - subclasses are easy to compare because they only differ in the named hook overrides.',
+    sources: [
+      nesterukSource('Chapter on Template Method'),
+      gofSource('Template Method (Behavioural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Template Method',
   },
   {
@@ -650,6 +768,12 @@ public:
       'Polymorphism (a State base interface).',
       'Smart pointers for owning the current state.',
     ],
+    readabilityBenefit:
+      'Following State makes the code more readable because each mode is a named class with its own valid transitions - scattered `if (state == ...)` branches collapse into one delegate call that means "do whatever the current state says."',
+    sources: [
+      nesterukSource('Chapter on State'),
+      gofSource('State (Behavioural Patterns)'),
+    ],
     nesterukChapter: 'Nesteruk 2022, Chapter on State',
   },
   {
@@ -682,6 +806,27 @@ public:
       'Inheritance and virtual functions.',
       'Smart pointers for owning concrete repositories.',
       'Optional types (std::optional) for "not found" responses.',
+    ],
+    readabilityBenefit:
+      'Following Repository makes the code more readable because business logic reads as `users.findById(id)` instead of an inline SQL string - reviewers stop context-switching between domain language and storage syntax on every line.',
+    sources: [
+      {
+        kind: 'book',
+        citation:
+          'Evans, E. (2003). Domain-Driven Design: Tackling Complexity in the Heart of Software. Addison-Wesley.',
+        chapter: 'Chapter 6 - Repositories',
+      },
+      {
+        kind: 'book',
+        citation:
+          'Fowler, M. (2002). Patterns of Enterprise Application Architecture. Addison-Wesley.',
+        chapter: 'Repository (Object-Relational Metadata Mapping Patterns)',
+      },
+      {
+        kind: 'thesis',
+        citation:
+          'CodiNeo thesis (2026), Chapter 1.1 - lists Repository as a first-class detection target outside the GoF set.',
+      },
     ],
     nesterukChapter:
       'Mentioned in CodiNeo Chapter 1.1; not a GoF pattern, but widely used in modern C++ apps and discussed in Nesteruk 2022.',
@@ -725,6 +870,23 @@ Widget::~Widget() = default;`,
       'Smart pointers, especially std::unique_ptr.',
       'Forward declarations.',
       'Defining the destructor in the .cpp file (so the compiler sees Impl when it generates the destructor).',
+    ],
+    readabilityBenefit:
+      'Following PIMPL makes the code more readable because the public header lists only what callers can do - readers no longer wade through private members and dependent #includes to find the API.',
+    sources: [
+      nesterukSource('Chapter on Modern C++ idioms (PIMPL)'),
+      {
+        kind: 'book',
+        citation:
+          'Meyers, S. (2014). Effective Modern C++. O\'Reilly.',
+        chapter: 'Item 22 - When using the Pimpl Idiom, define special member functions in the implementation file',
+      },
+      {
+        kind: 'article',
+        citation:
+          'Sutter, H. (1998). GotW #28 - The Fast Pimpl Idiom. herbsutter.com.',
+        url: 'https://herbsutter.com/gotw/_028/',
+      },
     ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Modern C++ idioms',
   },
