@@ -89,9 +89,9 @@ export default function MainLayout() {
   useOverflowGuard({ rootSelector: '.shell', tolerancePx: 2 });
   const { theme, toggleTheme } = useTheme();
   const {
-    status, msState, msLabel, dockerState, dockerLabel, user, sessionRanAnalyze, sessionReviewedEnd,
+    user, sessionRanAnalyze, sessionReviewedEnd,
     token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
-    setAiStatus, aiStatus, aiConfigured, setStatus,
+    setAiStatus, setStatus,
     currentRun, gdbAllPassedForRun, reviewsRequired
   } = useAppStore();
 
@@ -123,18 +123,11 @@ export default function MainLayout() {
     return undefined;
   }
 
-  const aiChipStatus = !aiConfigured ? 'offline'
-    : aiStatus === 'pending'  ? 'working'
-    : aiStatus === 'failed'   ? 'error'
-    : aiStatus === 'disabled' ? 'offline'
-    : 'ready';
-
-  const aiChipLabel = !aiConfigured  ? 'not configured'
-    : aiStatus === 'pending'  ? 'working…'
-    : aiStatus === 'failed'   ? 'failed'
-    : aiStatus === 'disabled' ? 'disabled'
-    : aiStatus === 'ready'    ? 'done'
-    : 'ready';
+  // Backend / microservice / Docker / AI status chips were removed from the
+  // topbar per project owner — they read as noise on a teaching tool. The
+  // appStore still tracks them (setStatus / setAiStatus calls below are
+  // intact) so admin views and pipeline timing can use them, just not the
+  // studio chrome.
   const { signOut } = useAuth();
 
   const [pendingSave, setPendingSave] = useState<PendingSave | null>(null);
@@ -280,25 +273,7 @@ export default function MainLayout() {
             and the studio shows comments side-by-side with the lines they reference.
           </p>
         </div>
-        <div id="status-card" className="status-card" data-kind={status.kind}>
-          <span className="status-label">Backend</span>
-          <strong id="status-title">{status.title}</strong>
-          <span id="status-detail">{status.detail}</span>
-          <div id="ms-row" className="ms-row" data-state={msState}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">Microservice:</span>
-            <strong id="ms-status">{msLabel}</strong>
-          </div>
-          <div id="docker-row" className="ms-row" data-state={dockerState}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">Docker service:</span>
-            <strong id="docker-status">{dockerLabel}</strong>
-          </div>
-          <div id="ai-row" className="ai-row" data-status={aiChipStatus}>
-            <span className="ms-dot" aria-hidden="true"></span>
-            <span className="ms-label">AI:</span>
-            <strong id="ai-status-label">{aiChipLabel}</strong>
-          </div>
+        <div id="status-card" className="status-card status-card--slim">
           <div id="user-row" className="user-row">
             <span id="user-label">{user?.username ?? ''}</span>
             <button
@@ -358,48 +333,54 @@ export default function MainLayout() {
         })}
       </nav>
 
-      <main className="content tab-content">
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={activeTab}
-            // NOTE: no `filter` and no `y` — both properties create a
-            // containing block for any position:fixed descendant, which
-            // breaks viewport pinning for src-popover, class-nav-corner,
-            // save-prompt, etc. Opacity-only transition keeps the wrapper
-            // a transparent layout proxy.
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {activeTab === 'submit' && (
-              <SubmitTab
-                onAnalysisComplete={onAnalysisComplete}
-                refreshSignal={runRefreshSignal}
-                beforeAnalyze={beforeAnalyze}
-              />
-            )}
-            {activeTab === 'annotated' && (
-              <AnnotatedTab
-                onLineFlash={flashLine}
-                onCommentFlash={flashComment}
-                pendingSave={!!pendingSave}
-                onDiscard={discardCurrentRun}
-                onGoToReview={() => setActiveTab('ambiguous')}
-              />
-            )}
-            {activeTab === 'gdb' && <GdbRunnerTab />}
-            {activeTab === 'docs' && <DocumentationTab />}
-            {activeTab === 'ambiguous' && (
-              <AmbiguousTab
-                pendingSave={pendingSave}
-                onSaved={onSaved}
-                onDiscard={discardCurrentRun}
-              />
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </main>
+      {/* Flattened: the per-tab content is a direct sibling of .topbar
+          and .tab-bar inside .shell, so the entire page scrolls as one
+          unit (no inner scrollbar, no "window in a window"). The old
+          <main className="content tab-content"> wrapper used to be the
+          single scroll container; removing it lets natural document flow
+          take over. AnimatePresence renders no DOM node of its own, so
+          motion.div is the direct .shell child. */}
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={activeTab}
+          className="tab-panel-flat"
+          // NOTE: no `filter` and no `y` — both properties create a
+          // containing block for any position:fixed descendant, which
+          // breaks viewport pinning for src-popover, class-nav-corner,
+          // save-prompt, etc. Opacity-only transition keeps the wrapper
+          // a transparent layout proxy.
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {activeTab === 'submit' && (
+            <SubmitTab
+              onAnalysisComplete={onAnalysisComplete}
+              refreshSignal={runRefreshSignal}
+              beforeAnalyze={beforeAnalyze}
+            />
+          )}
+          {activeTab === 'annotated' && (
+            <AnnotatedTab
+              onLineFlash={flashLine}
+              onCommentFlash={flashComment}
+              pendingSave={!!pendingSave}
+              onDiscard={discardCurrentRun}
+              onGoToReview={() => setActiveTab('ambiguous')}
+            />
+          )}
+          {activeTab === 'gdb' && <GdbRunnerTab />}
+          {activeTab === 'docs' && <DocumentationTab />}
+          {activeTab === 'ambiguous' && (
+            <AmbiguousTab
+              pendingSave={pendingSave}
+              onSaved={onSaved}
+              onDiscard={discardCurrentRun}
+            />
+          )}
+        </motion.div>
+      </AnimatePresence>
 
       {analyzeReplace && (
         <div className="modal-overlay" id="analyze-replace-modal" role="dialog" aria-modal="true">

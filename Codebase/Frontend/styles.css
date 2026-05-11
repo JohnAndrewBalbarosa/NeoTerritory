@@ -871,25 +871,34 @@ body::before {
   z-index: -1;
 }
 
-/* D80 (this turn): topbar fully removed from the scroll. The studio is now
-   a flex-column with three regions:
-     1. .topbar       - flex-shrink: 0, pinned at top, never moves.
-     2. .tab-bar      - flex-shrink: 0, sits below the topbar.
-     3. .tab-panel    - flex: 1; overflow-y: auto - the only scroll
-                        container. Content NEVER goes under the topbar
-                        because it scrolls within its own region.
-   This replaces the prior position: sticky approach which was technically
-   pinned but still allowed content to render under the topbar during
-   scroll, covering components per user complaint
-   ("natatabunan yung mga ibang components"). */
+/* D81 (this turn): flattened to natural page flow. The previous D80
+   model (.shell as a 100vh flex-column with an inner-scroll .content
+   region) caused a "window-in-a-window" feel — the topbar/tab-bar were
+   pinned and only the tab content scrolled. Per project owner, the
+   studio now scrolls as ONE unit: topbar, tab-bar and the active tab
+   are siblings of .shell, the browser scrollbar is the only scrollbar,
+   and the topbar moves out of view naturally when the user scrolls
+   down. No position:sticky, no inner overflow.
+
+   The old .content / main.tab-content wrapper is gone (see
+   MainLayout.tsx) so the inner-scroll rule that used to live here was
+   removed too. */
 .shell {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: auto;
+  min-height: 100vh;
   max-width: 1480px;
   padding: 0 clamp(16px, 3vw, 36px);
   margin: 0 auto;
-  overflow: hidden;
+  overflow: visible;
+}
+.tab-panel-flat {
+  /* The flattened per-tab wrapper inside .shell. Just a passive layout
+     proxy — no overflow, no height cap. Lets the page scroll naturally. */
+  display: block;
+  width: 100%;
+  padding: 4px 2px 32px;
 }
 
 .topbar {
@@ -1005,6 +1014,18 @@ body::before {
   min-width: 280px;
   border-radius: 14px;
 }
+/* D81: slim variant — used by the studio topbar after backend/microservice/
+   docker/AI rows were removed. Only the user-row remains, so the card
+   collapses its min-width and drops the column gap so it reads as a
+   sign-out + theme/tour control strip, not a diagnostic panel. */
+.status-card.status-card--slim {
+  min-width: 0;
+  padding: 10px 14px;
+  gap: 0;
+}
+.status-card.status-card--slim .user-row {
+  margin-top: 0;
+}
 .status-card strong,
 .ms-row[data-state="online"] #ms-status,
 .ai-row[data-status="ready"] #ai-status-label,
@@ -1036,19 +1057,9 @@ body::before {
   box-shadow: 0 10px 34px rgba(0, 0, 0, 0.24);
   overflow-x: auto;
 }
-/* The single scroll container: tab content lives here.
-   .content is the <main> element wrapping AnimatePresence in
-   MainLayout.tsx. .tab-panel is the inner section rendered by each tab
-   component; the scroll lives at the outer container so panel content
-   can size naturally. */
-.shell .content,
-.shell main.tab-content {
-  flex: 1 1 auto;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 4px 2px 24px;
-  min-height: 0;
-}
+/* D81: the old inner-scroll selectors (.shell .content, .shell main.tab-content)
+   are removed. The studio is one natural-flow page now — see the .shell
+   block above and .tab-panel-flat for the replacement wrapper. */
 .tab-btn {
   border: 1px solid transparent;
   border-radius: 10px;
