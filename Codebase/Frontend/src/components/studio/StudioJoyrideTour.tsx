@@ -39,6 +39,21 @@ export function dispatchStudioTourOpen(): void {
   window.dispatchEvent(new CustomEvent(FORCE_OPEN_EVENT));
 }
 
+// Playwright (and every WebDriver-driven browser) sets navigator.webdriver
+// to true. The Joyride overlay is a full-viewport SVG mask that intercepts
+// pointer events, so when the tour auto-fires on the submit tab while the
+// E2E spec is trying to click `analyze-btn` the click times out:
+//   "<path … d='M0 0H1440V963H0Z …'> from <div id='react-joyride-portal'>
+//    subtree intercepts pointer events"
+// Skipping auto-fire under automation lets the spec drive the page
+// untouched. Manual replay via the "? Tour" button still works in E2E if
+// a future spec explicitly tests the tour — it dispatches the
+// FORCE_OPEN_EVENT, which bypasses this gate.
+function isAutomatedBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.webdriver === true;
+}
+
 interface ScopedKey {
   storage: Storage | null;
   key: string;
@@ -466,11 +481,16 @@ export default function StudioJoyrideTour() {
   }
 
   // Auto-fire on every tab change where:
+  //   - the page isn't being driven by an automated browser (Playwright)
   //   - global suppression is NOT set (user hasn't ticked "Don't show again")
   //   - this specific tab hasn't been completed yet
   // The effect re-runs on activeTab so siblings get their own popover the
   // first time the user lands on them, instead of one global one-shot.
   useEffect(() => {
+    if (isAutomatedBrowser()) {
+      setRun(false);
+      return;
+    }
     if (readSuppressed()) {
       setRun(false);
       return;
