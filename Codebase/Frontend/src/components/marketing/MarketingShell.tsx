@@ -13,9 +13,11 @@ import WhyPage from './why/WhyPage';
 import MechanicsPage from './mechanics/MechanicsPage';
 import PatternsPage from './patterns/PatternsPage';
 import PatternDetailPage from './patterns/PatternDetailPage';
+import PatternsLearnPage from './patterns/PatternsLearnPage';
 import TourPage from './tour/TourPage';
 import DocsPage from './docs/DocsPage';
 import TryItChooser, { TRY_IT_OPEN_EVENT } from './TryItChooser';
+import { navigate } from '../../logic/router';
 
 interface MarketingShellProps {
   surface: Exclude<Surface, 'studio'>;
@@ -23,6 +25,15 @@ interface MarketingShellProps {
 
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
+
+  // D77: redirect legacy /student-learning to /patterns/learn so old
+  // bookmarks keep working. This runs in an effect so the redirect
+  // happens after first paint (preventing a blank flash).
+  useEffect(() => {
+    if (surface === 'studentLearning') {
+      navigate('/patterns/learn');
+    }
+  }, [surface]);
 
   // Try-it chooser hoisted to the shell so MarketingNav, WhyPage, TourPage,
   // HeroLanding feature tiles, etc. all open the SAME modal instead of each
@@ -77,6 +88,8 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'mechanics' && <MechanicsPage />}
           {surface === 'patterns' && <PatternsPage />}
           {surface === 'patternDetail' && <PatternDetailPage />}
+          {surface === 'patternsLearn' && <PatternsLearnPage />}
+          {surface === 'patternsLearnModule' && <PatternsLearnPage />}
           {surface === 'tour' && <TourPage />}
           {surface === 'docs' && <DocsPage />}
         </motion.div>

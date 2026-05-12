@@ -26,12 +26,24 @@ export default function PatternsPage() {
   return (
     <main className="nt-patterns" id="main">
       <header className="nt-patterns__head">
-        <p className="nt-section-eyebrow">Pattern catalog</p>
-        <h1 className="nt-patterns__title">Patterns NeoTerritory recognises</h1>
-        <p className="nt-patterns__lede">
-          Reference + invite. One tile per pattern. Click a tile to open the detail page, which
-          carries the structural criteria, the must-have tokens, and the per-pattern citations.
-        </p>
+        <div className="nt-patterns__head-text">
+          <p className="nt-section-eyebrow">Pattern catalog</p>
+          <h1 className="nt-patterns__title">Patterns NeoTerritory recognises</h1>
+          <p className="nt-patterns__lede">
+            Reference + invite. One tile per pattern. Click a tile to open the detail page, which
+            carries the structural criteria, the must-have tokens, and the per-pattern citations.
+          </p>
+        </div>
+        {/* D77: 'Learn more' button top-right of the main content header.
+            Routes to /patterns/learn — the silo'd learning hub that now
+            owns the student-learning content under the Patterns surface. */}
+        <button
+          type="button"
+          className="nt-patterns__head-cta"
+          onClick={() => navigate('/patterns/learn')}
+        >
+          Learn more →
+        </button>
       </header>
 
       <section className="nt-patterns__source" aria-labelledby="patterns-source">

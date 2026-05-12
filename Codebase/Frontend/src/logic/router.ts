@@ -18,6 +18,8 @@ export type Surface =
   | 'mechanics'
   | 'patterns'
   | 'patternDetail'
+  | 'patternsLearn'
+  | 'patternsLearnModule'
   | 'tour'
   | 'docs';
 
@@ -39,6 +41,9 @@ export function pathToSurface(path: string): Surface {
   if (path === '/choose' || path.startsWith('/choose/')) return 'choose';
   if (path === '/auth/callback') return 'googleCallback';
   if (path === '/developer/login' || path === '/student-learning/login') return 'googleSignIn';
+  // /student-learning (legacy) redirects in MarketingShell to /patterns/learn
+  // so old bookmarks keep working. The surface stays here just to satisfy
+  // any in-flight clients on an old SPA bundle.
   if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
   if (path === '/why' || path.startsWith('/why/')) return 'why';
   if (path === '/mechanics' || path.startsWith('/mechanics/')) return 'mechanics';
@@ -46,6 +51,12 @@ export function pathToSurface(path: string): Surface {
   // index; any deeper path is a detail page. /patterns/gof is preserved
   // as an alias back to the index for any old bookmarks.
   if (path === '/patterns' || path === '/patterns/gof') return 'patterns';
+  // D77 (this turn): /patterns/learn is the new student-learning home,
+  // nested under /patterns so the Patterns surface owns both the catalog
+  // (reference) and the learning hub. /patterns/learn alone is the
+  // category list; /patterns/learn/<slug> is one isolated module.
+  if (path === '/patterns/learn') return 'patternsLearn';
+  if (path.startsWith('/patterns/learn/')) return 'patternsLearnModule';
   if (path.startsWith('/patterns/')) return 'patternDetail';
   if (path === '/tour' || path.startsWith('/tour/')) return 'tour';
   // /research is the previous name; redirect-by-match so old bookmarks still land.
@@ -66,8 +77,16 @@ export function pathToSurface(path: string): Surface {
 export function patternSlugFromPath(path: string): string {
   if (!path.startsWith('/patterns/')) return '';
   const slug = path.slice('/patterns/'.length).split('/')[0];
-  if (slug === 'gof' || !slug) return '';
+  if (slug === 'gof' || slug === 'learn' || !slug) return '';
   return slug;
+}
+
+// D77: slug helper for /patterns/learn/<module-id>. Returns the module id,
+// empty when path is just /patterns/learn (the category list).
+export function learnModuleSlugFromPath(path: string): string {
+  if (!path.startsWith('/patterns/learn/')) return '';
+  const slug = path.slice('/patterns/learn/'.length).split('/')[0];
+  return slug || '';
 }
 
 const NAV_EVENT = 'nt:navigate';
