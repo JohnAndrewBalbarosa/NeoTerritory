@@ -5149,11 +5149,17 @@ body[data-surface] {
 }
 .nt-mkt-footer__credit a {
   color: var(--nt-mkt-accent);
-  text-decoration: none;
+  /* Underline is permanent (not hover-only) so the link is distinguishable
+     from the surrounding muted text without relying on color contrast —
+     fixes Lighthouse "Links rely on color to be distinguishable" on the
+     light-theme footer where accent #007a80 sits on mute #51607d (1.23:1). */
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
 }
 .nt-mkt-footer__credit a:hover,
 .nt-mkt-footer__credit a:focus-visible {
-  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 .nt-mkt-footer__admin code {
   font-family: 'JetBrains Mono', monospace;
