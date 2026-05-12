@@ -6,55 +6,57 @@ Working note for `FINAL THESIS 3 PAPER.docx`. Apply each block in Word in the or
 
 ---
 
-## A. Section 1.5 — Statement of the Problem (rewrite all 5 items, accessible register)
+## A. Section 1.5 — Statement of the Problem (v3: accessible + broader scope)
 
-> **Register note:** these are written for a panel that includes readers without an algorithms or coding background. The algorithm name "Hash-Based Virtual Structural Copy" appears in the Title, Section 1.8 Definition of Terms, and Chapter 3 only — never in these SOPs.
+> **Register notes (v3):** plain language for a panel including non-CS readers, AND broader scope than v2. v2 mentioned "C++" five times and "DEVCON Luzon" twice; v3 removes "C++" entirely (Scope owns the language constraint) and removes "DEVCON Luzon" entirely (Scope + Methodology + Significance own the partnership context). The algorithm name "Hash-Based Virtual Structural Copy" still lives only in the Title, Section 1.8 Definition of Terms, and Chapter 3 — never in these SOPs.
 
 **Replace each numbered SOP with:**
 
-1. How can the system teach design patterns in a way that lets the user try each pattern on their own C++ code immediately after the lesson, instead of only reading about it?
+1. How can the system teach design patterns in a way that lets the user try each pattern on their own source code immediately after the lesson, instead of only reading about it?
 
-2. How can the system examine a user's C++ code to find which design patterns are present, without changing the user's original code, and allow the team to add support for new patterns later without rebuilding the system?
+2. How can the system examine a user's source code to find which design patterns are present, without changing the user's original code, and allow the team to add support for new patterns later without rebuilding the system?
 
 3. How can the system present its findings in a way that shows the user which lines of their code triggered each detected pattern and why, so the user can verify the finding for themselves?
 
 4. How can the system write per-class documentation that combines findings the system verified from the user's code with explanations written by AI, while clearly labelling which sentences come from which source so the user can trust the documentation?
 
-5. How well does the system help DEVCON Luzon participants identify, document, and explain design patterns in C++ code that someone else wrote — measured by comparing what they can do before and after using the system?
+5. How well does the system help novice developers identify, document, and explain design patterns in source code that someone else wrote — measured by comparing what they can do before and after using the system?
 
 ---
 
-## B. Section 1.6 — Specific Objectives (rewrite all 5 items, accessible register, keep 1:1 pairing)
+## B. Section 1.6 — Specific Objectives (v3: accessible + broader scope, 1:1 pairing preserved)
 
-> **Register note:** same vocabulary discipline as block A. Each SO names a concrete deliverable a non-CS reader can read aloud and tell you what the system does. No "parse tree", "JSON catalog", "deterministic", "lexeme", or other algorithm terms.
+> **Register notes (v3):** same vocabulary discipline as block A. SO 2 is the ONLY objective that names C++ — and only as the prototype's scope, with an explicit extensibility cross-reference to Section 1.7. SOs 1, 3, 4, 5 say "source code". DEVCON Luzon is removed from SO 5 (replaced by "novice-developer participants"); WHO the participants are gets stated in Methodology Chapter 3.
 
 **Replace each numbered SO with:**
 
-1. Create learning modules where each design-pattern lesson is paired with a hands-on check the system runs on the user's own C++ code, so the user sees the lesson applied to their work right after learning it.
+1. Create learning modules where each design-pattern lesson is paired with a hands-on check the system runs on the user's own source code, so the user sees the lesson applied to their work right after learning it.
 
-2. Build a C++ code-analysis feature that reads the user's source without modifying it, identifies which design patterns appear at the class level, and reads its pattern definitions from configuration files so new patterns can be added by editing files instead of rebuilding the system.
+2. Build a code-analysis feature that reads the user's source without modifying it, identifies which design patterns appear at the class level, and reads its pattern definitions from configuration files so new patterns can be added by editing files instead of rebuilding the system. The prototype implementation supports C++ as its first and only currently-supported language; extension to additional statically-typed object-oriented languages is identified as future work (see Section 1.7 Scope).
 
 3. Build a results view that lists the most likely pattern matches first, links each match to the exact lines of code that caused it, and explains in plain language what the system saw in those lines.
 
 4. Build a documentation feature that produces a written explanation for each analysed class, mixing facts the system verified against the user's code with sentences written by AI, with each AI-written sentence visibly marked so the user can tell the two apart.
 
-5. Evaluate the system with DEVCON Luzon participants by measuring, before and after they use the system, how accurately they can identify design patterns in unfamiliar C++ code, how completely they can document those patterns, and how clearly they can explain why each pattern is there.
+5. Evaluate the system with novice-developer participants by measuring, before and after they use the system, how accurately they can identify design patterns in unfamiliar source code, how completely they can document those patterns, and how clearly they can explain why each pattern is there.
 
-**Pairing check (after pasting):** SOP 1 ↔ SO 1 (learn-then-try-on-own-code); SOP 2 ↔ SO 2 (find patterns without changing source + add new patterns by editing files); SOP 3 ↔ SO 3 (ranked findings + exact lines + plain-language reasons); SOP 4 ↔ SO 4 (verified findings + AI sentences clearly marked); SOP 5 ↔ SO 5 (DEVCON Luzon before/after on identify/document/explain).
-
----
-
-## C. Section 1.7.1 — Scope (insert a new second paragraph)
-
-**Insert this paragraph immediately after the existing first scope paragraph and before any of the existing pathway descriptions:**
-
-> While the system is designed and built without DEVCON-Luzon-specific assumptions — its C++ analysis surface, hash-based virtual structural copy algorithm, and JSON-defined pattern catalog are applicable to any class-level C++ codebase that meets the structural prerequisites stated in Section 1.7.2 — the primary evaluation context of this study is DEVCON Luzon. Findings reported in Chapters 4 and 5 therefore describe usefulness and effectiveness within DEVCON Luzon participants and may not generalize to the broader audiences (quantitative analysts, embedded engineers, low-level AI engineers, and undergraduate students who ship AI-written code) for whom the system is technically applicable. Industry-scale rationale for those broader audiences is discussed in the Significance section (Section 1.4).
-
-**Do not touch** the rest of Scope (1.7.1) or Delimitations (1.7.2). They are correct as written; the new paragraph just makes the system-vs-evaluation distinction explicit.
+**Pairing check (after pasting):** SOP 1 ↔ SO 1 (learn-then-try-on-own-code); SOP 2 ↔ SO 2 (find patterns without changing source + add new patterns by editing files + C++ prototype boundary); SOP 3 ↔ SO 3 (ranked findings + exact lines + plain-language reasons); SOP 4 ↔ SO 4 (verified findings + AI sentences clearly marked); SOP 5 ↔ SO 5 (novice-developer before/after on identify/document/explain).
 
 ---
 
-## D. Section 1.8 — Definition of Terms (fill in the placeholder)
+## C. Section 1.7.1 — Scope (v3: insert TWO new paragraphs that own BOTH boundaries)
+
+**Insert these two paragraphs immediately after the existing first scope paragraph and before any of the existing pathway descriptions. They replace any earlier v2 single-paragraph insertion if it was applied.**
+
+> The algorithm at the core of this study is designed for **statically-typed object-oriented programming languages with class-level syntactic structure**, including but not limited to C++, Java, C#, and Kotlin. The prototype implementation supports **C++ as its first and only currently-supported language**, chosen because of the time and resource constraints of an undergraduate thesis; extension to additional statically-typed object-oriented languages is identified as future work in Chapter 5. Support for **dynamically-typed object-oriented languages** (e.g. Python, JavaScript) is **out of scope** for both the prototype and the algorithmic claim of this study, and is not committed to as future work.
+>
+> The primary evaluation context of this study is the **DEVCON Luzon learning environment**, where the system is tested with novice-developer participants drawn from the DEVCON Luzon community. Findings reported in Chapters 4 and 5 describe usefulness and effectiveness within that participant pool and are not intended to generalize beyond it. The system itself is built without DEVCON-Luzon-specific assumptions — the partnership defines the evaluation site, not the audience the system is technically applicable to. Industry-scale rationale for the broader audiences for whom the system is technically applicable is discussed in the Significance section (Section 1.4).
+
+**Do not touch** the rest of Scope (1.7.1) or Delimitations (1.7.2). They are correct as written; these two paragraphs are the SINGLE owner of both the language boundary and the evaluation-site boundary for the whole paper. SOPs/SOs cross-reference Section 1.7 instead of repeating these statements.
+
+---
+
+## D. Section 1.8 — Definition of Terms (v3: fill in the placeholder + language-agnostic algorithm framing)
 
 **Replace the current placeholder entry** that reads:
 
@@ -62,7 +64,7 @@ Working note for `FINAL THESIS 3 PAPER.docx`. Apply each block in Word in the or
 
 **With:**
 
-> **Hash-Based Virtual Structural Copy.** An immutable representation of the user's C++ parse tree (the *actual tree*) is mirrored into a working copy (the *virtual tree*) on which classification tags, cross-references, and pattern-detection results are written. Structural hashing identifies repeated sub-tree shapes so that detection work is performed once per unique structural shape rather than per textual occurrence. The actual tree is never mutated; it provides an auditable ground truth to which every detected-pattern claim is anchored. This differs from a standard deep copy by maintaining structural identity through hashing rather than node-by-node duplication, and from a reference copy by ensuring writes to the working surface never propagate back to the source representation.
+> **Hash-Based Virtual Structural Copy.** An immutable representation of the user's source-code parse tree (the *actual tree*) is mirrored into a working copy (the *virtual tree*) on which classification tags, cross-references, and pattern-detection results are written. Structural hashing identifies repeated sub-tree shapes so that detection work is performed once per unique structural shape rather than per textual occurrence. The actual tree is never mutated; it provides an auditable ground truth to which every detected-pattern claim is anchored. This differs from a standard deep copy by maintaining structural identity through hashing rather than node-by-node duplication, and from a reference copy by ensuring writes to the working surface never propagate back to the source representation. The algorithm is defined for statically-typed object-oriented programming languages with class-level syntactic structure; the prototype implementation in this study operates on C++ parse trees (see Section 1.7 Scope for the full language-scope statement).
 
 The surrounding terms (Hashing Algorithm, Graph Memory Copy Algorithm) stay as written.
 
