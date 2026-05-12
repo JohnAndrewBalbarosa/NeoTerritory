@@ -3342,6 +3342,20 @@ body[data-surface] {
 :root[data-theme="light"] {
   --nt-bento-tile-bg: oklch(98% 0 0 / 0.92);
   --nt-bento-tile-bg-hover: oklch(96% 0.02 250 / 0.96);
+  --nt-bento-tile-border: rgba(15, 27, 46, 0.14);
+  --nt-bento-tile-border-hover: rgba(0, 156, 162, 0.55);
+  /* Text + line tokens must flip in light mode too, otherwise the dark-mode
+     near-white --nt-mkt-text lands on white bento tiles. Palette: keep the
+     DEVCON cyan/purple accents but pull text into deep slate for AA contrast
+     on the new light surfaces. */
+  --nt-mkt-text: #0d1422;
+  --nt-mkt-text-soft: #2a3754;
+  --nt-mkt-text-mute: #51607d;
+  --nt-mkt-accent: #007a80;
+  --nt-mkt-accent-2: #5b3e88;
+  --nt-mkt-line: rgba(13, 20, 34, 0.12);
+  --nt-mkt-line-strong: rgba(0, 122, 128, 0.34);
+  --devcon-cyan: #007a80;
 }
 
 /* ---------- Home (HeroLanding rebuild, D43) ---------- */
@@ -3724,6 +3738,94 @@ body[data-surface] {
   display: flex;
   justify-content: center;
   margin-top: 2rem;
+}
+
+/* Evidence section: cited stats backing the four industry panels above.
+   All colors come from --nt-mkt-* tokens, so the light/dark theme flip
+   handles contrast automatically. */
+.nt-why__evidence {
+  margin-top: clamp(2.5rem, 1.5rem + 2vw, 4rem);
+  padding: clamp(1.5rem, 1rem + 1.4vw, 2.5rem);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-bento-radius);
+  background: var(--nt-bento-tile-bg);
+}
+.nt-why__evidence-head {
+  margin-bottom: 1.75rem;
+  max-width: 70ch;
+}
+.nt-why__evidence-title {
+  font-size: clamp(1.4rem, 0.9rem + 1.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin: 0.5rem 0 0.75rem;
+  color: var(--nt-mkt-text);
+}
+.nt-why__evidence-lede {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--nt-mkt-text-soft);
+  margin: 0;
+}
+.nt-why__evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(0.75rem, 0.6rem + 0.5vw, 1.2rem);
+}
+@media (min-width: 900px) {
+  .nt-why__evidence-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nt-why__evidence-item {
+  position: relative;
+  padding: 1.1rem 1.2rem 1.2rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  background: var(--nt-bento-tile-bg-hover, var(--nt-bento-tile-bg));
+  display: grid;
+  gap: 0.55rem;
+}
+.nt-why__evidence-year {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  margin-bottom: 0.1rem;
+}
+.nt-why__evidence-headline {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--nt-mkt-text);
+}
+.nt-why__evidence-detail {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-why__evidence-cite {
+  margin: 0.2rem 0 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-why__evidence-link {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--devcon-cyan, var(--nt-mkt-accent)) 50%, transparent);
+  text-underline-offset: 3px;
+}
+.nt-why__evidence-link:hover,
+.nt-why__evidence-link:focus-visible {
+  text-decoration-color: currentColor;
 }
 
 /* ---------- /mechanics ---------- */
