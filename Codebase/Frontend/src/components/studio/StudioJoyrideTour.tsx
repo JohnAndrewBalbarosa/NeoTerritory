@@ -1,27 +1,28 @@
-import { useEffect, useRef, useState } from 'react';
-import { Joyride, EVENTS, type EventData, type Step } from 'react-joyride';
+import { useEffect, useState } from 'react';
+import { Joyride, EVENTS, ACTIONS, type EventData, type Step } from 'react-joyride';
 import { useAppStore, type StudioTab } from '../../store/appState';
 
-// Session-aware Joyride. Goals this turn:
-//   - First-session ONLY auto-fire. The tour appears once on the user's
-//     first studio entry and never auto-opens again. No "click this"
-//     circles, no per-tab beacons — the dialog opens itself directly.
-//   - One completion flag per user, NOT per tab. Previously the tour
-//     re-fired every time the user landed on a new tab; that turned the
-//     orientation into noise. Now: complete it (or close it) once and
-//     it's done.
-//   - Manual replay still works via the "? Tour" button in the studio
-//     header (dispatches FORCE_OPEN_EVENT). The button shows the tour
-//     for whichever tab the user is currently on.
-//   - Account users (any non-devcon username) persist completion in
-//     localStorage keyed by user.id. Guest/tester users (devconN) use
-//     sessionStorage so every new tester session re-orients them.
+// Per-tab auto-firing Joyride. Goals this turn:
+//   - Auto-fire on EVERY tab the user hasn't completed yet. The popover
+//     opens directly — no "click this" beacons / circles at any layer.
+//   - Per-tab completion flag (nt_studio_tour_completed__<tab>). Finishing
+//     or closing the tour for a tab silences that tab only; siblings keep
+//     auto-firing on first visit.
+//   - Global "don't show again" flag (nt_studio_tour_suppressed). The
+//     tour's Skip button writes this — once set, no tab auto-fires ever
+//     again for this user. Manual replay via "? Tour" still works.
+//   - Manual replay button (dispatches FORCE_OPEN_EVENT) ignores both
+//     flags and shows the tour for the current tab.
+//   - Account users persist flags in localStorage keyed by user.id.
+//     Guest/tester users (devconN) use sessionStorage so every new
+//     tester session re-orients them.
 //   - Before showing each step, the orchestrator waits up to a short
 //     budget for the target DOM element to exist. Steps whose targets
 //     never resolve are dropped from that run rather than rendering as
 //     centered placeholders.
 
-const COMPLETED_KEY = 'nt_studio_tour_completed';
+const COMPLETED_KEY_PREFIX = 'nt_studio_tour_completed__';
+const SUPPRESSED_KEY = 'nt_studio_tour_suppressed';
 const FORCE_OPEN_EVENT = 'nt:studio-tour:open';
 const TARGET_WAIT_MS = 1500;
 const TARGET_POLL_MS = 80;
@@ -31,14 +32,14 @@ export function dispatchStudioTourOpen(): void {
   window.dispatchEvent(new CustomEvent(FORCE_OPEN_EVENT));
 }
 
-interface CompletionScope {
+interface ScopedKey {
   storage: Storage | null;
   key: string;
 }
 
-function getCompletionScope(): CompletionScope {
+function getScopedKey(baseKey: string): ScopedKey {
   if (typeof window === 'undefined') {
-    return { storage: null, key: COMPLETED_KEY };
+    return { storage: null, key: baseKey };
   }
   const state = useAppStore.getState();
   const user = state.user;
@@ -47,15 +48,12 @@ function getCompletionScope(): CompletionScope {
   const isGuest = !user || /^devcon\d+$/i.test(user.username || '');
   const storage = isGuest ? window.sessionStorage : window.localStorage;
   const idPart = !isGuest && user ? `__${user.id ?? user.username}` : '';
-  return {
-    storage,
-    key: `${COMPLETED_KEY}${idPart}`,
-  };
+  return { storage, key: `${baseKey}${idPart}` };
 }
 
-function readCompleted(): boolean {
+function readTabCompleted(tab: StudioTab): boolean {
   try {
-    const { storage, key } = getCompletionScope();
+    const { storage, key } = getScopedKey(`${COMPLETED_KEY_PREFIX}${tab}`);
     if (!storage) return false;
     return storage.getItem(key) === '1';
   } catch {
@@ -63,9 +61,29 @@ function readCompleted(): boolean {
   }
 }
 
-function writeCompleted(): void {
+function writeTabCompleted(tab: StudioTab): void {
   try {
-    const { storage, key } = getCompletionScope();
+    const { storage, key } = getScopedKey(`${COMPLETED_KEY_PREFIX}${tab}`);
+    if (!storage) return;
+    storage.setItem(key, '1');
+  } catch {
+    /* storage blocked */
+  }
+}
+
+function readSuppressed(): boolean {
+  try {
+    const { storage, key } = getScopedKey(SUPPRESSED_KEY);
+    if (!storage) return false;
+    return storage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeSuppressed(): void {
+  try {
+    const { storage, key } = getScopedKey(SUPPRESSED_KEY);
     if (!storage) return;
     storage.setItem(key, '1');
   } catch {
@@ -239,7 +257,7 @@ async function resolveStepsForTab(tab: StudioTab): Promise<Step[]> {
         </div>
       ),
       placement: s.target ? 'auto' : 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     } as Step);
   }
   return resolved;
@@ -251,19 +269,18 @@ export default function StudioJoyrideTour() {
   const [run, setRun] = useState<boolean>(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [tourTab, setTourTab] = useState<StudioTab>(activeTab);
-  // Track whether we have already considered auto-firing for this user
-  // session. Without this, the effect re-evaluates on every render and a
-  // closed tour would re-open itself.
-  const autoFireConsidered = useRef<boolean>(false);
 
-  // Auto-trigger ONCE per user session. The trigger fires on the first
-  // render where the studio is visible. After that — whether the user
-  // completes the tour, skips it, or closes it — the completion flag is
-  // written and the tour never auto-opens again for this user.
+  // Auto-fire on every tab change where:
+  //   - global suppression is NOT set (user hasn't hit Skip / "Don't show again")
+  //   - this specific tab hasn't been completed yet
+  // The effect re-runs on activeTab so siblings get their own popover the
+  // first time the user lands on them, instead of one global one-shot.
   useEffect(() => {
-    if (autoFireConsidered.current) return;
-    autoFireConsidered.current = true;
-    if (readCompleted()) {
+    if (readSuppressed()) {
+      setRun(false);
+      return;
+    }
+    if (readTabCompleted(activeTab)) {
       setRun(false);
       return;
     }
@@ -278,21 +295,14 @@ export default function StudioJoyrideTour() {
     return () => {
       cancelled = true;
     };
-    // user is the only dep that legitimately changes auto-fire scope
-    // (guest vs account storage), and reset_autoFireConsidered triggers
-    // a fresh evaluation when the user logs in.
+    // user is included so a sign-in/sign-out (which changes which storage
+    // scope holds the flags) re-evaluates auto-fire eligibility.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
-
-  // Reset auto-fire consideration when the user logs in / out — that
-  // changes which storage scope holds the completion flag.
-  useEffect(() => {
-    autoFireConsidered.current = false;
-  }, [user]);
+  }, [activeTab, user]);
 
   // Manual replay event from the studio header "? Tour" button. This
-  // path ignores the completion flag — the user explicitly asked to see
-  // the tour again, for whichever tab they are currently on.
+  // path ignores both the per-tab and global suppression flags — the user
+  // explicitly asked to see the tour again, for whichever tab they are on.
   useEffect(() => {
     function handleForceOpen(): void {
       void (async () => {
@@ -308,11 +318,17 @@ export default function StudioJoyrideTour() {
   }, [activeTab]);
 
   function handleEvent(data: EventData): void {
-    // Mark the tour completed on any terminating event — finished, skipped,
-    // closed via the X. The flag is global per user, not per tab, so
-    // ANY terminating event silences future auto-fires.
+    // Two terminating intents:
+    //   - SKIP (action === 'skip') → "Don't show again" globally. Sets the
+    //     suppression flag so no tab auto-fires for this user from now on.
+    //   - Anything else that ends the tour (finished walk-through, closed
+    //     via X) → mark this tab complete only. Sibling tabs keep firing.
     if (data.type === EVENTS.TOUR_END) {
-      writeCompleted();
+      if (data.action === ACTIONS.SKIP) {
+        writeSuppressed();
+      } else {
+        writeTabCompleted(tourTab);
+      }
       setRun(false);
     }
   }
@@ -326,7 +342,18 @@ export default function StudioJoyrideTour() {
       run={run}
       continuous
       onEvent={handleEvent}
+      locale={{
+        skip: "Don't show again",
+        last: 'Got it',
+      }}
       options={{
+        // skipBeacon kills the pulsing circle at every step — the tooltip
+        // opens directly, which is what the user wants (no "click this
+        // dot" affordance, the full popover is the entry point).
+        skipBeacon: true,
+        // Surface the Skip button — clicking it triggers ACTIONS.SKIP,
+        // which we treat as a global "Don't show again" in handleEvent.
+        buttons: ['back', 'skip', 'close', 'primary'],
         primaryColor: 'rgb(0, 209, 216)',
         textColor: '#e2e4f0',
         backgroundColor: '#13141a',
@@ -334,7 +361,7 @@ export default function StudioJoyrideTour() {
         overlayColor: 'rgba(0, 0, 0, 0.55)',
         zIndex: 10000,
         showProgress: true,
-        closeButtonAction: 'skip',
+        closeButtonAction: 'close',
       }}
     />
   );

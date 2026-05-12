@@ -124,9 +124,13 @@ export class StudioPage {
           localStorage.setItem('nt_user', JSON.stringify(user));
           sessionStorage.setItem('nt-entry-flow', 'developer');
           localStorage.setItem('nt_start_here_dismissed', '1');
-          // Single global completion flag now. The legacy per-tab keys are
-          // set too so older builds that still read them don't auto-open.
+          // Per-tab auto-fire is now the default, so we must pre-stamp
+          // every per-tab completion key to keep screenshots clean. The
+          // legacy single-global key and the new global suppression key
+          // are both written defensively so any build of the tour stays
+          // silent during capture.
           localStorage.setItem('nt_studio_tour_completed', '1');
+          localStorage.setItem('nt_studio_tour_suppressed', '1');
           for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
             localStorage.setItem(`nt_studio_tour_completed__${tab}`, '1');
           }
