@@ -390,7 +390,6 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
         classResolvedPatterns: { ...prev, [className]: patternKey },
         userResolvedPattern: patternKey
       });
-      console.log(`[NT] user tagged (line popover)  class=${className}  pattern=${patternKey}  line=${line}`);
     } else {
       setLinePatternOverride(line, patternKey);
     }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import SourceView from '../analysis/SourceView';
 import PatternLegend from '../analysis/PatternLegend';
@@ -61,28 +61,6 @@ export default function AnnotatedTab({
     [model, currentRun],
   );
 
-  // Observability: log the full class→candidates tree.
-  // First log per run: BEFORE label. Subsequent logs (after each pick): AFTER label.
-  const isFirstLog = useRef(true);
-  // Reset BEFORE-state every time a fresh run lands so each run gets its own first log.
-  useEffect(() => {
-    isFirstLog.current = true;
-  }, [currentRun?.pendingId, currentRun?.runId]);
-
-  useEffect(() => {
-    if (model.classes.size === 0) return;
-    const label = isFirstLog.current
-      ? '[NT] tree BEFORE user picks'
-      : '[NT] tree AFTER user pick';
-    console.group(label);
-    for (const [cls, node] of model.classes) {
-      const resolvedSuffix = node.resolved ? `  resolved=${node.resolved}` : '';
-      console.log(`  ${cls}  candidates=[${node.candidates.join(', ')}]  status=${node.status}${resolvedSuffix}`);
-    }
-    console.groupEnd();
-    isFirstLog.current = false;
-  }, [model]);
-
   const handlePickClass = (className: string, patternKey: string): void => {
     const run = useAppStore.getState().currentRun;
     if (!run) return;
@@ -109,7 +87,6 @@ export default function AnnotatedTab({
       },
       classChosenPatterns: updatedChosenPatterns,
     });
-    console.log(`[NT] user tagged  class=${className}  pattern=${patternKey}`);
   };
 
   const allAnnotations = useMemo(() => {
