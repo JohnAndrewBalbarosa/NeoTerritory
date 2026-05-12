@@ -1821,6 +1821,19 @@ body.login-active{overflow:hidden;}
   font-family: var(--heading-font);
   font-size: 28px;
 }
+.review-drawer__close-btn {
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  line-height: 1;
+  border-radius: 8px;
+}
 .review-drawer__head p:not(.results-kicker) {
   margin: 6px 0 0;
   color: var(--ink-soft);

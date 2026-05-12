@@ -935,7 +935,7 @@ export default function AnnotatedTab({
                   Choose the pattern that best explains this code.
                 </p>
               </div>
-              <button type="button" className="ghost-btn" onClick={() => setReviewOpen(false)}>Close</button>
+              <button type="button" className="ghost-btn review-drawer__close-btn" onClick={() => setReviewOpen(false)} aria-label="Close">✕</button>
             </header>
             <div className="review-drawer__grid">
               <section className="review-evidence-panel">
