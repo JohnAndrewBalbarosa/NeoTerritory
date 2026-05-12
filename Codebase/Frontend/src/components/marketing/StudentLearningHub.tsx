@@ -310,9 +310,8 @@ function openSampleInStudentStudio(sample: Sample): void {
   // developer uses. The prefill stays in sessionStorage and is picked
   // up after the Google callback lands the user in /studio.
   stashStudioPrefill(sample);
-  // EntryChoice's sessionStorage gate would otherwise bounce the
-  // learner to /choose; stamp it ourselves so the redirect goes
-  // straight to /developer/login.
+  // Stamp the entry-flow so MainLayout treats this as a real-account
+  // user (skips ConsentGate + Pretest) once the Google callback lands.
   try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
   navigate('/developer/login');
 }
@@ -347,13 +346,18 @@ export default function StudentLearningHub() {
   const [activeStepIndex, setActiveStepIndex] = useState<number>(() => readPersistedActiveStepIndex());
   const [completedStepIds, setCompletedStepIds] = useState<Set<string>>(() => readPersistedCompletedStepIds());
   const [lockedMessage, setLockedMessage] = useState('');
-  // Accordion: only one section can be open at a time. Default to the
-  // section that contains the active step on first hydrate, then the
-  // user's manual toggles win. Persisted to sessionStorage so the
-  // accordion state is preserved across tab refresh.
-  const [openSectionId, setOpenSectionId] = useState<CourseSectionId>(
-    () => readPersistedOpenSection() ?? sectionForStepIndex(readPersistedActiveStepIndex()),
-  );
+  // Accordion: only one section can be open at a time. Default to 'intro'
+  // on a fresh session (no persisted open-section AND no progress yet) so
+  // the very first thing a new learner sees is the opened first lesson —
+  // not three collapsed section labels. After the first manual toggle or
+  // Next click, the persisted value / step-derived section take over.
+  const [openSectionId, setOpenSectionId] = useState<CourseSectionId>(() => {
+    const persisted = readPersistedOpenSection();
+    if (persisted) return persisted;
+    const stepIndex = readPersistedActiveStepIndex();
+    if (stepIndex === 0) return 'intro';
+    return sectionForStepIndex(stepIndex);
+  });
 
   // Persist state to sessionStorage on every change. Three separate
   // effects so a write failure in one (e.g., bad JSON for the Set)

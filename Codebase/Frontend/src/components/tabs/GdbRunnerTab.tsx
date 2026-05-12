@@ -253,7 +253,18 @@ export default function GdbRunnerTab() {
     return () => clearInterval(t);
   }, [cooldownUntil]);
 
-  const tree = useMemo(() => buildTree(groups), [groups]);
+  // Defense in depth: hide the backend's synthetic "no-patterns" placeholder
+  // group (className === '(none)', patternId === 'meta.no_patterns'). The
+  // frontend now gates Run on `taggingComplete`, so the backend should never
+  // emit this row; if it slips through (e.g., the gate logic regresses), we
+  // still don't want a phantom row showing "(none) / no template" in the
+  // tree.
+  const visibleGroups = useMemo(
+    () => groups.filter(g => g.className !== '(none)' && g.patternId !== 'meta.no_patterns'),
+    [groups],
+  );
+
+  const tree = useMemo(() => buildTree(visibleGroups), [visibleGroups]);
 
   // Local-side ambiguity gate: if the run still has classes with multiple
   // detected patterns and no resolution, block the request and prompt the
@@ -274,6 +285,18 @@ export default function GdbRunnerTab() {
     return out.sort();
   }, [currentRun]);
 
+  // Tagging-complete signal. Run is unlocked only when:
+  //   1. The current run actually has at least one detected pattern with a
+  //      bound className. An empty detection list means the user has nothing
+  //      to test — without this guard the backend emits a synthetic
+  //      "(none) / No patterns to test" row that confuses users.
+  //   2. No class still carries unresolved competing tags.
+  const taggedClassCount = useMemo(() => {
+    if (!currentRun) return 0;
+    return (currentRun.detectedPatterns || []).filter(p => !!p.className).length;
+  }, [currentRun]);
+  const taggingComplete = taggedClassCount > 0 && localAmbiguous.length === 0;
+
   if (!currentRun) {
     return (
       <section className="tab-panel tab-gdb tab-empty">
@@ -289,8 +312,10 @@ export default function GdbRunnerTab() {
   // This protects against stale state across refreshes / tab switches and
   // matches the user's mental model — if they're on the submit button,
   // they intend to run, not be told they already did.
-  const canRun = (runId !== null || !!pendingId)
-              && localAmbiguous.length === 0;
+  //
+  // taggingComplete folds in "has at least one tagged class" + "no
+  // unresolved ambiguity" — both prerequisites for a meaningful test run.
+  const canRun = (runId !== null || !!pendingId) && taggingComplete;
 
   const cooldownLeftMs = cooldownUntil ? Math.max(0, cooldownUntil - now) : 0;
   const onCooldown = cooldownLeftMs > 0;
@@ -399,8 +424,8 @@ export default function GdbRunnerTab() {
     }
   }
 
-  const active = groups.find(g => `${g.patternId}__${g.className}` === activeKey)
-              || groups[0]
+  const active = visibleGroups.find(g => `${g.patternId}__${g.className}` === activeKey)
+              || visibleGroups[0]
               || null;
 
   return (
@@ -508,7 +533,9 @@ export default function GdbRunnerTab() {
                 ? 'Start an analysis run first — then come back to test it.'
                 : localAmbiguous.length > 0
                   ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
-                  : 'Tests are not available for this run.'}
+                  : taggedClassCount === 0
+                    ? 'Tag at least one class on the Patterns tab before running tests.'
+                    : 'Tests are not available for this run.'}
           </p>
         )}
       </header>
@@ -540,8 +567,14 @@ export default function GdbRunnerTab() {
       )}
       {error && <div className="error-banner" role="alert">{error}</div>}
 
-      {groups.length === 0 && !busy && (
-        <p className="tab-empty">Run the tests to see per-pattern verdicts here.</p>
+      {visibleGroups.length === 0 && !busy && (
+        <p className="tab-empty">
+          {taggedClassCount === 0
+            ? 'Tag at least one class on the Patterns tab. The runner unlocks once tagging is complete and unambiguous.'
+            : localAmbiguous.length > 0
+              ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) before running tests.`
+              : 'Run the tests to see per-pattern verdicts here.'}
+        </p>
       )}
 
       {tree.length > 0 && (

@@ -7,7 +7,7 @@ import MarketingFooter from './MarketingFooter';
 import HeroLanding from './HeroLanding';
 import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
-import EntryChoice from './EntryChoice';
+import NotFoundPage from './NotFoundPage';
 import StudentLearningHub from './StudentLearningHub';
 import WhyPage from './why/WhyPage';
 import MechanicsPage from './mechanics/MechanicsPage';
@@ -82,7 +82,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'hero' && <HeroLanding />}
           {surface === 'learn' && <LearningPage />}
           {surface === 'about' && <AboutPage />}
-          {surface === 'choose' && <EntryChoice />}
+          {surface === 'notFound' && <NotFoundPage />}
           {surface === 'studentLearning' && <StudentLearningHub />}
           {surface === 'why' && <WhyPage />}
           {surface === 'mechanics' && <MechanicsPage />}

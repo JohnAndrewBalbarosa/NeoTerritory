@@ -236,10 +236,11 @@ export default function MainLayout() {
 
   // Real-account entry flow detection. GoogleCallback writes
   // `nt-entry-flow` to sessionStorage as 'developer' or 'student'
-  // after a successful exchange. Devcon testers (claim-seat path)
-  // never set this — so the absence of the flag = research participant.
-  // Real-account users skip both ConsentGate and PretestForm; those
-  // are tester-only research-onboarding screens.
+  // after a successful exchange; the homepage TryItChooser writes the
+  // same value before kicking off the OAuth redirect. Devcon testers
+  // (claim-seat path) never set this — so the absence of the flag
+  // means research participant, which keeps the ConsentGate + Pretest
+  // gates in front of them.
   const entryFlow = typeof window !== 'undefined'
     ? window.sessionStorage.getItem('nt-entry-flow')
     : null;

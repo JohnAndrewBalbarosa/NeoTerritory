@@ -1616,7 +1616,41 @@ async function handleRunTests(
     });
     return;
   }
+  // Hard reject: any resolvedMap entry whose value is a placeholder (e.g.
+  // '(none)', empty string, the literal 'none'). The frontend should never
+  // produce these — surface a 400 so a malformed payload from devtools or
+  // a regressed client doesn't sneak through and result in synthetic
+  // "(none) / no template" rows being rendered as if they were real
+  // verdicts.
+  const placeholderClasses: string[] = [];
+  for (const [klass, patternId] of Object.entries(resolvedMap || {})) {
+    const v = typeof patternId === 'string' ? patternId.trim() : '';
+    if (!v || v === '(none)' || v.toLowerCase() === 'none') {
+      placeholderClasses.push(klass);
+    }
+  }
+  if (placeholderClasses.length > 0) {
+    res.status(400).json({
+      error: 'AMBIGUOUS_TAGS',
+      detail: `Class${placeholderClasses.length === 1 ? '' : 'es'} ${placeholderClasses.join(', ')} are tagged with a placeholder pattern. Pick a real pattern on the Patterns tab.`,
+      ambiguousClasses: placeholderClasses
+    });
+    return;
+  }
   const taggedPatterns = filterToTaggedPatterns(patterns, resolvedMap);
+  // Hard reject: zero tagged classes. The frontend gates "Run all tests"
+  // on the same condition, so this branch fires only when a client
+  // bypasses the UI (devtools, scripted requests). A 400 is clearer than
+  // the previous behaviour, which emitted a synthetic "(none) / No
+  // patterns to test" row that read like a real verdict in the runner UI.
+  if (taggedPatterns.filter(p => !!p.className).length === 0) {
+    res.status(400).json({
+      error: 'AMBIGUOUS_TAGS',
+      detail: 'Tag at least one class on the Patterns tab before running tests.',
+      ambiguousClasses: []
+    });
+    return;
+  }
 
   // Streaming branch — when the client supplies a runId (or asks for one
   // via ?stream=1), the work runs in the background and each phase result
@@ -1644,42 +1678,11 @@ async function handleRunTests(
     // Background dispatch. We deliberately do not await this — the
     // response has already been sent. Any thrown error is funnelled into
     // a synthetic done event so subscribers always see closure.
-    // Surface "no eligible patterns" as a visible diagnostic instead of
-    // silently closing the SSE stream with done(0/0/0). Without this, the
-    // studio's Run-All click looks like nothing happened: the spinner
-    // flashes for one render, then the panel resets because no phase
-    // events ever landed (eligible=0 means dispatchPatternTests returns
-    // [] immediately). This is the exact symptom users hit when the
-    // microservice isn't running locally so /api/analyze finds zero
-    // patterns. Emit a single synthetic row so the UI can render
-    // something the user can read.
-    if (taggedPatterns.filter(p => p.className).length === 0) {
-      void (async () => {
-        // Keep this message terse: the FE row is just a placeholder so the
-        // panel doesn't reset to blank. Long-form guidance about tagging /
-        // resolving ambiguities lives in the docs + thesis chapter, not in
-        // the runner UI. Empty string suppresses the .gdb-phase-message <p>.
-        const message = '';
-        for (const phase of ['compile_run', 'unit_test'] as const) {
-          const r: TestResult = {
-            patternId: 'meta.no_patterns',
-            patternName: 'No patterns to test',
-            className: '(none)',
-            phase,
-            passed: false,
-            expected: 'pass',
-            actual: '',
-            exitCode: 0,
-            durationMs: 0,
-            verdict: 'no_template',
-            message
-          };
-          pushPhaseEvent(runId, phase, r);
-        }
-        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
-      })();
-      return;
-    }
+    //
+    // No "no eligible patterns" fallback is needed here: the
+    // taggedPatterns guard above returns a 400 AMBIGUOUS_TAGS before this
+    // streaming branch when nothing is tagged, so by the time we reach
+    // here `taggedPatterns` always has at least one className-bound entry.
 
     void (async () => {
       try {

@@ -5,11 +5,15 @@ import { useEffect, useState } from 'react';
 // public marketing surfaces. They are not in the top nav (only Try it /
 // Features / Learn / About are) but they are real routes reachable from the
 // Home bento grid and contextual links.
+//
+// Auth surface consolidation: /choose and /login are retired. All auth
+// entry now flows through the TryItChooser popup mounted by
+// MarketingShell, so visits to those legacy paths fall through to 'hero'
+// (the marketing homepage).
 export type Surface =
   | 'hero'
   | 'learn'
   | 'about'
-  | 'choose'
   | 'studentLearning'
   | 'studio'
   | 'googleCallback'
@@ -21,12 +25,16 @@ export type Surface =
   | 'patternsLearn'
   | 'patternsLearnModule'
   | 'tour'
-  | 'docs';
+  | 'docs'
+  | 'notFound';
+
+// Paths retired by the auth-surface consolidation. They render the 404
+// page instead of falling through to the homepage so old bookmarks land
+// somewhere honest rather than silently appearing to work.
+const RETIRED_PATHS = new Set<string>(['/choose', '/login', '/seat-selection']);
 
 const STUDIO_ALIASES = [
   '/app',
-  '/login',
-  '/seat-selection',
   '/consent',
   '/pretest',
   '/studio',
@@ -36,9 +44,9 @@ const STUDIO_ALIASES = [
 
 export function pathToSurface(path: string): Surface {
   if (path === '/' || path === '') return 'hero';
+  if (RETIRED_PATHS.has(path)) return 'notFound';
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
-  if (path === '/choose' || path.startsWith('/choose/')) return 'choose';
   if (path === '/auth/callback') return 'googleCallback';
   if (path === '/developer/login' || path === '/student-learning/login') return 'googleSignIn';
   // /student-learning (legacy) redirects in MarketingShell to /patterns/learn
