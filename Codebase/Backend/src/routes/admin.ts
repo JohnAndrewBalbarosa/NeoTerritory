@@ -6,6 +6,12 @@ import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { logAudit } from '../services/logService';
 import { getBoolSetting, setSetting, SettingKey } from '../db/appSettings';
+import {
+  getAiConfigSnapshot,
+  saveAiConfig,
+  clearAiConfig,
+  type AiProvider,
+} from '../db/aiConfig';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
 const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
@@ -54,6 +60,75 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
 function safeParse(json: string): unknown {
   try { return JSON.parse(json); } catch { return null; }
 }
+
+// ── AI provider configuration ─────────────────────────────────────────────
+// Admin reads/writes the AI provider, model, and API key at runtime. The
+// key is encrypted at rest (AES-256-GCM, see db/aiConfig.ts). GET never
+// returns the plaintext key — only a `hasKey` boolean and the masked
+// metadata so the operator can confirm whether the provider is wired up.
+router.get('/ai-config', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json(getAiConfigSnapshot());
+  } catch (err) { next(err); }
+});
+
+interface AiConfigBody {
+  provider?: string;
+  model?: string;
+  apiKey?: string | null;
+}
+
+router.put('/ai-config', (req: Request<unknown, unknown, AiConfigBody>, res: Response, next: NextFunction) => {
+  try {
+    const body = req.body || {};
+    const providerRaw = (body.provider || '').toLowerCase();
+    const VALID: AiProvider[] = ['anthropic', 'gemini', 'none'];
+    if (!VALID.includes(providerRaw as AiProvider)) {
+      res.status(400).json({ error: `Invalid provider. Must be one of: ${VALID.join(', ')}` });
+      return;
+    }
+    const provider = providerRaw as AiProvider;
+    const model = typeof body.model === 'string' ? body.model.trim() : '';
+    // provider === 'none' wipes the row entirely (returns to env fallback).
+    if (provider === 'none') {
+      clearAiConfig();
+      logAudit({
+        actorUserId: req.user?.id ?? null,
+        actorUsername: req.user?.username ?? null,
+        action: 'ai_config.clear',
+        targetKind: 'ai_config',
+        targetId: 'singleton',
+        detail: null,
+      });
+      res.json(getAiConfigSnapshot());
+      return;
+    }
+    // apiKey is optional only if the existing row already has one; saving
+    // a brand-new row without a key is a validation error.
+    const existing = getAiConfigSnapshot();
+    if ((body.apiKey === undefined || body.apiKey === null) && !existing.hasKey) {
+      res.status(400).json({ error: 'apiKey is required when no key is currently configured' });
+      return;
+    }
+    const snap = saveAiConfig({
+      provider,
+      model,
+      apiKey: body.apiKey === undefined ? null : body.apiKey,
+      updatedBy: req.user?.username ?? null,
+    });
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'ai_config.update',
+      targetKind: 'ai_config',
+      targetId: 'singleton',
+      // Never log the API key. Audit row only reflects provider/model
+      // + whether a key landed.
+      detail: `provider=${provider} model=${model || '(default)'} hasKey=${snap.hasKey}`,
+    });
+    res.json(snap);
+  } catch (err) { next(err); }
+});
 
 interface CountRow { c: number }
 interface AvgRow { a: number | null }

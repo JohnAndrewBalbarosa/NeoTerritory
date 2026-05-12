@@ -669,6 +669,11 @@ router.get('/health', (req: Request, res: Response) => {
     service: 'NeoTerritory analysis api',
     aiProviderConfigured: ai.configured,
     aiModel:              ai.model,
+    // Provenance of the active AI config — 'db' if set via the admin AI
+    // tab, 'env' if baked into the container, 'none' if unconfigured.
+    // The admin dashboard surfaces this on the AI ops pill.
+    aiProvider:           ai.provider,
+    aiSource:             ai.source,
     maxFilesPerSubmission: Math.min(16, Math.max(1, Number(process.env.MAX_FILES_PER_SUBMISSION || '3'))),
     maxTokensPerFile: resolveMaxTokensPerFile(),
     testRunnerEnabled: isTestRunnerEnabled(),
