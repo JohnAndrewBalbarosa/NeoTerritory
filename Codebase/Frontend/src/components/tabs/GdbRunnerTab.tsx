@@ -15,18 +15,14 @@ const VERDICT_LABEL: Record<string, string> = {
   skipped:           'skipped'
 };
 
-// Per D67 (this turn): the studio surfaces NeoTerritory's full Testing
-// Trophy strategy. Today only compile_run + unit_test actually run; the
-// remaining phases (integration, e2e, static analysis) are visible as
-// planned so the test surface tells the truth about the strategy. As each
-// phase ships its real backend, its label flips from "(planned)" to a
-// running pill without UI rework.
+// Phase order on the studio Tests tab. Three live phases, applied to the
+// user's submitted C++ source. Integration and E2E are NOT phases here —
+// see the trophy explainer banner for why a class declaration does not
+// have those layers to exercise.
 const PHASE_LABEL: Record<string, string> = {
-  compile_run: '1. Code compiles & runs',
-  unit_test:   '2. Unit-test verdict',
-  integration: '3. Integration test (planned)',
-  e2e:         '4. End-to-end (planned)',
-  static:      '5. Static analysis (planned)',
+  static_analysis: '1. Static analysis (cppcheck)',
+  compile_run:     '2. Code compiles & runs',
+  unit_test:       '3. Unit-test verdict',
 };
 
 const FAMILY_LABEL: Record<string, string> = {
@@ -46,6 +42,7 @@ interface PatternGroup {
   patternId: string;
   patternName: string;
   className: string;
+  staticAnalysis?: GdbTestResult;
   compileRun?: GdbTestResult;
   unitTest?: GdbTestResult;
 }
@@ -64,7 +61,8 @@ function groupResults(results: GdbTestResult[]): PatternGroup[] {
       patternName: r.patternName,
       className: r.className
     };
-    if (r.phase === 'compile_run') g.compileRun = r;
+    if (r.phase === 'static_analysis') g.staticAnalysis = r;
+    else if (r.phase === 'compile_run') g.compileRun = r;
     else if (r.phase === 'unit_test') g.unitTest = r;
     map.set(key, g);
   }
@@ -119,7 +117,7 @@ function CriteriaList({ result }: { result?: GdbTestResult }) {
 }
 
 function PhaseRow({ phase, result, loading }: {
-  phase: 'compile_run' | 'unit_test';
+  phase: 'static_analysis' | 'compile_run' | 'unit_test';
   result?: GdbTestResult;
   loading: boolean;
 }) {
@@ -131,7 +129,13 @@ function PhaseRow({ phase, result, loading }: {
       : result.passed ? 'pass' : (result.verdict === 'skipped' ? 'skipped' : 'fail');
   const verdictText = result ? VERDICT_LABEL[result.verdict] || result.verdict : 'idle';
   return (
-    <div className={`gdb-phase-row gdb-phase-${status}`} data-status={status}>
+    <div
+      className={`gdb-phase-row gdb-phase-${status}`}
+      data-testid="gdb-phase-row"
+      data-phase={phase}
+      data-status={status}
+      data-verdict={result?.verdict ?? ''}
+    >
       <header className="gdb-phase-head">
         <span className="gdb-phase-status-icon" aria-hidden="true">
           {loading ? null : status === 'pass' ? (
@@ -471,6 +475,7 @@ export default function GdbRunnerTab() {
         <button
           type="button"
           className="primary-btn"
+          data-testid="run-all-tests-btn"
           onClick={runAll}
           disabled={!canRun || busy || onCooldown}
           title={
@@ -605,8 +610,9 @@ export default function GdbRunnerTab() {
                   );
                 })()}
               </header>
-              <PhaseRow phase="compile_run" result={active.compileRun} loading={busy && !active.compileRun} />
-              <PhaseRow phase="unit_test"   result={active.unitTest}   loading={busy && active.compileRun?.passed === true && !active.unitTest} />
+              <PhaseRow phase="static_analysis" result={active.staticAnalysis} loading={busy && !active.staticAnalysis} />
+              <PhaseRow phase="compile_run"     result={active.compileRun}     loading={busy && !active.compileRun} />
+              <PhaseRow phase="unit_test"       result={active.unitTest}       loading={busy && active.compileRun?.passed === true && !active.unitTest} />
             </article>
           )}
         </div>

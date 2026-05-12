@@ -15,10 +15,12 @@
 
 run_remote_build_and_start() {
   local remote_dir="$1"
-  echo "-- Running Remote Build & Start --"
+  local sha="${DEPLOY_GIT_SHA:-unknown}"
+  echo "-- Running Remote Build & Start (deploying $sha) --"
   ssh $SSH_OPTS "$SSH_TARGET" "bash -l -s" <<EOF
 set -e
 export PATH=\$PATH:/usr/bin:/usr/local/bin:/snap/bin
+DEPLOY_GIT_SHA="$sha"
 
 cd "$remote_dir"
 mkdir -p .deploy-cache
@@ -247,6 +249,11 @@ if [ "\$SMOKE_OK" != "1" ]; then
   exit 1
 fi
 phase_end 0
+
+# Record the SHA we just deployed so diff-since-deploy.sh can ask the box
+# "what's actually running here?" and pick the right rebuild target.
+echo "${DEPLOY_GIT_SHA:-unknown}" > "$remote_dir/.deploy-sha"
+echo "   [deploy-sha] wrote ${DEPLOY_GIT_SHA:-unknown} → $remote_dir/.deploy-sha"
 
 trap - EXIT
 echo ""

@@ -2,20 +2,26 @@ import { useEffect, useRef, useState } from 'react';
 import { Joyride, EVENTS, type EventData, type Step } from 'react-joyride';
 import { useAppStore, type StudioTab } from '../../store/appState';
 
-// D81 (this turn): session-aware Joyride.
-//   - Account users (real Google account or any non-devcon username)
-//     remember tour completion in localStorage keyed by their user.id.
-//     Once they finish a tab's tour, it never re-fires on later sessions.
-//   - Guest/tester users (devcon1..devconN or any username matching the
-//     test-account shape) use sessionStorage instead. Every new session
-//     re-triggers the tour because the testing audience needs the
-//     orientation every time.
+// Session-aware Joyride. Goals this turn:
+//   - First-session ONLY auto-fire. The tour appears once on the user's
+//     first studio entry and never auto-opens again. No "click this"
+//     circles, no per-tab beacons — the dialog opens itself directly.
+//   - One completion flag per user, NOT per tab. Previously the tour
+//     re-fired every time the user landed on a new tab; that turned the
+//     orientation into noise. Now: complete it (or close it) once and
+//     it's done.
+//   - Manual replay still works via the "? Tour" button in the studio
+//     header (dispatches FORCE_OPEN_EVENT). The button shows the tour
+//     for whichever tab the user is currently on.
+//   - Account users (any non-devcon username) persist completion in
+//     localStorage keyed by user.id. Guest/tester users (devconN) use
+//     sessionStorage so every new tester session re-orients them.
 //   - Before showing each step, the orchestrator waits up to a short
 //     budget for the target DOM element to exist. Steps whose targets
 //     never resolve are dropped from that run rather than rendering as
-//     centered placeholders (which were the prior fallback).
+//     centered placeholders.
 
-const COMPLETED_KEY_PREFIX = 'nt_studio_tour_completed';
+const COMPLETED_KEY = 'nt_studio_tour_completed';
 const FORCE_OPEN_EVENT = 'nt:studio-tour:open';
 const TARGET_WAIT_MS = 1500;
 const TARGET_POLL_MS = 80;
@@ -27,12 +33,12 @@ export function dispatchStudioTourOpen(): void {
 
 interface CompletionScope {
   storage: Storage | null;
-  key: (tab: StudioTab) => string;
+  key: string;
 }
 
 function getCompletionScope(): CompletionScope {
   if (typeof window === 'undefined') {
-    return { storage: null, key: (tab) => `${COMPLETED_KEY_PREFIX}__${tab}` };
+    return { storage: null, key: COMPLETED_KEY };
   }
   const state = useAppStore.getState();
   const user = state.user;
@@ -43,25 +49,25 @@ function getCompletionScope(): CompletionScope {
   const idPart = !isGuest && user ? `__${user.id ?? user.username}` : '';
   return {
     storage,
-    key: (tab) => `${COMPLETED_KEY_PREFIX}${idPart}__${tab}`,
+    key: `${COMPLETED_KEY}${idPart}`,
   };
 }
 
-function readCompleted(tab: StudioTab): boolean {
+function readCompleted(): boolean {
   try {
     const { storage, key } = getCompletionScope();
     if (!storage) return false;
-    return storage.getItem(key(tab)) === '1';
+    return storage.getItem(key) === '1';
   } catch {
     return false;
   }
 }
 
-function writeCompleted(tab: StudioTab): void {
+function writeCompleted(): void {
   try {
     const { storage, key } = getCompletionScope();
     if (!storage) return;
-    storage.setItem(key(tab), '1');
+    storage.setItem(key, '1');
   } catch {
     /* storage blocked */
   }
@@ -245,14 +251,19 @@ export default function StudioJoyrideTour() {
   const [run, setRun] = useState<boolean>(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [tourTab, setTourTab] = useState<StudioTab>(activeTab);
-  const lastAutoTab = useRef<StudioTab | null>(null);
+  // Track whether we have already considered auto-firing for this user
+  // session. Without this, the effect re-evaluates on every render and a
+  // closed tour would re-open itself.
+  const autoFireConsidered = useRef<boolean>(false);
 
-  // Auto-trigger on first entry to a tab that has not been completed for
-  // the current scope (guest -> sessionStorage; account -> localStorage).
+  // Auto-trigger ONCE per user session. The trigger fires on the first
+  // render where the studio is visible. After that — whether the user
+  // completes the tour, skips it, or closes it — the completion flag is
+  // written and the tour never auto-opens again for this user.
   useEffect(() => {
-    if (lastAutoTab.current === activeTab) return;
-    lastAutoTab.current = activeTab;
-    if (readCompleted(activeTab)) {
+    if (autoFireConsidered.current) return;
+    autoFireConsidered.current = true;
+    if (readCompleted()) {
       setRun(false);
       return;
     }
@@ -267,9 +278,21 @@ export default function StudioJoyrideTour() {
     return () => {
       cancelled = true;
     };
-  }, [activeTab, user]);
+    // user is the only dep that legitimately changes auto-fire scope
+    // (guest vs account storage), and reset_autoFireConsidered triggers
+    // a fresh evaluation when the user logs in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-  // Manual replay event from the studio header "? Tour" button.
+  // Reset auto-fire consideration when the user logs in / out — that
+  // changes which storage scope holds the completion flag.
+  useEffect(() => {
+    autoFireConsidered.current = false;
+  }, [user]);
+
+  // Manual replay event from the studio header "? Tour" button. This
+  // path ignores the completion flag — the user explicitly asked to see
+  // the tour again, for whichever tab they are currently on.
   useEffect(() => {
     function handleForceOpen(): void {
       void (async () => {
@@ -285,8 +308,11 @@ export default function StudioJoyrideTour() {
   }, [activeTab]);
 
   function handleEvent(data: EventData): void {
+    // Mark the tour completed on any terminating event — finished, skipped,
+    // closed via the X. The flag is global per user, not per tab, so
+    // ANY terminating event silences future auto-fires.
     if (data.type === EVENTS.TOUR_END) {
-      writeCompleted(tourTab);
+      writeCompleted();
       setRun(false);
     }
   }

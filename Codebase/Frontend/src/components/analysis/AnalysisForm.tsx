@@ -386,13 +386,13 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, aside }
 
         {/* Action buttons */}
         <div className="studio-actions">
-          <button id="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
+          <button id="load-sample-btn" data-testid="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
             Load sample
           </button>
-          <button id="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
+          <button id="clear-btn" data-testid="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
             Clear
           </button>
-          <button id="analyze-btn" className="primary-btn studio-run-btn" type="submit" disabled={busy || submissionOverLimit}>
+          <button id="analyze-btn" data-testid="analyze-btn" className="primary-btn studio-run-btn" type="submit" disabled={busy || submissionOverLimit}>
             <IconPlay size={15} />
             {busy ? 'Running...' : `Run analysis (${filledCount} file${filledCount === 1 ? '' : 's'})`}
           </button>

@@ -17,11 +17,12 @@ import {
 import { generateDocumentation, AiResult } from '../services/aiDocumentationService';
 import { rankAll } from '../services/patternRankingService';
 import { bindAll as bindClassUsages } from '../services/classUsageBinder';
+import { findAmbiguousClasses, filterToTaggedPatterns } from '../services/candidateFilter';
 import type { ClassUsageBinding } from '../types/api';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
 import {
-  runSubmissionCompile, runPatternUnitTest,
+  runSubmissionCompile, runPatternUnitTest, runStaticAnalysis,
   isTestRunnerEnabled, getDisableReason, TestResult
 } from '../services/testRunnerService';
 import {
@@ -349,6 +350,64 @@ function buildAiAnnotations(detectedPatterns: DetectedPatternResult[], aiByPatte
   return buildAnnotations(detectedPatterns, aiByPattern, sourceText);
 }
 
+// Beginner-friendly fallback descriptions per structural-anchor label.
+// Used when AI documentation is unavailable for that anchor so the docs
+// page never says "AI documentation pending" — the reader sees a plain,
+// useful one-liner instead. Keep these as one sentence, plain words,
+// no jargon. New anchor labels added to the catalog should get an entry
+// here; missing labels fall back to a pattern-name sentence.
+const ANCHOR_FALLBACKS: Record<string, string> = {
+  // Singleton
+  singleton_class: 'This is the singleton class — the one and only shared object.',
+  static_instance_accessor: 'Call this static accessor to get the shared instance. Every call returns the same object.',
+  instance_accessor_method: 'This method hands out the single shared instance.',
+  // Factory
+  factory_class: 'This is the factory class. It builds objects so callers do not need to call `new` directly.',
+  factory_branch_decision: 'This branch picks which kind of object to build.',
+  factory_concrete_creation: 'This is where a specific object is actually constructed.',
+  factory_return: 'The factory returns the new object here.',
+  // Builder / Method Chaining
+  builder_class: 'This is the builder. It assembles an object step by step.',
+  fluent_class: 'This class supports method chaining — each setter returns the object itself so calls can stack.',
+  fluent_setter_return: 'This setter returns `*this` so you can chain calls like `obj.setA(...).setB(...)`.',
+  fluent_self_return: 'Returning `*this` is what makes method chaining work.',
+  // Strategy
+  strategy_interface_class: 'This is the strategy interface — it lists the operation every concrete strategy must implement.',
+  strategy_virtual_marker: 'The `virtual` keyword marks the operation that subclasses will override.',
+  strategy_method: 'This is the operation each strategy is required to implement.',
+  strategy_concrete_class: 'This is one concrete strategy — a specific implementation of the interface.',
+  strategy_inheritance: 'The `:` shows this class inherits from the strategy interface above.',
+  strategy_base_class: 'This is the strategy interface being inherited from.',
+  strategy_override_method: 'This method overrides the interface operation with concrete behaviour.',
+  // Adapter
+  adapter_class: 'This is the adapter — it makes one type usable where a different type is expected.',
+  adapter_wrapped_target: 'This holds the object being adapted. The adapter forwards work to it.',
+  adapter_forwarding_op: 'This call forwards the request to the wrapped object.',
+  adapter_forwarded_call: 'The wrapped object does the real work here.',
+  // Decorator
+  decorator_class: 'This is the decorator — it adds behaviour around an existing object without changing it.',
+  decorator_wrapped_component: 'This holds the wrapped object whose behaviour is being extended.',
+  decorator_forwarding_op: 'This call delegates to the wrapped object, with extra behaviour added before or after.',
+  decorator_forwarded_call: 'This is the wrapped object\'s call that the decorator wraps.',
+  // Proxy
+  proxy_class: 'This is the proxy — a stand-in that controls access to the real object.',
+  proxy_real_subject: 'This holds the real object the proxy stands in for.',
+  proxy_forwarding_op: 'This call passes the request through to the real object.',
+  proxy_forwarded_call: 'This is the real object\'s call that the proxy guards.',
+  // PIMPL
+  pimpl_outer_class: 'This is the public class users of the library see.',
+  pimpl_inner_struct_keyword: 'This declares a private implementation struct, hidden from the public header.',
+  pimpl_holder: 'This pointer holds the hidden implementation, keeping internal details out of the header.',
+  pimpl_impl_forward_decl: 'A forward declaration so the header can refer to the impl without exposing its definition.',
+  // Misc
+  explicit_copy_deletion: 'Copy is deleted with `= delete`, so this object cannot be duplicated by accident.',
+};
+
+function anchorFallback(label: string, patternName: string): string {
+  if (ANCHOR_FALLBACKS[label]) return ANCHOR_FALLBACKS[label];
+  return `This line is part of the ${patternName} pattern in your code.`;
+}
+
 function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern: AiResult[], sourceText: string): AnnotationOut[] {
   const normalized = (sourceText || '').replace(/\r\n/g, '\n');
   const lines = normalized.split('\n');
@@ -371,6 +430,7 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
       const lineText = anchor.line && anchor.line >= 1 && anchor.line <= lines.length
         ? (lines[anchor.line - 1] || '').trim()
         : '';
+      const patternLabel = pattern.patternName || pattern.patternId;
       annotations.push({
         id:       `comment-${counter}`,
         order:    counter++,
@@ -378,21 +438,27 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         severity: aiResult.verdict === 'reclassified' ? 'high' : 'medium',
         line:     anchor.line || null,
         lineEnd:  anchor.line || null,
-        title:    `${pattern.patternName || pattern.patternId} :: ${anchor.label}`,
-        comment:  aiDocs[anchor.label] || `Structural anchor "${anchor.label}" — AI documentation pending.`,
+        title:    `${patternLabel} :: ${anchor.label}`,
+        comment:  aiDocs[anchor.label] || anchorFallback(anchor.label, patternLabel),
         excerpt:  lineText,
         kind:     anchor.label,
-        patternKey: pattern.patternName || pattern.patternId,
+        patternKey: patternLabel,
         className:  pattern.className,
         lexemeHints
       });
     });
 
+    // Per project owner: when no AI test plan was produced for this target,
+    // do NOT push a placeholder "AI test plan pending" annotation. The docs
+    // surface is for beginners — empty rows are confusing and out of place.
+    // Render unit-test annotations only when there is a real plan to show.
     (pattern.unitTestTargets || []).forEach((target) => {
+      const planKey = String(target.function_hash || '');
+      const aiPlan = aiTests[planKey];
+      if (!aiPlan) return;
       const lineText = target.line && target.line >= 1 && target.line <= lines.length
         ? (lines[target.line - 1] || '').trim()
         : '';
-      const planKey = String(target.function_hash || '');
       annotations.push({
         id:       `comment-${counter}`,
         order:    counter++,
@@ -401,8 +467,7 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
         line:     target.line || null,
         lineEnd:  target.line || null,
         title:    `${pattern.patternName || pattern.patternId} :: ${target.function_name || target.branch_kind}`,
-        comment:  aiTests[planKey]
-          || `Unit-test target (${target.branch_kind}) — AI test plan pending.`,
+        comment:  aiPlan,
         excerpt:  lineText,
         kind:     `unit_test:${target.branch_kind}`,
         patternKey: pattern.patternName || pattern.patternId,
@@ -1375,11 +1440,32 @@ async function dispatchPatternTests(
   const eligible = patterns.filter(p => p.className);
   if (eligible.length === 0) return [];
 
-  // The compile_run phase only depends on the submission's source, so we run
-  // it once and replay the same TestResult under every eligible pattern's
-  // (patternId, className) keys. Cuts a 5-pattern submission from 10 compile
-  // calls to 6, and each unit_test then runs in parallel below.
+  // Static analysis + compile_run both only depend on the submission's
+  // source, so we run each once and replay the same TestResult under every
+  // eligible pattern's (patternId, className) keys. Cuts a 5-pattern
+  // submission from 10 compile calls to 6 (and adds 1 static-analysis call,
+  // not 5). Each unit_test then runs in parallel below.
   const probe = eligible[0];
+
+  // Phase 0 — static analysis (cppcheck). Cheap, always runs, never blocks.
+  const sharedStatic = await runStaticAnalysis({
+    patternId:   probe.patternId,
+    patternName: probe.patternName,
+    className:   probe.className!,
+    classText:   probe.classText!,
+    fullSource,
+    files,
+    userId,
+    stdin
+  });
+  const staticResults: TestResult[] = eligible.map(p => ({
+    ...sharedStatic,
+    patternId:   p.patternId,
+    patternName: p.patternName,
+    className:   p.className!,
+  }));
+  for (const sr of staticResults) safeEmit(sr);
+
   const sharedCompile = await runSubmissionCompile({
     patternId:   probe.patternId,
     patternName: probe.patternName,
@@ -1416,7 +1502,7 @@ async function dispatchPatternTests(
       message:     'Skipped — your class did not compile or did not exit cleanly on its own.'
     }));
     for (const sk of skips) safeEmit(sk);
-    return [...compileResults, ...skips];
+    return [...staticResults, ...compileResults, ...skips];
   }
 
   // Compile succeeded → run every unit_test driver in parallel. Each driver
@@ -1445,50 +1531,12 @@ async function dispatchPatternTests(
     }).then((r) => { safeEmit(r); return r; });
   }));
 
-  return [...compileResults, ...unitResults];
+  return [...staticResults, ...compileResults, ...unitResults];
 }
 
-// A class is "ambiguous" when the matcher emitted two-or-more competing
-// patterns for it AND the user has not explicitly resolved one via
-// classResolvedPatterns. The runner refuses to run unit tests in that
-// state — there's no defensible single pattern to test against, so we
-// bounce the user back to the annotated view to disambiguate.
-function findAmbiguousClasses(
-  patterns: DetectedPatternResult[],
-  resolvedMap: Record<string, string>
-): string[] {
-  const countByClass = new Map<string, number>();
-  for (const p of patterns) {
-    if (!p.className) continue;
-    countByClass.set(p.className, (countByClass.get(p.className) || 0) + 1);
-  }
-  const out: string[] = [];
-  for (const [name, count] of countByClass) {
-    if (count > 1 && !resolvedMap[name]) out.push(name);
-  }
-  return out.sort();
-}
-
-// Keep only the patterns the user actually committed to: either the matcher
-// gave a single confident detection for the class (no ambiguity), or the
-// user picked one via classResolvedPatterns. Anything else is dropped so
-// we don't waste compile cycles testing a hypothesis the user rejected.
-function filterToTaggedPatterns(
-  patterns: DetectedPatternResult[],
-  resolvedMap: Record<string, string>
-): DetectedPatternResult[] {
-  const countByClass = new Map<string, number>();
-  for (const p of patterns) {
-    if (!p.className) continue;
-    countByClass.set(p.className, (countByClass.get(p.className) || 0) + 1);
-  }
-  return patterns.filter(p => {
-    if (!p.className) return false;
-    const cnt = countByClass.get(p.className) || 0;
-    if (cnt === 1) return true;
-    return resolvedMap[p.className] === p.patternId;
-  });
-}
+// findAmbiguousClasses + filterToTaggedPatterns moved to
+// services/candidateFilter.ts so they can be exercised by unit tests
+// without spinning up the express app. See that module for the contract.
 
 // Build a fresh runId for a streaming invocation. Same shape pattern as
 // pendingId so logs are uniform across the analysis pipeline.
@@ -1591,6 +1639,43 @@ async function handleRunTests(
     // Background dispatch. We deliberately do not await this — the
     // response has already been sent. Any thrown error is funnelled into
     // a synthetic done event so subscribers always see closure.
+    // Surface "no eligible patterns" as a visible diagnostic instead of
+    // silently closing the SSE stream with done(0/0/0). Without this, the
+    // studio's Run-All click looks like nothing happened: the spinner
+    // flashes for one render, then the panel resets because no phase
+    // events ever landed (eligible=0 means dispatchPatternTests returns
+    // [] immediately). This is the exact symptom users hit when the
+    // microservice isn't running locally so /api/analyze finds zero
+    // patterns. Emit a single synthetic row so the UI can render
+    // something the user can read.
+    if (taggedPatterns.filter(p => p.className).length === 0) {
+      void (async () => {
+        // Keep this message terse: the FE row is just a placeholder so the
+        // panel doesn't reset to blank. Long-form guidance about tagging /
+        // resolving ambiguities lives in the docs + thesis chapter, not in
+        // the runner UI. Empty string suppresses the .gdb-phase-message <p>.
+        const message = '';
+        for (const phase of ['compile_run', 'unit_test'] as const) {
+          const r: TestResult = {
+            patternId: 'meta.no_patterns',
+            patternName: 'No patterns to test',
+            className: '(none)',
+            phase,
+            passed: false,
+            expected: 'pass',
+            actual: '',
+            exitCode: 0,
+            durationMs: 0,
+            verdict: 'no_template',
+            message
+          };
+          pushPhaseEvent(runId, phase, r);
+        }
+        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
+      })();
+      return;
+    }
+
     void (async () => {
       try {
         const results = await dispatchPatternTests(
@@ -1604,9 +1689,41 @@ async function handleRunTests(
           remaining: Math.max(0, GDB_RUNS_PER_WINDOW - (gdbAttempts.get(req.user!.id) || []).length)
         });
       } catch (err) {
-        markRunDone(runId, { total: 0, passed: 0, failed: 0 });
+        // The dispatch raised before any phase result could land. Without
+        // synthetic events the SSE stream would close with `done(0/0/0)`
+        // and the studio would render an empty panel - the exact "spinner
+        // flashes, nothing happens" symptom users see when Docker/the
+        // local compiler/the sandbox is misconfigured. Emit one
+        // `sandbox_disabled` row per tagged pattern so the failure
+        // surfaces as a visible diagnostic instead of a silent reset.
+        const message =
+          err instanceof Error && err.message
+            ? `Test runner failed: ${err.message}`
+            : 'Test runner failed before any phase ran. Check the backend log; the sandbox or compiler likely is not available on this host.';
         // eslint-disable-next-line no-console
         console.error('[run-tests] background dispatch failed', err);
+        const synth: TestResult[] = [];
+        for (const p of taggedPatterns) {
+          if (!p.className) continue;
+          for (const phase of ['compile_run', 'unit_test'] as const) {
+            const r: TestResult = {
+              patternId: p.patternId,
+              patternName: p.patternName,
+              className: p.className,
+              phase,
+              passed: false,
+              expected: 'pass',
+              actual: '',
+              exitCode: 0,
+              durationMs: 0,
+              verdict: 'sandbox_disabled',
+              message
+            };
+            pushPhaseEvent(runId, phase, r);
+            synth.push(r);
+          }
+        }
+        markRunDone(runId, summarize(synth));
       }
     })();
     return;

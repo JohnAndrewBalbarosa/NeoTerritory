@@ -1,0 +1,172 @@
+@startuml CodiNeo_Class
+' CodiNeo — Class Diagram (Chapter 3.5 Diagrams)
+skinparam handwritten false
+skinparam shadowing false
+skinparam classBackgroundColor   #FFFFFF
+skinparam classBorderColor       #2F2F2F
+skinparam classArrowColor        #2F2F2F
+skinparam classFontStyle         plain
+skinparam packageStyle           rectangle
+hide circle
+hide empty members
+
+title CodiNeo — Class Diagram (domain model)
+
+package "Identity & Access" {
+  class User {
+    + id : UUID
+    + email : String
+    + displayName : String
+    + role : Role
+    + createdAt : DateTime
+    + authenticate(password) : Session
+  }
+  class TesterAccount {
+    + id : UUID
+    + label : String
+    + cohort : String
+    + isolated : Boolean
+  }
+  enum Role {
+    LEARNER
+    DEVELOPER
+    ADMIN
+  }
+}
+
+package "Learning" {
+  class LearningModule {
+    + id : UUID
+    + patternFamily : String
+    + patternName : String
+    + summary : String
+    + objectives : List<String>
+    + content : Markdown
+  }
+  class ModuleSelfCheck {
+    + id : UUID
+    + moduleId : UUID
+    + questions : List<Question>
+    + grade(submission) : Score
+  }
+}
+
+package "Analysis Core" {
+  class AnalysisRun {
+    + id : UUID
+    + userId : UUID
+    + submittedAt : DateTime
+    + sourceHash : SHA256
+    + status : RunStatus
+  }
+  class SourceSubmission {
+    + id : UUID
+    + runId : UUID
+    + mode : SubmitMode
+    + files : List<SourceFile>
+  }
+  class VirtualStructuralCopy {
+    + id : UUID
+    + runId : UUID
+    + classes : List<ClassNode>
+    + relationships : List<Relation>
+    + hash : SHA256
+  }
+  class PatternVerdict {
+    + id : UUID
+    + runId : UUID
+    + patternName : String
+    + confidence : Float
+  }
+  class PatternEvidence {
+    + id : UUID
+    + verdictId : UUID
+    + codeUnit : String
+    + lineStart : Int
+    + lineEnd : Int
+    + rationale : String
+  }
+  enum RunStatus {
+    QUEUED
+    RUNNING
+    COMPLETED
+    FAILED
+  }
+  enum SubmitMode {
+    PASTE
+    SINGLE_FILE
+    MULTI_FILE
+  }
+}
+
+package "Outputs" {
+  class DocumentationOutput {
+    + id : UUID
+    + verdictId : UUID
+    + audience : String
+    + body : Markdown
+    + grounded : Boolean
+  }
+  class TestScaffold {
+    + id : UUID
+    + verdictId : UUID
+    + templatePath : String
+    + generatedSource : String
+    + lastRunResult : TestRunResult
+  }
+  class TestRunResult {
+    + passed : Boolean
+    + log : String
+    + durationMs : Int
+  }
+}
+
+package "Evaluation & Research" {
+  class KPIRecord {
+    + id : UUID
+    + runId : UUID
+    + processingTimeMs : Int
+    + memoryMb : Float
+    + tokenCount : Int
+    + structuralElements : Int
+  }
+  class ConfusionEntry {
+    + id : UUID
+    + runId : UUID
+    + label : ConfusionLabel
+    + reviewer : String
+  }
+  class SurveyResponse {
+    + id : UUID
+    + userId : UUID
+    + indicator : String
+    + score : Int
+  }
+  enum ConfusionLabel {
+    TP
+    TN
+    FP
+    FN
+  }
+}
+
+' --- relationships ---
+User "1" -- "*" AnalysisRun         : submits
+User "1" -- "*" TesterAccount       : owns
+User "1" -- "*" SurveyResponse      : answers
+LearningModule "1" -- "*" ModuleSelfCheck : has
+AnalysisRun "1" -- "1" SourceSubmission   : owns
+AnalysisRun "1" -- "1" VirtualStructuralCopy : produces
+AnalysisRun "1" -- "*" PatternVerdict     : produces
+PatternVerdict "1" -- "*" PatternEvidence : binds
+PatternVerdict "1" -- "1" DocumentationOutput : explained-by
+PatternVerdict "1" -- "1" TestScaffold    : scaffolded-by
+TestScaffold "1" -- "1" TestRunResult     : run-result
+AnalysisRun "1" -- "1" KPIRecord          : measured-by
+AnalysisRun "1" -- "*" ConfusionEntry     : labelled-by
+User --> Role
+SourceSubmission --> SubmitMode
+AnalysisRun --> RunStatus
+ConfusionEntry --> ConfusionLabel
+
+@enduml

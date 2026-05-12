@@ -96,17 +96,17 @@ Visibility strategy:
 **Functions**
 
 - `run_remote_build_and_start` (line 16)
-- `human_secs` (line 31)
-- `heartbeat_loop` (line 36)
-- `phase_start` (line 47)
-- `phase_end` (line 59)
-- `reclaim` (line 81)
+- `human_secs` (line 33)
+- `heartbeat_loop` (line 38)
+- `phase_start` (line 49)
+- `phase_end` (line 61)
+- `reclaim` (line 83)
   Reclaim ownership only if anything is currently root-owned (cheap no-op otherwise).
-- `print_dep_summary` (line 90)
+- `print_dep_summary` (line 92)
   Show dep summary from package.json so the operator sees what is about to install.
-- `npm_install_if_changed` (line 105)
+- `npm_install_if_changed` (line 107)
   Hash-gated npm ci: only reinstall if package-lock.json changed.
-- `run_remote_restart_only` (line 263)
+- `run_remote_restart_only` (line 270)
   Restart-only mode: bounces pm2 against the existing dist/ artifacts on the
   remote box. Use this to recover quickly when a previous deploy died mid-build
   and left pm2 in a wedged state — no rebuild, no shipping, just a clean restart
@@ -205,14 +205,14 @@ so a no-op build is visible.
 **Functions**
 
 - `invoke_dev` (line 4)
-- `ensure_pod_image` (line 74)
-- `start_backend` (line 95)
-- `start_vite` (line 125)
-- `install_cleanup_trap` (line 152)
-- `cleanup` (line 153)
-- `studio_port` (line 162)
-- `studio_open_url` (line 166)
-- `print_studio_urls` (line 173)
+- `ensure_pod_image` (line 76)
+- `start_backend` (line 97)
+- `start_vite` (line 127)
+- `install_cleanup_trap` (line 154)
+- `cleanup` (line 155)
+- `studio_port` (line 164)
+- `studio_open_url` (line 168)
+- `print_studio_urls` (line 175)
 
 ### `ops/bash/start/commands/k8s.sh`
 

@@ -46,9 +46,9 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
     ],
   },
   {
-    title: 'Research',
+    title: 'Docs',
     links: [
-      { label: 'Thesis + bibliography', path: '/research' },
+      { label: 'Methods + references', path: '/docs' },
       { label: 'Design decisions log', path: 'https://github.com/JohnAndrewBalbarosa/NeoTerritory/blob/main/docs/Codebase/DESIGN_DECISIONS.md', external: true },
       { label: 'Source on GitHub', path: 'https://github.com/JohnAndrewBalbarosa/NeoTerritory', external: true },
     ],

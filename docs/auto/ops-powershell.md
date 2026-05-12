@@ -128,13 +128,13 @@ Optional Let's Encrypt setup driven by AWS_DOMAIN.
 **Functions**
 
 - `Invoke-Dev` (line 3)
-- `Ensure-PodImage` (line 41)
-- `Invoke-ProdBuilds` (line 62)
-- `Start-Backend` (line 75)
-- `Start-Vite` (line 106)
-- `Studio-Port` (line 137)
-- `Studio-OpenUrl` (line 141)
-- `Print-StudioUrls` (line 148)
+- `Ensure-PodImage` (line 42)
+- `Invoke-ProdBuilds` (line 63)
+- `Start-Backend` (line 76)
+- `Start-Vite` (line 107)
+- `Studio-Port` (line 138)
+- `Studio-OpenUrl` (line 142)
+- `Print-StudioUrls` (line 149)
 
 ### `ops/powershell/start/commands/k8s.ps1`
 

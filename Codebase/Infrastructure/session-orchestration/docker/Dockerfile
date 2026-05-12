@@ -71,8 +71,13 @@ ENV MAX_TEST_USERS=20
 # Both are required for the production-default test-runner config below.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-         python3 make g++ ca-certificates firejail docker.io \
+         python3 make g++ ca-certificates firejail docker.io cppcheck \
     && rm -rf /var/lib/apt/lists/*
+
+# cppcheck is the broad base of the Testing Trophy on the studio Tests tab.
+# It runs on the user's submitted C++ source before compile_run and unit_test
+# and reports per-line findings via the same SSE pipeline. See
+# Codebase/Backend/src/services/testRunnerService.ts::runStaticAnalysis.
 
 WORKDIR /app
 

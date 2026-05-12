@@ -141,6 +141,11 @@ export default function MainLayout() {
     return undefined;
   }
 
+  // Backend / microservice / Docker / AI status chips were removed from the
+  // topbar per project owner — they read as noise on a teaching tool. The
+  // appStore still tracks them (setStatus / setAiStatus calls below are
+  // intact) so admin views and pipeline timing can use them, just not the
+  // studio chrome.
   const { signOut } = useAuth();
 
   function handleThemeToggle(e: React.MouseEvent<HTMLButtonElement>) {
@@ -278,6 +283,7 @@ export default function MainLayout() {
               key={t.id}
               type="button"
               role="tab"
+              data-testid={`tab-${t.id}`}
               aria-selected={isActive}
               aria-disabled={!unlocked}
               disabled={!unlocked}

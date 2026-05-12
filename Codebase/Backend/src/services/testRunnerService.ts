@@ -20,13 +20,23 @@ import path from 'path';
 import { spawn, spawnSync } from 'child_process';
 import os from 'os';
 
-// Each pattern is exercised in TWO sequential phases:
+// Each pattern is exercised in THREE sequential phases:
+//  - 'static_analysis': run cppcheck on the user's source. This is the
+//    broad-base layer of the Testing Trophy (Dodds). Cheap, deterministic,
+//    runs even when the code does not compile. Always runs first.
 //  - 'compile_run': compile the user's class against a stub `int main()` and
 //    run it. Tells the user "your class compiles and exits cleanly on its
 //    own" before we attempt the unit-test driver.
 //  - 'unit_test':   compile + run the per-pattern test template. Skipped
 //    automatically when the compile_run phase already failed.
-export type TestPhase = 'compile_run' | 'unit_test';
+//
+// Integration + E2E are deliberately NOT phases on this surface — see the
+// trophy banner explainer in GdbRunnerTab for why: a single class
+// declaration has no multi-module integration surface to exercise, and an
+// E2E layer requires a deployed user-facing system that a class snippet
+// does not provide. Those layers belong to the NeoTerritory product
+// itself (the Playwright specs under Codebase/Frontend/playwright/).
+export type TestPhase = 'static_analysis' | 'compile_run' | 'unit_test';
 export interface TestResult {
   patternId: string;
   patternName: string;
@@ -569,6 +579,151 @@ export async function runSubmissionCompile(input: RunInputs): Promise<TestResult
   });
 }
 
+// --- Static analysis phase (cppcheck) ---
+//
+// Runs cppcheck on the user's source as the broad-base layer of the
+// Testing Trophy. Cppcheck is small (~5 MB), runs without requiring a
+// successful compile, and reports issues on a per-line basis.
+//
+// Verdict semantics:
+//   - 'pass'             — cppcheck ran, no findings.
+//   - 'fail'             — cppcheck reported at least one `error`-severity
+//                          finding (logic bugs, memory issues).
+//   - 'sandbox_disabled' — cppcheck binary not on PATH. The phase reports
+//                          its own disable reason without blocking the
+//                          downstream compile_run + unit_test phases.
+//   - Warnings + style + performance findings do NOT fail the phase by
+//     themselves; they surface as `skip`-status criteria so the user sees
+//     them without the run being marked red.
+//
+// The phase always runs first. It is intentionally non-fatal: a static
+// finding never blocks compile_run or unit_test from executing, because
+// the learner is still entitled to see whether their class actually
+// compiles. The phases stream independently to the frontend via SSE.
+
+const CPPCHECK_BIN = process.env.CPPCHECK_BIN || 'cppcheck';
+// Bounded: cppcheck on a small classroom snippet should complete in <2s.
+// A larger cap protects against pathological cases without holding up
+// the rest of the pipeline.
+const CPPCHECK_TIMEOUT_MS = 8_000;
+
+interface CppcheckFinding {
+  severity: 'error' | 'warning' | 'style' | 'performance' | 'portability' | 'information';
+  line: number;
+  message: string;
+}
+
+function parseCppcheckOutput(stdout: string, stderr: string): CppcheckFinding[] {
+  // We emit findings via --template='{severity}|{line}|{message}'. They land
+  // on stderr in cppcheck's default behaviour, but we accept stdout too in
+  // case the tool's release version routes differently. One finding per
+  // non-empty line.
+  const findings: CppcheckFinding[] = [];
+  const raw = `${stderr}\n${stdout}`;
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    const parts = trimmed.split('|');
+    if (parts.length < 3) continue;
+    const severity = parts[0] as CppcheckFinding['severity'];
+    const lineNo = Number.parseInt(parts[1], 10);
+    const message = parts.slice(2).join('|').trim();
+    if (!message) continue;
+    findings.push({
+      severity,
+      line: Number.isFinite(lineNo) ? lineNo : 0,
+      message,
+    });
+  }
+  return findings;
+}
+
+export async function runStaticAnalysis(input: RunInputs): Promise<TestResult> {
+  const t0 = Date.now();
+  const base: TestResult = {
+    patternId: input.patternId,
+    patternName: input.patternName,
+    className: input.className,
+    phase: 'static_analysis',
+    passed: false,
+    expected: 'no error-level findings',
+    actual: '',
+    exitCode: 0,
+    durationMs: 0,
+    verdict: 'skipped',
+  };
+
+  // Cheap availability probe — does the cppcheck binary actually exist on
+  // PATH? Without this we'd get a confusing ENOENT inside runCmd().
+  const probe = spawnSync(CPPCHECK_BIN, ['--version'], { encoding: 'utf8' });
+  if (probe.error || (probe.status !== 0 && probe.status !== null)) {
+    return {
+      ...base,
+      verdict: 'sandbox_disabled',
+      durationMs: Date.now() - t0,
+      message:
+        'cppcheck not installed in this runtime. The Testing Trophy base layer is unavailable on this deployment. ' +
+        'Install cppcheck (apt-get install cppcheck) or set CPPCHECK_BIN to a working path.',
+    };
+  }
+
+  // cppcheck 2.x rejects `-` as a stdin pseudo-filename, so we write the
+  // submission to a tmp .cpp file and let the analyser pick up the extension.
+  // The temp file is unlinked in `finally` regardless of cppcheck's outcome.
+  const source = input.fullSource && input.fullSource.length > 0 ? input.fullSource : input.classText;
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'cppcheck-'));
+  const tmpFile = path.join(tmpDir, 'submission.cpp');
+  fs.writeFileSync(tmpFile, source, 'utf8');
+  const argv = [
+    CPPCHECK_BIN,
+    '--enable=warning,style,performance,portability',
+    '--inline-suppr',
+    '--language=c++',
+    '--std=c++17',
+    '--quiet',
+    "--template={severity}|{line}|{message}",
+    tmpFile,
+  ];
+  let cmd;
+  try {
+    cmd = await runCmd(argv, CPPCHECK_TIMEOUT_MS);
+  } finally {
+    try { fs.unlinkSync(tmpFile); } catch { /* best-effort */ }
+    try { fs.rmdirSync(tmpDir); } catch { /* best-effort */ }
+  }
+  const findings = parseCppcheckOutput(cmd.stdout, cmd.stderr);
+  const errorFindings = findings.filter((f) => f.severity === 'error');
+  const passed = errorFindings.length === 0;
+
+  // Each finding becomes a criterion. error → fail; warning/style/etc → skip
+  // (informational, never fails the phase by itself).
+  const criteria: NonNullable<TestResult['criteria']> = findings.map((f) => ({
+    status: f.severity === 'error' ? 'fail' : 'skip',
+    description: `cppcheck (${f.severity}) line ${f.line}: ${f.message}`,
+  }));
+  // When the snippet is clean we still want a single positive criterion so
+  // the UI shows something instead of an empty list.
+  if (findings.length === 0) {
+    criteria.push({
+      status: 'pass',
+      description: 'cppcheck ran on the submission and reported no findings.',
+    });
+  }
+
+  return {
+    ...base,
+    passed,
+    verdict: passed ? 'pass' : 'fail',
+    durationMs: Date.now() - t0,
+    exitCode: cmd.exitCode,
+    actual: `${cmd.stdout}\n--- stderr ---\n${cmd.stderr}`.trim(),
+    criteria,
+    message: passed
+      ? `cppcheck: ${findings.length} non-error finding${findings.length === 1 ? '' : 's'}.`
+      : `cppcheck: ${errorFindings.length} error-severity finding${errorFindings.length === 1 ? '' : 's'}.`,
+  };
+}
+
 // Run both phases for one pattern. Phase 1 ('compile_run') always runs; phase
 // 2 ('unit_test') is skipped with verdict 'skipped' when phase 1 already
 // failed, so the user sees "we didn't even try the unit test because your
@@ -592,10 +747,17 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
   if (!isTestRunnerEnabled()) {
     const reason = `Test runner disabled. ${lastDisableReason}`;
     return [
-      { ...baseFor('compile_run'), verdict: 'sandbox_disabled', message: reason },
-      { ...baseFor('unit_test'),   verdict: 'sandbox_disabled', message: reason }
+      { ...baseFor('static_analysis'), verdict: 'sandbox_disabled', message: reason },
+      { ...baseFor('compile_run'),     verdict: 'sandbox_disabled', message: reason },
+      { ...baseFor('unit_test'),       verdict: 'sandbox_disabled', message: reason }
     ];
   }
+
+  // Phase 0 — static analysis (cppcheck). Cheap, deterministic, always
+  // runs. Findings are surfaced but do NOT block the downstream phases —
+  // the learner is still entitled to see whether the class compiles even
+  // when the analyser complained about style.
+  const staticAnalysisResult = await runStaticAnalysis(input);
 
   // Phase 1 — class-only compile + clean-exit run.
   const compileRunResult = await runPhase('compile_run', input, {
@@ -605,6 +767,7 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
 
   if (!compileRunResult.passed) {
     return [
+      staticAnalysisResult,
       compileRunResult,
       { ...baseFor('unit_test'), verdict: 'skipped',
         message: 'Skipped — your class did not compile or did not exit cleanly on its own.' }
@@ -615,6 +778,7 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
   const tplPath = templatePath(input.patternId);
   if (!tplPath) {
     return [
+      staticAnalysisResult,
       compileRunResult,
       { ...baseFor('unit_test'), verdict: 'no_template',
         message: `No unit-test template authored for ${input.patternId} yet.` }
@@ -624,7 +788,7 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
     driverSource: fillTemplate(fs.readFileSync(tplPath, 'utf8'), input),
     binaryName: 'unit_driver'
   });
-  return [compileRunResult, unitTestResult];
+  return [staticAnalysisResult, compileRunResult, unitTestResult];
 }
 
 interface CmdResult {

@@ -889,3 +889,81 @@ Per user direction: use Playwright for pictures wherever possible. The full stud
 **Why dist/ and not dev server**: dev mode emits HMR overlays and dev banners that should not appear in press-kit shots. The built `dist/` matches what production serves.
 
 **Run**: `npx vite build && node tools/capture-marketing-screenshots.mjs`. The captures land under `Codebase/Frontend/public/preview/` so they can be referenced from doc files or external press materials. They are not auto-displayed inside the marketing pages — those use the inline SVGs per D60 + D61 instead.
+
+## D63 — CI requirement-coverage audit 2026-05-11 (baseline)
+
+Per user direction this turn: audit whether the CI/CD test suite actually verifies the project's stated requirements (D21 locked catalog, D38 ambiguity, D44 Testing Trophy, D68 sample gate) or has drifted into a smoke test that just confirms the page renders. The goal was explicitly **not** to make CI green — it was to bring CI's gates into compliance with the documented requirements and let real product gaps surface.
+
+**Why this audit happened**: the `#status-title` element was removed by the layout-flatten refactor (D58 trail / commit `2a51db4`). CI stayed green for months because the spec's selector was already so weak that "tree renders" was the only assertion. The removal eventually broke the selector outright and the cascade exhausted `/auth/claim`, which finally got attention. The real fault wasn't the refactor — it was that no assertion ever looked at WHAT the detector emitted, only whether the DOM responded.
+
+### What changed (commits `588f645` → `0ca3f5c`, plus `840bc5e`, `6beb120`)
+
+- **Phase A — Selector hardening + crash-safe seat lifecycle.** Added `data-testid` on `status-title`, `status-detail`, `tab-<id>`, `analyze-btn`, `load-sample-btn`, `class-tree-view` (with `data-empty`), `class-tree-name`, `class-tree-badge` (with `data-pattern`), `gdb-phase-row` (with the previously-missing `data-phase` + `data-verdict`), and `run-all-tests-btn`. `all-samples.spec.ts` and the `StudioPage` POM use `getByTestId`. A new `playwright/global-teardown.ts` reads `.playwright-seat.json` and posts `/auth/disconnect` even when a Playwright worker crash skips `test.afterAll` — the exact cascade that masked the previous CI failure.
+- **Phase B — Sample coverage (D21 regression contract).** SAMPLES grew from 10 to 15. Added: `integration/all_patterns.cpp`, `negative/plain_class_no_pattern.cpp`, `negative/plain_widget.cpp`, `usages/usages_adapter_trace.cpp`, `usages/usages_smart_pointers.cpp`. SampleSpec gained a `kind` discriminator (`positive | negative | integration`) and the negative-sample test branch enforces the false-positive contract (no locked-catalog pattern may surface).
+- **Phase C — Structural assertions (D68).** Added `expectedPatternNameRegex` per positive sample and `expectedAllCatalogPatterns` on the integration sample. The new assertion auto-resolves ambiguous classes (mirroring how a real user reaches the test-runner) then scans every rendered badge's `data-pattern` attribute. A regression that silently swaps Singleton→Factory now fails CI.
+- **Phase D — Missing test layers (D44).** Wired `vitest` into the backend. Extracted `findAmbiguousClasses` + `filterToTaggedPatterns` from `routes/analysis.ts` into `services/candidateFilter.ts` so they're testable in isolation. New unit tests: `candidateFilter.test.ts` (10 cases covering D38) and `aiDocumentationService.test.ts` (8 cases on the AI envelope per D44). Added `npm --prefix Codebase/Backend run test:unit` to CI between typecheck and build. Extended `scripts/ci-gdb-runner-flow.mjs` so the gdb-runner job (a) asserts the analyze response actually detects singleton (not just that `pendingId` exists), (b) asserts the `static_analysis` phase has `verdict !== 'sandbox_disabled'`. The cppcheck-`-`-stdin bug from `6beb120` would have lit this canary up before AWS shipped.
+- **Phase E — AWS post-deploy verification.** New `post-deploy-smoke` job in `ci.yml`, main-branch only, runs after `deploy-aws`. Hits the LIVE deployment at `AWS_PUBLIC_URL` (repo Actions variable), claims a tester seat, posts a Singleton snippet, runs the test pipeline, asserts compile_run=pass and static_analysis verdict ≠ sandbox_disabled. Production drift gets caught here, not in user reports. First green run: `25673446550` (commit `26a2ff1`).
+- **Phase F — Monitored re-run + audit.** Three CI runs total. Run #1 (commit `80a68ac`) failed 7/16; failures were test-author bugs (`isVisible` race, missing data-empty handling for negative samples, studio-screenshots clicking a locked tab). Run #2 fixed those and the negative-sample contract: 11/15 pass. Run #3 added ambiguity auto-resolution before the structural check: **12/15 pass**.
+
+### CI green vs. detector-gap evidence
+
+CI runs to consult: ci.yml `25673446550` (all 10 jobs green, including new `post-deploy-smoke`), playwright-e2e `25674123004` (12/15 samples pass).
+
+The **3 still-failing samples** are the audit's primary output — real detector gaps the previous CI never reported:
+
+| Sample | Label | Detector emits | Why this matters |
+|---|---|---|---|
+| `query_predicate.cpp` | Method Chaining | `Builder` | The matcher confuses fluent `*this` returns with the Builder pattern. Builder's `build()` terminator should be the negative signal that disqualifies a pure method-chaining class; that signal is either missing or not strong enough in the candidate filter. |
+| `logging_proxy.cpp` | Wrapping (Proxy/Decorator family) | `Adapter` | Adapter is structurally similar (wraps another type) but semantically distinct (translates an interface; doesn't add behaviour transparently). The catalog needs a stronger discriminator between Adapter and Proxy/Decorator, or the sample needs to lean harder on the proxy idiom so the matcher's existing signals fire. |
+| `integration/all_patterns.cpp` | All locked-catalog patterns | Surfaces Adapter, Singleton, Builder ×2, Factory, Strategy ×3 — **never `method_chain`** | The integration regression contract says every D21 catalog entry must surface at least once. Method Chaining never does, consistent with the query_predicate finding above. This is the contract the test was designed to enforce. |
+
+These are not test bugs. The spec is reading the actual `data-pattern` attribute that the studio renders to a user after ambiguity resolution. If the team disagrees about whether `query_predicate.cpp` IS a Builder, the right answer is to update the sample's `kind` / `expectedPatternNameRegex`, NOT to weaken the assertion.
+
+### Algorithm-known-limits gate (per-user direction this turn)
+
+User direction in the same turn this audit was produced: *"If detector gaps talaga sya wag pipilitin hayaan or have the tester to handle sa limits ng algorithm namin."* — accept the algorithm's real limits, don't make CI red over things the catalog isn't yet built to detect.
+
+Implemented via `algorithmKnownLimits` on each SampleSpec:
+
+```ts
+algorithmKnownLimits?: {
+  acceptedAlternatePattern?: RegExp;   // positive samples
+  missingFromCatalogScan?: RegExp[];   // integration sample
+  reason: string;                       // documented justification
+}
+```
+
+Effect:
+- **`query_predicate.cpp`** — `acceptedAlternatePattern: /builder/i`. Builder is now a documented-alternate pass for this file.
+- **`logging_proxy.cpp`** — `acceptedAlternatePattern: /adapter/i`. Adapter is a documented-alternate pass.
+- **`integration/all_patterns.cpp`** — `missingFromCatalogScan: [/method.?chain/i]`. The method-chain presence check is skipped on this sample (consistent with the query_predicate finding).
+
+When the documented-limit path fires, the test records a `testInfo.annotation` of type `algorithm-known-limit` with the reason verbatim. CI passes; the gap stays visible in the Actions report under each test's annotations; nobody pretends the catalog detects what it doesn't.
+
+The list is meant to shrink as the catalog learns. When a future commit adds the missing discriminators (Builder-vs-method_chain terminator, Proxy/Decorator-vs-Adapter signature), the entry comes off, and any regression there fails CI.
+
+### Final CI state
+
+After applying `algorithmKnownLimits`: all 15 samples pass with three annotated as `algorithm-known-limit`. Run `gh run list --workflow=playwright-e2e.yml --limit 1` for the most recent run; open each test's annotations to see the documented gaps.
+
+### What this audit fixed about the audit process itself
+
+1. **Selector fragility hotspots** that allowed silent drift are now `data-testid`-anchored. A future layout refactor of the same kind as `2a51db4` will not break tests without surfacing a real regression.
+2. **Seat-pool lifecycle** survives worker crashes via `.playwright-seat.json` + `globalTeardown`. The `/auth/claim` cascade from the previous failing run cannot happen again.
+3. **Phase coverage** — Testing Trophy base, integration, E2E, and AWS production are all gated now. Per D44 each layer now has at least one assertion that maps to a documented requirement.
+4. **AWS drift visible in CI** — pre-Phase E, the deploy job had zero post-deploy assertions and bugs like cppcheck-stdin only got discovered when a user noticed `static_analysis` stuck on `idle`. The new `post-deploy-smoke` job catches the same class of bug in CI.
+
+### Out of scope (deliberate, follow-ups)
+
+- **`studio-screenshots.spec.ts`** is excluded from the playwright-e2e gate. It captures thesis figures and asserts nothing about correctness; running it as a gate is noise. Capture manually via `npx playwright test playwright/tests/studio-screenshots.spec.ts`.
+- **Class-usage binder tests (D24)** — the binder lives in `services/classUsageBinder.ts`; unit-testing it in isolation requires fixture-driving microservice output. Deferred — D44 coverage is partial here.
+- **`Codebase/Frontend/app.js`** still references `#status-title` as dead code from the pre-React era. Cleanup belongs in a separate refactor.
+
+### Next steps (if the project wants the 3 red samples green)
+
+These are product changes, not test changes:
+- Add a `method_chain` negative signal to the Builder catalog entry (or a positive Builder signal that requires a `build()`-like terminator).
+- Strengthen the Proxy/Decorator signature in the structural catalog so `logging_proxy.cpp` doesn't fall to Adapter.
+- Audit `integration/all_patterns.cpp` to make sure its method-chaining class is distinctly recognisable as such (e.g. lacks a Builder terminator).
+
+The test contract is the spec; the catalog is what needs to learn.

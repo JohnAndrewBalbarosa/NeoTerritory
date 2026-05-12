@@ -40,7 +40,8 @@ load_deploy_env "$ENV_FILE"
 
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=240 -o TCPKeepAlive=yes -i $AWS_SSH_KEY"
 SSH_TARGET="$AWS_USER@$AWS_HOST"
-export SSH_OPTS SSH_TARGET ROOT_DIR AWS_HOST
+DEPLOY_GIT_SHA="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"
+export SSH_OPTS SSH_TARGET ROOT_DIR AWS_HOST DEPLOY_GIT_SHA
 
 verify_ssh_link
 open_lightsail_ports
