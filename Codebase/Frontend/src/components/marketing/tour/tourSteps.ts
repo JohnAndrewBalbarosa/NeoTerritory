@@ -2,6 +2,11 @@
 // docs/Codebase/Frontend/src/components/marketing/tour/TourPage.tsx.md.
 // The /tour public page reads this. The future in-studio popup walkthrough
 // (D45 follow-up) will read the same file so the two never drift.
+//
+// Scope per user direction: the tour mirrors the studio tab walkthrough —
+// sign-in is not part of the studio, and the save-the-run + open-history
+// flows live inside the run-history surface (not on a studio tab), so they
+// are intentionally omitted from this tour.
 
 export interface TourStep {
   num: number;
@@ -17,15 +22,6 @@ export interface TourStep {
 export const TOUR_STEPS: ReadonlyArray<TourStep> = [
   {
     num: 1,
-    slug: 'sign-in',
-    title: 'Sign in',
-    paragraph:
-      'Sign in with Google or use a tester credential. Why we ask: to save your runs so you can come back to them and see your progress over time. Reading the public site does not require sign-in — only saving runs does.',
-    takeaway: 'Your future runs land under your account, not in a shared bucket.',
-    imagePath: '/tour/sign-in.png',
-  },
-  {
-    num: 2,
     slug: 'land-on-submit',
     title: 'Land in the Submit tab',
     paragraph:
@@ -34,7 +30,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/land-on-submit.png',
   },
   {
-    num: 3,
+    num: 2,
     slug: 'load-a-sample',
     title: 'Load a sample',
     paragraph:
@@ -43,7 +39,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/load-a-sample.png',
   },
   {
-    num: 4,
+    num: 3,
     slug: 'click-analyze',
     title: 'Click Analyze',
     paragraph:
@@ -52,7 +48,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/click-analyze.png',
   },
   {
-    num: 5,
+    num: 4,
     slug: 'read-the-card',
     title: 'Read the pattern card',
     paragraph:
@@ -61,7 +57,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/read-the-card.png',
   },
   {
-    num: 6,
+    num: 5,
     slug: 'run-tests',
     title: 'Run the unit tests',
     paragraph:
@@ -70,7 +66,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/run-tests.png',
   },
   {
-    num: 7,
+    num: 6,
     slug: 'generate-docs',
     title: 'Generate documentation',
     paragraph:
@@ -79,30 +75,12 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/generate-docs.png',
   },
   {
-    num: 8,
+    num: 7,
     slug: 'self-check',
     title: 'Self-check before you submit',
     paragraph:
       'The Self-check tab is the four-step gate that turns an analysis run into a saved submission: class validation (was each detection correct?), code understanding, pattern evidence, and a performance rating. Your answers attach to the run and feed the alpha-testing review loop.',
     takeaway: 'Validate, rate, then save — in one click.',
     imagePath: '/tour/self-check.png',
-  },
-  {
-    num: 9,
-    slug: 'save-the-run',
-    title: 'Save the run',
-    paragraph:
-      'Submit your per-run review (a quick five-star accuracy rating). The run record and the review cascade together — deleting a run automatically deletes its review. Reviews exist so we can see which patterns the system gets right and which need work.',
-    takeaway: 'Your feedback drives the next iteration of the catalog.',
-    imagePath: '/tour/save-the-run.png',
-  },
-  {
-    num: 10,
-    slug: 'open-history',
-    title: 'Open run history',
-    paragraph:
-      'Every saved run is replayable from the run list. Clicking a run loads its source, its detections, its documentation, and your review back into the studio. You can compare versions of the same file and see whether your refactor improved the readability score.',
-    takeaway: 'Your work persists. You can always come back to it.',
-    imagePath: '/tour/open-history.png',
   },
 ];

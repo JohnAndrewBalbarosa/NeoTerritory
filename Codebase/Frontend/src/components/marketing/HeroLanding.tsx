@@ -108,7 +108,7 @@ const DOORS: ReadonlyArray<BentoDoor> = [
   },
   {
     title: 'Take the tour',
-    blurb: 'Eight steps through the studio. No sign-in.',
+    blurb: 'Seven steps through the studio. No sign-in.',
     path: '/tour',
     size: '1x1',
   },
