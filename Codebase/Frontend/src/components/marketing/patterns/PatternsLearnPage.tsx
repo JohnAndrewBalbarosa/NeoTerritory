@@ -1,71 +1,138 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { learnModuleSlugFromPath, navigate } from '../../../logic/router';
 import {
   CATEGORY_META,
-  LEARNING_MODULES,
   findLearningModule,
   modulesInCategory,
+  type LearningCategory,
   type LearningModule,
 } from '../../../data/learningModules';
 
-// D77: /patterns/learn (category list) and /patterns/learn/<module-id>
-// (single isolated module) both render this component. The surface
-// signal in MarketingShell decides which route this is, but the page
-// itself reads the slug from the URL to decide whether to show the
-// category overview or one focused module.
+// D77 (round 2): user feedback — restore the multi-step guided-course UI
+// from the legacy StudentLearningHub (hero + progress bar, three-section
+// sidebar with numbered step buttons + status, lesson panel with
+// Previous/Next/Mark-read footer). Keep the data-silo rules from round 1
+// (one module on screen at a time, citations + summary + read-only
+// "See also" pointer footer).
 //
-// Strict-silo rule (user direction): only ONE module's content is in
-// the DOM at a time. Sidebar is the picker. "See also" at the bottom of
-// each module is a read-only pointer list — clicking switches to that
-// module but never auto-folds content from one module into another.
+// Differences from the legacy hub:
+//   - Data source is LEARNING_MODULES (Foundations + 4 pattern families)
+//     instead of INTRO_LESSONS + PATTERN_STEPS, so the catalog and the
+//     learning surface share one source of truth.
+//   - No sequential gating. Every step is reachable at any time —
+//     "data silo" means the modules don't depend on each other, so
+//     forcing a linear order would contradict the rule. Progress reflects
+//     "marked read" only, never "unlocked".
+//   - URL syncs to /patterns/learn/<module-id> for the active step.
+//   - "Mark read" is per-tab (in-memory). Closing the tab clears progress.
+
+interface CourseStep {
+  module: LearningModule;
+  category: LearningCategory;
+  globalIndex: number;
+}
 
 interface CategoryGroup {
   meta: (typeof CATEGORY_META)[number];
-  modules: ReadonlyArray<LearningModule>;
+  steps: ReadonlyArray<CourseStep>;
 }
 
-function useSelectedModule(): LearningModule | null {
-  const initial =
-    typeof window !== 'undefined' ? learnModuleSlugFromPath(window.location.pathname) : '';
-  const [slug, setSlug] = useState<string>(initial);
-
-  useEffect(() => {
-    function recompute(): void {
-      setSlug(learnModuleSlugFromPath(window.location.pathname));
-    }
-    window.addEventListener('popstate', recompute);
-    window.addEventListener('nt:navigate', recompute);
-    return () => {
-      window.removeEventListener('popstate', recompute);
-      window.removeEventListener('nt:navigate', recompute);
-    };
-  }, []);
-
-  return slug ? findLearningModule(slug) ?? null : null;
+function buildCategoryGroups(): {
+  groups: ReadonlyArray<CategoryGroup>;
+  steps: ReadonlyArray<CourseStep>;
+} {
+  const steps: CourseStep[] = [];
+  const groups: CategoryGroup[] = [];
+  CATEGORY_META.forEach((meta) => {
+    const inCat = modulesInCategory(meta.id);
+    if (inCat.length === 0) return;
+    const grouped: CourseStep[] = inCat.map((module) => {
+      const step: CourseStep = {
+        module,
+        category: meta.id,
+        globalIndex: steps.length,
+      };
+      steps.push(step);
+      return step;
+    });
+    groups.push({ meta, steps: grouped });
+  });
+  return { groups, steps };
 }
 
-function pickModule(moduleId: string): void {
-  navigate(`/patterns/learn/${moduleId}`);
+function indexFromUrl(steps: ReadonlyArray<CourseStep>): number {
+  if (typeof window === 'undefined') return 0;
+  const slug = learnModuleSlugFromPath(window.location.pathname);
+  if (!slug) return 0;
+  const idx = steps.findIndex((s) => s.module.id === slug);
+  return idx >= 0 ? idx : 0;
 }
 
-function goToCategoryList(): void {
-  navigate('/patterns/learn');
+// ----- step button + section wrappers (matches old StudentLearningHub CSS) -----
+
+interface StepButtonProps {
+  step: CourseStep;
+  activeIndex: number;
+  isRead: boolean;
+  onClick: () => void;
 }
 
-function ModuleView({ module }: { module: LearningModule }): JSX.Element {
+function StepButton({ step, activeIndex, isRead, onClick }: StepButtonProps): JSX.Element {
+  const isActive = step.globalIndex === activeIndex;
+  const status = isRead ? 'Done' : isActive ? 'Current' : 'Ready';
+  const numberLabel = isRead ? 'ok' : String(step.globalIndex + 1);
+  return (
+    <li>
+      <button
+        type="button"
+        data-active={isActive ? 'true' : undefined}
+        data-completed={isRead ? 'true' : undefined}
+        onClick={onClick}
+      >
+        <span className="nt-course-outline__dot" aria-hidden="true">
+          {numberLabel}
+        </span>
+        <span>
+          <small>
+            {step.module.eyebrow} · {status}
+          </small>
+          {step.module.title}
+        </span>
+      </button>
+    </li>
+  );
+}
+
+interface SectionProps {
+  label: string;
+  children: React.ReactNode;
+}
+
+function Section({ label, children }: SectionProps): JSX.Element {
+  return (
+    <div className="nt-course-section">
+      <p className="nt-course-section__label">{label}</p>
+      {children}
+    </div>
+  );
+}
+
+// ----- lesson body renderer: one module in isolation -----
+
+function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
   return (
     <article className="nt-learn__module" aria-labelledby={`mod-${module.id}-title`}>
       <header className="nt-learn__module-head">
         <p className="nt-section-eyebrow">{module.eyebrow}</p>
-        <h1 id={`mod-${module.id}-title`} className="nt-learn__module-title">
+        <h2 id={`mod-${module.id}-title`} className="nt-learn__module-title">
           {module.title}
-        </h1>
+        </h2>
         <p className="nt-learn__module-intro">{module.intro}</p>
       </header>
 
       {module.sections.map((s, idx) => (
         <section className="nt-learn__module-section" key={`${module.id}-s-${idx}`}>
-          <h2 className="nt-learn__module-section-head">{s.heading}</h2>
+          <h3 className="nt-learn__module-section-head">{s.heading}</h3>
           {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
           {s.bullets && s.bullets.length > 0 ? (
             <ul className="nt-learn__module-bullets">
@@ -85,7 +152,7 @@ function ModuleView({ module }: { module: LearningModule }): JSX.Element {
 
       {module.keyTerms && module.keyTerms.length > 0 ? (
         <section className="nt-learn__module-section">
-          <h2 className="nt-learn__module-section-head">Key terms</h2>
+          <h3 className="nt-learn__module-section-head">Key terms</h3>
           <dl className="nt-learn__module-terms">
             {module.keyTerms.map((t) => (
               <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
@@ -105,7 +172,7 @@ function ModuleView({ module }: { module: LearningModule }): JSX.Element {
       ) : null}
 
       <section className="nt-learn__module-cites" aria-label="Citations">
-        <h2 className="nt-learn__module-section-head">Sources</h2>
+        <h3 className="nt-learn__module-section-head">Sources</h3>
         <ol className="nt-learn__module-cite-list">
           {module.citations.map((c, i) => (
             <li key={`${module.id}-c-${i}`}>
@@ -130,7 +197,7 @@ function ModuleView({ module }: { module: LearningModule }): JSX.Element {
                 <button
                   type="button"
                   className="nt-learn__module-see-also-link"
-                  onClick={() => pickModule(sa.moduleId)}
+                  onClick={() => navigate(`/patterns/learn/${sa.moduleId}`)}
                 >
                   {sa.label} →
                 </button>
@@ -143,121 +210,163 @@ function ModuleView({ module }: { module: LearningModule }): JSX.Element {
   );
 }
 
-function CategoryOverview({ groups }: { groups: ReadonlyArray<CategoryGroup> }): JSX.Element {
-  return (
-    <section className="nt-learn__overview" aria-labelledby="learn-overview-heading">
-      <header className="nt-learn__overview-head">
-        <p className="nt-section-eyebrow">Learning hub</p>
-        <h1 id="learn-overview-heading" className="nt-learn__overview-title">
-          Pick a module on the left to begin
-        </h1>
-        <p className="nt-learn__overview-lede">
-          Each module is a standalone reference — read it end to end without needing the others.
-          Use the sidebar to jump between categories; the &ldquo;See also&rdquo; footer at the bottom
-          of each module points at related reading.
-        </p>
-      </header>
-      <div className="nt-learn__overview-grid">
-        {groups.map((g) => (
-          <article key={g.meta.id} className="nt-learn__overview-card">
-            <h2 className="nt-learn__overview-card-title">{g.meta.name}</h2>
-            <p className="nt-learn__overview-card-gist">{g.meta.gist}</p>
-            <p className="nt-learn__overview-card-count">{g.modules.length} modules</p>
-            {g.modules.length > 0 ? (
-              <button
-                type="button"
-                className="nt-learn__overview-card-cta"
-                onClick={() => pickModule(g.modules[0].id)}
-              >
-                Start with {g.modules[0].title} →
-              </button>
-            ) : null}
-          </article>
-        ))}
-      </div>
-    </section>
-  );
-}
+// ----- page -----
 
 export default function PatternsLearnPage(): JSX.Element {
-  const selected = useSelectedModule();
+  const { groups, steps } = useMemo(() => buildCategoryGroups(), []);
 
-  const groups: ReadonlyArray<CategoryGroup> = useMemo(
-    () =>
-      CATEGORY_META.map((meta) => ({
-        meta,
-        modules: modulesInCategory(meta.id),
-      })).filter((g) => g.modules.length > 0),
-    [],
+  const [activeIndex, setActiveIndex] = useState<number>(() => indexFromUrl(steps));
+  const [readIds, setReadIds] = useState<Set<string>>(() => new Set());
+
+  // Keep activeIndex synced when the URL changes (back button, deep links,
+  // see-also click).
+  useEffect(() => {
+    function recompute(): void {
+      setActiveIndex(indexFromUrl(steps));
+    }
+    window.addEventListener('popstate', recompute);
+    window.addEventListener('nt:navigate', recompute);
+    return () => {
+      window.removeEventListener('popstate', recompute);
+      window.removeEventListener('nt:navigate', recompute);
+    };
+  }, [steps]);
+
+  const activeStep = steps[activeIndex];
+  const activeModule: LearningModule | undefined = activeStep
+    ? findLearningModule(activeStep.module.id)
+    : undefined;
+
+  const goToStep = useCallback(
+    (index: number) => {
+      if (index < 0 || index >= steps.length) return;
+      const target = steps[index];
+      navigate(`/patterns/learn/${target.module.id}`);
+      setActiveIndex(index);
+    },
+    [steps],
   );
 
-  const totalCount = LEARNING_MODULES.length;
+  const markRead = useCallback(() => {
+    if (!activeStep) return;
+    setReadIds((prev) => {
+      if (prev.has(activeStep.module.id)) return prev;
+      const next = new Set(prev);
+      next.add(activeStep.module.id);
+      return next;
+    });
+  }, [activeStep]);
+
+  const markReadAndAdvance = useCallback(() => {
+    markRead();
+    if (activeIndex < steps.length - 1) {
+      goToStep(activeIndex + 1);
+    }
+  }, [activeIndex, goToStep, markRead, steps.length]);
+
+  const goPrev = useCallback(() => {
+    if (activeIndex > 0) goToStep(activeIndex - 1);
+  }, [activeIndex, goToStep]);
+
+  const readCount = readIds.size;
+  const total = steps.length;
+  const progress = total > 0 ? Math.round((readCount / total) * 100) : 0;
+  const isFirst = activeIndex === 0;
+  const isLast = activeIndex === total - 1;
+  const isActiveRead = !!(activeStep && readIds.has(activeStep.module.id));
 
   return (
-    <main className="nt-learn" id="main" data-learn-mode="true">
-      <header className="nt-learn__topbar">
-        <div className="nt-learn__topbar-left">
+    <main className="nt-student nt-student-course" id="main">
+      <section className="nt-course-hero" aria-labelledby="learn-heading">
+        <div>
           <p className="nt-section-eyebrow">Patterns · Learn</p>
-          <h1 className="nt-learn__topbar-title">Learning modules</h1>
-          <p className="nt-learn__topbar-lede">
-            {totalCount} silo&rsquo;d reference modules. One module on screen at a time.
+          <h1 id="learn-heading" className="nt-student__title">
+            Learning Path
+          </h1>
+          <p className="nt-student__lede">
+            {total} silo&rsquo;d modules across Foundations and the four pattern families. Every
+            module reads end-to-end without depending on the others — jump anywhere.
+          </p>
+          <p className="nt-course-hero__audience">
+            Reading the lessons is free. Each module ends with a Summary box, a Sources list, and a
+            See-also footer of related modules. Use the &ldquo;Mark as read&rdquo; button to track
+            your progress on this device.
           </p>
         </div>
-        <button
-          type="button"
-          className="nt-learn__topbar-back"
-          onClick={() => navigate('/patterns')}
-        >
-          ← Back to catalog
-        </button>
-      </header>
+        <div className="nt-course-progress" aria-label={`Read progress ${progress}%`}>
+          <span>{progress}%</span>
+          <p>
+            {readCount}/{total} modules read
+          </p>
+          <div className="nt-course-progress__bar" aria-hidden="true">
+            <i style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      </section>
 
-      <div className="nt-learn__shell">
-        <aside className="nt-learn__sidebar" aria-label="Learning module index">
-          {groups.map((g) => (
-            <section className="nt-learn__sidebar-cat" key={g.meta.id}>
-              <header className="nt-learn__sidebar-cat-head">
-                <h2 className="nt-learn__sidebar-cat-name">{g.meta.name}</h2>
-                <p className="nt-learn__sidebar-cat-gist">{g.meta.gist}</p>
-              </header>
-              <ol className="nt-learn__sidebar-cat-list">
-                {g.modules.map((m) => {
-                  const isActive = selected?.id === m.id;
-                  return (
-                    <li key={m.id}>
-                      <button
-                        type="button"
-                        className="nt-learn__sidebar-link"
-                        data-active={isActive ? 'true' : undefined}
-                        onClick={() => pickModule(m.id)}
-                      >
-                        {m.title}
-                      </button>
-                    </li>
-                  );
-                })}
+      <section className="nt-course-shell" aria-label="Learning path">
+        <aside className="nt-course-sidebar" aria-label="Learning module outline">
+          <div className="nt-course-sidebar__head">
+            <p>Modules</p>
+            <span>
+              {activeIndex + 1}/{total}
+            </span>
+          </div>
+
+          {groups.map((g, idx) => (
+            <Section key={g.meta.id} label={`Section ${idx + 1} · ${g.meta.name}`}>
+              <ol className="nt-course-outline">
+                {g.steps.map((step) => (
+                  <StepButton
+                    key={step.module.id}
+                    step={step}
+                    activeIndex={activeIndex}
+                    isRead={readIds.has(step.module.id)}
+                    onClick={() => goToStep(step.globalIndex)}
+                  />
+                ))}
               </ol>
-            </section>
+            </Section>
           ))}
         </aside>
 
-        <section className="nt-learn__main" aria-live="polite">
-          {selected ? (
-            <>
-              <button
-                type="button"
-                className="nt-learn__main-back"
-                onClick={goToCategoryList}
-              >
-                ← All modules
-              </button>
-              <ModuleView module={selected} />
-            </>
-          ) : (
-            <CategoryOverview groups={groups} />
-          )}
-        </section>
-      </div>
+        <article className="nt-lesson-panel">
+          {activeModule ? <ModuleBody module={activeModule} /> : null}
+
+          <footer className="nt-lesson-controls">
+            <button
+              type="button"
+              className="nt-lesson-button"
+              disabled={isFirst}
+              onClick={goPrev}
+            >
+              Previous
+            </button>
+
+            <button
+              type="button"
+              className="nt-lesson-button nt-lesson-button--primary"
+              onClick={isLast ? markRead : markReadAndAdvance}
+            >
+              {isActiveRead
+                ? isLast
+                  ? 'Marked read'
+                  : 'Next module'
+                : isLast
+                  ? 'Mark as read'
+                  : 'Mark as read & next'}
+            </button>
+
+            <button
+              type="button"
+              className="nt-lesson-button"
+              onClick={() => navigate('/patterns')}
+            >
+              ← Back to catalog
+            </button>
+          </footer>
+        </article>
+      </section>
     </main>
   );
 }
