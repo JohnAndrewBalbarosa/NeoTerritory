@@ -1184,14 +1184,47 @@ body[data-surface] #root {
   border-bottom: 0;
 }
 .nt-course-section__label {
+  /* Accordion header — button reset overrides + a chevron on the right.
+     Only one section in the sidebar is open at a time; the chevron flips
+     between ▸ (collapsed) and ▾ (open) so the affordance is visible
+     without depending on color alone. */
   margin: 0.25rem 0 0.55rem;
-  padding: 0 0.45rem;
+  padding: 0.35rem 0.45rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
   color: var(--nt-mkt-text-mute);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   line-height: 1.4;
   text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+}
+.nt-course-section__label:hover {
+  color: var(--nt-mkt-text);
+  background: rgba(0, 209, 216, 0.06);
+}
+.nt-course-section__label:focus-visible {
+  outline: 2px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  outline-offset: 2px;
+}
+.nt-course-section.is-open .nt-course-section__label {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-section__chev {
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+.nt-course-section__body {
+  padding: 0.1rem 0 0.25rem;
 }
 .nt-course-outline {
   list-style: none;
