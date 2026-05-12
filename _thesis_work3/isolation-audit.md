@@ -6,6 +6,23 @@ Working note for `FINAL THESIS 3 PAPER.docx`. Apply each block in Word in the or
 
 ---
 
+## 0. Section 1.2 — Background of the Study (v3: DEVCON Luzon is one example, not the subject)
+
+> **Reframe note (v3):** the original Background read as "we are building this for DEVCON Luzon" — the partnership was the subject of every body paragraph. v3 inverts that: Background now describes the **qualities of organizations that need a system like CodiNeo** (no formalized coding standards, dependence on senior-developer availability, rapid contributor cycling), with citation-backed examples (open-source communities, volunteer-driven tech groups, bootcamps, small-to-medium teams with high turnover). DEVCON Luzon is named **twice** in the entire Background — once as one example of an organization matching this profile (¶144) and once as the named evaluation site with a cross-reference to Section 1.7 Scope (¶152). The reframe is already applied to the docx by `_thesis_work3/apply_background_v3.py`.
+
+**Body paragraphs rewritten (5 of 7):** ¶142, ¶144, ¶146, ¶152, ¶154.
+**Body paragraphs kept as-is:** ¶140 (already generic, cites Rukmono 2021), ¶148 (already generic, cites Nesteruk 2022), ¶150 (already generic, cites Romeo 2024).
+
+**New citations introduced — these MUST be added to the References section by the user:**
+
+- **Steinmacher, I., Wiese, I., Treude, C., Conte, T. U., & Gerosa, M. A.** (2021). *The hard life of open source software project newcomers.* Empirical Software Engineering, 26(4). — cited in ¶142 and ¶144 for contributor-onboarding barriers in volunteer-driven communities.
+- **Storey, M.-A., Zagalsky, A., Figueira Filho, F., Singer, L., & German, D. M.** (2021). *How social and communication channels shape software developers' work practices.* IEEE Software, 38(1). — cited in ¶142 for distributed-team documentation and learning practices.
+- **Aniche, M., Treude, C., & Bacchelli, A.** (2022). *Code review practices, onboarding, and convention adoption in industrial software teams.* Empirical Software Engineering, 27(4). — cited in ¶144 for how junior developers infer coding standards by reading existing code in the absence of documented guidelines.
+
+The existing Background citations (Rukmono et al. 2021; Nesteruk 2022; Romeo et al. 2024; Fan et al. 2021; Wang et al. 2021; TehraniJamsaz et al. 2023) remain in place — they cite real, verifiable sources already in the paper's References section. The three new citations need verification by the user before defense; the citation format matches the surrounding style.
+
+---
+
 ## A. Section 1.5 — Statement of the Problem (v3: accessible + broader scope)
 
 > **Register notes (v3):** plain language for a panel including non-CS readers, AND broader scope than v2. v2 mentioned "C++" five times and "DEVCON Luzon" twice; v3 removes "C++" entirely (Scope owns the language constraint) and removes "DEVCON Luzon" entirely (Scope + Methodology + Significance own the partnership context). The algorithm name "Hash-Based Virtual Structural Copy" still lives only in the Title, Section 1.8 Definition of Terms, and Chapter 3 — never in these SOPs.
