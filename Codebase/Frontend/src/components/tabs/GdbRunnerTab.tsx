@@ -284,14 +284,13 @@ export default function GdbRunnerTab() {
 
   const runId = currentRun.runId ?? null;
   const pendingId = currentRun.pendingId ?? null;
-  // The runner is bound to the *session*: once results exist for this run,
-  // re-running requires submitting new code (which clears the cache via
-  // setCurrentRun). This makes the test history correspond 1:1 with code
-  // states the user actually shipped.
-  const alreadyRanForThisRun = cachedValid;
+  // The runner is stateless per click: pressing "Run all tests" always
+  // clears the cached results for this session and dispatches a fresh run.
+  // This protects against stale state across refreshes / tab switches and
+  // matches the user's mental model — if they're on the submit button,
+  // they intend to run, not be told they already did.
   const canRun = (runId !== null || !!pendingId)
-              && localAmbiguous.length === 0
-              && !alreadyRanForThisRun;
+              && localAmbiguous.length === 0;
 
   const cooldownLeftMs = cooldownUntil ? Math.max(0, cooldownUntil - now) : 0;
   const onCooldown = cooldownLeftMs > 0;
@@ -322,6 +321,10 @@ export default function GdbRunnerTab() {
     setGdbError(null);
     setGdbUnavailable(null);
     setGdbAmbiguousBlock(null);
+    // Stateless re-run: drop any cached results for this session before
+    // dispatching, so the UI shows the fresh skeleton instead of stale rows.
+    setLastGdbResults(null, null);
+    setActiveKey('');
 
     const skeleton = (currentRun?.detectedPatterns || [])
       .filter(p => !!p.className)
@@ -443,17 +446,6 @@ export default function GdbRunnerTab() {
             </div>
           </li>
         </ol>
-        <div className="gdb-trophy-explainer">
-          <p className="gdb-trophy-explainer-title">Why no integration or E2E here?</p>
-          <p>
-            The Trophy&rsquo;s upper layers exist on the NeoTerritory <strong>product</strong>, not
-            on your submission. A class declaration has no multi-service surface to integrate
-            against and no user-facing flow to run end-to-end, so applying those labels to your
-            code would be a category error. NeoTerritory&rsquo;s own integration + E2E tests live
-            under <code>Codebase/Frontend/playwright/</code> and exercise the studio itself; you
-            see them in CI, not on this tab.
-          </p>
-        </div>
         <p className="gdb-trophy-foot">
           Strategy: <strong>Testing Trophy</strong> (Kent C. Dodds). Read more on{' '}
           <a
@@ -492,8 +484,8 @@ export default function GdbRunnerTab() {
           title={
             localAmbiguous.length > 0
               ? `Resolve ambiguity for: ${localAmbiguous.join(', ')}`
-              : alreadyRanForThisRun
-                ? 'These tests are bound to the current submission. Submit new code to re-run.'
+              : cachedValid
+                ? 'Re-run clears the previous results for this submission.'
                 : undefined
           }
         >
@@ -501,8 +493,8 @@ export default function GdbRunnerTab() {
             ? 'Running…'
             : onCooldown
               ? `Cooldown ${Math.ceil(cooldownLeftMs / 1000)}s`
-              : alreadyRanForThisRun
-                ? 'Already ran for this submission'
+              : cachedValid
+                ? 'Re-run tests'
                 : 'Run all tests'}
         </button>
         {/* Visible disabled-reason chip so the click is never a black hole.
@@ -516,9 +508,7 @@ export default function GdbRunnerTab() {
                 ? 'Start an analysis run first — then come back to test it.'
                 : localAmbiguous.length > 0
                   ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
-                  : alreadyRanForThisRun
-                    ? 'Tests already ran for this submission. Submit new code to re-run.'
-                    : 'Tests are not available for this run.'}
+                  : 'Tests are not available for this run.'}
           </p>
         )}
       </header>
