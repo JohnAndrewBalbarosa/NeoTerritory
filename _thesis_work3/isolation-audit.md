@@ -6,37 +6,41 @@ Working note for `FINAL THESIS 3 PAPER.docx`. Apply each block in Word in the or
 
 ---
 
-## A. Section 1.5 — Statement of the Problem (rewrite all 5 items)
+## A. Section 1.5 — Statement of the Problem (rewrite all 5 items, accessible register)
+
+> **Register note:** these are written for a panel that includes readers without an algorithms or coding background. The algorithm name "Hash-Based Virtual Structural Copy" appears in the Title, Section 1.8 Definition of Terms, and Chapter 3 only — never in these SOPs.
 
 **Replace each numbered SOP with:**
 
-1. How can the proposed system deliver design-pattern learning modules that pair conceptual instruction with deterministic, structure-level analysis of the user's own C++ source code?
+1. How can the system teach design patterns in a way that lets the user try each pattern on their own C++ code immediately after the lesson, instead of only reading about it?
 
-2. How can a hash-based virtual structural copy of the C++ parse tree enable class-level design-pattern detection without mutating the original source representation, while remaining extensible through a JSON-defined pattern catalog?
+2. How can the system examine a user's C++ code to find which design patterns are present, without changing the user's original code, and allow the team to add support for new patterns later without rebuilding the system?
 
-3. How can detected design-pattern evidence be presented as ranked, source-anchored explanations that allow a reader unfamiliar with the codebase to trace every claim back to specific class, method, and line locations in the user's submitted source?
+3. How can the system present its findings in a way that shows the user which lines of their code triggered each detected pattern and why, so the user can verify the finding for themselves?
 
-4. How can the system generate per-class documentation artifacts that combine deterministic structural facts with AI-assisted natural-language explanation, while clearly distinguishing the two so the AI output never replaces the structural ground truth used for evaluation?
+4. How can the system write per-class documentation that combines findings the system verified from the user's code with explanations written by AI, while clearly labelling which sentences come from which source so the user can trust the documentation?
 
-5. How effective is the proposed system, evaluated within DEVCON Luzon as the primary user context, in measurably improving novice developers' ability to identify, document, and reason about design patterns in C++ code they did not write themselves?
+5. How well does the system help DEVCON Luzon participants identify, document, and explain design patterns in C++ code that someone else wrote — measured by comparing what they can do before and after using the system?
 
 ---
 
-## B. Section 1.6 — Specific Objectives (rewrite all 5 items, keep 1:1 pairing)
+## B. Section 1.6 — Specific Objectives (rewrite all 5 items, accessible register, keep 1:1 pairing)
+
+> **Register note:** same vocabulary discipline as block A. Each SO names a concrete deliverable a non-CS reader can read aloud and tell you what the system does. No "parse tree", "JSON catalog", "deterministic", "lexeme", or other algorithm terms.
 
 **Replace each numbered SO with:**
 
-1. Design and implement learning modules that link each design-pattern concept to a corresponding deterministic structural check the system can run against user-submitted C++ code.
+1. Create learning modules where each design-pattern lesson is paired with a hands-on check the system runs on the user's own C++ code, so the user sees the lesson applied to their work right after learning it.
 
-2. Develop a C++ analysis pipeline that (a) constructs an immutable actual parse tree, (b) maintains an annotated virtual structural copy with hash-identified sub-trees, and (c) runs pattern detection against the virtual tree using JSON pattern definitions, so new patterns can be added without recompilation.
+2. Build a C++ code-analysis feature that reads the user's source without modifying it, identifies which design patterns appear at the class level, and reads its pattern definitions from configuration files so new patterns can be added by editing files instead of rebuilding the system.
 
-3. Implement an evidence-presentation surface that ranks competing pattern matches, anchors each match to its source location, and exposes the structural tells (lexeme categories, signatures, ordered checks) that produced the match.
+3. Build a results view that lists the most likely pattern matches first, links each match to the exact lines of code that caused it, and explains in plain language what the system saw in those lines.
 
-4. Implement a documentation generator that emits artifacts in which every AI-written sentence is traceable to a deterministic structural fact, and the deterministic facts remain machine-readable and re-verifiable independently of the AI layer.
+4. Build a documentation feature that produces a written explanation for each analysed class, mixing facts the system verified against the user's code with sentences written by AI, with each AI-written sentence visibly marked so the user can tell the two apart.
 
-5. Evaluate the system using DEVCON Luzon participants against a pre/post measurement of pattern-identification accuracy, documentation completeness, and reasoning quality on unseen C++ code.
+5. Evaluate the system with DEVCON Luzon participants by measuring, before and after they use the system, how accurately they can identify design patterns in unfamiliar C++ code, how completely they can document those patterns, and how clearly they can explain why each pattern is there.
 
-**Pairing check (after pasting):** SOP 1 ↔ SO 1 (learning modules + structural checks); SOP 2 ↔ SO 2 (hash-based virtual structural copy + JSON catalog); SOP 3 ↔ SO 3 (ranked source-anchored evidence); SOP 4 ↔ SO 4 (deterministic + AI documentation); SOP 5 ↔ SO 5 (DEVCON Luzon pre/post evaluation).
+**Pairing check (after pasting):** SOP 1 ↔ SO 1 (learn-then-try-on-own-code); SOP 2 ↔ SO 2 (find patterns without changing source + add new patterns by editing files); SOP 3 ↔ SO 3 (ranked findings + exact lines + plain-language reasons); SOP 4 ↔ SO 4 (verified findings + AI sentences clearly marked); SOP 5 ↔ SO 5 (DEVCON Luzon before/after on identify/document/explain).
 
 ---
 
