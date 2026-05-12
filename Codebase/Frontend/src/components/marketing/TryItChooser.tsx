@@ -8,6 +8,22 @@ import { navigate } from '../../logic/router';
 // The "account holder saves progress" angle is a forward-looking pitch
 // per user direction; both /developer/login and /student-learning/login
 // land in flows that have account-bound state today.
+//
+// Global open trigger (this turn, D76): any "Try it now" / "Try it" CTA
+// across the marketing surfaces (MarketingNav, WhyPage, TourPage,
+// HeroLanding feature tiles) dispatches the TRY_IT_OPEN_EVENT instead
+// of routing directly to /student-studio. Routing direct to /student-studio
+// landed users on the tester-seat picker (LoginOverlay default mode) and
+// also broke viewport scroll because the studio shell does not
+// scroll-restore on mount. With the chooser hoisted to MarketingShell
+// and listening to this event, every CTA reaches the choices step first.
+
+export const TRY_IT_OPEN_EVENT = 'nt:open-try-it-chooser';
+
+export function dispatchTryItChooserOpen(): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent(TRY_IT_OPEN_EVENT));
+}
 
 interface TryItChooserProps {
   open: boolean;

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { navigate, Surface } from '../../logic/router';
+import { dispatchTryItChooserOpen } from './TryItChooser';
 
 // Updated per user feedback (post-D43): the bento doors on Home (See how
 // it works, Why this matters, Pattern catalog, Take the tour, Research,
@@ -94,7 +95,11 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         className="nt-mkt-nav__cta"
         onClick={(e) => {
           e.preventDefault();
-          navigate('/student-studio');
+          // D76: open the path-choice modal first so the user picks
+          // Learning vs Studio (and, if Studio, Tester vs Account) before
+          // any navigation happens. Bypassing this used to drop users
+          // straight on the tester-seat picker.
+          dispatchTryItChooserOpen();
         }}
       >
         Try it now

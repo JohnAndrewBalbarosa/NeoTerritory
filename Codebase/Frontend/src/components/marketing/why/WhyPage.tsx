@@ -1,5 +1,5 @@
-import { navigate } from '../../../logic/router';
 import MagneticButton from '../effects/MagneticButton';
+import { dispatchTryItChooserOpen } from '../TryItChooser';
 
 // Per D40 audience reframe + D43 features-first hierarchy: this surface
 // makes the reader self-identify with an industry where unreadable AI-written
@@ -205,7 +205,7 @@ export default function WhyPage() {
       </section>
 
       <section className="nt-why__cta" aria-label="Try it">
-        <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+        <MagneticButton variant="primary" onClick={dispatchTryItChooserOpen}>
           Try it now
         </MagneticButton>
       </section>

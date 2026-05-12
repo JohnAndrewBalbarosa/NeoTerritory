@@ -80,6 +80,17 @@ const TABS: ReadonlyArray<TabDef> = [
 ];
 
 export default function MainLayout() {
+  // D76 follow-up: ensure the studio shell always lands at viewport top
+  // on mount. Previously, navigating from a scrolled marketing page
+  // (e.g., the bottom of /why or /tour) to /student-studio left the
+  // window scroll position where it was, so the studio appeared
+  // "missing" until the user scrolled back up. MarketingShell already
+  // scrolls to top on its own surface changes, but the studio shell
+  // is a sibling component with no equivalent reset.
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }, []);
+
   useHealth();
   useAiCommentaryPoll();
   // useHeartbeat();  // TEMP: disabled while debugging tagging/undo verification logs.

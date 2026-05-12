@@ -1,5 +1,5 @@
 import { MotionConfig, motion, AnimatePresence } from 'motion/react';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Surface } from '../../logic/router';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
@@ -15,6 +15,7 @@ import PatternsPage from './patterns/PatternsPage';
 import PatternDetailPage from './patterns/PatternDetailPage';
 import TourPage from './tour/TourPage';
 import DocsPage from './docs/DocsPage';
+import TryItChooser, { TRY_IT_OPEN_EVENT } from './TryItChooser';
 
 interface MarketingShellProps {
   surface: Exclude<Surface, 'studio'>;
@@ -22,6 +23,27 @@ interface MarketingShellProps {
 
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
+
+  // Try-it chooser hoisted to the shell so MarketingNav, WhyPage, TourPage,
+  // HeroLanding feature tiles, etc. all open the SAME modal instead of each
+  // navigating directly to /student-studio (which would land on the tester
+  // seat picker and skip the path-choice screen).
+  const [chooserOpen, setChooserOpen] = useState<boolean>(false);
+  const closeChooser = useCallback(() => setChooserOpen(false), []);
+
+  useEffect(() => {
+    function onOpen(): void {
+      setChooserOpen(true);
+    }
+    window.addEventListener(TRY_IT_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(TRY_IT_OPEN_EVENT, onOpen);
+  }, []);
+
+  // Close the chooser on a real route change so it never lingers across
+  // surfaces (e.g., user opens it on /why, hits Back, lands on /).
+  useEffect(() => {
+    setChooserOpen(false);
+  }, [surface]);
 
   useEffect(() => {
     document.body.dataset.surface = surface;
@@ -60,6 +82,7 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
         </motion.div>
       </AnimatePresence>
       <MarketingFooter />
+      <TryItChooser open={chooserOpen} onClose={closeChooser} />
       </div>
     </MotionConfig>
   );
