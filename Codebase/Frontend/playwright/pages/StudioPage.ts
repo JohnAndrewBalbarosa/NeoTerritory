@@ -125,14 +125,17 @@ export class StudioPage {
           sessionStorage.setItem('nt-entry-flow', 'developer');
           localStorage.setItem('nt_start_here_dismissed', '1');
           // Per-tab auto-fire is now the default, so we must pre-stamp
-          // every per-tab completion key to keep screenshots clean. The
-          // legacy single-global key and the new global suppression key
-          // are both written defensively so any build of the tour stays
-          // silent during capture.
-          localStorage.setItem('nt_studio_tour_completed', '1');
-          localStorage.setItem('nt_studio_tour_suppressed', '1');
-          for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
-            localStorage.setItem(`nt_studio_tour_completed__${tab}`, '1');
+          // every per-tab completion key to keep screenshots clean.
+          // CRITICAL: guest/tester users (devconN, which is what this
+          // spec claims) read their suppression flags from sessionStorage,
+          // not localStorage. Write to BOTH so the tour stays silent
+          // regardless of which scope the joyride consults.
+          for (const store of [localStorage, sessionStorage]) {
+            store.setItem('nt_studio_tour_completed', '1');
+            store.setItem('nt_studio_tour_suppressed', '1');
+            for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
+              store.setItem(`nt_studio_tour_completed__${tab}`, '1');
+            }
           }
         } catch {
           /* private mode or quota */

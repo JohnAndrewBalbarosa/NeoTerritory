@@ -62,15 +62,33 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
   },
   {
     num: 6,
+    slug: 'run-tests',
+    title: 'Run the unit tests',
+    paragraph:
+      'The Tests tab applies the Testing-Trophy strategy to your submission: static analysis (cppcheck), compile-and-run, and per-pattern unit-test scaffolds. One click streams every phase verdict back live, with a per-class pass/fail tree on the left and the gdb / stdout / stderr panes on the right.',
+    takeaway: 'Three test phases, every pattern, one click.',
+    imagePath: '/tour/run-tests.png',
+  },
+  {
+    num: 7,
     slug: 'generate-docs',
     title: 'Generate documentation',
     paragraph:
-      'Press "Generate documentation" to trigger the AI doc job. The job runs in chunks (max five per run) so you see progress instead of a frozen spinner. If the AI is unavailable or times out, NeoTerritory falls back to static documentation built from the catalog templates — no run ever ends with nothing.',
+      'The Docs tab assembles the auto-generated pattern documentation — class-by-class explanations, evidence anchors back to your source lines, and AI commentary when an AI provider is configured. Export buttons (MD / PDF / DOCX) ship the same content as the printable view.',
     takeaway: 'Documentation always lands, AI on or off.',
     imagePath: '/tour/generate-docs.png',
   },
   {
-    num: 7,
+    num: 8,
+    slug: 'self-check',
+    title: 'Self-check before you submit',
+    paragraph:
+      'The Self-check tab is the four-step gate that turns an analysis run into a saved submission: class validation (was each detection correct?), code understanding, pattern evidence, and a performance rating. Your answers attach to the run and feed the alpha-testing review loop.',
+    takeaway: 'Validate, rate, then save — in one click.',
+    imagePath: '/tour/self-check.png',
+  },
+  {
+    num: 9,
     slug: 'save-the-run',
     title: 'Save the run',
     paragraph:
@@ -79,7 +97,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     imagePath: '/tour/save-the-run.png',
   },
   {
-    num: 8,
+    num: 10,
     slug: 'open-history',
     title: 'Open run history',
     paragraph:
