@@ -351,8 +351,25 @@ export default function GdbRunnerTab() {
     setLastGdbResults(null, null);
     setActiveKey('');
 
-    const skeleton = (currentRun?.detectedPatterns || [])
-      .filter(p => !!p.className)
+    // Build the skeleton to match exactly what the backend will run.
+    // Mirror backend services/candidateFilter.ts#filterToTaggedPatterns:
+    // for each class, keep the single detection when unambiguous, otherwise
+    // keep only the candidate whose patternId === resolvedMap[className].
+    // Without this filter, ambiguous-class candidates leak into the skeleton
+    // and the user sees "ambiguous" rows in Tests even though they already
+    // resolved a pattern on the patterns page.
+    const allDetections = (currentRun?.detectedPatterns || [])
+      .filter(p => !!p.className);
+    const countByClass = new Map<string, number>();
+    for (const p of allDetections) {
+      countByClass.set(p.className!, (countByClass.get(p.className!) || 0) + 1);
+    }
+    const skeleton = allDetections
+      .filter(p => {
+        const cnt = countByClass.get(p.className!) || 0;
+        if (cnt === 1) return true;
+        return resolvedMap[p.className!] === p.patternId;
+      })
       .map(p => ({
         patternId: p.patternId,
         patternName: p.patternName || p.patternId,

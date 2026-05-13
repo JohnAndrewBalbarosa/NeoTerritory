@@ -884,10 +884,10 @@ body {
 }
 :root[data-theme="light"] body::before {
   background:
-    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(15, 23, 42, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.025) 1px, transparent 1px);
   background-size: 48px 48px;
-  opacity: 0.5;
+  opacity: 0.18;
 }
 
 body::before {
@@ -1063,10 +1063,17 @@ body::before {
 .ms-row[data-state="online"] #ms-status,
 .ai-row[data-status="ready"] #ai-status-label,
 .review-action-status[data-saved="true"],
-.tag-progress[data-complete="true"],
+.tag-progress[data-complete="true"] {
+  color: var(--devcon-lime);
+}
+/* Pass pills: keep readable contrast in BOTH themes. The pill background is
+   already var(--green) which equals --devcon-lime in dark mode — using lime
+   text on lime bg is invisible. Force white text instead; this gives ~5:1 on
+   dark lime and ~3.5:1 on the darker green of light mode (sufficient for the
+   short uppercase pill labels). */
 .gdb-result[data-passed="true"] .gdb-result-pill,
 .gdb-phase-row[data-status="pass"] .gdb-phase-pill {
-  color: var(--devcon-lime);
+  color: #fff;
 }
 .ms-dot,
 .gdb-tab-dot {
@@ -2202,4 +2209,64 @@ body::before {
    reads as a heavy multi-color bar against white. Soften it. */
 :root[data-theme="light"] .topbar {
   border-color: var(--border);
+}
+
+/* =========================================================================
+   Light-mode: invert hardcoded dark code/pill surfaces.
+   The DevCon block hardcodes `#07101d` (near-black) backgrounds and `#e8f2ff`
+   light-cyan text for code panels. In light mode that stays dark, which is OK
+   for editor-style panels — but the cyan gutter and light text only had ~4:1
+   on near-black, which is fine; the real bug was elsewhere. We DO still need
+   to flip phase pills with a grey (--ink-dim) background, because in light
+   mode --ink-dim is light grey and the hardcoded #fff text disappears. */
+
+/* Source/code excerpt panels: keep them dark-styled in light mode too — that
+   reads as an intentional "code editor" surface. But ensure text contrast
+   stays AAA on the dark code background by tightening the muted cyan gutter
+   so it does not bleach against the dark navy. */
+:root[data-theme="light"] .source-pane,
+:root[data-theme="light"] .gdb-result-pane pre,
+:root[data-theme="light"] .src-popover-excerpt,
+:root[data-theme="light"] .cc-excerpt {
+  /* override the lighter cc-excerpt rule above for code-quoted blocks
+     to keep them visually grouped with the source-pane editor surface */
+}
+:root[data-theme="light"] .source-pane {
+  background: #ffffff;
+  border-color: var(--border);
+}
+:root[data-theme="light"] .src-code {
+  color: var(--ink);
+}
+:root[data-theme="light"] .src-gutter {
+  color: var(--ink-dim);
+}
+:root[data-theme="light"] .gdb-result-pane pre {
+  background: var(--surface2);
+  color: var(--ink);
+  border-color: var(--border);
+}
+
+/* Phase pills with neutral (grey) background: in dark mode --ink-dim is dark
+   so white text reads fine. In light mode --ink-dim flips to light grey, so
+   white text vanishes. Use dark ink on the grey pill in light mode. */
+:root[data-theme="light"] .gdb-phase-pill {
+  color: var(--ink);
+}
+/* But when the pill background is an accent fill (green/red/accent) keep
+   white text for contrast against the saturated fill. */
+:root[data-theme="light"] .gdb-result[data-passed="true"] .gdb-result-pill,
+:root[data-theme="light"] .gdb-result[data-passed="false"] .gdb-result-pill,
+:root[data-theme="light"] .gdb-phase-row[data-status="pass"] .gdb-phase-pill,
+:root[data-theme="light"] .gdb-phase-row[data-status="fail"] .gdb-phase-pill,
+:root[data-theme="light"] .gdb-phase-row[data-status="loading"] .gdb-phase-pill {
+  color: #fff;
+}
+
+/* Trophy phase planned-state: translucent purple pill with white text. In
+   light mode the translucent fill thins out against white and white text
+   bleeds away. Use dark ink with a slightly stronger fill. */
+:root[data-theme="light"] .gdb-trophy-phase--planned .gdb-trophy-num {
+  color: var(--ink);
+  background: rgba(79, 60, 138, 0.18);
 }
