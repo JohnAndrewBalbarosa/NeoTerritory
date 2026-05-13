@@ -33,7 +33,6 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
     title: 'Learn',
     links: [
       { label: 'Pattern catalog', path: '/patterns' },
-      { label: 'Why this matters', path: '/why' },
       { label: 'Student learning hub', path: '/student-learning' },
     ],
   },

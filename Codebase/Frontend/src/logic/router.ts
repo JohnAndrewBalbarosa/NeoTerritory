@@ -18,7 +18,6 @@ export type Surface =
   | 'studio'
   | 'googleCallback'
   | 'googleSignIn'
-  | 'why'
   | 'mechanics'
   | 'patterns'
   | 'patternDetail'
@@ -53,7 +52,8 @@ export function pathToSurface(path: string): Surface {
   // so old bookmarks keep working. The surface stays here just to satisfy
   // any in-flight clients on an old SPA bundle.
   if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
-  if (path === '/why' || path.startsWith('/why/')) return 'why';
+  // /why retired: legacy industry-panels page redirects to /learn.
+  if (path === '/why' || path.startsWith('/why/')) return 'learn';
   if (path === '/mechanics' || path.startsWith('/mechanics/')) return 'mechanics';
   // Per D59: the All/GoF filter is gone. /patterns renders the unified
   // index; any deeper path is a detail page. /patterns/gof is preserved

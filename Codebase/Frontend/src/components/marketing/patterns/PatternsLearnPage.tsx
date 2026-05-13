@@ -171,23 +171,6 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
         </section>
       ) : null}
 
-      <section className="nt-learn__module-cites" aria-label="Citations">
-        <h3 className="nt-learn__module-section-head">Sources</h3>
-        <ol className="nt-learn__module-cite-list">
-          {module.citations.map((c, i) => (
-            <li key={`${module.id}-c-${i}`}>
-              {c.url ? (
-                <a href={c.url} target="_blank" rel="noopener noreferrer">
-                  {c.citation}
-                </a>
-              ) : (
-                c.citation
-              )}
-            </li>
-          ))}
-        </ol>
-      </section>
-
       {module.seeAlso && module.seeAlso.length > 0 ? (
         <footer className="nt-learn__module-see-also" aria-label="Related modules">
           <p className="nt-learn__module-see-also-eyebrow">See also</p>

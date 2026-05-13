@@ -183,7 +183,7 @@ function LikertRow({
 }
 
 export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: AmbiguousTabProps) {
-  const { currentRun, setStatus, gdbAllPassedForRun } = useAppStore();
+  const { currentRun, setStatus, gdbAllPassedForRun, setActiveTab } = useAppStore();
 
   const [taggedDecisions, setTaggedDecisions]   = useState<Record<string, TaggedDecision>>({});
   const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
@@ -708,6 +708,17 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
             }}
           >Next →</button>
         )}
+      </div>
+      <div className="tab-next-bar">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={!submitted}
+          title={submitted ? undefined : 'Submit your verdicts before finishing.'}
+          onClick={() => setActiveTab('submit')}
+        >
+          Done — back to Analyze →
+        </button>
       </div>
     </section>
   );

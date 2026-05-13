@@ -1,16 +1,13 @@
-// Header for /docs. Kept as its own component so DocsPage.tsx stays a
-// thin composition file — per user direction this turn: "have a folder
-// where all the UI / HTML lives, and then it's just called from one
-// component."
+// Header for /docs. Slim overview surface — not a thesis chapter.
 
 export default function DocsHeader() {
   return (
     <header className="nt-docs__head">
       <p className="nt-section-eyebrow">Docs</p>
-      <h1 className="nt-docs__title">CodiNeo design documentation</h1>
+      <h1 className="nt-docs__title">NeoTerritory in three minutes</h1>
       <p className="nt-docs__meta">
-        The in-depth surface: methods, design rationale, trade-offs, and references behind the
-        Hash-Based Virtual Structural Copy algorithm.
+        A short overview of what NeoTerritory detects, the families it recognises, and how
+        analysis works. Deeper lessons live under the learning surface.
       </p>
     </header>
   );

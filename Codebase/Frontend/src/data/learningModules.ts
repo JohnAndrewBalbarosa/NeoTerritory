@@ -2,22 +2,8 @@
 //
 // Each module is intentionally a data silo: it can be read end-to-end
 // without cross-module dependencies. The "See also" footer is a read-only
-// pointer set — clicking switches to another module but never auto-folds
-// content from one module into another. This matches the user's
-// "regurgitate"-friendly rote-learning intent.
-//
-// Citations are reused from existing local sources to avoid drift:
-//   - patternData.ts                          (Nesteruk 2022, GoF 1994, per-pattern)
-//   - WhyPage.tsx evidence section            (CISQ 2022, McKinsey 2020, DORA 2023,
-//                                              GitHub 2022/2024, Ampatzoglou 2020,
-//                                              IBM 2023, Stack Overflow 2024)
-//   - _thesis_work3/extracted thesis paper    (Rukmono 2021, Nesteruk 2022,
-//                                              Romeo 2024, Fan 2021, Wang 2021,
-//                                              TehraniJamsaz 2023, Steinmacher 2021,
-//                                              Storey 2021, Aniche/Treude/Bacchelli 2022)
-// All citations land between 2020–2026 except GoF 1994, which is included
-// because every modern design-pattern reference cites it and it is already
-// the canonical text used by patternData.ts.
+// pointer set; clicking switches to another module but never auto-folds
+// content from one module into another.
 
 import { PATTERNS } from '../components/marketing/patterns/patternData';
 
@@ -27,11 +13,6 @@ export type LearningCategory =
   | 'structural'
   | 'behavioural'
   | 'idioms';
-
-export interface LearningCitation {
-  citation: string;
-  url?: string;
-}
 
 export interface LearningSection {
   heading: string;
@@ -55,7 +36,6 @@ export interface LearningModule {
   sections: ReadonlyArray<LearningSection>;
   keyTerms?: ReadonlyArray<{ term: string; definition: string }>;
   summary?: string;
-  citations: ReadonlyArray<LearningCitation>;
   seeAlso?: ReadonlyArray<LearningSeeAlso>;
 }
 
@@ -92,70 +72,6 @@ export const CATEGORY_META: ReadonlyArray<LearningCategoryMeta> = [
     gist: 'C++ idioms that are not GoF but appear often enough to detect.',
   },
 ];
-
-// -------------------------------------------------------------------------
-// Shared citation objects (referenced from multiple modules — defined once
-// so the wording stays consistent across the whole learning surface).
-// -------------------------------------------------------------------------
-
-const CITE_NESTERUK: LearningCitation = {
-  citation: 'Nesteruk, D. (2022). Design Patterns in Modern C++20. Apress.',
-};
-const CITE_GOF: LearningCitation = {
-  citation:
-    'Gamma, E., Helm, R., Johnson, R., & Vlissides, J. (1994). Design Patterns: Elements of Reusable Object-Oriented Software. Addison-Wesley.',
-};
-const CITE_RUKMONO: LearningCitation = {
-  citation:
-    'Rukmono, S. A., et al. (2021). Code comprehension difficulties in software development practices.',
-};
-const CITE_FAN: LearningCitation = {
-  citation:
-    'Fan, J., et al. (2021). AST-based code representations for program analysis.',
-};
-const CITE_WANG: LearningCitation = {
-  citation:
-    'Wang, S., et al. (2021). Graph-based representations for software source code understanding.',
-};
-const CITE_AMPATZOGLOU: LearningCitation = {
-  citation:
-    'Ampatzoglou, A., Charalampidou, S., & Stamelos, I. (2020). A systematic literature review on the use of design patterns. Information and Software Technology, 124.',
-  url: 'https://doi.org/10.1016/j.infsof.2020.106324',
-};
-const CITE_ROMEO: LearningCitation = {
-  citation:
-    'Romeo, F., et al. (2024). Design, implementation, and documentation drift in software systems.',
-};
-const CITE_ANICHE: LearningCitation = {
-  citation:
-    'Aniche, M., Treude, C., & Bacchelli, A. (2022). Code review practices, onboarding, and convention adoption in industrial software teams. Empirical Software Engineering, 27(4).',
-};
-const CITE_STORY: LearningCitation = {
-  citation:
-    'Storey, M.-A., Zagalsky, A., Figueira Filho, F., Singer, L., & German, D. M. (2021). How social and communication channels shape software developers\' work practices. IEEE Software, 38(1).',
-};
-const CITE_STEINMACHER: LearningCitation = {
-  citation:
-    'Steinmacher, I., Wiese, I., Treude, C., Conte, T. U., & Gerosa, M. A. (2021). The hard life of open source software project newcomers. Empirical Software Engineering, 26(4).',
-};
-const CITE_STACK_OVERFLOW_2024: LearningCitation = {
-  citation: 'Stack Overflow (2024). 2024 Developer Survey — AI Tooling section.',
-  url: 'https://survey.stackoverflow.co/2024/ai',
-};
-const CITE_GITHUB_COPILOT: LearningCitation = {
-  citation:
-    'GitHub (2022, 2024). Quantifying GitHub Copilot\'s impact on developer productivity and happiness; Octoverse 2024.',
-  url: 'https://github.blog/2022-09-07-research-quantifying-github-copilots-impact-on-developer-productivity-and-happiness/',
-};
-const CITE_DORA: LearningCitation = {
-  citation: 'DORA / Google Cloud (2023). Accelerate State of DevOps Report 2023.',
-  url: 'https://cloud.google.com/devops/state-of-devops',
-};
-const CITE_CISQ: LearningCitation = {
-  citation:
-    'Krasner, H. (2022). The Cost of Poor Software Quality in the US: A 2022 Report. CISQ.',
-  url: 'https://www.it-cisq.org/the-cost-of-poor-software-quality-in-the-us-2022/',
-};
 
 // -------------------------------------------------------------------------
 // Foundations modules — ported from StudentLearningHub.INTRO_LESSONS and
@@ -195,7 +111,6 @@ const FOUNDATIONS_MODULES: ReadonlyArray<LearningModule> = [
     ],
     summary:
       'A design pattern is a named shape, not a piece of code. The same shape appears in many programs because the underlying language facts keep producing it.',
-    citations: [CITE_GOF, CITE_NESTERUK, CITE_RUKMONO],
     seeAlso: [
       { moduleId: 'foundations-why-matters', label: 'Why design patterns matter' },
       { moduleId: 'foundations-categories', label: 'Three main pattern categories' },
@@ -228,7 +143,6 @@ const FOUNDATIONS_MODULES: ReadonlyArray<LearningModule> = [
     ],
     summary:
       'Patterns are not academic vocabulary. They compress engineering decisions into one shared word that reviewers, mentors, and tools can all use.',
-    citations: [CITE_CISQ, CITE_DORA, CITE_AMPATZOGLOU, CITE_GITHUB_COPILOT],
     seeAlso: [
       { moduleId: 'foundations-what-is-pattern', label: 'What is a design pattern?' },
       { moduleId: 'foundations-real-software', label: 'Design patterns in real software' },
@@ -265,7 +179,6 @@ const FOUNDATIONS_MODULES: ReadonlyArray<LearningModule> = [
     ],
     summary:
       'Creational makes objects. Structural connects them. Behavioural decides how they talk. Idioms are common shapes the catalog also detects.',
-    citations: [CITE_GOF, CITE_NESTERUK],
     seeAlso: [
       { moduleId: 'foundations-what-is-pattern', label: 'What is a design pattern?' },
     ],
@@ -313,7 +226,6 @@ public:
     ],
     summary:
       'Classes blueprint; objects instantiate; inheritance reuses; polymorphism varies behaviour; encapsulation hides; abstraction simplifies.',
-    citations: [CITE_NESTERUK],
     seeAlso: [
       { moduleId: 'foundations-interface-principle', label: 'Program to an interface' },
       { moduleId: 'foundations-code-structure', label: 'Understanding software structure' },
@@ -340,7 +252,6 @@ public:
     ],
     summary:
       'Depend on what something does, not who is doing it. Patterns formalise this principle into named shapes.',
-    citations: [CITE_GOF, CITE_NESTERUK],
     seeAlso: [{ moduleId: 'foundations-oop', label: 'OOP foundations' }],
   },
   {
@@ -368,7 +279,6 @@ public:
     ],
     summary:
       'Code is a tree, not a string. Patterns are shapes in that tree, and tools detect them by walking the tree, not by reading text.',
-    citations: [CITE_FAN, CITE_WANG],
     seeAlso: [
       { moduleId: 'foundations-structural-rules', label: 'Each pattern has a structural rule' },
     ],
@@ -399,7 +309,6 @@ public:
     ],
     summary:
       'Patterns are everywhere you actually work. Learning their shapes is the fastest path to reading unfamiliar code. When documentation drifts away from the code (which it eventually does), the recognisable shape is what survives.',
-    citations: [CITE_NESTERUK, CITE_STEINMACHER, CITE_STORY, CITE_ROMEO],
     seeAlso: [
       { moduleId: 'foundations-why-matters', label: 'Why design patterns matter' },
     ],
@@ -423,7 +332,6 @@ public:
     ],
     summary:
       'Use patterns to solve problems you actually have. Loose coupling beats premature abstraction every time.',
-    citations: [CITE_ANICHE, CITE_NESTERUK],
     seeAlso: [
       { moduleId: 'foundations-interface-principle', label: 'Program to an interface' },
     ],
@@ -457,7 +365,6 @@ public:
     ],
     summary:
       'Ambiguity between two patterns is information, not failure. It tells you human judgement is required.',
-    citations: [CITE_NESTERUK],
     seeAlso: [
       { moduleId: 'foundations-connotative-definition', label: 'The connotative-definition rule' },
       { moduleId: 'foundations-structural-rules', label: 'Each pattern has a structural rule' },
@@ -489,7 +396,6 @@ public:
     ],
     summary:
       'Add structural descriptions until ambiguity disappears. Single keywords are noise; multi-token combos and stdlib symbols are signal.',
-    citations: [CITE_NESTERUK, CITE_FAN],
     seeAlso: [
       { moduleId: 'foundations-ambiguity', label: 'Ambiguity is built in to design patterns' },
     ],
@@ -518,7 +424,6 @@ public:
     ],
     summary:
       'must-have = at least one combo present. must-not-have = if any combo fires, the class is rejected. Same vocabulary as the analyser itself.',
-    citations: [CITE_NESTERUK],
     seeAlso: [
       { moduleId: 'foundations-connotative-definition', label: 'The connotative-definition rule' },
     ],
@@ -547,7 +452,6 @@ public:
     ],
     summary:
       'Standardise on language structure for tooling. Layer team conventions on top for culture.',
-    citations: [CITE_NESTERUK, CITE_ANICHE],
     seeAlso: [
       { moduleId: 'foundations-structural-rules', label: 'Each pattern has a structural rule' },
     ],
@@ -577,7 +481,6 @@ public:
     ],
     summary:
       'Patterns are also a conversation. The interesting questions are organisational, not just structural.',
-    citations: [CITE_STACK_OVERFLOW_2024, CITE_GITHUB_COPILOT, CITE_ANICHE],
     seeAlso: [
       { moduleId: 'foundations-context-variation', label: 'Patterns vary by team and codebase' },
     ],
@@ -617,15 +520,6 @@ function buildPatternModule(slug: string): LearningModule | null {
     });
   }
 
-  const citations: LearningCitation[] = (pattern.sources ?? []).map((s) => ({
-    citation: s.citation + (s.chapter ? ` — ${s.chapter}` : ''),
-    url: s.url,
-  }));
-  if (citations.length === 0) {
-    citations.push({
-      citation: `${CITE_NESTERUK.citation}${pattern.nesterukChapter ? ` — ${pattern.nesterukChapter}` : ''}`,
-    });
-  }
 
   // See-also: other patterns in the same family, capped at 3.
   const seeAlso: LearningSeeAlso[] = PATTERNS.filter(
@@ -642,7 +536,6 @@ function buildPatternModule(slug: string): LearningModule | null {
     intro: pattern.oneLiner || pattern.intent,
     sections,
     summary: pattern.readabilityBenefit,
-    citations,
     seeAlso,
   };
 }

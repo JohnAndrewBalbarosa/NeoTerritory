@@ -1,57 +1,100 @@
-// Main column on /docs. Per user direction this turn: drop the bento
-// grid; render every section inline as long-form content with a left
-// sidebar (DocsSidebar) acting as the TOC. The Testing Trophy section
-// previously lived inside /mechanics — moved here so /how-it-works
-// stays focused on the algorithm, not the test strategy.
+// Slim /docs main column. The page is a short overview, not a teacher.
+// Deep teaching lives at /patterns/learn (the StudentLearningHub-style
+// surface). Docs only orients the reader: what NeoTerritory does, the
+// three pattern families it recognises, and a three-sentence summary
+// of how analysis works.
 
-import { RESEARCH_TILES } from '../docsTiles';
-import DocsInlineSection from './DocsInlineSection';
-import TradeOffsSection from './TradeOffsSection';
-import BibliographySection from './BibliographySection';
+import { FAMILIES } from '../../../../data/learningContent';
+import { navigate } from '../../../../logic/router';
+
+interface FamilyCard {
+  id: string;
+  name: string;
+  blurb: string;
+  patterns: ReadonlyArray<string>;
+}
+
+// Three family cards: Creational, Structural, Behavioural. Pattern
+// names are pulled from learningContent.FAMILIES so this stays in sync
+// with the lessons surface.
+function familyCards(): ReadonlyArray<FamilyCard> {
+  const order = ['creational', 'structural', 'behavioural'] as const;
+  const blurbs: Record<string, string> = {
+    creational: 'Patterns that decide how new objects are made.',
+    structural: 'Patterns that decide how objects fit together.',
+    behavioural: 'Patterns that decide how objects communicate.',
+  };
+  const cards: FamilyCard[] = [];
+  for (const id of order) {
+    const fam = FAMILIES.find((f) => f.id === id);
+    if (!fam) continue;
+    cards.push({
+      id: fam.id,
+      name: fam.name,
+      blurb: blurbs[id] ?? fam.gist,
+      patterns: fam.lessons.map((l) => l.name),
+    });
+  }
+  return cards;
+}
 
 export default function DocsMain() {
+  const cards = familyCards();
+
   return (
     <div className="nt-docs__main">
-      <DocsInlineSection
-        eyebrow="Scope"
-        title="Scope and delimitations"
-        ariaId="dp-scope"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'scope')}
-      />
+      <section id="dp-overview" aria-labelledby="dp-overview-h" className="nt-docs__overview">
+        <p className="nt-section-eyebrow">Overview</p>
+        <h2 id="dp-overview-h" className="nt-docs__section-title">
+          What NeoTerritory does
+        </h2>
+        <p>
+          NeoTerritory analyzes C++ source for design patterns (Creational, Structural,
+          Behavioral) and helps you learn how they're recognized. Start a run in the
+          Studio, walk through the analysis, then verify your understanding with a
+          self-check.
+        </p>
+      </section>
 
-      <DocsInlineSection
-        eyebrow="Why this approach"
-        title="Design rationale"
-        ariaId="dp-rationale"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'rationale')}
-      />
+      <section id="dp-families" aria-labelledby="dp-families-h" className="nt-docs__families">
+        <p className="nt-section-eyebrow">Pattern families</p>
+        <h2 id="dp-families-h" className="nt-docs__section-title">
+          Three families we recognise
+        </h2>
+        <div className="nt-docs__family-grid">
+          {cards.map((c) => (
+            <article key={c.id} className="nt-docs__family-card">
+              <h3 className="nt-docs__family-name">{c.name}</h3>
+              <p className="nt-docs__family-blurb">{c.blurb}</p>
+              <ul className="nt-docs__family-list">
+                {c.patterns.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+              <button
+                type="button"
+                className="nt-docs__family-cta"
+                onClick={() => navigate('/patterns/learn')}
+              >
+                Learn this family →
+              </button>
+            </article>
+          ))}
+        </div>
+      </section>
 
-      <DocsInlineSection
-        eyebrow="Method"
-        title="The algorithmic analysis pipeline"
-        lede="Ten deterministic stages on every submission. Each entry below carries the full thesis paragraph and the citation that grounds it."
-        ariaId="dp-method"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'method')}
-      />
-
-      <TradeOffsSection />
-
-      <DocsInlineSection
-        eyebrow="Contribution"
-        title="Expected contribution"
-        ariaId="dp-contribution"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'contribution')}
-      />
-
-      <DocsInlineSection
-        eyebrow="Testing strategy"
-        title="The Testing Trophy"
-        lede="What the shipped studio actually verifies on every user submission, and what stays in the thesis alpha-testing chapter only. Integration and E2E layers are methodology constructs — they are NOT runtime test loops the studio runs against user code."
-        ariaId="dp-trophy"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'trophy')}
-      />
-
-      <BibliographySection />
+      <section id="dp-how" aria-labelledby="dp-how-h" className="nt-docs__how">
+        <p className="nt-section-eyebrow">How it works</p>
+        <h2 id="dp-how-h" className="nt-docs__section-title">
+          How analysis works
+        </h2>
+        <p>
+          Source is tokenized and each class is scored against pattern rules. When two
+          patterns share enough structure to be ambiguous, we surface both for you to
+          inspect. A self-check at the end records whether each pattern decision matched
+          your intent.
+        </p>
+      </section>
     </div>
   );
 }

@@ -1,17 +1,11 @@
-// Left sidebar on /docs. Per user direction this turn: replace the
-// stacked-bento rail with a TOC of anchor links. Each link jumps to a
-// <section id> rendered by DocsMain / DocsInlineSection. The sidebar
-// is sticky on wide viewports and collapses inline on narrow ones via
-// styles.css.
+// Slim TOC for /docs. Three anchors only: Overview, Pattern families,
+// How it works. Deep teaching lives at /patterns/learn — the Docs page
+// is not a second teacher.
 
 const TOC: ReadonlyArray<{ href: string; label: string }> = [
-  { href: '#dp-scope', label: 'Scope and delimitations' },
-  { href: '#dp-rationale', label: 'Design rationale' },
-  { href: '#dp-method', label: 'Algorithmic analysis pipeline' },
-  { href: '#dp-tradeoffs', label: 'Trade-offs and limitations' },
-  { href: '#dp-contribution', label: 'Expected contribution' },
-  { href: '#dp-trophy', label: 'Testing Trophy' },
-  { href: '#dp-bibliography', label: 'Bibliography' },
+  { href: '#dp-overview', label: 'Overview' },
+  { href: '#dp-families', label: 'Pattern families' },
+  { href: '#dp-how', label: 'How it works' },
 ];
 
 export default function DocsSidebar() {

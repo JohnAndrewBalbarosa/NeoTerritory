@@ -803,8 +803,8 @@ body.login-active{overflow:hidden;}
   --border: rgba(0, 209, 216, 0.18);
   --border-bright: rgba(45, 107, 255, 0.42);
   --ink: #f4f7ff;
-  --ink-soft: #aebbd5;
-  --ink-dim: #6f7d99;
+  --ink-soft: #cdd6e8;
+  --ink-dim: #8693af;
   --accent: var(--devcon-cyan);
   --accent-glow: rgba(0, 209, 216, 0.26);
   --accent-hover: #62f7ff;
@@ -829,23 +829,37 @@ body.login-active{overflow:hidden;}
   --devcon-panel-glow: 0 0 0 1px rgba(0, 209, 216, 0.10), 0 22px 54px rgba(0, 0, 0, 0.46), 0 0 38px rgba(45, 107, 255, 0.10);
 }
 
+/* True light mode. Overrides the DevCon dark :root block above when
+   <html data-theme="light"> is set. Earlier work had this block re-stating
+   dark surface/ink values, which made the theme toggle visually a no-op
+   and made every panel unreadable when the user expected light mode.
+   The values below match the original inverse-polarity intent from the
+   first :root block (lines 1-67): near-white surfaces, near-black ink,
+   accent/green/red retuned for ≥4.5:1 on white. */
 :root[data-theme="light"] {
-  --bg: #0d0f14;
-  --surface: #111a2b;
-  --surface2: #0f1b2e;
-  --border: rgba(0, 209, 216, 0.20);
-  --border-bright: rgba(45, 107, 255, 0.46);
-  --ink: #f7fbff;
-  --ink-soft: #b6c4de;
-  --ink-dim: #7686a2;
-  --accent: var(--devcon-blue);
-  --accent-hover: var(--devcon-cyan);
-  --accent-glow: rgba(45, 107, 255, 0.24);
-  --green: var(--devcon-lime);
-  --amber: var(--devcon-orange);
-  --red: #ff5c7a;
-  --purple: #c08cff;
-  --accent-soft: rgba(45, 107, 255, 0.12);
+  --bg: #f4f5f7;
+  --surface: #ffffff;
+  --surface2: #f0f1f5;
+  --border: #d8dae0;
+  --border-bright: #b8bbc4;
+  --ink: #15161c;
+  --ink-soft: #3c3e50;
+  --ink-dim: #5b5e72;
+  --accent: #4f3c8a;
+  --accent-hover: #3b2c6e;
+  --accent-glow: rgba(79, 60, 138, 0.18);
+  --green: #16a34a;
+  --green-glow: rgba(22, 163, 74, 0.22);
+  --amber: #b45309;
+  --red: #dc2626;
+  --cyan: #0891b2;
+  --purple: #7c3aed;
+  --panel: var(--surface);
+  --panel-border: var(--border);
+  --accent-soft: rgba(79, 60, 138, 0.10);
+  --shadow-sm: 0 1px 4px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 2px 12px rgba(15, 23, 42, 0.08);
+  --shadow-lg: 0 8px 32px rgba(15, 23, 42, 0.12);
 }
 
 html,
@@ -855,6 +869,25 @@ body {
     radial-gradient(circle at 82% 0%, rgba(138, 43, 226, 0.16), transparent 34rem),
     radial-gradient(circle at 92% 70%, rgba(255, 179, 0, 0.08), transparent 28rem),
     var(--devcon-charcoal);
+}
+/* Light-mode override: drop the dark devcon base, soften the accent
+   washes so they read as ambient tint on a near-white surface instead
+   of dark coloured halos against white. Without this, light mode kept
+   showing the dark base color behind every translucent layer. */
+:root[data-theme="light"] html,
+:root[data-theme="light"] body {
+  background:
+    radial-gradient(circle at 12% 6%, rgba(79, 60, 138, 0.05), transparent 30rem),
+    radial-gradient(circle at 82% 0%, rgba(123, 94, 167, 0.06), transparent 34rem),
+    radial-gradient(circle at 92% 70%, rgba(180, 83, 9, 0.04), transparent 28rem),
+    var(--bg);
+}
+:root[data-theme="light"] body::before {
+  background:
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.5;
 }
 
 body::before {
@@ -2005,3 +2038,168 @@ body::before {
   border: 0;
 }
 
+/* Linear-flow Next button bar — bottom-right of each Studio tab so the
+   user advances Analyze → Tests → Docs → Self-check without hunting for
+   the next step. Uses existing .primary-btn token; no hardcoded color. */
+.tab-next-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-lg, 24px);
+  padding-top: var(--space-md, 16px);
+  border-top: 1px solid var(--surface-border, rgba(255, 255, 255, 0.08));
+}
+
+/* Slim /docs family cards — three short cards (Creational/Structural/Behavioural)
+   used by the rewritten DocsMain. Token-only styling. */
+.nt-docs__section-title {
+  font-size: clamp(1.25rem, 1rem + 1vw, 1.75rem);
+  margin: 0 0 var(--space-md, 16px);
+}
+.nt-docs__family-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md, 16px);
+  margin-top: var(--space-md, 16px);
+}
+.nt-docs__family-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: var(--space-md, 16px);
+  border: 1px solid var(--surface-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--radius-sm, 8px);
+  background: var(--surface-elev, transparent);
+}
+.nt-docs__family-name {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.nt-docs__family-blurb {
+  margin: 0;
+  color: var(--ink-soft, currentColor);
+  font-size: 0.95rem;
+}
+.nt-docs__family-list {
+  margin: 0;
+  padding-left: 1.1em;
+  font-size: 0.9rem;
+}
+.nt-docs__family-cta {
+  margin-top: auto;
+  align-self: flex-start;
+  background: transparent;
+  border: 1px solid var(--accent, currentColor);
+  color: var(--accent, currentColor);
+  border-radius: var(--radius-sm, 8px);
+  padding: 6px 12px;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.nt-docs__family-cta:hover {
+  background: var(--accent, currentColor);
+  color: var(--bg, #fff);
+}
+.nt-docs__overview,
+.nt-docs__families,
+.nt-docs__how {
+  margin-block: var(--space-lg, 24px);
+}
+
+/* =========================================================================
+   LIGHT-MODE SURFACE OVERRIDES
+   -------------------------------------------------------------------------
+   The DevCon block above (lines ~798-863) hardcodes navy/charcoal panel
+   backgrounds for every major surface (.panel, .gdb-result, .tab-bar,
+   .file-tab, .tester-tile, etc.). Those rgba(15, 27, 46, ...) fills do not
+   respect the CSS-variable theme switch, so in light mode the page used to
+   show dark navy panels under light-mode ink — unreadable.
+
+   This block re-skins those same surfaces for light mode without touching
+   the dark-mode definitions. It maps the navy fills onto white/near-white
+   surfaces and keeps the accent/cyan borders so the DevCon visual language
+   survives.
+
+   Scope: only color/background/border. No layout, spacing, or typography.
+   ========================================================================= */
+:root[data-theme="light"] .panel,
+:root[data-theme="light"] .gdb-result,
+:root[data-theme="light"] .gdb-phase-row,
+:root[data-theme="light"] .docs-pattern,
+:root[data-theme="light"] .file-tab-pane,
+:root[data-theme="light"] .gdb-tab-pane,
+:root[data-theme="light"] .stats-pie {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-md);
+}
+:root[data-theme="light"] .tab-bar {
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow: var(--shadow-sm);
+}
+:root[data-theme="light"] .file-tab,
+:root[data-theme="light"] .gdb-tab,
+:root[data-theme="light"] .file-tab-btn,
+:root[data-theme="light"] .review-subtab-btn {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .file-tab.is-active,
+:root[data-theme="light"] .gdb-tab.is-active,
+:root[data-theme="light"] .file-tab-btn.is-active,
+:root[data-theme="light"] .review-subtab-btn.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+:root[data-theme="light"] .tester-chip,
+:root[data-theme="light"] .tester-tile {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--ink);
+}
+:root[data-theme="light"] .tester-chip:hover,
+:root[data-theme="light"] .tester-tile:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+:root[data-theme="light"] .tester-seat-icon {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--accent);
+}
+:root[data-theme="light"] .session-gateway__bullets li {
+  background: var(--surface2);
+  border-color: var(--border);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .login-overlay {
+  background: rgba(244, 245, 247, 0.78);
+}
+:root[data-theme="light"] .save-prompt,
+:root[data-theme="light"] .modal-overlay {
+  background: rgba(15, 23, 42, 0.32);
+}
+/* Code excerpt blocks: dark mode uses rgba(0,0,0,0.3) which produces a
+   muddy black panel on a white surface. Use a soft tinted panel in light
+   mode so the excerpt reads as a quoted block instead of a black bar. */
+:root[data-theme="light"] .cc-excerpt,
+:root[data-theme="light"] .src-popover-excerpt {
+  background: var(--surface2);
+  color: var(--ink-soft);
+}
+/* Source line hover/flash: dark-mode uses purple-on-dark, which in light
+   mode reads as a near-white wash. Tint slightly stronger for visibility. */
+:root[data-theme="light"] .src-line.has-comment:hover {
+  background-color: rgba(79, 60, 138, 0.10);
+}
+:root[data-theme="light"] .source-line-flash {
+  background: rgba(79, 60, 138, 0.18) !important;
+}
+/* Topbar already uses var(--surface), but the ::before gradient stripe
+   reads as a heavy multi-color bar against white. Soften it. */
+:root[data-theme="light"] .topbar {
+  border-color: var(--border);
+}

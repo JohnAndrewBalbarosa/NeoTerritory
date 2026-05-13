@@ -636,6 +636,18 @@ export default function GdbRunnerTab() {
           )}
         </div>
       )}
+
+      <div className="tab-next-bar">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={!cachedValid}
+          title={cachedValid ? undefined : 'Run at least one test before continuing.'}
+          onClick={() => setActiveTab('docs')}
+        >
+          Next: Read pattern docs →
+        </button>
+      </div>
     </section>
   );
 }

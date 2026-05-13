@@ -2,7 +2,6 @@ import { useEffect } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
 import { dispatchTryItChooserOpen } from './TryItChooser';
-import HomeStudySummary from './sections/HomeStudySummary';
 
 // Per D40 (audience reframe), D41 (effects budget), D42 (info offloading),
 // D43 (features-first hierarchy), and the doc blueprint at
@@ -95,12 +94,6 @@ const DOORS: ReadonlyArray<BentoDoor> = [
     size: '2x1',
   },
   {
-    title: 'Why this matters',
-    blurb: 'Four industries where unreadable code costs more than missed deadlines.',
-    path: '/why',
-    size: '1x1',
-  },
-  {
     title: 'Pattern catalog',
     blurb: 'Every pattern we recognise, with intent, problem, solution.',
     path: '/patterns',
@@ -119,8 +112,8 @@ const DOORS: ReadonlyArray<BentoDoor> = [
     size: '1x1',
   },
   {
-    title: 'About this thesis',
-    blurb: 'Research question, hypothesis, method, contribution.',
+    title: 'About',
+    blurb: 'What NeoTerritory is and who it is for.',
     path: '/about',
     size: '1x1',
   },
@@ -329,8 +322,6 @@ export default function HeroLanding() {
           ))}
         </div>
       </section>
-
-      <HomeStudySummary />
 
       <section className="nt-home__bento" aria-labelledby="bento-heading">
         <header className="nt-home__bento-head">

@@ -20,7 +20,6 @@ interface MarketingNavProps {
 const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | null }> = [
   { path: '/', label: 'Home', surface: 'hero' },
   { path: '/mechanics', label: 'How it works', surface: 'mechanics' },
-  { path: '/why', label: 'Why', surface: 'why' },
   { path: '/patterns', label: 'Patterns', surface: 'patterns' },
   { path: '/tour', label: 'Tour', surface: 'tour' },
   { path: '/docs', label: 'Docs', surface: 'docs' },

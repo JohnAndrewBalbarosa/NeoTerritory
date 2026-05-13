@@ -9,7 +9,6 @@ import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
 import NotFoundPage from './NotFoundPage';
 import StudentLearningHub from './StudentLearningHub';
-import WhyPage from './why/WhyPage';
 import MechanicsPage from './mechanics/MechanicsPage';
 import PatternsPage from './patterns/PatternsPage';
 import PatternDetailPage from './patterns/PatternDetailPage';
@@ -84,7 +83,6 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'about' && <AboutPage />}
           {surface === 'notFound' && <NotFoundPage />}
           {surface === 'studentLearning' && <StudentLearningHub />}
-          {surface === 'why' && <WhyPage />}
           {surface === 'mechanics' && <MechanicsPage />}
           {surface === 'patterns' && <PatternsPage />}
           {surface === 'patternDetail' && <PatternDetailPage />}
