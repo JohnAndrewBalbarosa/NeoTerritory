@@ -354,10 +354,12 @@ export default function GdbRunnerTab() {
     // Build the skeleton to match exactly what the backend will run.
     // Mirror backend services/candidateFilter.ts#filterToTaggedPatterns:
     // for each class, keep the single detection when unambiguous, otherwise
-    // keep only the candidate whose patternId === resolvedMap[className].
-    // Without this filter, ambiguous-class candidates leak into the skeleton
-    // and the user sees "ambiguous" rows in Tests even though they already
-    // resolved a pattern on the patterns page.
+    // keep only the candidate whose patternId / patternName normalizes to
+    // resolvedMap[className]. Normalization mirrors the backend helper:
+    // lowercase, strip family prefix, drop non-alphanum — so frontend's
+    // canonical "Singleton" matches microservice's "creational.singleton".
+    const normalize = (s: string | null | undefined): string =>
+      !s ? '' : s.toLowerCase().trim().replace(/^[a-z]+\./, '').replace(/[^a-z0-9]/g, '');
     const allDetections = (currentRun?.detectedPatterns || [])
       .filter(p => !!p.className);
     const countByClass = new Map<string, number>();
@@ -368,7 +370,10 @@ export default function GdbRunnerTab() {
       .filter(p => {
         const cnt = countByClass.get(p.className!) || 0;
         if (cnt === 1) return true;
-        return resolvedMap[p.className!] === p.patternId;
+        const want = normalize(resolvedMap[p.className!]);
+        if (!want) return false;
+        return want === normalize(p.patternId)
+            || want === normalize(p.patternName);
       })
       .map(p => ({
         patternId: p.patternId,

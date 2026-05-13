@@ -104,5 +104,30 @@ describe('candidateFilter — D38 ambiguity resolution', () => {
       const kept = filterToTaggedPatterns(patterns, { A: 'builder' });
       expect(kept).toEqual([]);
     });
+
+    it('matches resolvedMap canonical name (e.g. "Singleton") against patternId "creational.singleton"', () => {
+      // Real-world bug: frontend canonicalPatternName() emits PascalCase
+      // palette names ("Singleton", "Factory"), but the microservice emits
+      // patternId values prefixed with a family (e.g. "creational.singleton").
+      // Without normalization the filter never matches and the runner
+      // returns 400 AMBIGUOUS_TAGS even though the user tagged a real
+      // pattern. Lock the cross-format match in.
+      const realPatterns: DetectedPatternResult[] = [
+        { ...mk('Connection', 'creational.singleton'), patternName: 'Singleton' },
+        { ...mk('Connection', 'creational.factory'),   patternName: 'Factory' },
+      ];
+      const kept = filterToTaggedPatterns(realPatterns, { Connection: 'Singleton' });
+      expect(kept.map((p) => p.patternId)).toEqual(['creational.singleton']);
+    });
+
+    it('matches case-insensitively against patternName', () => {
+      const patterns: DetectedPatternResult[] = [
+        { ...mk('Builder', 'creational.builder'), patternName: 'Builder' },
+        { ...mk('Builder', 'creational.factory'), patternName: 'Factory' },
+      ];
+      // resolvedMap might come in lowercase from older clients.
+      const kept = filterToTaggedPatterns(patterns, { Builder: 'builder' });
+      expect(kept.map((p) => p.patternId)).toEqual(['creational.builder']);
+    });
   });
 });
