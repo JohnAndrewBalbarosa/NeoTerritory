@@ -1255,7 +1255,21 @@ body[data-surface] #root {
   opacity: 0.45;
 }
 .nt-course-outline button[data-locked='true'] {
-  border-color: rgba(255, 179, 0, 0.16);
+  border-color: rgba(255, 179, 0, 0.22);
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.nt-course-outline button[data-locked='true']:hover {
+  background: transparent;
+  border-color: rgba(255, 179, 0, 0.22);
+}
+.nt-course-outline button[data-locked='true'] .nt-course-outline__dot {
+  border-color: rgba(255, 179, 0, 0.42);
+  color: var(--devcon-orange, var(--nt-mkt-text-mute));
+  background: rgba(255, 179, 0, 0.06);
+}
+.nt-course-outline button[data-locked='true'] small {
+  color: var(--devcon-orange, var(--nt-mkt-text-mute));
 }
 .nt-course-outline button:not(:disabled):hover,
 .nt-course-outline button[data-active='true'] {

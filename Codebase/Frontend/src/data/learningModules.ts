@@ -1,9 +1,11 @@
 // Learning modules for the /patterns/learn surface (D77).
 //
-// Each module is intentionally a data silo: it can be read end-to-end
-// without cross-module dependencies. The "See also" footer is a read-only
-// pointer set; clicking switches to another module but never auto-folds
-// content from one module into another.
+// Each module is independent in content: it reads end-to-end without
+// pulling material in from other modules. The "See also" footer is a
+// read-only pointer set; clicking switches to another module but never
+// auto-folds content from one module into another. Round-3 ordering
+// (Foundations → Creational → Structural → Behavioural → Idioms) drives
+// the linear unlock gate in PatternsLearnPage.
 
 import { PATTERNS } from '../components/marketing/patterns/patternData';
 

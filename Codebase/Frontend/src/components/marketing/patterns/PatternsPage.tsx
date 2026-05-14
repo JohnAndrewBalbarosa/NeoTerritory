@@ -35,7 +35,7 @@ export default function PatternsPage() {
           </p>
         </div>
         {/* D77: 'Learn more' button top-right of the main content header.
-            Routes to /patterns/learn — the silo'd learning hub that now
+            Routes to /patterns/learn — the step-through learning hub that
             owns the student-learning content under the Patterns surface. */}
         <button
           type="button"
