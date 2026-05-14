@@ -3373,22 +3373,50 @@ body[data-surface] {
   --nt-bento-tile-border-hover: rgba(0, 209, 216, 0.45);
 }
 :root[data-theme="light"] {
-  --nt-bento-tile-bg: oklch(98% 0 0 / 0.92);
-  --nt-bento-tile-bg-hover: oklch(96% 0.02 250 / 0.96);
-  --nt-bento-tile-border: rgba(15, 27, 46, 0.14);
-  --nt-bento-tile-border-hover: rgba(0, 156, 162, 0.55);
-  /* Text + line tokens must flip in light mode too, otherwise the dark-mode
-     near-white --nt-mkt-text lands on white bento tiles. Palette: keep the
-     DEVCON cyan/purple accents but pull text into deep slate for AA contrast
-     on the new light surfaces. */
-  --nt-mkt-text: #0d1422;
-  --nt-mkt-text-soft: #2a3754;
-  --nt-mkt-text-mute: #51607d;
-  --nt-mkt-accent: #007a80;
-  --nt-mkt-accent-2: #5b3e88;
-  --nt-mkt-line: rgba(13, 20, 34, 0.12);
-  --nt-mkt-line-strong: rgba(0, 122, 128, 0.34);
-  --devcon-cyan: #007a80;
+  --nt-bento-tile-bg: #ffffff;
+  --nt-bento-tile-bg-hover: #f3f6fb;
+  --nt-bento-tile-border: rgba(15, 27, 46, 0.18);
+  --nt-bento-tile-border-hover: rgba(0, 122, 128, 0.65);
+  /* Page surfaces flipped to a real light palette: cream/paper background,
+     white card surfaces, deep slate text. Without these the dark `--nt-mkt-bg`
+     remained behind the light bento tiles and the page read as washed-out,
+     low-contrast pale-on-pale. */
+  --nt-mkt-bg: #eef1f6;
+  --nt-mkt-bg-2: #e3e8f1;
+  --nt-mkt-surface: #ffffff;
+  --nt-mkt-text: #0a1020;
+  --nt-mkt-text-soft: #243049;
+  --nt-mkt-text-mute: #4a5775;
+  --nt-mkt-accent: #006066;
+  --nt-mkt-accent-2: #4a2a78;
+  --nt-mkt-line: rgba(13, 20, 34, 0.16);
+  --nt-mkt-line-strong: rgba(0, 96, 102, 0.42);
+  --nt-mkt-shadow: 0 20px 50px -24px rgba(15, 27, 46, 0.18), 0 0 24px rgba(0, 96, 102, 0.06);
+  --devcon-charcoal: #eef1f6;
+  --devcon-cyan: #006066;
+  --devcon-purple: #4a2a78;
+  --devcon-blue: #1f4fcc;
+  --devcon-orange: #c97a00;
+  --devcon-lime: #4f8a00;
+}
+
+/* Body background in light mode: drop the heavy dark radial glows (which were
+   designed for a near-black canvas) and use light tinted washes instead so the
+   bento tiles, nav, and footer don't sit on a dim slab. */
+:root[data-theme="light"] body[data-surface] {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(0, 96, 102, 0.10), transparent 30rem),
+    radial-gradient(circle at 88% 4%, rgba(74, 42, 120, 0.10), transparent 34rem),
+    radial-gradient(circle at 88% 78%, rgba(201, 122, 0, 0.07), transparent 30rem),
+    #eef1f6;
+}
+
+/* Nav was pinned to a dark-translucent slab. Re-paint for light mode so it
+   doesn't look like a stray dark band across the top of a light page. */
+:root[data-theme="light"] .nt-mkt-nav {
+  background: rgba(255, 255, 255, 0.88);
+  border-bottom-color: rgba(0, 96, 102, 0.28);
+  box-shadow: 0 8px 22px rgba(15, 27, 46, 0.06);
 }
 
 /* ---------- Home (HeroLanding rebuild, D43) ---------- */

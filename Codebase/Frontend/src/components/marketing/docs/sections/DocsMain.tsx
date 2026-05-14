@@ -61,6 +61,10 @@ export default function DocsMain() {
         <h2 id="dp-families-h" className="nt-docs__section-title">
           Three families we recognise
         </h2>
+        <p className="nt-docs__families-note">
+          Opening a family takes you to the Student Learning surface. You&rsquo;ll need to sign in
+          with your Google account first to track progress on this device.
+        </p>
         <div className="nt-docs__family-grid">
           {cards.map((c) => (
             <article key={c.id} className="nt-docs__family-card">

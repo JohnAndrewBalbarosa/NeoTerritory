@@ -337,7 +337,7 @@ export default function PatternsLearnPage(): JSX.Element {
                   : 'Next module'
                 : isLast
                   ? 'Mark as read'
-                  : 'Mark as read & next'}
+                  : 'Next'}
             </button>
 
             <button
