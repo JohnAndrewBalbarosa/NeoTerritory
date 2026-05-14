@@ -69,6 +69,6 @@ export const consentNotice =
   'In compliance with the Data Privacy Act of 2012 (Republic Act No. 10173), all information collected through this questionnaire will be treated with strict confidentiality and used solely for academic research purposes. Participation is voluntary, and respondents may refuse to answer any question or withdraw at any time. All responses will be analyzed and reported only in summarized form, and no personal information will be disclosed in the final study or related outputs. By proceeding with this questionnaire, you acknowledge that you have read and understood this notice and voluntarily consent to the collection and use of your responses for the stated research purpose.';
 
 export const consentAcknowledgement =
-  'I have read and understood this notice and voluntarily consent.';
+  'By answering the questionnaire, I acknowledge that I have read and understood the Letter to the Participants and the Data Privacy Notice. I also voluntarily consent to the collection, use, and processing of my responses for the stated academic research purpose.';
 
 export const consentVersion = '2026-05-01';
