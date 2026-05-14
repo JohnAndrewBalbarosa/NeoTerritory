@@ -4767,6 +4767,14 @@ body[data-surface] {
   color: var(--nt-mkt-text);
   white-space: pre;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 640px) {
+  .nt-pattern-detail__code {
+    font-size: 0.78rem;
+    padding: 0.85rem;
+    line-height: 1.5;
+  }
 }
 :root[data-theme="light"] .nt-pattern-detail__code {
   background: oklch(96% 0.01 250);
