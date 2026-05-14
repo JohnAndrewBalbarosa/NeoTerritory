@@ -93,12 +93,15 @@ export const PATTERNS: ReadonlyArray<PatternEntry> = [
     solution:
       'Make the constructor private. Expose a static accessor that lazily constructs and caches the instance. Modern C++ uses Meyer-style local statics so the construction is thread-safe by language guarantee.',
     codeSketch: `class Logger {
-  Logger() = default;
 public:
   static Logger& instance() {
     static Logger inst;
     return inst;
   }
+  Logger(const Logger&) = delete;
+  Logger& operator=(const Logger&) = delete;
+private:
+  Logger() = default;
 };`,
     detection:
       'Catalog entry uses signature_categories: ["object_instantiation", "static_storage_access"]. Negative gates rule out classes that ship ownership handles or virtual interfaces.',
@@ -156,12 +159,12 @@ public:
       'A class needs to construct collaborators it cannot name in advance. Hardcoding the concrete type couples the class to a specific implementation and blocks substitution.',
     solution:
       'Replace direct construction with a virtual factory method. Subclasses override the factory to return their own collaborator. The calling code keeps depending on the abstract interface.',
-    codeSketch: `class Dialog {
+    codeSketch: `class ButtonFactory {
 public:
-  virtual std::unique_ptr<Button> createButton() = 0;
-  void render() {
-    auto btn = createButton();
-    btn->draw();
+  virtual ~ButtonFactory() = default;
+  virtual std::unique_ptr<Button> createButton(int kind) {
+    if (kind == 1) return std::make_unique<RoundButton>();
+    return std::make_unique<SquareButton>();
   }
 };`,
     detection:
@@ -213,11 +216,16 @@ public:
       'Constructors with seven optional parameters are unreadable, error-prone (positional mistakes), and force every caller to know all the knobs even when most should stay default.',
     solution:
       'Move construction into a Builder. Each setter returns *this so calls chain. A terminal build() method returns the finished object. Optional knobs stay optional; required knobs are enforced by the builder.',
-    codeSketch: `Request r = RequestBuilder()
-  .withMethod("POST")
-  .withHeader("Content-Type", "json")
-  .withBody(payload)
-  .build();`,
+    codeSketch: `class RequestBuilder {
+  std::string method_;
+  std::string body_;
+public:
+  RequestBuilder& withMethod(const std::string& m) { method_ = m; return *this; }
+  RequestBuilder& withBody(const std::string& b)   { body_   = b; return *this; }
+  std::unique_ptr<Request> build() {
+    return std::make_unique<Request>(method_, body_);
+  }
+};`,
     detection:
       'Catalog entry uses signature_categories: ["self_return"]. ordered_checks requires both fluent setters returning *this AND a terminal build/Build identifier.',
     catalogFile: 'pattern_catalog/creational/builder.json',
@@ -262,10 +270,14 @@ public:
       'Configuring an object across many setter calls produces visual clutter when each call is a standalone statement on its own line repeating the variable name.',
     solution:
       'Have each setter return *this. Calls fluently chain on a single expression. Reads like a sentence: subject, verb, verb, verb.',
-    codeSketch: `query
-  .where("price", ">", 100)
-  .orderBy("created_at")
-  .limit(20);`,
+    codeSketch: `class QueryConfig {
+  std::vector<std::string> filters_;
+  int limit_ = 0;
+public:
+  QueryConfig& where(const std::string& clause) { filters_.push_back(clause); return *this; }
+  QueryConfig& orderBy(const std::string& col)  { filters_.push_back("order:" + col); return *this; }
+  QueryConfig& limit(int n)                     { limit_ = n; return *this; }
+};`,
     detection:
       'Catalog entry uses signature_categories: ["self_return"] but does NOT require a build/Build identifier. When both Method Chaining and Builder match, both emit (per D21 co-emit rule); the AI disambiguates.',
     catalogFile: 'pattern_catalog/creational/method_chaining.json',
@@ -378,13 +390,16 @@ public:
     solution:
       'Substitute a Proxy with the same interface as the real subject. The Proxy decides when (and whether) to forward calls to the subject, adding caching, auth, or remoting along the way.',
     codeSketch: `class CachedFetcher {
-  RealFetcher real;
-  std::unordered_map<Url, Response> cache;
+  std::unique_ptr<RealFetcher> real_;
+  std::unordered_map<Url, Response> cache_;
+  std::mutex mu_;
 public:
-  Response get(Url u) {
-    if (auto it = cache.find(u); it != cache.end()) return it->second;
-    auto r = real.get(u);
-    cache[u] = r;
+  Response get(const Url& u) {
+    std::lock_guard<std::mutex> lock(mu_);
+    if (auto it = cache_.find(u); it != cache_.end()) return it->second;
+    if (!real_) real_ = std::make_unique<RealFetcher>();
+    auto r = real_->get(u);
+    cache_[u] = r;
     return r;
   }
 };`,
@@ -436,12 +451,13 @@ public:
       'Adding optional behaviour through inheritance produces a combinatorial explosion of subclasses. The user wants composable add-ons (logging + retry + caching), not a class for every combination.',
     solution:
       'Wrap the object in a Decorator with the same interface. The Decorator forwards calls to the inner object and adds behaviour around the call. Decorators stack: each layer is itself decoratable.',
-    codeSketch: `class LoggingFetcher {
-  Fetcher inner;
+    codeSketch: `class LoggingFetcher : public Fetcher {
+  std::unique_ptr<Fetcher> inner_;
 public:
-  Response get(Url u) {
+  explicit LoggingFetcher(std::unique_ptr<Fetcher> w) : inner_(std::move(w)) {}
+  Response get(const Url& u) override {
     log("GET " + u.str());
-    return inner.get(u);
+    return inner_->get(u);
   }
 };`,
     detection:
