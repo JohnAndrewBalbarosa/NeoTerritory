@@ -29,6 +29,29 @@ export interface LearningSeeAlso {
   label: string;
 }
 
+export interface LearningQuizPractical {
+  kind: 'quiz';
+  question: string;
+  options: ReadonlyArray<string>;
+  correctIndex: number;
+  explanation?: string;
+}
+
+export interface LearningPatternPractical {
+  kind: 'pattern';
+  // Slug from PATTERNS (e.g. 'singleton', 'factory-method'). Compared
+  // against detection.patternId / patternName via normalize() so the
+  // microservice's "creational.singleton" form matches "Singleton" too.
+  patternSlug: string;
+  // Display name shown to the user in the verdict line.
+  patternName: string;
+  family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
+  // Prompt sentence shown above the textarea.
+  prompt: string;
+}
+
+export type LearningPractical = LearningQuizPractical | LearningPatternPractical;
+
 export interface LearningModule {
   id: string;
   category: LearningCategory;
@@ -39,6 +62,11 @@ export interface LearningModule {
   keyTerms?: ReadonlyArray<{ term: string; definition: string }>;
   summary?: string;
   seeAlso?: ReadonlyArray<LearningSeeAlso>;
+  // Round-3 (linear-gate) practical check. Foundations modules use a
+  // single-question quiz; pattern modules use a /api/analyze code-check
+  // against the microservice. Module N unlocks only when module N-1's
+  // practical is passed.
+  practical?: LearningPractical;
 }
 
 export interface LearningCategoryMeta {
@@ -542,16 +570,210 @@ function buildPatternModule(slug: string): LearningModule | null {
   };
 }
 
-const PATTERN_MODULES: ReadonlyArray<LearningModule> = PATTERNS.map((p) =>
+const PATTERN_MODULES_RAW: ReadonlyArray<LearningModule> = PATTERNS.map((p) =>
   buildPatternModule(p.slug),
 ).filter((m): m is LearningModule => m !== null);
+
+// -------------------------------------------------------------------------
+// Practicals — one per module, used as the linear-gate unlock criterion.
+// Foundations modules get a single-question multiple-choice quiz; pattern
+// modules get a code-submission check that runs against /api/analyze and
+// passes iff the target patternId / patternName is in the response.
+// -------------------------------------------------------------------------
+
+const FOUNDATIONS_QUIZZES: Record<string, LearningQuizPractical> = {
+  'foundations-what-is-pattern': {
+    kind: 'quiz',
+    question: 'Which best describes a design pattern?',
+    options: [
+      'A copy-pasteable code library you import.',
+      'A named structural arrangement that solves a recurring design problem.',
+      'A specific framework like Spring or React.',
+      'A unit test template applied to every class.',
+    ],
+    correctIndex: 1,
+    explanation: 'A design pattern is a named, idiomatic shape — not code you import.',
+  },
+  'foundations-why-matters': {
+    kind: 'quiz',
+    question: 'What is the practical value of knowing pattern names?',
+    options: [
+      'They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.',
+      'They guarantee the code will be bug-free.',
+      'They replace the need for testing.',
+      'They are required by the C++ standard.',
+    ],
+    correctIndex: 0,
+    explanation: 'Patterns compress engineering decisions into one shared word.',
+  },
+  'foundations-categories': {
+    kind: 'quiz',
+    question: 'Which sentence correctly maps the three main families?',
+    options: [
+      'Creational connects classes, Structural decides communication, Behavioural makes objects.',
+      'Creational makes objects, Structural connects them, Behavioural decides how they communicate.',
+      'All three families do the same thing under different names.',
+      'Structural is a subset of Behavioural in modern C++.',
+    ],
+    correctIndex: 1,
+    explanation: 'Creational → make. Structural → connect. Behavioural → talk.',
+  },
+  'foundations-oop': {
+    kind: 'quiz',
+    question: 'Why are design patterns described in terms of classes and objects?',
+    options: [
+      'Because patterns predate procedural programming.',
+      'Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.',
+      'Because every language must use OOP.',
+      'Because the C++ compiler enforces patterns natively.',
+    ],
+    correctIndex: 1,
+    explanation: 'Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.',
+  },
+  'foundations-interface-principle': {
+    kind: 'quiz',
+    question: '"Program to an interface, not an implementation" means…',
+    options: [
+      'Always use C++ pure virtual classes.',
+      'Code should depend on what something does, not which concrete class is doing it.',
+      'Replace every class with a template.',
+      'Avoid writing concrete classes entirely.',
+    ],
+    correctIndex: 1,
+    explanation: 'Depend on contracts (what), not identities (who).',
+  },
+  'foundations-code-structure': {
+    kind: 'quiz',
+    question: 'Why do pattern detectors walk an AST instead of grep-searching source text?',
+    options: [
+      'Because grep is too slow.',
+      'Because code is a tree; patterns are shapes in that tree, and matching needs structural context.',
+      'Because AST parsers are required by ISO C++.',
+      'Because text search is forbidden on Linux.',
+    ],
+    correctIndex: 1,
+    explanation: 'Patterns are tree shapes, not text shapes.',
+  },
+  'foundations-real-software': {
+    kind: 'quiz',
+    question: 'Why does recognising patterns matter in real-world codebases?',
+    options: [
+      'Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.',
+      'Patterns are mandated by every linter.',
+      'They make compilation faster.',
+      'They eliminate the need for code review.',
+    ],
+    correctIndex: 0,
+    explanation: 'When docs go stale, the shape is what is still true.',
+  },
+  'foundations-beginner-mistakes': {
+    kind: 'quiz',
+    question: 'What is the most common beginner mistake with design patterns?',
+    options: [
+      'Refusing to use any patterns at all.',
+      'Forcing a pattern onto a problem that does not need it ("pattern fever").',
+      'Always preferring composition over inheritance.',
+      'Reading too many books.',
+    ],
+    correctIndex: 1,
+    explanation: 'Use patterns to solve problems you actually have — not for their own sake.',
+  },
+  'foundations-ambiguity': {
+    kind: 'quiz',
+    question: 'When two patterns fit the same class, the detector should…',
+    options: [
+      'Silently pick one and hide the other.',
+      'Surface both and ask the human — ambiguity is information, not failure.',
+      'Reject the class entirely.',
+      'Rewrite the source to remove ambiguity.',
+    ],
+    correctIndex: 1,
+    explanation: 'Ambiguity tells you human judgement is required.',
+  },
+  'foundations-connotative-definition': {
+    kind: 'quiz',
+    question: 'What kinds of tokens are most useful for distinguishing one pattern from another?',
+    options: [
+      'Any single keyword that appears in the class.',
+      'Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.',
+      'Comments only.',
+      'Function lengths.',
+    ],
+    correctIndex: 1,
+    explanation: 'Add structural descriptions until ambiguity disappears.',
+  },
+  'foundations-structural-rules': {
+    kind: 'quiz',
+    question: 'In the matcher’s vocabulary, what does "must-have" mean for a pattern?',
+    options: [
+      'Every listed token must appear at least once.',
+      'At least one combo from the must-have set must fire for the class to match.',
+      'The class must contain the pattern name as a comment.',
+      'The class must inherit from a sealed base.',
+    ],
+    correctIndex: 1,
+    explanation: 'must-have = at least one combo present. must-not-have = any one match rejects the class.',
+  },
+  'foundations-context-variation': {
+    kind: 'quiz',
+    question: 'How does the analyser handle team-specific naming conventions?',
+    options: [
+      'It refuses to match anything that does not follow Gang-of-Four naming.',
+      'It standardises on language structure for matching; team conventions are layered on top for culture.',
+      'It auto-renames the source.',
+      'It only matches identifiers spelled in PascalCase.',
+    ],
+    correctIndex: 1,
+    explanation: 'Language structure is the universal ground; team style sits on top.',
+  },
+  'foundations-postrequisite': {
+    kind: 'quiz',
+    question: 'After Foundations, what kind of question is the catalog NOT trying to answer?',
+    options: [
+      'Which structural shape this class matches.',
+      'Whether the chosen pattern fits the team’s organisational conventions and goals.',
+      'Which stdlib symbols are present.',
+      'Whether the class declares a constructor.',
+    ],
+    correctIndex: 1,
+    explanation: 'Patterns are also a conversation — the organisational fit is yours to decide.',
+  },
+};
+
+function attachPractical(module: LearningModule): LearningModule {
+  if (module.category === 'foundations') {
+    const quiz = FOUNDATIONS_QUIZZES[module.id];
+    if (quiz) return { ...module, practical: quiz };
+    return module;
+  }
+  // Pattern modules: derive the target pattern from the slug embedded in
+  // the module id (`${category}-${pattern.slug}`). The slug is stable
+  // because buildPatternModule emitted it.
+  const slug = module.id.replace(/^[a-z]+-/, '');
+  const pattern = PATTERNS.find((p) => p.slug === slug);
+  if (!pattern) return module;
+  const familyName = pattern.family as LearningPatternPractical['family'];
+  const practical: LearningPatternPractical = {
+    kind: 'pattern',
+    patternSlug: pattern.slug,
+    patternName: pattern.name,
+    family: familyName,
+    prompt: `Write a small C++ class (or two) that demonstrates the ${pattern.name} pattern. The analyser passes you when the response tags include ${pattern.name}, even if other patterns also fire on the same class.`,
+  };
+  return { ...module, practical };
+}
+
+const FOUNDATIONS_MODULES_WITH_PRACTICAL: ReadonlyArray<LearningModule> =
+  FOUNDATIONS_MODULES.map(attachPractical);
+
+const PATTERN_MODULES: ReadonlyArray<LearningModule> = PATTERN_MODULES_RAW.map(attachPractical);
 
 // -------------------------------------------------------------------------
 // Public API
 // -------------------------------------------------------------------------
 
 export const LEARNING_MODULES: ReadonlyArray<LearningModule> = [
-  ...FOUNDATIONS_MODULES,
+  ...FOUNDATIONS_MODULES_WITH_PRACTICAL,
   ...PATTERN_MODULES,
 ];
 

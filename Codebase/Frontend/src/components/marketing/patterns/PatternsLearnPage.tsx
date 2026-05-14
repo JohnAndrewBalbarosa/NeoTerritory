@@ -6,22 +6,26 @@ import {
   modulesInCategory,
   type LearningCategory,
   type LearningModule,
+  type LearningPatternPractical,
+  type LearningQuizPractical,
 } from '../../../data/learningModules';
+import { submitAnalysis } from '../../../api/client';
 
-// D77 (round 3): linear-path gating. The hub keeps the multi-step
-// guided-course UI from round 2 (hero + progress bar, three-section
-// sidebar with numbered step buttons + status, lesson panel with
-// Previous/Next footer) but each module now unlocks only after the
-// previous module is marked read. Module 0 is unlocked from the start;
-// module N is unlocked iff module N-1 is in readIds.
+// D77 (round 4): per-module practical check is the unlock gate. The hub
+// keeps the multi-step guided-course UI (hero + progress, three-section
+// sidebar, lesson panel with Previous/Next footer) from earlier rounds,
+// but module N now unlocks only after module N-1's practical passes —
+// either a multiple-choice quiz (Foundations) or a /api/analyze code
+// submission whose detected tags include the target pattern (Creational,
+// Structural, Behavioural, Idioms).
 //
 // Other rules:
-//   - Data source is LEARNING_MODULES (Foundations + 4 pattern families),
-//     so the catalog and the learning surface share one source of truth.
-//   - URL syncs to /patterns/learn/<module-id> for the active step; a
-//     deep link to a locked module bounces to the highest unlocked step.
-//   - "Mark read" is per-tab (in-memory). Closing the tab clears progress
-//     and re-locks every module past the first.
+//   - Data source is LEARNING_MODULES (Foundations + 4 pattern families).
+//   - URL syncs to /patterns/learn/<module-id>; a deep link to a locked
+//     module bounces to the highest unlocked step.
+//   - "Completed" is per-tab (in-memory). Closing the tab re-locks
+//     everything past module 0. Pattern practicals require the user to
+//     be signed in because /api/analyze is jwtAuth-gated.
 
 interface CourseStep {
   module: LearningModule;
@@ -66,17 +70,27 @@ function indexFromUrl(steps: ReadonlyArray<CourseStep>): number {
 }
 
 // Linear unlock: module 0 is always reachable; module N is reachable only
-// once module N-1 has been marked read.
+// once module N-1's practical has been passed (or, for the rare module
+// without a practical, marked complete via the footer).
 function computeUnlockedCount(
   steps: ReadonlyArray<CourseStep>,
-  readIds: ReadonlySet<string>,
+  completedIds: ReadonlySet<string>,
 ): number {
   let n = 1;
   for (let i = 0; i < steps.length - 1; i++) {
-    if (readIds.has(steps[i].module.id)) n++;
+    if (completedIds.has(steps[i].module.id)) n++;
     else break;
   }
   return Math.min(n, Math.max(steps.length, 1));
+}
+
+// Mirror of backend services/candidateFilter.ts#normalize. Lowercase,
+// strip "<family>." prefix, drop non-alphanum so the microservice's
+// "creational.singleton" matches the practical's slug "singleton" or
+// its display name "Singleton".
+function normalizePatternKey(s: string | null | undefined): string {
+  if (!s) return '';
+  return s.toLowerCase().trim().replace(/^[a-z]+\./, '').replace(/[^a-z0-9]/g, '');
 }
 
 function clampToUnlocked(idx: number, unlockedCount: number): number {
@@ -215,13 +229,246 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
   );
 }
 
+// ----- per-module practical: quiz OR code-check -----
+
+interface ModulePracticalProps {
+  module: LearningModule;
+  isPassed: boolean;
+  onPass: () => void;
+}
+
+function QuizPractical({
+  practical, isPassed, onPass,
+}: { practical: LearningQuizPractical; isPassed: boolean; onPass: () => void }): JSX.Element {
+  const [picked, setPicked] = useState<number | null>(null);
+  const [submitted, setSubmitted] = useState<boolean>(isPassed);
+
+  const correct = submitted && picked === practical.correctIndex;
+  const wrong = submitted && picked !== null && picked !== practical.correctIndex;
+
+  function handleSubmit(): void {
+    if (picked === null) return;
+    setSubmitted(true);
+    if (picked === practical.correctIndex) onPass();
+  }
+
+  function handleRetry(): void {
+    setSubmitted(false);
+    setPicked(null);
+  }
+
+  return (
+    <section className="nt-practical nt-practical--quiz" aria-label="Module practical">
+      <header className="nt-practical__head">
+        <p className="nt-practical__eyebrow">Practical · Check your understanding</p>
+        <h3 className="nt-practical__title">{practical.question}</h3>
+      </header>
+      <ol className="nt-practical__choices">
+        {practical.options.map((opt, i) => {
+          const isPickedRow = picked === i;
+          const isCorrectRow = submitted && i === practical.correctIndex;
+          const isWrongPick = submitted && isPickedRow && i !== practical.correctIndex;
+          return (
+            <li key={i}>
+              <label
+                className="nt-practical__choice"
+                data-picked={isPickedRow ? 'true' : undefined}
+                data-correct={isCorrectRow ? 'true' : undefined}
+                data-wrong={isWrongPick ? 'true' : undefined}
+              >
+                <input
+                  type="radio"
+                  name={`quiz-${practical.question.slice(0, 24)}`}
+                  checked={isPickedRow}
+                  disabled={submitted && correct}
+                  onChange={() => setPicked(i)}
+                />
+                <span>{opt}</span>
+              </label>
+            </li>
+          );
+        })}
+      </ol>
+      <div className="nt-practical__footer">
+        {!submitted && (
+          <button
+            type="button"
+            className="nt-lesson-button nt-lesson-button--primary"
+            onClick={handleSubmit}
+            disabled={picked === null}
+          >
+            Submit answer
+          </button>
+        )}
+        {submitted && correct && (
+          <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
+            ✓ Correct. {practical.explanation || 'Module unlocked.'}
+          </p>
+        )}
+        {submitted && wrong && (
+          <>
+            <p className="nt-practical__verdict nt-practical__verdict--fail" role="status">
+              ✗ Not quite. {practical.explanation || 'Re-read the section above and try again.'}
+            </p>
+            <button type="button" className="nt-lesson-button" onClick={handleRetry}>
+              Try again
+            </button>
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function PatternPractical({
+  practical, isPassed, onPass,
+}: { practical: LearningPatternPractical; isPassed: boolean; onPass: () => void }): JSX.Element {
+  const starter = useMemo(
+    () => `// Write a C++ class that demonstrates the ${practical.patternName} pattern.\n// The check passes when the analyser's tags include "${practical.patternName}".\n\n`,
+    [practical.patternName],
+  );
+  const [code, setCode] = useState<string>(starter);
+  const [status, setStatus] = useState<'idle' | 'running' | 'pass' | 'fail' | 'error'>(
+    isPassed ? 'pass' : 'idle',
+  );
+  const [tags, setTags] = useState<ReadonlyArray<{ patternId: string; patternName: string }>>([]);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+
+  const targetKey = normalizePatternKey(practical.patternSlug);
+  const targetNameKey = normalizePatternKey(practical.patternName);
+
+  async function handleRun(): Promise<void> {
+    if (!code.trim()) {
+      setStatus('error');
+      setErrorMsg('Write a C++ class first, then run the check.');
+      return;
+    }
+    setStatus('running');
+    setErrorMsg('');
+    setTags([]);
+    try {
+      const run = await submitAnalysis(JSON.stringify({
+        code,
+        filename: `${practical.patternSlug}-submission.cpp`,
+      }));
+      const detected = (run.detectedPatterns || []).map((p) => ({
+        patternId: p.patternId,
+        patternName: p.patternName || p.patternId,
+      }));
+      setTags(detected);
+      const hit = detected.some((p) => {
+        const idKey = normalizePatternKey(p.patternId);
+        const nameKey = normalizePatternKey(p.patternName);
+        return idKey === targetKey || idKey === targetNameKey
+            || nameKey === targetKey || nameKey === targetNameKey;
+      });
+      if (hit) {
+        setStatus('pass');
+        onPass();
+      } else {
+        setStatus('fail');
+      }
+    } catch (err) {
+      setStatus('error');
+      setErrorMsg(err instanceof Error ? err.message : 'Analysis failed.');
+    }
+  }
+
+  function handleReset(): void {
+    setCode(starter);
+    setStatus('idle');
+    setTags([]);
+    setErrorMsg('');
+  }
+
+  return (
+    <section className="nt-practical nt-practical--pattern" aria-label="Module practical">
+      <header className="nt-practical__head">
+        <p className="nt-practical__eyebrow">Practical · Trigger the analyser</p>
+        <h3 className="nt-practical__title">
+          Target pattern: <span className="nt-practical__target">{practical.patternName}</span>
+        </h3>
+        <p className="nt-practical__prompt">{practical.prompt}</p>
+      </header>
+      <textarea
+        className="nt-practical__editor"
+        spellCheck={false}
+        value={code}
+        onChange={(e) => setCode(e.target.value)}
+        rows={14}
+        aria-label="C++ source for the practical check"
+        disabled={status === 'running'}
+      />
+      <div className="nt-practical__footer">
+        <button
+          type="button"
+          className="nt-lesson-button nt-lesson-button--primary"
+          onClick={handleRun}
+          disabled={status === 'running'}
+        >
+          {status === 'running' ? 'Running…' : status === 'pass' ? 'Re-run check' : 'Run check'}
+        </button>
+        <button
+          type="button"
+          className="nt-lesson-button"
+          onClick={handleReset}
+          disabled={status === 'running'}
+        >
+          Reset
+        </button>
+      </div>
+      {status === 'pass' && (
+        <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
+          ✓ Pass — the analyser tagged your class as <strong>{practical.patternName}</strong>
+          {tags.length > 1 ? ` (alongside ${tags.length - 1} other tag${tags.length - 1 === 1 ? '' : 's'} — ambiguity is fine)` : ''}
+          .
+        </p>
+      )}
+      {status === 'fail' && (
+        <div className="nt-practical__verdict nt-practical__verdict--fail" role="status">
+          <p>
+            ✗ <strong>{practical.patternName}</strong> was not detected.
+            {tags.length > 0
+              ? ' Detected tags: '
+              : ' The analyser returned no pattern tags for your submission.'}
+          </p>
+          {tags.length > 0 && (
+            <ul className="nt-practical__tags">
+              {tags.map((t, i) => (
+                <li key={`${t.patternId}-${i}`}>
+                  <code>{t.patternName || t.patternId}</code>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+      {status === 'error' && (
+        <p className="nt-practical__verdict nt-practical__verdict--fail" role="status">
+          {errorMsg || 'Analyser unavailable. Sign in (Google) and try again — /api/analyze requires authentication.'}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function ModulePractical({ module, isPassed, onPass }: ModulePracticalProps): JSX.Element | null {
+  const p = module.practical;
+  if (!p) return null;
+  if (p.kind === 'quiz') return <QuizPractical practical={p} isPassed={isPassed} onPass={onPass} />;
+  return <PatternPractical practical={p} isPassed={isPassed} onPass={onPass} />;
+}
+
 // ----- page -----
 
 export default function PatternsLearnPage(): JSX.Element {
   const { groups, steps } = useMemo(() => buildCategoryGroups(), []);
 
-  const [readIds, setReadIds] = useState<Set<string>>(() => new Set());
-  const unlockedCount = useMemo(() => computeUnlockedCount(steps, readIds), [steps, readIds]);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
+  const unlockedCount = useMemo(
+    () => computeUnlockedCount(steps, completedIds),
+    [steps, completedIds],
+  );
 
   const [activeIndex, setActiveIndex] = useState<number>(() =>
     clampToUnlocked(indexFromUrl(steps), 1),
@@ -273,33 +520,35 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps, unlockedCount],
   );
 
-  const markRead = useCallback(() => {
-    if (!activeStep) return;
-    setReadIds((prev) => {
-      if (prev.has(activeStep.module.id)) return prev;
-      const next = new Set(prev);
-      next.add(activeStep.module.id);
-      return next;
-    });
-  }, [activeStep]);
-
-  const markReadAndAdvance = useCallback(() => {
-    markRead();
-    if (activeIndex < steps.length - 1) {
-      goToStep(activeIndex + 1);
-    }
-  }, [activeIndex, goToStep, markRead, steps.length]);
+  const markComplete = useCallback(
+    (moduleId: string) => {
+      setCompletedIds((prev) => {
+        if (prev.has(moduleId)) return prev;
+        const next = new Set(prev);
+        next.add(moduleId);
+        return next;
+      });
+    },
+    [],
+  );
 
   const goPrev = useCallback(() => {
     if (activeIndex > 0) goToStep(activeIndex - 1);
   }, [activeIndex, goToStep]);
 
-  const readCount = readIds.size;
+  const goNext = useCallback(() => {
+    // Advance only when the current module is complete; the footer button
+    // is disabled otherwise so this is a defence-in-depth check.
+    if (!activeStep || !completedIds.has(activeStep.module.id)) return;
+    if (activeIndex < steps.length - 1) goToStep(activeIndex + 1);
+  }, [activeIndex, activeStep, completedIds, goToStep, steps.length]);
+
+  const completedCount = completedIds.size;
   const total = steps.length;
-  const progress = total > 0 ? Math.round((readCount / total) * 100) : 0;
+  const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === total - 1;
-  const isActiveRead = !!(activeStep && readIds.has(activeStep.module.id));
+  const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
 
   return (
     <main className="nt-student nt-student-course" id="main">
@@ -320,10 +569,10 @@ export default function PatternsLearnPage(): JSX.Element {
             Progress is tracked on this device only.
           </p>
         </div>
-        <div className="nt-course-progress" aria-label={`Read progress ${progress}%`}>
+        <div className="nt-course-progress" aria-label={`Practical progress ${progress}%`}>
           <span>{progress}%</span>
           <p>
-            {readCount}/{total} modules read
+            {completedCount}/{total} modules passed
           </p>
           <div className="nt-course-progress__bar" aria-hidden="true">
             <i style={{ width: `${progress}%` }} />
@@ -348,7 +597,7 @@ export default function PatternsLearnPage(): JSX.Element {
                     key={step.module.id}
                     step={step}
                     activeIndex={activeIndex}
-                    isRead={readIds.has(step.module.id)}
+                    isRead={completedIds.has(step.module.id)}
                     isLocked={step.globalIndex >= unlockedCount}
                     onClick={() => goToStep(step.globalIndex)}
                   />
@@ -360,6 +609,15 @@ export default function PatternsLearnPage(): JSX.Element {
 
         <article className="nt-lesson-panel">
           {activeModule ? <ModuleBody module={activeModule} /> : null}
+
+          {activeModule && activeModule.practical ? (
+            <ModulePractical
+              key={activeModule.id}
+              module={activeModule}
+              isPassed={isActiveComplete}
+              onPass={() => markComplete(activeModule.id)}
+            />
+          ) : null}
 
           <footer className="nt-lesson-controls">
             <button
@@ -374,15 +632,23 @@ export default function PatternsLearnPage(): JSX.Element {
             <button
               type="button"
               className="nt-lesson-button nt-lesson-button--primary"
-              onClick={isLast ? markRead : markReadAndAdvance}
+              onClick={isLast ? undefined : goNext}
+              disabled={!isActiveComplete || isLast}
+              title={
+                !isActiveComplete
+                  ? 'Pass the practical above to unlock the next module.'
+                  : isLast
+                  ? 'You finished the last module.'
+                  : undefined
+              }
             >
-              {isActiveRead
-                ? isLast
-                  ? 'Marked read'
-                  : 'Next module'
-                : isLast
-                  ? 'Mark as read'
-                  : 'Next'}
+              {isLast
+                ? isActiveComplete
+                  ? 'Path complete'
+                  : 'Finish the practical'
+                : isActiveComplete
+                ? 'Next module'
+                : 'Locked'}
             </button>
 
             <button
