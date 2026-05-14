@@ -93,7 +93,7 @@ export default function MarketingFooter() {
                       {link.external ? (
                         <span className="nt-mkt-footer__ext" aria-hidden="true">
                           {' '}
-                          &nearr;
+                          {'↗'}
                         </span>
                       ) : null}
                     </a>

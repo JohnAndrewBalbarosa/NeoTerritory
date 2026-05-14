@@ -5739,6 +5739,11 @@ body[data-surface] {
   gap: clamp(1rem, 0.75rem + 1vw, 2rem);
   grid-template-columns: 1fr 1fr;
 }
+@media (max-width: 379px) {
+  .nt-mkt-footer__columns {
+    grid-template-columns: 1fr;
+  }
+}
 @media (min-width: 760px) {
   .nt-mkt-footer__columns {
     grid-template-columns: repeat(4, minmax(0, 1fr));
