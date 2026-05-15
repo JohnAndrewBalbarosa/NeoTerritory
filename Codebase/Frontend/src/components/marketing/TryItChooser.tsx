@@ -138,7 +138,7 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
         {view === 'choices' && (
           <>
             <header className="nt-tryit__head">
-              <p className="nt-tryit__eyebrow">Welcome to NeoTerritory</p>
+              <p className="nt-tryit__eyebrow">Welcome to CodiNeo</p>
               <h2 id="tryit-title" className="nt-tryit__title">
                 How do you want to start?
               </h2>

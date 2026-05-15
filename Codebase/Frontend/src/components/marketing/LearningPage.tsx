@@ -53,7 +53,7 @@ export default function LearningPage() {
           <SplitText text="Learn the shapes." as="span" />
         </h1>
         <p className="nt-learn__lede">
-          A design pattern is a name for a shape that shows up again and again in code. NeoTerritory
+          A design pattern is a name for a shape that shows up again and again in code. CodiNeo
           teaches the structural rule each pattern obeys, not the names developers happen to give
           their methods. The student path walks through the concepts first, then introduces each
           pattern with the exact token combos the analyzer looks for.

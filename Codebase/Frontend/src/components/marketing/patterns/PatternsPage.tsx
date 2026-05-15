@@ -28,7 +28,7 @@ export default function PatternsPage() {
       <header className="nt-patterns__head">
         <div className="nt-patterns__head-text">
           <p className="nt-section-eyebrow">Pattern catalog</p>
-          <h1 className="nt-patterns__title">Patterns NeoTerritory recognises</h1>
+          <h1 className="nt-patterns__title">Patterns CodiNeo recognises</h1>
           <p className="nt-patterns__lede">
             Reference + invite. One tile per pattern. Click a tile to open the detail page, which
             carries the structural criteria, the must-have tokens, and the per-pattern citations.

@@ -186,7 +186,7 @@ const STEPS_BY_TAB: Record<StudioTab, TabSteps> = {
       {
         target: '.gdb-trophy-banner',
         title: 'Testing Trophy strategy',
-        body: 'NeoTerritory tests in five layers (Kent C. Dodds Trophy). Today Compile-and-run and Unit-test execute live; Integration, E2E, and Static analysis are planned and shown here so you know the full strategy.',
+        body: 'CodiNeo tests in five layers (Kent C. Dodds Trophy). Today Compile-and-run and Unit-test execute live; Integration, E2E, and Static analysis are planned and shown here so you know the full strategy.',
         takeaway: 'Integration tests are the meat - they catch what unit tests cannot.',
       },
       {

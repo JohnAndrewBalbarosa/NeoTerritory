@@ -1,7 +1,7 @@
 import { navigate } from '../../logic/router';
 
 // Per D65 (this turn): standard multi-column site footer. Replaces the
-// previous two-line "NeoTerritory Studio - For thesis evaluation..." footer
+// previous two-line "CodiNeo Studio - For thesis evaluation..." footer
 // that classmates flagged as too minimal. Four columns (Product, Learn,
 // Company, Research) + a bottom row with copyright + DevCon acknowledgment.
 //
@@ -66,10 +66,16 @@ export default function MarketingFooter() {
       <div className="nt-mkt-footer__inner">
         <div className="nt-mkt-footer__brand">
           <span className="nt-mkt-footer__brand-mark" aria-hidden="true">
-            NT
+            <img
+              src="/cody_codineo_mascot.svg"
+              alt=""
+              className="nt-mkt-footer__brand-mascot"
+              width={36}
+              height={36}
+            />
           </span>
           <div>
-            <p className="nt-mkt-footer__brand-name">NeoTerritory</p>
+            <p className="nt-mkt-footer__brand-name">CodiNeo</p>
             <p className="nt-mkt-footer__brand-tag">
               Design-pattern learning + auto-documentation for DEVCON Luzon.
             </p>
@@ -107,7 +113,7 @@ export default function MarketingFooter() {
 
       <div className="nt-mkt-footer__bottom">
         <p className="nt-mkt-footer__copy">
-          &copy; 2026 NeoTerritory. Thesis project by Balbarosa, De Leon, Santander - FEU
+          &copy; 2026 CodiNeo. Thesis project by Balbarosa, De Leon, Santander - FEU
           Institute of Technology.
         </p>
         <p className="nt-mkt-footer__credit">

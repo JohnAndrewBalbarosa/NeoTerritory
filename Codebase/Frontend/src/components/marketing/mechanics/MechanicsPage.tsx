@@ -321,7 +321,7 @@ const STAGES: ReadonlyArray<Stage> = [
     id: 'stage-5',
     title: 'Pre-templated pattern matching',
     paragraph:
-      'Each design pattern is a JSON file describing the structural shape NeoTerritory expects to see. Adding a new pattern is dropping a JSON file in pattern_catalog/<family>/ and rerunning. No C++ recompile. Because templates are pre-known, generating tests is cheap: every detected pattern carries a list of unit-test targets the test scaffold consumes.',
+      'Each design pattern is a JSON file describing the structural shape CodiNeo expects to see. Adding a new pattern is dropping a JSON file in pattern_catalog/<family>/ and rerunning. No C++ recompile. Because templates are pre-known, generating tests is cheap: every detected pattern carries a list of unit-test targets the test scaffold consumes.',
     diagram: (
       <StageSvg label="A pattern catalog JSON drives the matcher" height={280}>
         {/* Folder column */}
@@ -423,7 +423,7 @@ export default function MechanicsPage() {
     <main className="nt-mech" id="main">
       <header className="nt-mech__head">
         <p className="nt-section-eyebrow">Mechanics</p>
-        <h1 className="nt-mech__title">How NeoTerritory reads your code.</h1>
+        <h1 className="nt-mech__title">How CodiNeo reads your code.</h1>
         <p className="nt-mech__lede">
           Five stages, in order. Each one runs once. The output is structural facts plus an
           evidence file the AI can cite back to.

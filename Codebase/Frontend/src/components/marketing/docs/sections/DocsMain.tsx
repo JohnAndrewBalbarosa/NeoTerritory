@@ -1,6 +1,6 @@
 // Slim /docs main column. The page is a short overview, not a teacher.
 // Deep teaching lives at /patterns/learn (the StudentLearningHub-style
-// surface). Docs only orients the reader: what NeoTerritory does, the
+// surface). Docs only orients the reader: what CodiNeo does, the
 // three pattern families it recognises, and a three-sentence summary
 // of how analysis works.
 
@@ -46,10 +46,10 @@ export default function DocsMain() {
       <section id="dp-overview" aria-labelledby="dp-overview-h" className="nt-docs__overview">
         <p className="nt-section-eyebrow">Overview</p>
         <h2 id="dp-overview-h" className="nt-docs__section-title">
-          What NeoTerritory does
+          What CodiNeo does
         </h2>
         <p>
-          NeoTerritory analyzes C++ source for design patterns (Creational, Structural,
+          CodiNeo analyzes C++ source for design patterns (Creational, Structural,
           Behavioral) and helps you learn how they're recognized. Start a run in the
           Studio, walk through the analysis, then verify your understanding with a
           self-check.

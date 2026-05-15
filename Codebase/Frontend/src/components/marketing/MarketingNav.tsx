@@ -46,9 +46,15 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         }}
       >
         <span className="nt-mkt-nav__brand-mark" aria-hidden>
-          NT
+          <img
+            src="/cody_codineo_mascot.svg"
+            alt=""
+            className="nt-mkt-nav__brand-mascot"
+            width={36}
+            height={36}
+          />
         </span>
-        <span className="nt-mkt-nav__brand-name">NeoTerritory</span>
+        <span className="nt-mkt-nav__brand-name">CodiNeo</span>
       </a>
 
       <button

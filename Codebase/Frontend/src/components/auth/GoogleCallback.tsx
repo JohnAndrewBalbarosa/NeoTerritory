@@ -82,7 +82,7 @@ export default function GoogleCallback() {
                 <div className="nt-signin-spinner" aria-hidden="true" />
                 <h1 className="nt-entry__title nt-signin__title">Signing you in</h1>
                 <p className="nt-entry__lede">
-                  Verifying your Google session with NeoTerritory.
+                  Verifying your Google session with CodiNeo.
                 </p>
               </>
             )}

@@ -80,7 +80,7 @@ export default function GoogleSignInButton({ role, redirectAfter }: Props) {
       </button>
       {error && <p className="auth-error" role="alert">{error}</p>}
       <p className="auth-helper">
-        We use Google sign-in to verify your account. NeoTerritory
+        We use Google sign-in to verify your account. CodiNeo
         receives only your name and email.
       </p>
     </div>

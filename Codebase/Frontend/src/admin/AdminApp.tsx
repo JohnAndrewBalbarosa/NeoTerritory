@@ -93,7 +93,7 @@ export default function AdminApp() {
         <main className="admin-login-wrap">
           <section className="admin-section admin-section--card admin-login-card">
             <header className="admin-section__head">
-              <p className="eyebrow">NeoTerritory · Admin</p>
+              <p className="eyebrow">CodiNeo · Admin</p>
               <h1 className="brand-title">Sign in</h1>
               <p className="admin-section__hint">Admin credentials only. Non-admin accounts are rejected here.</p>
             </header>
@@ -148,7 +148,7 @@ export default function AdminApp() {
       <AuroraBackground variant="warm" className="admin-aurora" />
       <header className="admin-topbar reveal">
         <div className="brand">
-          <p className="eyebrow">NeoTerritory · Admin</p>
+          <p className="eyebrow">CodiNeo · Admin</p>
           {/* Solid-color title — same call as studio: a marketing
               shimmer on a working operations dashboard reads as
               decorative noise. Plain h1 = solid theme accent. */}

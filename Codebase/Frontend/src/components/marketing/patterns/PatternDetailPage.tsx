@@ -13,7 +13,7 @@ function formatSource(s: PatternSource): string {
 //   2. One-liner + What it is + When to use + Everyday example  (lesson)
 //   3. Problem
 //   4. Solution + code sketch
-//   5. Where NeoTerritory detects this
+//   5. Where CodiNeo detects this
 //   6. Prerequisites + correctStructure  (lesson; from learningContent.ts)
 //   7. Source citation (Nesteruk 2022 chapter)
 
@@ -113,7 +113,7 @@ export default function PatternDetailPage() {
       </section>
 
       <section className="nt-pattern-detail__section">
-        <h2>Where NeoTerritory detects this</h2>
+        <h2>Where CodiNeo detects this</h2>
         <p>{pattern.detection}</p>
         {pattern.catalogFile ? (
           <p className="nt-pattern-detail__catalog">

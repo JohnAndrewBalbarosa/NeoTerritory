@@ -113,7 +113,7 @@ const DOORS: ReadonlyArray<BentoDoor> = [
   },
   {
     title: 'About',
-    blurb: 'What NeoTerritory is and who it is for.',
+    blurb: 'What CodiNeo is and who it is for.',
     path: '/about',
     size: '1x1',
   },
@@ -267,7 +267,7 @@ export default function HeroLanding() {
             </g>
           </svg>
           <figcaption className="nt-home__demo-caption">
-            Paste C++. NeoTerritory tags the design pattern. You get a README and unit-test
+            Paste C++. CodiNeo tags the design pattern. You get a README and unit-test
             scaffolds for free.
           </figcaption>
         </figure>

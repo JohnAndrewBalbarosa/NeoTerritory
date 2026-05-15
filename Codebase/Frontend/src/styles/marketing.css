@@ -82,15 +82,19 @@ body[data-surface] #root {
   letter-spacing: -0.01em;
 }
 .nt-mkt-nav__brand-mark {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: grid;
   place-items: center;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2));
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  color: oklch(15% 0 0);
+  background: transparent;
+  overflow: hidden;
+}
+.nt-mkt-nav__brand-mascot {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 .nt-mkt-nav__links {
   display: flex;
@@ -3262,9 +3266,9 @@ body[data-surface] {
   text-transform: uppercase;
 }
 .nt-mkt-nav__brand-mark {
-  background: conic-gradient(from 20deg, var(--devcon-cyan), var(--devcon-lime), var(--devcon-orange), var(--devcon-purple), var(--devcon-blue), var(--devcon-cyan));
-  color: #061014;
-  box-shadow: 0 0 20px rgba(0, 209, 216, 0.42);
+  background: transparent;
+  color: inherit;
+  box-shadow: 0 0 20px rgba(0, 209, 216, 0.18);
 }
 .nt-mkt-nav__links a[data-active='true']::after,
 .nt-module::before,
@@ -5791,12 +5795,15 @@ body[data-surface] {
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2));
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: oklch(15% 0 0);
+  background: transparent;
   flex-shrink: 0;
+  overflow: hidden;
+}
+.nt-mkt-footer__brand-mascot {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
 }
 .nt-mkt-footer__brand-name {
   margin: 0 0 0.25rem;

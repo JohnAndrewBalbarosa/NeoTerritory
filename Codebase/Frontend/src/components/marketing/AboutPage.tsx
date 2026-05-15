@@ -8,9 +8,9 @@ export default function AboutPage() {
     <main className="nt-about" id="main">
       <header className="nt-about__head">
         <p className="nt-section-eyebrow">About</p>
-        <h1 className="nt-about__title">About NeoTerritory</h1>
+        <h1 className="nt-about__title">About CodiNeo</h1>
         <p className="nt-about__subtitle">
-          NeoTerritory is a C++ design-pattern learning tool. It detects Creational,
+          CodiNeo is a C++ design-pattern learning tool. It detects Creational,
           Structural, and Behavioral patterns in your source, explains why each was
           flagged, and walks you through a guided self-check.
         </p>

@@ -274,7 +274,7 @@ export default function MainLayout() {
     <div className="shell">
       <header className="topbar">
         <div className="brand">
-          <p className="eyebrow">NeoTerritory Studio</p>
+          <p className="eyebrow">CodiNeo Studio</p>
           {/* Solid-color title (project owner aligned with Miryl's branch:
               the ShinyText shimmer made the hero look like a marketing
               effect on a working tool). Plain h1 = solid theme accent. */}

@@ -149,7 +149,7 @@ public:
       'Source code is more than plain text.',
       'A system can look at code structure, class relationships, inheritance, dependencies, and communication flow.',
       'AST means Abstract Syntax Tree. It represents code as a tree-like structure so software tools can analyze syntax and structure.',
-      'NeoTerritory uses code structure to help detect design-pattern evidence and generate documentation support.',
+      'CodiNeo uses code structure to help detect design-pattern evidence and generate documentation support.',
     ],
   },
   {
@@ -205,7 +205,7 @@ public:
       'The way to reduce ambiguity is to add context to the definition itself, not to guess. This is exactly how connotative meaning works in language.',
       'Lumalalim ang kahulugan (connotative): kapag nagdadagdag ka ng mga descriptions sa isang salita, mas espesipiko ang kahulugan. Mula sa "parent", kapag dinagdagan mo ng "female", nagiging "female parent" — mas tiyak na.',
       'Nabawasan ang sakop (denotative): habang dumarami ang descriptions, nababawasan ang bilang ng bagay o tao na pasok sa depinisyon. Mas marami ang pumapasok sa "parent" kaysa sa "female parent".',
-      'NeoTerritory applies the same rule to design patterns. Each pattern is defined not by a single keyword but by a small SET of structural descriptions — token combos that, taken together, narrow what counts as that pattern. Adding the right set of descriptions reduces ambiguity without resorting to method names that vary by team.',
+      'CodiNeo applies the same rule to design patterns. Each pattern is defined not by a single keyword but by a small SET of structural descriptions — token combos that, taken together, narrow what counts as that pattern. Adding the right set of descriptions reduces ambiguity without resorting to method names that vary by team.',
     ],
     bullets: [
       'Connotation = adding descriptions to make meaning more specific.',
@@ -232,7 +232,7 @@ public:
     eyebrow: 'Lesson 12',
     body: [
       'Two teams that both claim to use Builder can write code that looks different. One team may insist on a final build() method; another may just chain setters and return *this. Same pattern name, different conventions.',
-      'NeoTerritory does not pick one team’s convention as the universal truth. Instead, it standardises on language-level structure so that detection is consistent regardless of which team wrote the class. This is what makes automatic unit-test scaffolding feasible — the analyzer agrees with itself across every codebase, even when humans disagree.',
+      'CodiNeo does not pick one team’s convention as the universal truth. Instead, it standardises on language-level structure so that detection is consistent regardless of which team wrote the class. This is what makes automatic unit-test scaffolding feasible — the analyzer agrees with itself across every codebase, even when humans disagree.',
       'The takeaway: if your team has stricter conventions, layer them on top. The analyzer answers the structural question. The conventions answer the cultural one.',
     ],
     bullets: [
@@ -258,7 +258,7 @@ public:
   },
   {
     id: 'intro-try-neoterritory',
-    title: 'Try NeoTerritory',
+    title: 'Try CodiNeo',
     eyebrow: 'Lesson 14',
     body: [
       'You now have the concept module behind you. Continue through the required pattern library and you will see the structural rule for each pattern you read about.',
@@ -855,7 +855,7 @@ function PracticeView({ isComplete }: { isComplete: boolean }) {
       </header>
       <div className="nt-lesson-content">
         <p>
-          You have completed the beginner lessons and pattern library. You can now try NeoTerritory
+          You have completed the beginner lessons and pattern library. You can now try CodiNeo
           with real C++ code.
         </p>
         <p className="nt-student__seat-note">

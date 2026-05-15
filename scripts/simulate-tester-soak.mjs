@@ -98,12 +98,38 @@ process.on('SIGINT', async () => {
   process.exit(130);
 });
 
-function startHeartbeat(username, token) {
+function startHeartbeat(ctx) {
   const interval = setInterval(async () => {
-    const r = await http('POST', '/auth/heartbeat', { token });
-    logEvent({ user: username, endpoint: '/auth/heartbeat', status: r.status, latencyMs: r.latencyMs });
+    const r = await authedHttp('POST', '/auth/heartbeat', { ctx });
+    logEvent({ user: ctx.username, endpoint: '/auth/heartbeat', status: r.status, latencyMs: r.latencyMs });
   }, HEARTBEAT_MS);
   return () => clearInterval(interval);
+}
+
+// authedHttp: wrap http() with one-shot 401 recovery. If the call comes
+// back unauthorized, re-claim the seat for the user (the server may have
+// restarted and dropped the in-memory revocation list / regenerated its
+// JWT secret) and retry the original call with the fresh token.
+async function authedHttp(method, url, { ctx, body } = {}) {
+  let resp = await http(method, url, { token: ctx.token, body });
+  if (resp.status === 401 && !ctx.reclaimInFlight) {
+    ctx.reclaimInFlight = true;
+    try {
+      logEvent({ user: ctx.username, event: 'token_reclaim_attempt', reason: '401_on_' + url });
+      const claim = await http('POST', '/auth/claim', { body: { username: ctx.username } });
+      if (claim.status === 200 && claim.json?.token) {
+        ctx.token = claim.json.token;
+        claimedTokens.set(ctx.username, ctx.token);
+        logEvent({ user: ctx.username, event: 'token_reclaimed' });
+        resp = await http(method, url, { token: ctx.token, body });
+      } else {
+        logEvent({ user: ctx.username, event: 'token_reclaim_failed', status: claim.status });
+      }
+    } finally {
+      ctx.reclaimInFlight = false;
+    }
+  }
+  return resp;
 }
 
 function loadSampleCode(samplePath, commentInject) {
@@ -114,17 +140,17 @@ function loadSampleCode(samplePath, commentInject) {
   return `${commentInject}\n${original}`;
 }
 
-async function runOneAnalysis(username, token, runFixture) {
+async function runOneAnalysis(ctx, runFixture) {
   const code = loadSampleCode(runFixture.sample, runFixture.comment_inject);
-  const filename = `${username}-${path.basename(runFixture.sample)}`;
+  const filename = `${ctx.username}-${path.basename(runFixture.sample)}`;
 
   // 1. analyze
-  const analyze = await http('POST', '/api/analyze', {
-    token,
+  const analyze = await authedHttp('POST', '/api/analyze', {
+    ctx,
     body: { filename, code },
   });
   logEvent({
-    user: username,
+    user: ctx.username,
     endpoint: '/api/analyze',
     sample: runFixture.sample,
     status: analyze.status,
@@ -149,12 +175,12 @@ async function runOneAnalysis(username, token, runFixture) {
   }
 
   // 2. save → integer runId
-  const save = await http('POST', '/api/runs/save', {
-    token,
+  const save = await authedHttp('POST', '/api/runs/save', {
+    ctx,
     body: { pendingId: analyze.json.pendingId, classResolvedPatterns },
   });
   logEvent({
-    user: username,
+    user: ctx.username,
     endpoint: '/api/runs/save',
     status: save.status,
     latencyMs: save.latencyMs,
@@ -179,14 +205,14 @@ async function runOneUser(userFixture, userIndex) {
   if (claim.status !== 200 || !claim.json?.token) {
     throw new Error(`claim failed: ${claim.status} ${claim.text.slice(0, 200)}`);
   }
-  const token = claim.json.token;
-  claimedTokens.set(username, token);
+  const ctx = { username, token: claim.json.token, reclaimInFlight: false };
+  claimedTokens.set(username, ctx.token);
 
-  const stopHeartbeat = startHeartbeat(username, token);
+  const stopHeartbeat = startHeartbeat(ctx);
   try {
     // 2. consent
-    const consent = await http('POST', '/api/survey/consent', {
-      token,
+    const consent = await authedHttp('POST', '/api/survey/consent', {
+      ctx,
       body: { version: CONSENT_VERSION },
     });
     logEvent({ user: username, endpoint: '/api/survey/consent', status: consent.status, latencyMs: consent.latencyMs });
@@ -195,15 +221,15 @@ async function runOneUser(userFixture, userIndex) {
     const runs = userFixture.runs.slice(0, RUNS_PER_USER);
     for (let i = 0; i < runs.length; i++) {
       const runFx = runs[i];
-      const runId = await runOneAnalysis(username, token, runFx);
+      const runId = await runOneAnalysis(ctx, runFx);
 
       // think time before the survey opens
       const thinkMs = THINK_OVERRIDE != null ? THINK_OVERRIDE : pickInRange(userFixture.think_time_ms_range);
       logEvent({ user: username, event: 'think', durationMs: thinkMs, runId });
       await sleep(thinkMs);
 
-      const surveyRun = await http('POST', `/api/survey/run/${encodeURIComponent(runId)}`, {
-        token,
+      const surveyRun = await authedHttp('POST', `/api/survey/run/${encodeURIComponent(runId)}`, {
+        ctx,
         body: { ratings: runFx.ratings, openEnded: {} },
       });
       logEvent({
@@ -230,8 +256,8 @@ async function runOneUser(userFixture, userIndex) {
       ...userFixture.profile,
       ...userFixture.session_ratings,
     };
-    const sessionResp = await http('POST', '/api/survey/session', {
-      token,
+    const sessionResp = await authedHttp('POST', '/api/survey/session', {
+      ctx,
       body: { ratings: sessionRatings, openEnded: {} },
     });
     logEvent({
@@ -246,7 +272,7 @@ async function runOneUser(userFixture, userIndex) {
     }
   } finally {
     stopHeartbeat();
-    const dc = await http('POST', '/auth/disconnect', { token });
+    const dc = await http('POST', '/auth/disconnect', { token: ctx.token });
     logEvent({ user: username, endpoint: '/auth/disconnect', status: dc.status, latencyMs: dc.latencyMs });
     claimedTokens.delete(username);
     logEvent({ user: username, event: 'user_end', durationMs: Date.now() - userStart });

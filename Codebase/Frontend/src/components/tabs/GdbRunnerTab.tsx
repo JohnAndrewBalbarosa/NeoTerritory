@@ -459,7 +459,7 @@ export default function GdbRunnerTab() {
       <aside className="gdb-trophy-banner" aria-label="Testing Trophy strategy">
         <header>
           <span className="gdb-trophy-eyebrow">Testing Trophy &mdash; applied to your submission</span>
-          <h2 className="gdb-trophy-title">How NeoTerritory tests your code</h2>
+          <h2 className="gdb-trophy-title">How CodiNeo tests your code</h2>
         </header>
         <ol className="gdb-trophy-phases">
           <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="static_analysis">

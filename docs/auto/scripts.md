@@ -399,10 +399,15 @@ Env:
 - `http` (line 56)
 - `releaseAllClaimed` (line 81)
 - `startHeartbeat` (line 101)
-- `loadSampleCode` (line 109)
-- `runOneAnalysis` (line 117)
-- `runOneUser` (line 169)
-- `main` (line 256)
+- `authedHttp` (line 113)
+  authedHttp: wrap http() with one-shot 401 recovery. If the call comes
+  back unauthorized, re-claim the seat for the user (the server may have
+  restarted and dropped the in-memory revocation list / regenerated its
+  JWT secret) and retry the original call with the fresh token.
+- `loadSampleCode` (line 135)
+- `runOneAnalysis` (line 143)
+- `runOneUser` (line 195)
+- `main` (line 282)
 
 ### `scripts/verify-requirements.ps1`
 

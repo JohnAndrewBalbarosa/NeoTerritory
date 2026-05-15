@@ -298,9 +298,9 @@ public:
           'AST means Abstract Syntax Tree. It represents code as a tree-like structure so software tools can analyse syntax and structure without re-reading raw text. Most static analysis (including this site\'s pattern detector) operates on ASTs.',
       },
       {
-        heading: 'How NeoTerritory uses it',
+        heading: 'How CodiNeo uses it',
         body:
-          'NeoTerritory builds a parse tree from the user\'s C++ source, mirrors it into a virtual structural copy, and runs pattern checks against the virtual tree. The original parse tree is never mutated — so every detection result can be traced back to specific lines in the user\'s source.',
+          'CodiNeo builds a parse tree from the user\'s C++ source, mirrors it into a virtual structural copy, and runs pattern checks against the virtual tree. The original parse tree is never mutated — so every detection result can be traced back to specific lines in the user\'s source.',
       },
     ],
     keyTerms: [
@@ -414,7 +414,7 @@ public:
           'Lumalalim ang kahulugan (connotative): kapag nagdadagdag ka ng mga descriptions sa isang salita, mas espesipiko ang kahulugan. Mula sa "parent", kapag dinagdagan mo ng "female", nagiging "female parent" — mas tiyak na. Nabawasan ang sakop (denotative): habang dumarami ang descriptions, nababawasan ang bilang ng bagay o tao na pasok sa depinisyon. Mas marami ang pumapasok sa "parent" kaysa sa "female parent".',
       },
       {
-        heading: 'How NeoTerritory uses this rule',
+        heading: 'How CodiNeo uses this rule',
         body:
           'Each pattern is defined not by a single keyword but by a small SET of structural descriptions — token combos that, taken together, narrow what counts as that pattern. The analyser rejects bare keywords as basis and accepts only stdlib symbols or multi-token combos.',
         bullets: [
@@ -464,14 +464,14 @@ public:
     title: 'Patterns vary by team and codebase',
     eyebrow: 'Foundations · Module 12',
     intro:
-      'Two teams that both claim to use Builder can write code that looks different. NeoTerritory does not pick one team\'s convention as universal truth — it standardises on language-level structure so detection stays consistent.',
+      'Two teams that both claim to use Builder can write code that looks different. CodiNeo does not pick one team\'s convention as universal truth — it standardises on language-level structure so detection stays consistent.',
     sections: [
       {
         heading: 'What this means',
         bullets: [
           'Same pattern name can mean different things in different orgs.',
           'Standardising on language-level structure (not naming) is what enables tooling.',
-          'NeoTerritory\'s detection feeds into automatic unit-test generation, so a stable rule matters.',
+          'CodiNeo\'s detection feeds into automatic unit-test generation, so a stable rule matters.',
         ],
       },
       {
