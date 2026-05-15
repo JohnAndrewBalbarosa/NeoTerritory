@@ -1145,6 +1145,75 @@ body[data-surface] #root {
   box-shadow: var(--nt-mkt-shadow);
   overflow: hidden;
 }
+
+/* Visible "you got bounced back" banner shown when the linear-gate
+   silently redirects a user from a locked /patterns/learn/<id> deep
+   link to the highest unlocked module. Without this the URL flips
+   and the user thinks the foundations quiz IS the practical they
+   were trying to take. */
+.nt-lesson-redirect-notice {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+  margin: 1rem 1rem 0;
+  padding: 0.85rem 1rem;
+  border: 1px solid #f3c11055;
+  border-left: 3px solid #f3c110;
+  border-radius: 8px;
+  background: linear-gradient(90deg, rgba(243, 193, 16, 0.08), rgba(243, 193, 16, 0.02));
+  color: var(--nt-mkt-text);
+}
+.nt-lesson-redirect-notice__body {
+  flex: 1 1 auto;
+  display: grid;
+  gap: 0.25rem;
+}
+.nt-lesson-redirect-notice__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f3c110;
+}
+.nt-lesson-redirect-notice__detail {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-lesson-redirect-notice__dismiss {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--nt-mkt-text-soft);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+.nt-lesson-redirect-notice__dismiss:hover,
+.nt-lesson-redirect-notice__dismiss:focus-visible {
+  background: rgba(243, 193, 16, 0.12);
+  border-color: #f3c11055;
+  color: var(--nt-mkt-text);
+  outline: none;
+}
+:root[data-theme="light"] .nt-lesson-redirect-notice {
+  background: linear-gradient(90deg, oklch(96% 0.08 90), oklch(99% 0.02 90));
+  color: oklch(20% 0.05 60);
+}
+:root[data-theme="light"] .nt-lesson-redirect-notice__title {
+  color: oklch(40% 0.16 75);
+}
+:root[data-theme="light"] .nt-lesson-redirect-notice__detail {
+  color: oklch(35% 0.04 60);
+}
 .nt-course-sidebar {
   position: sticky;
   top: 88px;

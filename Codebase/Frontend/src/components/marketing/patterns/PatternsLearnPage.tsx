@@ -474,6 +474,19 @@ export default function PatternsLearnPage(): JSX.Element {
     clampToUnlocked(indexFromUrl(steps), 1),
   );
 
+  // Surface a banner whenever the URL clamp silently redirects the user
+  // (deep link / paste of a locked module URL). Without this banner the
+  // user sees foundations-module-1 content while the address bar reads
+  // /patterns/learn/creational-builder for a fraction of a second, and
+  // then the URL flips — they think the system broke or that the
+  // foundation quiz IS the Builder practical.
+  const [redirectNotice, setRedirectNotice] = useState<{
+    requestedTitle: string;
+    requestedId: string;
+    landedTitle: string;
+    requiredCount: number;
+  } | null>(null);
+
   // Keep activeIndex synced when the URL changes (back button, deep links,
   // see-also click). Clamp to unlockedCount so a deep link to a locked
   // module bounces to the highest unlocked step instead of slipping past
@@ -493,16 +506,38 @@ export default function PatternsLearnPage(): JSX.Element {
   // If unlockedCount shrinks (shouldn't normally — readIds only grows in
   // this tab — but kept as a safety net) or the URL points past the gate,
   // rewrite the URL back to the clamped step so the address bar can't
-  // outpace the unlock state.
+  // outpace the unlock state. Capture the requested-vs-landed delta into
+  // redirectNotice so the article surface can render a visible banner.
   useEffect(() => {
     if (steps.length === 0) return;
     const fromUrl = indexFromUrl(steps);
     const clamped = clampToUnlocked(fromUrl, unlockedCount);
     if (clamped !== fromUrl) {
+      const requestedStep = steps[fromUrl];
+      const landedStep = steps[clamped];
+      if (requestedStep && landedStep) {
+        setRedirectNotice({
+          requestedTitle: requestedStep.module.title,
+          requestedId: requestedStep.module.id,
+          landedTitle: landedStep.module.title,
+          requiredCount: fromUrl - clamped,
+        });
+      }
       navigate(`/patterns/learn/${steps[clamped].module.id}`);
       setActiveIndex(clamped);
     }
   }, [steps, unlockedCount]);
+
+  // Clear the redirect notice the moment the user has unlocked enough
+  // modules to reach (or pass) the originally requested one — the banner
+  // stops being relevant once the gate they hit no longer applies.
+  useEffect(() => {
+    if (!redirectNotice) return;
+    const requestedIndex = steps.findIndex((s) => s.module.id === redirectNotice.requestedId);
+    if (requestedIndex === -1 || requestedIndex < unlockedCount) {
+      setRedirectNotice(null);
+    }
+  }, [redirectNotice, steps, unlockedCount]);
 
   const activeStep = steps[activeIndex];
   const activeModule: LearningModule | undefined = activeStep
@@ -608,6 +643,34 @@ export default function PatternsLearnPage(): JSX.Element {
         </aside>
 
         <article className="nt-lesson-panel">
+          {redirectNotice ? (
+            <aside
+              className="nt-lesson-redirect-notice"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="nt-lesson-redirect-notice__body">
+                <p className="nt-lesson-redirect-notice__title">
+                  &ldquo;{redirectNotice.requestedTitle}&rdquo; is locked
+                </p>
+                <p className="nt-lesson-redirect-notice__detail">
+                  Finish {redirectNotice.requiredCount}{' '}
+                  more module{redirectNotice.requiredCount === 1 ? '' : 's'} to unlock it.
+                  You&rsquo;re now on &ldquo;{redirectNotice.landedTitle}&rdquo; — pass its
+                  practical to keep moving forward.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="nt-lesson-redirect-notice__dismiss"
+                aria-label="Dismiss locked-module notice"
+                onClick={() => setRedirectNotice(null)}
+              >
+                ×
+              </button>
+            </aside>
+          ) : null}
+
           {activeModule ? <ModuleBody module={activeModule} /> : null}
 
           {activeModule && activeModule.practical ? (
