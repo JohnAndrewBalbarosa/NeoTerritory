@@ -40,26 +40,23 @@
       "id": "inner_struct_keyword",
       "expected_kind": "Keyword",
       "expected_lexeme_any_of": ["struct", "class"],
-      "document_as": "pimpl_inner_struct_keyword",
-      "optional": true
+      "document_as": "pimpl_inner_struct_keyword"
     },
     {
       "id": "impl_name",
       "expected_kind": "Identifier",
       "capture_as": "impl_name",
-      "document_as": "pimpl_impl_forward_decl",
-      "optional": true
+      "document_as": "pimpl_impl_forward_decl"
     },
     {
       "id": "impl_semicolon",
       "expected_kind": "Punctuation",
-      "expected_lexeme_any_of": [";"],
-      "optional": true
+      "expected_lexeme_any_of": [";"]
     },
     {
       "id": "smart_pointer_holder",
       "expected_kind": "Identifier",
-      "expected_lexeme_any_of": ["unique_ptr", "shared_ptr", "std::unique_ptr", "std::shared_ptr"],
+      "expected_lexeme_any_of": ["unique_ptr", "shared_ptr"],
       "document_as": "pimpl_holder"
     }
   ],
