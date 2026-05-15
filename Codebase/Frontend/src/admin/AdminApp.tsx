@@ -1,5 +1,7 @@
-import { useEffect, useState, ComponentType } from 'react';
+import { useEffect, useState, ComponentType, FormEvent } from 'react';
 import { useAppStore } from '../store/appState';
+import { login as apiLogin } from '../api/client';
+import type { User } from '../types/api';
 import { useTheme } from '../hooks/useTheme';
 import { useHealth } from '../hooks/useHealth';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
@@ -31,7 +33,7 @@ const TABS: Array<{ id: AdminTab; label: string; icon: ComponentType<IconProps> 
 ];
 
 export default function AdminApp() {
-  const { token, user, clearAuth, status, msState, msLabel, dockerState, dockerLabel, aiConfigured } = useAppStore();
+  const { token, user, setAuth, clearAuth, status, msState, msLabel, dockerState, dockerLabel, aiConfigured } = useAppStore();
   const { theme, toggleTheme } = useTheme();
   // Seed backend / microservice / docker status on mount so the topbar
   // shows the same ops state the studio header surfaces. Admin is the
@@ -52,12 +54,84 @@ export default function AdminApp() {
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
-  useEffect(() => {
-    if (!token || !user) { window.location.href = '/'; return; }
-    if (user.role !== 'admin') window.location.href = '/';
-  }, [token, user]);
+  const [loginUsername, setLoginUsername] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [loginBusy, setLoginBusy] = useState(false);
 
-  if (!token || !user || user.role !== 'admin') return null;
+  useEffect(() => {
+    if (token && user && user.role !== 'admin') {
+      setLoginError('That account is not an admin. Sign in with an admin account.');
+      clearAuth();
+    }
+  }, [token, user, clearAuth]);
+
+  async function onAdminLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (loginBusy) return;
+    setLoginError(null);
+    setLoginBusy(true);
+    try {
+      const { token: nextToken, user: nextUser } = await apiLogin(loginUsername.trim(), loginPassword);
+      if (!nextUser || nextUser.role !== 'admin') {
+        setLoginError('That account is not an admin.');
+        return;
+      }
+      setAuth(nextToken, nextUser as User);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Sign-in failed';
+      setLoginError(message || 'Sign-in failed');
+    } finally {
+      setLoginBusy(false);
+    }
+  }
+
+  if (!token || !user || user.role !== 'admin') {
+    return (
+      <div className="admin-shell admin-shell--login">
+        <AuroraBackground variant="warm" className="admin-aurora" />
+        <main className="admin-login-wrap">
+          <section className="admin-section admin-section--card admin-login-card">
+            <header className="admin-section__head">
+              <p className="eyebrow">NeoTerritory · Admin</p>
+              <h1 className="brand-title">Sign in</h1>
+              <p className="admin-section__hint">Admin credentials only. Non-admin accounts are rejected here.</p>
+            </header>
+            <form className="admin-login-form" onSubmit={onAdminLogin}>
+              <label className="admin-login-field">
+                <span>Username</span>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  required
+                  value={loginUsername}
+                  onChange={(e) => setLoginUsername(e.target.value)}
+                  disabled={loginBusy}
+                />
+              </label>
+              <label className="admin-login-field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  disabled={loginBusy}
+                />
+              </label>
+              {loginError && (
+                <p className="admin-login-error" role="alert">{loginError}</p>
+              )}
+              <button type="submit" className="ghost-btn" disabled={loginBusy}>
+                {loginBusy ? 'Signing in…' : 'Sign in to admin'}
+              </button>
+            </form>
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   function onLogout() { clearAuth(); window.location.href = '/'; }
   function onRefresh() {

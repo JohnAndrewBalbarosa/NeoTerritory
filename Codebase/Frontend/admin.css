@@ -407,3 +407,11 @@ body{position:relative;}
 .admin-field__row .admin-field__input{flex:1;}
 .admin-success-banner{color:var(--green);background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.28);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;}
 @media (max-width:720px){.admin-ai-config__grid{grid-template-columns:1fr;}}
+.admin-shell--login{min-height:100vh;display:flex;align-items:center;justify-content:center;}
+.admin-login-wrap{width:100%;max-width:440px;padding:32px 20px;position:relative;z-index:1;}
+.admin-login-card{display:flex;flex-direction:column;gap:18px;}
+.admin-login-form{display:flex;flex-direction:column;gap:14px;}
+.admin-login-field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-soft);}
+.admin-login-field input{padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:14px;}
+.admin-login-field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.admin-login-error{color:var(--red,#f87171);background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.28);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin:0;}
