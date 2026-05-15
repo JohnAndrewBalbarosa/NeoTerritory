@@ -404,10 +404,10 @@ Env:
 - `releaseAllClaimed` (line 87)
 - `startHeartbeat` (line 107)
 - `authedHttp` (line 124)
-- `loadSampleCode` (line 152)
-- `runOneAnalysis` (line 160)
-- `runOneUser` (line 212)
-- `main` (line 299)
+- `loadSampleCode` (line 173)
+- `runOneAnalysis` (line 181)
+- `runOneUser` (line 233)
+- `main` (line 320)
 
 ### `scripts/verify-requirements.ps1`
 

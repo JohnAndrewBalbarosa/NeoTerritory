@@ -133,15 +133,36 @@ async function authedHttp(method, url, { ctx, body } = {}) {
     ctx.reclaimInFlight = true;
     try {
       logEvent({ user: ctx.username, event: 'token_reclaim_attempt', reason: '401_on_' + url });
+      // First path: re-claim the seat. Works when the server has cleared
+      // claimed_at (e.g. via the seat-sweep grace window).
+      let recovered = false;
       const claim = await http('POST', '/auth/claim', { body: { username: ctx.username } });
       if (claim.status === 200 && claim.json?.token) {
         ctx.token = claim.json.token;
         claimedTokens.set(ctx.username, ctx.token);
-        logEvent({ user: ctx.username, event: 'token_reclaimed' });
-        resp = await http(method, url, { token: ctx.token, body });
+        logEvent({ user: ctx.username, event: 'token_reclaimed', via: 'claim' });
+        recovered = true;
+      } else if (claim.status === 409) {
+        // Seat still occupied by the same username (we hold it but the
+        // backend's JWT secret cycled and our token is dead). Fall back
+        // to /auth/login with the seeded tester password — login does
+        // not check seat ownership, so it always issues a fresh token
+        // tied to the same user_id and the existing claimed_at stays.
+        const login = await http('POST', '/auth/login', {
+          body: { username: ctx.username, password: 'devcon' },
+        });
+        if (login.status === 200 && login.json?.token) {
+          ctx.token = login.json.token;
+          claimedTokens.set(ctx.username, ctx.token);
+          logEvent({ user: ctx.username, event: 'token_reclaimed', via: 'login' });
+          recovered = true;
+        } else {
+          logEvent({ user: ctx.username, event: 'login_fallback_failed', status: login.status });
+        }
       } else {
         logEvent({ user: ctx.username, event: 'token_reclaim_failed', status: claim.status });
       }
+      if (recovered) resp = await http(method, url, { token: ctx.token, body });
     } finally {
       ctx.reclaimInFlight = false;
     }
