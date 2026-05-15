@@ -1185,14 +1185,47 @@ body[data-surface] #root {
   border-bottom: 0;
 }
 .nt-course-section__label {
+  /* Accordion header — button reset overrides + a chevron on the right.
+     Only one section in the sidebar is open at a time; the chevron flips
+     between ▸ (collapsed) and ▾ (open) so the affordance is visible
+     without depending on color alone. */
   margin: 0.25rem 0 0.55rem;
-  padding: 0 0.45rem;
+  padding: 0.35rem 0.45rem;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
   color: var(--nt-mkt-text-mute);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.68rem;
   letter-spacing: 0.1em;
   line-height: 1.4;
   text-transform: uppercase;
+  cursor: pointer;
+  text-align: left;
+}
+.nt-course-section__label:hover {
+  color: var(--nt-mkt-text);
+  background: rgba(0, 209, 216, 0.06);
+}
+.nt-course-section__label:focus-visible {
+  outline: 2px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  outline-offset: 2px;
+}
+.nt-course-section.is-open .nt-course-section__label {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-section__chev {
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+.nt-course-section__body {
+  padding: 0.1rem 0 0.25rem;
 }
 .nt-course-outline {
   list-style: none;
@@ -3343,6 +3376,20 @@ body[data-surface] {
 :root[data-theme="light"] {
   --nt-bento-tile-bg: oklch(98% 0 0 / 0.92);
   --nt-bento-tile-bg-hover: oklch(96% 0.02 250 / 0.96);
+  --nt-bento-tile-border: rgba(15, 27, 46, 0.14);
+  --nt-bento-tile-border-hover: rgba(0, 156, 162, 0.55);
+  /* Text + line tokens must flip in light mode too, otherwise the dark-mode
+     near-white --nt-mkt-text lands on white bento tiles. Palette: keep the
+     DEVCON cyan/purple accents but pull text into deep slate for AA contrast
+     on the new light surfaces. */
+  --nt-mkt-text: #0d1422;
+  --nt-mkt-text-soft: #2a3754;
+  --nt-mkt-text-mute: #51607d;
+  --nt-mkt-accent: #007a80;
+  --nt-mkt-accent-2: #5b3e88;
+  --nt-mkt-line: rgba(13, 20, 34, 0.12);
+  --nt-mkt-line-strong: rgba(0, 122, 128, 0.34);
+  --devcon-cyan: #007a80;
 }
 
 /* ---------- Home (HeroLanding rebuild, D43) ---------- */
@@ -3735,6 +3782,94 @@ body[data-surface] {
   margin-top: 2rem;
 }
 
+/* Evidence section: cited stats backing the four industry panels above.
+   All colors come from --nt-mkt-* tokens, so the light/dark theme flip
+   handles contrast automatically. */
+.nt-why__evidence {
+  margin-top: clamp(2.5rem, 1.5rem + 2vw, 4rem);
+  padding: clamp(1.5rem, 1rem + 1.4vw, 2.5rem);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-bento-radius);
+  background: var(--nt-bento-tile-bg);
+}
+.nt-why__evidence-head {
+  margin-bottom: 1.75rem;
+  max-width: 70ch;
+}
+.nt-why__evidence-title {
+  font-size: clamp(1.4rem, 0.9rem + 1.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+  margin: 0.5rem 0 0.75rem;
+  color: var(--nt-mkt-text);
+}
+.nt-why__evidence-lede {
+  font-size: 0.98rem;
+  line-height: 1.6;
+  color: var(--nt-mkt-text-soft);
+  margin: 0;
+}
+.nt-why__evidence-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: clamp(0.75rem, 0.6rem + 0.5vw, 1.2rem);
+}
+@media (min-width: 900px) {
+  .nt-why__evidence-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nt-why__evidence-item {
+  position: relative;
+  padding: 1.1rem 1.2rem 1.2rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  background: var(--nt-bento-tile-bg-hover, var(--nt-bento-tile-bg));
+  display: grid;
+  gap: 0.55rem;
+}
+.nt-why__evidence-year {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  margin-bottom: 0.1rem;
+}
+.nt-why__evidence-headline {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--nt-mkt-text);
+}
+.nt-why__evidence-detail {
+  margin: 0;
+  font-size: 0.94rem;
+  line-height: 1.55;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-why__evidence-cite {
+  margin: 0.2rem 0 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-why__evidence-link {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklch, var(--devcon-cyan, var(--nt-mkt-accent)) 50%, transparent);
+  text-underline-offset: 3px;
+}
+.nt-why__evidence-link:hover,
+.nt-why__evidence-link:focus-visible {
+  text-decoration-color: currentColor;
+}
+
 /* ---------- /mechanics ---------- */
 .nt-mech {
   max-width: 1320px;
@@ -3865,8 +4000,445 @@ body[data-surface] {
   padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
 }
 .nt-patterns__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
   text-align: left;
   margin-bottom: 2rem;
+}
+.nt-patterns__head-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.nt-patterns__head-cta {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  margin-top: 0.5rem;
+  padding: 0.65rem 1.1rem;
+  border: 1px solid var(--nt-mkt-line-strong);
+  border-radius: 999px;
+  background: var(--nt-bento-tile-bg);
+  color: var(--nt-mkt-text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color 200ms ease, background 200ms ease, color 200ms ease;
+}
+.nt-patterns__head-cta:hover,
+.nt-patterns__head-cta:focus-visible {
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+@media (max-width: 640px) {
+  .nt-patterns__head {
+    flex-direction: column;
+  }
+  .nt-patterns__head-cta {
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
+/* -------- /patterns/learn (D77 learning hub under Patterns) -------- */
+.nt-learn {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: clamp(1.25rem, 1rem + 1.2vw, 2.5rem) clamp(1.25rem, 4vw, 3rem);
+}
+.nt-learn__topbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid var(--nt-mkt-line);
+}
+.nt-learn__topbar-left {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.nt-learn__topbar-title {
+  font-size: clamp(1.5rem, 1rem + 1.6vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0.4rem 0 0.5rem;
+  color: var(--nt-mkt-text);
+}
+.nt-learn__topbar-lede {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.98rem;
+}
+.nt-learn__topbar-back {
+  flex: 0 0 auto;
+  align-self: flex-start;
+  padding: 0.55rem 1rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nt-mkt-text-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.nt-learn__topbar-back:hover,
+.nt-learn__topbar-back:focus-visible {
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+  color: var(--nt-mkt-text);
+}
+.nt-learn__shell {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: clamp(1rem, 0.75rem + 1vw, 2rem);
+}
+@media (min-width: 900px) {
+  .nt-learn__shell {
+    grid-template-columns: 280px 1fr;
+  }
+}
+.nt-learn__sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  background: var(--nt-bento-tile-bg);
+  position: sticky;
+  top: 84px;
+  align-self: start;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+}
+.nt-learn__sidebar-cat-head {
+  margin-bottom: 0.5rem;
+}
+.nt-learn__sidebar-cat-name {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-learn__sidebar-cat-gist {
+  margin: 0.3rem 0 0;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text-mute);
+  line-height: 1.45;
+}
+.nt-learn__sidebar-cat-list {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.nt-learn__sidebar-link {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nt-mkt-text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease;
+}
+.nt-learn__sidebar-link:hover,
+.nt-learn__sidebar-link:focus-visible {
+  background: var(--nt-bento-tile-bg-hover, var(--nt-bento-tile-bg));
+  border-color: var(--nt-mkt-line);
+}
+.nt-learn__sidebar-link[data-active="true"] {
+  background: var(--nt-bento-tile-bg-hover, var(--nt-bento-tile-bg));
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-weight: 600;
+}
+.nt-learn__main {
+  min-width: 0;
+}
+.nt-learn__main-back {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nt-mkt-text-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+.nt-learn__main-back:hover,
+.nt-learn__main-back:focus-visible {
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+  color: var(--nt-mkt-text);
+}
+.nt-learn__overview-head {
+  margin-bottom: 1.5rem;
+}
+.nt-learn__overview-title {
+  font-size: clamp(1.4rem, 0.9rem + 1.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0.4rem 0 0.6rem;
+  color: var(--nt-mkt-text);
+}
+.nt-learn__overview-lede {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.55;
+  max-width: 70ch;
+}
+.nt-learn__overview-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  margin-top: 1.5rem;
+}
+@media (min-width: 720px) {
+  .nt-learn__overview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1100px) {
+  .nt-learn__overview-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.nt-learn__overview-card {
+  padding: 1.1rem 1.2rem 1.25rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  background: var(--nt-bento-tile-bg);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.nt-learn__overview-card-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-learn__overview-card-gist {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.nt-learn__overview-card-count {
+  margin: 0.4rem 0 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-learn__overview-card-cta {
+  align-self: flex-start;
+  padding: 0.45rem 0.85rem;
+  border: 1px solid var(--nt-mkt-line-strong);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+.nt-learn__overview-card-cta:hover,
+.nt-learn__overview-card-cta:focus-visible {
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-learn__module {
+  padding: clamp(1rem, 0.85rem + 0.5vw, 1.4rem);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 16px;
+  background: var(--nt-bento-tile-bg);
+}
+.nt-learn__module-head {
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--nt-mkt-line);
+}
+.nt-learn__module-title {
+  font-size: clamp(1.4rem, 0.9rem + 1.4vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0.4rem 0 0.6rem;
+  color: var(--nt-mkt-text);
+}
+.nt-learn__module-intro {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+.nt-learn__module-section {
+  margin-top: 1.25rem;
+}
+.nt-learn__module-section-head {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--nt-mkt-text);
+}
+.nt-learn__module-section-body {
+  margin: 0 0 0.6rem;
+  color: var(--nt-mkt-text);
+  line-height: 1.6;
+  font-size: 0.96rem;
+}
+.nt-learn__module-bullets {
+  margin: 0.4rem 0 0;
+  padding-left: 1.4rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+.nt-learn__module-bullets li {
+  margin-bottom: 0.3rem;
+}
+.nt-learn__module-code {
+  display: block;
+  margin: 0.75rem 0 0;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--nt-mkt-line);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--nt-mkt-text);
+  white-space: pre;
+  overflow-x: auto;
+}
+:root[data-theme="light"] .nt-learn__module-code {
+  background: oklch(96% 0.01 250);
+}
+.nt-learn__module-note {
+  margin: 0.6rem 0 0;
+  padding: 0.6rem 0.85rem;
+  border-left: 3px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  background: rgba(0, 209, 216, 0.06);
+  border-radius: 0 8px 8px 0;
+  color: var(--nt-mkt-text);
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+.nt-learn__module-terms {
+  margin: 0;
+  display: grid;
+  gap: 0.6rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 720px) {
+  .nt-learn__module-terms {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.nt-learn__module-term {
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 10px;
+  background: var(--nt-bento-tile-bg-hover, var(--nt-bento-tile-bg));
+}
+.nt-learn__module-term dt {
+  font-weight: 700;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-size: 0.92rem;
+}
+.nt-learn__module-term dd {
+  margin: 0.3rem 0 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.nt-learn__module-summary {
+  margin-top: 1.5rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  border-radius: 12px;
+  background: rgba(0, 209, 216, 0.06);
+}
+.nt-learn__module-summary-eyebrow {
+  margin: 0 0 0.3rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-learn__module-summary-body {
+  margin: 0;
+  color: var(--nt-mkt-text);
+  font-size: 1rem;
+  line-height: 1.55;
+  font-weight: 500;
+}
+.nt-learn__module-cites {
+  margin-top: 1.5rem;
+}
+.nt-learn__module-cite-list {
+  margin: 0;
+  padding-left: 1.4rem;
+  color: var(--nt-mkt-text-mute);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.nt-learn__module-cite-list a {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nt-learn__module-see-also {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--nt-mkt-line);
+}
+.nt-learn__module-see-also-eyebrow {
+  margin: 0 0 0.5rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-learn__module-see-also-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.nt-learn__module-see-also-link {
+  display: inline-block;
+  padding: 0.4rem 0.85rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--nt-mkt-text);
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 160ms ease, color 160ms ease;
+}
+.nt-learn__module-see-also-link:hover,
+.nt-learn__module-see-also-link:focus-visible {
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
 }
 .nt-patterns__title {
   font-size: clamp(1.8rem, 1rem + 2.4vw, 2.6rem);
@@ -4231,6 +4803,137 @@ body[data-surface] {
 .nt-research__bento-grid[data-layout="stack"] .nt-research__bento-tile {
   grid-column: span 1 !important;
   grid-row: span 1 !important;
+}
+
+/* ---------- Docs sidebar TOC nav + inline section list ---------- */
+/* New /docs layout per user direction this turn: sidebar of anchor
+   links on the left, inline long-form sections on the right (no bento
+   tile grid, no click-to-popup). */
+.nt-docs__sidebar-eyebrow {
+  margin: 0 0 0.6rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #94a3b8);
+}
+.nt-docs__sidebar-nav ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.nt-docs__sidebar-nav li {
+  margin: 0;
+}
+.nt-docs__sidebar-link {
+  display: block;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+  color: var(--ink, #e2e4f0);
+  text-decoration: none;
+  font-size: 0.92rem;
+  line-height: 1.35;
+  border-left: 2px solid transparent;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.nt-docs__sidebar-link:hover,
+.nt-docs__sidebar-link:focus-visible {
+  background: rgba(148, 163, 184, 0.08);
+  border-left-color: var(--accent, #818cf8);
+  outline: none;
+}
+.nt-docs__section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* Anchor-jump offset so sticky topbar doesn't cover the heading. */
+  scroll-margin-top: 90px;
+}
+.nt-docs__section-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.nt-docs__section-title {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.nt-docs__section-lede {
+  margin: 0;
+  color: var(--ink-dim, #94a3b8);
+  max-width: 64ch;
+}
+.nt-docs__inline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.nt-docs__inline-tile {
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.2));
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  background: var(--surface, rgba(15, 23, 42, 0.35));
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+.nt-docs__inline-tile-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+.nt-docs__inline-tile-hook {
+  margin: 0;
+  color: var(--ink-dim, #94a3b8);
+  font-size: 0.92rem;
+}
+.nt-docs__inline-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.nt-docs__inline-tile-body p {
+  margin: 0;
+}
+.nt-docs__inline-tile-sources {
+  margin-top: 0.4rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--border, rgba(148, 163, 184, 0.2));
+  font-size: 0.82rem;
+}
+.nt-docs__inline-tile-sources-label {
+  margin: 0 0 0.35rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-dim, #94a3b8);
+}
+.nt-docs__inline-tile-sources ol {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.nt-docs__inline-tile-source-kind {
+  text-transform: uppercase;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--accent, #818cf8);
+}
+.nt-docs__inline-tile-pending {
+  margin: 0.5rem 0 0;
+  font-size: 0.78rem;
+  color: var(--warn, #f0b429);
+}
+.nt-docs__inline-tile[data-pending="true"] {
+  border-style: dashed;
 }
 
 /* ---------- Home study-summary block ---------- */
@@ -4925,11 +5628,17 @@ body[data-surface] {
 }
 .nt-mkt-footer__credit a {
   color: var(--nt-mkt-accent);
-  text-decoration: none;
+  /* Underline is permanent (not hover-only) so the link is distinguishable
+     from the surrounding muted text without relying on color contrast —
+     fixes Lighthouse "Links rely on color to be distinguishable" on the
+     light-theme footer where accent #007a80 sits on mute #51607d (1.23:1). */
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
 }
 .nt-mkt-footer__credit a:hover,
 .nt-mkt-footer__credit a:focus-visible {
-  text-decoration: underline;
+  text-decoration-thickness: 2px;
 }
 .nt-mkt-footer__admin code {
   font-family: 'JetBrains Mono', monospace;

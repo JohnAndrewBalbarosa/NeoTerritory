@@ -38,6 +38,15 @@ echo "Timestamp: $(date)"
 
 load_deploy_env "$ENV_FILE"
 
+# The .env loader stores values verbatim, so a path written as
+# `$HOME/.ssh/...` arrives here unexpanded. Re-expand `~` and `$HOME`
+# explicitly so SSH gets a real path. Without this, `ssh -i $HOME/.ssh/...`
+# is handed the literal seven-character `$HOME` segment and silently
+# fails with "Cannot reach <host>".
+AWS_SSH_KEY="${AWS_SSH_KEY/#\~/$HOME}"
+AWS_SSH_KEY="${AWS_SSH_KEY//\$HOME/$HOME}"
+export AWS_SSH_KEY
+
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=30 -o ServerAliveCountMax=240 -o TCPKeepAlive=yes -i $AWS_SSH_KEY"
 SSH_TARGET="$AWS_USER@$AWS_HOST"
 DEPLOY_GIT_SHA="$(git -C "$ROOT_DIR" rev-parse HEAD 2>/dev/null || echo unknown)"

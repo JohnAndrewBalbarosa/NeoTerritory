@@ -1,27 +1,28 @@
-// Sidebar rail on /docs. Renders Scope and Design rationale as stacked
-// click-to-popup tiles. Lives in its own file per user direction:
-// "have a folder where all the UI / HTML lives, called from one component."
+// Slim TOC for /docs. Three anchors only: Overview, Pattern families,
+// How it works. Deep teaching lives at /patterns/learn — the Docs page
+// is not a second teacher.
 
-import ResearchBento from '../ResearchBento';
-import { RESEARCH_TILES } from '../docsTiles';
+const TOC: ReadonlyArray<{ href: string; label: string }> = [
+  { href: '#dp-overview', label: 'Overview' },
+  { href: '#dp-families', label: 'Pattern families' },
+  { href: '#dp-how', label: 'How it works' },
+];
 
 export default function DocsSidebar() {
   return (
-    <aside className="nt-docs__sidebar" aria-label="Sidebar — scope and rationale">
-      <ResearchBento
-        eyebrow="Scope"
-        title="Scope and delimitations"
-        ariaId="dp-scope"
-        layout="stack"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'scope')}
-      />
-      <ResearchBento
-        eyebrow="Why this approach"
-        title="Design rationale"
-        ariaId="dp-rationale"
-        layout="stack"
-        tiles={RESEARCH_TILES.filter((t) => t.group === 'rationale')}
-      />
+    <aside className="nt-docs__sidebar" aria-label="Docs section navigation">
+      <p className="nt-docs__sidebar-eyebrow">On this page</p>
+      <nav className="nt-docs__sidebar-nav" aria-label="Table of contents">
+        <ol>
+          {TOC.map((item) => (
+            <li key={item.href}>
+              <a className="nt-docs__sidebar-link" href={item.href}>
+                {item.label}
+              </a>
+            </li>
+          ))}
+        </ol>
+      </nav>
     </aside>
   );
 }

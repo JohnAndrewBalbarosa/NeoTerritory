@@ -967,3 +967,34 @@ These are product changes, not test changes:
 - Audit `integration/all_patterns.cpp` to make sure its method-chaining class is distinctly recognisable as such (e.g. lacks a Builder terminator).
 
 The test contract is the spec; the catalog is what needs to learn.
+
+
+---
+
+## D78 (this turn) — Auth surface consolidation
+
+Retired surfaces:
+- `/choose` page (EntryChoice) — DELETED
+- `/login` and `/seat-selection` tester-pick surfaces (LoginOverlay) — DELETED
+
+New single auth entry: the `TryItChooser` popup mounted by `MarketingShell` on every marketing route. Three cards (Tester Guest, Student Learning, Developer). Admin is reachable only via direct `/app`; never linked from the popup.
+
+Flow changes:
+- Tester (Guest) opens the extracted `SeatClaimPanel` inline (no nav) and `claimSeat()` runs in-place. Popup closes and routes to `/studio` on success.
+- "Back to choices" inside the popup rewinds an internal view, never page navigation.
+- `useAuth.signOut()` now always navigates to `/` (was bouncing to `/choose`).
+- `ConsentGate` decline reuses `signOut()`; same end-state.
+- `StudioApp` unauthenticated visitor → `navigate('/')` + `dispatchTryItChooserOpen()` instead of `replaceState('/choose')`.
+- `/choose`, `/login`, `/seat-selection` now map to the new `notFound` surface (`NotFoundPage.tsx`) so stale bookmarks land somewhere honest.
+
+### D78b — Test-runner tagging gate + backend ambiguity guard
+
+User report: incognito session on the Tests tab showed `(none) / No patterns to test / 1. Static analysis (cppcheck) — idle / 2. Code compiles & runs — no template / 3. Unit-test verdict — no template` even after tagging classes on the Patterns tab. Root cause: the backend `routes/analysis.ts` `handleRunTests` path emitted a synthetic `TestResult` row when `taggedPatterns` filtered to zero, which the studio rendered as a real verdict. The studio also did not gate `Run all tests` on tag completeness.
+
+Fixes:
+- Frontend (`GdbRunnerTab.tsx`): derived `taggingComplete = taggedClassCount > 0 && localAmbiguous.length === 0`; `canRun` requires `taggingComplete`; empty-state copy distinguishes the three cases (no analysis / no tags / unresolved ambiguity). `visibleGroups` filters any synthetic `(none)` group as defense in depth.
+- Backend (`routes/analysis.ts`): the synthetic-no-patterns emission is gone. New 400 `AMBIGUOUS_TAGS` response when (a) `resolvedMap` contains placeholder pattern ids (`""`, `(none)`, `none`), or (b) `taggedPatterns` filters to zero className-bound entries. The legacy 409 ambiguity check is unchanged.
+
+### D78c — Student Learning accordion default
+
+`openSectionId` falls back to `'intro'` when there is no persisted open section AND the user has not started a step. The previous `sectionForStepIndex(0)` path returns `'intro'` for index 0 in practice, but the explicit fallback removes any ambiguity for fresh incognito sessions.

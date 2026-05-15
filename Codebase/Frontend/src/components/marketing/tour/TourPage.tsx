@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { navigate } from '../../../logic/router';
+import { dispatchTryItChooserOpen } from '../TryItChooser';
 import { TOUR_STEPS } from './tourSteps';
 
 // Per Sprint 0 doc blueprint: public revisitable walkthrough. Same content
@@ -84,7 +84,7 @@ export default function TourPage() {
         <button
           type="button"
           className="nt-tour__cta-btn"
-          onClick={() => navigate('/student-studio')}
+          onClick={dispatchTryItChooserOpen}
         >
           Try it now
         </button>

@@ -1,8 +1,52 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FAMILIES, Family, Lesson, Sample, CorrectStructure } from '../../data/learningContent';
 import { navigate } from '../../logic/router';
 import { stashStudioPrefill } from '../../logic/studioPrefill';
 import MagneticButton from './effects/MagneticButton';
+
+// Sidebar accordion section identifiers. Only one section can be open
+// at a time — that invariant is enforced just by holding a single
+// `openSectionId` value in state (no need for a counter, the type
+// system makes "two open" impossible).
+type CourseSectionId = 'intro' | 'patterns' | 'practice';
+
+// sessionStorage keys for the learner's per-session state. sessionStorage
+// (not localStorage) is intentional: the persistence is scoped to the
+// current browser tab, matching the user's "saved progress per session"
+// framing. Closing the tab clears it.
+const SESSION_KEY_ACTIVE_STEP   = 'nt-student-learning:active-step';
+const SESSION_KEY_OPEN_SECTION  = 'nt-student-learning:open-section';
+const SESSION_KEY_COMPLETED     = 'nt-student-learning:completed';
+
+function readSession(key: string): string | null {
+  try { return sessionStorage.getItem(key); } catch { return null; }
+}
+function writeSession(key: string, value: string): void {
+  try { sessionStorage.setItem(key, value); } catch { /* private mode / quota */ }
+}
+
+function readPersistedActiveStepIndex(): number {
+  const raw = readSession(SESSION_KEY_ACTIVE_STEP);
+  if (!raw) return 0;
+  const n = Number.parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : 0;
+}
+
+function readPersistedOpenSection(): CourseSectionId | null {
+  const raw = readSession(SESSION_KEY_OPEN_SECTION);
+  if (raw === 'intro' || raw === 'patterns' || raw === 'practice') return raw;
+  return null;
+}
+
+function readPersistedCompletedStepIds(): Set<string> {
+  const raw = readSession(SESSION_KEY_COMPLETED);
+  if (!raw) return new Set();
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (Array.isArray(parsed)) return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+  } catch { /* corrupt — start fresh */ }
+  return new Set();
+}
 
 type IntroLesson = {
   id: string;
@@ -258,8 +302,28 @@ const REQUIRED_STEPS: CourseStep[] = [
 ];
 
 function openSampleInStudentStudio(sample: Sample): void {
+  // Per user direction this turn: Student Learning does NOT require
+  // sign-in to read lessons. Sign-in is only required when the learner
+  // wants to try the studio. The studio entry for student-learning
+  // routes through the Developer Google sign-in flow (NOT the tester
+  // picker), so the learner ends up on the same authenticated studio a
+  // developer uses. The prefill stays in sessionStorage and is picked
+  // up after the Google callback lands the user in /studio.
   stashStudioPrefill(sample);
-  navigate('/student-studio');
+  // Stamp the entry-flow so MainLayout treats this as a real-account
+  // user (skips ConsentGate + Pretest) once the Google callback lands.
+  try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
+  navigate('/developer/login');
+}
+
+// Maps a step index to the sidebar section that should host it. Used
+// both for the initial accordion-open decision and for auto-opening
+// the right section when the active step changes (e.g., user pressed
+// Next at the end of the intro lessons → patterns section opens).
+function sectionForStepIndex(index: number): CourseSectionId {
+  if (index < INTRO_LESSONS.length) return 'intro';
+  if (index < REQUIRED_STEPS.length - 1) return 'patterns';
+  return 'practice';
 }
 
 export default function StudentLearningHub() {
@@ -273,9 +337,45 @@ export default function StudentLearningHub() {
   // Progress state (`completedStepIds`) stays in-memory for the current
   // browser tab. Nothing is persisted server-side for an unauthenticated
   // visitor.
-  const [activeStepIndex, setActiveStepIndex] = useState(0);
-  const [completedStepIds, setCompletedStepIds] = useState<Set<string>>(() => new Set());
+  // sessionStorage-backed state: restoring the learner's last screen
+  // when they come back to the tab. Per user direction this turn the
+  // open section, the active step, and completed step IDs all persist
+  // for the session so a refresh / re-visit lands exactly where they
+  // left off. Storage is best-effort — private mode / quota errors
+  // fall back to in-memory defaults.
+  const [activeStepIndex, setActiveStepIndex] = useState<number>(() => readPersistedActiveStepIndex());
+  const [completedStepIds, setCompletedStepIds] = useState<Set<string>>(() => readPersistedCompletedStepIds());
   const [lockedMessage, setLockedMessage] = useState('');
+  // Accordion: only one section can be open at a time. Default to 'intro'
+  // on a fresh session (no persisted open-section AND no progress yet) so
+  // the very first thing a new learner sees is the opened first lesson —
+  // not three collapsed section labels. After the first manual toggle or
+  // Next click, the persisted value / step-derived section take over.
+  const [openSectionId, setOpenSectionId] = useState<CourseSectionId>(() => {
+    const persisted = readPersistedOpenSection();
+    if (persisted) return persisted;
+    const stepIndex = readPersistedActiveStepIndex();
+    if (stepIndex === 0) return 'intro';
+    return sectionForStepIndex(stepIndex);
+  });
+
+  // Persist state to sessionStorage on every change. Three separate
+  // effects so a write failure in one (e.g., bad JSON for the Set)
+  // does not block the others. Stringification of the completed-set
+  // is the only non-trivial bit — Sets don't JSON.stringify directly.
+  useEffect(() => { writeSession(SESSION_KEY_ACTIVE_STEP, String(activeStepIndex)); }, [activeStepIndex]);
+  useEffect(() => { writeSession(SESSION_KEY_OPEN_SECTION, openSectionId); }, [openSectionId]);
+  useEffect(() => {
+    writeSession(SESSION_KEY_COMPLETED, JSON.stringify([...completedStepIds]));
+  }, [completedStepIds]);
+
+  // When the active step changes (Next / Previous / Mark complete),
+  // auto-open the section that contains the new step so the learner
+  // can see where they are. Manual accordion toggles override this on
+  // the next user click.
+  useEffect(() => {
+    setOpenSectionId(sectionForStepIndex(activeStepIndex));
+  }, [activeStepIndex]);
 
   const activeStep = REQUIRED_STEPS[activeStepIndex];
   const isFirst = activeStepIndex === 0;
@@ -333,8 +433,8 @@ export default function StudentLearningHub() {
             Studio.
           </p>
           <p className="nt-course-hero__audience">
-            You already have a session seat. Continue through the modules, then open Studio to try
-            the analyzer.
+            Reading the lessons is free — no sign-in needed. Continue through the modules, then
+            sign in with Google when you are ready to try the analyzer in Studio.
           </p>
         </div>
         <div className="nt-course-progress" aria-label={`Course progress ${progress}%`}>
@@ -355,7 +455,12 @@ export default function StudentLearningHub() {
             </span>
           </div>
 
-          <CourseSection label="Section 1 · Beginner Course">
+          <CourseSection
+            id="intro"
+            label="Section 1 · Beginner Course"
+            isOpen={openSectionId === 'intro'}
+            onToggle={setOpenSectionId}
+          >
             <ol className="nt-course-outline">
               {INTRO_LESSONS.map((lesson, index) => (
                 <CourseStepButton
@@ -371,7 +476,12 @@ export default function StudentLearningHub() {
             </ol>
           </CourseSection>
 
-          <CourseSection label="Section 2 · Pattern Library">
+          <CourseSection
+            id="patterns"
+            label="Section 2 · Pattern Library"
+            isOpen={openSectionId === 'patterns'}
+            onToggle={setOpenSectionId}
+          >
             <ol className="nt-course-outline">
               {PATTERN_STEPS.map(({ lesson }, patternIndex) => {
                 const stepIndex = INTRO_LESSONS.length + patternIndex;
@@ -390,7 +500,12 @@ export default function StudentLearningHub() {
             </ol>
           </CourseSection>
 
-          <CourseSection label="Section 3 · Practice">
+          <CourseSection
+            id="practice"
+            label="Section 3 · Practice"
+            isOpen={openSectionId === 'practice'}
+            onToggle={setOpenSectionId}
+          >
             <button
               type="button"
               className="nt-course-practice-link"
@@ -452,7 +567,17 @@ export default function StudentLearningHub() {
             )}
 
             {isPractice && isPracticeComplete && (
-              <MagneticButton variant="primary" onClick={() => navigate('/student-studio')}>
+              <MagneticButton
+                variant="primary"
+                onClick={() => {
+                  // Same gate as openSampleInStudentStudio: route the
+                  // "Proceed to Studio" click through the Developer
+                  // Google sign-in. Reading lessons stays free; running
+                  // code requires the developer flow.
+                  try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
+                  navigate('/developer/login');
+                }}
+              >
                 Proceed to Studio
               </MagneticButton>
             )}
@@ -464,16 +589,37 @@ export default function StudentLearningHub() {
 }
 
 function CourseSection({
+  id,
   label,
+  isOpen,
+  onToggle,
   children,
 }: {
+  id: CourseSectionId;
   label: string;
+  isOpen: boolean;
+  onToggle: (id: CourseSectionId) => void;
   children: React.ReactNode;
 }) {
+  // Accordion section. The body uses `hidden` rather than conditional
+  // rendering so the inner ol mounts once and React doesn't tear down
+  // CourseStepButton state every time a sibling section opens.
+  const bodyId = `nt-course-section-body-${id}`;
   return (
-    <div className="nt-course-section">
-      <p className="nt-course-section__label">{label}</p>
-      {children}
+    <div className={`nt-course-section${isOpen ? ' is-open' : ''}`} data-section={id}>
+      <button
+        type="button"
+        className="nt-course-section__label"
+        aria-expanded={isOpen}
+        aria-controls={bodyId}
+        onClick={() => onToggle(id)}
+      >
+        <span>{label}</span>
+        <span className="nt-course-section__chev" aria-hidden="true">{isOpen ? '▾' : '▸'}</span>
+      </button>
+      <div id={bodyId} className="nt-course-section__body" hidden={!isOpen}>
+        {children}
+      </div>
     </div>
   );
 }

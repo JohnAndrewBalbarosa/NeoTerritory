@@ -1,11 +1,8 @@
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
-import AboutResearchTeam from './sections/AboutResearchTeam';
 
-// Per D64 (this turn): /about is the developer team page and the DevCon
-// partnership story. Thesis methodology (research question, objectives,
-// scope, method, contribution, panel) has moved to /research where the
-// thesis content belongs.
+// Per D64: /about is the developer team page and the DevCon partnership story.
+// Thesis methodology has moved to /research.
 
 export default function AboutPage() {
   return (
@@ -45,8 +42,6 @@ export default function AboutPage() {
           academic prototype into a tool we can hand to actual learners.
         </p>
       </section>
-
-      <AboutResearchTeam />
 
       <section className="nt-about__section" aria-labelledby="ab-acks">
         <h2 id="ab-acks" className="nt-about__section-title">

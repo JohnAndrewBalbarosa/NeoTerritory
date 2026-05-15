@@ -111,7 +111,7 @@ function PatternSection({ p, annotations }: { p: DetectedPatternFull; annotation
 }
 
 export default function DocumentationTab() {
-  const { currentRun } = useAppStore();
+  const { currentRun, setActiveTab, gdbAllPassedForRun } = useAppStore();
   const contentRef = useRef<HTMLDivElement>(null);
 
   if (!currentRun) {
@@ -239,6 +239,17 @@ export default function DocumentationTab() {
             </section>
           );
         })}
+      </div>
+      <div className="tab-next-bar">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={!gdbAllPassedForRun}
+          title={gdbAllPassedForRun ? undefined : 'Pass the test runner before the self-check.'}
+          onClick={() => setActiveTab('ambiguous')}
+        >
+          Next: Self-check →
+        </button>
       </div>
     </div>
   );

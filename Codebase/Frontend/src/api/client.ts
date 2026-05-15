@@ -388,6 +388,33 @@ export async function setAdminSetting(key: keyof AdminSettings, value: boolean):
     body: JSON.stringify({ value })
   });
 }
+
+// AI provider config. The DB-backed row is the source of truth at runtime;
+// legacy env vars are still consulted as a fallback when no row is set.
+// `apiKey` is NEVER returned by the server — only `hasKey` indicates
+// whether a key is currently configured.
+export type AdminAiProvider = 'anthropic' | 'gemini' | 'none';
+export interface AdminAiConfig {
+  provider: AdminAiProvider;
+  model: string;
+  hasKey: boolean;
+  updatedAt: string | null;
+  updatedBy: string | null;
+}
+export async function fetchAdminAiConfig(): Promise<AdminAiConfig> {
+  return apiFetch<AdminAiConfig>('/api/admin/ai-config');
+}
+export async function saveAdminAiConfig(input: {
+  provider: AdminAiProvider;
+  model: string;
+  apiKey?: string;
+}): Promise<AdminAiConfig> {
+  return apiFetch<AdminAiConfig>('/api/admin/ai-config', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
 export async function fetchAdminReviews(): Promise<{ reviews: AdminReview[] }> {
   return apiFetch<{ reviews: AdminReview[] }>('/api/admin/reviews');
 }

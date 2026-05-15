@@ -20,8 +20,8 @@ interface Sample {
 
 // Maps the existing samples directory layout to user-facing pattern data.
 // Families and intents are sourced from Nesteruk (2022) "Design Patterns
-// in Modern C++20", which the CodiNeo thesis cites in Chapter 1.1 + 2 as
-// the design-pattern reference.
+// in Modern C++20", the design-pattern reference used by the NeoTerritory
+// sample programs.
 interface SampleMeta {
   family: Sample['family'];
   patternName: string;

@@ -12,25 +12,27 @@ import PerUserActivity from './components/PerUserActivity';
 import LogsView from './components/LogsView';
 import SurveyStats from './components/SurveyStats';
 import ReviewsPanel from './components/ReviewsPanel';
+import AiConfigPanel from './components/AiConfigPanel';
 import { markAdminRefresh } from '../api/client';
 import {
-  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard
+  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
 } from '../components/icons/Icons';
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'logs';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs';
 
 const TABS: Array<{ id: AdminTab; label: string; icon: ComponentType<IconProps> }> = [
   { id: 'runs',       label: 'Runs',       icon: IconLayers },
   { id: 'complexity', label: 'Complexity', icon: IconBeaker },
   { id: 'users',      label: 'Users',      icon: IconShield },
   { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare },
+  { id: 'ai',         label: 'AI',         icon: IconCode },
   { id: 'logs',       label: 'Logs',       icon: IconClipboard }
 ];
 
 export default function AdminApp() {
-  const { token, user, clearAuth, status, msState, msLabel, dockerState, dockerLabel } = useAppStore();
+  const { token, user, clearAuth, status, msState, msLabel, dockerState, dockerLabel, aiConfigured } = useAppStore();
   const { theme, toggleTheme } = useTheme();
   // Seed backend / microservice / docker status on mount so the topbar
   // shows the same ops state the studio header surfaces. Admin is the
@@ -98,6 +100,20 @@ export default function AdminApp() {
               <span className="admin-ops-label">Docker</span>
               <strong>{dockerLabel}</strong>
             </span>
+            {/* AI pill — reads from /api/health.aiProviderConfigured.
+                Click navigates to the AI tab where the operator can flip
+                the provider, model, and API key without redeploying. */}
+            <button
+              type="button"
+              className="admin-ops-pill admin-ops-pill--btn"
+              data-state={aiConfigured ? 'online' : 'offline'}
+              onClick={() => setActiveTab('ai')}
+              title={aiConfigured ? 'AI configured — click to manage' : 'AI not configured — click to set provider + key'}
+            >
+              <span className="admin-ops-dot" aria-hidden="true" />
+              <span className="admin-ops-label">AI</span>
+              <strong>{aiConfigured ? 'configured' : 'not configured'}</strong>
+            </button>
           </div>
           <span
             className="admin-online-pill"
@@ -193,6 +209,19 @@ export default function AdminApp() {
               <p className="admin-section__hint">Per-run + end-of-session feedback ratings and free-text answers.</p>
             </header>
             <SurveyStats />
+          </section>
+        </div>
+        <div hidden={activeTab !== 'ai'}>
+          <section className="admin-section admin-section--card">
+            <header className="admin-section__head">
+              <h2>AI provider configuration</h2>
+              <p className="admin-section__hint">
+                Pick the provider, model, and API key the documentation + commentary jobs should call.
+                Changes take effect on the next AI request — no redeploy. Setting the provider to
+                &ldquo;None&rdquo; clears the row and falls back to environment variables.
+              </p>
+            </header>
+            <AiConfigPanel />
           </section>
         </div>
         <div hidden={activeTab !== 'logs'}>

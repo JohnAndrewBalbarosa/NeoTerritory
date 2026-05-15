@@ -1,27 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
-import { Joyride, EVENTS, type EventData, type Step } from 'react-joyride';
+import {
+  Joyride,
+  EVENTS,
+  ACTIONS,
+  type EventData,
+  type Step,
+  type TooltipRenderProps,
+} from 'react-joyride';
 import { useAppStore, type StudioTab } from '../../store/appState';
 
-// Session-aware Joyride. Goals this turn:
-//   - First-session ONLY auto-fire. The tour appears once on the user's
-//     first studio entry and never auto-opens again. No "click this"
-//     circles, no per-tab beacons — the dialog opens itself directly.
-//   - One completion flag per user, NOT per tab. Previously the tour
-//     re-fired every time the user landed on a new tab; that turned the
-//     orientation into noise. Now: complete it (or close it) once and
-//     it's done.
-//   - Manual replay still works via the "? Tour" button in the studio
-//     header (dispatches FORCE_OPEN_EVENT). The button shows the tour
-//     for whichever tab the user is currently on.
-//   - Account users (any non-devcon username) persist completion in
-//     localStorage keyed by user.id. Guest/tester users (devconN) use
-//     sessionStorage so every new tester session re-orients them.
+// Per-tab auto-firing Joyride. Goals this turn:
+//   - Auto-fire on EVERY tab the user hasn't completed yet. The popover
+//     opens directly — no "click this" beacons / circles at any layer.
+//   - Per-tab completion flag (nt_studio_tour_completed__<tab>). Finishing
+//     or closing the tour for a tab silences that tab only; siblings keep
+//     auto-firing on first visit.
+//   - Global "don't show again" flag (nt_studio_tour_suppressed). The
+//     tour's Skip button writes this — once set, no tab auto-fires ever
+//     again for this user. Manual replay via "? Tour" still works.
+//   - Manual replay button (dispatches FORCE_OPEN_EVENT) ignores both
+//     flags and shows the tour for the current tab.
+//   - Account users persist flags in localStorage keyed by user.id.
+//     Guest/tester users (devconN) use sessionStorage so every new
+//     tester session re-orients them.
 //   - Before showing each step, the orchestrator waits up to a short
 //     budget for the target DOM element to exist. Steps whose targets
 //     never resolve are dropped from that run rather than rendering as
 //     centered placeholders.
 
-const COMPLETED_KEY = 'nt_studio_tour_completed';
+const COMPLETED_KEY_PREFIX = 'nt_studio_tour_completed__';
+const SUPPRESSED_KEY = 'nt_studio_tour_suppressed';
 const FORCE_OPEN_EVENT = 'nt:studio-tour:open';
 const TARGET_WAIT_MS = 1500;
 const TARGET_POLL_MS = 80;
@@ -31,14 +39,29 @@ export function dispatchStudioTourOpen(): void {
   window.dispatchEvent(new CustomEvent(FORCE_OPEN_EVENT));
 }
 
-interface CompletionScope {
+// Playwright (and every WebDriver-driven browser) sets navigator.webdriver
+// to true. The Joyride overlay is a full-viewport SVG mask that intercepts
+// pointer events, so when the tour auto-fires on the submit tab while the
+// E2E spec is trying to click `analyze-btn` the click times out:
+//   "<path … d='M0 0H1440V963H0Z …'> from <div id='react-joyride-portal'>
+//    subtree intercepts pointer events"
+// Skipping auto-fire under automation lets the spec drive the page
+// untouched. Manual replay via the "? Tour" button still works in E2E if
+// a future spec explicitly tests the tour — it dispatches the
+// FORCE_OPEN_EVENT, which bypasses this gate.
+function isAutomatedBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return navigator.webdriver === true;
+}
+
+interface ScopedKey {
   storage: Storage | null;
   key: string;
 }
 
-function getCompletionScope(): CompletionScope {
+function getScopedKey(baseKey: string): ScopedKey {
   if (typeof window === 'undefined') {
-    return { storage: null, key: COMPLETED_KEY };
+    return { storage: null, key: baseKey };
   }
   const state = useAppStore.getState();
   const user = state.user;
@@ -47,15 +70,12 @@ function getCompletionScope(): CompletionScope {
   const isGuest = !user || /^devcon\d+$/i.test(user.username || '');
   const storage = isGuest ? window.sessionStorage : window.localStorage;
   const idPart = !isGuest && user ? `__${user.id ?? user.username}` : '';
-  return {
-    storage,
-    key: `${COMPLETED_KEY}${idPart}`,
-  };
+  return { storage, key: `${baseKey}${idPart}` };
 }
 
-function readCompleted(): boolean {
+function readTabCompleted(tab: StudioTab): boolean {
   try {
-    const { storage, key } = getCompletionScope();
+    const { storage, key } = getScopedKey(`${COMPLETED_KEY_PREFIX}${tab}`);
     if (!storage) return false;
     return storage.getItem(key) === '1';
   } catch {
@@ -63,9 +83,29 @@ function readCompleted(): boolean {
   }
 }
 
-function writeCompleted(): void {
+function writeTabCompleted(tab: StudioTab): void {
   try {
-    const { storage, key } = getCompletionScope();
+    const { storage, key } = getScopedKey(`${COMPLETED_KEY_PREFIX}${tab}`);
+    if (!storage) return;
+    storage.setItem(key, '1');
+  } catch {
+    /* storage blocked */
+  }
+}
+
+function readSuppressed(): boolean {
+  try {
+    const { storage, key } = getScopedKey(SUPPRESSED_KEY);
+    if (!storage) return false;
+    return storage.getItem(key) === '1';
+  } catch {
+    return false;
+  }
+}
+
+function writeSuppressed(): void {
+  try {
+    const { storage, key } = getScopedKey(SUPPRESSED_KEY);
     if (!storage) return;
     storage.setItem(key, '1');
   } catch {
@@ -223,6 +263,10 @@ async function resolveStepsForTab(tab: StudioTab): Promise<Step[]> {
     resolved.push({
       target: s.target ?? 'body',
       title: s.title,
+      // The content here is body + takeaway. The "Don't show again" checkbox
+      // lives in the custom tooltipComponent (TourTooltip below), not inside
+      // each step's content, so it stays consistent across every step and
+      // its state isn't recreated each time the step re-renders.
       content: (
         <div>
           <p style={{ margin: '0 0 10px', lineHeight: 1.55 }}>{s.body}</p>
@@ -239,10 +283,172 @@ async function resolveStepsForTab(tab: StudioTab): Promise<Step[]> {
         </div>
       ),
       placement: s.target ? 'auto' : 'center',
-      disableBeacon: true,
+      skipBeacon: true,
     } as Step);
   }
   return resolved;
+}
+
+// Custom tooltip with an explicit "Don't show again" checkbox in the footer.
+// The checkbox state is hoisted into the parent component via a ref-based
+// setter so handleEvent can read it on TOUR_END to decide whether to fire
+// the global suppression flag.
+interface TourTooltipProps extends TooltipRenderProps {
+  dontShowAgain: boolean;
+  setDontShowAgain: (v: boolean) => void;
+}
+
+function TourTooltip(props: TourTooltipProps): JSX.Element {
+  const {
+    backProps,
+    closeProps,
+    index,
+    isLastStep,
+    primaryProps,
+    skipProps,
+    step,
+    tooltipProps,
+    size,
+    dontShowAgain,
+    setDontShowAgain,
+  } = props;
+
+  return (
+    <div
+      {...tooltipProps}
+      style={{
+        background: '#13141a',
+        color: '#e2e4f0',
+        borderRadius: 12,
+        padding: '14px 16px 12px',
+        maxWidth: 360,
+        boxShadow: '0 18px 40px rgba(0, 0, 0, 0.45)',
+        border: '1px solid rgba(0, 209, 216, 0.22)',
+      }}
+    >
+      <button
+        {...closeProps}
+        aria-label="Close tour"
+        style={{
+          position: 'absolute',
+          top: 8,
+          right: 10,
+          background: 'transparent',
+          border: 0,
+          color: 'rgba(226, 228, 240, 0.7)',
+          fontSize: 18,
+          cursor: 'pointer',
+          padding: 4,
+          lineHeight: 1,
+        }}
+      >
+        ×
+      </button>
+
+      {step.title ? (
+        <h3 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: 700 }}>
+          {step.title}
+        </h3>
+      ) : null}
+
+      <div style={{ fontSize: '0.92rem', lineHeight: 1.55 }}>{step.content}</div>
+
+      <label
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          marginTop: 12,
+          paddingTop: 10,
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          fontSize: '0.82rem',
+          color: 'rgba(226, 228, 240, 0.78)',
+          cursor: 'pointer',
+          userSelect: 'none',
+        }}
+      >
+        <input
+          type="checkbox"
+          checked={dontShowAgain}
+          onChange={(e) => setDontShowAgain(e.target.checked)}
+          aria-label="Do not show this tour again"
+          style={{ cursor: 'pointer' }}
+        />
+        Don&rsquo;t show this tour again
+      </label>
+
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 10,
+          gap: 8,
+        }}
+      >
+        <button
+          {...skipProps}
+          style={{
+            background: 'transparent',
+            border: '1px solid rgba(255, 255, 255, 0.15)',
+            color: 'rgba(226, 228, 240, 0.7)',
+            borderRadius: 999,
+            padding: '6px 12px',
+            fontSize: '0.78rem',
+            cursor: 'pointer',
+          }}
+        >
+          Skip
+        </button>
+
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span
+            style={{
+              fontFamily: 'JetBrains Mono, monospace',
+              fontSize: '0.74rem',
+              color: 'rgba(226, 228, 240, 0.55)',
+            }}
+            aria-hidden="true"
+          >
+            {index + 1}/{size}
+          </span>
+
+          {index > 0 ? (
+            <button
+              {...backProps}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255, 255, 255, 0.15)',
+                color: '#e2e4f0',
+                borderRadius: 999,
+                padding: '6px 12px',
+                fontSize: '0.82rem',
+                cursor: 'pointer',
+              }}
+            >
+              Back
+            </button>
+          ) : null}
+
+          <button
+            {...primaryProps}
+            style={{
+              background: 'rgb(0, 209, 216)',
+              border: 0,
+              color: '#0a0c12',
+              fontWeight: 700,
+              borderRadius: 999,
+              padding: '7px 14px',
+              fontSize: '0.85rem',
+              cursor: 'pointer',
+            }}
+          >
+            {isLastStep ? 'Got it' : 'Next'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function StudioJoyrideTour() {
@@ -251,19 +457,45 @@ export default function StudioJoyrideTour() {
   const [run, setRun] = useState<boolean>(false);
   const [steps, setSteps] = useState<Step[]>([]);
   const [tourTab, setTourTab] = useState<StudioTab>(activeTab);
-  // Track whether we have already considered auto-firing for this user
-  // session. Without this, the effect re-evaluates on every render and a
-  // closed tour would re-open itself.
-  const autoFireConsidered = useRef<boolean>(false);
+  // runId is bumped every time a tour starts, used as the React key on the
+  // Joyride component so a stale run is fully unmounted before the new one
+  // mounts. Without this, re-clicking "? Tour" on the same tab the user just
+  // finished did nothing (Joyride state was stale).
+  const [runId, setRunId] = useState<number>(0);
+  // Checkbox state for the in-tooltip "Don't show again" toggle. Reset to
+  // false whenever a fresh tour starts so each replay decides for itself.
+  const [dontShowAgain, setDontShowAgain] = useState<boolean>(false);
+  // Refs so handleEvent can read the latest values without re-binding on
+  // every Joyride callback.
+  const dontShowAgainRef = useRef<boolean>(false);
+  dontShowAgainRef.current = dontShowAgain;
+  const tourTabRef = useRef<StudioTab>(tourTab);
+  tourTabRef.current = tourTab;
 
-  // Auto-trigger ONCE per user session. The trigger fires on the first
-  // render where the studio is visible. After that — whether the user
-  // completes the tour, skips it, or closes it — the completion flag is
-  // written and the tour never auto-opens again for this user.
+  function startTour(forTab: StudioTab, newSteps: Step[]): void {
+    setTourTab(forTab);
+    setSteps(newSteps);
+    setDontShowAgain(false);
+    setRunId((id) => id + 1);
+    setRun(true);
+  }
+
+  // Auto-fire on every tab change where:
+  //   - the page isn't being driven by an automated browser (Playwright)
+  //   - global suppression is NOT set (user hasn't ticked "Don't show again")
+  //   - this specific tab hasn't been completed yet
+  // The effect re-runs on activeTab so siblings get their own popover the
+  // first time the user lands on them, instead of one global one-shot.
   useEffect(() => {
-    if (autoFireConsidered.current) return;
-    autoFireConsidered.current = true;
-    if (readCompleted()) {
+    if (isAutomatedBrowser()) {
+      setRun(false);
+      return;
+    }
+    if (readSuppressed()) {
+      setRun(false);
+      return;
+    }
+    if (readTabCompleted(activeTab)) {
       setRun(false);
       return;
     }
@@ -271,36 +503,27 @@ export default function StudioJoyrideTour() {
     void (async () => {
       const resolved = await resolveStepsForTab(activeTab);
       if (cancelled || resolved.length === 0) return;
-      setTourTab(activeTab);
-      setSteps(resolved);
-      setRun(true);
+      startTour(activeTab, resolved);
     })();
     return () => {
       cancelled = true;
     };
-    // user is the only dep that legitimately changes auto-fire scope
-    // (guest vs account storage), and reset_autoFireConsidered triggers
-    // a fresh evaluation when the user logs in.
+    // user is included so a sign-in/sign-out (which changes which storage
+    // scope holds the flags) re-evaluates auto-fire eligibility.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [activeTab, user]);
 
-  // Reset auto-fire consideration when the user logs in / out — that
-  // changes which storage scope holds the completion flag.
-  useEffect(() => {
-    autoFireConsidered.current = false;
-  }, [user]);
-
-  // Manual replay event from the studio header "? Tour" button. This
-  // path ignores the completion flag — the user explicitly asked to see
-  // the tour again, for whichever tab they are currently on.
+  // Manual replay event from the studio header "? Tour" button. This path
+  // ignores both the per-tab and global suppression flags — the user
+  // explicitly asked to see the tour again, for whichever tab they are on
+  // right now. Bumping runId via startTour forces a fresh Joyride mount
+  // even when the user replays the same tab they just finished.
   useEffect(() => {
     function handleForceOpen(): void {
       void (async () => {
         const resolved = await resolveStepsForTab(activeTab);
         if (resolved.length === 0) return;
-        setTourTab(activeTab);
-        setSteps(resolved);
-        setRun(true);
+        startTour(activeTab, resolved);
       })();
     }
     window.addEventListener(FORCE_OPEN_EVENT, handleForceOpen);
@@ -308,11 +531,19 @@ export default function StudioJoyrideTour() {
   }, [activeTab]);
 
   function handleEvent(data: EventData): void {
-    // Mark the tour completed on any terminating event — finished, skipped,
-    // closed via the X. The flag is global per user, not per tab, so
-    // ANY terminating event silences future auto-fires.
+    // Two terminating intents:
+    //   - SKIP (action === 'skip') OR dontShowAgain checkbox ticked at the
+    //     time TOUR_END fires → global suppression. No tab auto-fires for
+    //     this user from now on (manual replay via "? Tour" still works).
+    //   - Anything else that ends the tour (finished walk-through, closed
+    //     via X) → mark this tab complete only. Sibling tabs keep firing.
     if (data.type === EVENTS.TOUR_END) {
-      writeCompleted();
+      const skip = data.action === ACTIONS.SKIP;
+      if (skip || dontShowAgainRef.current) {
+        writeSuppressed();
+      } else {
+        writeTabCompleted(tourTabRef.current);
+      }
       setRun(false);
     }
   }
@@ -321,20 +552,34 @@ export default function StudioJoyrideTour() {
 
   return (
     <Joyride
-      key={tourTab}
+      key={`${tourTab}-${runId}`}
       steps={steps}
       run={run}
       continuous
       onEvent={handleEvent}
+      tooltipComponent={(p: TooltipRenderProps) => (
+        <TourTooltip
+          {...p}
+          dontShowAgain={dontShowAgain}
+          setDontShowAgain={setDontShowAgain}
+        />
+      )}
       options={{
+        // skipBeacon kills the pulsing circle at every step — the tooltip
+        // opens directly, no "click this dot" affordance ever.
+        skipBeacon: true,
+        // Render the Skip button so the in-tooltip Skip handler (which also
+        // routes through ACTIONS.SKIP in handleEvent) has a backing trigger
+        // for keyboard / accessibility paths.
+        buttons: ['back', 'skip', 'close', 'primary'],
+        showProgress: true,
         primaryColor: 'rgb(0, 209, 216)',
         textColor: '#e2e4f0',
         backgroundColor: '#13141a',
         arrowColor: '#13141a',
         overlayColor: 'rgba(0, 0, 0, 0.55)',
         zIndex: 10000,
-        showProgress: true,
-        closeButtonAction: 'skip',
+        closeButtonAction: 'close',
       }}
     />
   );

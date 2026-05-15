@@ -2,17 +2,15 @@ import { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { fetchHealth, fetchRuns, fetchSample } from '../../api/client';
 import { navigate } from '../../logic/router';
-import LoginOverlay from '../auth/LoginOverlay';
+import { dispatchTryItChooserOpen } from '../marketing/TryItChooser';
 import MainLayout from '../layout/MainLayout';
 
 function getSafeReturnTarget(): string | null {
   if (typeof window === 'undefined') return null;
   const next = new URLSearchParams(window.location.search).get('next');
-  if (next === '/student-learning') return next;
+  if (next === '/student-learning' || next === '/patterns/learn') return next;
   return null;
 }
-
-const DEVELOPER_ENTRY_KEY = 'nt-entry-flow';
 
 export default function StudioApp() {
   const { token, user, setStatus, setMsStatus, setAiConfigured, resetSession } = useAppStore();
@@ -22,9 +20,8 @@ export default function StudioApp() {
     resetSession();
 
     // Admins land on the dedicated admin dashboard ONLY when they hit the
-    // admin sign-in entry (/app). On the tester picker (/login,
-    // /seat-selection) we let them stay so they can sign out or pick a
-    // seat without being yanked to /admin.html.
+    // admin sign-in entry (/app). Other studio paths let admins stay so
+    // they can sign out or pick a seat without being yanked away.
     const here = typeof window !== 'undefined' ? window.location.pathname : '/';
     if (token && user?.role === 'admin' && here === '/app') {
       window.location.href = '/admin.html';
@@ -66,28 +63,27 @@ export default function StudioApp() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Logged-out studio visit → bounce to the marketing homepage and pop
+  // the TryItChooser open on the seat-claim view. This replaces the old
+  // /choose page + LoginOverlay seat picker that lived on /login. The
+  // popup is the only auth surface now.
+  const isLoggedIn = !!(token && user);
+  useEffect(() => {
+    if (!ready) return;
+    if (isLoggedIn) return;
+    if (typeof window === 'undefined') return;
+    // /app is the hidden admin entry — let it render its own gate.
+    if (window.location.pathname === '/app') return;
+    navigate('/');
+    dispatchTryItChooserOpen();
+  }, [ready, isLoggedIn]);
+
   if (!ready) return null;
 
-  const isLoggedIn = !!(token && user);
-
-  if (typeof window !== 'undefined') {
+  if (isLoggedIn && typeof window !== 'undefined') {
     const path = window.location.pathname;
-    const SIGN_IN_PATHS = ['/login', '/seat-selection', '/app', '/developer', '/student-studio'];
-    if (path === '/developer') {
-      window.sessionStorage.setItem(DEVELOPER_ENTRY_KEY, 'developer');
-    } else if (path === '/student-studio') {
-      window.sessionStorage.setItem(DEVELOPER_ENTRY_KEY, 'student');
-    } else if (!isLoggedIn) {
-      window.sessionStorage.removeItem(DEVELOPER_ENTRY_KEY);
-    }
-    if (!isLoggedIn) {
-      // Logged-out visitors landing on consent/pretest/studio go through
-      // the tester picker. /app stays at /app so admins can keep typing
-      // credentials there.
-      if (!SIGN_IN_PATHS.includes(path)) {
-        window.history.replaceState(null, '', '/login');
-      }
-    } else if (SIGN_IN_PATHS.includes(path)) {
+    const SIGN_IN_PATHS = ['/app', '/developer', '/student-studio'];
+    if (SIGN_IN_PATHS.includes(path)) {
       const next = getSafeReturnTarget();
       if (path === '/student-studio' && next) {
         navigate(next);
@@ -97,10 +93,8 @@ export default function StudioApp() {
     }
   }
 
-  return (
-    <>
-      {!isLoggedIn && <LoginOverlay />}
-      {isLoggedIn && <MainLayout />}
-    </>
-  );
+  // While the bounce-to-home effect runs, render nothing so the logged-out
+  // visitor never sees the studio chrome flash.
+  if (!isLoggedIn) return null;
+  return <MainLayout />;
 }

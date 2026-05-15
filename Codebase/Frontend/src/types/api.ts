@@ -286,6 +286,11 @@ export interface HealthStatus {
   service: string;
   totalRuns: number;
   aiProviderConfigured: boolean;
+  aiModel?: string;
+  // Provenance of the active AI config. 'db' = set via admin AI tab,
+  // 'env' = baked into the container, 'none' = no provider wired up.
+  aiSource?: 'db' | 'env' | 'none';
+  aiProvider?: 'anthropic' | 'gemini' | 'none';
   maxFilesPerSubmission?: number;
   maxTokensPerFile?: number;
   testRunnerEnabled?: boolean;

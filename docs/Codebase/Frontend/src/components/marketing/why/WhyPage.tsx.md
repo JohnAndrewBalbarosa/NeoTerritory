@@ -17,7 +17,8 @@ Touched C++ once in 1st year, ships via AI, doesn't know GoF by name. Cannot be 
    - Industry name.
    - One stat OR one quote (not both).
    - One sentence describing the failure mode for unreadable code in that industry.
-4. **Single CTA** — "Try it now" → `/student-studio` (gated; auth happens there).
+4. **Hard-evidence section** — citations 2020–2026 backing the "readable code is money" claim. Each entry: year, headline number, one-paragraph detail, and a verifiable citation (peer-reviewed paper or industry report) linking to the primary source. Covers cost-of-poor-quality (CISQ 2022), developer velocity (McKinsey 2020), DORA recovery time (Google 2023), AI-assist throughput and review pressure (GitHub 2022/2024), design-pattern stability (Ampatzoglou et al. 2020), breach cost amplifiers (IBM 2023), and AI trust gap (Stack Overflow 2024). All colors come from `--nt-mkt-*` tokens so light/dark theme flip handles contrast automatically.
+5. **Single CTA** — "Try it now" → `/student-studio` (gated; auth happens there).
 
 ## Industries (locked content shape)
 

@@ -1,9 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { navigate } from '../../logic/router';
 import MagneticButton from './effects/MagneticButton';
-import TryItChooser from './TryItChooser';
+import { dispatchTryItChooserOpen } from './TryItChooser';
 import ScrollReveal from './effects/ScrollReveal';
-import HomeStudySummary from './sections/HomeStudySummary';
 
 // Per D40 (audience reframe), D41 (effects budget), D42 (info offloading),
 // D43 (features-first hierarchy), and the doc blueprint at
@@ -90,12 +89,6 @@ const DOORS: ReadonlyArray<BentoDoor> = [
     size: '2x1',
   },
   {
-    title: 'Why this matters',
-    blurb: 'Four industries where unreadable code costs more than missed deadlines.',
-    path: '/why',
-    size: '1x1',
-  },
-  {
     title: 'Pattern catalog',
     blurb: 'Every pattern we recognise, with intent, problem, solution.',
     path: '/patterns',
@@ -103,7 +96,7 @@ const DOORS: ReadonlyArray<BentoDoor> = [
   },
   {
     title: 'Take the tour',
-    blurb: 'Eight steps through the studio. No sign-in.',
+    blurb: 'Seven steps through the studio. No sign-in.',
     path: '/tour',
     size: '1x1',
   },
@@ -114,8 +107,8 @@ const DOORS: ReadonlyArray<BentoDoor> = [
     size: '1x1',
   },
   {
-    title: 'About this thesis',
-    blurb: 'Research question, hypothesis, method, contribution.',
+    title: 'About',
+    blurb: 'What NeoTerritory is and who it is for.',
     path: '/about',
     size: '1x1',
   },
@@ -150,11 +143,11 @@ const FAQ: ReadonlyArray<FaqItem> = [
 ];
 
 export default function HeroLanding() {
-  // Try-it chooser: clicking the primary CTA opens this instead of routing
-  // straight to the gated studio. Picking "Learning" goes to the open
-  // /student-learning surface; picking "Studio" goes to /student-studio
-  // where sign-in is triggered.
-  const [chooserOpen, setChooserOpen] = useState<boolean>(false);
+  // D76: the TryItChooser modal is now hoisted to MarketingShell and opened
+  // via the TRY_IT_OPEN_EVENT custom event. HeroLanding (and MarketingNav,
+  // WhyPage, TourPage) all call dispatchTryItChooserOpen() instead of
+  // owning local chooser state. Single source of truth, same modal across
+  // every "Try it now" / "Try it" CTA.
 
   // Hash-anchor support: nav can route to /#features. On mount and on every
   // hash change, scroll the matching anchor into view if present.
@@ -172,8 +165,6 @@ export default function HeroLanding() {
   }, []);
 
   return (
-    <>
-    <TryItChooser open={chooserOpen} onClose={() => setChooserOpen(false)} />
     <main className="nt-home" id="main">
       <section className="nt-home__above" aria-labelledby="home-heading">
         <p className="nt-home__eyebrow">Design pattern tutor</p>
@@ -221,12 +212,23 @@ export default function HeroLanding() {
           </svg>
         </figure>
 
-        <div className="nt-home__above-ctas">
-          <MagneticButton
-            variant="primary"
-            onClick={() => setChooserOpen(true)}
-            ariaLabel="Try CodiNeo now"
-          >
+        <ol className="nt-home__steps">
+          <li>
+            <span className="nt-home__step-num">1</span>
+            <span className="nt-home__step-text">Paste your C++ (or load a sample).</span>
+          </li>
+          <li>
+            <span className="nt-home__step-num">2</span>
+            <span className="nt-home__step-text">We detect the design pattern.</span>
+          </li>
+          <li>
+            <span className="nt-home__step-num">3</span>
+            <span className="nt-home__step-text">Get readable docs + integration tests, free.</span>
+          </li>
+        </ol>
+
+        <div className="nt-home__primary-cta">
+          <MagneticButton variant="primary" onClick={dispatchTryItChooserOpen}>
             Try it now
           </MagneticButton>
           <MagneticButton
@@ -281,7 +283,11 @@ export default function HeroLanding() {
               key={f.title}
               type="button"
               className="nt-home__feature"
-              onClick={() => navigate(f.surface)}
+              // D76: every feature tile previously routed straight to
+              // /student-studio (the value in f.surface) and dropped the
+              // user on the tester-seat picker. Now the tiles open the
+              // path-choice modal first, same as every other "Try it" CTA.
+              onClick={dispatchTryItChooserOpen}
             >
               <span className="nt-home__feature-glyph" aria-hidden="true">
                 {f.glyph}
@@ -292,8 +298,6 @@ export default function HeroLanding() {
           ))}
         </div>
       </ScrollReveal>
-
-      <HomeStudySummary />
 
       <section className="nt-home__bento" aria-labelledby="bento-heading">
         <header className="nt-home__bento-head">
@@ -339,11 +343,10 @@ export default function HeroLanding() {
       </section>
 
       <section className="nt-home__final-cta">
-        <MagneticButton variant="primary" onClick={() => navigate('/choose')}>
+        <MagneticButton variant="primary" onClick={dispatchTryItChooserOpen}>
           Try it now
         </MagneticButton>
       </section>
     </main>
-    </>
   );
 }

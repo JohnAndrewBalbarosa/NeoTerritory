@@ -5,26 +5,35 @@ import { useEffect, useState } from 'react';
 // public marketing surfaces. They are not in the top nav (only Try it /
 // Features / Learn / About are) but they are real routes reachable from the
 // Home bento grid and contextual links.
+//
+// Auth surface consolidation: /choose and /login are retired. All auth
+// entry now flows through the TryItChooser popup mounted by
+// MarketingShell, so visits to those legacy paths fall through to 'hero'
+// (the marketing homepage).
 export type Surface =
   | 'hero'
   | 'learn'
   | 'about'
-  | 'choose'
   | 'studentLearning'
   | 'studio'
   | 'googleCallback'
   | 'googleSignIn'
-  | 'why'
   | 'mechanics'
   | 'patterns'
   | 'patternDetail'
+  | 'patternsLearn'
+  | 'patternsLearnModule'
   | 'tour'
-  | 'docs';
+  | 'docs'
+  | 'notFound';
+
+// Paths retired by the auth-surface consolidation. They render the 404
+// page instead of falling through to the homepage so old bookmarks land
+// somewhere honest rather than silently appearing to work.
+const RETIRED_PATHS = new Set<string>(['/choose', '/login', '/seat-selection']);
 
 const STUDIO_ALIASES = [
   '/app',
-  '/login',
-  '/seat-selection',
   '/consent',
   '/pretest',
   '/studio',
@@ -34,18 +43,28 @@ const STUDIO_ALIASES = [
 
 export function pathToSurface(path: string): Surface {
   if (path === '/' || path === '') return 'hero';
+  if (RETIRED_PATHS.has(path)) return 'notFound';
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
-  if (path === '/choose' || path.startsWith('/choose/')) return 'choose';
   if (path === '/auth/callback') return 'googleCallback';
   if (path === '/developer/login' || path === '/student-learning/login') return 'googleSignIn';
+  // /student-learning (legacy) redirects in MarketingShell to /patterns/learn
+  // so old bookmarks keep working. The surface stays here just to satisfy
+  // any in-flight clients on an old SPA bundle.
   if (path === '/student-learning' || path.startsWith('/student-learning/')) return 'studentLearning';
-  if (path === '/why' || path.startsWith('/why/')) return 'why';
+  // /why retired: legacy industry-panels page redirects to /learn.
+  if (path === '/why' || path.startsWith('/why/')) return 'learn';
   if (path === '/mechanics' || path.startsWith('/mechanics/')) return 'mechanics';
   // Per D59: the All/GoF filter is gone. /patterns renders the unified
   // index; any deeper path is a detail page. /patterns/gof is preserved
   // as an alias back to the index for any old bookmarks.
   if (path === '/patterns' || path === '/patterns/gof') return 'patterns';
+  // D77 (this turn): /patterns/learn is the new student-learning home,
+  // nested under /patterns so the Patterns surface owns both the catalog
+  // (reference) and the learning hub. /patterns/learn alone is the
+  // category list; /patterns/learn/<slug> is one isolated module.
+  if (path === '/patterns/learn') return 'patternsLearn';
+  if (path.startsWith('/patterns/learn/')) return 'patternsLearnModule';
   if (path.startsWith('/patterns/')) return 'patternDetail';
   if (path === '/tour' || path.startsWith('/tour/')) return 'tour';
   // /research is the previous name; redirect-by-match so old bookmarks still land.
@@ -66,8 +85,16 @@ export function pathToSurface(path: string): Surface {
 export function patternSlugFromPath(path: string): string {
   if (!path.startsWith('/patterns/')) return '';
   const slug = path.slice('/patterns/'.length).split('/')[0];
-  if (slug === 'gof' || !slug) return '';
+  if (slug === 'gof' || slug === 'learn' || !slug) return '';
   return slug;
+}
+
+// D77: slug helper for /patterns/learn/<module-id>. Returns the module id,
+// empty when path is just /patterns/learn (the category list).
+export function learnModuleSlugFromPath(path: string): string {
+  if (!path.startsWith('/patterns/learn/')) return '';
+  const slug = path.slice('/patterns/learn/'.length).split('/')[0];
+  return slug || '';
 }
 
 const NAV_EVENT = 'nt:navigate';

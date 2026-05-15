@@ -19,6 +19,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { getAiConfigSnapshot } from '../db/aiConfig';
 
 // ---------- public-side checks (synchronous, cheap) ----------
 
@@ -33,6 +34,11 @@ interface MicroserviceStatus {
 interface AiTranslatorStatus {
   configured: boolean;
   model: string;
+  // Where the active config came from. 'db' means the admin set it via
+  // the AI admin tab; 'env' means it was baked into the container at
+  // deploy time; 'none' means nothing is configured.
+  source: 'db' | 'env' | 'none';
+  provider: 'anthropic' | 'gemini' | 'none';
 }
 
 function resolveMicroserviceBinary(): string {
@@ -86,16 +92,37 @@ export function getMicroserviceStatus(): MicroserviceStatus {
 }
 
 export function getAiTranslatorStatus(): AiTranslatorStatus {
+  // 1. DB-backed admin config wins, matching the precedence used by
+  //    pickProvider() inside the AI service.
+  try {
+    const snap = getAiConfigSnapshot();
+    if (snap.hasKey && (snap.provider === 'anthropic' || snap.provider === 'gemini')) {
+      const fallbackModel = snap.provider === 'gemini' ? 'gemini-2.5-flash' : 'claude-sonnet-4-6';
+      return {
+        configured: true,
+        model: snap.model || fallbackModel,
+        source: 'db',
+        provider: snap.provider,
+      };
+    }
+  } catch { /* fall through */ }
+
+  // 2. Legacy env-var path.
   const gKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
   const aKey = process.env.ANTHROPIC_API_KEY;
   const explicit = (process.env.AI_PROVIDER || '').toLowerCase();
   const useGemini = (explicit === 'gemini' && gKey) || (!explicit && gKey);
-  return {
-    configured: Boolean(gKey || aKey),
-    model: useGemini
-      ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash')
-      : (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'),
-  };
+  if (gKey || aKey) {
+    return {
+      configured: true,
+      model: useGemini
+        ? (process.env.GEMINI_MODEL || 'gemini-2.5-flash')
+        : (process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6'),
+      source: 'env',
+      provider: useGemini ? 'gemini' : 'anthropic',
+    };
+  }
+  return { configured: false, model: '', source: 'none', provider: 'none' };
 }
 
 // ---------- private-side state (async-supplied) ----------

@@ -35,7 +35,7 @@ export default function LearningPage() {
           <div className="nt-learn-referral__actions">
             <MagneticButton
               variant="primary"
-              onClick={() => navigate('/choose')}
+              onClick={() => navigate('/patterns/learn')}
               ariaLabel="Open the full student learning path"
             >
               Open the full student learning path

@@ -1,3 +1,5 @@
+import { getAiConfigSecret } from '../db/aiConfig';
+
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 const DEFAULT_ANTHROPIC_MODEL = 'claude-sonnet-4-6';
@@ -373,10 +375,23 @@ async function callGemini(apiKey: string, model: string, payload: AiPayload): Pr
   };
 }
 
-// Provider selection: explicit AI_PROVIDER env wins; otherwise Gemini if its
-// key is present, then Anthropic. Lets the same backend image serve either.
+// Provider selection: admin-configured DB row wins (set via the AI admin
+// tab), then explicit AI_PROVIDER env, then key presence. Lets the same
+// backend image serve either provider, and lets an admin flip the
+// runtime AI config without redeploying.
 type Provider = 'gemini' | 'anthropic';
 function pickProvider(): { provider: Provider; apiKey: string; model: string } | null {
+  // 1. DB-backed admin config takes precedence. Only valid providers
+  // with a non-empty decrypted key are honoured here.
+  try {
+    const secret = getAiConfigSecret();
+    if (secret && secret.apiKey && (secret.provider === 'anthropic' || secret.provider === 'gemini')) {
+      const fallbackModel = secret.provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_ANTHROPIC_MODEL;
+      return { provider: secret.provider, apiKey: secret.apiKey, model: secret.model || fallbackModel };
+    }
+  } catch { /* fall through to env */ }
+
+  // 2. Legacy env-var path.
   const explicit = (process.env.AI_PROVIDER || '').toLowerCase();
   const gKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || '';
   const aKey = process.env.ANTHROPIC_API_KEY || '';

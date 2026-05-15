@@ -1,5 +1,6 @@
 import { useAppStore } from '../store/appState';
 import { login as apiLogin, fetchRuns, fetchSample, signOutAndRevoke } from '../api/client';
+import { navigate } from '../logic/router';
 import { User } from '../types/api';
 
 export function useAuth() {
@@ -23,7 +24,9 @@ export function useAuth() {
     void signOutAndRevoke();
     clearAuth();
     setStatus({ kind: 'idle', title: 'Signed out', detail: '' });
-    window.location.href = '/';
+    // Always land back on the marketing homepage. The old behaviour
+    // bounced through /choose which no longer exists.
+    navigate('/');
   }
 
   return { token, user, signIn, signOut, isLoggedIn: !!(token && user) };

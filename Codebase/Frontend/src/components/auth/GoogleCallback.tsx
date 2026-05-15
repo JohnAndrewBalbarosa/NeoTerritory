@@ -101,8 +101,8 @@ export default function GoogleCallback() {
           </header>
           {phase === 'error' && (
             <footer className="nt-signin-foot">
-              <button type="button" className="ghost-btn" onClick={() => navigate('/choose')}>
-                Back to entry choices
+              <button type="button" className="ghost-btn" onClick={() => navigate('/')}>
+                Back to homepage
               </button>
             </footer>
           )}

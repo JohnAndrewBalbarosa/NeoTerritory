@@ -137,28 +137,6 @@ function PhaseRow({ phase, result, loading }: {
       data-verdict={result?.verdict ?? ''}
     >
       <header className="gdb-phase-head">
-        <span className="gdb-phase-status-icon" aria-hidden="true">
-          {loading ? null : status === 'pass' ? (
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <circle cx="7.5" cy="7.5" r="7" fill="rgba(16,185,129,0.15)" stroke="#10b981" strokeWidth="1.2"/>
-              <path d="M4.5 7.5l2 2 4-4" stroke="#10b981" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          ) : status === 'fail' ? (
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <circle cx="7.5" cy="7.5" r="7" fill="rgba(239,68,68,0.1)" stroke="#ef4444" strokeWidth="1.2"/>
-              <path d="M5 5l5 5M10 5l-5 5" stroke="#ef4444" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-          ) : status === 'skipped' ? (
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <circle cx="7.5" cy="7.5" r="7" fill="none" stroke="var(--border)" strokeWidth="1.2"/>
-              <path d="M5 7.5h5" stroke="var(--ink-soft)" strokeWidth="1.4" strokeLinecap="round"/>
-            </svg>
-          ) : (
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
-              <circle cx="7.5" cy="7.5" r="7" fill="none" stroke="var(--border)" strokeWidth="1.2"/>
-            </svg>
-          )}
-        </span>
         <span className="gdb-phase-label">{label}</span>
         {loading
           ? <span className="gdb-phase-spinner" aria-hidden="true" />
@@ -275,7 +253,18 @@ export default function GdbRunnerTab() {
     return () => clearInterval(t);
   }, [cooldownUntil]);
 
-  const tree = useMemo(() => buildTree(groups), [groups]);
+  // Defense in depth: hide the backend's synthetic "no-patterns" placeholder
+  // group (className === '(none)', patternId === 'meta.no_patterns'). The
+  // frontend now gates Run on `taggingComplete`, so the backend should never
+  // emit this row; if it slips through (e.g., the gate logic regresses), we
+  // still don't want a phantom row showing "(none) / no template" in the
+  // tree.
+  const visibleGroups = useMemo(
+    () => groups.filter(g => g.className !== '(none)' && g.patternId !== 'meta.no_patterns'),
+    [groups],
+  );
+
+  const tree = useMemo(() => buildTree(visibleGroups), [visibleGroups]);
 
   // Local-side ambiguity gate: if the run still has classes with multiple
   // detected patterns and no resolution, block the request and prompt the
@@ -296,6 +285,18 @@ export default function GdbRunnerTab() {
     return out.sort();
   }, [currentRun]);
 
+  // Tagging-complete signal. Run is unlocked only when:
+  //   1. The current run actually has at least one detected pattern with a
+  //      bound className. An empty detection list means the user has nothing
+  //      to test — without this guard the backend emits a synthetic
+  //      "(none) / No patterns to test" row that confuses users.
+  //   2. No class still carries unresolved competing tags.
+  const taggedClassCount = useMemo(() => {
+    if (!currentRun) return 0;
+    return (currentRun.detectedPatterns || []).filter(p => !!p.className).length;
+  }, [currentRun]);
+  const taggingComplete = taggedClassCount > 0 && localAmbiguous.length === 0;
+
   if (!currentRun) {
     return (
       <section className="tab-panel tab-gdb tab-empty">
@@ -306,14 +307,15 @@ export default function GdbRunnerTab() {
 
   const runId = currentRun.runId ?? null;
   const pendingId = currentRun.pendingId ?? null;
-  // The runner is bound to the *session*: once results exist for this run,
-  // re-running requires submitting new code (which clears the cache via
-  // setCurrentRun). This makes the test history correspond 1:1 with code
-  // states the user actually shipped.
-  const alreadyRanForThisRun = cachedValid;
-  const canRun = (runId !== null || !!pendingId)
-              && localAmbiguous.length === 0
-              && !alreadyRanForThisRun;
+  // The runner is stateless per click: pressing "Run all tests" always
+  // clears the cached results for this session and dispatches a fresh run.
+  // This protects against stale state across refreshes / tab switches and
+  // matches the user's mental model — if they're on the submit button,
+  // they intend to run, not be told they already did.
+  //
+  // taggingComplete folds in "has at least one tagged class" + "no
+  // unresolved ambiguity" — both prerequisites for a meaningful test run.
+  const canRun = (runId !== null || !!pendingId) && taggingComplete;
 
   const cooldownLeftMs = cooldownUntil ? Math.max(0, cooldownUntil - now) : 0;
   const onCooldown = cooldownLeftMs > 0;
@@ -344,9 +346,30 @@ export default function GdbRunnerTab() {
     setGdbError(null);
     setGdbUnavailable(null);
     setGdbAmbiguousBlock(null);
+    // Stateless re-run: drop any cached results for this session before
+    // dispatching, so the UI shows the fresh skeleton instead of stale rows.
+    setLastGdbResults(null, null);
+    setActiveKey('');
 
-    const skeleton = (currentRun?.detectedPatterns || [])
-      .filter(p => !!p.className)
+    // Build the skeleton to match exactly what the backend will run.
+    // Mirror backend services/candidateFilter.ts#filterToTaggedPatterns:
+    // for each class, keep the single detection when unambiguous, otherwise
+    // keep only the candidate whose patternId === resolvedMap[className].
+    // Without this filter, ambiguous-class candidates leak into the skeleton
+    // and the user sees "ambiguous" rows in Tests even though they already
+    // resolved a pattern on the patterns page.
+    const allDetections = (currentRun?.detectedPatterns || [])
+      .filter(p => !!p.className);
+    const countByClass = new Map<string, number>();
+    for (const p of allDetections) {
+      countByClass.set(p.className!, (countByClass.get(p.className!) || 0) + 1);
+    }
+    const skeleton = allDetections
+      .filter(p => {
+        const cnt = countByClass.get(p.className!) || 0;
+        if (cnt === 1) return true;
+        return resolvedMap[p.className!] === p.patternId;
+      })
       .map(p => ({
         patternId: p.patternId,
         patternName: p.patternName || p.patternId,
@@ -418,60 +441,82 @@ export default function GdbRunnerTab() {
     }
   }
 
-  const active = groups.find(g => `${g.patternId}__${g.className}` === activeKey)
-              || groups[0]
+  const active = visibleGroups.find(g => `${g.patternId}__${g.className}` === activeKey)
+              || visibleGroups[0]
               || null;
 
   return (
     <section className="tab-panel tab-gdb">
-      <header className="gdb-header">
-        <div className="gdb-header-left">
-          <div className="gdb-header-meta">
-            <span className="gdb-header-label">Pre-templated unit tests</span>
-            <span className="gdb-header-run">
-              {runId !== null ? `run #${runId}` : 'unsaved run'}
-              {budgetRemaining !== null && (
-                <span className="gdb-budget-chip">{budgetRemaining} run(s) left this minute</span>
-              )}
+      {/* Per D67: Testing Trophy banner. Documents the testing strategy
+          in-line so the studio surface matches what /research describes.
+          Phases the backend already runs are linked-to from the per-pattern
+          breakdown below; planned phases are listed here as a roadmap. */}
+      <aside className="gdb-trophy-banner" aria-label="Testing Trophy strategy">
+        <header>
+          <span className="gdb-trophy-eyebrow">Testing Trophy &mdash; applied to your submission</span>
+          <h2 className="gdb-trophy-title">How NeoTerritory tests your code</h2>
+        </header>
+        <ol className="gdb-trophy-phases">
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="static_analysis">
+            <span className="gdb-trophy-num">01</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Static analysis</p>
+              <p className="gdb-trophy-phase-note">
+                Live: cppcheck scans your source for likely defects and style issues. Runs first
+                because static findings are the cheapest to surface. Findings never block the
+                downstream phases.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="compile_run">
+            <span className="gdb-trophy-num">02</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Compile &amp; run</p>
+              <p className="gdb-trophy-phase-note">
+                Live: your class compiles under g++ and exits cleanly on its own.
+              </p>
+            </div>
+          </li>
+          <li className="gdb-trophy-phase gdb-trophy-phase--live" data-phase="unit_test">
+            <span className="gdb-trophy-num">03</span>
+            <div>
+              <p className="gdb-trophy-phase-name">Unit / contract test</p>
+              <p className="gdb-trophy-phase-note">
+                Live: per-pattern scaffolds exercise the contract the pattern implies (Singleton:
+                identity stability; Builder: terminal product; etc).
+              </p>
+            </div>
+          </li>
+        </ol>
+        <p className="gdb-trophy-foot">
+          Strategy: <strong>Testing Trophy</strong> (Kent C. Dodds). Read more on{' '}
+          <a
+            href="/docs"
+            onClick={(e) => {
+              e.preventDefault();
+              window.history.pushState(null, '', '/docs');
+              window.dispatchEvent(new CustomEvent('nt:navigate'));
+            }}
+          >
+            /docs
+          </a>
+          .
+        </p>
+      </aside>
+      <header className="results-header">
+        <p className="results-summary">
+          Pre-templated unit tests · {runId !== null ? `run #${runId}` : 'unsaved run'}
+          {budgetRemaining !== null && (
+            <span className="gdb-budget"> · {budgetRemaining} run(s) left this minute</span>
+          )}
+          {accuracy && accuracy.total > 0 && (
+            <span className="gdb-accuracy" title={`${accuracy.passed} pass / ${accuracy.failed} fail across all your runs`}>
+              {' · '}
+              <strong>{(accuracy.passRate * 100).toFixed(0)}%</strong> accuracy
+              {' '}({accuracy.passed}✓/{accuracy.failed}✗)
             </span>
-          </div>
-          {accuracy && accuracy.total > 0 && (() => {
-            const pct = Math.round(accuracy.passRate * 100);
-            const scoreColor = pct >= 80 ? '#10b981' : pct >= 50 ? '#f59e0b' : '#ef4444';
-            return (
-              <div
-                className="gdb-score-card"
-                title={`${accuracy.passed} passed / ${accuracy.failed} failed across all your runs`}
-              >
-                <div className="gdb-score-ring">
-                  <svg viewBox="0 0 36 36" className="gdb-score-svg" aria-hidden="true">
-                    <circle className="gdb-score-track" cx="18" cy="18" r="15.9" />
-                    <circle
-                      className="gdb-score-fill"
-                      cx="18" cy="18" r="15.9"
-                      strokeDasharray={`${pct} ${100 - pct}`}
-                      style={{ stroke: scoreColor }}
-                    />
-                  </svg>
-                  <span className="gdb-score-num" style={{ color: scoreColor }}>{pct}%</span>
-                </div>
-                <div className="gdb-score-info">
-                  <span className="gdb-score-label">Accuracy</span>
-                  <div className="gdb-score-badges">
-                    <span className="gdb-badge gdb-badge--pass">
-                      <span className="gdb-badge-dot" aria-hidden="true" />
-                      {accuracy.passed} passed
-                    </span>
-                    <span className="gdb-badge gdb-badge--fail">
-                      <span className="gdb-badge-dot" aria-hidden="true" />
-                      {accuracy.failed} failed
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </div>
+          )}
+        </p>
         <button
           type="button"
           className="primary-btn"
@@ -481,8 +526,8 @@ export default function GdbRunnerTab() {
           title={
             localAmbiguous.length > 0
               ? `Resolve ambiguity for: ${localAmbiguous.join(', ')}`
-              : alreadyRanForThisRun
-                ? 'These tests are bound to the current submission. Submit new code to re-run.'
+              : cachedValid
+                ? 'Re-run clears the previous results for this submission.'
                 : undefined
           }
         >
@@ -490,8 +535,8 @@ export default function GdbRunnerTab() {
             ? 'Running…'
             : onCooldown
               ? `Cooldown ${Math.ceil(cooldownLeftMs / 1000)}s`
-              : alreadyRanForThisRun
-                ? 'Already ran for this submission'
+              : cachedValid
+                ? 'Re-run tests'
                 : 'Run all tests'}
         </button>
         {/* Visible disabled-reason chip so the click is never a black hole.
@@ -505,8 +550,8 @@ export default function GdbRunnerTab() {
                 ? 'Start an analysis run first — then come back to test it.'
                 : localAmbiguous.length > 0
                   ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
-                  : alreadyRanForThisRun
-                    ? 'Tests already ran for this submission. Submit new code to re-run.'
+                  : taggedClassCount === 0
+                    ? 'Tag at least one class on the Patterns tab before running tests.'
                     : 'Tests are not available for this run.'}
           </p>
         )}
@@ -539,8 +584,14 @@ export default function GdbRunnerTab() {
       )}
       {error && <div className="error-banner" role="alert">{error}</div>}
 
-      {groups.length === 0 && !busy && (
-        <p className="tab-empty">Run the tests to see per-pattern verdicts here.</p>
+      {visibleGroups.length === 0 && !busy && (
+        <p className="tab-empty">
+          {taggedClassCount === 0
+            ? 'Tag at least one class on the Patterns tab. The runner unlocks once tagging is complete and unambiguous.'
+            : localAmbiguous.length > 0
+              ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) before running tests.`
+              : 'Run the tests to see per-pattern verdicts here.'}
+        </p>
       )}
 
       {tree.length > 0 && (
@@ -594,21 +645,6 @@ export default function GdbRunnerTab() {
               <header className="gdb-result-head">
                 <span className="gdb-result-class">{active.className}</span>
                 <span className="gdb-result-pattern">{active.patternName}</span>
-                {(() => {
-                  const hasResults = active.compileRun || active.unitTest;
-                  if (!hasResults || (busy && !active.compileRun && !active.unitTest)) return null;
-                  const compileFailed = active.compileRun && !active.compileRun.passed;
-                  const unitPassed = active.unitTest?.passed === true;
-                  const unitFailed = active.unitTest && !active.unitTest.passed;
-                  const passed = !compileFailed && (unitPassed || (!unitFailed && !!active.compileRun?.passed));
-                  return (
-                    <span className={`gdb-result-overall-badge gdb-result-overall-badge--${passed ? 'pass' : 'fail'}`}>
-                      {passed
-                        ? (active.unitTest ? 'All tests passed' : 'Compiled & ran')
-                        : 'Tests failed'}
-                    </span>
-                  );
-                })()}
               </header>
               <PhaseRow phase="static_analysis" result={active.staticAnalysis} loading={busy && !active.staticAnalysis} />
               <PhaseRow phase="compile_run"     result={active.compileRun}     loading={busy && !active.compileRun} />
@@ -617,6 +653,18 @@ export default function GdbRunnerTab() {
           )}
         </div>
       )}
+
+      <div className="tab-next-bar">
+        <button
+          type="button"
+          className="primary-btn"
+          disabled={!cachedValid}
+          title={cachedValid ? undefined : 'Run at least one test before continuing.'}
+          onClick={() => setActiveTab('docs')}
+        >
+          Next: Read pattern docs →
+        </button>
+      </div>
     </section>
   );
 }
