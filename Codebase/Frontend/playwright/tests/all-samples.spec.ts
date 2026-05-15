@@ -384,27 +384,48 @@ async function assertTaggingHappened(
   return { tagged: true, reason: '', emptyTree: false };
 }
 
-async function resolveAllAmbiguousClasses(page: Page): Promise<number> {
+async function resolveAllAmbiguousClasses(
+  page: Page,
+): Promise<{ resolved: number; candidatesSeen: string[] }> {
   // Walk the class tree, click each review CTA, and pick the first
   // candidate pattern in the resulting popover. Returns the number of
-  // classes resolved. The order does not matter for the spec  -  we only
-  // need every class tagged so Run All is no longer blocked.
+  // classes resolved AND the union of every candidate label seen across
+  // every popover (so the structural assertion can recognise patterns
+  // the matcher proposed even when the auto-resolver picked a different
+  // co-emitted candidate).
+  //
+  // Why we collect candidates: ambiguity is information per the catalog
+  // (Builder co-emits with MethodChaining, Adapter/Proxy/Decorator co-
+  // emit on wrap+forward). The .first() chip is arbitrary, so asserting
+  // strictly on the resolved badge would treat a co-emit ambiguity as a
+  // detection failure when the matcher actually surfaced both options.
+  // Per user direction (option c, this turn): the assertion should pass
+  // when the expected pattern was a CANDIDATE, regardless of which one
+  // the auto-resolver picked.
   await page.getByTestId('tab-annotated').click();
   await expect(page.getByTestId('class-tree-view')).toBeVisible({ timeout: 10_000 });
 
   let resolved = 0;
+  const candidatesSeen = new Set<string>();
   for (let i = 0; i < 50; i += 1) {
     const reviewCta = page.locator('.class-tree-review-cta').first();
     const visible = await reviewCta.isVisible().catch(() => false);
     if (!visible) break;
     await reviewCta.click();
-    const firstChoice = page.locator('.class-root-picker-chip').first();
-    await expect(firstChoice).toBeVisible({ timeout: 5_000 });
-    await firstChoice.click();
+    const chips = page.locator('.class-root-picker-chip');
+    await expect(chips.first()).toBeVisible({ timeout: 5_000 });
+    // Snapshot every chip label in this popover before picking. The
+    // chips render the canonical pattern name as visible text.
+    const chipCount = await chips.count();
+    for (let c = 0; c < chipCount; c += 1) {
+      const label = ((await chips.nth(c).textContent()) || '').trim();
+      if (label) candidatesSeen.add(label);
+    }
+    await chips.first().click();
     resolved += 1;
     await page.waitForTimeout(300);
   }
-  return resolved;
+  return { resolved, candidatesSeen: Array.from(candidatesSeen) };
 }
 
 async function runTestsAndAssertCompile(page: Page): Promise<{
@@ -428,7 +449,8 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
   if (disabled) {
     const title = (await runAll.getAttribute('title')) ?? '';
     if (/Resolve ambiguity/i.test(title) || /ambiguity/i.test(title)) {
-      ambiguityResolved = await resolveAllAmbiguousClasses(page);
+      const r = await resolveAllAmbiguousClasses(page);
+      ambiguityResolved = r.resolved;
       await page.getByTestId('tab-gdb').click();
       await expect(runAll).toBeVisible({ timeout: 10_000 });
       disabled = await runAll.isDisabled().catch(() => false);
@@ -677,7 +699,7 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
       // scoping to one row (mixed/usages samples host multiple classes;
       // any one matching the regex satisfies the catalog contract).
       if (sample.expectedPatternNameRegex || sample.kind === 'integration') {
-        await resolveAllAmbiguousClasses(page);
+        const { candidatesSeen } = await resolveAllAmbiguousClasses(page);
         // resolveAllAmbiguousClasses leaves us on the Patterns tab.
         const badges = page.getByTestId('class-tree-badge');
         const seenPatterns: string[] = [];
@@ -686,20 +708,36 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
           const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
           if (p) seenPatterns.push(p);
         }
+        // Per option (c) this turn: the matcher correctly co-emits
+        // ambiguous candidates (e.g. Builder + MethodChaining on the
+        // same `return *this` chain). The auto-resolver picks .first()
+        // arbitrarily; the resolved badge is therefore not a reliable
+        // signal of "did the matcher see X". The structural assertion
+        // is satisfied if the expected pattern was EITHER on a final
+        // badge OR present as a candidate the matcher proposed during
+        // ambiguity resolution.
+        const seenOrCandidate = [...seenPatterns, ...candidatesSeen];
+        const formatSeen = (): string =>
+          `badges=[${seenPatterns.join(', ') || '(none)'}], ` +
+          `candidates=[${candidatesSeen.join(', ') || '(none)'}]`;
         if (sample.expectedPatternNameRegex) {
-          const matched = seenPatterns.some((p) => sample.expectedPatternNameRegex!.test(p));
+          const matched = seenOrCandidate.some((p) =>
+            sample.expectedPatternNameRegex!.test(p),
+          );
           if (!matched) {
             // D63 algorithm-known-limit gate: if the detector emits the
             // documented alternate pattern, count as a documented limit
             // (annotate, don't fail). Anything else is a real regression.
             const accepted = sample.algorithmKnownLimits?.acceptedAlternatePattern;
-            const altMatched = accepted ? seenPatterns.some((p) => accepted.test(p)) : false;
+            const altMatched = accepted
+              ? seenOrCandidate.some((p) => accepted.test(p))
+              : false;
             if (altMatched) {
               testInfo.annotations.push({
                 type: 'algorithm-known-limit',
                 description:
                   `${sample.filename}: expected ${sample.expectedPatternNameRegex} but saw ` +
-                  `${seenPatterns.join(', ') || '(none)'}. Accepted per ` +
+                  `${formatSeen()}. Accepted per ` +
                   `${sample.algorithmKnownLimits!.reason}`,
               });
             } else {
@@ -707,7 +745,7 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
                 matched,
                 `${sample.filename} expected pattern matching ${sample.expectedPatternNameRegex} ` +
                   `(or documented alternate ${accepted ?? '(none configured)'}) on some class; ` +
-                  `saw: ${seenPatterns.join(', ') || '(none)'}`,
+                  `saw: ${formatSeen()}`,
               ).toBeTruthy();
             }
           }
@@ -719,7 +757,7 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
             // (D63) records WHY each entry is here; the spec just
             // annotates instead of failing.
             const isSkipped = skipList.some((s) => s.source === rx.source && s.flags === rx.flags);
-            const present = seenPatterns.some((p) => rx.test(p));
+            const present = seenOrCandidate.some((p) => rx.test(p));
             if (!present && isSkipped) {
               testInfo.annotations.push({
                 type: 'algorithm-known-limit',
@@ -731,7 +769,7 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
             }
             expect(
               present,
-              `integration sample must surface a pattern matching ${rx}; saw: ${seenPatterns.join(', ') || '(none)'}`,
+              `integration sample must surface a pattern matching ${rx}; saw: ${formatSeen()}`,
             ).toBeTruthy();
           }
         }
