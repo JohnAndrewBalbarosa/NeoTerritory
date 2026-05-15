@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAppStore } from '../../store/appState';
-import { signoutStars, openEnded } from '../../data/surveyQuestions';
+import { profile, signoutStars } from '../../data/surveyQuestions';
 import { submitSessionSurvey } from '../../api/client';
 import StarRating from '../ui/StarRating';
 
@@ -12,23 +12,24 @@ interface SignoutSurveyProps {
 export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyProps) {
   const { user } = useAppStore();
   const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [open, setOpen] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isDevcon = (user?.username || '').toLowerCase().startsWith('devcon');
   const canSkip = !isDevcon;
+  const allProfileAnswered = profile.every((q) => ratings[q.id] >= 1);
   const allRated = signoutStars.every((q) => ratings[q.id] >= 1 && ratings[q.id] <= 5);
+  const canSubmit = allProfileAnswered && allRated;
 
   async function onSubmit(): Promise<void> {
-    if (!allRated) {
-      setError('Please rate every item before continuing.');
+    if (!canSubmit) {
+      setError('Please complete every profile choice and rate every statement before continuing.');
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      await submitSessionSurvey(ratings, open);
+      await submitSessionSurvey(ratings, {});
       onComplete();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit feedback.');
@@ -42,32 +43,55 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
       <div className="modal-card signout-card">
         <h2 id="signout-title">Session feedback</h2>
         <p className="modal-lede">
-          Before you sign out, please rate your overall experience with the system.
+          Before you sign out, please complete your respondent profile and rate your overall experience.
         </p>
-        {signoutStars.map((q) => (
-          <div key={q.id} className="survey-question">
-            <p className="question-text">
-              <span className="question-id">{q.id}</span> {q.text}
-            </p>
-            <StarRating
-              value={ratings[q.id] || 0}
-              onChange={(v) => setRatings((r) => ({ ...r, [q.id]: v }))}
-              label={`${q.id} rating`}
-            />
-          </div>
-        ))}
-        {openEnded.signout.map((q) => (
-          <div key={q.id} className="survey-question">
-            <p className="question-text">
-              <span className="question-id">{q.id}</span> {q.text}
-            </p>
-            <textarea
-              value={open[q.id] || ''}
-              onChange={(e) => setOpen((o) => ({ ...o, [q.id]: e.target.value }))}
-              rows={3}
-            />
-          </div>
-        ))}
+
+        <section className="survey-section">
+          <h3 className="survey-section-title">Section A. Respondent Profile</h3>
+          {profile.map((q) => (
+            <div key={q.id} className="survey-question survey-profile-question">
+              <p className="question-text">
+                <span className="question-id">{q.id}</span> {q.text}
+              </p>
+              <div className="profile-choice-row" role="radiogroup" aria-label={`${q.id} choices`}>
+                {q.choices.map((c) => {
+                  const inputId = `${q.id}-${c.value}`;
+                  const checked = ratings[q.id] === c.value;
+                  return (
+                    <label key={c.value} htmlFor={inputId} className="profile-choice">
+                      <input
+                        id={inputId}
+                        type="radio"
+                        name={q.id}
+                        value={c.value}
+                        checked={checked}
+                        onChange={() => setRatings((r) => ({ ...r, [q.id]: c.value }))}
+                      />
+                      <span>{c.label}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </section>
+
+        <section className="survey-section">
+          <h3 className="survey-section-title">Sections B–F. System Evaluation</h3>
+          {signoutStars.map((q) => (
+            <div key={q.id} className="survey-question">
+              <p className="question-text">
+                <span className="question-id">{q.id}</span> {q.text}
+              </p>
+              <StarRating
+                value={ratings[q.id] || 0}
+                onChange={(v) => setRatings((r) => ({ ...r, [q.id]: v }))}
+                label={`${q.id} rating`}
+              />
+            </div>
+          ))}
+        </section>
+
         {error && <div className="error-banner" role="alert">{error}</div>}
         <div className="modal-actions">
           <button className="ghost-btn" type="button" onClick={onCancel} disabled={busy}>
@@ -82,7 +106,7 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
             className="primary-btn"
             type="button"
             onClick={() => { void onSubmit(); }}
-            disabled={busy || !allRated}
+            disabled={busy || !canSubmit}
           >
             {busy ? 'Submitting…' : 'Submit & sign out'}
           </button>

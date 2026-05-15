@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { perRun, openEnded } from '../../data/surveyQuestions';
+import { perRun } from '../../data/surveyQuestions';
 import { submitRunSurvey } from '../../api/client';
 import StarRating from '../ui/StarRating';
 
@@ -10,7 +10,6 @@ interface RunSurveyModalProps {
 
 export default function RunSurveyModal({ runKey, onSubmitted }: RunSurveyModalProps) {
   const [ratings, setRatings] = useState<Record<string, number>>({});
-  const [open, setOpen] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +23,7 @@ export default function RunSurveyModal({ runKey, onSubmitted }: RunSurveyModalPr
     setBusy(true);
     setError(null);
     try {
-      await submitRunSurvey(runKey, ratings, open);
+      await submitRunSurvey(runKey, ratings, {});
       onSubmitted();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to submit feedback.');
@@ -49,18 +48,6 @@ export default function RunSurveyModal({ runKey, onSubmitted }: RunSurveyModalPr
               value={ratings[q.id] || 0}
               onChange={(v) => setRatings((r) => ({ ...r, [q.id]: v }))}
               label={`${q.id} rating`}
-            />
-          </div>
-        ))}
-        {openEnded.perRun.map((q) => (
-          <div key={q.id} className="survey-question">
-            <p className="question-text">
-              <span className="question-id">{q.id}</span> {q.text}
-            </p>
-            <textarea
-              value={open[q.id] || ''}
-              onChange={(e) => setOpen((o) => ({ ...o, [q.id]: e.target.value }))}
-              rows={3}
             />
           </div>
         ))}

@@ -2,12 +2,11 @@ import { useEffect, useState } from 'react';
 import {
   fetchAdminSurveySummary,
   fetchAdminPerRunFeedback,
-  fetchAdminPerSessionFeedback,
-  fetchAdminOpenEnded
+  fetchAdminPerSessionFeedback
 } from '../../api/client';
 import {
   SurveySummary, LikertMetric,
-  AdminPerRunFeedbackRow, AdminPerSessionFeedbackRow, AdminOpenEndedRow
+  AdminPerRunFeedbackRow, AdminPerSessionFeedbackRow
 } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
@@ -45,40 +44,41 @@ function MetricBar({ label, metric }: { label: string; metric: LikertMetric }) {
   );
 }
 
-// Questionnaire B item bank — Section A (profile) is excluded since it
-// isn't on the Likert scale. Sections B–F are the rating items the
-// admin Survey panel should label by their full prompt rather than
+// 2026-05-15 instrument. Section A (profile, A.1–A.5) is a respondent
+// profile and is shown by raw id; Sections B–F are the Likert items
+// labelled here so the admin panel reads the full prompt instead of
 // the bare question id.
 const QUESTION_LABELS: Record<string, string> = {
-  // Section B — Functional Suitability and Code Understanding Support
-  B1:  'B1. Helps me understand unfamiliar C++ source code.',
-  B2:  'B2. Helps me identify important parts of the analyzed code.',
-  B3:  'B3. Generated documentation is clear and understandable.',
-  B4:  'B4. Documentation explains the purpose of the analyzed code.',
-  B5:  'B5. Detected design-pattern evidence connects concepts to code.',
-  B6:  'B6. Explanations help me understand why structures relate to a pattern.',
-  B7:  'B7. Generated unit-test targets identify what may need testing.',
-  B8:  'B8. Unit-test targets help me understand expected behavior.',
-  B9:  'B9. Useful during internship onboarding.',
-  B10: 'B10. Overall useful for code understanding & pattern learning.',
-  // Section C — Usability and Interface Clarity
-  C11: 'C11. Interface is easy to understand.',
-  C12: 'C12. Easy to enter or paste C++ code into the system.',
-  C13: 'C13. I can understand what the system shows after analysis.',
-  C14: 'C14. Displayed results are organized clearly.',
-  C15: 'C15. Easy to use even with minimal assistance.',
+  // Section A — respondent profile (categorical, not Likert)
+  'A.1': 'A.1 Current year level',
+  'A.2': 'A.2 Programming experience',
+  'A.3': 'A.3 Familiarity with C++',
+  'A.4': 'A.4 Familiarity with object-oriented programming',
+  'A.5': 'A.5 Familiarity with design patterns',
+  // Section B — Functional Suitability
+  'B.1': 'B.1 Learning modules help me understand design-pattern concepts.',
+  'B.2': 'B.2 Examples in modules show how patterns appear in code.',
+  'B.3': 'B.3 System helps me understand unfamiliar C++ source code.',
+  'B.4': 'B.4 System helps me identify important parts of the analyzed code.',
+  'B.5': 'B.5 System helps me connect pattern concepts to actual C++ code.',
+  'B.6': 'B.6 Generated documentation explains structure, purpose, and key parts.',
+  'B.7': 'B.7 Generated unit-test targets help me recognize areas needing checking.',
+  'B.8': 'B.8 Useful as a learning support tool for DEVCON interns / novices.',
+  // Section C — Usability
+  'C.9':  'C.9 Interface is easy to understand.',
+  'C.10': 'C.10 Easy to access and navigate the learning modules.',
+  'C.11': 'C.11 Easy to enter, paste, or submit C++ code.',
+  'C.12': 'C.12 Analysis results are organized clearly.',
+  'C.13': 'C.13 Detected pattern evidence and highlighted code structures are clear.',
   // Section D — Performance Efficiency
-  D16: 'D16. Loads and responds within an acceptable time.',
-  D17: 'D17. Generates analysis without noticeable delays.',
-  D18: 'D18. Stays responsive while processing submitted code.',
+  'D.14': 'D.14 Loads, responds, and generates results in acceptable time.',
+  'D.15': 'D.15 Responds quickly when moving between modules, results, docs, surveys.',
   // Section E — Reliability
-  E19: 'E19. Works consistently when analyzing valid C++ code.',
-  E20: 'E20. Provides clear feedback when code cannot be analyzed.',
-  E21: 'E21. Produces stable results on similar inputs.',
-  // Section F — Security and Data Protection
-  F22: 'F22. Handles submitted code and responses responsibly.',
-  F23: 'F23. Assures information is used only for academic purpose.',
-  F24: 'F24. Protects responses from unauthorized disclosure.'
+  'E.16': 'E.16 Clear feedback when code cannot be analyzed properly.',
+  'E.17': 'E.17 Stable results on similar inputs.',
+  // Section F — Security & Data Protection
+  'F.18': 'F.18 Handles submitted code and responses responsibly.',
+  'F.19': 'F.19 Protects user responses from unauthorized disclosure.'
 };
 
 function labelFor(key: string) {
@@ -89,7 +89,6 @@ export default function SurveyStats() {
   const [data, setData] = useState<SurveySummary | null>(null);
   const [perRunRows, setPerRunRows] = useState<AdminPerRunFeedbackRow[]>([]);
   const [perSessRows, setPerSessRows] = useState<AdminPerSessionFeedbackRow[]>([]);
-  const [openRows, setOpenRows] = useState<AdminOpenEndedRow[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -105,9 +104,6 @@ export default function SurveyStats() {
     fetchAdminPerSessionFeedback()
       .then(d => setPerSessRows(d.rows || []))
       .catch(err => { if (!isAuthError(err)) setError(err.message); });
-    fetchAdminOpenEnded()
-      .then(d => setOpenRows(d.rows || []))
-      .catch(err => { if (!isAuthError(err)) setError(err.message); });
   }, []);
 
   if (error) return <div className="empty-state admin-error" role="alert">Survey error: {error}</div>;
@@ -120,7 +116,7 @@ export default function SurveyStats() {
   // the live data, not a hard-coded list. Sorted by section letter +
   // numeric suffix for stable order.
   function unionRatingKeys(rows: Array<{ ratings: Record<string, number> }>): string[] {
-    const order = ['B', 'C', 'D', 'E', 'F', 'G'];
+    const order = ['A', 'B', 'C', 'D', 'E', 'F'];
     const seen = new Set<string>();
     for (const r of rows) for (const k of Object.keys(r.ratings || {})) seen.add(k);
     return [...seen].sort((a, b) => {
@@ -236,43 +232,6 @@ export default function SurveyStats() {
           )}
       </section>
 
-      {/* === Open-ended text answers ======================================== */}
-      <section className="stats-section">
-        <h3>Open-ended text answers</h3>
-        {openRows.length === 0
-          ? <div className="empty-state">No open-ended answers submitted yet.</div>
-          : (
-            <div className="logs-table-wrap">
-              <table className="logs-table">
-                <thead>
-                  <tr>
-                    <th>User</th>
-                    <th>Source</th>
-                    <th>Question</th>
-                    <th>Answer (click to expand)</th>
-                    <th>Submitted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {openRows.map((r, i) => (
-                    <tr key={`${r.source}-${r.id}-${r.questionId}-${i}`}>
-                      <td>{r.username || '—'}</td>
-                      <td><code>{r.source}</code></td>
-                      <td>{r.questionId}</td>
-                      <td>
-                        <details>
-                          <summary>{r.text.slice(0, 80)}{r.text.length > 80 ? '…' : ''}</summary>
-                          <pre style={{ whiteSpace: 'pre-wrap', margin: '6px 0 0', padding: 8, background: 'var(--surface2)', borderRadius: 4, fontFamily: 'inherit', fontSize: 12.5 }}>{r.text}</pre>
-                        </details>
-                      </td>
-                      <td className="logs-td-date">{r.submittedAt}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-      </section>
       {perRunKeys.length > 0 && (
         <section className="stats-section">
           <h3>Per-run ratings</h3>

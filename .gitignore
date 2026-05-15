@@ -98,6 +98,7 @@ client_secret_*.apps.googleusercontent.com*
 test-artifacts/local-unittest-*.py
 test-artifacts/local-unittest-*.mjs
 test-artifacts/local-unittest-*.sh
+test-artifacts/soak-runs/
 
 # SSH / deploy credentials — never commit, even locally
 *.pem
