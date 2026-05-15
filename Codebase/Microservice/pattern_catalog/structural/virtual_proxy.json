@@ -1,0 +1,69 @@
+{
+  "pattern_id": "structural.virtual_proxy",
+  "pattern_family": "structural",
+  "pattern_name": "Proxy",
+  "enabled": true,
+  "signature_categories": [
+    "ownership_handle",
+    "lazy_init"
+  ],
+  "lexeme_identifiers": {
+    "forwarding":       ["->", "."],
+    "real_member":      ["m_real", "real", "target", "subject",
+                         "m_subject", "realSubject_", "impl_", "m_impl",
+                         "real_subject_", "subject_", "m_service",
+                         "service_", "resource_", "m_resource"],
+    "lazy_init_ops":    ["make_unique", "make_shared", "std::make_unique",
+                         "std::make_shared", "unique_ptr", "shared_ptr",
+                         "new", "nullptr"]
+  },
+  "ordered_checks": [
+    {
+      "id": "class_introducer",
+      "expected_kind": "Keyword",
+      "expected_lexeme_any_of": ["class", "struct"]
+    },
+    {
+      "id": "class_name",
+      "expected_kind": "Identifier",
+      "capture_as": "class_name",
+      "document_as": "proxy_class"
+    },
+    {
+      "id": "open_class_brace",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["{"]
+    },
+    {
+      "id": "real_subject",
+      "expected_kind": "Identifier",
+      "capture_as": "real_subject",
+      "document_as": "proxy_real_subject"
+    },
+    {
+      "id": "forward_operator",
+      "one_of": [
+        { "expected_kind": "Punctuation", "expected_lexeme_any_of": ["."] },
+        { "expected_kind": "Operator",    "expected_lexeme_any_of": ["->"] }
+      ],
+      "document_as": "proxy_forwarding_op"
+    },
+    {
+      "id": "forwarded_method",
+      "expected_kind": "Identifier",
+      "capture_as": "forwarded_method",
+      "document_as": "proxy_forwarded_call"
+    },
+    {
+      "id": "forwarded_open_paren",
+      "expected_kind": "Punctuation",
+      "expected_lexeme_any_of": ["("]
+    }
+  ],
+
+  "implementation_template": {
+    "callsites": [],
+    "expected_collaborators": [],
+    "negative_signals": []
+  }
+}

@@ -46,6 +46,11 @@
     ],
     "destruction_signal": [
       ["=", "delete"]
+    ],
+    "lazy_init": [
+      ["if", "(", "!"],
+      ["==", "nullptr"],
+      ["!=", "nullptr"]
     ]
   }
 }
