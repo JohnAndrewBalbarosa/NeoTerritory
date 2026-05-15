@@ -1,104 +1,100 @@
-# Microservice true-positive sweep — report
+# Microservice + learners-page rigorous test — final report
 
-**Probe target:** `http://122.248.192.49/api/analyze` (deploy SHA `314eb21`).
-**Auth:** `devcon1` / `devcon` tester seat (claimed via `/auth/claim` → `/auth/login` → JWT).
-**Dataset:** 47 true-positive samples across 9 detected patterns + the user's verbatim `DatabaseManager` Singleton.
+**Probe target:** `http://122.248.192.49/api/analyze` (live AWS, deploy SHA `d68d58d`).
+**Auth:** `devcon1` / `devcon` tester seat.
+**Datasets:** 51 true-positive C++ samples across 9 detected patterns + the user's verbatim `DatabaseManager` Singleton. Files under `test-artifacts/microservice-audit/datasets/<pattern>/`.
 **Reference:** Gang of Four (Gamma et al., 1994) for canonical pattern intent. Catalog under `Codebase/Microservice/pattern_catalog/`.
 
-## Headline
+## Final live results (after Shape 1 fix deployed)
 
 ```
-folder              pass  total  failures
-adapter             5     5      —
-builder             5     5      —
-decorator           5     5      —
-factory             5     5      —          (1 sample fixed during sweep — see Shape 4)
-method_chaining     5     5      —
-strategy_interface  5     5      —
-singleton           4     7      3 NONE     ← USER'S DatabaseManager is one of these
-proxy               3     5      1 WRONG, 1 NONE
-pimpl               1     6      5 NONE     (1 added during sweep PASSES — see Shape 2)
+folder              pass / total   notes
+adapter             5 / 5          —
+builder             5 / 5          —
+decorator           5 / 5          —
+factory             5 / 5          —          (1 sample fixed during sweep — see Shape 4)
+method_chaining     5 / 5          —
+strategy_interface  5 / 5          —
+singleton           7 / 7          ✅ USER'S DatabaseManager + 2 more private-first variants now PASS
+proxy               3 / 5          1 wrong (factory only), 1 none — Shape 3, paused for user
+pimpl               1 / 8          7 fail (5 external-decl + 2 expansion) — Shape 2, paused for user
+                    ─────
+                    41/53
 ```
+
+E2E learners walk (`test-artifacts/learners-e2e/walk.mjs`): **8/9 pattern modules accept ≥3 different valid samples** on live AWS. PIMPL is the lone shortfall (0/5). `/patterns/learn` UI renders correctly (screenshot at `patterns-learn.png`).
 
 ## The four root-cause shapes
 
-### Shape 1 — Singleton `ordered_checks` is too strict about source order *(the user's DatabaseManager bug)*
+### Shape 1 — Singleton `ordered_checks` was anchored to source position *(the user's DatabaseManager bug)*
 
-**Reproducible 3/3.** The `ordered_checks` in `Codebase/Microservice/pattern_catalog/creational/singleton.json` walk tokens in source order and expect, after the opening `{`, to see in this order: `static` → `&` → identifier → `(` → `)` → `delete`. When `private:` block (with the constructor + deleted ops) appears **before** the `public:` block (with the `static` accessor), the matcher hits `delete` keywords first and never finds the static accessor in the expected position.
+**Root cause:** `pattern_token_sequence_matcher.cpp` walks tokens forward with a monotonic cursor. The Singleton `ordered_checks` step `deleted_copy_op` was anchored AFTER `static_keyword`. For private-first layouts the `delete` keyword appears earlier in source than `static`; once the cursor advances past `static`, scanning forward for `delete` finds nothing.
 
-| Sample | Layout | Result |
+**Status:** ✅ **FIXED** in commit `c00ff88`. Made `deleted_copy_op` `optional: true` in `singleton.json`. The positive `signature_categories: ["destruction_signal"]` filter still requires `[=, delete]` somewhere in the class, so we don't lose the "must have copy deletion" guarantee.
+
+**Verification (live AWS, post-fix):**
+
+| Sample | Layout | Verdict |
 |---|---|---|
-| `01-user-databasemanager.cpp` (verbatim) | `private:` ctor + deleted ops, then `public:` `getInstance` | **NONE** |
-| `06-private-first-no-comments.cpp` | private-first, `= default` ctor | **NONE** |
-| `07-private-first-empty-body.cpp` | private-first, `{}` body | **NONE** |
-| `02-public-first-default-ctor.cpp` | `public:` `getInstance` + deleted ops, then `private:` ctor | PASS |
-| `03-empty-body-ctor.cpp` | public-first, `{}` body | PASS |
-| `04-thread-safe-mutex.cpp` | public-first, mutex-guarded | PASS |
-| `05-namespaced.cpp` | public-first, inside `namespace` | PASS |
+| `01-user-databasemanager.cpp` (verbatim) | private-first | ✅ PASS |
+| `06-private-first-no-comments.cpp` | private-first, `= default` | ✅ PASS |
+| `07-private-first-empty-body.cpp` | private-first, `{}` | ✅ PASS |
+| 02-05 (public-first variants) | unchanged | ✅ PASS |
 
-**Verdict:** The user's `DatabaseManager` is GoF-canonical (Gamma et al., 1994). The microservice fails it. Both the **`ordered_checks` schema** and the **C++ matcher's tolerance for intervening tokens** are involved — fixing this needs either (a) catalog-structure change (split into multiple ordered groups, or convert to unordered must-find), or (b) matcher change to skip past `private:`/`public:` and constructor declarations when looking for the next expected token.
+### Shape 2 — PIMPL fails on external forward decl *(PAUSED — needs matcher change)*
 
-**Action: PAUSED — catalog-structure / matcher decision needed.**
+**Root cause:** the parser/AST stage upstream of `ordered_checks` reports `items_processed=0` for any TU that contains a forward decl like `class WidgetImpl;` followed by `class Widget { ... };`. The outer class never reaches pattern matching at all. Catalog edits to `pimpl.json` (tried: marking inner_struct/impl_name/impl_semicolon as optional) cause downstream false positives but do not fix the upstream drop. The fix has to be in `Modules/Source/Analysis/Patterns/` source — likely in the class-discovery stage that decides which classes to forward to `match_pattern_against_class`.
 
-### Shape 2 — PIMPL only detects the *nested* forward-decl style
+**Status:** 🛑 **PAUSED.** Catalog defensive optional flags were reverted in `d68d58d` because they caused PIMPL false positives on every class with a `unique_ptr<T>` member. The Shape 2 fix needs a small C++ change in the class-discovery / class-stream construction logic.
 
-**Reproducible 5/5 fail vs 1 pass.** The `ordered_checks` in `pattern_catalog/idiom/pimpl.json` expect: `class` → name → `{` → `struct`/`class` → impl name → `;` → `unique_ptr`. That second `class` keyword is searched **after** the outer `{`, meaning the impl forward decl must be **inside** the outer class.
+**Recommended fix:** edit the class-discovery code to keep outer classes even when sibling forward decls are present in the same TU. This is the right place to recognise PIMPL's idiom of declaring the impl class once at file scope and referencing it inside the outer class.
 
-| Style | Sample | Result |
-|---|---|---|
-| External forward decl (canonical) | `class WidgetImpl;` ↵ `class Widget { unique_ptr<WidgetImpl> impl_; };` | **NONE** (5/5 — samples 01..05) |
-| Nested forward decl | `class Widget { class Impl; unique_ptr<Impl> impl_; };` | PASS (sample 06) |
+### Shape 3 — Proxy disambiguation misses lazy-init-without-mutex variants *(PAUSED — research only, per user instruction)*
 
-**Verdict:** Real-world PIMPL almost always uses external forward decl (the impl is in the .cpp, hidden from the header consumer). Catalog needs a parallel ordered_checks variant or restructured logic to accept the external style.
+**Root cause (after C++ matcher inspection):** `proxy.json` declares `signature_categories: ["access_control_caching"]`. The `lexeme_categories.json` definition of `access_control_caching` lists **mutex / lock_guard / unique_lock / shared_mutex** etc. — but NOT `if` / `!` / `nullptr` (the tokens you see in classic lazy-init Virtual Proxy). The ranker filter (`match_ranker.cpp`) requires every declared `signature_categories` to fire; lazy-init-only Proxy classes don't have a mutex and so fail the filter.
 
-**Action: PAUSED — catalog-structure decision needed.**
-
-### Shape 3 — Proxy disambiguation is fragile
-
-**2/5 fail.** Proxy shares the wrap+forward signature with Adapter and Decorator; disambiguation depends on `access_control_caching` lexemes (mutex, cache identifiers, nullptr guards).
-
-| Sample | Members / behaviour | Detected | Expected |
+| Sample | Has mutex? | Has `if (!ptr)` lazy init? | Live verdict |
 |---|---|---|---|
-| `02-lazy-image.cpp` | `unique_ptr<RealImage>` + `if(!real_)` lazy init + `real_->render()` forward | **NONE** | structural.proxy |
-| `04-remote-stub.cpp` | `unique_ptr<RemoteService>` + `if(!connected_)` + `make_unique` + `service_->call()` | **WRONG** (only `creational.factory` fired) | structural.proxy |
-| `01-cached-fetcher.cpp` | unique_ptr + cache map + mutex + lazy init | PASS | ✓ |
-| `03-access-controlled.cpp` | unique_ptr + mutex + auth check | PASS | ✓ |
-| `05-mutex-guarded.cpp` | unique_ptr + mutex | PASS | ✓ |
+| `01-cached-fetcher.cpp` | ✅ | ✅ | PASS |
+| `03-access-controlled.cpp` | ✅ | ✅ | PASS |
+| `05-mutex-guarded.cpp` | ✅ | ❌ | PASS |
+| `02-lazy-image.cpp` | ❌ | ✅ | **NONE** |
+| `04-remote-stub.cpp` | ❌ | ✅ | **WRONG** (factory only) |
 
-**Verdict:** Proxy passes only when `mutex`/`lock_guard` is present. Lazy-init-without-mutex (a perfectly valid Proxy variant per GoF — the Virtual Proxy in single-threaded code) is misclassified or missed. The `access_guard` lexeme list does include `nullptr`, `if`, `!`, `cache_`, `loaded_`, `initialized_` — but in practice those trigger only when paired with the mutex set in actual scoring.
+**Status:** 🔍 **RESEARCHED.** Two possible catalog-only fixes:
+- (a) Add a parallel pattern entry `structural/virtual_proxy.json` with its own `signature_categories` (e.g. a new `lazy_init` category in `lexeme_categories.json` that includes `if` + `nullptr` + `make_unique` token sequences). Cleanest separation per GoF — Virtual Proxy is a distinct sub-pattern.
+- (b) Add `if`/`!`/`nullptr` to the existing `access_control_caching` category in `lexeme_categories.json`. Simpler but pollutes the category — anything else that gates on `access_control_caching` (Proxy is the only one today) would loosen.
 
-**Action: PAUSED — needs either a catalog scoring change (lower the mutex weight, or treat `if(!ptr)` as enough proxy evidence) or a matcher-side disambiguation tweak.**
+Both are catalog changes that affect detection semantics; per your earlier instruction these need approval before applying.
 
-### Shape 4 — Sample bug *(fixed in this sweep)*
+### Shape 4 — Sample bug *(FIXED in this sweep, no catalog change)*
 
-`factory/02-virtual-overridden.cpp` originally shipped a derived `WinFactory::createButton` with no branching, so the `branch_decision` lexeme didn't fire and only the abstract base was tagged (correctly, as `strategy_interface`). Per GoF's Factory Method intent (a polymorphic creator that picks at runtime), the canonical example needs branching. Rewrote sample to add `if (kind == 1) ...` and a third concrete product. Now passes as `creational.factory`. **No catalog change needed.**
+`factory/02-virtual-overridden.cpp` originally shipped a derived `WinFactory::createButton` with no branching. The `creational.factory` catalog requires a `branch_decision` token (`if` / `switch` / `case`) so the lone polymorphic override was correctly classified as `strategy_interface` only. Rewrote the sample to add `if (kind == 1)` branching and a third concrete product. Per GoF (Gamma et al., 1994, Factory Method) a Factory Method is a polymorphic creator that picks at runtime — branching is part of the canonical structure.
 
-## Final results table
+## What still needs your decision
 
-| Pattern | Pass | Total | Notes |
-|---|---|---|---|
-| adapter | 5 | 5 | — |
-| builder | 5 | 5 | — |
-| decorator | 5 | 5 | (also fires strategy_interface + strategy_concrete due to wrappee polymorphism — expected per D21 co-emit) |
-| factory | 5 | 5 | (sample 02 was rewritten — see Shape 4) |
-| method_chaining | 5 | 5 | (also co-fires builder per the catalog's own note) |
-| strategy_interface | 5 | 5 | — |
-| singleton | 4 | 7 | **3 fails — Shape 1, the USER'S bug** |
-| proxy | 3 | 5 | **2 fails — Shape 3** |
-| pimpl | 1 | 6 | **5 fails — Shape 2** (only nested-forward-decl variant passes) |
+1. **Shape 2 (PIMPL)** — approve a C++ change in `Modules/Source/Analysis/Patterns/` to stop the parser from dropping outer classes when a sibling forward decl exists in the same TU? Without this, PIMPL detection only works for the nested-forward-decl style (which is uncommon in real codebases).
 
-## What needs your decision
+2. **Shape 3 (Proxy)** — pick one of the two catalog approaches above (separate Virtual Proxy entry vs widening `access_control_caching` lexeme set), or defer.
 
-Per your instruction (algo / catalog-structure changes pause for approval), these three shapes require your call:
+## Files committed
 
-1. **Shape 1** — make Singleton matching tolerant of `private:`-first ordering so the user's `DatabaseManager` (and any other GoF-canonical example written that way) gets detected. Two paths:
-   - **(a) Catalog-structure**: split the `ordered_checks` into "must-find anywhere in class body" groups instead of strict source order.
-   - **(b) Matcher**: change the C++ matcher to skip past `private:`/`public:` access specifiers and prior member declarations when looking for the next expected token.
+- `Codebase/Microservice/pattern_catalog/creational/singleton.json` — `deleted_copy_op` marked optional. **DEPLOYED.**
+- `test-artifacts/microservice-audit/probe-aws.mjs` — repeatable audit harness (env vars `PROBE_BASE`, `PROBE_USER`, `PROBE_PASS`).
+- `test-artifacts/microservice-audit/datasets/<pattern>/*.cpp` — 51 true-positive samples.
+- `test-artifacts/microservice-audit/results.json` — last probe run output.
+- `test-artifacts/learners-e2e/walk.mjs` — E2E walk harness.
+- `test-artifacts/learners-e2e/walk-log.json` — last walk output.
+- `test-artifacts/learners-e2e/patterns-learn.png` — UI screenshot from the walk.
 
-2. **Shape 2** — make PIMPL detect external forward decl. Two paths:
-   - **(a) Catalog**: add a parallel ordered_checks group that expects the impl forward decl **before** the outer class header.
-   - **(b) Matcher**: same kind of multi-pass tolerance change.
+## Live commit history (this turn)
 
-3. **Shape 3** — let lazy-init-without-mutex Proxy variants count as Proxy. Smallest fix is likely a catalog scoring tweak (e.g. raise the weight of `if(!ptr)` lazy-init in `access_guard`).
-
-All three are inside the catalog/matcher boundary you flagged. Sabihin mo lang ano gusto mo: catalog-structure edit, matcher edit, or both. Wala pang ginawa kong catalog or matcher edit — tanging sample fixes ang naipasa (Shape 4 only).
+```
+d68d58d revert(microservice-catalog): un-optional PIMPL ordered_checks
+c00ff88 fix(microservice-catalog): Singleton tolerates private-first member ordering
+314eb21 fix(frontend): mobile-friendly pattern code blocks
+f3e7d69 fix(frontend): close trailing @media block in styles.css
+e2be492 fix(frontend): mobile audit fixes — &nearr; HTML entity + ultra-narrow footer
+09c2ae7 fix(learning): make every pattern module's practical actually passable
+4c48ab3 feat(frontend): port miryl's data-privacy consent UI
+```

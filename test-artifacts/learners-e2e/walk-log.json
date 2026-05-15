@@ -1,0 +1,298 @@
+{
+  "startedAt": "2026-05-15T01:22:11.056Z",
+  "base": "http://122.248.192.49",
+  "user": "devcon1",
+  "modules": [
+    {
+      "slug": "singleton",
+      "target": "singleton",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-user-databasemanager.cpp",
+          "hit": true,
+          "detected": [
+            "creational.singleton"
+          ]
+        },
+        {
+          "sample": "02-public-first-default-ctor.cpp",
+          "hit": true,
+          "detected": [
+            "creational.singleton"
+          ]
+        },
+        {
+          "sample": "03-empty-body-ctor.cpp",
+          "hit": true,
+          "detected": [
+            "creational.singleton"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "factory-method",
+      "target": "factory",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-make-unique-branched.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface",
+            "creational.factory"
+          ]
+        },
+        {
+          "sample": "02-virtual-overridden.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface",
+            "behavioural.strategy_interface",
+            "creational.factory"
+          ]
+        },
+        {
+          "sample": "03-switch-make-shared.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface",
+            "creational.factory"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "builder",
+      "target": "builder",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-request-fluent.cpp",
+          "hit": true,
+          "detected": [
+            "creational.builder",
+            "creational.method_chaining"
+          ]
+        },
+        {
+          "sample": "02-pizza-style.cpp",
+          "hit": true,
+          "detected": [
+            "creational.builder",
+            "creational.method_chaining"
+          ]
+        },
+        {
+          "sample": "03-html-builder.cpp",
+          "hit": true,
+          "detected": [
+            "creational.builder",
+            "creational.method_chaining"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "method-chaining",
+      "target": "methodchaining",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-query-config.cpp",
+          "hit": true,
+          "detected": [
+            "structural.decorator",
+            "creational.builder",
+            "creational.method_chaining"
+          ]
+        },
+        {
+          "sample": "02-settings-fluent.cpp",
+          "hit": true,
+          "detected": [
+            "creational.builder",
+            "creational.method_chaining"
+          ]
+        },
+        {
+          "sample": "03-options-with.cpp",
+          "hit": true,
+          "detected": [
+            "creational.builder",
+            "creational.method_chaining"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "adapter",
+      "target": "adapter",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-xml-to-json.cpp",
+          "hit": true,
+          "detected": [
+            "structural.adapter"
+          ]
+        },
+        {
+          "sample": "02-metric-to-imperial.cpp",
+          "hit": true,
+          "detected": [
+            "structural.adapter"
+          ]
+        },
+        {
+          "sample": "03-square-peg.cpp",
+          "hit": true,
+          "detected": [
+            "structural.adapter"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "decorator",
+      "target": "decorator",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-logging-fetcher.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface",
+            "structural.decorator",
+            "behavioural.strategy_concrete"
+          ]
+        },
+        {
+          "sample": "02-retry-decorator.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface",
+            "structural.decorator",
+            "behavioural.strategy_concrete"
+          ]
+        },
+        {
+          "sample": "03-cached-component.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface",
+            "structural.decorator",
+            "behavioural.strategy_concrete"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "proxy",
+      "target": "proxy",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-cached-fetcher.cpp",
+          "hit": true,
+          "detected": [
+            "structural.proxy",
+            "creational.factory"
+          ]
+        },
+        {
+          "sample": "02-lazy-image.cpp",
+          "hit": false,
+          "detected": []
+        },
+        {
+          "sample": "03-access-controlled.cpp",
+          "hit": true,
+          "detected": [
+            "structural.proxy"
+          ]
+        },
+        {
+          "sample": "04-remote-stub.cpp",
+          "hit": false,
+          "detected": [
+            "creational.factory"
+          ]
+        },
+        {
+          "sample": "05-mutex-guarded.cpp",
+          "hit": true,
+          "detected": [
+            "structural.proxy"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "strategy",
+      "target": "strategyinterface",
+      "passes": 3,
+      "attempts": [
+        {
+          "sample": "01-sort-strategy.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface"
+          ]
+        },
+        {
+          "sample": "02-compression-strategy.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface"
+          ]
+        },
+        {
+          "sample": "03-pricing-strategy.cpp",
+          "hit": true,
+          "detected": [
+            "behavioural.strategy_interface"
+          ]
+        }
+      ]
+    },
+    {
+      "slug": "pimpl",
+      "target": "pimpl",
+      "passes": 0,
+      "attempts": [
+        {
+          "sample": "01-classic-widget.cpp",
+          "hit": false,
+          "detected": []
+        },
+        {
+          "sample": "02-database-pimpl.cpp",
+          "hit": false,
+          "detected": []
+        },
+        {
+          "sample": "03-render-engine-pimpl.cpp",
+          "hit": false,
+          "detected": []
+        },
+        {
+          "sample": "04-network-pimpl.cpp",
+          "hit": false,
+          "detected": []
+        },
+        {
+          "sample": "05-audio-pimpl.cpp",
+          "hit": false,
+          "detected": []
+        }
+      ]
+    }
+  ],
+  "ui": {
+    "title": "CodiNeo",
+    "firstHeading": "Learning Path"
+  },
+  "finishedAt": "2026-05-15T01:22:40.227Z"
+}

@@ -33,8 +33,8 @@
     "pimpl": {
       "pass": 1,
       "wrong": 0,
-      "none": 5,
-      "total": 6
+      "none": 7,
+      "total": 8
     },
     "proxy": {
       "pass": 3,
@@ -43,9 +43,9 @@
       "total": 5
     },
     "singleton": {
-      "pass": 4,
+      "pass": 7,
       "wrong": 0,
-      "none": 3,
+      "none": 0,
       "total": 7
     },
     "strategy_interface": {
@@ -384,6 +384,22 @@
       "status": 200
     },
     {
+      "folder": "pimpl",
+      "file": "07-no-forward-decl.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "08-with-inline-def.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
       "folder": "proxy",
       "file": "01-cached-fetcher.cpp",
       "expected": "proxy",
@@ -436,8 +452,10 @@
       "folder": "singleton",
       "file": "01-user-databasemanager.cpp",
       "expected": "singleton",
-      "verdict": "NONE",
-      "detected": [],
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
       "status": 200
     },
     {
@@ -484,16 +502,20 @@
       "folder": "singleton",
       "file": "06-private-first-no-comments.cpp",
       "expected": "singleton",
-      "verdict": "NONE",
-      "detected": [],
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
       "status": 200
     },
     {
       "folder": "singleton",
       "file": "07-private-first-empty-body.cpp",
       "expected": "singleton",
-      "verdict": "NONE",
-      "detected": [],
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
       "status": 200
     },
     {
