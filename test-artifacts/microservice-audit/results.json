@@ -1,0 +1,550 @@
+{
+  "summary": {
+    "adapter": {
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
+      "total": 5
+    },
+    "builder": {
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
+      "total": 5
+    },
+    "decorator": {
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
+      "total": 5
+    },
+    "factory": {
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
+      "total": 5
+    },
+    "method_chaining": {
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
+      "total": 5
+    },
+    "pimpl": {
+      "pass": 1,
+      "wrong": 0,
+      "none": 5,
+      "total": 6
+    },
+    "proxy": {
+      "pass": 3,
+      "wrong": 1,
+      "none": 1,
+      "total": 5
+    },
+    "singleton": {
+      "pass": 4,
+      "wrong": 0,
+      "none": 3,
+      "total": 7
+    },
+    "strategy_interface": {
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
+      "total": 5
+    }
+  },
+  "results": [
+    {
+      "folder": "adapter",
+      "file": "01-xml-to-json.cpp",
+      "expected": "adapter",
+      "verdict": "PASS",
+      "detected": [
+        "structural.adapter"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "adapter",
+      "file": "02-metric-to-imperial.cpp",
+      "expected": "adapter",
+      "verdict": "PASS",
+      "detected": [
+        "structural.adapter"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "adapter",
+      "file": "03-square-peg.cpp",
+      "expected": "adapter",
+      "verdict": "PASS",
+      "detected": [
+        "structural.adapter"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "adapter",
+      "file": "04-old-printer.cpp",
+      "expected": "adapter",
+      "verdict": "PASS",
+      "detected": [
+        "structural.adapter"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "adapter",
+      "file": "05-vector-stack.cpp",
+      "expected": "adapter",
+      "verdict": "PASS",
+      "detected": [
+        "structural.adapter"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "builder",
+      "file": "01-request-fluent.cpp",
+      "expected": "builder",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "builder",
+      "file": "02-pizza-style.cpp",
+      "expected": "builder",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "builder",
+      "file": "03-html-builder.cpp",
+      "expected": "builder",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "builder",
+      "file": "04-sql-query-builder.cpp",
+      "expected": "builder",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "builder",
+      "file": "05-color-builder.cpp",
+      "expected": "builder",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "decorator",
+      "file": "01-logging-fetcher.cpp",
+      "expected": "decorator",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "structural.decorator",
+        "behavioural.strategy_concrete"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "decorator",
+      "file": "02-retry-decorator.cpp",
+      "expected": "decorator",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "structural.decorator",
+        "behavioural.strategy_concrete"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "decorator",
+      "file": "03-cached-component.cpp",
+      "expected": "decorator",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "structural.decorator",
+        "behavioural.strategy_concrete"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "decorator",
+      "file": "04-auth-decorator.cpp",
+      "expected": "decorator",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "structural.decorator",
+        "behavioural.strategy_concrete"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "decorator",
+      "file": "05-coffee-decorator.cpp",
+      "expected": "decorator",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "structural.decorator",
+        "behavioural.strategy_concrete"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "factory",
+      "file": "01-make-unique-branched.cpp",
+      "expected": "factory",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "factory",
+      "file": "02-virtual-overridden.cpp",
+      "expected": "factory",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "behavioural.strategy_interface",
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "factory",
+      "file": "03-switch-make-shared.cpp",
+      "expected": "factory",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "factory",
+      "file": "04-new-keyword.cpp",
+      "expected": "factory",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "factory",
+      "file": "05-static-factory-method.cpp",
+      "expected": "factory",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface",
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "method_chaining",
+      "file": "01-query-config.cpp",
+      "expected": "methodchaining",
+      "verdict": "PASS",
+      "detected": [
+        "structural.decorator",
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "method_chaining",
+      "file": "02-settings-fluent.cpp",
+      "expected": "methodchaining",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "method_chaining",
+      "file": "03-options-with.cpp",
+      "expected": "methodchaining",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "method_chaining",
+      "file": "04-css-style.cpp",
+      "expected": "methodchaining",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "method_chaining",
+      "file": "05-config-fluent.cpp",
+      "expected": "methodchaining",
+      "verdict": "PASS",
+      "detected": [
+        "creational.builder",
+        "creational.method_chaining"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "01-classic-widget.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "02-database-pimpl.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "03-render-engine-pimpl.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "04-network-pimpl.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "05-audio-pimpl.cpp",
+      "expected": "pimpl",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "pimpl",
+      "file": "06-nested-forward-decl.cpp",
+      "expected": "pimpl",
+      "verdict": "PASS",
+      "detected": [
+        "idiom.pimpl"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "proxy",
+      "file": "01-cached-fetcher.cpp",
+      "expected": "proxy",
+      "verdict": "PASS",
+      "detected": [
+        "structural.proxy",
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "proxy",
+      "file": "02-lazy-image.cpp",
+      "expected": "proxy",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "proxy",
+      "file": "03-access-controlled.cpp",
+      "expected": "proxy",
+      "verdict": "PASS",
+      "detected": [
+        "structural.proxy"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "proxy",
+      "file": "04-remote-stub.cpp",
+      "expected": "proxy",
+      "verdict": "WRONG",
+      "detected": [
+        "creational.factory"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "proxy",
+      "file": "05-mutex-guarded.cpp",
+      "expected": "proxy",
+      "verdict": "PASS",
+      "detected": [
+        "structural.proxy"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "01-user-databasemanager.cpp",
+      "expected": "singleton",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "02-public-first-default-ctor.cpp",
+      "expected": "singleton",
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "03-empty-body-ctor.cpp",
+      "expected": "singleton",
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "04-thread-safe-mutex.cpp",
+      "expected": "singleton",
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "05-namespaced.cpp",
+      "expected": "singleton",
+      "verdict": "PASS",
+      "detected": [
+        "creational.singleton"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "06-private-first-no-comments.cpp",
+      "expected": "singleton",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "singleton",
+      "file": "07-private-first-empty-body.cpp",
+      "expected": "singleton",
+      "verdict": "NONE",
+      "detected": [],
+      "status": 200
+    },
+    {
+      "folder": "strategy_interface",
+      "file": "01-sort-strategy.cpp",
+      "expected": "strategyinterface",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "strategy_interface",
+      "file": "02-compression-strategy.cpp",
+      "expected": "strategyinterface",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "strategy_interface",
+      "file": "03-pricing-strategy.cpp",
+      "expected": "strategyinterface",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "strategy_interface",
+      "file": "04-routing-strategy.cpp",
+      "expected": "strategyinterface",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface"
+      ],
+      "status": 200
+    },
+    {
+      "folder": "strategy_interface",
+      "file": "05-validation-strategy.cpp",
+      "expected": "strategyinterface",
+      "verdict": "PASS",
+      "detected": [
+        "behavioural.strategy_interface"
+      ],
+      "status": 200
+    }
+  ]
+}
