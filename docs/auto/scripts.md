@@ -393,21 +393,21 @@ Env:
 
 **Functions**
 
-- `logEvent` (line 42)
-- `pickInRange` (line 47)
-- `sleep` (line 52)
-- `http` (line 56)
-- `releaseAllClaimed` (line 81)
-- `startHeartbeat` (line 101)
-- `authedHttp` (line 113)
-  authedHttp: wrap http() with one-shot 401 recovery. If the call comes
-  back unauthorized, re-claim the seat for the user (the server may have
-  restarted and dropped the in-memory revocation list / regenerated its
-  JWT secret) and retry the original call with the fresh token.
-- `loadSampleCode` (line 135)
-- `runOneAnalysis` (line 143)
-- `runOneUser` (line 195)
-- `main` (line 282)
+- `usernameFilter` (line 38)
+  Recovery mode: SOAK_USERNAMES is a comma-separated list of usernames to
+  re-run after a partial failure. When set, USER_COUNT is ignored and the
+  simulator only drives the named users (still in 10-min stagger order).
+- `logEvent` (line 48)
+- `pickInRange` (line 53)
+- `sleep` (line 58)
+- `http` (line 62)
+- `releaseAllClaimed` (line 87)
+- `startHeartbeat` (line 107)
+- `authedHttp` (line 124)
+- `loadSampleCode` (line 152)
+- `runOneAnalysis` (line 160)
+- `runOneUser` (line 212)
+- `main` (line 299)
 
 ### `scripts/verify-requirements.ps1`
 

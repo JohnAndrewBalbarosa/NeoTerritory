@@ -32,7 +32,13 @@ const SAMPLE_ROOT = 'Codebase/Microservice/samples';
 const CONSENT_VERSION = '2026-05-15';
 
 const dataset = JSON.parse(fs.readFileSync(FIXTURE_PATH, 'utf8'));
-const allUsers = dataset.users.slice(0, USER_COUNT);
+// Recovery mode: SOAK_USERNAMES is a comma-separated list of usernames to
+// re-run after a partial failure. When set, USER_COUNT is ignored and the
+// simulator only drives the named users (still in 10-min stagger order).
+const usernameFilter = (process.env.SOAK_USERNAMES || '').split(',').map((s) => s.trim()).filter(Boolean);
+const allUsers = usernameFilter.length > 0
+  ? dataset.users.filter((u) => usernameFilter.includes(u.username))
+  : dataset.users.slice(0, USER_COUNT);
 
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -106,12 +112,23 @@ function startHeartbeat(ctx) {
   return () => clearInterval(interval);
 }
 
-// authedHttp: wrap http() with one-shot 401 recovery. If the call comes
-// back unauthorized, re-claim the seat for the user (the server may have
-// restarted and dropped the in-memory revocation list / regenerated its
-// JWT secret) and retry the original call with the fresh token.
+// authedHttp: wrap http() with two recovery paths.
+//   1) status === 0 (network blip / fetch terminated) → up to NETWORK_RETRIES
+//      retries with linear backoff. The AWS Lightsail node intermittently
+//      drops long-running connections under bot scanner load.
+//   2) status === 401 (token revoked or backend restarted with a fresh JWT
+//      secret) → one re-claim of the seat for this user, then retry.
+const NETWORK_RETRIES = 3;
+const NETWORK_BACKOFF_MS = 4000;
+
 async function authedHttp(method, url, { ctx, body } = {}) {
-  let resp = await http(method, url, { token: ctx.token, body });
+  let resp;
+  for (let attempt = 0; attempt <= NETWORK_RETRIES; attempt++) {
+    resp = await http(method, url, { token: ctx.token, body });
+    if (resp.status !== 0) break;
+    logEvent({ user: ctx.username, event: 'network_retry', endpoint: url, attempt: attempt + 1, latencyMs: resp.latencyMs });
+    if (attempt < NETWORK_RETRIES) await sleep(NETWORK_BACKOFF_MS * (attempt + 1));
+  }
   if (resp.status === 401 && !ctx.reclaimInFlight) {
     ctx.reclaimInFlight = true;
     try {
