@@ -100,6 +100,10 @@ test-artifacts/local-unittest-*.mjs
 test-artifacts/local-unittest-*.sh
 test-artifacts/soak-runs/
 
+# Thesis docx backups (kept locally before destructive edits — never push)
+*.backup-pre-*.docx
+*.backup-before-*.docx
+
 # SSH / deploy credentials — never commit, even locally
 *.pem
 *.key
