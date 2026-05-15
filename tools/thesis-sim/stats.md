@@ -1,17 +1,17 @@
 # Thesis Simulation — Computed Statistics
 
-_Generated from `tools\thesis-sim\dataset.json` on 2026-05-15T12:40:59.988Z_
+_Generated from `tools\thesis-sim\dataset.json` on 2026-05-15T17:22:07.342Z_
 
-Instrument version: **2026-05-15**. Respondents (N): **10**. Per-run observations: **250** total Likert ratings (5 items × 10 testers × 5 runs). Sign-out Likert observations: **140** total ratings (14 items × 10 testers).
+Instrument version: **2026-05-15**. Respondents (N): **30**. Per-run observations: **750** total Likert ratings (5 items × 30 testers × 5 runs). Sign-out Likert observations: **420** total ratings (14 items × 30 testers).
 
 ## Persona spread (simulation-only metadata)
 
 | Persona | Count |
 |---|---:|
-| `pragmatic_intern` | 4 |
-| `enthusiastic_intern` | 3 |
-| `critical_intern` | 2 |
-| `terse_intern` | 1 |
+| `pragmatic_intern` | 12 |
+| `enthusiastic_intern` | 9 |
+| `critical_intern` | 6 |
+| `terse_intern` | 3 |
 
 ## Section A — Respondent Profile (frequency)
 
@@ -19,19 +19,19 @@ Instrument version: **2026-05-15**. Respondents (N): **10**. Per-run observation
 
 | Choice | n | % |
 |---|---:|---:|
-| 1 — First year | 2 | 20.0% |
-| 2 — Second year | 4 | 40.0% |
-| 3 — Third year | 2 | 20.0% |
-| 4 — Fourth year | 2 | 20.0% |
+| 1 — First year | 3 | 10.0% |
+| 2 — Second year | 13 | 43.3% |
+| 3 — Third year | 7 | 23.3% |
+| 4 — Fourth year | 7 | 23.3% |
 | 5 — Others | 0 | 0.0% |
 
 ### A.2 — Programming experience
 
 | Choice | n | % |
 |---|---:|---:|
-| 1 — Less than 1 year | 3 | 30.0% |
-| 2 — 1–2 years | 5 | 50.0% |
-| 3 — 3–4 years | 2 | 20.0% |
+| 1 — Less than 1 year | 9 | 30.0% |
+| 2 — 1–2 years | 16 | 53.3% |
+| 3 — 3–4 years | 5 | 16.7% |
 | 4 — More than 4 years | 0 | 0.0% |
 
 ### A.3 — Familiarity with C++
@@ -39,56 +39,56 @@ Instrument version: **2026-05-15**. Respondents (N): **10**. Per-run observation
 | Choice | n | % |
 |---|---:|---:|
 | 1 — Not familiar | 0 | 0.0% |
-| 2 — Beginner | 6 | 60.0% |
-| 3 — Intermediate | 3 | 30.0% |
-| 4 — Advanced | 1 | 10.0% |
+| 2 — Beginner | 16 | 53.3% |
+| 3 — Intermediate | 8 | 26.7% |
+| 4 — Advanced | 6 | 20.0% |
 
 ### A.4 — Familiarity with object-oriented programming
 
 | Choice | n | % |
 |---|---:|---:|
 | 1 — Not familiar | 0 | 0.0% |
-| 2 — Beginner | 4 | 40.0% |
-| 3 — Intermediate | 4 | 40.0% |
-| 4 — Advanced | 2 | 20.0% |
+| 2 — Beginner | 10 | 33.3% |
+| 3 — Intermediate | 14 | 46.7% |
+| 4 — Advanced | 6 | 20.0% |
 
 ### A.5 — Familiarity with design patterns
 
 | Choice | n | % |
 |---|---:|---:|
-| 1 — Not familiar | 3 | 30.0% |
-| 2 — Beginner | 5 | 50.0% |
-| 3 — Intermediate | 2 | 20.0% |
+| 1 — Not familiar | 9 | 30.0% |
+| 2 — Beginner | 14 | 46.7% |
+| 3 — Intermediate | 7 | 23.3% |
 | 4 — Advanced | 0 | 0.0% |
 
 ## Per-run survey — items B.3–B.7 (one row per analysis)
 
 | Item | N | Mean | SD | 1 | 2 | 3 | 4 | 5 | Verbal Interpretation |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| **B.3** The system helps me understand unfamiliar C++ source code. | 50 | 4.22 | 0.71 | 0 | 1 | 5 | 26 | 18 | Strongly Agree |
-| **B.4** The system helps me identify important parts of the analyzed code. | 50 | 4.28 | 0.64 | 0 | 0 | 5 | 26 | 19 | Strongly Agree |
-| **B.5** The system helps me connect design-pattern concepts to actual C++ code. | 50 | 4.20 | 0.64 | 0 | 0 | 6 | 28 | 16 | Agree |
-| **B.6** The generated documentation helps me understand the structure, purpose, and important parts of the analyzed source code. | 50 | 4.26 | 0.63 | 0 | 0 | 5 | 27 | 18 | Strongly Agree |
-| **B.7** The generated unit-test targets or testing focus areas help me recognize possible areas of the analyzed code that may require further checking. | 50 | 4.04 | 0.67 | 0 | 0 | 10 | 28 | 12 | Agree |
+| **B.3** The system helps me understand unfamiliar C++ source code. | 150 | 4.25 | 0.73 | 0 | 4 | 13 | 74 | 59 | Strongly Agree |
+| **B.4** The system helps me identify important parts of the analyzed code. | 150 | 4.23 | 0.72 | 0 | 4 | 13 | 78 | 55 | Strongly Agree |
+| **B.5** The system helps me connect design-pattern concepts to actual C++ code. | 150 | 4.25 | 0.73 | 0 | 3 | 16 | 71 | 60 | Strongly Agree |
+| **B.6** The generated documentation helps me understand the structure, purpose, and important parts of the analyzed source code. | 150 | 4.23 | 0.72 | 0 | 3 | 16 | 74 | 57 | Strongly Agree |
+| **B.7** The generated unit-test targets or testing focus areas help me recognize possible areas of the analyzed code that may require further checking. | 150 | 4.14 | 0.70 | 0 | 1 | 24 | 78 | 47 | Agree |
 
 ## Sign-out survey — Likert items
 
 | Item | N | Mean | SD | 1 | 2 | 3 | 4 | 5 | Verbal Interpretation |
 |---|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| **B.1** The learning modules help me understand selected software design-pattern concepts. | 10 | 4.30 | 0.67 | 0 | 0 | 1 | 5 | 4 | Strongly Agree |
-| **B.2** The examples in the learning modules help me understand how design patterns may appear in code. | 10 | 4.20 | 0.63 | 0 | 0 | 1 | 6 | 3 | Agree |
-| **B.8** CodiNeo is useful as a learning support tool for DEVCON Luzon interns or novice developers. | 10 | 4.10 | 0.74 | 0 | 0 | 2 | 5 | 3 | Agree |
-| **C.9** The system interface is easy to understand. | 10 | 4.40 | 0.52 | 0 | 0 | 0 | 6 | 4 | Strongly Agree |
-| **C.10** It is easy to access and navigate the learning modules. | 10 | 4.00 | 0.67 | 0 | 0 | 2 | 6 | 2 | Agree |
-| **C.11** It is easy to enter, paste, or submit C++ code into the system. | 10 | 4.40 | 0.52 | 0 | 0 | 0 | 6 | 4 | Strongly Agree |
-| **C.12** The analysis results are organized clearly. | 10 | 4.20 | 0.63 | 0 | 0 | 1 | 6 | 3 | Agree |
-| **C.13** The detected design-pattern evidence and highlighted code structures are easy to understand. | 10 | 4.00 | 0.67 | 0 | 0 | 2 | 6 | 2 | Agree |
-| **D.14** The system loads, responds, and generates analysis results within an acceptable time. | 10 | 4.20 | 0.42 | 0 | 0 | 0 | 8 | 2 | Agree |
-| **D.15** The system responds quickly enough when I move between learning modules, analysis results, documentation outputs, and questionnaire sections. | 10 | 4.00 | 0.67 | 0 | 0 | 2 | 6 | 2 | Agree |
-| **E.16** The system provides clear feedback when the submitted code cannot be analyzed properly. | 10 | 3.80 | 0.42 | 0 | 0 | 2 | 8 | 0 | Agree |
-| **E.17** The system produces stable results when similar C++ inputs are analyzed. | 10 | 4.30 | 0.48 | 0 | 0 | 0 | 7 | 3 | Strongly Agree |
-| **F.18** The system handles submitted code and user responses responsibly. | 10 | 4.40 | 0.52 | 0 | 0 | 0 | 6 | 4 | Strongly Agree |
-| **F.19** The system protects user responses and submitted information from unauthorized disclosure. | 10 | 4.30 | 0.48 | 0 | 0 | 0 | 7 | 3 | Strongly Agree |
+| **B.1** The learning modules help me understand selected software design-pattern concepts. | 30 | 4.10 | 0.84 | 0 | 2 | 3 | 15 | 10 | Agree |
+| **B.2** The examples in the learning modules help me understand how design patterns may appear in code. | 30 | 4.27 | 0.74 | 0 | 1 | 2 | 15 | 12 | Strongly Agree |
+| **B.8** CodiNeo is useful as a learning support tool for DEVCON Luzon interns or novice developers. | 30 | 4.17 | 0.70 | 0 | 0 | 5 | 15 | 10 | Agree |
+| **C.9** The system interface is easy to understand. | 30 | 4.30 | 0.70 | 0 | 1 | 1 | 16 | 12 | Strongly Agree |
+| **C.10** It is easy to access and navigate the learning modules. | 30 | 4.17 | 0.75 | 0 | 0 | 6 | 13 | 11 | Agree |
+| **C.11** It is easy to enter, paste, or submit C++ code into the system. | 30 | 4.23 | 0.63 | 0 | 0 | 3 | 17 | 10 | Strongly Agree |
+| **C.12** The analysis results are organized clearly. | 30 | 4.20 | 0.71 | 0 | 1 | 2 | 17 | 10 | Agree |
+| **C.13** The detected design-pattern evidence and highlighted code structures are easy to understand. | 30 | 4.13 | 0.68 | 0 | 0 | 5 | 16 | 9 | Agree |
+| **D.14** The system loads, responds, and generates analysis results within an acceptable time. | 30 | 4.40 | 0.56 | 0 | 0 | 1 | 16 | 13 | Strongly Agree |
+| **D.15** The system responds quickly enough when I move between learning modules, analysis results, documentation outputs, and questionnaire sections. | 30 | 4.13 | 0.63 | 0 | 0 | 4 | 18 | 8 | Agree |
+| **E.16** The system provides clear feedback when the submitted code cannot be analyzed properly. | 30 | 4.03 | 0.56 | 0 | 0 | 4 | 21 | 5 | Agree |
+| **E.17** The system produces stable results when similar C++ inputs are analyzed. | 30 | 4.47 | 0.57 | 0 | 0 | 1 | 14 | 15 | Strongly Agree |
+| **F.18** The system handles submitted code and user responses responsibly. | 30 | 4.07 | 0.87 | 0 | 2 | 4 | 14 | 10 | Agree |
+| **F.19** The system protects user responses and submitted information from unauthorized disclosure. | 30 | 4.43 | 0.57 | 0 | 0 | 1 | 15 | 14 | Strongly Agree |
 
 ## Per-section weighted means
 
@@ -96,11 +96,11 @@ Each section combines its per-run items (50 observations each) with its sign-out
 
 | Section | Items | Total observations | Sum of ratings | Weighted mean | Verbal Interpretation |
 |---|---|---:|---:|---:|---|
-| **Functional Suitability** | B.1, B.2, B.3, B.4, B.5, B.6, B.7, B.8 | 280 | 1176 | 4.20 | Agree |
-| **Usability** | C.9, C.10, C.11, C.12, C.13 | 50 | 210 | 4.20 | Agree |
-| **Performance Efficiency** | D.14, D.15 | 20 | 82 | 4.10 | Agree |
-| **Reliability** | E.16, E.17 | 20 | 81 | 4.05 | Agree |
-| **Security and Data Protection** | F.18, F.19 | 20 | 87 | 4.35 | Strongly Agree |
+| **Functional Suitability** | B.1, B.2, B.3, B.4, B.5, B.6, B.7, B.8 | 840 | 3542 | 4.22 | Strongly Agree |
+| **Usability** | C.9, C.10, C.11, C.12, C.13 | 150 | 631 | 4.21 | Agree |
+| **Performance Efficiency** | D.14, D.15 | 60 | 256 | 4.27 | Strongly Agree |
+| **Reliability** | E.16, E.17 | 60 | 255 | 4.25 | Strongly Agree |
+| **Security and Data Protection** | F.18, F.19 | 60 | 255 | 4.25 | Strongly Agree |
 
 ## Verbal interpretation cutoffs (5-point Likert)
 

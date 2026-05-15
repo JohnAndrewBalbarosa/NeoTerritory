@@ -1155,6 +1155,79 @@ body[data-surface] #root {
    link to the highest unlocked module. Without this the URL flips
    and the user thinks the foundations quiz IS the practical they
    were trying to take. */
+.nt-lesson-prereq {
+  margin: 1rem 1rem 1.25rem;
+  padding: 1rem 1.15rem;
+  border: 1px solid rgba(0, 209, 216, 0.32);
+  border-left: 3px solid var(--devcon-cyan, #00d1d8);
+  border-radius: 10px;
+  background: linear-gradient(90deg, rgba(0, 209, 216, 0.08), rgba(0, 209, 216, 0.02));
+  color: var(--nt-mkt-text);
+}
+.nt-lesson-prereq__head {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-bottom: 0.85rem;
+}
+.nt-lesson-prereq__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, #00d1d8);
+  font-weight: 700;
+}
+.nt-lesson-prereq__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--nt-mkt-text);
+}
+.nt-lesson-prereq__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.6rem 0;
+  margin: 0;
+}
+.nt-lesson-prereq__row {
+  display: grid;
+  grid-template-columns: minmax(140px, 200px) 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  padding: 0.35rem 0;
+  border-top: 1px dashed rgba(255, 255, 255, 0.08);
+}
+.nt-lesson-prereq__row:first-of-type {
+  border-top: none;
+  padding-top: 0;
+}
+.nt-lesson-prereq__row dt {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-soft);
+  font-weight: 600;
+}
+.nt-lesson-prereq__row dd {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--nt-mkt-text);
+}
+.nt-lesson-prereq__row[data-state='done'] dd {
+  color: #6ee7a8;
+}
+.nt-lesson-prereq__row[data-state='pending'] dd {
+  color: #f3c110;
+}
+@media (max-width: 720px) {
+  .nt-lesson-prereq__row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .nt-lesson-redirect-notice {
   display: flex;
   gap: 0.85rem;

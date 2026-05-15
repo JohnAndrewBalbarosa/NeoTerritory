@@ -745,13 +745,31 @@ const FOUNDATIONS_QUIZZES: Record<string, LearningQuizPractical> = {
 // in this set fall back to a quiz practical so the linear gate stays
 // pass-able. Aliases map a route slug to the catalog's canonical key
 // (e.g. /patterns/factory-method vs catalog `creational.factory`).
+// Slugs actually emitted by the microservice — verified against
+// Codebase/Microservice/pattern_catalog. The router slug in patternData.ts
+// is mapped to the canonical detection slug here via PATTERN_SLUG_ALIAS so
+// the front-end practical can pass when the analyser's tag set includes
+// the catalog-canonical id. Missing any of these is what makes a learning
+// module fall through to the "no practical" branch and lock the next step.
 const DETECTED_PATTERN_SLUGS = new Set<string>([
-  'singleton', 'builder', 'method-chaining',
+  // creational
+  'singleton', 'builder', 'method-chaining', 'factory',
+  // structural
   'adapter', 'decorator', 'proxy',
-  'strategy', 'pimpl',
+  // behavioural — catalog folder is "strategy_interface"; normaliser
+  // collapses to "strategyinterface" at run time, so the slug stored here
+  // is the post-normalisation form.
+  'strategyinterface',
+  // idiom
+  'pimpl',
 ]);
 const PATTERN_SLUG_ALIAS: Record<string, { slug: string; name: string }> = {
+  // Router slug "factory-method" → microservice tag "creational.factory".
   'factory-method': { slug: 'factory', name: 'Factory' },
+  // Router slug "strategy" → microservice tag "behavioural.strategy_interface".
+  // Keep the spaces in the display name so the practical UI reads naturally
+  // even though the detector's underlying id has an underscore.
+  'strategy': { slug: 'strategyinterface', name: 'Strategy Interface' },
 };
 
 const NON_DETECTED_QUIZZES: Record<string, LearningQuizPractical> = {

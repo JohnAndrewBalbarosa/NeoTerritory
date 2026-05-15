@@ -153,6 +153,77 @@ function Section({ label, children }: SectionProps): JSX.Element {
   );
 }
 
+// ----- prerequisite banner: what unlocked THIS module, what's needed for the NEXT -----
+
+interface PrerequisiteBannerProps {
+  steps: ReadonlyArray<CourseStep>;
+  activeIndex: number;
+  isActiveComplete: boolean;
+}
+
+function describePractical(module: LearningModule | undefined): string {
+  if (!module || !module.practical) return 'No practical configured for this module — advance via the footer when ready.';
+  if (module.practical.kind === 'quiz') {
+    return 'A one-question multiple-choice quiz (Check your understanding) on this page.';
+  }
+  return `A code-submission check against the live analyser. Target pattern: ${module.practical.patternName}. Submit a small C++ class that the analyser tags as ${module.practical.patternName}.`;
+}
+
+function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: PrerequisiteBannerProps): JSX.Element | null {
+  const active = steps[activeIndex];
+  if (!active) return null;
+  const prev = activeIndex > 0 ? steps[activeIndex - 1] : null;
+  const next = activeIndex < steps.length - 1 ? steps[activeIndex + 1] : null;
+  const isFirst = activeIndex === 0;
+
+  return (
+    <aside className="nt-lesson-prereq" role="region" aria-label="Prerequisite check">
+      <header className="nt-lesson-prereq__head">
+        <p className="nt-lesson-prereq__eyebrow">Prerequisite check</p>
+        <h2 className="nt-lesson-prereq__title">{active.module.title}</h2>
+      </header>
+
+      <dl className="nt-lesson-prereq__grid">
+        <div className="nt-lesson-prereq__row">
+          <dt>Unlock condition</dt>
+          <dd>
+            {isFirst
+              ? 'This is the first module of the path — always unlocked.'
+              : prev
+                ? <>Previous module &ldquo;<strong>{prev.module.title}</strong>&rdquo; practical must be passed. ✓ Passed.</>
+                : 'Always unlocked.'}
+          </dd>
+        </div>
+
+        <div className="nt-lesson-prereq__row">
+          <dt>To complete this module</dt>
+          <dd>{describePractical(active.module)}</dd>
+        </div>
+
+        <div className="nt-lesson-prereq__row" data-state={isActiveComplete ? 'done' : 'pending'}>
+          <dt>Status of this module</dt>
+          <dd>
+            {isActiveComplete
+              ? '✓ Practical passed — Next is unlocked.'
+              : active.module.practical
+                ? 'Pending — scroll down to the practical block to attempt it.'
+                : 'No practical configured; use the Next button to advance.'}
+          </dd>
+        </div>
+
+        <div className="nt-lesson-prereq__row">
+          <dt>To unlock the next module</dt>
+          <dd>
+            {next
+              ? <>Pass the practical for this module to unlock &ldquo;<strong>{next.module.title}</strong>&rdquo;.</>
+              : 'This is the final module of the path — no further unlock.'}
+          </dd>
+        </div>
+      </dl>
+    </aside>
+  );
+}
+
 // ----- lesson body renderer: one module in isolation -----
 
 function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
@@ -670,6 +741,12 @@ export default function PatternsLearnPage(): JSX.Element {
               </button>
             </aside>
           ) : null}
+
+          <PrerequisiteBanner
+            steps={steps}
+            activeIndex={activeIndex}
+            isActiveComplete={isActiveComplete}
+          />
 
           {activeModule ? <ModuleBody module={activeModule} /> : null}
 
