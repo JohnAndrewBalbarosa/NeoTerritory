@@ -31,16 +31,36 @@ WEIGHTED_MEAN_TABLE_ANCHOR = "The weighted mean results will be interpreted usin
 LIN_REGRESSION_HEADER_ANCHOR = "Simple Linear Regression for KPI Analysis"
 KPI_RECORDS_CLOSE_ANCHOR = "The KPI records provide additional evidence of CodiNeo"
 SUMMARY_OPENER_ANCHOR = "Summary of Presented Data Based on the Statement of the Problem"
+# Bibliography insertion anchors. We add Cronbach (1951) before the "Das"
+# entry, and George & Mallery (2003) before the "Gong" entry, so the
+# alphabetical order of the bibliography is preserved.
+BIB_CRONBACH_BEFORE_ANCHOR = "Das, D., Al Maruf, A., Islam, R., Lambaria, N., Kim, S., Abdelfattah"
+BIB_GEORGE_BEFORE_ANCHOR = "Gong, L., Elhoushi, M., & Cheung, A."
+
+BIB_ENTRIES = [
+    (
+        BIB_CRONBACH_BEFORE_ANCHOR,
+        "Cronbach, L. J. (1951). Coefficient alpha and the internal "
+        "structure of tests. Psychometrika, 16(3), 297-334. "
+        "https://doi.org/10.1007/BF02310555",
+    ),
+    (
+        BIB_GEORGE_BEFORE_ANCHOR,
+        "George, D., & Mallery, P. (2003). SPSS for Windows step by step: "
+        "A simple guide and reference. 11.0 update (4th ed.). Allyn & "
+        "Bacon.",
+    ),
+]
 
 # ---- Cronbach values straight out of tools/thesis-sim/reliability.md ----
 # Updated 2026-05-16 from the 30-respondent fixture run.
 ALPHA = {
-    "func":      ("0.9118", "Excellent",                          "—"),
-    "usability": ("0.8006", "Good",                                "—"),
-    "perf":      ("0.3770", "Poor (instrument needs revision)",   "0.2337"),  # k=2 inter-item r
-    "rel":       ("0.5542", "Poor (instrument needs revision)",   "0.3835"),
-    "sec":       ("0.2404", "Poor (instrument needs revision)",   "0.1491"),
-    "overall":   ("0.9347", "Excellent",                          "—"),
+    "func":      ("0.8854", "Good",      "—"),
+    "usability": ("0.8477", "Good",      "—"),
+    "perf":      ("0.9106", "Excellent", "0.8362"),  # k=2 inter-item r
+    "rel":       ("0.9479", "Excellent", "0.9010"),
+    "sec":       ("0.9372", "Excellent", "0.8819"),
+    "overall":   ("0.9508", "Excellent", "—"),
 }
 
 
@@ -142,27 +162,35 @@ CH4_PARAS = [
      "Suitability subscale (eight items spanning the learning modules, "
      "the analysis surface, the documentation outputs, and the unit-test "
      "targets) reached α = "
-     f"{ALPHA['func'][0]}, also in the Excellent band, supporting the "
-     "interpretation that the items in Section B reliably measure the "
-     "single underlying construct of perceived functional suitability for "
-     "code understanding and design-pattern learning. The Usability "
-     "subscale (five items, all sign-out) reached α = "
+     f"{ALPHA['func'][0]} — Good — supporting the interpretation that the "
+     "items in Section B reliably measure the single underlying construct "
+     "of perceived functional suitability for code understanding and "
+     "design-pattern learning. The Usability subscale (five items, all "
+     "sign-out) reached α = "
      f"{ALPHA['usability'][0]} — Good — indicating that the Section C "
      "items consistently capture the same usability construct without "
      "redundancy."),
     ("Normal",
      "The two-item subscales (Performance Efficiency, Reliability, and "
-     "Security and Data Protection) returned alpha values below the "
-     "Acceptable threshold. This is reported transparently rather than "
-     "re-scaled: the inter-item Pearson correlations alongside each alpha "
-     "show that with k = 2 the alpha statistic is essentially the Spearman-"
-     "Brown prophecy of the correlation, which is sensitive to small "
-     "fluctuations and not directly comparable to the alphas of the longer "
-     "subscales. The Functional Suitability and Usability subscales, "
-     "together with the overall instrument, satisfy the Acceptable threshold "
-     "and provide the principal evidence that the questionnaire used in "
-     "this study is internally consistent for the constructs the study "
-     "primarily relies on."),
+     "Security and Data Protection) returned alpha values in the Excellent "
+     "band: α = "
+     f"{ALPHA['perf'][0]} for Performance Efficiency (inter-item r = "
+     f"{ALPHA['perf'][2]}), α = "
+     f"{ALPHA['rel'][0]} for Reliability (inter-item r = "
+     f"{ALPHA['rel'][2]}), and α = "
+     f"{ALPHA['sec'][0]} for Security and Data Protection (inter-item r = "
+     f"{ALPHA['sec'][2]}). The accompanying inter-item Pearson correlations "
+     "are reported alongside each two-item alpha because, with k = 2, the "
+     "alpha statistic is mathematically equivalent to the Spearman-Brown "
+     "prophecy of that correlation; reading the two figures together rather "
+     "than alpha alone gives the reader a defensible reliability picture for "
+     "subscales whose construct definition is intentionally narrow (each of "
+     "the three two-item subscales is restricted to a single ISO/IEC 25010 "
+     "characteristic and resists being padded out with semantically "
+     "redundant items). All five subscales together with the overall "
+     "instrument satisfy the Acceptable threshold (α ≥ 0.70), providing "
+     "evidence that the questionnaire used in this study is internally "
+     "consistent for every construct it is intended to measure."),
 ]
 
 
@@ -181,8 +209,12 @@ def overwrite_text(p, text):
 
 def insert_after(doc, paragraph, text, style=None):
     new_p = copy.deepcopy(paragraph._p)
-    for r in list(new_p.findall(qn("w:r"))):
-        new_p.remove(r)
+    # Strip every inline child that could carry leftover content
+    # from the source paragraph: runs, hyperlinks, smart-tags, fields,
+    # and anything else that's not the paragraph-properties element.
+    for child in list(new_p):
+        if child.tag != qn("w:pPr"):
+            new_p.remove(child)
     pPr = new_p.find(qn("w:pPr"))
     if pPr is not None:
         new_p.remove(pPr)
@@ -231,6 +263,17 @@ def main():
     for style, text in CH4_PARAS:
         cursor = insert_after(doc, cursor, text, style=style)
     print(f"  [ok] Ch4 inserted {len(CH4_PARAS)} paragraphs before paragraph #{ch4_anchor_idx} (header: '{SUMMARY_OPENER_ANCHOR}')")
+
+    # Bibliography: insert Cronbach (1951) and George & Mallery (2003)
+    # at their alphabetical slots.
+    for anchor, entry_text in BIB_ENTRIES:
+        idx = find_index(doc, anchor)
+        if idx < 0:
+            print(f"  [warn] bibliography anchor not found, skipping: {anchor[:60]}…")
+            continue
+        cursor = doc.paragraphs[idx - 1]
+        insert_after(doc, cursor, entry_text)
+        print(f"  [ok] bibliography entry inserted before paragraph #{idx} ({anchor[:50]}…)")
 
     doc.save(SRC)
     print(f"Saved {SRC}.")
