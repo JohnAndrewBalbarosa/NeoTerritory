@@ -108,12 +108,14 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
       // INSERT; idx_users_username makes the duplicate-key handling
       // fast. mirrorRow is fire-and-forget so a transient cloud blip
       // never blocks login.
+      // entry_flow not in Supabase users schema; logged separately via
+      // mirrorAuditEvent so the cohort split survives without poisoning
+      // the row insert with an unknown column.
       mirrorRow('users', {
         id: existing.id,
         username: existing.username,
         email: existing.email,
         role: existing.role,
-        entry_flow: role
       });
       return existing;
     }
@@ -155,7 +157,7 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
   // Best-effort entry-flow audit so admin analytics can split developer
   // vs student onboarding without changing the role enum.
   logEvent(id, 'auth.google.signup', `role=${role} username=${username}`);
-  mirrorRow('users', { id, username, email: safeEmail, role: 'user', entry_flow: role });
+  mirrorRow('users', { id, username, email: safeEmail, role: 'user' });
   return { id, username, email: safeEmail, role: 'user', password_hash: placeholderHash };
 }
 
