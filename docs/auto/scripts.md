@@ -384,30 +384,36 @@ Env:
   SOAK_BASE_URL         (default http://122.248.192.49)
   SOAK_USER_COUNT       (default 10; clamped to dataset users)
   SOAK_RUNS_PER_USER    (default 5; clamped to fixture runs)
-  SOAK_STAGGER_MS       (default 600000  = 10 min between user starts)
+  SOAK_CONCURRENCY      (default 4; worker-pool size; cap to avoid Lightsail overload)
   SOAK_HEARTBEAT_MS     (default 30000   = 30 s)
   SOAK_FIXTURE          (default tools/thesis-sim/dataset.json)
   SOAK_LOG_DIR          (default test-artifacts/soak-runs)
-  SOAK_THINK_OVERRIDE   (optional integer ms; forces think time, ignores fixture range)
-  SOAK_GAP_OVERRIDE     (optional integer ms; forces inter-run gap, ignores fixture range)
+
+Per-cycle order (no artificial delays):
+  /auth/claim → /api/survey/consent
+  for each fixture run:
+    /api/analyze → /api/runs/save → /api/analysis/:runId/run-tests
+                 → /api/analysis/:runId/manual-review (one POST per detected pattern)
+                 → /api/survey/run/:runId
+  /api/survey/session → /auth/disconnect
 
 **Functions**
 
-- `usernameFilter` (line 38)
+- `usernameFilter` (line 42)
   Recovery mode: SOAK_USERNAMES is a comma-separated list of usernames to
   re-run after a partial failure. When set, USER_COUNT is ignored and the
   simulator only drives the named users (still in 10-min stagger order).
-- `logEvent` (line 48)
-- `pickInRange` (line 53)
-- `sleep` (line 58)
-- `http` (line 62)
-- `releaseAllClaimed` (line 87)
-- `startHeartbeat` (line 107)
-- `authedHttp` (line 124)
-- `loadSampleCode` (line 173)
-- `runOneAnalysis` (line 181)
-- `runOneUser` (line 233)
-- `main` (line 320)
+- `logEvent` (line 52)
+- `sleep` (line 57)
+- `http` (line 61)
+- `releaseAllClaimed` (line 86)
+- `startHeartbeat` (line 106)
+- `authedHttp` (line 123)
+- `loadSampleCode` (line 172)
+- `runOneAnalysis` (line 180)
+- `runOneUser` (line 288)
+- `main` (line 363)
+- `worker` (line 380)
 
 ### `scripts/verify-requirements.ps1`
 

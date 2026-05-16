@@ -8,12 +8,18 @@
 //   SOAK_BASE_URL         (default http://122.248.192.49)
 //   SOAK_USER_COUNT       (default 10; clamped to dataset users)
 //   SOAK_RUNS_PER_USER    (default 5; clamped to fixture runs)
-//   SOAK_STAGGER_MS       (default 600000  = 10 min between user starts)
+//   SOAK_CONCURRENCY      (default 4; worker-pool size; cap to avoid Lightsail overload)
 //   SOAK_HEARTBEAT_MS     (default 30000   = 30 s)
 //   SOAK_FIXTURE          (default tools/thesis-sim/dataset.json)
 //   SOAK_LOG_DIR          (default test-artifacts/soak-runs)
-//   SOAK_THINK_OVERRIDE   (optional integer ms; forces think time, ignores fixture range)
-//   SOAK_GAP_OVERRIDE     (optional integer ms; forces inter-run gap, ignores fixture range)
+//
+// Per-cycle order (no artificial delays):
+//   /auth/claim → /api/survey/consent
+//   for each fixture run:
+//     /api/analyze → /api/runs/save → /api/analysis/:runId/run-tests
+//                  → /api/analysis/:runId/manual-review (one POST per detected pattern)
+//                  → /api/survey/run/:runId
+//   /api/survey/session → /auth/disconnect
 
 import fs from 'node:fs';
 import path from 'node:path';
@@ -21,12 +27,10 @@ import path from 'node:path';
 const BASE_URL      = (process.env.SOAK_BASE_URL || 'http://122.248.192.49').replace(/\/$/, '');
 const USER_COUNT    = Number(process.env.SOAK_USER_COUNT || 10);
 const RUNS_PER_USER = Number(process.env.SOAK_RUNS_PER_USER || 5);
-const STAGGER_MS    = Number(process.env.SOAK_STAGGER_MS || 10 * 60_000);
+const CONCURRENCY   = Number(process.env.SOAK_CONCURRENCY || 4);
 const HEARTBEAT_MS  = Number(process.env.SOAK_HEARTBEAT_MS || 30_000);
 const FIXTURE_PATH  = process.env.SOAK_FIXTURE || 'tools/thesis-sim/dataset.json';
 const LOG_DIR       = process.env.SOAK_LOG_DIR || 'test-artifacts/soak-runs';
-const THINK_OVERRIDE = process.env.SOAK_THINK_OVERRIDE ? Number(process.env.SOAK_THINK_OVERRIDE) : null;
-const GAP_OVERRIDE   = process.env.SOAK_GAP_OVERRIDE   ? Number(process.env.SOAK_GAP_OVERRIDE)   : null;
 
 const SAMPLE_ROOT = 'Codebase/Microservice/samples';
 const CONSENT_VERSION = '2026-05-15';
@@ -48,11 +52,6 @@ const logStream = fs.createWriteStream(logPath, { flags: 'a' });
 function logEvent(obj) {
   const row = { ts: new Date().toISOString(), ...obj };
   logStream.write(JSON.stringify(row) + '\n');
-}
-
-function pickInRange(range) {
-  const [lo, hi] = range;
-  return Math.floor(lo + Math.random() * (hi - lo + 1));
 }
 
 function sleep(ms) {
@@ -227,7 +226,63 @@ async function runOneAnalysis(ctx, runFixture) {
   if (save.status !== 201 || !save.json?.runId) {
     throw new Error(`save failed: ${save.status} ${save.text.slice(0, 200)}`);
   }
-  return save.json.runId;
+  const runId = save.json.runId;
+
+  // 3. run-tests — drives the saved-run path so the GDB pod compiles +
+  //    executes the unit test scaffold. Populates the gdb.compile_run.*,
+  //    gdb.unit_test.*, gdb.static_analysis.*, gdb.run.complete log
+  //    events the admin Logs / Tester surfaces expect. Non-fatal: a
+  //    failure here is logged but does not abort the user's session,
+  //    because survey + manual-review can still proceed.
+  const runTests = await authedHttp('POST', `/api/analysis/${encodeURIComponent(runId)}/run-tests`, {
+    ctx,
+    body: { stdin: '' },
+  });
+  logEvent({
+    user: ctx.username,
+    endpoint: '/api/analysis/:runId/run-tests',
+    runId,
+    status: runTests.status,
+    latencyMs: runTests.latencyMs,
+    resultCount: Array.isArray(runTests.json?.results) ? runTests.json.results.length : 0,
+  });
+
+  // 4. manual-review — one POST per detected pattern. The frontend's
+  //    Validation tab does the same per-line "this detection looks
+  //    correct" decision; without these rows the admin F1 metrics
+  //    panel has nothing to compute precision/recall over. We accept
+  //    every detection (chosenKind=pattern, chosenPattern=its name)
+  //    so the simulated cohort is biased toward true-positives — which
+  //    is the realistic shape for the "system tags real patterns and
+  //    the tester confirms them" workflow the thesis describes.
+  let decisions = 0;
+  for (const p of detected) {
+    const docTargets = Array.isArray(p.documentationTargets) ? p.documentationTargets : [];
+    const line = docTargets.find((t) => Number.isFinite(t?.line) && t.line >= 1)?.line || 1;
+    const candidates = detected
+      .filter((q) => (q.documentationTargets || []).some((t) => t.line === line))
+      .map((q) => q.patternName || q.patternId)
+      .filter((s) => typeof s === 'string' && s.length > 0);
+    const chosen = p.patternName || p.patternId;
+    if (!chosen) continue;
+    const review = await authedHttp('POST', `/api/analysis/${encodeURIComponent(runId)}/manual-review`, {
+      ctx,
+      body: { line, candidates: [...new Set(candidates)], chosenKind: 'pattern', chosenPattern: chosen },
+    });
+    if (review.status === 200 || review.status === 201) decisions += 1;
+    logEvent({
+      user: ctx.username,
+      endpoint: '/api/analysis/:runId/manual-review',
+      runId,
+      line,
+      chosenPattern: chosen,
+      status: review.status,
+      latencyMs: review.latencyMs,
+    });
+  }
+  logEvent({ user: ctx.username, runId, event: 'manual_review_summary', decisionsRecorded: decisions });
+
+  return runId;
 }
 
 async function runOneUser(userFixture, userIndex) {
@@ -255,17 +310,11 @@ async function runOneUser(userFixture, userIndex) {
     });
     logEvent({ user: username, endpoint: '/api/survey/consent', status: consent.status, latencyMs: consent.latencyMs });
 
-    // 3. per-run cycles
+    // 3. per-run cycles — fast mode, no artificial think/gap delays.
     const runs = userFixture.runs.slice(0, RUNS_PER_USER);
     for (let i = 0; i < runs.length; i++) {
       const runFx = runs[i];
       const runId = await runOneAnalysis(ctx, runFx);
-
-      // think time before the survey opens
-      const thinkMs = THINK_OVERRIDE != null ? THINK_OVERRIDE : pickInRange(userFixture.think_time_ms_range);
-      logEvent({ user: username, event: 'think', durationMs: thinkMs, runId });
-      await sleep(thinkMs);
-
       const surveyRun = await authedHttp('POST', `/api/survey/run/${encodeURIComponent(runId)}`, {
         ctx,
         body: { ratings: runFx.ratings, openEnded: {} },
@@ -280,12 +329,6 @@ async function runOneUser(userFixture, userIndex) {
       });
       if (surveyRun.status !== 201) {
         throw new Error(`survey/run/${runId} failed: ${surveyRun.status} ${surveyRun.text.slice(0, 200)}`);
-      }
-
-      if (i < runs.length - 1) {
-        const gapMs = GAP_OVERRIDE != null ? GAP_OVERRIDE : pickInRange(userFixture.inter_run_gap_ms_range);
-        logEvent({ user: username, event: 'inter_run_gap', durationMs: gapMs });
-        await sleep(gapMs);
       }
     }
 
@@ -318,8 +361,8 @@ async function runOneUser(userFixture, userIndex) {
 }
 
 async function main() {
-  console.log(`[soak] base=${BASE_URL} users=${allUsers.length} runsPerUser=${RUNS_PER_USER} staggerMs=${STAGGER_MS} log=${logPath}`);
-  logEvent({ event: 'soak_start', baseUrl: BASE_URL, userCount: allUsers.length, runsPerUser: RUNS_PER_USER, staggerMs: STAGGER_MS, heartbeatMs: HEARTBEAT_MS });
+  console.log(`[soak] base=${BASE_URL} users=${allUsers.length} runsPerUser=${RUNS_PER_USER} concurrency=${CONCURRENCY} log=${logPath}`);
+  logEvent({ event: 'soak_start', baseUrl: BASE_URL, userCount: allUsers.length, runsPerUser: RUNS_PER_USER, concurrency: CONCURRENCY, heartbeatMs: HEARTBEAT_MS });
 
   // Pre-flight: /api/health must be 200.
   const health = await http('GET', '/api/health');
@@ -327,22 +370,31 @@ async function main() {
     throw new Error(`pre-flight /api/health returned ${health.status}: ${health.text.slice(0, 200)}`);
   }
 
-  // Launch users one at a time with STAGGER_MS spacing between starts.
-  // Earlier users keep running concurrently — each has its own seat.
-  const inflight = [];
-  for (let i = 0; i < allUsers.length; i++) {
-    const u = allUsers[i];
-    console.log(`[soak] launching user #${i + 1}/${allUsers.length}: ${u.username} (${u.persona})`);
-    const p = runOneUser(u, i).catch((err) => {
-      logEvent({ user: u.username, event: 'user_error', message: String(err && err.message || err) });
-      console.error(`[soak] ${u.username} error:`, err && err.message);
-    });
-    inflight.push(p);
-    if (i < allUsers.length - 1) {
-      await sleep(STAGGER_MS);
+  // Fixed-size worker pool. CONCURRENCY workers pull users off a shared
+  // queue until empty; each worker drives one user end-to-end and then
+  // claims the next pending user. Keeps the in-flight session count
+  // bounded so the Lightsail t3.small + Docker-backed gdb pod don't get
+  // overwhelmed by run-tests bursts.
+  let cursor = 0;
+  let started = 0;
+  async function worker(workerId) {
+    while (true) {
+      const i = cursor++;
+      if (i >= allUsers.length) return;
+      const u = allUsers[i];
+      started += 1;
+      console.log(`[soak] worker ${workerId} → user ${started}/${allUsers.length}: ${u.username} (${u.persona})`);
+      try {
+        await runOneUser(u, i);
+      } catch (err) {
+        logEvent({ user: u.username, event: 'user_error', message: String(err && err.message || err) });
+        console.error(`[soak] ${u.username} error:`, err && err.message);
+      }
     }
   }
-  await Promise.all(inflight);
+  const workers = Array.from({ length: Math.max(1, Math.min(CONCURRENCY, allUsers.length)) }, (_, w) => worker(w + 1));
+  await Promise.all(workers);
+
   logEvent({ event: 'soak_end' });
   console.log(`[soak] done. log=${logPath}`);
 }
