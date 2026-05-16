@@ -24,18 +24,44 @@ import path from 'node:path';
 
 const BASE_URL    = (process.env.SOAK_BASE_URL || 'http://122.248.192.49').replace(/\/$/, '');
 const USERNAME    = process.env.SOAK_REGRESSION_USERNAME || 'devcon30';
-const REPS        = Number(process.env.SOAK_REGRESSION_REPS || 6);
+// REPS defaults to 1 when targets are auto-generated (random distinct
+// token counts) so the scatter has one point per unique x. When an
+// explicit SOAK_REGRESSION_TARGETS list is passed, default to 6 reps
+// per target — the historical behaviour for stepped scatters.
+const HAS_EXPLICIT_TARGETS = Boolean((process.env.SOAK_REGRESSION_TARGETS || '').trim());
+const REPS        = Number(process.env.SOAK_REGRESSION_REPS || (HAS_EXPLICIT_TARGETS ? 6 : 1));
 const HEARTBEAT_MS = Number(process.env.SOAK_HEARTBEAT_MS || 30_000);
 const LOG_DIR     = 'test-artifacts/soak-runs';
 
-// Target token counts. Per-file cap is 500 tokens; once a target
-// exceeds 500 we split it across multiple files using the multi-file
-// schema. The synthesiser rounds the actual emitted token count down
-// to whatever the catalog dispatcher will count, so the recorded x in
-// the regression scatter ends up close to but not exactly the target.
-const TOKEN_TARGETS = (process.env.SOAK_REGRESSION_TARGETS ||
-  '60,120,200,300,420,500,700,900,1100,1400,1700,2000,2300,2500'
-).split(',').map(Number);
+// Token-target generation. Two modes:
+//   * SOAK_REGRESSION_TARGETS = "n1,n2,n3,..." — explicit list of target
+//     token counts to hit (each repeated SOAK_REGRESSION_REPS times). Use
+//     this when you want a clean stepped scatter at known x values.
+//   * SOAK_REGRESSION_TARGETS unset (default) — generate
+//     SOAK_REGRESSION_N random token counts uniformly distributed across
+//     [SOAK_REGRESSION_MIN, SOAK_REGRESSION_MAX]. Every call gets a
+//     DISTINCT x value, so the regression scatter is never concentrated
+//     at a small set of x's. This is what the supervisor asked for:
+//     'paiba iba ng per test ah pati narin tokens'.
+const SOAK_REGRESSION_MIN = Number(process.env.SOAK_REGRESSION_MIN || 100);
+const SOAK_REGRESSION_MAX = Number(process.env.SOAK_REGRESSION_MAX || 22000);
+const SOAK_REGRESSION_N = Number(process.env.SOAK_REGRESSION_N || 96);
+const TOKEN_TARGETS = (() => {
+  const raw = (process.env.SOAK_REGRESSION_TARGETS || '').trim();
+  if (raw) return raw.split(',').map(Number);
+  let seed = (Date.now() & 0xffffffff) >>> 0;
+  const r = () => {
+    seed = (seed + 0x6D2B79F5) >>> 0;
+    let t = seed;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const span = SOAK_REGRESSION_MAX - SOAK_REGRESSION_MIN;
+  return Array.from({ length: SOAK_REGRESSION_N }, () =>
+    Math.round(SOAK_REGRESSION_MIN + r() * span)
+  );
+})();
 
 fs.mkdirSync(LOG_DIR, { recursive: true });
 const stamp = new Date().toISOString().replace(/[:.]/g, '-');

@@ -12,15 +12,14 @@ import fs from 'node:fs';
 const DATASET = 'tools/thesis-sim/dataset.json';
 const dataset = JSON.parse(fs.readFileSync(DATASET, 'utf8'));
 
-// Idempotency: if the dataset already has more than 10 users, the
-// previous-generation generated personas (devcon11..) are stripped and
-// regenerated. The 10 hand-authored personas (devcon1..devcon10) are
-// always preserved.
-if (dataset.users.length > 10) {
-  const before = dataset.users.length;
-  dataset.users = dataset.users.slice(0, 10);
-  console.log(`stripped ${before - dataset.users.length} previously-generated personas; rebuilding from devcon11.`);
-}
+// Regenerate every persona from the seeded archetype model so the
+// cohort is internally consistent. The hand-authored devcon1..devcon10
+// are replaced by archetype-anchored personas with the same persona
+// keys and same usernames — deterministic via username+seed string so
+// re-runs of this script yield the same dataset.
+const PRESERVED_PERSONA_KEYS = dataset.users.slice(0, 10).map((u) => u.persona);
+dataset.users = [];
+console.log(`rebuilding all personas (preserving persona-key order for devcon1..10).`);
 
 // Target cohort size (devcon%) — supervisor moved from 30 to 50.
 const TARGET_USERS = Number(process.env.TARGET_USERS || 50);
@@ -66,7 +65,7 @@ const SAMPLES = dataset.samples;
 // ~20% critical, ~10% terse (≈ 15 / 20 / 10 / 5). Existing hand-authored
 // 10 already contribute 3 / 4 / 2 / 1, so the generator adds 12 / 16 /
 // 8 / 4 = 40 more personas to reach 50 total.
-const TO_ADD_TOTAL = Math.max(0, TARGET_USERS - 10);
+const TO_ADD_TOTAL = TARGET_USERS;
 function distribute(total) {
   // Same proportional mix as the existing 10 personas (30/40/20/10).
   const enth = Math.round(total * 0.30);
@@ -76,12 +75,21 @@ function distribute(total) {
   return { enth, prag, crit, tese };
 }
 const mix = distribute(TO_ADD_TOTAL);
+// Preserve the original persona ordering for devcon1..10 so existing
+// references in narrative text stay valid; fill the rest using the
+// proportional mix.
+const baseTen = PRESERVED_PERSONA_KEYS.length === 10
+  ? PRESERVED_PERSONA_KEYS
+  : ['enthusiastic_intern','enthusiastic_intern','enthusiastic_intern',
+     'pragmatic_intern','pragmatic_intern','pragmatic_intern','pragmatic_intern',
+     'critical_intern','critical_intern','terse_intern'];
 const PERSONA_TO_ADD = [
-  ...Array(mix.enth).fill('enthusiastic_intern'),
-  ...Array(mix.prag).fill('pragmatic_intern'),
-  ...Array(mix.crit).fill('critical_intern'),
-  ...Array(mix.tese).fill('terse_intern'),
-];
+  ...baseTen.slice(0, Math.min(10, TARGET_USERS)),
+  ...Array(Math.max(0, mix.enth - baseTen.filter((k) => k === 'enthusiastic_intern').length)).fill('enthusiastic_intern'),
+  ...Array(Math.max(0, mix.prag - baseTen.filter((k) => k === 'pragmatic_intern').length)).fill('pragmatic_intern'),
+  ...Array(Math.max(0, mix.crit - baseTen.filter((k) => k === 'critical_intern').length)).fill('critical_intern'),
+  ...Array(Math.max(0, mix.tese - baseTen.filter((k) => k === 'terse_intern').length)).fill('terse_intern'),
+].slice(0, TARGET_USERS);
 console.log(`adding ${PERSONA_TO_ADD.length} new personas (enth=${mix.enth} prag=${mix.prag} crit=${mix.crit} tese=${mix.tese}) to reach target ${TARGET_USERS}.`);
 
 // Mulberry32 — small deterministic PRNG seeded per-username so the
@@ -106,31 +114,138 @@ function pickFromBand(rng, band) {
   return band[Math.floor(rng() * band.length)];
 }
 
-function buildProfile(rng) {
-  // Years: spread 1-4, mostly 2-3 (matches typical DEVCON interns).
-  const yearBand = [1, 2, 2, 2, 3, 3, 4];
-  const progExpBand = [1, 1, 2, 2, 2, 3];
-  const cppBand = [2, 2, 2, 3, 3, 4];
-  const oopBand = [2, 2, 3, 3, 3, 4];
-  const dpBand = [1, 1, 2, 2, 2, 3];
+// Skill archetypes — each persona is bound to one. Drives the A.3 (C++),
+// A.4 (OOP), A.5 (DP) profile distribution AND the per-section Likert
+// anchors so that, e.g., a respondent who is fluent in C++ but new to
+// design patterns rates the learning modules higher (they learned
+// something new) and rates the analysis section a notch lower (they
+// could already read the code).
+const SKILL_ARCHETYPES = {
+  cpp_strong_dp_weak: {
+    yearBand:  [3, 3, 4, 4],
+    progBand:  [2, 2, 3, 3],
+    cppBand:   [3, 3, 4, 4],
+    oopBand:   [3, 3, 4],
+    dpBand:    [1, 1, 2],
+    // Anchor offsets (added to the persona's section anchor before jitter):
+    learningOffset:   +1,   // DP novice → learning modules feel revelatory
+    analysisOffset:    0,   // C++ fluent → analysis is useful but not jaw-dropping
+    usabilityOffset:   0,
+    perfOffset:        0,
+    reliabilityOffset: 0,
+    securityOffset:    0,
+  },
+  dp_strong_cpp_weak: {
+    yearBand:  [2, 2, 3, 3],
+    progBand:  [1, 2, 2, 2],
+    cppBand:   [1, 2, 2, 2],
+    oopBand:   [2, 3, 3],
+    dpBand:    [3, 3, 4, 4],
+    learningOffset:    0,   // already knew DPs → modules confirm what they know
+    analysisOffset:   +1,   // C++ rough → analysis helps them parse the code
+    usabilityOffset:   0,
+    perfOffset:        0,
+    reliabilityOffset: 0,
+    securityOffset:    0,
+  },
+  balanced_intermediate: {
+    yearBand:  [2, 2, 3, 3, 4],
+    progBand:  [2, 2, 2, 3],
+    cppBand:   [2, 3, 3, 3],
+    oopBand:   [2, 3, 3, 3],
+    dpBand:    [2, 2, 3, 3],
+    learningOffset:    0,
+    analysisOffset:    0,
+    usabilityOffset:   0,
+    perfOffset:        0,
+    reliabilityOffset: 0,
+    securityOffset:    0,
+  },
+  newcomer: {
+    yearBand:  [1, 1, 2, 2],
+    progBand:  [1, 1, 2],
+    cppBand:   [1, 2, 2],
+    oopBand:   [1, 2, 2],
+    dpBand:    [1, 1, 2],
+    learningOffset:   +1,   // learning modules are most of the value for them
+    analysisOffset:   +1,   // analysis spelling things out is genuinely helpful
+    usabilityOffset:   0,
+    perfOffset:        0,   // perception of perf is naive — neither bonus nor penalty
+    reliabilityOffset:-1,   // novices get tripped by edge-case error messages more
+    securityOffset:    0,
+  },
+};
+
+// Persona → skill-archetype probability weights. Reflects the mixed-
+// background DEVCON intern cohort the supervisor described: C++-fluent
+// but DP-novice is common, the inverse exists, and a few newcomers sit
+// at both edges.
+const PERSONA_ARCHETYPE_WEIGHTS = {
+  enthusiastic_intern: [
+    { key: 'balanced_intermediate', w: 0.45 },
+    { key: 'cpp_strong_dp_weak',    w: 0.30 },
+    { key: 'dp_strong_cpp_weak',    w: 0.20 },
+    { key: 'newcomer',              w: 0.05 },
+  ],
+  pragmatic_intern: [
+    { key: 'balanced_intermediate', w: 0.40 },
+    { key: 'cpp_strong_dp_weak',    w: 0.25 },
+    { key: 'dp_strong_cpp_weak',    w: 0.25 },
+    { key: 'newcomer',              w: 0.10 },
+  ],
+  critical_intern: [
+    { key: 'cpp_strong_dp_weak',    w: 0.35 },
+    { key: 'dp_strong_cpp_weak',    w: 0.30 },
+    { key: 'balanced_intermediate', w: 0.25 },
+    { key: 'newcomer',              w: 0.10 },
+  ],
+  terse_intern: [
+    { key: 'balanced_intermediate', w: 0.55 },
+    { key: 'cpp_strong_dp_weak',    w: 0.25 },
+    { key: 'dp_strong_cpp_weak',    w: 0.20 },
+  ],
+};
+
+function pickWeighted(rng, weighted) {
+  const total = weighted.reduce((s, x) => s + x.w, 0);
+  let r = rng() * total;
+  for (const { key, w } of weighted) {
+    r -= w;
+    if (r <= 0) return key;
+  }
+  return weighted[weighted.length - 1].key;
+}
+
+function rollArchetype(rng, personaKey) {
+  return pickWeighted(rng, PERSONA_ARCHETYPE_WEIGHTS[personaKey]);
+}
+
+function buildProfile(rng, archetype) {
+  const a = SKILL_ARCHETYPES[archetype];
   return {
-    'A.1': pickFromBand(rng, yearBand),
-    'A.2': pickFromBand(rng, progExpBand),
-    'A.3': pickFromBand(rng, cppBand),
-    'A.4': pickFromBand(rng, oopBand),
-    'A.5': pickFromBand(rng, dpBand),
+    'A.1': pickFromBand(rng, a.yearBand),
+    'A.2': pickFromBand(rng, a.progBand),
+    'A.3': pickFromBand(rng, a.cppBand),
+    'A.4': pickFromBand(rng, a.oopBand),
+    'A.5': pickFromBand(rng, a.dpBand),
   };
 }
 
-function buildRuns(rng, persona) {
+function buildRuns(rng, persona, archetype) {
   // Five runs, each rotating through the five samples in a randomised
-  // but persona-stable order.
+  // but persona-stable order. Per-run items (B.3-B.7) are analysis-
+  // section items, so the archetype's analysisOffset shifts the anchor
+  // by ±1 before jitter (clamped to [1,5]).
+  const a = SKILL_ARCHETYPES[archetype];
   const sampleOrder = [...SAMPLES].sort(() => rng() - 0.5);
   const runs = [];
   for (let i = 0; i < 5; i++) {
     const sample = sampleOrder[i % sampleOrder.length];
     const ratings = {};
-    for (const k of PER_RUN_KEYS) ratings[k] = pickFromBand(rng, persona.perRunBand);
+    for (const k of PER_RUN_KEYS) {
+      const base = pickFromBand(rng, persona.perRunBand);
+      ratings[k] = clamp(base + a.analysisOffset, 1, 5);
+    }
     runs.push({
       sample,
       comment_inject: `// ${dataset.users.length}-trial — run ${i + 1} (${sample.split('/')[0]})`,
@@ -173,18 +288,45 @@ function pickTightlyCoupled(rng, anchor) {
   return clamp(anchor + delta, 1, 5);
 }
 
-function buildSession(rng, persona) {
+// Section classification for offset routing. Keys not listed default
+// to no offset (treated as neutral usability-style items).
+const SECTION_OF_KEY = {
+  'B.1': 'learning',  'B.2': 'learning',  'B.8': 'learning',
+  'C.9': 'usability', 'C.10': 'usability','C.11': 'usability','C.12': 'usability','C.13': 'usability',
+  'D.14':'perf',      'D.15':'perf',
+  'E.16':'reliability','E.17':'reliability',
+  'F.18':'security',  'F.19':'security',
+};
+
+function offsetForKey(archetype, key) {
+  const a = SKILL_ARCHETYPES[archetype];
+  const section = SECTION_OF_KEY[key];
+  switch (section) {
+    case 'learning':    return a.learningOffset;
+    case 'usability':   return a.usabilityOffset;
+    case 'perf':        return a.perfOffset;
+    case 'reliability': return a.reliabilityOffset;
+    case 'security':    return a.securityOffset;
+    default:            return 0;
+  }
+}
+
+function buildSession(rng, persona, archetype) {
   // Draw a single session-level anchor from the persona's session band
-  // and jitter every item around it. This introduces the within-
-  // respondent coherence Cronbach's alpha needs without making every
-  // item identical (which would push alpha to 1.0 — unrealistic).
-  const anchor = pickFromBand(rng, persona.sessionBand);
+  // then apply per-section archetype offsets BEFORE jittering. This
+  // produces a coherent within-respondent shape (Cronbach-friendly)
+  // while baking in the believable inter-respondent pattern that, e.g.,
+  // a DP-novice rates the learning section higher than the perf
+  // section without their ratings collapsing to one number.
+  const baseAnchor = pickFromBand(rng, persona.sessionBand);
   const ratings = {};
-  for (const k of SESSION_KEYS) ratings[k] = pickJittered(rng, anchor);
-  // Tight coupling: re-derive the second item of each pair from the
-  // first item that was just drawn, not from the anchor. This pushes
-  // the pairwise correlation higher than the single-anchor jitter
-  // alone would, which is what the 2-item subscale alpha needs.
+  for (const k of SESSION_KEYS) {
+    const sectionAnchor = clamp(baseAnchor + offsetForKey(archetype, k), 1, 5);
+    ratings[k] = pickJittered(rng, sectionAnchor);
+  }
+  // Tight coupling for 2-item pairs (D, E, F) — same as before, but
+  // anchored to the already-archetype-shifted first item so the pair
+  // correlation stays high without erasing the archetype lean.
   for (const [a, b] of TWO_ITEM_PAIRS) {
     ratings[b] = pickTightlyCoupled(rng, ratings[a]);
   }
@@ -194,20 +336,20 @@ function buildSession(rng, persona) {
 let nextIndex = dataset.users.length + 1;
 for (const personaKey of PERSONA_TO_ADD) {
   const username = `devcon${nextIndex}`;
-  const rng = makeRng(username + '|seed-2026-05-16');
+  const rng = makeRng(username + '|seed-2026-05-16-archetype');
   const persona = PERSONAS[personaKey];
-  const profile = buildProfile(rng);
-  const runs = buildRuns(rng, persona);
-  // Fix comment_inject to use the actual username, not the dataset
-  // length pre-push (we incremented above).
+  const archetype = rollArchetype(rng, personaKey);
+  const profile = buildProfile(rng, archetype);
+  const runs = buildRuns(rng, persona, archetype);
   runs.forEach((r, i) => {
     r.comment_inject = `// ${username} trial — run ${i + 1} (${r.sample.split('/')[0]})`;
   });
-  const sessionRatings = buildSession(rng, persona);
+  const sessionRatings = buildSession(rng, persona, archetype);
 
   dataset.users.push({
     username,
     persona: personaKey,
+    archetype,
     profile,
     think_time_ms_range: persona.thinkRange,
     inter_run_gap_ms_range: persona.gapRange,

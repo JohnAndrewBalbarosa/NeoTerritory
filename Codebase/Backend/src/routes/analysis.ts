@@ -724,6 +724,15 @@ router.get('/sample', (_req: Request, res: Response) => {
 });
 
 router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody, async (req: Request, res: Response, next: NextFunction) => {
+  // Capture nanosecond-precision start-of-request. The microservice's
+  // own stageMetrics.milliseconds field is integer-ms and loses signal
+  // at the small input sizes the validator allows (most runs round to
+  // 1-50ms). Server-observed wall-time captured with hrtime.bigint
+  // gives microsecond resolution that's enough to fit a real linear
+  // regression across the cohort. This value is stashed into the
+  // analysis payload below and persisted into analysis_json so the
+  // admin complexity dashboard can chart it.
+  const requestStartNs = process.hrtime.bigint();
   try {
     const body = req.body as {
       code?: unknown;
@@ -928,6 +937,13 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     analysis.transformedPreview = analysis.commentedCode.slice(0, 1500);
 
     if (req.file) fs.unlink(req.file.path, () => {});
+
+    // High-resolution server-observed wall time: end-of-analysis minus
+    // start-of-request, in microseconds. Stamped onto the analysis
+    // object so it lives in analysis_json on save and feeds the admin
+    // complexity-data regression at microsecond resolution.
+    const wallUs = Number((process.hrtime.bigint() - requestStartNs) / 1000n);
+    (analysis as unknown as { serverWallUs?: number }).serverWallUs = wallUs;
 
     // Ephemeral: do NOT persist. Stash payload and return a pendingId.
     const pendingId = stashPending({

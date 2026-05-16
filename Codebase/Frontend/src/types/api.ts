@@ -375,8 +375,11 @@ export interface RegressionResult {
 }
 
 export interface ComplexityData {
-  points:     ComplexityPoint[];
-  regression: RegressionResult;
+  points:                   ComplexityPoint[];
+  regression:               RegressionResult;
+  regressionByItems?:        RegressionResult;
+  regressionSpaceByTokens?:  RegressionResult;
+  regressionWallUsByTokens?: RegressionResult;
 }
 
 export interface F1Score {

@@ -188,6 +188,12 @@ export default function MainLayout() {
     // Validation tab and at sign-out, so this auto-popup was redundant
     // and confusing — removed.
     useAppStore.getState().patchCurrentRun({ runId });
+    // Navigate the user back to the Submit Code tab after a successful
+    // save. Without this the studio stays on whichever tab triggered the
+    // save (typically Ambiguous / Validation), which renders blank once
+    // pendingSave is cleared — testers reported a "blank page after
+    // submission" because of exactly that race.
+    setActiveTab('submit');
   }
 
   function discardCurrentRun(): void {
@@ -208,7 +214,12 @@ export default function MainLayout() {
   }
 
   function onSignOutClick() {
-    if (sessionRanAnalyze && !sessionReviewedEnd && token) {
+    // The sign-out survey is a tester-research instrument. Developers,
+    // admins, and anyone whose username is not a seeded devcon tester
+    // bypass the modal entirely and sign out directly — they are
+    // operating the system, not participating in the study.
+    const isTester = (user?.username || '').toLowerCase().startsWith('devcon');
+    if (isTester && sessionRanAnalyze && !sessionReviewedEnd && token) {
       setShowSignout(true);
       return;
     }

@@ -1,6 +1,6 @@
 # Cronbach's Alpha — Internal-Consistency Reliability
 
-_Generated 2026-05-16T02:12:27.840Z from `tools/thesis-sim/dataset.json` (N = 50 respondents, 19 Likert items)._
+_Generated 2026-05-16T11:18:09.945Z from `tools/thesis-sim/dataset.json` (N = 50 respondents, 19 Likert items)._
 
 Per-respondent rolling rule for Section B per-run items (B.3 — B.7): the five ratings collected across the respondent's five analysis runs are averaged into one score per item per respondent before being fed into the alpha formula. Section B.1 / B.2 / B.8 and Sections C-F are session-only items used as-is.
 
@@ -8,17 +8,17 @@ Per-respondent rolling rule for Section B per-run items (B.3 — B.7): the five 
 
 | Subscale | Items | k | N | α | Interpretation | Inter-item r (k=2 only) |
 |---|---|---:|---:|---:|---|---:|
-| **Functional Suitability (Section B)** | B.1, B.2, B.3, B.4, B.5, B.6, B.7, B.8 | 8 | 50 | 0.8684 | Good | — |
-| **Usability (Section C)** | C.9, C.10, C.11, C.12, C.13 | 5 | 50 | 0.8580 | Good | — |
-| **Performance Efficiency (Section D)** | D.14, D.15 | 2 | 50 | 0.9211 | Excellent | 0.8545 |
-| **Reliability (Section E)** | E.16, E.17 | 2 | 50 | 0.9147 | Excellent | 0.8449 |
-| **Security & Data Protection (Section F)** | F.18, F.19 | 2 | 50 | 0.8854 | Good | 0.8037 |
+| **Functional Suitability (Section B)** | B.1, B.2, B.3, B.4, B.5, B.6, B.7, B.8 | 8 | 50 | 0.7833 | Acceptable | — |
+| **Usability (Section C)** | C.9, C.10, C.11, C.12, C.13 | 5 | 50 | 0.8067 | Good | — |
+| **Performance Efficiency (Section D)** | D.14, D.15 | 2 | 50 | 0.9065 | Excellent | 0.8320 |
+| **Reliability (Section E)** | E.16, E.17 | 2 | 50 | 0.8692 | Good | 0.7733 |
+| **Security & Data Protection (Section F)** | F.18, F.19 | 2 | 50 | 0.9333 | Excellent | 0.8755 |
 
 ## Overall instrument
 
 | Items | k | N | α | Interpretation |
 |---|---:|---:|---:|---|
-| All 19 Likert items (B.1 — F.19) | 19 | 50 | **0.9403** | **Excellent** |
+| All 19 Likert items (B.1 — F.19) | 19 | 50 | **0.8683** | **Good** |
 
 ## Threshold table (interpretation key)
 

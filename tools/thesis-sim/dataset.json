@@ -42,36 +42,37 @@
     {
       "username": "devcon1",
       "persona": "enthusiastic_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 2,
         "A.3": 3,
-        "A.4": 3,
-        "A.5": 2
+        "A.4": 2,
+        "A.5": 3
       },
       "think_time_ms_range": [
-        22000,
-        38000
+        18000,
+        36000
       ],
       "inter_run_gap_ms_range": [
-        32000,
+        28000,
         58000
       ],
       "runs": [
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon1 trial — first pass through the singleton sample",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon1 trial — run 1 (integration)",
           "ratings": {
             "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
+            "B.4": 4,
+            "B.5": 5,
             "B.6": 5,
-            "B.7": 4
+            "B.7": 5
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon1 trial — builder run 2",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon1 trial — run 2 (wrapping)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
@@ -82,310 +83,34 @@
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon1 trial — factory run 3",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon1 trial — proxy run 4",
+          "comment_inject": "// devcon1 trial — run 3 (factory)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon1 trial — integration finisher",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 5,
-        "B.2": 4,
-        "B.8": 5,
-        "C.9": 5,
-        "C.10": 4,
-        "C.11": 5,
-        "C.12": 4,
-        "C.13": 4,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 4,
-        "E.17": 5,
-        "F.18": 5,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon2",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 2,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        28000,
-        50000
-      ],
-      "inter_run_gap_ms_range": [
-        40000,
-        75000
-      ],
-      "runs": [
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon2 trial — starting with the factory",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon2 trial — singleton second",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
             "B.5": 4,
             "B.6": 4,
-            "B.7": 3
+            "B.7": 5
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon2 trial — builder third",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon2 trial — integration fourth, heavier sample",
+          "comment_inject": "// devcon1 trial — run 4 (builder)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon2 trial — wrapping last",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 3
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 5,
-        "C.12": 4,
-        "C.13": 4,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 5,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon3",
-      "persona": "critical_intern",
-      "profile": {
-        "A.1": 4,
-        "A.2": 3,
-        "A.3": 3,
-        "A.4": 4,
-        "A.5": 3
-      },
-      "think_time_ms_range": [
-        35000,
-        60000
-      ],
-      "inter_run_gap_ms_range": [
-        45000,
-        85000
-      ],
-      "runs": [
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon3 trial — proxy first, want to see how the wrapping evidence reads",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon3 trial — factory next; the verdict surface is the part I care about",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon3 trial — large integration sample, third run",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 3
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
           }
         },
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon3 trial — singleton fourth",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon3 trial — builder finisher",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 3,
-        "B.8": 3,
-        "C.9": 4,
-        "C.10": 3,
-        "C.11": 4,
-        "C.12": 3,
-        "C.13": 3,
-        "D.14": 4,
-        "D.15": 3,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon4",
-      "persona": "enthusiastic_intern",
-      "profile": {
-        "A.1": 1,
-        "A.2": 1,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        18000,
-        32000
-      ],
-      "inter_run_gap_ms_range": [
-        30000,
-        55000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon4 trial — first time seeing a singleton in C++",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon4 trial — second run, factory",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon4 trial — third run, builder pattern",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon4 trial — fourth, proxy",
+          "comment_inject": "// devcon1 trial — run 5 (singleton)",
           "ratings": {
             "B.3": 4,
             "B.4": 5,
             "B.5": 5,
             "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon4 trial — finisher, combined",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
             "B.7": 5
           }
         }
@@ -400,85 +125,86 @@
         "C.12": 5,
         "C.13": 4,
         "D.14": 5,
-        "D.15": 4,
-        "E.16": 4,
+        "D.15": 5,
+        "E.16": 5,
         "E.17": 5,
-        "F.18": 5,
-        "F.19": 5
+        "F.18": 4,
+        "F.19": 4
       }
     },
     {
-      "username": "devcon5",
+      "username": "devcon2",
       "persona": "pragmatic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 2,
+        "A.1": 4,
         "A.2": 2,
-        "A.3": 2,
+        "A.3": 3,
         "A.4": 3,
-        "A.5": 2
+        "A.5": 1
       },
       "think_time_ms_range": [
         25000,
-        45000
+        48000
       ],
       "inter_run_gap_ms_range": [
         35000,
-        65000
+        70000
       ],
       "runs": [
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon5 trial — opening with the big integration sample",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon5 trial — wrapping next",
+          "comment_inject": "// devcon2 trial — run 1 (wrapping)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 5,
+            "B.3": 3,
+            "B.4": 4,
             "B.5": 4,
-            "B.6": 5,
+            "B.6": 4,
             "B.7": 4
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon5 trial — builder run 3",
+          "comment_inject": "// devcon2 trial — run 2 (builder)",
           "ratings": {
             "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
+            "B.4": 5,
+            "B.5": 3,
             "B.6": 4,
-            "B.7": 3
+            "B.7": 5
           }
         },
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon5 trial — singleton run 4",
+          "comment_inject": "// devcon2 trial — run 3 (singleton)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 3
           }
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon5 trial — closing with factory",
+          "comment_inject": "// devcon2 trial — run 4 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon2 trial — run 5 (integration)",
           "ratings": {
             "B.3": 4,
             "B.4": 5,
             "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
+            "B.6": 4,
+            "B.7": 5
           }
         }
       ],
@@ -486,27 +212,214 @@
         "B.1": 4,
         "B.2": 5,
         "B.8": 4,
+        "C.9": 3,
+        "C.10": 4,
+        "C.11": 3,
+        "C.12": 3,
+        "C.13": 3,
+        "D.14": 3,
+        "D.15": 3,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 3,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon3",
+      "persona": "critical_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 3,
+        "A.2": 3,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        35000,
+        60000
+      ],
+      "inter_run_gap_ms_range": [
+        50000,
+        90000
+      ],
+      "runs": [
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon3 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 3,
+            "B.6": 4,
+            "B.7": 2
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon3 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 2,
+            "B.6": 4,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon3 trial — run 3 (factory)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 2,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon3 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 2
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon3 trial — run 5 (integration)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 3,
+            "B.7": 2
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 4,
+        "C.11": 5,
+        "C.12": 5,
+        "C.13": 5,
+        "D.14": 5,
+        "D.15": 5,
+        "E.16": 4,
+        "E.17": 3,
+        "F.18": 5,
+        "F.19": 5
+      }
+    },
+    {
+      "username": "devcon4",
+      "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 4,
+        "A.4": 3,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        18000,
+        36000
+      ],
+      "inter_run_gap_ms_range": [
+        28000,
+        58000
+      ],
+      "runs": [
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon4 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon4 trial — run 2 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon4 trial — run 3 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon4 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon4 trial — run 5 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 3,
+        "B.2": 5,
+        "B.8": 3,
         "C.9": 4,
         "C.10": 5,
         "C.11": 4,
         "C.12": 4,
         "C.13": 4,
         "D.14": 4,
-        "D.15": 5,
-        "E.16": 4,
-        "E.17": 4,
+        "D.15": 4,
+        "E.16": 5,
+        "E.17": 5,
         "F.18": 4,
         "F.19": 4
       }
     },
     {
-      "username": "devcon6",
+      "username": "devcon5",
       "persona": "pragmatic_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 3,
+        "A.1": 2,
         "A.2": 2,
         "A.3": 2,
-        "A.4": 2,
+        "A.4": 3,
         "A.5": 2
       },
       "think_time_ms_range": [
@@ -519,149 +432,57 @@
       ],
       "runs": [
         {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon5 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon6 trial — builder opener",
+          "comment_inject": "// devcon5 trial — run 2 (builder)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
             "B.5": 4,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon6 trial — factory second",
+          "comment_inject": "// devcon5 trial — run 3 (factory)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
+            "B.4": 5,
+            "B.5": 3,
+            "B.6": 4,
             "B.7": 3
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon6 trial — singleton run 3",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon5 trial — run 4 (wrapping)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 5,
             "B.6": 4,
             "B.7": 4
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon6 trial — integration run 4",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon6 trial — proxy finisher",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 4,
-        "C.9": 5,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 5,
-        "C.13": 4,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 3,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon7",
-      "persona": "enthusiastic_intern",
-      "profile": {
-        "A.1": 2,
-        "A.2": 1,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        20000,
-        36000
-      ],
-      "inter_run_gap_ms_range": [
-        30000,
-        60000
-      ],
-      "runs": [
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon7 trial — factory opener",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon7 trial — proxy second",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon7 trial — singleton third",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon7 trial — integration fourth",
+          "comment_inject": "// devcon5 trial — run 5 (integration)",
           "ratings": {
             "B.3": 5,
             "B.4": 4,
             "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon7 trial — builder finisher",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
+            "B.6": 4,
             "B.7": 4
           }
         }
@@ -676,118 +497,27 @@
         "C.12": 5,
         "C.13": 5,
         "D.14": 5,
-        "D.15": 5,
+        "D.15": 4,
         "E.16": 4,
-        "E.17": 5,
-        "F.18": 5,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon8",
-      "persona": "critical_intern",
-      "profile": {
-        "A.1": 4,
-        "A.2": 3,
-        "A.3": 4,
-        "A.4": 4,
-        "A.5": 3
-      },
-      "think_time_ms_range": [
-        40000,
-        60000
-      ],
-      "inter_run_gap_ms_range": [
-        50000,
-        90000
-      ],
-      "runs": [
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon8 trial — integration first; large enough to stress the report",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon8 trial — singleton second; trivial",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon8 trial — builder third",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon8 trial — factory fourth",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon8 trial — proxy finisher; documentation could be tighter",
-          "ratings": {
-            "B.3": 2,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 3,
-        "B.2": 4,
-        "B.8": 3,
-        "C.9": 4,
-        "C.10": 3,
-        "C.11": 4,
-        "C.12": 4,
-        "C.13": 3,
-        "D.14": 4,
-        "D.15": 3,
-        "E.16": 3,
         "E.17": 4,
-        "F.18": 4,
-        "F.19": 4
+        "F.18": 5,
+        "F.19": 5
       }
     },
     {
-      "username": "devcon9",
+      "username": "devcon6",
       "persona": "pragmatic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 2,
-        "A.3": 3,
+        "A.3": 4,
         "A.4": 3,
-        "A.5": 2
+        "A.5": 1
       },
       "think_time_ms_range": [
         25000,
-        45000
+        48000
       ],
       "inter_run_gap_ms_range": [
         35000,
@@ -796,31 +526,42 @@
       "runs": [
         {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon9 trial — proxy first",
+          "comment_inject": "// devcon6 trial — run 1 (wrapping)",
           "ratings": {
             "B.3": 4,
-            "B.4": 5,
+            "B.4": 4,
             "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon6 trial — run 2 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 3,
             "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon9 trial — builder second",
+          "comment_inject": "// devcon6 trial — run 3 (builder)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
             "B.5": 4,
             "B.6": 4,
-            "B.7": 5
+            "B.7": 3
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon9 trial — integration third",
+          "comment_inject": "// devcon6 trial — run 4 (integration)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 3,
             "B.4": 4,
             "B.5": 5,
             "B.6": 4,
@@ -828,145 +569,43 @@
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon9 trial — factory fourth",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon9 trial — singleton finisher",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 5,
-        "B.2": 4,
-        "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 4,
-        "C.13": 5,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon10",
-      "persona": "terse_intern",
-      "profile": {
-        "A.1": 1,
-        "A.2": 1,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        18000,
-        30000
-      ],
-      "inter_run_gap_ms_range": [
-        25000,
-        45000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon10 trial — singleton",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon10 trial — builder",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon10 trial — factory",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon10 trial — proxy",
+          "comment_inject": "// devcon6 trial — run 5 (singleton)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon10 trial — integration",
-          "ratings": {
-            "B.3": 4,
             "B.4": 5,
             "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
+            "B.6": 3,
+            "B.7": 5
           }
         }
       ],
       "session_ratings": {
         "B.1": 4,
-        "B.2": 4,
-        "B.8": 4,
+        "B.2": 5,
+        "B.8": 5,
         "C.9": 4,
         "C.10": 4,
-        "C.11": 4,
+        "C.11": 3,
         "C.12": 4,
         "C.13": 4,
-        "D.14": 4,
-        "D.15": 4,
+        "D.14": 3,
+        "D.15": 3,
         "E.16": 4,
         "E.17": 4,
         "F.18": 4,
-        "F.19": 4
+        "F.19": 3
       }
     },
     {
-      "username": "devcon11",
+      "username": "devcon7",
       "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 2,
-        "A.3": 3,
-        "A.4": 3,
+        "A.3": 4,
+        "A.4": 4,
         "A.5": 1
       },
       "think_time_ms_range": [
@@ -980,40 +619,7 @@
       "runs": [
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon11 trial — run 1 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon11 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon11 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon11 trial — run 4 (wrapping)",
+          "comment_inject": "// devcon7 trial — run 1 (singleton)",
           "ratings": {
             "B.3": 5,
             "B.4": 4,
@@ -1023,12 +629,45 @@
           }
         },
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon11 trial — run 5 (integration)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon7 trial — run 2 (builder)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
             "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon7 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon7 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon7 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
             "B.6": 5,
             "B.7": 5
           }
@@ -1036,12 +675,12 @@
       ],
       "session_ratings": {
         "B.1": 5,
-        "B.2": 4,
+        "B.2": 5,
         "B.8": 5,
         "C.9": 4,
         "C.10": 4,
-        "C.11": 4,
-        "C.12": 4,
+        "C.11": 3,
+        "C.12": 3,
         "C.13": 4,
         "D.14": 5,
         "D.15": 5,
@@ -1052,12 +691,292 @@
       }
     },
     {
-      "username": "devcon12",
-      "persona": "enthusiastic_intern",
+      "username": "devcon8",
+      "persona": "critical_intern",
+      "archetype": "dp_strong_cpp_weak",
+      "profile": {
+        "A.1": 2,
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 4
+      },
+      "think_time_ms_range": [
+        35000,
+        60000
+      ],
+      "inter_run_gap_ms_range": [
+        50000,
+        90000
+      ],
+      "runs": [
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon8 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon8 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon8 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 3,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon8 trial — run 4 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon8 trial — run 5 (wrapping)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 3,
+            "B.5": 3,
+            "B.6": 4,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 4,
+        "B.2": 4,
+        "B.8": 5,
+        "C.9": 4,
+        "C.10": 3,
+        "C.11": 2,
+        "C.12": 5,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 3,
+        "E.16": 4,
+        "E.17": 4,
+        "F.18": 4,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon9",
+      "persona": "pragmatic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
         "A.1": 3,
         "A.2": 2,
-        "A.3": 2,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon9 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon9 trial — run 2 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon9 trial — run 3 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon9 trial — run 4 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon9 trial — run 5 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 3,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 3,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 4,
+        "C.12": 4,
+        "C.13": 3,
+        "D.14": 4,
+        "D.15": 5,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 4,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon10",
+      "persona": "terse_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 4,
+        "A.2": 3,
+        "A.3": 4,
+        "A.4": 4,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        16000,
+        28000
+      ],
+      "inter_run_gap_ms_range": [
+        22000,
+        40000
+      ],
+      "runs": [
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon10 trial — run 1 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon10 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon10 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon10 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon10 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 3,
+        "C.10": 4,
+        "C.11": 5,
+        "C.12": 4,
+        "C.13": 5,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 4,
+        "E.17": 4,
+        "F.18": 4,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon11",
+      "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 4,
         "A.4": 3,
         "A.5": 2
       },
@@ -1071,43 +990,10 @@
       ],
       "runs": [
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon12 trial — run 1 (integration)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon11 trial — run 1 (wrapping)",
           "ratings": {
             "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon12 trial — run 2 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon12 trial — run 3 (wrapping)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon12 trial — run 4 (builder)",
-          "ratings": {
-            "B.3": 5,
             "B.4": 5,
             "B.5": 5,
             "B.6": 4,
@@ -1116,11 +1002,137 @@
         },
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon12 trial — run 5 (singleton)",
+          "comment_inject": "// devcon11 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon11 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon11 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon11 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 3,
+        "B.2": 5,
+        "B.8": 4,
+        "C.9": 5,
+        "C.10": 5,
+        "C.11": 5,
+        "C.12": 3,
+        "C.13": 5,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 5,
+        "F.19": 5
+      }
+    },
+    {
+      "username": "devcon12",
+      "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        18000,
+        36000
+      ],
+      "inter_run_gap_ms_range": [
+        28000,
+        58000
+      ],
+      "runs": [
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon12 trial — run 1 (wrapping)",
           "ratings": {
             "B.3": 5,
             "B.4": 4,
-            "B.5": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon12 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon12 trial — run 3 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon12 trial — run 4 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon12 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
@@ -1132,26 +1144,27 @@
         "B.8": 5,
         "C.9": 5,
         "C.10": 5,
-        "C.11": 4,
-        "C.12": 4,
+        "C.11": 5,
+        "C.12": 5,
         "C.13": 5,
         "D.14": 5,
-        "D.15": 4,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 4,
-        "F.19": 4
+        "D.15": 5,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 5,
+        "F.19": 5
       }
     },
     {
       "username": "devcon13",
       "persona": "enthusiastic_intern",
+      "archetype": "newcomer",
       "profile": {
-        "A.1": 4,
+        "A.1": 1,
         "A.2": 2,
-        "A.3": 3,
-        "A.4": 2,
-        "A.5": 2
+        "A.3": 2,
+        "A.4": 1,
+        "A.5": 1
       },
       "think_time_ms_range": [
         18000,
@@ -1166,7 +1179,7 @@
           "sample": "builder/http_request_builder.cpp",
           "comment_inject": "// devcon13 trial — run 1 (builder)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
             "B.5": 5,
             "B.6": 5,
@@ -1181,15 +1194,15 @@
             "B.4": 5,
             "B.5": 5,
             "B.6": 5,
-            "B.7": 4
+            "B.7": 5
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon13 trial — run 3 (wrapping)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon13 trial — run 3 (integration)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
+            "B.4": 5,
             "B.5": 5,
             "B.6": 5,
             "B.7": 5
@@ -1207,43 +1220,44 @@
           }
         },
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon13 trial — run 5 (integration)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon13 trial — run 5 (wrapping)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
             "B.5": 5,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 5
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 4,
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
         "C.9": 5,
         "C.10": 4,
-        "C.11": 4,
-        "C.12": 2,
-        "C.13": 3,
-        "D.14": 4,
-        "D.15": 4,
+        "C.11": 5,
+        "C.12": 5,
+        "C.13": 5,
+        "D.14": 5,
+        "D.15": 5,
         "E.16": 3,
         "E.17": 3,
-        "F.18": 5,
-        "F.19": 5
+        "F.18": 4,
+        "F.19": 4
       }
     },
     {
       "username": "devcon14",
       "persona": "enthusiastic_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
         "A.1": 2,
         "A.2": 2,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 1
+        "A.3": 1,
+        "A.4": 3,
+        "A.5": 4
       },
       "think_time_ms_range": [
         18000,
@@ -1255,21 +1269,21 @@
       ],
       "runs": [
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon14 trial — run 1 (integration)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon14 trial — run 1 (builder)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
             "B.5": 5,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 5
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon14 trial — run 2 (wrapping)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon14 trial — run 2 (integration)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
             "B.5": 5,
             "B.6": 5,
@@ -1282,14 +1296,14 @@
           "ratings": {
             "B.3": 5,
             "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon14 trial — run 4 (builder)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon14 trial — run 4 (singleton)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
@@ -1299,12 +1313,12 @@
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon14 trial — run 5 (singleton)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon14 trial — run 5 (wrapping)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
+            "B.4": 5,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
@@ -1314,194 +1328,10 @@
         "B.1": 4,
         "B.2": 4,
         "B.8": 4,
-        "C.9": 2,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 4,
-        "C.13": 4,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 5,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon15",
-      "persona": "enthusiastic_intern",
-      "profile": {
-        "A.1": 4,
-        "A.2": 1,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 3
-      },
-      "think_time_ms_range": [
-        18000,
-        36000
-      ],
-      "inter_run_gap_ms_range": [
-        28000,
-        58000
-      ],
-      "runs": [
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon15 trial — run 1 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon15 trial — run 2 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon15 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon15 trial — run 4 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon15 trial — run 5 (wrapping)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 5,
-        "B.2": 3,
-        "B.8": 5,
         "C.9": 5,
         "C.10": 4,
         "C.11": 4,
         "C.12": 5,
-        "C.13": 5,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 5,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon16",
-      "persona": "enthusiastic_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 2,
-        "A.3": 3,
-        "A.4": 3,
-        "A.5": 3
-      },
-      "think_time_ms_range": [
-        18000,
-        36000
-      ],
-      "inter_run_gap_ms_range": [
-        28000,
-        58000
-      ],
-      "runs": [
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon16 trial — run 1 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon16 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon16 trial — run 3 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon16 trial — run 4 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon16 trial — run 5 (wrapping)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 5,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 3,
-        "C.12": 2,
         "C.13": 4,
         "D.14": 4,
         "D.15": 4,
@@ -1512,14 +1342,15 @@
       }
     },
     {
-      "username": "devcon17",
+      "username": "devcon15",
       "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 3,
+        "A.1": 4,
         "A.2": 2,
-        "A.3": 2,
+        "A.3": 3,
         "A.4": 3,
-        "A.5": 2
+        "A.5": 1
       },
       "think_time_ms_range": [
         18000,
@@ -1531,32 +1362,21 @@
       ],
       "runs": [
         {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon15 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon17 trial — run 1 (singleton)",
+          "comment_inject": "// devcon15 trial — run 2 (singleton)",
           "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon17 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon17 trial — run 3 (integration)",
-          "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 5,
             "B.5": 5,
             "B.6": 4,
@@ -1564,19 +1384,30 @@
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon17 trial — run 4 (factory)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon15 trial — run 3 (integration)",
           "ratings": {
             "B.3": 4,
             "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon15 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
             "B.7": 4
           }
         },
         {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon17 trial — run 5 (wrapping)",
+          "comment_inject": "// devcon15 trial — run 5 (wrapping)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
@@ -1593,25 +1424,212 @@
         "C.9": 5,
         "C.10": 5,
         "C.11": 5,
-        "C.12": 5,
-        "C.13": 3,
+        "C.12": 3,
+        "C.13": 4,
         "D.14": 5,
         "D.15": 5,
         "E.16": 5,
         "E.17": 5,
-        "F.18": 5,
-        "F.19": 5
+        "F.18": 3,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon16",
+      "persona": "enthusiastic_intern",
+      "archetype": "balanced_intermediate",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 3,
+        "A.4": 2,
+        "A.5": 3
+      },
+      "think_time_ms_range": [
+        18000,
+        36000
+      ],
+      "inter_run_gap_ms_range": [
+        28000,
+        58000
+      ],
+      "runs": [
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon16 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon16 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon16 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon16 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon16 trial — run 5 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 4,
+        "B.2": 5,
+        "B.8": 4,
+        "C.9": 5,
+        "C.10": 5,
+        "C.11": 5,
+        "C.12": 4,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 4,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon17",
+      "persona": "enthusiastic_intern",
+      "archetype": "balanced_intermediate",
+      "profile": {
+        "A.1": 2,
+        "A.2": 2,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        18000,
+        36000
+      ],
+      "inter_run_gap_ms_range": [
+        28000,
+        58000
+      ],
+      "runs": [
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon17 trial — run 1 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon17 trial — run 2 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon17 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon17 trial — run 4 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon17 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 4,
+        "B.2": 4,
+        "B.8": 4,
+        "C.9": 4,
+        "C.10": 5,
+        "C.11": 3,
+        "C.12": 4,
+        "C.13": 4,
+        "D.14": 5,
+        "D.15": 5,
+        "E.16": 3,
+        "E.17": 2,
+        "F.18": 3,
+        "F.19": 3
       }
     },
     {
       "username": "devcon18",
       "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 2,
-        "A.2": 2,
-        "A.3": 3,
-        "A.4": 4,
-        "A.5": 3
+        "A.1": 3,
+        "A.2": 3,
+        "A.3": 4,
+        "A.4": 3,
+        "A.5": 2
       },
       "think_time_ms_range": [
         18000,
@@ -1627,20 +1645,20 @@
           "comment_inject": "// devcon18 trial — run 1 (singleton)",
           "ratings": {
             "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
+            "B.4": 4,
+            "B.5": 4,
             "B.6": 4,
             "B.7": 5
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon18 trial — run 2 (builder)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon18 trial — run 2 (wrapping)",
           "ratings": {
             "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
             "B.7": 4
           }
         },
@@ -1648,38 +1666,38 @@
           "sample": "integration/all_patterns.cpp",
           "comment_inject": "// devcon18 trial — run 3 (integration)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon18 trial — run 4 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon18 trial — run 5 (wrapping)",
-          "ratings": {
             "B.3": 5,
             "B.4": 5,
             "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon18 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon18 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 4
+          }
         }
       ],
       "session_ratings": {
-        "B.1": 3,
+        "B.1": 5,
         "B.2": 5,
         "B.8": 5,
         "C.9": 5,
@@ -1689,19 +1707,113 @@
         "C.13": 5,
         "D.14": 5,
         "D.15": 5,
-        "E.16": 5,
-        "E.17": 5,
+        "E.16": 4,
+        "E.17": 4,
         "F.18": 5,
-        "F.19": 4
+        "F.19": 5
       }
     },
     {
       "username": "devcon19",
       "persona": "enthusiastic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 2,
-        "A.2": 1,
+        "A.1": 3,
+        "A.2": 2,
         "A.3": 4,
+        "A.4": 3,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        18000,
+        36000
+      ],
+      "inter_run_gap_ms_range": [
+        28000,
+        58000
+      ],
+      "runs": [
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon19 trial — run 1 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon19 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon19 trial — run 3 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon19 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon19 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 4,
+        "C.12": 2,
+        "C.13": 3,
+        "D.14": 2,
+        "D.15": 3,
+        "E.16": 4,
+        "E.17": 4,
+        "F.18": 4,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon20",
+      "persona": "enthusiastic_intern",
+      "archetype": "balanced_intermediate",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 2,
         "A.4": 3,
         "A.5": 2
       },
@@ -1715,32 +1827,21 @@
       ],
       "runs": [
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon19 trial — run 1 (singleton)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon20 trial — run 1 (wrapping)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 5,
             "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon19 trial — run 2 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
             "B.6": 5,
             "B.7": 5
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon19 trial — run 3 (builder)",
+          "comment_inject": "// devcon20 trial — run 2 (builder)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 5,
             "B.5": 5,
             "B.6": 5,
@@ -1748,23 +1849,34 @@
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon19 trial — run 4 (factory)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon20 trial — run 3 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon20 trial — run 4 (integration)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
             "B.5": 5,
             "B.6": 4,
-            "B.7": 5
+            "B.7": 4
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon19 trial — run 5 (wrapping)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon20 trial — run 5 (factory)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 5,
-            "B.5": 5,
+            "B.5": 4,
             "B.6": 5,
             "B.7": 5
           }
@@ -1772,29 +1884,30 @@
       ],
       "session_ratings": {
         "B.1": 5,
-        "B.2": 4,
+        "B.2": 5,
         "B.8": 5,
         "C.9": 5,
         "C.10": 5,
         "C.11": 5,
-        "C.12": 5,
+        "C.12": 4,
         "C.13": 5,
-        "D.14": 4,
+        "D.14": 5,
         "D.15": 4,
-        "E.16": 3,
-        "E.17": 3,
+        "E.16": 5,
+        "E.17": 5,
         "F.18": 5,
         "F.19": 5
       }
     },
     {
-      "username": "devcon20",
+      "username": "devcon21",
       "persona": "enthusiastic_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 4,
-        "A.2": 1,
-        "A.3": 4,
-        "A.4": 4,
+        "A.1": 2,
+        "A.2": 3,
+        "A.3": 3,
+        "A.4": 3,
         "A.5": 3
       },
       "think_time_ms_range": [
@@ -1807,11 +1920,104 @@
       ],
       "runs": [
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon20 trial — run 1 (integration)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon21 trial — run 1 (factory)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon21 trial — run 2 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon21 trial — run 3 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon21 trial — run 4 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon21 trial — run 5 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 4,
+        "C.11": 5,
+        "C.12": 5,
+        "C.13": 5,
+        "D.14": 5,
+        "D.15": 5,
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 5,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon22",
+      "persona": "enthusiastic_intern",
+      "archetype": "dp_strong_cpp_weak",
+      "profile": {
+        "A.1": 3,
+        "A.2": 1,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 3
+      },
+      "think_time_ms_range": [
+        18000,
+        36000
+      ],
+      "inter_run_gap_ms_range": [
+        28000,
+        58000
+      ],
+      "runs": [
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon22 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
             "B.5": 5,
             "B.6": 5,
             "B.7": 5
@@ -1819,7 +2025,29 @@
         },
         {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon20 trial — run 2 (wrapping)",
+          "comment_inject": "// devcon22 trial — run 2 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon22 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon22 trial — run 4 (builder)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
@@ -1830,35 +2058,13 @@
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon20 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon20 trial — run 4 (builder)",
+          "comment_inject": "// devcon22 trial — run 5 (factory)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon20 trial — run 5 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
           }
         }
       ],
@@ -1875,76 +2081,66 @@
         "D.15": 5,
         "E.16": 5,
         "E.17": 5,
-        "F.18": 4,
-        "F.19": 4
+        "F.18": 5,
+        "F.19": 5
       }
     },
     {
-      "username": "devcon21",
-      "persona": "enthusiastic_intern",
+      "username": "devcon23",
+      "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
         "A.1": 2,
-        "A.2": 1,
-        "A.3": 4,
-        "A.4": 2,
-        "A.5": 2
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 3,
+        "A.5": 4
       },
       "think_time_ms_range": [
-        18000,
-        36000
+        25000,
+        48000
       ],
       "inter_run_gap_ms_range": [
-        28000,
-        58000
+        35000,
+        70000
       ],
       "runs": [
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon21 trial — run 1 (singleton)",
+          "comment_inject": "// devcon23 trial — run 1 (singleton)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon21 trial — run 2 (builder)",
+          "comment_inject": "// devcon23 trial — run 2 (builder)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon21 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
             "B.5": 5,
-            "B.6": 5,
+            "B.6": 4,
             "B.7": 5
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon21 trial — run 4 (integration)",
+          "comment_inject": "// devcon23 trial — run 3 (integration)",
           "ratings": {
             "B.3": 5,
-            "B.4": 5,
+            "B.4": 4,
             "B.5": 5,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 5
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon21 trial — run 5 (wrapping)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon23 trial — run 4 (factory)",
           "ratings": {
             "B.3": 5,
             "B.4": 5,
@@ -1952,15 +2148,26 @@
             "B.6": 5,
             "B.7": 5
           }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon23 trial — run 5 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 4
+          }
         }
       ],
       "session_ratings": {
-        "B.1": 3,
-        "B.2": 5,
-        "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 2,
+        "B.1": 4,
+        "B.2": 4,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 5,
+        "C.11": 4,
         "C.12": 4,
         "C.13": 4,
         "D.14": 4,
@@ -1972,106 +2179,15 @@
       }
     },
     {
-      "username": "devcon22",
-      "persona": "enthusiastic_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 2,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        18000,
-        36000
-      ],
-      "inter_run_gap_ms_range": [
-        28000,
-        58000
-      ],
-      "runs": [
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon22 trial — run 1 (wrapping)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon22 trial — run 2 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon22 trial — run 3 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon22 trial — run 4 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon22 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 5,
-        "B.2": 5,
-        "B.8": 5,
-        "C.9": 4,
-        "C.10": 5,
-        "C.11": 3,
-        "C.12": 5,
-        "C.13": 5,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 5,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon23",
+      "username": "devcon24",
       "persona": "pragmatic_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
         "A.1": 2,
         "A.2": 2,
-        "A.3": 2,
+        "A.3": 3,
         "A.4": 2,
-        "A.5": 1
+        "A.5": 3
       },
       "think_time_ms_range": [
         25000,
@@ -2083,128 +2199,36 @@
       ],
       "runs": [
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon23 trial — run 1 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon23 trial — run 2 (wrapping)",
+          "comment_inject": "// devcon24 trial — run 1 (wrapping)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 3,
             "B.4": 4,
             "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon23 trial — run 3 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 5,
+            "B.6": 4,
             "B.7": 5
           }
         },
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon23 trial — run 4 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon23 trial — run 5 (singleton)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon24 trial — run 2 (factory)",
           "ratings": {
             "B.3": 4,
             "B.4": 3,
             "B.5": 4,
-            "B.6": 5,
+            "B.6": 4,
             "B.7": 4
           }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 5,
-        "B.2": 5,
-        "B.8": 5,
-        "C.9": 4,
-        "C.10": 5,
-        "C.11": 5,
-        "C.12": 5,
-        "C.13": 5,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 5,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon24",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 2,
-        "A.3": 2,
-        "A.4": 4,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
+        },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon24 trial — run 1 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon24 trial — run 2 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon24 trial — run 3 (factory)",
+          "comment_inject": "// devcon24 trial — run 3 (integration)",
           "ratings": {
             "B.3": 5,
             "B.4": 4,
             "B.5": 5,
             "B.6": 5,
-            "B.7": 5
+            "B.7": 4
           }
         },
         {
@@ -2213,48 +2237,49 @@
           "ratings": {
             "B.3": 4,
             "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 3
           }
         },
         {
           "sample": "singleton/config_registry.cpp",
           "comment_inject": "// devcon24 trial — run 5 (singleton)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 4,
             "B.5": 5,
             "B.6": 4,
-            "B.7": 4
+            "B.7": 5
           }
         }
       ],
       "session_ratings": {
-        "B.1": 2,
-        "B.2": 3,
-        "B.8": 5,
+        "B.1": 4,
+        "B.2": 4,
+        "B.8": 2,
         "C.9": 4,
-        "C.10": 5,
+        "C.10": 4,
         "C.11": 4,
         "C.12": 4,
-        "C.13": 2,
-        "D.14": 3,
-        "D.15": 3,
+        "C.13": 4,
+        "D.14": 2,
+        "D.15": 2,
         "E.16": 4,
         "E.17": 4,
-        "F.18": 4,
+        "F.18": 5,
         "F.19": 4
       }
     },
     {
       "username": "devcon25",
       "persona": "pragmatic_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 4,
-        "A.2": 3,
-        "A.3": 2,
-        "A.4": 3,
+        "A.1": 3,
+        "A.2": 2,
+        "A.3": 3,
+        "A.4": 2,
         "A.5": 2
       },
       "think_time_ms_range": [
@@ -2267,12 +2292,12 @@
       ],
       "runs": [
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon25 trial — run 1 (integration)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon25 trial — run 1 (singleton)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 5,
-            "B.5": 5,
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
             "B.6": 4,
             "B.7": 4
           }
@@ -2283,31 +2308,31 @@
           "ratings": {
             "B.3": 4,
             "B.4": 5,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 3,
             "B.7": 4
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon25 trial — run 3 (singleton)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon25 trial — run 3 (factory)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
-            "B.5": 4,
+            "B.5": 3,
             "B.6": 4,
             "B.7": 4
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon25 trial — run 4 (factory)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon25 trial — run 4 (integration)",
           "ratings": {
             "B.3": 5,
-            "B.4": 3,
-            "B.5": 3,
+            "B.4": 5,
+            "B.5": 5,
             "B.6": 4,
-            "B.7": 4
+            "B.7": 5
           }
         },
         {
@@ -2318,382 +2343,14 @@
             "B.4": 4,
             "B.5": 4,
             "B.6": 4,
-            "B.7": 5
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 5,
-        "C.13": 3,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 4,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon26",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 2,
-        "A.2": 3,
-        "A.3": 3,
-        "A.4": 4,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon26 trial — run 1 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon26 trial — run 2 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon26 trial — run 3 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon26 trial — run 4 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon26 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 5,
-        "B.2": 5,
-        "B.8": 5,
-        "C.9": 5,
-        "C.10": 5,
-        "C.11": 5,
-        "C.12": 5,
-        "C.13": 5,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 3,
-        "F.19": 3
-      }
-    },
-    {
-      "username": "devcon27",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 2,
-        "A.2": 1,
-        "A.3": 4,
-        "A.4": 2,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon27 trial — run 1 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon27 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon27 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon27 trial — run 4 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon27 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 5,
             "B.7": 3
           }
         }
       ],
       "session_ratings": {
-        "B.1": 3,
-        "B.2": 3,
-        "B.8": 2,
-        "C.9": 3,
-        "C.10": 3,
-        "C.11": 4,
-        "C.12": 3,
-        "C.13": 4,
-        "D.14": 3,
-        "D.15": 4,
-        "E.16": 2,
-        "E.17": 2,
-        "F.18": 3,
-        "F.19": 3
-      }
-    },
-    {
-      "username": "devcon28",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 4,
-        "A.2": 3,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon28 trial — run 1 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon28 trial — run 2 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon28 trial — run 3 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon28 trial — run 4 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon28 trial — run 5 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 3,
-        "B.2": 2,
-        "B.8": 3,
-        "C.9": 2,
-        "C.10": 4,
-        "C.11": 3,
-        "C.12": 4,
-        "C.13": 3,
-        "D.14": 3,
-        "D.15": 3,
-        "E.16": 3,
-        "E.17": 4,
-        "F.18": 3,
-        "F.19": 3
-      }
-    },
-    {
-      "username": "devcon29",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 1,
-        "A.2": 1,
-        "A.3": 4,
-        "A.4": 3,
-        "A.5": 3
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon29 trial — run 1 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 3,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon29 trial — run 2 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon29 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon29 trial — run 4 (builder)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon29 trial — run 5 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
         "B.1": 5,
         "B.2": 5,
-        "B.8": 5,
+        "B.8": 4,
         "C.9": 5,
         "C.10": 5,
         "C.11": 5,
@@ -2708,14 +2365,201 @@
       }
     },
     {
-      "username": "devcon30",
+      "username": "devcon26",
       "persona": "pragmatic_intern",
+      "archetype": "newcomer",
+      "profile": {
+        "A.1": 1,
+        "A.2": 1,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon26 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon26 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon26 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon26 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon26 trial — run 5 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 4,
+        "C.12": 4,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 3,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 4,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon27",
+      "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
+      "profile": {
+        "A.1": 3,
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 3,
+        "A.5": 3
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon27 trial — run 1 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon27 trial — run 2 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon27 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon27 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon27 trial — run 5 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 4,
+        "B.2": 4,
+        "B.8": 4,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 5,
+        "C.12": 4,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 3,
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 3,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon28",
+      "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
         "A.1": 2,
         "A.2": 2,
         "A.3": 2,
         "A.4": 3,
-        "A.5": 2
+        "A.5": 3
       },
       "think_time_ms_range": [
         25000,
@@ -2728,11 +2572,197 @@
       "runs": [
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon30 trial — run 1 (builder)",
+          "comment_inject": "// devcon28 trial — run 1 (builder)",
           "ratings": {
-            "B.3": 3,
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon28 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon28 trial — run 3 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon28 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon28 trial — run 5 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 4,
+        "B.2": 3,
+        "B.8": 4,
+        "C.9": 4,
+        "C.10": 5,
+        "C.11": 4,
+        "C.12": 5,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 4,
+        "E.17": 3,
+        "F.18": 5,
+        "F.19": 5
+      }
+    },
+    {
+      "username": "devcon29",
+      "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
+      "profile": {
+        "A.1": 2,
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 3
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon29 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon29 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon29 trial — run 3 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon29 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon29 trial — run 5 (integration)",
+          "ratings": {
+            "B.3": 5,
             "B.4": 4,
             "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 5,
+        "C.11": 3,
+        "C.12": 4,
+        "C.13": 5,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 5,
+        "F.19": 5
+      }
+    },
+    {
+      "username": "devcon30",
+      "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
+      "profile": {
+        "A.1": 2,
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 3,
+        "A.5": 4
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon30 trial — run 1 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
@@ -2742,42 +2772,42 @@
           "comment_inject": "// devcon30 trial — run 2 (wrapping)",
           "ratings": {
             "B.3": 5,
-            "B.4": 3,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon30 trial — run 3 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 3,
+            "B.4": 5,
             "B.5": 4,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon30 trial — run 4 (factory)",
+          "comment_inject": "// devcon30 trial — run 3 (factory)",
           "ratings": {
             "B.3": 5,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 4
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
           }
         },
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon30 trial — run 5 (integration)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon30 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon30 trial — run 5 (singleton)",
           "ratings": {
             "B.3": 4,
-            "B.4": 4,
+            "B.4": 5,
             "B.5": 5,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 4
           }
         }
@@ -2787,9 +2817,9 @@
         "B.2": 5,
         "B.8": 3,
         "C.9": 5,
-        "C.10": 5,
+        "C.10": 3,
         "C.11": 5,
-        "C.12": 4,
+        "C.12": 3,
         "C.13": 5,
         "D.14": 5,
         "D.15": 5,
@@ -2802,12 +2832,13 @@
     {
       "username": "devcon31",
       "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
-        "A.1": 1,
-        "A.2": 3,
-        "A.3": 3,
+        "A.1": 3,
+        "A.2": 2,
+        "A.3": 1,
         "A.4": 3,
-        "A.5": 1
+        "A.5": 3
       },
       "think_time_ms_range": [
         25000,
@@ -2819,74 +2850,74 @@
       ],
       "runs": [
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon31 trial — run 1 (factory)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon31 trial — run 1 (builder)",
           "ratings": {
             "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
+            "B.4": 5,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon31 trial — run 2 (builder)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon31 trial — run 2 (singleton)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 4,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 5,
-            "B.7": 4
+            "B.7": 5
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
           "comment_inject": "// devcon31 trial — run 3 (integration)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 3,
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
             "B.7": 5
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon31 trial — run 4 (singleton)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon31 trial — run 4 (wrapping)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 4,
+            "B.3": 5,
+            "B.4": 5,
             "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
+            "B.6": 5,
+            "B.7": 5
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon31 trial — run 5 (wrapping)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon31 trial — run 5 (factory)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 4
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
+        "B.1": 3,
         "B.2": 3,
-        "B.8": 4,
+        "B.8": 3,
         "C.9": 3,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 4,
-        "C.13": 5,
-        "D.14": 4,
-        "D.15": 4,
+        "C.10": 1,
+        "C.11": 3,
+        "C.12": 3,
+        "C.13": 3,
+        "D.14": 3,
+        "D.15": 3,
         "E.16": 4,
-        "E.17": 3,
+        "E.17": 4,
         "F.18": 3,
         "F.19": 3
       }
@@ -2894,11 +2925,12 @@
     {
       "username": "devcon32",
       "persona": "pragmatic_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 3,
         "A.3": 3,
-        "A.4": 2,
+        "A.4": 3,
         "A.5": 2
       },
       "think_time_ms_range": [
@@ -2922,76 +2954,77 @@
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon32 trial — run 2 (builder)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon32 trial — run 2 (factory)",
           "ratings": {
             "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon32 trial — run 3 (builder)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 3,
+            "B.5": 4,
             "B.6": 4,
             "B.7": 4
           }
         },
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon32 trial — run 3 (singleton)",
+          "comment_inject": "// devcon32 trial — run 4 (singleton)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 4,
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
             "B.7": 3
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon32 trial — run 4 (integration)",
+          "comment_inject": "// devcon32 trial — run 5 (integration)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 4,
             "B.5": 4,
             "B.6": 4,
             "B.7": 3
           }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon32 trial — run 5 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 5
-          }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
+        "B.1": 5,
+        "B.2": 3,
         "B.8": 4,
         "C.9": 4,
-        "C.10": 4,
+        "C.10": 5,
         "C.11": 4,
         "C.12": 4,
         "C.13": 4,
-        "D.14": 3,
-        "D.15": 3,
+        "D.14": 4,
+        "D.15": 5,
         "E.16": 4,
-        "E.17": 5,
-        "F.18": 5,
+        "E.17": 4,
+        "F.18": 4,
         "F.19": 5
       }
     },
     {
       "username": "devcon33",
       "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
-        "A.1": 2,
-        "A.2": 1,
-        "A.3": 4,
-        "A.4": 3,
-        "A.5": 3
+        "A.1": 3,
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 4
       },
       "think_time_ms_range": [
         25000,
@@ -3003,87 +3036,88 @@
       ],
       "runs": [
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon33 trial — run 1 (singleton)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon33 trial — run 1 (wrapping)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon33 trial — run 2 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon33 trial — run 3 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
             "B.5": 4,
             "B.6": 4,
             "B.7": 5
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon33 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon33 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon33 trial — run 4 (wrapping)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon33 trial — run 5 (integration)",
+          "comment_inject": "// devcon33 trial — run 4 (integration)",
           "ratings": {
             "B.3": 4,
             "B.4": 5,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon33 trial — run 5 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
           }
         }
       ],
       "session_ratings": {
         "B.1": 4,
         "B.2": 4,
-        "B.8": 2,
+        "B.8": 5,
         "C.9": 4,
-        "C.10": 5,
+        "C.10": 4,
         "C.11": 4,
         "C.12": 5,
         "C.13": 4,
-        "D.14": 5,
-        "D.15": 5,
+        "D.14": 3,
+        "D.15": 2,
         "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 4
+        "E.17": 3,
+        "F.18": 2,
+        "F.19": 2
       }
     },
     {
       "username": "devcon34",
       "persona": "pragmatic_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 2,
         "A.3": 2,
-        "A.4": 3,
-        "A.5": 1
+        "A.4": 2,
+        "A.5": 4
       },
       "think_time_ms_range": [
         25000,
@@ -3095,12 +3129,12 @@
       ],
       "runs": [
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon34 trial — run 1 (wrapping)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon34 trial — run 1 (builder)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 5
           }
@@ -3109,6 +3143,17 @@
           "sample": "factory/shape_factory.cpp",
           "comment_inject": "// devcon34 trial — run 2 (factory)",
           "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon34 trial — run 3 (singleton)",
+          "ratings": {
             "B.3": 4,
             "B.4": 5,
             "B.5": 5,
@@ -3117,155 +3162,53 @@
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon34 trial — run 3 (builder)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon34 trial — run 4 (integration)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon34 trial — run 4 (singleton)",
-          "ratings": {
-            "B.3": 3,
+            "B.3": 5,
             "B.4": 5,
             "B.5": 5,
             "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon34 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 5,
-        "C.9": 5,
-        "C.10": 5,
-        "C.11": 4,
-        "C.12": 5,
-        "C.13": 4,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon35",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 2,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon35 trial — run 1 (factory)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 3,
             "B.7": 5
           }
         },
         {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon35 trial — run 2 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon35 trial — run 3 (singleton)",
+          "comment_inject": "// devcon34 trial — run 5 (wrapping)",
           "ratings": {
             "B.3": 5,
-            "B.4": 4,
+            "B.4": 5,
             "B.5": 5,
-            "B.6": 4,
+            "B.6": 5,
             "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon35 trial — run 4 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon35 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 3
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
-        "B.2": 3,
-        "B.8": 3,
-        "C.9": 3,
-        "C.10": 3,
-        "C.11": 2,
-        "C.12": 4,
-        "C.13": 3,
-        "D.14": 3,
-        "D.15": 3,
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 5,
+        "C.11": 3,
+        "C.12": 5,
+        "C.13": 5,
+        "D.14": 5,
+        "D.15": 5,
         "E.16": 3,
         "E.17": 3,
-        "F.18": 3,
-        "F.19": 1
+        "F.18": 5,
+        "F.19": 5
       }
     },
     {
-      "username": "devcon36",
+      "username": "devcon35",
       "persona": "pragmatic_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 4,
-        "A.2": 1,
-        "A.3": 2,
+        "A.1": 3,
+        "A.2": 3,
+        "A.3": 4,
         "A.4": 4,
         "A.5": 2
       },
@@ -3279,122 +3222,41 @@
       ],
       "runs": [
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon36 trial — run 1 (integration)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon35 trial — run 1 (wrapping)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 4,
-            "B.5": 4,
+            "B.5": 3,
             "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon36 trial — run 2 (singleton)",
+          "comment_inject": "// devcon35 trial — run 2 (singleton)",
           "ratings": {
-            "B.3": 5,
-            "B.4": 3,
-            "B.5": 5,
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 3,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon35 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
             "B.6": 4,
             "B.7": 3
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon36 trial — run 3 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 3,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon36 trial — run 4 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 3,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon36 trial — run 5 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 3,
-        "B.2": 3,
-        "B.8": 3,
-        "C.9": 3,
-        "C.10": 4,
-        "C.11": 3,
-        "C.12": 3,
-        "C.13": 3,
-        "D.14": 3,
-        "D.15": 4,
-        "E.16": 3,
-        "E.17": 3,
-        "F.18": 3,
-        "F.19": 3
-      }
-    },
-    {
-      "username": "devcon37",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 4,
-        "A.2": 1,
-        "A.3": 3,
-        "A.4": 3,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon37 trial — run 1 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon37 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon37 trial — run 3 (factory)",
+          "comment_inject": "// devcon35 trial — run 4 (builder)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
@@ -3404,117 +3266,14 @@
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon37 trial — run 4 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon37 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 5,
-        "C.13": 4,
-        "D.14": 4,
-        "D.15": 4,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon38",
-      "persona": "pragmatic_intern",
-      "profile": {
-        "A.1": 2,
-        "A.2": 3,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        25000,
-        48000
-      ],
-      "inter_run_gap_ms_range": [
-        35000,
-        70000
-      ],
-      "runs": [
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon38 trial — run 1 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon38 trial — run 2 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon38 trial — run 3 (factory)",
+          "comment_inject": "// devcon35 trial — run 5 (factory)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
             "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon38 trial — run 4 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon38 trial — run 5 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
           }
         }
       ],
@@ -3531,19 +3290,299 @@
         "D.15": 5,
         "E.16": 5,
         "E.17": 5,
-        "F.18": 5,
+        "F.18": 4,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon36",
+      "persona": "pragmatic_intern",
+      "archetype": "balanced_intermediate",
+      "profile": {
+        "A.1": 3,
+        "A.2": 2,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 3
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon36 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon36 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon36 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon36 trial — run 4 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon36 trial — run 5 (wrapping)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 4,
+        "B.8": 5,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 3,
+        "C.12": 5,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 4,
         "F.19": 5
+      }
+    },
+    {
+      "username": "devcon37",
+      "persona": "pragmatic_intern",
+      "archetype": "newcomer",
+      "profile": {
+        "A.1": 2,
+        "A.2": 1,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon37 trial — run 1 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon37 trial — run 2 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon37 trial — run 3 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon37 trial — run 4 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon37 trial — run 5 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 4,
+        "C.9": 5,
+        "C.10": 4,
+        "C.11": 5,
+        "C.12": 2,
+        "C.13": 4,
+        "D.14": 5,
+        "D.15": 5,
+        "E.16": 3,
+        "E.17": 5,
+        "F.18": 3,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon38",
+      "persona": "pragmatic_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        25000,
+        48000
+      ],
+      "inter_run_gap_ms_range": [
+        35000,
+        70000
+      ],
+      "runs": [
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon38 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 3,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon38 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 3,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon38 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 3,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon38 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 3,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon38 trial — run 5 (singleton)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 4,
+        "C.9": 4,
+        "C.10": 3,
+        "C.11": 4,
+        "C.12": 3,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 5,
+        "E.16": 4,
+        "E.17": 5,
+        "F.18": 4,
+        "F.19": 4
       }
     },
     {
       "username": "devcon39",
       "persona": "critical_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
-        "A.1": 4,
-        "A.2": 3,
+        "A.1": 2,
+        "A.2": 2,
         "A.3": 2,
         "A.4": 3,
-        "A.5": 3
+        "A.5": 4
       },
       "think_time_ms_range": [
         35000,
@@ -3555,74 +3594,74 @@
       ],
       "runs": [
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon39 trial — run 1 (wrapping)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon39 trial — run 1 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon39 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon39 trial — run 3 (singleton)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
-            "B.5": 4,
-            "B.6": 3,
+            "B.5": 5,
+            "B.6": 5,
             "B.7": 4
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon39 trial — run 2 (factory)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon39 trial — run 3 (integration)",
+          "comment_inject": "// devcon39 trial — run 4 (integration)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 4,
+            "B.3": 4,
+            "B.4": 5,
             "B.5": 5,
             "B.6": 3,
             "B.7": 4
           }
         },
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon39 trial — run 4 (builder)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon39 trial — run 5 (wrapping)",
           "ratings": {
             "B.3": 5,
             "B.4": 3,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon39 trial — run 5 (singleton)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 2,
-            "B.6": 3,
-            "B.7": 2
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 5
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
-        "B.2": 3,
+        "B.1": 3,
+        "B.2": 4,
         "B.8": 4,
         "C.9": 4,
         "C.10": 4,
         "C.11": 4,
-        "C.12": 4,
-        "C.13": 3,
+        "C.12": 5,
+        "C.13": 4,
         "D.14": 4,
         "D.15": 4,
-        "E.16": 4,
-        "E.17": 4,
+        "E.16": 3,
+        "E.17": 3,
         "F.18": 4,
         "F.19": 4
       }
@@ -3630,12 +3669,13 @@
     {
       "username": "devcon40",
       "persona": "critical_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
-        "A.1": 2,
-        "A.2": 3,
-        "A.3": 3,
+        "A.1": 3,
+        "A.2": 1,
+        "A.3": 2,
         "A.4": 3,
-        "A.5": 2
+        "A.5": 4
       },
       "think_time_ms_range": [
         35000,
@@ -3647,87 +3687,88 @@
       ],
       "runs": [
         {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon40 trial — run 1 (builder)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon40 trial — run 1 (singleton)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 4,
+            "B.3": 5,
+            "B.4": 3,
             "B.5": 5,
-            "B.6": 2,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon40 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon40 trial — run 2 (wrapping)",
+          "comment_inject": "// devcon40 trial — run 3 (wrapping)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 5,
+            "B.3": 3,
+            "B.4": 3,
             "B.5": 5,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon40 trial — run 3 (singleton)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon40 trial — run 4 (factory)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
+            "B.6": 4,
+            "B.7": 5
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon40 trial — run 5 (integration)",
+          "comment_inject": "// devcon40 trial — run 4 (integration)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 4,
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon40 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
             "B.5": 4,
             "B.6": 5,
-            "B.7": 2
+            "B.7": 3
           }
         }
       ],
       "session_ratings": {
-        "B.1": 2,
-        "B.2": 2,
+        "B.1": 3,
+        "B.2": 3,
         "B.8": 3,
         "C.9": 3,
-        "C.10": 3,
-        "C.11": 4,
-        "C.12": 5,
+        "C.10": 5,
+        "C.11": 3,
+        "C.12": 3,
         "C.13": 3,
         "D.14": 3,
         "D.15": 3,
-        "E.16": 3,
-        "E.17": 3,
-        "F.18": 3,
-        "F.19": 3
+        "E.16": 5,
+        "E.17": 5,
+        "F.18": 5,
+        "F.19": 5
       }
     },
     {
       "username": "devcon41",
       "persona": "critical_intern",
+      "archetype": "dp_strong_cpp_weak",
       "profile": {
         "A.1": 2,
-        "A.2": 1,
-        "A.3": 4,
-        "A.4": 3,
-        "A.5": 1
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 4
       },
       "think_time_ms_range": [
         35000,
@@ -3739,46 +3780,46 @@
       ],
       "runs": [
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon41 trial — run 1 (singleton)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon41 trial — run 1 (integration)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 5,
-            "B.5": 3,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon41 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 5,
+            "B.5": 4,
             "B.6": 4,
             "B.7": 4
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon41 trial — run 2 (builder)",
+          "comment_inject": "// devcon41 trial — run 3 (builder)",
           "ratings": {
-            "B.3": 5,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 5,
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 4,
             "B.7": 3
           }
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon41 trial — run 3 (factory)",
+          "comment_inject": "// devcon41 trial — run 4 (factory)",
           "ratings": {
             "B.3": 5,
             "B.4": 4,
-            "B.5": 3,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon41 trial — run 4 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
+            "B.5": 5,
+            "B.6": 4,
             "B.7": 5
           }
         },
@@ -3786,38 +3827,39 @@
           "sample": "wrapping/logging_proxy.cpp",
           "comment_inject": "// devcon41 trial — run 5 (wrapping)",
           "ratings": {
-            "B.3": 2,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
+            "B.3": 3,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
           }
         }
       ],
       "session_ratings": {
         "B.1": 3,
-        "B.2": 2,
-        "B.8": 1,
-        "C.9": 2,
-        "C.10": 2,
-        "C.11": 3,
-        "C.12": 1,
-        "C.13": 1,
-        "D.14": 2,
-        "D.15": 2,
-        "E.16": 2,
-        "E.17": 2,
+        "B.2": 3,
+        "B.8": 4,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 5,
+        "C.12": 4,
+        "C.13": 2,
+        "D.14": 4,
+        "D.15": 3,
+        "E.16": 4,
+        "E.17": 4,
         "F.18": 4,
-        "F.19": 5
+        "F.19": 4
       }
     },
     {
       "username": "devcon42",
       "persona": "critical_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 1,
+        "A.1": 4,
         "A.2": 2,
-        "A.3": 2,
+        "A.3": 3,
         "A.4": 2,
         "A.5": 2
       },
@@ -3831,74 +3873,74 @@
       ],
       "runs": [
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon42 trial — run 1 (singleton)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon42 trial — run 1 (wrapping)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 3,
+            "B.3": 5,
+            "B.4": 4,
             "B.5": 4,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon42 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 3,
+            "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon42 trial — run 3 (factory)",
+          "comment_inject": "// devcon42 trial — run 2 (factory)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 3,
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 2,
             "B.6": 4,
-            "B.7": 3
+            "B.7": 4
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon42 trial — run 4 (wrapping)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon42 trial — run 3 (builder)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 2,
-            "B.5": 2,
-            "B.6": 3,
-            "B.7": 3
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 2,
+            "B.7": 4
           }
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon42 trial — run 5 (integration)",
+          "comment_inject": "// devcon42 trial — run 4 (integration)",
           "ratings": {
             "B.3": 3,
             "B.4": 4,
-            "B.5": 2,
+            "B.5": 3,
+            "B.6": 3,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon42 trial — run 5 (singleton)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 2,
+            "B.5": 5,
             "B.6": 4,
-            "B.7": 3
+            "B.7": 2
           }
         }
       ],
       "session_ratings": {
-        "B.1": 3,
-        "B.2": 4,
-        "B.8": 3,
-        "C.9": 2,
+        "B.1": 2,
+        "B.2": 3,
+        "B.8": 2,
+        "C.9": 4,
         "C.10": 3,
-        "C.11": 3,
+        "C.11": 2,
         "C.12": 3,
-        "C.13": 2,
+        "C.13": 3,
         "D.14": 3,
         "D.15": 3,
-        "E.16": 3,
-        "E.17": 2,
+        "E.16": 4,
+        "E.17": 4,
         "F.18": 3,
         "F.19": 3
       }
@@ -3906,12 +3948,13 @@
     {
       "username": "devcon43",
       "persona": "critical_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
         "A.1": 3,
-        "A.2": 1,
-        "A.3": 2,
+        "A.2": 2,
+        "A.3": 3,
         "A.4": 3,
-        "A.5": 3
+        "A.5": 2
       },
       "think_time_ms_range": [
         35000,
@@ -3927,31 +3970,31 @@
           "comment_inject": "// devcon43 trial — run 1 (wrapping)",
           "ratings": {
             "B.3": 4,
-            "B.4": 5,
-            "B.5": 2,
+            "B.4": 2,
+            "B.5": 3,
             "B.6": 4,
             "B.7": 4
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon43 trial — run 2 (singleton)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon43 trial — run 2 (factory)",
           "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
+            "B.3": 3,
+            "B.4": 2,
+            "B.5": 3,
+            "B.6": 2,
             "B.7": 2
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon43 trial — run 3 (factory)",
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon43 trial — run 3 (integration)",
           "ratings": {
             "B.3": 3,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 3,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
             "B.7": 4
           }
         },
@@ -3959,20 +4002,206 @@
           "sample": "builder/http_request_builder.cpp",
           "comment_inject": "// devcon43 trial — run 4 (builder)",
           "ratings": {
-            "B.3": 3,
+            "B.3": 4,
             "B.4": 2,
+            "B.5": 3,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon43 trial — run 5 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
             "B.5": 4,
+            "B.6": 3,
+            "B.7": 4
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 4,
+        "B.2": 4,
+        "B.8": 4,
+        "C.9": 3,
+        "C.10": 4,
+        "C.11": 4,
+        "C.12": 5,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 5,
+        "E.17": 4,
+        "F.18": 4,
+        "F.19": 4
+      }
+    },
+    {
+      "username": "devcon44",
+      "persona": "critical_intern",
+      "archetype": "newcomer",
+      "profile": {
+        "A.1": 1,
+        "A.2": 1,
+        "A.3": 2,
+        "A.4": 2,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        35000,
+        60000
+      ],
+      "inter_run_gap_ms_range": [
+        50000,
+        90000
+      ],
+      "runs": [
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon44 trial — run 1 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon44 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 3,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon44 trial — run 3 (integration)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 3,
+            "B.5": 3,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon44 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon44 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 4
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 4,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 5,
+        "C.11": 5,
+        "C.12": 5,
+        "C.13": 5,
+        "D.14": 5,
+        "D.15": 5,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 5,
+        "F.19": 5
+      }
+    },
+    {
+      "username": "devcon45",
+      "persona": "critical_intern",
+      "archetype": "balanced_intermediate",
+      "profile": {
+        "A.1": 4,
+        "A.2": 2,
+        "A.3": 2,
+        "A.4": 3,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        35000,
+        60000
+      ],
+      "inter_run_gap_ms_range": [
+        50000,
+        90000
+      ],
+      "runs": [
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon45 trial — run 1 (wrapping)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 3,
+            "B.5": 3,
+            "B.6": 2,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon45 trial — run 2 (singleton)",
+          "ratings": {
+            "B.3": 3,
+            "B.4": 3,
+            "B.5": 5,
             "B.6": 3,
             "B.7": 4
           }
         },
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon43 trial — run 5 (integration)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon45 trial — run 3 (builder)",
           "ratings": {
-            "B.3": 2,
-            "B.4": 4,
+            "B.3": 3,
+            "B.4": 3,
             "B.5": 3,
+            "B.6": 4,
+            "B.7": 3
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon45 trial — run 4 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 2,
+            "B.5": 3,
+            "B.6": 2,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon45 trial — run 5 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
             "B.6": 4,
             "B.7": 4
           }
@@ -3989,190 +4218,6 @@
         "C.13": 5,
         "D.14": 5,
         "D.15": 5,
-        "E.16": 5,
-        "E.17": 4,
-        "F.18": 5,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon44",
-      "persona": "critical_intern",
-      "profile": {
-        "A.1": 2,
-        "A.2": 2,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        35000,
-        60000
-      ],
-      "inter_run_gap_ms_range": [
-        50000,
-        90000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon44 trial — run 1 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 2
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon44 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 3,
-            "B.6": 5,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon44 trial — run 3 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 3,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon44 trial — run 4 (wrapping)",
-          "ratings": {
-            "B.3": 2,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 2,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon44 trial — run 5 (integration)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 3,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 4,
-        "C.13": 4,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 4,
-        "E.17": 3,
-        "F.18": 4,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon45",
-      "persona": "critical_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 3,
-        "A.3": 4,
-        "A.4": 3,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        35000,
-        60000
-      ],
-      "inter_run_gap_ms_range": [
-        50000,
-        90000
-      ],
-      "runs": [
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon45 trial — run 1 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon45 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 2,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon45 trial — run 3 (singleton)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 4,
-            "B.7": 3
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon45 trial — run 4 (wrapping)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 3,
-            "B.5": 3,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon45 trial — run 5 (factory)",
-          "ratings": {
-            "B.3": 3,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 5
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 4,
-        "B.8": 5,
-        "C.9": 3,
-        "C.10": 4,
-        "C.11": 5,
-        "C.12": 3,
-        "C.13": 4,
-        "D.14": 3,
-        "D.15": 4,
         "E.16": 4,
         "E.17": 4,
         "F.18": 4,
@@ -4182,10 +4227,11 @@
     {
       "username": "devcon46",
       "persona": "critical_intern",
+      "archetype": "cpp_strong_dp_weak",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 3,
-        "A.3": 3,
+        "A.3": 4,
         "A.4": 3,
         "A.5": 1
       },
@@ -4199,36 +4245,36 @@
       ],
       "runs": [
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon46 trial — run 1 (wrapping)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon46 trial — run 1 (singleton)",
           "ratings": {
-            "B.3": 3,
+            "B.3": 4,
             "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
+            "B.5": 3,
+            "B.6": 4,
+            "B.7": 3
           }
         },
         {
           "sample": "builder/http_request_builder.cpp",
           "comment_inject": "// devcon46 trial — run 2 (builder)",
           "ratings": {
-            "B.3": 3,
-            "B.4": 3,
+            "B.3": 4,
+            "B.4": 4,
             "B.5": 4,
             "B.6": 4,
-            "B.7": 3
+            "B.7": 4
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon46 trial — run 3 (singleton)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon46 trial — run 3 (factory)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 3,
             "B.4": 4,
-            "B.5": 2,
-            "B.6": 2,
-            "B.7": 3
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
           }
         },
         {
@@ -4236,44 +4282,231 @@
           "comment_inject": "// devcon46 trial — run 4 (integration)",
           "ratings": {
             "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
+            "B.4": 3,
+            "B.5": 3,
             "B.6": 3,
-            "B.7": 4
+            "B.7": 3
           }
         },
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon46 trial — run 5 (factory)",
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon46 trial — run 5 (wrapping)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 3,
-            "B.5": 3,
-            "B.6": 2,
-            "B.7": 4
+            "B.5": 2,
+            "B.6": 3,
+            "B.7": 3
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
-        "B.2": 2,
+        "B.1": 5,
+        "B.2": 3,
         "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 4,
-        "C.12": 5,
-        "C.13": 4,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 5
+        "C.9": 2,
+        "C.10": 3,
+        "C.11": 3,
+        "C.12": 3,
+        "C.13": 1,
+        "D.14": 3,
+        "D.15": 3,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 3,
+        "F.19": 3
       }
     },
     {
       "username": "devcon47",
       "persona": "terse_intern",
+      "archetype": "balanced_intermediate",
+      "profile": {
+        "A.1": 3,
+        "A.2": 3,
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 2
+      },
+      "think_time_ms_range": [
+        16000,
+        28000
+      ],
+      "inter_run_gap_ms_range": [
+        22000,
+        40000
+      ],
+      "runs": [
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon47 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon47 trial — run 2 (builder)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon47 trial — run 3 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon47 trial — run 4 (wrapping)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon47 trial — run 5 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 5,
+            "B.6": 5,
+            "B.7": 5
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 4,
+        "B.8": 4,
+        "C.9": 4,
+        "C.10": 4,
+        "C.11": 4,
+        "C.12": 4,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 3,
+        "E.17": 5,
+        "F.18": 3,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon48",
+      "persona": "terse_intern",
+      "archetype": "cpp_strong_dp_weak",
+      "profile": {
+        "A.1": 4,
+        "A.2": 3,
+        "A.3": 4,
+        "A.4": 3,
+        "A.5": 1
+      },
+      "think_time_ms_range": [
+        16000,
+        28000
+      ],
+      "inter_run_gap_ms_range": [
+        22000,
+        40000
+      ],
+      "runs": [
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon48 trial — run 1 (builder)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "integration/all_patterns.cpp",
+          "comment_inject": "// devcon48 trial — run 2 (integration)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 5
+          }
+        },
+        {
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon48 trial — run 3 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 5,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon48 trial — run 4 (factory)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon48 trial — run 5 (wrapping)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 5,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        }
+      ],
+      "session_ratings": {
+        "B.1": 5,
+        "B.2": 5,
+        "B.8": 5,
+        "C.9": 5,
+        "C.10": 4,
+        "C.11": 4,
+        "C.12": 4,
+        "C.13": 4,
+        "D.14": 4,
+        "D.15": 4,
+        "E.16": 3,
+        "E.17": 3,
+        "F.18": 3,
+        "F.19": 3
+      }
+    },
+    {
+      "username": "devcon49",
+      "persona": "terse_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
         "A.1": 3,
         "A.2": 2,
@@ -4292,134 +4525,42 @@
       "runs": [
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon47 trial — run 1 (integration)",
+          "comment_inject": "// devcon49 trial — run 1 (integration)",
+          "ratings": {
+            "B.3": 4,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "wrapping/logging_proxy.cpp",
+          "comment_inject": "// devcon49 trial — run 2 (wrapping)",
           "ratings": {
             "B.3": 4,
             "B.4": 5,
-            "B.5": 5,
-            "B.6": 5,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon47 trial — run 2 (factory)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon47 trial — run 3 (builder)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
             "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon47 trial — run 4 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon47 trial — run 5 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 3,
-        "B.8": 4,
-        "C.9": 3,
-        "C.10": 5,
-        "C.11": 4,
-        "C.12": 4,
-        "C.13": 4,
-        "D.14": 5,
-        "D.15": 5,
-        "E.16": 4,
-        "E.17": 4,
-        "F.18": 4,
-        "F.19": 4
-      }
-    },
-    {
-      "username": "devcon48",
-      "persona": "terse_intern",
-      "profile": {
-        "A.1": 3,
-        "A.2": 2,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 2
-      },
-      "think_time_ms_range": [
-        16000,
-        28000
-      ],
-      "inter_run_gap_ms_range": [
-        22000,
-        40000
-      ],
-      "runs": [
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon48 trial — run 1 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon48 trial — run 2 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
             "B.6": 5,
             "B.7": 4
           }
         },
         {
           "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon48 trial — run 3 (factory)",
+          "comment_inject": "// devcon49 trial — run 3 (factory)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 4,
             "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
+            "B.6": 5,
+            "B.7": 5
           }
         },
         {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon48 trial — run 4 (wrapping)",
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon49 trial — run 4 (builder)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 4,
             "B.5": 5,
             "B.6": 4,
@@ -4427,19 +4568,19 @@
           }
         },
         {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon48 trial — run 5 (integration)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon49 trial — run 5 (singleton)",
           "ratings": {
-            "B.3": 4,
+            "B.3": 5,
             "B.4": 4,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 4,
             "B.7": 4
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
+        "B.1": 5,
         "B.2": 5,
         "B.8": 5,
         "C.9": 5,
@@ -4449,100 +4590,8 @@
         "C.13": 5,
         "D.14": 5,
         "D.15": 5,
-        "E.16": 5,
-        "E.17": 5,
-        "F.18": 5,
-        "F.19": 5
-      }
-    },
-    {
-      "username": "devcon49",
-      "persona": "terse_intern",
-      "profile": {
-        "A.1": 4,
-        "A.2": 3,
-        "A.3": 2,
-        "A.4": 3,
-        "A.5": 1
-      },
-      "think_time_ms_range": [
-        16000,
-        28000
-      ],
-      "inter_run_gap_ms_range": [
-        22000,
-        40000
-      ],
-      "runs": [
-        {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon49 trial — run 1 (factory)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 5,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon49 trial — run 2 (singleton)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "wrapping/logging_proxy.cpp",
-          "comment_inject": "// devcon49 trial — run 3 (wrapping)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        },
-        {
-          "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon49 trial — run 4 (integration)",
-          "ratings": {
-            "B.3": 4,
-            "B.4": 4,
-            "B.5": 5,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon49 trial — run 5 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 5,
-            "B.5": 4,
-            "B.6": 4,
-            "B.7": 4
-          }
-        }
-      ],
-      "session_ratings": {
-        "B.1": 4,
-        "B.2": 5,
-        "B.8": 4,
-        "C.9": 4,
-        "C.10": 4,
-        "C.11": 5,
-        "C.12": 5,
-        "C.13": 4,
-        "D.14": 5,
-        "D.15": 5,
         "E.16": 4,
-        "E.17": 4,
+        "E.17": 3,
         "F.18": 5,
         "F.19": 5
       }
@@ -4550,12 +4599,13 @@
     {
       "username": "devcon50",
       "persona": "terse_intern",
+      "archetype": "balanced_intermediate",
       "profile": {
-        "A.1": 2,
+        "A.1": 3,
         "A.2": 2,
-        "A.3": 2,
-        "A.4": 2,
-        "A.5": 2
+        "A.3": 3,
+        "A.4": 3,
+        "A.5": 3
       },
       "think_time_ms_range": [
         16000,
@@ -4567,8 +4617,19 @@
       ],
       "runs": [
         {
-          "sample": "factory/shape_factory.cpp",
-          "comment_inject": "// devcon50 trial — run 1 (factory)",
+          "sample": "singleton/config_registry.cpp",
+          "comment_inject": "// devcon50 trial — run 1 (singleton)",
+          "ratings": {
+            "B.3": 5,
+            "B.4": 4,
+            "B.5": 4,
+            "B.6": 4,
+            "B.7": 4
+          }
+        },
+        {
+          "sample": "builder/http_request_builder.cpp",
+          "comment_inject": "// devcon50 trial — run 2 (builder)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
@@ -4578,8 +4639,8 @@
           }
         },
         {
-          "sample": "singleton/config_registry.cpp",
-          "comment_inject": "// devcon50 trial — run 2 (singleton)",
+          "sample": "factory/shape_factory.cpp",
+          "comment_inject": "// devcon50 trial — run 3 (factory)",
           "ratings": {
             "B.3": 4,
             "B.4": 4,
@@ -4590,22 +4651,11 @@
         },
         {
           "sample": "integration/all_patterns.cpp",
-          "comment_inject": "// devcon50 trial — run 3 (integration)",
+          "comment_inject": "// devcon50 trial — run 4 (integration)",
           "ratings": {
             "B.3": 4,
-            "B.4": 4,
+            "B.4": 5,
             "B.5": 4,
-            "B.6": 4,
-            "B.7": 5
-          }
-        },
-        {
-          "sample": "builder/http_request_builder.cpp",
-          "comment_inject": "// devcon50 trial — run 4 (builder)",
-          "ratings": {
-            "B.3": 5,
-            "B.4": 4,
-            "B.5": 5,
             "B.6": 4,
             "B.7": 4
           }
@@ -4614,27 +4664,27 @@
           "sample": "wrapping/logging_proxy.cpp",
           "comment_inject": "// devcon50 trial — run 5 (wrapping)",
           "ratings": {
-            "B.3": 5,
+            "B.3": 4,
             "B.4": 4,
-            "B.5": 4,
+            "B.5": 5,
             "B.6": 5,
             "B.7": 4
           }
         }
       ],
       "session_ratings": {
-        "B.1": 4,
+        "B.1": 5,
         "B.2": 4,
-        "B.8": 4,
+        "B.8": 5,
         "C.9": 4,
-        "C.10": 3,
+        "C.10": 4,
         "C.11": 4,
         "C.12": 4,
         "C.13": 4,
         "D.14": 4,
-        "D.15": 4,
-        "E.16": 3,
-        "E.17": 3,
+        "D.15": 3,
+        "E.16": 4,
+        "E.17": 4,
         "F.18": 4,
         "F.19": 4
       }

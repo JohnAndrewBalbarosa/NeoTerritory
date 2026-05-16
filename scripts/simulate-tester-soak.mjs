@@ -23,6 +23,7 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
+import { synthesizeCppFiles } from './lib/cppSynth.mjs';
 
 const BASE_URL      = (process.env.SOAK_BASE_URL || 'http://122.248.192.49').replace(/\/$/, '');
 const USER_COUNT    = Number(process.env.SOAK_USER_COUNT || 10);
@@ -103,6 +104,44 @@ process.on('SIGINT', async () => {
   process.exit(130);
 });
 
+// Mulberry32 PRNG seeded by FNV-1a hash of a string. Deterministic per
+// (username, runId) so the same simulator invocation produces the same
+// FP/FN/TN distribution on re-run — important for thesis reproducibility.
+function makeRng(seedStr) {
+  let h = 2166136261 >>> 0;
+  for (let i = 0; i < seedStr.length; i++) {
+    h ^= seedStr.charCodeAt(i);
+    h = Math.imul(h, 16777619) >>> 0;
+  }
+  let a = h >>> 0;
+  return function rng() {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return (((t ^ (t >>> 14)) >>> 0) / 4294967296);
+  };
+}
+
+// Persona-driven decision policy for manual-review. Probabilities sum to
+// 1.0 across {accept, switch, reject}. fnClaimProb is independent — the
+// probability that this run also injects a "missed pattern" claim on a
+// clean line (drives FN counts up for the critical persona).
+function personaPolicy(persona) {
+  switch (persona) {
+    case 'enthusiastic_intern':
+      return { accept: 0.95, switch: 0.00, reject: 0.05, fnClaimProb: 0.00 };
+    case 'pragmatic_intern':
+      return { accept: 0.80, switch: 0.05, reject: 0.15, fnClaimProb: 0.05 };
+    case 'critical_intern':
+      return { accept: 0.65, switch: 0.10, reject: 0.25, fnClaimProb: 0.35 };
+    case 'terse_intern':
+      return { accept: 0.90, switch: 0.00, reject: 0.10, fnClaimProb: 0.00 };
+    default:
+      return { accept: 0.85, switch: 0.05, reject: 0.10, fnClaimProb: 0.05 };
+  }
+}
+
 function startHeartbeat(ctx) {
   const interval = setInterval(async () => {
     const r = await authedHttp('POST', '/auth/heartbeat', { ctx });
@@ -177,19 +216,38 @@ function loadSampleCode(samplePath, commentInject) {
   return `${commentInject}\n${original}`;
 }
 
-async function runOneAnalysis(ctx, runFixture) {
-  const code = loadSampleCode(runFixture.sample, runFixture.comment_inject);
-  const filename = `${ctx.username}-${path.basename(runFixture.sample)}`;
+async function runOneAnalysis(ctx, runFixture, runIndex) {
+  // Per-run synthesized C++ — every intern submits genuinely different
+  // code (random class names, member layouts, pattern mix, file count).
+  // Seeded by (username, runIndex) so the same simulator invocation
+  // yields the same dataset on re-run. Falls back to the fixed sample
+  // path only if SOAK_USE_FIXTURE=1 is set (for debugging).
+  let analyzeBody;
+  let displayLabel;
+  if (process.env.SOAK_USE_FIXTURE === '1') {
+    const code = loadSampleCode(runFixture.sample, runFixture.comment_inject);
+    const filename = `${ctx.username}-${path.basename(runFixture.sample)}`;
+    analyzeBody = { filename, code };
+    displayLabel = runFixture.sample;
+  } else {
+    const synth = synthesizeCppFiles(`${ctx.username}|run${runIndex}|2026-05-16`);
+    if (synth.files.length === 1) {
+      analyzeBody = { filename: synth.files[0].name, code: synth.files[0].code };
+    } else {
+      analyzeBody = { files: synth.files };
+    }
+    displayLabel = `synth:${synth.files.length}files`;
+  }
 
   // 1. analyze
   const analyze = await authedHttp('POST', '/api/analyze', {
     ctx,
-    body: { filename, code },
+    body: analyzeBody,
   });
   logEvent({
     user: ctx.username,
     endpoint: '/api/analyze',
-    sample: runFixture.sample,
+    sample: displayLabel,
     status: analyze.status,
     latencyMs: analyze.latencyMs,
     pendingId: analyze.json?.pendingId,
@@ -266,15 +324,24 @@ async function runOneAnalysis(ctx, runFixture) {
     });
   }
 
-  // 4. manual-review — one POST per detected pattern. The frontend's
-  //    Validation tab does the same per-line "this detection looks
-  //    correct" decision; without these rows the admin F1 metrics
-  //    panel has nothing to compute precision/recall over. We accept
-  //    every detection (chosenKind=pattern, chosenPattern=its name)
-  //    so the simulated cohort is biased toward true-positives — which
-  //    is the realistic shape for the "system tags real patterns and
-  //    the tester confirms them" workflow the thesis describes.
+  // 4. manual-review — persona-driven decisions. Real reviewers
+  //    disagree with the analyzer sometimes; auto-accepting every
+  //    detection produced F1 = 1.000, which is empirically suspicious.
+  //    Each persona has an accept / switch / reject probability mix
+  //    that mirrors how that personality type would actually behave.
+  //    The critical persona additionally claims a missed-pattern (FN)
+  //    on the occasional clean line. Randomness is seeded by username
+  //    so re-runs are reproducible.
+  const rng = makeRng(`${ctx.username}|${runId}`);
+  const policy = personaPolicy(ctx.persona);
+  const allDetectedNames = [...new Set(
+    detected.map((q) => q.patternName || q.patternId).filter((s) => typeof s === 'string' && s.length > 0)
+  )];
+  const KNOWN_PATTERNS = [
+    'Singleton','Builder','Factory','Method Chaining','Adapter','Decorator','Proxy','Strategy','Pimpl'
+  ];
   let decisions = 0;
+  const decisionMix = { accept: 0, reject: 0, switch: 0, fnClaim: 0 };
   for (const p of detected) {
     const docTargets = Array.isArray(p.documentationTargets) ? p.documentationTargets : [];
     const line = docTargets.find((t) => Number.isFinite(t?.line) && t.line >= 1)?.line || 1;
@@ -282,11 +349,29 @@ async function runOneAnalysis(ctx, runFixture) {
       .filter((q) => (q.documentationTargets || []).some((t) => t.line === line))
       .map((q) => q.patternName || q.patternId)
       .filter((s) => typeof s === 'string' && s.length > 0);
-    const chosen = p.patternName || p.patternId;
-    if (!chosen) continue;
+    const detectedName = p.patternName || p.patternId;
+    if (!detectedName) continue;
+
+    const roll = rng();
+    let body;
+    let bucket;
+    if (roll < policy.accept) {
+      body = { line, candidates: [...new Set(candidates)], chosenKind: 'pattern', chosenPattern: detectedName };
+      bucket = 'accept';
+    } else if (roll < policy.accept + policy.switch) {
+      const alternatives = KNOWN_PATTERNS.filter((n) => !candidates.includes(n));
+      const swapTo = alternatives[Math.floor(rng() * alternatives.length)] || 'Builder';
+      body = { line, candidates: [...new Set(candidates)], chosenKind: 'pattern', chosenPattern: swapTo };
+      bucket = 'switch';
+    } else {
+      body = { line, candidates: [...new Set(candidates)], chosenKind: 'none' };
+      bucket = 'reject';
+    }
+    decisionMix[bucket] += 1;
+
     const review = await authedHttp('POST', `/api/analysis/${encodeURIComponent(runId)}/manual-review`, {
       ctx,
-      body: { line, candidates: [...new Set(candidates)], chosenKind: 'pattern', chosenPattern: chosen },
+      body,
     });
     if (review.status === 200 || review.status === 201) decisions += 1;
     logEvent({
@@ -294,12 +379,55 @@ async function runOneAnalysis(ctx, runFixture) {
       endpoint: '/api/analysis/:runId/manual-review',
       runId,
       line,
-      chosenPattern: chosen,
+      decision: bucket,
+      chosenKind: body.chosenKind,
+      chosenPattern: body.chosenPattern,
+      detectedAtLine: allDetectedNames,
       status: review.status,
       latencyMs: review.latencyMs,
     });
   }
-  logEvent({ user: ctx.username, runId, event: 'manual_review_summary', decisionsRecorded: decisions });
+
+  // Critical persona: occasionally claims a missed pattern (FN) on a
+  // line the analyzer left clean. Picks a line a few past the last
+  // detection — guarantees no overlap with detected lines so the row
+  // hits the FN path in admin.ts.
+  if (policy.fnClaimProb > 0 && rng() < policy.fnClaimProb && detected.length > 0) {
+    const usedLines = new Set(
+      detected.flatMap((p) => (p.documentationTargets || []).map((t) => t.line).filter(Number.isFinite))
+    );
+    let claimLine = (Math.max(...usedLines) || 1) + 7 + Math.floor(rng() * 5);
+    while (usedLines.has(claimLine)) claimLine += 1;
+    const claimedPattern = KNOWN_PATTERNS[Math.floor(rng() * KNOWN_PATTERNS.length)];
+    const review = await authedHttp('POST', `/api/analysis/${encodeURIComponent(runId)}/manual-review`, {
+      ctx,
+      body: { line: claimLine, candidates: [], chosenKind: 'pattern', chosenPattern: claimedPattern },
+    });
+    if (review.status === 200 || review.status === 201) {
+      decisions += 1;
+      decisionMix.fnClaim += 1;
+    }
+    logEvent({
+      user: ctx.username,
+      endpoint: '/api/analysis/:runId/manual-review',
+      runId,
+      line: claimLine,
+      decision: 'fn_claim',
+      chosenKind: 'pattern',
+      chosenPattern: claimedPattern,
+      status: review.status,
+      latencyMs: review.latencyMs,
+    });
+  }
+
+  logEvent({
+    user: ctx.username,
+    runId,
+    event: 'manual_review_summary',
+    decisionsRecorded: decisions,
+    mix: decisionMix,
+    persona: ctx.persona,
+  });
 
   return runId;
 }
@@ -317,7 +445,7 @@ async function runOneUser(userFixture, userIndex) {
   if (claim.status !== 200 || !claim.json?.token) {
     throw new Error(`claim failed: ${claim.status} ${claim.text.slice(0, 200)}`);
   }
-  const ctx = { username, token: claim.json.token, reclaimInFlight: false };
+  const ctx = { username, persona: userFixture.persona, token: claim.json.token, reclaimInFlight: false };
   claimedTokens.set(username, ctx.token);
 
   const stopHeartbeat = startHeartbeat(ctx);
@@ -333,7 +461,7 @@ async function runOneUser(userFixture, userIndex) {
     const runs = userFixture.runs.slice(0, RUNS_PER_USER);
     for (let i = 0; i < runs.length; i++) {
       const runFx = runs[i];
-      const runId = await runOneAnalysis(ctx, runFx);
+      const runId = await runOneAnalysis(ctx, runFx, i);
       const surveyRun = await authedHttp('POST', `/api/survey/run/${encodeURIComponent(runId)}`, {
         ctx,
         body: { ratings: runFx.ratings, openEnded: {} },

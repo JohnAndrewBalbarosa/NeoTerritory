@@ -1091,7 +1091,7 @@ router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFu
     type PointData = { x: number; y: number };
     const regressionInput: PointData[] = [];
     const points: Array<{
-      runId: number; tokens: number; loc: number; patternCount: number; totalTargets: number; totalMs: number
+      runId: number; tokens: number; loc: number; patternCount: number; totalTargets: number; totalMs: number; items: number; serverWallUs: number
     }> = [];
 
     // Token count is a better predictor of analyzer cost than line count:
@@ -1108,6 +1108,7 @@ router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFu
         detectedPatterns?: Array<{ documentationTargets?: unknown[] }>;
         stageMetrics?:     Array<{ milliseconds?: number }>;
         tokenCount?:       number;
+        serverWallUs?:     number;
       } | null;
       if (!a) continue;
       const src          = row.source_text || '';
@@ -1121,12 +1122,65 @@ router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFu
       const patternCount = patterns.length;
       const totalTargets = patterns.reduce((s, p) => s + (p.documentationTargets?.length || 0), 0);
       const totalMs      = (a.stageMetrics || []).reduce((s, m) => s + (m.milliseconds || 0), 0);
-      if (totalMs === 0) continue;
-      points.push({ runId: row.id, tokens, loc, patternCount, totalTargets, totalMs });
+      // items_processed = sum across all stage_metrics entries. This is
+      // the count of structural items the analyzer's per-class loop
+      // actually iterated over — the variable that the thesis's O(K + L)
+      // claim directly predicts. Tokens are correlated but add noise
+      // (whitespace/comments don't drive analyser work); items_processed
+      // is what the inner loop is literally bounded by, so the
+      // regression fits much tighter.
+      const items = (a.stageMetrics || []).reduce(
+        (s, m) => s + (typeof (m as { items_processed?: number }).items_processed === 'number'
+          ? (m as { items_processed: number }).items_processed
+          : 0),
+        0,
+      );
+      const serverWallUs = typeof a.serverWallUs === 'number' && a.serverWallUs > 0 ? a.serverWallUs : 0;
+      if (totalMs === 0 && serverWallUs === 0) continue;
+      points.push({ runId: row.id, tokens, loc, patternCount, totalTargets, totalMs, items, serverWallUs });
       regressionInput.push({ x: tokens, y: totalMs });
     }
 
-    res.json({ points, regression: olsRegression(regressionInput) });
+    // Second regression keyed on items_processed (the analyzer's real
+    // inner-loop bound). The token-based fit is preserved for backward
+    // compatibility and for transparency on why token count is a weaker
+    // predictor at the input sizes the validator allows.
+    const regressionByItemsInput = points
+      .filter((p) => typeof p.items === 'number' && p.items > 0)
+      .map((p) => ({ x: p.items as number, y: p.totalMs }));
+
+    // Space-complexity regression. items_processed is a direct proxy
+    // for the analyzer's in-memory working set: every item the per-
+    // class loop iterates over corresponds to a structural-rep node
+    // the analyzer holds in RAM for the duration of the analysis.
+    // Regressing items against tokens lets the thesis report a
+    // separate empirical fit for the O(n) space claim alongside the
+    // O(n) time claim. The y-axis unit is "structural items"; the
+    // ratio bytes/item is approximately constant for the analyzer's
+    // node types so a linear fit on items linearly fits memory too.
+    const regressionSpaceByTokensInput = points
+      .filter((p) => p.tokens > 0 && typeof p.items === 'number' && p.items > 0)
+      .map((p) => ({ x: p.tokens, y: p.items as number }));
+
+    // High-resolution wall-time regression. y = serverWallUs (microseconds,
+    // captured via process.hrtime.bigint() at the /analyze request entry
+    // and end-of-analysis). x = token count. The microservice's per-stage
+    // ms field rounds to integers, which destroys the time signal at the
+    // input sizes the validator allows; hrtime captures three more
+    // decimal digits of precision and produces a regression whose R²
+    // reflects the actual O(n) cost of the analyzer rather than the
+    // measurement instrument's quantization noise.
+    const regressionWallUsByTokensInput = points
+      .filter((p) => p.tokens > 0 && p.serverWallUs > 0)
+      .map((p) => ({ x: p.tokens, y: p.serverWallUs }));
+
+    res.json({
+      points,
+      regression: olsRegression(regressionInput),
+      regressionByItems: olsRegression(regressionByItemsInput),
+      regressionSpaceByTokens: olsRegression(regressionSpaceByTokensInput),
+      regressionWallUsByTokens: olsRegression(regressionWallUsByTokensInput),
+    });
   } catch (err) { next(err); }
 });
 

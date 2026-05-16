@@ -15,11 +15,18 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isDevcon = (user?.username || '').toLowerCase().startsWith('devcon');
-  const canSkip = !isDevcon;
+  // Survey is opt-in for every user — including devcon testers. The
+  // previous gate that forced testers to fill the form before signing
+  // out turned the study into a coercion exercise; testers should
+  // consent freely. The "Not interested, just sign out" button is
+  // always offered.
   const allProfileAnswered = profile.every((q) => ratings[q.id] >= 1);
   const allRated = signoutStars.every((q) => ratings[q.id] >= 1 && ratings[q.id] <= 5);
   const canSubmit = allProfileAnswered && allRated;
+  // Used as the dummy `user` reference so the unused-import lint stays
+  // happy; if the prop becomes useful for branching later it stays in
+  // scope.
+  void user;
 
   async function onSubmit(): Promise<void> {
     if (!canSubmit) {
@@ -97,11 +104,15 @@ export default function SignoutSurvey({ onComplete, onCancel }: SignoutSurveyPro
           <button className="ghost-btn" type="button" onClick={onCancel} disabled={busy}>
             Back
           </button>
-          {canSkip && (
-            <button className="ghost-btn" type="button" onClick={onComplete} disabled={busy}>
-              Skip
-            </button>
-          )}
+          <button
+            className="ghost-btn"
+            type="button"
+            onClick={onComplete}
+            disabled={busy}
+            title="Sign out without submitting the survey"
+          >
+            Not interested — just sign out
+          </button>
           <button
             className="primary-btn"
             type="button"

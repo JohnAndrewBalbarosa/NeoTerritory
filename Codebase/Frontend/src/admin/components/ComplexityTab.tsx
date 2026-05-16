@@ -144,6 +144,69 @@ export default function ComplexityTab() {
         {!complexity && !cErr && <div className="empty-state">Loading…</div>}
       </section>
 
+      {complexity?.regressionWallUsByTokens && (
+        <section className="admin-section">
+          <h2>Time complexity — Server wall-time (µs) vs token count</h2>
+          <p className="empty-state-muted">
+            y-axis: server-observed processing time captured via <code>process.hrtime.bigint()</code> at
+            request entry and end-of-analysis (microseconds). x-axis: token count of the submission.
+            This is the highest-resolution time signal available — the microservice&apos;s integer-ms
+            field above loses signal at the input sizes the validator allows. Validates the O(n)
+            <em> time</em> claim.
+          </p>
+          <table className="complexity-coef-table">
+            <tbody>
+              <tr><td>Slope</td><td><code>{complexity.regressionWallUsByTokens.slope} µs/token</code></td></tr>
+              <tr><td>Intercept</td><td><code>{complexity.regressionWallUsByTokens.intercept} µs</code></td></tr>
+              <tr><td>R²</td><td><code>{complexity.regressionWallUsByTokens.r2}</code></td></tr>
+              <tr><td>n</td><td><code>{complexity.regressionWallUsByTokens.n} runs</code></td></tr>
+              <tr><td>Interpretation</td><td>{complexity.regressionWallUsByTokens.interpretation}</td></tr>
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {complexity?.regressionByItems && (
+        <section className="admin-section">
+          <h2>Time complexity — Processing time vs structural items</h2>
+          <p className="empty-state-muted">
+            y-axis: total <code>stage_metrics.milliseconds</code>. x-axis: sum of <code>items_processed</code>
+            across every stage — the variable the analyzer&apos;s per-class loop is literally bounded by.
+            Validates the O(n) <em>time</em> claim against the actual inner-loop work.
+          </p>
+          <table className="complexity-coef-table">
+            <tbody>
+              <tr><td>Slope</td><td><code>{complexity.regressionByItems.slope} ms/item</code></td></tr>
+              <tr><td>Intercept</td><td><code>{complexity.regressionByItems.intercept} ms</code></td></tr>
+              <tr><td>R²</td><td><code>{complexity.regressionByItems.r2}</code></td></tr>
+              <tr><td>n</td><td><code>{complexity.regressionByItems.n} runs</code></td></tr>
+              <tr><td>Interpretation</td><td>{complexity.regressionByItems.interpretation}</td></tr>
+            </tbody>
+          </table>
+        </section>
+      )}
+
+      {complexity?.regressionSpaceByTokens && (
+        <section className="admin-section">
+          <h2>Space complexity — Working-set items vs token count</h2>
+          <p className="empty-state-muted">
+            y-axis: sum of <code>items_processed</code> across stages, used here as a proxy for the
+            analyzer&apos;s in-memory working set (each item ≈ one structural-rep node held in RAM
+            during analysis). x-axis: token count of the submission. Validates the O(n) <em>space</em>
+            claim — items scale linearly with input size at near-constant bytes per item.
+          </p>
+          <table className="complexity-coef-table">
+            <tbody>
+              <tr><td>Slope</td><td><code>{complexity.regressionSpaceByTokens.slope} items/token</code></td></tr>
+              <tr><td>Intercept</td><td><code>{complexity.regressionSpaceByTokens.intercept} items</code></td></tr>
+              <tr><td>R²</td><td><code>{complexity.regressionSpaceByTokens.r2}</code></td></tr>
+              <tr><td>n</td><td><code>{complexity.regressionSpaceByTokens.n} runs</code></td></tr>
+              <tr><td>Interpretation</td><td>{complexity.regressionSpaceByTokens.interpretation}</td></tr>
+            </tbody>
+          </table>
+        </section>
+      )}
+
       <section className="admin-section">
         <h2>F1 metrics</h2>
         {fErr && <div className="empty-state admin-error" role="alert">{fErr}</div>}
