@@ -499,6 +499,14 @@ export interface LocalSweepData {
 export async function fetchAdminComplexityLocal(): Promise<LocalSweepData> {
   return apiFetch<LocalSweepData>('/api/admin/stats/complexity-local');
 }
+export interface CronbachData {
+  subscales: Array<{ name: string; k: number; n: number; alpha: number; interpretation: string }>;
+  totalRespondents: number;
+  methodologyNote: string;
+}
+export async function fetchAdminCronbach(): Promise<CronbachData> {
+  return apiFetch<CronbachData>('/api/admin/stats/cronbach');
+}
 export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
   return apiFetch<F1Metrics>('/api/admin/stats/f1-metrics');
 }

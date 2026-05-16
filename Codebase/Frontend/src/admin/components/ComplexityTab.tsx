@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminF1Metrics, type LocalSweepData } from '../../api/client';
+import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminCronbach, fetchAdminF1Metrics, type LocalSweepData, type CronbachData } from '../../api/client';
 import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
@@ -159,6 +159,7 @@ function F1Badge({ value }: { value: number }) {
 export default function ComplexityTab() {
   const [complexity, setComplexity] = useState<ComplexityData | null>(null);
   const [local, setLocal] = useState<LocalSweepData | null>(null);
+  const [cron, setCron] = useState<CronbachData | null>(null);
   const [f1, setF1] = useState<F1Metrics | null>(null);
   const [cErr, setCErr] = useState<string | null>(null);
   const [fErr, setFErr] = useState<string | null>(null);
@@ -169,6 +170,9 @@ export default function ComplexityTab() {
       .catch(e => { if (!isAuthError(e)) setCErr(e.message); });
     fetchAdminComplexityLocal()
       .then(setLocal)
+      .catch(() => { /* optional panel — silent on miss */ });
+    fetchAdminCronbach()
+      .then(setCron)
       .catch(() => { /* optional panel — silent on miss */ });
     fetchAdminF1Metrics()
       .then(setF1)
@@ -253,6 +257,40 @@ export default function ComplexityTab() {
             <p className="f1-note-footnote">{local.methodologyNote}</p>
           </section>
         </>
+      )}
+
+      {cron && (
+        <section className="admin-section">
+          <h2>Cronbach&apos;s α — Internal-consistency reliability</h2>
+          <p className="empty-state-muted">
+            Per-respondent rolled-up Likert ratings (per-run items B.3-B.7
+            collapsed to mean before α). Live from <code>session_feedback</code>
+            and <code>run_feedback</code>. n = {cron.totalRespondents} respondents.
+          </p>
+          <table className="complexity-coef-table">
+            <thead>
+              <tr>
+                <th>Subscale</th>
+                <th>k (items)</th>
+                <th>n (respondents)</th>
+                <th>α</th>
+                <th>Interpretation</th>
+              </tr>
+            </thead>
+            <tbody>
+              {cron.subscales.map((s) => (
+                <tr key={s.name}>
+                  <td>{s.name}</td>
+                  <td><code>{s.k}</code></td>
+                  <td><code>{s.n}</code></td>
+                  <td><code style={{ color: s.alpha >= 0.7 ? '#10b981' : s.alpha >= 0.6 ? '#f59e0b' : '#ef4444' }}>{s.alpha.toFixed(4)}</code></td>
+                  <td>{s.interpretation}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="f1-note-footnote">{cron.methodologyNote}</p>
+        </section>
       )}
 
       {cErr && <section className="admin-section"><div className="empty-state admin-error" role="alert">{cErr}</div></section>}
