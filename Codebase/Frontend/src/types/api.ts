@@ -364,6 +364,9 @@ export interface ComplexityPoint {
   patternCount: number;
   totalTargets: number;
   totalMs:      number;
+  items?:        number;
+  serverWallUs?: number;
+  analysisKb?:   number;
 }
 
 export interface RegressionResult {
@@ -377,9 +380,11 @@ export interface RegressionResult {
 export interface ComplexityData {
   points:                   ComplexityPoint[];
   regression:               RegressionResult;
-  regressionByItems?:        RegressionResult;
-  regressionSpaceByTokens?:  RegressionResult;
-  regressionWallUsByTokens?: RegressionResult;
+  regressionByItems?:         RegressionResult;
+  regressionSpaceByTokens?:   RegressionResult;
+  regressionSpaceKbByTokens?: RegressionResult;
+  regressionWallUsByTokens?:        RegressionResult;
+  regressionWallUsByTokensTrimmed?: RegressionResult;
 }
 
 export interface F1Score {

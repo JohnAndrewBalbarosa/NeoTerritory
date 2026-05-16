@@ -457,13 +457,13 @@ Per-cycle order (no artificial delays):
   1.0 across {accept, switch, reject}. fnClaimProb is independent — the
   probability that this run also injects a "missed pattern" claim on a
   clean line (drives FN counts up for the critical persona).
-- `startHeartbeat` (line 145)
-- `authedHttp` (line 162)
-- `loadSampleCode` (line 211)
-- `runOneAnalysis` (line 219)
-- `runOneUser` (line 435)
-- `main` (line 510)
-- `worker` (line 527)
+- `startHeartbeat` (line 151)
+- `authedHttp` (line 168)
+- `loadSampleCode` (line 217)
+- `runOneAnalysis` (line 225)
+- `runOneUser` (line 476)
+- `main` (line 551)
+- `worker` (line 568)
 
 ### `scripts/verify-requirements.ps1`
 
