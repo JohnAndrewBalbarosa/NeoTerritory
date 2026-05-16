@@ -55,12 +55,12 @@ BIB_ENTRIES = [
 # ---- Cronbach values straight out of tools/thesis-sim/reliability.md ----
 # Updated 2026-05-16 from the 30-respondent fixture run.
 ALPHA = {
-    "func":      ("0.8854", "Good",      "—"),
-    "usability": ("0.8477", "Good",      "—"),
-    "perf":      ("0.9106", "Excellent", "0.8362"),  # k=2 inter-item r
-    "rel":       ("0.9479", "Excellent", "0.9010"),
-    "sec":       ("0.9372", "Excellent", "0.8819"),
-    "overall":   ("0.9508", "Excellent", "—"),
+    "func":      ("0.8684", "Good",      "—"),
+    "usability": ("0.8580", "Good",      "—"),
+    "perf":      ("0.9211", "Excellent", "0.8545"),  # k=2 inter-item r
+    "rel":       ("0.9147", "Excellent", "0.8449"),
+    "sec":       ("0.8854", "Good",      "0.8037"),
+    "overall":   ("0.9403", "Excellent", "—"),
 }
 
 
@@ -172,20 +172,21 @@ CH4_PARAS = [
      "redundancy."),
     ("Normal",
      "The two-item subscales (Performance Efficiency, Reliability, and "
-     "Security and Data Protection) returned alpha values in the Excellent "
-     "band: α = "
-     f"{ALPHA['perf'][0]} for Performance Efficiency (inter-item r = "
-     f"{ALPHA['perf'][2]}), α = "
-     f"{ALPHA['rel'][0]} for Reliability (inter-item r = "
+     "Security and Data Protection) returned alpha values comfortably "
+     "above the Acceptable threshold: α = "
+     f"{ALPHA['perf'][0]} for Performance Efficiency (Excellent; "
+     f"inter-item r = {ALPHA['perf'][2]}), α = "
+     f"{ALPHA['rel'][0]} for Reliability (Excellent; inter-item r = "
      f"{ALPHA['rel'][2]}), and α = "
-     f"{ALPHA['sec'][0]} for Security and Data Protection (inter-item r = "
-     f"{ALPHA['sec'][2]}). The accompanying inter-item Pearson correlations "
-     "are reported alongside each two-item alpha because, with k = 2, the "
-     "alpha statistic is mathematically equivalent to the Spearman-Brown "
-     "prophecy of that correlation; reading the two figures together rather "
-     "than alpha alone gives the reader a defensible reliability picture for "
-     "subscales whose construct definition is intentionally narrow (each of "
-     "the three two-item subscales is restricted to a single ISO/IEC 25010 "
+     f"{ALPHA['sec'][0]} for Security and Data Protection (Good; "
+     f"inter-item r = {ALPHA['sec'][2]}). The accompanying inter-item "
+     "Pearson correlations are reported alongside each two-item alpha "
+     "because, with k = 2, the alpha statistic is mathematically "
+     "equivalent to the Spearman-Brown prophecy of that correlation; "
+     "reading the two figures together rather than alpha alone gives "
+     "the reader a defensible reliability picture for subscales whose "
+     "construct definition is intentionally narrow (each of the three "
+     "two-item subscales is restricted to a single ISO/IEC 25010 "
      "characteristic and resists being padded out with semantically "
      "redundant items). All five subscales together with the overall "
      "instrument satisfy the Acceptable threshold (α ≥ 0.70), providing "

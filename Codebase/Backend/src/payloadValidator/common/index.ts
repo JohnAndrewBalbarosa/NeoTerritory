@@ -11,7 +11,15 @@ export const filenameSchema = z
     message: 'filename contains path separators or control characters'
   });
 
-export const MAX_TOKENS_PER_FILE = 500;
+// Raised from 500 to 5000 so the empirical complexity-regression sweep
+// can reach the input-size band where the analyzer's per-token variable
+// cost rises above the catalog-load floor (~10 ms). At 500 tokens/file
+// every submission processed in 3-9 ms, which made the admin's
+// /api/admin/stats/complexity-data fit collapse to noise. 5000 tokens
+// per file × 5 files = 25 000 tokens / submission, matching the upper
+// end of the local synthetic sweep where R² ≈ 0.93 (full range) /
+// 0.98 (normal case) per tools/thesis-sim/regression.md.
+export const MAX_TOKENS_PER_FILE = 5000;
 
 // Whitespace-split word count — simple, transparent, language-agnostic.
 // Keeps per-file AI payload small enough to avoid Gemini overload.

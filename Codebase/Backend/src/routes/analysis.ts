@@ -1061,6 +1061,21 @@ function saveRunHandler(req: Request, res: Response, next: NextFunction): void {
       pending.analysis.classResolvedPatterns = classResolvedPatterns;
     }
 
+    // Compute aggregate token count across the entire submission (single-
+    // file `code` OR multi-file `files[]`) and persist it on the analysis
+    // payload so the admin's /api/admin/stats/complexity-data regression
+    // can plot the true submission size on the x-axis. Without this, the
+    // admin endpoint falls back to counting tokens from analysis_runs.
+    // source_text — which only holds ONE file for multi-file submissions,
+    // truncating the x-axis and flattening the regression scatter.
+    const submissionFiles = Array.isArray((pending.analysis as { files?: Array<{ sourceText?: string }> }).files)
+      ? ((pending.analysis as { files?: Array<{ sourceText?: string }> }).files || [])
+      : [];
+    const aggregateSourceText = submissionFiles.length > 0
+      ? submissionFiles.map((f) => f.sourceText || '').join('\n\n')
+      : (pending.sourceText || '');
+    (pending.analysis as { tokenCount?: number }).tokenCount = countCppTokens(aggregateSourceText);
+
     const userDirName = safeUsername(req.user?.username);
     const userOutputsDir = path.join(outputsDir, userDirName);
     if (!fs.existsSync(userOutputsDir)) fs.mkdirSync(userOutputsDir, { recursive: true });

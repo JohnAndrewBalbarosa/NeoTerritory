@@ -15,13 +15,15 @@ const dataset = JSON.parse(fs.readFileSync(DATASET, 'utf8'));
 // Idempotency: if the dataset already has more than 10 users, the
 // previous-generation generated personas (devcon11..) are stripped and
 // regenerated. The 10 hand-authored personas (devcon1..devcon10) are
-// always preserved. This lets the file be re-run with a tighter
-// generator (anchor + jitter coupling) without a manual reset.
+// always preserved.
 if (dataset.users.length > 10) {
   const before = dataset.users.length;
   dataset.users = dataset.users.slice(0, 10);
   console.log(`stripped ${before - dataset.users.length} previously-generated personas; rebuilding from devcon11.`);
 }
+
+// Target cohort size (devcon%) — supervisor moved from 30 to 50.
+const TARGET_USERS = Number(process.env.TARGET_USERS || 50);
 
 const PER_RUN_KEYS  = dataset.perRunQuestions;
 const SESSION_KEYS  = dataset.sessionLikertQuestions;
@@ -60,14 +62,27 @@ const PERSONAS = {
 
 const SAMPLES = dataset.samples;
 
-// Plan: 9 enthusiastic + 12 pragmatic + 6 critical + 3 terse = 30 total.
-// Existing 10: 3 + 4 + 2 + 1 = 10. Need to ADD: 6 + 8 + 4 + 2 = 20.
+// Target cohort persona mix at 50: ~30% enthusiastic, ~40% pragmatic,
+// ~20% critical, ~10% terse (≈ 15 / 20 / 10 / 5). Existing hand-authored
+// 10 already contribute 3 / 4 / 2 / 1, so the generator adds 12 / 16 /
+// 8 / 4 = 40 more personas to reach 50 total.
+const TO_ADD_TOTAL = Math.max(0, TARGET_USERS - 10);
+function distribute(total) {
+  // Same proportional mix as the existing 10 personas (30/40/20/10).
+  const enth = Math.round(total * 0.30);
+  const prag = Math.round(total * 0.40);
+  const crit = Math.round(total * 0.20);
+  const tese = total - enth - prag - crit;
+  return { enth, prag, crit, tese };
+}
+const mix = distribute(TO_ADD_TOTAL);
 const PERSONA_TO_ADD = [
-  ...Array(6).fill('enthusiastic_intern'),
-  ...Array(8).fill('pragmatic_intern'),
-  ...Array(4).fill('critical_intern'),
-  ...Array(2).fill('terse_intern'),
+  ...Array(mix.enth).fill('enthusiastic_intern'),
+  ...Array(mix.prag).fill('pragmatic_intern'),
+  ...Array(mix.crit).fill('critical_intern'),
+  ...Array(mix.tese).fill('terse_intern'),
 ];
+console.log(`adding ${PERSONA_TO_ADD.length} new personas (enth=${mix.enth} prag=${mix.prag} crit=${mix.crit} tese=${mix.tese}) to reach target ${TARGET_USERS}.`);
 
 // Mulberry32 — small deterministic PRNG seeded per-username so the
 // generated data is reproducible across runs of this script.

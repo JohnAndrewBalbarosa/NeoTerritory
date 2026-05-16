@@ -92,9 +92,15 @@ app.use(cors({
 app.use(express.static(frontendDir));
 
 // Rate limiters
+// Bumped from 10 to 100 per 15-min window so a single-host empirical
+// study (50-tester soak + variable-token regression sweep on the same
+// IP) doesn't trip the limiter mid-run. The limiter still defends
+// against credential stuffing — 100 claims / 15 min is well below an
+// attacker's request rate but well above any plausible legitimate
+// burst from a study harness.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 100,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many login attempts. Please try again in 15 minutes.' }

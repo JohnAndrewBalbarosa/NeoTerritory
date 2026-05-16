@@ -238,14 +238,33 @@ async function runOneAnalysis(ctx, runFixture) {
     ctx,
     body: { stdin: '' },
   });
+  const runTestResults = Array.isArray(runTests.json?.results) ? runTests.json.results : [];
   logEvent({
     user: ctx.username,
     endpoint: '/api/analysis/:runId/run-tests',
     runId,
     status: runTests.status,
     latencyMs: runTests.latencyMs,
-    resultCount: Array.isArray(runTests.json?.results) ? runTests.json.results.length : 0,
+    resultCount: runTestResults.length,
   });
+  // Log every individual phase verdict (compile_run, unit_test,
+  // static_analysis) per test so a failed unit test always has its
+  // reason in the JSONL — answers the supervisor's 'if hindi nagrurun,
+  // merong dahilan or nakalogged ang dahilan' requirement.
+  for (const r of runTestResults) {
+    logEvent({
+      user: ctx.username,
+      runId,
+      event: 'test_phase',
+      phase: r?.phase,
+      pattern: r?.pattern,
+      className: r?.className,
+      verdict: r?.verdict,
+      passed: r?.passed,
+      message: (r?.message || '').slice(0, 240),
+      actualSnippet: (r?.actual || '').slice(0, 240),
+    });
+  }
 
   // 4. manual-review — one POST per detected pattern. The frontend's
   //    Validation tab does the same per-line "this detection looks
