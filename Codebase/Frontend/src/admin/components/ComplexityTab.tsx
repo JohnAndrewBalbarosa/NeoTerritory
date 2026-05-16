@@ -216,6 +216,16 @@ export default function ComplexityTab() {
                   <td><code>{local.regressionWallMsFull.n}</code></td>
                   <td>{local.regressionWallMsFull.interpretation}</td>
                 </tr>
+                {local.regressionWallMsFullRaw && (
+                  <tr>
+                    <td>Raw (all reps, full range)</td>
+                    <td><code>{local.regressionWallMsFullRaw.slope} ms/line</code></td>
+                    <td><code>{local.regressionWallMsFullRaw.intercept} ms</code></td>
+                    <td><code>{local.regressionWallMsFullRaw.r2}</code></td>
+                    <td><code>{local.regressionWallMsFullRaw.n}</code></td>
+                    <td>{local.regressionWallMsFullRaw.interpretation}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </section>
@@ -252,6 +262,16 @@ export default function ComplexityTab() {
                   <td><code>{local.regressionPeakKbFull.n}</code></td>
                   <td>{local.regressionPeakKbFull.interpretation}</td>
                 </tr>
+                {local.regressionPeakKbFullRaw && (
+                  <tr>
+                    <td>Raw (all reps, full range)</td>
+                    <td><code>{local.regressionPeakKbFullRaw.slope} KB/line</code></td>
+                    <td><code>{local.regressionPeakKbFullRaw.intercept} KB</code></td>
+                    <td><code>{local.regressionPeakKbFullRaw.r2}</code></td>
+                    <td><code>{local.regressionPeakKbFullRaw.n}</code></td>
+                    <td>{local.regressionPeakKbFullRaw.interpretation}</td>
+                  </tr>
+                )}
               </tbody>
             </table>
             <p className="f1-note-footnote">{local.methodologyNote}</p>

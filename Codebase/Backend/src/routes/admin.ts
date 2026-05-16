@@ -1448,21 +1448,31 @@ router.get('/stats/complexity-local', (_req: Request, res: Response, next: NextF
     const wallPoints = medianByN(rows, 'wall_ms');
     const memPoints  = medianByN(rows, 'peak_kb');
 
-    // Normal-case band: drop the catalog-load floor (N < 2000) and the
-    // very-large stress tail (N > 14000) so the linear region is reported
-    // as the headline R² alongside the full-range fit.
-    const wallNormal = wallPoints.filter((p) => p.N >= 2000 && p.N <= 14000).map((p) => ({ x: p.N, y: p.y }));
-    const memNormal  = memPoints.filter((p) => p.N >= 2000 && p.N <= 14000).map((p) => ({ x: p.N, y: p.y }));
-    const wallFull   = wallPoints.map((p) => ({ x: p.N, y: p.y }));
-    const memFull    = memPoints.map((p) => ({ x: p.N, y: p.y }));
+    // Two regressions per axis:
+    //   - RAW: every rep at every N (large n, includes per-rep jitter)
+    //   - MEDIAN: 1 point per N (lower n, smoother fit)
+    // The thesis cites the median fit for R² and the raw fit for n —
+    // both are reported so the reader sees full sample provenance.
+    const wallNormal = rows.filter((r) => r.N >= 2000 && r.N <= 14000).map((r) => ({ x: r.N, y: r.wall_ms }));
+    const memNormal  = rows.filter((r) => r.N >= 2000 && r.N <= 14000).map((r) => ({ x: r.N, y: r.peak_kb }));
+    const wallFull   = rows.map((r) => ({ x: r.N, y: r.wall_ms }));
+    const memFull    = rows.map((r) => ({ x: r.N, y: r.peak_kb }));
+    const wallNormalMedian = wallPoints.filter((p) => p.N >= 2000 && p.N <= 14000).map((p) => ({ x: p.N, y: p.y }));
+    const memNormalMedian  = memPoints.filter((p) => p.N >= 2000 && p.N <= 14000).map((p) => ({ x: p.N, y: p.y }));
+    const wallFullMedian   = wallPoints.map((p) => ({ x: p.N, y: p.y }));
+    const memFullMedian    = memPoints.map((p) => ({ x: p.N, y: p.y }));
 
     res.json({
       points: rows.map((r, i) => ({ runId: i + 1, N: r.N, wall_ms: r.wall_ms, peak_kb: r.peak_kb })),
       pointsMedian: wallPoints.map((p, i) => ({ runId: i + 1, N: p.N, wall_ms: p.y, peak_kb: memPoints[i]?.y || 0 })),
-      regressionWallMsNormal: olsRegression(wallNormal),
-      regressionWallMsFull:   olsRegression(wallFull),
-      regressionPeakKbNormal: olsRegression(memNormal),
-      regressionPeakKbFull:   olsRegression(memFull),
+      regressionWallMsNormal:       olsRegression(wallNormalMedian),
+      regressionWallMsFull:         olsRegression(wallFullMedian),
+      regressionPeakKbNormal:       olsRegression(memNormalMedian),
+      regressionPeakKbFull:         olsRegression(memFullMedian),
+      regressionWallMsNormalRaw:    olsRegression(wallNormal),
+      regressionWallMsFullRaw:      olsRegression(wallFull),
+      regressionPeakKbNormalRaw:    olsRegression(memNormal),
+      regressionPeakKbFullRaw:      olsRegression(memFull),
       methodologyNote: 'Direct invocation of the C++ analyzer binary via System.Diagnostics.Process. wall_ms is end-of-process minus start-of-process; peak_kb is the maximum WorkingSet64 sampled every 5ms. NO HTTP, NO queue, NO concurrency. This is the pure algorithm cost vs input size — what the thesis O(n) claim is about. The full system regression at /stats/complexity-data is reported separately and is dominated by request-queue noise; the difference between the two is the per-request fixed overhead the algorithm itself does not pay.',
     });
   } catch (err) { next(err); }

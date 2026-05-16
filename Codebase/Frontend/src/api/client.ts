@@ -490,10 +490,14 @@ export async function fetchAdminComplexityData(): Promise<ComplexityData> {
 export interface LocalSweepData {
   points:                  Array<{ runId: number; N: number; wall_ms: number; peak_kb: number }>;
   pointsMedian:            Array<{ runId: number; N: number; wall_ms: number; peak_kb: number }>;
-  regressionWallMsNormal:  RegressionResult;
-  regressionWallMsFull:    RegressionResult;
-  regressionPeakKbNormal:  RegressionResult;
-  regressionPeakKbFull:    RegressionResult;
+  regressionWallMsNormal:    RegressionResult;
+  regressionWallMsFull:      RegressionResult;
+  regressionPeakKbNormal:    RegressionResult;
+  regressionPeakKbFull:      RegressionResult;
+  regressionWallMsNormalRaw?: RegressionResult;
+  regressionWallMsFullRaw?:   RegressionResult;
+  regressionPeakKbNormalRaw?: RegressionResult;
+  regressionPeakKbFullRaw?:   RegressionResult;
   methodologyNote:         string;
 }
 export async function fetchAdminComplexityLocal(): Promise<LocalSweepData> {
