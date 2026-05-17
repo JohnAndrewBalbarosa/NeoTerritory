@@ -69,6 +69,20 @@
       "auth": "public",
       "expectStatus": 200,
       "expectSelector": "[data-testid=\"developer-login\"]"
+    },
+    {
+      "path": "/pm/login",
+      "name": "pm-google-login",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"pm-login\"]"
+    },
+    {
+      "path": "/new-user/login",
+      "name": "new-user-google-login",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"new-user-login\"]"
     }
   ]
 }

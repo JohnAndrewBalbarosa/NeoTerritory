@@ -16,6 +16,8 @@ import SurveyStats from './components/SurveyStats';
 import ReviewsPanel from './components/ReviewsPanel';
 import AiConfigPanel from './components/AiConfigPanel';
 import CatalogsTab from './components/CatalogsTab';
+import InviteCodesTab from './components/InviteCodesTab';
+import JoinRequestsTab from './components/JoinRequestsTab';
 import { markAdminRefresh } from '../api/client';
 import {
   IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
@@ -23,7 +25,7 @@ import {
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests';
 
 interface TabDef {
   id: AdminTab;
@@ -43,7 +45,9 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare, originalDevsOnly: true },
   { id: 'ai',         label: 'AI',         icon: IconCode },
   { id: 'logs',       label: 'Logs',       icon: IconClipboard },
-  { id: 'catalogs',   label: 'Catalogs',   icon: IconBeaker }
+  { id: 'catalogs',     label: 'Catalogs',       icon: IconBeaker },
+  { id: 'invites',      label: 'Invites',        icon: IconCheckSquare },
+  { id: 'joinRequests', label: 'Join requests',  icon: IconShield }
 ];
 
 // Original-devs detection: the JWT now carries an explicit
@@ -281,6 +285,16 @@ export default function AdminApp() {
           >
             {theme === 'dark' ? '☀ Light' : '☾ Dark'}
           </button>
+          <button
+            id="admin-go-studio-btn"
+            className="ghost-btn"
+            type="button"
+            data-testid="admin-go-studio"
+            onClick={() => { window.location.assign('/studio'); }}
+            title="Switch to my studio (full-page nav to the main SPA)"
+          >
+            Go to my studio →
+          </button>
           <button id="admin-refresh-btn" className="ghost-btn" type="button" onClick={onRefresh}>
             Refresh
           </button>
@@ -375,6 +389,12 @@ export default function AdminApp() {
         </div>
         <div hidden={activeTab !== 'catalogs'}>
           <CatalogsTab />
+        </div>
+        <div hidden={activeTab !== 'invites'}>
+          <InviteCodesTab />
+        </div>
+        <div hidden={activeTab !== 'joinRequests'}>
+          <JoinRequestsTab />
         </div>
       </main>
     </div>

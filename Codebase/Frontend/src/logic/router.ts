@@ -19,6 +19,7 @@ export type Surface =
   | 'googleCallback'
   | 'googleSignIn'
   | 'authChoose'
+  | 'onboarding'
   | 'mechanics'
   | 'patterns'
   | 'patternDetail'
@@ -50,10 +51,13 @@ export function pathToSurface(path: string): Surface {
   if (path === '/about' || path.startsWith('/about/')) return 'about';
   if (path === '/auth/callback') return 'googleCallback';
   if (path === '/auth/choose' || path === '/auth') return 'authChoose';
+  if (path === '/onboarding' || path.startsWith('/onboarding/')) return 'onboarding';
   if (
     path === '/developer/login' ||
     path === '/student-learning/login' ||
-    path === '/admin/login'
+    path === '/admin/login' ||
+    path === '/pm/login' ||
+    path === '/new-user/login'
   )
     return 'googleSignIn';
   // /student-learning (legacy) redirects in MarketingShell to /patterns/learn

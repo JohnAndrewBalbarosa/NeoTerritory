@@ -26,6 +26,7 @@ import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
+import { sendInviteEmail } from '../services/inviteEmail';
 import {
   isOriginalDevEmail,
   NEOTERRITORY_ORG_ID,
@@ -89,12 +90,17 @@ async function verifySupabaseToken(token: string): Promise<SupabaseUser | null> 
 // derived username when email is missing or already in use under a
 // different role. The local row keeps NeoTerritory-side state (saved
 // runs, reviews, surveys) joined to the user.
-// 'unspecified' is for the unified single-button sign-in flow: the
-// caller does NOT pre-tag intent, the backend just upserts the user
-// and reports whether they are new. The front-end then prompts the
-// user once via RoleChooserModal and calls /auth/google/finalize-role
-// to commit the chosen role.
-type SignInRole = 'developer' | 'student' | 'admin' | 'unspecified';
+// Sign-in role intents. Picked pre-OAuth from the FE chooser:
+//   'admin' — super admin tier; ONLY ORIGINAL_DEV_EMAILS allowed.
+//             Non-allowlisted emails get a 403 with `allowed: false`.
+//   'pm'    — self-serve org owner; anyone with a Google account can
+//             pick this. Creates a fresh org on 'new' intent.
+//   'developer' — joins an existing org (via invite) or stays solo.
+//   'student'   — student-learning entry flow.
+//   'new'   — first-timer; backend just mints a JWT with no org and
+//             tells the FE to route to /onboarding/choose.
+//   'unspecified' — legacy single-button path; no longer reached.
+type SignInRole = 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
 
 // Ensures an org_memberships row exists tying this local user to the
 // given org id with the given role. Idempotent — re-running on every
@@ -142,7 +148,7 @@ function ensureMembership(
 // email local-part with a short uid suffix to dodge collisions; the
 // row is added to a local SQLite mirror and best-effort mirrored to
 // the Supabase organizations table.
-function createSelfServeOrg(email: string, displayName: string): string {
+function createSelfServeOrg(email: string, displayName: string, orgNameOverride?: string): string {
   db.prepare(`CREATE TABLE IF NOT EXISTS organizations (
     id TEXT PRIMARY KEY,
     name TEXT NOT NULL,
@@ -165,7 +171,9 @@ function createSelfServeOrg(email: string, displayName: string): string {
   // Use a deterministic-looking uuid-ish id so the row id is stable
   // even before the Supabase mirror runs.
   const id = `org_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-  const name = displayName ? `${displayName}'s org` : slug;
+  const name = (orgNameOverride && orgNameOverride.trim())
+    ? orgNameOverride.trim().slice(0, 64)
+    : (displayName ? `${displayName}'s org` : slug);
   db.prepare(
     `INSERT INTO organizations (id, name, slug, is_original_devs) VALUES (?, ?, ?, 0)`
   ).run(id, name, slug);
@@ -330,7 +338,9 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     const roleRaw = typeof body.role === 'string' ? body.role : '';
     let role: SignInRole;
     if (roleRaw === 'student') role = 'student';
-    else if (roleRaw === 'admin' || roleRaw === 'pm') role = 'admin';
+    else if (roleRaw === 'admin') role = 'admin';
+    else if (roleRaw === 'pm') role = 'pm';
+    else if (roleRaw === 'new' || roleRaw === 'new-user') role = 'new';
     else if (roleRaw === 'unspecified' || roleRaw === '') role = 'unspecified';
     else role = 'developer';
     const intent: 'existing' | 'new' =
@@ -348,12 +358,23 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
 
     const probeEmail = (supaUser.email || '').toLowerCase();
 
+    // Admin tier gate: 'admin' role is restricted to ORIGINAL_DEV_EMAILS.
+    // Non-allowlisted emails picking the admin card get a 403 with
+    // `allowed: false`; the FE offers a "Switch to PM sign-in" CTA.
+    if (role === 'admin' && !isOriginalDevEmail(probeEmail)) {
+      res.status(403).json({
+        error: 'The admin tier is restricted to original developers. Pick PM instead.',
+        allowed: false,
+      });
+      return;
+    }
+
     // Intent='existing' contract: the user clicked "I already have an
     // account." If we cannot find them, we refuse to silently create
     // and instead let the front-end offer a "sign up instead" CTA. We
     // do this BEFORE upserting the local user so no orphan row is
     // created for a failed existing-login attempt.
-    if (intent === 'existing' && (role === 'admin' || role === 'developer')) {
+    if (intent === 'existing' && (role === 'admin' || role === 'pm' || role === 'developer')) {
       const priorMembership = existingMembershipRole(probeEmail);
       const isOriginalDevs = isOriginalDevEmail(probeEmail);
       // Admin path: existing only if there is an admin membership OR
@@ -361,6 +382,16 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
       if (role === 'admin' && priorMembership !== 'admin' && !isOriginalDevs) {
         res.status(404).json({
           error: 'No admin account exists for this email. Sign up first.',
+          existing: false,
+        });
+        return;
+      }
+      // PM path: existing only if there is an admin membership in some
+      // org (excluding the seeded original-devs org which belongs to
+      // the admin tier). Otherwise prompt to sign up.
+      if (role === 'pm' && priorMembership !== 'admin') {
+        res.status(404).json({
+          error: 'No PM account exists for this email. Sign up first.',
           existing: false,
         });
         return;
@@ -384,22 +415,23 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
 
     const { row: localUser, wasNew } = upsertLocalUser(supaUser, role);
 
-    // Org binding fires for admin intent. For developer/student, no
-    // org is attached until the user redeems an invite (future work).
-    // 'unspecified' is unreachable from the current FE but kept for
-    // backwards compatibility (no-op binding).
+    // Org binding fires for admin + pm intent. For developer/student/new,
+    // no org is attached automatically — developers redeem an invite or
+    // request to join via the onboarding wizard; new users land sa
+    // /onboarding/choose where they pick admin/developer.
     const email = (localUser.email || '').toLowerCase();
     let binding: OrgBinding = { orgId: null, isOriginalDevs: false, createdNewOrg: false };
-    if (role === 'admin') {
+    if (role === 'admin' || role === 'pm') {
       binding = resolveAdminOrg(email, localUser.username || '', supaUser.id);
       // Original-devs (the thesis team) get users.role='admin' so the
       // legacy requireAdmin gate opens for them too. Self-serve admins
-      // keep users.role='user' and rely on org_memberships.role.
+      // (PMs) keep users.role='user' and rely on org_memberships.role.
       if (binding.isOriginalDevs && localUser.role !== 'admin') {
         db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(localUser.id);
         localUser.role = 'admin';
       }
     }
+    const needsOnboarding = role === 'new' && binding.orgId === null;
 
     const token = jwt.sign(
       {
@@ -431,7 +463,8 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
       },
       entryFlow: role,
       orgCreated: binding.createdNewOrg,
-      wasNew
+      wasNew,
+      needsOnboarding
     });
   } catch (err) {
     next(err);
@@ -442,6 +475,449 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
 // sign-in UX moved role selection BEFORE OAuth — there is no longer
 // a post-OAuth role prompt to commit. /exchange now does the binding
 // in one round-trip based on the role+intent passed up front.)
+
+// ────────────────────────────────────────────────────────────────────────
+// Onboarding wizard endpoints (post-OAuth for brand-new users).
+// ────────────────────────────────────────────────────────────────────────
+
+interface BearerClaims {
+  id?: number;
+  username?: string;
+  email?: string | null;
+  role?: string;
+  orgId?: string | null;
+  isOriginalDevs?: boolean;
+}
+
+function verifyBearer(req: Request): BearerClaims | null {
+  const authHeader = req.headers.authorization || '';
+  const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+  if (!bearer) return null;
+  try {
+    return jwt.verify(bearer, process.env.JWT_SECRET as string) as BearerClaims;
+  } catch {
+    return null;
+  }
+}
+
+function mintJwt(payload: {
+  id: number;
+  username: string;
+  email: string | null;
+  role: string;
+  orgId: string | null;
+  isOriginalDevs: boolean;
+}): string {
+  return jwt.sign(payload, process.env.JWT_SECRET as string, { expiresIn: '30d' });
+}
+
+// SQLite mirror tables for invite codes and join requests. Created on
+// demand; the production schema lives in Supabase migrations.
+function ensureInviteTables(): void {
+  db.prepare(`CREATE TABLE IF NOT EXISTS org_invites (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    email TEXT NOT NULL,
+    role TEXT NOT NULL DEFAULT 'developer',
+    token TEXT,
+    email_sent_at TEXT,
+    email_status TEXT DEFAULT 'queued',
+    created_by INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(org_id, email)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_org_invites_email ON org_invites(email)`).run();
+
+  db.prepare(`CREATE TABLE IF NOT EXISTS org_invite_codes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    code TEXT NOT NULL UNIQUE,
+    created_by INTEGER,
+    uses_remaining INTEGER NOT NULL DEFAULT 1,
+    expires_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_invite_codes_org ON org_invite_codes(org_id)`).run();
+
+  db.prepare(`CREATE TABLE IF NOT EXISTS org_join_requests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    requester_email TEXT NOT NULL,
+    requester_user_id INTEGER,
+    requester_name TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    decided_by INTEGER,
+    decided_at TEXT,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(org_id, requester_email)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_join_requests_org ON org_join_requests(org_id, status)`).run();
+}
+
+function isUserAdminOfOrg(userId: number, orgId: string): boolean {
+  ensureInviteTables();
+  const row = db.prepare(
+    `SELECT 1 FROM org_memberships m
+     INNER JOIN users u ON lower(u.email) = lower(m.email)
+     WHERE u.id = ? AND m.org_id = ? AND m.role = 'admin' LIMIT 1`
+  ).get(userId, orgId);
+  return !!row;
+}
+
+function generateInviteCode(): string {
+  // 6-char alphanumeric, easy to read aloud (no 0/O/1/I/L confusion).
+  const alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+  let out = '';
+  for (let i = 0; i < 6; i++) {
+    out += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return out;
+}
+
+// POST /auth/onboarding/admin — completes the admin onboarding wizard.
+// Creates a fresh org (or rebinds to NeoTerritory for original-devs),
+// records invite rows for any provided emails, fires invite emails
+// fire-and-forget, re-mints the JWT.
+router.post('/onboarding/admin', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.email) {
+      res.status(401).json({ error: 'invalid or missing bearer token' });
+      return;
+    }
+    const body = (req.body ?? {}) as { orgName?: unknown; inviteEmails?: unknown };
+    const orgName = typeof body.orgName === 'string' ? body.orgName.trim() : '';
+    if (!orgName) {
+      res.status(400).json({ error: 'orgName is required' });
+      return;
+    }
+    if (orgName.length > 64) {
+      res.status(400).json({ error: 'orgName must be 64 characters or fewer' });
+      return;
+    }
+    const inviteEmails: string[] = Array.isArray(body.inviteEmails)
+      ? body.inviteEmails
+          .filter((s): s is string => typeof s === 'string')
+          .map((s) => s.trim().toLowerCase())
+          .filter((s) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s))
+          .slice(0, 50)
+      : [];
+
+    const email = claims.email.toLowerCase();
+    const isOriginalDevs = isOriginalDevEmail(email);
+
+    // Prevent double-onboarding: if user already has any admin
+    // membership, refuse — they should hit the admin page instead.
+    const existing = db.prepare(
+      `SELECT org_id FROM org_memberships WHERE lower(email) = lower(?) AND role = 'admin' LIMIT 1`
+    ).get(email) as { org_id: string } | undefined;
+    let orgId: string;
+    if (existing) {
+      orgId = existing.org_id;
+    } else if (isOriginalDevs) {
+      orgId = NEOTERRITORY_ORG_ID;
+      ensureMembership(orgId, email, '', 'admin');
+    } else {
+      orgId = createSelfServeOrg(email, claims.username || '', orgName);
+      ensureMembership(orgId, email, '', 'admin');
+    }
+
+    // Bump local users.role to 'admin' for original-devs so the legacy
+    // requireAdmin gate opens. PMs stay 'user'.
+    let newRole = claims.role || 'user';
+    if (isOriginalDevs && newRole !== 'admin') {
+      db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(claims.id);
+      newRole = 'admin';
+    }
+
+    // Record pending invites (idempotent on email per org) and fire the
+    // invite-email service fire-and-forget. Real delivery depends on
+    // Supabase Auth SMTP being configured; otherwise the invite stays
+    // visible in the admin page so the operator can copy a link.
+    ensureInviteTables();
+    const inviteStmt = db.prepare(
+      `INSERT OR IGNORE INTO org_invites (org_id, email, role, created_by, email_status)
+       VALUES (?, ?, 'developer', ?, 'queued')`
+    );
+    for (const invitee of inviteEmails) {
+      inviteStmt.run(orgId, invitee, claims.id);
+      void sendInviteEmail({ email: invitee, orgName, inviterEmail: email }).then(
+        (ok) => {
+          db.prepare(
+            `UPDATE org_invites SET email_status = ?, email_sent_at = ? WHERE org_id = ? AND email = ?`
+          ).run(ok ? 'sent' : 'failed', new Date().toISOString(), orgId, invitee);
+        },
+        () => {
+          db.prepare(
+            `UPDATE org_invites SET email_status = 'failed' WHERE org_id = ? AND email = ?`
+          ).run(orgId, invitee);
+        }
+      );
+    }
+
+    const token = mintJwt({
+      id: claims.id,
+      username: claims.username || '',
+      email: claims.email,
+      role: newRole,
+      orgId,
+      isOriginalDevs,
+    });
+
+    logEvent(
+      claims.id,
+      'auth.onboarding.admin',
+      `orgId=${orgId} orgName=${orgName} invites=${inviteEmails.length} originalDevs=${isOriginalDevs}`
+    );
+
+    res.json({
+      token,
+      user: {
+        id: claims.id,
+        username: claims.username,
+        email: claims.email,
+        role: newRole,
+        orgId,
+        isOriginalDevs,
+      },
+      invitesQueued: inviteEmails.length,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/onboarding/developer — completes the developer onboarding
+// wizard. Branches on `mode`:
+//   solo               → no membership, JWT unchanged.
+//   invite-code        → look up org_invite_codes by code, attach.
+//   request-by-email   → insert into org_join_requests; admin sees pending.
+router.post('/onboarding/developer', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.email) {
+      res.status(401).json({ error: 'invalid or missing bearer token' });
+      return;
+    }
+    const body = (req.body ?? {}) as { mode?: unknown; code?: unknown; adminEmail?: unknown };
+    const mode = body.mode;
+    const email = claims.email.toLowerCase();
+
+    ensureInviteTables();
+
+    if (mode === 'solo') {
+      logEvent(claims.id, 'auth.onboarding.developer', 'mode=solo');
+      res.json({ ok: true, mode: 'solo' });
+      return;
+    }
+
+    if (mode === 'invite-code') {
+      const code = typeof body.code === 'string' ? body.code.trim().toUpperCase() : '';
+      if (!code) {
+        res.status(400).json({ error: 'code is required' });
+        return;
+      }
+      const row = db.prepare(
+        `SELECT id, org_id, uses_remaining, expires_at FROM org_invite_codes WHERE code = ?`
+      ).get(code) as { id: number; org_id: string; uses_remaining: number; expires_at: string | null } | undefined;
+      if (!row) {
+        res.status(404).json({ error: 'Invite code not found' });
+        return;
+      }
+      if (row.uses_remaining <= 0) {
+        res.status(410).json({ error: 'Invite code exhausted' });
+        return;
+      }
+      if (row.expires_at && new Date(row.expires_at).getTime() < Date.now()) {
+        res.status(410).json({ error: 'Invite code expired' });
+        return;
+      }
+      ensureMembership(row.org_id, email, '', 'developer');
+      db.prepare(`UPDATE org_invite_codes SET uses_remaining = uses_remaining - 1 WHERE id = ?`).run(row.id);
+      const token = mintJwt({
+        id: claims.id,
+        username: claims.username || '',
+        email: claims.email,
+        role: claims.role || 'user',
+        orgId: row.org_id,
+        isOriginalDevs: false,
+      });
+      logEvent(claims.id, 'auth.onboarding.developer', `mode=invite-code orgId=${row.org_id} code=${code}`);
+      res.json({
+        token,
+        user: {
+          id: claims.id,
+          username: claims.username,
+          email: claims.email,
+          role: claims.role || 'user',
+          orgId: row.org_id,
+          isOriginalDevs: false,
+        },
+        mode: 'invite-code',
+      });
+      return;
+    }
+
+    if (mode === 'request-by-email') {
+      const adminEmail = typeof body.adminEmail === 'string' ? body.adminEmail.trim().toLowerCase() : '';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail)) {
+        res.status(400).json({ error: 'valid adminEmail is required' });
+        return;
+      }
+      // Find an admin membership for that email.
+      const target = db.prepare(
+        `SELECT org_id FROM org_memberships WHERE lower(email) = lower(?) AND role = 'admin' LIMIT 1`
+      ).get(adminEmail) as { org_id: string } | undefined;
+      if (!target) {
+        res.status(404).json({ error: 'No admin found for that email. Double-check spelling.' });
+        return;
+      }
+      db.prepare(
+        `INSERT OR IGNORE INTO org_join_requests (org_id, requester_email, requester_user_id, requester_name, status)
+         VALUES (?, ?, ?, ?, 'pending')`
+      ).run(target.org_id, email, claims.id, claims.username || null);
+      logEvent(claims.id, 'auth.onboarding.developer', `mode=request orgId=${target.org_id} adminEmail=${adminEmail}`);
+      res.json({ pending: true, mode: 'request-by-email' });
+      return;
+    }
+
+    res.status(400).json({ error: "mode must be 'solo' | 'invite-code' | 'request-by-email'" });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// POST /auth/invite-code/create — admin generates a 6-char invite code.
+router.post('/invite-code/create', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.orgId) {
+      res.status(401).json({ error: 'invalid token or no org' });
+      return;
+    }
+    if (!isUserAdminOfOrg(claims.id, claims.orgId)) {
+      res.status(403).json({ error: 'must be an admin of the org' });
+      return;
+    }
+    ensureInviteTables();
+    let code = '';
+    for (let attempt = 0; attempt < 10; attempt++) {
+      code = generateInviteCode();
+      const exists = db.prepare(`SELECT 1 FROM org_invite_codes WHERE code = ?`).get(code);
+      if (!exists) break;
+    }
+    const expires = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
+    db.prepare(
+      `INSERT INTO org_invite_codes (org_id, code, created_by, uses_remaining, expires_at)
+       VALUES (?, ?, ?, 10, ?)`
+    ).run(claims.orgId, code, claims.id, expires);
+    logEvent(claims.id, 'auth.invite-code.create', `orgId=${claims.orgId} code=${code}`);
+    res.json({ code, expiresAt: expires, usesRemaining: 10 });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/invite-code/list', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.orgId || !isUserAdminOfOrg(claims.id, claims.orgId)) {
+      res.status(403).json({ error: 'must be an admin of the org' });
+      return;
+    }
+    ensureInviteTables();
+    const rows = db.prepare(
+      `SELECT id, code, uses_remaining, expires_at, created_at
+       FROM org_invite_codes
+       WHERE org_id = ?
+       ORDER BY created_at DESC`
+    ).all(claims.orgId);
+    res.json({ codes: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/join-request/list', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.orgId || !isUserAdminOfOrg(claims.id, claims.orgId)) {
+      res.status(403).json({ error: 'must be an admin of the org' });
+      return;
+    }
+    ensureInviteTables();
+    const rows = db.prepare(
+      `SELECT id, requester_email, requester_name, status, created_at, decided_at
+       FROM org_join_requests
+       WHERE org_id = ?
+       ORDER BY (status = 'pending') DESC, created_at DESC`
+    ).all(claims.orgId);
+    res.json({ requests: rows });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/join-request/accept', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.orgId || !isUserAdminOfOrg(claims.id, claims.orgId)) {
+      res.status(403).json({ error: 'must be an admin of the org' });
+      return;
+    }
+    const body = (req.body ?? {}) as { requestId?: unknown };
+    const requestId = Number(body.requestId);
+    if (!Number.isFinite(requestId)) {
+      res.status(400).json({ error: 'requestId required' });
+      return;
+    }
+    ensureInviteTables();
+    const row = db.prepare(
+      `SELECT requester_email, status FROM org_join_requests WHERE id = ? AND org_id = ?`
+    ).get(requestId, claims.orgId) as { requester_email: string; status: string } | undefined;
+    if (!row) {
+      res.status(404).json({ error: 'request not found' });
+      return;
+    }
+    if (row.status !== 'pending') {
+      res.status(409).json({ error: `already ${row.status}` });
+      return;
+    }
+    ensureMembership(claims.orgId, row.requester_email, '', 'developer');
+    db.prepare(
+      `UPDATE org_join_requests SET status = 'accepted', decided_by = ?, decided_at = datetime('now') WHERE id = ?`
+    ).run(claims.id, requestId);
+    logEvent(claims.id, 'auth.join-request.accept', `requestId=${requestId} email=${row.requester_email}`);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/join-request/reject', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const claims = verifyBearer(req);
+    if (!claims?.id || !claims.orgId || !isUserAdminOfOrg(claims.id, claims.orgId)) {
+      res.status(403).json({ error: 'must be an admin of the org' });
+      return;
+    }
+    const body = (req.body ?? {}) as { requestId?: unknown };
+    const requestId = Number(body.requestId);
+    if (!Number.isFinite(requestId)) {
+      res.status(400).json({ error: 'requestId required' });
+      return;
+    }
+    ensureInviteTables();
+    db.prepare(
+      `UPDATE org_join_requests SET status = 'rejected', decided_by = ?, decided_at = datetime('now')
+       WHERE id = ? AND org_id = ? AND status = 'pending'`
+    ).run(claims.id, requestId, claims.orgId);
+    logEvent(claims.id, 'auth.join-request.reject', `requestId=${requestId}`);
+    res.json({ ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Lightweight readiness probe so the FE can ask "is google sign-in
 // available right now?" before rendering the button. Returns false

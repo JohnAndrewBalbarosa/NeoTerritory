@@ -6578,6 +6578,89 @@ body[data-surface] {
     grid-template-columns: 1fr 1fr;
   }
 }
+@media (min-width: 1080px) {
+  .nt-auth-choose__grid--three {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+.nt-auth-choose__card-eyebrow {
+  display: block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--nt-mkt-text-mute, var(--nt-mkt-text-soft));
+  margin-bottom: 0.1rem;
+}
+.nt-auth-choose__card[data-highlight="pm"] {
+  border-left: 3px solid var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-auth-choose__card[data-highlight="new"] {
+  border-left: 3px solid oklch(78% 0.18 60);
+}
+
+/* Onboarding wizard */
+.nt-onboarding-shell {
+  max-width: 720px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+  display: grid;
+  gap: 1.5rem;
+}
+.nt-onboarding-form {
+  display: grid;
+  gap: 1.1rem;
+  padding: 1.4rem 1.4rem 1.2rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 16px;
+  background: var(--nt-bento-tile-bg, rgba(13, 18, 25, 0.65));
+}
+.nt-onboarding-field {
+  display: grid;
+  gap: 0.4rem;
+}
+.nt-onboarding-field > span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-onboarding-field input,
+.nt-onboarding-field textarea {
+  padding: 0.7rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid var(--nt-mkt-line);
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--nt-mkt-text);
+  font: inherit;
+  font-size: 0.95rem;
+}
+.nt-onboarding-field input:focus,
+.nt-onboarding-field textarea:focus {
+  outline: 2px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  outline-offset: 1px;
+}
+.nt-onboarding-hint {
+  color: var(--nt-mkt-text-mute, var(--nt-mkt-text-soft));
+  font-size: 0.82rem;
+}
+.nt-onboarding-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+.auth-error {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  border: 1px solid rgba(248, 113, 113, 0.28);
+  background: rgba(248, 113, 113, 0.08);
+  color: var(--red, #f87171);
+  font-size: 0.88rem;
+}
 .nt-auth-choose__card {
   display: grid;
   gap: 0.75rem;
