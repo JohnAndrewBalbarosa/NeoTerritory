@@ -44,9 +44,9 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
   {
     id: 'tester',
     eyebrow: 'Guest',
-    title: 'Claim a tester seat',
+    title: 'Try as guest',
     blurb:
-      'Pick one of the open Devcon seats and try the analyzer right now. No account, no saved history — good for a one-time look around.',
+      'Continue as a guest at try the analyzer. No account, no saved history — good for a one-time look around.',
   },
   {
     id: 'student-learning',
@@ -57,10 +57,10 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
   },
   {
     id: 'developer',
-    eyebrow: 'Sign in',
-    title: 'Continue as Developer',
+    eyebrow: 'Account',
+    title: 'Sign in or create account',
     blurb:
-      'Sign in with Google. Your analysis runs and learning progress are saved to your account so you can come back later.',
+      "Sign in with Google. We'll ask sa next page kung PM ka, developer, o new user — tapos saved na ang runs at history mo.",
   },
 ];
 
@@ -121,9 +121,15 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
       return;
     }
     if (card.id === 'developer') {
+      // Role-neutral entry: the modal no longer pre-picks developer.
+      // /auth/choose now shows the three-card role picker (New user /
+      // PM / Developer) so the user makes the decision there. The
+      // sessionStorage stash gets overwritten by GoogleCallback's
+      // data.entryFlow after exchange so it's safe to leave intact for
+      // back-compat with anything still reading the old key.
       try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* ignore */ }
       onClose();
-      navigate('/developer/login');
+      navigate('/auth/choose');
       return;
     }
   }
@@ -185,9 +191,9 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
         {view === 'seatClaim' && (
           <>
             <header className="nt-tryit__head">
-              <p className="nt-tryit__eyebrow">Tester guest</p>
+              <p className="nt-tryit__eyebrow">Guest seat</p>
               <h2 id="tryit-title" className="nt-tryit__title">
-                Pick an open seat
+                Claim an open guest seat
               </h2>
               <button
                 type="button"

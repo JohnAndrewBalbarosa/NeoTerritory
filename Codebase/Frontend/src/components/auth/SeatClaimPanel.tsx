@@ -10,8 +10,19 @@ import {
 import { User } from '../../types/api';
 
 // Extracted seat-claim grid from the now-deleted LoginOverlay. Used inline
-// inside the homepage TryItChooser so the Tester (Guest) flow lives in one
-// modal step instead of bouncing to a dedicated /login surface.
+// inside the homepage TryItChooser so the Guest flow lives in one modal
+// step instead of bouncing to a dedicated /login surface. Internal account
+// usernames remain `devcon{N}` for backend compatibility but the UI
+// displays them as "Guest seat #{N}" via displayGuestLabel().
+
+// Convert the internal devcon{N} username into a user-facing label so
+// public visitors never see the literal "devcon" string. Falls back to
+// the raw value if the pattern doesn't match.
+function displayGuestLabel(username: string): string {
+  const m = /^devcon(\d+)$/i.exec(username);
+  if (m) return `Guest seat #${m[1]}`;
+  return username;
+}
 
 interface SeatClaimPanelProps {
   // Called after a successful claim so the parent popup can close itself
@@ -37,7 +48,7 @@ export default function SeatClaimPanel({ onClaimed, onBack }: SeatClaimPanelProp
       setAccounts(data.accounts);
       setAccountsError('');
     } catch (err) {
-      setAccountsError(err instanceof Error ? err.message : 'Failed to load testers');
+      setAccountsError(err instanceof Error ? err.message : 'Failed to load guest seats');
     } finally {
       setAccountsLoaded(true);
     }
@@ -61,7 +72,7 @@ export default function SeatClaimPanel({ onClaimed, onBack }: SeatClaimPanelProp
       setAccounts(fresh.accounts);
       const live = fresh.accounts.find(a => a.username === account.username);
       if (live?.claimed) {
-        setError('That tester seat is currently in use. Pick a different one.');
+        setError('That guest seat is currently in use. Pick a different one.');
         return;
       }
       const { token, user } = await claimSeat(account.username);
@@ -85,8 +96,8 @@ export default function SeatClaimPanel({ onClaimed, onBack }: SeatClaimPanelProp
   return (
     <section className="nt-seat-claim" aria-label="Available session seats">
       <header className="nt-seat-claim__head">
-        <p className="nt-tryit__eyebrow">Tester guest seat</p>
-        <h3 className="nt-tryit__title">Claim your session seat</h3>
+        <p className="nt-tryit__eyebrow">Guest seat</p>
+        <h3 className="nt-tryit__title">Claim your guest seat</h3>
         <p className="nt-tryit__lede">
           Each seat is a shared environment for trying the analyzer. Pick an open one to continue —
           no account, no saved history.
@@ -96,7 +107,7 @@ export default function SeatClaimPanel({ onClaimed, onBack }: SeatClaimPanelProp
       {accountsError && <p className="login-error">{accountsError}</p>}
       {accountsLoaded && !accountsError && accounts.length === 0 && (
         <p className="login-hint">
-          No tester seats are available right now. Contact an administrator.
+          No guest seats are available right now. Contact an administrator.
         </p>
       )}
 
@@ -113,9 +124,11 @@ export default function SeatClaimPanel({ onClaimed, onBack }: SeatClaimPanelProp
                 className="tester-chip tester-tile"
                 data-claimed={isClaimed ? 'true' : undefined}
                 disabled={isClaiming || isClaimed}
-                title={isClaimed ? 'Already claimed by another tester' : undefined}
+                title={isClaimed ? 'Already claimed by another guest' : undefined}
                 aria-label={
-                  isClaimed ? `${acc.username} is already in use` : `Claim seat ${acc.username}`
+                  isClaimed
+                    ? `${displayGuestLabel(acc.username)} is already in use`
+                    : `Claim ${displayGuestLabel(acc.username)}`
                 }
                 onClick={() => void handleClaim(acc)}
               >
@@ -127,7 +140,7 @@ export default function SeatClaimPanel({ onClaimed, onBack }: SeatClaimPanelProp
                   </svg>
                 </span>
                 <span className="tester-seat-name">
-                  {isClaiming ? 'Claiming...' : acc.username}
+                  {isClaiming ? 'Claiming...' : displayGuestLabel(acc.username)}
                 </span>
                 {isClaimed && <span className="tester-chip-sub">in use</span>}
               </button>

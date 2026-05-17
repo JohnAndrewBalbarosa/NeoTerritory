@@ -141,8 +141,12 @@ export default function GoogleCallback() {
           err.status = r.status;
           err.existing = body.existing === false ? false : undefined;
           err.allowed = body.allowed === false ? false : undefined;
+          // The admin tier is hidden from the UI (no /auth/choose admin
+          // card). If a user deep-linked to /admin/login and hit an
+          // error, collapse it into the PM fallback CTA so the recovery
+          // path matches what the chooser actually exposes.
           err.attemptedRole =
-            role === 'admin' ? 'admin' : role === 'pm' ? 'pm' : 'developer';
+            role === 'admin' || role === 'pm' ? 'pm' : 'developer';
           throw err;
         }
         return body as ExchangeResponse;

@@ -1,8 +1,13 @@
 // /auth/choose — Step 1: three-card entry chooser.
 //
-// Admin = original-devs allowlist only (super admin tier).
-// PM    = self-serve org owner (anyone with a Google account).
-// New   = first-timer — onboarding wizard figures out role after OAuth.
+// New user  = first-timer — onboarding wizard figures out role after OAuth.
+// PM        = self-serve org owner (anyone with a Google account). The
+//             original-devs allowlist promotion happens SILENTLY through
+//             this path — if the email is in ORIGINAL_DEV_EMAILS, the
+//             backend binds them to the NeoTerritory org and the
+//             callback routes them to /admin. No separate admin card.
+// Developer = joining an org via invite code / admin-email request, or
+//             solo against the public open-standards catalog.
 //
 // Existing users (who pick any card) get auto-routed to their actual
 // surface by the backend's /exchange endpoint based on their stored
@@ -18,7 +23,7 @@ interface RoleCard {
   body: string;
   cta: string;
   path: string;
-  highlight: 'admin' | 'pm' | 'new';
+  highlight: 'pm' | 'new' | 'developer';
 }
 
 const CARDS: ReadonlyArray<RoleCard> = [
@@ -27,7 +32,7 @@ const CARDS: ReadonlyArray<RoleCard> = [
     eyebrow: 'First time',
     title: "I'm a new user",
     body:
-      "Bago ka pa lang sa CodiNeo. Sign in with Google and we'll ask kung admin ka ba o developer sa onboarding.",
+      "Bago ka pa lang sa CodiNeo. Sign in with Google and we'll ask kung PM ka ba o developer sa onboarding.",
     cta: 'Continue as new user →',
     path: '/new-user/login',
     highlight: 'new',
@@ -37,20 +42,20 @@ const CARDS: ReadonlyArray<RoleCard> = [
     eyebrow: 'Org owner',
     title: "I'm a PM",
     body:
-      "Project manager / admin ng sarili mong organization. Mag-iinvite ka ng developers at mag-manage ng pattern catalogs. Pag bago ka, gagawa kami ng fresh org para sa'yo.",
+      "Project manager ng sarili mong organization. Mag-iinvite ka ng developers at mag-manage ng pattern catalogs. Pag bago ka, gagawa kami ng fresh org para sa'yo.",
     cta: 'Continue as PM →',
     path: '/pm/login',
     highlight: 'pm',
   },
   {
-    testId: 'auth-choose-admin',
-    eyebrow: 'Super admin',
-    title: "I'm an admin",
+    testId: 'auth-choose-developer',
+    eyebrow: 'Team member',
+    title: "I'm a developer",
     body:
-      "Para sa NeoTerritory original-devs lang (Andrew / Miryl / Josephine). Full thesis-grade admin tabs. Iba pang email, redirected sa PM sign-in.",
-    cta: 'Continue as admin →',
-    path: '/admin/login',
-    highlight: 'admin',
+      "Sumali sa existing org gamit ang invite code o admin-email request. May solo path din kung gusto mong gamitin ang public open-standards catalog lang.",
+    cta: 'Continue as developer →',
+    path: '/developer/login',
+    highlight: 'developer',
   },
 ];
 
@@ -67,9 +72,9 @@ export default function AuthChooserPage() {
             How will you use CodiNeo?
           </h1>
           <p className="nt-entry__lede">
-            Pick the role na bagay sa&rsquo;yo. Existing accounts auto-route after
-            Google sign-in &mdash; the pre-OAuth choice is mainly for first-time
-            users.
+            Pick your role. New users go through a quick onboarding; PMs at
+            developers ay deretso sign-in. Existing accounts auto-route after
+            Google &mdash; ang pre-OAuth choice ay para lang sa first-time setup.
           </p>
         </header>
 
