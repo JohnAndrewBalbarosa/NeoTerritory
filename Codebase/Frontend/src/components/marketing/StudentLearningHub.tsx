@@ -302,18 +302,18 @@ const REQUIRED_STEPS: CourseStep[] = [
 ];
 
 function openSampleInStudentStudio(sample: Sample): void {
-  // Per user direction this turn: Student Learning does NOT require
-  // sign-in to read lessons. Sign-in is only required when the learner
-  // wants to try the studio. The studio entry for student-learning
-  // routes through the Developer Google sign-in flow (NOT the tester
-  // picker), so the learner ends up on the same authenticated studio a
-  // developer uses. The prefill stays in sessionStorage and is picked
-  // up after the Google callback lands the user in /studio.
+  // Per user direction: Student Learning does NOT require sign-in to
+  // read lessons. Sign-in is only required when the learner wants to
+  // try the studio. ALL sign-in entries (homepage Try-it, Student
+  // Learning practice button, anywhere) route through the /auth/choose
+  // role chooser so the user always picks PM / Developer / New user
+  // BEFORE Google OAuth — never pre-decided by the surface they came
+  // from. The 'developer' entry-flow stash is left as a hint that the
+  // Google callback uses to skip ConsentGate + Pretest for real-account
+  // users; the chooser still owns the actual role decision.
   stashStudioPrefill(sample);
-  // Stamp the entry-flow so MainLayout treats this as a real-account
-  // user (skips ConsentGate + Pretest) once the Google callback lands.
   try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
-  navigate('/developer/login');
+  navigate('/auth/choose');
 }
 
 // Maps a step index to the sidebar section that should host it. Used
@@ -571,11 +571,11 @@ export default function StudentLearningHub() {
                 variant="primary"
                 onClick={() => {
                   // Same gate as openSampleInStudentStudio: route the
-                  // "Proceed to Studio" click through the Developer
-                  // Google sign-in. Reading lessons stays free; running
-                  // code requires the developer flow.
+                  // "Proceed to Studio" click through /auth/choose so
+                  // the learner picks PM/Developer/New-user explicitly,
+                  // matching every other sign-in entry on the site.
                   try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }
-                  navigate('/developer/login');
+                  navigate('/auth/choose');
                 }}
               >
                 Proceed to Studio

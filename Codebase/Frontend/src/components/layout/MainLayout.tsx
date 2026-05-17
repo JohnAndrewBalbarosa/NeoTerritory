@@ -236,14 +236,13 @@ export default function MainLayout() {
     setReview(null);
   }
 
-  // Admins skip the research-participant gates entirely. Their place is the
-  // /admin dashboard, not the studio. Send them there immediately.
-  useEffect(() => {
-    if (token && user?.role === 'admin' && !window.location.pathname.startsWith('/admin')) {
-      window.location.href = '/admin.html';
-    }
-  }, [token, user]);
-  if (token && user?.role === 'admin') return null;
+  // Admins skip the research-participant gates entirely (ConsentGate +
+  // Pretest), but they MAY visit /studio voluntarily via the "Go to my
+  // studio →" button on the admin topbar. The old behaviour force-
+  // bounced admins back to /admin.html whenever they touched a non-
+  // /admin path; that broke the new admin↔studio toggle. Now admins
+  // who land on /studio just render the studio as a real-account user
+  // (handled by the expected-path block below).
 
   // Real-account entry flow detection. GoogleCallback writes
   // `nt-entry-flow` to sessionStorage as 'developer' or 'student'
@@ -255,7 +254,12 @@ export default function MainLayout() {
   const entryFlow = typeof window !== 'undefined'
     ? window.sessionStorage.getItem('nt-entry-flow')
     : null;
-  const isRealAccountUser = entryFlow === 'developer' || entryFlow === 'student';
+  // Admins are treated like real-account users for the gate logic — they
+  // skip ConsentGate + Pretest the same way developer/student OAuth
+  // sign-ins do. Without this, an admin clicking "Go to my studio"
+  // would land on /consent and feel stuck.
+  const isRealAccountUser =
+    user?.role === 'admin' || entryFlow === 'developer' || entryFlow === 'student';
 
   // Reflect each gate in the URL so the address bar distinguishes consent
   // and pretest from the studio home. replaceState avoids back-button noise.
