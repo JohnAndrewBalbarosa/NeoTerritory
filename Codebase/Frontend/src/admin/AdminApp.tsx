@@ -46,15 +46,30 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'catalogs',   label: 'Catalogs',   icon: IconBeaker }
 ];
 
-// Until Supabase OAuth + org membership wiring lands, the legacy
-// username/password admin is treated as the original-devs admin. Once
-// req.orgMembership flows through useAppStore.user, this flag will be
-// driven by user.orgMembership.org.is_original_devs instead.
-function isOriginalDevsAdmin(user: { username: string; email?: string | null } | null): boolean {
+// Original-devs detection: the JWT now carries an explicit
+// isOriginalDevs flag (set by /auth/google/exchange when the email is
+// in ORIGINAL_DEV_EMAILS). The legacy username/password admin (seeded
+// 'Neoterritory') still passes through the username heuristic so the
+// thesis admin login keeps working without Supabase configured.
+function isOriginalDevsAdmin(
+  user: { username: string; email?: string | null; isOriginalDevs?: boolean } | null,
+): boolean {
   if (!user) return false;
-  // The legacy seeded admin username = "Neoterritory" (see initDb.ts).
+  if (user.isOriginalDevs === true) return true;
   if (user.username && user.username.toLowerCase() === 'neoterritory') return true;
   return false;
+}
+
+// Admin shell access. Accept the legacy users.role='admin' (seeded
+// thesis admin) AND any OAuth user flagged isOriginalDevs (the
+// original-devs allowlist matched). Self-serve admins keep
+// users.role='user' + orgId set — they're deferred until we expand
+// the gate to read JWT orgRole (see plan's "out of scope" note).
+function isAdminAuthorized(
+  user: { role: string; isOriginalDevs?: boolean } | null,
+): boolean {
+  if (!user) return false;
+  return user.role === 'admin' || user.isOriginalDevs === true;
 }
 
 export default function AdminApp() {
@@ -93,7 +108,7 @@ export default function AdminApp() {
   const [loginBusy, setLoginBusy] = useState(false);
 
   useEffect(() => {
-    if (token && user && user.role !== 'admin') {
+    if (token && user && !isAdminAuthorized(user)) {
       setLoginError('That account is not an admin. Sign in with an admin account.');
       clearAuth();
     }
@@ -119,7 +134,7 @@ export default function AdminApp() {
     }
   }
 
-  if (!token || !user || user.role !== 'admin') {
+  if (!token || !user || !isAdminAuthorized(user)) {
     return (
       <div className="admin-shell admin-shell--login">
         <AuroraBackground variant="warm" className="admin-aurora" />

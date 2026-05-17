@@ -1,21 +1,45 @@
-// /auth/choose — unified entry surface for sign-in AND sign-up via
-// Supabase Google OAuth. One primary button:
-//   "Continue with Google" → /auth/callback with role='unspecified'
+// /auth/choose — Step 1 of the sign-in flow. Pick a role; the next
+// page asks "new account or existing" and kicks off Google OAuth.
 //
-// Post-OAuth the backend reports promptRoleChoice for brand-new users
-// or returning users without a stored role. GoogleCallback then mounts
-// RoleChooserModal, the user picks "I'm a PM/admin" or "I'm a developer",
-// and the backend commits the chosen role via /auth/google/finalize-role.
-//
-// Existing users (with a stored membership) skip the prompt and route
-// straight to their surface.
-//
-// Power-user shortcut: small secondary links below the main button let
-// returning users skip the prompt by going to /admin/login or
-// /developer/login directly — same OAuth flow, pre-tagged intent.
+// Why pre-OAuth role picking: the old single-button flow returned a
+// post-OAuth RoleChooserModal for new users, which felt like "sign in
+// twice". Users want intent visible up front. Now: role → new/existing
+// → OAuth → auto-route. No prompts after Google.
 
 import { navigate } from '../../logic/router';
-import GoogleSignInButton from './GoogleSignInButton';
+
+interface RoleCard {
+  testId: string;
+  title: string;
+  body: string;
+  cta: string;
+  path: string;
+  highlight: 'admin' | 'developer';
+}
+
+const CARDS: ReadonlyArray<RoleCard> = [
+  {
+    testId: 'auth-choose-developer',
+    title: "I'm a developer",
+    body:
+      "Run analyses, see your saved history, and (if you have an invite) join your team's organization. " +
+      "Otherwise you can use the public open-standards pattern catalog.",
+    cta: 'Continue as developer →',
+    path: '/developer/login',
+    highlight: 'developer',
+  },
+  {
+    testId: 'auth-choose-admin',
+    title: "I'm a PM / admin",
+    body:
+      "Manage an organization, invite developers, upload pattern catalogs. " +
+      "If your email is in the original-devs team, you land sa NeoTerritory admin. " +
+      "Other admins get a self-serve organization.",
+    cta: 'Continue as PM / admin →',
+    path: '/admin/login',
+    highlight: 'admin',
+  },
+];
 
 export default function AuthChooserPage() {
   return (
@@ -27,43 +51,30 @@ export default function AuthChooserPage() {
         <header className="nt-entry__hero">
           <p className="nt-section-eyebrow">Sign in or create account</p>
           <h1 id="auth-choose-heading" className="nt-entry__title">
-            Continue to CodiNeo
+            How will you use CodiNeo?
           </h1>
           <p className="nt-entry__lede">
-            One button, Google sign-in via Supabase. New here? We&rsquo;ll ask
-            once kung admin/PM ka ba o developer after sign-in.
+            Pick the role na bagay sa&rsquo;yo. Sa next step, sasabihin mo kung
+            existing account o bago, tapos Google sign-in na lang.
           </p>
         </header>
 
-        <div className="nt-auth-choose__primary">
-          <GoogleSignInButton role="unspecified" redirectAfter="/" />
+        <div className="nt-auth-choose__grid">
+          {CARDS.map((card) => (
+            <button
+              key={card.testId}
+              type="button"
+              className="nt-auth-choose__card"
+              data-highlight={card.highlight}
+              data-testid={card.testId}
+              onClick={() => navigate(card.path)}
+            >
+              <span className="nt-auth-choose__card-title">{card.title}</span>
+              <span className="nt-auth-choose__card-body">{card.body}</span>
+              <span className="nt-auth-choose__card-cta">{card.cta}</span>
+            </button>
+          ))}
         </div>
-
-        <details className="nt-auth-choose__shortcuts">
-          <summary>I already know my role — go direct</summary>
-          <p className="nt-auth-choose__hint">
-            Tinago dahil unified flow ang default. Use these only if you want
-            to skip the role prompt for a returning account.
-          </p>
-          <div className="nt-auth-choose__shortcut-row">
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={() => navigate('/admin/login')}
-              data-testid="auth-choose-admin-shortcut"
-            >
-              Sign in as PM / admin →
-            </button>
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={() => navigate('/developer/login')}
-              data-testid="auth-choose-developer-shortcut"
-            >
-              Sign in as developer →
-            </button>
-          </div>
-        </details>
 
         <footer className="nt-signin-foot nt-auth-choose__foot">
           <button type="button" className="ghost-btn" onClick={() => navigate('/')}>

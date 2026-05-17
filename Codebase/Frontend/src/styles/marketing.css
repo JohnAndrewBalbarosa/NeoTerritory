@@ -6656,100 +6656,79 @@ body[data-surface] {
   margin-top: 0.4rem;
 }
 
-/* RoleChooserModal — shown post-OAuth for brand-new users */
-.nt-role-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1.25rem;
-}
-.nt-role-modal__backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(4, 8, 14, 0.7);
-  backdrop-filter: blur(8px);
-}
-.nt-role-modal__panel {
-  position: relative;
-  z-index: 1;
-  max-width: 820px;
-  width: 100%;
-  background: var(--nt-bento-tile-bg, #0d1219);
-  border: 1px solid var(--nt-mkt-line, rgba(255, 255, 255, 0.1));
-  border-radius: 20px;
-  padding: 1.6rem 1.6rem 1.4rem;
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.55);
-  display: grid;
-  gap: 1rem;
-}
-.nt-role-modal__title {
-  margin: 0;
-  font-size: clamp(1.4rem, 1.1rem + 1vw, 1.9rem);
-  color: var(--nt-mkt-text);
-}
-.nt-role-modal__lede {
-  margin: 0;
-  color: var(--nt-mkt-text-soft);
-  font-size: 0.96rem;
-  line-height: 1.55;
-}
-.nt-role-modal__grid {
-  display: grid;
-  gap: 0.9rem;
-  grid-template-columns: 1fr;
-}
-@media (min-width: 720px) {
-  .nt-role-modal__grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-.nt-role-modal__card {
-  display: grid;
-  gap: 0.55rem;
-  text-align: left;
-  padding: 1.2rem 1.2rem 1.1rem;
-  border-radius: 16px;
-  border: 1px solid var(--nt-mkt-line);
-  background: rgba(255, 255, 255, 0.025);
-  color: var(--nt-mkt-text);
-  font: inherit;
+/* Sign-in page: role picker cards (Step 1) — buttons so the whole
+   card is clickable, matches the look of the old role-chooser modal. */
+.nt-auth-choose__card {
   cursor: pointer;
-  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
+  text-align: left;
+  font: inherit;
+  color: var(--nt-mkt-text);
+  background: var(--nt-bento-tile-bg, rgba(13, 18, 25, 0.65));
 }
-.nt-role-modal__card:hover:not(:disabled),
-.nt-role-modal__card:focus-visible {
-  transform: translateY(-2px);
-  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
-  background: rgba(0, 209, 216, 0.05);
-}
-.nt-role-modal__card[data-highlight="admin"] {
-  border-left: 3px solid var(--devcon-lime, oklch(85% 0.2 130));
-}
-.nt-role-modal__card[data-highlight="developer"] {
-  border-left: 3px solid var(--devcon-cyan, var(--nt-mkt-accent));
-}
-.nt-role-modal__card:disabled {
-  opacity: 0.55;
-  cursor: progress;
-}
-.nt-role-modal__card-title {
+.nt-auth-choose__card-title {
+  display: block;
   font-size: 1.15rem;
   font-weight: 700;
 }
-.nt-role-modal__card-body {
+.nt-auth-choose__card-body {
+  display: block;
   color: var(--nt-mkt-text-soft);
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   line-height: 1.55;
 }
-.nt-role-modal__card-cta {
+.nt-auth-choose__card-cta {
+  display: block;
   margin-top: 0.4rem;
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.78rem;
   letter-spacing: 0.05em;
   color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+
+/* Sign-in page: new/existing toggle (Step 2) */
+.nt-signin-intent {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  margin: 0.4rem 0 0.8rem;
+  display: grid;
+  gap: 0.55rem;
+}
+.nt-signin-intent__legend {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-soft);
+  padding: 0 0.3rem;
+}
+.nt-signin-intent__option {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 0.4rem;
+  border-radius: 8px;
+  transition: background 120ms ease;
+}
+.nt-signin-intent__option:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+.nt-signin-intent__option input[type="radio"] {
+  margin-top: 0.25rem;
+  accent-color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-signin-intent__label {
+  display: grid;
+  gap: 0.1rem;
+  font-size: 0.92rem;
+}
+.nt-signin-intent__label strong {
+  color: var(--nt-mkt-text);
+}
+.nt-signin-intent__label span {
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.86rem;
 }
 .nt-link-btn {
   background: none;

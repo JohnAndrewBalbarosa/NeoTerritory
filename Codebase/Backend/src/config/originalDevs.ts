@@ -10,7 +10,7 @@
 // preferred Google addresses.
 
 export const ORIGINAL_DEV_EMAILS: ReadonlyArray<string> = [
-  'jbalabrosa15@gmail.com',
+  'jbalbarosa15@gmail.com',
   // TODO: replace with Miryl's confirmed Google account.
   'miryl-email-tbd@placeholder.invalid',
   // TODO: replace with Josephine Santander's confirmed Google account.

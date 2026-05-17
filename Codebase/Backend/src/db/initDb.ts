@@ -210,6 +210,26 @@ export function initDb(): void {
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_org_catalogs_org ON org_pattern_catalogs(org_id)`).run();
 
+  // ── Original-devs email reconciliation ─────────────────────────────────
+  // If Andrew (or any future original-dev) signed in BEFORE their email
+  // entered the ORIGINAL_DEV_EMAILS allowlist, resolveAdminOrg would
+  // have spun up a self-serve org for them. Re-bind those memberships
+  // back to the NeoTerritory org so they don't keep two parallel admin
+  // orgs. Idempotent: targets only admin rows whose org_id is NOT the
+  // NeoTerritory id. Wrapped in try/catch because dev envs may not
+  // have the table yet (it's lazily created in googleAuth.ts).
+  try {
+    db.prepare(`UPDATE org_memberships
+      SET org_id = '00000000-0000-0000-0000-000000000001'
+      WHERE lower(email) = lower(?)
+        AND role = 'admin'
+        AND org_id != '00000000-0000-0000-0000-000000000001'`)
+      .run('jbalbarosa15@gmail.com');
+  } catch {
+    // org_memberships table not yet present — first Google sign-in
+    // will create it; nothing to reconcile.
+  }
+
   // ── ON DELETE CASCADE migration ────────────────────────────────────────
   // SQLite can't ALTER an existing foreign key to add CASCADE — we have
   // to recreate the table. We do this once, idempotently, by checking

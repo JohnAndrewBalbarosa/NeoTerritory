@@ -1,22 +1,31 @@
 import { useEffect, useState } from 'react';
 import { navigate, replaceUrl } from '../../logic/router';
-import RoleChooserModal from './RoleChooserModal';
+import { useAppStore } from '../../store/appState';
+import type { User } from '../../types/api';
 
-const TOKEN_KEY = 'nt_token';
+// Persisted via the appState store's setAuth so BOTH nt_token and
+// nt_user end up in localStorage (the admin SPA reads nt_user at boot
+// — without it, AdminApp's gate `if (!user)` falls through to the
+// legacy login form and the user gets prompted to sign in a second
+// time).
+
+interface ExchangeUser {
+  id: number;
+  username: string;
+  email: string | null;
+  role: string;
+  orgId?: string | null;
+  isOriginalDevs?: boolean;
+}
 
 interface ExchangeResponse {
   token: string;
-  user: {
-    id: number;
-    username: string;
-    email: string | null;
-    role: string;
-    orgId?: string | null;
-    isOriginalDevs?: boolean;
-  };
+  user: ExchangeUser;
   entryFlow: 'developer' | 'student' | 'admin' | 'unspecified';
   orgCreated?: boolean;
   wasNew?: boolean;
+  // Legacy field from the old single-button flow; ignored after the
+  // pre-OAuth role + new/existing redesign.
   promptRoleChoice?: boolean;
 }
 
@@ -32,33 +41,38 @@ function landAt(next: string): void {
   replaceUrl(next);
 }
 
+function exchangeUserToStored(user: ExchangeUser): User {
+  return {
+    id: user.id,
+    username: user.username,
+    email: user.email || '',
+    role: user.role === 'admin' ? 'admin' : 'user',
+    orgId: user.orgId ?? null,
+    isOriginalDevs: user.isOriginalDevs === true,
+  };
+}
+
 export default function GoogleCallback() {
-  const [phase, setPhase] = useState<'verifying' | 'success' | 'rolePrompt' | 'error'>('verifying');
+  const setAuth = useAppStore((s) => s.setAuth);
+  const [phase, setPhase] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [tokenForPrompt, setTokenForPrompt] = useState<string | null>(null);
-  const [pendingNext, setPendingNext] = useState<string>('/studio');
+  const [errorCanSignUp, setErrorCanSignUp] = useState<{ role: 'admin' | 'developer' } | null>(null);
 
   useEffect(() => {
     const url = new URL(window.location.href);
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const accessToken = fragment.get('access_token');
     const queryRole = url.searchParams.get('role');
-    const role: 'developer' | 'student' | 'admin' | 'unspecified' =
+    const queryIntent = url.searchParams.get('intent');
+    const role: 'developer' | 'student' | 'admin' =
       queryRole === 'student'
         ? 'student'
         : queryRole === 'admin' || queryRole === 'pm'
           ? 'admin'
-          : queryRole === 'unspecified' || queryRole === '' || queryRole === null
-            ? 'unspecified'
-            : 'developer';
+          : 'developer';
+    const intent: 'existing' | 'new' = queryIntent === 'new' ? 'new' : 'existing';
     const defaultNext =
-      role === 'student'
-        ? '/student-learning'
-        : role === 'admin'
-          ? '/admin'
-          : role === 'unspecified'
-            ? '/' // will be overridden after the role prompt resolves
-            : '/studio';
+      role === 'student' ? '/student-learning' : role === 'admin' ? '/admin' : '/studio';
     const next = url.searchParams.get('next') || defaultNext;
 
     if (!accessToken) {
@@ -70,62 +84,57 @@ export default function GoogleCallback() {
     fetch('/auth/google/exchange', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({ accessToken, role }),
+      body: JSON.stringify({ accessToken, role, intent }),
     })
       .then(async (r) => {
+        const body = await r.json().catch(() => ({}));
         if (!r.ok) {
-          const body = await r.json().catch(() => ({}));
-          throw new Error(body.error || `Exchange failed (${r.status})`);
+          const err = new Error(body.error || `Exchange failed (${r.status})`) as Error & {
+            status?: number;
+            existing?: boolean;
+            attemptedRole?: 'admin' | 'developer';
+          };
+          err.status = r.status;
+          err.existing = body.existing === false ? false : undefined;
+          err.attemptedRole = role === 'admin' ? 'admin' : 'developer';
+          throw err;
         }
-        return r.json() as Promise<ExchangeResponse>;
+        return body as ExchangeResponse;
       })
       .then((data) => {
-        localStorage.setItem(TOKEN_KEY, data.token);
+        // Persist BOTH token AND user — admin SPA reads nt_user at boot.
+        setAuth(data.token, exchangeUserToStored(data.user));
         try {
           window.sessionStorage.setItem('nt-entry-flow', data.entryFlow);
         } catch {
           /* ignore */
         }
-        // Brand-new (or role-unset) unified sign-ins → show the role
-        // prompt. The prompt commits via /auth/google/finalize-role and
-        // re-mints the JWT before we route.
-        if (data.promptRoleChoice) {
-          setTokenForPrompt(data.token);
-          setPendingNext(next);
-          setPhase('rolePrompt');
-          return;
-        }
-        // Returning user OR explicit role tag (admin/developer/student) →
-        // resolve next from the response so admin lands sa /admin even
-        // if the URL param said something else.
-        const resolvedNext =
-          data.user.orgId && data.entryFlow === 'admin'
-            ? '/admin'
-            : next;
         setPhase('success');
-        landAt(resolvedNext);
+        // Auto-route. Original-devs and admin-role users go to the admin
+        // bundle (full-page nav). Everyone else lands in the SPA.
+        const goesToAdmin =
+          data.user.isOriginalDevs === true ||
+          data.user.role === 'admin' ||
+          (data.entryFlow === 'admin' && data.user.orgId);
+        landAt(goesToAdmin ? '/admin' : next);
       })
-      .catch((err: Error) => {
+      .catch((err: Error & { status?: number; existing?: boolean; attemptedRole?: 'admin' | 'developer' }) => {
         setPhase('error');
         setErrorMsg(err.message || 'Sign-in failed.');
+        // 404 + existing=false → backend told us there is no account
+        // matching the chosen role. Offer a one-click switch to "new".
+        if (err.status === 404 && err.existing === false && err.attemptedRole) {
+          setErrorCanSignUp({ role: err.attemptedRole });
+        }
       });
-  }, []);
+  }, [setAuth]);
 
-  function onRoleChosen(result: {
-    token: string;
-    role: 'admin' | 'developer';
-    orgId: string | null;
-    isOriginalDevs: boolean;
-  }): void {
-    localStorage.setItem(TOKEN_KEY, result.token);
-    try {
-      window.sessionStorage.setItem('nt-entry-flow', result.role);
-    } catch {
-      /* ignore */
-    }
-    setPhase('success');
-    const next = result.role === 'admin' ? '/admin' : '/studio';
-    landAt(next);
+  function signUpInstead(): void {
+    if (!errorCanSignUp) return;
+    const target = errorCanSignUp.role === 'admin' ? '/admin/login' : '/developer/login';
+    // intent=new will be the default on the login page once the user
+    // toggles it; for now drop a query hint the login page can honor.
+    navigate(`${target}?intent=new`);
   }
 
   return (
@@ -143,14 +152,6 @@ export default function GoogleCallback() {
                 </p>
               </>
             )}
-            {phase === 'rolePrompt' && (
-              <>
-                <h1 className="nt-entry__title nt-signin__title">Almost done</h1>
-                <p className="nt-entry__lede">
-                  Pick how you&rsquo;ll use CodiNeo to finish setting up your account.
-                </p>
-              </>
-            )}
             {phase === 'success' && (
               <>
                 <h1 className="nt-entry__title nt-signin__title">Signed in</h1>
@@ -160,28 +161,29 @@ export default function GoogleCallback() {
             {phase === 'error' && (
               <>
                 <h1 className="nt-entry__title nt-signin__title">Sign-in failed</h1>
-                <p className="nt-entry__lede" role="alert">{errorMsg}</p>
+                <p className="nt-entry__lede" role="alert">
+                  {errorMsg}
+                </p>
               </>
             )}
           </header>
           {phase === 'error' && (
             <footer className="nt-signin-foot">
+              {errorCanSignUp && (
+                <button
+                  type="button"
+                  className="primary-btn"
+                  onClick={signUpInstead}
+                >
+                  Sign up as {errorCanSignUp.role} instead →
+                </button>
+              )}
               <button type="button" className="ghost-btn" onClick={() => navigate('/')}>
                 Back to homepage
               </button>
             </footer>
           )}
         </div>
-        {/* Suppress unused-state warning for pendingNext when not in rolePrompt. */}
-        {phase === 'rolePrompt' && tokenForPrompt && (
-          <RoleChooserModal
-            bearerToken={tokenForPrompt}
-            onChosen={(r) => {
-              void pendingNext; // keep ref so lint doesn't flag the state
-              onRoleChosen(r);
-            }}
-          />
-        )}
       </section>
     </main>
   );

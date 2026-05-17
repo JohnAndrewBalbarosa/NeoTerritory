@@ -325,7 +325,7 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
       return;
     }
 
-    const body = (req.body || {}) as { accessToken?: unknown; role?: unknown };
+    const body = (req.body || {}) as { accessToken?: unknown; role?: unknown; intent?: unknown };
     const accessToken = typeof body.accessToken === 'string' ? body.accessToken : '';
     const roleRaw = typeof body.role === 'string' ? body.role : '';
     let role: SignInRole;
@@ -333,6 +333,8 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     else if (roleRaw === 'admin' || roleRaw === 'pm') role = 'admin';
     else if (roleRaw === 'unspecified' || roleRaw === '') role = 'unspecified';
     else role = 'developer';
+    const intent: 'existing' | 'new' =
+      typeof body.intent === 'string' && body.intent === 'new' ? 'new' : 'existing';
     if (!accessToken) {
       res.status(400).json({ error: 'accessToken required' });
       return;
@@ -344,36 +346,58 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
       return;
     }
 
+    const probeEmail = (supaUser.email || '').toLowerCase();
+
+    // Intent='existing' contract: the user clicked "I already have an
+    // account." If we cannot find them, we refuse to silently create
+    // and instead let the front-end offer a "sign up instead" CTA. We
+    // do this BEFORE upserting the local user so no orphan row is
+    // created for a failed existing-login attempt.
+    if (intent === 'existing' && (role === 'admin' || role === 'developer')) {
+      const priorMembership = existingMembershipRole(probeEmail);
+      const isOriginalDevs = isOriginalDevEmail(probeEmail);
+      // Admin path: existing only if there is an admin membership OR
+      // the email is in the original-devs allowlist (seed exists).
+      if (role === 'admin' && priorMembership !== 'admin' && !isOriginalDevs) {
+        res.status(404).json({
+          error: 'No admin account exists for this email. Sign up first.',
+          existing: false,
+        });
+        return;
+      }
+      // Developer path: existing only if there is a developer
+      // membership OR a prior local users row with this email.
+      if (role === 'developer' && priorMembership !== 'developer') {
+        const localExists = probeEmail
+          ? (db.prepare(`SELECT 1 FROM users WHERE lower(email) = ? AND role = 'user' LIMIT 1`)
+              .get(probeEmail) as { 1?: number } | undefined)
+          : undefined;
+        if (!localExists) {
+          res.status(404).json({
+            error: 'No developer account exists for this email. Sign up first.',
+            existing: false,
+          });
+          return;
+        }
+      }
+    }
+
     const { row: localUser, wasNew } = upsertLocalUser(supaUser, role);
 
-    // Org binding only fires when intent is explicit (admin). For
-    // 'unspecified' (the unified single-button flow), we skip org
-    // creation entirely; the front-end shows RoleChooserModal on
-    // wasNew=true and the user's chosen role is committed via
-    // /auth/google/finalize-role. For 'developer' / 'student' we also
-    // skip org creation — those flows are membership-less by design
-    // until an invite is redeemed.
+    // Org binding fires for admin intent. For developer/student, no
+    // org is attached until the user redeems an invite (future work).
+    // 'unspecified' is unreachable from the current FE but kept for
+    // backwards compatibility (no-op binding).
     const email = (localUser.email || '').toLowerCase();
     let binding: OrgBinding = { orgId: null, isOriginalDevs: false, createdNewOrg: false };
-    let promptRoleChoice = false;
     if (role === 'admin') {
       binding = resolveAdminOrg(email, localUser.username || '', supaUser.id);
-    } else if (role === 'unspecified') {
-      // Returning users with an existing membership keep their prior
-      // role and skip the modal. Brand-new users (no membership row)
-      // get prompted.
-      const priorRole = existingMembershipRole(email);
-      if (priorRole === 'admin') {
-        binding = resolveAdminOrg(email, localUser.username || '', supaUser.id);
-      } else if (priorRole === 'developer') {
-        // Membership already exists; no prompt needed.
-        promptRoleChoice = false;
-      } else {
-        // No prior membership. Always prompt for brand-new users; for
-        // returning users with a local row but no membership yet, also
-        // prompt so they can pick a role even if they've been seen
-        // before in the legacy guest flow.
-        promptRoleChoice = true;
+      // Original-devs (the thesis team) get users.role='admin' so the
+      // legacy requireAdmin gate opens for them too. Self-serve admins
+      // keep users.role='user' and rely on org_memberships.role.
+      if (binding.isOriginalDevs && localUser.role !== 'admin') {
+        db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(localUser.id);
+        localUser.role = 'admin';
       }
     }
 
@@ -392,7 +416,7 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     logEvent(
       localUser.id,
       'auth.google.login',
-      `role=${role} username=${localUser.username} orgId=${binding.orgId ?? '-'} newOrg=${binding.createdNewOrg} wasNew=${wasNew} promptRole=${promptRoleChoice}`
+      `role=${role} intent=${intent} username=${localUser.username} orgId=${binding.orgId ?? '-'} newOrg=${binding.createdNewOrg} wasNew=${wasNew}`
     );
 
     res.json({
@@ -407,98 +431,17 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
       },
       entryFlow: role,
       orgCreated: binding.createdNewOrg,
-      wasNew,
-      promptRoleChoice
+      wasNew
     });
   } catch (err) {
     next(err);
   }
 });
 
-// Commit a chosen role from the first-time RoleChooserModal. Called
-// post-/exchange when the unified single-button sign-in returned
-// promptRoleChoice=true. Verifies the bearer JWT (signed by /exchange
-// just now), runs the admin org logic if role='admin', and re-mints
-// the JWT with the resolved org membership so the front-end can route
-// to the right surface.
-router.post('/google/finalize-role', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-  try {
-    const authHeader = req.headers.authorization || '';
-    const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
-    if (!bearer) {
-      res.status(401).json({ error: 'missing bearer token' });
-      return;
-    }
-    let claims: { id?: number; username?: string; email?: string | null; role?: string } = {};
-    try {
-      claims = jwt.verify(bearer, process.env.JWT_SECRET as string) as typeof claims;
-    } catch {
-      res.status(401).json({ error: 'invalid bearer token' });
-      return;
-    }
-    const body = (req.body ?? {}) as { role?: unknown };
-    const chosen = typeof body.role === 'string' ? body.role : '';
-    if (chosen !== 'admin' && chosen !== 'developer') {
-      res.status(400).json({ error: "role must be 'admin' or 'developer'" });
-      return;
-    }
-    if (!claims.id || !claims.email) {
-      res.status(400).json({ error: 'token payload missing id/email' });
-      return;
-    }
-    const email = claims.email.toLowerCase();
-    let binding: OrgBinding = { orgId: null, isOriginalDevs: false, createdNewOrg: false };
-    let newLocalRole = claims.role || 'user';
-    if (chosen === 'admin') {
-      // Reuse the supabase_user_id we don't actually need here — pass
-      // an empty string; ensureMembership only patches when present.
-      binding = resolveAdminOrg(email, claims.username || '', '');
-      // Original-devs get the legacy users.role='admin' upgrade so the
-      // requireAdmin middleware opens for them. Self-serve admins keep
-      // users.role='user' and rely on org_memberships.role='admin'.
-      if (binding.isOriginalDevs) {
-        db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(claims.id);
-        newLocalRole = 'admin';
-      }
-    }
-    // Developer choice: just record the intent; org_memberships is
-    // populated later when they redeem an invite (future work).
-    logEvent(
-      claims.id,
-      'auth.google.finalize-role',
-      `chose=${chosen} orgId=${binding.orgId ?? '-'} newOrg=${binding.createdNewOrg}`
-    );
-
-    const token = jwt.sign(
-      {
-        id: claims.id,
-        username: claims.username,
-        email: claims.email,
-        role: newLocalRole,
-        orgId: binding.orgId,
-        isOriginalDevs: binding.isOriginalDevs,
-      },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '30d' }
-    );
-
-    res.json({
-      token,
-      user: {
-        id: claims.id,
-        username: claims.username,
-        email: claims.email,
-        role: newLocalRole,
-        orgId: binding.orgId,
-        isOriginalDevs: binding.isOriginalDevs,
-      },
-      chosenRole: chosen,
-      orgCreated: binding.createdNewOrg
-    });
-  } catch (err) {
-    next(err);
-  }
-});
+// (The /auth/google/finalize-role endpoint was removed when the
+// sign-in UX moved role selection BEFORE OAuth — there is no longer
+// a post-OAuth role prompt to commit. /exchange now does the binding
+// in one round-trip based on the role+intent passed up front.)
 
 // Lightweight readiness probe so the FE can ask "is google sign-in
 // available right now?" before rendering the button. Returns false

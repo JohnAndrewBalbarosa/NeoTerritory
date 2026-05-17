@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { navigate } from '../../logic/router';
 import GoogleSignInButton from './GoogleSignInButton';
 
-/**
- * Standalone Google sign-in page used by both /developer/login and
- * /student-learning/login. Reads the role from the path so we don't
- * need a prop.
- */
+// Step 2 of the sign-in flow. Role is already decided by /auth/choose
+// (or the user came in via a direct URL). This page asks the
+// new/existing question — the answer determines whether the backend
+// will look up an existing membership (existing) or set one up (new).
+
 export default function GoogleSignInPage() {
   const path = window.location.pathname;
+  const url = new URL(window.location.href);
   const role: 'developer' | 'student' | 'admin' =
     path.startsWith('/student-learning/login')
       ? 'student'
@@ -26,10 +28,18 @@ export default function GoogleSignInPage() {
     role === 'student'
       ? 'Your progress through the learning path is tied to your Google account.'
       : role === 'admin'
-        ? 'Project managers / admins sign in to manage their organization and pattern catalogs. If your email is the original-devs team, you land sa NeoTerritory admin; kung hindi, automatic self-serve org gets created for you.'
-        : 'Documentation runs and saved analyses are tied to your Google account.';
+        ? 'PMs / admins manage an organization at pattern catalogs. Original-devs land sa NeoTerritory admin; iba ay automatic self-serve org.'
+        : 'Your analysis runs at saved history are tied to your Google account.';
   const testId =
     role === 'admin' ? 'admin-login' : role === 'student' ? 'student-login' : 'developer-login';
+
+  // Default to "existing" — most clicks are returning users. The
+  // "Sign up instead" CTA on the callback error page sends ?intent=new
+  // so users who get bounced for "no account" land here with the
+  // correct radio already pre-selected.
+  const initialIntent: 'existing' | 'new' =
+    url.searchParams.get('intent') === 'new' ? 'new' : 'existing';
+  const [intent, setIntent] = useState<'existing' | 'new'>(initialIntent);
 
   return (
     <main className="nt-entry" id="main" data-testid={testId}>
@@ -42,9 +52,47 @@ export default function GoogleSignInPage() {
             </h1>
             <p className="nt-entry__lede">{lede}</p>
           </header>
+
+          {role !== 'student' && (
+            <fieldset className="nt-signin-intent" data-testid={`${testId}-intent`}>
+              <legend className="nt-signin-intent__legend">Bago ba o existing account?</legend>
+              <label className="nt-signin-intent__option">
+                <input
+                  type="radio"
+                  name="intent"
+                  value="existing"
+                  checked={intent === 'existing'}
+                  onChange={() => setIntent('existing')}
+                />
+                <span className="nt-signin-intent__label">
+                  <strong>I already have an account</strong>
+                  <span>Sign in and route me sa{role === 'admin' ? ' /admin' : ' /studio'}.</span>
+                </span>
+              </label>
+              <label className="nt-signin-intent__option">
+                <input
+                  type="radio"
+                  name="intent"
+                  value="new"
+                  checked={intent === 'new'}
+                  onChange={() => setIntent('new')}
+                />
+                <span className="nt-signin-intent__label">
+                  <strong>I&rsquo;m new here</strong>
+                  <span>
+                    {role === 'admin'
+                      ? 'Set up my organization on first sign-in.'
+                      : 'Create a developer account so I can save runs.'}
+                  </span>
+                </span>
+              </label>
+            </fieldset>
+          )}
+
           <div className="nt-signin-action">
-            <GoogleSignInButton role={role} redirectAfter={next} />
+            <GoogleSignInButton role={role} intent={intent} redirectAfter={next} />
           </div>
+
           <footer className="nt-signin-foot">
             <button
               type="button"

@@ -3,6 +3,12 @@ export interface User {
   username: string;
   email: string;
   role: 'admin' | 'user';
+  // Populated by /auth/google/exchange when the user is signed in via
+  // Supabase OAuth with admin intent. Both fields are optional so the
+  // legacy username/password path (which doesn't know about org
+  // memberships) keeps working.
+  orgId?: string | null;
+  isOriginalDevs?: boolean;
 }
 
 export interface DocumentationTarget {

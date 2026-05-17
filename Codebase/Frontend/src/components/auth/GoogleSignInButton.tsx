@@ -10,14 +10,17 @@ interface Props {
   // Persisted into the OAuth redirect_to URL so the callback handler
   // can mint a JWT with the right entry flow + land the user on the
   // right post-login page.
-  //   'unspecified' — unified sign-in / sign-up flow. New users get
-  //     prompted for role via RoleChooserModal in GoogleCallback.
-  //   'admin' — pre-tagged admin intent (e.g. /admin/login direct entry).
+  //   'admin' — pre-tagged admin intent (/admin/login).
   //   'developer' / 'student' — pre-tagged dev/student intent.
+  //   'unspecified' — legacy single-button path; kept for the type
+  //     signature but no longer used by any caller.
   role: 'developer' | 'student' | 'admin' | 'unspecified';
-  // Where to send the user once Google sign-in succeeds. Defaults are
-  // wired per-role; 'unspecified' lands on the callback page which
-  // mounts the role prompt before final routing.
+  // 'existing' = user expects to find an account; backend will 404 if
+  //   no matching membership exists. 'new' = backend creates whatever
+  //   the role needs (org for admin, plain user for developer). Default
+  //   is 'existing' since most clicks are returning users.
+  intent?: 'existing' | 'new';
+  // Where to send the user once Google sign-in succeeds.
   redirectAfter?: string;
 }
 
@@ -30,7 +33,7 @@ interface Props {
  * configured (locally or on the deployed backend). Avoids a dead
  * button in environments where Supabase auth hasn't been provisioned.
  */
-export default function GoogleSignInButton({ role, redirectAfter }: Props) {
+export default function GoogleSignInButton({ role, intent, redirectAfter }: Props) {
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,6 +60,7 @@ export default function GoogleSignInButton({ role, redirectAfter }: Props) {
     const callback = new URL('/auth/callback', window.location.origin);
     callback.searchParams.set('role', role);
     callback.searchParams.set('next', after);
+    callback.searchParams.set('intent', intent ?? 'existing');
     const oauthUrl = `${status.supabaseUrl.replace(/\/+$/, '')}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(callback.toString())}`;
     // Full-page redirect — Supabase + Google handle the round-trip and
     // bounce back to /auth/callback with the session in the URL fragment.

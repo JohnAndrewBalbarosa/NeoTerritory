@@ -16,7 +16,7 @@ on conflict (slug) do nothing;
 
 insert into public.org_memberships (org_id, email, role)
 values
-  ('00000000-0000-0000-0000-000000000001', 'jbalabrosa15@gmail.com', 'admin'),
+  ('00000000-0000-0000-0000-000000000001', 'jbalbarosa15@gmail.com', 'admin'),
   ('00000000-0000-0000-0000-000000000001', 'miryl-email-tbd@placeholder.invalid', 'admin'),
   ('00000000-0000-0000-0000-000000000001', 'josephine-santander-email-tbd@placeholder.invalid', 'admin')
 on conflict (org_id, email) do nothing;
