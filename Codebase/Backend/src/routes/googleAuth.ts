@@ -194,12 +194,24 @@ function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UpsertResult
 
   // Reuse a local row when one already exists for this email — keeps
   // saved runs / reviews bound to the same numeric user_id across
-  // sessions. Original-devs (Andrew/Miryl/Josephine) reuse their row
-  // even if it was seeded as admin. Other roles match non-admin rows
-  // only so we never accidentally collide with a Devcon seat or the
-  // seeded legacy admin.
+  // sessions.
+  //
+  // Match rules:
+  //   - Original-devs allowlist emails (Andrew/Miryl/Josephine) match
+  //     ANY existing row, including role='admin'. This is important:
+  //     after the first OAuth sign-in, /exchange bumps their local
+  //     users.role to 'admin' (so the legacy requireAdmin gate opens).
+  //     Subsequent sign-ins, even via role='pm' or role='new' intent,
+  //     must STILL match that same row instead of trying to INSERT a
+  //     duplicate (which fails on the email UNIQUE constraint).
+  //   - Explicit role='admin' sign-in also matches any row.
+  //   - Everything else excludes role='admin' rows so a fresh OAuth
+  //     sign-in can never accidentally collide with the seeded
+  //     `Neoterritory` legacy admin (`admin@neoterritory.local`) or a
+  //     Devcon seat row (`devcon{N}@nodelivery.local`).
   if (email) {
-    const matchClause = role === 'admin' && isOriginalDevEmail(email)
+    const matchAnyRole = isOriginalDevEmail(email) || role === 'admin';
+    const matchClause = matchAnyRole
       ? `WHERE lower(email) = ? LIMIT 1`
       : `WHERE lower(email) = ? AND role NOT IN ('admin') LIMIT 1`;
     const existing = db.prepare(
