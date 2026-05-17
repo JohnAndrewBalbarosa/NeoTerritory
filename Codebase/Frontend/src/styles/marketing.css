@@ -6039,6 +6039,23 @@ body[data-surface] {
   font-size: 0.9rem;
   line-height: 1.55;
 }
+.nt-about__dev-links {
+  margin: 0.4rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+}
+.nt-about__dev-links a {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  text-decoration: none;
+  border-bottom: 1px solid currentColor;
+}
+.nt-about__dev-links a:hover,
+.nt-about__dev-links a:focus-visible {
+  color: var(--nt-mkt-text);
+}
 .nt-about__partner {
   background: linear-gradient(160deg, rgba(0,209,216,0.06), rgba(123,94,167,0.04));
   border: 1px solid rgba(0, 209, 216, 0.25);
@@ -6457,4 +6474,100 @@ body[data-surface] {
   padding: 0 4px;
   border-radius: 3px;
   font-size: 0.84rem;
+}
+
+/* /docs popup-style overview surface */
+.nt-docs-modal {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh 1.25rem 4rem;
+}
+.nt-docs-modal__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 8, 14, 0.62);
+  backdrop-filter: blur(6px);
+  border: 0;
+  cursor: pointer;
+  z-index: 0;
+}
+.nt-docs-modal__card {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  width: 100%;
+  background: var(--nt-bento-tile-bg, #0d1219);
+  border: 1px solid var(--nt-mkt-line, rgba(255, 255, 255, 0.1));
+  border-radius: 18px;
+  padding: 1.6rem 1.6rem 1.4rem;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+  display: grid;
+  gap: 1rem;
+}
+.nt-docs-modal__head {
+  display: grid;
+  gap: 0.25rem;
+  position: relative;
+  padding-right: 2.2rem;
+}
+.nt-docs-modal__title {
+  margin: 0;
+  font-size: clamp(1.4rem, 1.1rem + 0.9vw, 1.85rem);
+  color: var(--nt-mkt-text);
+}
+.nt-docs-modal__close {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.25rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  border: 1px solid var(--nt-mkt-line);
+  background: transparent;
+  color: var(--nt-mkt-text);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.nt-docs-modal__close:hover,
+.nt-docs-modal__close:focus-visible {
+  background: rgba(255, 255, 255, 0.05);
+}
+.nt-docs-modal__foot {
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid var(--nt-mkt-line);
+  padding-top: 1rem;
+}
+.nt-docs-modal__cta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.86rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.7rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  background: transparent;
+  cursor: pointer;
+}
+.nt-docs-modal__cta:hover,
+.nt-docs-modal__cta:focus-visible {
+  background: rgba(0, 209, 216, 0.08);
+}
+
+/* Full-docs code block (reused inside DocsFullTechnical) */
+.nt-docs__code {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.55;
+  overflow-x: auto;
+  color: var(--nt-mkt-text);
 }

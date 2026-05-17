@@ -25,6 +25,7 @@ export type Surface =
   | 'patternsLearnModule'
   | 'tour'
   | 'docs'
+  | 'docsFull'
   | 'notFound';
 
 // Paths retired by the auth-surface consolidation. They render the 404
@@ -67,7 +68,10 @@ export function pathToSurface(path: string): Surface {
   if (path.startsWith('/patterns/learn/')) return 'patternsLearnModule';
   if (path.startsWith('/patterns/')) return 'patternDetail';
   if (path === '/tour' || path.startsWith('/tour/')) return 'tour';
-  // /research is the previous name; redirect-by-match so old bookmarks still land.
+  // /docs is now a popup-style overview; /docs/full is the public full
+  // technical documentation surface. /research is the previous name and
+  // redirects to /docs so old bookmarks still land.
+  if (path === '/docs/full' || path.startsWith('/docs/full/')) return 'docsFull';
   if (
     path === '/docs' ||
     path.startsWith('/docs/') ||

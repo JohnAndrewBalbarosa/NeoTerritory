@@ -157,3 +157,38 @@ Order each prompt's tail as: `git add` → `git commit` → `git push`. If the p
 
 If a prompt produced ZERO file changes (pure question/discussion), no commit or push is required. If a prompt produced changes that fail type-check or build, fix forward in the same commit chain rather than leaving the tree dirty across prompts — then commit and push the fix.
 
+## CI/CD Routes Manifest (Hard Rule)
+
+The file `tests/routes.manifest.json` is the single source of truth for CI/CD's
+route coverage. Every public route the website serves MUST have a row
+there with: path, auth tier (`public|guest|developer|admin`), expected status,
+and a stable `data-testid` selector on the rendered page. Admin routes are
+listed too, but the auth-gated spec lives separately (login fixtures required);
+the public manifest gate skips `auth: "admin"` rows automatically.
+
+When ANY of the following changes in a prompt, the manifest MUST be updated in
+the SAME commit:
+
+- A new route is added to `Codebase/Frontend/src/logic/router.ts`
+- An existing route's path is renamed, moved, or removed
+- A page's top-level structure changes such that its `data-testid` anchor moves
+- An auth tier shifts (e.g., a public route becomes admin-only)
+
+Rendered pages MUST carry stable `data-testid` anchors that the manifest
+references (`studio-shell`, `about-team-grid`, `docs-modal-overview`,
+`docs-full-shell`, `patterns-family-grid`, `admin-tab-bar`, …). Do not delete
+or rename a `data-testid` without updating the manifest.
+
+The Playwright spec at `Codebase/Frontend/playwright/tests/manifest-driven.spec.ts`
+reads the manifest and runs the smoke; the workflow at
+`.github/workflows/routes-manifest.yml` invokes it. A route change without a
+manifest update WILL cause a deterministic test failure with a clear "expected
+selector X on /Y" message — that's the intended canary. Never "fix" the failure
+by deleting the manifest row; fix the page or the route.
+
+When adding a brand-new route or page in this session, the AI should:
+
+1. Add the route to `router.ts` and the page component with its `data-testid`.
+2. Add the matching row to `tests/routes.manifest.json` in the same commit.
+3. State in the prompt summary which row was added.
+

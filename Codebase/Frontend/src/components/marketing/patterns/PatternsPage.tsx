@@ -24,7 +24,7 @@ export default function PatternsPage() {
   })).filter((g) => g.items.length > 0);
 
   return (
-    <main className="nt-patterns" id="main">
+    <main className="nt-patterns" id="main" data-testid="patterns-family-grid">
       <header className="nt-patterns__head">
         <div className="nt-patterns__head-text">
           <p className="nt-section-eyebrow">Pattern catalog</p>

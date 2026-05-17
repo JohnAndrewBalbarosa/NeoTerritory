@@ -14,6 +14,7 @@ import LogsView from './components/LogsView';
 import SurveyStats from './components/SurveyStats';
 import ReviewsPanel from './components/ReviewsPanel';
 import AiConfigPanel from './components/AiConfigPanel';
+import CatalogsTab from './components/CatalogsTab';
 import { markAdminRefresh } from '../api/client';
 import {
   IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
@@ -21,16 +22,39 @@ import {
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs';
 
-const TABS: Array<{ id: AdminTab; label: string; icon: ComponentType<IconProps> }> = [
+interface TabDef {
+  id: AdminTab;
+  label: string;
+  icon: ComponentType<IconProps>;
+  // When true, the tab is only shown for the original-devs org (thesis
+  // team). Other admins do not see Complexity / Reviews because those
+  // surfaces are anchored on the thesis study cohort, not arbitrary
+  // user orgs.
+  originalDevsOnly?: boolean;
+}
+
+const TABS: ReadonlyArray<TabDef> = [
   { id: 'runs',       label: 'Runs',       icon: IconLayers },
-  { id: 'complexity', label: 'Complexity', icon: IconBeaker },
+  { id: 'complexity', label: 'Complexity', icon: IconBeaker,      originalDevsOnly: true },
   { id: 'users',      label: 'Users',      icon: IconShield },
-  { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare },
+  { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare, originalDevsOnly: true },
   { id: 'ai',         label: 'AI',         icon: IconCode },
-  { id: 'logs',       label: 'Logs',       icon: IconClipboard }
+  { id: 'logs',       label: 'Logs',       icon: IconClipboard },
+  { id: 'catalogs',   label: 'Catalogs',   icon: IconBeaker }
 ];
+
+// Until Supabase OAuth + org membership wiring lands, the legacy
+// username/password admin is treated as the original-devs admin. Once
+// req.orgMembership flows through useAppStore.user, this flag will be
+// driven by user.orgMembership.org.is_original_devs instead.
+function isOriginalDevsAdmin(user: { username: string; email?: string | null } | null): boolean {
+  if (!user) return false;
+  // The legacy seeded admin username = "Neoterritory" (see initDb.ts).
+  if (user.username && user.username.toLowerCase() === 'neoterritory') return true;
+  return false;
+}
 
 export default function AdminApp() {
   const { token, user, setAuth, clearAuth, status, msState, msLabel, dockerState, dockerLabel, aiConfigured } = useAppStore();
@@ -220,8 +244,8 @@ export default function AdminApp() {
         </div>
       </header>
 
-      <nav className="admin-tab-bar" aria-label="Admin sections">
-        {TABS.map((tab, index) => {
+      <nav className="admin-tab-bar" aria-label="Admin sections" data-testid="admin-tab-bar">
+        {TABS.filter((t) => !t.originalDevsOnly || isOriginalDevsAdmin(user)).map((tab, index) => {
           const Icon = tab.icon;
           return (
             <button
@@ -302,6 +326,9 @@ export default function AdminApp() {
         </div>
         <div hidden={activeTab !== 'logs'}>
           <LogsView />
+        </div>
+        <div hidden={activeTab !== 'catalogs'}>
+          <CatalogsTab />
         </div>
       </main>
     </div>

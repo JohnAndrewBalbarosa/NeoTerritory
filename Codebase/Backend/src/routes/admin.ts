@@ -1621,4 +1621,103 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
   } catch (err) { next(err); }
 });
 
+// ── Pattern catalogs (per-org, dud state) ──────────────────────────────────
+// Admins upload JSON catalogs that will eventually flow into the C++
+// parser. For now the rows are stored and listed in the admin Catalogs
+// tab; is_active_in_parser stays 0 so the runtime ignores them. Once
+// the microservice learns to consume admin-uploaded catalogs, this flag
+// becomes the routing switch.
+//
+// org_id source-of-truth (until Supabase OAuth wires real org membership):
+//   - Legacy admin (username/password) is treated as the NeoTerritory
+//     original-devs org, hardcoded id below. New admins that come in via
+//     Supabase OAuth in a follow-up prompt will have their resolved
+//     org_id passed through req.orgMembership instead.
+const LEGACY_ORIGINAL_DEVS_ORG_ID = '00000000-0000-0000-0000-000000000001';
+
+function resolveOrgId(req: Request): string {
+  const fromMembership = (req as Request & { orgMembership?: { orgId?: string } })
+    .orgMembership?.orgId;
+  if (fromMembership) return fromMembership;
+  return LEGACY_ORIGINAL_DEVS_ORG_ID;
+}
+
+router.get('/catalogs', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = resolveOrgId(req);
+    const rows = db.prepare(
+      `SELECT id, org_id, name, is_active_in_parser, uploaded_by_user_id, created_at
+       FROM org_pattern_catalogs
+       WHERE org_id = ?
+       ORDER BY created_at DESC, id DESC`
+    ).all(orgId);
+    res.json({ catalogs: rows });
+  } catch (err) { next(err); }
+});
+
+router.post('/catalogs', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const body = (req.body ?? {}) as { name?: unknown; jsonPayload?: unknown };
+    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    if (!name) {
+      res.status(400).json({ error: 'name is required' });
+      return;
+    }
+    if (body.jsonPayload === undefined || body.jsonPayload === null) {
+      res.status(400).json({ error: 'jsonPayload is required' });
+      return;
+    }
+    let serialized: string;
+    try {
+      serialized = typeof body.jsonPayload === 'string'
+        ? JSON.stringify(JSON.parse(body.jsonPayload))
+        : JSON.stringify(body.jsonPayload);
+    } catch {
+      res.status(400).json({ error: 'jsonPayload must be valid JSON' });
+      return;
+    }
+    if (serialized.length > 1_000_000) {
+      res.status(413).json({ error: 'jsonPayload exceeds 1MB cap' });
+      return;
+    }
+    const orgId = resolveOrgId(req);
+    const info = db.prepare(
+      `INSERT INTO org_pattern_catalogs (org_id, name, json_payload, uploaded_by_user_id)
+       VALUES (?, ?, ?, ?)`
+    ).run(orgId, name, serialized, req.user?.id ?? null);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'catalog.upload',
+      targetKind: 'org_pattern_catalog',
+      targetId: String(info.lastInsertRowid),
+      detail: JSON.stringify({ name, orgId, bytes: serialized.length }),
+    });
+    res.status(201).json({ id: info.lastInsertRowid });
+  } catch (err) { next(err); }
+});
+
+router.delete('/catalogs/:id', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'invalid id' });
+      return;
+    }
+    const orgId = resolveOrgId(req);
+    const info = db.prepare(
+      `DELETE FROM org_pattern_catalogs WHERE id = ? AND org_id = ?`
+    ).run(id, orgId);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'catalog.delete',
+      targetKind: 'org_pattern_catalog',
+      targetId: String(id),
+      detail: JSON.stringify({ orgId, removed: info.changes }),
+    });
+    res.json({ removed: info.changes });
+  } catch (err) { next(err); }
+});
+
 export default router;

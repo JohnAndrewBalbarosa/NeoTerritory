@@ -4,7 +4,7 @@
     {
       "slug": "andrew",
       "name": "John Andrew Balbarosa",
-      "role": "Lead engineer · algorithm + microservice",
+      "role": "Lead Developer · algorithm + microservice",
       "bio": "Computer Science at FEU Tech. Owns the C++ pipeline — parsing, hashing, pattern dispatch, evidence emission. Believes in deterministic structural detection before any AI step. Spends his off-hours on CTF and certification grinds because he likes proof, not vibes.",
       "photoPath": "team/andrew/portrait.jpg",
       "skills": [
@@ -50,7 +50,7 @@
     {
       "slug": "miryl",
       "name": "Miryl de Leon",
-      "role": "Research · pattern catalog + study design",
+      "role": "Project Manager · pattern catalog + study design",
       "bio": "Computer Science at FEU Tech. On the team she keeps the pattern catalog honest and runs the study-design loop — what gets measured, how readers actually behave, where the evidence lives.",
       "photoPath": "team/miryl/01.jpg",
       "skills": [
@@ -65,6 +65,22 @@
         "facebook": "",
         "website": ""
       }
+    },
+    {
+      "slug": "josephine",
+      "name": "Josephine Santander",
+      "role": "Documentation",
+      "bio": "Bio TBD — Josephine handles the thesis documentation and technical writing for the CodiNeo team. Full details to be added once she sends her materials.",
+      "photoPath": "",
+      "skills": [],
+      "highlights": [],
+      "links": {
+        "github": "",
+        "linkedin": "",
+        "facebook": "",
+        "website": ""
+      },
+      "isPlaceholder": true
     }
   ]
 }

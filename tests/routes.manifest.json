@@ -1,0 +1,52 @@
+{
+  "$schema": "neoterritory.routes.v1",
+  "description": "Single source of truth for CI/CD route coverage. Each row pins a path, expected HTTP status, and a stable data-testid selector that must exist on the rendered page. If any route changes (rename, add, remove, auth-tier shift, testid move), this file MUST be updated in the same commit. See CLAUDE.md > 'CI/CD Routes Manifest' for the hard rule.",
+  "baseUrl": "http://127.0.0.1:3001",
+  "routes": [
+    {
+      "path": "/",
+      "name": "studio-landing",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"studio-shell\"]",
+      "expectText": ["CodiNeo"]
+    },
+    {
+      "path": "/about",
+      "name": "about-page",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"about-team-grid\"]",
+      "expectText": ["John Andrew Balbarosa", "Miryl", "Josephine"]
+    },
+    {
+      "path": "/docs",
+      "name": "docs-modal-overview",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"docs-modal-overview\"]"
+    },
+    {
+      "path": "/docs/full",
+      "name": "docs-full-technical",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"docs-full-shell\"]",
+      "expectText": ["Method", "Trade-offs", "Bibliography"]
+    },
+    {
+      "path": "/patterns",
+      "name": "patterns-catalog",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"patterns-family-grid\"]"
+    },
+    {
+      "path": "/admin",
+      "name": "admin-dashboard",
+      "auth": "admin",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"admin-tab-bar\"]"
+    }
+  ]
+}

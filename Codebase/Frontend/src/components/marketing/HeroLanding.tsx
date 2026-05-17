@@ -170,7 +170,7 @@ export default function HeroLanding() {
   }, []);
 
   return (
-    <main className="nt-home" id="main">
+    <main className="nt-home" id="main" data-testid="studio-shell">
       <section className="nt-home__above" aria-labelledby="home-heading">
         <p className="nt-home__eyebrow">Design pattern tutor</p>
         <h1 id="home-heading" className="nt-home__title">

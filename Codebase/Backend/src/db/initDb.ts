@@ -192,6 +192,24 @@ export function initDb(): void {
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_manual_decisions_run ON manual_pattern_decisions(run_id)`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_manual_decisions_user ON manual_pattern_decisions(user_id)`).run();
 
+  // ── org_pattern_catalogs (dud-state local mirror of the Supabase table) ─
+  // Local SQLite mirror that backs the admin Catalogs tab before the full
+  // Supabase OAuth + org model goes live. org_id is stored as TEXT so the
+  // same row maps cleanly to the Supabase UUID once Phase 3's OAuth path
+  // is wired. is_active_in_parser stays 0 until the microservice learns
+  // to consume admin-uploaded catalogs.
+  db.prepare(`CREATE TABLE IF NOT EXISTS org_pattern_catalogs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    json_payload TEXT NOT NULL,
+    is_active_in_parser INTEGER NOT NULL DEFAULT 0,
+    uploaded_by_user_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY(uploaded_by_user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_org_catalogs_org ON org_pattern_catalogs(org_id)`).run();
+
   // ── ON DELETE CASCADE migration ────────────────────────────────────────
   // SQLite can't ALTER an existing foreign key to add CASCADE — we have
   // to recreate the table. We do this once, idempotently, by checking
