@@ -14,6 +14,8 @@ NeoTerritory analyses class-level C++ source code, identifies design-pattern evi
 
 The live site exposes a learner pathway (`/learn`, `/patterns`), a studio pathway (`/student-studio`), and a research / admin surface (`/admin`). The codebase mirrors `Codebase/` 1:1 against a markdown blueprint in `docs/Codebase/` — see `CLAUDE.md` for the docs-as-source-of-truth contract.
 
+> 📘 **Looking for docs?** Read [`DOCS.md`](./DOCS.md) for a one-page map of the `docs/` folder (auth setup, deploy, security, runbooks, research, etc.).
+
 ---
 
 ## Quick start
