@@ -47,6 +47,28 @@
       "auth": "admin",
       "expectStatus": 200,
       "expectSelector": "[data-testid=\"admin-tab-bar\"]"
+    },
+    {
+      "path": "/auth/choose",
+      "name": "auth-chooser",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"auth-choose\"]",
+      "expectText": ["PM", "developer"]
+    },
+    {
+      "path": "/admin/login",
+      "name": "admin-google-login",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"admin-login\"]"
+    },
+    {
+      "path": "/developer/login",
+      "name": "developer-google-login",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"developer-login\"]"
     }
   ]
 }

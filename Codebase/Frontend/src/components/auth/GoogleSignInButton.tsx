@@ -9,10 +9,13 @@ interface GoogleStatus {
 interface Props {
   // Persisted into the OAuth redirect_to URL so the callback handler
   // can mint a JWT with the right entry flow + land the user on the
-  // right post-login page.
-  role: 'developer' | 'student';
-  // Where to send the user once Google sign-in succeeds. Defaults to
-  // /studio for developer and /student-learning for student.
+  // right post-login page. 'admin' lands sa /admin if the email is in
+  // ORIGINAL_DEV_EMAILS or has an existing admin membership; otherwise
+  // the backend self-serves a new org and still lands sa /admin (with
+  // subset tabs).
+  role: 'developer' | 'student' | 'admin';
+  // Where to send the user once Google sign-in succeeds. Defaults are
+  // wired per-role.
   redirectAfter?: string;
 }
 
@@ -41,7 +44,12 @@ export default function GoogleSignInButton({ role, redirectAfter }: Props) {
     if (!status?.configured || !status.supabaseUrl) return;
     setBusy(true);
     setError(null);
-    const after = redirectAfter || (role === 'student' ? '/student-learning' : '/studio');
+    const defaultAfter = role === 'student'
+      ? '/student-learning'
+      : role === 'admin'
+        ? '/admin'
+        : '/studio';
+    const after = redirectAfter || defaultAfter;
     const callback = new URL('/auth/callback', window.location.origin);
     callback.searchParams.set('role', role);
     callback.searchParams.set('next', after);

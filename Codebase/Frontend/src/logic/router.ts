@@ -18,6 +18,7 @@ export type Surface =
   | 'studio'
   | 'googleCallback'
   | 'googleSignIn'
+  | 'authChoose'
   | 'mechanics'
   | 'patterns'
   | 'patternDetail'
@@ -48,7 +49,13 @@ export function pathToSurface(path: string): Surface {
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
   if (path === '/auth/callback') return 'googleCallback';
-  if (path === '/developer/login' || path === '/student-learning/login') return 'googleSignIn';
+  if (path === '/auth/choose' || path === '/auth') return 'authChoose';
+  if (
+    path === '/developer/login' ||
+    path === '/student-learning/login' ||
+    path === '/admin/login'
+  )
+    return 'googleSignIn';
   // /student-learning (legacy) redirects in MarketingShell to /patterns/learn
   // so old bookmarks keep working. The surface stays here just to satisfy
   // any in-flight clients on an old SPA bundle.

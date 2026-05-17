@@ -5,8 +5,16 @@ const TOKEN_KEY = 'nt_token';
 
 interface ExchangeResponse {
   token: string;
-  user: { id: number; username: string; email: string | null; role: string };
-  entryFlow: 'developer' | 'student';
+  user: {
+    id: number;
+    username: string;
+    email: string | null;
+    role: string;
+    orgId?: string | null;
+    isOriginalDevs?: boolean;
+  };
+  entryFlow: 'developer' | 'student' | 'admin';
+  orgCreated?: boolean;
 }
 
 /**
@@ -29,8 +37,15 @@ export default function GoogleCallback() {
     const fragment = new URLSearchParams(window.location.hash.replace(/^#/, ''));
     const accessToken = fragment.get('access_token');
     const queryRole = url.searchParams.get('role');
-    const role: 'developer' | 'student' = queryRole === 'student' ? 'student' : 'developer';
-    const next = url.searchParams.get('next') || (role === 'student' ? '/student-learning' : '/studio');
+    const role: 'developer' | 'student' | 'admin' =
+      queryRole === 'student'
+        ? 'student'
+        : queryRole === 'admin' || queryRole === 'pm'
+          ? 'admin'
+          : 'developer';
+    const defaultNext =
+      role === 'student' ? '/student-learning' : role === 'admin' ? '/admin' : '/studio';
+    const next = url.searchParams.get('next') || defaultNext;
 
     if (!accessToken) {
       setPhase('error');

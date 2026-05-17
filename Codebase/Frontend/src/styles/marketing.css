@@ -6559,6 +6559,80 @@ body[data-surface] {
   background: rgba(0, 209, 216, 0.08);
 }
 
+/* /auth/choose — the explicit two-button role picker */
+.nt-auth-choose-shell {
+  max-width: 920px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 3rem 1.25rem 4rem;
+  display: grid;
+  gap: 1.5rem;
+}
+.nt-auth-choose__grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+@media (min-width: 760px) {
+  .nt-auth-choose__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.nt-auth-choose__card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 1.5rem 1.5rem 1.4rem;
+  border-radius: 18px;
+  border: 1px solid var(--nt-mkt-line, rgba(255, 255, 255, 0.1));
+  background: var(--nt-bento-tile-bg, rgba(13, 18, 25, 0.65));
+  transition: transform 160ms ease, border-color 160ms ease;
+}
+.nt-auth-choose__card:hover {
+  transform: translateY(-2px);
+  border-color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-auth-choose__card[data-highlight="admin"] {
+  border-left: 3px solid var(--devcon-lime, oklch(85% 0.2 130));
+}
+.nt-auth-choose__card[data-highlight="developer"] {
+  border-left: 3px solid var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-auth-choose__card-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 1.05rem + 0.6vw, 1.5rem);
+  color: var(--nt-mkt-text);
+}
+.nt-auth-choose__card-body {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.nt-auth-choose__cta {
+  margin-top: 0.4rem;
+  justify-self: start;
+}
+.nt-auth-choose__foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.nt-auth-choose__hint {
+  margin: 0;
+  color: var(--nt-mkt-text-mute, var(--nt-mkt-text-soft));
+  font-size: 0.85rem;
+}
+.nt-link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  text-decoration: underline;
+  cursor: pointer;
+  font: inherit;
+}
+
 /* Full-docs code block (reused inside DocsFullTechnical) */
 .nt-docs__code {
   background: rgba(0, 0, 0, 0.35);

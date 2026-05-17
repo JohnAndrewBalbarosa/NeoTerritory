@@ -26,6 +26,10 @@ import jwt from 'jsonwebtoken';
 import db from '../db/database';
 import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
+import {
+  isOriginalDevEmail,
+  NEOTERRITORY_ORG_ID,
+} from '../config/originalDevs';
 
 const router = express.Router();
 
@@ -85,7 +89,86 @@ async function verifySupabaseToken(token: string): Promise<SupabaseUser | null> 
 // derived username when email is missing or already in use under a
 // different role. The local row keeps NeoTerritory-side state (saved
 // runs, reviews, surveys) joined to the user.
-function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'): UserRow {
+type SignInRole = 'developer' | 'student' | 'admin';
+
+// Ensures an org_memberships row exists tying this local user to the
+// given org id with the given role. Idempotent — re-running on every
+// login is safe and lets us patch supabase_user_id once it's known.
+function ensureMembership(
+  orgId: string,
+  email: string,
+  supabaseUserId: string,
+  role: 'admin' | 'developer',
+): void {
+  // The SQLite mirror table for memberships lives next to
+  // org_pattern_catalogs. Create-if-missing so dev environments that
+  // never ran the Supabase migrations still work; production reads
+  // from the Supabase tables via the supabase logger.
+  db.prepare(`CREATE TABLE IF NOT EXISTS org_memberships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    supabase_user_id TEXT,
+    email TEXT NOT NULL,
+    role TEXT NOT NULL,
+    joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(org_id, email)
+  )`).run();
+  const lowered = email.toLowerCase();
+  const existing = db.prepare(
+    `SELECT id, supabase_user_id FROM org_memberships WHERE org_id = ? AND email = ?`
+  ).get(orgId, lowered) as { id: number; supabase_user_id: string | null } | undefined;
+  if (existing) {
+    if (!existing.supabase_user_id && supabaseUserId) {
+      db.prepare(`UPDATE org_memberships SET supabase_user_id = ? WHERE id = ?`)
+        .run(supabaseUserId, existing.id);
+    }
+    return;
+  }
+  db.prepare(
+    `INSERT INTO org_memberships (org_id, supabase_user_id, email, role) VALUES (?, ?, ?, ?)`
+  ).run(orgId, supabaseUserId || null, lowered, role);
+  // Mirror to Supabase Cloud best-effort.
+  mirrorRow('org_memberships', { org_id: orgId, email: lowered, role });
+}
+
+// For a brand-new self-serve admin (Google sign-in, NOT in
+// ORIGINAL_DEV_EMAILS, no existing membership), spin up a new
+// organization owned by them. The org slug is derived from their
+// email local-part with a short uid suffix to dodge collisions; the
+// row is added to a local SQLite mirror and best-effort mirrored to
+// the Supabase organizations table.
+function createSelfServeOrg(email: string, displayName: string): string {
+  db.prepare(`CREATE TABLE IF NOT EXISTS organizations (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    slug TEXT NOT NULL UNIQUE,
+    is_original_devs INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run();
+  const local = (email.split('@')[0] || displayName || 'org')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 24) || 'org';
+  let slug = local;
+  let suffix = 0;
+  while (db.prepare(`SELECT 1 FROM organizations WHERE slug = ?`).get(slug)) {
+    suffix += 1;
+    slug = `${local}-${suffix}`;
+    if (suffix > 50) {
+      slug = `${local}-${Math.random().toString(36).slice(2, 6)}`;
+      break;
+    }
+  }
+  // Use a deterministic-looking uuid-ish id so the row id is stable
+  // even before the Supabase mirror runs.
+  const id = `org_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+  const name = displayName ? `${displayName}'s org` : slug;
+  db.prepare(
+    `INSERT INTO organizations (id, name, slug, is_original_devs) VALUES (?, ?, ?, 0)`
+  ).run(id, name, slug);
+  mirrorRow('organizations', { id, name, slug, is_original_devs: false });
+  return id;
+}
+
+function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UserRow {
   const email = (supaUser.email || '').toLowerCase().trim();
   const display = supaUser.user_metadata?.full_name
                || supaUser.user_metadata?.name
@@ -93,13 +176,16 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
 
   // Reuse a local row when one already exists for this email — keeps
   // saved runs / reviews bound to the same numeric user_id across
-  // sessions. Only matches non-tester/non-admin rows so we never
-  // accidentally collide with a Devcon seat or the seeded admin.
+  // sessions. Original-devs (Andrew/Miryl/Josephine) reuse their row
+  // even if it was seeded as admin. Other roles match non-admin rows
+  // only so we never accidentally collide with a Devcon seat or the
+  // seeded legacy admin.
   if (email) {
+    const matchClause = role === 'admin' && isOriginalDevEmail(email)
+      ? `WHERE lower(email) = ? LIMIT 1`
+      : `WHERE lower(email) = ? AND role NOT IN ('admin') LIMIT 1`;
     const existing = db.prepare(
-      `SELECT id, username, email, role, password_hash FROM users
-       WHERE lower(email) = ? AND role NOT IN ('admin')
-       LIMIT 1`
+      `SELECT id, username, email, role, password_hash FROM users ${matchClause}`
     ).get(email) as UserRow | undefined;
     if (existing) {
       // Re-mirror to Supabase Cloud on every login. The Supabase row
@@ -148,17 +234,24 @@ function upsertLocalUser(supaUser: SupabaseUser, role: 'developer' | 'student'):
   // than rejecting the sign-in. The placeholder is non-deliverable so
   // it cannot collide with a real user.
   const safeEmail = email || `oauth_${supaUser.id}@nodelivery.local`;
+  // Admin intent + email in the original-devs allowlist creates an
+  // 'admin' local row. Any other Google sign-in stays 'user'; admin
+  // privileges for self-serve admins are conferred via the
+  // org_memberships row (role='admin' for their own org) not via the
+  // users.role column, so the legacy requireAdmin gate only opens for
+  // the seeded NeoTerritory admins.
+  const localRole = role === 'admin' && isOriginalDevEmail(safeEmail) ? 'admin' : 'user';
   const info = db.prepare(
     `INSERT INTO users (username, email, password_hash, role, created_at)
      VALUES (?, ?, ?, ?, datetime('now'))`
-  ).run(username, safeEmail, placeholderHash, 'user');
+  ).run(username, safeEmail, placeholderHash, localRole);
   const id = Number(info.lastInsertRowid);
 
   // Best-effort entry-flow audit so admin analytics can split developer
   // vs student onboarding without changing the role enum.
-  logEvent(id, 'auth.google.signup', `role=${role} username=${username}`);
-  mirrorRow('users', { id, username, email: safeEmail, role: 'user' });
-  return { id, username, email: safeEmail, role: 'user', password_hash: placeholderHash };
+  logEvent(id, 'auth.google.signup', `role=${role} localRole=${localRole} username=${username}`);
+  mirrorRow('users', { id, username, email: safeEmail, role: localRole });
+  return { id, username, email: safeEmail, role: localRole, password_hash: placeholderHash };
 }
 
 router.post('/google/exchange', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -174,7 +267,10 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     const body = (req.body || {}) as { accessToken?: unknown; role?: unknown };
     const accessToken = typeof body.accessToken === 'string' ? body.accessToken : '';
     const roleRaw = typeof body.role === 'string' ? body.role : '';
-    const role: 'developer' | 'student' = roleRaw === 'student' ? 'student' : 'developer';
+    let role: SignInRole;
+    if (roleRaw === 'student') role = 'student';
+    else if (roleRaw === 'admin' || roleRaw === 'pm') role = 'admin';
+    else role = 'developer';
     if (!accessToken) {
       res.status(400).json({ error: 'accessToken required' });
       return;
@@ -187,12 +283,63 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     }
 
     const localUser = upsertLocalUser(supaUser, role);
+
+    // Org binding: only resolved for admin sign-ins.
+    //   - Original-dev emails → seeded NeoTerritory org as admin.
+    //   - Any other admin sign-in → self-serve: create a new org owned
+    //     by this email, attach an admin membership.
+    //   - Developer sign-ins stay membership-less here; they're
+    //     expected to redeem an invite after first sign-in.
+    let orgId: string | null = null;
+    let isOriginalDevs = false;
+    let createdNewOrg = false;
+    if (role === 'admin') {
+      const email = (localUser.email || '').toLowerCase();
+      if (isOriginalDevEmail(email)) {
+        orgId = NEOTERRITORY_ORG_ID;
+        isOriginalDevs = true;
+        ensureMembership(orgId, email, supaUser.id, 'admin');
+      } else if (email) {
+        // Look for an existing self-serve org for this email first.
+        db.prepare(`CREATE TABLE IF NOT EXISTS org_memberships (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          org_id TEXT NOT NULL,
+          supabase_user_id TEXT,
+          email TEXT NOT NULL,
+          role TEXT NOT NULL,
+          joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+          UNIQUE(org_id, email)
+        )`).run();
+        const existing = db.prepare(
+          `SELECT org_id FROM org_memberships WHERE email = ? AND role = 'admin' LIMIT 1`
+        ).get(email) as { org_id: string } | undefined;
+        if (existing) {
+          orgId = existing.org_id;
+        } else {
+          orgId = createSelfServeOrg(email, localUser.username || '');
+          createdNewOrg = true;
+        }
+        ensureMembership(orgId, email, supaUser.id, 'admin');
+      }
+    }
+
     const token = jwt.sign(
-      { id: localUser.id, username: localUser.username, email: localUser.email, role: localUser.role },
+      {
+        id: localUser.id,
+        username: localUser.username,
+        email: localUser.email,
+        role: localUser.role,
+        orgId,
+        isOriginalDevs,
+      },
       process.env.JWT_SECRET as string,
       { expiresIn: '30d' }
     );
-    logEvent(localUser.id, 'auth.google.login', `role=${role} username=${localUser.username}`);
+    logEvent(
+      localUser.id,
+      'auth.google.login',
+      `role=${role} username=${localUser.username} orgId=${orgId ?? '-'} newOrg=${createdNewOrg}`
+    );
 
     res.json({
       token,
@@ -200,9 +347,12 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
         id: localUser.id,
         username: localUser.username,
         email: localUser.email,
-        role: localUser.role
+        role: localUser.role,
+        orgId,
+        isOriginalDevs,
       },
-      entryFlow: role
+      entryFlow: role,
+      orgCreated: createdNewOrg
     });
   } catch (err) {
     next(err);
