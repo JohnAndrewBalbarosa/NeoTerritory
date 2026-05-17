@@ -192,3 +192,47 @@ When adding a brand-new route or page in this session, the AI should:
 2. Add the matching row to `tests/routes.manifest.json` in the same commit.
 3. State in the prompt summary which row was added.
 
+## CI/CD Sync (Hard Rule)
+
+The routes-manifest rule above is the canonical example. The general principle
+is broader: **whenever a change in this repo can affect what CI tests, the
+matching CI surface MUST be updated in the same commit.** Never let production
+testing drift from production code.
+
+The AI is responsible for spotting the drift and patching the CI surface
+without waiting to be asked. Below is the trigger → CI-surface map. When
+editing in this repo, scan the changes against this list before committing,
+and update everything in the same commit.
+
+### Trigger → CI surface to update
+
+| Change category | If you touch… | …then update |
+|------------------|---------------|----------------|
+| **Public routes** | `Codebase/Frontend/src/logic/router.ts` (add/rename/retire path) OR page component's `data-testid` on the `<main>` shell | `tests/routes.manifest.json` (add/rename/remove row, keep selector pinned) |
+| **Auth tiers** | A route's required role/auth changes (public ↔ guest ↔ developer ↔ admin) | `tests/routes.manifest.json` `auth` field on that row |
+| **AWS post-deploy contract** | `Codebase/Backend/src/routes/*` (analyze, run-tests, health, /auth/*), AnalysisRun JSON shape, microservice binary contract | `scripts/ci-aws-post-deploy-smoke.mjs` (assertions must match) AND its unit tests in `scripts/__tests__/` if the runc-flake matcher or retry policy is involved |
+| **Backend test suite** | New file under `Codebase/Backend/**/*.test.ts` or `*.spec.ts` | Verify the existing `Backend unit tests (vitest)` step in `.github/workflows/ci.yml` picks it up by glob; no edit needed if pattern catches it, but add a comment if the file is unusual |
+| **Microservice build** | `Codebase/Microservice/CMakeLists.txt`, new source under `Codebase/Microservice/Modules/`, or change to `NEOTERRITORY_BIN`/`NEOTERRITORY_CATALOG` env contract | `.github/workflows/ci.yml` (`Build microservice` step and any env vars on `start the studio stack`) AND `.github/workflows/playwright-e2e.yml` (same env block) |
+| **Playwright spec layout** | Add/rename a spec under `Codebase/Frontend/playwright/tests/` | If the new spec must run on every push (gating), reference it in `.github/workflows/playwright-e2e.yml` OR rely on the `Run manifest-driven Playwright spec` step's glob. Never leave a critical spec un-invoked. |
+| **Frontend build step** | `Codebase/Frontend/package.json` scripts, new vite entry, new dependency that requires a build flag | Both `.github/workflows/ci.yml` (`Build Frontend (production)`) and `.github/workflows/routes-manifest.yml` (`Build Frontend (production)`) — they're parallel copies; keep them in sync |
+| **Database / Supabase schema** | New migration under `supabase/migrations/`, change to `Codebase/Backend/src/db/initDb.ts` schema CREATE TABLE statements | Note in the commit message that `supabase db push` must run on the hosted project (CI does NOT apply migrations automatically). If a CI job depends on schema state (e.g. the smoke claims a Devcon seat that requires `SEED_TEST_USERS=1`), keep that env var aligned in the workflow YAMLs. |
+| **CI-relevant env vars** | `Codebase/Backend/server.ts` reads a new `process.env.X` that gates behaviour the smoke depends on | Update `.github/workflows/ci.yml` AND `.github/workflows/playwright-e2e.yml` `Start the studio stack` blocks to set `X` to the test-mode value. Document defaults in `.env.example`. |
+| **/admin route ownership** | Any change to which paths are served by `admin.html` vs `index.html` in `Codebase/Backend/server.ts` | Confirm `tests/routes.manifest.json` still resolves the right testid; the auth='admin' row stays exercised by the public smoke (currently auth='public' for /admin/login). |
+| **Test runner contract** | The `phase` / `verdict` strings returned by `/api/analysis/run-tests`, or the response shape of `run-tests` | Update `scripts/ci-aws-post-deploy-smoke.mjs` assertions on `phase === 'compile_run'` etc. AND the matcher in `RUNC_FLAKE_PATTERNS` if a new flaky error class shows up. |
+
+### Operating procedure (every commit)
+
+Before committing, the AI should mentally scan its diff and ask:
+
+1. **Did I add, rename, retire, or change auth on a public route?** → manifest must reflect it.
+2. **Did I change any `/api/*` shape, status code, or contract that the AWS smoke probes?** → `scripts/ci-aws-post-deploy-smoke.mjs`.
+3. **Did I add a Playwright spec or rename one?** → confirm a workflow step still picks it up.
+4. **Did I introduce or change a server env var that gates test-mode behaviour?** → update both CI workflow YAMLs.
+5. **Did I add a Supabase migration?** → call this out in the commit body and note whether the AWS host needs `supabase db push` to apply it.
+
+If the answer to any of those is yes and the corresponding CI surface is NOT in the staged diff, the commit is incomplete. Fix forward in the same commit chain rather than landing the source change without its CI partner.
+
+The reason this rule exists: tests are only useful when they actually exercise the production contract. A backend route that no smoke probes is a backend route the next deploy can silently break. A spec that ships under a renamed path but no workflow ever invokes is a spec that protects nothing. CI sync keeps the safety net taut.
+
+When in doubt, prefer "update one row in the manifest / one selector in the smoke script" over "wait for the next CI failure to remind me." Treat the YAMLs and the manifest as first-class code, not paperwork.
+
