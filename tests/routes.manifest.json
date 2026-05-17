@@ -21,18 +21,19 @@
     },
     {
       "path": "/docs",
-      "name": "docs-modal-overview",
-      "auth": "public",
-      "expectStatus": 200,
-      "expectSelector": "[data-testid=\"docs-modal-overview\"]"
-    },
-    {
-      "path": "/docs/full",
-      "name": "docs-full-technical",
+      "name": "docs-sidebar-shell",
       "auth": "public",
       "expectStatus": 200,
       "expectSelector": "[data-testid=\"docs-full-shell\"]",
-      "expectText": ["Method", "Trade-offs", "Bibliography"]
+      "expectText": ["Documentation", "What CodiNeo does"]
+    },
+    {
+      "path": "/docs/full",
+      "name": "docs-sidebar-shell-alias",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"docs-full-shell\"]",
+      "expectText": ["Documentation", "What CodiNeo does"]
     },
     {
       "path": "/patterns",

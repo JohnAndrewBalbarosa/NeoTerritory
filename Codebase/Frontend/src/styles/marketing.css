@@ -5147,20 +5147,76 @@ body[data-surface] {
 }
 .nt-docs__sidebar-link {
   display: block;
+  width: 100%;
+  text-align: left;
   padding: 0.45rem 0.6rem;
   border-radius: 6px;
+  border: none;
+  background: transparent;
   color: var(--ink, #e2e4f0);
   text-decoration: none;
+  font: inherit;
   font-size: 0.92rem;
   line-height: 1.35;
+  cursor: pointer;
   border-left: 2px solid transparent;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
 }
 .nt-docs__sidebar-link:hover,
 .nt-docs__sidebar-link:focus-visible {
   background: rgba(148, 163, 184, 0.08);
   border-left-color: var(--accent, #818cf8);
   outline: none;
+}
+.nt-docs__sidebar-link[data-active="true"] {
+  background: rgba(129, 140, 248, 0.14);
+  border-left-color: var(--accent, #818cf8);
+  color: var(--ink, #e2e4f0);
+  font-weight: 600;
+}
+.nt-docs__sidebar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+.nt-docs__sidebar-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: var(--ink-dim, #94a3b8);
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+.nt-docs__sidebar-group-head:hover,
+.nt-docs__sidebar-group-head:focus-visible {
+  background: rgba(148, 163, 184, 0.06);
+  color: var(--ink, #e2e4f0);
+  outline: none;
+}
+.nt-docs__sidebar-group-caret {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.95rem;
+  line-height: 1;
+  opacity: 0.7;
+}
+.nt-docs__sidebar-list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
 }
 .nt-docs__section {
   display: flex;
