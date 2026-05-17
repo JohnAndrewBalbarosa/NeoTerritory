@@ -89,7 +89,12 @@ async function verifySupabaseToken(token: string): Promise<SupabaseUser | null> 
 // derived username when email is missing or already in use under a
 // different role. The local row keeps NeoTerritory-side state (saved
 // runs, reviews, surveys) joined to the user.
-type SignInRole = 'developer' | 'student' | 'admin';
+// 'unspecified' is for the unified single-button sign-in flow: the
+// caller does NOT pre-tag intent, the backend just upserts the user
+// and reports whether they are new. The front-end then prompts the
+// user once via RoleChooserModal and calls /auth/google/finalize-role
+// to commit the chosen role.
+type SignInRole = 'developer' | 'student' | 'admin' | 'unspecified';
 
 // Ensures an org_memberships row exists tying this local user to the
 // given org id with the given role. Idempotent — re-running on every
@@ -168,7 +173,12 @@ function createSelfServeOrg(email: string, displayName: string): string {
   return id;
 }
 
-function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UserRow {
+interface UpsertResult {
+  row: UserRow;
+  wasNew: boolean;
+}
+
+function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UpsertResult {
   const email = (supaUser.email || '').toLowerCase().trim();
   const display = supaUser.user_metadata?.full_name
                || supaUser.user_metadata?.name
@@ -188,22 +198,13 @@ function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UserRow {
       `SELECT id, username, email, role, password_hash FROM users ${matchClause}`
     ).get(email) as UserRow | undefined;
     if (existing) {
-      // Re-mirror to Supabase Cloud on every login. The Supabase row
-      // may not exist yet (rows created before SUPABASE_URL was set)
-      // and a no-op upsert is cheap. PostgREST treats this as an
-      // INSERT; idx_users_username makes the duplicate-key handling
-      // fast. mirrorRow is fire-and-forget so a transient cloud blip
-      // never blocks login.
-      // entry_flow not in Supabase users schema; logged separately via
-      // mirrorAuditEvent so the cohort split survives without poisoning
-      // the row insert with an unknown column.
       mirrorRow('users', {
         id: existing.id,
         username: existing.username,
         email: existing.email,
         role: existing.role,
       });
-      return existing;
+      return { row: existing, wasNew: false };
     }
   }
 
@@ -251,7 +252,67 @@ function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UserRow {
   // vs student onboarding without changing the role enum.
   logEvent(id, 'auth.google.signup', `role=${role} localRole=${localRole} username=${username}`);
   mirrorRow('users', { id, username, email: safeEmail, role: localRole });
-  return { id, username, email: safeEmail, role: localRole, password_hash: placeholderHash };
+  return {
+    row: { id, username, email: safeEmail, role: localRole, password_hash: placeholderHash },
+    wasNew: true,
+  };
+}
+
+interface OrgBinding {
+  orgId: string | null;
+  isOriginalDevs: boolean;
+  createdNewOrg: boolean;
+}
+
+// Resolve the org membership for an admin-intent sign-in. Original-dev
+// emails go to the seeded NeoTerritory org; everyone else gets a fresh
+// self-serve org owned by them. Idempotent: callers can run this on
+// every admin sign-in or once during finalize-role.
+function resolveAdminOrg(email: string, displayName: string, supabaseUserId: string): OrgBinding {
+  const lowered = email.toLowerCase();
+  if (isOriginalDevEmail(lowered)) {
+    ensureMembership(NEOTERRITORY_ORG_ID, lowered, supabaseUserId, 'admin');
+    return { orgId: NEOTERRITORY_ORG_ID, isOriginalDevs: true, createdNewOrg: false };
+  }
+  if (!lowered) return { orgId: null, isOriginalDevs: false, createdNewOrg: false };
+  db.prepare(`CREATE TABLE IF NOT EXISTS org_memberships (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    org_id TEXT NOT NULL,
+    supabase_user_id TEXT,
+    email TEXT NOT NULL,
+    role TEXT NOT NULL,
+    joined_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(org_id, email)
+  )`).run();
+  const existing = db.prepare(
+    `SELECT org_id FROM org_memberships WHERE email = ? AND role = 'admin' LIMIT 1`
+  ).get(lowered) as { org_id: string } | undefined;
+  let orgId: string;
+  let createdNewOrg = false;
+  if (existing) {
+    orgId = existing.org_id;
+  } else {
+    orgId = createSelfServeOrg(lowered, displayName);
+    createdNewOrg = true;
+  }
+  ensureMembership(orgId, lowered, supabaseUserId, 'admin');
+  return { orgId, isOriginalDevs: false, createdNewOrg };
+}
+
+// Best-effort lookup of an existing membership for this email. Used so
+// returning users who originally chose 'developer' don't re-trigger the
+// new-user role prompt — their stored role is honored.
+function existingMembershipRole(email: string): 'admin' | 'developer' | null {
+  if (!email) return null;
+  try {
+    const row = db.prepare(
+      `SELECT role FROM org_memberships WHERE lower(email) = lower(?) ORDER BY role = 'admin' DESC LIMIT 1`
+    ).get(email) as { role: string } | undefined;
+    if (row?.role === 'admin' || row?.role === 'developer') return row.role;
+  } catch {
+    // org_memberships table may not exist yet in fresh dev envs.
+  }
+  return null;
 }
 
 router.post('/google/exchange', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
@@ -270,6 +331,7 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     let role: SignInRole;
     if (roleRaw === 'student') role = 'student';
     else if (roleRaw === 'admin' || roleRaw === 'pm') role = 'admin';
+    else if (roleRaw === 'unspecified' || roleRaw === '') role = 'unspecified';
     else role = 'developer';
     if (!accessToken) {
       res.status(400).json({ error: 'accessToken required' });
@@ -282,44 +344,36 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
       return;
     }
 
-    const localUser = upsertLocalUser(supaUser, role);
+    const { row: localUser, wasNew } = upsertLocalUser(supaUser, role);
 
-    // Org binding: only resolved for admin sign-ins.
-    //   - Original-dev emails → seeded NeoTerritory org as admin.
-    //   - Any other admin sign-in → self-serve: create a new org owned
-    //     by this email, attach an admin membership.
-    //   - Developer sign-ins stay membership-less here; they're
-    //     expected to redeem an invite after first sign-in.
-    let orgId: string | null = null;
-    let isOriginalDevs = false;
-    let createdNewOrg = false;
+    // Org binding only fires when intent is explicit (admin). For
+    // 'unspecified' (the unified single-button flow), we skip org
+    // creation entirely; the front-end shows RoleChooserModal on
+    // wasNew=true and the user's chosen role is committed via
+    // /auth/google/finalize-role. For 'developer' / 'student' we also
+    // skip org creation — those flows are membership-less by design
+    // until an invite is redeemed.
+    const email = (localUser.email || '').toLowerCase();
+    let binding: OrgBinding = { orgId: null, isOriginalDevs: false, createdNewOrg: false };
+    let promptRoleChoice = false;
     if (role === 'admin') {
-      const email = (localUser.email || '').toLowerCase();
-      if (isOriginalDevEmail(email)) {
-        orgId = NEOTERRITORY_ORG_ID;
-        isOriginalDevs = true;
-        ensureMembership(orgId, email, supaUser.id, 'admin');
-      } else if (email) {
-        // Look for an existing self-serve org for this email first.
-        db.prepare(`CREATE TABLE IF NOT EXISTS org_memberships (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          org_id TEXT NOT NULL,
-          supabase_user_id TEXT,
-          email TEXT NOT NULL,
-          role TEXT NOT NULL,
-          joined_at TEXT NOT NULL DEFAULT (datetime('now')),
-          UNIQUE(org_id, email)
-        )`).run();
-        const existing = db.prepare(
-          `SELECT org_id FROM org_memberships WHERE email = ? AND role = 'admin' LIMIT 1`
-        ).get(email) as { org_id: string } | undefined;
-        if (existing) {
-          orgId = existing.org_id;
-        } else {
-          orgId = createSelfServeOrg(email, localUser.username || '');
-          createdNewOrg = true;
-        }
-        ensureMembership(orgId, email, supaUser.id, 'admin');
+      binding = resolveAdminOrg(email, localUser.username || '', supaUser.id);
+    } else if (role === 'unspecified') {
+      // Returning users with an existing membership keep their prior
+      // role and skip the modal. Brand-new users (no membership row)
+      // get prompted.
+      const priorRole = existingMembershipRole(email);
+      if (priorRole === 'admin') {
+        binding = resolveAdminOrg(email, localUser.username || '', supaUser.id);
+      } else if (priorRole === 'developer') {
+        // Membership already exists; no prompt needed.
+        promptRoleChoice = false;
+      } else {
+        // No prior membership. Always prompt for brand-new users; for
+        // returning users with a local row but no membership yet, also
+        // prompt so they can pick a role even if they've been seen
+        // before in the legacy guest flow.
+        promptRoleChoice = true;
       }
     }
 
@@ -329,8 +383,8 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
         username: localUser.username,
         email: localUser.email,
         role: localUser.role,
-        orgId,
-        isOriginalDevs,
+        orgId: binding.orgId,
+        isOriginalDevs: binding.isOriginalDevs,
       },
       process.env.JWT_SECRET as string,
       { expiresIn: '30d' }
@@ -338,7 +392,7 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     logEvent(
       localUser.id,
       'auth.google.login',
-      `role=${role} username=${localUser.username} orgId=${orgId ?? '-'} newOrg=${createdNewOrg}`
+      `role=${role} username=${localUser.username} orgId=${binding.orgId ?? '-'} newOrg=${binding.createdNewOrg} wasNew=${wasNew} promptRole=${promptRoleChoice}`
     );
 
     res.json({
@@ -348,11 +402,98 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
         username: localUser.username,
         email: localUser.email,
         role: localUser.role,
-        orgId,
-        isOriginalDevs,
+        orgId: binding.orgId,
+        isOriginalDevs: binding.isOriginalDevs,
       },
       entryFlow: role,
-      orgCreated: createdNewOrg
+      orgCreated: binding.createdNewOrg,
+      wasNew,
+      promptRoleChoice
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Commit a chosen role from the first-time RoleChooserModal. Called
+// post-/exchange when the unified single-button sign-in returned
+// promptRoleChoice=true. Verifies the bearer JWT (signed by /exchange
+// just now), runs the admin org logic if role='admin', and re-mints
+// the JWT with the resolved org membership so the front-end can route
+// to the right surface.
+router.post('/google/finalize-role', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization || '';
+    const bearer = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+    if (!bearer) {
+      res.status(401).json({ error: 'missing bearer token' });
+      return;
+    }
+    let claims: { id?: number; username?: string; email?: string | null; role?: string } = {};
+    try {
+      claims = jwt.verify(bearer, process.env.JWT_SECRET as string) as typeof claims;
+    } catch {
+      res.status(401).json({ error: 'invalid bearer token' });
+      return;
+    }
+    const body = (req.body ?? {}) as { role?: unknown };
+    const chosen = typeof body.role === 'string' ? body.role : '';
+    if (chosen !== 'admin' && chosen !== 'developer') {
+      res.status(400).json({ error: "role must be 'admin' or 'developer'" });
+      return;
+    }
+    if (!claims.id || !claims.email) {
+      res.status(400).json({ error: 'token payload missing id/email' });
+      return;
+    }
+    const email = claims.email.toLowerCase();
+    let binding: OrgBinding = { orgId: null, isOriginalDevs: false, createdNewOrg: false };
+    let newLocalRole = claims.role || 'user';
+    if (chosen === 'admin') {
+      // Reuse the supabase_user_id we don't actually need here — pass
+      // an empty string; ensureMembership only patches when present.
+      binding = resolveAdminOrg(email, claims.username || '', '');
+      // Original-devs get the legacy users.role='admin' upgrade so the
+      // requireAdmin middleware opens for them. Self-serve admins keep
+      // users.role='user' and rely on org_memberships.role='admin'.
+      if (binding.isOriginalDevs) {
+        db.prepare(`UPDATE users SET role = 'admin' WHERE id = ?`).run(claims.id);
+        newLocalRole = 'admin';
+      }
+    }
+    // Developer choice: just record the intent; org_memberships is
+    // populated later when they redeem an invite (future work).
+    logEvent(
+      claims.id,
+      'auth.google.finalize-role',
+      `chose=${chosen} orgId=${binding.orgId ?? '-'} newOrg=${binding.createdNewOrg}`
+    );
+
+    const token = jwt.sign(
+      {
+        id: claims.id,
+        username: claims.username,
+        email: claims.email,
+        role: newLocalRole,
+        orgId: binding.orgId,
+        isOriginalDevs: binding.isOriginalDevs,
+      },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '30d' }
+    );
+
+    res.json({
+      token,
+      user: {
+        id: claims.id,
+        username: claims.username,
+        email: claims.email,
+        role: newLocalRole,
+        orgId: binding.orgId,
+        isOriginalDevs: binding.isOriginalDevs,
+      },
+      chosenRole: chosen,
+      orgCreated: binding.createdNewOrg
     });
   } catch (err) {
     next(err);

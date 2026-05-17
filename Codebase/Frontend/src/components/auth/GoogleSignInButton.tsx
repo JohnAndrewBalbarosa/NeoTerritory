@@ -9,13 +9,15 @@ interface GoogleStatus {
 interface Props {
   // Persisted into the OAuth redirect_to URL so the callback handler
   // can mint a JWT with the right entry flow + land the user on the
-  // right post-login page. 'admin' lands sa /admin if the email is in
-  // ORIGINAL_DEV_EMAILS or has an existing admin membership; otherwise
-  // the backend self-serves a new org and still lands sa /admin (with
-  // subset tabs).
-  role: 'developer' | 'student' | 'admin';
+  // right post-login page.
+  //   'unspecified' — unified sign-in / sign-up flow. New users get
+  //     prompted for role via RoleChooserModal in GoogleCallback.
+  //   'admin' — pre-tagged admin intent (e.g. /admin/login direct entry).
+  //   'developer' / 'student' — pre-tagged dev/student intent.
+  role: 'developer' | 'student' | 'admin' | 'unspecified';
   // Where to send the user once Google sign-in succeeds. Defaults are
-  // wired per-role.
+  // wired per-role; 'unspecified' lands on the callback page which
+  // mounts the role prompt before final routing.
   redirectAfter?: string;
 }
 
@@ -48,7 +50,9 @@ export default function GoogleSignInButton({ role, redirectAfter }: Props) {
       ? '/student-learning'
       : role === 'admin'
         ? '/admin'
-        : '/studio';
+        : role === 'unspecified'
+          ? '/'
+          : '/studio';
     const after = redirectAfter || defaultAfter;
     const callback = new URL('/auth/callback', window.location.origin);
     callback.searchParams.set('role', role);
@@ -84,7 +88,11 @@ export default function GoogleSignInButton({ role, redirectAfter }: Props) {
         onClick={startSignIn}
         disabled={busy}
       >
-        {busy ? 'Redirecting…' : 'Sign in with Google'}
+        {busy
+          ? 'Redirecting…'
+          : role === 'unspecified'
+            ? 'Continue with Google'
+            : 'Sign in with Google'}
       </button>
       {error && <p className="auth-error" role="alert">{error}</p>}
       <p className="auth-helper">
