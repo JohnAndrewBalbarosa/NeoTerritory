@@ -169,13 +169,14 @@ app.get('/', (_req: Request, res: Response) => {
   res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
-// Admin SPA lives in its own Vite bundle (admin.html) — the main SPA
-// router has no /admin case and would render the marketing hero, so
-// requests like `/admin` (no extension) or `/admin/...` must serve the
-// admin bundle directly. Without this, Google OAuth callbacks that
-// land on /admin bounce back to the homepage because the catch-all
-// at the bottom of this file falls through to index.html.
-app.get(['/admin', /^\/admin\/.*$/], (_req: Request, res: Response) => {
+// Admin SPA lives in its own Vite bundle (admin.html). Serve it for
+// /admin EXACT only — everything under /admin/* (currently just
+// /admin/login) must fall through to the main SPA's catch-all so
+// GoogleSignInPage can render with role='admin' and the manifest
+// data-testid="admin-login" assertion finds its anchor. AdminApp
+// does no client-side path routing (purely tab state) so the admin
+// SPA never needs to own sub-routes.
+app.get('/admin', (_req: Request, res: Response) => {
   res.sendFile(path.join(frontendDir, 'admin.html'));
 });
 
