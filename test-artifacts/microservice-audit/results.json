@@ -37,9 +37,9 @@
       "total": 8
     },
     "proxy": {
-      "pass": 3,
-      "wrong": 1,
-      "none": 1,
+      "pass": 5,
+      "wrong": 0,
+      "none": 0,
       "total": 5
     },
     "singleton": {
@@ -405,6 +405,7 @@
       "expected": "proxy",
       "verdict": "PASS",
       "detected": [
+        "structural.virtual_proxy",
         "structural.proxy",
         "creational.factory"
       ],
@@ -414,8 +415,10 @@
       "folder": "proxy",
       "file": "02-lazy-image.cpp",
       "expected": "proxy",
-      "verdict": "NONE",
-      "detected": [],
+      "verdict": "PASS",
+      "detected": [
+        "structural.virtual_proxy"
+      ],
       "status": 200
     },
     {
@@ -424,6 +427,7 @@
       "expected": "proxy",
       "verdict": "PASS",
       "detected": [
+        "structural.virtual_proxy",
         "structural.proxy"
       ],
       "status": 200
@@ -432,8 +436,9 @@
       "folder": "proxy",
       "file": "04-remote-stub.cpp",
       "expected": "proxy",
-      "verdict": "WRONG",
+      "verdict": "PASS",
       "detected": [
+        "structural.virtual_proxy",
         "creational.factory"
       ],
       "status": 200
@@ -444,6 +449,7 @@
       "expected": "proxy",
       "verdict": "PASS",
       "detected": [
+        "structural.virtual_proxy",
         "structural.proxy"
       ],
       "status": 200

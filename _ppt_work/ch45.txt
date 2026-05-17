@@ -1,0 +1,157 @@
+[0001|] 
+[0002|] CHAPTER 4
+[0003|] PRESENTATION, ANALYSIS AND INTERPRETATION OF DATA
+[0004|] 
+[0005|] DISCUSS ABOUT THE STATEMENT OF THE PROBLEM – HOW DID YOU SOLVE IT DURING YOUR PROPOSE APP
+[0006|] 4.1. Presentation of Results
+[0007|] The proponents performed an evaluation of the software through the use of survey forms. The reliability or internal of the survey was assessed using Cronbach’s Alpha. Before letting the respondents answer the survey forms, they were briefed and shown a live demonstration of how the web application works.  The survey forms consist of six questions to evaluate the software’s Functional Stability, and three questions for evaluating the maintainability, efficiency, usability, reliability, and security with a total of 21 questions. The following results were calculated using Likert scale equations.
+[0008|] 
+[0009|] Table 11. Functional Suitability of BloodLine
+[0010|] Questions
+[0011|] Students under CCSMA Dept.
+[0012|] CS/IT Faculty and Professionals
+[0013|] Health Workers
+[0014|] Average Residents of Sampaloc Manila
+[0015|] The system successfully determines the location and optimized route of the user on the map
+[0016|] 3.133
+[0017|] 3.533
+[0018|] 3.533
+[0019|] 3.2
+[0020|] The system provides complete & up-to-date blood inventory information
+[0021|] 3.333
+[0022|] 3.667
+[0023|] 3.6
+[0024|] 3.6
+[0025|] The system stores and shows data in a structured and organized way
+[0026|] 3.467
+[0027|] 3.333
+[0028|] 3.733
+[0029|] 3.8
+[0030|] The chat features work as intended
+[0031|] 3.667
+[0032|] 3.533
+[0033|] 3.6
+[0034|] 3.6
+[0035|] The system shows blood banks that match my blood type
+[0036|] 3.533
+[0037|] 3.533
+[0038|] 3.733
+[0039|] 3.8
+[0040|] The system proves its potential to be applied in real-world solutions
+[0041|] 3.4
+[0042|] 3.6
+[0043|] 3.8
+[0044|] 4
+[0045|] Average
+[0046|] 3.422
+[0047|] 3.533
+[0048|] 3.667
+[0049|] 3.667
+[0050|] Interpretation
+[0051|] Strongly Agree
+[0052|] Strongly Agree
+[0053|] Strongly Agree
+[0054|] Strongly Agree
+[0055|] Total Average
+[0056|] 3.572
+[0057|] Overall Interpretation
+[0058|] Strongly Agree
+[0059|] 
+[0060|] 
+[0061|] As shown on the Table 11, the provided table represents the functional suitability of the system for different respondents, including students under the CCSMA Department (15), CS/IT faculty and professionals (15), health workers (15), and residents of Sampaloc Manila (5), with a total of (50) respondents. The table displays the average scores for each category based on the Likert scale used by the researchers.
+[0062|] Analyzing the results, it can be observed that all respondents generally agreed with the functionality of the system. In question one, which pertains to the system successfully determining the location and optimized route of the user on the map, the students gave an average score of 3.133, CS/IT faculty and professionals rated it 3.533, health workers rated it 3.533, and the average residents of Sampaloc Manila rated it 3.2.
+[0063|] Moving on to question two, regarding the system providing complete and up-to-date blood inventory information, the students gave it a score of 3.333, CS/IT faculty and professionals rated it 3.667, health workers rated it 3.6, and the average residents of Sampaloc Manila also rated it 3.6.
+[0064|] Furthermore, question three focused on the system's ability to store and display data in a structured and organized way. The students rated it an average of 3.467, CS/IT faculty and professionals rated it 3.333, health workers rated it 3.733, and the average residents of Sampaloc, Manila, rated it 3.8.
+[0065|] For question four, which examined the functionality of the chat features, the students gave an average score of 3.667; CS/IT faculty and professionals rated it 3.533; health workers rated it 3.6; and the average residents of Sampaloc, Manila, rated it 3.6.
+[0066|] Moving on to, question five focused on the system showing blood banks that match the user's blood type. The students rated it 3.533; CS/IT faculty and professionals rated it 3.533; health workers rated it 3.733; and the average residents of Sampaloc, Manila, also rated it 3.8.
+[0067|] Lastly on to question six, which focuses on the system proving its potential to be applied in real-world solutions, the students gave it an average score of 3.4, CS/IT faculty and professionals rated it 3.6, health workers rated it 3.8, and the average residents of Sampaloc Manila rated it 4.
+[0068|] Considering the overall interpretation of the results, it can be concluded that all respondents strongly agreed with the functional suitability of the system. The average scores across the categories were as follows: students (3.422), CS/IT faculty and professionals (3.533), health workers (3.667), and average residents of Sampaloc Manila (3.667). The total average score was 3.572, indicating a positive reception of the system's functionality.
+[0069|] 
+[0070|] Cronbach’s Alpha
+[0071|] Cronbach's alpha is a measure of how well the items in a scale measure the same underlying construct. A high Cronbach's alpha indicates that the items on the scale are measuring the same underlying construct, and that the scores on the scale are consistent. In this study, Cronbach's alpha was calculated for each of the six subscales of the survey. The results showed that all six subscales had high Cronbach's alphas, ranging from 0.755 to 0.871. This indicates that the survey is a reliable measure of software quality.
+[0072|] The following table shows the Cronbach's alphas for the whole survey, and for each of the subscales:
+[0073|] Table 17. Cronbach’s Alpha Results
+[0074|] Subscale
+[0075|] Cronbach’s Alpha
+[0076|] Functional Stability
+[0077|] 0.856
+[0078|] Maintainability
+[0079|] 0.849
+[0080|] Performance Efficiency
+[0081|] 0.755
+[0082|] Usability
+[0083|] 0.851
+[0084|] Reliability
+[0085|] 0.829
+[0086|] Security
+[0087|] 0.871
+[0088|] Whole Survey
+[0089|] 0.961
+[0090|] 
+[0091|] The high Cronbach's alphas for all six subscales indicate that the survey is a reliable measure of software quality. This means that the items on the scale are measuring the same underlying construct, and that the scores on the scale are consistent. The reliability of the survey is important because it ensures that the results of the study are valid.
+[0092|] Algorithm Complexity
+[0093|] 
+[0094|] Time Complexity for BloodLine API
+[0095|] 
+[0096|] The algorithm is essentially fetching the best route for a user from their location to a blood bank that has inventory of their blood type. It checks across multiple routing services to ensure it gets a successful routing and only proceeds to the next routing service if the previous one fails.
+[0097|] For the purpose of calculating the time complexity, it is safe to make a simplifying assumption that the time taken by the external API requests (fetchRoute() function that interacts with routing services) is constant. In the real world, this could vary based on various factors such as network latency, server load etc. Also, the time taken to perform Firestore operations is usually considered constant since it is real-world factor
+[0098|] .
+[0099|] 
+[0100|] Big O Notation (Worst-Case Scenario)
+[0101|] 
+[0102|] 
+[0103|] Where N = number of registered Blood Banks
+[0104|] R = N (R is the number of returned Routes)
+[0105|] S = instance of Service URL of OSRMv1
+[0106|] 
+[0107|] In this case, the time complexity for the algorithm to run on the upper bound is . For the worst case to occur, the following conditions are met:
+[0108|] The algorithm reiterates through all the registered blood banks that were fetched from the firestore database. This is a necessary step since blood bank’s inventory data is dynamic. This procedure is required to make sure that all changes to the bank's inventory are captured from the snapshot.
+[0109|] 4.2. Interpretation of Results
+[0110|ListParagraph] Table 18. Summary of Findings
+[0111|] Category
+[0112|] Weighted Mean
+[0113|] Response
+[0114|] Functional Stability
+[0115|] 3.572
+[0116|] Strongly Agree
+[0117|] Maintainability
+[0118|] 3.444
+[0119|] Strongly Agree
+[0120|] Efficiency
+[0121|] 3.533
+[0122|] Strongly Agree
+[0123|] Usability
+[0124|] 3.511
+[0125|] Strongly Agree
+[0126|] Reliability
+[0127|] 3.556
+[0128|] Strongly Agree
+[0129|] Security
+[0130|] 3.569
+[0131|] Strongly Agree
+[0132|] Total Average
+[0133|] 3.531
+[0134|] Strongly Agree
+[0135|ListParagraph] 
+[0136|ListParagraph] With the highest total average of 4.75, functional stability indicates that the users strongly agree on the functionality of BloodLine. Although the lowest total average being 3.444, users still strongly agree on its maintainability and scalability. The overall efficiency of BloodLine has a total average of 3.533, which pertains to respondents strongly agreeing. The usability of the web application scored a total average of 3.511, rendering the respondents believing that it is interactive, engaging, and user-friendly. With the total average of reliability being 3.556, it shows that the respondents think that the application is easily accessible with less faults, crashes, and errors. The security category garnered a calculated mean of 3.569, as respondents do think that the web application is secure. Overall, BloodLine has a total average rating of 3.531, showing that the respondents do think the web application is capable and has potential to be applied in real world scenarios. 
+[0137|] CHAPTER 5
+[0138|] CONCLUSION AND RECOMMENDATIONS
+[0139|] The thesis focuses on addressing the research objectives and answering key questions related to the blood bank system. The primary objective of the study is to improve the understanding and effectiveness of the blood bank system and mitigate the adverse effects of blood loss. The chapter highlights five key questions that contribute to the quality and outcomes of the research.
+[0140|] The first question focuses on determining the essential data required by the system to provide accurate information about blood inventory details, including blood type, lifespan, and availability. This data is crucial for improving the accessibility and reliability of blood supplies.
+[0141|] The second question addresses the development of an effective organizational framework within the application to manage large amounts of data. This includes organizing information about available blood packs, their specific details, and maintaining a database of reserved donors and their contact information. Such organization facilitates efficient tracking and allocation of blood resources.
+[0142|] Lastly, the study emphasizes the significance of evaluating the system's quality in terms of functionality, efficiency, usability, reliability, and maintainability. The application of standards such as ISO 25010 and Cronbach's alpha enables the assessment and enhancement of the overall performance and robustness of the application.
+[0143|] By addressing these research objectives and questions, the study aims to provide practical contributions to the field of computer science and offer valuable insights for practitioners, researchers, patients, blood donors, and healthcare organizations involved in the blood bank system. The findings and recommendations presented in this chapter contribute to enhancing the overall understanding, effectiveness, and efficiency of the blood bank system, ultimately improving patient outcomes and saving lives.
+[0144|] 5.1 Conclusion
+[0145|] This chapter presents a summary of findings based on the collected data from the participants. The objective of this research was to evaluate the various aspects of the BloodLine web application, including functional stability, maintainability, efficiency, usability, reliability, and security.
+[0146|] The findings indicate that the participants strongly agree with the different categories of the BloodLine web application. The functional stability category received the highest weighted mean of 3.572, indicating a strong agreement among the participants. This suggests that the web application performs its intended functions effectively and reliably.
+[0147|] Maintainability, with a weighted mean of 3.444, also garnered strong agreement from the participants. This implies that the web application is perceived as easily maintainable and scalable, allowing for future updates and improvements.
+[0148|] In terms of efficiency, the participants strongly agreed, as evidenced by a weighted mean of 3.533. This suggests that BloodLine performs tasks efficiently and optimizes its resources effectively.
+[0149|] The usability category received a weighted mean of 3.511, indicating that participants found the web application to be intuitive, interactive, and user-friendly. This suggests that users can easily navigate and interact with the features of BloodLine.
+[0150|] Overall, the total average of 3.531 indicates a strong agreement among the participants in all aspects of the BloodLine web application. These findings highlight the positive perception of users towards the functional stability, maintainability, efficiency, usability, reliability, and security of BloodLine.
+[0151|] These findings contribute to the validation and evaluation of the BloodLine web application, supporting its potential for real-world application and reinforcing its value as a reliable and user-friendly tool for accessing blood bank services.
+[0152|] The results of this study provide valuable insights for further enhancements and improvements to the BloodLine web application, ensuring that it continues to meet the needs and expectations of its users in terms of functionality, maintainability, efficiency, usability, reliability, and security.
+[0153|] 5.2 Recommendation
+[0154|] The Following recommendations are offered based on the work accomplished during this project:
+[0155|] Integration with existing Electronic Health Records (EHR): Consider exploring the integration of the blood bank system with existing electronic health record systems. This integration would allow for seamless information exchange between healthcare facilities, enabling real-time access to patient data, blood type requirements, and availability. By incorporating EHR integration, the efficiency and accuracy of the blood bank system can be further enhanced.
+[0156|] Collaboration with Blood Banks and Healthcare Organizations: One important recommendation we would like to emphasize is the inclusion of a client in the research process. In our study, we opted for a general-use approach and did not specifically explore the perspective and input of a client. The involvement of a client ensures that the research outcomes are directly aligned with their needs and can be effectively implemented in real-world scenarios. Collaborating with a client promotes a user-centered approach and fosters a deeper understanding of the practical implications of the research findings. Therefore, we highly recommend incorporating the client perspective into future studies to maximize the impact and applicability of the research.
+[0157|] 
