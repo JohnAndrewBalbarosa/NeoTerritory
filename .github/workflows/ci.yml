@@ -487,6 +487,12 @@ jobs:
         with:
           node-version: "20"
 
+      - name: Unit test the runc-flake matcher + retry policy
+        # Pins the post-deploy-smoke retry behaviour. If someone weakens
+        # the matcher (e.g. removes the /run/docker/netns/ pattern) or
+        # loosens the retry budget, this fails before we even probe AWS.
+        run: node --test scripts/__tests__/ci-aws-post-deploy-smoke.test.mjs
+
       - name: Wait for deployment to settle (15s)
         # pm2 restart takes a moment to bind on :80. Give the new process
         # a small window before we probe — the smoke script's first health
