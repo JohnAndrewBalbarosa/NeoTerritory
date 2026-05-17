@@ -415,6 +415,14 @@ body{position:relative;}
 .admin-login-field input{padding:10px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:14px;}
 .admin-login-field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
 .admin-login-error{color:var(--red,#f87171);background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.28);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin:0;}
+.admin-login-google{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:8px 0 4px;}
+.admin-login-google .google-signin{margin:0;}
+.admin-login-legacy{margin-top:18px;padding:12px 14px;border:1px dashed var(--border);border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);}
+.admin-login-legacy summary{cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-mute);padding:2px 0;}
+.admin-login-legacy summary:hover,.admin-login-legacy summary:focus-visible{color:var(--ink-soft);}
+.admin-login-legacy[open]{background:rgba(255,255,255,0.04);}
+.admin-login-legacy[open] summary{margin-bottom:10px;color:var(--ink-soft);}
+.admin-login-legacy code{font-family:'JetBrains Mono',monospace;background:rgba(0,209,216,0.1);padding:0 4px;border-radius:3px;font-size:12px;}
 
 /* Catalogs tab */
 .admin-catalog-upload{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin:8px 0 18px;}

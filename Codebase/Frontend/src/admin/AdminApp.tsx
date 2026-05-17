@@ -6,6 +6,7 @@ import { useTheme } from '../hooks/useTheme';
 import { useHealth } from '../hooks/useHealth';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
 import AuroraBackground from '../components/marketing/effects/AuroraBackground';
+import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -78,6 +79,14 @@ export default function AdminApp() {
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
+  // Legacy username/password form is now a collapsible fallback. The
+  // primary admin sign-in is Google OAuth via /admin/login → callback →
+  // /admin (handled by AuthChooserPage / GoogleSignInPage). The fallback
+  // only exists for: (a) the seeded thesis admin `Neoterritory` user,
+  // and (b) emergencies where Supabase auth is not configured on the
+  // backend (AUTH_SUPABASE_SELF_HOSTED_URL unset). It defaults to
+  // hidden so the surface reads as "Google sign-in is the way."
+  const [legacyOpen, setLegacyOpen] = useState(false);
   const [loginUsername, setLoginUsername] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -118,39 +127,61 @@ export default function AdminApp() {
           <section className="admin-section admin-section--card admin-login-card">
             <header className="admin-section__head">
               <p className="eyebrow">CodiNeo · Admin</p>
-              <h1 className="brand-title">Sign in</h1>
-              <p className="admin-section__hint">Admin credentials only. Non-admin accounts are rejected here.</p>
+              <h1 className="brand-title">Sign in as PM / admin</h1>
+              <p className="admin-section__hint">
+                Admins sign in with Google. Original-devs emails land sa NeoTerritory
+                admin; ibang emails ay automatic self-serve org creation.
+              </p>
             </header>
-            <form className="admin-login-form" onSubmit={onAdminLogin}>
-              <label className="admin-login-field">
-                <span>Username</span>
-                <input
-                  type="text"
-                  autoComplete="username"
-                  required
-                  value={loginUsername}
-                  onChange={(e) => setLoginUsername(e.target.value)}
-                  disabled={loginBusy}
-                />
-              </label>
-              <label className="admin-login-field">
-                <span>Password</span>
-                <input
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  disabled={loginBusy}
-                />
-              </label>
-              {loginError && (
-                <p className="admin-login-error" role="alert">{loginError}</p>
-              )}
-              <button type="submit" className="ghost-btn" disabled={loginBusy}>
-                {loginBusy ? 'Signing in…' : 'Sign in to admin'}
-              </button>
-            </form>
+
+            <div className="admin-login-google">
+              <GoogleSignInButton role="admin" redirectAfter="/admin" />
+            </div>
+
+            <details
+              className="admin-login-legacy"
+              open={legacyOpen}
+              onToggle={(e) => setLegacyOpen((e.target as HTMLDetailsElement).open)}
+            >
+              <summary>
+                Legacy sign-in (seeded thesis admin only)
+              </summary>
+              <p className="admin-section__hint">
+                Tinago dahil OAuth na ang primary path. Gamitin lang ito kapag
+                walang Supabase config sa server o kung gusto mong gamitin yung
+                seeded <code>Neoterritory</code> admin account.
+              </p>
+              <form className="admin-login-form" onSubmit={onAdminLogin}>
+                <label className="admin-login-field">
+                  <span>Username</span>
+                  <input
+                    type="text"
+                    autoComplete="username"
+                    required
+                    value={loginUsername}
+                    onChange={(e) => setLoginUsername(e.target.value)}
+                    disabled={loginBusy}
+                  />
+                </label>
+                <label className="admin-login-field">
+                  <span>Password</span>
+                  <input
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    disabled={loginBusy}
+                  />
+                </label>
+                {loginError && (
+                  <p className="admin-login-error" role="alert">{loginError}</p>
+                )}
+                <button type="submit" className="ghost-btn" disabled={loginBusy}>
+                  {loginBusy ? 'Signing in…' : 'Sign in with username/password'}
+                </button>
+              </form>
+            </details>
           </section>
         </main>
       </div>

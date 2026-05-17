@@ -2,15 +2,22 @@ import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import SeatClaimPanel from '../auth/SeatClaimPanel';
 
-// Homepage chooser popup. Single auth surface across the marketing site:
-// every "Try it now" / hero / nav CTA dispatches TRY_IT_OPEN_EVENT and
-// MarketingShell mounts this modal. Three cards, plus a nested seat-claim
-// step for the Tester (Guest) path. Admin is intentionally hidden from
-// the popup and reachable only via the direct /app route.
+// Homepage chooser popup. Single public-facing auth surface across the
+// marketing site: every "Try it now" / hero / nav CTA dispatches
+// TRY_IT_OPEN_EVENT and MarketingShell mounts this modal. Three cards
+// (Tester / Student / Developer), plus a nested seat-claim step for
+// the Tester (Guest) path.
+//
+// PM / admin sign-in is intentionally HIDDEN from this public popup —
+// admins reach the OAuth flow via either:
+//   1. The /auth/choose page (URL-addressable two-button picker), or
+//   2. The /admin route, which renders an admin sign-in card with a
+//      "Sign in with Google" button (and a hidden legacy
+//      username/password fallback for the seeded thesis admin).
 //
 // The previous /choose entry page and the /login seat-pick page are gone;
-// any seat-claim, sign-in, or pick-a-role flow now goes through this
-// component.
+// any public seat-claim, sign-in, or pick-a-role flow now goes through
+// this component.
 
 export const TRY_IT_OPEN_EVENT = 'nt:open-try-it-chooser';
 
