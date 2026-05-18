@@ -134,6 +134,24 @@ jobs:
           ./build/NeoTerritory --output artifacts/microservice-output Codebase/Microservice/samples
           test -f artifacts/microservice-output/report.json
 
+      - name: Algorithm time-complexity validation (post-build)
+        # Runs the regression-validation test in
+        # Codebase/Backend/src/__tests__/algorithm-complexity.test.ts
+        # against the freshly-built binary. The test sweeps increasing
+        # input sizes, captures items_processed (count of operations
+        # the analyzer's inner loop performs — structurally immune to
+        # job scheduling and CPU contention), fits a linear regression,
+        # and asserts R² ≥ 0.95 + positive slope + bounded intercept.
+        # Lives AFTER the cmake build because vitest's first run
+        # (above, "Backend unit tests") happens before the binary
+        # exists — that earlier invocation skips this spec gracefully.
+        env:
+          NEOTERRITORY_BIN: ${{ github.workspace }}/build/NeoTerritory
+          NEOTERRITORY_CATALOG: ${{ github.workspace }}/Codebase/Microservice/pattern_catalog
+        run: |
+          cd Codebase/Backend
+          npx vitest run src/__tests__/algorithm-complexity.test.ts --reporter=default
+
       - name: Upload backend build artifact
         uses: actions/upload-artifact@v4
         with:

@@ -349,22 +349,30 @@ export default function ComplexityTab() {
 
       {complexity?.regressionSpaceByTokens && (
         <section className="admin-section">
-          <h2>Space complexity — Working-set items vs token count</h2>
+          <h2>Algorithm time complexity — Operations vs token count</h2>
           <p className="empty-state-muted">
-            y-axis: sum of <code>items_processed</code> across stages, used here as a proxy for the
-            analyzer&apos;s in-memory working set (each item ≈ one structural-rep node held in RAM
-            during analysis). x-axis: token count of the submission. Validates the O(n) <em>space</em>
-            claim — items scale linearly with input size at near-constant bytes per item.
+            y-axis: sum of <code>items_processed</code> across stages — the literal count of
+            operations the analyzer&apos;s inner loop performs. x-axis: token count of the
+            submission. <strong>Immune to job scheduling and CPU contention</strong> because
+            operation counts are deterministic given a fixed input — wall-clock noise cannot
+            reach this metric. Validates the O(n) <em>time</em> claim regardless of server load.
+            Cross-validated by the regression-validation test sa{' '}
+            <code>Codebase/Backend/src/__tests__/algorithm-complexity.test.ts</code>.
           </p>
           <table className="complexity-coef-table">
             <tbody>
-              <tr><td>Slope</td><td><code>{complexity.regressionSpaceByTokens.slope} items/token</code></td></tr>
-              <tr><td>Intercept</td><td><code>{complexity.regressionSpaceByTokens.intercept} items</code></td></tr>
+              <tr><td>Slope</td><td><code>{complexity.regressionSpaceByTokens.slope} ops/token</code></td></tr>
+              <tr><td>Intercept</td><td><code>{complexity.regressionSpaceByTokens.intercept} ops</code></td></tr>
               <tr><td>R²</td><td><code>{complexity.regressionSpaceByTokens.r2}</code></td></tr>
               <tr><td>n</td><td><code>{complexity.regressionSpaceByTokens.n} runs</code></td></tr>
               <tr><td>Interpretation</td><td>{complexity.regressionSpaceByTokens.interpretation}</td></tr>
             </tbody>
           </table>
+          <p className="empty-state-muted" style={{ marginTop: '0.75rem' }}>
+            Same regression also serves the O(n) <em>space</em> claim — each
+            <code> items_processed</code> entry ≈ one structural-rep node held in RAM during
+            analysis, at near-constant bytes per item.
+          </p>
         </section>
       )}
 
