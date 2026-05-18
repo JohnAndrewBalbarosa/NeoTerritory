@@ -36,7 +36,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import { countCppTokens } from '../utils/tokenCounter';
 
@@ -60,6 +60,7 @@ interface RegressionFit {
 interface SweepPoint {
   inputTokens: number;
   totalItems: number;
+  reportBytes: number;
 }
 
 // Resolve the binary path. Prefer NEOTERRITORY_BIN (set in CI), then
@@ -166,7 +167,17 @@ private:
   return parts.join('\n');
 }
 
-function runBinaryOnce(binaryPath: string, catalogPath: string, sourceCode: string): BinaryReport {
+interface BinaryRun {
+  report: BinaryReport;
+  // Byte size of the binary's report.json — the analyzer's on-disk
+  // representation of the in-memory result it held just before exit.
+  // Used as the SPACE COMPLEXITY proxy (KB of analyzer working set
+  // ≈ KB of the serialized output), mirroring the same calculation
+  // the admin /stats/complexity-data endpoint does on stored runs.
+  reportBytes: number;
+}
+
+function runBinaryOnce(binaryPath: string, catalogPath: string, sourceCode: string): BinaryRun {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'nt-complexity-'));
   try {
     const inputPath = path.join(tmpDir, 'input.cpp');
@@ -192,30 +203,36 @@ function runBinaryOnce(binaryPath: string, catalogPath: string, sourceCode: stri
     if (!fs.existsSync(reportPath)) {
       throw new Error(`binary did not produce report.json at ${reportPath}`);
     }
-    return JSON.parse(fs.readFileSync(reportPath, 'utf8')) as BinaryReport;
+    const raw = fs.readFileSync(reportPath, 'utf8');
+    return {
+      report: JSON.parse(raw) as BinaryReport,
+      reportBytes: Buffer.byteLength(raw, 'utf8'),
+    };
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
 }
 
-function fitOls(points: SweepPoint[]): RegressionFit {
+interface XYPoint { x: number; y: number; }
+
+function fitOls(points: XYPoint[]): RegressionFit {
   const n = points.length;
-  const meanX = points.reduce((s, p) => s + p.inputTokens, 0) / n;
-  const meanY = points.reduce((s, p) => s + p.totalItems, 0) / n;
+  const meanX = points.reduce((s, p) => s + p.x, 0) / n;
+  const meanY = points.reduce((s, p) => s + p.y, 0) / n;
   let num = 0;
   let denX = 0;
   for (const p of points) {
-    num += (p.inputTokens - meanX) * (p.totalItems - meanY);
-    denX += (p.inputTokens - meanX) ** 2;
+    num += (p.x - meanX) * (p.y - meanY);
+    denX += (p.x - meanX) ** 2;
   }
   const slope = denX === 0 ? 0 : num / denX;
   const intercept = meanY - slope * meanX;
   let ssRes = 0;
   let ssTot = 0;
   for (const p of points) {
-    const yHat = slope * p.inputTokens + intercept;
-    ssRes += (p.totalItems - yHat) ** 2;
-    ssTot += (p.totalItems - meanY) ** 2;
+    const yHat = slope * p.x + intercept;
+    ssRes += (p.y - yHat) ** 2;
+    ssTot += (p.y - meanY) ** 2;
   }
   const r2 = ssTot === 0 ? 1 : 1 - ssRes / ssTot;
   return { slope, intercept, r2, n };
@@ -226,28 +243,33 @@ const catalogPath = resolveCatalogPath();
 const canRun = !!(binaryPath && catalogPath);
 const describeIfRuntime = canRun ? describe : describe.skip;
 
-describeIfRuntime('algorithm time complexity (O(n) on items_processed)', () => {
+describeIfRuntime('algorithm complexity (linear regression on real binary)', () => {
   // Sweep five input sizes spanning ~10x. Synthesized inputs use
   // copy-counts that produce roughly linearly-varying token counts so
   // the regression has clear leverage at both ends. Five points is
   // enough for OLS to be meaningful; more would inflate test runtime
-  // without strengthening the assertion.
+  // without strengthening the assertion. The sweep is shared across
+  // both the time-complexity and space-complexity tests via a single
+  // beforeAll() pass so the binary fires only N times, not 2*N.
   const COPY_COUNTS = [2, 5, 10, 20, 40] as const;
+  let sweep: SweepPoint[] = [];
 
-  it('items_processed scales linearly with input token count', () => {
+  beforeAll(() => {
     expect(binaryPath, 'binary path resolved').toBeTruthy();
-    const sweep: SweepPoint[] = [];
+    sweep = [];
     for (const copies of COPY_COUNTS) {
       const source = synthesizeInput(copies);
       const inputTokens = countCppTokens(source);
-      const report = runBinaryOnce(binaryPath!, catalogPath!, source);
-      const totalItems = (report.stage_metrics ?? []).reduce(
+      const run = runBinaryOnce(binaryPath!, catalogPath!, source);
+      const totalItems = (run.report.stage_metrics ?? []).reduce(
         (sum, m) => sum + (typeof m.items_processed === 'number' ? m.items_processed : 0),
         0,
       );
-      sweep.push({ inputTokens, totalItems });
+      sweep.push({ inputTokens, totalItems, reportBytes: run.reportBytes });
     }
+  }, 60_000);
 
+  it('items_processed scales linearly with input token count (time complexity O(n))', () => {
     // Every point should record SOME work — if the binary reports 0
     // items across the board, the regression below is meaningless.
     for (const p of sweep) {
@@ -255,7 +277,7 @@ describeIfRuntime('algorithm time complexity (O(n) on items_processed)', () => {
       expect(p.totalItems, `items > 0 for ${JSON.stringify(p)}`).toBeGreaterThan(0);
     }
 
-    const fit = fitOls(sweep);
+    const fit = fitOls(sweep.map((p) => ({ x: p.inputTokens, y: p.totalItems })));
 
     // Diagnostic dump — failures will print this so the operator can
     // see the raw sweep without re-running locally.
@@ -288,6 +310,54 @@ describeIfRuntime('algorithm time complexity (O(n) on items_processed)', () => {
     ).toBeLessThan(dominanceLimit);
   });
 
+  it('report.json size scales linearly with input token count (space complexity O(n))', () => {
+    // Space complexity validation: the analyzer holds a structural
+    // representation + detected patterns in RAM until it serializes
+    // to report.json at exit. The byte size of that output is the
+    // cleanest proxy for "how much memory did the algorithm need" —
+    // every node in the rep gets one entry in the JSON. A true O(n)
+    // space algorithm should produce reportBytes that scale linearly
+    // with input tokens.
+    //
+    // This mirrors the admin /stats/complexity-data endpoint's
+    // `regressionSpaceKbByTokens` calculation, which uses
+    // row.analysis_json.length / 1024 as the y-axis. Here we use the
+    // raw byte length of the SAME content the backend would store,
+    // captured directly from the binary's output before any DB layer
+    // can introduce framing overhead.
+    for (const p of sweep) {
+      expect(p.inputTokens, `tokens > 0 for ${JSON.stringify(p)}`).toBeGreaterThan(0);
+      expect(p.reportBytes, `reportBytes > 0 for ${JSON.stringify(p)}`).toBeGreaterThan(0);
+    }
+
+    const fit = fitOls(sweep.map((p) => ({ x: p.inputTokens, y: p.reportBytes })));
+
+    const summary = sweep
+      .map((p) => `  tokens=${p.inputTokens} reportBytes=${p.reportBytes}`)
+      .join('\n');
+    const fitMsg = `R²=${fit.r2.toFixed(4)} slope=${fit.slope.toFixed(2)} bytes/token intercept=${fit.intercept.toFixed(2)} bytes n=${fit.n}\n${summary}`;
+
+    // R² threshold is 0.90 for space (vs 0.95 for op count) because
+    // report.json carries a small constant per-run framing overhead
+    // (boilerplate keys, empty arrays at smallest N) that introduces
+    // sub-linear behaviour at the very low end of the sweep. The
+    // largest N points still dominate the fit and confirm linearity.
+    expect(fit.r2, `R² >= 0.90 for space-bytes linearity\n${fitMsg}`).toBeGreaterThanOrEqual(0.90);
+
+    expect(fit.slope, `slope > 0 (more tokens => more bytes)\n${fitMsg}`).toBeGreaterThan(0);
+
+    // Constant framing overhead is allowed but should not dominate
+    // the largest sample. Same bound as the time test: |intercept|
+    // < 50% × slope × max_tokens means the n=largest point is
+    // mostly slope-driven, not intercept-driven.
+    const maxTokens = Math.max(...sweep.map((p) => p.inputTokens));
+    const dominanceLimit = 0.5 * fit.slope * maxTokens;
+    expect(
+      Math.abs(fit.intercept),
+      `|intercept| < 50% of slope*max_tokens (${dominanceLimit.toFixed(2)})\n${fitMsg}`,
+    ).toBeLessThan(dominanceLimit);
+  });
+
   it('items_processed is deterministic across reps for the same input', () => {
     // Confirms job-scheduling immunity directly: run the same input
     // three times and assert the count is byte-identical. If this
@@ -297,9 +367,9 @@ describeIfRuntime('algorithm time complexity (O(n) on items_processed)', () => {
     const source = synthesizeInput(10);
     const totals: number[] = [];
     for (let i = 0; i < 3; i++) {
-      const report = runBinaryOnce(binaryPath!, catalogPath!, source);
+      const run = runBinaryOnce(binaryPath!, catalogPath!, source);
       totals.push(
-        (report.stage_metrics ?? []).reduce(
+        (run.report.stage_metrics ?? []).reduce(
           (s, m) => s + (typeof m.items_processed === 'number' ? m.items_processed : 0),
           0,
         ),
