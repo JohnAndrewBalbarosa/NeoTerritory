@@ -456,6 +456,20 @@ const tx = db.transaction(() => {
     if (!String(err.message || '').includes('no such table')) throw err;
   }
 
+  // 2c. Drop any stale logs / audit_log rows that fall OUTSIDE the
+  //     May 15-17 seed window. Catches legacy admin maintenance rows
+  //     (e.g. the seeded `Neoterritory` user's earlier cleanups) so
+  //     the dashboard's date filters show ONLY the v2 dataset on
+  //     subsequent re-runs. We deliberately do not filter by user
+  //     here — anything not from the testing windows is noise.
+  for (const tbl of ['logs', 'audit_log']) {
+    try {
+      db.prepare(`DELETE FROM ${tbl} WHERE created_at < '2026-05-15' OR created_at > '2026-05-17'`).run();
+    } catch (err) {
+      if (!String(err.message || '').includes('no such table')) throw err;
+    }
+  }
+
   // 3. Wipe tester + participant users (preserve admin + OAuth users).
   const r2 = db
     .prepare(`DELETE FROM users WHERE username LIKE 'devcon%' OR username LIKE 'participant_%'`)
