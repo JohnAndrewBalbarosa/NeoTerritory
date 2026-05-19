@@ -44,7 +44,12 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
-const DB_PATH = path.join(REPO_ROOT, 'Codebase', 'Backend', 'src', 'db', 'database.sqlite');
+// SEED_DB_PATH lets the AWS / Docker re-seed scripts point at the
+// dist/ build's database path (Codebase/Backend/dist/src/db/database.sqlite)
+// without forking the seed itself. Falls back to the dev SQLite path.
+const DB_PATH = process.env.SEED_DB_PATH
+  ? path.resolve(process.env.SEED_DB_PATH)
+  : path.join(REPO_ROOT, 'Codebase', 'Backend', 'src', 'db', 'database.sqlite');
 const BACKEND_NODE_MODULES = path.join(REPO_ROOT, 'Codebase', 'Backend', 'node_modules');
 
 const sqliteModulePath = path.join(BACKEND_NODE_MODULES, 'better-sqlite3');
