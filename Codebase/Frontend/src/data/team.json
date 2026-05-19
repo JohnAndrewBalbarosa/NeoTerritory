@@ -4,8 +4,8 @@
     {
       "slug": "andrew",
       "name": "John Andrew Balbarosa",
-      "role": "Lead Developer · algorithm + microservice",
-      "bio": "Computer Science at FEU Tech. Owns the C++ pipeline — parsing, hashing, pattern dispatch, evidence emission. Believes in deterministic structural detection before any AI step. Spends his off-hours on CTF and certification grinds because he likes proof, not vibes.",
+      "role": "Lead Developer",
+      "bio": "Computer Science at FEU Tech. Owns the algorithm and the C++ pattern-detection microservice — parsing, hashing, pattern dispatch, evidence emission. Believes in deterministic structural detection before any AI step. Spends his off-hours on CTF and certification grinds because he likes proof, not vibes.",
       "photoPath": "team/andrew/portrait.jpg",
       "skills": [
         "TOPCIT Level 3 passer · aiming Level 5",
@@ -50,8 +50,8 @@
     {
       "slug": "miryl",
       "name": "Miryl de Leon",
-      "role": "Project Manager · pattern catalog + study design",
-      "bio": "Computer Science at FEU Tech. On the team she keeps the pattern catalog honest and runs the study-design loop — what gets measured, how readers actually behave, where the evidence lives.",
+      "role": "Project Manager",
+      "bio": "Computer Science at FEU Tech. Owns the pattern catalog and the study-design loop — what gets measured, how readers actually behave, and where the evidence lives. Keeps the catalog honest and the research instruments aligned across iterations.",
       "photoPath": "team/miryl/01.jpg",
       "skills": [
         "FEU Tech — Computer Science",
@@ -69,18 +69,21 @@
     {
       "slug": "josephine",
       "name": "Josephine Santander",
-      "role": "Documentation",
-      "bio": "Bio TBD — Josephine handles the thesis documentation and technical writing for the CodiNeo team. Full details to be added once she sends her materials.",
+      "role": "Documentation Lead",
+      "bio": "Computer Science at FEU Tech. Leads the thesis documentation track for CodiNeo — covering the written narrative, study artifacts, and user-facing copy that ships alongside the analyzer. Keeps the project's external voice consistent across the docs site, the printed thesis, and the research write-ups.",
       "photoPath": "",
-      "skills": [],
+      "skills": [
+        "Technical writing · thesis chapters + docs site",
+        "Research narrative · pattern catalog rationale",
+        "Editorial review · cross-team consistency"
+      ],
       "highlights": [],
       "links": {
         "github": "",
         "linkedin": "",
         "facebook": "",
         "website": ""
-      },
-      "isPlaceholder": true
+      }
     }
   ]
 }

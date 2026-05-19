@@ -19,7 +19,7 @@ function resolveRole(pathname: string): Role {
 }
 
 function resolveNext(role: Role): string {
-  if (role === 'student') return '/student-learning';
+  if (role === 'student') return '/patterns/learn';
   if (role === 'admin' || role === 'pm') return '/admin';
   if (role === 'new') return '/onboarding/choose';
   return '/studio';

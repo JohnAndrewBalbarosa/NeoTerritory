@@ -125,10 +125,15 @@ router.get('/test-accounts', async (_req: Request, res: Response) => {
   // works, so admins can sign in as a tester for QA via direct username
   // input. Default is ON so the existing devcon flow keeps working out
   // of the box.
-  const { getBoolSetting } = await import('../db/appSettings');
+  const { getBoolSetting, getFeatureReleases } = await import('../db/appSettings');
   const visible = getBoolSetting('testers_visible_to_users');
   const accounts = visible ? loadTesterAccounts() : [];
-  res.json({ accounts, password: accounts.length ? 'devcon' : null, testersHidden: !visible });
+  res.json({
+    accounts,
+    password: accounts.length ? 'devcon' : null,
+    testersHidden: !visible,
+    featureReleases: getFeatureReleases()
+  });
 });
 
 export default router;

@@ -26,11 +26,18 @@ export type SettingKey =
   // thesis is done so real-account Developer/Student users do not
   // hit a survey wall after every run — admin flips this when the
   // research period ends.
-  | 'reviews_required';
+  | 'reviews_required'
+  // Per-feature release flags. Stored as a JSON string mapping feature
+  // key → boolean (true = released/visible). Unknown keys fall back to
+  // the registry default on the frontend so unposted features stay
+  // hidden until the developer admin flips them on. Owned by the
+  // original-devs admin (e.g. jbalbarosa15@gmail.com).
+  | 'feature_releases';
 
 const DEFAULTS: Record<SettingKey, string> = {
   testers_visible_to_users: '1',
-  reviews_required: '1'
+  reviews_required: '1',
+  feature_releases: '{}'
 };
 
 interface Row { value: string }
@@ -51,4 +58,24 @@ export function setSetting<T extends SettingKey>(key: T, value: string): void {
 export function getBoolSetting<T extends SettingKey>(key: T): boolean {
   const v = getSetting(key);
   return v === '1' || v === 'true';
+}
+
+// Parse the feature_releases JSON setting into a typed map. Falls back to
+// an empty object when the stored value is missing or malformed — keeps
+// the frontend safe to merge with its defaultReleased registry.
+export function getFeatureReleases(): Record<string, boolean> {
+  const raw = getSetting('feature_releases');
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const out: Record<string, boolean> = {};
+      for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+        if (typeof k === 'string' && typeof v === 'boolean') out[k] = v;
+      }
+      return out;
+    }
+  } catch {
+    // fall through to empty
+  }
+  return {};
 }

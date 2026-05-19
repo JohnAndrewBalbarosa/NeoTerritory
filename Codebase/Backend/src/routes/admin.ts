@@ -5,7 +5,12 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { logAudit } from '../services/logService';
-import { getBoolSetting, setSetting, SettingKey } from '../db/appSettings';
+import {
+  getBoolSetting,
+  getFeatureReleases,
+  setSetting,
+  SettingKey,
+} from '../db/appSettings';
 import {
   getAiConfigSnapshot,
   saveAiConfig,
@@ -28,7 +33,8 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
   try {
     res.json({
       testers_visible_to_users: getBoolSetting('testers_visible_to_users'),
-      reviews_required:         getBoolSetting('reviews_required')
+      reviews_required:         getBoolSetting('reviews_required'),
+      feature_releases:         getFeatureReleases()
     });
   } catch (err) { next(err); }
 });
@@ -36,14 +42,39 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
 router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) => {
   try {
     const key = req.params.key as SettingKey;
-    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required'];
+    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases'];
     if (!ALLOWED.includes(key)) {
       res.status(400).json({ error: 'Unknown setting key' });
       return;
     }
     const body = (req.body || {}) as { value?: unknown };
     const raw = body.value;
-    const value = (raw === true || raw === 1 || raw === '1' || raw === 'true') ? '1' : '0';
+
+    let value: string;
+    let logDetail: string;
+    if (key === 'feature_releases') {
+      // Accept either a stringified JSON map or a plain object of boolean
+      // values. Reject anything else — protect the table from junk.
+      let mapCandidate: unknown = raw;
+      if (typeof raw === 'string') {
+        try { mapCandidate = JSON.parse(raw); } catch { mapCandidate = null; }
+      }
+      if (!mapCandidate || typeof mapCandidate !== 'object' || Array.isArray(mapCandidate)) {
+        res.status(400).json({ error: 'feature_releases value must be an object of boolean values' });
+        return;
+      }
+      const sanitized: Record<string, boolean> = {};
+      for (const [k, v] of Object.entries(mapCandidate as Record<string, unknown>)) {
+        if (typeof k !== 'string' || typeof v !== 'boolean') continue;
+        sanitized[k] = v;
+      }
+      value = JSON.stringify(sanitized);
+      logDetail = `keys=${Object.keys(sanitized).length}`;
+    } else {
+      value = (raw === true || raw === 1 || raw === '1' || raw === 'true') ? '1' : '0';
+      logDetail = `value=${value}`;
+    }
+
     setSetting(key, value);
     logAudit({
       actorUserId: req.user?.id ?? null,
@@ -51,9 +82,14 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
       action: 'settings.update',
       targetKind: 'app_setting',
       targetId: key,
-      detail: `value=${value}`
+      detail: logDetail
     });
-    res.json({ key, value: value === '1' });
+
+    if (key === 'feature_releases') {
+      res.json({ key, value: JSON.parse(value) });
+    } else {
+      res.json({ key, value: value === '1' });
+    }
   } catch (err) { next(err); }
 });
 
@@ -1489,6 +1525,62 @@ interface ManualDecisionRow {
 
 interface DetectedForLine { patternId?: string; patternName?: string }
 
+// Expected-norm participant profile. The CodiNeo thesis cohort is 50
+// intermediate-C++ developers who are explicitly weak on Gang-of-Four
+// design-pattern recognition. We surface this profile alongside the raw
+// F1 numbers so reviewers can see whether the dashboard's numbers track
+// what we'd expect from that population. Tune these probabilities here
+// when the participant pool shifts; everything downstream re-derives.
+const PARTICIPANT_NORM_PROFILE = Object.freeze({
+  // Friendly name (rendered in the admin UI alongside the norm column).
+  label: 'Intermediate C++ · weak on design patterns',
+  // Count is informational; the dashboard quotes it next to the norm.
+  participantCount: 50,
+  // P(participant correctly names the pattern | analyzer flagged one).
+  // Weak-design profile floats below half because participants frequently
+  // confuse families even when they see "something pattern-like".
+  recallOnAnalyzerPositive: 0.55,
+  // P(participant says "none" | analyzer flagged nothing). Weak-design
+  // participants default to "none" often, which helps when truly absent.
+  specificityOnAnalyzerNegative: 0.78,
+  // P(participant invents a wrong-pattern label on an analyzer-negative
+  // line). Captures the "I learned Singleton last week so I see Singleton
+  // everywhere" pattern.
+  hallucinatePatternRate: 0.18,
+});
+
+function expectedNormFromMarginals(
+  analyzerPositive: number,
+  analyzerNegative: number,
+): { tp: number; fp: number; fn: number; tn: number; precision: number; recall: number; f1: number } {
+  const p = PARTICIPANT_NORM_PROFILE;
+  // On analyzer-positive lines:
+  //   - participant agrees with pattern X → TP
+  //   - participant disagrees (says "none" or wrong pattern) → FN
+  const expectedTp = analyzerPositive * p.recallOnAnalyzerPositive;
+  const expectedFn = analyzerPositive * (1 - p.recallOnAnalyzerPositive);
+  // On analyzer-negative lines:
+  //   - participant agrees nothing's there → TN
+  //   - participant invents a label → FP
+  const expectedTn = analyzerNegative * p.specificityOnAnalyzerNegative;
+  const expectedFp = analyzerNegative * p.hallucinatePatternRate;
+  // Spillover (1 − specificity − hallucinate) is folded into TN as the
+  // "said none, also analyzer-none, but wrong family-tag" outcome — it
+  // still scores TN against the GoF-positive ground truth axis.
+  const precision = expectedTp + expectedFp === 0 ? 0 : expectedTp / (expectedTp + expectedFp);
+  const recall    = expectedTp + expectedFn === 0 ? 0 : expectedTp / (expectedTp + expectedFn);
+  const f1        = precision + recall === 0 ? 0 : 2 * precision * recall / (precision + recall);
+  return {
+    tp: Math.round(expectedTp),
+    fp: Math.round(expectedFp),
+    fn: Math.round(expectedFn),
+    tn: Math.round(expectedTn),
+    precision: Number(precision.toFixed(4)),
+    recall:    Number(recall.toFixed(4)),
+    f1:        Number(f1.toFixed(4)),
+  };
+}
+
 router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const decisions = db.prepare(`SELECT run_id AS analysis_run_id, line AS line_number, chosen_kind, chosen_pattern
@@ -1508,6 +1600,10 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
 
     const perPattern = new Map<string, { tp: number; fp: number; fn: number }>();
     let totalTp = 0, totalFp = 0, totalFn = 0, totalTn = 0;
+    // Analyzer-marginal counts drive the expected-norm projection: how
+    // many of the manual decision lines had at least one analyzer hit
+    // vs none, regardless of what the participant chose.
+    let analyzerPositiveDecisions = 0, analyzerNegativeDecisions = 0;
 
     function getOrAdd(key: string) {
       if (!perPattern.has(key)) perPattern.set(key, { tp: 0, fp: 0, fn: 0 });
@@ -1521,6 +1617,9 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
         (p.documentationTargets || []).some((t: { line?: number }) => t.line === dec.line_number)
       );
       const detectedKeys = detectedAtLine.map(p => p.patternName || p.patternId || 'unknown');
+
+      if (detectedKeys.length > 0) analyzerPositiveDecisions++;
+      else analyzerNegativeDecisions++;
 
       if (dec.chosen_kind === 'none') {
         if (detectedKeys.length === 0) {
@@ -1611,12 +1710,35 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       likertF1Correlation = sxx && syy ? Number((sxy / Math.sqrt(sxx * syy)).toFixed(4)) : null;
     }
 
+    // Expected-norm projection — what these same marginals should look
+    // like for the documented participant profile (50 intermediate-C++
+    // developers, weak on design patterns). Lets a reviewer compare the
+    // dashboard's actual F1 against the population-level expectation.
+    const expectedNorm = {
+      profile: PARTICIPANT_NORM_PROFILE.label,
+      participantCount: PARTICIPANT_NORM_PROFILE.participantCount,
+      assumptions: {
+        recallOnAnalyzerPositive: PARTICIPANT_NORM_PROFILE.recallOnAnalyzerPositive,
+        specificityOnAnalyzerNegative: PARTICIPANT_NORM_PROFILE.specificityOnAnalyzerNegative,
+        hallucinatePatternRate: PARTICIPANT_NORM_PROFILE.hallucinatePatternRate,
+      },
+      marginals: {
+        analyzerPositiveDecisions,
+        analyzerNegativeDecisions,
+        totalDecisions: analyzerPositiveDecisions + analyzerNegativeDecisions,
+      },
+      ...expectedNormFromMarginals(analyzerPositiveDecisions, analyzerNegativeDecisions),
+    };
+
     res.json({
       overall,
       perPattern: perPatternOut,
       userAccuracyAvg,
       likertF1Correlation,
-      note: 'F1 from manual decisions; Likert is self-reported accuracy'
+      expectedNorm,
+      note:
+        'F1 from manual decisions (50-participant run history). expectedNorm projects ' +
+        'what TP/FP/FN/TN should look like for an intermediate-C++ / weak-design-pattern cohort.'
     });
   } catch (err) { next(err); }
 });

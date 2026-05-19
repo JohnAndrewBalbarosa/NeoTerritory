@@ -377,16 +377,47 @@ export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
 export interface AdminSettings {
   testers_visible_to_users: boolean;
   reviews_required: boolean;
+  feature_releases: Record<string, boolean>;
 }
 export async function fetchAdminSettings(): Promise<AdminSettings> {
   return apiFetch<AdminSettings>('/api/admin/settings');
 }
-export async function setAdminSetting(key: keyof AdminSettings, value: boolean): Promise<{ key: string; value: boolean }> {
+export async function setAdminSetting(
+  key: 'testers_visible_to_users' | 'reviews_required',
+  value: boolean
+): Promise<{ key: string; value: boolean }> {
   return apiFetch<{ key: string; value: boolean }>(`/api/admin/settings/${encodeURIComponent(key)}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ value })
   });
+}
+export async function setFeatureReleases(
+  value: Record<string, boolean>
+): Promise<{ key: string; value: Record<string, boolean> }> {
+  return apiFetch<{ key: string; value: Record<string, boolean> }>(
+    '/api/admin/settings/feature_releases',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value })
+    }
+  );
+}
+
+// Public read of the feature-release map. Piggy-backs on /auth/test-accounts
+// so anonymous visitors do not need a new endpoint — the map is already
+// considered public-safe (it only controls which UI surfaces are visible,
+// not any secret state).
+export async function fetchFeatureReleases(): Promise<Record<string, boolean>> {
+  try {
+    const r = await fetch('/auth/test-accounts', { headers: { Accept: 'application/json' } });
+    if (!r.ok) return {};
+    const data = (await r.json()) as { featureReleases?: Record<string, boolean> };
+    return data?.featureReleases ?? {};
+  } catch {
+    return {};
+  }
 }
 
 // AI provider config. The DB-backed row is the source of truth at runtime;

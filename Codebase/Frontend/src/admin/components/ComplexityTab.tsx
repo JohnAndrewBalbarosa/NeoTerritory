@@ -396,7 +396,7 @@ export default function ComplexityTab() {
               </thead>
               <tbody>
                 <tr className="f1-overall-row">
-                  <td><strong>Overall</strong></td>
+                  <td><strong>Overall (actual)</strong></td>
                   <td><F1Badge value={f1.overall.precision} /></td>
                   <td><F1Badge value={f1.overall.recall} /></td>
                   <td><F1Badge value={f1.overall.f1} /></td>
@@ -405,6 +405,27 @@ export default function ComplexityTab() {
                   <td>{f1.overall.fn}</td>
                   <td>{f1.overall.tn}</td>
                 </tr>
+                {f1.expectedNorm && (
+                  <tr
+                    className="f1-overall-row f1-overall-row--norm"
+                    data-testid="f1-expected-norm-row"
+                    title={`Expected norm for ${f1.expectedNorm.profile} (${f1.expectedNorm.participantCount} participants)`}
+                  >
+                    <td>
+                      <strong>Expected norm</strong>
+                      <span className="f1-norm-sub">
+                        {f1.expectedNorm.profile} · n={f1.expectedNorm.participantCount}
+                      </span>
+                    </td>
+                    <td><F1Badge value={f1.expectedNorm.precision} /></td>
+                    <td><F1Badge value={f1.expectedNorm.recall} /></td>
+                    <td><F1Badge value={f1.expectedNorm.f1} /></td>
+                    <td>{f1.expectedNorm.tp}</td>
+                    <td>{f1.expectedNorm.fp}</td>
+                    <td>{f1.expectedNorm.fn}</td>
+                    <td>{f1.expectedNorm.tn}</td>
+                  </tr>
+                )}
                 {f1.perPattern.map(p => (
                   <tr key={p.pattern}>
                     <td>{p.pattern}</td>
@@ -425,6 +446,19 @@ export default function ComplexityTab() {
               {f1.likertF1Correlation !== null && <> · Likert↔F1 correlation: <strong>{f1.likertF1Correlation}</strong></>}
               {' '}<span className="f1-note-footnote">({f1.note})</span>
             </p>
+
+            {f1.expectedNorm && (
+              <p className="f1-integration-note f1-norm-explainer">
+                <strong>Expected norm assumes:</strong>{' '}
+                recall on analyzer-positive lines = {(f1.expectedNorm.assumptions.recallOnAnalyzerPositive * 100).toFixed(0)}%,{' '}
+                specificity on analyzer-negative lines = {(f1.expectedNorm.assumptions.specificityOnAnalyzerNegative * 100).toFixed(0)}%,{' '}
+                pattern-hallucination rate = {(f1.expectedNorm.assumptions.hallucinatePatternRate * 100).toFixed(0)}%.{' '}
+                Marginals (from run history):{' '}
+                {f1.expectedNorm.marginals.analyzerPositiveDecisions} analyzer-positive /
+                {' '}{f1.expectedNorm.marginals.analyzerNegativeDecisions} analyzer-negative
+                {' '}of {f1.expectedNorm.marginals.totalDecisions} total decisions.
+              </p>
+            )}
           </>
         )}
         {!f1 && !fErr && <div className="empty-state">Loading…</div>}

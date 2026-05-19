@@ -1,20 +1,20 @@
 // /auth/choose — Step 1: three-card entry chooser.
 //
-// New user  = first-timer — onboarding wizard figures out role after OAuth.
-// PM        = self-serve org owner (anyone with a Google account). The
-//             original-devs allowlist promotion happens SILENTLY through
-//             this path — if the email is in ORIGINAL_DEV_EMAILS, the
-//             backend binds them to the NeoTerritory org and the
-//             callback routes them to /admin. No separate admin card.
-// Developer = joining an org via invite code / admin-email request, or
-//             solo against the public open-standards catalog.
-//
-// Existing users (who pick any card) get auto-routed to their actual
-// surface by the backend's /exchange endpoint based on their stored
-// membership. The pre-OAuth choice is mostly an INTENT TAG for new
-// users — existing accounts override it.
+// Learners  = student-learning track. Account-gated so progress saves
+//             across sessions. Lands on /student-learning/login → OAuth
+//             → standalone learning shell at /patterns/learn.
+// Guest     = one-time analyzer try-out without an account. Opens the
+//             shared TryItChooser modal on the homepage so the seat-
+//             claim flow runs through its existing surface.
+// Developer = generic Google sign-in. The backend /exchange endpoint
+//             auto-routes existing accounts to PM / admin / developer
+//             surfaces based on stored membership. The original-devs
+//             allowlist promotion (e.g. jbalbarosa15@gmail.com → admin)
+//             happens SILENTLY along this path.
 
 import { navigate } from '../../logic/router';
+import { dispatchTryItChooserOpen } from '../marketing/TryItChooser';
+import { useFeatureReleases } from '../../hooks/useFeatureReleases';
 
 interface RoleCard {
   testId: string;
@@ -22,44 +22,53 @@ interface RoleCard {
   title: string;
   body: string;
   cta: string;
-  path: string;
-  highlight: 'pm' | 'new' | 'developer';
+  highlight: 'learners' | 'guest' | 'developer';
+  action: () => void;
 }
 
 const CARDS: ReadonlyArray<RoleCard> = [
   {
-    testId: 'auth-choose-new-user',
-    eyebrow: 'First time',
-    title: "I'm a new user",
+    testId: 'auth-choose-learners',
+    eyebrow: 'Learn first',
+    title: "I'm a learner",
     body:
-      "Bago ka pa lang sa CodiNeo. Sign in with Google and we'll ask kung PM ka ba o developer sa onboarding.",
-    cta: 'Continue as new user →',
-    path: '/new-user/login',
-    highlight: 'new',
+      "Para sa students at self-learners. Mag-sign in with Google para ma-save ang progress mo sa learning path — pwedeng tuloy-tuloy across sessions.",
+    cta: 'Continue as learner →',
+    highlight: 'learners',
+    action: () => navigate('/student-learning/login'),
   },
   {
-    testId: 'auth-choose-pm',
-    eyebrow: 'Org owner',
-    title: "I'm a PM",
+    testId: 'auth-choose-guest',
+    eyebrow: 'No account',
+    title: "I'm a guest",
     body:
-      "Project manager ng sarili mong organization. Mag-iinvite ka ng developers at mag-manage ng pattern catalogs. Pag bago ka, gagawa kami ng fresh org para sa'yo.",
-    cta: 'Continue as PM →',
-    path: '/pm/login',
-    highlight: 'pm',
+      "One-time look around — walang account, walang saved history. Mag-cloclaim ka ng guest seat tapos pwede mo nang subukan ang analyzer.",
+    cta: 'Continue as guest →',
+    highlight: 'guest',
+    action: () => {
+      navigate('/');
+      // Defer until the marketing shell has mounted the TryItChooser listener.
+      setTimeout(() => dispatchTryItChooserOpen(), 0);
+    },
   },
   {
     testId: 'auth-choose-developer',
-    eyebrow: 'Team member',
+    eyebrow: 'Account',
     title: "I'm a developer",
     body:
-      "Sumali sa existing org gamit ang invite code o admin-email request. May solo path din kung gusto mong gamitin ang public open-standards catalog lang.",
+      "Sign in with Google. Auto-route ka ng backend after OAuth — PM, admin, o developer, depende sa stored membership mo.",
     cta: 'Continue as developer →',
-    path: '/developer/login',
     highlight: 'developer',
+    action: () => navigate('/developer/login'),
   },
 ];
 
 export default function AuthChooserPage() {
+  const { isReleased } = useFeatureReleases();
+  const visibleCards = CARDS.filter((card) =>
+    card.highlight === 'learners' ? isReleased('student-learning') : true,
+  );
+
   return (
     <main className="nt-entry" id="main" data-testid="auth-choose">
       <section
@@ -72,21 +81,22 @@ export default function AuthChooserPage() {
             How will you use CodiNeo?
           </h1>
           <p className="nt-entry__lede">
-            Pick your role. New users go through a quick onboarding; PMs at
-            developers ay deretso sign-in. Existing accounts auto-route after
-            Google &mdash; ang pre-OAuth choice ay para lang sa first-time setup.
+            Pick your entry. Learners mag-sa-sign in para masave ang progress;
+            guests pwedeng tumingin lang ng one-time; developers (kasama na ang
+            PM at admin accounts) ay deretso Google sign-in &mdash; auto-route
+            ka after OAuth based sa stored membership.
           </p>
         </header>
 
         <div className="nt-auth-choose__grid nt-auth-choose__grid--three">
-          {CARDS.map((card) => (
+          {visibleCards.map((card) => (
             <button
               key={card.testId}
               type="button"
               className="nt-auth-choose__card"
               data-highlight={card.highlight}
               data-testid={card.testId}
-              onClick={() => navigate(card.path)}
+              onClick={card.action}
             >
               <span className="nt-auth-choose__card-eyebrow">{card.eyebrow}</span>
               <span className="nt-auth-choose__card-title">{card.title}</span>

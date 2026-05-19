@@ -412,10 +412,33 @@ export interface F1Overall extends F1Score {
   tn: number;
 }
 
+export interface F1ExpectedNorm {
+  profile:           string;
+  participantCount:  number;
+  assumptions: {
+    recallOnAnalyzerPositive:       number;
+    specificityOnAnalyzerNegative:  number;
+    hallucinatePatternRate:         number;
+  };
+  marginals: {
+    analyzerPositiveDecisions:  number;
+    analyzerNegativeDecisions:  number;
+    totalDecisions:             number;
+  };
+  tp:        number;
+  fp:        number;
+  fn:        number;
+  tn:        number;
+  precision: number;
+  recall:    number;
+  f1:        number;
+}
+
 export interface F1Metrics {
   overall:              F1Overall;
   perPattern:           PatternF1[];
   userAccuracyAvg:      number | null;
   likertF1Correlation:  number | null;
+  expectedNorm?:        F1ExpectedNorm;
   note:                 string;
 }

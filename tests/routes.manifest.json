@@ -43,6 +43,13 @@
       "expectSelector": "[data-testid=\"patterns-family-grid\"]"
     },
     {
+      "path": "/patterns/learn",
+      "name": "student-learning-shell",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"student-learning-shell\"]"
+    },
+    {
       "path": "/admin",
       "name": "admin-dashboard",
       "auth": "admin",
@@ -55,7 +62,7 @@
       "auth": "public",
       "expectStatus": 200,
       "expectSelector": "[data-testid=\"auth-choose\"]",
-      "expectText": ["PM", "developer"]
+      "expectText": ["learner", "guest", "developer"]
     },
     {
       "path": "/admin/login",

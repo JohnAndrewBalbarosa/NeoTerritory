@@ -6909,3 +6909,72 @@ body[data-surface] {
   overflow-x: auto;
   color: var(--nt-mkt-text);
 }
+
+/* Student Learning standalone shell — sits outside MarketingShell so the
+   homepage topbar/footer do not bleed in. Keeps a slim brand bar +
+   sign-out and lets PatternsLearnPage render its existing layout as-is. */
+.nt-learn-shell {
+  min-height: 100vh;
+  background: var(--nt-mkt-bg);
+  color: var(--nt-mkt-text);
+}
+.nt-learn-shell__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.9rem 1.5rem;
+  border-bottom: 1px solid var(--nt-mkt-line);
+  background: rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(8px);
+}
+.nt-learn-shell__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  color: var(--nt-mkt-text);
+  font: inherit;
+  padding: 0;
+}
+.nt-learn-shell__wordmark {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.nt-learn-shell__divider {
+  opacity: 0.45;
+}
+.nt-learn-shell__crumb {
+  opacity: 0.75;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+}
+.nt-learn-shell__bar-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.9rem;
+  font-size: 0.85rem;
+}
+.nt-learn-shell__email {
+  opacity: 0.7;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.nt-learn-shell__signout {
+  background: transparent;
+  border: 1px solid var(--nt-mkt-line);
+  color: var(--nt-mkt-text);
+  border-radius: 999px;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+}
+.nt-learn-shell__signout:hover {
+  background: rgba(255, 255, 255, 0.06);
+}

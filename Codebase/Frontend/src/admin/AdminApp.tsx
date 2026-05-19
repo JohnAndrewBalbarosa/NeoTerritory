@@ -18,6 +18,7 @@ import AiConfigPanel from './components/AiConfigPanel';
 import CatalogsTab from './components/CatalogsTab';
 import InviteCodesTab from './components/InviteCodesTab';
 import JoinRequestsTab from './components/JoinRequestsTab';
+import FeatureReleasePanel from './components/FeatureReleasePanel';
 import { markAdminRefresh } from '../api/client';
 import {
   IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
@@ -25,7 +26,7 @@ import {
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases';
 
 interface TabDef {
   id: AdminTab;
@@ -47,7 +48,8 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'logs',       label: 'Logs',       icon: IconClipboard },
   { id: 'catalogs',     label: 'Catalogs',       icon: IconBeaker },
   { id: 'invites',      label: 'Invites',        icon: IconCheckSquare },
-  { id: 'joinRequests', label: 'Join requests',  icon: IconShield }
+  { id: 'joinRequests', label: 'Join requests',  icon: IconShield },
+  { id: 'featureReleases', label: 'Feature releases', icon: IconCode, originalDevsOnly: true }
 ];
 
 // Original-devs detection: the JWT now carries an explicit
@@ -396,6 +398,11 @@ export default function AdminApp() {
         <div hidden={activeTab !== 'joinRequests'}>
           <JoinRequestsTab />
         </div>
+        {isOriginalDevsAdmin(user) && (
+          <div hidden={activeTab !== 'featureReleases'}>
+            <FeatureReleasePanel />
+          </div>
+        )}
       </main>
     </div>
   );

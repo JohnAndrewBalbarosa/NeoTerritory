@@ -1,5 +1,6 @@
 import { navigate } from '../../../logic/router';
 import { PATTERNS, PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
+import { useFeatureReleases } from '../../../hooks/useFeatureReleases';
 
 // Per this turn (post-D74 refresh):
 //   1. Drop the standalone "Tokens" popover. The token criteria already
@@ -18,6 +19,9 @@ const FAMILY_ORDER: ReadonlyArray<string> = [
 ];
 
 export default function PatternsPage() {
+  const { isReleased } = useFeatureReleases();
+  const learnCtaVisible = isReleased('patterns-learn-cta') && isReleased('student-learning');
+
   const grouped = FAMILY_ORDER.map((family) => ({
     family,
     items: PATTERNS.filter((p) => p.family === family),
@@ -36,14 +40,18 @@ export default function PatternsPage() {
         </div>
         {/* D77: 'Learn more' button top-right of the main content header.
             Routes to /patterns/learn — the step-through learning hub that
-            owns the student-learning content under the Patterns surface. */}
-        <button
-          type="button"
-          className="nt-patterns__head-cta"
-          onClick={() => navigate('/patterns/learn')}
-        >
-          Learn more →
-        </button>
+            owns the student-learning content under the Patterns surface.
+            Gated on the `patterns-learn-cta` + `student-learning` feature
+            flags so the developer admin can hide it pre-release. */}
+        {learnCtaVisible && (
+          <button
+            type="button"
+            className="nt-patterns__head-cta"
+            onClick={() => navigate('/patterns/learn')}
+          >
+            Learn more →
+          </button>
+        )}
       </header>
 
       <section className="nt-patterns__source" aria-labelledby="patterns-source">

@@ -12,7 +12,6 @@ import StudentLearningHub from './StudentLearningHub';
 import MechanicsPage from './mechanics/MechanicsPage';
 import PatternsPage from './patterns/PatternsPage';
 import PatternDetailPage from './patterns/PatternDetailPage';
-import PatternsLearnPage from './patterns/PatternsLearnPage';
 import TourPage from './tour/TourPage';
 import DocsPage from './docs/DocsPage';
 import DocsFullPage from './docs/DocsFullPage';
@@ -87,8 +86,6 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'mechanics' && <MechanicsPage />}
           {surface === 'patterns' && <PatternsPage />}
           {surface === 'patternDetail' && <PatternDetailPage />}
-          {surface === 'patternsLearn' && <PatternsLearnPage />}
-          {surface === 'patternsLearnModule' && <PatternsLearnPage />}
           {surface === 'tour' && <TourPage />}
           {surface === 'docs' && <DocsPage />}
           {surface === 'docsFull' && <DocsFullPage />}
