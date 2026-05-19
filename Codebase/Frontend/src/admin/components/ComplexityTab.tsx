@@ -435,7 +435,7 @@ export default function ComplexityTab() {
                     <td>{p.tp}</td>
                     <td>{p.fp}</td>
                     <td>{p.fn}</td>
-                    <td title="Per-pattern TN intentionally omitted — see DESIGN_DECISIONS D36">—</td>
+                    <td title="Manual decisions where neither user nor analyzer mentioned this pattern (totalDecisions − tp − fp − fn).">{p.tn}</td>
                   </tr>
                 ))}
               </tbody>

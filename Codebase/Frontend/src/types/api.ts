@@ -404,6 +404,11 @@ export interface F1Score {
 
 export interface PatternF1 extends F1Score {
   pattern: string;
+  // Per-pattern true negatives — count of manual decisions where neither
+  // the user nor the analyzer mentioned this pattern. Backend computes
+  // this as totalDecisions − (tp + fp + fn) so the UI can render a real
+  // 0 instead of "—" for patterns with no decisions yet.
+  tn: number;
 }
 
 // Overall extends F1Score with TN (true negative). Per-pattern TN is

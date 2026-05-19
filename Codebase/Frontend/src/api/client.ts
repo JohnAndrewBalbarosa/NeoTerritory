@@ -374,10 +374,18 @@ export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
 // testers_visible_to_users — that hides the devcon* picker on the
 // public login surface when flipped off. Adding new keys is a backend
 // change (admin.ts ALLOWED list + appSettings.ts SettingKey).
+export interface AdminF1NormProfile {
+  label: string;
+  participantCount: number;
+  recallOnAnalyzerPositive: number;
+  specificityOnAnalyzerNegative: number;
+  hallucinatePatternRate: number;
+}
 export interface AdminSettings {
   testers_visible_to_users: boolean;
   reviews_required: boolean;
   feature_releases: Record<string, boolean>;
+  f1_norm_profile: AdminF1NormProfile;
 }
 export async function fetchAdminSettings(): Promise<AdminSettings> {
   return apiFetch<AdminSettings>('/api/admin/settings');

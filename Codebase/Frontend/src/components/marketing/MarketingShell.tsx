@@ -34,6 +34,24 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
     }
   }, [surface]);
 
+  // Legacy /auth/choose and /auth used to render a standalone three-card
+  // picker. The homepage TryItChooser popup now owns role selection, so
+  // visits to those URLs land on the hero and we auto-open the popup so
+  // bookmarks keep working without a second click.
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const path = window.location.pathname;
+    if (path === '/auth/choose' || path === '/auth') {
+      navigate('/');
+      // Wait one tick so MarketingShell's TRY_IT_OPEN_EVENT listener is
+      // attached (it mounts in the next effect below) before dispatching.
+      const t = setTimeout(() => {
+        window.dispatchEvent(new CustomEvent(TRY_IT_OPEN_EVENT));
+      }, 0);
+      return () => clearTimeout(t);
+    }
+  }, []);
+
   // Try-it chooser hoisted to the shell so MarketingNav, WhyPage, TourPage,
   // HeroLanding feature tiles, etc. all open the SAME modal instead of each
   // navigating directly to /student-studio (which would land on the tester

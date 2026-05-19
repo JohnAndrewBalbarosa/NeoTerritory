@@ -18,7 +18,6 @@ export type Surface =
   | 'studio'
   | 'googleCallback'
   | 'googleSignIn'
-  | 'authChoose'
   | 'onboarding'
   | 'mechanics'
   | 'patterns'
@@ -50,7 +49,10 @@ export function pathToSurface(path: string): Surface {
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
   if (path === '/auth/callback') return 'googleCallback';
-  if (path === '/auth/choose' || path === '/auth') return 'authChoose';
+  // /auth/choose and /auth are retired — the homepage TryItChooser popup
+  // now covers role selection. Both URLs fall through to the marketing
+  // hero, and MarketingShell auto-opens the popup on mount so old
+  // bookmarks still land on a working chooser without a separate page.
   if (path === '/onboarding' || path.startsWith('/onboarding/')) return 'onboarding';
   if (
     path === '/developer/login' ||

@@ -8,8 +8,10 @@ import { logAudit } from '../services/logService';
 import {
   getBoolSetting,
   getFeatureReleases,
+  getF1NormProfile,
   setSetting,
   SettingKey,
+  type F1NormProfile,
 } from '../db/appSettings';
 import {
   getAiConfigSnapshot,
@@ -34,7 +36,8 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
     res.json({
       testers_visible_to_users: getBoolSetting('testers_visible_to_users'),
       reviews_required:         getBoolSetting('reviews_required'),
-      feature_releases:         getFeatureReleases()
+      feature_releases:         getFeatureReleases(),
+      f1_norm_profile:          getF1NormProfile()
     });
   } catch (err) { next(err); }
 });
@@ -42,7 +45,7 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
 router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) => {
   try {
     const key = req.params.key as SettingKey;
-    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases'];
+    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases', 'f1_norm_profile'];
     if (!ALLOWED.includes(key)) {
       res.status(400).json({ error: 'Unknown setting key' });
       return;
@@ -70,6 +73,28 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
       }
       value = JSON.stringify(sanitized);
       logDetail = `keys=${Object.keys(sanitized).length}`;
+    } else if (key === 'f1_norm_profile') {
+      // Same JSON acceptance shape as feature_releases. Field-level
+      // validation + clamping happens in getF1NormProfile() when the
+      // value is read, so here we only enforce object-shape and strip
+      // anything not on the known field list.
+      let profileCandidate: unknown = raw;
+      if (typeof raw === 'string') {
+        try { profileCandidate = JSON.parse(raw); } catch { profileCandidate = null; }
+      }
+      if (!profileCandidate || typeof profileCandidate !== 'object' || Array.isArray(profileCandidate)) {
+        res.status(400).json({ error: 'f1_norm_profile value must be a JSON object' });
+        return;
+      }
+      const src = profileCandidate as Record<string, unknown>;
+      const sanitizedProfile: Partial<F1NormProfile> = {};
+      if (typeof src.label === 'string') sanitizedProfile.label = src.label;
+      if (typeof src.participantCount === 'number') sanitizedProfile.participantCount = src.participantCount;
+      for (const numKey of ['recallOnAnalyzerPositive', 'specificityOnAnalyzerNegative', 'hallucinatePatternRate'] as const) {
+        if (typeof src[numKey] === 'number') (sanitizedProfile as Record<string, number>)[numKey] = src[numKey] as number;
+      }
+      value = JSON.stringify(sanitizedProfile);
+      logDetail = `keys=${Object.keys(sanitizedProfile).length}`;
     } else {
       value = (raw === true || raw === 1 || raw === '1' || raw === 'true') ? '1' : '0';
       logDetail = `value=${value}`;
@@ -87,6 +112,10 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
 
     if (key === 'feature_releases') {
       res.json({ key, value: JSON.parse(value) });
+    } else if (key === 'f1_norm_profile') {
+      // Echo the normalised + clamped profile so the client sees the
+      // exact values the dashboard will use.
+      res.json({ key, value: getF1NormProfile() });
     } else {
       res.json({ key, value: value === '1' });
     }
@@ -1525,35 +1554,16 @@ interface ManualDecisionRow {
 
 interface DetectedForLine { patternId?: string; patternName?: string }
 
-// Expected-norm participant profile. The CodiNeo thesis cohort is 50
-// intermediate-C++ developers who are explicitly weak on Gang-of-Four
-// design-pattern recognition. We surface this profile alongside the raw
-// F1 numbers so reviewers can see whether the dashboard's numbers track
-// what we'd expect from that population. Tune these probabilities here
-// when the participant pool shifts; everything downstream re-derives.
-const PARTICIPANT_NORM_PROFILE = Object.freeze({
-  // Friendly name (rendered in the admin UI alongside the norm column).
-  label: 'Intermediate C++ · weak on design patterns',
-  // Count is informational; the dashboard quotes it next to the norm.
-  participantCount: 50,
-  // P(participant correctly names the pattern | analyzer flagged one).
-  // Weak-design profile floats below half because participants frequently
-  // confuse families even when they see "something pattern-like".
-  recallOnAnalyzerPositive: 0.55,
-  // P(participant says "none" | analyzer flagged nothing). Weak-design
-  // participants default to "none" often, which helps when truly absent.
-  specificityOnAnalyzerNegative: 0.78,
-  // P(participant invents a wrong-pattern label on an analyzer-negative
-  // line). Captures the "I learned Singleton last week so I see Singleton
-  // everywhere" pattern.
-  hallucinatePatternRate: 0.18,
-});
-
+// Expected-norm participant profile is persisted in app_settings under
+// 'f1_norm_profile' (see appSettings.ts → getF1NormProfile). The DB
+// store lets admins retune the assumptions without redeploying — the
+// frontend Feature Releases tab is the editor; this endpoint just reads
+// the latest value on every request so changes propagate immediately.
 function expectedNormFromMarginals(
   analyzerPositive: number,
   analyzerNegative: number,
+  p: F1NormProfile,
 ): { tp: number; fp: number; fn: number; tn: number; precision: number; recall: number; f1: number } {
-  const p = PARTICIPANT_NORM_PROFILE;
   // On analyzer-positive lines:
   //   - participant agrees with pattern X → TP
   //   - participant disagrees (says "none" or wrong pattern) → FN
@@ -1650,8 +1660,17 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
     }
 
     const overall = { ...f1(totalTp, totalFp, totalFn), tn: totalTn };
+    // Per-pattern TN: every decision that did NOT contribute to this
+    // pattern's TP/FP/FN counts is a true negative for it. Using the
+    // total-decisions denominator keeps the value meaningful (it's the
+    // number of lines where neither user nor analyzer mentioned the
+    // pattern) and lets the frontend show "0" instead of a dash when
+    // a brand-new pattern has no manual decisions yet.
+    const totalDecisions = analyzerPositiveDecisions + analyzerNegativeDecisions;
     const perPatternOut = [...perPattern.entries()].map(([pattern, s]) => ({
-      pattern, ...f1(s.tp, s.fp, s.fn)
+      pattern,
+      ...f1(s.tp, s.fp, s.fn),
+      tn: Math.max(0, totalDecisions - (s.tp + s.fp + s.fn)),
     })).sort((a, b) => b.f1 - a.f1);
 
     // Pull avg accuracy from per-run reviews
@@ -1711,23 +1730,23 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
     }
 
     // Expected-norm projection — what these same marginals should look
-    // like for the documented participant profile (50 intermediate-C++
-    // developers, weak on design patterns). Lets a reviewer compare the
-    // dashboard's actual F1 against the population-level expectation.
+    // like for the documented participant profile. Read live from the
+    // DB so admins can retune the assumptions without redeploying.
+    const normProfile = getF1NormProfile();
     const expectedNorm = {
-      profile: PARTICIPANT_NORM_PROFILE.label,
-      participantCount: PARTICIPANT_NORM_PROFILE.participantCount,
+      profile: normProfile.label,
+      participantCount: normProfile.participantCount,
       assumptions: {
-        recallOnAnalyzerPositive: PARTICIPANT_NORM_PROFILE.recallOnAnalyzerPositive,
-        specificityOnAnalyzerNegative: PARTICIPANT_NORM_PROFILE.specificityOnAnalyzerNegative,
-        hallucinatePatternRate: PARTICIPANT_NORM_PROFILE.hallucinatePatternRate,
+        recallOnAnalyzerPositive:      normProfile.recallOnAnalyzerPositive,
+        specificityOnAnalyzerNegative: normProfile.specificityOnAnalyzerNegative,
+        hallucinatePatternRate:        normProfile.hallucinatePatternRate,
       },
       marginals: {
         analyzerPositiveDecisions,
         analyzerNegativeDecisions,
         totalDecisions: analyzerPositiveDecisions + analyzerNegativeDecisions,
       },
-      ...expectedNormFromMarginals(analyzerPositiveDecisions, analyzerNegativeDecisions),
+      ...expectedNormFromMarginals(analyzerPositiveDecisions, analyzerNegativeDecisions, normProfile),
     };
 
     res.json({

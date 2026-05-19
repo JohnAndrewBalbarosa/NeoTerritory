@@ -32,12 +32,25 @@ export type SettingKey =
   // the registry default on the frontend so unposted features stay
   // hidden until the developer admin flips them on. Owned by the
   // original-devs admin (e.g. jbalbarosa15@gmail.com).
-  | 'feature_releases';
+  | 'feature_releases'
+  // F1 expected-norm participant profile. JSON-encoded so the admin
+  // can retune the assumptions without redeploying. Shape is enforced
+  // by getF1NormProfile() (every numeric field clamped to [0, 1]).
+  | 'f1_norm_profile';
+
+const DEFAULT_F1_NORM_PROFILE = {
+  label: 'Intermediate C++ · weak on design patterns',
+  participantCount: 50,
+  recallOnAnalyzerPositive: 0.55,
+  specificityOnAnalyzerNegative: 0.78,
+  hallucinatePatternRate: 0.18,
+};
 
 const DEFAULTS: Record<SettingKey, string> = {
   testers_visible_to_users: '1',
   reviews_required: '1',
-  feature_releases: '{}'
+  feature_releases: '{}',
+  f1_norm_profile: JSON.stringify(DEFAULT_F1_NORM_PROFILE)
 };
 
 interface Row { value: string }
@@ -58,6 +71,40 @@ export function setSetting<T extends SettingKey>(key: T, value: string): void {
 export function getBoolSetting<T extends SettingKey>(key: T): boolean {
   const v = getSetting(key);
   return v === '1' || v === 'true';
+}
+
+export interface F1NormProfile {
+  label: string;
+  participantCount: number;
+  recallOnAnalyzerPositive: number;
+  specificityOnAnalyzerNegative: number;
+  hallucinatePatternRate: number;
+}
+
+function clamp01(n: unknown, fallback: number): number {
+  const v = typeof n === 'number' && Number.isFinite(n) ? n : fallback;
+  return Math.min(1, Math.max(0, v));
+}
+
+// Parse the F1 expected-norm profile from app_settings. Each field is
+// validated + clamped so a bad PUT cannot poison the dashboard math.
+export function getF1NormProfile(): F1NormProfile {
+  const raw = getSetting('f1_norm_profile');
+  let parsed: Record<string, unknown> = {};
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === 'object' && !Array.isArray(p)) parsed = p as Record<string, unknown>;
+  } catch { /* fall through to defaults */ }
+  const participantRaw = typeof parsed.participantCount === 'number' ? parsed.participantCount : DEFAULT_F1_NORM_PROFILE.participantCount;
+  return {
+    label: typeof parsed.label === 'string' && parsed.label.trim()
+      ? parsed.label.trim()
+      : DEFAULT_F1_NORM_PROFILE.label,
+    participantCount: Math.max(0, Math.round(participantRaw)),
+    recallOnAnalyzerPositive:      clamp01(parsed.recallOnAnalyzerPositive,      DEFAULT_F1_NORM_PROFILE.recallOnAnalyzerPositive),
+    specificityOnAnalyzerNegative: clamp01(parsed.specificityOnAnalyzerNegative, DEFAULT_F1_NORM_PROFILE.specificityOnAnalyzerNegative),
+    hallucinatePatternRate:        clamp01(parsed.hallucinatePatternRate,        DEFAULT_F1_NORM_PROFILE.hallucinatePatternRate),
+  };
 }
 
 // Parse the feature_releases JSON setting into a typed map. Falls back to

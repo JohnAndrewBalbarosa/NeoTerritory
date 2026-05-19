@@ -57,14 +57,6 @@
       "expectSelector": "[data-testid=\"admin-tab-bar\"]"
     },
     {
-      "path": "/auth/choose",
-      "name": "auth-chooser",
-      "auth": "public",
-      "expectStatus": 200,
-      "expectSelector": "[data-testid=\"auth-choose\"]",
-      "expectText": ["learner", "guest", "developer"]
-    },
-    {
       "path": "/admin/login",
       "name": "admin-google-login",
       "auth": "public",
