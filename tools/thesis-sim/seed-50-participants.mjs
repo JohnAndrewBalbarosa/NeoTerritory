@@ -128,11 +128,17 @@ const RECALL_NOISE_STD = 0.08;
 const HALLUCINATE_MEAN = 0.18;
 const HALLUCINATE_NOISE_STD = 0.05;
 
-// Decisions per run — Gaussian around 5, clipped to [3, 7].
-const DECISIONS_PER_RUN_MEAN = 5;
-const DECISIONS_PER_RUN_STD = 1;
-const DECISIONS_PER_RUN_MIN = 3;
-const DECISIONS_PER_RUN_MAX = 7;
+// Decisions per run — realistic review behavior. A participant only
+// records a manual decision when they want to disagree with the
+// analyzer OR resolve an ambiguous tag; if the analyzer's findings
+// look clear, they accept silently. So most runs have 0 decisions,
+// some have 1, a few have 2-3. Gaussian μ=0.7, σ=0.9, clipped to
+// [0, 4] → ~95-115 total decisions across 150 runs (well under 150,
+// matching the user's "less than 150 dapat" constraint).
+const DECISIONS_PER_RUN_MEAN = 0.7;
+const DECISIONS_PER_RUN_STD = 0.9;
+const DECISIONS_PER_RUN_MIN = 0;
+const DECISIONS_PER_RUN_MAX = 4;
 
 // ─── ISO-25010 instrument (drives Cronbach α + per-run / session feedback) ─
 // The admin /stats/cronbach endpoint expects ratings_json keys matching
@@ -399,11 +405,14 @@ function buildDecisionsForRun(detectedPatterns, sourceText) {
   const positiveArr = Array.from(positiveLines);
 
   const decisions = [];
-  // Roughly 60% of decisions land on analyzer-positive lines (where
-  // the participant either confirms TP or fails to recognize it → FN);
-  // the other 40% land on analyzer-negative lines (TN or hallucinated FP).
+  // Decisions skew strongly toward analyzer-positive lines (~75%) because
+  // real review behavior is "look at what the analyzer flagged, push back
+  // if something feels wrong." Negative-line decisions (~25%) are the
+  // less-common case of a participant inventing a pattern label on an
+  // otherwise-clean line. Matches the user's "less than 150 dapat,
+  // most reviews don't happen if walang ambiguity" framing.
   for (let i = 0; i < decisionCount; i++) {
-    const onPositive = Math.random() < 0.6 && positiveArr.length > 0;
+    const onPositive = Math.random() < 0.75 && positiveArr.length > 0;
     if (onPositive) {
       const line = pickFrom(positiveArr);
       // Find the pattern at this line.
