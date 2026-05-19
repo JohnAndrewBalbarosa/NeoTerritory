@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminCronbach, fetchAdminF1Metrics, type LocalSweepData, type CronbachData } from '../../api/client';
-import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult } from '../../types/api';
+import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminCronbach, fetchAdminF1Metrics, fetchAdminTestSummary, type LocalSweepData, type CronbachData } from '../../api/client';
+import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult, TestSummary } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 // ─── Line chart (token-sorted, with regression overlay) ─────────────────────
@@ -161,6 +161,7 @@ export default function ComplexityTab() {
   const [local, setLocal] = useState<LocalSweepData | null>(null);
   const [cron, setCron] = useState<CronbachData | null>(null);
   const [f1, setF1] = useState<F1Metrics | null>(null);
+  const [tests, setTests] = useState<TestSummary | null>(null);
   const [cErr, setCErr] = useState<string | null>(null);
   const [fErr, setFErr] = useState<string | null>(null);
 
@@ -177,6 +178,9 @@ export default function ComplexityTab() {
     fetchAdminF1Metrics()
       .then(setF1)
       .catch(e => { if (!isAuthError(e)) setFErr(e.message); });
+    fetchAdminTestSummary()
+      .then(setTests)
+      .catch(() => { /* optional — silent on miss */ });
   }, []);
 
   return (
@@ -427,15 +431,23 @@ export default function ComplexityTab() {
                   </tr>
                 )}
                 {f1.perPattern.map(p => (
-                  <tr key={p.pattern}>
-                    <td>{p.pattern}</td>
+                  <tr key={p.pattern} data-valid={p.valid !== false ? 'true' : 'false'}>
+                    <td>
+                      {p.pattern}
+                      {p.valid === false && <span className="f1-row-flag" title="Insufficient data — informational only">⚠</span>}
+                      {p.reasoning && (
+                        <span className="f1-row-reason" title={p.reasoning}>
+                          {p.reasoning}
+                        </span>
+                      )}
+                    </td>
                     <td><F1Badge value={p.precision} /></td>
                     <td><F1Badge value={p.recall} /></td>
                     <td><F1Badge value={p.f1} /></td>
                     <td>{p.tp}</td>
                     <td>{p.fp}</td>
                     <td>{p.fn}</td>
-                    <td title="Manual decisions where neither user nor analyzer mentioned this pattern (totalDecisions − tp − fp − fn).">{p.tn}</td>
+                    <td title="Per-line per-pattern true negative: analyzer did NOT flag this pattern AND the participant did NOT pick it.">{p.tn}</td>
                   </tr>
                 ))}
               </tbody>
@@ -459,10 +471,66 @@ export default function ComplexityTab() {
                 {' '}of {f1.expectedNorm.marginals.totalDecisions} total decisions.
               </p>
             )}
+
+            {f1.overall.reasoning && (
+              <p className="f1-integration-note f1-overall-reasoning" data-testid="f1-overall-reasoning">
+                <strong>Verdict:</strong> {f1.overall.reasoning}
+              </p>
+            )}
           </>
         )}
         {!f1 && !fErr && <div className="empty-state">Loading…</div>}
       </section>
+
+      {tests && (
+        <section className="admin-section" data-testid="test-summary-card">
+          <h2>Test runs — compile / static / unit</h2>
+          <p className="empty-state-muted">
+            Aggregated across {tests.runsWithTests} of {tests.runs} analysis runs. Compile + static surfaces are 1-per-run; unit tests scale per detected class.
+          </p>
+          <table className="f1-pattern-table">
+            <thead>
+              <tr>
+                <th>Surface</th>
+                <th>Total</th>
+                <th>Passed</th>
+                <th>Failed</th>
+                <th>Pass rate</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Compile</strong></td>
+                <td>{tests.compile.total}</td>
+                <td>{tests.compile.passed}</td>
+                <td>{tests.compile.failed}</td>
+                <td>{tests.compile.passRate}%</td>
+                <td>Avg {tests.compile.avgMs} ms / compile.</td>
+              </tr>
+              <tr>
+                <td><strong>Static analysis</strong></td>
+                <td>{tests.staticAnalysis.total}</td>
+                <td>{tests.staticAnalysis.passed}</td>
+                <td>{tests.staticAnalysis.failed}</td>
+                <td>{tests.staticAnalysis.passRate}%</td>
+                <td>Avg {tests.staticAnalysis.avgFindings} findings; {tests.staticAnalysis.avgMs} ms / run.</td>
+              </tr>
+              <tr>
+                <td><strong>Unit tests</strong></td>
+                <td>{tests.unitTests.totalCases}</td>
+                <td>{tests.unitTests.passedCases}</td>
+                <td>{tests.unitTests.failedCases}</td>
+                <td>{tests.unitTests.passRate}%</td>
+                <td>{tests.unitTests.totalClasses} classes · {tests.unitTests.avgCasesPerClass} cases / class.</td>
+              </tr>
+            </tbody>
+          </table>
+          <p className="f1-integration-note">
+            <span className="f1-note-footnote">({tests.note})</span>
+          </p>
+        </section>
+      )}
 
     </div>
   );

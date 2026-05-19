@@ -364,6 +364,10 @@ body{position:relative;}
 :root[data-theme="light"] .f1-overall-table .f1-overall-row--norm{background:rgba(34,140,76,0.08);}
 .f1-norm-sub{display:block;font-size:11px;font-weight:400;color:var(--ink-mute);letter-spacing:0.02em;margin-top:2px;}
 .f1-norm-explainer{font-size:11.5px;color:var(--ink-mute);}
+.f1-overall-reasoning{font-size:12.5px;color:var(--ink);background:rgba(123,94,167,0.05);padding:10px 12px;border-left:3px solid var(--accent);border-radius:4px;margin-top:8px;}
+.f1-row-flag{color:#f59e0b;margin-left:6px;font-weight:700;}
+.f1-row-reason{display:block;font-size:11px;color:var(--ink-mute);font-style:italic;margin-top:3px;line-height:1.45;max-width:520px;}
+.f1-pattern-table tr[data-valid="false"]{background:rgba(245,158,11,0.05);}
 .f1-integration-note{font-size:12px;color:var(--ink-soft);margin:0;padding:10px 0;border-top:1px solid var(--border);}
 .f1-integration-note strong{color:var(--ink);}
 .f1-note-footnote{font-style:italic;opacity:0.7;}

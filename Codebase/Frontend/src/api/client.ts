@@ -554,6 +554,10 @@ export async function fetchAdminF1Metrics(): Promise<F1Metrics> {
   return apiFetch<F1Metrics>('/api/admin/stats/f1-metrics');
 }
 
+export async function fetchAdminTestSummary(): Promise<import('../types/api').TestSummary> {
+  return apiFetch<import('../types/api').TestSummary>('/api/admin/stats/test-summary');
+}
+
 // Pre-templated unit-test runner (Tier-2). The backend may return 503 with a
 // detail string when ENABLE_TEST_RUNNER is unset; the GdbRunnerTab catches
 // that and renders a "configure to enable" banner instead of an error toast.

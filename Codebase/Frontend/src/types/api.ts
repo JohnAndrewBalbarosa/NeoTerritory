@@ -404,17 +404,55 @@ export interface F1Score {
 
 export interface PatternF1 extends F1Score {
   pattern: string;
-  // Per-pattern true negatives — count of manual decisions where neither
-  // the user nor the analyzer mentioned this pattern. Backend computes
-  // this as totalDecisions − (tp + fp + fn) so the UI can render a real
-  // 0 instead of "—" for patterns with no decisions yet.
+  // Per-pattern TN: count of manually-reviewed decisions where the
+  // analyzer did NOT flag this pattern AND the participant did not
+  // pick it. Comparable across patterns at the per-decision grain.
   tn: number;
+  // Human-readable explanation of the score, keyed off familiarity
+  // bucket + observed counts. Shown to the thesis panel so each row
+  // is defensible without needing to derive the reasoning manually.
+  reasoning?: string;
+  // false when the pattern has too few decisions to compute a stable
+  // F1 (informational-only). Used by the UI to mark the row.
+  valid?: boolean;
 }
 
-// Overall extends F1Score with TN (true negative). Per-pattern TN is
-// intentionally omitted — see D36 in DESIGN_DECISIONS for rationale.
+// Overall extends F1Score with TN (true negative) + a top-level
+// reasoning string comparing the actual F1 to the expected-norm
+// projection so the panel can read the verdict at a glance.
 export interface F1Overall extends F1Score {
   tn: number;
+  reasoning?: string;
+}
+
+// /api/admin/stats/test-summary — aggregates testResults across all runs.
+export interface TestSummary {
+  runs: number;
+  runsWithTests: number;
+  compile: {
+    total: number;
+    passed: number;
+    failed: number;
+    passRate: number;
+    avgMs: number;
+  };
+  staticAnalysis: {
+    total: number;
+    passed: number;
+    failed: number;
+    passRate: number;
+    avgFindings: number;
+    avgMs: number;
+  };
+  unitTests: {
+    totalCases: number;
+    passedCases: number;
+    failedCases: number;
+    passRate: number;
+    totalClasses: number;
+    avgCasesPerClass: number;
+  };
+  note: string;
 }
 
 export interface F1ExpectedNorm {
