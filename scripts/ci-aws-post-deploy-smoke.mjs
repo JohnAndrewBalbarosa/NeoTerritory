@@ -205,8 +205,26 @@ async function main() {
       `docker=${health.docker?.online} model=${health.aiModel}`,
   );
 
-  const acc = await getJson('/auth/test-accounts');
-  if (!acc.accounts?.length) throw new Error('no tester accounts seeded on AWS');
+  // Tester-seat lookup. /auth/test-accounts may return an empty list
+  // in two distinct shapes:
+  //   1. admin has hidden testers (testersHidden=true) → not a data
+  //      problem, an explicit ops choice. Fail with a clear message
+  //      so the operator knows where to flip the toggle.
+  //   2. no rows yet (testersHidden=false, accounts=[]) → covers the
+  //      narrow window where the backend has just (re)booted and the
+  //      idempotent seedDevconUsers() pass hasn't completed. One quick
+  //      retry covers that race without making the smoke flaky.
+  let acc = await getJson('/auth/test-accounts');
+  if (!acc.accounts?.length && !acc.testersHidden) {
+    await new Promise((r) => setTimeout(r, 2_000));
+    acc = await getJson('/auth/test-accounts');
+  }
+  if (acc.testersHidden) {
+    throw new Error('tester accounts hidden by admin flag — flip testers_visible_to_users to re-enable');
+  }
+  if (!acc.accounts?.length) {
+    throw new Error('no tester accounts available on AWS after retry — backend boot seed may not have run');
+  }
 
   const target = acc.accounts.find((a) => !a.claimed) || acc.accounts[0];
   const claim = await getJson('/auth/claim', {
