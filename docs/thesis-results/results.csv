@@ -1,0 +1,43 @@
+# CodiNeo Thesis — Results Worksheet
+# Generated 2026-05-20T03:31:43.621Z from database.sqlite
+
+## Cohort summary
+metric,value
+participants,50
+analysis_runs,150
+manual_pattern_decisions,79
+run_feedback rows,150
+session_feedback rows,50
+
+## Test surfaces (compile / static / unit)
+surface,total,passed,failed,pass_rate_%
+compile,150,137,13,91.3
+static_analysis,150,133,17,88.7
+unit_test_cases,346,310,36,89.6
+
+## Time + space complexity (OLS regression)
+relationship,slope,intercept,r_squared,n
+items_processed ~ tokens (time complexity proxy),0.4756,1.00,0.9998,150
+serverWallUs ~ tokens (wall-time),13.05,2432.37,0.9653,150
+analysis_json bytes ~ tokens (space complexity proxy),0.18,867.62,0.8714,150
+
+## F1 — overall + per-pattern (with thematic interpretation)
+scope,familiarity,precision,recall,f1,tp,fp,fn,tn,interpretation
+Overall,—,0.9265,0.8077,0.8630,63,5,15,0,"Overall F1 0.863 sits in the documented intermediate-C++ / weak-design-pattern band. The analyzer holds up against the cohort: half the decisions are right, the misses are concentrated on the patterns the cohort openly does not know."
+singleton,high,0.9737,0.9737,0.9737,37,1,1,40,"High-familiarity pattern: participants recognised it accurately (TP=37) but also over-attributed it on unrelated lines (FP=1). Strong recall (0.97), moderate precision (0.97) — matches the ""intermediate-C++ defaults to Singleton/Factory"" tendency."
+builder,low,0.8182,1.0000,0.9000,18,4,0,57,"Low-familiarity pattern: only 18 TP(s) in the cohort, but those who picked it picked it right (recall 1.00). Precision 0.82 is the bottleneck — FP=4 hallucinations from unrelated lines outnumber the real picks. Tier-level reading is more honest than per-pattern F1 at this decision count."
+factory_method,high,0.0000,0.0000,0.0000,0,0,0,79,"Only 0 decision(s) touched factory_method; F1 is informational, not a stable estimate."
+observer,mid,0.0000,0.0000,0.0000,0,0,0,79,"Only 0 decision(s) touched observer; F1 is informational, not a stable estimate."
+strategy,mid,0.0000,0.0000,0.0000,0,0,0,79,"Only 0 decision(s) touched strategy; F1 is informational, not a stable estimate."
+adapter,low,0.0000,0.0000,0.0000,0,0,2,77,"Only 2 decision(s) touched adapter; F1 is informational, not a stable estimate."
+composite,low,0.0000,0.0000,0.0000,0,0,0,79,"Only 0 decision(s) touched composite; F1 is informational, not a stable estimate."
+proxy,low,0.0000,0.0000,0.0000,0,0,1,78,"Only 1 decision(s) touched proxy; F1 is informational, not a stable estimate."
+
+## Cronbach alpha per subscale
+subscale,k_items,n_respondents,alpha,interpretation
+Functional Suitability (B),8,50,0.9033,Excellent
+Usability (C),5,50,0.8194,Good
+Performance (D),2,50,0.7231,Acceptable
+Reliability (E),2,50,0.7479,Acceptable
+Security (F),2,50,0.6102,Questionable
+Overall instrument,19,50,0.9486,Excellent
