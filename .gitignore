@@ -145,6 +145,11 @@ test-artifacts/probe-pod-*.sh
 test-artifacts/regression-sweep-*.json
 test-artifacts/learning-audit/out-builder-*/
 
+# Thesis-simulation tooling — local-only dataset shaping, seed scripts,
+# and reseed wrappers. All artifacts here are derived data + local
+# experimentation; not part of the shipped product surface.
+tools/thesis-sim/
+
 # SSH / deploy credentials — never commit, even locally
 *.pem
 *.key
