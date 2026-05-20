@@ -252,3 +252,13 @@ Codebase/Backend/keys/jwt-private.pem
 /Codebase/Frontend/.playwright-seat.json
 .claude/scheduled_tasks.lock
 node_modules.stale*/
+
+# Local-only thesis paper artefacts — .docx, .pdf, .pptx and personal
+# investigation notes that are not part of the codebase. Stays on the
+# author's machine; never pushed.
+local-only/
+
+# Ad-hoc temp scripts and test runner scratch — regenerated on demand.
+mobile-audit-tmp.mjs
+/test/
+/test-results/
