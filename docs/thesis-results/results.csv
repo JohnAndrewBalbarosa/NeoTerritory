@@ -1,45 +1,45 @@
 # CodiNeo Thesis — Results Worksheet
-# Generated 2026-05-20T13:17:50.353Z from database.sqlite
+# Generated 2026-05-20T13:43:46.895Z from database.sqlite
 
 ## Cohort summary
 metric,value
 participants,50
 analysis_runs,150
-manual_pattern_decisions,107
+manual_pattern_decisions,131
 run_feedback rows,150
 session_feedback rows,50
 
 ## Test surfaces (compile / static / unit)
 surface,total,passed,failed,pass_rate_%
-compile,150,136,14,90.7
-static_analysis,150,133,17,88.7
-unit_test_cases,306,252,54,82.4
+compile,150,143,7,95.3
+static_analysis,150,134,16,89.3
+unit_test_cases,304,264,40,86.8
 
 ## Time + space complexity (OLS regression)
 relationship,slope,intercept,r_squared,n
-items_processed ~ tokens (time complexity proxy),0.4748,2.08,0.9997,150
-serverWallUs ~ tokens (wall-time),13.05,2301.35,0.9694,150
-analysis_json bytes ~ tokens (space complexity proxy),0.15,915.07,0.6481,150
+items_processed ~ tokens (time complexity proxy),0.0473,0.93,0.9997,150
+serverWallUs ~ tokens (wall-time),6.24,145642.60,0.2824,150
+analysis_json bytes ~ tokens (space complexity proxy),0.17,899.41,0.6890,150
 
 ## F1 — overall + per-pattern (v4 run × pattern grain; per-pattern total = total runs)
 scope,familiarity,precision,recall,f1,tp,fp,fn,tn,total,interpretation
-Overall,—,0.9167,0.8761,0.8959,198,18,28,1256,1500,"Overall F1 0.896 across 150 runs × 10 patterns. TP=198 are analyzer detections the cohort accepted; FP=18 are rare survey rejections; FN=28 are patterns participants ticked as ""intended but missed""; TN=1256 dominates because each run only writes 1-2 patterns out of 10. Algorithm reliability shows in the small FP and FN counts."
-virtual_proxy,low,0.9286,1.0000,0.9630,13,1,0,136,150,"structural/idiom-family pattern: 13 of 150 runs intended virtual_proxy; analyzer caught 13 (recall 1.00). FP=1 is rare survey-rejection of correct detections; FN=0 is participants ticking ""intended but missed"" via the checkbox. TN=136 reflects runs where virtual_proxy simply wasn't written and the analyzer correctly stayed silent."
-singleton,high,0.9268,0.9500,0.9383,38,3,2,107,150,"high-familiarity creational pattern: 40 of 150 runs intended singleton; analyzer caught 38 (recall 0.95). FP=3 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=107 reflects runs where singleton simply wasn't written and the analyzer correctly stayed silent."
-factory,high,0.9565,0.9167,0.9362,22,1,2,125,150,"high-familiarity creational pattern: 24 of 150 runs intended factory; analyzer caught 22 (recall 0.92). FP=1 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=125 reflects runs where factory simply wasn't written and the analyzer correctly stayed silent."
-strategy_interface,mid,0.9333,0.9333,0.9333,14,1,1,134,150,"mid-familiarity pattern: 15 of 150 runs intended strategy_interface; analyzer caught 14 (recall 0.93). FP=1 is rare survey-rejection of correct detections; FN=1 is participants ticking ""intended but missed"" via the checkbox. TN=134 reflects runs where strategy_interface simply wasn't written and the analyzer correctly stayed silent."
-decorator,low,1.0000,0.8750,0.9333,21,0,3,126,150,"structural/idiom-family pattern: 24 of 150 runs intended decorator; analyzer caught 21 (recall 0.88). FP=0 is rare survey-rejection of correct detections; FN=3 is participants ticking ""intended but missed"" via the checkbox. TN=126 reflects runs where decorator simply wasn't written and the analyzer correctly stayed silent."
-builder,mid,0.9231,0.9231,0.9231,24,2,2,122,150,"mid-familiarity pattern: 26 of 150 runs intended builder; analyzer caught 24 (recall 0.92). FP=2 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=122 reflects runs where builder simply wasn't written and the analyzer correctly stayed silent."
-method_chaining,mid,0.9474,0.8182,0.8780,18,1,4,127,150,"mid-familiarity pattern: 22 of 150 runs intended method_chaining; analyzer caught 18 (recall 0.82). FP=1 is rare survey-rejection of correct detections; FN=4 is participants ticking ""intended but missed"" via the checkbox. TN=127 reflects runs where method_chaining simply wasn't written and the analyzer correctly stayed silent."
-pimpl,low,0.8421,0.8000,0.8205,16,3,4,127,150,"structural/idiom-family pattern: 20 of 150 runs intended pimpl; analyzer caught 16 (recall 0.80). FP=3 is rare survey-rejection of correct detections; FN=4 is participants ticking ""intended but missed"" via the checkbox. TN=127 reflects runs where pimpl simply wasn't written and the analyzer correctly stayed silent."
-adapter,low,0.8571,0.7826,0.8182,18,3,5,124,150,"structural/idiom-family pattern: 23 of 150 runs intended adapter; analyzer caught 18 (recall 0.78). FP=3 is rare survey-rejection of correct detections; FN=5 is participants ticking ""intended but missed"" via the checkbox. TN=124 reflects runs where adapter simply wasn't written and the analyzer correctly stayed silent."
-proxy,low,0.8235,0.7368,0.7778,14,3,5,128,150,"structural/idiom-family pattern: 19 of 150 runs intended proxy; analyzer caught 14 (recall 0.74). FP=3 is rare survey-rejection of correct detections; FN=5 is participants ticking ""intended but missed"" via the checkbox. TN=128 reflects runs where proxy simply wasn't written and the analyzer correctly stayed silent."
+Overall,—,0.8802,0.8489,0.8643,191,26,34,1249,1500,"Overall F1 0.864 across 150 runs × 10 patterns. TP=191 are analyzer detections the cohort accepted; FP=26 are rare survey rejections; FN=34 are patterns participants ticked as ""intended but missed""; TN=1249 dominates because each run only writes 1-2 patterns out of 10. Algorithm reliability shows in the small FP and FN counts."
+factory,high,0.9200,0.9583,0.9388,23,2,1,124,150,"high-familiarity creational pattern: 24 of 150 runs intended factory; analyzer caught 23 (recall 0.96). FP=2 is rare survey-rejection of correct detections; FN=1 is participants ticking ""intended but missed"" via the checkbox. TN=124 reflects runs where factory simply wasn't written and the analyzer correctly stayed silent."
+virtual_proxy,low,1.0000,0.8750,0.9333,14,0,2,134,150,"structural/idiom-family pattern: 16 of 150 runs intended virtual_proxy; analyzer caught 14 (recall 0.88). FP=0 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=134 reflects runs where virtual_proxy simply wasn't written and the analyzer correctly stayed silent."
+proxy,low,0.9355,0.8529,0.8923,29,2,5,114,150,"structural/idiom-family pattern: 34 of 150 runs intended proxy; analyzer caught 29 (recall 0.85). FP=2 is rare survey-rejection of correct detections; FN=5 is participants ticking ""intended but missed"" via the checkbox. TN=114 reflects runs where proxy simply wasn't written and the analyzer correctly stayed silent."
+singleton,high,0.9000,0.8710,0.8852,27,3,4,116,150,"high-familiarity creational pattern: 31 of 150 runs intended singleton; analyzer caught 27 (recall 0.87). FP=3 is rare survey-rejection of correct detections; FN=4 is participants ticking ""intended but missed"" via the checkbox. TN=116 reflects runs where singleton simply wasn't written and the analyzer correctly stayed silent."
+adapter,low,1.0000,0.7586,0.8627,22,0,7,121,150,"structural/idiom-family pattern: 29 of 150 runs intended adapter; analyzer caught 22 (recall 0.76). FP=0 is rare survey-rejection of correct detections; FN=7 is participants ticking ""intended but missed"" via the checkbox. TN=121 reflects runs where adapter simply wasn't written and the analyzer correctly stayed silent."
+builder,mid,0.8824,0.7895,0.8333,15,2,4,129,150,"mid-familiarity pattern: 19 of 150 runs intended builder; analyzer caught 15 (recall 0.79). FP=2 is rare survey-rejection of correct detections; FN=4 is participants ticking ""intended but missed"" via the checkbox. TN=129 reflects runs where builder simply wasn't written and the analyzer correctly stayed silent."
+strategy_interface,mid,0.7500,0.9231,0.8276,12,4,1,133,150,"mid-familiarity pattern: 13 of 150 runs intended strategy_interface; analyzer caught 12 (recall 0.92). FP=4 is rare survey-rejection of correct detections; FN=1 is participants ticking ""intended but missed"" via the checkbox. TN=133 reflects runs where strategy_interface simply wasn't written and the analyzer correctly stayed silent."
+method_chaining,mid,0.7500,0.9130,0.8235,21,7,2,120,150,"mid-familiarity pattern: 23 of 150 runs intended method_chaining; analyzer caught 21 (recall 0.91). FP=7 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=120 reflects runs where method_chaining simply wasn't written and the analyzer correctly stayed silent."
+decorator,low,0.8696,0.7692,0.8163,20,3,6,121,150,"structural/idiom-family pattern: 26 of 150 runs intended decorator; analyzer caught 20 (recall 0.77). FP=3 is rare survey-rejection of correct detections; FN=6 is participants ticking ""intended but missed"" via the checkbox. TN=121 reflects runs where decorator simply wasn't written and the analyzer correctly stayed silent."
+pimpl,low,0.7273,0.8000,0.7619,8,3,2,137,150,"structural/idiom-family pattern: 10 of 150 runs intended pimpl; analyzer caught 8 (recall 0.80). FP=3 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=137 reflects runs where pimpl simply wasn't written and the analyzer correctly stayed silent."
 
 ## Cronbach alpha per subscale
 subscale,k_items,n_respondents,alpha,interpretation
-Functional Suitability (B),8,50,0.9449,Excellent
-Usability (C),5,50,0.9106,Excellent
-Performance (D),2,50,0.6443,Questionable
-Reliability (E),2,50,0.7977,Acceptable
-Security (F),2,50,0.7450,Acceptable
-Overall instrument,19,50,0.9690,Excellent
+Functional Suitability (B),8,50,0.9532,Excellent
+Usability (C),5,50,0.8251,Good
+Performance (D),2,50,0.7304,Acceptable
+Reliability (E),2,50,0.6676,Questionable
+Security (F),2,50,0.7912,Acceptable
+Overall instrument,19,50,0.9672,Excellent
