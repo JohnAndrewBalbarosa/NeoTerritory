@@ -458,3 +458,10 @@ body{position:relative;}
 .admin-feature-row__toggle:hover:not(:disabled){border-color:var(--accent);}
 .admin-feature-row__toggle.is-on{background:rgba(74,222,128,0.12);border-color:rgba(74,222,128,0.55);color:var(--green,#4ade80);}
 .admin-feature-row__toggle:disabled{opacity:.6;cursor:wait;}
+
+/* Runs tab — top-of-tab metrics card (run count + test pass rates). */
+.admin-runs-metrics-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-top:8px;}
+.admin-runs-metric{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);}
+.admin-runs-metric__label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);}
+.admin-runs-metric__value{font-size:22px;font-weight:700;color:var(--ink);}
+.admin-runs-metric__sub{font-size:11px;color:var(--ink-mute);margin-top:2px;}

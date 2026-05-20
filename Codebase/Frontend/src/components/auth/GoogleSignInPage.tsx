@@ -20,7 +20,14 @@ function resolveRole(pathname: string): Role {
 
 function resolveNext(role: Role): string {
   if (role === 'student') return '/patterns/learn';
-  if (role === 'admin' || role === 'pm') return '/admin';
+  if (role === 'admin' || role === 'pm') {
+    // /admin is gated by ADMIN_GATE_KEY on the backend. Append the key
+    // (injected at build time via VITE_ADMIN_GATE_KEY) so the post-OAuth
+    // redirect lands directly on the dashboard. When the env var is
+    // absent the gate is unenforced and /admin serves normally.
+    const key = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_ADMIN_GATE_KEY;
+    return key ? `/admin?key=${encodeURIComponent(key)}` : '/admin';
+  }
   if (role === 'new') return '/onboarding/choose';
   return '/studio';
 }

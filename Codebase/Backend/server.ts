@@ -176,7 +176,19 @@ app.get('/', (_req: Request, res: Response) => {
 // data-testid="admin-login" assertion finds its anchor. AdminApp
 // does no client-side path routing (purely tab state) so the admin
 // SPA never needs to own sub-routes.
-app.get('/admin', (_req: Request, res: Response) => {
+//
+// Gate: when ADMIN_GATE_KEY is set, /admin only serves the SPA if the
+// request carries ?key=<value> matching the env. Other requests fall
+// through to the public homepage. This is security-through-obscurity
+// for the developer-side admin entry — casual visitors who type /admin
+// do not see the admin login. The OAuth callback at /admin/login is
+// NOT gated; only the dashboard landing path is.
+const ADMIN_GATE_KEY = process.env.ADMIN_GATE_KEY || '';
+app.get('/admin', (req: Request, res: Response) => {
+  if (ADMIN_GATE_KEY && req.query.key !== ADMIN_GATE_KEY) {
+    res.redirect('/');
+    return;
+  }
   res.sendFile(path.join(frontendDir, 'admin.html'));
 });
 

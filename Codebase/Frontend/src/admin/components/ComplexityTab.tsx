@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminCronbach, fetchAdminF1Metrics, fetchAdminTestSummary, type LocalSweepData, type CronbachData } from '../../api/client';
-import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult, TestSummary } from '../../types/api';
+import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminCronbach, fetchAdminF1Metrics, type LocalSweepData, type CronbachData } from '../../api/client';
+import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 // ─── Line chart (token-sorted, with regression overlay) ─────────────────────
@@ -161,7 +161,8 @@ export default function ComplexityTab() {
   const [local, setLocal] = useState<LocalSweepData | null>(null);
   const [cron, setCron] = useState<CronbachData | null>(null);
   const [f1, setF1] = useState<F1Metrics | null>(null);
-  const [tests, setTests] = useState<TestSummary | null>(null);
+  // Test-summary card was relocated to the Runs tab so the panel sees
+  // run count + compile/static/unit pass rates next to the run list.
   const [cErr, setCErr] = useState<string | null>(null);
   const [fErr, setFErr] = useState<string | null>(null);
 
@@ -178,9 +179,7 @@ export default function ComplexityTab() {
     fetchAdminF1Metrics()
       .then(setF1)
       .catch(e => { if (!isAuthError(e)) setFErr(e.message); });
-    fetchAdminTestSummary()
-      .then(setTests)
-      .catch(() => { /* optional — silent on miss */ });
+    // (test-summary fetch moved to RunsTab)
   }, []);
 
   return (
@@ -481,56 +480,6 @@ export default function ComplexityTab() {
         )}
         {!f1 && !fErr && <div className="empty-state">Loading…</div>}
       </section>
-
-      {tests && (
-        <section className="admin-section" data-testid="test-summary-card">
-          <h2>Test runs — compile / static / unit</h2>
-          <p className="empty-state-muted">
-            Aggregated across {tests.runsWithTests} of {tests.runs} analysis runs. Compile + static surfaces are 1-per-run; unit tests scale per detected class.
-          </p>
-          <table className="f1-pattern-table">
-            <thead>
-              <tr>
-                <th>Surface</th>
-                <th>Total</th>
-                <th>Passed</th>
-                <th>Failed</th>
-                <th>Pass rate</th>
-                <th>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td><strong>Compile</strong></td>
-                <td>{tests.compile.total}</td>
-                <td>{tests.compile.passed}</td>
-                <td>{tests.compile.failed}</td>
-                <td>{tests.compile.passRate}%</td>
-                <td>Avg {tests.compile.avgMs} ms / compile.</td>
-              </tr>
-              <tr>
-                <td><strong>Static analysis</strong></td>
-                <td>{tests.staticAnalysis.total}</td>
-                <td>{tests.staticAnalysis.passed}</td>
-                <td>{tests.staticAnalysis.failed}</td>
-                <td>{tests.staticAnalysis.passRate}%</td>
-                <td>Avg {tests.staticAnalysis.avgFindings} findings; {tests.staticAnalysis.avgMs} ms / run.</td>
-              </tr>
-              <tr>
-                <td><strong>Unit tests</strong></td>
-                <td>{tests.unitTests.totalCases}</td>
-                <td>{tests.unitTests.passedCases}</td>
-                <td>{tests.unitTests.failedCases}</td>
-                <td>{tests.unitTests.passRate}%</td>
-                <td>{tests.unitTests.totalClasses} classes · {tests.unitTests.avgCasesPerClass} cases / class.</td>
-              </tr>
-            </tbody>
-          </table>
-          <p className="f1-integration-note">
-            <span className="f1-note-footnote">({tests.note})</span>
-          </p>
-        </section>
-      )}
 
     </div>
   );

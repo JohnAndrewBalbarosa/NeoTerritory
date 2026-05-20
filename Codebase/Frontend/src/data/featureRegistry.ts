@@ -43,6 +43,13 @@ export const FEATURE_FLAGS: ReadonlyArray<FeatureFlag> = [
     description: 'Top-nav entry for the public documentation surface.',
     defaultReleased: true,
   },
+  {
+    key: 'pm-accounts',
+    label: 'PM accounts',
+    description:
+      'Adds a "PM" card to the Try-It-Now popup, restores PM sign-in via /pm/login, and shows the PM-flavoured admin shell (no Complexity / Reviews / Feature Releases tabs) after sign-in. Off by default — flip when the cohort is ready to onboard project managers.',
+    defaultReleased: false,
+  },
 ];
 
 export function defaultReleaseMap(): Record<string, boolean> {

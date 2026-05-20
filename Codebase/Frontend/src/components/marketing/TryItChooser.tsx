@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import SeatClaimPanel from '../auth/SeatClaimPanel';
+import { useFeatureReleases } from '../../hooks/useFeatureReleases';
 
 // Homepage chooser popup. Single public-facing auth surface across the
 // marketing site: every "Try it now" / hero / nav CTA dispatches
@@ -34,7 +35,7 @@ interface TryItChooserProps {
 type View = 'choices' | 'seatClaim';
 
 interface ChoiceCard {
-  id: 'tester' | 'student-learning' | 'developer';
+  id: 'tester' | 'student-learning' | 'developer' | 'pm';
   eyebrow: string;
   title: string;
   blurb: string;
@@ -64,9 +65,22 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
   },
 ];
 
+// Optional PM card — only injected when the `pm-accounts` feature flag is
+// released. The card lives outside the base CARDS so existing visitors
+// without the flag see the unchanged three-card chooser.
+const PM_CARD: ChoiceCard = {
+  id: 'pm',
+  eyebrow: 'Project manager',
+  title: 'I manage a CodiNeo org',
+  blurb:
+    "PM sign-in: manage testers, invite developers, and switch between the studio and admin sides. Backend auto-routes via Google OAuth.",
+};
+
 export default function TryItChooser({ open, onClose }: TryItChooserProps) {
   const [view, setView] = useState<View>('choices');
   const [testersHidden, setTestersHidden] = useState(false);
+  const { isReleased } = useFeatureReleases();
+  const pmEnabled = isReleased('pm-accounts');
 
   // Reset to the choices step every time the popup re-opens so users
   // never re-enter on the seat-claim view from a previous dismissal.
@@ -102,7 +116,8 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
 
   if (!open) return null;
 
-  const visibleCards = testersHidden ? CARDS.filter(c => c.id !== 'tester') : CARDS;
+  const baseCards = testersHidden ? CARDS.filter(c => c.id !== 'tester') : CARDS;
+  const visibleCards = pmEnabled ? [...baseCards, PM_CARD] : baseCards;
 
   function pickCard(card: ChoiceCard): void {
     if (card.id === 'tester') {
@@ -130,6 +145,14 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
       try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* ignore */ }
       onClose();
       navigate('/auth/choose');
+      return;
+    }
+    if (card.id === 'pm') {
+      // PM-accounts feature flag path. Stamp the entry flow and land
+      // on /pm/login (the Google sign-in surface keyed to the PM role).
+      try { sessionStorage.setItem('nt-entry-flow', 'pm'); } catch { /* ignore */ }
+      onClose();
+      navigate('/pm/login');
       return;
     }
   }

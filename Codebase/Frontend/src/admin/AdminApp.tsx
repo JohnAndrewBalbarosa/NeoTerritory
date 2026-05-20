@@ -66,6 +66,14 @@ function isOriginalDevsAdmin(
   return false;
 }
 
+// PM admin detection. PM users see the admin shell minus the research
+// tabs (Complexity / Reviews / Feature releases) — those are scoped to
+// the thesis cohort, not to project managers who run their own orgs.
+function isPmAdmin(user: { role?: string } | null): boolean {
+  if (!user) return false;
+  return user.role === 'pm';
+}
+
 // Admin shell access. Accept the legacy users.role='admin' (seeded
 // thesis admin) AND any OAuth user flagged isOriginalDevs (the
 // original-devs allowlist matched). Self-serve admins keep
@@ -307,7 +315,13 @@ export default function AdminApp() {
       </header>
 
       <nav className="admin-tab-bar" aria-label="Admin sections" data-testid="admin-tab-bar">
-        {TABS.filter((t) => !t.originalDevsOnly || isOriginalDevsAdmin(user)).map((tab, index) => {
+        {TABS.filter((t) => {
+          // Research-only tabs (Complexity / Reviews / Feature releases)
+          // are hidden from PM users AND from non-original-devs admins.
+          if (t.originalDevsOnly && isPmAdmin(user)) return false;
+          if (t.originalDevsOnly && !isOriginalDevsAdmin(user)) return false;
+          return true;
+        }).map((tab, index) => {
           const Icon = tab.icon;
           return (
             <button
