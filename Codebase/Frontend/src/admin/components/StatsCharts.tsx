@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
   fetchAdminOverview, fetchAdminRunsPerDay, fetchAdminPatternFreq,
-  fetchAdminTestRunStats
 } from '../../api/client';
 import {
   AdminOverview, RunsPerDayPoint, PatternFreqPoint
@@ -203,21 +202,12 @@ function RunsLineChart({ series }: { series: RunsPerDayPoint[] }) {
 // "accuracy" pill is just pass / (pass + fail) — a quick read of whether
 // the unit-test suite is broadly healthy across all submissions.
 
-interface TestRunStats {
-  total: number;
-  passed: number;
-  failed: number;
-  passRate: number;
-  perPhase: Array<{ phase: string; passed: number; failed: number }>;
-}
-
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function StatsCharts() {
   const overview    = useStat<AdminOverview>(fetchAdminOverview);
   const runsPerDay  = useStat<{ series: RunsPerDayPoint[] }>(() => fetchAdminRunsPerDay(7));
   const patternFreq = useStat<{ series: PatternFreqPoint[] }>(fetchAdminPatternFreq);
-  const testRuns    = useStat<TestRunStats>(fetchAdminTestRunStats);
 
   const patternMax = Math.max(1, ...(patternFreq.data?.series || []).map(p => p.count));
 
@@ -293,36 +283,11 @@ export default function StatsCharts() {
             })())}
       </section>
 
-      <section className="stats-section">
-        <h3>Unit-test accuracy</h3>
-        {testRuns.error && <ErrorRow message={testRuns.error} />}
-        {testRuns.data && (testRuns.data.total === 0
-          ? <div className="empty-state">No GDB test runs recorded yet.</div>
-          : (
-            <div className="test-run-stats">
-              <div className="stats-overview">
-                <StatTile label="Total cases"  value={testRuns.data.total} />
-                <StatTile label="Passed"        value={testRuns.data.passed} />
-                <StatTile label="Failed"        value={testRuns.data.failed} />
-                <StatTile label="Pass rate"     value={`${(testRuns.data.passRate * 100).toFixed(1)}%`} />
-              </div>
-              {testRuns.data.perPhase.map(p => {
-                const total = p.passed + p.failed;
-                const rate = total > 0 ? p.passed / total : 0;
-                return (
-                  <BarRow
-                    key={p.phase}
-                    label={`${p.phase} (${p.passed}/${total})`}
-                    value={Math.round(rate * 100)}
-                    max={100}
-                    color={rate >= 0.8 ? '#10b981' : rate >= 0.5 ? '#f59e0b' : '#ef4444'}
-                  />
-                );
-              })}
-            </div>
-          ))}
-      </section>
-
+      {/* Unit-test accuracy panel removed — the equivalent rollup
+          (compile / static / unit pass rates) now lives at the top of
+          the Runs tab via fetchAdminTestSummary. Keeping it only there
+          avoids two competing surfaces showing the same data with
+          slightly different framing. */}
     </div>
   );
 }
