@@ -1,6 +1,6 @@
 CodiNeo Thesis — Data Interpretation
 ====================================
-Generated: 2026-05-20T15:09:16.614Z
+Generated: 2026-05-20T16:36:56.944Z
 Source DB: database.sqlite
 
 Cohort: 50 participants, 3 analysis sessions each (150 runs total).
@@ -41,7 +41,7 @@ The intercept in each regression above (the "+ N" term that the slope sits on to
 
 Why this matters for reproducibility:
 
-  • A different machine (faster CPU, NVMe vs spinning disk, warm container vs cold start) will produce a DIFFERENT intercept. On the dev WSL host, the same binary measured a ~150 ms intercept (cold spawn); on AWS Lightsail production, the intercept is ~1 ms. Same algorithm, two orders of magnitude apart on setup cost.
+  • A different machine (faster CPU, NVMe vs spinning disk, warm container vs cold start) will produce a DIFFERENT intercept. The intercept measured here is specific to the AWS Lightsail instance the live demo runs on; replicating this study on different hardware would land on a different intercept value while the slope (the actual algorithmic cost per token) stays essentially the same.
   • A different language (re-implementing the analyzer in Rust, Python, Go) will produce a different intercept. The slope shape (linear, O(n)) would transfer if the algorithm is preserved; the intercept would not.
   • A different deployment shape (containerized vs bare metal, persistent worker vs per-request fork) will produce a different intercept.
 

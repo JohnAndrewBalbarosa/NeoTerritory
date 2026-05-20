@@ -2,7 +2,7 @@ import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
   ReviewSchema, AdminUser, AdminLogEntry, AdminLogFilters, AdminReview, AdminOverview,
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
-  SurveySummary, ComplexityData, F1Metrics, RegressionResult
+  SurveySummary, ComplexityData, F1Metrics
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -525,22 +525,6 @@ export async function fetchAdminSurveySummary(): Promise<SurveySummary> {
 }
 export async function fetchAdminComplexityData(): Promise<ComplexityData> {
   return apiFetch<ComplexityData>('/api/admin/stats/complexity-data');
-}
-export interface LocalSweepData {
-  points:                  Array<{ runId: number; N: number; wall_ms: number; peak_kb: number }>;
-  pointsMedian:            Array<{ runId: number; N: number; wall_ms: number; peak_kb: number }>;
-  regressionWallMsNormal:    RegressionResult;
-  regressionWallMsFull:      RegressionResult;
-  regressionPeakKbNormal:    RegressionResult;
-  regressionPeakKbFull:      RegressionResult;
-  regressionWallMsNormalRaw?: RegressionResult;
-  regressionWallMsFullRaw?:   RegressionResult;
-  regressionPeakKbNormalRaw?: RegressionResult;
-  regressionPeakKbFullRaw?:   RegressionResult;
-  methodologyNote:         string;
-}
-export async function fetchAdminComplexityLocal(): Promise<LocalSweepData> {
-  return apiFetch<LocalSweepData>('/api/admin/stats/complexity-local');
 }
 export interface CronbachData {
   subscales: Array<{ name: string; k: number; n: number; alpha: number; interpretation: string }>;

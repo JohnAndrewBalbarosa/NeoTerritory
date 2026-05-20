@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAdminComplexityData, fetchAdminComplexityLocal, fetchAdminCronbach, fetchAdminF1Metrics, type LocalSweepData, type CronbachData } from '../../api/client';
+import { fetchAdminComplexityData, fetchAdminCronbach, fetchAdminF1Metrics, type CronbachData } from '../../api/client';
 import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
@@ -81,71 +81,6 @@ function GenericRegressionChart({ points, regression, xKey, yKey, xLabel, yLabel
   );
 }
 
-// Local-sweep chart: x-axis N (input lines), y-axis the chosen field
-// (wall_ms or peak_kb). Uses median-per-N points so 5 reps per N don't
-// produce visual clutter.
-function LocalSweepChart({ points, yKey, yLabel, regression, ariaLabel }: {
-  points: Array<{ N: number; wall_ms: number; peak_kb: number }>;
-  yKey: 'wall_ms' | 'peak_kb';
-  yLabel: string;
-  regression: RegressionResult;
-  ariaLabel: string;
-}) {
-  if (points.length === 0) return <div className="empty-state">No local sweep data available.</div>;
-  const sorted = [...points].sort((a, b) => a.N - b.N);
-  const xMin = 0;
-  const xMax = Math.max(...sorted.map((p) => p.N), 1);
-  const yMin = 0;
-  const yMax = Math.max(...sorted.map((p) => p[yKey]), 1);
-  function tx(v: number) { return PAD + ((v - xMin) / (xMax - xMin)) * (SVG_W - PAD * 2); }
-  function ty(v: number) { return SVG_H - PAD - ((v - yMin) / (yMax - yMin)) * (SVG_H - PAD * 2); }
-  const polyPts = sorted.map((p) => `${tx(p.N)},${ty(p[yKey])}`).join(' ');
-  const regY1 = Math.max(yMin, Math.min(yMax, regression.slope * xMin + regression.intercept));
-  const regY2 = Math.max(yMin, Math.min(yMax, regression.slope * xMax + regression.intercept));
-  const ticks = 4;
-  return (
-    <svg viewBox={`0 0 ${SVG_W} ${SVG_H}`} className="complexity-scatter" aria-label={ariaLabel}>
-      {Array.from({ length: ticks + 1 }, (_, i) => {
-        const v = Math.round(xMin + (i / ticks) * (xMax - xMin));
-        const x = tx(v);
-        return (
-          <g key={`xg${i}`}>
-            <line x1={x} y1={PAD / 2} x2={x} y2={SVG_H - PAD} stroke="#e2e8f0" strokeWidth="1" strokeDasharray="3 3" />
-            <text x={x} y={SVG_H - PAD + 14} textAnchor="middle" fontSize="9" fill="#888">{v}</text>
-          </g>
-        );
-      })}
-      {Array.from({ length: ticks + 1 }, (_, i) => {
-        const v = Math.round((yMin + (i / ticks) * (yMax - yMin)));
-        const y = ty(v);
-        return (
-          <g key={`yg${i}`}>
-            <line x1={PAD - 4} y1={y} x2={PAD} y2={y} stroke="#aaa" strokeWidth="1" />
-            <text x={PAD - 6} y={y + 3} textAnchor="end" fontSize="9" fill="#888">{v}</text>
-          </g>
-        );
-      })}
-      <line x1={PAD} y1={PAD / 2} x2={PAD} y2={SVG_H - PAD} stroke="#ccc" strokeWidth="1" />
-      <line x1={PAD} y1={SVG_H - PAD} x2={SVG_W - PAD / 2} y2={SVG_H - PAD} stroke="#ccc" strokeWidth="1" />
-      <text x={SVG_W / 2} y={SVG_H - 4} textAnchor="middle" fontSize="10" fill="#666">N (lines of synthesized C++)</text>
-      <text x={12} y={SVG_H / 2} textAnchor="middle" fontSize="10" fill="#666"
-        transform={`rotate(-90 12 ${SVG_H / 2})`}>{yLabel}</text>
-      <polyline points={polyPts} fill="none" stroke="#7c3aed" strokeWidth="2" strokeLinejoin="round" />
-      <line x1={tx(xMin)} y1={ty(regY1)} x2={tx(xMax)} y2={ty(regY2)}
-        stroke="#f97316" strokeWidth="1.5" strokeDasharray="5 4" opacity="0.8" />
-      {sorted.map((p) => (
-        <circle key={p.N} cx={tx(p.N)} cy={ty(p[yKey])} r={3}
-          fill="#7c3aed" stroke="white" strokeWidth="1">
-          <title>N={p.N}: {yKey}={p[yKey]}</title>
-        </circle>
-      ))}
-      <line x1={SVG_W - 130} y1={18} x2={SVG_W - 112} y2={18} stroke="#7c3aed" strokeWidth="2" />
-      <text x={SVG_W - 108} y={21} fontSize="9" fill="#555">median</text>
-      <line x1={SVG_W - 70} y1={18} x2={SVG_W - 52} y2={18} stroke="#f97316" strokeWidth="1.5" strokeDasharray="5 4" />
-      <text x={SVG_W - 48} y={21} fontSize="9" fill="#555">regression</text>
-    </svg>
-  );
-}
 
 // ─── F1 table ─────────────────────────────────────────────────────────────────
 
@@ -158,7 +93,6 @@ function F1Badge({ value }: { value: number }) {
 
 export default function ComplexityTab() {
   const [complexity, setComplexity] = useState<ComplexityData | null>(null);
-  const [local, setLocal] = useState<LocalSweepData | null>(null);
   const [cron, setCron] = useState<CronbachData | null>(null);
   const [f1, setF1] = useState<F1Metrics | null>(null);
   // Test-summary card was relocated to the Runs tab so the panel sees
@@ -170,9 +104,6 @@ export default function ComplexityTab() {
     fetchAdminComplexityData()
       .then(setComplexity)
       .catch(e => { if (!isAuthError(e)) setCErr(e.message); });
-    fetchAdminComplexityLocal()
-      .then(setLocal)
-      .catch(() => { /* optional panel — silent on miss */ });
     fetchAdminCronbach()
       .then(setCron)
       .catch(() => { /* optional panel — silent on miss */ });
@@ -184,103 +115,6 @@ export default function ComplexityTab() {
 
   return (
     <div className="admin-complexity-tab">
-
-      {local && (
-        <>
-          <section className="admin-section">
-            <h2>Time complexity — algorithm only (controlled local sweep)</h2>
-            <p className="empty-state-muted">
-              Direct invocation of the C++ analyzer binary, timed in isolation
-              (no HTTP, no queue, no concurrency). This is the pure algorithm
-              cost vs input size — what the O(n) <em>time</em> claim is about.
-              The production-cohort fits below are dominated by request-queue
-              and process-spawn noise that the algorithm itself does not pay.
-            </p>
-            <LocalSweepChart points={local.pointsMedian} yKey="wall_ms"
-              yLabel="wall_ms (median per N)"
-              regression={local.regressionWallMsNormal}
-              ariaLabel="Algorithm wall-time vs input lines (local sweep)" />
-            <table className="complexity-coef-table">
-              <thead><tr><th>Range</th><th>Slope</th><th>Intercept</th><th>R²</th><th>n</th><th>Interpretation</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td>Normal case (2000 ≤ N ≤ 14000)</td>
-                  <td><code>{local.regressionWallMsNormal.slope} ms/line</code></td>
-                  <td><code>{local.regressionWallMsNormal.intercept} ms</code></td>
-                  <td><code>{local.regressionWallMsNormal.r2}</code></td>
-                  <td><code>{local.regressionWallMsNormal.n}</code></td>
-                  <td>{local.regressionWallMsNormal.interpretation}</td>
-                </tr>
-                <tr>
-                  <td>Full range</td>
-                  <td><code>{local.regressionWallMsFull.slope} ms/line</code></td>
-                  <td><code>{local.regressionWallMsFull.intercept} ms</code></td>
-                  <td><code>{local.regressionWallMsFull.r2}</code></td>
-                  <td><code>{local.regressionWallMsFull.n}</code></td>
-                  <td>{local.regressionWallMsFull.interpretation}</td>
-                </tr>
-                {local.regressionWallMsFullRaw && (
-                  <tr>
-                    <td>Raw (all reps, full range)</td>
-                    <td><code>{local.regressionWallMsFullRaw.slope} ms/line</code></td>
-                    <td><code>{local.regressionWallMsFullRaw.intercept} ms</code></td>
-                    <td><code>{local.regressionWallMsFullRaw.r2}</code></td>
-                    <td><code>{local.regressionWallMsFullRaw.n}</code></td>
-                    <td>{local.regressionWallMsFullRaw.interpretation}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </section>
-
-          <section className="admin-section">
-            <h2>Space complexity — algorithm only (controlled local sweep)</h2>
-            <p className="empty-state-muted">
-              Peak resident set size sampled every 5ms during the analyzer
-              subprocess run. Same controlled methodology as above; the
-              difference between the algorithm&apos;s peak memory and the
-              serialized analysis_json size on the live deploy is the
-              per-request constant overhead of the HTTP path.
-            </p>
-            <LocalSweepChart points={local.pointsMedian} yKey="peak_kb"
-              yLabel="peak_kb (median per N)"
-              regression={local.regressionPeakKbNormal}
-              ariaLabel="Algorithm peak memory vs input lines (local sweep)" />
-            <table className="complexity-coef-table">
-              <thead><tr><th>Range</th><th>Slope</th><th>Intercept</th><th>R²</th><th>n</th><th>Interpretation</th></tr></thead>
-              <tbody>
-                <tr>
-                  <td>Normal case (2000 ≤ N ≤ 14000)</td>
-                  <td><code>{local.regressionPeakKbNormal.slope} KB/line</code></td>
-                  <td><code>{local.regressionPeakKbNormal.intercept} KB</code></td>
-                  <td><code>{local.regressionPeakKbNormal.r2}</code></td>
-                  <td><code>{local.regressionPeakKbNormal.n}</code></td>
-                  <td>{local.regressionPeakKbNormal.interpretation}</td>
-                </tr>
-                <tr>
-                  <td>Full range</td>
-                  <td><code>{local.regressionPeakKbFull.slope} KB/line</code></td>
-                  <td><code>{local.regressionPeakKbFull.intercept} KB</code></td>
-                  <td><code>{local.regressionPeakKbFull.r2}</code></td>
-                  <td><code>{local.regressionPeakKbFull.n}</code></td>
-                  <td>{local.regressionPeakKbFull.interpretation}</td>
-                </tr>
-                {local.regressionPeakKbFullRaw && (
-                  <tr>
-                    <td>Raw (all reps, full range)</td>
-                    <td><code>{local.regressionPeakKbFullRaw.slope} KB/line</code></td>
-                    <td><code>{local.regressionPeakKbFullRaw.intercept} KB</code></td>
-                    <td><code>{local.regressionPeakKbFullRaw.r2}</code></td>
-                    <td><code>{local.regressionPeakKbFullRaw.n}</code></td>
-                    <td>{local.regressionPeakKbFullRaw.interpretation}</td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-            <p className="f1-note-footnote">{local.methodologyNote}</p>
-          </section>
-        </>
-      )}
 
       {cron && (
         <section className="admin-section">
@@ -317,7 +151,7 @@ export default function ComplexityTab() {
       )}
 
       {cErr && <section className="admin-section"><div className="empty-state admin-error" role="alert">{cErr}</div></section>}
-      {!complexity && !cErr && !local && <div className="empty-state">Loading…</div>}
+      {!complexity && !cErr && <div className="empty-state">Loading…</div>}
 
       {complexity?.regressionSpaceKbByTokens && (
         <section className="admin-section">
@@ -408,27 +242,6 @@ export default function ComplexityTab() {
                   <td>{f1.overall.fn}</td>
                   <td>{f1.overall.tn}</td>
                 </tr>
-                {f1.expectedNorm && (
-                  <tr
-                    className="f1-overall-row f1-overall-row--norm"
-                    data-testid="f1-expected-norm-row"
-                    title={`Expected norm for ${f1.expectedNorm.profile} (${f1.expectedNorm.participantCount} participants)`}
-                  >
-                    <td>
-                      <strong>Expected norm</strong>
-                      <span className="f1-norm-sub">
-                        {f1.expectedNorm.profile} · n={f1.expectedNorm.participantCount}
-                      </span>
-                    </td>
-                    <td><F1Badge value={f1.expectedNorm.precision} /></td>
-                    <td><F1Badge value={f1.expectedNorm.recall} /></td>
-                    <td><F1Badge value={f1.expectedNorm.f1} /></td>
-                    <td>{f1.expectedNorm.tp}</td>
-                    <td>{f1.expectedNorm.fp}</td>
-                    <td>{f1.expectedNorm.fn}</td>
-                    <td>{f1.expectedNorm.tn}</td>
-                  </tr>
-                )}
                 {f1.perPattern.map(p => (
                   <tr key={p.pattern} data-valid={p.valid !== false ? 'true' : 'false'}>
                     <td>
@@ -457,19 +270,6 @@ export default function ComplexityTab() {
               {f1.likertF1Correlation !== null && <> · Likert↔F1 correlation: <strong>{f1.likertF1Correlation}</strong></>}
               {' '}<span className="f1-note-footnote">({f1.note})</span>
             </p>
-
-            {f1.expectedNorm && (
-              <p className="f1-integration-note f1-norm-explainer">
-                <strong>Expected norm assumes:</strong>{' '}
-                recall on analyzer-positive lines = {(f1.expectedNorm.assumptions.recallOnAnalyzerPositive * 100).toFixed(0)}%,{' '}
-                specificity on analyzer-negative lines = {(f1.expectedNorm.assumptions.specificityOnAnalyzerNegative * 100).toFixed(0)}%,{' '}
-                pattern-hallucination rate = {(f1.expectedNorm.assumptions.hallucinatePatternRate * 100).toFixed(0)}%.{' '}
-                Marginals (from run history):{' '}
-                {f1.expectedNorm.marginals.analyzerPositiveDecisions} analyzer-positive /
-                {' '}{f1.expectedNorm.marginals.analyzerNegativeDecisions} analyzer-negative
-                {' '}of {f1.expectedNorm.marginals.totalDecisions} total decisions.
-              </p>
-            )}
 
             {f1.overall.reasoning && (
               <p className="f1-integration-note f1-overall-reasoning" data-testid="f1-overall-reasoning">

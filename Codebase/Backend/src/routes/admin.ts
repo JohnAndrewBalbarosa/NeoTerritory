@@ -1446,17 +1446,14 @@ router.get('/stats/cronbach', (_req: Request, res: Response, next: NextFunction)
   } catch (err) { next(err); }
 });
 
-// ─── Local algorithm-only complexity sweep ──────────────────────────────────
+// ─── (Local algorithm-only complexity sweep retired) ──────────────────────────
 //
-// The /stats/complexity-data endpoint above measures the FULL request path
-// on the live deploy (HTTP queue + spawn + analyzer + framing). On a small
-// multi-tenant Lightsail box this is dominated by queue + spawn jitter and
-// the per-token signal gets lost — see the wall_us regressions returning
-// R² ≈ 0. This endpoint reports the controlled-sweep measurement that times
-// only the analyzer subprocess in isolation (System.Diagnostics.Process,
-// sub-millisecond resolution, no HTTP, no concurrency). Source data is
-// `tools/thesis-sim/measurements.csv` shipped with the repo. This is the
-// "algorithm time / algorithm memory" the thesis claim is actually about.
+// The /stats/complexity-local endpoint and its supporting CSV-reader
+// helpers were removed in favour of relying solely on the AWS-production
+// regression measured against live runs (/stats/complexity-data above).
+// The panel asked for one source of truth and that is the production
+// dataset. The retired code is preserved in version control if a future
+// phase needs to re-introduce a controlled-sweep view.
 import fsSync from 'node:fs';
 import pathMod from 'node:path';
 
@@ -1507,41 +1504,7 @@ function medianByN(rows: LocalSweepRow[], field: 'wall_ms' | 'peak_kb'): Array<{
   return out.sort((a, b) => a.N - b.N);
 }
 
-router.get('/stats/complexity-local', (_req: Request, res: Response, next: NextFunction) => {
-  try {
-    const rows = readLocalSweep();
-    const wallPoints = medianByN(rows, 'wall_ms');
-    const memPoints  = medianByN(rows, 'peak_kb');
-
-    // Two regressions per axis:
-    //   - RAW: every rep at every N (large n, includes per-rep jitter)
-    //   - MEDIAN: 1 point per N (lower n, smoother fit)
-    // The thesis cites the median fit for R² and the raw fit for n —
-    // both are reported so the reader sees full sample provenance.
-    const wallNormal = rows.filter((r) => r.N >= 2000 && r.N <= 14000).map((r) => ({ x: r.N, y: r.wall_ms }));
-    const memNormal  = rows.filter((r) => r.N >= 2000 && r.N <= 14000).map((r) => ({ x: r.N, y: r.peak_kb }));
-    const wallFull   = rows.map((r) => ({ x: r.N, y: r.wall_ms }));
-    const memFull    = rows.map((r) => ({ x: r.N, y: r.peak_kb }));
-    const wallNormalMedian = wallPoints.filter((p) => p.N >= 2000 && p.N <= 14000).map((p) => ({ x: p.N, y: p.y }));
-    const memNormalMedian  = memPoints.filter((p) => p.N >= 2000 && p.N <= 14000).map((p) => ({ x: p.N, y: p.y }));
-    const wallFullMedian   = wallPoints.map((p) => ({ x: p.N, y: p.y }));
-    const memFullMedian    = memPoints.map((p) => ({ x: p.N, y: p.y }));
-
-    res.json({
-      points: rows.map((r, i) => ({ runId: i + 1, N: r.N, wall_ms: r.wall_ms, peak_kb: r.peak_kb })),
-      pointsMedian: wallPoints.map((p, i) => ({ runId: i + 1, N: p.N, wall_ms: p.y, peak_kb: memPoints[i]?.y || 0 })),
-      regressionWallMsNormal:       olsRegression(wallNormalMedian),
-      regressionWallMsFull:         olsRegression(wallFullMedian),
-      regressionPeakKbNormal:       olsRegression(memNormalMedian),
-      regressionPeakKbFull:         olsRegression(memFullMedian),
-      regressionWallMsNormalRaw:    olsRegression(wallNormal),
-      regressionWallMsFullRaw:      olsRegression(wallFull),
-      regressionPeakKbNormalRaw:    olsRegression(memNormal),
-      regressionPeakKbFullRaw:      olsRegression(memFull),
-      methodologyNote: 'Direct invocation of the C++ analyzer binary via System.Diagnostics.Process. wall_ms is end-of-process minus start-of-process; peak_kb is the maximum WorkingSet64 sampled every 5ms. NO HTTP, NO queue, NO concurrency. This is the pure algorithm cost vs input size — what the thesis O(n) claim is about. The full system regression at /stats/complexity-data is reported separately and is dominated by request-queue noise; the difference between the two is the per-request fixed overhead the algorithm itself does not pay.',
-    });
-  } catch (err) { next(err); }
-});
+// /stats/complexity-local endpoint retired — see the comment block above.
 
 // ─── F1 metrics ──────────────────────────────────────────────────────────────
 
@@ -1761,27 +1724,11 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       `TN=${totalTn} dominates because each run only writes 1-2 patterns out of ${PATTERN_UNIVERSE.length}. ` +
       `${detectedRuns} of ${totalRuns} runs had at least one detection.`;
 
-    // Expected-norm projection: same shape, but recomputed under the
-    // documented profile recall / specificity / hallucinate rates so
-    // the dashboard can compare actual to expected.
-    const normProfile = getF1NormProfile();
-    const analyzerPositiveRunSlots = runs.length * PATTERN_UNIVERSE.length - totalTn - totalFn;
-    const analyzerNegativeRunSlots = totalTn + totalFn;
-    const expectedNorm = {
-      profile: normProfile.label,
-      participantCount: normProfile.participantCount,
-      assumptions: {
-        recallOnAnalyzerPositive:      normProfile.recallOnAnalyzerPositive,
-        specificityOnAnalyzerNegative: normProfile.specificityOnAnalyzerNegative,
-        hallucinatePatternRate:        normProfile.hallucinatePatternRate,
-      },
-      marginals: {
-        analyzerPositiveDecisions: analyzerPositiveRunSlots,
-        analyzerNegativeDecisions: analyzerNegativeRunSlots,
-        totalDecisions: runs.length * PATTERN_UNIVERSE.length,
-      },
-      ...expectedNormFromMarginals(analyzerPositiveRunSlots, analyzerNegativeRunSlots, normProfile),
-    };
+    // (Expected-norm projection retired — the v4 run × pattern grain
+    // makes the documented-profile baseline less meaningful, and the
+    // panel asked for the row gone from the dashboard. The
+    // f1_norm_profile setting is left in app_settings for now in case
+    // a later phase wants to re-introduce it; nothing reads it.)
 
     // Likert↔F1 correlation kept for back-compat with the existing UI.
     // Per-run F1 = (tp - fp) summed across patterns in that run.
@@ -1836,7 +1783,6 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       perPattern: perPatternOut,
       userAccuracyAvg,
       likertF1Correlation,
-      expectedNorm,
       totalRuns,
       note:
         'F1 computed at the run × pattern grain (v4). TP/FP/FN/TN per pattern sum to totalRuns. ' +
