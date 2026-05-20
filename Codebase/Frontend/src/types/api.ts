@@ -404,10 +404,14 @@ export interface F1Score {
 
 export interface PatternF1 extends F1Score {
   pattern: string;
-  // Per-pattern TN: count of manually-reviewed decisions where the
-  // analyzer did NOT flag this pattern AND the participant did not
-  // pick it. Comparable across patterns at the per-decision grain.
+  // Per-pattern TN: at the run × pattern grain — runs where the analyzer
+  // did NOT flag this pattern AND the participant didn't tick it as
+  // missed in the per-run survey. With 10 patterns and 150 runs the
+  // per-pattern total always sums to 150.
   tn: number;
+  // Optional total surfaced by the v4 endpoint so the UI can show the
+  // denominator next to F1 without re-summing TP/FP/FN/TN client-side.
+  total?: number;
   // Human-readable explanation of the score, keyed off familiarity
   // bucket + observed counts. Shown to the thesis panel so each row
   // is defensible without needing to derive the reasoning manually.

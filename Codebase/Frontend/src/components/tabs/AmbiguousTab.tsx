@@ -188,6 +188,11 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
   const [taggedDecisions, setTaggedDecisions]   = useState<Record<string, TaggedDecision>>({});
   const [untaggedDecisions, setUntaggedDecisions] = useState<Record<string, UntaggedDecision>>({});
   const [likert, setLikert] = useState<Record<string, number>>({});
+  // v4 F1 ground truth: patterns the participant intended but the
+  // analyzer did NOT tag in this run. Only patterns absent from the
+  // analyzer's detection list appear in the checkbox; ticks become FN
+  // for that pattern in the F1 dashboard.
+  const [surveyMissed, setSurveyMissed] = useState<Set<string>>(new Set());
   const [activeSubTab, setActiveSubTab] = useState<SubTabId>('validation');
   const [saved, setSaved]     = useState<Set<string>>(new Set());
   const [savingRun, setSavingRun] = useState(false);
@@ -478,7 +483,9 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
     if (Object.keys(likertRatings).length > 0) {
       try {
         const { submitRunSurvey } = await import('../../api/client');
-        await submitRunSurvey(String(effectiveRunId), likertRatings, {});
+        await submitRunSurvey(String(effectiveRunId), likertRatings, {}, {
+          surveyMissed: [...surveyMissed],
+        });
         for (const id of Object.keys(likertRatings)) markSaved(`likert-${id}`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -662,6 +669,61 @@ export default function AmbiguousTab({ pendingSave, onSaved, onDiscard }: Ambigu
                 />
               ))}
             </ul>
+          </div>
+        );
+      })()}
+
+      {/* v4 F1 ground truth: ask the participant which patterns they
+          intended but the analyzer didn't tag. Only non-detected
+          patterns appear; detected ones are implied TP. Ticks become
+          FN for those patterns on the admin F1 dashboard. */}
+      {(() => {
+        const PATTERN_UNIVERSE = [
+          { id: 'singleton',          label: 'Singleton' },
+          { id: 'factory',            label: 'Factory' },
+          { id: 'builder',            label: 'Builder' },
+          { id: 'method_chaining',    label: 'Method Chaining' },
+          { id: 'strategy_interface', label: 'Strategy Interface' },
+          { id: 'adapter',            label: 'Adapter' },
+          { id: 'decorator',          label: 'Decorator' },
+          { id: 'proxy',              label: 'Proxy' },
+          { id: 'virtual_proxy',      label: 'Virtual Proxy' },
+          { id: 'pimpl',              label: 'Pimpl' },
+        ];
+        const detectedSet = new Set<string>(
+          (currentRun?.detectedPatterns || [])
+            .map((d: { patternId?: string; patternName?: string }) => d.patternId || d.patternName)
+            .filter((s: unknown): s is string => typeof s === 'string'),
+        );
+        const missedOptions = PATTERN_UNIVERSE.filter(p => !detectedSet.has(p.id));
+        if (missedOptions.length === 0) return null;
+        return (
+          <div className="checklist-section">
+            <header className="checklist-section-header">
+              <h3>Patterns you intended but weren&apos;t detected</h3>
+              <p className="checklist-section-desc">
+                Tick any pattern you actually wrote that doesn&apos;t appear in the analyzer&apos;s detection list. Leave empty if every pattern you intended was already tagged.
+              </p>
+            </header>
+            <div className="survey-missed-grid">
+              {missedOptions.map(p => (
+                <label key={p.id} className="survey-missed-option">
+                  <input
+                    type="checkbox"
+                    checked={surveyMissed.has(p.id)}
+                    onChange={() => {
+                      setSurveyMissed(prev => {
+                        const next = new Set(prev);
+                        if (next.has(p.id)) next.delete(p.id);
+                        else next.add(p.id);
+                        return next;
+                      });
+                    }}
+                  />
+                  <span>{p.label}</span>
+                </label>
+              ))}
+            </div>
           </div>
         );
       })()}

@@ -72,9 +72,11 @@ router.post('/run/:runId', jwtAuth, validateBody(runFeedbackSchema), (req: Reque
       res.status(400).json({ error: 'Invalid runId' });
       return;
     }
-    const { ratings, openEnded } = req.body as {
+    const { ratings, openEnded, surveyMissed, surveyRejected } = req.body as {
       ratings: Record<string, number>;
       openEnded: Record<string, string>;
+      surveyMissed?: string[];
+      surveyRejected?: string[];
     };
     // Survey submission is the gate that flushes the buffered test-run
     // verdicts (gdb.compile_run.* / gdb.unit_test.* / gdb.run.complete)
@@ -82,15 +84,24 @@ router.post('/run/:runId', jwtAuth, validateBody(runFeedbackSchema), (req: Reque
     // run with feedback but no verdicts, or vice versa. Flush is
     // idempotent — a second survey submit for the same runId is a no-op
     // on the buffered side (already drained).
+    //
+    // Per-run F1 ground truth (surveyMissed + surveyRejected) is stored
+    // inside ratings_json alongside the Likert items so the F1 endpoint
+    // reads a single row per run without a join.
+    const ratingsPayload = {
+      ...ratings,
+      ...(surveyMissed   ? { __surveyMissed:   surveyMissed }   : {}),
+      ...(surveyRejected ? { __surveyRejected: surveyRejected } : {}),
+    };
     const rfInfo = db.prepare(
       `INSERT INTO run_feedback (run_id, user_id, ratings_json, open_json, submitted_at)
        VALUES (?, ?, ?, ?, datetime('now'))`
-    ).run(runIdNum, req.user.id, JSON.stringify(ratings), JSON.stringify(openEnded));
+    ).run(runIdNum, req.user.id, JSON.stringify(ratingsPayload), JSON.stringify(openEnded));
     const flushResult = flushForRunId(runIdNum);
     mirrorRow('run_feedback', {
       id: Number(rfInfo.lastInsertRowid),
       run_id: runIdNum, user_id: req.user.id,
-      ratings, open: openEnded,
+      ratings: ratingsPayload, open: openEnded,
       submitted_at: new Date().toISOString(),
     });
     logEvent(req.user.id, 'survey_run', `runId=${runIdNum} flushedRows=${flushResult.rowsWritten}`);

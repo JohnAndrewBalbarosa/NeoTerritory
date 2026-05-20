@@ -6978,3 +6978,40 @@ body[data-surface] {
 .nt-learn-shell__signout:hover {
   background: rgba(255, 255, 255, 0.06);
 }
+
+/* Survey-missed checkbox grid — used by RunSurveyModal and the v4
+   per-run F1 ground-truth question inside AmbiguousTab. Lists the
+   non-detected patterns the participant might have intended. */
+.survey-missed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px 14px;
+  padding: 6px 0;
+}
+.survey-missed-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+.survey-missed-option:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.survey-missed-option input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--nt-mkt-text, currentColor);
+}
+.survey-missed-hint {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin: 4px 0 8px;
+}
+.survey-missed-block {
+  border-top: 1px solid var(--nt-mkt-line, rgba(255, 255, 255, 0.1));
+  padding-top: 10px;
+  margin-top: 12px;
+}

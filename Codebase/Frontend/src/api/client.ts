@@ -789,11 +789,17 @@ export async function submitPretest(answers: Record<string, unknown>): Promise<u
 export async function submitRunSurvey(
   runId: string,
   ratings: Record<string, number>,
-  openEnded: Record<string, string>
+  openEnded: Record<string, string>,
+  survey?: { surveyMissed?: string[]; surveyRejected?: string[] }
 ): Promise<unknown> {
   return apiFetch<unknown>(`/api/survey/run/${encodeURIComponent(runId)}`, {
     method: 'POST',
-    body: JSON.stringify({ ratings, openEnded })
+    body: JSON.stringify({
+      ratings,
+      openEnded,
+      ...(survey?.surveyMissed?.length   ? { surveyMissed:   survey.surveyMissed }   : {}),
+      ...(survey?.surveyRejected?.length ? { surveyRejected: survey.surveyRejected } : {}),
+    })
   });
 }
 

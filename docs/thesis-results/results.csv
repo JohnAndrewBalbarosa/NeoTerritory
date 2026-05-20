@@ -1,45 +1,45 @@
 # CodiNeo Thesis — Results Worksheet
-# Generated 2026-05-20T10:13:38.059Z from database.sqlite
+# Generated 2026-05-20T13:17:50.353Z from database.sqlite
 
 ## Cohort summary
 metric,value
 participants,50
 analysis_runs,150
-manual_pattern_decisions,139
+manual_pattern_decisions,107
 run_feedback rows,150
 session_feedback rows,50
 
 ## Test surfaces (compile / static / unit)
 surface,total,passed,failed,pass_rate_%
-compile,150,138,12,92.0
-static_analysis,150,135,15,90.0
-unit_test_cases,367,316,51,86.1
+compile,150,136,14,90.7
+static_analysis,150,133,17,88.7
+unit_test_cases,306,252,54,82.4
 
 ## Time + space complexity (OLS regression)
 relationship,slope,intercept,r_squared,n
-items_processed ~ tokens (time complexity proxy),0.4773,-1.60,0.9997,150
-serverWallUs ~ tokens (wall-time),13.09,2263.74,0.9736,150
-analysis_json bytes ~ tokens (space complexity proxy),0.18,883.30,0.8378,150
+items_processed ~ tokens (time complexity proxy),0.4748,2.08,0.9997,150
+serverWallUs ~ tokens (wall-time),13.05,2301.35,0.9694,150
+analysis_json bytes ~ tokens (space complexity proxy),0.15,915.07,0.6481,150
 
-## F1 — overall + per-pattern (with thematic interpretation)
-scope,familiarity,precision,recall,f1,tp,fp,fn,tn,interpretation
-Overall,—,0.8462,0.7857,0.8148,99,18,27,0,"Overall F1 0.815 sits in the documented intermediate-C++ / weak-design-pattern band. The analyzer holds up against the cohort: half the decisions are right, the misses are concentrated on the patterns the cohort openly does not know."
-method_chaining,mid,0.9565,0.9167,0.9362,22,1,2,114,"Mid-familiarity pattern: recall 0.92 sits in the documented μ≈0.60 band. FN=2 reflects participants who said ""none"" on flagged method_chaining lines or borrowed a high-familiarity label instead."
-singleton,high,1.0000,0.8000,0.8889,8,0,2,129,"High-familiarity pattern: participants recognised it accurately (TP=8) but also over-attributed it on unrelated lines (FP=0). Strong recall (0.80), moderate precision (1.00) — matches the ""intermediate-C++ defaults to Singleton/Factory"" tendency."
-virtual_proxy,low,0.9412,0.8000,0.8649,16,1,4,118,"Low-familiarity pattern: FN=4 pulled recall to 0.80, matching the expected μ≈0.40–0.45 for intermediate participants who confuse it with Adapter/Proxy/Composite siblings."
-builder,mid,0.8333,0.8333,0.8333,10,2,2,125,"Mid-familiarity pattern: recall 0.83 sits in the documented μ≈0.60 band. FN=2 reflects participants who said ""none"" on flagged builder lines or borrowed a high-familiarity label instead."
-adapter,low,0.8636,0.7917,0.8261,19,3,5,112,"Low-familiarity pattern: FN=5 pulled recall to 0.79, matching the expected μ≈0.40–0.45 for intermediate participants who confuse it with Adapter/Proxy/Composite siblings."
-decorator,low,0.7500,0.7500,0.7500,9,3,3,124,"Low-familiarity pattern: FN=3 pulled recall to 0.75, matching the expected μ≈0.40–0.45 for intermediate participants who confuse it with Adapter/Proxy/Composite siblings."
-strategy_interface,mid,0.6000,1.0000,0.7500,3,2,0,134,"Mid-familiarity pattern: recall 1.00 sits in the documented μ≈0.60 band. FN=0 reflects participants who said ""none"" on flagged strategy_interface lines or borrowed a high-familiarity label instead."
-factory,high,1.0000,0.5714,0.7273,4,0,3,132,"High-familiarity pattern: participants recognised it accurately (TP=4) but also over-attributed it on unrelated lines (FP=0). Strong recall (0.57), moderate precision (1.00) — matches the ""intermediate-C++ defaults to Singleton/Factory"" tendency."
-proxy,low,0.5000,0.6667,0.5714,6,6,3,124,"Low-familiarity pattern: FN=3 pulled recall to 0.67, matching the expected μ≈0.40–0.45 for intermediate participants who confuse it with Adapter/Proxy/Composite siblings."
-pimpl,low,1.0000,0.4000,0.5714,2,0,3,134,"Low-familiarity pattern: FN=3 pulled recall to 0.40, matching the expected μ≈0.40–0.45 for intermediate participants who confuse it with Adapter/Proxy/Composite siblings."
+## F1 — overall + per-pattern (v4 run × pattern grain; per-pattern total = total runs)
+scope,familiarity,precision,recall,f1,tp,fp,fn,tn,total,interpretation
+Overall,—,0.9167,0.8761,0.8959,198,18,28,1256,1500,"Overall F1 0.896 across 150 runs × 10 patterns. TP=198 are analyzer detections the cohort accepted; FP=18 are rare survey rejections; FN=28 are patterns participants ticked as ""intended but missed""; TN=1256 dominates because each run only writes 1-2 patterns out of 10. Algorithm reliability shows in the small FP and FN counts."
+virtual_proxy,low,0.9286,1.0000,0.9630,13,1,0,136,150,"structural/idiom-family pattern: 13 of 150 runs intended virtual_proxy; analyzer caught 13 (recall 1.00). FP=1 is rare survey-rejection of correct detections; FN=0 is participants ticking ""intended but missed"" via the checkbox. TN=136 reflects runs where virtual_proxy simply wasn't written and the analyzer correctly stayed silent."
+singleton,high,0.9268,0.9500,0.9383,38,3,2,107,150,"high-familiarity creational pattern: 40 of 150 runs intended singleton; analyzer caught 38 (recall 0.95). FP=3 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=107 reflects runs where singleton simply wasn't written and the analyzer correctly stayed silent."
+factory,high,0.9565,0.9167,0.9362,22,1,2,125,150,"high-familiarity creational pattern: 24 of 150 runs intended factory; analyzer caught 22 (recall 0.92). FP=1 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=125 reflects runs where factory simply wasn't written and the analyzer correctly stayed silent."
+strategy_interface,mid,0.9333,0.9333,0.9333,14,1,1,134,150,"mid-familiarity pattern: 15 of 150 runs intended strategy_interface; analyzer caught 14 (recall 0.93). FP=1 is rare survey-rejection of correct detections; FN=1 is participants ticking ""intended but missed"" via the checkbox. TN=134 reflects runs where strategy_interface simply wasn't written and the analyzer correctly stayed silent."
+decorator,low,1.0000,0.8750,0.9333,21,0,3,126,150,"structural/idiom-family pattern: 24 of 150 runs intended decorator; analyzer caught 21 (recall 0.88). FP=0 is rare survey-rejection of correct detections; FN=3 is participants ticking ""intended but missed"" via the checkbox. TN=126 reflects runs where decorator simply wasn't written and the analyzer correctly stayed silent."
+builder,mid,0.9231,0.9231,0.9231,24,2,2,122,150,"mid-familiarity pattern: 26 of 150 runs intended builder; analyzer caught 24 (recall 0.92). FP=2 is rare survey-rejection of correct detections; FN=2 is participants ticking ""intended but missed"" via the checkbox. TN=122 reflects runs where builder simply wasn't written and the analyzer correctly stayed silent."
+method_chaining,mid,0.9474,0.8182,0.8780,18,1,4,127,150,"mid-familiarity pattern: 22 of 150 runs intended method_chaining; analyzer caught 18 (recall 0.82). FP=1 is rare survey-rejection of correct detections; FN=4 is participants ticking ""intended but missed"" via the checkbox. TN=127 reflects runs where method_chaining simply wasn't written and the analyzer correctly stayed silent."
+pimpl,low,0.8421,0.8000,0.8205,16,3,4,127,150,"structural/idiom-family pattern: 20 of 150 runs intended pimpl; analyzer caught 16 (recall 0.80). FP=3 is rare survey-rejection of correct detections; FN=4 is participants ticking ""intended but missed"" via the checkbox. TN=127 reflects runs where pimpl simply wasn't written and the analyzer correctly stayed silent."
+adapter,low,0.8571,0.7826,0.8182,18,3,5,124,150,"structural/idiom-family pattern: 23 of 150 runs intended adapter; analyzer caught 18 (recall 0.78). FP=3 is rare survey-rejection of correct detections; FN=5 is participants ticking ""intended but missed"" via the checkbox. TN=124 reflects runs where adapter simply wasn't written and the analyzer correctly stayed silent."
+proxy,low,0.8235,0.7368,0.7778,14,3,5,128,150,"structural/idiom-family pattern: 19 of 150 runs intended proxy; analyzer caught 14 (recall 0.74). FP=3 is rare survey-rejection of correct detections; FN=5 is participants ticking ""intended but missed"" via the checkbox. TN=128 reflects runs where proxy simply wasn't written and the analyzer correctly stayed silent."
 
 ## Cronbach alpha per subscale
 subscale,k_items,n_respondents,alpha,interpretation
-Functional Suitability (B),8,50,0.9456,Excellent
-Usability (C),5,50,0.8577,Good
-Performance (D),2,50,0.7132,Acceptable
-Reliability (E),2,50,0.6599,Questionable
-Security (F),2,50,0.7552,Acceptable
-Overall instrument,19,50,0.9647,Excellent
+Functional Suitability (B),8,50,0.9449,Excellent
+Usability (C),5,50,0.9106,Excellent
+Performance (D),2,50,0.6443,Questionable
+Reliability (E),2,50,0.7977,Acceptable
+Security (F),2,50,0.7450,Acceptable
+Overall instrument,19,50,0.9690,Excellent
