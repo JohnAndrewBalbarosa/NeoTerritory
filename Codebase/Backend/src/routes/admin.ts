@@ -1611,30 +1611,46 @@ function familiarityBucket(p: string): 'high' | 'mid' | 'low' {
 
 router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1) Load every run + its detected patterns.
+    // 1) Load every run + its detected patterns + embedded F1 ground
+    //    truth. analysis_json is the per-run source (one row per run);
+    //    run_feedback only carries Likert + a copy on first-run rows,
+    //    so reading from analysis_json keeps the F1 math working
+    //    regardless of how the self-checkout survey rowcount evolves.
     const runs = db.prepare(`SELECT id, analysis_json FROM analysis_runs`).all() as Array<{
       id: number; analysis_json: string;
     }>;
     const totalRuns = runs.length;
     const detectedByRun = new Map<number, Set<string>>();
+    const missedByRun = new Map<number, Set<string>>();
+    const rejectedByRun = new Map<number, Set<string>>();
     for (const r of runs) {
-      const a = safeParse(r.analysis_json) as { detectedPatterns?: Array<{ patternId?: string; patternName?: string }> } | null;
-      const set = new Set<string>();
+      const a = safeParse(r.analysis_json) as {
+        detectedPatterns?: Array<{ patternId?: string; patternName?: string }>;
+        surveyMissed?: string[];
+        surveyRejected?: string[];
+      } | null;
+      const detSet = new Set<string>();
       for (const dp of a?.detectedPatterns || []) {
         const id = dp.patternId || dp.patternName;
-        if (id) set.add(id);
+        if (id) detSet.add(id);
       }
-      detectedByRun.set(r.id, set);
+      detectedByRun.set(r.id, detSet);
+      if (Array.isArray(a?.surveyMissed) && a.surveyMissed.length) {
+        missedByRun.set(r.id, new Set(a.surveyMissed));
+      }
+      if (Array.isArray(a?.surveyRejected) && a.surveyRejected.length) {
+        rejectedByRun.set(r.id, new Set(a.surveyRejected));
+      }
     }
 
-    // 2) Load survey ground truth from run_feedback.ratings_json.
-    //    Keys __surveyMissed + __surveyRejected (written by the v4 survey
-    //    payload). A run may have multiple feedback rows; union them.
+    // 2) Back-compat fallback: any per-run feedback rows that still
+    //    carry __surveyMissed / __surveyRejected (legacy v4 wire path)
+    //    union into the same maps so live submissions before the
+    //    storage move are not dropped. New live submissions write
+    //    through analysis_json directly (see survey route below).
     const surveyRows = db.prepare(`SELECT run_id, ratings_json FROM run_feedback`).all() as Array<{
       run_id: number; ratings_json: string;
     }>;
-    const missedByRun = new Map<number, Set<string>>();
-    const rejectedByRun = new Map<number, Set<string>>();
     for (const row of surveyRows) {
       const parsed = safeParse(row.ratings_json) as Record<string, unknown> | null;
       if (!parsed) continue;
