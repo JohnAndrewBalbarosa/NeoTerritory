@@ -4,11 +4,36 @@
 ship_source() {
   local remote_dir="$1"
   echo "-- Shipping SOURCE to $SSH_TARGET --"
-  local includes=( Codebase/Backend Codebase/Frontend Codebase/Microservice \
-                   Codebase/Infrastructure/session-orchestration/docker scripts start.sh )
-  local excludes=( --exclude='**/.git' --exclude='**/node_modules' \
-                   --exclude='**/dist' --exclude='**/build' --exclude='**/build-linux' \
-                   --exclude='**/.env' )
+
+  # ── includes + excludes load from deploy.manifest.json ──────────────
+  # Single source of truth at repo root. Edited like package.json — no
+  # bash array editing required when adding a folder to the ship list.
+  # Schema lives at scripts/deploy-manifest.schema.json.
+  local manifest="$ROOT_DIR/deploy.manifest.json"
+  if [ ! -f "$manifest" ]; then
+    echo "   [ship] ERROR: deploy.manifest.json not found at repo root" >&2
+    return 1
+  fi
+  local includes excludes
+  mapfile -t includes < <(python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: m = json.load(f)
+for p in m.get('includes', []): print(p)
+" "$manifest")
+  mapfile -t excludes_raw < <(python3 -c "
+import json, sys
+with open(sys.argv[1]) as f: m = json.load(f)
+for p in m.get('excludes', []): print(p)
+" "$manifest")
+  excludes=()
+  for pat in "${excludes_raw[@]}"; do
+    excludes+=( "--exclude=$pat" )
+  done
+
+  if [ ${#includes[@]} -eq 0 ]; then
+    echo "   [ship] ERROR: deploy.manifest.json has no includes entries" >&2
+    return 1
+  fi
 
   # Pre-flight summary so the operator can see what's about to ship.
   local file_count size_human

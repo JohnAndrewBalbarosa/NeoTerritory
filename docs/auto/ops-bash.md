@@ -119,7 +119,7 @@ Tar + ssh-pipe the source tree to AWS, then write Backend/.env on the remote.
 **Functions**
 
 - `ship_source` (line 4)
-- `write_remote_env` (line 46)
+- `write_remote_env` (line 71)
 
 ## `ops/bash/rebuild/`
 

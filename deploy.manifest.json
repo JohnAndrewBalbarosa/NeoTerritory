@@ -1,0 +1,41 @@
+{
+  "$schema": "./scripts/deploy-manifest.schema.json",
+  "version": 1,
+
+  "_description": "Single source of truth for what ships to the AWS Lightsail host. Edited like package.json — add or remove paths here, no need to touch the deploy shell scripts. Consumed by ops/bash/deploy/lib/ship.sh.",
+
+  "remote": {
+    "appDir":     "/home/ubuntu/neoterritory",
+    "binary":     "Codebase/Microservice/build/NeoTerritory",
+    "port":       3001,
+    "healthPath": "/api/health"
+  },
+
+  "includes": [
+    "Codebase/Backend",
+    "Codebase/Frontend",
+    "Codebase/Microservice",
+    "Codebase/Infrastructure/session-orchestration/docker",
+    "scripts",
+    "start.sh",
+    "package.json",
+    "package-lock.json"
+  ],
+
+  "excludes": [
+    "**/.git",
+    "**/node_modules",
+    "**/dist",
+    "**/build",
+    "**/build-linux",
+    "**/build-wsl",
+    "**/build-msys",
+    "**/.env",
+    "**/.env.backup-*",
+    "**/database.sqlite",
+    "**/uploads/",
+    "**/outputs/",
+    "**/server.out.log",
+    "**/server.err.log"
+  ]
+}
