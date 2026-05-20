@@ -1,5 +1,5 @@
 # CodiNeo Thesis — Results Worksheet
-# Generated 2026-05-20T14:21:06.816Z from database.sqlite
+# Generated 2026-05-20T15:09:16.574Z from database.sqlite
 
 ## Cohort summary
 metric,value
@@ -20,6 +20,16 @@ relationship,slope,intercept,r_squared,n
 items_processed ~ tokens (time complexity proxy),0.1055,0.10,0.9997,150
 serverWallUs ~ tokens (wall-time),9.51,1002.48,0.9932,150
 analysis_json bytes ~ tokens (space complexity proxy),0.15,909.91,0.6154,150
+
+## Per-run averages (derived from OLS fit + mean token count)
+metric,value,unit,computation
+mean tokens per run,1709,tokens,avg over 150 runs
+avg items_processed per run,180,items,slope × mean(tokens) + intercept
+avg wall time per run,17.25,milliseconds,(9.51 µs × 1709 tokens + 1002 µs intercept) ÷ 1000
+avg analysis_json size per run,1.14,KB,(0.15 × 1709 tokens + 910 bytes intercept) ÷ 1024
+
+## Important: what the intercept means + system-dependence caveat
+note,"The intercept in each regression is the fixed per-invocation overhead — the cost the analyzer pays BEFORE processing any token (process spawn + catalog load for time; empty JSON skeleton for space). This is NOT a property of the algorithm itself; it is a property of the host system, the runtime, and the deployment shape. Re-running this study on a different machine, in a different language, or with a different launcher (containerized vs bare, cold-start vs warm) will produce a DIFFERENT intercept while the slope (the actual algorithmic O(n) work per token) stays essentially the same. The slope is what the panel should read as ""the algorithm."" The intercept is ""the environment."""
 
 ## F1 — overall + per-pattern (v4 run × pattern grain; per-pattern total = total runs)
 scope,familiarity,precision,recall,f1,tp,fp,fn,tn,total,interpretation

@@ -11,13 +11,15 @@ Panel-facing summary of the analyzer's measured behaviour against the
   - Cronbach α per ISO-25010 subscale (B / C / D / E / F + overall instrument)
   - Paste into Excel as-is; no formula evaluation needed.
 
-- **`complexity-interpretation.txt`** — narrative reading of the same
+- **`results-interpretation.md`** — narrative reading of the same
   numbers, written for the panel.
-  - Time complexity verdict (O(n) confirmed)
+  - Time complexity verdict (O(n) confirmed) + system-dependence caveat
   - Space complexity verdict
+  - Per-run averages (mean tokens, items, wall ms, output KB)
+  - Explicit note: the regression **intercept** is a property of the host
+    system, not the algorithm. Slope is what transfers across replications.
   - Test-surface verdict (pass rates in expected band)
-  - **F1 verdict** structured as a story arc by familiarity tier
-    (HIGH → MID → LOW), with overall panel verdict
+  - **F1 verdict** under the v4 run × pattern grain (per-pattern total = 150)
   - Cronbach α reading + the k=2 short-scale caveat
   - Closing four-bullet "common themes" panel takeaway
 
