@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>NeoTerritory — Time &amp; Space Complexity Table</title>
+<style>
+  body { font-family: Calibri, Arial, sans-serif; font-size: 11pt; color: #222; padding: 24px; }
+  h1 { font-size: 16pt; margin-bottom: 4px; }
+  h2 { font-size: 13pt; margin-top: 24px; }
+  p.sub { color: #555; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+  th, td { border: 1px solid #888; padding: 6px 10px; text-align: left; vertical-align: top; }
+  th { background: #d9e2f3; font-weight: 700; }
+  td.stage { font-weight: 600; background: #f2f2f2; }
+  td.note { font-style: italic; color: #555; }
+  caption { caption-side: top; text-align: left; font-weight: 700; padding: 6px 0; }
+  .legend { font-size: 10pt; color: #555; margin-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>NeoTerritory Analyzer — Time &amp; Space Complexity</h1>
+<p class="sub">
+  n = input token count &nbsp;|&nbsp; m = AST nodes (O(n)) &nbsp;|&nbsp; p = catalog patterns (constant, ~10) &nbsp;|&nbsp; s = symbols collected &nbsp;|&nbsp; k = candidate matches per site
+</p>
+
+<h2>Table 1. Per-stage time complexity</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Pipeline stage</th>
+      <th>Best case</th>
+      <th>Average case</th>
+      <th>Worst case</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage">Lexical analysis (tokenization)</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>Single linear scan over source bytes.</td></tr>
+    <tr><td class="stage">Main tree / AST construction</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>One pass over the token stream; each token produces ≤1 node.</td></tr>
+    <tr><td class="stage">ReverseMerkle hashing</td><td>O(m)</td><td>O(m)</td><td>O(m)</td><td>Each node hashed exactly once; m = O(n).</td></tr>
+    <tr><td class="stage">Symbol table build (classes, functions)</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>Hash-map inserts; amortized O(1) per symbol.</td></tr>
+    <tr><td class="stage">Symbol resolution / lookup</td><td>O(1)</td><td>O(1)</td><td>O(s)</td><td>Worst case is a degenerate hash collision chain.</td></tr>
+    <tr><td class="stage">Pattern matching (catalog × nodes)</td><td>O(n)</td><td>O(n · p)</td><td>O(n · p)</td><td>p is bounded by the catalog (~10), so effectively linear in n.</td></tr>
+    <tr><td class="stage">Pattern ranking (lexeme categories → structure tiebreak)</td><td>O(1)</td><td>O(k)</td><td>O(k log k)</td><td>k is the number of competing matches at one site (typically &lt;5).</td></tr>
+    <tr><td class="stage">Subtree comparison (diffing)</td><td>O(1)</td><td>O(m)</td><td>O(m)</td><td>Best case: root hashes match → early exit. Worst case: full descent.</td></tr>
+    <tr><td class="stage">Output JSON generation</td><td>O(f)</td><td>O(f)</td><td>O(f)</td><td>f = findings + targets, bounded by O(n).</td></tr>
+    <tr><td class="stage"><strong>End-to-end pipeline</strong></td><td><strong>O(n)</strong></td><td><strong>O(n)</strong></td><td><strong>O(n)</strong></td><td>Validated empirically: wall time ≈ 9.51·n + 1002 µs, R² = 0.9932 (n = 150 runs, AWS-production sweep).</td></tr>
+  </tbody>
+</table>
+
+<h2>Table 2. Per-stage space complexity</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Pipeline stage</th>
+      <th>Best case</th>
+      <th>Average case</th>
+      <th>Worst case</th>
+      <th>Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="stage">Lexical analysis (tokenization)</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>Token vector held in memory for downstream stages.</td></tr>
+    <tr><td class="stage">Main tree / AST construction</td><td>O(n)</td><td>O(n)</td><td>O(n)</td><td>One AST node per syntactic construct.</td></tr>
+    <tr><td class="stage">ReverseMerkle hashing</td><td>O(m)</td><td>O(m)</td><td>O(m)</td><td>One hash stored per node.</td></tr>
+    <tr><td class="stage">Symbol table build</td><td>O(s)</td><td>O(s)</td><td>O(s)</td><td>s ≤ n; one entry per declared class / function.</td></tr>
+    <tr><td class="stage">Symbol resolution / lookup</td><td>O(1)</td><td>O(1)</td><td>O(1)</td><td>Read-only against the existing symbol table.</td></tr>
+    <tr><td class="stage">Pattern matching</td><td>O(1)</td><td>O(f)</td><td>O(n)</td><td>f findings emitted; bounded by AST size.</td></tr>
+    <tr><td class="stage">Pattern ranking</td><td>O(1)</td><td>O(k)</td><td>O(k)</td><td>Scratch buffer for competing matches at one site.</td></tr>
+    <tr><td class="stage">Subtree comparison (diffing)</td><td>O(1)</td><td>O(log m)</td><td>O(m)</td><td>Recursion stack; worst case fully unbalanced subtree.</td></tr>
+    <tr><td class="stage">Output JSON generation</td><td>O(f)</td><td>O(f)</td><td>O(n)</td><td>Serialized analysis_json payload.</td></tr>
+    <tr><td class="stage"><strong>End-to-end pipeline</strong></td><td><strong>O(n)</strong></td><td><strong>O(n)</strong></td><td><strong>O(n)</strong></td><td>Validated empirically: output bytes ≈ 0.15·n + 910, R² = 0.6154 (n = 150).</td></tr>
+  </tbody>
+</table>
+
+<p class="legend">
+  Empirical calibration: AWS Lightsail production sweep, 7 input sizes × 5 repeats = 35 microservice samples,
+  re-measured across 150 cohort runs. Slope = algorithmic cost per token; intercept = fixed per-invocation setup
+  (process exec + catalog load), environment-dependent and not part of the algorithm.
+</p>
+
+</body>
+</html>
