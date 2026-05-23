@@ -10,6 +10,7 @@ import {
   type LearningQuizPractical,
 } from '../../../data/learningModules';
 import { submitAnalysis } from '../../../api/client';
+import { PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
 
 // D77 (round 4): per-module practical check is the unlock gate. The hub
 // keeps the multi-step guided-course UI (hero + progress, three-section
@@ -800,6 +801,48 @@ export default function PatternsLearnPage(): JSX.Element {
             </button>
           </footer>
         </article>
+      </section>
+
+      {/* Reference & context — moved here from the Pattern Catalog so the
+          citation and the GoF-anchoring rationale live alongside the
+          lessons. These are read-only context cards at the foot of the
+          Learning Path. */}
+      <section className="nt-learn-reference" aria-labelledby="learn-reference-heading">
+        <p className="nt-section-eyebrow" id="learn-reference-heading">
+          Reference &amp; context
+        </p>
+
+        <div className="nt-learn-reference__cards">
+          <article className="nt-patterns__source" aria-labelledby="learn-source">
+            <p className="nt-section-eyebrow">Source &amp; framing</p>
+            <h2 id="learn-source" className="nt-patterns__source-title">
+              Definitions come from Nesteruk 2022 and Gamma et al. 1994
+            </h2>
+            <p className="nt-patterns__source-body">
+              The intent, problem, solution, and idiomatic implementation for every pattern in the
+              catalog are paraphrased from {PATTERN_BOOK_CITATION} and cross-checked against the
+              original Gang of Four reference. Every pattern detail page lists its sources
+              explicitly.
+            </p>
+            <p className="nt-patterns__source-body">
+              Nesteruk&rsquo;s framing is straightforward: a design pattern is a named, idiomatic
+              arrangement of classes and operations that solves a recurring object-oriented design
+              problem. The same problem keeps appearing because the underlying language facts
+              (inheritance, ownership, virtual dispatch) keep producing the same shapes. Giving each
+              shape a name turns a paragraph of structural explanation into one word a reviewer can
+              look up. That is the entire pitch of design patterns - shared vocabulary that
+              compresses architecture into a few familiar shapes.
+            </p>
+          </article>
+
+          <article className="nt-patterns__source" aria-labelledby="learn-why-gof">
+            <p className="nt-section-eyebrow">Why GoF</p>
+            <h2 id="learn-why-gof" className="nt-patterns__source-title">
+              Why the catalog is Gang-of-Four anchored
+            </h2>
+            <p className="nt-patterns__source-body">{WHY_GOF_EXPLAINER}</p>
+          </article>
+        </div>
       </section>
     </main>
   );

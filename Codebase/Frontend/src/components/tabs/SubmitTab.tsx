@@ -1,7 +1,6 @@
 import AnalysisForm from '../analysis/AnalysisForm';
 import RunList from '../runs/RunList';
 import { AnalysisRun } from '../../types/api';
-import { useAppStore } from '../../store/appState';
 
 interface SubmitTabProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
@@ -10,11 +9,9 @@ interface SubmitTabProps {
 }
 
 export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAnalyze }: SubmitTabProps) {
-  // Linear-flow Next button. Switches the user to the Tests tab once an
-  // analysis run has produced a currentRun. The button stays disabled
-  // until that prerequisite is met so the user can't skip ahead.
-  const { currentRun, setActiveTab } = useAppStore();
-  const canAdvance = !!currentRun;
+  // The linear-flow "Next: Run tests →" button was removed (this turn).
+  // Navigation between Submit and Tests now goes through the tab bar, so
+  // this tab is just the analysis form plus the run list.
 
   // Single-popup behavior: hand straight to MainLayout's beforeAnalyze, which
   // shows the discard-or-keep-editing prompt only when there is an existing
@@ -31,17 +28,6 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAna
         beforeSubmit={handleBeforeAnalyze}
       />
       <RunList refreshSignal={refreshSignal} />
-      <div className="tab-next-bar">
-        <button
-          type="button"
-          className="primary-btn"
-          disabled={!canAdvance}
-          title={canAdvance ? undefined : 'Run an analysis first.'}
-          onClick={() => setActiveTab('gdb')}
-        >
-          Next: Run tests →
-        </button>
-      </div>
     </section>
   );
 }

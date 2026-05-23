@@ -1040,6 +1040,28 @@ body[data-surface] #root {
 .nt-student-course {
   max-width: 1280px;
 }
+/* Reference & context cards at the foot of the Learning Path (moved here
+   from the Pattern Catalog). Two columns on wide screens, stacked on
+   small ones; the inner cards reuse .nt-patterns__source styling. */
+.nt-learn-reference {
+  margin-top: clamp(2rem, 1.4rem + 2.4vw, 3.5rem);
+  padding-bottom: clamp(2rem, 1.4rem + 2vw, 3rem);
+}
+.nt-learn-reference__cards {
+  display: grid;
+  gap: 1.2rem;
+  margin-top: 0.75rem;
+}
+@media (min-width: 900px) {
+  .nt-learn-reference__cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+.nt-learn-reference .nt-patterns__source {
+  margin-top: 0;
+  height: 100%;
+}
 .nt-student-session-gate {
   min-height: calc(100vh - 180px);
   display: grid;

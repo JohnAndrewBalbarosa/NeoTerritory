@@ -17,10 +17,14 @@ interface MarketingNavProps {
 // content moved into /patterns/<slug> detail pages so /patterns is the
 // single learning + reference surface. /learn still routes (back-compat for
 // anyone who bookmarked it) but is not advertised.
+// Pattern catalog dropped from the primary nav (this turn): most of its
+// reference content is already covered in the Learning Path, and the
+// citation/why-GoF context cards moved to the bottom of /patterns/learn.
+// /patterns still routes for internal/back-compat use but is no longer
+// advertised in the top nav or primary flow.
 const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | null }> = [
   { path: '/', label: 'Home', surface: 'hero' },
   { path: '/mechanics', label: 'How it works', surface: 'mechanics' },
-  { path: '/patterns', label: 'Patterns', surface: 'patterns' },
   { path: '/tour', label: 'Guide', surface: 'tour' },
   { path: '/docs', label: 'Docs', surface: 'docs' },
   { path: '/about', label: 'About', surface: 'about' },
@@ -75,10 +79,7 @@ export default function MarketingNav({ current }: MarketingNavProps) {
         data-open={menuOpen ? 'true' : undefined}
       >
         {PRIMARY_LINKS.map((l) => {
-          // 'patternDetail' surface should highlight the Patterns link.
-          const isPatternFamily =
-            l.surface === 'patterns' && (current === 'patterns' || current === 'patternDetail');
-          const isActive = isPatternFamily || (l.surface !== null && current === l.surface);
+          const isActive = l.surface !== null && current === l.surface;
           return (
             <a
               key={l.path}

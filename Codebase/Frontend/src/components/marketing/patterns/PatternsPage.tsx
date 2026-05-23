@@ -1,5 +1,5 @@
 import { navigate } from '../../../logic/router';
-import { PATTERNS, PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
+import { PATTERNS } from './patternData';
 import { useFeatureReleases } from '../../../hooks/useFeatureReleases';
 
 // Per this turn (post-D74 refresh):
@@ -54,34 +54,9 @@ export default function PatternsPage() {
         )}
       </header>
 
-      <section className="nt-patterns__source" aria-labelledby="patterns-source">
-        <p className="nt-section-eyebrow">Source &amp; framing</p>
-        <h2 id="patterns-source" className="nt-patterns__source-title">
-          Definitions come from Nesteruk 2022 and Gamma et al. 1994
-        </h2>
-        <p className="nt-patterns__source-body">
-          The intent, problem, solution, and idiomatic implementation for every pattern below are
-          paraphrased from {PATTERN_BOOK_CITATION} and cross-checked against the original Gang of
-          Four reference. Every pattern detail page lists its sources explicitly.
-        </p>
-        <p className="nt-patterns__source-body">
-          Nesteruk&rsquo;s framing is straightforward: a design pattern is a named, idiomatic
-          arrangement of classes and operations that solves a recurring object-oriented design
-          problem. The same problem keeps appearing because the underlying language facts
-          (inheritance, ownership, virtual dispatch) keep producing the same shapes. Giving each
-          shape a name turns a paragraph of structural explanation into one word a reviewer can
-          look up. That is the entire pitch of design patterns - shared vocabulary that compresses
-          architecture into a few familiar shapes.
-        </p>
-      </section>
-
-      <section className="nt-patterns__source" aria-labelledby="patterns-why-gof">
-        <p className="nt-section-eyebrow">Why GoF</p>
-        <h2 id="patterns-why-gof" className="nt-patterns__source-title">
-          Why the catalog is Gang-of-Four anchored
-        </h2>
-        <p className="nt-patterns__source-body">{WHY_GOF_EXPLAINER}</p>
-      </section>
+      {/* The "Source & framing" and "Why GoF" reference sections moved to
+          the bottom of the Learning Path page (/patterns/learn) so the
+          citation/context lives in one place alongside the lessons. */}
 
       {grouped.map((group) => (
         <section key={group.family} className="nt-patterns__group" aria-label={group.family}>
