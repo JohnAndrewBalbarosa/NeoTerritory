@@ -32,11 +32,10 @@ export type Surface =
 // Paths retired by the auth-surface consolidation. They render the 404
 // page instead of falling through to the homepage so old bookmarks land
 // somewhere honest rather than silently appearing to work.
-const RETIRED_PATHS = new Set<string>(['/choose', '/login', '/seat-selection']);
+const RETIRED_PATHS = new Set<string>(['/choose', '/login', '/seat-selection', '/consent']);
 
 const STUDIO_ALIASES = [
   '/app',
-  '/consent',
   '/pretest',
   '/studio',
   '/developer',
