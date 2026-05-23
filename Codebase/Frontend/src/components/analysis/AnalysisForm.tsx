@@ -20,7 +20,17 @@ interface FileSlot {
 
 // Hard ceiling — must match backend payloadValidator max(5).
 const MAX_FILES_HARD_CAP = 5;
-const ACCEPTED_EXT = '.cpp,.cc,.cxx,.h,.hpp';
+// Allow-list of C/C++ source and header extensions. The `accept` attribute
+// on <input type="file"> is only a hint to the OS file picker — users can
+// still pick "All files" and submit a .txt or .pdf, so runtime validation
+// in onFileInput is the real gate. Keep this list and ACCEPTED_EXT in sync.
+const ACCEPTED_EXTS = ['.cpp', '.cc', '.cxx', '.c', '.hpp', '.h'] as const;
+const ACCEPTED_EXT = ACCEPTED_EXTS.join(',');
+
+function hasAcceptedExt(name: string): boolean {
+  const lower = name.toLowerCase();
+  return ACCEPTED_EXTS.some(ext => lower.endsWith(ext));
+}
 
 function newSlotId(): string {
   return `slot-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
@@ -215,10 +225,31 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
     if (idx === 0 && patch.name !== undefined) setFilename(patch.name);
   }
 
-  function onFileInput(id: string, fileList: FileList | null) {
+  function onFileInput(id: string, fileList: FileList | null, inputEl?: HTMLInputElement | null) {
     const file = fileList?.[0];
     if (!file) return;
-    file.text().then(txt => patchSlot(id, { name: file.name, text: txt })).catch(() => {});
+    // Fallback gate: the OS picker's accept hint is bypassable, so verify
+    // the extension here before reading. Reject other types with a clear
+    // status message and clear the input so the user can re-pick.
+    if (!hasAcceptedExt(file.name)) {
+      setStatus({
+        kind: 'error',
+        title: 'Unsupported file type',
+        detail: `Only C/C++ source and header files are accepted (${ACCEPTED_EXTS.join(', ')}). "${file.name}" was rejected.`
+      });
+      logFrontendEvent('frontend.error', `upload_rejected name=${file.name}`);
+      if (inputEl) inputEl.value = '';
+      return;
+    }
+    file.text()
+      .then(txt => patchSlot(id, { name: file.name, text: txt }))
+      .catch(() => {
+        setStatus({
+          kind: 'error',
+          title: 'Read failed',
+          detail: `Could not read "${file.name}". Pick another file or paste the code directly.`
+        });
+      });
   }
 
   return (
@@ -287,7 +318,7 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
               type="file"
               className="file-slot-picker"
               accept={ACCEPTED_EXT}
-              onChange={e => onFileInput(activeSlot.id, e.target.files)}
+              onChange={e => onFileInput(activeSlot.id, e.target.files, e.target)}
               aria-label="Upload a file into this tab"
             />
           </header>
