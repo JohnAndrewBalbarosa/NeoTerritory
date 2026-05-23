@@ -452,7 +452,7 @@ Env:
   SOAK_LOG_DIR          (default test-artifacts/soak-runs)
 
 Per-cycle order (no artificial delays):
-  /auth/claim → /api/survey/consent
+  /auth/claim
   for each fixture run:
     /api/analyze → /api/runs/save → /api/analysis/:runId/run-tests
                  → /api/analysis/:runId/manual-review (one POST per detected pattern)
@@ -461,30 +461,30 @@ Per-cycle order (no artificial delays):
 
 **Functions**
 
-- `usernameFilter` (line 43)
+- `usernameFilter` (line 42)
   Recovery mode: SOAK_USERNAMES is a comma-separated list of usernames to
   re-run after a partial failure. When set, USER_COUNT is ignored and the
   simulator only drives the named users (still in 10-min stagger order).
-- `logEvent` (line 53)
-- `sleep` (line 58)
-- `http` (line 62)
-- `releaseAllClaimed` (line 87)
-- `makeRng` (line 110)
+- `logEvent` (line 52)
+- `sleep` (line 57)
+- `http` (line 61)
+- `releaseAllClaimed` (line 86)
+- `makeRng` (line 109)
   Mulberry32 PRNG seeded by FNV-1a hash of a string. Deterministic per
   (username, runId) so the same simulator invocation produces the same
   FP/FN/TN distribution on re-run — important for thesis reproducibility.
-- `personaPolicy` (line 130)
+- `personaPolicy` (line 129)
   Persona-driven decision policy for manual-review. Probabilities sum to
   1.0 across {accept, switch, reject}. fnClaimProb is independent — the
   probability that this run also injects a "missed pattern" claim on a
   clean line (drives FN counts up for the critical persona).
-- `startHeartbeat` (line 151)
-- `authedHttp` (line 168)
-- `loadSampleCode` (line 217)
-- `runOneAnalysis` (line 225)
-- `runOneUser` (line 476)
-- `main` (line 551)
-- `worker` (line 568)
+- `startHeartbeat` (line 150)
+- `authedHttp` (line 167)
+- `loadSampleCode` (line 216)
+- `runOneAnalysis` (line 224)
+- `runOneUser` (line 475)
+- `main` (line 543)
+- `worker` (line 560)
 
 ### `scripts/verify-requirements.ps1`
 

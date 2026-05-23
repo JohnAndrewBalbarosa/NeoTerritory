@@ -70,11 +70,7 @@ async function main() {
   const jwt = login.json.token;
   console.log(`[auth] devcon1 logged in`);
 
-  // 2. POST consent so the consent gate doesn't block UI later
-  const consent = await api(jwt, '/api/survey/consent', { version: '2026-05-01' });
-  console.log(`[consent] status=${consent.status}`);
-
-  // 3. Each pattern: replay 3 samples through /api/analyze, assert each
+  // 2. Each pattern: replay 3 samples through /api/analyze, assert each
   //    triggers the expected pattern. This is exactly what the practical
   //    UI does (PatternsLearnPage.tsx PatternPractical.handleRun).
   for (const m of PATTERN_MODULES) {

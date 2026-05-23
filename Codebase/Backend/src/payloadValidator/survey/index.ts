@@ -11,10 +11,6 @@ export const reviewSubmitSchema = z.object({
 const starRatingSchema = z.number().int().min(1).max(5);
 const openTextSchema = z.string().max(4000);
 
-export const consentSchema = z.object({
-  version: z.string().min(1).max(64)
-});
-
 export const pretestSchema = z.object({
   answers: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]))
 });

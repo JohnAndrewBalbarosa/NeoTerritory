@@ -20,7 +20,6 @@
 --                                 the analysis jsonb column
 --   • reviews                 ← per-pattern reviewer answers (jsonb)
 --   • manual_pattern_decisions← user-confirmed pattern picks (jsonb candidates)
---   • survey_consent          ← consent acceptance (version, timestamp)
 --   • survey_pretest          ← pretest answers (jsonb)
 --   • run_feedback            ← per-run ratings + open-ended (jsonb each)
 --   • session_feedback        ← end-of-session ratings + open-ended (jsonb)
@@ -145,14 +144,6 @@ create index if not exists idx_decisions_user on public.manual_pattern_decisions
 -- ============================================================================
 -- 5. Surveys + feedback
 -- ============================================================================
-create table if not exists public.survey_consent (
-  id           bigint primary key,
-  user_id      bigint not null,
-  accepted_at  timestamptz not null default now(),
-  version      text not null
-);
-create index if not exists idx_consent_user on public.survey_consent (user_id);
-
 create table if not exists public.survey_pretest (
   id            bigint primary key,
   user_id       bigint not null,
@@ -194,7 +185,6 @@ alter table public.jobs                        enable row level security;
 alter table public.analysis_runs               enable row level security;
 alter table public.reviews                     enable row level security;
 alter table public.manual_pattern_decisions    enable row level security;
-alter table public.survey_consent              enable row level security;
 alter table public.survey_pretest              enable row level security;
 alter table public.run_feedback                enable row level security;
 alter table public.session_feedback            enable row level security;

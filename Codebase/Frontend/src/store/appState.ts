@@ -55,7 +55,6 @@ interface AppState {
   // setCurrentRun / resetSession.
   programStdin: string;
   activeTab: StudioTab;
-  consentAccepted: boolean;
   pretestSubmitted: boolean;
   aiStatus: AiCommentaryStatus;
   aiJobId: string | null;
@@ -99,7 +98,6 @@ interface AppState {
   setPendingGdbAutoRun: (v: boolean) => void;
   setProgramStdin: (text: string) => void;
   setActiveTab: (tab: StudioTab) => void;
-  setConsentAccepted: (v: boolean) => void;
   setPretestSubmitted: (v: boolean) => void;
   setAiStatus: (status: AiCommentaryStatus, jobId?: string | null) => void;
   setAiConfigured: (v: boolean) => void;
@@ -150,7 +148,6 @@ export const useAppStore = create<AppState>((set) => ({
   pendingGdbAutoRun: false,
   programStdin: '',
   activeTab: 'submit',
-  consentAccepted: false,
   pretestSubmitted: false,
   aiStatus: 'idle',
   aiJobId: null,
@@ -181,7 +178,6 @@ export const useAppStore = create<AppState>((set) => ({
       sessionRanAnalyze: false,
       sessionReviewedEnd: false,
       activeTab: 'submit',
-      consentAccepted: false,
       pretestSubmitted: false,
       aiStatus: 'idle',
       aiJobId: null,
@@ -249,7 +245,6 @@ export const useAppStore = create<AppState>((set) => ({
   setPendingGdbAutoRun: (v) => set({ pendingGdbAutoRun: v }),
   setProgramStdin: (text) => set({ programStdin: text }),
   setActiveTab: (tab) => set({ activeTab: tab }),
-  setConsentAccepted: (v) => set({ consentAccepted: v }),
   setPretestSubmitted: (v) => set({ pretestSubmitted: v }),
   setAiStatus: (status, jobId) => set((s) => ({
     aiStatus: status,

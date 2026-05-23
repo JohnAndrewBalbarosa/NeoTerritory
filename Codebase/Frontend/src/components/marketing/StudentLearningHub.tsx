@@ -309,7 +309,7 @@ function openSampleInStudentStudio(sample: Sample): void {
   // role chooser so the user always picks PM / Developer / New user
   // BEFORE Google OAuth — never pre-decided by the surface they came
   // from. The 'developer' entry-flow stash is left as a hint that the
-  // Google callback uses to skip ConsentGate + Pretest for real-account
+  // Google callback uses to skip the Pretest gate for real-account
   // users; the chooser still owns the actual role decision.
   stashStudioPrefill(sample);
   try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* private mode */ }

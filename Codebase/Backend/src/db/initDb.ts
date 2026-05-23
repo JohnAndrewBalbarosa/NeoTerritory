@@ -129,15 +129,6 @@ export function initDb(): void {
   initEtlSchema(db);
 
   // --- Survey + manual-review tables (idempotent) ---
-  db.prepare(`CREATE TABLE IF NOT EXISTS survey_consent (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    accepted_at TEXT NOT NULL,
-    version TEXT NOT NULL,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  )`).run();
-  db.prepare(`CREATE INDEX IF NOT EXISTS idx_survey_consent_user ON survey_consent(user_id)`).run();
-
   db.prepare(`CREATE TABLE IF NOT EXISTS survey_pretest (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,

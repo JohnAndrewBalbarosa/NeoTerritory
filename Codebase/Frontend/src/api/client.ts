@@ -756,13 +756,6 @@ export async function submitManualReview(runId: number, payload: ManualReviewPay
 }
 
 // Survey endpoints
-export async function submitConsent(version: string): Promise<unknown> {
-  return apiFetch<unknown>('/api/survey/consent', {
-    method: 'POST',
-    body: JSON.stringify({ version })
-  });
-}
-
 export async function submitPretest(answers: Record<string, unknown>): Promise<unknown> {
   return apiFetch<unknown>('/api/survey/pretest', {
     method: 'POST',

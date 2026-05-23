@@ -88,7 +88,7 @@ body{position:relative;}
 .admin-brand-dot{width:10px;height:10px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);}
 .admin-brand h1{font-size:18px;font-weight:700;color:var(--ink);letter-spacing:-0.01em;}
 .admin-brand .eyebrow{font-size:10px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:var(--accent);display:block;margin-bottom:2px;}
-.admin-topbar-actions{display:flex;gap:8px;align-items:center;}
+.admin-topbar-actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center;}
 /* Admin action row — sign out / refresh / theme toggle / ops pills.
    flex-wrap so the ops pills line wraps below the auth buttons on
    narrow viewports instead of overflowing the topbar. gap:10px gives
@@ -224,7 +224,7 @@ body{position:relative;}
 .logs-filter-chip{padding:4px 10px;border:1px solid var(--border);border-radius:999px;background:var(--bg);color:var(--ink-soft);font-size:11.5px;cursor:pointer;text-transform:capitalize;transition:all 0.12s;}
 .logs-filter-chip:hover{border-color:var(--accent);color:var(--ink);}
 .logs-filter-chip.is-on{background:var(--accent-glow);border-color:var(--accent);color:var(--accent);font-weight:600;}
-.logs-filter-actions{display:flex;justify-content:flex-end;gap:8px;border-top:1px solid var(--border);padding-top:10px;}
+.logs-filter-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:12px;border-top:1px solid var(--border);padding-top:10px;}
 .logs-table-wrap{max-height:480px;overflow-y:auto;border:1px solid var(--border);border-radius:var(--radius-md);}
 .logs-table{width:100%;border-collapse:collapse;font-size:12.5px;}
 .logs-table th,.logs-table td{text-align:left;padding:8px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
@@ -282,7 +282,7 @@ body{position:relative;}
 
 /* ADMIN TAB BAR — adds index + icon slots so tabs scan as fast as the
    studio tabs. Underline animation kept (existing pattern). */
-.admin-tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px;gap:0;flex-wrap:wrap;}
+.admin-tab-bar{display:flex;border-bottom:1px solid var(--border);margin-bottom:4px;gap:0.5rem;flex-wrap:wrap;}
 .admin-tab-btn{display:inline-flex;align-items:center;gap:10px;font-family:var(--ui-font);font-weight:700;font-size:13px;padding:11px 18px;border:none;background:transparent;border-bottom:3px solid transparent;margin-bottom:-1px;cursor:pointer;color:var(--ink-soft);transition:color 200ms cubic-bezier(0.16,1,0.3,1),border-color 200ms cubic-bezier(0.16,1,0.3,1),transform 200ms cubic-bezier(0.16,1,0.3,1);letter-spacing:0.02em;position:relative;}
 .admin-tab-btn:hover{color:var(--accent);transform:translateY(-1px);}
 .admin-tab-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}

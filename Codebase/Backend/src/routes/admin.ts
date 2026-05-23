@@ -565,13 +565,12 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
     const tx = db.transaction(() => {
       const r = {
         logs: 0, runs: 0, reviews: 0, surveys: 0, decisions: 0,
-        consent: 0, pretest: 0, runFeedback: 0, sessionFeedback: 0, jobs: 0
+        pretest: 0, runFeedback: 0, sessionFeedback: 0, jobs: 0
       };
       // 1) Tables that REFERENCE analysis_runs(id) — must die first.
       r.decisions       = safeDelete('DELETE FROM manual_pattern_decisions');
       r.reviews         = safeDelete('DELETE FROM reviews');
       // 2) Tables that REFERENCE users(id) but not analysis_runs.
-      r.consent         = safeDelete('DELETE FROM survey_consent');
       r.pretest         = safeDelete('DELETE FROM survey_pretest');
       r.runFeedback     = safeDelete('DELETE FROM run_feedback');
       r.sessionFeedback = safeDelete('DELETE FROM session_feedback');
@@ -586,7 +585,7 @@ router.delete('/logs', (req: Request, res: Response, next: NextFunction) => {
     const changes = r.logs;
     const detail = `logs=${r.logs} runs=${r.runs} reviews=${r.reviews} `
                  + `surveys=${r.surveys} decisions=${r.decisions} `
-                 + `consent=${r.consent} pretest=${r.pretest} `
+                 + `pretest=${r.pretest} `
                  + `runFeedback=${r.runFeedback} sessionFeedback=${r.sessionFeedback} `
                  + `jobs=${r.jobs}`;
     logAudit({

@@ -14,7 +14,6 @@ import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
 import DocumentationTab from '../tabs/DocumentationTab';
 import ReviewModal from '../modals/ReviewModal';
-import ConsentGate from '../survey/ConsentGate';
 import PretestForm from '../survey/PretestForm';
 import SignoutSurvey from '../survey/SignoutSurvey';
 import { AnalysisRun } from '../../types/api';
@@ -100,7 +99,7 @@ export default function MainLayout() {
   const { theme, toggleTheme } = useTheme();
   const {
     user, sessionRanAnalyze, sessionReviewedEnd,
-    token, activeTab, setActiveTab, consentAccepted, pretestSubmitted,
+    token, activeTab, setActiveTab, pretestSubmitted,
     setAiStatus, setStatus, status,
     currentRun, gdbAllPassedForRun, reviewsRequired
   } = useAppStore();
@@ -236,51 +235,47 @@ export default function MainLayout() {
     setReview(null);
   }
 
-  // Admins skip the research-participant gates entirely (ConsentGate +
-  // Pretest), but they MAY visit /studio voluntarily via the "Go to my
-  // studio →" button on the admin topbar. The old behaviour force-
-  // bounced admins back to /admin.html whenever they touched a non-
-  // /admin path; that broke the new admin↔studio toggle. Now admins
-  // who land on /studio just render the studio as a real-account user
-  // (handled by the expected-path block below).
+  // Admins skip the research-participant Pretest gate entirely, but they
+  // MAY visit /studio voluntarily via the "Go to my studio →" button on
+  // the admin topbar. The old behaviour force-bounced admins back to
+  // /admin.html whenever they touched a non-/admin path; that broke the
+  // new admin↔studio toggle. Now admins who land on /studio just render
+  // the studio as a real-account user (handled by the expected-path
+  // block below).
 
   // Real-account entry flow detection. GoogleCallback writes
   // `nt-entry-flow` to sessionStorage as 'developer' or 'student'
   // after a successful exchange; the homepage TryItChooser writes the
   // same value before kicking off the OAuth redirect. Devcon testers
   // (claim-seat path) never set this — so the absence of the flag
-  // means research participant, which keeps the ConsentGate + Pretest
-  // gates in front of them.
+  // means research participant, which keeps the Pretest gate in front
+  // of them.
   const entryFlow = typeof window !== 'undefined'
     ? window.sessionStorage.getItem('nt-entry-flow')
     : null;
-  // Admins are treated like real-account users for the gate logic — they
-  // skip ConsentGate + Pretest the same way developer/student OAuth
-  // sign-ins do. Without this, an admin clicking "Go to my studio"
-  // would land on /consent and feel stuck.
+  // Admins are treated like real-account users for the gate logic —
+  // they skip the Pretest gate the same way developer/student OAuth
+  // sign-ins do.
   const isRealAccountUser =
     user?.role === 'admin' || entryFlow === 'developer' || entryFlow === 'student';
 
-  // Reflect each gate in the URL so the address bar distinguishes consent
-  // and pretest from the studio home. replaceState avoids back-button noise.
-  // Real-account users go straight to the studio; tester gates are skipped.
+  // Reflect the pretest gate in the URL so the address bar distinguishes
+  // it from the studio home. replaceState avoids back-button noise.
+  // Real-account users go straight to the studio; the tester pretest
+  // gate is skipped for them.
   if (token && user && typeof window !== 'undefined') {
     const path = window.location.pathname;
     const expected = isRealAccountUser
       ? '/studio'
-      : !consentAccepted ? '/consent' : !pretestSubmitted ? '/pretest' : '/studio';
+      : !pretestSubmitted ? '/pretest' : '/studio';
     if (path !== expected && path !== '/admin.html') {
       window.history.replaceState(null, '', expected);
     }
   }
 
-  // Gate: consent first (research participants only — Devcon flow).
-  // Real-account Google sign-in users (Developer / Student Learning)
-  // skip this entirely.
-  if (token && user && !isRealAccountUser && !consentAccepted) {
-    return <ConsentGate />;
-  }
-  // Gate: pretest second. Same skip rule applies.
+  // Gate: pretest only. Research-participant flow (Devcon testers).
+  // Real-account Google sign-in users (Developer / Student Learning /
+  // Admin) skip this entirely.
   if (token && user && !isRealAccountUser && !pretestSubmitted) {
     return <PretestForm />;
   }

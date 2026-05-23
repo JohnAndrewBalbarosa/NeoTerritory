@@ -3,7 +3,6 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import {
-  consentSchema,
   pretestSchema,
   runFeedbackSchema,
   sessionFeedbackSchema
@@ -13,28 +12,6 @@ import { mirrorRow } from '../services/supabaseLogger';
 import { flushForRunId } from '../services/pendingRunPersistence';
 
 const router = express.Router();
-
-router.post('/consent', jwtAuth, validateBody(consentSchema), (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-    const { version } = req.body as { version: string };
-    const cInfo = db.prepare(
-      `INSERT INTO survey_consent (user_id, accepted_at, version) VALUES (?, datetime('now'), ?)`
-    ).run(req.user.id, version);
-    const acceptedAt = new Date().toISOString();
-    mirrorRow('survey_consent', {
-      id: Number(cInfo.lastInsertRowid),
-      user_id: req.user.id, accepted_at: acceptedAt, version,
-    });
-    logEvent(req.user.id, 'survey_consent', `version=${version}`);
-    res.status(201).json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
 
 router.post('/pretest', jwtAuth, validateBody(pretestSchema), (req: Request, res: Response, next: NextFunction) => {
   try {

@@ -122,9 +122,6 @@ await probe('manual_pattern_decisions', () => ({
   candidates: [], chosen_pattern: null, chosen_kind: 'probe',
   other_text: null, decided_at: now(),
 }));
-await probe('survey_consent', () => ({
-  id: probeId(), user_id: 0, accepted_at: now(), version: 'probe',
-}));
 await probe('survey_pretest', () => ({
   id: probeId(), user_id: 0, answers: { probe: true }, submitted_at: now(),
 }));

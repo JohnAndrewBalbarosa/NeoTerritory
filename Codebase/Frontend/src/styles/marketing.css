@@ -765,8 +765,9 @@ body[data-surface] #root {
 .nt-entry {
   min-height: calc(100vh - 72px);
   display: grid;
-  place-items: center;
+  place-items: start center;
   padding: clamp(1.25rem, 3vw, 2.5rem);
+  padding-top: clamp(2rem, 4vh + 1rem, 5rem);
   background:
     radial-gradient(circle at 18% 18%, rgba(0, 209, 216, 0.13), transparent 30%),
     radial-gradient(circle at 82% 78%, rgba(138, 43, 226, 0.16), transparent 34%),
@@ -3605,7 +3606,7 @@ body[data-surface] {
   width: min(100%, 540px);
 }
 .nt-signin-panel {
-  padding: clamp(1.25rem, 0.9rem + 1.8vw, 2.2rem) clamp(1.4rem, 1rem + 2vw, 2.6rem)
+  padding: clamp(1rem, 0.7rem + 1.2vw, 1.6rem) clamp(1.4rem, 1rem + 2vw, 2.6rem)
     clamp(1.6rem, 1.1rem + 2vw, 2.4rem);
   display: flex;
   flex-direction: column;

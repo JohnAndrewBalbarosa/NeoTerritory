@@ -333,7 +333,7 @@ The frontend is split into two surfaces that share the same Vite app:
 
 **Server fallback**: Vite dev already serves `index.html` for unknown paths, so `/learn` and `/about` work in dev without extra config. Production preview uses Vite's SPA fallback; if a static-host migration ever happens, configure SPA fallback there too.
 
-**Backwards compat**: hitting `/login`, `/consent`, `/pretest`, or `/studio` directly is preserved — these all map to the studio surface. The previous "URL purely informational" contract is upgraded to "URL drives surface selection," but the existing studio-surface URL writes (replaceState to `/login`/`/studio`) keep working unchanged.
+**Backwards compat**: hitting `/login`, `/pretest`, or `/studio` directly is preserved — these all map to the studio surface. (`/consent` was retired in D79 — it now renders the 404 surface.) The previous "URL purely informational" contract is upgraded to "URL drives surface selection," but the existing studio-surface URL writes (replaceState to `/login`/`/studio`) keep working unchanged.
 
 ## D30 — Default landing page is the Hero, not the Login overlay
 Per user direction, the entry point at `/` is now a marketing **Hero** (`components/marketing/HeroLanding.tsx`), not the `LoginOverlay`. The Hero has two CTAs:
@@ -452,7 +452,7 @@ Backing this with schema-level guarantees:
 - **`run_feedback.run_id`** is now `INTEGER` and a **`FOREIGN KEY … REFERENCES analysis_runs(id) ON DELETE CASCADE`**. Deleting a run automatically deletes its per-run survey. Existing TEXT-typed `run_id` rows are migrated in place by the existing `ensureCascade` helper in `Codebase/Backend/src/db/initDb.ts` (numeric strings coerce cleanly to integers via `INSERT … SELECT`).
 - **`reviews` (per-run scope)** and **`manual_pattern_decisions`** already cascade with `analysis_runs` (D-pre-existing migration).
 - **`session_feedback`** (sign-out survey) deliberately has NO foreign key to `analysis_runs`. It is bound to the user session, not to any individual run, and must survive run deletions. This stays standalone.
-- **`survey_consent`** and **`survey_pretest`** are pre-session and similarly user-bound, not run-bound.
+- **`survey_pretest`** is pre-session and user-bound, not run-bound. (The `survey_consent` table was retired in D79.)
 
 **True Negative metric**: the `/api/admin/stats/f1-metrics` endpoint now returns `overall.tn` — the count of manual review decisions where the user said "no pattern here" AND the system also detected nothing. Per-pattern TN is intentionally NOT computed because every line where neither side mentions pattern X is a TN for X, which collapses to "every line in the corpus" and carries no information. The admin Complexity tab shows TN in the Overall row only; per-pattern rows render `—`.
 
@@ -983,7 +983,7 @@ Flow changes:
 - Tester (Guest) opens the extracted `SeatClaimPanel` inline (no nav) and `claimSeat()` runs in-place. Popup closes and routes to `/studio` on success.
 - "Back to choices" inside the popup rewinds an internal view, never page navigation.
 - `useAuth.signOut()` now always navigates to `/` (was bouncing to `/choose`).
-- `ConsentGate` decline reuses `signOut()`; same end-state.
+- (Historical) `ConsentGate` decline reused `signOut()`; gate retired in D79, but the sign-out symmetry it relied on stays in place.
 - `StudioApp` unauthenticated visitor → `navigate('/')` + `dispatchTryItChooserOpen()` instead of `replaceState('/choose')`.
 - `/choose`, `/login`, `/seat-selection` now map to the new `notFound` surface (`NotFoundPage.tsx`) so stale bookmarks land somewhere honest.
 
@@ -998,3 +998,16 @@ Fixes:
 ### D78c — Student Learning accordion default
 
 `openSectionId` falls back to `'intro'` when there is no persisted open section AND the user has not started a step. The previous `sectionForStepIndex(0)` path returns `'intro'` for index 0 in practice, but the explicit fallback removes any ambiguity for fresh incognito sessions.
+
+## D79 — Consent gate fully retired (2026-05-23)
+
+The `/consent` surface and the `survey_consent` table are gone. Real-account OAuth users (Developer / Student / Admin via Google sign-in) never went through this gate — the only flow that hit it was the Devcon tester cohort, and that population is no longer the target audience. Carrying a half-used gate adds confusion (Devcon testers seeing it, real users wondering why a route exists), so removal is cleaner than keeping it dormant.
+
+What's removed:
+- Frontend: `ConsentGate.tsx`, `consentAccepted` store field and setter, `submitConsent()` API client, `consentNotice` / `consentAcknowledgement` / `consentVersion` constants in `surveyQuestions.ts`, all consent-gate branching in `MainLayout.tsx`.
+- Backend: `POST /api/survey/consent` route, `consentSchema` validator, `survey_consent` table init in `initDb.ts`, the admin cascade-delete entry, the supabase mirror call.
+- Migrations: `20260523000000_drop_survey_consent.sql` drops the table on the hosted Supabase project (requires `supabase db push`).
+- Scripts: `simulate-tester-soak.mjs` and `learners-e2e/walk.mjs` no longer POST consent; `check-supabase.mjs` no longer probes the table.
+- Router: `/consent` was already moved to `RETIRED_PATHS` (renders 404).
+
+Remaining behaviour: research participants who reach the studio without an entry-flow stamp still hit the Pretest gate; that is unchanged. Sign-out symmetry that ConsentGate previously relied on (decline → `signOut()`) is preserved by other call sites.

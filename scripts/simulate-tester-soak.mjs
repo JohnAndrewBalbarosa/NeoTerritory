@@ -14,7 +14,7 @@
 //   SOAK_LOG_DIR          (default test-artifacts/soak-runs)
 //
 // Per-cycle order (no artificial delays):
-//   /auth/claim → /api/survey/consent
+//   /auth/claim
 //   for each fixture run:
 //     /api/analyze → /api/runs/save → /api/analysis/:runId/run-tests
 //                  → /api/analysis/:runId/manual-review (one POST per detected pattern)
@@ -34,7 +34,6 @@ const FIXTURE_PATH  = process.env.SOAK_FIXTURE || 'tools/thesis-sim/dataset.json
 const LOG_DIR       = process.env.SOAK_LOG_DIR || 'test-artifacts/soak-runs';
 
 const SAMPLE_ROOT = 'Codebase/Microservice/samples';
-const CONSENT_VERSION = '2026-05-15';
 
 const dataset = JSON.parse(fs.readFileSync(FIXTURE_PATH, 'utf8'));
 // Recovery mode: SOAK_USERNAMES is a comma-separated list of usernames to
@@ -491,14 +490,7 @@ async function runOneUser(userFixture, userIndex) {
 
   const stopHeartbeat = startHeartbeat(ctx);
   try {
-    // 2. consent
-    const consent = await authedHttp('POST', '/api/survey/consent', {
-      ctx,
-      body: { version: CONSENT_VERSION },
-    });
-    logEvent({ user: username, endpoint: '/api/survey/consent', status: consent.status, latencyMs: consent.latencyMs });
-
-    // 3. per-run cycles — fast mode, no artificial think/gap delays.
+    // 2. per-run cycles — fast mode, no artificial think/gap delays.
     const runs = userFixture.runs.slice(0, RUNS_PER_USER);
     for (let i = 0; i < runs.length; i++) {
       const runFx = runs[i];
