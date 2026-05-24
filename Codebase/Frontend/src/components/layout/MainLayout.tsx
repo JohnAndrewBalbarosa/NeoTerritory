@@ -226,8 +226,12 @@ export default function MainLayout() {
     // admins, and anyone whose username is not a seeded devcon tester
     // bypass the modal entirely and sign out directly — they are
     // operating the system, not participating in the study.
+    //
+    // It is also gated on reviewsRequired: when an admin turns the survey
+    // off, the whole feedback workflow (Self-check tab + this session
+    // feedback) is removed, so sign-out goes straight through with no modal.
     const isTester = (user?.username || '').toLowerCase().startsWith('devcon');
-    if (isTester && sessionRanAnalyze && !sessionReviewedEnd && token) {
+    if (reviewsRequired && isTester && sessionRanAnalyze && !sessionReviewedEnd && token) {
       setShowSignout(true);
       return;
     }
