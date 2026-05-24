@@ -142,15 +142,12 @@ export default function GoogleSignInPage() {
           </div>
 
           <footer className="nt-signin-foot">
-            <button
-              type="button"
-              className="ghost-btn"
-              onClick={() => navigate('/auth/choose')}
-            >
-              ← Back to role choice
-            </button>
+            {/* Single Back control that returns to the homepage. The old
+                two-button footer (Back to role choice / Homepage) pointed at
+                the retired /auth/choose surface; one clear [Back] → / is all
+                this page needs. */}
             <button type="button" className="ghost-btn" onClick={() => navigate('/')}>
-              Homepage
+              ← Back
             </button>
           </footer>
         </div>
