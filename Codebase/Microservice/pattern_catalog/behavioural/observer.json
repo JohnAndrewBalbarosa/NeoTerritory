@@ -1,0 +1,28 @@
+{
+  "pattern_id": "behavioural.observer",
+  "pattern_family": "behavioural",
+  "pattern_name": "Observer",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "notification_methods": ["update", "onNotify", "notify", "onUpdate", "onEvent",
+                             "onChange", "onStateChanged", "handleEvent", "stateChanged",
+                             "fieldChanged", "onNext"],
+    "subject_registry":     ["observers", "observers_", "listeners", "listeners_",
+                             "subscribers", "subscribers_", "m_observers", "m_listeners"],
+    "registration_methods": ["attach", "subscribe", "registerObserver", "addObserver",
+                             "addListener", "detach", "unsubscribe", "removeObserver",
+                             "removeListener"],
+    "virtual_interface":    ["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "observer_interface_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "virtual_marker",   "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "observer_virtual_marker" },
+    { "id": "update_method",    "expected_kind": "Identifier",  "expected_lexeme_any_of": ["update", "onNotify", "notify", "onUpdate", "onEvent", "onChange", "onStateChanged", "handleEvent", "stateChanged", "fieldChanged", "onNext"], "capture_as": "update_method", "document_as": "observer_update_method" },
+    { "id": "open_method_paren","expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] }
+  ]
+}

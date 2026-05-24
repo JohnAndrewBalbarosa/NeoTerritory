@@ -263,7 +263,7 @@ public:
   {
     slug: 'method-chaining',
     name: 'Method Chaining',
-    family: 'Behavioural',
+    family: 'Creational',
     intent:
       'Allow multiple method calls on the same object in sequence by returning the object from each method.',
     problem:
@@ -514,7 +514,7 @@ public:
   void run(Vec& v) { s->sort(v); }
 };`,
     detection:
-      'Catalog entry (planned): signature_categories: ["interface_polymorphism", "ownership_handle"]. Distinguishes from State by absence of state-transition methods.',
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` operation method, paired with a subclass.json that detects concrete strategies. Co-emits with State and Command on the shared virtual-interface shape (per D21).',
     catalogFile: null,
     oneLiner: 'Swap the algorithm at runtime. The caller stays the same.',
     whatItIs:
@@ -569,8 +569,8 @@ public:
   void notify(const Event& e){ for (auto* o : observers) o->update(e); }
 };`,
     detection:
-      'Catalog entry (planned): signature_categories: ["interface_polymorphism"], ordered_checks looking for an attach/subscribe + a notify/publish loop over a collection of polymorphic listeners.',
-    catalogFile: null,
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a class with a `virtual` update/notify-named method. Co-emits with Strategy on the shared virtual-interface shape (per D21); the AI disambiguates on the update/observer naming.',
+    catalogFile: 'pattern_catalog/behavioural/observer.json',
     oneLiner: 'When something changes, everyone who cares finds out.',
     whatItIs:
       'A subject that maintains a list of observers and notifies them on every change. Each observer decides what to do with the notification.',
@@ -604,8 +604,8 @@ public:
   process(*it);
 }`,
     detection:
-      'Catalog entry (planned): looks for begin/end methods returning a type with operator++ and operator*.',
-    catalogFile: null,
+      'Catalog entry uses ordered_checks for a class that overloads `operator++` or `operator*` (the canonical traversal operators). No signature_categories gate — the operator-overload shape is distinctive on its own.',
+    catalogFile: 'pattern_catalog/behavioural/iterator.json',
     oneLiner: 'Walk through a collection. The collection picks the order.',
     whatItIs:
       'An object that knows where you are in a collection and how to move to the next element.',
@@ -643,8 +643,8 @@ public:
   void undo()    override { e.pos -= delta; }
 };`,
     detection:
-      'Catalog entry (planned): interface_polymorphism + a member function named execute / run / invoke + state captured in member fields.',
-    catalogFile: null,
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` execute/undo/redo-named method. Co-emits with Strategy on execute/run (per D21); the AI splits them on the undo/redo and receiver signals.',
+    catalogFile: 'pattern_catalog/behavioural/command.json',
     oneLiner: 'Wrap an action in an object. Replay it. Undo it. Queue it.',
     whatItIs:
       'A Command object captures the call: which method, which arguments, on which receiver. Calling execute() runs it; calling undo() reverses it.',
@@ -686,8 +686,8 @@ public:
   }
 };`,
     detection:
-      'Catalog entry (planned): interface_polymorphism + a self-typed container field + a forwarding call inside the parent override.',
-    catalogFile: null,
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for an add/remove-child operation and a child container (vector/list/children_). Co-emits with Decorator on the held-member shape (per D21).',
+    catalogFile: 'pattern_catalog/structural/composite.json',
     oneLiner: 'A leaf and a tree look the same to whoever asks.',
     whatItIs:
       'A pattern where a container of Components is itself a Component. Operations on the container recurse into children automatically.',
@@ -730,8 +730,8 @@ protected:
   void close() { /* shared */ }
 };`,
     detection:
-      'Catalog entry (planned): non-virtual public method that calls one or more virtual hook methods. Negative gate: pure forwarder Adapter shape.',
-    catalogFile: null,
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for an orchestrator method (run/process/generate) followed by `virtual` hook methods. Co-emits with Strategy on the virtual-interface shape (per D21).',
+    catalogFile: 'pattern_catalog/behavioural/template_method.json',
     oneLiner: 'A base class owns the algorithm. Subclasses fill in a few blanks.',
     whatItIs:
       'A base method that runs a fixed sequence of steps and calls virtual hooks at the variable points. Subclasses override the hooks, not the sequence.',
@@ -771,8 +771,8 @@ public:
   void tick() { state = state->handle(); }
 };`,
     detection:
-      'Catalog entry (planned): interface_polymorphism + ownership_handle + state-transition methods returning a new State (the differentiator from Strategy).',
-    catalogFile: null,
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` handle/request-named method. Structurally near-identical to Strategy, so the two co-emit (per D21); the AI separates them on the context state-transition signal.',
+    catalogFile: 'pattern_catalog/behavioural/state.json',
     oneLiner: 'Different mode, different rules. Same object.',
     whatItIs:
       'A pattern where each state of an object is its own class. The host delegates behaviour to its current state and switches state objects to change behaviour.',

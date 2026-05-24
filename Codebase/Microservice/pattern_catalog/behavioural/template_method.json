@@ -1,0 +1,26 @@
+{
+  "pattern_id": "behavioural.template_method",
+  "pattern_family": "behavioural",
+  "pattern_name": "TemplateMethod",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "template_methods": ["run", "execute", "process", "templateMethod", "play",
+                         "generate", "solve", "prepare", "cook", "make", "build",
+                         "render", "serialize"],
+    "hook_methods":     ["step", "doStep", "primitiveOperation", "hook", "onStep",
+                         "stepOne", "stepTwo", "initialize", "finalize", "beforeStep",
+                         "afterStep", "createHeader", "createBody"],
+    "virtual_interface":["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer",  "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",        "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "template_method_class" },
+    { "id": "open_class_brace",  "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "template_method",   "expected_kind": "Identifier",  "expected_lexeme_any_of": ["run", "execute", "process", "templateMethod", "play", "generate", "solve", "prepare", "cook", "make", "render", "serialize"], "capture_as": "template_method", "document_as": "template_orchestrator_method" },
+    { "id": "orchestrator_paren","expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] },
+    { "id": "virtual_hook",      "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "template_virtual_hook" }
+  ]
+}

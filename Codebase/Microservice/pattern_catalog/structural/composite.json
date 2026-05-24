@@ -1,0 +1,24 @@
+{
+  "pattern_id": "structural.composite",
+  "pattern_family": "structural",
+  "pattern_name": "Composite",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "child_container":  ["vector", "list", "set", "children", "children_",
+                         "m_children", "components", "components_", "elements",
+                         "elements_", "leaves", "nodes_", "items_"],
+    "child_ops":        ["add", "addChild", "remove", "removeChild", "getChild",
+                         "addComponent", "removeComponent", "append", "insert"],
+    "virtual_interface":["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "composite_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "child_op",         "expected_kind": "Identifier",  "expected_lexeme_any_of": ["add", "addChild", "remove", "removeChild", "getChild", "addComponent", "removeComponent", "append", "insert"], "capture_as": "child_op", "document_as": "composite_child_operation" },
+    { "id": "child_container",  "expected_kind": "Identifier",  "expected_lexeme_any_of": ["vector", "list", "set", "children", "children_", "m_children", "components", "components_", "elements", "elements_", "leaves", "nodes_", "items_"], "capture_as": "child_container", "document_as": "composite_child_container" }
+  ]
+}

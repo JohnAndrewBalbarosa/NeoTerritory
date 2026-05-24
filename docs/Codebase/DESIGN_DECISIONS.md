@@ -1011,3 +1011,22 @@ What's removed:
 - Router: `/consent` was already moved to `RETIRED_PATHS` (renders 404).
 
 Remaining behaviour: research participants who reach the studio without an entry-flow stamp still hit the Pretest gate; that is unchanged. Sign-out symmetry that ConsentGate previously relied on (decline → `signOut()`) is preserved by other call sites.
+
+## D80 — Catalog expanded toward full Gang-of-Four coverage (supersedes D21's "locked at seven")
+D21 locked the first catalog at seven entries as a deliberate starting point. Per user direction, the catalog is now being expanded to cover **all 23 Gang-of-Four patterns** that were not yet shipped, added incrementally in tested batches under `Codebase/Microservice/pattern_catalog/<family>/`.
+
+**Batch 1 (this decision)** adds six behavioural/structural GoF detectors:
+- **Behavioural**: `behavioural.observer`, `behavioural.command`, `behavioural.state`, `behavioural.template_method`, `behavioural.iterator`
+- **Structural**: `structural.composite`
+
+**Authoring rules these detectors follow** (consistent with the existing seven and the matcher in `pattern_token_sequence_matcher.cpp` + `match_ranker.cpp`):
+- `ordered_checks` is an **ordered-subsequence** matcher (forward scan, not adjacency). Detectors discriminate by constraining the method-name Identifier token via `expected_lexeme_any_of` (e.g. Observer requires a `virtual` method named `update`/`notify`; Command requires `execute`/`undo`), exactly as Singleton constrains its accessor name.
+- The behavioural interface detectors gate on `signature_categories: ["interface_polymorphism"]`. Iterator uses **no** signature gate — the `operator++` / `operator*` overload shape is distinctive on its own.
+- **Co-emit is expected and by design** (extends D21's co-emit philosophy): Observer/Command/State/Template Method all share the virtual-interface shape with Strategy and will co-emit (`ambiguous=true`); Composite co-emits with Decorator on the held-member shape. The backend ranking (D23) + AI assigns the final role. No attempt is made to force perfect structural separation at the microservice layer.
+- No C++ recompile is needed — catalog JSON is read fresh per run (D9).
+
+**Frontend sync**: `Codebase/Frontend/src/components/marketing/patterns/patternData.ts` flips these six from `catalogFile: null` ("(planned)") to their real catalog paths, and corrects two stale entries surfaced during this work: Strategy's `detection` prose (was wrongly marked "(planned)" though `strategy_interface.json` has shipped since an earlier batch) and Method Chaining's `family` (was `Behavioural`; the catalog files it under `creational`).
+
+**Samples & testing — deliberately NOT in the repo**: per explicit user direction, the reference samples, the detection-verification runs, and any planning scratch for this expansion live ONLY in the gitignored `local-only/` drop zone. They are never committed and leave no trace in the GitHub repo. This intentionally diverges from D21's note about `Codebase/Microservice/samples/`; the new patterns are validated locally against the standalone CLI binary (`NeoTerritory --catalog pattern_catalog/ --output <local-dir> <sample.cpp>`), which never touches the analysis database. The production analysis database is left fully intact.
+
+**Remaining GoF to add in later batches**: Abstract Factory, Prototype (creational); Bridge, Facade, Flyweight (structural); Chain of Responsibility, Interpreter, Mediator, Memento, Visitor (behavioural).
