@@ -545,12 +545,22 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps, completedIds],
   );
 
+  // Whether the account's progress has been resolved yet. Until it is, we must
+  // NOT clamp/bounce the active module to the unlock gate — on a refresh the
+  // progress loads async, and clamping against the empty initial set would
+  // bounce the user back to module 1 before their real progress arrives.
+  // Guests (no token) have nothing to load, so they're "loaded" immediately.
+  const [progressLoaded, setProgressLoaded] = useState<boolean>(false);
+
   // Hydrate progress from the account on mount / sign-in. Progress is stored
   // server-side per user (jwtAuth), so guests keep only the in-memory set for
   // the current visit. Stale ids that no longer match a module are harmless —
   // computeUnlockedCount only counts ids present in `steps`.
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      setProgressLoaded(true);
+      return;
+    }
     let cancelled = false;
     void fetchLearningProgress()
       .then((p) => {
@@ -563,6 +573,9 @@ export default function PatternsLearnPage(): JSX.Element {
       })
       .catch(() => {
         /* offline / first visit — start empty */
+      })
+      .finally(() => {
+        if (!cancelled) setProgressLoaded(true);
       });
     return () => {
       cancelled = true;
@@ -586,9 +599,17 @@ export default function PatternsLearnPage(): JSX.Element {
     [token, steps],
   );
 
+  // Honor the URL module on first render (clamp only to the valid range, not
+  // to the unlock gate yet). The bounce-to-gate happens later, once progress
+  // has loaded — see the effect below gated on progressLoaded.
   const [activeIndex, setActiveIndex] = useState<number>(() =>
-    clampToUnlocked(indexFromUrl(steps), 1),
+    clampToUnlocked(indexFromUrl(steps), steps.length || 1),
   );
+
+  // The unlock ceiling used by the URL-sync + bounce effects. While progress
+  // is still loading we use the full length (no bounce); once loaded we use
+  // the real unlock count so locked deep links are clamped.
+  const navUnlocked = progressLoaded ? unlockedCount : steps.length || 1;
 
   // Surface a banner whenever the URL clamp silently redirects the user
   // (deep link / paste of a locked module URL). Without this banner the
@@ -609,7 +630,7 @@ export default function PatternsLearnPage(): JSX.Element {
   // the gate.
   useEffect(() => {
     function recompute(): void {
-      setActiveIndex(clampToUnlocked(indexFromUrl(steps), unlockedCount));
+      setActiveIndex(clampToUnlocked(indexFromUrl(steps), navUnlocked));
     }
     window.addEventListener('popstate', recompute);
     window.addEventListener('nt:navigate', recompute);
@@ -617,7 +638,7 @@ export default function PatternsLearnPage(): JSX.Element {
       window.removeEventListener('popstate', recompute);
       window.removeEventListener('nt:navigate', recompute);
     };
-  }, [steps, unlockedCount]);
+  }, [steps, navUnlocked]);
 
   // If unlockedCount shrinks (shouldn't normally — readIds only grows in
   // this tab — but kept as a safety net) or the URL points past the gate,
@@ -626,6 +647,10 @@ export default function PatternsLearnPage(): JSX.Element {
   // redirectNotice so the article surface can render a visible banner.
   useEffect(() => {
     if (steps.length === 0) return;
+    // Wait until the account's progress is known. Bouncing before then would
+    // send a refreshing user (whose URL points at a deep, legitimately
+    // unlocked module) back to module 1 against the empty initial set.
+    if (!progressLoaded) return;
     const fromUrl = indexFromUrl(steps);
     const clamped = clampToUnlocked(fromUrl, unlockedCount);
     if (clamped !== fromUrl) {
@@ -642,7 +667,7 @@ export default function PatternsLearnPage(): JSX.Element {
       navigate(`/patterns/learn/${steps[clamped].module.id}`);
       setActiveIndex(clamped);
     }
-  }, [steps, unlockedCount]);
+  }, [steps, unlockedCount, progressLoaded]);
 
   // Clear the redirect notice the moment the user has unlocked enough
   // modules to reach (or pass) the originally requested one — the banner
