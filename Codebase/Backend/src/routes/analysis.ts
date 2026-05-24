@@ -706,11 +706,11 @@ router.get('/sample', (_req: Request, res: Response) => {
     // Backend-local upload override (operator-customised sample).
     path.join(__dirname, '..', '..', 'uploads', 'sample.cpp'),       // ts-node
     path.join(__dirname, '..', '..', '..', 'uploads', 'sample.cpp'), // dist
-    // Repo-shipped reference sample.
+    // Repo-shipped reference sample (single canonical pattern).
     path.join(__dirname, '..', '..', '..', '..',
-              'Codebase', 'Microservice', 'samples', 'integration', 'all_patterns.cpp'),  // ts-node
+              'Codebase', 'Microservice', 'samples', 'singleton', 'config_registry.cpp'),  // ts-node
     path.join(__dirname, '..', '..', '..', '..', '..',
-              'Codebase', 'Microservice', 'samples', 'integration', 'all_patterns.cpp'),  // dist
+              'Codebase', 'Microservice', 'samples', 'singleton', 'config_registry.cpp'),  // dist
   ];
   const sourcePath = candidates.find((p) => fs.existsSync(p)) || null;
   if (!sourcePath) {

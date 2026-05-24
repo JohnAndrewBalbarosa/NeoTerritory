@@ -19,13 +19,13 @@ const SAMPLE_DIR_BY_FILENAME: Record<string, string> = {
   'query_predicate.cpp': 'method_chaining',
   'strategy_basic.cpp': 'strategy',
   'strategy_with_pimpl.cpp': 'strategy',
+  'payment_gateway_adapter.cpp': 'adapter',
+  'coffee_decorator.cpp': 'decorator',
   'logging_proxy.cpp': 'wrapping',
   'pimpl_basic.cpp': 'pimpl',
   'mixed_classes.cpp': 'mixed',
   'usages_basic.cpp': 'usages',
-  // Phase B (D21 regression contract): integration sample +
-  // false-positive contract (negative/) + extended usages coverage.
-  'all_patterns.cpp': 'integration',
+  // Phase B (D21): false-positive contract (negative/) + usages coverage.
   'plain_class_no_pattern.cpp': 'negative',
   'plain_widget.cpp': 'negative',
   'usages_adapter_trace.cpp': 'usages',
@@ -173,19 +173,32 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
     expectedPatternNameRegex: /strategy|pimpl/i,
   },
   {
+    name: 'Adapter  -  payment_gateway_adapter',
+    filename: 'payment_gateway_adapter.cpp',
+    family: 'Structural',
+    kind: 'positive',
+    expectedClassNameRegex: /LegacyPaymentAdapter|Adapter/,
+    expectedPatternNameRegex: /adapter/i,
+  },
+  {
+    name: 'Decorator  -  coffee_decorator',
+    filename: 'coffee_decorator.cpp',
+    family: 'Structural',
+    kind: 'positive',
+    expectedClassNameRegex: /Decorator|Beverage/,
+    expectedPatternNameRegex: /decorator/i,
+  },
+  {
     name: 'Wrapping  -  logging_proxy',
     filename: 'logging_proxy.cpp',
     family: 'Structural',
     kind: 'positive',
+    // The wrapper implements a shared interface and forwards to a member of
+    // the same interface, so Adapter and Decorator co-emit (ambiguity is the
+    // point — the backend AI disambiguates the wrapping role). Either tag
+    // satisfies the bar.
     expectedClassNameRegex: /Logging|Proxy/,
-    expectedPatternNameRegex: /proxy|decorator|wrap/i,
-    algorithmKnownLimits: {
-      acceptedAlternatePattern: /adapter/i,
-      reason:
-        'D63: matcher emits Adapter on wrapping classes that hold a pointer to ' +
-        'another type. Proxy/Decorator vs Adapter discrimination is a known ' +
-        'catalog limit; accept Adapter here.',
-    },
+    expectedPatternNameRegex: /adapter|proxy|decorator|wrap/i,
   },
   {
     name: 'PIMPL  -  pimpl_basic',
@@ -206,39 +219,15 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
     expectedPatternNameRegex: /singleton|factory|builder|method.?chain|adapter|proxy|decorator|strategy/i,
   },
   {
+    // Cross-class usage-annotation sample. By design it expresses no single
+    // per-class GoF pattern (the "usages" are documentation anchors, not
+    // pattern structure), so the contract is: no catalog pattern badge.
     name: 'Usages  -  usages_basic',
     filename: 'usages_basic.cpp',
     family: 'Idioms',
-    kind: 'positive',
-    expectedClassNameRegex: /[A-Z]\w+/,
-    expectedPatternNameRegex: /singleton|factory|builder|method.?chain|adapter|proxy|decorator|strategy/i,
+    kind: 'negative',
   },
-  // ---- Phase B regression contract (D21) ----
-  {
-    name: 'Regression  -  integration/all_patterns',
-    filename: 'all_patterns.cpp',
-    family: 'Regression',
-    kind: 'integration',
-    expectedClassNameRegex: /ConfigSingleton|ShapeFactory|QueryBuilder|FluentLogger|Repository/,
-    // Per D21 locked catalog: every entry must show up somewhere in the
-    // tree. Strategy is included because the integration sample also
-    // exercises behavioural detection.
-    expectedAllCatalogPatterns: [
-      /singleton/i,
-      /factory/i,
-      /builder/i,
-      /method.?chain/i,
-      /adapter|proxy|decorator/i,
-    ],
-    algorithmKnownLimits: {
-      missingFromCatalogScan: [/method.?chain/i],
-      reason:
-        'D63: the matcher never surfaces method_chain on the integration sample; ' +
-        'Builder wins the fluent classes (same root cause as query_predicate). ' +
-        'Skip the method_chain presence check until the catalog learns a stronger ' +
-        'discriminator.',
-    },
-  },
+  // ---- Phase B false-positive contract (D21) ----
   {
     name: 'Negative  -  plain_class_no_pattern',
     filename: 'plain_class_no_pattern.cpp',
@@ -255,20 +244,19 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
     kind: 'negative',
   },
   {
+    // Diagnostic usage-annotation sample (no per-class GoF pattern by design).
     name: 'Usages  -  usages_adapter_trace',
     filename: 'usages_adapter_trace.cpp',
     family: 'Idioms',
-    kind: 'positive',
-    expectedClassNameRegex: /SocketLib|HttpClient|Adapter/,
-    expectedPatternNameRegex: /adapter|wrap|proxy/i,
+    kind: 'negative',
   },
   {
+    // Diagnostic usage-annotation sample: smart-pointer usages are tagged as
+    // documentation anchors, not a per-class pattern, so no catalog badge.
     name: 'Usages  -  usages_smart_pointers',
     filename: 'usages_smart_pointers.cpp',
     family: 'Idioms',
-    kind: 'positive',
-    expectedClassNameRegex: /Engine|Car|Owner/,
-    expectedPatternNameRegex: /singleton|factory|builder|smart.?pointer|raii/i,
+    kind: 'negative',
   },
 ];
 

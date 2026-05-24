@@ -3,10 +3,10 @@
   "pattern_family": "structural",
   "pattern_name": "Adapter",
   "enabled": true,
-  "signature_categories": [],
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
   "negative_signature_categories": [
-    "ownership_handle",
-    "interface_polymorphism",
     "access_control_caching"
   ],
   "lexeme_identifiers": {

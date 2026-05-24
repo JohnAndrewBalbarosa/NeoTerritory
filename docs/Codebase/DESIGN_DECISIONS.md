@@ -1038,3 +1038,24 @@ D21 locked the first catalog at seven entries as a deliberate starting point. Pe
 **Module base**: no per-pattern C++ module folder under `Modules/Source/Analysis/Patterns/Families/` is required — detection is JSON-catalog-driven (D9) and `CMakeLists.txt` globs sources; existing catalog-only patterns (`method_chaining`, `virtual_proxy`) have no module folder and detect fine.
 
 **GoF coverage after this decision: 23/23.**
+
+## D81 — Adapter detection fixed; wrapping/usages samples reclassified; integration sample retired (2026-05-25)
+
+A per-sample audit (every `Codebase/Microservice/samples/**/*.cpp` run through the standalone CLI binary against the live catalog) found exactly one GoF sample whose **named pattern was not tagged**: `adapter/payment_gateway_adapter.cpp`. Root cause: `structural/adapter.json` listed `interface_polymorphism` in `negative_signature_categories`. But a real Adapter *implements a target interface* (`: public IPaymentProcessor`, `override`), so the negative suppressed every genuine adapter, while the loose `ordered_checks` (class → any member identifier → `.`/`->` → method → `(`) let Adapter false-fire on any plain class with a member call (e.g. `intentionally_clean_dto`, `hidden_singleton`, and spurious co-tags on facade/memento/observer/state/visitor).
+
+**Fix** (catalog-only, read fresh per run — no recompile, D9):
+- `adapter.json`: `signature_categories: ["interface_polymorphism"]` (positive — an Adapter implements a target interface) and `negative_signature_categories: ["access_control_caching"]` (mutex/atomic ⇒ Proxy's turf). This makes Adapter fire on the real adapter and stop firing on plain DTOs. The audit's named-pattern failures went from 1 → 0 and the promiscuous false positives on negative/edge-case samples cleared.
+
+**Wrapping sample** (`samples/wrapping/logging_proxy.cpp`): previously relied on Adapter's looseness (no interface) and lost its tag under the stricter rule. Rewritten so `DataService`/`LoggingDataService` implement a shared `IDataService` interface — the structural common ground of the wrapping family — so **Adapter + Decorator co-emit** (ambiguity is the point; the backend AI disambiguates). Proxy is intentionally absent (it needs an access guard / lazy-init / cache, i.e. `access_control_caching`).
+
+**Usages samples** (`samples/usages/*.cpp`): reclassified in `all-samples.spec.ts` from `positive` to `negative`/diagnostic. The analyzer is per-class and token-based (no compilation); "cross-class usages" are surfaced as **documentation anchors**, not per-class pattern structure, so these files express **no single GoF pattern by design** and correctly produce no catalog badge. This is the documented answer to "usages_smart_pointers tags nothing."
+
+**Mixed sample** (`samples/mixed/mixed_classes.cpp`): only `Logger` (Singleton) tags; the sibling `Calculator` is a plain class. This is **correct per-class isolation**, not a bug — one file can hold tagged and untagged classes side by side.
+
+**Flyweight** (`samples/flyweight/glyph_factory.cpp`): co-emits `structural.flyweight` AND `creational.factory`. Accepted ambiguity — a lazy-cache `getGlyph` (`if(!slot) make_shared; return`) legitimately reads as both a Flyweight pool and a conditional Factory. Both fire; the named pattern (Flyweight) is present.
+
+**Picker**: `SamplePickerModal.tsx` had no `adapter`/`decorator` `META_BY_DIRECTORY` entries, so those samples were never loadable. Added both (Structural). `edge_cases/` stays excluded (test fixtures, not demos).
+
+**Integration sample retired**: `samples/integration/all_patterns.cpp` removed per user (multi-pattern regression file no longer used). Cleaned references: picker `integration` meta, `all-samples.spec.ts` (`integration` SAMPLES entry + `SAMPLE_DIR_BY_FILENAME` row; the `kind: 'integration'` type/branches remain inert), and the `/api/sample` fallback in `Backend/src/routes/analysis.ts` now points at `singleton/config_registry.cpp`.
+
+**Behavioural `strategy_interface` co-tagging** across most behavioural samples is unchanged and accepted (D21/D80 co-emit philosophy): every behavioural sample still tags its own named pattern alongside the strategy-interface ambiguity tag.

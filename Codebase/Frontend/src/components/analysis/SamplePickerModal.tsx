@@ -54,6 +54,16 @@ const META_BY_DIRECTORY: Record<string, SampleMeta> = {
     patternName: 'Strategy',
     intent: 'Make an algorithm interchangeable at runtime through an abstract interface.',
   },
+  adapter: {
+    family: 'Structural',
+    patternName: 'Adapter',
+    intent: 'Implement a target interface and forward calls to an incompatible adaptee.',
+  },
+  decorator: {
+    family: 'Structural',
+    patternName: 'Decorator',
+    intent: 'Wrap a component sharing its interface and add behaviour around its calls.',
+  },
   wrapping: {
     family: 'Structural',
     patternName: 'Adapter / Proxy / Decorator (wrapping)',
@@ -63,11 +73,6 @@ const META_BY_DIRECTORY: Record<string, SampleMeta> = {
     family: 'Idioms',
     patternName: 'PIMPL (Pointer to Implementation)',
     intent: 'Hide implementation details behind a forward-declared inner type.',
-  },
-  integration: {
-    family: 'Idioms',
-    patternName: 'Integration sample',
-    intent: 'Multi-pattern file used by the regression contract for the matcher.',
   },
   mixed: {
     family: 'Idioms',
