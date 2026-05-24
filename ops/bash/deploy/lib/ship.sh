@@ -14,21 +14,31 @@
 prune_remote_stale_sources() {
   local remote_dir="$1"
   echo "-- Pruning stale source on remote (caches preserved) --"
+  # The prune is best-effort cleanup, NOT the source-of-truth restore (the
+  # tar extract right after is). Runtime data the app writes as root —
+  # uploaded C++ under Codebase/Backend/test/_uploads and generated outputs
+  # under test/ (outputsDir == testRoot, uploadsDir == test/_uploads per
+  # Codebase/Backend/src/config/paths.ts) — is owned by a different uid than
+  # the deploy SSH user, so `rm -rf` on it returns "Permission denied". We
+  # must NOT let that abort the deploy:
+  #   1. protect `test` (the runtime-data root) from the prune entirely, and
+  #   2. tolerate permission errors on anything else (`|| true`) so a stray
+  #      root-owned file can never hard-fail the ship.
   ssh $SSH_OPTS "$SSH_TARGET" "set -e; cd '$remote_dir' 2>/dev/null || exit 0; \
     if [ -d Codebase/Backend ]; then \
       find Codebase/Backend -mindepth 1 -maxdepth 1 \
         ! -name node_modules ! -name dist ! -name .env ! -name .deploy-cache \
-        ! -name database.sqlite ! -name uploads ! -name outputs \
-        -exec rm -rf {} + ; fi; \
+        ! -name database.sqlite ! -name uploads ! -name outputs ! -name test \
+        -exec rm -rf {} + 2>/dev/null || true ; fi; \
     if [ -d Codebase/Frontend ]; then \
       find Codebase/Frontend -mindepth 1 -maxdepth 1 \
         ! -name node_modules ! -name dist ! -name .deploy-cache \
-        -exec rm -rf {} + ; fi; \
+        -exec rm -rf {} + 2>/dev/null || true ; fi; \
     if [ -d Codebase/Microservice ]; then \
       find Codebase/Microservice -mindepth 1 -maxdepth 1 \
         ! -name 'build*' ! -name .deploy-cache \
-        -exec rm -rf {} + ; fi; \
-    echo '   [prune] stale source removed; node_modules/dist/build caches kept'"
+        -exec rm -rf {} + 2>/dev/null || true ; fi; \
+    echo '   [prune] stale source removed; node_modules/dist/build/test caches kept'"
 }
 
 ship_source() {

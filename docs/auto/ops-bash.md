@@ -129,8 +129,8 @@ Tar + ssh-pipe the source tree to AWS, then write Backend/.env on the remote.
   survive, so we prune each package's contents while protecting node_modules /
   dist / build* / .deploy-cache / .env / runtime data. The tar extract right
   after restores every shipped file, so only genuinely-deleted files stay gone.
-- `ship_source` (line 34)
-- `write_remote_env` (line 101)
+- `ship_source` (line 44)
+- `write_remote_env` (line 111)
 
 ## `ops/bash/rebuild/`
 
