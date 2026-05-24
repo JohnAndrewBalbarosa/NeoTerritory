@@ -44,15 +44,15 @@ function resolveLede(role: Role): string {
     return 'Your progress through the learning path is tied to your Google account.';
   }
   if (role === 'admin') {
-    return 'For NeoTerritory original-devs (Andrew / Miryl / Josephine) only. Other emails ay ire-redirect sa PM sign-in.';
+    return 'For NeoTerritory original developers (Andrew / Miryl / Josephine) only. Other emails are redirected to PM sign-in.';
   }
   if (role === 'pm') {
-    return 'Mag-manage ng sariling organization at pattern catalogs. New PMs get a fresh org on first sign-in.';
+    return 'Manage your own organization and pattern catalogs. New PMs get a fresh org on first sign-in.';
   }
   if (role === 'new') {
-    return 'Sign in with Google. Pagkatapos, tatanungin ka kung admin ka ba o developer sa onboarding wizard.';
+    return 'Sign in with Google. Afterwards, the onboarding wizard will ask whether you are an admin or a developer.';
   }
-  return 'Your analysis runs at saved history are tied to your Google account.';
+  return 'Your analysis runs and saved history are tied to your Google account.';
 }
 
 function resolveTestId(role: Role): string {

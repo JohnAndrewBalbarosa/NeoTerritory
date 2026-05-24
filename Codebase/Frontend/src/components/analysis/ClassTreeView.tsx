@@ -2,7 +2,7 @@
 //
 // One row per tagged class. Click target attaches ONLY when the row's
 // status is 'review'; 'clean' and 'resolved' rows render as locked badges
-// — direct fulfilment of the "wag mong baguhin yung walang ambiguity"
+// — direct fulfilment of the "don't touch what has no ambiguity"
 // rule. Children render once per LineNode (declaration first, then
 // usage). When a LineNode is itself 'review', its semicolon-split
 // segments display as sub-rows so a multi-statement source line is

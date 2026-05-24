@@ -176,9 +176,9 @@ export default function AdminApp() {
                 Legacy sign-in (seeded thesis admin only)
               </summary>
               <p className="admin-section__hint">
-                Tinago dahil OAuth na ang primary path. Gamitin lang ito kapag
-                walang Supabase config sa server o kung gusto mong gamitin yung
-                seeded <code>Neoterritory</code> admin account.
+                Hidden because OAuth is now the primary path. Use this only when
+                the server has no Supabase config, or when you need the seeded
+                <code>Neoterritory</code> admin account.
               </p>
               <form className="admin-login-form" onSubmit={onAdminLogin}>
                 <label className="admin-login-field">

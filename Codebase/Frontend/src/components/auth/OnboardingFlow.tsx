@@ -282,7 +282,7 @@ function OnboardingDeveloper() {
               />
               <span className="nt-signin-intent__label">
                 <strong>Solo developer</strong>
-                <span>Use the public open-standards pattern catalog. Walang invite needed.</span>
+                <span>Use the public open-standards pattern catalog. No invite needed.</span>
               </span>
             </label>
 
@@ -296,7 +296,7 @@ function OnboardingDeveloper() {
               />
               <span className="nt-signin-intent__label">
                 <strong>I have an invite code</strong>
-                <span>6-character code na binigay ng admin mo. Auto-join, walang approval needed.</span>
+                <span>6-character code given by your admin. Auto-join, no approval needed.</span>
               </span>
             </label>
 

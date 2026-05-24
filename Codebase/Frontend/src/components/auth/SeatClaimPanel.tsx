@@ -13,14 +13,14 @@ import { User } from '../../types/api';
 // inside the homepage TryItChooser so the Guest flow lives in one modal
 // step instead of bouncing to a dedicated /login surface. Internal account
 // usernames remain `devcon{N}` for backend compatibility but the UI
-// displays them as "Guest seat #{N}" via displayGuestLabel().
+// displays them as "Guest {N}" via displayGuestLabel().
 
 // Convert the internal devcon{N} username into a user-facing label so
 // public visitors never see the literal "devcon" string. Falls back to
 // the raw value if the pattern doesn't match.
 function displayGuestLabel(username: string): string {
   const m = /^devcon(\d+)$/i.exec(username);
-  if (m) return `Guest seat #${m[1]}`;
+  if (m) return `Guest ${m[1]}`;
   return username;
 }
 

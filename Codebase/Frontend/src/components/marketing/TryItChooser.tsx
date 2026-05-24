@@ -49,7 +49,7 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
     eyebrow: 'Guest',
     title: 'Try as guest',
     blurb:
-      'Continue as a guest at try the analyzer. No account, no saved history — good for a one-time look around.',
+      'Continue as a guest to try the analyzer. No account, no saved history — good for a one-time look around.',
   },
   {
     id: 'student-learning',
@@ -63,7 +63,7 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
     eyebrow: 'Account',
     title: 'Sign in or create account',
     blurb:
-      'Sign in with Google. Bago man o existing ang account mo, ise-set up namin ito automatically — tapos diretso ka na sa /studio, saved na ang runs at history mo.',
+      'Sign in with Google. Whether your account is new or existing, we set it up automatically — then you go straight to /studio, with your runs and history saved.',
   },
 ];
 

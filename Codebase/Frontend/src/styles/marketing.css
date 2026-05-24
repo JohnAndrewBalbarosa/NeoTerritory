@@ -5783,6 +5783,13 @@ body[data-surface] {
   align-items: center;
   justify-content: center;
   padding: clamp(0.75rem, 1vw, 1.5rem);
+  /* Fallback scroll region: the panel caps at 90vh and scrolls internally
+     (.nt-tryit__choices), but on very short viewports the overlay itself
+     can scroll so a tall panel is never clipped above the fold. The body is
+     scroll-locked via useScrollLock, and overscroll-behavior:contain stops
+     any wheel/touch from chaining out to the page behind. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .nt-tryit__backdrop {
   position: absolute;
