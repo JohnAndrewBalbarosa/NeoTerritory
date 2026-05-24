@@ -48,6 +48,12 @@ export interface LearningPatternPractical {
   family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
   // Prompt sentence shown above the textarea.
   prompt: string;
+  // Optional editor seed. Patterns with a strict structural shape (e.g.
+  // PIMPL needs a forward-declared inner Impl + unique_ptr<Impl> in order)
+  // ship a scaffold so the learner can run-then-modify instead of guessing
+  // the exact token shape the analyser requires. Omitted patterns fall back
+  // to the generic "write a class" starter in PatternPractical.
+  starterCode?: string;
 }
 
 export type LearningPractical = LearningQuizPractical | LearningPatternPractical;
@@ -830,15 +836,43 @@ function attachPractical(module: LearningModule): LearningModule {
     return module;
   }
   const familyName = pattern.family as LearningPatternPractical['family'];
+  const starterCode = PATTERN_STARTERS[detectionSlug];
   const practical: LearningPatternPractical = {
     kind: 'pattern',
     patternSlug: detectionSlug,
     patternName: detectionName,
     family: familyName,
     prompt: `Write a small C++ class (or two) that demonstrates the ${pattern.name} pattern. The analyser passes you when the response tags include ${detectionName}, even if other patterns also fire on the same class.`,
+    ...(starterCode ? { starterCode } : {}),
   };
   return { ...module, practical };
 }
+
+// Editor seeds for patterns whose detector is order-sensitive enough that a
+// blank "write a class" prompt leaves learners guessing the exact token shape.
+// The scaffold already tags the target pattern, so the learner can Run-check
+// (see green), then modify it to learn the moving parts. Keyed by the
+// detectionSlug attachPractical computes.
+const PATTERN_STARTERS: Record<string, string> = {
+  pimpl: `// PIMPL idiom — the analyser passes when it tags "Pimpl".
+// The shape it looks for, in order, inside ONE class body:
+//   1. a forward-declared inner struct/class (e.g. \`struct Impl;\`)
+//   2. a std::unique_ptr<Impl> member that owns it
+// Try running this as-is, then rename Impl / add your own methods.
+#include <memory>
+
+class Widget {
+public:
+  Widget();
+  ~Widget();
+  void doThing();
+
+private:
+  struct Impl;                  // forward-declared implementation
+  std::unique_ptr<Impl> impl_;  // owns the hidden Impl
+};
+`,
+};
 
 const FOUNDATIONS_MODULES_WITH_PRACTICAL: ReadonlyArray<LearningModule> =
   FOUNDATIONS_MODULES.map(attachPractical);

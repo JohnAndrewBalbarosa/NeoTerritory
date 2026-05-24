@@ -397,8 +397,10 @@ function PatternPractical({
   practical, isPassed, onPass,
 }: { practical: LearningPatternPractical; isPassed: boolean; onPass: () => void }): JSX.Element {
   const starter = useMemo(
-    () => `// Write a C++ class that demonstrates the ${practical.patternName} pattern.\n// The check passes when the analyser's tags include "${practical.patternName}".\n\n`,
-    [practical.patternName],
+    () =>
+      practical.starterCode ??
+      `// Write a C++ class that demonstrates the ${practical.patternName} pattern.\n// The check passes when the analyser's tags include "${practical.patternName}".\n\n`,
+    [practical.patternName, practical.starterCode],
   );
   const [code, setCode] = useState<string>(starter);
   const [status, setStatus] = useState<'idle' | 'running' | 'pass' | 'fail' | 'error'>(
