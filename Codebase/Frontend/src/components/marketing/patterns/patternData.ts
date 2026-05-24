@@ -906,6 +906,247 @@ Widget::~Widget() = default;`,
     ],
     nesterukChapter: 'Nesteruk 2022, Chapter on Modern C++ idioms',
   },
+  {
+    slug: 'prototype',
+    name: 'Prototype',
+    family: 'Creational',
+    intent:
+      'Create new objects by copying an existing instance (the prototype) rather than constructing from scratch.',
+    problem:
+      'A caller needs a new object of the same dynamic type as one it already holds, but it only has a base-class pointer and must not hardcode the concrete class.',
+    solution:
+      'Give the base class a virtual clone() that each concrete type implements to return a copy of itself. Callers clone through the base pointer and never name the concrete type.',
+    codeSketch: `class Shape {
+public:
+  virtual ~Shape() = default;
+  virtual std::unique_ptr<Shape> clone() const = 0;
+};
+class Circle : public Shape {
+  std::unique_ptr<Shape> clone() const override { return std::make_unique<Circle>(*this); }
+};`,
+    detection:
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` method named clone/copy/duplicate. Co-emits with Strategy on the virtual-interface shape (per D21); the clone naming is the disambiguator.',
+    catalogFile: 'pattern_catalog/creational/prototype.json',
+    oneLiner: 'Copy an existing object instead of building a new one from nothing.',
+    readabilityBenefit:
+      'Reading clone() at the call site says "make me another of whatever this is" without a chain of if/else over concrete types - the polymorphism carries the intent.',
+    sources: [nesterukSource('Chapter on Prototype'), gofSource('Prototype (Creational Patterns)')],
+  },
+  {
+    slug: 'abstract-factory',
+    name: 'Abstract Factory',
+    family: 'Creational',
+    intent:
+      'Provide an interface for creating families of related objects without specifying their concrete classes.',
+    problem:
+      'A program must build several products that have to match (a button and a checkbox from the same UI theme), but it should not be wired to one concrete family.',
+    solution:
+      'Declare a factory interface with one virtual create method per product. Each concrete factory builds one coherent family. Client code holds the factory interface and stays family-agnostic.',
+    codeSketch: `class GUIFactory {
+public:
+  virtual ~GUIFactory() = default;
+  virtual std::unique_ptr<Button>   createButton()   = 0;
+  virtual std::unique_ptr<Checkbox> createCheckbox() = 0;
+};`,
+    detection:
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for two `virtual create*` methods in one interface. Co-emits with Factory Method (per D21); the multiple-product-family shape is the differentiator.',
+    catalogFile: 'pattern_catalog/creational/abstract_factory.json',
+    oneLiner: 'One factory that makes a whole matching set of objects.',
+    readabilityBenefit:
+      'Grouping the create methods on one interface makes the product family explicit - a reviewer sees at a glance which products are meant to vary together.',
+    sources: [nesterukSource('Chapter on Abstract Factory'), gofSource('Abstract Factory (Creational Patterns)')],
+  },
+  {
+    slug: 'bridge',
+    name: 'Bridge',
+    family: 'Structural',
+    intent:
+      'Decouple an abstraction from its implementation so the two can vary independently.',
+    problem:
+      'An abstraction and its implementation are both expected to grow (shapes × renderers). Binding them by inheritance produces a combinatorial class explosion.',
+    solution:
+      'Hold the implementor through a pointer in the abstraction and forward operations to it. The abstraction hierarchy and the implementor hierarchy then evolve separately.',
+    codeSketch: `class Shape {
+  std::unique_ptr<Renderer> renderer_;
+public:
+  void draw() { renderer_->renderCircle(radius_); }
+};`,
+    detection:
+      'Catalog entry gates on signature_categories: ["ownership_handle"] and ordered_checks for a smart-pointer-owned implementor member that is forwarded to. Co-emits with PIMPL/Adapter on the owned-member shape (per D21).',
+    catalogFile: 'pattern_catalog/structural/bridge.json',
+    oneLiner: 'Split "what it is" from "how it is done" so each can change alone.',
+    readabilityBenefit:
+      'The forwarding through renderer_-> makes the seam between abstraction and implementation visible in one line, instead of hiding it inside a deep inheritance tree.',
+    sources: [nesterukSource('Chapter on Bridge'), gofSource('Bridge (Structural Patterns)')],
+  },
+  {
+    slug: 'facade',
+    name: 'Facade',
+    family: 'Structural',
+    intent:
+      'Provide a single simplified interface to a larger body of code or a set of subsystems.',
+    problem:
+      'Using a subsystem correctly requires calling several objects in the right order. Every caller repeating that choreography couples them all to the internals.',
+    solution:
+      'Introduce one class that owns the subsystem objects and exposes a few high-level methods that perform the choreography internally.',
+    codeSketch: `class ComputerFacade {
+  CPU cpu_; Memory memory_;
+public:
+  void start() { cpu_.freeze(); memory_.load(0, "boot"); cpu_.jump(0); }
+};`,
+    detection:
+      'Catalog entry uses ordered_checks for a class that delegates to two or more distinct subsystem members. No signature gate. Co-emits with Adapter/Proxy on the forwarding shape (per D21).',
+    catalogFile: 'pattern_catalog/structural/facade.json',
+    oneLiner: 'One simple front door over a complicated back room.',
+    readabilityBenefit:
+      'start() reads as a single intention; the subsystem ordering it hides would otherwise be copy-pasted into every caller.',
+    sources: [nesterukSource('Chapter on Facade'), gofSource('Facade (Structural Patterns)')],
+  },
+  {
+    slug: 'flyweight',
+    name: 'Flyweight',
+    family: 'Structural',
+    intent:
+      'Use sharing to support large numbers of fine-grained objects efficiently.',
+    problem:
+      'Creating one object per element (a glyph per character) wastes memory when most of the state is identical and intrinsic.',
+    solution:
+      'Keep a pool keyed by the intrinsic state and hand out shared instances. Extrinsic state is passed in per call instead of stored.',
+    codeSketch: `class GlyphFactory {
+  std::unordered_map<char, std::shared_ptr<Glyph>> pool_;
+public:
+  std::shared_ptr<Glyph> getGlyph(char key) {
+    auto& slot = pool_[key];
+    if (!slot) slot = std::make_shared<Glyph>();
+    return slot;
+  }
+};`,
+    detection:
+      'Catalog entry gates on signature_categories: ["ownership_handle"] and ordered_checks for a shared-pool getter (getFlyweight/get) plus a map/cache/pool member. Co-emits with Factory on the creation shape (per D21).',
+    catalogFile: 'pattern_catalog/structural/flyweight.json',
+    oneLiner: 'Share one copy of identical things instead of making thousands.',
+    readabilityBenefit:
+      'The pool_ lookup states the sharing policy in one place; readers see immediately that instances are interned, not duplicated.',
+    sources: [nesterukSource('Chapter on Flyweight'), gofSource('Flyweight (Structural Patterns)')],
+  },
+  {
+    slug: 'chain-of-responsibility',
+    name: 'Chain of Responsibility',
+    family: 'Behavioural',
+    intent:
+      'Pass a request along a chain of handlers; each handler decides to process it or forward it.',
+    problem:
+      'Several objects could handle a request and the right one is not known in advance. Hardcoding the dispatch couples the sender to every potential handler.',
+    solution:
+      'Give each handler a link to the next and a virtual handle(). A handler either processes the request or delegates to its successor.',
+    codeSketch: `class Handler {
+  Handler* next_ = nullptr;
+public:
+  void setNext(Handler* n) { next_ = n; }
+  virtual void handle(int r) { if (next_) next_->handle(r); }
+};`,
+    detection:
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` handle method and a next_/successor link. Co-emits with State/Strategy on the virtual shape (per D21); the successor link is the discriminator.',
+    catalogFile: 'pattern_catalog/behavioural/chain_of_responsibility.json',
+    oneLiner: 'Hand the request down the line until someone takes it.',
+    readabilityBenefit:
+      'The next_->handle() forward makes the fallback path explicit, so a reviewer can follow who gets a shot at the request without a giant switch.',
+    sources: [nesterukSource('Chapter on Chain of Responsibility'), gofSource('Chain of Responsibility (Behavioural Patterns)')],
+  },
+  {
+    slug: 'mediator',
+    name: 'Mediator',
+    family: 'Behavioural',
+    intent:
+      'Define an object that encapsulates how a set of objects interact, so they no longer refer to each other directly.',
+    problem:
+      'Many components that talk to each other directly form a dense web of dependencies that is hard to change.',
+    solution:
+      'Route all interaction through a mediator. Components notify the mediator, which decides who else needs to react.',
+    codeSketch: `class Mediator {
+public:
+  virtual ~Mediator() = default;
+  virtual void notify(int senderId, int event) = 0;
+};`,
+    detection:
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` notify/send method. Co-emits with Observer on the notify naming (per D21); the AI separates them on the central-hub vs subscriber-list shape.',
+    catalogFile: 'pattern_catalog/behavioural/mediator.json',
+    oneLiner: 'Components talk through one hub instead of to each other.',
+    readabilityBenefit:
+      'A single notify() entry point concentrates the interaction rules in one class, so reviewers stop tracing N-to-N call chains between components.',
+    sources: [nesterukSource('Chapter on Mediator'), gofSource('Mediator (Behavioural Patterns)')],
+  },
+  {
+    slug: 'visitor',
+    name: 'Visitor',
+    family: 'Behavioural',
+    intent:
+      'Represent an operation to be performed on the elements of an object structure without changing their classes.',
+    problem:
+      'You need to add new operations across a class hierarchy often, but editing every element class for each new operation is invasive.',
+    solution:
+      'Move the operation into a visitor with one visit() per element type. Elements expose accept(Visitor&) and call back the matching visit().',
+    codeSketch: `class Visitor {
+public:
+  virtual ~Visitor() = default;
+  virtual void visit(Circle& c) = 0;
+  virtual void visit(Square& s) = 0;
+};`,
+    detection:
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` visit/accept method. Co-emits with Strategy on the virtual shape (per D21); the visit naming is the discriminator.',
+    catalogFile: 'pattern_catalog/behavioural/visitor.json',
+    oneLiner: 'Add new operations to a hierarchy without touching its classes.',
+    readabilityBenefit:
+      'Each new operation lives in its own visitor class, so a reviewer reads one cohesive file instead of a method scattered across every element type.',
+    sources: [nesterukSource('Chapter on Visitor'), gofSource('Visitor (Behavioural Patterns)')],
+  },
+  {
+    slug: 'interpreter',
+    name: 'Interpreter',
+    family: 'Behavioural',
+    intent:
+      'Given a language, define a representation for its grammar and an interpreter that uses the representation to interpret sentences.',
+    problem:
+      'A simple, recurring language (arithmetic, rules, queries) needs to be evaluated, and parsing it ad hoc each time is error-prone.',
+    solution:
+      'Model each grammar rule as a class implementing a virtual interpret(Context&). Composite expressions interpret their children to produce a result.',
+    codeSketch: `class Expression {
+public:
+  virtual ~Expression() = default;
+  virtual int interpret(Context& ctx) = 0;
+};`,
+    detection:
+      'Catalog entry uses signature_categories: ["interface_polymorphism"] plus ordered_checks for a `virtual` interpret/evaluate method. Co-emits with Strategy on the virtual shape (per D21); the interpret naming is the discriminator.',
+    catalogFile: 'pattern_catalog/behavioural/interpreter.json',
+    oneLiner: 'Turn each grammar rule into a class that knows how to evaluate itself.',
+    readabilityBenefit:
+      'interpret(ctx) on each node makes the grammar map one-to-one onto classes, so the language structure is readable in the type hierarchy.',
+    sources: [nesterukSource('Chapter on Interpreter'), gofSource('Interpreter (Behavioural Patterns)')],
+  },
+  {
+    slug: 'memento',
+    name: 'Memento',
+    family: 'Behavioural',
+    intent:
+      "Capture and externalize an object's internal state so it can be restored later, without violating encapsulation.",
+    problem:
+      'Undo, snapshots, and checkpoints require saving and restoring an object\'s state without exposing its private fields to the outside world.',
+    solution:
+      'The originator produces a Memento holding its state via save(), and restores from one via restore(). Only the originator can read the memento\'s contents.',
+    codeSketch: `class Editor {
+  std::string text_;
+public:
+  Memento save() const         { return Memento(text_); }
+  void restore(const Memento& m){ text_ = m.getState(); }
+};`,
+    detection:
+      'Catalog entry uses ordered_checks for a save/restore (or createMemento/setMemento) method pair. No signature gate — the save/restore naming carries the signal. May co-emit with Adapter on incidental forwarding.',
+    catalogFile: 'pattern_catalog/behavioural/memento.json',
+    oneLiner: "Snapshot an object's state now so you can put it back later.",
+    readabilityBenefit:
+      'save()/restore() name the undo seam directly, so a reviewer finds the checkpoint boundary without hunting through field-by-field copies.',
+    sources: [nesterukSource('Chapter on Memento'), gofSource('Memento (Behavioural Patterns)')],
+  },
 ];
 
 export function findPattern(slug: string): PatternEntry | undefined {
