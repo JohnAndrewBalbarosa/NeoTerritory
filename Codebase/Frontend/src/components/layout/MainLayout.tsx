@@ -112,6 +112,15 @@ export default function MainLayout() {
     ? TABS
     : TABS.filter(t => t.id !== 'ambiguous');
 
+  // Safety net: if reviews get turned off while the user is already sitting on
+  // the Self-check (ambiguous) tab — or a stale activeTab points there — bounce
+  // them to Docs so the deprecated surface can never stay on screen.
+  useEffect(() => {
+    if (!reviewsRequired && activeTab === 'ambiguous') {
+      setActiveTab(currentRun ? 'docs' : 'submit');
+    }
+  }, [reviewsRequired, activeTab, currentRun, setActiveTab]);
+
   // Sequential tab gating. Each tab unlocks only after the previous is
   // complete, mirroring the natural workflow: submit → annotate → run
   // tests → review. Clicking a locked tab is a no-op (the button is
@@ -401,7 +410,7 @@ export default function MainLayout() {
           )}
           {activeTab === 'gdb' && <GdbRunnerTab />}
           {activeTab === 'docs' && <DocumentationTab />}
-          {activeTab === 'ambiguous' && (
+          {activeTab === 'ambiguous' && reviewsRequired && (
             <AmbiguousTab
               pendingSave={pendingSave}
               onSaved={onSaved}

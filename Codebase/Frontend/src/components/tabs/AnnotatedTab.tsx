@@ -29,6 +29,7 @@ export default function AnnotatedTab({
     gdbAllPassedForRun,
     setActiveTab,
     setPendingGdbAutoRun,
+    reviewsRequired,
   } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
   const [classNavIdx, setClassNavIdx] = useState(0);
@@ -378,12 +379,16 @@ export default function AnnotatedTab({
   // CTA state machine. tag → gdb → submit (validation+save) → review.
   // Submit-and-save replaces the old separate "Save run" flow: the
   // single button collects validation + persistence into one API call,
-  // and only Review unblocks afterwards.
-  const ctaPhase: 'tag' | 'gdb' | 'submit' | 'review' =
+  // and only Review unblocks afterwards. When an admin has turned reviews
+  // off, the Self-check (review) step is removed from the workflow — so
+  // after save the flow is 'done' (no CTA) rather than routing into the
+  // now-hidden Self-check tab.
+  const ctaPhase: 'tag' | 'gdb' | 'submit' | 'review' | 'done' =
     !allTagged ? 'tag'
     : !gdbAllPassedForRun ? 'gdb'
     : !currentRun.runId ? 'submit'
-    : 'review';
+    : reviewsRequired ? 'review'
+    : 'done';
 
   const [submitting, setSubmitting] = useState(false);
 
@@ -455,7 +460,7 @@ export default function AnnotatedTab({
                 {untaggedClassNames.length} class{untaggedClassNames.length === 1 ? '' : 'es'} without a design pattern tag
               </span>
             )}
-            {ctaPhase !== 'tag' && (
+            {ctaPhase !== 'tag' && ctaPhase !== 'done' && (
               <button
                 type="button"
                 className="primary-btn tag-progress-cta"

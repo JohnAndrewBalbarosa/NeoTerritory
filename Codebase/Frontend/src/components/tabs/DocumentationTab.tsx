@@ -111,7 +111,7 @@ function PatternSection({ p, annotations }: { p: DetectedPatternFull; annotation
 }
 
 export default function DocumentationTab() {
-  const { currentRun, setActiveTab, gdbAllPassedForRun } = useAppStore();
+  const { currentRun, setActiveTab, gdbAllPassedForRun, reviewsRequired } = useAppStore();
   const contentRef = useRef<HTMLDivElement>(null);
 
   if (!currentRun) {
@@ -240,17 +240,25 @@ export default function DocumentationTab() {
           );
         })}
       </div>
-      <div className="tab-next-bar">
-        <button
-          type="button"
-          className="primary-btn"
-          disabled={!gdbAllPassedForRun}
-          title={gdbAllPassedForRun ? undefined : 'Pass the test runner before the self-check.'}
-          onClick={() => setActiveTab('ambiguous')}
-        >
-          Next: Self-check →
-        </button>
-      </div>
+      {/* The Self-check step only exists when reviews are required (thesis
+          mode). When an admin turns reviews off, the Self-check tab is removed
+          from the tab bar (MainLayout) — so this "Next" button must not offer
+          a way back into it, otherwise the deprecated self-check surface stays
+          reachable. With reviews off, Docs is the final step and the bar is
+          hidden entirely. */}
+      {reviewsRequired && (
+        <div className="tab-next-bar">
+          <button
+            type="button"
+            className="primary-btn"
+            disabled={!gdbAllPassedForRun}
+            title={gdbAllPassedForRun ? undefined : 'Pass the test runner before the self-check.'}
+            onClick={() => setActiveTab('ambiguous')}
+          >
+            Next: Self-check →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
