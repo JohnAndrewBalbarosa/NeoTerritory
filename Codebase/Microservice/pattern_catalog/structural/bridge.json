@@ -1,0 +1,26 @@
+{
+  "pattern_id": "structural.bridge",
+  "pattern_family": "structural",
+  "pattern_name": "Bridge",
+  "enabled": true,
+  "signature_categories": [
+    "ownership_handle"
+  ],
+  "lexeme_identifiers": {
+    "implementor_member": ["impl", "impl_", "pImpl", "implementor", "implementor_",
+                           "m_impl", "renderer", "renderer_", "device", "device_",
+                           "backend", "backend_", "body", "body_"],
+    "forward_ops":        ["->", "."],
+    "smart_storage":      ["unique_ptr", "shared_ptr", "std::unique_ptr",
+                           "std::shared_ptr", "make_unique", "make_shared"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Identifier",  "expected_lexeme_any_of": ["unique_ptr", "shared_ptr"], "document_as": "bridge_owned_implementor" },
+    { "id": "implementor_ref",  "expected_kind": "Identifier",  "expected_lexeme_any_of": ["impl", "impl_", "pImpl", "implementor", "implementor_", "m_impl", "renderer", "renderer_", "device", "device_", "backend", "backend_", "body", "body_"], "capture_as": "implementor_member", "document_as": "bridge_implementor_member" },
+    { "id": "forward_operator", "one_of": [
+        { "expected_kind": "Punctuation", "expected_lexeme_any_of": ["."] },
+        { "expected_kind": "Operator",    "expected_lexeme_any_of": ["->"] }
+      ], "document_as": "bridge_forward_to_implementor" },
+    { "id": "forwarded_method", "expected_kind": "Identifier",  "capture_as": "forwarded_method", "document_as": "bridge_forwarded_call" }
+  ]
+}

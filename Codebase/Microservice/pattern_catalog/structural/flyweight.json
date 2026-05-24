@@ -1,0 +1,25 @@
+{
+  "pattern_id": "structural.flyweight",
+  "pattern_family": "structural",
+  "pattern_name": "Flyweight",
+  "enabled": true,
+  "signature_categories": [
+    "ownership_handle"
+  ],
+  "lexeme_identifiers": {
+    "pool_container":  ["map", "unordered_map", "flyweights", "flyweights_",
+                        "cache", "cache_", "pool", "pool_", "m_flyweights",
+                        "instances", "instances_"],
+    "factory_methods": ["getFlyweight", "get", "getGlyph", "getState", "acquire",
+                        "intern", "getShared", "lookup"],
+    "shared_return":   ["shared_ptr", "std::shared_ptr", "make_shared", "std::make_shared",
+                        "weak_ptr", "std::weak_ptr"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "flyweight_factory_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "factory_method",   "expected_kind": "Identifier",  "expected_lexeme_any_of": ["getFlyweight", "get", "getGlyph", "getState", "acquire", "intern", "getShared", "lookup"], "capture_as": "factory_method", "document_as": "flyweight_factory_method" },
+    { "id": "pool_member",      "expected_kind": "Identifier",  "expected_lexeme_any_of": ["map", "unordered_map", "flyweights", "flyweights_", "cache", "cache_", "pool", "pool_", "m_flyweights", "instances", "instances_"], "capture_as": "pool_member", "document_as": "flyweight_shared_pool" }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "pattern_id": "structural.facade",
+  "pattern_family": "structural",
+  "pattern_name": "Facade",
+  "enabled": true,
+  "signature_categories": [],
+  "lexeme_identifiers": {
+    "subsystem_member": ["subsystem", "subsystem_", "cpu", "cpu_", "memory", "memory_",
+                         "disk", "disk_", "engine", "engine_", "audio", "audio_",
+                         "video", "video_", "db", "db_", "logger", "logger_",
+                         "network", "network_", "parser", "parser_", "compiler", "compiler_",
+                         "loader", "loader_"],
+    "forward_ops":      ["->", "."]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "facade_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "subsystem_1",      "expected_kind": "Identifier",  "expected_lexeme_any_of": ["subsystem", "subsystem_", "cpu", "cpu_", "memory", "memory_", "disk", "disk_", "engine", "engine_", "audio", "audio_", "video", "video_", "db", "db_", "logger", "logger_", "network", "network_", "parser", "parser_", "compiler", "compiler_", "loader", "loader_"], "capture_as": "subsystem_1", "document_as": "facade_subsystem_member" },
+    { "id": "forward_1",        "one_of": [
+        { "expected_kind": "Punctuation", "expected_lexeme_any_of": ["."] },
+        { "expected_kind": "Operator",    "expected_lexeme_any_of": ["->"] }
+      ], "document_as": "facade_subsystem_delegation" },
+    { "id": "subsystem_2",      "expected_kind": "Identifier",  "expected_lexeme_any_of": ["subsystem", "subsystem_", "cpu", "cpu_", "memory", "memory_", "disk", "disk_", "engine", "engine_", "audio", "audio_", "video", "video_", "db", "db_", "logger", "logger_", "network", "network_", "parser", "parser_", "compiler", "compiler_", "loader", "loader_"], "capture_as": "subsystem_2", "document_as": "facade_second_subsystem" }
+  ]
+}
