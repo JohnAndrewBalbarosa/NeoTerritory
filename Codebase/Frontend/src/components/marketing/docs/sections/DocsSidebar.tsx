@@ -1,8 +1,10 @@
 // Sidebar for the docs surface. Reads DOCS_SECTIONS from the registry,
-// groups entries by their group id, and renders each group as a
-// collapsible block of buttons. Clicking a leaf calls onSelect(id);
-// the active leaf is highlighted. No anchors — the parent shell owns
-// active state and renders only the selected section in the main pane.
+// groups entries by their group id, and renders each group as an
+// accordion block: only one group stays open at a time, so opening a
+// different group auto-collapses the previous one and the rail stays
+// uncluttered. Clicking a leaf calls onSelect(id); the active leaf is
+// highlighted. No anchors — the parent shell owns active state and
+// renders only the selected section in the main pane.
 
 import { useState } from 'react';
 import {
@@ -17,16 +19,22 @@ interface DocsSidebarProps {
   onSelect: (id: string) => void;
 }
 
-export default function DocsSidebar({ activeId, onSelect }: DocsSidebarProps) {
-  const [collapsed, setCollapsed] = useState<Record<DocsGroupId, boolean>>({
-    overview: false,
-    studio: false,
-    admin: false,
-    technical: false,
-  });
+// The group that owns the active leaf should be the one open on mount,
+// so a cold visitor lands with their current section's group expanded.
+function groupForSection(id: string | null): DocsGroupId {
+  const entry = DOCS_SECTIONS.find((s) => s.id === id);
+  return entry?.group ?? DOCS_GROUPS[0].id;
+}
 
+export default function DocsSidebar({ activeId, onSelect }: DocsSidebarProps) {
+  const [openGroup, setOpenGroup] = useState<DocsGroupId | null>(() =>
+    groupForSection(activeId),
+  );
+
+  // Accordion toggle: open the clicked group as the sole expanded one,
+  // or collapse it if it was already the open one.
   function toggleGroup(id: DocsGroupId): void {
-    setCollapsed((prev) => ({ ...prev, [id]: !prev[id] }));
+    setOpenGroup((prev) => (prev === id ? null : id));
   }
 
   return (
@@ -38,7 +46,7 @@ export default function DocsSidebar({ activeId, onSelect }: DocsSidebarProps) {
             (s) => s.group === group.id,
           );
           if (items.length === 0) return null;
-          const isCollapsed = collapsed[group.id];
+          const isCollapsed = openGroup !== group.id;
           return (
             <div key={group.id} className="nt-docs__sidebar-group">
               <button
