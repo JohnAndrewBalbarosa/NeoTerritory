@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { navigate } from '../../logic/router';
 import GoogleSignInButton from './GoogleSignInButton';
 
@@ -72,19 +71,23 @@ export default function GoogleSignInPage() {
   const lede = resolveLede(role);
   const testId = resolveTestId(role);
 
-  // Default to "existing" — most clicks are returning users. The
-  // "Sign up instead" CTA on the callback error page sends ?intent=new.
-  // For role='new', intent is locked to 'new' since the path is the
-  // onboarding wizard by definition.
-  const initialIntent: 'existing' | 'new' =
-    role === 'new'
+  // The visible "I already have an account / I'm new here" toggle was
+  // removed per the project owner (it isn't part of the thesis paper). The
+  // page now shows only the single "Sign in with Google" button. We still
+  // resolve an intent under the hood so the backend can create-or-sign-in:
+  //   - developer / new  → 'new', the create-or-sign-in upsert (a first-time
+  //     Gmail is auto-registered; a returning email is matched). This is the
+  //     public Account path, so it must never 404 on a new user.
+  //   - admin / pm        → honor an explicit ?intent=new deep-link, else
+  //     default to 'existing' (returning-operator behavior preserved).
+  //   - student           → 'existing' (the backend upserts students without
+  //     the existing-account 404 gate anyway).
+  const intent: 'existing' | 'new' =
+    role === 'new' || role === 'developer'
       ? 'new'
       : url.searchParams.get('intent') === 'new'
         ? 'new'
         : 'existing';
-  const [intent, setIntent] = useState<'existing' | 'new'>(initialIntent);
-
-  const showIntentToggle = role !== 'student' && role !== 'new';
 
   return (
     <main className="nt-entry" id="main" data-testid={testId}>
@@ -97,45 +100,6 @@ export default function GoogleSignInPage() {
             </h1>
             <p className="nt-entry__lede">{lede}</p>
           </header>
-
-          {showIntentToggle && (
-            <fieldset className="nt-signin-intent" data-testid={`${testId}-intent`}>
-              <legend className="nt-signin-intent__legend">Bago ba o existing account?</legend>
-              <label className="nt-signin-intent__option">
-                <input
-                  type="radio"
-                  name="intent"
-                  value="existing"
-                  checked={intent === 'existing'}
-                  onChange={() => setIntent('existing')}
-                />
-                <span className="nt-signin-intent__label">
-                  <strong>I already have an account</strong>
-                  <span>
-                    Sign in and route me sa
-                    {role === 'admin' || role === 'pm' ? ' /admin' : ' /studio'}.
-                  </span>
-                </span>
-              </label>
-              <label className="nt-signin-intent__option">
-                <input
-                  type="radio"
-                  name="intent"
-                  value="new"
-                  checked={intent === 'new'}
-                  onChange={() => setIntent('new')}
-                />
-                <span className="nt-signin-intent__label">
-                  <strong>I&rsquo;m new here</strong>
-                  <span>
-                    {role === 'admin' || role === 'pm'
-                      ? 'Set up my organization on first sign-in.'
-                      : 'Create a developer account so I can save runs.'}
-                  </span>
-                </span>
-              </label>
-            </fieldset>
-          )}
 
           <div className="nt-signin-action">
             <GoogleSignInButton role={role} intent={intent} redirectAfter={next} />

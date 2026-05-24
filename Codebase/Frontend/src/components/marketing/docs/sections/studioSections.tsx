@@ -22,8 +22,8 @@ export function OverviewSection() {
         CodiNeo analyzes C++ source for Gang of Four design patterns (Creational,
         Structural, Behavioral) plus a small idiom family. It is built around three
         surfaces: <strong>Studio</strong> where developers, students, and guests run
-        analyses; <strong>Admin / PM</strong> where program managers configure the
-        platform and review cohort activity; and the <strong>Technical reference</strong>
+        analyses; <strong>Admin</strong> where the platform is configured and cohort
+        activity is reviewed; and the <strong>Technical reference</strong>
         for understanding the analyzer&rsquo;s method and limits.
       </p>
       <p>

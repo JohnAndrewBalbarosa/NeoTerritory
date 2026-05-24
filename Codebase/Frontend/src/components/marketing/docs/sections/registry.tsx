@@ -17,9 +17,7 @@ import {
 } from './studioSections';
 import {
   RunsSection,
-  ComplexitySection,
   UsersSection,
-  ReviewsSection,
   AISection,
   LogsSection,
   CatalogsSection,
@@ -46,7 +44,7 @@ export interface DocsSectionEntry {
 export const DOCS_GROUPS: ReadonlyArray<{ id: DocsGroupId; label: string }> = [
   { id: 'overview', label: 'Overview' },
   { id: 'studio', label: 'Studio' },
-  { id: 'admin', label: 'Admin / PM' },
+  { id: 'admin', label: 'Admin' },
   { id: 'technical', label: 'Technical reference' },
 ];
 
@@ -60,9 +58,7 @@ export const DOCS_SECTIONS: ReadonlyArray<DocsSectionEntry> = [
   { id: 'studio-selfcheck', label: 'Self-check', group: 'studio', render: () => <SelfCheckSection /> },
 
   { id: 'admin-runs', label: 'Runs', group: 'admin', render: () => <RunsSection /> },
-  { id: 'admin-complexity', label: 'Complexity', group: 'admin', render: () => <ComplexitySection /> },
   { id: 'admin-users', label: 'Users', group: 'admin', render: () => <UsersSection /> },
-  { id: 'admin-reviews', label: 'Reviews', group: 'admin', render: () => <ReviewsSection /> },
   { id: 'admin-ai', label: 'AI', group: 'admin', render: () => <AISection /> },
   { id: 'admin-logs', label: 'Logs', group: 'admin', render: () => <LogsSection /> },
   { id: 'admin-catalogs', label: 'Catalogs', group: 'admin', render: () => <CatalogsSection /> },

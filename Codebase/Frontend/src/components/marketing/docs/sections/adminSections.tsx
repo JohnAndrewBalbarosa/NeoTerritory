@@ -1,7 +1,5 @@
-// Per-tab docs for the Admin / PM surface. PM and Admin share the same
-// surface in this project (per design choice), so this file covers both
-// roles. Each component renders alone when its sidebar entry is the
-// active selection.
+// Per-tab docs for the Admin surface. Each component renders alone when
+// its sidebar entry is the active selection.
 
 import { ReactElement } from 'react';
 
@@ -34,19 +32,6 @@ export function RunsSection() {
   );
 }
 
-export function ComplexitySection() {
-  return (
-    <Shell eyebrow="Admin · Complexity" title="Thesis-cohort-only complexity metrics">
-      <p>
-        Complexity is a thesis-only tab: it computes per-submission complexity
-        metrics (cyclomatic, depth, member count) and groups them by participant. It
-        exists for the research cohort to correlate code complexity with pattern
-        recognisability and is not part of the day-to-day product flow.
-      </p>
-    </Shell>
-  );
-}
-
 export function UsersSection() {
   return (
     <Shell eyebrow="Admin · Users" title="Manage testers, guest seats, and developer accounts">
@@ -56,19 +41,6 @@ export function UsersSection() {
         whether a session is still active. Admins can reclaim a stuck seat, hide the
         tester pool from the public popup, or change the maximum number of
         concurrent guest seats.
-      </p>
-    </Shell>
-  );
-}
-
-export function ReviewsSection() {
-  return (
-    <Shell eyebrow="Admin · Reviews" title="Per-pattern reviewer answers and survey feedback">
-      <p>
-        Reviews surfaces what users submitted in the Studio Self-check tab and any
-        open-ended feedback gathered after a run. Admins use it to triage
-        misdetections, gather agree/disagree counts per pattern, and feed back into
-        catalog tuning.
       </p>
     </Shell>
   );
