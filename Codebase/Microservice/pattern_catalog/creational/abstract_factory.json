@@ -1,0 +1,28 @@
+{
+  "pattern_id": "creational.abstract_factory",
+  "pattern_family": "creational",
+  "pattern_name": "AbstractFactory",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "factory_methods":  ["create", "make", "createButton", "createWindow",
+                         "createCheckbox", "createProduct", "createProductA",
+                         "createProductB", "makeButton", "makeWindow", "build"],
+    "ownership_return": ["unique_ptr", "shared_ptr", "std::unique_ptr", "std::shared_ptr",
+                         "make_unique", "make_shared"],
+    "virtual_interface":["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer",  "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",        "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "abstract_factory_class" },
+    { "id": "open_class_brace",  "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "virtual_marker_1",  "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "abstract_factory_virtual_marker" },
+    { "id": "create_method_1",   "expected_kind": "Identifier",  "expected_lexeme_any_of": ["create", "make", "createButton", "createWindow", "createCheckbox", "createProduct", "createProductA", "createProductB", "makeButton", "makeWindow"], "capture_as": "create_method_1", "document_as": "abstract_factory_create_method" },
+    { "id": "create_paren_1",    "expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] },
+    { "id": "virtual_marker_2",  "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "abstract_factory_second_marker" },
+    { "id": "create_method_2",   "expected_kind": "Identifier",  "expected_lexeme_any_of": ["create", "make", "createButton", "createWindow", "createCheckbox", "createProduct", "createProductA", "createProductB", "makeButton", "makeWindow"], "capture_as": "create_method_2", "document_as": "abstract_factory_second_create" },
+    { "id": "create_paren_2",    "expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] }
+  ]
+}

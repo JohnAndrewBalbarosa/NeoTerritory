@@ -1,0 +1,25 @@
+{
+  "pattern_id": "behavioural.chain_of_responsibility",
+  "pattern_family": "behavioural",
+  "pattern_name": "ChainOfResponsibility",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "handle_methods":  ["handle", "handleRequest", "process", "handleEvent",
+                        "dispatch", "onRequest"],
+    "successor_member":["next", "next_", "m_next", "successor", "successor_",
+                        "m_successor", "nextHandler", "nextHandler_"],
+    "successor_setter":["setNext", "set_next", "setSuccessor", "setNextHandler"],
+    "virtual_interface":["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "chain_handler_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "virtual_marker",   "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "chain_virtual_marker" },
+    { "id": "handle_method",    "expected_kind": "Identifier",  "expected_lexeme_any_of": ["handle", "handleRequest", "process", "handleEvent", "dispatch", "onRequest"], "capture_as": "handle_method", "document_as": "chain_handle_method" },
+    { "id": "successor_ref",    "expected_kind": "Identifier",  "expected_lexeme_any_of": ["next", "next_", "m_next", "successor", "successor_", "m_successor", "nextHandler", "nextHandler_", "setNext", "setSuccessor", "setNextHandler"], "capture_as": "successor_ref", "document_as": "chain_successor_link" }
+  ]
+}

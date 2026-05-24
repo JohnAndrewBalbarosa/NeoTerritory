@@ -1027,6 +1027,14 @@ D21 locked the first catalog at seven entries as a deliberate starting point. Pe
 
 **Frontend sync**: `Codebase/Frontend/src/components/marketing/patterns/patternData.ts` flips these six from `catalogFile: null` ("(planned)") to their real catalog paths, and corrects two stale entries surfaced during this work: Strategy's `detection` prose (was wrongly marked "(planned)" though `strategy_interface.json` has shipped since an earlier batch) and Method Chaining's `family` (was `Behavioural`; the catalog files it under `creational`).
 
-**Samples & testing — deliberately NOT in the repo**: per explicit user direction, the reference samples, the detection-verification runs, and any planning scratch for this expansion live ONLY in the gitignored `local-only/` drop zone. They are never committed and leave no trace in the GitHub repo. This intentionally diverges from D21's note about `Codebase/Microservice/samples/`; the new patterns are validated locally against the standalone CLI binary (`NeoTerritory --catalog pattern_catalog/ --output <local-dir> <sample.cpp>`), which never touches the analysis database. The production analysis database is left fully intact.
+**Batch 2** adds five more detectors: `creational.prototype` (virtual `clone`), `creational.abstract_factory` (two `virtual create*` methods), `behavioural.chain_of_responsibility` (virtual `handle` + `next_`/`successor` link), `behavioural.mediator` (virtual `notify`/`send`; co-emits with Observer), `behavioural.visitor` (virtual `visit`).
 
-**Remaining GoF to add in later batches**: Abstract Factory, Prototype (creational); Bridge, Facade, Flyweight (structural); Chain of Responsibility, Interpreter, Mediator, Memento, Visitor (behavioural).
+**Batch 3** adds the final five, completing GoF 23/23: `structural.bridge`, `structural.facade`, `structural.flyweight`, `behavioural.memento`, `behavioural.interpreter`.
+
+**Full artifact set per pattern** (per user direction, matching the existing seven): each new pattern ships `<pattern>.json` (detector) + `<pattern>.fallback_doc.json` (AI doc templates keyed by the detector's `document_as` anchors) + `<pattern>.test.template.cpp` (unit-test driver).
+
+**Samples & the analysis database**: per refined user direction, each new pattern ships a committed demo sample at `Codebase/Microservice/samples/<pattern>/<pattern>_demo.cpp` plus a `META_BY_DIRECTORY` entry in `Codebase/Frontend/src/components/analysis/SamplePickerModal.tsx`, so it appears in the studio "Load sample" picker (the picker glob-imports `samples/**/*.cpp` at build time). Detection is validated locally against the standalone CLI binary (`NeoTerritory --catalog pattern_catalog/ --output <local-dir> <sample.cpp>`), which **never touches the analysis database** — no analysis runs are persisted during this work, and the production DB is left fully intact. Only throwaway test OUTPUTS and planning scratch stay in the gitignored `local-only/` drop zone.
+
+**Module base**: no per-pattern C++ module folder under `Modules/Source/Analysis/Patterns/Families/` is required — detection is JSON-catalog-driven (D9) and `CMakeLists.txt` globs sources; existing catalog-only patterns (`method_chaining`, `virtual_proxy`) have no module folder and detect fine.
+
+**GoF coverage after this decision: 23/23.**

@@ -1,0 +1,23 @@
+{
+  "pattern_id": "creational.prototype",
+  "pattern_family": "creational",
+  "pattern_name": "Prototype",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "clone_methods":    ["clone", "copy", "duplicate", "deepCopy", "deep_copy", "cloneSelf"],
+    "ownership_return": ["unique_ptr", "shared_ptr", "std::unique_ptr", "std::shared_ptr",
+                         "make_unique", "make_shared"],
+    "virtual_interface":["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "prototype_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "virtual_marker",   "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "prototype_virtual_marker" },
+    { "id": "clone_method",     "expected_kind": "Identifier",  "expected_lexeme_any_of": ["clone", "copy", "duplicate", "deepCopy", "deep_copy", "cloneSelf"], "capture_as": "clone_method", "document_as": "prototype_clone_method" },
+    { "id": "open_method_paren","expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] }
+  ]
+}

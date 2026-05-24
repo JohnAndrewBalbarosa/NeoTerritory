@@ -1,0 +1,23 @@
+{
+  "pattern_id": "behavioural.visitor",
+  "pattern_family": "behavioural",
+  "pattern_name": "Visitor",
+  "enabled": true,
+  "signature_categories": [
+    "interface_polymorphism"
+  ],
+  "lexeme_identifiers": {
+    "visit_methods":  ["visit", "visitConcrete", "visitElement", "visitNode",
+                       "visitCircle", "visitSquare"],
+    "accept_methods": ["accept", "acceptVisitor"],
+    "virtual_interface":["virtual", "= 0", "override", "final"]
+  },
+  "ordered_checks": [
+    { "id": "class_introducer", "expected_kind": "Keyword",     "expected_lexeme_any_of": ["class", "struct"] },
+    { "id": "class_name",       "expected_kind": "Identifier",  "capture_as": "class_name", "document_as": "visitor_class" },
+    { "id": "open_class_brace", "expected_kind": "Punctuation", "expected_lexeme_any_of": ["{"] },
+    { "id": "virtual_marker",   "expected_kind": "Keyword",     "expected_lexeme_any_of": ["virtual"], "document_as": "visitor_virtual_marker" },
+    { "id": "visit_method",     "expected_kind": "Identifier",  "expected_lexeme_any_of": ["visit", "visitConcrete", "visitElement", "visitNode", "visitCircle", "visitSquare", "accept", "acceptVisitor"], "capture_as": "visit_method", "document_as": "visitor_visit_method" },
+    { "id": "open_method_paren","expected_kind": "Punctuation", "expected_lexeme_any_of": ["("] }
+  ]
+}
