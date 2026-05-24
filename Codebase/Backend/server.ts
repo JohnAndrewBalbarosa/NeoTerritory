@@ -61,6 +61,7 @@ import adminRoutes from './src/routes/admin';
 import reviewRoutes from './src/routes/reviews';
 import surveyRoutes from './src/routes/survey';
 import scraperRoutes from './src/routes/scraper';
+import learningRoutes from './src/routes/learning';
 import { startWatching as startReviewSchemaWatch } from './src/reviews/questionLoader';
 import { uploadsDir } from './src/config/paths';
 import { httpsAdapter } from './src/middleware/httpsHandler';
@@ -167,6 +168,7 @@ if (process.env.NEOTERRITORY_ENABLE_SCRAPER === '1') {
 }
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/survey', surveyRoutes);
+app.use('/api/learning', learningRoutes);
 app.use('/api', analysisRoutes);
 
 // Sealed namespace — every route under /api/sealed/* is gated by the

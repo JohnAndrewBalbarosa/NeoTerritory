@@ -221,6 +221,27 @@ export async function fetchSample(): Promise<{ code: string; filename: string }>
   return apiFetch<{ code: string; filename: string }>('/api/sample');
 }
 
+export interface LearningProgress {
+  completedModuleIds: string[];
+  lastUnlockedModuleId: string | null;
+}
+
+// Per-account learning-path progress. Both endpoints are jwtAuth-gated, so
+// these are only meaningful for signed-in users; callers guard on token.
+export async function fetchLearningProgress(): Promise<LearningProgress> {
+  return apiFetch<LearningProgress>('/api/learning/progress');
+}
+
+export async function saveLearningProgress(
+  completedModuleIds: string[],
+  lastUnlockedModuleId: string | null,
+): Promise<void> {
+  await apiFetch('/api/learning/progress', {
+    method: 'PUT',
+    body: JSON.stringify({ completedModuleIds, lastUnlockedModuleId }),
+  });
+}
+
 export async function submitAnalysis(body: string | FormData): Promise<AnalysisRun> {
   return apiFetch<AnalysisRun>('/api/analyze', { method: 'POST', body });
 }

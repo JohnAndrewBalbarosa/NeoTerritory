@@ -221,6 +221,20 @@ export function initDb(): void {
   ensureColumn('org_pattern_catalogs', 'kind', `kind TEXT NOT NULL DEFAULT 'custom'`);
   ensureColumn('org_pattern_catalogs', 'pattern_enabled_map', `pattern_enabled_map TEXT NOT NULL DEFAULT '{}'`);
 
+  // ── learning_progress (per-account learning-path progress) ──────────────
+  // One row per user. completed_module_ids is a JSON array of the learning
+  // module ids the account has passed; last_unlocked_module_id is the highest
+  // module the linear gate has opened for that account. Updated every time a
+  // module is completed (which unlocks the next), so the path resumes where
+  // the user left off after a refresh or on another device.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_progress (
+    user_id INTEGER PRIMARY KEY,
+    completed_module_ids TEXT NOT NULL DEFAULT '[]',
+    last_unlocked_module_id TEXT,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email
   // entered the ORIGINAL_DEV_EMAILS allowlist, resolveAdminOrg would

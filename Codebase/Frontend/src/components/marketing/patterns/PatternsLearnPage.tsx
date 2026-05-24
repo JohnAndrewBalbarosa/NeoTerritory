@@ -9,7 +9,8 @@ import {
   type LearningPatternPractical,
   type LearningQuizPractical,
 } from '../../../data/learningModules';
-import { submitAnalysis } from '../../../api/client';
+import { submitAnalysis, fetchLearningProgress, saveLearningProgress } from '../../../api/client';
+import { useAppStore } from '../../../store/appState';
 import { PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
 
 // D77 (round 4): per-module practical check is the unlock gate. The hub
@@ -536,10 +537,53 @@ function ModulePractical({ module, isPassed, onPass }: ModulePracticalProps): JS
 export default function PatternsLearnPage(): JSX.Element {
   const { groups, steps } = useMemo(() => buildCategoryGroups(), []);
 
+  const token = useAppStore((s) => s.token);
+
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
   const unlockedCount = useMemo(
     () => computeUnlockedCount(steps, completedIds),
     [steps, completedIds],
+  );
+
+  // Hydrate progress from the account on mount / sign-in. Progress is stored
+  // server-side per user (jwtAuth), so guests keep only the in-memory set for
+  // the current visit. Stale ids that no longer match a module are harmless —
+  // computeUnlockedCount only counts ids present in `steps`.
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    void fetchLearningProgress()
+      .then((p) => {
+        if (cancelled || !p.completedModuleIds?.length) return;
+        setCompletedIds((prev) => {
+          const next = new Set(prev);
+          for (const id of p.completedModuleIds) next.add(id);
+          return next;
+        });
+      })
+      .catch(() => {
+        /* offline / first visit — start empty */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  // Persist the completed set to the account, recording the highest unlocked
+  // module id. Fire-and-forget: a failed save never blocks the UI, and the
+  // next unlock re-sends the full set so a dropped write self-heals.
+  const persistProgress = useCallback(
+    (completed: ReadonlySet<string>) => {
+      if (!token) return;
+      const ids = steps.map((s) => s.module.id).filter((id) => completed.has(id));
+      const unlocked = computeUnlockedCount(steps, completed);
+      const lastUnlockedModuleId =
+        steps.length > 0 ? steps[Math.max(0, Math.min(unlocked, steps.length) - 1)].module.id : null;
+      void saveLearningProgress(ids, lastUnlockedModuleId).catch(() => {
+        /* best-effort; resent on next unlock */
+      });
+    },
+    [token, steps],
   );
 
   const [activeIndex, setActiveIndex] = useState<number>(() =>
@@ -633,10 +677,13 @@ export default function PatternsLearnPage(): JSX.Element {
         if (prev.has(moduleId)) return prev;
         const next = new Set(prev);
         next.add(moduleId);
+        // Completing a module unlocks the next one — persist the new state to
+        // the account so progress survives refresh / device change.
+        persistProgress(next);
         return next;
       });
     },
-    [],
+    [persistProgress],
   );
 
   const goPrev = useCallback(() => {
