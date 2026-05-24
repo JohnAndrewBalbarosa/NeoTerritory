@@ -45,7 +45,7 @@ const META_BY_DIRECTORY: Record<string, SampleMeta> = {
     intent: 'Ensure a class has exactly one instance, accessed via a static accessor.',
   },
   method_chaining: {
-    family: 'Behavioural',
+    family: 'Creational',
     patternName: 'Method Chaining',
     intent: 'Configure an object across many setters in a single fluent expression.',
   },
@@ -83,6 +83,87 @@ const META_BY_DIRECTORY: Record<string, SampleMeta> = {
     family: 'Idioms',
     patternName: 'Cross-class usages',
     intent: 'A file with several classes that reference each other.',
+  },
+  // ---- Gang-of-Four expansion (D80) — one demo per added pattern ----
+  prototype: {
+    family: 'Creational',
+    patternName: 'Prototype',
+    intent: 'Create new objects by cloning an existing instance through a virtual clone().',
+  },
+  abstract_factory: {
+    family: 'Creational',
+    patternName: 'Abstract Factory',
+    intent: 'Create families of related products through one factory interface.',
+  },
+  composite: {
+    family: 'Structural',
+    patternName: 'Composite',
+    intent: 'Treat individual objects and compositions of objects uniformly through a shared interface.',
+  },
+  bridge: {
+    family: 'Structural',
+    patternName: 'Bridge',
+    intent: 'Decouple an abstraction from its implementation so the two vary independently.',
+  },
+  facade: {
+    family: 'Structural',
+    patternName: 'Facade',
+    intent: 'Offer one simple entry point that delegates to several subsystem objects.',
+  },
+  flyweight: {
+    family: 'Structural',
+    patternName: 'Flyweight',
+    intent: 'Share immutable instances from a pool instead of allocating duplicates.',
+  },
+  observer: {
+    family: 'Behavioural',
+    patternName: 'Observer',
+    intent: 'Notify a list of subscribers through a virtual update when a subject changes.',
+  },
+  command: {
+    family: 'Behavioural',
+    patternName: 'Command',
+    intent: 'Package an action as an object with execute()/undo() so it can be queued or reversed.',
+  },
+  state: {
+    family: 'Behavioural',
+    patternName: 'State',
+    intent: 'Let an object change behaviour by swapping the concrete state it delegates to.',
+  },
+  template_method: {
+    family: 'Behavioural',
+    patternName: 'Template Method',
+    intent: 'Fix an algorithm skeleton in a base method that calls overridable virtual hooks.',
+  },
+  iterator: {
+    family: 'Behavioural',
+    patternName: 'Iterator',
+    intent: 'Walk a collection through operator++/operator* without exposing its storage.',
+  },
+  mediator: {
+    family: 'Behavioural',
+    patternName: 'Mediator',
+    intent: 'Route interaction between components through one mediator instead of direct coupling.',
+  },
+  visitor: {
+    family: 'Behavioural',
+    patternName: 'Visitor',
+    intent: 'Add operations to a class hierarchy via a visitor without editing the elements.',
+  },
+  interpreter: {
+    family: 'Behavioural',
+    patternName: 'Interpreter',
+    intent: 'Evaluate sentences of a small grammar through a virtual interpret(Context&).',
+  },
+  memento: {
+    family: 'Behavioural',
+    patternName: 'Memento',
+    intent: 'Capture and restore an object\'s state via save()/restore() without breaking encapsulation.',
+  },
+  chain_of_responsibility: {
+    family: 'Behavioural',
+    patternName: 'Chain of Responsibility',
+    intent: 'Pass a request along a linked chain of handlers until one handles it.',
   },
 };
 
