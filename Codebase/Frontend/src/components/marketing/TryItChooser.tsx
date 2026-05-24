@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import SeatClaimPanel from '../auth/SeatClaimPanel';
 import { useFeatureReleases } from '../../hooks/useFeatureReleases';
+import { useAppStore } from '../../store/appState';
 
 // Homepage chooser popup. Single public-facing auth surface across the
 // marketing site: every "Try it now" / hero / nav CTA dispatches
@@ -61,7 +62,7 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
     eyebrow: 'Account',
     title: 'Sign in or create account',
     blurb:
-      "Sign in with Google. We'll ask sa next page kung PM ka, developer, o new user — tapos saved na ang runs at history mo.",
+      'Sign in with Google. Bago man o existing ang account mo, ise-set up namin ito automatically — tapos diretso ka na sa /studio, saved na ang runs at history mo.',
   },
 ];
 
@@ -136,15 +137,32 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
       return;
     }
     if (card.id === 'developer') {
-      // Role-neutral entry: the modal no longer pre-picks developer.
-      // /auth/choose now shows the three-card role picker (New user /
-      // PM / Developer) so the user makes the decision there. The
-      // sessionStorage stash gets overwritten by GoogleCallback's
-      // data.entryFlow after exchange so it's safe to leave intact for
-      // back-compat with anything still reading the old key.
+      // Account path. Two cases per the homepage spec:
+      //   1. Already signed in → skip OAuth entirely, go straight to
+      //      /studio (auth is rehydrated from localStorage at store init,
+      //      so this survives a refresh).
+      //   2. Not signed in → hand off to the same Google sign-in surface
+      //      the student path uses (GoogleSignInPage), but with
+      //      intent=new so the backend create-or-sign-in upsert runs.
+      //      intent=new is the universal path: a brand-new Gmail gets a
+      //      developer account auto-created, an existing email is matched
+      //      to its row — neither hits the intent=existing 404. role
+      //      'developer' resolves next=/studio, so GoogleCallback lands
+      //      the user directly in the studio (no onboarding detour, since
+      //      needsOnboarding is only set for the 'new' role).
+      //
+      // The previous target, /auth/choose, is a retired surface that
+      // MarketingShell bounces back to '/', which is why clicking Account
+      // looped the user back to the homepage instead of authenticating.
+      const { token, user } = useAppStore.getState();
+      if (token && user) {
+        onClose();
+        navigate('/studio');
+        return;
+      }
       try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* ignore */ }
       onClose();
-      navigate('/auth/choose');
+      navigate('/developer/login?intent=new');
       return;
     }
     if (card.id === 'pm') {
