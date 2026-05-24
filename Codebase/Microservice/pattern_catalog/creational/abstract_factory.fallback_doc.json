@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "creational.abstract_factory",
+  "pattern_name": "Abstract Factory",
+  "patternRoleByEvidence": {
+    "abstract_factory_class": "Abstract factory interface",
+    "abstract_factory_virtual_marker": "Virtual dispatch marker",
+    "abstract_factory_create_method": "Product creator",
+    "abstract_factory_second_marker": "Second virtual marker",
+    "abstract_factory_second_create": "Second product creator"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It declares several virtual create methods so one concrete factory builds a coherent family of matching products. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Abstract Factory because {{className}} declares two or more virtual create methods (lines {{lineStart}}-{{lineEnd}}) — the family-of-products interface, distinct from a single Factory Method.",
+  "lineExplanationTemplates": {
+    "abstract_factory_create_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "A product creator. Grouping several on one interface declares which products must come from the same family."
+      }
+    ],
+    "abstract_factory_second_create": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "A second product creator. More than one create method is what separates an Abstract Factory from a plain Factory Method."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Factory Method": "Factory Method is one virtual create returning one product. Abstract Factory bundles several create methods so an entire family of related products varies together."
+  }
+}

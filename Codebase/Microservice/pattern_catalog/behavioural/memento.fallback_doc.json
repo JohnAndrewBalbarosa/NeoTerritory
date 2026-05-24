@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.memento",
+  "pattern_name": "Memento",
+  "patternRoleByEvidence": {
+    "memento_class": "Originator / caretaker",
+    "memento_save_restore_method": "Save / restore operation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It captures its state into a memento and restores from one later, enabling undo and checkpoints without exposing private fields. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Memento because {{className}} exposes a save/restore method pair (lines {{lineStart}}-{{lineEnd}}) — the snapshot-and-rollback shape that keeps state encapsulated.",
+  "lineExplanationTemplates": {
+    "memento_save_restore_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The save/restore operation. This is the undo seam: state leaves and re-enters the object only through here, so encapsulation holds."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Prototype": "Prototype clones a whole live object to get another usable instance. Memento captures opaque state purely to restore the same object later — the snapshot is not meant to be used as an object."
+  }
+}

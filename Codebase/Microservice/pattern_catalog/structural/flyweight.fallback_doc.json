@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.flyweight",
+  "pattern_name": "Flyweight",
+  "patternRoleByEvidence": {
+    "flyweight_factory_class": "Flyweight factory",
+    "flyweight_factory_method": "Shared accessor",
+    "flyweight_shared_pool": "Shared pool"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It interns instances in a pool keyed by intrinsic state and hands out shared references, so many fine-grained objects cost little memory. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Flyweight because {{className}} pairs a shared-instance accessor with a keyed pool (lines {{lineStart}}-{{lineEnd}}) and returns shared ownership — the interning shape.",
+  "lineExplanationTemplates": {
+    "flyweight_factory_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The shared accessor. It returns an existing instance from the pool when one exists instead of allocating a duplicate."
+      }
+    ],
+    "flyweight_shared_pool": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The shared pool. Keying instances by intrinsic state is what enables safe sharing."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Factory Method": "Factory Method hides which concrete product is built. Flyweight's factory additionally reuses already-built instances from a pool — the sharing/interning is the point, not just construction."
+  }
+}

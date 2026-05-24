@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.iterator",
+  "pattern_name": "Iterator",
+  "patternRoleByEvidence": {
+    "iterator_class": "Iterator type",
+    "iterator_operator_overload": "Traversal operator",
+    "iterator_advance_or_deref": "Advance / dereference"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It exposes traversal through operator++/operator* so callers walk a collection without seeing its internal storage. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Iterator because {{className}} overloads the canonical traversal operators (lines {{lineStart}}-{{lineEnd}}) — operator++ to advance and operator* to read the current element.",
+  "lineExplanationTemplates": {
+    "iterator_advance_or_deref": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The advance/dereference operator. Overloading these is what lets the type drop into range-for and standard algorithms transparently."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Composite": "Composite models part-whole trees; an Iterator may walk one, but the Iterator's own job is sequential access via operator++/operator*, independent of the structure it traverses."
+  }
+}

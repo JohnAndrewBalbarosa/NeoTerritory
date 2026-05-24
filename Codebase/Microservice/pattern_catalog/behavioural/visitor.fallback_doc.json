@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.visitor",
+  "pattern_name": "Visitor",
+  "patternRoleByEvidence": {
+    "visitor_class": "Visitor interface",
+    "visitor_virtual_marker": "Virtual dispatch marker",
+    "visitor_visit_method": "Visit operation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It declares one visit() per element type so new operations can be added across a hierarchy without editing the element classes. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Visitor because {{className}} declares virtual visit/accept methods (lines {{lineStart}}-{{lineEnd}}) — the double-dispatch shape that externalises operations from the element hierarchy.",
+  "lineExplanationTemplates": {
+    "visitor_visit_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "A visit operation. One per element type; adding a new operation means adding a new visitor, not editing every element."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Strategy": "Strategy varies one algorithm behind an interface. Visitor adds a family of operations over many element types via accept/visit double dispatch — the goal is extending operations, not swapping one."
+  }
+}

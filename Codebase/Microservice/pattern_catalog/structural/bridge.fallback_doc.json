@@ -1,0 +1,31 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.bridge",
+  "pattern_name": "Bridge",
+  "patternRoleByEvidence": {
+    "bridge_owned_implementor": "Owned implementor handle",
+    "bridge_implementor_member": "Implementor reference",
+    "bridge_forward_to_implementor": "Delegation operator",
+    "bridge_forwarded_call": "Forwarded operation"
+  },
+  "summaryTemplate": "{{className}} is the abstraction in a Bridge. It owns an implementor through a pointer and forwards operations to it, so the abstraction and implementation hierarchies vary independently. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Bridge because {{className}} owns an implementor member via a smart pointer and forwards calls to it (lines {{lineStart}}-{{lineEnd}}) — the abstraction-over-implementor seam.",
+  "lineExplanationTemplates": {
+    "bridge_implementor_member": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The implementor reference. Holding it by pointer (not inheriting) is what lets the two hierarchies grow separately."
+      }
+    ],
+    "bridge_forwarded_call": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "A forwarded operation. The abstraction delegates real work to the implementor here."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "PIMPL": "PIMPL hides one class's own implementation behind a private inner type for compilation firewalling. Bridge points at a separate, public implementor hierarchy meant to vary — same handle shape, different intent.",
+    "Adapter": "Adapter converts an existing interface to a needed one. Bridge is designed up front to separate two dimensions that both evolve; it is not a retrofit."
+  }
+}

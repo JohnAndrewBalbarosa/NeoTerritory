@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.state",
+  "pattern_name": "State",
+  "patternRoleByEvidence": {
+    "state_interface_class": "State interface",
+    "state_virtual_marker": "Virtual dispatch marker",
+    "state_handle_method": "State-specific behaviour"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. A context delegates to the current state object; swapping the concrete state changes the context's behaviour without conditional branching. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as State because {{className}} declares a virtual handle/request-family method (lines {{lineStart}}-{{lineEnd}}) that a context calls, letting behaviour change by swapping the concrete state.",
+  "lineExplanationTemplates": {
+    "state_handle_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "State-specific behaviour. Each concrete state implements this differently; the context's behaviour changes by pointing at a different state, not by an if/switch."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Strategy": "Strategy and State share the interface-and-implementations shape. State concretes typically trigger transitions to the next state; Strategy concretes are independent peers chosen externally and do not move the context between modes."
+  }
+}

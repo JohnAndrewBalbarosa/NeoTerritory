@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.interpreter",
+  "pattern_name": "Interpreter",
+  "patternRoleByEvidence": {
+    "interpreter_expression_class": "Expression interface",
+    "interpreter_virtual_marker": "Virtual dispatch marker",
+    "interpreter_interpret_method": "Interpret operation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. Each grammar rule is a class with a virtual interpret(Context&); composite expressions interpret their children to evaluate a sentence. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Interpreter because {{className}} declares a virtual interpret/evaluate method (lines {{lineStart}}-{{lineEnd}}), the per-grammar-rule evaluation shape.",
+  "lineExplanationTemplates": {
+    "interpreter_interpret_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The interpret operation. Each grammar rule evaluates itself against a shared context; composites recurse into their children."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Composite": "Interpreter expression trees are usually built with Composite, but the Interpreter tag is about the interpret(Context&) evaluation contract, not the part-whole nesting itself."
+  }
+}

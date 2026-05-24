@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.template_method",
+  "pattern_name": "Template Method",
+  "patternRoleByEvidence": {
+    "template_method_class": "Template base class",
+    "template_orchestrator_method": "Algorithm skeleton",
+    "template_virtual_hook": "Overridable hook"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. A non-virtual method fixes the algorithm's skeleton and calls virtual hooks that subclasses fill in, so the overall flow stays constant while steps vary. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Template Method because {{className}} pairs an orchestrator method (lines {{lineStart}}-{{lineEnd}}) with virtual hook methods it calls — the skeleton-plus-overridable-steps shape.",
+  "lineExplanationTemplates": {
+    "template_orchestrator_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The algorithm skeleton. It is intentionally non-virtual so the sequence of steps is fixed; only the steps themselves vary."
+      }
+    ],
+    "template_virtual_hook": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "An overridable hook. Subclasses customise this step without being able to reorder or skip the skeleton."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Strategy": "Strategy composes a varying algorithm as a separate object. Template Method keeps the algorithm in the base class and varies only named steps via inheritance — the variation point is finer-grained."
+  }
+}

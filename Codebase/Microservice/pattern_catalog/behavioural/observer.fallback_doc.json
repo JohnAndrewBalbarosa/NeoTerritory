@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.observer",
+  "pattern_name": "Observer",
+  "patternRoleByEvidence": {
+    "observer_interface_class": "Observer interface",
+    "observer_virtual_marker": "Virtual dispatch marker",
+    "observer_update_method": "Notification callback"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. Observers register with a subject and are notified through a virtual callback whenever the subject's state changes, so the subject never needs to know what each observer does. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Observer because {{className}} exposes a virtual notification method (lines {{lineStart}}-{{lineEnd}}) of the update/notify family that a subject calls to fan a state change out to many dependents.",
+  "lineExplanationTemplates": {
+    "observer_virtual_marker": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "`virtual` — without it the subject's callback would bind statically and the fan-out to different observer types would not dispatch."
+      }
+    ],
+    "observer_update_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The notification callback. The subject invokes this for every registered observer; each observer decides independently what to do with the change."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Strategy": "Strategy also dispatches through a virtual interface, but it swaps one algorithm at a call site. Observer broadcasts a change to many registered listeners — the cardinality is one-to-many, not one-of-many.",
+    "Mediator": "Mediator centralises interaction in a hub the components call. Observer pushes a change outward to subscribers that registered themselves; there is no central coordinator deciding who reacts."
+  }
+}

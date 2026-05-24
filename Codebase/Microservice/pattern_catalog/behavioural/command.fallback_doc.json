@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.command",
+  "pattern_name": "Command",
+  "patternRoleByEvidence": {
+    "command_interface_class": "Command interface",
+    "command_virtual_marker": "Virtual dispatch marker",
+    "command_execute_method": "Command operation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It packages an action as an object behind a virtual execute(), so the action can be stored, queued, logged, or undone without the caller knowing what it does. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Command because {{className}} declares a virtual execute/undo-family operation (lines {{lineStart}}-{{lineEnd}}), the signature that lets a request be handled as a first-class object.",
+  "lineExplanationTemplates": {
+    "command_execute_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The command operation. Reifying the action here is what lets it be queued, replayed, or paired with an undo."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Strategy": "Strategy varies how one step is computed. Command captures a whole request to perform later — the value is deferral and reversibility (execute/undo), not algorithm choice."
+  }
+}

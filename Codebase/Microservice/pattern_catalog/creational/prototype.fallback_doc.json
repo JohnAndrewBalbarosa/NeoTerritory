@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "creational.prototype",
+  "pattern_name": "Prototype",
+  "patternRoleByEvidence": {
+    "prototype_class": "Prototype interface",
+    "prototype_virtual_marker": "Virtual dispatch marker",
+    "prototype_clone_method": "Clone operation"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. A virtual clone() lets callers copy an object through its base pointer without naming the concrete type. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Prototype because {{className}} declares a virtual clone/copy method (lines {{lineStart}}-{{lineEnd}}) that returns a copy of the concrete type behind the base interface.",
+  "lineExplanationTemplates": {
+    "prototype_clone_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The clone operation. Returning a copy of the dynamic type is what lets callers duplicate without knowing the concrete class."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Abstract Factory": "Abstract Factory builds new product families from scratch. Prototype produces new objects by copying an existing exemplar — creation is by duplication, not by a factory call."
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.mediator",
+  "pattern_name": "Mediator",
+  "patternRoleByEvidence": {
+    "mediator_class": "Mediator interface",
+    "mediator_virtual_marker": "Virtual dispatch marker",
+    "mediator_notify_method": "Coordination method"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. Components report events to the mediator, which decides who else must react, replacing a dense web of direct references. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Mediator because {{className}} declares a virtual notify/send coordination method (lines {{lineStart}}-{{lineEnd}}) that components call instead of talking to each other directly.",
+  "lineExplanationTemplates": {
+    "mediator_notify_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The coordination method. Centralising interaction here is what removes the N-to-N coupling between components."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Observer": "Observer fans a change out to subscribers that registered themselves. Mediator is a hub components call to coordinate each other — the interaction logic lives in the mediator, not in the senders."
+  }
+}

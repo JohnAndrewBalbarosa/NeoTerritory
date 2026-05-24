@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.facade",
+  "pattern_name": "Facade",
+  "patternRoleByEvidence": {
+    "facade_class": "Facade",
+    "facade_subsystem_member": "Subsystem member",
+    "facade_subsystem_delegation": "Subsystem delegation",
+    "facade_second_subsystem": "Second subsystem member"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It owns several subsystem objects and exposes a few high-level methods that perform the multi-step choreography internally. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Facade because {{className}} delegates to two or more distinct subsystem members (lines {{lineStart}}-{{lineEnd}}), wrapping their combined use behind one simpler interface.",
+  "lineExplanationTemplates": {
+    "facade_subsystem_member": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "A subsystem member. The facade owns it so callers never wire the subsystems together themselves."
+      }
+    ],
+    "facade_second_subsystem": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "A second subsystem member. Coordinating more than one subsystem is what distinguishes a facade from a plain wrapper."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Adapter": "Adapter converts one object's interface to another. Facade simplifies the combined use of several subsystem objects — it is about reducing surface area, not converting a single interface."
+  }
+}

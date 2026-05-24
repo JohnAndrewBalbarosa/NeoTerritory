@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "pattern_id": "structural.composite",
+  "pattern_name": "Composite",
+  "patternRoleByEvidence": {
+    "composite_class": "Composite node",
+    "composite_child_operation": "Child management",
+    "composite_child_container": "Child collection"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. It holds a collection of children behind the same interface as a leaf, so clients treat individual objects and compositions uniformly. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Composite because {{className}} pairs a child-management operation with a child container (lines {{lineStart}}-{{lineEnd}}) while sharing the component interface — the part-whole shape.",
+  "lineExplanationTemplates": {
+    "composite_child_operation": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "Child management. add/remove on the same interface as the leaf is what lets clients ignore the part-whole distinction."
+      }
+    ],
+    "composite_child_container": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The child collection. Holding children of the component type is the structural core of Composite."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "Decorator": "Decorator wraps exactly one component to add behaviour. Composite holds many children to model a tree — the container of children, not a single wrappee, is the difference."
+  }
+}

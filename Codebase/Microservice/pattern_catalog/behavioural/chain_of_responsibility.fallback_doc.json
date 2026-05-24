@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "pattern_id": "behavioural.chain_of_responsibility",
+  "pattern_name": "Chain of Responsibility",
+  "patternRoleByEvidence": {
+    "chain_handler_class": "Handler",
+    "chain_virtual_marker": "Virtual dispatch marker",
+    "chain_handle_method": "Request handler",
+    "chain_successor_link": "Successor link"
+  },
+  "summaryTemplate": "{{className}} is the {{patternRole}}. Each handler either processes a request or forwards it to its successor, so the sender is decoupled from which handler ultimately responds. Pattern body lives at {{file}}:{{lineStart}}-{{lineEnd}}.",
+  "chosenRationaleTemplate": "Tagged as Chain of Responsibility because {{className}} pairs a virtual handle method with a successor link (lines {{lineStart}}-{{lineEnd}}) — the handle-or-forward shape.",
+  "lineExplanationTemplates": {
+    "chain_handle_method": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The request handler. It decides whether to process the request or pass it on."
+      }
+    ],
+    "chain_successor_link": [
+      {
+        "linePicker": "by_evidence_kind",
+        "note": "The successor link. Forwarding to it is what makes this a chain rather than a single handler."
+      }
+    ]
+  },
+  "runnerUpComparisonTemplates": {
+    "State": "State swaps the whole object the context delegates to. Chain of Responsibility keeps a linked list of handlers and walks it until one accepts — the successor pointer is the tell."
+  }
+}
