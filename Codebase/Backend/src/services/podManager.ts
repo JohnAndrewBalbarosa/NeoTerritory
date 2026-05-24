@@ -273,6 +273,25 @@ export function lazyStartPodServices(): void {
   const { startDockerWatcher } = require('./dockerWatcher');
   startDockerWatcher();
 
+  // Only attempt the image pre-build when docker is actually usable (binary
+  // present AND the daemon answers a compatible API). In containers where the
+  // bundled docker client is OLDER than the host daemon's minimum API version,
+  // `docker build` fails — and on such hosts that failed build has been
+  // observed to take the whole node process down (exit 255), even though the
+  // failure is "handled" at the JS level. Probing first keeps the HTTP server
+  // up: the docker-watcher above still flips imageReady on once docker becomes
+  // usable, and ensurePod() rebuilds on demand when a pod is first requested.
+  const docker = dockerStatus();
+  if (!docker.ok) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[pod-manager] docker not usable (${docker.reason}) — skipping pod image pre-build. ` +
+      'Compile/run pods are disabled until docker is available; the studio, auth, and ' +
+      'analysis surfaces stay up.'
+    );
+    return;
+  }
+
   // Trigger the idempotent image build in the background. Defensive .catch:
   // ensurePodImageBuilt resolves rather than rejects today, but a future edit
   // (or an unexpected throw before the inner Promise is constructed) must

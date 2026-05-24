@@ -751,15 +751,24 @@ const FOUNDATIONS_QUIZZES: Record<string, LearningQuizPractical> = {
 // the front-end practical can pass when the analyser's tag set includes
 // the catalog-canonical id. Missing any of these is what makes a learning
 // module fall through to the "no practical" branch and lock the next step.
+// Kept in sync with Codebase/Microservice/pattern_catalog (now GoF 23/23
+// complete + idioms). Values are the *detectionSlug* attachPractical computes
+// (alias.slug ?? pattern.slug), normalised at match time by
+// normalizePatternKey. Every catalog-detectable pattern gets a code-submission
+// practical; only patterns with NO catalog detector (e.g. Repository, which is
+// not GoF and ships no catalog JSON) fall back to a quiz. If a new pattern JSON
+// is added to the catalog, add its route slug here so the learning module
+// switches from quiz/none to a code submission.
 const DETECTED_PATTERN_SLUGS = new Set<string>([
   // creational
-  'singleton', 'builder', 'method-chaining', 'factory',
+  'singleton', 'builder', 'method-chaining', 'factory', 'abstract-factory', 'prototype',
   // structural
-  'adapter', 'decorator', 'proxy',
-  // behavioural — catalog folder is "strategy_interface"; normaliser
-  // collapses to "strategyinterface" at run time, so the slug stored here
-  // is the post-normalisation form.
-  'strategyinterface',
+  'adapter', 'decorator', 'proxy', 'bridge', 'composite', 'facade', 'flyweight',
+  // behavioural — 'strategyinterface' is the alias target for the 'strategy'
+  // route slug (catalog id behavioural.strategy_interface).
+  'strategyinterface', 'observer', 'iterator', 'command', 'state',
+  'template-method', 'chain-of-responsibility', 'mediator', 'memento',
+  'interpreter', 'visitor',
   // idiom
   'pimpl',
 ]);
@@ -772,69 +781,12 @@ const PATTERN_SLUG_ALIAS: Record<string, { slug: string; name: string }> = {
   'strategy': { slug: 'strategyinterface', name: 'Strategy Interface' },
 };
 
+// Patterns with NO catalog detector fall back to a quiz so the linear gate
+// stays pass-able. Repository is the only learning pattern that ships no
+// catalog JSON (it is not a Gang-of-Four pattern); every other pattern is now
+// detectable and uses a code-submission practical instead. If a future pattern
+// is removed from the catalog, add a quiz here.
 const NON_DETECTED_QUIZZES: Record<string, LearningQuizPractical> = {
-  observer: {
-    kind: 'quiz',
-    question: 'A class keeps a list of subscribers and calls update() on each one when its state changes. Which Gang of Four pattern is this?',
-    options: ['Strategy', 'Observer', 'Command', 'Visitor'],
-    correctIndex: 1,
-    explanation: 'Observer (GoF, Gamma et al. 1994): a Subject notifies many Observers via a uniform update() call.',
-  },
-  iterator: {
-    kind: 'quiz',
-    question: 'Which structural element is required by the Iterator pattern (GoF)?',
-    options: [
-      'A factory method that decides the concrete iterator type.',
-      'An interface exposing operations like next() / hasNext() (or begin/end) so callers can traverse a collection without knowing its layout.',
-      'A virtual destructor on the aggregate.',
-      'A singleton iterator instance shared by all collections.',
-    ],
-    correctIndex: 1,
-    explanation: 'Iterator (GoF, Gamma et al. 1994): traverse a collection without exposing its representation.',
-  },
-  command: {
-    kind: 'quiz',
-    question: 'In the Command pattern, what is encapsulated as an object?',
-    options: ['A subscriber list.', 'A request — the action plus its receiver — so it can be queued, logged, or undone.', 'A factory method.', 'A traversal cursor.'],
-    correctIndex: 1,
-    explanation: 'Command (GoF, Gamma et al. 1994): wrap a request as an object so the caller is decoupled from the receiver.',
-  },
-  composite: {
-    kind: 'quiz',
-    question: 'Which sentence describes the Composite pattern?',
-    options: [
-      'Compose objects into tree structures and treat individual objects and compositions uniformly through a common interface.',
-      'Wrap a class so it conforms to a different interface.',
-      'Hand out the same instance every time.',
-      'Replace inheritance with composition for cross-cutting concerns.',
-    ],
-    correctIndex: 0,
-    explanation: 'Composite (GoF, Gamma et al. 1994): part-whole hierarchies where leaves and composites share one interface.',
-  },
-  'template-method': {
-    kind: 'quiz',
-    question: 'Where does Template Method put the variable steps?',
-    options: [
-      'In a separate Strategy object passed to the algorithm.',
-      'In hook methods that subclasses override; the base class fixes the overall algorithm skeleton.',
-      'In a builder.',
-      'In a Singleton accessor.',
-    ],
-    correctIndex: 1,
-    explanation: 'Template Method (GoF, Gamma et al. 1994): the base method calls overridable hooks; subclasses fill the variable steps.',
-  },
-  state: {
-    kind: 'quiz',
-    question: 'How does the State pattern (GoF) differ from a switch on an enum?',
-    options: [
-      'It uses if/else instead of switch.',
-      'Each state is a class implementing the same interface; the context delegates and the active state may swap itself for the next one.',
-      'It hides state in a Singleton.',
-      'It stores state inside a Builder.',
-    ],
-    correctIndex: 1,
-    explanation: 'State (GoF, Gamma et al. 1994): behaviour changes when state changes by swapping a State object, not branching on a tag.',
-  },
   repository: {
     kind: 'quiz',
     question: 'Repository is not a Gang of Four pattern. Which sentence captures its purpose best?',
