@@ -7,6 +7,12 @@
 // sign-in is not part of the studio, and the save-the-run + open-history
 // flows live inside the run-history surface (not on a studio tab), so they
 // are intentionally omitted from this tour.
+//
+// The Self-check step was dropped from this public walkthrough per user
+// direction: the Self-check tab is an admin-gated (thesis-mode) surface, not
+// part of the default studio flow, so it no longer belongs in the
+// "how it works" narrative. The tab still exists in the studio code behind
+// the thesis-mode setting; only its tour entry + screenshot were removed.
 
 export interface TourStep {
   num: number;
@@ -73,14 +79,5 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
       'The Docs tab assembles the auto-generated pattern documentation — class-by-class explanations, evidence anchors back to your source lines, and AI commentary when an AI provider is configured. Export buttons (MD / PDF / DOCX) ship the same content as the printable view.',
     takeaway: 'Documentation always lands, AI on or off.',
     imagePath: '/tour/generate-docs.png',
-  },
-  {
-    num: 7,
-    slug: 'self-check',
-    title: 'Self-check before you submit',
-    paragraph:
-      'The Self-check tab is the four-step gate that turns an analysis run into a saved submission: class validation (was each detection correct?), code understanding, pattern evidence, and a performance rating. Your answers attach to the run and feed the alpha-testing review loop.',
-    takeaway: 'Validate, rate, then save — in one click.',
-    imagePath: '/tour/self-check.png',
   },
 ];
