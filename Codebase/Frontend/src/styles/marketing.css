@@ -5823,6 +5823,9 @@ body[data-surface] {
   color: oklch(15% 0 0);
 }
 .nt-tryit__head {
+  /* Fixed header: never shrinks, so the scroll region below is the choices
+     list, not the title/close-button block. */
+  flex: 0 0 auto;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 8px 16px;
@@ -5871,6 +5874,17 @@ body[data-surface] {
   outline: none;
 }
 .nt-tryit__choices {
+  /* The panel clips at max-height:90vh; this is the one scroll region inside
+     it. flex:1 + min-height:0 lets it shrink within the flex panel so its
+     own overflow-y engages instead of the content spilling past the clip.
+     overscroll-behavior:contain stops scroll from chaining to the (already
+     locked) page behind. Smooth on touch via -webkit-overflow-scrolling. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-right: 4px;
   display: grid;
   gap: 0.85rem;
 }

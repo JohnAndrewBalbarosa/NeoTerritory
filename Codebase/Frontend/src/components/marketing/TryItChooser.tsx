@@ -3,6 +3,7 @@ import { navigate } from '../../logic/router';
 import SeatClaimPanel from '../auth/SeatClaimPanel';
 import { useFeatureReleases } from '../../hooks/useFeatureReleases';
 import { useAppStore } from '../../store/appState';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 // Homepage chooser popup. Single public-facing auth surface across the
 // marketing site: every "Try it now" / hero / nav CTA dispatches
@@ -82,6 +83,12 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
   const [testersHidden, setTestersHidden] = useState(false);
   const { isReleased } = useFeatureReleases();
   const pmEnabled = isReleased('pm-accounts');
+
+  // Pin the homepage behind the chooser: while the popup is open the body
+  // stops scrolling (no background drift), and the panel itself owns the
+  // only scroll region. Called before the `if (!open) return null` below so
+  // the hook order stays stable across renders.
+  useScrollLock(open);
 
   // Reset to the choices step every time the popup re-opens so users
   // never re-enter on the seat-claim view from a previous dismissal.
