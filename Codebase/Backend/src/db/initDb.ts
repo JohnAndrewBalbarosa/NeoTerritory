@@ -197,9 +197,29 @@ export function initDb(): void {
     is_active_in_parser INTEGER NOT NULL DEFAULT 0,
     uploaded_by_user_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    kind TEXT NOT NULL DEFAULT 'custom',
+    pattern_enabled_map TEXT NOT NULL DEFAULT '{}',
     FOREIGN KEY(uploaded_by_user_id) REFERENCES users(id)
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_org_catalogs_org ON org_pattern_catalogs(org_id)`).run();
+
+  // ── Pattern-groups migration ───────────────────────────────────────────
+  // Existing DBs predate the kind / pattern_enabled_map columns introduced
+  // for the Pattern Groups feature. ensureColumn adds a column only when it
+  // is missing (PRAGMA table_info lookup), wrapped in try/catch so a stray
+  // race or unexpected schema never aborts boot.
+  function ensureColumn(table: string, column: string, ddl: string): void {
+    try {
+      const cols = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+      if (cols.some((c) => c.name === column)) return;
+      db.prepare(`ALTER TABLE ${table} ADD COLUMN ${ddl}`).run();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn(`[initDb] ensureColumn ${table}.${column} skipped:`, err);
+    }
+  }
+  ensureColumn('org_pattern_catalogs', 'kind', `kind TEXT NOT NULL DEFAULT 'custom'`);
+  ensureColumn('org_pattern_catalogs', 'pattern_enabled_map', `pattern_enabled_map TEXT NOT NULL DEFAULT '{}'`);
 
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email

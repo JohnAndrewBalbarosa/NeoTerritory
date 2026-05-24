@@ -791,5 +791,53 @@ export async function submitSessionSurvey(
   });
 }
 
+// ── Pattern groups (admin) ──────────────────────────────────────────────────
+export interface PatternGroupPattern {
+  patternId: string;
+  patternName: string;
+  patternFamily: string;
+  enabled: boolean;
+}
+
+export interface PatternGroup {
+  id: number | 'default';
+  kind: 'default' | 'custom';
+  name: string;
+  active: boolean;
+  deletable: boolean;
+  patterns: PatternGroupPattern[];
+}
+
+export async function fetchPatternGroups(): Promise<PatternGroup[]> {
+  const res = await apiFetch<{ groups: PatternGroup[] }>('/api/admin/pattern-groups');
+  return res.groups ?? [];
+}
+
+export async function createPatternGroup(payload: {
+  name: string;
+  patterns: ReadonlyArray<Record<string, unknown>>;
+}): Promise<{ id: number }> {
+  return apiFetch<{ id: number }>('/api/admin/pattern-groups', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function patchPatternGroup(
+  id: number | 'default',
+  payload: { active?: boolean; patternEnabled?: Record<string, boolean> }
+): Promise<PatternGroup> {
+  return apiFetch<PatternGroup>(`/api/admin/pattern-groups/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function deletePatternGroup(id: number): Promise<{ removed: number }> {
+  return apiFetch<{ removed: number }>(`/api/admin/pattern-groups/${id}`, {
+    method: 'DELETE',
+  });
+}
+
 // Re-export TesterAccount so consumers can avoid touching the type module directly.
 export type { TesterAccount };

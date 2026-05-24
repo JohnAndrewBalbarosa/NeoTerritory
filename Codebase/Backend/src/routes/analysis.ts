@@ -41,6 +41,7 @@ import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import { analyzeBodySchema, saveRunSchema, filenameSchema } from '../validation/schemas';
 import { uploadsDir, outputsDir } from '../config/paths';
+import { resolveAnalyzeOrgId } from '../services/orgScope';
 import { countCppTokens, resolveMaxTokensPerFile } from '../utils/tokenCounter';
 
 interface AnalysisPayload {
@@ -836,9 +837,14 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     const intMainMatch = fileList.find(f => /\bint\s+main\s*\(/.test(f.code));
     let primaryName = (mainCppMatch || intMainMatch || fileList[0]).name;
 
+    // Resolve the org once — its pattern-group config drives which patterns
+    // every file in this submission is checked against. Org-less callers
+    // (guests/devcon/solo) get null → pristine default catalog.
+    const analyzeOrgId = resolveAnalyzeOrgId(req.user);
+
     for (const f of fileList) {
       console.log(`[NT] analyzing  file=${f.name}`);
-      const r: AnalysisResult = analyzeClassDeclaration({ sourceName: f.name, code: f.code });
+      const r: AnalysisResult = analyzeClassDeclaration({ sourceName: f.name, code: f.code, orgId: analyzeOrgId });
       const stamped = (r.detectedPatterns || []).map(p => ({
         ...p,
         fileName: f.name

@@ -236,6 +236,9 @@ Codebase/Backend/keys/jwt-private.pem
 # Test result artifacts (per-user analysis run outputs)
 /test/
 /Codebase/test/
+# Backend runtime work area (analysis outputs, uploads, assembled per-org
+# catalogs). Never committed — regenerated at runtime.
+/Codebase/Backend/test/
 
 # Local playwright scratch (developer-only, never commit)
 /playwright-scratch/

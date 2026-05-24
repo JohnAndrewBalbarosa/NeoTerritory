@@ -5,6 +5,16 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { logAudit } from '../services/logService';
+import { LEGACY_ORIGINAL_DEVS_ORG_ID } from '../services/orgScope';
+import {
+  createPatternGroupSchema,
+  patchPatternGroupSchema,
+} from '../payloadValidator';
+import {
+  bumpCatalogEpoch,
+  listDefaultCatalogPatterns,
+  defaultCatalogPatternIds,
+} from '../services/catalogAssemblyService';
 import {
   getBoolSetting,
   getFeatureReleases,
@@ -1887,7 +1897,8 @@ router.get('/stats/test-summary', (_req: Request, res: Response, next: NextFunct
 //     original-devs org, hardcoded id below. New admins that come in via
 //     Supabase OAuth in a follow-up prompt will have their resolved
 //     org_id passed through req.orgMembership instead.
-const LEGACY_ORIGINAL_DEVS_ORG_ID = '00000000-0000-0000-0000-000000000001';
+// LEGACY_ORIGINAL_DEVS_ORG_ID is owned by services/orgScope so the analyze
+// route and these admin routes resolve the same legacy org.
 
 function resolveOrgId(req: Request): string {
   const fromMembership = (req as Request & { orgMembership?: { orgId?: string } })
@@ -1970,6 +1981,337 @@ router.delete('/catalogs/:id', (req: Request, res: Response, next: NextFunction)
       targetId: String(id),
       detail: JSON.stringify({ orgId, removed: info.changes }),
     });
+    res.json({ removed: info.changes });
+  } catch (err) { next(err); }
+});
+
+// ── Pattern groups (per-org, active) ───────────────────────────────────────
+// Each org_pattern_catalogs row = one group. kind='default' is a synthetic
+// per-org placeholder for the on-disk GoF set (json_payload='[]'); kind='custom'
+// rows carry an uploaded bundle in json_payload. is_active_in_parser is the
+// group-level toggle; pattern_enabled_map is the per-pattern override map.
+// The assembly service reads these rows at analysis time.
+
+interface PatternGroupPatternOut {
+  patternId: string;
+  patternName: string;
+  patternFamily: string;
+  enabled: boolean;
+}
+interface PatternGroupOut {
+  id: number | 'default';
+  kind: 'default' | 'custom';
+  name: string;
+  active: boolean;
+  deletable: boolean;
+  patterns: PatternGroupPatternOut[];
+}
+
+const DEFAULT_GROUP_NAME = 'Default (GoF)';
+
+function ensureDefaultRow(orgId: string): {
+  id: number;
+  active: boolean;
+  map: Record<string, boolean>;
+} {
+  let row = db
+    .prepare(
+      `SELECT id, is_active_in_parser, pattern_enabled_map
+       FROM org_pattern_catalogs WHERE org_id = ? AND kind = 'default' LIMIT 1`
+    )
+    .get(orgId) as { id: number; is_active_in_parser: number; pattern_enabled_map: string } | undefined;
+  if (!row) {
+    const info = db
+      .prepare(
+        `INSERT INTO org_pattern_catalogs
+           (org_id, name, json_payload, is_active_in_parser, kind, pattern_enabled_map)
+         VALUES (?, ?, '[]', 1, 'default', '{}')`
+      )
+      .run(orgId, DEFAULT_GROUP_NAME);
+    row = { id: Number(info.lastInsertRowid), is_active_in_parser: 1, pattern_enabled_map: '{}' };
+  }
+  let map: Record<string, boolean> = {};
+  try {
+    const parsed = JSON.parse(row.pattern_enabled_map || '{}');
+    if (parsed && typeof parsed === 'object') map = parsed as Record<string, boolean>;
+  } catch {
+    map = {};
+  }
+  return { id: row.id, active: row.is_active_in_parser === 1, map };
+}
+
+function buildDefaultGroup(orgId: string): PatternGroupOut {
+  const { active, map } = ensureDefaultRow(orgId);
+  const patterns = listDefaultCatalogPatterns().map((p) => ({
+    patternId: p.patternId,
+    patternName: p.patternName,
+    patternFamily: p.patternFamily,
+    enabled: map[p.patternId] !== false,
+  }));
+  return { id: 'default', kind: 'default', name: DEFAULT_GROUP_NAME, active, deletable: false, patterns };
+}
+
+function buildCustomGroup(row: {
+  id: number;
+  name: string;
+  json_payload: string;
+  is_active_in_parser: number;
+  pattern_enabled_map: string;
+}): PatternGroupOut {
+  let bundle: Array<Record<string, unknown>> = [];
+  try {
+    const parsed = JSON.parse(row.json_payload || '[]');
+    if (Array.isArray(parsed)) bundle = parsed.filter((e) => e && typeof e === 'object');
+  } catch {
+    bundle = [];
+  }
+  let map: Record<string, boolean> = {};
+  try {
+    const parsed = JSON.parse(row.pattern_enabled_map || '{}');
+    if (parsed && typeof parsed === 'object') map = parsed as Record<string, boolean>;
+  } catch {
+    map = {};
+  }
+  const patterns: PatternGroupPatternOut[] = bundle.map((p) => {
+    const patternId = typeof p.pattern_id === 'string' ? p.pattern_id : '';
+    const mapVal = map[patternId];
+    const ownEnabled = p.enabled !== false;
+    return {
+      patternId,
+      patternName: typeof p.pattern_name === 'string' ? p.pattern_name : patternId,
+      patternFamily: typeof p.pattern_family === 'string' ? p.pattern_family : 'custom',
+      enabled: mapVal === undefined ? ownEnabled : mapVal,
+    };
+  });
+  return {
+    id: row.id,
+    kind: 'custom',
+    name: row.name,
+    active: row.is_active_in_parser === 1,
+    deletable: true,
+    patterns,
+  };
+}
+
+function customBundlePatternIds(row: { json_payload: string }): Set<string> {
+  const ids = new Set<string>();
+  try {
+    const parsed = JSON.parse(row.json_payload || '[]');
+    if (Array.isArray(parsed)) {
+      for (const p of parsed) {
+        if (p && typeof p === 'object' && typeof (p as Record<string, unknown>).pattern_id === 'string') {
+          ids.add((p as Record<string, string>).pattern_id);
+        }
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+  return ids;
+}
+
+router.get('/pattern-groups', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const orgId = resolveOrgId(req);
+    const defaultGroup = buildDefaultGroup(orgId);
+    const customRows = db
+      .prepare(
+        `SELECT id, name, json_payload, is_active_in_parser, pattern_enabled_map
+         FROM org_pattern_catalogs
+         WHERE org_id = ? AND kind = 'custom'
+         ORDER BY created_at DESC, id DESC`
+      )
+      .all(orgId) as Array<{
+      id: number;
+      name: string;
+      json_payload: string;
+      is_active_in_parser: number;
+      pattern_enabled_map: string;
+    }>;
+    const groups: PatternGroupOut[] = [defaultGroup, ...customRows.map(buildCustomGroup)];
+    res.json({ groups });
+  } catch (err) { next(err); }
+});
+
+router.post('/pattern-groups', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = createPatternGroupSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
+      return;
+    }
+    const { name, patterns } = parsed.data;
+    // Reject custom pattern_ids that collide with on-disk GoF ids.
+    const gofIds = defaultCatalogPatternIds();
+    const collisions = patterns
+      .map((p, index) => ({ index, patternId: p.pattern_id }))
+      .filter((p) => gofIds.has(p.patternId));
+    if (collisions.length > 0) {
+      res.status(409).json({
+        error: 'pattern_id collides with a built-in GoF pattern',
+        collisions,
+      });
+      return;
+    }
+    const serialized = JSON.stringify(patterns);
+    if (serialized.length > 1_000_000) {
+      res.status(413).json({ error: 'serialized patterns exceed 1MB cap' });
+      return;
+    }
+    const orgId = resolveOrgId(req);
+    const info = db
+      .prepare(
+        `INSERT INTO org_pattern_catalogs
+           (org_id, name, json_payload, is_active_in_parser, uploaded_by_user_id, kind, pattern_enabled_map)
+         VALUES (?, ?, ?, 1, ?, 'custom', '{}')`
+      )
+      .run(orgId, name, serialized, req.user?.id ?? null);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'pattern_group.create',
+      targetKind: 'org_pattern_catalog',
+      targetId: String(info.lastInsertRowid),
+      detail: JSON.stringify({ name, orgId, patterns: patterns.length, bytes: serialized.length }),
+    });
+    bumpCatalogEpoch();
+    res.status(201).json({ id: info.lastInsertRowid });
+  } catch (err) { next(err); }
+});
+
+router.patch('/pattern-groups/:id', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const parsed = patchPatternGroupSchema.safeParse(req.body ?? {});
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Validation failed', issues: parsed.error.issues });
+      return;
+    }
+    const { active, patternEnabled } = parsed.data;
+    const orgId = resolveOrgId(req);
+    const rawId = req.params.id;
+
+    if (rawId === 'default') {
+      const current = ensureDefaultRow(orgId); // upserts if missing
+      const validIds = defaultCatalogPatternIds();
+      const nextMap = { ...current.map };
+      if (patternEnabled) {
+        for (const [k, v] of Object.entries(patternEnabled)) {
+          if (!validIds.has(k)) {
+            res.status(400).json({ error: `unknown pattern_id: ${k}` });
+            return;
+          }
+          nextMap[k] = v;
+        }
+      }
+      const nextActive = active === undefined ? current.active : active;
+      db.prepare(
+        `UPDATE org_pattern_catalogs
+         SET is_active_in_parser = ?, pattern_enabled_map = ?
+         WHERE id = ? AND org_id = ?`
+      ).run(nextActive ? 1 : 0, JSON.stringify(nextMap), current.id, orgId);
+      logAudit({
+        actorUserId: req.user?.id ?? null,
+        actorUsername: req.user?.username ?? null,
+        action: 'pattern_group.update',
+        targetKind: 'org_pattern_catalog',
+        targetId: 'default',
+        detail: JSON.stringify({ orgId, active: nextActive, changed: Object.keys(patternEnabled ?? {}) }),
+      });
+      bumpCatalogEpoch();
+      res.json(buildDefaultGroup(orgId));
+      return;
+    }
+
+    const id = Number(rawId);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'invalid id' });
+      return;
+    }
+    const row = db
+      .prepare(
+        `SELECT id, name, json_payload, is_active_in_parser, pattern_enabled_map
+         FROM org_pattern_catalogs
+         WHERE id = ? AND org_id = ? AND kind = 'custom' LIMIT 1`
+      )
+      .get(id, orgId) as
+      | { id: number; name: string; json_payload: string; is_active_in_parser: number; pattern_enabled_map: string }
+      | undefined;
+    if (!row) {
+      res.status(404).json({ error: 'pattern group not found' });
+      return;
+    }
+    const validIds = customBundlePatternIds(row);
+    let map: Record<string, boolean> = {};
+    try {
+      const p = JSON.parse(row.pattern_enabled_map || '{}');
+      if (p && typeof p === 'object') map = p as Record<string, boolean>;
+    } catch {
+      map = {};
+    }
+    if (patternEnabled) {
+      for (const [k, v] of Object.entries(patternEnabled)) {
+        if (!validIds.has(k)) {
+          res.status(400).json({ error: `unknown pattern_id: ${k}` });
+          return;
+        }
+        map[k] = v;
+      }
+    }
+    const nextActive = active === undefined ? row.is_active_in_parser === 1 : active;
+    db.prepare(
+      `UPDATE org_pattern_catalogs
+       SET is_active_in_parser = ?, pattern_enabled_map = ?
+       WHERE id = ? AND org_id = ?`
+    ).run(nextActive ? 1 : 0, JSON.stringify(map), id, orgId);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'pattern_group.update',
+      targetKind: 'org_pattern_catalog',
+      targetId: String(id),
+      detail: JSON.stringify({ orgId, active: nextActive, changed: Object.keys(patternEnabled ?? {}) }),
+    });
+    bumpCatalogEpoch();
+    const refreshed = db
+      .prepare(
+        `SELECT id, name, json_payload, is_active_in_parser, pattern_enabled_map
+         FROM org_pattern_catalogs WHERE id = ? AND org_id = ? LIMIT 1`
+      )
+      .get(id, orgId) as {
+      id: number;
+      name: string;
+      json_payload: string;
+      is_active_in_parser: number;
+      pattern_enabled_map: string;
+    };
+    res.json(buildCustomGroup(refreshed));
+  } catch (err) { next(err); }
+});
+
+router.delete('/pattern-groups/:id', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    if (req.params.id === 'default') {
+      res.status(400).json({ error: 'the default group cannot be deleted' });
+      return;
+    }
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'invalid id' });
+      return;
+    }
+    const orgId = resolveOrgId(req);
+    const info = db
+      .prepare(`DELETE FROM org_pattern_catalogs WHERE id = ? AND org_id = ? AND kind = 'custom'`)
+      .run(id, orgId);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'pattern_group.delete',
+      targetKind: 'org_pattern_catalog',
+      targetId: String(id),
+      detail: JSON.stringify({ orgId, removed: info.changes }),
+    });
+    bumpCatalogEpoch();
     res.json({ removed: info.changes });
   } catch (err) { next(err); }
 });

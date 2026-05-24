@@ -46,7 +46,7 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare, originalDevsOnly: true },
   { id: 'ai',         label: 'AI',         icon: IconCode },
   { id: 'logs',       label: 'Logs',       icon: IconClipboard },
-  { id: 'catalogs',     label: 'Catalogs',       icon: IconBeaker },
+  { id: 'catalogs',     label: 'Pattern groups', icon: IconBeaker },
   { id: 'invites',      label: 'Invites',        icon: IconCheckSquare },
   { id: 'joinRequests', label: 'Join requests',  icon: IconShield },
   { id: 'featureReleases', label: 'Feature releases', icon: IconCode, originalDevsOnly: true }

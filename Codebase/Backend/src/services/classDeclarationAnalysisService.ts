@@ -147,6 +147,26 @@ export function resolveCatalogPath(): string {
   return process.env.NEOTERRITORY_CATALOG || DEFAULT_CATALOG;
 }
 
+// The pristine on-disk default catalog dir, independent of any per-org or
+// NEOTERRITORY_CATALOG override. The assembly service copies FROM here and
+// must never write back into it.
+export function getDefaultCatalog(): string {
+  return DEFAULT_CATALOG;
+}
+
+// Per-org catalog resolution. Delegates to the assembly service (lazy require
+// to avoid a circular import) and falls back to the plain catalog on ANY
+// error so a broken assembly never hard-fails an analysis run.
+export function resolveCatalogPathForOrg(orgId: string | null): string {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { assembleCatalogForOrg } = require('./catalogAssemblyService');
+    return assembleCatalogForOrg(orgId) || resolveCatalogPath();
+  } catch {
+    return resolveCatalogPath();
+  }
+}
+
 function makeTempRunDir(): string {
   const base = path.join(os.tmpdir(), 'neoterritory-run-' + Date.now() + '-' + Math.random().toString(16).slice(2));
   fs.mkdirSync(base, { recursive: true });
@@ -230,7 +250,7 @@ function readReport(outputDir: string): MicroserviceReport | null {
   return JSON.parse(fs.readFileSync(reportPath, 'utf8')) as MicroserviceReport;
 }
 
-export function analyzeClassDeclaration(input: { sourceName: string; code: string }): AnalysisResult {
+export function analyzeClassDeclaration(input: { sourceName: string; code: string; orgId?: string | null }): AnalysisResult {
   const { sourceName, code } = input;
   if (typeof code !== 'string' || !code.trim()) {
     return rejectWithDiagnostic('lexical', [
@@ -239,7 +259,7 @@ export function analyzeClassDeclaration(input: { sourceName: string; code: strin
   }
 
   const binaryPath  = resolveBinaryPath();
-  const catalogPath = resolveCatalogPath();
+  const catalogPath = resolveCatalogPathForOrg(input.orgId ?? null);
 
   if (!fs.existsSync(binaryPath)) {
     return {
