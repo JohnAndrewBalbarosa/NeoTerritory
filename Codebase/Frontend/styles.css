@@ -193,8 +193,16 @@ body.login-active{overflow:hidden;}
 .cc-excerpt{margin:0;padding:7px 9px;background:rgba(0,0,0,0.3);border-left:3px solid;border-radius:3px;font-family:var(--code-font);font-size:11px;white-space:pre-wrap;word-break:break-word;color:var(--ink-soft);}
 
 /* === RUN LIST === */
-.run-list{display:flex;flex-direction:column;gap:5px;}
-.run-item{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--border);border-radius:var(--radius-md);padding:8px 12px;transition:border-color 0.15s;}
+/* The saved-runs block sits directly under the Run analysis form. Both
+   .run-list-wrap and .run-list-head had no rule, so the block butted against
+   the form and the "Saved runs" heading + "Refresh" button were not laid out
+   as an aligned row. Separate the block vertically, and make the header a
+   space-between flex row with the title and button vertically centered. */
+.run-list-wrap{margin-top:24px;display:flex;flex-direction:column;gap:12px;}
+.run-list-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;}
+.run-list-head h3{margin:0;font-size:13px;font-weight:700;color:var(--ink);letter-spacing:0.06em;text-transform:uppercase;}
+.run-list{display:flex;flex-direction:column;gap:8px;}
+.run-item{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 14px;transition:border-color 0.15s;}
 .run-item:hover{border-color:var(--border-bright);}
 .run-item strong{font-family:var(--code-font);font-size:12px;color:var(--ink);}
 .run-item p{margin:0;font-size:11px;color:var(--ink-soft);}

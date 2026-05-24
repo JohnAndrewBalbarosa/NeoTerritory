@@ -273,8 +273,14 @@ export function lazyStartPodServices(): void {
   const { startDockerWatcher } = require('./dockerWatcher');
   startDockerWatcher();
 
-  // Trigger the idempotent image build in the background.
-  void ensurePodImageBuilt();
+  // Trigger the idempotent image build in the background. Defensive .catch:
+  // ensurePodImageBuilt resolves rather than rejects today, but a future edit
+  // (or an unexpected throw before the inner Promise is constructed) must
+  // never become an unhandled rejection that crashes the HTTP server.
+  void ensurePodImageBuilt().catch((err) => {
+    // eslint-disable-next-line no-console
+    console.warn('[pod-manager] image build threw (non-fatal):', err instanceof Error ? err.message : err);
+  });
 }
 
 // Public — best-effort. Failures (Docker missing, image pull required, OOM)

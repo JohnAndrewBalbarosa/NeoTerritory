@@ -28,6 +28,21 @@ if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
   );
 }
 
+// Global safety net. An optional background actor — notably the pod-manager's
+// docker-in-docker image build, which fails when the in-container docker
+// client is older than the host daemon's minimum API — must NEVER take down
+// the HTTP server. Node terminates the process on an unhandled rejection by
+// default; here we log and keep serving so /studio, auth, and analysis stay
+// up even when a non-essential subsystem (compile/run pods) cannot start.
+process.on('unhandledRejection', (reason) => {
+  // eslint-disable-next-line no-console
+  console.error('[unhandledRejection]', reason instanceof Error ? reason.stack : reason);
+});
+process.on('uncaughtException', (err) => {
+  // eslint-disable-next-line no-console
+  console.error('[uncaughtException]', err instanceof Error ? err.stack : err);
+});
+
 // Probe for a C++ compiler and seed ENABLE_TEST_RUNNER + TEST_RUNNER_SANDBOX
 // when running outside production. Honours explicit env overrides; in prod
 // the runner stays off unless both vars are set deliberately.
