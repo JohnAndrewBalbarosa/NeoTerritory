@@ -84,6 +84,11 @@ if [ "$CLEAN" = "1" ]; then
     fi"
 fi
 
+# Prune deleted source first so the host tree matches the repo exactly.
+# Skipped under --clean (that path already wiped the whole app dir above).
+if [ "$CLEAN" != "1" ]; then
+  prune_remote_stale_sources "$REMOTE_APP_DIR"
+fi
 ship_source       "$REMOTE_APP_DIR"
 write_remote_env  "$REMOTE_APP_DIR"
 run_remote_build_and_start "$REMOTE_APP_DIR"

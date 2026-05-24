@@ -1,6 +1,36 @@
 #!/usr/bin/env bash
 # Tar + ssh-pipe the source tree to AWS, then write Backend/.env on the remote.
 
+# Remove repo-owned SOURCE trees on the remote before extracting the fresh
+# tar, so files DELETED from the repo do not linger on the host. The plain
+# `tar -xzf` overwrites changed files but never removes deletions — that is
+# how a stale source file (e.g. a removed component still importing dropped
+# exports) can keep breaking the on-server build long after it left git.
+#
+# Caches and build artifacts are NOT shipped (see manifest excludes) and must
+# survive, so we prune each package's contents while protecting node_modules /
+# dist / build* / .deploy-cache / .env / runtime data. The tar extract right
+# after restores every shipped file, so only genuinely-deleted files stay gone.
+prune_remote_stale_sources() {
+  local remote_dir="$1"
+  echo "-- Pruning stale source on remote (caches preserved) --"
+  ssh $SSH_OPTS "$SSH_TARGET" "set -e; cd '$remote_dir' 2>/dev/null || exit 0; \
+    if [ -d Codebase/Backend ]; then \
+      find Codebase/Backend -mindepth 1 -maxdepth 1 \
+        ! -name node_modules ! -name dist ! -name .env ! -name .deploy-cache \
+        ! -name database.sqlite ! -name uploads ! -name outputs \
+        -exec rm -rf {} + ; fi; \
+    if [ -d Codebase/Frontend ]; then \
+      find Codebase/Frontend -mindepth 1 -maxdepth 1 \
+        ! -name node_modules ! -name dist ! -name .deploy-cache \
+        -exec rm -rf {} + ; fi; \
+    if [ -d Codebase/Microservice ]; then \
+      find Codebase/Microservice -mindepth 1 -maxdepth 1 \
+        ! -name 'build*' ! -name .deploy-cache \
+        -exec rm -rf {} + ; fi; \
+    echo '   [prune] stale source removed; node_modules/dist/build caches kept'"
+}
+
 ship_source() {
   local remote_dir="$1"
   echo "-- Shipping SOURCE to $SSH_TARGET --"

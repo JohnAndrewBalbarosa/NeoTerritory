@@ -118,8 +118,19 @@ Tar + ssh-pipe the source tree to AWS, then write Backend/.env on the remote.
 
 **Functions**
 
-- `ship_source` (line 4)
-- `write_remote_env` (line 71)
+- `prune_remote_stale_sources` (line 14)
+  Remove repo-owned SOURCE trees on the remote before extracting the fresh
+  tar, so files DELETED from the repo do not linger on the host. The plain
+  `tar -xzf` overwrites changed files but never removes deletions — that is
+  how a stale source file (e.g. a removed component still importing dropped
+  exports) can keep breaking the on-server build long after it left git.
+  
+  Caches and build artifacts are NOT shipped (see manifest excludes) and must
+  survive, so we prune each package's contents while protecting node_modules /
+  dist / build* / .deploy-cache / .env / runtime data. The tar extract right
+  after restores every shipped file, so only genuinely-deleted files stay gone.
+- `ship_source` (line 34)
+- `write_remote_env` (line 101)
 
 ## `ops/bash/rebuild/`
 
