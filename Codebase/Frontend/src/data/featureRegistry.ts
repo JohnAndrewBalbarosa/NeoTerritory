@@ -44,6 +44,13 @@ export const FEATURE_FLAGS: ReadonlyArray<FeatureFlag> = [
     defaultReleased: true,
   },
   {
+    key: 'panelist-ai-sample',
+    label: 'Panelist AI sample generator',
+    description:
+      'Adds an "AI sample (panelist only)" button beside Load sample in the studio. A panelist picks a catalog pattern; the backend injects that pattern\'s JSON into an AI prompt and generates a fresh C++ sample into the editor. For testing during the defense only — off by default.',
+    defaultReleased: false,
+  },
+  {
     key: 'pm-accounts',
     label: 'PM accounts',
     description:

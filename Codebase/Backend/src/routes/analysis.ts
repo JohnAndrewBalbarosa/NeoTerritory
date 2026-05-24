@@ -30,7 +30,9 @@ import {
   pushPhaseEvent, markRunDone, subscribeRun, RunEvent
 } from '../services/runEventsStore';
 import { recordRun as bufferRunDetails, bindRunIdToPending } from '../services/pendingRunPersistence';
-import { getBoolSetting } from '../db/appSettings';
+import { getBoolSetting, getFeatureReleases } from '../db/appSettings';
+import { listCatalogPatterns } from '../services/aiSample/patternCatalogReader';
+import { generateAiSample } from '../services/aiSample/aiSampleService';
 import { ensurePod, isPodModeEnabled, podManagerStatus, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import {
   getMicroserviceStatus,
@@ -721,6 +723,50 @@ router.get('/sample', (_req: Request, res: Response) => {
   res.json({
     filename: path.basename(sourcePath),
     code
+  });
+});
+
+// ---- Panelist AI-sample helper (feature 'panelist-ai-sample') ----
+// Gated server-side on the same feature flag the UI hides behind, so the
+// endpoint is unreachable when the toggle is OFF even if the route is known.
+// Default-OFF: absent key in feature_releases means not released.
+const AI_SAMPLE_FLAG = 'panelist-ai-sample';
+function aiSampleEnabled(): boolean {
+  return getFeatureReleases()[AI_SAMPLE_FLAG] === true;
+}
+
+router.get('/ai-sample/patterns', jwtAuth, (_req: Request, res: Response) => {
+  if (!aiSampleEnabled()) {
+    res.status(403).json({ error: 'panelist_ai_sample_disabled' });
+    return;
+  }
+  res.json({ patterns: listCatalogPatterns() });
+});
+
+router.post('/ai-sample', jwtAuth, async (req: Request, res: Response) => {
+  if (!aiSampleEnabled()) {
+    res.status(403).json({ error: 'panelist_ai_sample_disabled' });
+    return;
+  }
+  const patternId = typeof req.body?.patternId === 'string' ? req.body.patternId : '';
+  if (!patternId) {
+    res.status(400).json({ error: 'missing_pattern_id' });
+    return;
+  }
+  const result = await generateAiSample(patternId);
+  if (!result.ok) {
+    const status = result.reason === 'unknown_pattern' ? 404
+      : result.reason === 'ai_provider_not_configured' ? 503
+      : 502;
+    res.status(status).json({ error: result.reason, detail: result.detail, durationMs: result.durationMs });
+    return;
+  }
+  res.json({
+    filename: `${patternId.replace(/\W+/g, '_')}_ai_sample.cpp`,
+    code: result.code,
+    provider: result.provider,
+    model: result.model,
+    durationMs: result.durationMs,
   });
 });
 

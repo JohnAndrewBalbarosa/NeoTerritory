@@ -379,8 +379,9 @@ async function callGemini(apiKey: string, model: string, payload: AiPayload): Pr
 // tab), then explicit AI_PROVIDER env, then key presence. Lets the same
 // backend image serve either provider, and lets an admin flip the
 // runtime AI config without redeploying.
-type Provider = 'gemini' | 'anthropic';
-function pickProvider(): { provider: Provider; apiKey: string; model: string } | null {
+export type Provider = 'gemini' | 'anthropic';
+export interface ProviderChoice { provider: Provider; apiKey: string; model: string }
+export function pickProvider(): ProviderChoice | null {
   // 1. DB-backed admin config takes precedence. Only valid providers
   // with a non-empty decrypted key are honoured here.
   try {

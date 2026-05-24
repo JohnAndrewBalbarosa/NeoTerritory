@@ -19,10 +19,12 @@ import {
   getBoolSetting,
   getFeatureReleases,
   getF1NormProfile,
+  getSetting,
   setSetting,
   SettingKey,
   type F1NormProfile,
 } from '../db/appSettings';
+import { getAiSampleMonitor } from '../services/aiSample/aiSampleService';
 import {
   getAiConfigSnapshot,
   saveAiConfig,
@@ -47,15 +49,25 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
       testers_visible_to_users: getBoolSetting('testers_visible_to_users'),
       reviews_required:         getBoolSetting('reviews_required'),
       feature_releases:         getFeatureReleases(),
-      f1_norm_profile:          getF1NormProfile()
+      f1_norm_profile:          getF1NormProfile(),
+      ai_sample_system_prompt:        getSetting('ai_sample_system_prompt'),
+      ai_sample_injection_instruction: getSetting('ai_sample_injection_instruction')
     });
+  } catch (err) { next(err); }
+});
+
+// Recent panelist AI-sample attempts (monitoring ring buffer) so the admin
+// can spot anomalies — provider errors, slow calls, empty output.
+router.get('/ai-sample/monitor', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json({ entries: getAiSampleMonitor() });
   } catch (err) { next(err); }
 });
 
 router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) => {
   try {
     const key = req.params.key as SettingKey;
-    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases', 'f1_norm_profile'];
+    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases', 'f1_norm_profile', 'ai_sample_system_prompt', 'ai_sample_injection_instruction'];
     if (!ALLOWED.includes(key)) {
       res.status(400).json({ error: 'Unknown setting key' });
       return;
@@ -105,6 +117,17 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
       }
       value = JSON.stringify(sanitizedProfile);
       logDetail = `keys=${Object.keys(sanitizedProfile).length}`;
+    } else if (key === 'ai_sample_system_prompt' || key === 'ai_sample_injection_instruction') {
+      // Free-text prompt. Store trimmed and length-capped; an empty value
+      // resets to the code default on next read (getSetting returns DEFAULTS
+      // only when the row is absent, so we reject empties to keep intent
+      // explicit).
+      if (typeof raw !== 'string' || !raw.trim()) {
+        res.status(400).json({ error: `${key} must be a non-empty string` });
+        return;
+      }
+      value = raw.trim().slice(0, 8000);
+      logDetail = `chars=${value.length}`;
     } else {
       value = (raw === true || raw === 1 || raw === '1' || raw === 'true') ? '1' : '0';
       logDetail = `value=${value}`;
@@ -126,6 +149,8 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
       // Echo the normalised + clamped profile so the client sees the
       // exact values the dashboard will use.
       res.json({ key, value: getF1NormProfile() });
+    } else if (key === 'ai_sample_system_prompt' || key === 'ai_sample_injection_instruction') {
+      res.json({ key, value });
     } else {
       res.json({ key, value: value === '1' });
     }

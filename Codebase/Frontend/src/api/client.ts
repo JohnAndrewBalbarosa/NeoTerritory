@@ -221,6 +221,28 @@ export async function fetchSample(): Promise<{ code: string; filename: string }>
   return apiFetch<{ code: string; filename: string }>('/api/sample');
 }
 
+// ---- Panelist AI-sample helper (feature 'panelist-ai-sample') ----
+export interface AiSamplePattern {
+  patternId: string;
+  patternName: string;
+  family: string;
+}
+
+export async function fetchAiSamplePatterns(): Promise<AiSamplePattern[]> {
+  const r = await apiFetch<{ patterns: AiSamplePattern[] }>('/api/analysis/ai-sample/patterns');
+  return r.patterns || [];
+}
+
+export async function generateAiSample(
+  patternId: string,
+): Promise<{ code: string; filename: string; provider?: string; model?: string }> {
+  return apiFetch<{ code: string; filename: string; provider?: string; model?: string }>(
+    '/api/analysis/ai-sample',
+    { method: 'POST', body: JSON.stringify({ patternId }) },
+    60000,
+  );
+}
+
 export interface LearningProgress {
   completedModuleIds: string[];
   lastUnlockedModuleId: string | null;

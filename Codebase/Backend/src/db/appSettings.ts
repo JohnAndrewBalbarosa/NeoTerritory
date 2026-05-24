@@ -36,7 +36,14 @@ export type SettingKey =
   // F1 expected-norm participant profile. JSON-encoded so the admin
   // can retune the assumptions without redeploying. Shape is enforced
   // by getF1NormProfile() (every numeric field clamped to [0, 1]).
-  | 'f1_norm_profile';
+  | 'f1_norm_profile'
+  // Panelist AI-sample helper (feature 'panelist-ai-sample'). Two
+  // independently-editable prompt strings, kept DECOUPLED from the catalog
+  // JSON content: the system prompt frames the task; the injection
+  // instruction is the per-request line wrapped around the injected
+  // pattern JSON. Admin edits both from the AI-sample prompt editor.
+  | 'ai_sample_system_prompt'
+  | 'ai_sample_injection_instruction';
 
 const DEFAULT_F1_NORM_PROFILE = {
   label: 'Intermediate C++ · weak on design patterns',
@@ -46,11 +53,30 @@ const DEFAULT_F1_NORM_PROFILE = {
   hallucinatePatternRate: 0.18,
 };
 
+export const DEFAULT_AI_SAMPLE_SYSTEM_PROMPT = [
+  'You are a senior C++ instructor generating a SHORT, self-contained teaching sample',
+  'that demonstrates ONE design pattern for a static, token-based pattern analyser.',
+  'Output requirements:',
+  '- Emit ONLY C++ source. No prose, no Markdown, no code fences.',
+  '- Keep it compilable and minimal (a header-style single file is fine).',
+  '- Make the pattern STRUCTURALLY obvious: use the canonical member/method shapes',
+  '  described by the supplied pattern definition so a structural matcher tags it.',
+  '- Prefer clear, conventional names over clever ones.',
+].join('\n');
+
+export const DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION = [
+  'Create a C++ sample that demonstrates the design pattern described by the following',
+  'pattern definition (JSON). Use its pattern_name, ordered_checks, and lexeme_identifiers',
+  'as the structure to satisfy. Return only the C++ source.',
+].join('\n');
+
 const DEFAULTS: Record<SettingKey, string> = {
   testers_visible_to_users: '1',
   reviews_required: '1',
   feature_releases: '{}',
-  f1_norm_profile: JSON.stringify(DEFAULT_F1_NORM_PROFILE)
+  f1_norm_profile: JSON.stringify(DEFAULT_F1_NORM_PROFILE),
+  ai_sample_system_prompt: DEFAULT_AI_SAMPLE_SYSTEM_PROMPT,
+  ai_sample_injection_instruction: DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION
 };
 
 interface Row { value: string }

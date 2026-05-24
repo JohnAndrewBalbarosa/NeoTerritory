@@ -6,6 +6,8 @@ import { logFrontendEvent } from '../../logic/frontendLog';
 import { AnalysisRun } from '../../types/api';
 import { countCppTokens, DEFAULT_MAX_TOKENS_PER_FILE } from '../../utils/tokenCounter';
 import SamplePickerModal from './SamplePickerModal';
+import AiSamplePickerModal from './AiSamplePickerModal';
+import { useFeatureReleases } from '../../hooks/useFeatureReleases';
 
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
@@ -150,6 +152,13 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   // empty for some reason.
   const [samplePickerOpen, setSamplePickerOpen] = useState<boolean>(false);
 
+  // Panelist-only AI sample generator (feature 'panelist-ai-sample'). Hidden
+  // unless an admin has flipped the toggle ON; the backend route is gated on
+  // the same flag, so the button is purely a convenience trigger.
+  const { isReleased } = useFeatureReleases();
+  const aiSampleEnabled = isReleased('panelist-ai-sample');
+  const [aiSamplePickerOpen, setAiSamplePickerOpen] = useState<boolean>(false);
+
   function applyLoadedSample(filename: string, code: string): void {
     setSlots(prev => {
       const next = [...prev];
@@ -267,6 +276,13 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
         applyLoadedSample(filename, code);
       }}
     />
+    {aiSampleEnabled ? (
+      <AiSamplePickerModal
+        open={aiSamplePickerOpen}
+        onClose={() => setAiSamplePickerOpen(false)}
+        onGenerated={(fname, code) => applyLoadedSample(fname, code)}
+      />
+    ) : null}
     <form id="analysis-form" className="analysis-form" onSubmit={onSubmit}>
       <div className="file-tabs" role="tablist" aria-label="Submission files">
         {slots.map((slot) => {
@@ -364,6 +380,18 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
         <button id="load-sample-btn" data-testid="load-sample-btn" className="ghost-btn" type="button" onClick={onLoadSample}>
           Load sample
         </button>
+        {aiSampleEnabled ? (
+          <button
+            id="ai-sample-btn"
+            data-testid="ai-sample-btn"
+            className="ghost-btn"
+            type="button"
+            onClick={() => setAiSamplePickerOpen(true)}
+            title="Panelist use only — for testing during the defense. Generates a C++ sample with AI from the selected pattern's catalog definition."
+          >
+            AI sample (panelist only)
+          </button>
+        ) : null}
         <button id="clear-btn" data-testid="clear-btn" className="ghost-btn" type="button" onClick={onClear}>
           Clear
         </button>
