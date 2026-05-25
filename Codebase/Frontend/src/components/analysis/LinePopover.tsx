@@ -24,46 +24,6 @@ interface LinePopoverProps {
   onClose: () => void;
 }
 
-interface CardProps {
-  annotation: Annotation;
-}
-
-function AnnotationCard({ annotation: a }: CardProps): JSX.Element {
-  const patternKey = a.patternKey || patternFromAnnotation(a);
-  const c = colorFor(patternKey);
-  const titleParts = (a.title || '').split(' :: ');
-  const head = titleParts[0] || a.stage || 'Comment';
-  const label = titleParts.slice(1).join(' :: ') || a.kind || '';
-  return (
-    <article
-      className="src-popover-item"
-      style={{ borderLeft: `4px solid ${c.border}`, background: c.bg }}
-    >
-      <header className="src-popover-head">
-        <span className="src-popover-pattern" style={{ color: c.text }}>{head}</span>
-        {a.className && (
-          <span
-            className="src-popover-class"
-            style={{ borderColor: c.border, color: c.text }}
-          >
-            {a.className}
-          </span>
-        )}
-        {label && <span className="src-popover-label">{label}</span>}
-        {a.line && (
-          <span className="src-popover-line">
-            L{a.line}{a.lineEnd && a.lineEnd > a.line ? `–${a.lineEnd}` : ''}
-          </span>
-        )}
-      </header>
-      {a.comment && <p className="src-popover-comment">{a.comment}</p>}
-      {a.excerpt && (
-        <pre className="src-popover-excerpt" style={{ borderColor: c.border }}>{a.excerpt}</pre>
-      )}
-    </article>
-  );
-}
-
 interface RivalChipProps {
   patternKey: string;
   onClick?: () => void;
@@ -123,29 +83,6 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   // colour persists in the store would be dead-clicked.
   if (!annotations.length && !resolvedPattern) return null;
 
-  // Dedupe annotation cards: if the matcher emitted both "creational.factory"
-  // and "Factory" against the same class+line, they are the same pattern —
-  // collapse to one card. We key by (canonical pattern, className, line)
-  // and prefer annotations whose own patternKey is already canonical so the
-  // surviving card carries the cleaner label.
-  const dedupedAnnotations: Annotation[] = (() => {
-    const seen = new Map<string, Annotation>();
-    for (const a of annotations) {
-      const raw = a.patternKey || patternFromAnnotation(a);
-      const canon = canonicalPatternName(raw);
-      const id = `${canon}|${a.className || ''}|${a.line ?? 0}`;
-      const existing = seen.get(id);
-      if (!existing) {
-        seen.set(id, a);
-        continue;
-      }
-      // Prefer the entry whose raw key is already the canonical short form.
-      const existingRaw = existing.patternKey || patternFromAnnotation(existing);
-      if (raw === canon && existingRaw !== canon) seen.set(id, a);
-    }
-    return Array.from(seen.values());
-  })();
-
   // Distinct patterns now uses canonical names, so the dotted/short pair
   // that previously rendered two chips collapses to one. The "Review"
   // sentinel is dropped — it is commentary-only / no detected pattern,
@@ -153,7 +90,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
   const linePatterns = (() => {
     const out: string[] = [];
     const seen = new Set<string>();
-    for (const a of dedupedAnnotations) {
+    for (const a of annotations) {
       const raw = a.patternKey || patternFromAnnotation(a);
       if (!isRealPattern(raw)) continue;
       const canon = canonicalPatternName(raw);
@@ -192,7 +129,7 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
       id="src-popover"
       className="src-popover src-popover--pinned"
       role="dialog"
-      aria-label={`Annotations for line ${line}`}
+      aria-label={`Disambiguation for line ${line}`}
     >
       <button
         className="src-popover-close"
@@ -229,9 +166,6 @@ export default function LinePopover({ line, annotations, anchorRect, resolvedPat
           </div>
         </div>
       )}
-      <div className="src-popover-body">
-        {dedupedAnnotations.map(a => <AnnotationCard key={a.id} annotation={a} />)}
-      </div>
     </div>,
     document.body,
   );
