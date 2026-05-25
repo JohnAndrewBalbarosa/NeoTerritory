@@ -2745,3 +2745,19 @@ body::before {
     margin-left: 0;
   }
 }
+
+/* Merged walkthrough — on-screen */
+.pattern-header { margin: 0.75rem 0 0.25rem; }
+.pattern-header__body { display: none; padding: 0.5rem 0 0.5rem 1.5rem; }
+.pattern-header--open .pattern-header__body { display: block; }
+.pattern-header__toggle { display: flex; gap: 0.5rem; align-items: center; width: 100%; background: none; border: none; cursor: pointer; text-align: left; }
+.pattern-header__badge { border: 1px solid; border-radius: 999px; padding: 0 0.5rem; font-size: 0.8rem; }
+.inline-line-doc { margin: 0 0 0.4rem 2rem; padding: 0.25rem 0.5rem; border-left: 3px solid var(--ann-border, #d1d5db); font-size: 0.85rem; }
+.inline-line-doc__tag { margin-left: 0.4rem; font-size: 0.7rem; opacity: 0.7; }
+.inline-line-doc__usage-ref { background: none; border: none; cursor: pointer; color: inherit; text-decoration: underline; padding: 0 0.2rem; }
+
+/* Export: never print interactive chrome; always expand headers */
+@media print {
+  .no-print { display: none !important; }
+  .pattern-header__body { display: block !important; }
+}
