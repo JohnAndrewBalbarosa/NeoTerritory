@@ -1082,3 +1082,21 @@ A per-sample audit (every `Codebase/Microservice/samples/**/*.cpp` run through t
 **Decision (now, low-risk).** Mark both samples with `algorithmKnownLimits.acceptedAlternatePattern: /strategy/i` (the same documented-limit mechanism as D63's Builder-for-MethodChaining). CI annotates instead of hard-failing, reflecting shipped UI behaviour, while the `reason` records the true cause. No change to the load-bearing ambiguity model in this pass.
 
 **Tracked follow-up (real fix, deferred).** In cascade case (b)/(e), when a propagated subclass has its OWN independent structural detections (Adapter/Decorator) beyond the propagated Strategy, KEEP them as candidates (present as ambiguous) instead of collapsing to `[parentEffective]`. This re-surfaces Adapter/Proxy/Decorator in the studio. Deferred because it touches the core studio tagging model and must be verified end-to-end (full Playwright run across all samples) before shipping — it is not safe to land unverified.
+
+## D84: Patterns tab = single line-by-line walkthrough (Annotated + Docs merged)
+
+The Studio Patterns tab no longer has an Annotated/Documentation sub-view
+toggle. There is ONE surface: a continuous source spine. At each class
+declaration line a collapsible `PatternHeader` carries the pattern-level
+teaching (what-is-X / why-fired / when-to-use+analogy / methods-to-test).
+Beneath each annotated line an `InlineLineDoc` carries the per-line note,
+folding documentationTargets (landmarks) and usage callsites into one block.
+
+- The sidebar (`PatternCards`, `ClassBindings`, `ClassTreeView`) is removed;
+  class navigation is the ←/→ corner buttons; "where used" is inline.
+- `LinePopover` is narrowed to the disambiguation picker only (docs moved inline).
+- Default state: headers collapsed, inline docs visible.
+- Export (MD/PDF/DOCX) serializes the merged walkthrough; print CSS forces
+  headers expanded so nothing is hidden from the export.
+- `DocumentedSource` composes the existing `SourceView` line renderer via two
+  render-slot props — colour/scope logic is reused, not duplicated.
