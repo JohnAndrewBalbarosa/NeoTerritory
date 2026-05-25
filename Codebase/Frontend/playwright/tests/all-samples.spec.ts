@@ -16,13 +16,11 @@ const SAMPLE_DIR_BY_FILENAME: Record<string, string> = {
   'http_request_builder.cpp': 'builder',
   'shape_factory.cpp': 'factory',
   'config_registry.cpp': 'singleton',
-  'query_predicate.cpp': 'method_chaining',
   'strategy_basic.cpp': 'strategy',
   'strategy_with_pimpl.cpp': 'strategy',
   'payment_gateway_adapter.cpp': 'adapter',
   'coffee_decorator.cpp': 'decorator',
   'logging_proxy.cpp': 'wrapping',
-  'pimpl_basic.cpp': 'pimpl',
   'mixed_classes.cpp': 'mixed',
   'usages_basic.cpp': 'usages',
   // Phase B (D21): false-positive contract (negative/) + usages coverage.
@@ -105,7 +103,7 @@ interface SampleSpec {
   //                    named class. Phase C: expectedPatternNameRegex is
   //                    required.
   //  - 'negative'    — false-positive contract from D21. The class tree
-  //                    must render in its empty state (data-empty="true")
+  //                    must render the documented source with no pattern headers
   //                    OR not render a known catalog pattern badge.
   //  - 'integration' — regression contract from D21. Every locked-catalog
   //                    pattern must surface on at least one class.
@@ -168,21 +166,6 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
     kind: 'positive',
     expectedClassNameRegex: /ConfigRegistry|Config/,
     expectedPatternNameRegex: /singleton/i,
-  },
-  {
-    name: 'Method Chaining  -  query_predicate',
-    filename: 'query_predicate.cpp',
-    family: 'Behavioural',
-    kind: 'positive',
-    expectedClassNameRegex: /QueryPredicate|Query/,
-    expectedPatternNameRegex: /method.?chain|chaining/i,
-    algorithmKnownLimits: {
-      acceptedAlternatePattern: /builder/i,
-      reason:
-        'D63: matcher emits Builder for fluent *this returns without a build() ' +
-        'terminator. Method-chaining vs Builder discrimination is a known catalog ' +
-        'limit; accept Builder here so the contract reflects shipped behaviour.',
-    },
   },
   {
     name: 'Strategy  -  strategy_basic',
@@ -252,14 +235,6 @@ const SAMPLES: ReadonlyArray<SampleSpec> = [
         'propagating Strategy parent, hiding the wrapping-family chips. Accept ' +
         'Strategy so CI reflects shipped UI behaviour pending the cascade fix.',
     },
-  },
-  {
-    name: 'PIMPL  -  pimpl_basic',
-    filename: 'pimpl_basic.cpp',
-    family: 'Idioms',
-    kind: 'positive',
-    expectedClassNameRegex: /Pimpl|Widget|Impl/,
-    expectedPatternNameRegex: /pimpl|opaque|impl/i,
   },
   {
     name: 'Mixed  -  mixed_classes',
@@ -387,37 +362,42 @@ async function assertTaggingHappened(
   // label is layout-dependent and would silently drift on a tab-bar rename).
   await page.getByTestId('tab-annotated').click();
 
-  // The class tree mounts inside the results sidebar; data-empty="true"
-  // signals an explicit "no pattern matches" verdict (negative samples).
-  // Important: locator.isVisible() does NOT auto-wait. For samples whose
-  // tree takes a beat to paint (integration sample with 9 classes), the
-  // previous isVisible-with-timeout was a no-op and we raced. Use
-  // waitFor({state: 'visible'}) so the wait actually happens.
-  const tree = page.getByTestId('class-tree-view');
-  const treeVisible = await tree
+  // D84 merged surface: the old sidebar class tree is gone. Detected patterns
+  // now render as collapsible `.pattern-header` blocks at each class
+  // declaration line inside `[data-testid="documented-source"]`. Each header
+  // carries `data-pattern` (canonical pattern name) and a `.pattern-header__class`
+  // node (the class name). "Tagging happened" = the documented source mounted
+  // AND at least one pattern header rendered. An empty/negative sample mounts
+  // the source spine but yields zero pattern headers.
+  const spine = page.getByTestId('documented-source');
+  const spineVisible = await spine
     .waitFor({ state: 'visible', timeout: 8_000 })
     .then(() => true)
     .catch(() => false);
-  if (!treeVisible) {
-    return { tagged: false, reason: 'No class tree rendered (analyze never landed).', emptyTree: false };
-  }
-  const isEmpty = (await tree.getAttribute('data-empty')) === 'true';
-  if (isEmpty) {
-    return { tagged: false, reason: 'Class tree rendered empty (no patterns detected).', emptyTree: true };
+  if (!spineVisible) {
+    return { tagged: false, reason: 'Documented source never rendered (analyze never landed).', emptyTree: false };
   }
 
-  const classNode = page.getByTestId('class-tree-name').filter({ hasText: classNameRegex }).first();
+  const headers = page.locator('.pattern-header');
+  const headerCount = await headers
+    .first()
+    .waitFor({ state: 'visible', timeout: 8_000 })
+    .then(() => true)
+    .catch(() => false);
+  if (!headerCount) {
+    return { tagged: false, reason: 'Source rendered but no pattern headers (no patterns detected).', emptyTree: true };
+  }
+
+  const classNode = page.locator('.pattern-header__class').filter({ hasText: classNameRegex }).first();
   const classVisible = await classNode
     .waitFor({ state: 'visible', timeout: 8_000 })
     .then(() => true)
     .catch(() => false);
   if (!classVisible) {
-    // The tree rendered but no class matched the expected regex - log all
-    // class names we saw so the diagnostic is useful when this triggers.
-    const names = await page.getByTestId('class-tree-name').allTextContents();
+    const names = await page.locator('.pattern-header__class').allTextContents();
     return {
       tagged: false,
-      reason: `Tree rendered but no class matched ${classNameRegex}. Saw: ${names.join(', ') || '(none)'}`,
+      reason: `Headers rendered but no class matched ${classNameRegex}. Saw: ${names.join(', ') || '(none)'}`,
       emptyTree: false,
     };
   }
@@ -452,19 +432,36 @@ async function resolveAllAmbiguousClasses(
   // when the expected pattern was a CANDIDATE, regardless of which one
   // the auto-resolver picked.
   await page.getByTestId('tab-annotated').click();
-  await expect(page.getByTestId('class-tree-view')).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId('documented-source')).toBeVisible({ timeout: 10_000 });
 
-  let resolved = 0;
   const candidatesSeen = new Set<string>();
+  // Seed candidates with whatever pattern headers already rendered — the
+  // header's data-pattern carries the (first-emitted) detected pattern even
+  // for ambiguous classes, so the structural assertion can read it without
+  // resolving anything.
+  const headerPatterns = await page.locator('.pattern-header[data-pattern]').evaluateAll(
+    (els) => els.map((e) => (e.getAttribute('data-pattern') || '').trim()).filter(Boolean),
+  );
+  for (const p of headerPatterns) candidatesSeen.add(p);
+
+  // D84 merged surface: ambiguity is resolved by clicking an ambiguous source
+  // line (`.src-line.has-ambiguous`) — that opens the LinePopover picker whose
+  // rival chips are `.src-popover-rival--btn`. Picking a chip writes the class
+  // resolution, which unblocks "Run all tests". Loop until no ambiguous line
+  // remains (or a safety cap).
+  let resolved = 0;
   for (let i = 0; i < 50; i += 1) {
-    const reviewCta = page.locator('.class-tree-review-cta').first();
-    const visible = await reviewCta.isVisible().catch(() => false);
+    const ambiguousLine = page.locator('.src-line.has-ambiguous').first();
+    const visible = await ambiguousLine.isVisible().catch(() => false);
     if (!visible) break;
-    await reviewCta.click();
-    const chips = page.locator('.class-root-picker-chip');
-    await expect(chips.first()).toBeVisible({ timeout: 5_000 });
-    // Snapshot every chip label in this popover before picking. The
-    // chips render the canonical pattern name as visible text.
+    await ambiguousLine.click();
+    const chips = page.locator('.src-popover-rival--btn');
+    const chipsAppeared = await chips
+      .first()
+      .waitFor({ state: 'visible', timeout: 5_000 })
+      .then(() => true)
+      .catch(() => false);
+    if (!chipsAppeared) break; // line was ambiguous-for-colour but offered no picker; avoid an infinite loop
     const chipCount = await chips.count();
     const labels: string[] = [];
     for (let c = 0; c < chipCount; c += 1) {
@@ -472,17 +469,12 @@ async function resolveAllAmbiguousClasses(
       labels.push(label);
       if (label) candidatesSeen.add(label);
     }
-    // D82: prefer the chip matching the sample's known tag (priority order).
-    // Fall back to the first chip only when no candidate matches a known tag.
     const normalizedLabels = labels.map(normalizeTag);
     let pickIndex = 0;
     for (const tag of preferredTags) {
       const want = normalizeTag(tag);
       const found = normalizedLabels.findIndex((l) => l === want);
-      if (found !== -1) {
-        pickIndex = found;
-        break;
-      }
+      if (found !== -1) { pickIndex = found; break; }
     }
     await chips.nth(pickIndex).click();
     resolved += 1;
@@ -720,41 +712,37 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
 
       // --- Negative samples (D21 false-positive contract) ---
       if (sample.kind === 'negative') {
-        // Three acceptable outcomes, in order of strongest signal:
-        //   1. The class tree never renders at all (analyze produced no
-        //      patterns AND the binder produced no usages, so the sidebar
-        //      tree section gates itself out).
-        //   2. The tree renders with data-empty="true".
-        //   3. The tree renders with some badges, but NONE of them
-        //      carries a locked-catalog pattern name. The matcher fired
-        //      a non-catalog suggestion which we tolerate.
-        // Any locked-catalog pattern badge is a hard fail — that's the
-        // false positive the D21 contract protects.
+        // D84 merged surface: there is no class tree. The contract is now
+        // expressed against pattern headers in the documented source:
+        //   1. The documented source never renders (analyze never landed) —
+        //      treated as a pass here (the pipeline produced nothing to tag).
+        //   2. The source renders with ZERO pattern headers (no detection).
+        //   3. The source renders headers, but NONE carries a locked-catalog
+        //      pattern name. A non-catalog suggestion is tolerated.
+        // Any locked-catalog pattern header is a hard fail — that's the false
+        // positive the D21 contract protects.
         await page.getByTestId('tab-annotated').click();
-        const tree = page.getByTestId('class-tree-view');
-        const treeAppeared = await tree
+        const spine = page.getByTestId('documented-source');
+        const spineAppeared = await spine
           .waitFor({ state: 'visible', timeout: 5_000 })
           .then(() => true)
           .catch(() => false);
-        if (!treeAppeared) {
-          // Outcome 1: no tree at all. Strongest pass.
+        if (!spineAppeared) {
+          // Outcome 1: source never rendered. Pass.
           return;
         }
-        const empty = (await tree.getAttribute('data-empty')) === 'true';
-        if (empty) {
-          // Outcome 2: empty tree.
+        // Give any headers a beat to paint, then scan their data-pattern.
+        await page.waitForTimeout(1_000);
+        const seenPatterns = await page.locator('.pattern-header[data-pattern]').evaluateAll(
+          (els) => els.map((e) => (e.getAttribute('data-pattern') || '').trim()).filter(Boolean),
+        );
+        if (seenPatterns.length === 0) {
+          // Outcome 2: no patterns detected.
           return;
         }
-        // Outcome 3: scan badges.
-        const badges = page.getByTestId('class-tree-badge');
-        const count = await badges.count();
-        const seenPatterns: string[] = [];
-        for (let i = 0; i < count; i += 1) {
-          const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
-          if (p) seenPatterns.push(p);
-        }
+        // Outcome 3: tolerate non-catalog; fail on any GoF catalog hit.
         const catalogHit = seenPatterns.find((p) =>
-          /singleton|factory|builder|method.?chain|adapter|proxy|decorator/i.test(p),
+          /singleton|factory|builder|adapter|proxy|decorator|strategy|bridge|composite|facade|flyweight|observer|state|command|visitor|iterator|mediator|memento|template|interpreter|chain/i.test(p),
         );
         expect(
           catalogHit,
@@ -798,14 +786,11 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
           page,
           knownTagsFor(sample.filename),
         );
-        // resolveAllAmbiguousClasses leaves us on the Patterns tab.
-        const badges = page.getByTestId('class-tree-badge');
-        const seenPatterns: string[] = [];
-        const count = await badges.count();
-        for (let i = 0; i < count; i += 1) {
-          const p = (await badges.nth(i).getAttribute('data-pattern')) || '';
-          if (p) seenPatterns.push(p);
-        }
+        // resolveAllAmbiguousClasses leaves us on the Patterns tab. Read the
+        // detected patterns from the documented-source headers' data-pattern.
+        const seenPatterns = await page.locator('.pattern-header[data-pattern]').evaluateAll(
+          (els) => els.map((e) => (e.getAttribute('data-pattern') || '').trim()).filter(Boolean),
+        );
         // Per option (c) this turn: the matcher correctly co-emits
         // ambiguous candidates (e.g. Builder + MethodChaining on the
         // same `return *this` chain). The auto-resolver picks .first()

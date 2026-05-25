@@ -23,14 +23,6 @@
       "tags": ["Singleton"]
     },
     {
-      "file": "method_chaining/query_predicate.cpp",
-      "family": "Behavioural",
-      "kind": "positive",
-      "classHint": "QueryPredicate",
-      "tags": ["MethodChaining", "Builder"],
-      "note": "D63 algorithm-known-limit: matcher co-emits Builder for fluent `return *this` chains lacking a build() terminator. Either chip satisfies the contract; MethodChaining preferred."
-    },
-    {
       "file": "strategy/strategy_basic.cpp",
       "family": "Behavioural",
       "kind": "positive",
@@ -42,7 +34,8 @@
       "family": "Behavioural",
       "kind": "positive",
       "classHint": "Strategy",
-      "tags": ["Strategy", "Pimpl"]
+      "tags": ["Strategy"],
+      "note": "Pimpl idiom toggled off (D85, non-GoF); the Strategy structure is the asserted pattern here."
     },
     {
       "file": "adapter/payment_gateway_adapter.cpp",
@@ -65,13 +58,6 @@
       "classHint": "LoggingDataService",
       "tags": ["Decorator", "Adapter", "Proxy"],
       "note": "D81 co-emit: the wrapper implements a shared interface and forwards to a same-interface member, so Adapter + Decorator co-emit (Proxy intentionally absent). Any wrapping-family chip satisfies the contract."
-    },
-    {
-      "file": "pimpl/pimpl_basic.cpp",
-      "family": "Idioms",
-      "kind": "positive",
-      "classHint": "Widget",
-      "tags": ["Pimpl"]
     },
     {
       "file": "mixed/mixed_classes.cpp",
