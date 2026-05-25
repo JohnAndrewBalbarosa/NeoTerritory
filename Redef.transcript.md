@@ -285,3 +285,61 @@
 
 **[05:08–05:09]** For example.
 
+**[05:09–05:10]** Kung learner na to.
+
+**[05:10–05:13]** Hindi, dapat save-able lang yung results, yung kanilang post-test.
+
+**[05:13–05:14]** Save-able ba yun?
+
+**[05:14–05:15]** Hindi nakaka-save ba yun?
+
+**[05:15–05:16]** Nasa-save yun.
+
+**[05:16–05:18]** Ang ano lang, wala tayong parang actual test-test.
+
+**[05:18–05:20]** Kailangan nyo parang actual test.
+
+**[05:20–05:23]** Bakit ako yung summit parang matukog?
+
+**[05:23–05:25]** Parang yung latest lang ako yun.
+
+**[05:25–05:27]** Pero, I think, get ko yun naman yung sasabi mo.
+
+**[05:27–05:31]** Parang, basically, yung chapter 4, 5, 6 nyo, puro lima.
+
+**[05:31–05:32]** Lima, lima, lima.
+
+**[05:32–05:33]** Results and discussion.
+
+**[05:33–05:35]** Wala akong makita, boss. Wait lang.
+
+**[05:35–05:36]** Salamin.
+
+**[05:39–05:42]** Chapter 4 in discussion, 4.1.
+
+**[05:42–05:44]** Ayan yung puno namin yung SOP.
+
+**[05:44–05:46]** How can we, how can an image...
+
+**[05:46–05:48]** Copy-paste ko lang.
+
+**[05:48–05:50]** 4.1, 4.1.
+
+**[05:50–05:51]** Okay, kagets.
+
+**[05:51–05:53]** 4.1, 4.2.
+
+**[05:53–05:55]** Madami yan, madami findings nila.
+
+**[05:55–05:58]** Ah, yun rin sasabi ni Dok Ajay na parang puro table daw.
+
+**[05:58–06:00]** Table, figure na kailangan nyo.
+
+**[06:00–06:02]** Oh, okay. Gets, gets, gets.
+
+**[06:02–06:07]** Sa next SOP, 4.2.1, 4.2.
+
+**[06:07–06:08]** Ayun o.
+
+**[06:08–06:09]** 4.2.1. 4.2.1. 4.2.1. 4.2.1. 4.2.1.
+
