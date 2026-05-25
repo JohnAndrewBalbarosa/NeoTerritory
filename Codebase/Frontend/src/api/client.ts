@@ -473,6 +473,7 @@ export interface AdminSettings {
   reviews_required: boolean;
   feature_releases: Record<string, boolean>;
   f1_norm_profile: AdminF1NormProfile;
+  proficiency_bands?: ProficiencyBandDto[];
 }
 export async function fetchAdminSettings(): Promise<AdminSettings> {
   return apiFetch<AdminSettings>('/api/admin/settings');
@@ -498,6 +499,52 @@ export async function setFeatureReleases(
       body: JSON.stringify({ value })
     }
   );
+}
+
+// Admin: set the proficiency bands (professor-defined score ranges). Echoes
+// the validated + sorted bands the backend stored.
+export async function setProficiencyBands(
+  value: ProficiencyBandDto[]
+): Promise<{ key: string; value: ProficiencyBandDto[] }> {
+  return apiFetch<{ key: string; value: ProficiencyBandDto[] }>(
+    '/api/admin/settings/proficiency_bands',
+    {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ value })
+    }
+  );
+}
+
+// Admin: learning-path pre/post analytics (per-learner pre/post/gain/<g> and
+// per-scope aggregates plus practical tries).
+export interface LearningScopeCell {
+  pre?: number;
+  post?: number;
+  rawGain?: number;
+  normGain?: number | null;
+}
+export interface LearningLearnerRow {
+  userId: number;
+  username: string | null;
+  email: string | null;
+  scopes: Record<string, LearningScopeCell>;
+  totalTries: number;
+}
+export interface LearningScopeAggregate {
+  n: number;
+  avgPre: number;
+  avgPost: number;
+  avgRawGain: number;
+  avgNormGain: number | null;
+}
+export interface LearningAnalytics {
+  bands: ProficiencyBandDto[];
+  learners: LearningLearnerRow[];
+  aggregate: Record<string, LearningScopeAggregate>;
+}
+export async function fetchLearningAnalytics(): Promise<LearningAnalytics> {
+  return apiFetch<LearningAnalytics>('/api/admin/stats/learning-analytics');
 }
 
 // Public read of the feature-release map. Piggy-backs on /auth/test-accounts

@@ -19,10 +19,12 @@ import {
   getBoolSetting,
   getFeatureReleases,
   getF1NormProfile,
+  getProficiencyBands,
   getSetting,
   setSetting,
   SettingKey,
   type F1NormProfile,
+  type ProficiencyBand,
 } from '../db/appSettings';
 import { getAiSampleMonitor } from '../services/aiSample/aiSampleService';
 import {
@@ -51,7 +53,8 @@ router.get('/settings', (_req: Request, res: Response, next: NextFunction) => {
       feature_releases:         getFeatureReleases(),
       f1_norm_profile:          getF1NormProfile(),
       ai_sample_system_prompt:        getSetting('ai_sample_system_prompt'),
-      ai_sample_injection_instruction: getSetting('ai_sample_injection_instruction')
+      ai_sample_injection_instruction: getSetting('ai_sample_injection_instruction'),
+      proficiency_bands:              getProficiencyBands()
     });
   } catch (err) { next(err); }
 });
@@ -64,10 +67,115 @@ router.get('/ai-sample/monitor', (_req: Request, res: Response, next: NextFuncti
   } catch (err) { next(err); }
 });
 
+// ── Learning-path pre/post analytics ──────────────────────────────────────
+// The objective learning measure the panel asked for: per-learner pre vs post
+// scores, raw gain, and Hake normalized gain <g> = (post - pre) / (100 - pre),
+// plus per-scope aggregates and the practical attempt counts. Feeds the admin
+// "Learning" tab — this is the reviews signal, NOT a Likert questionnaire.
+interface LearnAssessRow {
+  user_id: number;
+  username: string | null;
+  email: string | null;
+  scope: string;
+  phase: string;
+  percent: number;
+}
+interface LearnTriesRow {
+  user_id: number;
+  tries_by_module: string | null;
+}
+
+function hakeGain(pre: number, post: number): number | null {
+  if (pre >= 100) return null;
+  return Number(((post - pre) / (100 - pre)).toFixed(3));
+}
+
+router.get('/stats/learning-analytics', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rows = db.prepare(
+      `SELECT la.user_id, u.username, u.email, la.scope, la.phase, la.percent
+       FROM learning_assessment la
+       JOIN users u ON u.id = la.user_id`,
+    ).all() as LearnAssessRow[];
+
+    const triesRows = db.prepare(
+      `SELECT user_id, tries_by_module FROM learning_progress`,
+    ).all() as LearnTriesRow[];
+    const triesByUser = new Map<number, number>();
+    for (const t of triesRows) {
+      let sum = 0;
+      try {
+        const m = JSON.parse(t.tries_by_module || '{}') as Record<string, unknown>;
+        for (const v of Object.values(m)) if (typeof v === 'number' && Number.isFinite(v)) sum += v;
+      } catch { /* corrupt — treat as 0 */ }
+      triesByUser.set(t.user_id, sum);
+    }
+
+    // Per-user, per-scope pre/post.
+    interface ScopeCell { pre?: number; post?: number; rawGain?: number; normGain?: number | null }
+    interface UserAgg {
+      userId: number; username: string | null; email: string | null;
+      scopes: Record<string, ScopeCell>; totalTries: number;
+    }
+    const byUser = new Map<number, UserAgg>();
+    for (const r of rows) {
+      let u = byUser.get(r.user_id);
+      if (!u) {
+        u = {
+          userId: r.user_id, username: r.username, email: r.email,
+          scopes: {}, totalTries: triesByUser.get(r.user_id) ?? 0,
+        };
+        byUser.set(r.user_id, u);
+      }
+      const cell = (u.scopes[r.scope] ??= {});
+      if (r.phase === 'pre') cell.pre = r.percent;
+      else if (r.phase === 'post') cell.post = r.percent;
+    }
+    // Derive gains once both phases are present.
+    for (const u of byUser.values()) {
+      for (const cell of Object.values(u.scopes)) {
+        if (cell.pre != null && cell.post != null) {
+          cell.rawGain = cell.post - cell.pre;
+          cell.normGain = hakeGain(cell.pre, cell.post);
+        }
+      }
+    }
+
+    // Per-scope aggregates across learners who completed BOTH phases.
+    const scopeAgg: Record<string, {
+      n: number; avgPre: number; avgPost: number; avgRawGain: number; avgNormGain: number | null;
+    }> = {};
+    const acc: Record<string, { pre: number; post: number; raw: number; norm: number; nNorm: number; n: number }> = {};
+    for (const u of byUser.values()) {
+      for (const [scope, cell] of Object.entries(u.scopes)) {
+        if (cell.pre == null || cell.post == null) continue;
+        const a = (acc[scope] ??= { pre: 0, post: 0, raw: 0, norm: 0, nNorm: 0, n: 0 });
+        a.pre += cell.pre; a.post += cell.post; a.raw += cell.post - cell.pre; a.n += 1;
+        if (cell.normGain != null) { a.norm += cell.normGain; a.nNorm += 1; }
+      }
+    }
+    for (const [scope, a] of Object.entries(acc)) {
+      scopeAgg[scope] = {
+        n: a.n,
+        avgPre: Number((a.pre / a.n).toFixed(1)),
+        avgPost: Number((a.post / a.n).toFixed(1)),
+        avgRawGain: Number((a.raw / a.n).toFixed(1)),
+        avgNormGain: a.nNorm > 0 ? Number((a.norm / a.nNorm).toFixed(3)) : null,
+      };
+    }
+
+    res.json({
+      bands: getProficiencyBands(),
+      learners: Array.from(byUser.values()),
+      aggregate: scopeAgg,
+    });
+  } catch (err) { next(err); }
+});
+
 router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) => {
   try {
     const key = req.params.key as SettingKey;
-    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases', 'f1_norm_profile', 'ai_sample_system_prompt', 'ai_sample_injection_instruction'];
+    const ALLOWED: SettingKey[] = ['testers_visible_to_users', 'reviews_required', 'feature_releases', 'f1_norm_profile', 'ai_sample_system_prompt', 'ai_sample_injection_instruction', 'proficiency_bands'];
     if (!ALLOWED.includes(key)) {
       res.status(400).json({ error: 'Unknown setting key' });
       return;
@@ -128,6 +236,33 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
       }
       value = raw.trim().slice(0, 8000);
       logDetail = `chars=${value.length}`;
+    } else if (key === 'proficiency_bands') {
+      // Array of { min, max, label } percent ranges. Accept a JSON string or
+      // a plain array; field-level clamping + sorting happens in
+      // getProficiencyBands() on read, so here we only enforce array shape and
+      // strip non-conforming entries. The professor sets these ranges and the
+      // statistician validates them.
+      let bandsCandidate: unknown = raw;
+      if (typeof raw === 'string') {
+        try { bandsCandidate = JSON.parse(raw); } catch { bandsCandidate = null; }
+      }
+      if (!Array.isArray(bandsCandidate)) {
+        res.status(400).json({ error: 'proficiency_bands value must be an array of { min, max, label }' });
+        return;
+      }
+      const sanitizedBands: ProficiencyBand[] = [];
+      for (const b of bandsCandidate) {
+        if (!b || typeof b !== 'object' || Array.isArray(b)) continue;
+        const o = b as Record<string, unknown>;
+        if (typeof o.min !== 'number' || typeof o.max !== 'number' || typeof o.label !== 'string' || !o.label.trim()) continue;
+        sanitizedBands.push({ min: o.min, max: o.max, label: o.label.trim() });
+      }
+      if (sanitizedBands.length === 0) {
+        res.status(400).json({ error: 'proficiency_bands must contain at least one valid band' });
+        return;
+      }
+      value = JSON.stringify(sanitizedBands);
+      logDetail = `bands=${sanitizedBands.length}`;
     } else {
       value = (raw === true || raw === 1 || raw === '1' || raw === 'true') ? '1' : '0';
       logDetail = `value=${value}`;
@@ -151,6 +286,9 @@ router.put('/settings/:key', (req: Request, res: Response, next: NextFunction) =
       res.json({ key, value: getF1NormProfile() });
     } else if (key === 'ai_sample_system_prompt' || key === 'ai_sample_injection_instruction') {
       res.json({ key, value });
+    } else if (key === 'proficiency_bands') {
+      // Echo the validated + sorted bands so the client sees what reads back.
+      res.json({ key, value: getProficiencyBands() });
     } else {
       res.json({ key, value: value === '1' });
     }

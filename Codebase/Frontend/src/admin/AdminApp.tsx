@@ -19,14 +19,15 @@ import CatalogsTab from './components/CatalogsTab';
 import InviteCodesTab from './components/InviteCodesTab';
 import JoinRequestsTab from './components/JoinRequestsTab';
 import FeatureReleasePanel from './components/FeatureReleasePanel';
+import LearningAnalyticsPanel from './components/LearningAnalyticsPanel';
 import { markAdminRefresh } from '../api/client';
 import {
-  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
+  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode, IconBook
 } from '../components/icons/Icons';
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'learning' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases';
 
 interface TabDef {
   id: AdminTab;
@@ -44,6 +45,7 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'complexity', label: 'Complexity', icon: IconBeaker,      originalDevsOnly: true },
   { id: 'users',      label: 'Users',      icon: IconShield },
   { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare, originalDevsOnly: true },
+  { id: 'learning',   label: 'Learning',   icon: IconBook,        originalDevsOnly: true },
   { id: 'ai',         label: 'AI',         icon: IconCode },
   { id: 'logs',       label: 'Logs',       icon: IconClipboard },
   { id: 'catalogs',     label: 'Pattern groups', icon: IconBeaker },
@@ -387,6 +389,11 @@ export default function AdminApp() {
             <SurveyStats />
           </section>
         </div>
+        {isOriginalDevsAdmin(user) && (
+          <div hidden={activeTab !== 'learning'}>
+            <LearningAnalyticsPanel />
+          </div>
+        )}
         <div hidden={activeTab !== 'ai'}>
           <section className="admin-section admin-section--card">
             <header className="admin-section__head">

@@ -465,3 +465,15 @@ body{position:relative;}
 .admin-runs-metric__label{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);}
 .admin-runs-metric__value{font-size:22px;font-weight:700;color:var(--ink);}
 .admin-runs-metric__sub{font-size:11px;color:var(--ink-mute);margin-top:2px;}
+
+/* Learning analytics tab — per-learner scope breakdown + proficiency-band editor. */
+.admin-learn-scopes{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px;}
+.admin-learn-scopes li{font-size:12px;color:var(--ink-soft);line-height:1.45;}
+.admin-learn-scopes strong{color:var(--ink);}
+.admin-bands-editor{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:8px;}
+.admin-bands-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding:10px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);}
+.admin-bands-row label{display:flex;flex-direction:column;gap:3px;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-mute);}
+.admin-bands-row input[type="number"]{width:80px;}
+.admin-bands-row .admin-bands-label{flex:1 1 200px;}
+.admin-bands-row .admin-bands-label input{width:100%;}
+.admin-bands-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
