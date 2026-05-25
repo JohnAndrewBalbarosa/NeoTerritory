@@ -522,44 +522,9 @@ export default function GdbRunnerTab() {
             </span>
           )}
         </p>
-        <button
-          type="button"
-          className="primary-btn"
-          data-testid="run-all-tests-btn"
-          onClick={runAll}
-          disabled={!canRun || busy || onCooldown}
-          title={
-            localAmbiguous.length > 0
-              ? `Resolve ambiguity for: ${localAmbiguous.join(', ')}`
-              : cachedValid
-                ? 'Re-run clears the previous results for this submission.'
-                : undefined
-          }
-        >
-          {busy
-            ? 'Running…'
-            : onCooldown
-              ? `Cooldown ${Math.ceil(cooldownLeftMs / 1000)}s`
-              : cachedValid
-                ? 'Re-run tests'
-                : 'Run all tests'}
-        </button>
-        {/* Visible disabled-reason chip so the click is never a black hole.
-            Shows only when the button is disabled and we are not actively
-            running. Matches the disabled-state precedence order from runAll(). */}
-        {!busy && (!canRun || onCooldown) && (
-          <p className="gdb-disabled-reason" role="status" aria-live="polite">
-            {onCooldown
-              ? `Cooldown active — retry in ${Math.ceil(cooldownLeftMs / 1000)}s.`
-              : runId === null && !pendingId
-                ? 'Start an analysis run first — then come back to test it.'
-                : localAmbiguous.length > 0
-                  ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
-                  : taggedClassCount === 0
-                    ? 'Tag at least one class on the Patterns tab before running tests.'
-                    : 'Tests are not available for this run.'}
-          </p>
-        )}
+        {/* The Run button moved to the bottom action bar (left of Next) per
+            project owner — keeping the primary action anchored at the foot of
+            the tab next to the navigation control. See .tab-next-bar below. */}
       </header>
 
       {(localAmbiguous.length > 0 || ambiguousBlock) && (
@@ -660,6 +625,46 @@ export default function GdbRunnerTab() {
       )}
 
       <div className="tab-next-bar">
+        {/* Run cluster sits on the LEFT (margin-right:auto pushes Next to the
+            right). The disabled-reason chip rides under the button so the
+            click is never a black hole. */}
+        <div className="gdb-run-cluster">
+          <button
+            type="button"
+            className="primary-btn"
+            data-testid="run-all-tests-btn"
+            onClick={runAll}
+            disabled={!canRun || busy || onCooldown}
+            title={
+              localAmbiguous.length > 0
+                ? `Resolve ambiguity for: ${localAmbiguous.join(', ')}`
+                : cachedValid
+                  ? 'Re-run clears the previous results for this submission.'
+                  : undefined
+            }
+          >
+            {busy
+              ? 'Running…'
+              : onCooldown
+                ? `Cooldown ${Math.ceil(cooldownLeftMs / 1000)}s`
+                : cachedValid
+                  ? 'Re-run tests'
+                  : 'Run all tests'}
+          </button>
+          {!busy && (!canRun || onCooldown) && (
+            <p className="gdb-disabled-reason" role="status" aria-live="polite">
+              {onCooldown
+                ? `Cooldown active — retry in ${Math.ceil(cooldownLeftMs / 1000)}s.`
+                : runId === null && !pendingId
+                  ? 'Start an analysis run first — then come back to test it.'
+                  : localAmbiguous.length > 0
+                    ? `Resolve ambiguous class${localAmbiguous.length === 1 ? '' : 'es'} (${localAmbiguous.join(', ')}) on the Annotated source tab before running tests.`
+                    : taggedClassCount === 0
+                      ? 'Tag at least one class on the Patterns tab before running tests.'
+                      : 'Tests are not available for this run.'}
+            </p>
+          )}
+        </div>
         <button
           type="button"
           className="primary-btn"
