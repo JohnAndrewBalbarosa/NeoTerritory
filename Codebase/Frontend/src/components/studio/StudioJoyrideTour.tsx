@@ -179,6 +179,15 @@ const STEPS_BY_TAB: Record<StudioTab, TabSteps> = {
         body: 'This arrow jumps to the next class whose ambiguity is unresolved. Combined with the resolution buttons above, you can clear an entire run in one pass.',
         takeaway: 'Use the arrow to keep moving; the badge counter updates live.',
       },
+      {
+        // Docs is now a sub-view of the Patterns tab (the "Documentation"
+        // toggle). The guide only mounts when that sub-view is open, so this
+        // step is gracefully skipped when the user is on the annotated view.
+        target: '.docs-read-guide',
+        title: 'How to read the docs page',
+        body: 'Switch to the "Documentation" sub-view to read the generated docs. The guide at the top explains each section - pattern definitions, code annotations, and where AI commentary lands when present.',
+        takeaway: 'Annotated source and documentation now share the Patterns tab.',
+      },
     ],
   },
   gdb: {
@@ -206,16 +215,6 @@ const STEPS_BY_TAB: Record<StudioTab, TabSteps> = {
         title: 'Reading verdicts',
         body: 'Green pill (or "pass") = the phase succeeded. Red pill (or "fail") = the phase rejected the code. Duration in milliseconds appears next to the pill.',
         takeaway: 'Color tells the result at a glance.',
-      },
-    ],
-  },
-  docs: {
-    steps: [
-      {
-        target: '.docs-read-guide',
-        title: 'How to read the docs page',
-        body: 'The guide at the top of this tab explains each section of the generated documentation - pattern definitions, code annotations, and where AI commentary lands when present.',
-        takeaway: 'Open this once; it stays out of the way after.',
       },
     ],
   },

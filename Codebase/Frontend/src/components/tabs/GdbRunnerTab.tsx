@@ -665,9 +665,9 @@ export default function GdbRunnerTab() {
           className="primary-btn"
           disabled={!cachedValid}
           title={cachedValid ? undefined : 'Run at least one test before continuing.'}
-          onClick={() => setActiveTab('docs')}
+          onClick={() => setActiveTab('annotated')}
         >
-          Next: Read pattern docs →
+          Next: Back to patterns &amp; docs →
         </button>
       </div>
     </section>

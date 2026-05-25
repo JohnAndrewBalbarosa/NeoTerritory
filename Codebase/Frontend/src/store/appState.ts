@@ -4,7 +4,10 @@ import { User, AnalysisRun, AppStatus, MsState, Annotation, PatternEducation } f
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
 
-export type StudioTab = 'submit' | 'annotated' | 'gdb' | 'docs' | 'ambiguous';
+// 'docs' is no longer a top-level studio tab — the generated documentation
+// now lives as a sub-view inside the Patterns (annotated) tab. The union is
+// kept tight so a stale 'docs' activeTab can't be set anywhere.
+export type StudioTab = 'submit' | 'annotated' | 'gdb' | 'ambiguous';
 export type AiCommentaryStatus = 'idle' | 'pending' | 'ready' | 'failed' | 'disabled';
 
 interface AppState {

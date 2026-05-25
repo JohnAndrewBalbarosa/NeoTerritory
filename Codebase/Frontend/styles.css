@@ -517,6 +517,15 @@ body.login-active{overflow:hidden;}
        (right side) instead of the viewport. === */
 .tab-annotated-shell{display:grid;grid-template-columns:minmax(0,1fr) minmax(280px,360px);gap:16px;align-items:start;}
 .tab-annotated-shell > .tab-panel.tab-annotated{position:relative;min-width:0;}
+/* Docs merged into Patterns: the sub-view toggle and the (full-width) docs
+   page both span every grid column so they sit above / replace the two-column
+   annotated layout instead of getting jammed into column 1. */
+.tab-annotated-shell > .studio-subview-toggle{grid-column:1 / -1;}
+.tab-annotated-shell > .docs-tab{grid-column:1 / -1;min-width:0;}
+.studio-subview-toggle{display:flex;gap:4px;border-bottom:1px solid var(--border-soft,rgba(255,255,255,0.08));margin-bottom:4px;}
+.subview-btn{background:transparent;border:none;padding:8px 16px;font:inherit;font-size:13px;font-weight:600;color:var(--ink-soft);cursor:pointer;border-bottom:2px solid transparent;}
+.subview-btn:hover{color:var(--ink);}
+.subview-btn.is-active{color:var(--accent);border-bottom-color:var(--accent);}
 .results-sidebar{display:flex;flex-direction:column;gap:14px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto;min-width:0;}
 @media (max-width: 900px){
   .tab-annotated-shell{grid-template-columns:1fr;}

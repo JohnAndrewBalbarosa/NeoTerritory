@@ -106,9 +106,10 @@ test.describe('Studio screenshot walkthrough', () => {
     await studio.snapshot('tests-tab-results');
     await studio.snapshot('tests-tab-results-fullpage', { fullPage: true });
 
-    // 6. Docs tab — static once analysis is ready. waitForStable still
+    // 6. Docs sub-view — now lives behind the "Documentation" toggle inside
+    //    the Patterns tab. Static once analysis is ready. waitForStable still
     //    runs in case Documentation lazy-loads a markdown bundle.
-    await studio.tab('docs');
+    await studio.subview('docs');
     await studio.snapshot('docs-tab');
     await studio.snapshot('docs-tab-fullpage', { fullPage: true });
 

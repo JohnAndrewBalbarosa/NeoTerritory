@@ -12,7 +12,6 @@ import StudioJoyrideTour, { dispatchStudioTourOpen } from '../studio/StudioJoyri
 import AnnotatedTab from '../tabs/AnnotatedTab';
 import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
-import DocumentationTab from '../tabs/DocumentationTab';
 import ReviewModal from '../modals/ReviewModal';
 import PretestForm from '../survey/PretestForm';
 import SignoutSurvey from '../survey/SignoutSurvey';
@@ -21,7 +20,6 @@ import {
   IconUpload,
   IconLayers,
   IconPlay,
-  IconBook,
   IconCheckSquare,
   IconLock,
 } from '../icons/Icons';
@@ -70,11 +68,13 @@ interface TabDef {
   icon: ComponentType<IconProps>;
 }
 
+// Docs is no longer its own tab — the Patterns tab hosts an "Annotated /
+// Documentation" sub-view toggle, so the generated docs live alongside the
+// annotated source. The tab bar is correspondingly shorter.
 const TABS: ReadonlyArray<TabDef> = [
   { id: 'submit',     label: 'Submit',     icon: IconUpload },
   { id: 'annotated',  label: 'Patterns',   icon: IconLayers },
   { id: 'gdb',        label: 'Tests',      icon: IconPlay },
-  { id: 'docs',       label: 'Docs',       icon: IconBook },
   { id: 'ambiguous',  label: 'Self-check', icon: IconCheckSquare },
 ];
 
@@ -117,7 +117,7 @@ export default function MainLayout() {
   // them to Docs so the deprecated surface can never stay on screen.
   useEffect(() => {
     if (!reviewsRequired && activeTab === 'ambiguous') {
-      setActiveTab(currentRun ? 'docs' : 'submit');
+      setActiveTab(currentRun ? 'annotated' : 'submit');
     }
   }, [reviewsRequired, activeTab, currentRun, setActiveTab]);
 
@@ -129,14 +129,12 @@ export default function MainLayout() {
     if (id === 'submit')    return true;
     if (id === 'annotated') return !!currentRun;            // need a finished analysis
     if (id === 'gdb')       return !!currentRun;            // need a finished analysis
-    if (id === 'docs')      return !!currentRun;            // need a finished analysis
     if (id === 'ambiguous') return gdbAllPassedForRun;      // need GDB to have all-passed
     return true;
   }
   function tabLockReason(id: StudioTab): string | undefined {
     if (id === 'annotated' && !currentRun)        return 'Submit source code first.';
     if (id === 'gdb'       && !currentRun)        return 'Submit source code and complete annotation first.';
-    if (id === 'docs'      && !currentRun)        return 'Submit source code first.';
     if (id === 'ambiguous' && !gdbAllPassedForRun) return 'Run the GDB unit tests and pass them all first.';
     return undefined;
   }
@@ -413,7 +411,6 @@ export default function MainLayout() {
             />
           )}
           {activeTab === 'gdb' && <GdbRunnerTab />}
-          {activeTab === 'docs' && <DocumentationTab />}
           {activeTab === 'ambiguous' && reviewsRequired && (
             <AmbiguousTab
               pendingSave={pendingSave}

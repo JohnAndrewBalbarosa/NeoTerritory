@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useAppStore } from '../../store/appState';
+import DocumentationTab from './DocumentationTab';
 import SourceView from '../analysis/SourceView';
 import PatternLegend from '../analysis/PatternLegend';
 import PatternCards from '../analysis/PatternCards';
@@ -33,6 +34,10 @@ export default function AnnotatedTab({
   } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
   const [classNavIdx, setClassNavIdx] = useState(0);
+  // Docs merged into the Patterns tab: a sub-view toggle swaps between the
+  // annotated source explorer and the generated documentation page. Default
+  // to the annotated view — that's the working surface; docs is the read-out.
+  const [view, setView] = useState<'annotated' | 'docs'>('annotated');
 
   // Resolve the per-file slice. Multi-file runs ship `files[]`; legacy
   // single-file runs back-fill into a synthetic single-entry list so the
@@ -426,6 +431,36 @@ export default function AnnotatedTab({
 
   return (
     <div className="tab-annotated-shell">
+      {/* Sub-view toggle: Docs used to be its own top-level studio tab; it now
+          lives here so the annotated source and the generated documentation
+          share the Patterns surface. The toggle swaps the body below. */}
+      <div className="studio-subview-toggle" role="tablist" aria-label="Patterns view">
+        <button
+          type="button"
+          role="tab"
+          data-testid="subview-annotated"
+          aria-selected={view === 'annotated'}
+          className={`subview-btn ${view === 'annotated' ? 'is-active' : ''}`}
+          onClick={() => setView('annotated')}
+        >
+          Annotated
+        </button>
+        <button
+          type="button"
+          role="tab"
+          data-testid="subview-docs"
+          aria-selected={view === 'docs'}
+          className={`subview-btn ${view === 'docs' ? 'is-active' : ''}`}
+          onClick={() => setView('docs')}
+        >
+          Documentation
+        </button>
+      </div>
+
+      {view === 'docs' && <DocumentationTab />}
+
+      {view === 'annotated' && (
+      <>
       <section className="tab-panel tab-annotated">
         <header className="results-header">
           <p className="results-summary">{summaryText}</p>
@@ -585,6 +620,8 @@ export default function AnnotatedTab({
           onLineFlash={onLineFlash}
         />
       </aside>
+      </>
+      )}
     </div>
   );
 }

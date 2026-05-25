@@ -23,7 +23,10 @@ import { waitForStable } from '../helpers/waitForStable';
 // running CSS animations, in-flight requests) before each shot, so the
 // screenshot never lands mid-transition.
 
-export type StudioTabId = 'submit' | 'annotated' | 'gdb' | 'docs' | 'ambiguous';
+// Docs is no longer a top-level studio tab; it's a sub-view inside the
+// Patterns (annotated) tab. Use `subview('docs')` to reach it.
+export type StudioTabId = 'submit' | 'annotated' | 'gdb' | 'ambiguous';
+export type StudioSubviewId = 'annotated' | 'docs';
 
 interface ClaimedSeat {
   username: string;
@@ -35,7 +38,6 @@ const STUDIO_TAB_LABELS: Record<StudioTabId, string> = {
   submit: 'Submit',
   annotated: 'Patterns',
   gdb: 'Tests',
-  docs: 'Docs',
   ambiguous: 'Self-check',
 };
 
@@ -133,7 +135,7 @@ export class StudioPage {
           for (const store of [localStorage, sessionStorage]) {
             store.setItem('nt_studio_tour_completed', '1');
             store.setItem('nt_studio_tour_suppressed', '1');
-            for (const tab of ['submit', 'annotated', 'gdb', 'docs', 'ambiguous']) {
+            for (const tab of ['submit', 'annotated', 'gdb', 'ambiguous']) {
               store.setItem(`nt_studio_tour_completed__${tab}`, '1');
             }
           }
@@ -183,6 +185,21 @@ export class StudioPage {
         return;
       }
       await target.click();
+    }
+    await waitForStable(this.page);
+  }
+
+  /**
+   * Switch the Patterns-tab sub-view. Docs used to be its own tab; it now
+   * lives behind the "Documentation" toggle inside the annotated tab. This
+   * ensures the Patterns tab is active, then flips the sub-view. Tolerant of
+   * the toggle being absent (e.g. no current run) — it just settles.
+   */
+  async subview(id: StudioSubviewId): Promise<void> {
+    await this.tab('annotated');
+    const btn = this.page.getByTestId(`subview-${id}`);
+    if ((await btn.count()) > 0) {
+      await btn.click();
     }
     await waitForStable(this.page);
   }
