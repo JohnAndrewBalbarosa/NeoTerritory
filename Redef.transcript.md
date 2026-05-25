@@ -1119,3 +1119,513 @@
 
 **[12:56–12:57]** Andrew,
 
+**[12:57–12:58]** tandaan mo yung paper ni Emil.
+
+**[12:58–12:59]** Tandaan mo yung paper ni Emil.
+
+**[12:59–12:59]** Okay yun.
+
+**[13:02–13:02]** Yung,
+
+**[13:03–13:03]** puro,
+
+**[13:03–13:04]** puro,
+
+**[13:05–13:06]** puro context,
+
+**[13:06–13:06]** interpretation,
+
+**[13:07–13:07]** text-based only.
+
+**[13:08–13:08]** Tapos may,
+
+**[13:08–13:09]** konting ano naman,
+
+**[13:10–13:11]** may konting diagram na siguro.
+
+**[13:11–13:12]** May mga bar graph.
+
+**[13:13–13:13]** Yun yung context nun.
+
+**[13:13–13:15]** Pero basic lang context nun is,
+
+**[13:16–13:16]** um,
+
+**[13:16–13:16]** much,
+
+**[13:17–13:18]** when needed,
+
+**[13:18–13:19]** saka lang mag-graph.
+
+**[13:23–13:24]** Anong ibig sabi doon DP?
+
+**[13:26–13:27]** May nakalagay rin doon DP
+
+**[13:27–13:28]** si sir,
+
+**[13:28–13:28]** si Doc Haji.
+
+**[13:28–13:31]** Nasa bahay,
+
+**[13:31–13:31]** nasa bahay,
+
+**[13:31–13:32]** nasa dorm niya po.
+
+**[13:34–13:34]** DP.
+
+**[13:35–13:36]** Design pattern 10.
+
+**[13:36–13:37]** Ah 10!
+
+**[13:37–13:38]** Yun 10 yung mali.
+
+**[13:39–13:39]** Okay,
+
+**[13:39–13:40]** design pattern ni,
+
+**[13:40–13:40]** ano,
+
+**[13:41–13:41]** si,
+
+**[13:41–13:42]** si,
+
+**[13:42–13:42]** okay,
+
+**[13:42–13:43]** design pattern 10.
+
+**[13:45–13:45]** O,
+
+**[13:45–13:47]** design pattern 10.
+
+**[13:52–13:53]** Hindi na natin nasabi nun.
+
+**[13:54–13:55]** Kaya mas,
+
+**[13:55–13:55]** ano,
+
+**[13:55–13:55]** kung,
+
+**[13:56–13:57]** how can
+
+**[13:57–13:58]** provost
+
+**[13:58–13:58]** system analysis
+
+**[13:58–13:59]** plus
+
+**[13:59–14:00]** source code.
+
+**[14:00–14:01]** Identify supported
+
+**[14:01–14:01]** design pattern.
+
+**[14:02–14:02]** Ayusin ko na lang ito.
+
+**[14:03–14:04]** How can
+
+**[14:04–14:04]** propose
+
+**[14:04–14:05]** analysis
+
+**[14:05–14:06]** plus design pattern
+
+**[14:06–14:06]** to identify
+
+**[14:06–14:07]** supported design pattern
+
+**[14:07–14:08]** evidence.
+
+**[14:08–14:09]** This section
+
+**[14:09–14:09]** can still
+
+**[14:09–14:10]** You see?
+
+**[14:11–14:12]** Sure, sure, sure.
+
+**[14:12–14:12]** 50-60.
+
+**[14:13–14:13]** Ah,
+
+**[14:13–14:14]** yung klase lang ito.
+
+**[14:15–14:16]** 7 to 9,
+
+**[14:16–14:16]** 90-90.
+
+**[14:17–14:17]** So,
+
+**[14:17–14:18]** technically,
+
+**[14:18–14:19]** pwede siyang kumamba
+
+**[14:19–14:19]** anywhere.
+
+**[14:20–14:21]** For every Monday,
+
+**[14:22–14:22]** 7 to 11.
+
+**[14:22–14:23]** Saan ba siya sa
+
+**[14:23–14:24]** E&M?
+
+**[14:26–14:27]** How can
+
+**[14:27–14:27]** the proposed
+
+**[14:27–14:28]** system analysis
+
+**[14:28–14:29]** plus code code
+
+**[14:29–14:29]** identify
+
+**[14:29–14:30]** the design pattern?
+
+**[14:31–14:32]** Ano ba bang problema
+
+**[14:32–14:32]** dito ni Doc?
+
+**[14:33–14:34]** Yung 4.3
+
+**[14:34–14:35]** ata ito.
+
+**[14:35–14:36]** 4.3.1.
+
+**[14:37–14:38]** Ano ang
+
+**[14:38–14:39]** result?
+
+**[14:39–14:40]** More of result?
+
+**[14:40–14:41]** Label,
+
+**[14:41–14:41]** intern.
+
+**[14:41–14:42]** Ano binilugan niya
+
+**[14:42–14:42]** result?
+
+**[14:43–14:43]** Saka siguro,
+
+**[14:43–14:43]** hindi,
+
+**[14:44–14:44]** yung,
+
+**[14:44–14:45]** ito lang yung result
+
+**[14:45–14:46]** na binilugan niya
+
+**[14:46–14:48]** na may problema lang siya.
+
+**[14:48–14:49]** Ito,
+
+**[14:49–14:49]** yung other kasi,
+
+**[14:50–14:50]** problema sa PPT
+
+**[14:50–14:51]** most likely.
+
+**[14:51–14:52]** Yung ano kasi ni Doc
+
+**[14:52–14:54]** ng value?
+
+**[14:54–14:54]** Ay,
+
+**[14:54–14:55]** yung pre-test post-test.
+
+**[14:56–14:57]** Pre-test post-test
+
+**[14:57–14:58]** yung 4.3.1.
+
+**[14:58–14:58]** Kailangan
+
+**[14:58–14:59]** pre-test post-test.
+
+**[14:59–15:00]** Ano yung mabilis?
+
+**[15:00–15:01]** Ayos.
+
+**[15:02–15:02]** Hindi,
+
+**[15:02–15:03]** kailangan,
+
+**[15:03–15:03]** hindi,
+
+**[15:03–15:03]** hindi natin kailangan
+
+**[15:03–15:04]** technical na mag-risk it.
+
+**[15:05–15:05]** Kausapin ko lang
+
+**[15:05–15:06]** si Doc
+
+**[15:06–15:07]** gato po yung nangyari
+
+**[15:07–15:08]** tapos siglang
+
+**[15:08–15:09]** baka may ganyan ito.
+
+**[15:09–15:10]** Ang kailangan natin
+
+**[15:10–15:11]** is yung sa evaluation
+
+**[15:11–15:12]** ng static station
+
+**[15:12–15:13]** which is
+
+**[15:13–15:14]** si Doc Haji kasi
+
+**[15:14–15:14]** halata rin naman
+
+**[15:14–15:15]** na wala nang masyadong
+
+**[15:15–15:16]** paka-elam
+
+**[15:16–15:17]** na ano.
+
+**[15:18–15:19]** Ang paka-elam niya
+
+**[15:19–15:19]** talaga
+
+**[15:19–15:20]** yung
+
+**[15:20–15:21]** tama nga yung
+
+**[15:21–15:22]** sinabi dito kanina.
+
+**[15:23–15:23]** Hindi,
+
+**[15:23–15:24]** validation is
+
+**[15:24–15:24]** magkakaroon tayong
+
+**[15:24–15:25]** pre-test post-test
+
+**[15:25–15:26]** pero yung magngayari
+
+**[15:26–15:27]** is sample size na lang
+
+**[15:27–15:27]** natin is mga umunti
+
+**[15:27–15:28]** para mas mukhang
+
+**[15:28–15:29]** ano siya,
+
+**[15:29–15:30]** mas mukhang valid siya.
+
+**[15:30–15:31]** Wait lang.
+
+**[15:31–15:32]** Post-test,
+
+**[15:32–15:32]** post-test.
+
+**[15:35–15:37]** 4.3.1
+
+**[15:37–15:42]** It lacks impact.
+
+**[15:44–15:45]** 4.3.1
+
+**[15:45–15:45]** Ito,
+
+**[15:45–15:46]** ba't nabati ng
+
+**[15:46–15:46]** evaluation as a
+
+**[15:46–15:47]** professional documentation?
+
+**[15:47–15:48]** Ito kasi,
+
+**[15:48–15:49]** ito ata naalala ko po
+
+**[15:49–15:50]** yung professional
+
+**[15:50–15:51]** natin na ano niya dito.
+
+**[15:51–15:52]** Anong problema
+
+**[15:52–15:53]** doon sa professional?
+
+**[15:53–15:54]** Kasi kaya niya binilugan.
+
+**[15:55–15:56]** Yung pagka ano ko lang ha,
+
+**[15:57–15:57]** binilugan niya to
+
+**[15:57–15:59]** kasi yung nakalagay
+
+**[15:59–16:00]** siguro sa PowerPoint
+
+**[16:00–16:01]** professional.
+
+**[16:03–16:03]** Okay,
+
+**[16:03–16:05]** PowerPoint problem.
+
+**[16:05–16:06]** Pero double check natin
+
+**[16:06–16:07]** kung hindi,
+
+**[16:07–16:07]** baka hula ako.
+
+**[16:08–16:08]** Ang problema
+
+**[16:08–16:09]** tayo sa entrance.
+
+**[16:09–16:10]** E double check natin
+
+**[16:10–16:10]** pagka ano.
+
+**[16:11–16:11]** Wait mga,
+
+**[16:11–16:12]** gawa kailangan na
+
+**[16:12–16:12]** gawin.
+
+**[16:12–16:13]** Gawa lang,
+
+**[16:13–16:13]** gawa.
+
+**[16:13–16:14]** Anong result?
+
+**[16:14–16:15]** Sa results talaga
+
+**[16:15–16:16]** validation.
+
+**[16:17–16:17]** More on doon,
+
+**[16:17–16:18]** SOP alignment.
+
+**[16:19–16:20]** Yung mga kulang
+
+**[16:20–16:21]** na hindi natin
+
+**[16:21–16:22]** masabot yun.
+
+**[16:22–16:23]** Hindi natin
+
+**[16:23–16:23]** i-realign
+
+**[16:23–16:25]** or babagoy yung SOP.
+
+**[16:25–16:26]** Parang bibigyan na natin
+
+**[16:26–16:26]** siya ng
+
+**[16:26–16:28]** may oh,
+
+**[16:28–16:29]** yun lang yung kailangan gawin.
+
+**[16:29–16:29]** Hindi,
+
+**[16:30–16:31]** yung i-realign
+
+**[16:31–16:31]** yung chapter 4
+
+**[16:31–16:32]** kasi mangyayari doon
+
+**[16:32–16:33]** is
+
+**[16:33–16:34]** yung gagawin natin
+
+**[16:34–16:35]** yung recommend dito
+
+**[16:35–16:35]** ni ano.
+
+**[16:36–16:36]** Ah,
+
+**[16:36–16:36]** APA.
+
+**[16:36–16:37]** Huwag mong kalimutin Andrew.
+
+**[16:37–16:38]** APA citation.
+
+**[16:38–16:39]** APA citation yung table.
+
+**[16:39–16:40]** Table sa taas.
+
+**[16:40–16:41]** APA din yung table
+
+**[16:41–16:42]** for matting
+
+**[16:42–16:43]** sinagdunan sa'yo yun ah.
+
+**[16:43–16:43]** APA.
+
+**[16:43–16:44]** Ay hindi,
+
+**[16:44–16:45]** after kasi noon,
+
+**[16:45–16:46]** yung yung
+
+**[16:46–16:47]** kailangan mo nga ba
+
+**[16:47–16:47]** sinagdunan sa'kin,
+
+**[16:48–16:48]** after na kasi yun,
+
+**[16:48–16:49]** nag-delegate na kasi
+
+**[16:49–16:49]** kayo ng task,
+
+**[16:49–16:51]** nahati na yung task namin.
+
+**[16:51–16:51]** Okay,
+
+**[16:51–16:52]** parang naging complete system lang.
+
+**[16:52–16:53]** Chapter 1 to 3 pa lang,
+
+**[16:53–16:54]** sinabi ko na sa'yo
+
+**[16:54–16:55]** APA said.
+
+**[16:55–16:55]** Ay,
+
+**[16:56–16:56]** alam ba yun?
+
+**[16:56–16:57]** February pa lang,
+
+**[16:57–16:58]** sinabi ko na sa'yo.
+
+**[16:58–16:58]** Ay,
+
+**[16:58–17:00]** ayun yung nagtanong ako sa'yo
+
+**[17:00–17:00]** yung ano.
+
+**[17:01–17:02]** Sinabi mo pa nga yung
+
+**[17:02–17:02]** Google,
+
+**[17:02–17:04]** yung Microsoft Word
+
+**[17:04–17:04]** yung sa'kin?
+
+**[17:06–17:06]** Ay,
+
+**[17:06–17:06]** tangina.
+
+**[17:07–17:08]** Hindi mo sinabi kailangay rin.
+
+**[17:09–17:09]** Ako,
+
+**[17:10–17:10]** ando.
+
+**[17:10–17:11]** Ando pa nga si Apsury
+
+**[17:11–17:12]** sa grupo niya nun eh.
+
+**[17:14–17:14]** Boss,
+
+**[17:14–17:14]** huwag.
+
+**[17:18–17:18]** Wait lang,
+
+**[17:18–17:18]** ah,
+
+**[17:18–17:19]** intern.
+
+**[17:19–17:20]** Ito.
+
+**[17:20–17:21]** Mag-send ako ng example.
+
