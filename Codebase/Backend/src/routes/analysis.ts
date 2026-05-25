@@ -735,7 +735,7 @@ function aiSampleEnabled(): boolean {
   return getFeatureReleases()[AI_SAMPLE_FLAG] === true;
 }
 
-router.get('/ai-sample/patterns', jwtAuth, (_req: Request, res: Response) => {
+router.get('/analysis/ai-sample/patterns', jwtAuth, (_req: Request, res: Response) => {
   if (!aiSampleEnabled()) {
     res.status(403).json({ error: 'panelist_ai_sample_disabled' });
     return;
@@ -743,7 +743,7 @@ router.get('/ai-sample/patterns', jwtAuth, (_req: Request, res: Response) => {
   res.json({ patterns: listCatalogPatterns() });
 });
 
-router.post('/ai-sample', jwtAuth, async (req: Request, res: Response) => {
+router.post('/analysis/ai-sample', jwtAuth, async (req: Request, res: Response) => {
   if (!aiSampleEnabled()) {
     res.status(403).json({ error: 'panelist_ai_sample_disabled' });
     return;
