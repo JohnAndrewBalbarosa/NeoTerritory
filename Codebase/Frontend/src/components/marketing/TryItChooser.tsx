@@ -130,7 +130,7 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
   function pickCard(card: ChoiceCard): void {
     if (card.id === 'tester') {
       // Drop any stale entry-flow stamp so MainLayout treats this user
-      // as a research participant (Pretest gate applies).
+      // as a research participant.
       try { sessionStorage.removeItem('nt-entry-flow'); } catch { /* ignore */ }
       setView('seatClaim');
       return;

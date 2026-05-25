@@ -36,7 +36,6 @@ const RETIRED_PATHS = new Set<string>(['/choose', '/login', '/seat-selection', '
 
 const STUDIO_ALIASES = [
   '/app',
-  '/pretest',
   '/studio',
   '/developer',
   '/student-studio',
