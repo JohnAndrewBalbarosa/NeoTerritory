@@ -2307,6 +2307,27 @@ body::before {
   background: rgba(79, 60, 138, 0.18);
 }
 
+/* Form inputs / textareas / selects: the default rule paints a dark navy
+   gradient (correct on the dark shell) which would render as dark fields on a
+   white page in light mode. Flip to the light surface token so light mode is
+   fully light. Text already uses var(--ink) (theme-aware). */
+:root[data-theme="light"] .field input[type="text"],
+:root[data-theme="light"] .field input[type="file"],
+:root[data-theme="light"] .file-slot-name,
+:root[data-theme="light"] .file-slot-textarea,
+:root[data-theme="light"] .program-stdin-textarea,
+:root[data-theme="light"] .review-textarea,
+:root[data-theme="light"] .review-select,
+:root[data-theme="light"] .survey-question textarea,
+:root[data-theme="light"] .src-manual-textarea,
+:root[data-theme="light"] .log-delete-pw-input,
+:root[data-theme="light"] .user-search-input,
+:root[data-theme="light"] .logs-event-select,
+:root[data-theme="light"] .checklist-chip .other-input {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
 /* === Consent gate redesign === */
 .consent-gate {
   align-items: center;

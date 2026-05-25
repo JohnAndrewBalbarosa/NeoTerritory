@@ -192,6 +192,9 @@ jobs:
       - name: Frontend typecheck
         run: npm --prefix Codebase/Frontend run typecheck
 
+      - name: Theme-leak guard (light mode stays light)
+        run: npm --prefix Codebase/Frontend run check:theme
+
       - name: Frontend build
         run: npm --prefix Codebase/Frontend run build
 
