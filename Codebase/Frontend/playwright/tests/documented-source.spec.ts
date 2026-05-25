@@ -4,7 +4,9 @@
 // [data-testid="documented-source"]. Collapsible sections are driven by
 // .pattern-header elements whose toggle is .pattern-header__toggle; opening
 // adds .pattern-header--open to the header. Inline per-line documentation
-// renders as .inline-line-doc and is visible by default.
+// renders as .inline-line-doc and is COLLAPSED by default (hidden via CSS,
+// still in the DOM for export). Annotated lines carry .src-line.has-doc with a
+// .src-line-doc-marker; clicking the line reveals that line's note.
 //
 // The analysis trigger sequence is copied verbatim from all-samples.spec.ts
 // (same seat-claim, same JWT inject, same textarea fill, same wait signal)
@@ -165,8 +167,16 @@ test.describe('merged documented source', () => {
     await expect(header).toHaveClass(/pattern-header--open/);
   });
 
-  test('inline line docs are visible by default', async ({ page }) => {
+  test('inline line docs are collapsed by default and reveal on line click', async ({ page }) => {
     await runSample(page);
-    await expect(page.locator('.inline-line-doc').first()).toBeVisible();
+    // Collapsed by default: the block is in the DOM but hidden on screen.
+    const firstDoc = page.locator('.inline-line-doc').first();
+    await expect(firstDoc).toBeHidden();
+    // An annotated, non-decision line carries the doc marker. Clicking it
+    // reveals that line's note.
+    const docLine = page.locator('.src-line.has-doc').first();
+    await expect(docLine.locator('.src-line-doc-marker')).toBeVisible();
+    await docLine.click();
+    await expect(page.locator('.inline-line-doc:visible').first()).toBeVisible();
   });
 });

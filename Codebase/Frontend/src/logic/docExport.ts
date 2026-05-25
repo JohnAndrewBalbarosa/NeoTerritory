@@ -210,6 +210,8 @@ export function downloadDocx(run: AnalysisRun, bodyHtml: string): void {
   .no-print{display:none}
   .pattern-header__body{display:block}
   .inline-line-doc{border-left:3px solid #d1d5db;margin:0 0 6pt 18pt;padding:2pt 6pt}
+  .inline-line-doc--collapsed{display:block}
+  .src-line-doc-marker{display:none}
 </style>
 </head>
 <body>${bodyHtml}</body>
@@ -240,6 +242,8 @@ export function triggerPdfPrint(el: HTMLElement | null): void {
   .no-print{display:none}
   .pattern-header__body{display:block}
   .inline-line-doc{border-left:3px solid #d1d5db;margin:0 0 6px 18px;padding:2px 6px}
+  .inline-line-doc--collapsed{display:block}
+  .src-line-doc-marker{display:none}
   @page{margin:2cm}
 </style>
 </head>

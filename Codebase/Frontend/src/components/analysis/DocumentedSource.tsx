@@ -1,4 +1,4 @@
-import { useMemo, forwardRef } from 'react';
+import { useMemo, useState, useCallback, forwardRef } from 'react';
 import SourceView from './SourceView';
 import PatternHeader from './PatternHeader';
 import InlineLineDoc from './InlineLineDoc';
@@ -35,17 +35,33 @@ const DocumentedSource = forwardRef<HTMLDivElement, DocumentedSourceProps>(funct
     [run, annotatedModel],
   );
 
+  // Inline docs are collapsed by default — the spine reads as code first,
+  // notes on demand. Expansion state is per-line and owned here so SourceView
+  // stays presentational. The InlineLineDoc still renders into the DOM while
+  // collapsed (hidden via CSS) so MD/PDF/DOCX exports stay complete.
+  const [expandedDocs, setExpandedDocs] = useState<Set<number>>(new Set());
+  const toggleDoc = useCallback((lineNo: number) => {
+    setExpandedDocs(prev => {
+      const next = new Set(prev);
+      if (next.has(lineNo)) next.delete(lineNo); else next.add(lineNo);
+      return next;
+    });
+  }, []);
+
   return (
     <div ref={ref} className="documented-source" data-testid="documented-source">
       <SourceView
         {...sourceProps}
+        hasDocForLine={(lineNo) => docModel.docByLine.has(lineNo)}
+        docExpandedForLine={(lineNo) => expandedDocs.has(lineNo)}
+        onToggleDoc={toggleDoc}
         renderHeaderForLine={(lineNo) => {
           const h = docModel.headerByLine.get(lineNo);
           return h ? <PatternHeader data={h} onLineFlash={onLineFlash} /> : null;
         }}
         renderDocForLine={(lineNo) => {
           const d = docModel.docByLine.get(lineNo);
-          return d ? <InlineLineDoc data={d} onLineFlash={onLineFlash} /> : null;
+          return d ? <InlineLineDoc data={d} collapsed={!expandedDocs.has(lineNo)} onLineFlash={onLineFlash} /> : null;
         }}
       />
     </div>

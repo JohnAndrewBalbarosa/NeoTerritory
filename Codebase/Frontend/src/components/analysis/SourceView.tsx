@@ -44,6 +44,13 @@ interface SourceViewProps {
   // fires AFTER the line, so inline docs sit beneath the code.
   renderHeaderForLine?: (lineNo: number) => React.ReactNode;
   renderDocForLine?: (lineNo: number) => React.ReactNode;
+  // Inline docs are collapsed by default. These let the parent own the
+  // expand state while SourceView renders the per-line toggle affordance.
+  // hasDocForLine → show a marker on the line; docExpandedForLine → marker
+  // state; onToggleDoc → flip it when a non-decision annotated line is clicked.
+  hasDocForLine?: (lineNo: number) => boolean;
+  docExpandedForLine?: (lineNo: number) => boolean;
+  onToggleDoc?: (lineNo: number) => void;
 }
 
 interface PopoverState {
@@ -301,7 +308,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick, renderHeaderForLine, renderDocForLine }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick, renderHeaderForLine, renderDocForLine, hasDocForLine, docExpandedForLine, onToggleDoc }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -344,7 +351,12 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
       ? (inScopePatternsByClass?.get(row.scope.className)?.size ?? 0)
       : 0;
     const lineNeedsPick = distinct > 1 || scopeUnion > 1;
-    if (!lineNeedsPick && !hasOverride) return;
+    if (!lineNeedsPick && !hasOverride) {
+      // Non-decision line: if it carries an inline doc, clicking toggles the
+      // note open/closed (docs are collapsed by default). Otherwise dead click.
+      if (hasDocForLine?.(row.lineNo)) onToggleDoc?.(row.lineNo);
+      return;
+    }
     const rect = ev.currentTarget.getBoundingClientRect();
     if (popover && popover.line === row.lineNo) { setPopover(null); return; }
     setPopover({ line: row.lineNo, annotations: row.rawAnns, anchorRect: rect });
@@ -552,21 +564,36 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
           const header = renderHeaderForLine?.(row.lineNo);
           const doc = renderDocForLine?.(row.lineNo);
 
+          // Inline-doc marker: shown on annotated lines that aren't decision
+          // lines (ambiguous lines already carry the N× badge + open a picker).
+          // It's a lightweight hint that a collapsed note lives here; clicking
+          // the line toggles it.
+          const hasDoc = !isAmbiguousLine && !!hasDocForLine?.(row.lineNo);
+          const docOpen = hasDoc && !!docExpandedForLine?.(row.lineNo);
+          const lineClassNames = [classNames, hasDoc ? 'has-doc' : '', docOpen ? 'doc-open' : '']
+            .filter(Boolean).join(' ');
+
           return (
             <React.Fragment key={row.lineNo}>
               {header}
               <span
-                className={classNames}
+                className={lineClassNames}
                 data-line={row.lineNo}
                 data-class-name={row.isScopeStart ? row.scope?.className : undefined}
                 style={style}
                 onClick={(ev) => handleLineClick(row, ev)}
+                title={hasDoc ? (docOpen ? 'Hide note' : 'Show note') : undefined}
               >
                 <span className="src-gutter">{num}</span>
                 <span className="src-code">{row.text || '​'}</span>
                 {hasAnnotation && isAmbiguousLine && (
                   <span className="src-line-badge" aria-hidden="true">
                     {`${distinctPatternCount}×`}
+                  </span>
+                )}
+                {hasDoc && (
+                  <span className="src-line-doc-marker" aria-hidden="true">
+                    {docOpen ? '▾' : '▸'}
                   </span>
                 )}
               </span>

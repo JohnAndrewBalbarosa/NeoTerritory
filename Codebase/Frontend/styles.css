@@ -2756,8 +2756,18 @@ body::before {
 .inline-line-doc__tag { margin-left: 0.4rem; font-size: 0.7rem; opacity: 0.7; }
 .inline-line-doc__usage-ref { background: none; border: none; cursor: pointer; color: inherit; text-decoration: underline; padding: 0 0.2rem; }
 
-/* Export: never print interactive chrome; always expand headers */
+/* Inline docs collapsed by default — code reads first, notes on demand.
+   The block stays in the DOM (export integrity); only screen display hides. */
+.inline-line-doc--collapsed { display: none; }
+.src-line.has-doc { cursor: pointer; }
+.src-line-doc-marker { margin-left: 0.5rem; font-size: 0.7rem; opacity: 0.45; }
+.src-line.has-doc:hover .src-line-doc-marker { opacity: 0.9; }
+.src-line.doc-open .src-line-doc-marker { opacity: 0.9; }
+
+/* Export: never print interactive chrome; always expand headers + notes */
 @media print {
   .no-print { display: none !important; }
   .pattern-header__body { display: block !important; }
+  .inline-line-doc--collapsed { display: block !important; }
+  .src-line-doc-marker { display: none !important; }
 }
