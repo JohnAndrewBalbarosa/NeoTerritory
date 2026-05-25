@@ -1,6 +1,7 @@
-import { AnalysisRun, Annotation, DocumentationTarget } from '../types/api';
+import { AnalysisRun, DocumentationTarget } from '../types/api';
 import { AnnotatedModel } from './annotatedModel';
-import { PatternDefinition, patternDefinitionFor } from '../data/patternDefinitions';
+import { patternDefinitionFor } from '../data/patternDefinitions';
+import { isAiAnnotation } from './docExport';
 
 export interface PatternHeaderData {
   line: number;                 // class declaration line
@@ -35,10 +36,10 @@ export function buildDocumentedModel(
   const docByLine = new Map<number, InlineDocData>();
   if (!run) return { headerByLine, docByLine };
 
-  // Only patterns surviving cascade earn a header (matches the source spine).
-  const patterns = annotatedModel.activePatterns.length
-    ? annotatedModel.activePatterns
-    : run.detectedPatterns;
+  // Use the cascade-surviving patterns only. If cascade dropped everything,
+  // the correct result is an empty header map — do NOT fall back to the raw
+  // run.detectedPatterns, which would re-inflate dropped tags into the UI.
+  const patterns = annotatedModel.activePatterns;
 
   // ── Headers: one per class declaration line ──────────────────────────────
   for (const p of patterns) {
@@ -99,17 +100,20 @@ export function buildDocumentedModel(
   for (const a of run.annotations || []) {
     if (typeof a.line !== 'number') continue;
     const line = a.line;
-    const entry = docByLine.get(line) ?? {
-      line,
-      notes: [],
-      landmarks: landmarkByLine.get(line) ?? [],
-      usageLines: a.className ? (usageByClass.get(a.className) ?? []) : [],
-    };
-    entry.notes.push({
+    const newNote = {
       title: a.title,
       comment: a.comment,
-      source: isAiAnn(a) ? 'ai' : 'static',
-    });
+      source: (isAiAnnotation(a) ? 'ai' : 'static') as 'ai' | 'static',
+    };
+    const existing = docByLine.get(line);
+    const entry: InlineDocData = existing
+      ? { ...existing, notes: [...existing.notes, newNote] }
+      : {
+          line,
+          notes: [newNote],
+          landmarks: landmarkByLine.get(line) ?? [],
+          usageLines: a.className ? (usageByClass.get(a.className) ?? []) : [],
+        };
     docByLine.set(line, entry);
   }
 
@@ -123,10 +127,6 @@ export function buildDocumentedModel(
 }
 
 // Local helpers referenced by tests are exported for direct coverage.
-export function isAiAnn(a: Annotation): boolean {
-  return a.stage === 'ai_commentary';
-}
 export function landmarksForLine(targets: DocumentationTarget[], line: number): string[] {
   return targets.filter(t => t.line === line).map(t => t.label);
 }
-export type { PatternDefinition };
