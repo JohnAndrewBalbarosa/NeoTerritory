@@ -150,3 +150,415 @@ Tapos after nun is, dapat yung post-test and pre-test, dapat evaluated rin sigur
 00:02:02,280 --> 00:02:03,120
 So, magatakot.
 
+39
+00:02:03,480 --> 00:02:06,200
+At either si Sir Rad, dapat may qualification rin.
+
+40
+00:02:06,300 --> 00:02:09,440
+Dapat, hindi pala pwede si Sir Rad, dapat, ano, si Sir Legaspi.
+
+41
+00:02:10,440 --> 00:02:11,740
+Diyo, ikaw lang ang bala kay Sir Legaspi.
+
+42
+00:02:14,140 --> 00:02:15,880
+Kailangan lang nung evaluation siguro.
+
+43
+00:02:15,960 --> 00:02:17,000
+Ay, hindi, IT prof kasi siya.
+
+44
+00:02:17,420 --> 00:02:17,960
+Ay, hindi pwede naman.
+
+45
+00:02:18,060 --> 00:02:21,320
+Kailangan ko kapag, ano, design, ano, sa design pattern.
+
+46
+00:02:21,400 --> 00:02:23,760
+Okay lang naman kung IT prof as long na nag-design.
+
+47
+00:02:23,760 --> 00:02:25,880
+Hindi, ang, anong, ganun nga.
+
+48
+00:02:25,880 --> 00:02:30,260
+Kaya nga, anong, kung nakapagturo na si Dokaji ng, ano, sa design pattern.
+
+49
+00:02:30,960 --> 00:02:33,020
+Tapos yung sa, ano nga ba?
+
+50
+00:02:33,560 --> 00:02:34,280
+Nasaan nga ba ako?
+
+51
+00:02:34,360 --> 00:02:34,600
+Design pattern.
+
+52
+00:02:34,600 --> 00:02:34,620
+Design pattern.
+
+53
+00:02:34,620 --> 00:02:34,640
+Design pattern.
+
+54
+00:02:34,640 --> 00:02:34,660
+Design pattern.
+
+55
+00:02:34,660 --> 00:02:34,680
+Design pattern.
+
+56
+00:02:34,680 --> 00:02:35,320
+Pattern.
+
+57
+00:02:37,040 --> 00:02:38,000
+Hi, Sir.
+
+58
+00:02:38,680 --> 00:02:39,080
+Lidep.
+
+59
+00:02:41,280 --> 00:02:41,580
+Hi, Sir.
+
+60
+00:02:41,620 --> 00:02:41,960
+Ano yan, Boss?
+
+61
+00:02:42,220 --> 00:02:43,020
+Tuloy pa rin ba sa MG?
+
+62
+00:02:44,020 --> 00:02:44,920
+Kung daan si...
+
+63
+00:02:44,920 --> 00:02:47,500
+No questions, no questions, no questions.
+
+64
+00:02:47,960 --> 00:02:49,100
+No questions?
+
+65
+00:02:50,120 --> 00:02:50,560
+Wala?
+
+66
+00:02:50,660 --> 00:02:51,020
+Wait lang.
+
+67
+00:02:51,420 --> 00:02:51,980
+Ito ba?
+
+68
+00:02:52,300 --> 00:02:53,280
+Ito nung sila, pero...
+
+69
+00:02:53,280 --> 00:02:55,260
+Pwede ba tayo dito?
+
+70
+00:02:56,020 --> 00:02:56,220
+Dito.
+
+71
+00:03:00,530 --> 00:03:05,470
+Yung sa chapter 4, ang problema eh, siguro yung tables, masyadong...
+
+72
+00:03:05,470 --> 00:03:06,010
+May question.
+
+73
+00:03:06,690 --> 00:03:07,130
+Wala.
+
+74
+00:03:07,290 --> 00:03:07,610
+Maganda.
+
+75
+00:03:07,770 --> 00:03:08,290
+Ah, yung...
+
+76
+00:03:08,290 --> 00:03:09,290
+Ano, tanda ko na.
+
+77
+00:03:09,290 --> 00:03:16,290
+Ano ang relation, ano ang relation nitong table 14 dun sa, ano ba siya sagotan nito?
+
+78
+00:03:16,290 --> 00:03:18,290
+Four point yung profile.
+
+79
+00:03:18,290 --> 00:03:20,950
+Anong kinalaman nitong profile na ito, dun sa ano?
+
+80
+00:03:20,950 --> 00:03:21,450
+Ay!
+
+81
+00:03:22,290 --> 00:03:23,290
+Paano yung ito?
+
+82
+00:03:23,290 --> 00:03:23,790
+Emil.
+
+83
+00:03:23,790 --> 00:03:24,290
+No.
+
+84
+00:03:24,290 --> 00:03:28,790
+Dapat rin yung ano, no, lahat ating chapter 4, 1 to 1 ratio rin, 1 to 1 rin dapat, relationship.
+
+85
+00:03:28,790 --> 00:03:34,290
+So, kung maaaring yung respondent profile, sinasagutan niya dapat yung SOP 1.
+
+86
+00:03:34,790 --> 00:03:35,790
+Tama ba?
+
+87
+00:03:35,790 --> 00:03:38,150
+Yung SOP 1, sinasagutan niya respondent yung ano?
+
+88
+00:03:38,150 --> 00:03:38,650
+Ano?
+
+89
+00:03:38,650 --> 00:03:39,650
+Yung 4.1.
+
+90
+00:03:39,650 --> 00:03:40,650
+Pwede yan?
+
+91
+00:03:40,650 --> 00:03:41,650
+O.
+
+92
+00:03:41,650 --> 00:03:42,650
+Lahat-lahat, no?
+
+93
+00:03:42,650 --> 00:03:44,650
+From chapter 4, chapter 5, and chapter 6.
+
+94
+00:03:44,650 --> 00:03:46,650
+Ah, 4.1.
+
+95
+00:03:46,650 --> 00:03:47,650
+Pwede yan.
+
+96
+00:03:47,650 --> 00:03:49,150
+Yung SOP nyo mismo.
+
+97
+00:03:49,150 --> 00:03:50,150
+Oo, okay.
+
+98
+00:03:50,150 --> 00:03:53,150
+Tapos, 4.1, 4.1.
+
+99
+00:03:53,150 --> 00:03:54,650
+Yung respondent profile.
+
+100
+00:03:54,650 --> 00:03:55,150
+Ganun.
+
+101
+00:03:55,150 --> 00:03:56,150
+Ganun yung mangyayari.
+
+102
+00:03:56,150 --> 00:03:59,150
+Lahat ng subsections na kailangan nyo.
+
+103
+00:03:59,150 --> 00:04:00,150
+Sige-sige, bye.
+
+104
+00:04:00,150 --> 00:04:03,150
+Lahat na ng mga subsections na kailangan nyo.
+
+105
+00:04:03,150 --> 00:04:04,150
+Okay, yets.
+
+106
+00:04:04,150 --> 00:04:06,150
+Para mapatunayan yung 4.1.
+
+107
+00:04:06,150 --> 00:04:07,150
+Ah, yung 4.1.
+
+108
+00:04:07,150 --> 00:04:08,150
+Yung SOP 1.
+
+109
+00:04:08,150 --> 00:04:09,150
+Yan, okay.
+
+110
+00:04:09,150 --> 00:04:10,150
+Yets, yets, yets.
+
+111
+00:04:10,150 --> 00:04:11,150
+Para mas madali na mapatunayan.
+
+112
+00:04:11,150 --> 00:04:12,650
+Ah, kaya pala yun yung unang tanong nito, Kaji.
+
+113
+00:04:12,650 --> 00:04:15,650
+Anong kinalaman doon ng table doon sa ano namin?
+
+114
+00:04:15,650 --> 00:04:16,650
+SOP.
+
+115
+00:04:16,650 --> 00:04:17,650
+Oo, oo.
+
+116
+00:04:17,650 --> 00:04:18,650
+Which is may kinalaman naman.
+
+117
+00:04:18,650 --> 00:04:20,150
+Hindi lang nasagot ng tama.
+
+118
+00:04:20,150 --> 00:04:22,150
+Kasi, okay panel.
+
+119
+00:04:22,150 --> 00:04:25,150
+Saan yung SOP yung sinasagot nito?
+
+120
+00:04:25,150 --> 00:04:26,150
+Yets ba?
+
+121
+00:04:26,150 --> 00:04:27,150
+Okay, okay.
+
+122
+00:04:27,150 --> 00:04:28,150
+Yets, yets, yets.
+
+123
+00:04:28,150 --> 00:04:29,650
+Kasi magpapabalik-balik, pet.
+
+124
+00:04:29,650 --> 00:04:30,650
+Ah, about dito yun.
+
+125
+00:04:30,650 --> 00:04:32,150
+Or manguhula sila.
+
+126
+00:04:32,150 --> 00:04:33,150
+Okay, yets, yets.
+
+127
+00:04:33,150 --> 00:04:34,150
+Yets ko na.
+
+128
+00:04:38,600 --> 00:04:39,600
+Ayun, natinan mo.
+
+129
+00:04:39,600 --> 00:04:45,100
+Saan ko, ano bang SOP yung, saan bang SOP yung kailangan itong respondent profile?
+
+130
+00:04:45,100 --> 00:04:46,600
+Ano bang sinasagot na ito?
+
+131
+00:04:46,600 --> 00:04:50,100
+Ang sinasagot niya, dapat nga yun yung subsection yan eh.
+
+132
+00:04:50,100 --> 00:04:52,100
+Oo, dapat subsection.
+
+133
+00:04:52,100 --> 00:04:55,100
+Ah, tapos dyan papasok yung post-test at pre-test.
+
+134
+00:04:55,100 --> 00:04:56,100
+Para sa learners.
+
+135
+00:04:56,100 --> 00:04:58,100
+Kasi, SOP 1 namin is learning.
+
+136
+00:04:58,100 --> 00:05:01,100
+Hindi, kung saan ang SOP niya yun nakalagay.
+
+137
+00:05:01,100 --> 00:05:03,600
+Kailangan siguro sa mga learning path natin.
+
+138
+00:05:03,600 --> 00:05:04,600
+Kasi save yung mga...
+
+139
+00:05:04,600 --> 00:05:06,100
+Doon nadali tayo sa learning path.
+
+140
+00:05:06,100 --> 00:05:08,100
+Kailangan save ako yung mga ano.
+
+141
+00:05:08,100 --> 00:05:09,100
+For example.
+
