@@ -1,6 +1,6 @@
 import { AnalysisRun, Annotation, DocumentationTarget } from '../types/api';
 import { AnnotatedModel } from './annotatedModel';
-import { PatternDefinition } from '../data/patternDefinitions';
+import { PatternDefinition, patternDefinitionFor } from '../data/patternDefinitions';
 
 export interface PatternHeaderData {
   line: number;                 // class declaration line
@@ -28,10 +28,98 @@ export interface DocumentedModel {
 }
 
 export function buildDocumentedModel(
-  _run: AnalysisRun | null,
-  _annotatedModel: AnnotatedModel,
+  run: AnalysisRun | null,
+  annotatedModel: AnnotatedModel,
 ): DocumentedModel {
-  throw new Error('not implemented');
+  const headerByLine = new Map<number, PatternHeaderData>();
+  const docByLine = new Map<number, InlineDocData>();
+  if (!run) return { headerByLine, docByLine };
+
+  // Only patterns surviving cascade earn a header (matches the source spine).
+  const patterns = annotatedModel.activePatterns.length
+    ? annotatedModel.activePatterns
+    : run.detectedPatterns;
+
+  // ── Headers: one per class declaration line ──────────────────────────────
+  for (const p of patterns) {
+    if (!p.className) continue;
+    const loc = annotatedModel.classLocations.get(p.className);
+    const declLine = loc?.line
+      ?? (p.documentationTargets || [])
+          .map(t => t.line)
+          .filter((l): l is number => typeof l === 'number')
+          .sort((a, b) => a - b)[0];
+    if (typeof declLine !== 'number') continue;
+    if (headerByLine.has(declLine)) continue; // first pattern wins the line
+
+    const edu = p.patternEducation;
+    const def = patternDefinitionFor(p.patternName);
+    const source: 'ai' | 'static' = edu ? 'ai' : 'static';
+    const oneLiner = edu ? edu.explanation : (def?.oneLiner ?? '');
+
+    headerByLine.set(declLine, {
+      line: declLine,
+      patternName: p.patternName,
+      className: p.className,
+      source,
+      oneLiner,
+      whyThisFired: edu?.whyThisFired,
+      whenToUse: edu ? undefined : def?.whenToUse,
+      realWorldAnalogy: edu ? undefined : def?.realWorldAnalogy,
+      watchOuts: edu ? undefined : def?.watchOuts,
+      methodsToTest: (p.unitTestTargets || []).map(t => ({
+        name: t.function_name,
+        line: t.line,
+        branchKind: t.branch_kind,
+      })),
+    });
+  }
+
+  // ── Inline docs: one per annotated line ──────────────────────────────────
+  // Build a per-line landmark index from every pattern's documentationTargets.
+  const landmarkByLine = new Map<number, string[]>();
+  for (const p of patterns) {
+    for (const t of p.documentationTargets || []) {
+      if (typeof t.line !== 'number') continue;
+      const list = landmarkByLine.get(t.line) ?? [];
+      if (!list.includes(t.label)) list.push(t.label);
+      landmarkByLine.set(t.line, list);
+    }
+  }
+
+  // Usage lines per class (where the class is referenced elsewhere).
+  const usageByClass = new Map<string, number[]>();
+  for (const [cls, list] of Object.entries(run.classUsageBindings || {})) {
+    const lines = (list || [])
+      .map(b => b.line)
+      .filter((l): l is number => typeof l === 'number');
+    if (lines.length) usageByClass.set(cls, lines);
+  }
+
+  for (const a of run.annotations || []) {
+    if (typeof a.line !== 'number') continue;
+    const line = a.line;
+    const entry = docByLine.get(line) ?? {
+      line,
+      notes: [],
+      landmarks: landmarkByLine.get(line) ?? [],
+      usageLines: a.className ? (usageByClass.get(a.className) ?? []) : [],
+    };
+    entry.notes.push({
+      title: a.title,
+      comment: a.comment,
+      source: isAiAnn(a) ? 'ai' : 'static',
+    });
+    docByLine.set(line, entry);
+  }
+
+  // Lines that have a landmark but no annotation still deserve an inline doc.
+  for (const [line, landmarks] of landmarkByLine) {
+    if (docByLine.has(line)) continue;
+    docByLine.set(line, { line, notes: [], landmarks, usageLines: [] });
+  }
+
+  return { headerByLine, docByLine };
 }
 
 // Local helpers referenced by tests are exported for direct coverage.
