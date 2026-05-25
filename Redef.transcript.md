@@ -343,3 +343,255 @@
 
 **[06:08–06:09]** 4.2.1. 4.2.1. 4.2.1. 4.2.1. 4.2.1.
 
+**[06:09–06:10]** 4.2.1. 4.2.1. 4.2.1. 4.2.1.
+
+**[06:10–06:11]** 4.2.1. 4.2.1. 4.2.1. 4.2.1.
+
+**[06:11–06:12]** 4.2.1. 4.2.1. 4.2.1. 4.2.1.
+
+**[06:12–06:13]** How can a siglid to vision language and coding...
+
+**[06:13–06:14]** SOP 3 namin yan.
+
+**[06:14–06:15]** Okay, gets, gets.
+
+**[06:15–06:18]** Kasinagot namin ng mga following subsections para organize.
+
+**[06:18–06:19]** Gets ba?
+
+**[06:19–06:20]** Okay, gets, gets.
+
+**[06:20–06:23]** Yung results, yung conclusion, tapos saka yung..
+
+**[06:23–06:24]** Kaya yun o.
+
+**[06:24–06:28]** How can a proposed system analyze C++ source code?
+
+**[06:28–06:31]** Ano bang mga subsections mga kailangan nyo rin, gets ba?
+
+**[06:31–06:33]** Ano ang mga table kailangan nyo dyan?
+
+**[06:33–06:35]** Okay, gets, gets.
+
+**[06:35–06:35]** Okay, gets.
+
+**[06:37–06:38]** How can a documentation
+
+**[06:38–06:39]** out
+
+**[06:39–06:41]** what's that users?
+
+**[06:41–06:41]** Ano mga
+
+**[06:41–06:42]** subsets?
+
+**[06:42–06:43]** Ah, yun.
+
+**[06:43–06:43]** Okay, tanda ko na rin.
+
+**[06:44–06:45]** Diyan din sa system
+
+**[06:45–06:46]** ano daw
+
+**[06:46–06:47]** kay Doc Dennis
+
+**[06:47–06:48]** dapat yung docs
+
+**[06:48–06:49]** dapat nasa
+
+**[06:49–06:50]** pattern designer siya
+
+**[06:50–06:51]** dito sa documentation part.
+
+**[06:52–06:53]** Okay, gets, gets.
+
+**[06:53–06:54]** Yung docs magsamahin
+
+**[06:54–06:55]** pati yung ano
+
+**[06:55–06:56]** yung ano.
+
+**[06:56–06:57]** Para madaling
+
+**[06:57–06:57]** intindihan nyo
+
+**[06:57–06:58]** oras of the discussion.
+
+**[06:59–06:59]** Sige, sige, sige.
+
+**[06:59–07:01]** Hindi yung mamuhula si pilot
+
+**[07:01–07:01]** para saan mo
+
+**[07:01–07:02]** itong section na to
+
+**[07:02–07:04]** magpapalo ka manalaman
+
+**[07:04–07:05]** kung direct ninyo
+
+**[07:05–07:06]** na answer yung
+
+**[07:06–07:07]** SOP nyo.
+
+**[07:07–07:08]** Parang ganun eh.
+
+**[07:08–07:09]** Sige, sige, gets, gets.
+
+**[07:10–07:11]** Para magpapaladiyan na yung
+
+**[07:11–07:13]** panel na chapter 4 pa lang
+
+**[07:13–07:14]** ah, yung SOP 1 nila
+
+**[07:14–07:15]** okay kasi na
+
+**[07:15–07:16]** nasagot nila na
+
+**[07:16–07:17]** maayos yung question
+
+**[07:17–07:18]** with data
+
+**[07:18–07:19]** na nag-addoy nila.
+
+**[07:20–07:20]** Tapos,
+
+**[07:21–07:21]** sa conclusion
+
+**[07:21–07:22]** ano ba pinag-aiba
+
+**[07:22–07:22]** sa conclusion?
+
+**[07:22–07:23]** Yung conclusion
+
+**[07:23–07:24]** yung inference mo lang.
+
+**[07:25–07:26]** I-formalize mo na
+
+**[07:26–07:28]** into words.
+
+**[07:28–07:29]** Okay, gets.
+
+**[07:29–07:30]** Okay, so mas maikli
+
+**[07:30–07:30]** yung conclusion.
+
+**[07:31–07:31]** In a way
+
+**[07:31–07:32]** kasi sa
+
+**[07:32–07:34]** sa chapter 4 mo
+
+**[07:34–07:35]** sinabi na yung
+
+**[07:35–07:36]** based on the data
+
+**[07:36–07:36]** ito yung nangyari.
+
+**[07:37–07:38]** So parang
+
+**[07:38–07:38]** ano lang
+
+**[07:38–07:39]** parang
+
+**[07:39–07:41]** representation lang.
+
+**[07:41–07:42]** Representation lang
+
+**[07:42–07:43]** nung nangyari.
+
+**[07:43–07:44]** Okay, gets.
+
+**[07:44–07:45]** So to conclude
+
+**[07:45–07:46]** so your system
+
+**[07:46–07:47]** successfully naman
+
+**[07:47–07:48]** na pag-evaluate
+
+**[07:48–07:49]** ng mga ganda-ganyan
+
+**[07:49–07:49]** ganda-ganyan.
+
+**[07:50–07:50]** Okay, gets, gets, gets.
+
+**[07:51–07:51]** O.
+
+**[07:52–07:53]** Ang chapter 4
+
+**[07:53–07:56]** ang chapter 4
+
+**[07:56–07:57]** based on the data here
+
+**[07:57–07:58]** ito yung mga data
+
+**[07:58–07:59]** na nagbaback
+
+**[07:59–08:00]** ito yung
+
+**[08:00–08:01]** Okay, kayo.
+
+**[08:01–08:02]** Ano pa kayo?
+
+**[08:02–08:02]** Dahil sa
+
+**[08:02–08:03]** ganun.
+
+**[08:04–08:05]** Ano, ano sa
+
+**[08:05–08:05]** saan yung
+
+**[08:05–08:07]** unsavable pa ba ito?
+
+**[08:07–08:08]** Pag na-SCP, right?
+
+**[08:08–08:09]** Kasi sabi doon
+
+**[08:09–08:09]** yung ano yung
+
+**[08:09–08:10]** Dok Haji
+
+**[08:10–08:10]** dapat daw
+
+**[08:10–08:11]** ito daw in the first place
+
+**[08:11–08:12]** fail daw
+
+**[08:12–08:13]** daw talaga dapat.
+
+**[08:13–08:14]** Si Dok Dennis na yung
+
+**[08:14–08:15]** nag-insist
+
+**[08:15–08:16]** na gawing ano.
+
+**[08:16–08:17]** Kung gano'n yung context
+
+**[08:17–08:18]** kapag fail daw
+
+**[08:18–08:19]** talaga yung Dok Haji
+
+**[08:19–08:20]** pero si Dok Dennis
+
+**[08:20–08:21]** na doon yung nag-insist.
+
+**[08:23–08:23]** Na
+
+**[08:23–08:24]** ipasa?
+
+**[08:24–08:25]** Na gawin kaming
+
+**[08:25–08:25]** redef.
+
+**[08:27–08:28]** Yung papel lang
+
+**[08:28–08:28]** talaga yun?
+
+**[08:28–08:29]** Yung papel lang
+
+**[08:29–08:30]** yung problema lang
+
+**[08:30–08:30]** talaga
+
+**[08:30–08:31]** ni Dok.
+
