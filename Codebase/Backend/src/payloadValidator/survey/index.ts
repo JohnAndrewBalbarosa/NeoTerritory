@@ -11,10 +11,6 @@ export const reviewSubmitSchema = z.object({
 const starRatingSchema = z.number().int().min(1).max(5);
 const openTextSchema = z.string().max(4000);
 
-export const pretestSchema = z.object({
-  answers: z.record(z.union([z.string(), z.number(), z.boolean(), z.array(z.string())]))
-});
-
 // Pattern ID schema — matches the catalog. Lower-snake_case, optional
 // underscore. Keeps the F1 ground-truth payload tight without coupling
 // the schema to a hard-coded enum (which would force a redeploy every

@@ -83,10 +83,6 @@ export const profile: ProfileQuestion[] = [
   }
 ];
 
-// Pre-test gate retained as an empty array — the runtime gate skips
-// itself when this is empty, matching the prior contract.
-export const pretest: SurveyQuestion[] = [];
-
 // Per-run survey — five items focused on the just-completed analysis.
 export const perRun: SurveyQuestion[] = [
   { id: 'B.3', kind: 'star', text: 'The system helps me understand unfamiliar C++ source code.' },

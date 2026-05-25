@@ -129,15 +129,6 @@ export function initDb(): void {
   initEtlSchema(db);
 
   // --- Survey + manual-review tables (idempotent) ---
-  db.prepare(`CREATE TABLE IF NOT EXISTS survey_pretest (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    answers_json TEXT NOT NULL,
-    submitted_at TEXT NOT NULL,
-    FOREIGN KEY(user_id) REFERENCES users(id)
-  )`).run();
-  db.prepare(`CREATE INDEX IF NOT EXISTS idx_survey_pretest_user ON survey_pretest(user_id)`).run();
-
   // Fresh-DB shape: run_id is INTEGER + FK CASCADE so a run delete also
   // wipes its per-run survey rows. Older DBs created before this change
   // still have run_id TEXT and no FK; they get migrated by the
@@ -243,26 +234,6 @@ export function initDb(): void {
   } catch {
     /* column already exists — nothing to do */
   }
-
-  // ── learning_assessment (pre/post knowledge-test scores) ────────────────
-  // One row per (user, scope, phase). scope is 'path' or a category id
-  // ('foundations' | 'creational' | ...); phase is 'pre' | 'post'. The score
-  // is objective (correct/total), so post − pre measures real learning. A
-  // re-take upserts the same (user, scope, phase) row. answers_json stores the
-  // raw item→choice map for item-level analysis.
-  db.prepare(`CREATE TABLE IF NOT EXISTS learning_assessment (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    scope TEXT NOT NULL,
-    phase TEXT NOT NULL,
-    correct INTEGER NOT NULL,
-    total INTEGER NOT NULL,
-    percent INTEGER NOT NULL,
-    answers_json TEXT NOT NULL DEFAULT '{}',
-    submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
-    UNIQUE(user_id, scope, phase),
-    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-  )`).run();
 
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email

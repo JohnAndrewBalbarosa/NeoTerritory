@@ -1406,12 +1406,8 @@ body[data-surface] #root {
   letter-spacing: 0.1em;
   line-height: 1.4;
   text-transform: uppercase;
-  cursor: pointer;
+  cursor: default;
   text-align: left;
-}
-.nt-course-section__label:hover {
-  color: var(--nt-mkt-text);
-  background: rgba(0, 209, 216, 0.06);
 }
 .nt-course-section__label:focus-visible {
   outline: 2px solid var(--devcon-cyan, var(--nt-mkt-accent));
@@ -1510,6 +1506,67 @@ body[data-surface] #root {
   border-color: rgba(166, 255, 0, 0.44);
   color: var(--devcon-lime, var(--nt-mkt-accent));
 }
+
+/* ── Per-module collapsible dropdown (sidebar outline) ──
+   Each module is a row (title button + chevron) plus an inline list of the
+   module's sub-sections shown when expanded. The chevron + section-link
+   selectors carry a class so they out-specify the generic
+   `.nt-course-outline button` grid rule and reset back to plain buttons. */
+.nt-course-module__row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+.nt-course-module__row > button:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.nt-course-outline button.nt-course-module__chev {
+  display: flex;
+  grid-template-columns: none;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 30px;
+  width: 30px;
+  padding: 0;
+  border-radius: 12px;
+  color: var(--nt-mkt-text-mute);
+  font-size: 0.78rem;
+  line-height: 1;
+}
+.nt-course-outline button.nt-course-module__chev:hover {
+  background: rgba(0, 209, 216, 0.08);
+  border-color: rgba(0, 209, 216, 0.28);
+  color: var(--nt-mkt-text);
+}
+.nt-course-module__sections {
+  list-style: none;
+  margin: 0.1rem 0 0.35rem;
+  padding: 0 0 0 2.55rem;
+  display: grid;
+  gap: 0.05rem;
+}
+.nt-course-outline button.nt-course-module__section-link {
+  display: block;
+  grid-template-columns: none;
+  width: 100%;
+  padding: 0.32rem 0.5rem;
+  gap: 0;
+  border-radius: 8px;
+  color: var(--nt-mkt-text-mute);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+.nt-course-outline button.nt-course-module__section-link:hover {
+  background: rgba(0, 209, 216, 0.06);
+  border-color: rgba(0, 209, 216, 0.2);
+  color: var(--nt-mkt-text);
+}
+/* Jump-link target offset so a scrolled-to section sits a touch below the top. */
+.nt-learn__module-section {
+  scroll-margin-top: 1rem;
+}
+
 .nt-course-library-nav {
   display: grid;
   gap: 0.35rem;

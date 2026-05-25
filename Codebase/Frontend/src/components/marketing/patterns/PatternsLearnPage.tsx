@@ -13,20 +13,9 @@ import {
   submitAnalysis,
   fetchLearningProgress,
   saveLearningProgress,
-  fetchAssessments,
-  saveAssessment,
-  fetchProficiencyBands,
-  type ProficiencyBandDto,
 } from '../../../api/client';
 import { useAppStore } from '../../../store/appState';
 import { PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
-import AssessmentPanel from '../../learn/AssessmentPanel';
-import {
-  getAssessmentForm,
-  type AssessmentScope,
-  type AssessmentPhase,
-  type AssessmentScoreResult,
-} from '../../../data/learningAssessments';
 
 // D77 (round 4): per-module practical check is the unlock gate. The hub
 // keeps the multi-step guided-course UI (hero + progress, three-section
@@ -118,40 +107,80 @@ function clampToUnlocked(idx: number, unlockedCount: number): number {
 
 // ----- step button + section wrappers (matches old StudentLearningHub CSS) -----
 
-interface StepButtonProps {
+interface ModuleItemProps {
   step: CourseStep;
   activeIndex: number;
   isRead: boolean;
   isLocked: boolean;
-  onClick: () => void;
+  onSelectModule: () => void;
+  onSelectSection: (sectionIndex: number) => void;
 }
 
-function StepButton({ step, activeIndex, isRead, isLocked, onClick }: StepButtonProps): JSX.Element {
+// One module row in the sidebar outline, rendered as a collapsible dropdown:
+// the title button navigates to the lesson; the chevron expands an inline list
+// of that module's sub-sections (jump-links). The active module is expanded by
+// default and the rest collapse, so a long catalog stays scannable.
+function ModuleItem({ step, activeIndex, isRead, isLocked, onSelectModule, onSelectSection }: ModuleItemProps): JSX.Element {
   const isActive = step.globalIndex === activeIndex;
+  const sections = step.module.sections;
+  const hasSections = !isLocked && sections.length > 0;
+  const [open, setOpen] = useState<boolean>(isActive);
+  useEffect(() => {
+    if (isActive) setOpen(true);
+  }, [isActive]);
   const status = isLocked ? 'Locked' : isRead ? 'Done' : isActive ? 'Current' : 'Ready';
   const numberLabel = isLocked ? '\u{1F512}' : isRead ? 'ok' : String(step.globalIndex + 1);
   return (
-    <li>
-      <button
-        type="button"
-        data-active={isActive ? 'true' : undefined}
-        data-completed={isRead ? 'true' : undefined}
-        data-locked={isLocked ? 'true' : undefined}
-        disabled={isLocked}
-        aria-disabled={isLocked || undefined}
-        title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
-        onClick={onClick}
-      >
-        <span className="nt-course-outline__dot" aria-hidden="true">
-          {numberLabel}
-        </span>
-        <span>
-          <small>
-            {step.module.eyebrow} · {status}
-          </small>
-          {step.module.title}
-        </span>
-      </button>
+    <li className="nt-course-module" data-open={open ? 'true' : undefined}>
+      <div className="nt-course-module__row">
+        <button
+          type="button"
+          data-active={isActive ? 'true' : undefined}
+          data-completed={isRead ? 'true' : undefined}
+          data-locked={isLocked ? 'true' : undefined}
+          disabled={isLocked}
+          aria-disabled={isLocked || undefined}
+          title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
+          onClick={onSelectModule}
+        >
+          <span className="nt-course-outline__dot" aria-hidden="true">
+            {numberLabel}
+          </span>
+          <span>
+            <small>
+              {step.module.eyebrow} · {status}
+            </small>
+            {step.module.title}
+          </span>
+        </button>
+        {hasSections && (
+          <button
+            type="button"
+            className="nt-course-module__chev"
+            aria-expanded={open}
+            aria-label={open ? `Hide ${step.module.title} sections` : `Show ${step.module.title} sections`}
+            title={open ? 'Hide sections' : 'Show sections'}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? '▾' : '▸'}
+          </button>
+        )}
+      </div>
+      {hasSections && open && (
+        <ol className="nt-course-module__sections">
+          {sections.map((s, i) => (
+            <li key={`${step.module.id}-sec-${i}`}>
+              <button
+                type="button"
+                className="nt-course-module__section-link"
+                onClick={() => onSelectSection(i)}
+              >
+                {s.heading}
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
     </li>
   );
 }
@@ -161,6 +190,8 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
+// Static category header. Collapsing now happens per MODULE (see ModuleItem),
+// not per section.
 function Section({ label, children }: SectionProps): JSX.Element {
   return (
     <div className="nt-course-section">
@@ -255,7 +286,7 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
       </header>
 
       {module.sections.map((s, idx) => (
-        <section className="nt-learn__module-section" key={`${module.id}-s-${idx}`}>
+        <section className="nt-learn__module-section" key={`${module.id}-s-${idx}`} id={`mod-${module.id}-sec-${idx}`}>
           <h3 className="nt-learn__module-section-head">{s.heading}</h3>
           {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
           {s.bullets && s.bullets.length > 0 ? (
@@ -575,19 +606,6 @@ export default function PatternsLearnPage(): JSX.Element {
   // the UI and persisted alongside progress so analytics can read it.
   const [triesByModule, setTriesByModule] = useState<Record<string, number>>({});
 
-  // Pre/post knowledge-test results, keyed `${scope}.${phase}`. Hydrated from
-  // the account on mount and written back on each submission.
-  const [assessments, setAssessments] = useState<Record<string, AssessmentScoreResult>>({});
-  const [bands, setBands] = useState<ProficiencyBandDto[] | undefined>(undefined);
-  const [assessmentBusy, setAssessmentBusy] = useState<boolean>(false);
-
-  const assessmentKey = (scope: AssessmentScope, phase: AssessmentPhase): string =>
-    `${scope}.${phase}`;
-  const hasTaken = useCallback(
-    (scope: AssessmentScope, phase: AssessmentPhase): boolean =>
-      assessments[`${scope}.${phase}`] != null,
-    [assessments],
-  );
   const unlockedCount = useMemo(
     () => computeUnlockedCount(steps, completedIds),
     [steps, completedIds],
@@ -628,31 +646,6 @@ export default function PatternsLearnPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [token]);
-
-  // Hydrate prior assessment results + the admin proficiency bands. Bands are
-  // public (no token needed); results are per-account so they're token-gated.
-  useEffect(() => {
-    let cancelled = false;
-    void fetchProficiencyBands()
-      .then((b) => { if (!cancelled && b.length) setBands(b); })
-      .catch(() => { /* fall back to defaults in the scoring helpers */ });
-    if (!token) return () => { cancelled = true; };
-    void fetchAssessments()
-      .then((rows) => {
-        if (cancelled || !rows.length) return;
-        setAssessments((prev) => {
-          const next = { ...prev };
-          for (const r of rows) {
-            next[`${r.scope}.${r.phase}`] = {
-              correct: r.correct, total: r.total, percent: r.percent,
-            };
-          }
-          return next;
-        });
-      })
-      .catch(() => { /* first visit — start empty */ });
-    return () => { cancelled = true; };
   }, [token]);
 
   // Persist the completed set to the account, recording the highest unlocked
@@ -769,6 +762,22 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps, unlockedCount],
   );
 
+  const goToSection = useCallback(
+    (index: number, moduleId: string, sectionIndex: number) => {
+      goToStep(index);
+      // Wait for the lesson panel to (re)render the target module, then scroll
+      // to the section anchor in the lesson body.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          document
+            .getElementById(`mod-${moduleId}-sec-${sectionIndex}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }),
+      );
+    },
+    [goToStep],
+  );
+
   const markComplete = useCallback(
     (moduleId: string, tries: number) => {
       // Record the attempt count (keep the first/lowest if re-passed) for the
@@ -788,39 +797,6 @@ export default function PatternsLearnPage(): JSX.Element {
     },
     [persistProgress],
   );
-
-  const onCompleteAssessment = useCallback(
-    (
-      scope: AssessmentScope,
-      phase: AssessmentPhase,
-      result: AssessmentScoreResult,
-      answers: Record<string, number>,
-    ) => {
-      setAssessments((prev) => ({ ...prev, [assessmentKey(scope, phase)]: result }));
-      if (!token) return;
-      setAssessmentBusy(true);
-      void saveAssessment({
-        scope, phase,
-        correct: result.correct, total: result.total, percent: result.percent,
-        answers,
-      })
-        .catch(() => { /* best-effort; in-memory result already set */ })
-        .finally(() => setAssessmentBusy(false));
-    },
-    [token],
-  );
-
-  // First / last global step index for each category, so the page knows when
-  // the active module is a section boundary (where a section pre/post belongs).
-  const { firstIndexByCat, lastIndexByCat } = useMemo(() => {
-    const first = new Map<LearningCategory, number>();
-    const last = new Map<LearningCategory, number>();
-    steps.forEach((s) => {
-      if (!first.has(s.category)) first.set(s.category, s.globalIndex);
-      last.set(s.category, s.globalIndex);
-    });
-    return { firstIndexByCat: first, lastIndexByCat: last };
-  }, [steps]);
 
   const goPrev = useCallback(() => {
     if (activeIndex > 0) goToStep(activeIndex - 1);
@@ -849,39 +825,6 @@ export default function PatternsLearnPage(): JSX.Element {
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === total - 1;
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
-
-  // ── Assessment gating ────────────────────────────────────────────────────
-  // A blocking assessment (path pre-test, or a section pre-test on that
-  // section's first module) replaces the lesson body until it is submitted —
-  // "pre" must come before the content it measures. Trailing assessments
-  // (section post on the last module, whole-path post when everything is done)
-  // render below the lesson body and don't block reading.
-  const activeCat = activeStep?.category;
-  const pathPreDue = !hasTaken('path', 'pre');
-  const sectionPreDue =
-    !pathPreDue &&
-    !!activeStep &&
-    !!activeCat &&
-    activeStep.globalIndex === firstIndexByCat.get(activeCat) &&
-    !hasTaken(activeCat, 'pre');
-  const blockingAssessment: { scope: AssessmentScope; phase: AssessmentPhase } | null =
-    pathPreDue ? { scope: 'path', phase: 'pre' }
-    : sectionPreDue && activeCat ? { scope: activeCat, phase: 'pre' }
-    : null;
-
-  const allComplete = total > 0 && completedCount >= total;
-  const sectionPostDue =
-    !blockingAssessment &&
-    !!activeStep &&
-    !!activeCat &&
-    activeStep.globalIndex === lastIndexByCat.get(activeCat) &&
-    isActiveComplete &&
-    !hasTaken(activeCat, 'post');
-  const pathPostDue =
-    !blockingAssessment && !sectionPostDue && allComplete && !hasTaken('path', 'post');
-
-  const prePercentFor = (scope: AssessmentScope): number | null =>
-    assessments[assessmentKey(scope, 'pre')]?.percent ?? null;
 
   return (
     <main className="nt-student nt-student-course" id="main">
@@ -941,22 +884,28 @@ export default function PatternsLearnPage(): JSX.Element {
             </span>
           </div>
 
-          {sidebarOpen && groups.map((g, idx) => (
-            <Section key={g.meta.id} label={`Section ${idx + 1} · ${g.meta.name}`}>
-              <ol className="nt-course-outline">
-                {g.steps.map((step) => (
-                  <StepButton
-                    key={step.module.id}
-                    step={step}
-                    activeIndex={activeIndex}
-                    isRead={completedIds.has(step.module.id)}
-                    isLocked={step.globalIndex >= unlockedCount}
-                    onClick={() => goToStep(step.globalIndex)}
-                  />
-                ))}
-              </ol>
-            </Section>
-          ))}
+          {sidebarOpen && groups.map((g, idx) => {
+            return (
+              <Section
+                key={g.meta.id}
+                label={`Section ${idx + 1} · ${g.meta.name}`}
+              >
+                <ol className="nt-course-outline">
+                  {g.steps.map((step) => (
+                    <ModuleItem
+                      key={step.module.id}
+                      step={step}
+                      activeIndex={activeIndex}
+                      isRead={completedIds.has(step.module.id)}
+                      isLocked={step.globalIndex >= unlockedCount}
+                      onSelectModule={() => goToStep(step.globalIndex)}
+                      onSelectSection={(i) => goToSection(step.globalIndex, step.module.id, i)}
+                    />
+                  ))}
+                </ol>
+              </Section>
+            );
+          })}
         </aside>
 
         <article className="nt-lesson-panel">
@@ -994,52 +943,16 @@ export default function PatternsLearnPage(): JSX.Element {
             isActiveComplete={isActiveComplete}
           />
 
-          {blockingAssessment ? (
-            <AssessmentPanel
-              key={`${blockingAssessment.scope}.${blockingAssessment.phase}`}
-              form={getAssessmentForm(blockingAssessment.scope, blockingAssessment.phase)}
-              bands={bands}
-              submitting={assessmentBusy}
-              onComplete={(r, a) =>
-                onCompleteAssessment(blockingAssessment.scope, blockingAssessment.phase, r, a)
-              }
+          {activeModule ? <ModuleBody module={activeModule} /> : null}
+
+          {activeModule && activeModule.practical ? (
+            <ModulePractical
+              key={activeModule.id}
+              module={activeModule}
+              isPassed={isActiveComplete}
+              onPass={(tries) => markComplete(activeModule.id, tries)}
             />
-          ) : (
-            <>
-              {activeModule ? <ModuleBody module={activeModule} /> : null}
-
-              {activeModule && activeModule.practical ? (
-                <ModulePractical
-                  key={activeModule.id}
-                  module={activeModule}
-                  isPassed={isActiveComplete}
-                  onPass={(tries) => markComplete(activeModule.id, tries)}
-                />
-              ) : null}
-
-              {sectionPostDue && activeCat ? (
-                <AssessmentPanel
-                  key={`${activeCat}.post`}
-                  form={getAssessmentForm(activeCat, 'post')}
-                  prePercent={prePercentFor(activeCat)}
-                  bands={bands}
-                  submitting={assessmentBusy}
-                  onComplete={(r, a) => onCompleteAssessment(activeCat, 'post', r, a)}
-                />
-              ) : null}
-
-              {pathPostDue ? (
-                <AssessmentPanel
-                  key="path.post"
-                  form={getAssessmentForm('path', 'post')}
-                  prePercent={prePercentFor('path')}
-                  bands={bands}
-                  submitting={assessmentBusy}
-                  onComplete={(r, a) => onCompleteAssessment('path', 'post', r, a)}
-                />
-              ) : null}
-            </>
-          )}
+          ) : null}
 
           <footer className="nt-lesson-controls">
             <button
