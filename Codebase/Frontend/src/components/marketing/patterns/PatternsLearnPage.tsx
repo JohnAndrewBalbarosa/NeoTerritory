@@ -147,14 +147,32 @@ function StepButton({ step, activeIndex, isRead, isLocked, onClick }: StepButton
 
 interface SectionProps {
   label: string;
+  defaultOpen?: boolean;
+  containsActive?: boolean;
   children: React.ReactNode;
 }
 
-function Section({ label, children }: SectionProps): JSX.Element {
+// Collapsible accordion section. Only the section holding the active module is
+// open by default; the rest stay collapsed so the (long) module outline fits
+// the sidebar without endless scrolling. Navigating into a collapsed section
+// auto-expands it, and the user can toggle any section freely.
+function Section({ label, defaultOpen = false, containsActive = false, children }: SectionProps): JSX.Element {
+  const [open, setOpen] = useState<boolean>(defaultOpen);
+  useEffect(() => {
+    if (containsActive) setOpen(true);
+  }, [containsActive]);
   return (
-    <div className="nt-course-section">
-      <p className="nt-course-section__label">{label}</p>
-      {children}
+    <div className={`nt-course-section${open ? ' is-open' : ''}`}>
+      <button
+        type="button"
+        className="nt-course-section__label"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span>{label}</span>
+        <span className="nt-course-section__chev" aria-hidden="true">{open ? '▾' : '▸'}</span>
+      </button>
+      {open && <div className="nt-course-section__body">{children}</div>}
     </div>
   );
 }
@@ -826,22 +844,30 @@ export default function PatternsLearnPage(): JSX.Element {
             </span>
           </div>
 
-          {sidebarOpen && groups.map((g, idx) => (
-            <Section key={g.meta.id} label={`Section ${idx + 1} · ${g.meta.name}`}>
-              <ol className="nt-course-outline">
-                {g.steps.map((step) => (
-                  <StepButton
-                    key={step.module.id}
-                    step={step}
-                    activeIndex={activeIndex}
-                    isRead={completedIds.has(step.module.id)}
-                    isLocked={step.globalIndex >= unlockedCount}
-                    onClick={() => goToStep(step.globalIndex)}
-                  />
-                ))}
-              </ol>
-            </Section>
-          ))}
+          {sidebarOpen && groups.map((g, idx) => {
+            const containsActive = g.steps.some((s) => s.globalIndex === activeIndex);
+            return (
+              <Section
+                key={g.meta.id}
+                label={`Section ${idx + 1} · ${g.meta.name}`}
+                defaultOpen={containsActive}
+                containsActive={containsActive}
+              >
+                <ol className="nt-course-outline">
+                  {g.steps.map((step) => (
+                    <StepButton
+                      key={step.module.id}
+                      step={step}
+                      activeIndex={activeIndex}
+                      isRead={completedIds.has(step.module.id)}
+                      isLocked={step.globalIndex >= unlockedCount}
+                      onClick={() => goToStep(step.globalIndex)}
+                    />
+                  ))}
+                </ol>
+              </Section>
+            );
+          })}
         </aside>
 
         <article className="nt-lesson-panel">
