@@ -1950,6 +1950,12 @@ body[data-surface] #root {
   border: 1px solid rgba(255, 76, 76, 0.42);
   color: var(--nt-mkt-text);
 }
+.nt-practical__tries {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.8rem;
+  color: var(--nt-mkt-text-soft);
+  white-space: nowrap;
+}
 .nt-practical__tags {
   list-style: none;
   padding: 0;

@@ -510,6 +510,7 @@ function PatternPractical({
           ✓ Pass — the analyser tagged your class as <strong>{practical.patternName}</strong>
           {tags.length > 1 ? ` (alongside ${tags.length - 1} other tag${tags.length - 1 === 1 ? '' : 's'} — ambiguity is fine)` : ''}
           .
+          {tries > 0 && <span className="nt-practical__tries"> · {tries} attempt{tries === 1 ? '' : 's'}</span>}
         </p>
       )}
       {status === 'fail' && (
@@ -555,6 +556,9 @@ export default function PatternsLearnPage(): JSX.Element {
   const token = useAppStore((s) => s.token);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
+  // Attempts the learner needed to pass each module's practical. View-only in
+  // Phase 1 (the verdict line shows it); Phase 3 forwards this to analytics.
+  const [triesByModule, setTriesByModule] = useState<Record<string, number>>({});
   const unlockedCount = useMemo(
     () => computeUnlockedCount(steps, completedIds),
     [steps, completedIds],
@@ -712,7 +716,12 @@ export default function PatternsLearnPage(): JSX.Element {
   );
 
   const markComplete = useCallback(
-    (moduleId: string) => {
+    (moduleId: string, tries: number) => {
+      // Record the attempt count (keep the first/lowest if re-passed) for the
+      // module's practical. Phase 3 forwards this to the analytics endpoint.
+      setTriesByModule((prev) =>
+        prev[moduleId] != null ? prev : { ...prev, [moduleId]: tries },
+      );
       setCompletedIds((prev) => {
         if (prev.has(moduleId)) return prev;
         const next = new Set(prev);
@@ -746,6 +755,10 @@ export default function PatternsLearnPage(): JSX.Element {
   const completedCount = completedIds.size;
   const total = steps.length;
   const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  // Total practical attempts across passed modules — a lightweight effort
+  // signal shown beside the progress bar (and persisted to analytics in
+  // Phase 3). Reads the per-module attempt map captured on each pass.
+  const totalTries = Object.values(triesByModule).reduce((a, b) => a + b, 0);
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === total - 1;
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
@@ -773,6 +786,7 @@ export default function PatternsLearnPage(): JSX.Element {
           <span>{progress}%</span>
           <p>
             {completedCount}/{total} modules passed
+            {totalTries > 0 ? ` · ${totalTries} total attempt${totalTries === 1 ? '' : 's'}` : ''}
           </p>
           <div className="nt-course-progress__bar" aria-hidden="true">
             <i style={{ width: `${progress}%` }} />
@@ -867,7 +881,7 @@ export default function PatternsLearnPage(): JSX.Element {
               key={activeModule.id}
               module={activeModule}
               isPassed={isActiveComplete}
-              onPass={() => markComplete(activeModule.id)}
+              onPass={(tries) => markComplete(activeModule.id, tries)}
             />
           ) : null}
 
