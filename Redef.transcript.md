@@ -47,3 +47,35 @@
 
 **[01:01–01:03]** Na parang, sino ba yung ano nyo?
 
+**[01:03–01:06]** Ah, project manager sa si Ma'am May po.
+
+**[01:06–01:06]** Ah, okay.
+
+**[01:06–01:09]** Kaya nga pwede si Sir Pura, dapat nga daw is,
+
+**[01:09–01:14]** isa daw yung professor, nagtuturo daw ng siguro algorithms para daw yung sa professional evaluation.
+
+**[01:15–01:20]** Ang akala ko nga in the first place is pwedeng gamitin yung professional evaluator na teacher
+
+**[01:20–01:24]** para dun sa, ano, yung sa accurateness nung ating, ano natin.
+
+**[01:25–01:27]** Yung nga kailangan daw is yung action sa student nga.
+
+**[01:27–01:32]** Kaya siguro kakausapin namin yung, ano namin, yung pangalan nito.
+
+**[01:33–01:33]** Yung...
+
+**[01:33–01:39]** Kakausapin namin yung, ano, yung amic client adult namin para mag, ah, siguro mga sampungan nilang.
+
+**[01:39–01:42]** Sampung students lang na hindi nakasama nung, ano.
+
+**[01:43–01:44]** Tapos meron na rin dapat nilang perma.
+
+**[01:45–01:50]** Pero anyways, yun, yung sampu, kailangan ko para sa post-test and pre-test.
+
+**[01:50–01:55]** Siguro dapat is yung, may post-test and pre-test, dapat pala muna sila.
+
+**[01:56–02:02]** Tapos after nun is, dapat yung post-test and pre-test, dapat evaluated rin siguro siya ng prof.
+
+**[02:02–02:03]** So, magatakot.
+
