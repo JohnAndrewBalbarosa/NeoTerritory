@@ -1629,3 +1629,573 @@
 
 **[17:20–17:21]** Mag-send ako ng example.
 
+**[17:21–17:21]** Sige,
+
+**[17:21–17:21]** sige.
+
+**[17:22–17:22]** Sige,
+
+**[17:22–17:23]** salamat sa'yo.
+
+**[17:24–17:25]** Hindi niya pinansin.
+
+**[17:25–17:25]** Eh,
+
+**[17:25–17:26]** may chapter 2
+
+**[17:26–17:27]** di niya nga pinansin yun.
+
+**[17:28–17:29]** Hindi niya rin inano yung ano,
+
+**[17:30–17:30]** yung ano,
+
+**[17:31–17:32]** yung aming ano namin,
+
+**[17:32–17:33]** yung sa,
+
+**[17:33–17:33]** kay,
+
+**[17:34–17:35]** hindi ko nang bababuhayin dito siguro
+
+**[17:35–17:36]** is ito no,
+
+**[17:36–17:37]** yung sa,
+
+**[17:37–17:38]** ang tawag rito,
+
+**[17:38–17:39]** yung best case,
+
+**[17:39–17:39]** worst case scenario.
+
+**[17:40–17:41]** Make sure nyo lang talaga
+
+**[17:41–17:42]** chapter 4 yung systematic
+
+**[17:42–17:43]** na parang madali na siyang
+
+**[17:43–17:44]** intindihan.
+
+**[17:44–17:44]** Ay,
+
+**[17:44–17:44]** hindi,
+
+**[17:45–17:46]** ito palang tanong ko pala eh.
+
+**[17:47–17:47]** Hindi,
+
+**[17:47–17:48]** ito palang tanong sa SOP.
+
+**[17:48–17:48]** Merong,
+
+**[17:48–17:50]** merong kasi kami na kung saan
+
+**[17:50–17:52]** gumawa ko ng testing
+
+**[17:52–17:52]** para sa
+
+**[17:52–17:54]** time complexity
+
+**[17:54–17:55]** na often-often.
+
+**[17:55–17:55]** Ah,
+
+**[17:56–17:56]** tangaling ko na.
+
+**[17:56–17:57]** Mas okay yun,
+
+**[17:57–17:58]** may ganda.
+
+**[17:58–17:58]** Mas okay na ganda.
+
+**[17:59–18:00]** Pero hindi naman tinanong niya nga.
+
+**[18:00–18:00]** Hindi,
+
+**[18:00–18:01]** ang inanong kasi sa SOP,
+
+**[18:01–18:02]** saan ko i-realign?
+
+**[18:03–18:03]** Kasi,
+
+**[18:03–18:05]** kasi si Myril kasi yung ginawa niya
+
+**[18:05–18:05]** doon sa SOP,
+
+**[18:06–18:07]** hindi siya nag-include
+
+**[18:07–18:07]** ng ano-ano ganito.
+
+**[18:08–18:08]** Walang,
+
+**[18:08–18:09]** hindi ito,
+
+**[18:09–18:10]** hindi ito pwede pumasok sa SOP
+
+**[18:10–18:12]** kasi sabi ni Myril,
+
+**[18:12–18:13]** ilayo na rin doon yung
+
+**[18:13–18:14]** ito sa SOP.
+
+**[18:14–18:15]** Itong
+
+**[18:15–18:16]** time and space complexity.
+
+**[18:18–18:20]** Sa info ng algorithm niya,
+
+**[18:20–18:21]** hindi naman kailangan yan eh.
+
+**[18:21–18:22]** So,
+
+**[18:22–18:23]** hindi kailangan na kailangan?
+
+**[18:23–18:24]** Nasa algorithm part niya.
+
+**[18:25–18:26]** Nasa algorithm part namin?
+
+**[18:26–18:26]** Ay,
+
+**[18:26–18:27]** as is nga yan.
+
+**[18:27–18:28]** Pag di naman tinanong,
+
+**[18:28–18:28]** okay lang.
+
+**[18:28–18:30]** E di sa conclusion,
+
+**[18:30–18:31]** sa result pala,
+
+**[18:32–18:32]** result,
+
+**[18:32–18:33]** saan siya ilalagay?
+
+**[18:33–18:33]** Most likely.
+
+**[18:33–18:34]** Kaya naman.
+
+**[18:35–18:35]** Kaya,
+
+**[18:35–18:36]** all discretion,
+
+**[18:36–18:37]** kung saan niya ilalagay yan.
+
+**[18:38–18:38]** So,
+
+**[18:38–18:39]** kung saan naman nga sa conclusion,
+
+**[18:39–18:40]** halimbawa limang SOP lang,
+
+**[18:41–18:41]** dapat limang lang.
+
+**[18:41–18:42]** Limang,
+
+**[18:42–18:43]** limang na conclusion yun.
+
+**[18:43–18:44]** Okay,
+
+**[18:44–18:44]** pero,
+
+**[18:45–18:48]** alamin muna kung paano
+
+**[18:48–18:48]** itong gagamitin mo
+
+**[18:48–18:50]** sa SOP.
+
+**[18:50–18:50]** Siguro,
+
+**[18:51–18:51]** documentation,
+
+**[18:51–18:52]** the how she is,
+
+**[18:52–18:53]** pattern there,
+
+**[18:54–18:55]** how can propose,
+
+**[18:55–18:56]** design,
+
+**[18:56–18:57]** how can analyze.
+
+**[18:57–18:57]** Eto,
+
+**[18:57–18:58]** number two.
+
+**[18:58–18:59]** Number two ko ito ilalagay,
+
+**[18:59–19:00]** kasi yung time and space
+
+**[19:00–19:01]** yung complex yun na andun.
+
+**[19:01–19:02]** Kung paano niya inaano.
+
+**[19:02–19:02]** Tapos,
+
+**[19:02–19:03]** doon rin nakalagay Andrew,
+
+**[19:04–19:05]** yung evaluator.
+
+**[19:05–19:05]** Eto,
+
+**[19:05–19:06]** tandaan mo.
+
+**[19:06–19:06]** Okay,
+
+**[19:07–19:07]** chapter,
+
+**[19:07–19:08]** yung SOP 1,
+
+**[19:08–19:09]** Andrew,
+
+**[19:09–19:10]** ay,
+
+**[19:10–19:10]** una.
+
+**[19:11–19:11]** Hindi,
+
+**[19:11–19:11]** hindi,
+
+**[19:11–19:11]** ito,
+
+**[19:11–19:11]** ito,
+
+**[19:11–19:11]** ito,
+
+**[19:11–19:11]** ito,
+
+**[19:11–19:12]** ito,
+
+**[19:12–19:12]** ito,
+
+**[19:12–19:12]** ito,
+
+**[19:12–19:12]** ito,
+
+**[19:12–19:12]** ito,
+
+**[19:12–19:12]** ito,
+
+**[19:12–19:13]** ay, no.
+
+**[19:13–19:13]** Pero,
+
+**[19:14–19:15]** tandaan ko.
+
+**[19:15–19:15]** May lang,
+
+**[19:16–19:16]** ah,
+
+**[19:16–19:16]** one,
+
+**[19:16–19:17]** learning support pattern.
+
+**[19:18–19:18]** Ang kailangan nito,
+
+**[19:18–19:18]** una,
+
+**[19:19–19:19]** yung post-test.
+
+**[19:20–19:20]** Pangalawa,
+
+**[19:20–19:21]** yung mga,
+
+**[19:21–19:22]** sir,
+
+**[19:22–19:23]** post-test lang kailangan,
+
+**[19:23–19:24]** no?
+
+**[19:24–19:24]** May lang post-test.
+
+**[19:25–19:25]** Inalala ko yung kaya,
+
+**[19:26–19:26]** no?
+
+**[19:26–19:26]** Post-test.
+
+**[19:29–19:29]** Nga ba?
+
+**[19:29–19:30]** Yung sa learning,
+
+**[19:30–19:30]** sa learning,
+
+**[19:31–19:31]** learning module.
+
+**[19:32–19:32]** Wait lang.
+
+**[19:34–19:34]** So,
+
+**[19:34–19:35]** kung madadali dito,
+
+**[19:35–19:35]** use case,
+
+**[19:35–19:36]** malamang.
+
+**[19:37–19:37]** Ah,
+
+**[19:37–19:38]** how can propose
+
+**[19:38–19:39]** learning support
+
+**[19:39–19:41]** for users
+
+**[19:41–19:41]** in understanding
+
+**[19:41–19:42]** software design
+
+**[19:42–19:42]** pattern concepts?
+
+**[19:46–19:47]** Background of interns.
+
+**[19:48–19:48]** Which is,
+
+**[19:48–19:49]** technically,
+
+**[19:49–19:50]** meron na naman sa ano?
+
+**[19:53–19:53]** Yung interns.
+
+**[19:53–19:54]** Ano yung background of interns?
+
+**[19:55–19:55]** Hindi,
+
+**[19:55–19:56]** na,
+
+**[19:56–19:56]** eto,
+
+**[19:56–19:57]** tandaan ko dati,
+
+**[19:57–19:59]** nasulatan na yung Dok Haji
+
+**[19:59–20:00]** before mag-start.
+
+**[20:00–20:01]** Pero yung background of interns
+
+**[20:01–20:02]** kasi meron na naman talaga tayo
+
+**[20:02–20:03]** sa qualification
+
+**[20:03–20:03]** dun sa ano?
+
+**[20:04–20:04]** Dun sa
+
+**[20:04–20:06]** DevCon.
+
+**[20:06–20:06]** So,
+
+**[20:06–20:06]** siguro,
+
+**[20:06–20:08]** siguro ni Dok Haji
+
+**[20:08–20:09]** is,
+
+**[20:11–20:11]** hindi,
+
+**[20:11–20:12]** tanungan ko,
+
+**[20:12–20:12]** mamaya,
+
+**[20:12–20:13]** tanungan mo si Amiel,
+
+**[20:13–20:14]** if pwede ba magkaroon ng
+
+**[20:14–20:16]** parang pseudo-reference?
+
+**[20:16–20:16]** Yung parang,
+
+**[20:17–20:17]** ah,
+
+**[20:17–20:18]** according to this,
+
+**[20:18–20:18]** ah,
+
+**[20:18–20:19]** according to the chapter,
+
+**[20:20–20:20]** ganun?
+
+**[20:20–20:20]** Something,
+
+**[20:20–20:20]** something.
+
+**[20:23–20:25]** Class level source code structure.
+
+**[20:26–20:26]** Ah,
+
+**[20:26–20:26]** okay na,
+
+**[20:26–20:27]** sabi ko na rin ito.
+
+**[20:27–20:28]** Selected,
+
+**[20:28–20:29]** KPI based.
+
+**[20:31–20:31]** Ah,
+
+**[20:31–20:31]** yung accuracy.
+
+**[20:32–20:32]** Nakalimutan mo ilagay
+
+**[20:32–20:33]** boss yung accuracy?
+
+**[20:33–20:34]** Ilagay may accuracy
+
+**[20:34–20:35]** para masama siya.
+
+**[20:37–20:37]** Okay,
+
+**[20:37–20:37]** skip,
+
+**[20:37–20:38]** skip.
+
+**[20:38–20:38]** Ah,
+
+**[20:38–20:39]** huwag mo nang pansin Andrew
+
+**[20:39–20:41]** yung chapter 2
+
+**[20:41–20:41]** pati yung chapter 1
+
+**[20:41–20:43]** kasi hindi naman taga siya nadali.
+
+**[20:43–20:44]** Yung SOP naman,
+
+**[20:44–20:45]** hindi naman masyado nadali.
+
+**[20:46–20:47]** Kailangan lang siguro is
+
+**[20:47–20:49]** aligned yung SOP sa ano.
+
+**[20:49–20:50]** Gawin mo lang much better.
+
+**[20:50–20:56]** Algorithm side.
+
+**[20:57–20:57]** Ah,
+
+**[20:57–20:58]** hindi tanda ko nang kung ano
+
+**[20:58–20:59]** din na dito ni Dok Haji.
+
+**[20:59–20:59]** Okay,
+
+**[21:00–21:00]** yung sa
+
+**[21:00–21:02]** activity diagram.
+
+**[21:02–21:03]** Nagka,
+
+**[21:03–21:04]** ano sa activity diagram,
+
+**[21:04–21:05]** kung saan yung,
+
+**[21:05–21:06]** hindi may,
+
+**[21:06–21:07]** hindi ko alam
+
+**[21:07–21:07]** si Dok Haji ito
+
+**[21:07–21:08]** o si ano,
+
+**[21:08–21:10]** si Dok Dennis
+
+**[21:10–21:11]** o kaya si ano,
+
+**[21:11–21:11]** si Mam May.
+
+**[21:12–21:13]** Hindi may natatandaan kasi ako
+
+**[21:13–21:14]** yung problema daw kasi.
+
+**[21:14–21:15]** Yung sinasabi daw,
+
+**[21:15–21:16]** dito nadali yung
+
+**[21:16–21:17]** kay Mayril.
+
+**[21:18–21:18]** Kasi yung sinasabi niya
+
+**[21:18–21:19]** doon sa ano,
+
+**[21:19–21:20]** wala naman doon sa ano.
+
+**[21:20–21:21]** Hindi,
+
+**[21:21–21:21]** both sa use case
+
+**[21:21–21:22]** at sa activity.
+
+**[21:23–21:24]** Yung learner spot.
+
+**[21:24–21:24]** Yung learner spot
+
+**[21:24–21:26]** yung tiyanong sa akin.
+
+**[21:27–21:27]** Yan, yan, yan, yan.
+
+**[21:28–21:29]** Yung ata.
+
+**[21:29–21:30]** Yung sa develop,
+
+**[21:30–21:31]** yung sa developers.
+
+**[21:31–21:32]** Nasaan yun, nasaan yun?
+
+**[21:33–21:35]** Yung sa use case
+
+**[21:35–21:35]** at yung ano yun.
+
+**[21:35–21:35]** Hindi,
+
+**[21:36–21:36]** both use case
+
+**[21:36–21:37]** and sa activity.
+
+**[21:38–21:43]** Ayusin pati ang
+
+**[21:43–21:44]** Wala siya ano dyan.
+
+**[21:44–21:45]** Kasi wala naman
+
+**[21:45–21:46]** dito siguro.
+
+**[21:46–21:47]** Doon sa activity
+
+**[21:47–21:49]** lagyan rin siguro
+
+**[21:49–21:49]** ng guest.
+
+**[21:49–21:50]** Tapos yung
+
+**[21:50–21:50]** sa
+
+**[21:50–21:52]** yung
+
+**[21:52–21:53]** hindi,
+
+**[21:53–21:54]** hindi siya natagay.
+
+**[21:54–21:55]** Okay, good, good.
+
+**[21:55–21:55]** Ayos lang yun.
+
+**[21:56–21:56]** Docs,
+
+**[21:56–21:57]** ayos lang rin naman.
+
+**[21:58–21:59]** Unit testing,
+
+**[21:59–21:59]** siguro.
+
+**[22:00–22:01]** Yung unit testing is
+
+**[22:01–22:01]** hindi,
+
+**[22:02–22:03]** alignment lang sa SO4
+
+**[22:03–22:04]** at SO5 yan siguro.
+
+**[22:04–22:05]** So,
+
+**[22:05–22:06]** hindi ko na kailangan yun
+
+**[22:06–22:07]** i-ano.
+
+**[22:09–22:09]** Okay, yun lang.
+
