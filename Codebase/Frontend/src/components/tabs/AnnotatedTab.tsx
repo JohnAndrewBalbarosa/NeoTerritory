@@ -1,16 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useAppStore } from '../../store/appState';
-import DocumentationTab from './DocumentationTab';
-import SourceView from '../analysis/SourceView';
+import DocumentedSource from '../analysis/DocumentedSource';
 import PatternLegend from '../analysis/PatternLegend';
-import PatternCards from '../analysis/PatternCards';
-import ClassBindings from '../analysis/ClassBindings';
-import ClassTreeView from '../analysis/ClassTreeView';
+import { downloadMarkdown, downloadDocx, triggerPdfPrint } from '../../logic/docExport';
 import { synthesizeUsageAnnotations } from '../../logic/usageAnnotations';
 import { deriveAnnotatedModel } from '../../logic/annotatedModel';
-import { buildClassTree } from '../../logic/classTreeModel';
 import { canonicalPatternName } from '../../logic/patterns';
-import { buildHierarchyMap, applyPatternTag } from '../../logic/patternPropagation';
 import { AnalysisRunFile } from '../../types/api';
 
 interface AnnotatedTabProps {
@@ -34,10 +29,11 @@ export default function AnnotatedTab({
   } = useAppStore();
   const [activeFileIdx, setActiveFileIdx] = useState(0);
   const [classNavIdx, setClassNavIdx] = useState(0);
-  // Docs merged into the Patterns tab: a sub-view toggle swaps between the
-  // annotated source explorer and the generated documentation page. Default
-  // to the annotated view — that's the working surface; docs is the read-out.
-  const [view, setView] = useState<'annotated' | 'docs'>('annotated');
+  const exportRef = useRef<HTMLDivElement>(null);
+
+  function handleDocx() {
+    if (currentRun && exportRef.current) downloadDocx(currentRun, exportRef.current.innerHTML);
+  }
 
   // Resolve the per-file slice. Multi-file runs ship `files[]`; legacy
   // single-file runs back-fill into a synthetic single-entry list so the
@@ -58,42 +54,6 @@ export default function AnnotatedTab({
     () => deriveAnnotatedModel({ run: currentRun }),
     [currentRun],
   );
-
-  // Single class-rooted tree — one row per tagged class, status drives the
-  // click affordance (only review rows are clickable). Reads the same
-  // model so it stays in lockstep with SourceView, PatternCards, etc.
-  const classTree = useMemo(
-    () => buildClassTree({ model, run: currentRun }),
-    [model, currentRun],
-  );
-
-  const handlePickClass = (className: string, patternKey: string): void => {
-    const run = useAppStore.getState().currentRun;
-    if (!run) return;
-
-    // Verification: warn if the picked pattern has no structural detection for this class.
-    const node = model.classes.get(className);
-    if (node && !node.candidates.includes(patternKey)) {
-      console.warn(`[NT] verification failed: ${className} has no structural match for "${patternKey}". Candidates: [${node.candidates.join(', ')}]`);
-    }
-
-    // Build hierarchy from the current memoised model so propagation
-    // operates on the live (post-cascade) class tree, not the raw API shape.
-    const hierarchy = buildHierarchyMap(model.workingMasterlist.values());
-    const updatedChosenPatterns = applyPatternTag(
-      className,
-      patternKey,
-      hierarchy,
-      run.classChosenPatterns ?? {},
-    );
-    useAppStore.getState().patchCurrentRun({
-      classResolvedPatterns: {
-        ...(run.classResolvedPatterns || {}),
-        [className]: patternKey,
-      },
-      classChosenPatterns: updatedChosenPatterns,
-    });
-  };
 
   const allAnnotations = useMemo(() => {
     if (!currentRun) return [];
@@ -180,7 +140,6 @@ export default function AnnotatedTab({
   // class navigator since the model doesn't track navigation-only data.
   const classLocations = model.classLocations;
   const ambiguousLines = model.ambiguousLines;
-  const pickerEligibleClassNames = model.pickerEligibleClassNames;
 
   const classDerivation = useMemo(() => {
     const firstLineByClass = new Map<string, number>();
@@ -431,36 +390,6 @@ export default function AnnotatedTab({
 
   return (
     <div className="tab-annotated-shell">
-      {/* Sub-view toggle: Docs used to be its own top-level studio tab; it now
-          lives here so the annotated source and the generated documentation
-          share the Patterns surface. The toggle swaps the body below. */}
-      <div className="studio-subview-toggle" role="tablist" aria-label="Patterns view">
-        <button
-          type="button"
-          role="tab"
-          data-testid="subview-annotated"
-          aria-selected={view === 'annotated'}
-          className={`subview-btn ${view === 'annotated' ? 'is-active' : ''}`}
-          onClick={() => setView('annotated')}
-        >
-          Annotated
-        </button>
-        <button
-          type="button"
-          role="tab"
-          data-testid="subview-docs"
-          aria-selected={view === 'docs'}
-          className={`subview-btn ${view === 'docs' ? 'is-active' : ''}`}
-          onClick={() => setView('docs')}
-        >
-          Documentation
-        </button>
-      </div>
-
-      {view === 'docs' && <DocumentationTab />}
-
-      {view === 'annotated' && (
-      <>
       <section className="tab-panel tab-annotated">
         <header className="results-header">
           <p className="results-summary">{summaryText}</p>
@@ -473,6 +402,11 @@ export default function AnnotatedTab({
             <span className="ai-pill ai-pill-failed">AI commentary failed</span>
           )}
           <PatternLegend legendPatterns={model.legendPatterns} />
+          <div className="docs-download-group no-print">
+            <button className="ghost-btn docs-dl-btn" onClick={() => currentRun && downloadMarkdown(currentRun)}>MD</button>
+            <button className="ghost-btn docs-dl-btn" onClick={() => triggerPdfPrint(exportRef.current)}>PDF</button>
+            <button className="ghost-btn docs-dl-btn" onClick={handleDocx}>DOCX</button>
+          </div>
         </header>
         {totalClasses > 0 && (
           <div className="tag-progress" data-complete={allTagged ? 'true' : undefined}>
@@ -543,7 +477,10 @@ export default function AnnotatedTab({
           </nav>
         )}
         <div className="results-body">
-          <SourceView
+          <DocumentedSource
+            ref={exportRef}
+            run={currentRun}
+            annotatedModel={model}
             sourceText={activeFile?.sourceText || currentRun.sourceText || ''}
             annotations={allAnnotations}
             detectedPatterns={model.activePatterns}
@@ -555,6 +492,7 @@ export default function AnnotatedTab({
             subclassDroppedClassNames={model.droppedClassNames}
             usageLinesByAmbiguousClass={usageLinesByAmbiguousClass}
             onLineClick={onCommentFlash}
+            onLineFlash={onLineFlash}
           />
         </div>
       </section>
@@ -580,47 +518,6 @@ export default function AnnotatedTab({
             title={`Next ambiguous class — currently ${navClass.className} L${navClass.line}`}
           >→</button>
         </>
-      )}
-      <aside className="results-sidebar" aria-label="Detected patterns and class bindings">
-        {/* Class-rooted tree: one row per tagged class. Click-to-disambiguate
-            attaches only on `review` rows, so unambiguous classes render as
-            locked badges. Sits above ClassBindings/PatternCards but reads
-            the same memoized model so all three stay in lockstep. */}
-        <ClassTreeView
-          nodes={classTree}
-          pickerCandidatesByClass={model.inScopePatterns}
-          onPickClass={handlePickClass}
-          onLineFlash={onLineFlash}
-        />
-        {/* ClassBindings (which renders .class-strip-row) goes first so the
-            strip sits above the scoring-explainer-banner inside PatternCards. */}
-        <ClassBindings
-          bindings={currentRun.classUsageBindings || {}}
-          detectedPatterns={model.activePatterns}
-          classResolvedPatterns={currentRun.classResolvedPatterns}
-          ambiguousClassNames={model.greyClassNames}
-          subclassPendingClassNames={model.subclassPendingClassNames}
-          droppedClassNames={model.droppedClassNames}
-          onLineFlash={onLineFlash}
-        />
-        <PatternCards
-          // Subclass-pending classes are filtered out at the card level —
-          // their tag is tentative until the parent picks. The chrome
-          // (chip strip, source view) still shows them as grey, but they
-          // do not earn a card or accuracy bar yet.
-          detectedPatterns={model.activePatterns.filter(p =>
-            !p.className || !model.subclassPendingClassNames.has(p.className)
-          )}
-          ranking={currentRun.ranking}
-          userResolvedPattern={currentRun.userResolvedPattern}
-          classResolvedPatterns={currentRun.classResolvedPatterns}
-          ambiguousClassNames={pickerEligibleClassNames}
-          classUsageBindings={currentRun.classUsageBindings || {}}
-          classUsageBindingSource={currentRun.classUsageBindingSource || 'heuristic'}
-          onLineFlash={onLineFlash}
-        />
-      </aside>
-      </>
       )}
     </div>
   );
