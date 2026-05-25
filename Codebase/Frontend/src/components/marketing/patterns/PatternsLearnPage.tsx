@@ -307,22 +307,28 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
 interface ModulePracticalProps {
   module: LearningModule;
   isPassed: boolean;
-  onPass: () => void;
+  onPass: (tries: number) => void;
 }
 
 function QuizPractical({
   practical, isPassed, onPass,
-}: { practical: LearningQuizPractical; isPassed: boolean; onPass: () => void }): JSX.Element {
+}: { practical: LearningQuizPractical; isPassed: boolean; onPass: (tries: number) => void }): JSX.Element {
   const [picked, setPicked] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState<boolean>(isPassed);
+  // Attempt counter — how many times the learner submitted before passing.
+  // Surfaced to the learner and (Phase 3) forwarded to analytics as a proxy
+  // for difficulty / mastery on this practical.
+  const [tries, setTries] = useState<number>(0);
 
   const correct = submitted && picked === practical.correctIndex;
   const wrong = submitted && picked !== null && picked !== practical.correctIndex;
 
   function handleSubmit(): void {
     if (picked === null) return;
+    const attempt = tries + 1;
+    setTries(attempt);
     setSubmitted(true);
-    if (picked === practical.correctIndex) onPass();
+    if (picked === practical.correctIndex) onPass(attempt);
   }
 
   function handleRetry(): void {
@@ -376,6 +382,7 @@ function QuizPractical({
         {submitted && correct && (
           <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
             ✓ Correct. {practical.explanation || 'Module unlocked.'}
+            {tries > 0 && <span className="nt-practical__tries"> · {tries} attempt{tries === 1 ? '' : 's'}</span>}
           </p>
         )}
         {submitted && wrong && (
@@ -395,7 +402,7 @@ function QuizPractical({
 
 function PatternPractical({
   practical, isPassed, onPass,
-}: { practical: LearningPatternPractical; isPassed: boolean; onPass: () => void }): JSX.Element {
+}: { practical: LearningPatternPractical; isPassed: boolean; onPass: (tries: number) => void }): JSX.Element {
   const starter = useMemo(
     () =>
       practical.starterCode ??
@@ -408,6 +415,10 @@ function PatternPractical({
   );
   const [tags, setTags] = useState<ReadonlyArray<{ patternId: string; patternName: string }>>([]);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  // Attempt counter for the code-creation exam — counts each analyser run
+  // that actually executed (not editor edits). Forwarded to onPass so the
+  // module records how many tries the learner needed to trigger the pattern.
+  const [tries, setTries] = useState<number>(0);
 
   const targetKey = normalizePatternKey(practical.patternSlug);
   const targetNameKey = normalizePatternKey(practical.patternName);
@@ -421,6 +432,8 @@ function PatternPractical({
     setStatus('running');
     setErrorMsg('');
     setTags([]);
+    const attempt = tries + 1;
+    setTries(attempt);
     try {
       const run = await submitAnalysis(JSON.stringify({
         code,
@@ -439,7 +452,7 @@ function PatternPractical({
       });
       if (hit) {
         setStatus('pass');
-        onPass();
+        onPass(attempt);
       } else {
         setStatus('fail');
       }
@@ -724,6 +737,12 @@ export default function PatternsLearnPage(): JSX.Element {
     if (activeIndex < steps.length - 1) goToStep(activeIndex + 1);
   }, [activeIndex, activeStep, completedIds, goToStep, steps.length]);
 
+  // Collapsible module outline. Defaults open on wide viewports; the learner
+  // can fold it away to give the lesson body the full width (the path is long,
+  // and on a focused read the outline is noise). State is view-only — no need
+  // to persist a chrome preference server-side.
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+
   const completedCount = completedIds.size;
   const total = steps.length;
   const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
@@ -761,16 +780,34 @@ export default function PatternsLearnPage(): JSX.Element {
         </div>
       </section>
 
-      <section className="nt-course-shell" aria-label="Learning path">
-        <aside className="nt-course-sidebar" aria-label="Learning module outline">
+      <section
+        className="nt-course-shell"
+        data-sidebar={sidebarOpen ? 'open' : 'collapsed'}
+        aria-label="Learning path"
+      >
+        <aside
+          className="nt-course-sidebar"
+          aria-label="Learning module outline"
+          data-collapsed={sidebarOpen ? undefined : 'true'}
+        >
           <div className="nt-course-sidebar__head">
+            <button
+              type="button"
+              className="nt-course-sidebar__toggle"
+              aria-expanded={sidebarOpen}
+              aria-label={sidebarOpen ? 'Collapse module outline' : 'Expand module outline'}
+              title={sidebarOpen ? 'Collapse module outline' : 'Expand module outline'}
+              onClick={() => setSidebarOpen((v) => !v)}
+            >
+              {sidebarOpen ? '⟨' : '☰'}
+            </button>
             <p>Modules</p>
             <span>
               {activeIndex + 1}/{total}
             </span>
           </div>
 
-          {groups.map((g, idx) => (
+          {sidebarOpen && groups.map((g, idx) => (
             <Section key={g.meta.id} label={`Section ${idx + 1} · ${g.meta.name}`}>
               <ol className="nt-course-outline">
                 {g.steps.map((step) => (
