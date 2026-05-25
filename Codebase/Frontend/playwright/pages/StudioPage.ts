@@ -237,33 +237,35 @@ export class StudioPage {
   // ---- Patterns tab dynamic content ----
 
   /**
-   * Expand every collapsed PatternCard on the Patterns tab so the
+   * Expand every collapsed pattern header on the Patterns tab so the
    * inner explainer / functions / anchors / usages sections render
-   * before a screenshot. Each card defaults to collapsed
-   * (aria-expanded="false"). Clicking the .pattern-card-toggle flips
-   * it open. Idempotent — already-expanded cards are skipped via the
-   * aria-expanded check so re-running this on the same page is a
-   * no-op.
+   * before a screenshot. Each header defaults to collapsed
+   * (no .pattern-header--open class). Clicking the .pattern-header__toggle
+   * flips it open. Idempotent — already-expanded headers are skipped via the
+   * class check so re-running this on the same page is a no-op.
    *
    * After expansion we re-run waitForStable so the screenshot reflects
    * the final post-expansion layout (no mid-mount transition frames).
    */
   async expandAllPatternCards(): Promise<number> {
-    // The class tree must already be mounted (i.e., we're on the
-    // Patterns tab post-analyze). If it's not, fail loud — silent
+    // The documented-source spine must already be mounted (i.e., we're on
+    // the Patterns tab post-analyze). If it's not, fail loud — silent
     // skip would falsely suggest "no cards to expand".
     await this.page
-      .getByTestId('class-tree-view')
+      .getByTestId('documented-source')
       .waitFor({ state: 'visible', timeout: 10_000 })
-      .catch(() => { /* tree may legitimately be empty for negative samples */ });
+      .catch(() => { /* spine may legitimately be absent for negative samples */ });
 
-    const toggles = this.page.locator('.pattern-card-toggle');
+    const toggles = this.page.locator('.pattern-header__toggle');
     const count = await toggles.count();
     let expanded = 0;
     for (let i = 0; i < count; i += 1) {
       const toggle = toggles.nth(i);
-      const isExpanded = await toggle.getAttribute('aria-expanded');
-      if (isExpanded === 'true') continue;
+      // The header is open when its parent .pattern-header carries
+      // the .pattern-header--open modifier class.
+      const header = toggle.locator('xpath=ancestor::*[contains(@class,"pattern-header")][1]');
+      const headerClass = await header.getAttribute('class').catch(() => '');
+      if (headerClass && headerClass.includes('pattern-header--open')) continue;
       await toggle.scrollIntoViewIfNeeded();
       await toggle.click();
       expanded += 1;

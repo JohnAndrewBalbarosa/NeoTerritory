@@ -73,7 +73,7 @@ export function generateMarkdown(run: AnalysisRun): string {
   const lines: string[] = [];
   const primaryFile = run.files?.[0]?.name ?? run.sourceName ?? 'source.cpp';
 
-  lines.push('# CodiNeo Code Documentation');
+  lines.push('# CodiNeo Pattern Walkthrough');
   lines.push('');
   lines.push(`**File**: \`${primaryFile}\``);
   lines.push(`**Patterns detected**: ${run.detectedPatterns.length}`);
@@ -99,8 +99,15 @@ export function generateMarkdown(run: AnalysisRun): string {
       lines.push(`### ${p.patternName}${classPart}`);
       lines.push('');
 
+      const edu = p.patternEducation;
       const def = patternDefinitionFor(p.patternName);
-      if (def) {
+      if (edu) {
+        lines.push(`**What is it?** ${edu.explanation}`);
+        lines.push('');
+        lines.push(`*Why it fired*: ${edu.whyThisFired}`);
+        lines.push(`*Study hint*: ${edu.studyHint}`);
+        lines.push('');
+      } else if (def) {
         lines.push(`**What is it?** ${def.oneLiner}`);
         lines.push('');
         lines.push(`**When to use**: ${def.whenToUse}`);
@@ -109,40 +116,21 @@ export function generateMarkdown(run: AnalysisRun): string {
         lines.push('');
       }
 
-      if (p.patternEducation) {
-        lines.push('#### AI Analysis');
-        lines.push('');
-        lines.push(p.patternEducation.explanation);
-        lines.push('');
-        lines.push(`*Why it fired*: ${p.patternEducation.whyThisFired}`);
-        lines.push(`*Study hint*: ${p.patternEducation.studyHint}`);
-        lines.push('');
-      }
-
+      // Line-by-line: per-line annotation notes (the inline docs, serialized).
       const { static: stAnns, ai: aiAnns } = annotationsForPattern(run.annotations, p);
-
-      if (stAnns.length > 0) {
-        lines.push('#### Static Documentation');
+      const allAnns = [...stAnns, ...aiAnns].filter(a => typeof a.line === 'number');
+      if (allAnns.length > 0) {
+        lines.push('#### Line-by-line');
         lines.push('');
-        for (const a of stAnns) {
-          const loc = a.line ? ` (L${a.line})` : '';
-          lines.push(`- **[Static]** **${a.title}**${loc}: ${a.comment}`);
-        }
-        lines.push('');
-      }
-
-      if (aiAnns.length > 0) {
-        lines.push('#### AI-Generated Notes');
-        lines.push('');
-        for (const a of aiAnns) {
-          const loc = a.line ? ` (L${a.line})` : '';
-          lines.push(`- **[AI]** **${a.title}**${loc}: ${a.comment}`);
+        for (const a of allAnns) {
+          const tag = isAiAnnotation(a) ? 'AI' : 'Static';
+          lines.push(`- **L${a.line}** [${tag}] **${a.title}**: ${a.comment}`);
         }
         lines.push('');
       }
 
       if (p.unitTestTargets.length > 0) {
-        lines.push('#### Unit Tests to Implement');
+        lines.push('#### Methods to test');
         lines.push('');
         for (const t of p.unitTestTargets) {
           lines.push(`- [ ] \`${t.function_name}\` (L${t.line}) — *${t.branch_kind}*`);
@@ -151,11 +139,22 @@ export function generateMarkdown(run: AnalysisRun): string {
       }
 
       if (p.documentationTargets.length > 0) {
-        lines.push('#### Documentation Targets');
+        lines.push('#### Key landmarks');
         lines.push('');
         for (const t of p.documentationTargets) {
           lines.push(`- **${t.label}** (L${t.line}): \`${t.lexeme}\``);
         }
+        lines.push('');
+      }
+
+      const usageForClass = p.className ? (run.classUsageBindings?.[p.className] ?? []) : [];
+      const usageLines = usageForClass
+        .map(b => b.line)
+        .filter((l): l is number => typeof l === 'number');
+      if (usageLines.length > 0) {
+        lines.push('#### Where used');
+        lines.push('');
+        lines.push(`- \`${p.className}\` referenced at: ${usageLines.map(l => `L${l}`).join(', ')}`);
         lines.push('');
       }
 
@@ -208,6 +207,9 @@ export function downloadDocx(run: AnalysisRun, bodyHtml: string): void {
   .docs-line-ref{color:#9ca3af;font-size:9pt;margin:0 4pt}
   .docs-branch{color:#6b7280;font-size:9pt;font-style:italic}
   hr{border:none;border-top:1pt solid #e5e7eb;margin:12pt 0}
+  .no-print{display:none}
+  .pattern-header__body{display:block}
+  .inline-line-doc{border-left:3px solid #d1d5db;margin:0 0 6pt 18pt;padding:2pt 6pt}
 </style>
 </head>
 <body>${bodyHtml}</body>
@@ -235,6 +237,9 @@ export function triggerPdfPrint(el: HTMLElement | null): void {
   code{font-family:'Courier New',monospace;background:#f3f4f6;padding:0 3px;font-size:11px}
   .docs-line-ref{color:#9ca3af;font-size:10px;margin:0 4px}
   .docs-branch{color:#6b7280;font-size:10px;font-style:italic}
+  .no-print{display:none}
+  .pattern-header__body{display:block}
+  .inline-line-doc{border-left:3px solid #d1d5db;margin:0 0 6px 18px;padding:2px 6px}
   @page{margin:2cm}
 </style>
 </head>
