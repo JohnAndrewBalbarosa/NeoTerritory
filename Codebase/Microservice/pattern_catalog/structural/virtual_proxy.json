@@ -2,7 +2,7 @@
   "pattern_id": "structural.virtual_proxy",
   "pattern_family": "structural",
   "pattern_name": "Proxy",
-  "enabled": true,
+  "enabled": false,
   "signature_categories": [
     "ownership_handle",
     "lazy_init"

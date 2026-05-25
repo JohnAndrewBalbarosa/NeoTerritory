@@ -2,7 +2,7 @@
   "pattern_id": "idiom.pimpl",
   "pattern_family": "idiom",
   "pattern_name": "Pimpl",
-  "enabled": true,
+  "enabled": false,
   "signature_categories": [
     "ownership_handle"
   ],

@@ -2,7 +2,7 @@
   "pattern_id": "creational.method_chaining",
   "pattern_family": "creational",
   "pattern_name": "MethodChaining",
-  "enabled": true,
+  "enabled": false,
   "signature_categories": [
     "self_return"
   ],

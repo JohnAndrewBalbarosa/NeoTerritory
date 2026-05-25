@@ -1100,3 +1100,34 @@ folding documentationTargets (landmarks) and usage callsites into one block.
   headers expanded so nothing is hidden from the export.
 - `DocumentedSource` composes the existing `SourceView` line renderer via two
   render-slot props — colour/scope logic is reused, not duplicated.
+
+## D85: Detection scope = the 23 Gang of Four patterns only (toggle off non-GoF)
+
+The thesis citation is grounded strictly in the Gang of Four book (23 patterns).
+Three catalog entries are NOT GoF and are now toggled OFF via `"enabled": false`
+in their pattern JSON (the C++ dispatcher skips disabled patterns at
+`pattern_hook_dispatcher.cpp` — `if (!is_pattern_enabled(pattern)) continue;`):
+
+- `creational/method_chaining.json` (MethodChaining) — a fluent-interface idiom,
+  not a GoF pattern. (Fluent `return *this` chains still co-emit Builder, which
+  IS GoF and stays enabled.)
+- `structural/virtual_proxy.json` (Proxy variant) — a *kind* of Proxy discussed
+  inside the GoF Proxy chapter, not a separate 24th pattern. The canonical GoF
+  Proxy (`structural/proxy.json`) stays enabled, so Proxy detection is unaffected.
+- `idiom/pimpl.json` (Pimpl) — a C++ idiom (Pointer-to-Implementation), not GoF.
+
+Result: the detector now recognizes the **23 GoF patterns** (5 creational,
+7 structural, 11 behavioural). Reversible — flip `enabled` back to `true` (or
+remove the field; default is `true`). This is a data-only change; no C++ logic
+edit. The catalog is baked into the Docker image, so a rebuild/redeploy is
+required for prod to pick it up.
+
+Follow-up owed (CI-sync): `all-samples.spec.ts` + `sample-tags.json` still list
+`pimpl_basic.cpp` and `query_predicate.cpp` (method_chaining) as positive
+samples; with those patterns disabled they no longer detect their named pattern
+(method_chaining still co-emits Builder). Those rows must be removed or re-tagged.
+SEPARATELY, the D84 merge removed the `class-tree-*` testids that
+`all-samples.spec.ts` asserts on, so that spec currently soft-skips every
+positive sample (false green) and must be re-pointed to the `documented-source`
+surface (`.pattern-header[data-pattern]`, `.pattern-header__class`) before it
+gates anything again.
