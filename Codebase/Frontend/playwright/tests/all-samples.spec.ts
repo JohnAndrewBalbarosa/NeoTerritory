@@ -37,6 +37,38 @@ function readSampleSource(filename: string): string {
   return fs.readFileSync(path.join(SAMPLES_ROOT, dir, filename), 'utf8');
 }
 
+// --- D82: sample-side tag manifest -----------------------------------------
+// Codebase/Microservice/samples/sample-tags.json is the single source of
+// truth for each sample's canonical GoF tag(s). We feed those known tags
+// back into ambiguity resolution: when a class co-emits competing patterns
+// (Adapter+Decorator, Builder+MethodChaining, …  — by design per D21/D38/D80),
+// the e2e clicks the candidate chip matching the sample's KNOWN tag in
+// priority order, rather than arbitrarily picking the first chip. This makes
+// resolution deterministic and order-independent, killing the recurring
+// "ambiguous tags" flake without touching the by-design backend behaviour.
+interface SampleTagRow {
+  file: string;             // dir/filename relative to samples/
+  family: string;
+  kind: SampleKind;
+  classHint?: string;
+  tags: string[];           // priority-ordered canonical chip labels
+  note?: string;
+}
+const SAMPLE_TAGS_PATH = path.join(SAMPLES_ROOT, 'sample-tags.json');
+const SAMPLE_TAG_ROWS: ReadonlyArray<SampleTagRow> = (() => {
+  const raw = JSON.parse(fs.readFileSync(SAMPLE_TAGS_PATH, 'utf8')) as {
+    samples?: SampleTagRow[];
+  };
+  return raw.samples ?? [];
+})();
+// Lookup by basename (the spec keys samples by filename, not full path).
+const TAGS_BY_FILENAME = new Map<string, SampleTagRow>(
+  SAMPLE_TAG_ROWS.map((row) => [path.basename(row.file), row]),
+);
+function knownTagsFor(filename: string): string[] {
+  return TAGS_BY_FILENAME.get(filename)?.tags ?? [];
+}
+
 // Per D68 (this turn): iterate every design-pattern sample under
 // Codebase/Microservice/samples/ and assert the full studio pipeline works
 // end-to-end:
@@ -372,8 +404,16 @@ async function assertTaggingHappened(
   return { tagged: true, reason: '', emptyTree: false };
 }
 
+function normalizeTag(s: string): string {
+  return s.toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
 async function resolveAllAmbiguousClasses(
   page: Page,
+  // D82: the sample's known canonical tags, priority-ordered. When a chip
+  // label matches one of these, we pick THAT chip (deterministic) instead of
+  // the arbitrary first candidate. Empty → legacy .first() behaviour.
+  preferredTags: string[] = [],
 ): Promise<{ resolved: number; candidatesSeen: string[] }> {
   // Walk the class tree, click each review CTA, and pick the first
   // candidate pattern in the resulting popover. Returns the number of
@@ -405,18 +445,36 @@ async function resolveAllAmbiguousClasses(
     // Snapshot every chip label in this popover before picking. The
     // chips render the canonical pattern name as visible text.
     const chipCount = await chips.count();
+    const labels: string[] = [];
     for (let c = 0; c < chipCount; c += 1) {
       const label = ((await chips.nth(c).textContent()) || '').trim();
+      labels.push(label);
       if (label) candidatesSeen.add(label);
     }
-    await chips.first().click();
+    // D82: prefer the chip matching the sample's known tag (priority order).
+    // Fall back to the first chip only when no candidate matches a known tag.
+    const normalizedLabels = labels.map(normalizeTag);
+    let pickIndex = 0;
+    for (const tag of preferredTags) {
+      const want = normalizeTag(tag);
+      const found = normalizedLabels.findIndex((l) => l === want);
+      if (found !== -1) {
+        pickIndex = found;
+        break;
+      }
+    }
+    await chips.nth(pickIndex).click();
     resolved += 1;
     await page.waitForTimeout(300);
   }
   return { resolved, candidatesSeen: Array.from(candidatesSeen) };
 }
 
-async function runTestsAndAssertCompile(page: Page): Promise<{
+async function runTestsAndAssertCompile(
+  page: Page,
+  // D82: sample's known tags, forwarded to ambiguity resolution.
+  preferredTags: string[] = [],
+): Promise<{
   unitFailures: number;
   skipped: boolean;
   skipReason: string;
@@ -437,7 +495,7 @@ async function runTestsAndAssertCompile(page: Page): Promise<{
   if (disabled) {
     const title = (await runAll.getAttribute('title')) ?? '';
     if (/Resolve ambiguity/i.test(title) || /ambiguity/i.test(title)) {
-      const r = await resolveAllAmbiguousClasses(page);
+      const r = await resolveAllAmbiguousClasses(page, preferredTags);
       ambiguityResolved = r.resolved;
       await page.getByTestId('tab-gdb').click();
       await expect(runAll).toBeVisible({ timeout: 10_000 });
@@ -594,6 +652,34 @@ async function releaseSharedSeat(apiRequest: APIRequestContext): Promise<void> {
 }
 
 test.describe('Studio pipeline  -  every design-pattern sample', () => {
+  // D82 drift guard: the sample-tag manifest is the single source of truth
+  // for known tags. If a positive sample is added to SAMPLES without a
+  // manifest row (or vice versa), fail fast here with a clear message rather
+  // than letting ambiguity resolution silently fall back to .first(). Mirrors
+  // the "manifest is the gate" contract of tests/routes.manifest.json.
+  test.beforeAll(() => {
+    const problems: string[] = [];
+    for (const s of SAMPLES) {
+      const row = TAGS_BY_FILENAME.get(s.filename);
+      if (!row) {
+        problems.push(`SAMPLES has "${s.filename}" but sample-tags.json has no row for it.`);
+        continue;
+      }
+      if (s.kind === 'positive' && row.tags.length === 0) {
+        problems.push(`positive sample "${s.filename}" has an empty tags[] in sample-tags.json.`);
+      }
+    }
+    const specFilenames = new Set(SAMPLES.map((s) => s.filename));
+    for (const [filename] of TAGS_BY_FILENAME) {
+      if (!specFilenames.has(filename)) {
+        problems.push(`sample-tags.json lists "${filename}" but no SAMPLES entry iterates it.`);
+      }
+    }
+    if (problems.length > 0) {
+      throw new Error(`D82 sample-tag manifest drift:\n  - ${problems.join('\n  - ')}`);
+    }
+  });
+
   test.beforeAll(async ({ request }) => {
     await claimSharedSeat(request);
   });
@@ -687,7 +773,10 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
       // scoping to one row (mixed/usages samples host multiple classes;
       // any one matching the regex satisfies the catalog contract).
       if (sample.expectedPatternNameRegex || sample.kind === 'integration') {
-        const { candidatesSeen } = await resolveAllAmbiguousClasses(page);
+        const { candidatesSeen } = await resolveAllAmbiguousClasses(
+          page,
+          knownTagsFor(sample.filename),
+        );
         // resolveAllAmbiguousClasses leaves us on the Patterns tab.
         const badges = page.getByTestId('class-tree-badge');
         const seenPatterns: string[] = [];
@@ -763,7 +852,7 @@ test.describe('Studio pipeline  -  every design-pattern sample', () => {
         }
       }
 
-      const result = await runTestsAndAssertCompile(page);
+      const result = await runTestsAndAssertCompile(page, knownTagsFor(sample.filename));
       if (result.skipped) {
         testInfo.annotations.push({
           type: 'soft-skip',
