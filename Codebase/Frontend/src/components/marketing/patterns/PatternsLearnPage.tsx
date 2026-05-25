@@ -107,72 +107,96 @@ function clampToUnlocked(idx: number, unlockedCount: number): number {
 
 // ----- step button + section wrappers (matches old StudentLearningHub CSS) -----
 
-interface StepButtonProps {
+interface ModuleItemProps {
   step: CourseStep;
   activeIndex: number;
   isRead: boolean;
   isLocked: boolean;
-  onClick: () => void;
+  onSelectModule: () => void;
+  onSelectSection: (sectionIndex: number) => void;
 }
 
-function StepButton({ step, activeIndex, isRead, isLocked, onClick }: StepButtonProps): JSX.Element {
+// One module row in the sidebar outline, rendered as a collapsible dropdown:
+// the title button navigates to the lesson; the chevron expands an inline list
+// of that module's sub-sections (jump-links). The active module is expanded by
+// default and the rest collapse, so a long catalog stays scannable.
+function ModuleItem({ step, activeIndex, isRead, isLocked, onSelectModule, onSelectSection }: ModuleItemProps): JSX.Element {
   const isActive = step.globalIndex === activeIndex;
+  const sections = step.module.sections;
+  const hasSections = !isLocked && sections.length > 0;
+  const [open, setOpen] = useState<boolean>(isActive);
+  useEffect(() => {
+    if (isActive) setOpen(true);
+  }, [isActive]);
   const status = isLocked ? 'Locked' : isRead ? 'Done' : isActive ? 'Current' : 'Ready';
   const numberLabel = isLocked ? '\u{1F512}' : isRead ? 'ok' : String(step.globalIndex + 1);
   return (
-    <li>
-      <button
-        type="button"
-        data-active={isActive ? 'true' : undefined}
-        data-completed={isRead ? 'true' : undefined}
-        data-locked={isLocked ? 'true' : undefined}
-        disabled={isLocked}
-        aria-disabled={isLocked || undefined}
-        title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
-        onClick={onClick}
-      >
-        <span className="nt-course-outline__dot" aria-hidden="true">
-          {numberLabel}
-        </span>
-        <span>
-          <small>
-            {step.module.eyebrow} · {status}
-          </small>
-          {step.module.title}
-        </span>
-      </button>
+    <li className="nt-course-module" data-open={open ? 'true' : undefined}>
+      <div className="nt-course-module__row">
+        <button
+          type="button"
+          data-active={isActive ? 'true' : undefined}
+          data-completed={isRead ? 'true' : undefined}
+          data-locked={isLocked ? 'true' : undefined}
+          disabled={isLocked}
+          aria-disabled={isLocked || undefined}
+          title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
+          onClick={onSelectModule}
+        >
+          <span className="nt-course-outline__dot" aria-hidden="true">
+            {numberLabel}
+          </span>
+          <span>
+            <small>
+              {step.module.eyebrow} · {status}
+            </small>
+            {step.module.title}
+          </span>
+        </button>
+        {hasSections && (
+          <button
+            type="button"
+            className="nt-course-module__chev"
+            aria-expanded={open}
+            aria-label={open ? `Hide ${step.module.title} sections` : `Show ${step.module.title} sections`}
+            title={open ? 'Hide sections' : 'Show sections'}
+            onClick={() => setOpen((v) => !v)}
+          >
+            {open ? '▾' : '▸'}
+          </button>
+        )}
+      </div>
+      {hasSections && open && (
+        <ol className="nt-course-module__sections">
+          {sections.map((s, i) => (
+            <li key={`${step.module.id}-sec-${i}`}>
+              <button
+                type="button"
+                className="nt-course-module__section-link"
+                onClick={() => onSelectSection(i)}
+              >
+                {s.heading}
+              </button>
+            </li>
+          ))}
+        </ol>
+      )}
     </li>
   );
 }
 
 interface SectionProps {
   label: string;
-  defaultOpen?: boolean;
-  containsActive?: boolean;
   children: React.ReactNode;
 }
 
-// Collapsible accordion section. Only the section holding the active module is
-// open by default; the rest stay collapsed so the (long) module outline fits
-// the sidebar without endless scrolling. Navigating into a collapsed section
-// auto-expands it, and the user can toggle any section freely.
-function Section({ label, defaultOpen = false, containsActive = false, children }: SectionProps): JSX.Element {
-  const [open, setOpen] = useState<boolean>(defaultOpen);
-  useEffect(() => {
-    if (containsActive) setOpen(true);
-  }, [containsActive]);
+// Static category header. Collapsing now happens per MODULE (see ModuleItem),
+// not per section.
+function Section({ label, children }: SectionProps): JSX.Element {
   return (
-    <div className={`nt-course-section${open ? ' is-open' : ''}`}>
-      <button
-        type="button"
-        className="nt-course-section__label"
-        aria-expanded={open}
-        onClick={() => setOpen((v) => !v)}
-      >
-        <span>{label}</span>
-        <span className="nt-course-section__chev" aria-hidden="true">{open ? '▾' : '▸'}</span>
-      </button>
-      {open && <div className="nt-course-section__body">{children}</div>}
+    <div className="nt-course-section">
+      <p className="nt-course-section__label">{label}</p>
+      {children}
     </div>
   );
 }
@@ -262,7 +286,7 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
       </header>
 
       {module.sections.map((s, idx) => (
-        <section className="nt-learn__module-section" key={`${module.id}-s-${idx}`}>
+        <section className="nt-learn__module-section" key={`${module.id}-s-${idx}`} id={`mod-${module.id}-sec-${idx}`}>
           <h3 className="nt-learn__module-section-head">{s.heading}</h3>
           {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
           {s.bullets && s.bullets.length > 0 ? (
@@ -738,6 +762,22 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps, unlockedCount],
   );
 
+  const goToSection = useCallback(
+    (index: number, moduleId: string, sectionIndex: number) => {
+      goToStep(index);
+      // Wait for the lesson panel to (re)render the target module, then scroll
+      // to the section anchor in the lesson body.
+      requestAnimationFrame(() =>
+        requestAnimationFrame(() => {
+          document
+            .getElementById(`mod-${moduleId}-sec-${sectionIndex}`)
+            ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }),
+      );
+    },
+    [goToStep],
+  );
+
   const markComplete = useCallback(
     (moduleId: string, tries: number) => {
       // Record the attempt count (keep the first/lowest if re-passed) for the
@@ -845,23 +885,21 @@ export default function PatternsLearnPage(): JSX.Element {
           </div>
 
           {sidebarOpen && groups.map((g, idx) => {
-            const containsActive = g.steps.some((s) => s.globalIndex === activeIndex);
             return (
               <Section
                 key={g.meta.id}
                 label={`Section ${idx + 1} · ${g.meta.name}`}
-                defaultOpen={containsActive}
-                containsActive={containsActive}
               >
                 <ol className="nt-course-outline">
                   {g.steps.map((step) => (
-                    <StepButton
+                    <ModuleItem
                       key={step.module.id}
                       step={step}
                       activeIndex={activeIndex}
                       isRead={completedIds.has(step.module.id)}
                       isLocked={step.globalIndex >= unlockedCount}
-                      onClick={() => goToStep(step.globalIndex)}
+                      onSelectModule={() => goToStep(step.globalIndex)}
+                      onSelectSection={(i) => goToSection(step.globalIndex, step.module.id, i)}
                     />
                   ))}
                 </ol>
