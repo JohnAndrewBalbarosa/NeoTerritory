@@ -62,6 +62,11 @@ node_modules/
 .yarn/
 .pnpm-store/
 
+# Local speech-to-text runtime (faster-whisper venv + intermediate audio).
+# The large-v3 model lives in the HuggingFace cache outside the repo; only
+# the venv and the temp 16k wav land here and must never be committed.
+.venv-stt/
+
 # Frontend and JavaScript build outputs
 dist/
 coverage/
