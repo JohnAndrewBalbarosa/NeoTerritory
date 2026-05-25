@@ -1836,6 +1836,14 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       return { precision: Number(precision.toFixed(4)), recall: Number(recall.toFixed(4)), f1: Number(f.toFixed(4)), tp, fp, fn };
     }
 
+    // Accuracy = (TP + TN) / total. Computed at the call site because it needs
+    // TN, which f1Score() does not receive. Surfaced so the admin panel + thesis
+    // can report accuracy alongside precision/recall/F1.
+    function accuracyOf(tp: number, fp: number, fn: number, tn: number): number {
+      const total = tp + fp + fn + tn;
+      return total === 0 ? 0 : Number(((tp + tn) / total).toFixed(4));
+    }
+
     function reasonFor(pattern: string, s: PatRow & { precision: number; recall: number; f1: number }): { reasoning: string; valid: boolean } {
       const touched = s.tp + s.fp + s.fn;
       const total = s.tp + s.fp + s.fn + s.tn;
@@ -1875,6 +1883,7 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
         pattern,
         ...scored,
         tn: s.tn,
+        accuracy: accuracyOf(s.tp, s.fp, s.fn, s.tn),
         total: s.tp + s.fp + s.fn + s.tn,
         reasoning,
         valid,
@@ -1882,7 +1891,7 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
     }).sort((a, b) => b.f1 - a.f1);
 
     const overallScored = f1Score(totalTp, totalFp, totalFn);
-    const overall = { ...overallScored, tn: totalTn, total: totalTp + totalFp + totalFn + totalTn };
+    const overall = { ...overallScored, tn: totalTn, accuracy: accuracyOf(totalTp, totalFp, totalFn, totalTn), total: totalTp + totalFp + totalFn + totalTn };
 
     // Overall verdict — narrate the model so the panel reads it as a
     // consequence of algorithmic reliability + cohort coverage rather
@@ -1958,7 +1967,8 @@ router.get('/stats/f1-metrics', (_req: Request, res: Response, next: NextFunctio
       totalRuns,
       note:
         'F1 computed at the run × pattern grain (v4). TP/FP/FN/TN per pattern sum to totalRuns. ' +
-        'Survey ground truth lives in run_feedback.ratings_json.__surveyMissed / __surveyRejected.'
+        'Accuracy = (TP+TN)/total. Survey ground truth read from analysis_json.surveyMissed / ' +
+        'surveyRejected (per-run feedback rows unioned in for legacy submissions).'
     });
   } catch (err) { next(err); }
 });

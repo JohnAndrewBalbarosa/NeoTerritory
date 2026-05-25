@@ -409,6 +409,9 @@ export interface PatternF1 extends F1Score {
   // missed in the per-run survey. With 10 patterns and 150 runs the
   // per-pattern total always sums to 150.
   tn: number;
+  // (TP+TN)/total. TN-dominated at the run×pattern grain, so it reads high —
+  // pair with precision/recall rather than reading it alone.
+  accuracy: number;
   // Optional total surfaced by the v4 endpoint so the UI can show the
   // denominator next to F1 without re-summing TP/FP/FN/TN client-side.
   total?: number;
@@ -426,6 +429,7 @@ export interface PatternF1 extends F1Score {
 // projection so the panel can read the verdict at a glance.
 export interface F1Overall extends F1Score {
   tn: number;
+  accuracy: number;
   reasoning?: string;
 }
 

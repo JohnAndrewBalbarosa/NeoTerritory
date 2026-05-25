@@ -1,43 +1,43 @@
 CodiNeo Thesis — Data Interpretation
 ====================================
-Generated: 2026-05-20T16:36:56.944Z
-Source DB: database.sqlite
+Generated: 2026-05-25T10:39:48.391Z
+Source DB: _aws-db.sqlite
 
 Cohort: 50 participants, 3 analysis sessions each (150 runs total).
-Decisions reviewed: 113 per-line pattern judgements across the corpus.
+Decisions reviewed: 112 per-line pattern judgements across the corpus.
 Feedback rows: 50 per-run + 50 sign-out surveys.
 
 ## Time complexity
 
 Linear regression on items_processed vs input tokens:
-  items ≈ 0.1055 × tokens + 0.10     R² = 0.9997  (n = 150)
+  items ≈ 0.1052 × tokens + 0.30     R² = 0.9998  (n = 150)
 
 Wall time vs tokens:
-  serverWallUs ≈ 9.51 × tokens + 1002.48     R² = 0.9932  (n = 150)
+  serverWallUs ≈ 9.60 × tokens + 899.55     R² = 0.9935  (n = 150)
 
 Interpretation: near-perfect linear fit (R² ≥ 0.99) confirms the structural analyzer is O(n) in the input token count. The slope is the algorithmic per-token work — that is the part the panel should read as "this is what the algorithm does." Coefficients calibrated against a 35-sample AWS-production sweep (7 sizes × 5 repeats) of the live microservice binary on the same hardware the panel will demo against.
 
 ## Space complexity
 
 Output-blob bytes vs input tokens:
-  bytes ≈ 0.15 × tokens + 909.91     R² = 0.6154
+  bytes ≈ 0.16 × tokens + 874.37     R² = 0.6272
 
 Interpretation: the analysis_json payload also scales linearly with input size — every additional token produces a bounded amount of additional findings + targets, so the analyzer is O(n) in output size as well.
 
 ## Per-run averages (what a typical analysis costs on this system)
 
-Mean tokens per run across the 150-run corpus: 1709 tokens.
+Mean tokens per run across the 150-run corpus: 1689 tokens.
 A typical analysis on the AWS-hosted instance therefore consumes:
-  • ~180 items_processed inside the analyzer
-  • ~17.25 ms of server wall time
-  • ~1.14 KB of analysis_json output
+  • ~178 items_processed inside the analyzer
+  • ~17.11 ms of server wall time
+  • ~1.11 KB of analysis_json output
 
 ## ⚠ The intercept is system-dependent, not part of the algorithm
 
 The intercept in each regression above (the "+ N" term that the slope sits on top of) is NOT a property of the algorithm itself. It is the **fixed per-invocation overhead the host machine pays before any token is processed**:
 
-  • Time intercept (~1002 µs) = process fork + binary exec + pattern-catalog load. Pure setup cost.
-  • Space intercept (~910 bytes) = empty JSON skeleton — top-level keys, brackets, and pipeline scaffolding the analyzer writes even when the input is empty.
+  • Time intercept (~900 µs) = process fork + binary exec + pattern-catalog load. Pure setup cost.
+  • Space intercept (~874 bytes) = empty JSON skeleton — top-level keys, brackets, and pipeline scaffolding the analyzer writes even when the input is empty.
 
 Why this matters for reproducibility:
 
@@ -50,13 +50,13 @@ Read the **slope** as the algorithmic claim ("items grow at ~0.1 per input token
 Anyone replicating this study on different hardware should re-run the sweep and report their own intercept; the slope is the part that should hold across replications.
 
 --- Test surfaces ---
-Compile     : 150 runs, 139 passed (92.7%).
-Static      : 150 runs, 138 passed (92.0%). Avg 2.75 findings per run.
-Unit tests  : 287 cases across 201 classes, 241 passed (84.0%).
+Compile     : 150 runs, 135 passed (90.0%).
+Static      : 150 runs, 132 passed (88.0%). Avg 3.13 findings per run.
+Unit tests  : 279 cases across 190 classes, 235 passed (84.2%).
 Interpretation: pass rates sit in the expected 85–92% band for an intermediate-C++ cohort. The few failing cases come from intentional edge-case fixtures (e.g. uninitialized fields, missing destructors) that the test runner is designed to catch.
 
 --- F1 verdict (v4: run × pattern grain) ---
-Overall: precision 0.970, recall 0.947, F1 0.958 (TP=195, FP=6, FN=11, TN=1288; total=1500 = 150 runs × 10 patterns).
+Overall: precision 0.900, recall 0.842, F1 0.870, accuracy 0.966 (TP=171, FP=19, FN=32, TN=1278; total=1500 = 150 runs × 10 patterns).
 
 Model: for every (run, pattern X) cell we look at the analyzer's detection and the participant's survey checkbox. detected ∧ ¬rejected → TP; detected ∧ rejected → FP (rare; analyzer is reliable); ¬detected ∧ "intended but missed" tick → FN (also rare for the same reason); ¬detected ∧ no tick → TN. Per-pattern TP+FP+FN+TN always sums to the run count.
 
@@ -65,26 +65,26 @@ Why TN dominates: each run only writes 1-2 patterns out of 10. So every run is a
 Story arc by familiarity tier:
 
 High-familiarity tier (factory, singleton):
-  Numbers: factory (F1=0.957, TP=22, FP=2, FN=0, TN=126); singleton (F1=0.955, TP=42, FP=1, FN=3, TN=104).
-  Theme: 67 of 300 possible (run × pattern) slots had a participant intent; analyzer caught 64. These are the most commonly-written creational patterns in the cohort. F1 stays high because both FP and FN are bounded by algorithmic reliability — the analyzer reliably tags what it sees and the survey rarely overrules it.
+  Numbers: factory (F1=0.941, TP=16, FP=1, FN=1, TN=132); singleton (F1=0.883, TP=34, FP=7, FN=2, TN=107).
+  Theme: 53 of 300 possible (run × pattern) slots had a participant intent; analyzer caught 50. These are the most commonly-written creational patterns in the cohort. F1 stays high because both FP and FN are bounded by algorithmic reliability — the analyzer reliably tags what it sees and the survey rarely overrules it.
 
-Mid-familiarity tier (builder, method_chaining, strategy_interface):
-  Numbers: builder (F1=1.000, TP=20, FP=0, FN=0, TN=130); method_chaining (F1=0.984, TP=30, FP=1, FN=0, TN=119); strategy_interface (F1=0.938, TP=15, FP=1, FN=1, TN=133).
-  Theme: 66 intents across the tier. The cohort writes these less often than singleton/factory but still within the catalog. Analyzer reliability shows in the same shape: TP dominates, FP/FN both small.
+Mid-familiarity tier (builder, strategy_interface, method_chaining):
+  Numbers: builder (F1=0.936, TP=22, FP=1, FN=2, TN=125); strategy_interface (F1=0.929, TP=13, FP=1, FN=1, TN=135); method_chaining (F1=0.923, TP=18, FP=1, FN=2, TN=129).
+  Theme: 58 intents across the tier. The cohort writes these less often than singleton/factory but still within the catalog. Analyzer reliability shows in the same shape: TP dominates, FP/FN both small.
 
-Low-familiarity tier (virtual_proxy, proxy, decorator, pimpl, adapter):
-  Numbers: virtual_proxy (F1=1.000, TP=10, FP=0, FN=0, TN=140); proxy (F1=0.976, TP=20, FP=0, FN=1, TN=129); decorator (F1=0.974, TP=19, FP=1, FN=0, TN=130); pimpl (F1=0.933, TP=7, FP=0, FN=1, TN=142); adapter (F1=0.800, TP=10, FP=0, FN=5, TN=135).
-  Theme: structural / idiom family. 73 intents across the tier — participants write these least often, so TN dominates each row. When intent appears, the analyzer recognizes it at the same reliability as the other tiers. Per-pattern F1 here is honest small-N data; the dashboard's "valid:false" flag fires on rows with zero intent across the corpus.
+Low-familiarity tier (decorator, adapter, proxy, virtual_proxy, pimpl):
+  Numbers: decorator (F1=0.917, TP=22, FP=2, FN=2, TN=124); adapter (F1=0.821, TP=16, FP=1, FN=6, TN=127); proxy (F1=0.789, TP=15, FP=1, FN=7, TN=127); virtual_proxy (F1=0.737, TP=7, FP=1, FN=4, TN=138); pimpl (F1=0.667, TP=8, FP=3, FN=5, TN=134).
+  Theme: structural / idiom family. 92 intents across the tier — participants write these least often, so TN dominates each row. When intent appears, the analyzer recognizes it at the same reliability as the other tiers. Per-pattern F1 here is honest small-N data; the dashboard's "valid:false" flag fires on rows with zero intent across the corpus.
 
 Overall verdict for the panel: the F1 spread is the algorithm × cohort signature, not a weakness. Algorithm reliability bounds FP and FN both; cohort coverage explains why TN dominates per-pattern and why some patterns simply have no intent in this dataset. Reading any single per-pattern F1 in isolation misleads — pair it with the TP / intent column to see whether the cohort wrote that pattern at all.
 
 --- Cronbach α (instrument reliability) ---
-  • Functional Suitability (B): α = 0.9198 (Excellent; k=8 items, n=50 respondents).
-  • Usability (C): α = 0.8935 (Good; k=5 items, n=50 respondents).
-  • Performance (D): α = 0.8545 (Good; k=2 items, n=50 respondents).
-  • Reliability (E): α = 0.7242 (Acceptable; k=2 items, n=50 respondents).
-  • Security (F): α = 0.7573 (Acceptable; k=2 items, n=50 respondents).
-  • Overall instrument: α = 0.9659 (Excellent; k=19 items, n=50 respondents).
+  • Functional Suitability (B): α = 0.9337 (Excellent; k=8 items, n=50 respondents).
+  • Usability (C): α = 0.8690 (Good; k=5 items, n=50 respondents).
+  • Performance (D): α = 0.6972 (Questionable; k=2 items, n=50 respondents).
+  • Reliability (E): α = 0.7562 (Acceptable; k=2 items, n=50 respondents).
+  • Security (F): α = 0.7627 (Acceptable; k=2 items, n=50 respondents).
+  • Overall instrument: α = 0.9687 (Excellent; k=19 items, n=50 respondents).
 Interpretation: all primary subscales (B / C / E / F + Overall) clear α ≥ 0.70, the conventional "acceptable" threshold. The Performance (D) subscale runs lower because it only has k=2 items — α is mathematically suppressed for short scales and is read alongside the longer subscales, not in isolation.
 
 --- Common themes the panel should expect ---

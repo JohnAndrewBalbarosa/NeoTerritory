@@ -225,6 +225,7 @@ export default function ComplexityTab() {
                   <th>Precision</th>
                   <th>Recall</th>
                   <th>F1</th>
+                  <th title="(TP+TN)/total. TN dominates the run×pattern grid, so accuracy reads high — interpret it alongside precision/recall, not on its own.">Accuracy</th>
                   <th>TP</th>
                   <th>FP</th>
                   <th>FN</th>
@@ -237,6 +238,7 @@ export default function ComplexityTab() {
                   <td><F1Badge value={f1.overall.precision} /></td>
                   <td><F1Badge value={f1.overall.recall} /></td>
                   <td><F1Badge value={f1.overall.f1} /></td>
+                  <td><F1Badge value={f1.overall.accuracy} /></td>
                   <td>{f1.overall.tp}</td>
                   <td>{f1.overall.fp}</td>
                   <td>{f1.overall.fn}</td>
@@ -256,6 +258,7 @@ export default function ComplexityTab() {
                     <td><F1Badge value={p.precision} /></td>
                     <td><F1Badge value={p.recall} /></td>
                     <td><F1Badge value={p.f1} /></td>
+                    <td><F1Badge value={p.accuracy} /></td>
                     <td>{p.tp}</td>
                     <td>{p.fp}</td>
                     <td>{p.fn}</td>
