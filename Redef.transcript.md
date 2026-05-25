@@ -595,3 +595,527 @@
 
 **[08:30–08:31]** ni Dok.
 
+**[08:31–08:32]** Pati yung mga
+
+**[08:32–08:32]** sinabi ni Dok?
+
+**[08:33–08:33]** Pati siguro
+
+**[08:33–08:34]** naging problema
+
+**[08:34–08:34]** na talaga
+
+**[08:34–08:35]** is presentation wise
+
+**[08:35–08:36]** kasi na
+
+**[08:36–08:37]** ang comment talaga
+
+**[08:37–08:38]** sa amin ni Dok Hazel
+
+**[08:38–08:39]** kanina is
+
+**[08:39–08:40]** yung nasasabi doon
+
+**[08:40–08:40]** kanina yung Merrill
+
+**[08:40–08:42]** is wala daw doon sa paper
+
+**[08:42–08:42]** so ilagay na lang
+
+**[08:42–08:43]** namin sa paper kanina.
+
+**[08:44–08:45]** Ano nga ba yung mga
+
+**[08:45–08:46]** sinabi ni Merrill kanina?
+
+**[08:46–08:47]** I-align yung mga
+
+**[08:47–08:48]** sinasabi niya sa paper.
+
+**[08:49–08:49]** Ah, okay.
+
+**[08:50–08:51]** I-align yung mga
+
+**[08:51–08:52]** sinasabi niya kanina.
+
+**[08:53–08:53]** Ah, okay.
+
+**[08:53–08:54]** Yung
+
+**[08:54–08:54]** ano nga ba yung
+
+**[08:54–08:55]** sinasabi niya kanina?
+
+**[08:56–08:57]** Ah, ah, ah.
+
+**[08:59–09:00]** Oh, yung 16?
+
+**[09:00–09:00]** Okay.
+
+**[09:00–09:01]** Nakakita ko
+
+**[09:01–09:02]** 10 na yung sabi niya
+
+**[09:02–09:02]** pero 16 na yung
+
+**[09:02–09:04]** support design pattern natin.
+
+**[09:04–09:05]** Ah, yun lang.
+
+**[09:05–09:06]** Ah, ano pa nga ba
+
+**[09:06–09:06]** yung problema?
+
+**[09:07–09:08]** Oh, binago kasi natin
+
+**[09:08–09:09]** lang last minute.
+
+**[09:09–09:10]** Ah, gets ko rin naman
+
+**[09:10–09:10]** saan niya.
+
+**[09:10–09:11]** Ah, ang pangalan nito?
+
+**[09:11–09:12]** David.
+
+**[09:12–09:13]** David, tawag kayo.
+
+**[09:14–09:14]** Kino pa?
+
+**[09:15–09:15]** Dok Hazel.
+
+**[09:15–09:16]** Punta kayo here
+
+**[09:16–09:17]** sa 503.
+
+**[09:17–09:17]** Hello!
+
+**[09:18–09:19]** Ganon rin
+
+**[09:19–09:20]** ang nyo rin sa amin.
+
+**[09:21–09:21]** Ah, wala kasi
+
+**[09:21–09:22]** pork and spoon?
+
+**[09:22–09:22]** Ah, wala?
+
+**[09:23–09:23]** Wala?
+
+**[09:23–09:25]** Loh, papabalikin tayo
+
+**[09:25–09:26]** ngayon sa pork and spoon.
+
+**[09:26–09:27]** Yung pagkain namin
+
+**[09:27–09:28]** walang binigyan
+
+**[09:30–09:31]** ng mga pagkain.
+
+**[09:32–09:32]** Can you
+
+**[09:32–09:33]** help me?
+
+**[09:33–09:34]** Help me?
+
+**[09:34–09:35]** Help me?
+
+**[09:35–09:35]** Yes.
+
+**[09:42–09:43]** Class level
+
+**[09:43–09:44]** source code structure pala.
+
+**[09:45–09:46]** Walang class level
+
+**[09:46–09:47]** source code structure.
+
+**[09:49–09:50]** Anong, ano ito?
+
+**[09:50–09:51]** Anong meaning ito?
+
+**[09:51–09:52]** Ano, what do you mean
+
+**[09:52–09:53]** by selected?
+
+**[09:53–09:54]** Ah, yung sa Gang of Four to.
+
+**[09:54–09:55]** Siguro,
+
+**[09:55–09:56]** must specify yung Gang of Four.
+
+**[09:57–09:58]** Tapos,
+
+**[10:00–10:00]** may ka?
+
+**[10:00–10:00]** Okay, mom.
+
+**[10:01–10:01]** Paano ito?
+
+**[10:01–10:02]** Ang schedule?
+
+**[10:02–10:03]** Kasi,
+
+**[10:03–10:05]** kung hindi na
+
+**[10:05–10:05]** alam,
+
+**[10:06–10:06]** external.
+
+**[10:08–10:08]** Deb,
+
+**[10:08–10:09]** conclusion ba?
+
+**[10:10–10:11]** Hindi siya
+
+**[10:11–10:11]** kinilit?
+
+**[10:11–10:12]** Kinilit ba?
+
+**[10:12–10:13]** Nag-insist.
+
+**[10:14–10:14]** Nag-insist.
+
+**[10:15–10:15]** So,
+
+**[10:15–10:16]** sinel ba kayo
+
+**[10:16–10:16]** yung ito?
+
+**[10:16–10:17]** Opo.
+
+**[10:18–10:19]** Ano?
+
+**[10:21–10:21]** Eh, well,
+
+**[10:22–10:23]** kaysa pag-aakit ako,
+
+**[10:23–10:23]** parang
+
+**[10:23–10:24]** valid naman yung
+
+**[10:24–10:24]** kayo do-kaji
+
+**[10:24–10:25]** kasi parang
+
+**[10:25–10:26]** sa chapter four nila
+
+**[10:26–10:27]** dira-diretso lang
+
+**[10:27–10:28]** ng tables.
+
+**[10:28–10:29]** Parang,
+
+**[10:29–10:30]** hindi mamag-do-kaji
+
+**[10:30–10:30]** kung para sa
+
+**[10:30–10:31]** S.O.P. ba
+
+**[10:31–10:32]** ng mga table na to.
+
+**[10:34–10:34]** Tapos,
+
+**[10:34–10:35]** kinulang rin po ata kami
+
+**[10:35–10:36]** sa data po
+
+**[10:36–10:37]** kasi yung
+
+**[10:37–10:38]** sa SOP1 namin
+
+**[10:38–10:39]** is
+
+**[10:39–10:40]** presently
+
+**[10:40–10:41]** learning
+
+**[10:41–10:42]** ano yung
+
+**[10:42–10:43]** paano makakatulong
+
+**[10:43–10:44]** sa student na matuto
+
+**[10:44–10:45]** ay wala kami
+
+**[10:45–10:45]** post-test,
+
+**[10:45–10:46]** pre-test.
+
+**[10:47–10:47]** Parang wala kami
+
+**[10:47–10:48]** evaluation.
+
+**[10:48–10:48]** So,
+
+**[10:48–10:49]** ano yung nakalagay
+
+**[10:49–10:49]** sa ano nila?
+
+**[10:49–10:50]** Paano malalaman
+
+**[10:50–10:51]** yung evaluation
+
+**[10:51–10:51]** understanding?
+
+**[10:51–10:52]** Ang una po namin
+
+**[10:52–10:52]** atake yun
+
+**[10:52–10:53]** is doon sa questionnaire.
+
+**[10:53–10:54]** May nakalagay lang doon
+
+**[10:54–10:54]** did you,
+
+**[10:55–10:55]** ano,
+
+**[10:55–10:56]** did the system
+
+**[10:56–10:57]** improve
+
+**[10:57–10:58]** your understanding
+
+**[10:58–11:00]** ng code design pattern?
+
+**[11:00–11:01]** Pwede kasing hulaan
+
+**[11:01–11:01]** ng
+
+**[11:01–11:02]** yun po yung naging
+
+**[11:02–11:02]** ano nila?
+
+**[11:02–11:04]** Yung kay mommy
+
+**[11:04–11:05]** kasi parang gusto niya
+
+**[11:05–11:05]** kasi parang
+
+**[11:05–11:06]** nandun si mommy
+
+**[11:06–11:06]** kanina.
+
+**[11:06–11:07]** Nandun,
+
+**[11:07–11:07]** pero late.
+
+**[11:08–11:09]** Dalawang beses
+
+**[11:09–11:10]** nag-definish.
+
+**[11:11–11:11]** Doon kami
+
+**[11:11–11:12]** use case.
+
+**[11:13–11:14]** Medyo magulo yung
+
+**[11:14–11:15]** use case
+
+**[11:15–11:15]** doon sa system
+
+**[11:15–11:16]** kasi may intern,
+
+**[11:16–11:17]** may admin,
+
+**[11:17–11:17]** may developer.
+
+**[11:18–11:18]** So,
+
+**[11:18–11:18]** e-money?
+
+**[11:19–11:20]** E-money?
+
+**[11:20–11:21]** Kung ano kay doko,
+
+**[11:21–11:21]** hindi siya.
+
+**[11:23–11:24]** Hindi pa yun.
+
+**[11:24–11:25]** Si Doc Dennis
+
+**[11:25–11:26]** na yung nagsalba sa amin.
+
+**[11:27–11:27]** Ano siya?
+
+**[11:28–11:31]** E-money siya na
+
+**[11:31–11:32]** rediff na lang kami.
+
+**[11:34–11:34]** Kaya yun?
+
+**[11:35–11:35]** E paano yun?
+
+**[11:35–11:36]** Kung rediff kami,
+
+**[11:36–11:37]** kasama pa si Doc Dennis
+
+**[11:37–11:38]** o hindi na?
+
+**[11:38–11:39]** Kasama.
+
+**[11:39–11:40]** Kung malightly.
+
+**[11:40–11:41]** Kung sa next
+
+**[11:41–11:41]** yung availability.
+
+**[11:42–11:43]** Which is Thursday.
+
+**[11:44–11:44]** Ay.
+
+**[11:45–11:45]** Oo,
+
+**[11:45–11:46]** meron pa siya
+
+**[11:46–11:46]** isang araw.
+
+**[11:47–11:47]** Si Doc Dennis.
+
+**[11:50–11:50]** Oo,
+
+**[11:50–11:50]** bigla.
+
+**[11:51–11:52]** 1, 2, 3.
+
+**[11:52–11:52]** Kaya yun,
+
+**[11:52–11:53]** apat na araw.
+
+**[11:53–11:53]** Pero,
+
+**[11:54–11:55]** baka mag-rescension
+
+**[11:55–11:56]** din after 13.
+
+**[11:56–11:58]** Kasi malabo.
+
+**[11:58–11:59]** May mga naka-plot
+
+**[11:59–11:59]** na kasi ng
+
+**[11:59–11:59]** pre-release.
+
+**[11:59–12:00]** Tsaka unfair yun sa inyo.
+
+**[12:01–12:02]** May bibigay agad
+
+**[12:02–12:04]** na mag-deliver
+
+**[12:04–12:04]** agad kayo
+
+**[12:04–12:04]** ng websites.
+
+**[12:04–12:05]** Yung 5 days.
+
+**[12:06–12:06]** Ay,
+
+**[12:06–12:07]** nasan po kaya ngayon
+
+**[12:07–12:07]** si Doc Haji?
+
+**[12:07–12:08]** Kasi sabi daw po ni
+
+**[12:08–12:08]** Lokezel,
+
+**[12:09–12:09]** kitaan daw po namin
+
+**[12:09–12:10]** si Doc Haji
+
+**[12:10–12:11]** para maklarify daw po
+
+**[12:11–12:13]** yung ano daw po.
+
+**[12:13–12:14]** May nag-aral si Doc Haji
+
+**[12:14–12:15]** kasi kanina pa
+
+**[12:15–12:15]** kinukulit siya.
+
+**[12:16–12:16]** Sino?
+
+**[12:16–12:17]** Sino makukulit sa'yo?
+
+**[12:18–12:18]** Hindi naman.
+
+**[12:18–12:19]** Kasi parang kanina
+
+**[12:19–12:20]** kasi may nagsabi daw na
+
+**[12:20–12:21]** uy,
+
+**[12:21–12:22]** tawag kayo ni Doc Haji
+
+**[12:22–12:23]** so pumunta.
+
+**[12:23–12:23]** Hindi.
+
+**[12:24–12:25]** Understand daw mo naman yun eh.
+
+**[12:25–12:26]** May nagsabi sa atin na
+
+**[12:26–12:27]** tawag kayo ni Doc Haji.
+
+**[12:27–12:27]** Sa inyo.
+
+**[12:27–12:28]** Sa CR1.
+
+**[12:28–12:28]** Oo,
+
+**[12:28–12:30]** tapos siglang pagkapunta namin doon
+
+**[12:30–12:30]** Doc Haji,
+
+**[12:30–12:31]** tawag niya daw po kami.
+
+**[12:31–12:31]** Ay,
+
+**[12:31–12:32]** sabi naman,
+
+**[12:32–12:32]** ay hindi ko kayo tinatawag.
+
+**[12:33–12:33]** Ah,
+
+**[12:33–12:33]** okay po.
+
+**[12:33–12:34]** Gano'n nilang.
+
+**[12:34–12:35]** Pero kayo may nag-advise
+
+**[12:35–12:36]** sa inyo na
+
+**[12:36–12:38]** which is si Doc Hizal po
+
+**[12:38–12:40]** para maklarify daw po
+
+**[12:40–12:41]** yung mga need daw pong
+
+**[12:41–12:42]** ayusin.
+
+**[12:43–12:43]** Kasi siya lang naman
+
+**[12:43–12:44]** kailangan siyo yun eh.
+
+**[12:46–12:46]** Si Mommy,
+
+**[12:46–12:47]** kung saan naman si,
+
+**[12:47–12:48]** parang si Mommy more
+
+**[12:48–12:49]** ano lang siya
+
+**[12:49–12:50]** sa evaluation naman.
+
+**[12:51–12:52]** Tanggal-tanggal.
+
+**[12:52–12:53]** Yung kayo na Emil,
+
+**[12:53–12:54]** tandaan mo yung,
+
+**[12:54–12:55]** tandaan mo yung paper ni Emil.
+
+**[12:56–12:56]** Tandaan mo yung,
+
+**[12:56–12:57]** Andrew,
+
