@@ -3,7 +3,6 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { validateBody } from '../middleware/validateBody';
 import {
-  pretestSchema,
   runFeedbackSchema,
   sessionFeedbackSchema
 } from '../validation/schemas';
@@ -12,28 +11,6 @@ import { mirrorRow } from '../services/supabaseLogger';
 import { flushForRunId } from '../services/pendingRunPersistence';
 
 const router = express.Router();
-
-router.post('/pretest', jwtAuth, validateBody(pretestSchema), (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-    const { answers } = req.body as { answers: Record<string, unknown> };
-    const pInfo = db.prepare(
-      `INSERT INTO survey_pretest (user_id, answers_json, submitted_at) VALUES (?, ?, datetime('now'))`
-    ).run(req.user.id, JSON.stringify(answers));
-    mirrorRow('survey_pretest', {
-      id: Number(pInfo.lastInsertRowid),
-      user_id: req.user.id, answers,
-      submitted_at: new Date().toISOString(),
-    });
-    logEvent(req.user.id, 'survey_pretest', `keys=${Object.keys(answers).length}`);
-    res.status(201).json({ ok: true });
-  } catch (err) {
-    next(err);
-  }
-});
 
 router.post('/run/:runId', jwtAuth, validateBody(runFeedbackSchema), (req: Request, res: Response, next: NextFunction) => {
   try {

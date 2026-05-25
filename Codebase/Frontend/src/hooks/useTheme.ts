@@ -11,7 +11,7 @@ const THEME_KEY = 'nt_theme';
 // never leak onto surfaces it was not designed for. The admin dashboard
 // (/admin, a separate operator bundle) keeps its own theme toggle — it is a
 // private tool, not the public marketing site the leak affected.
-const THEMED_PATH_PREFIXES = ['/studio', '/app', '/pretest', '/developer', '/student-studio', '/admin'];
+const THEMED_PATH_PREFIXES = ['/studio', '/app', '/developer', '/student-studio', '/admin'];
 
 function isStudioPath(pathname: string): boolean {
   return THEMED_PATH_PREFIXES.some((p) => pathname === p || pathname.startsWith(p + '/'));

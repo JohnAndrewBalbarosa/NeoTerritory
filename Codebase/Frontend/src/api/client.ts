@@ -265,49 +265,6 @@ export async function saveLearningProgress(
   });
 }
 
-// ── Learning-path pre/post assessments ───────────────────────────────────
-// Knowledge-test scores (objective learning measure). Both endpoints are
-// jwtAuth-gated; callers guard on token like the progress API above.
-export interface AssessmentResultRecord {
-  scope: string;
-  phase: 'pre' | 'post';
-  correct: number;
-  total: number;
-  percent: number;
-}
-
-export async function fetchAssessments(): Promise<AssessmentResultRecord[]> {
-  const r = await apiFetch<{ results: AssessmentResultRecord[] }>('/api/learning/assessment');
-  return r.results ?? [];
-}
-
-export async function saveAssessment(rec: {
-  scope: string;
-  phase: 'pre' | 'post';
-  correct: number;
-  total: number;
-  percent: number;
-  answers: Record<string, number>;
-}): Promise<void> {
-  await apiFetch('/api/learning/assessment', {
-    method: 'POST',
-    body: JSON.stringify(rec),
-  });
-}
-
-// Admin-configured proficiency bands (score range → label). Public GET so the
-// learner-facing result can show the same label the analytics use.
-export interface ProficiencyBandDto {
-  min: number;
-  max: number;
-  label: string;
-}
-
-export async function fetchProficiencyBands(): Promise<ProficiencyBandDto[]> {
-  const r = await apiFetch<{ bands: ProficiencyBandDto[] }>('/api/learning/proficiency-bands');
-  return r.bands ?? [];
-}
-
 export async function submitAnalysis(body: string | FormData): Promise<AnalysisRun> {
   return apiFetch<AnalysisRun>('/api/analyze', { method: 'POST', body });
 }
@@ -473,7 +430,6 @@ export interface AdminSettings {
   reviews_required: boolean;
   feature_releases: Record<string, boolean>;
   f1_norm_profile: AdminF1NormProfile;
-  proficiency_bands?: ProficiencyBandDto[];
 }
 export async function fetchAdminSettings(): Promise<AdminSettings> {
   return apiFetch<AdminSettings>('/api/admin/settings');
@@ -499,52 +455,6 @@ export async function setFeatureReleases(
       body: JSON.stringify({ value })
     }
   );
-}
-
-// Admin: set the proficiency bands (professor-defined score ranges). Echoes
-// the validated + sorted bands the backend stored.
-export async function setProficiencyBands(
-  value: ProficiencyBandDto[]
-): Promise<{ key: string; value: ProficiencyBandDto[] }> {
-  return apiFetch<{ key: string; value: ProficiencyBandDto[] }>(
-    '/api/admin/settings/proficiency_bands',
-    {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ value })
-    }
-  );
-}
-
-// Admin: learning-path pre/post analytics (per-learner pre/post/gain/<g> and
-// per-scope aggregates plus practical tries).
-export interface LearningScopeCell {
-  pre?: number;
-  post?: number;
-  rawGain?: number;
-  normGain?: number | null;
-}
-export interface LearningLearnerRow {
-  userId: number;
-  username: string | null;
-  email: string | null;
-  scopes: Record<string, LearningScopeCell>;
-  totalTries: number;
-}
-export interface LearningScopeAggregate {
-  n: number;
-  avgPre: number;
-  avgPost: number;
-  avgRawGain: number;
-  avgNormGain: number | null;
-}
-export interface LearningAnalytics {
-  bands: ProficiencyBandDto[];
-  learners: LearningLearnerRow[];
-  aggregate: Record<string, LearningScopeAggregate>;
-}
-export async function fetchLearningAnalytics(): Promise<LearningAnalytics> {
-  return apiFetch<LearningAnalytics>('/api/admin/stats/learning-analytics');
 }
 
 // Public read of the feature-release map. Piggy-backs on /auth/test-accounts
@@ -890,13 +800,6 @@ export async function submitManualReview(runId: number, payload: ManualReviewPay
 }
 
 // Survey endpoints
-export async function submitPretest(answers: Record<string, unknown>): Promise<unknown> {
-  return apiFetch<unknown>('/api/survey/pretest', {
-    method: 'POST',
-    body: JSON.stringify({ answers })
-  });
-}
-
 export async function submitRunSurvey(
   runId: string,
   ratings: Record<string, number>,

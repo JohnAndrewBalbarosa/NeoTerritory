@@ -145,7 +145,7 @@ const LOG_CATEGORY_TABS: Array<{ id: LogCategory; label: string; hint: string }>
   { id: 'all',      label: 'All activity',     hint: 'Every event recorded across the system' },
   { id: 'auth',     label: 'Sign-in & seats',  hint: 'Logins, registrations, tester seat claims, sign-outs' },
   { id: 'analysis', label: 'Analysis runs',    hint: 'Submissions, saved runs, manual retags, GDB tests' },
-  { id: 'survey',   label: 'Surveys & reviews', hint: 'Consent, pretest, per-run and end-of-session feedback' },
+  { id: 'survey',   label: 'Surveys & reviews', hint: 'Consent, per-run and end-of-session feedback' },
   { id: 'frontend', label: 'Frontend events',  hint: 'In-app actions reported by the SPA (navigation, dispatch, etc.)' },
   { id: 'errors',   label: 'Errors & failures', hint: 'Anything that failed — backend or frontend' }
 ];
