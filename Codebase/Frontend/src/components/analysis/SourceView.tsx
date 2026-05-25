@@ -38,6 +38,12 @@ interface SourceViewProps {
   // and call-sites that touch an ambiguous class.
   usageLinesByAmbiguousClass?: Map<number, string>;
   onLineClick?: (commentId: string) => void;
+  // Render slots for the merged walkthrough. Returning null renders nothing.
+  // renderHeaderForLine fires for every line BEFORE the line itself, so a
+  // class-declaration header sits above its declaration line. renderDocForLine
+  // fires AFTER the line, so inline docs sit beneath the code.
+  renderHeaderForLine?: (lineNo: number) => React.ReactNode;
+  renderDocForLine?: (lineNo: number) => React.ReactNode;
 }
 
 interface PopoverState {
@@ -295,7 +301,7 @@ function buildRows(
   return { rows, scopeDominanceMap };
 }
 
-export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick }: SourceViewProps) {
+export default function SourceView({ sourceText, annotations, detectedPatterns, classResolvedPatterns, classUsageBindings, inScopePatternsByClass, coloringAmbiguousClassNames, subclassPendingClassNames, subclassDroppedClassNames, usageLinesByAmbiguousClass, onLineClick, renderHeaderForLine, renderDocForLine }: SourceViewProps) {
   const {
     linePatternOverrides,
     setLinePatternOverride, clearLinePatternOverride,
@@ -324,8 +330,21 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
     // undo (e.g. propagated from a class resolve whose source binding
     // no longer applies). Without the override fallback, an
     // override-coloured line with no annotations is dead-clicked.
+    // Docs now render inline; the popover is the disambiguation picker only.
+    // Open it when the user can act: the line (or its class-decl scope) is
+    // ambiguous, or there is an existing override to undo.
     const hasOverride = !!linePatternOverrides[row.lineNo];
-    if (!row.rawAnns.length && !hasOverride) return;
+    const distinct = new Set(
+      row.rawAnns
+        .map(a => patternFromAnnotation(a))
+        .filter(isRealPattern)
+        .map(canonicalPatternName)
+    ).size;
+    const scopeUnion = row.isScopeStart && row.scope
+      ? (inScopePatternsByClass?.get(row.scope.className)?.size ?? 0)
+      : 0;
+    const lineNeedsPick = distinct > 1 || scopeUnion > 1;
+    if (!lineNeedsPick && !hasOverride) return;
     const rect = ev.currentTarget.getBoundingClientRect();
     if (popover && popover.line === row.lineNo) { setPopover(null); return; }
     setPopover({ line: row.lineNo, annotations: row.rawAnns, anchorRect: rect });
@@ -530,23 +549,29 @@ export default function SourceView({ sourceText, annotations, detectedPatterns, 
 
           const style = styleFor(baseColor, badgeColor);
 
+          const header = renderHeaderForLine?.(row.lineNo);
+          const doc = renderDocForLine?.(row.lineNo);
+
           return (
-            <span
-              key={row.lineNo}
-              className={classNames}
-              data-line={row.lineNo}
-              data-class-name={row.isScopeStart ? row.scope?.className : undefined}
-              style={style}
-              onClick={(ev) => handleLineClick(row, ev)}
-            >
-              <span className="src-gutter">{num}</span>
-              <span className="src-code">{row.text || '​'}</span>
-              {hasAnnotation && isAmbiguousLine && (
-                <span className="src-line-badge" aria-hidden="true">
-                  {`${distinctPatternCount}×`}
-                </span>
-              )}
-            </span>
+            <React.Fragment key={row.lineNo}>
+              {header}
+              <span
+                className={classNames}
+                data-line={row.lineNo}
+                data-class-name={row.isScopeStart ? row.scope?.className : undefined}
+                style={style}
+                onClick={(ev) => handleLineClick(row, ev)}
+              >
+                <span className="src-gutter">{num}</span>
+                <span className="src-code">{row.text || '​'}</span>
+                {hasAnnotation && isAmbiguousLine && (
+                  <span className="src-line-badge" aria-hidden="true">
+                    {`${distinctPatternCount}×`}
+                  </span>
+                )}
+              </span>
+              {doc}
+            </React.Fragment>
           );
         })}
       </div>
