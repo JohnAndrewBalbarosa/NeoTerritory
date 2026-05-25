@@ -435,11 +435,24 @@ export default function GdbRunnerTab() {
         const ms = e.retryAfterMs || 60_000;
         setGdbCooldownUntil(Date.now() + ms);
         setGdbError(e.detail || `Rate limited. Try again in ${Math.ceil(ms / 1000)}s.`);
-      } else if (e.status === 409 && Array.isArray(e.ambiguousClasses)) {
+      } else if (
+        (e.status === 409 || e.status === 400) &&
+        Array.isArray(e.ambiguousClasses) &&
+        e.ambiguousClasses.length > 0
+      ) {
+        // The backend bounces unresolved / placeholder-tagged classes with a
+        // 400 AMBIGUOUS_TAGS (analysis.ts). This used to only match 409, so the
+        // 400 fell through to the generic branch and dumped the raw error code
+        // ("AMBIGUOUS_TAGS") into the banner. Route it to the friendly
+        // gdb-ambiguous-banner instead — it lists the classes and links to the
+        // Annotated tab where the user picks a pattern for each.
         setGdbAmbiguousBlock(e.ambiguousClasses);
       } else {
-        setGdbError(e.message || 'Failed to run tests.');
-        logFrontendEvent('frontend.gdb_test', `error ${(e.message || '').slice(0, 100)}`);
+        // Never surface a raw backend error code. `detail` carries the
+        // human-readable sentence (e.g. "Tag at least one class…"); fall back
+        // to it before the bare message so users see guidance, not a CONSTANT.
+        setGdbError(e.detail || e.message || 'Failed to run tests.');
+        logFrontendEvent('frontend.gdb_test', `error ${(e.detail || e.message || '').slice(0, 100)}`);
       }
     } finally {
       setGdbBusy(false);
