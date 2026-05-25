@@ -43,7 +43,12 @@ export type SettingKey =
   // instruction is the per-request line wrapped around the injected
   // pattern JSON. Admin edits both from the AI-sample prompt editor.
   | 'ai_sample_system_prompt'
-  | 'ai_sample_injection_instruction';
+  | 'ai_sample_injection_instruction'
+  // Learning-path proficiency bands: JSON array of { min, max, label } as
+  // PERCENT ranges. The supervising professor sets these score ranges and the
+  // statistician validates them, so they must be tunable without a redeploy.
+  // getProficiencyBands() validates + sorts the stored value.
+  | 'proficiency_bands';
 
 const DEFAULT_F1_NORM_PROFILE = {
   label: 'Intermediate C++ · weak on design patterns',
@@ -70,13 +75,29 @@ export const DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION = [
   'as the structure to satisfy. Return only the C++ source.',
 ].join('\n');
 
+// Default proficiency bands (percent ranges → label). Placeholder ranges
+// until the professor sets the validated cut scores. Contiguous and covering
+// 0–100 so every score lands in exactly one band.
+export interface ProficiencyBand {
+  min: number;
+  max: number;
+  label: string;
+}
+export const DEFAULT_PROFICIENCY_BANDS: ReadonlyArray<ProficiencyBand> = [
+  { min: 0, max: 49, label: 'Beginning' },
+  { min: 50, max: 74, label: 'Developing' },
+  { min: 75, max: 89, label: 'Proficient' },
+  { min: 90, max: 100, label: 'Advanced' },
+];
+
 const DEFAULTS: Record<SettingKey, string> = {
   testers_visible_to_users: '1',
   reviews_required: '1',
   feature_releases: '{}',
   f1_norm_profile: JSON.stringify(DEFAULT_F1_NORM_PROFILE),
   ai_sample_system_prompt: DEFAULT_AI_SAMPLE_SYSTEM_PROMPT,
-  ai_sample_injection_instruction: DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION
+  ai_sample_injection_instruction: DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION,
+  proficiency_bands: JSON.stringify(DEFAULT_PROFICIENCY_BANDS)
 };
 
 interface Row { value: string }
@@ -131,6 +152,36 @@ export function getF1NormProfile(): F1NormProfile {
     specificityOnAnalyzerNegative: clamp01(parsed.specificityOnAnalyzerNegative, DEFAULT_F1_NORM_PROFILE.specificityOnAnalyzerNegative),
     hallucinatePatternRate:        clamp01(parsed.hallucinatePatternRate,        DEFAULT_F1_NORM_PROFILE.hallucinatePatternRate),
   };
+}
+
+// Parse + validate the proficiency bands. Drops malformed entries, clamps
+// bounds to [0, 100], and sorts ascending by `min`. Falls back to defaults
+// when the stored value is missing/corrupt or yields no valid band.
+export function getProficiencyBands(): ProficiencyBand[] {
+  const raw = getSetting('proficiency_bands');
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      const bands: ProficiencyBand[] = [];
+      for (const b of parsed) {
+        if (!b || typeof b !== 'object') continue;
+        const o = b as Record<string, unknown>;
+        const min = typeof o.min === 'number' ? o.min : NaN;
+        const max = typeof o.max === 'number' ? o.max : NaN;
+        const label = typeof o.label === 'string' ? o.label.trim() : '';
+        if (!Number.isFinite(min) || !Number.isFinite(max) || !label) continue;
+        bands.push({
+          min: Math.min(100, Math.max(0, Math.round(min))),
+          max: Math.min(100, Math.max(0, Math.round(max))),
+          label,
+        });
+      }
+      if (bands.length) return bands.sort((a, b) => a.min - b.min);
+    }
+  } catch {
+    /* fall through to defaults */
+  }
+  return [...DEFAULT_PROFICIENCY_BANDS];
 }
 
 // Parse the feature_releases JSON setting into a typed map. Falls back to

@@ -9,9 +9,24 @@ import {
   type LearningPatternPractical,
   type LearningQuizPractical,
 } from '../../../data/learningModules';
-import { submitAnalysis, fetchLearningProgress, saveLearningProgress } from '../../../api/client';
+import {
+  submitAnalysis,
+  fetchLearningProgress,
+  saveLearningProgress,
+  fetchAssessments,
+  saveAssessment,
+  fetchProficiencyBands,
+  type ProficiencyBandDto,
+} from '../../../api/client';
 import { useAppStore } from '../../../store/appState';
 import { PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
+import AssessmentPanel from '../../learn/AssessmentPanel';
+import {
+  getAssessmentForm,
+  type AssessmentScope,
+  type AssessmentPhase,
+  type AssessmentScoreResult,
+} from '../../../data/learningAssessments';
 
 // D77 (round 4): per-module practical check is the unlock gate. The hub
 // keeps the multi-step guided-course UI (hero + progress, three-section
@@ -556,9 +571,23 @@ export default function PatternsLearnPage(): JSX.Element {
   const token = useAppStore((s) => s.token);
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
-  // Attempts the learner needed to pass each module's practical. View-only in
-  // Phase 1 (the verdict line shows it); Phase 3 forwards this to analytics.
+  // Attempts the learner needed to pass each module's practical. Surfaced in
+  // the UI and persisted alongside progress so analytics can read it.
   const [triesByModule, setTriesByModule] = useState<Record<string, number>>({});
+
+  // Pre/post knowledge-test results, keyed `${scope}.${phase}`. Hydrated from
+  // the account on mount and written back on each submission.
+  const [assessments, setAssessments] = useState<Record<string, AssessmentScoreResult>>({});
+  const [bands, setBands] = useState<ProficiencyBandDto[] | undefined>(undefined);
+  const [assessmentBusy, setAssessmentBusy] = useState<boolean>(false);
+
+  const assessmentKey = (scope: AssessmentScope, phase: AssessmentPhase): string =>
+    `${scope}.${phase}`;
+  const hasTaken = useCallback(
+    (scope: AssessmentScope, phase: AssessmentPhase): boolean =>
+      assessments[`${scope}.${phase}`] != null,
+    [assessments],
+  );
   const unlockedCount = useMemo(
     () => computeUnlockedCount(steps, completedIds),
     [steps, completedIds],
@@ -601,6 +630,31 @@ export default function PatternsLearnPage(): JSX.Element {
     };
   }, [token]);
 
+  // Hydrate prior assessment results + the admin proficiency bands. Bands are
+  // public (no token needed); results are per-account so they're token-gated.
+  useEffect(() => {
+    let cancelled = false;
+    void fetchProficiencyBands()
+      .then((b) => { if (!cancelled && b.length) setBands(b); })
+      .catch(() => { /* fall back to defaults in the scoring helpers */ });
+    if (!token) return () => { cancelled = true; };
+    void fetchAssessments()
+      .then((rows) => {
+        if (cancelled || !rows.length) return;
+        setAssessments((prev) => {
+          const next = { ...prev };
+          for (const r of rows) {
+            next[`${r.scope}.${r.phase}`] = {
+              correct: r.correct, total: r.total, percent: r.percent,
+            };
+          }
+          return next;
+        });
+      })
+      .catch(() => { /* first visit — start empty */ });
+    return () => { cancelled = true; };
+  }, [token]);
+
   // Persist the completed set to the account, recording the highest unlocked
   // module id. Fire-and-forget: a failed save never blocks the UI, and the
   // next unlock re-sends the full set so a dropped write self-heals.
@@ -611,11 +665,11 @@ export default function PatternsLearnPage(): JSX.Element {
       const unlocked = computeUnlockedCount(steps, completed);
       const lastUnlockedModuleId =
         steps.length > 0 ? steps[Math.max(0, Math.min(unlocked, steps.length) - 1)].module.id : null;
-      void saveLearningProgress(ids, lastUnlockedModuleId).catch(() => {
+      void saveLearningProgress(ids, lastUnlockedModuleId, triesByModule).catch(() => {
         /* best-effort; resent on next unlock */
       });
     },
-    [token, steps],
+    [token, steps, triesByModule],
   );
 
   // Honor the URL module on first render (clamp only to the valid range, not
@@ -735,6 +789,39 @@ export default function PatternsLearnPage(): JSX.Element {
     [persistProgress],
   );
 
+  const onCompleteAssessment = useCallback(
+    (
+      scope: AssessmentScope,
+      phase: AssessmentPhase,
+      result: AssessmentScoreResult,
+      answers: Record<string, number>,
+    ) => {
+      setAssessments((prev) => ({ ...prev, [assessmentKey(scope, phase)]: result }));
+      if (!token) return;
+      setAssessmentBusy(true);
+      void saveAssessment({
+        scope, phase,
+        correct: result.correct, total: result.total, percent: result.percent,
+        answers,
+      })
+        .catch(() => { /* best-effort; in-memory result already set */ })
+        .finally(() => setAssessmentBusy(false));
+    },
+    [token],
+  );
+
+  // First / last global step index for each category, so the page knows when
+  // the active module is a section boundary (where a section pre/post belongs).
+  const { firstIndexByCat, lastIndexByCat } = useMemo(() => {
+    const first = new Map<LearningCategory, number>();
+    const last = new Map<LearningCategory, number>();
+    steps.forEach((s) => {
+      if (!first.has(s.category)) first.set(s.category, s.globalIndex);
+      last.set(s.category, s.globalIndex);
+    });
+    return { firstIndexByCat: first, lastIndexByCat: last };
+  }, [steps]);
+
   const goPrev = useCallback(() => {
     if (activeIndex > 0) goToStep(activeIndex - 1);
   }, [activeIndex, goToStep]);
@@ -762,6 +849,39 @@ export default function PatternsLearnPage(): JSX.Element {
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === total - 1;
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
+
+  // ── Assessment gating ────────────────────────────────────────────────────
+  // A blocking assessment (path pre-test, or a section pre-test on that
+  // section's first module) replaces the lesson body until it is submitted —
+  // "pre" must come before the content it measures. Trailing assessments
+  // (section post on the last module, whole-path post when everything is done)
+  // render below the lesson body and don't block reading.
+  const activeCat = activeStep?.category;
+  const pathPreDue = !hasTaken('path', 'pre');
+  const sectionPreDue =
+    !pathPreDue &&
+    !!activeStep &&
+    !!activeCat &&
+    activeStep.globalIndex === firstIndexByCat.get(activeCat) &&
+    !hasTaken(activeCat, 'pre');
+  const blockingAssessment: { scope: AssessmentScope; phase: AssessmentPhase } | null =
+    pathPreDue ? { scope: 'path', phase: 'pre' }
+    : sectionPreDue && activeCat ? { scope: activeCat, phase: 'pre' }
+    : null;
+
+  const allComplete = total > 0 && completedCount >= total;
+  const sectionPostDue =
+    !blockingAssessment &&
+    !!activeStep &&
+    !!activeCat &&
+    activeStep.globalIndex === lastIndexByCat.get(activeCat) &&
+    isActiveComplete &&
+    !hasTaken(activeCat, 'post');
+  const pathPostDue =
+    !blockingAssessment && !sectionPostDue && allComplete && !hasTaken('path', 'post');
+
+  const prePercentFor = (scope: AssessmentScope): number | null =>
+    assessments[assessmentKey(scope, 'pre')]?.percent ?? null;
 
   return (
     <main className="nt-student nt-student-course" id="main">
@@ -874,16 +994,52 @@ export default function PatternsLearnPage(): JSX.Element {
             isActiveComplete={isActiveComplete}
           />
 
-          {activeModule ? <ModuleBody module={activeModule} /> : null}
-
-          {activeModule && activeModule.practical ? (
-            <ModulePractical
-              key={activeModule.id}
-              module={activeModule}
-              isPassed={isActiveComplete}
-              onPass={(tries) => markComplete(activeModule.id, tries)}
+          {blockingAssessment ? (
+            <AssessmentPanel
+              key={`${blockingAssessment.scope}.${blockingAssessment.phase}`}
+              form={getAssessmentForm(blockingAssessment.scope, blockingAssessment.phase)}
+              bands={bands}
+              submitting={assessmentBusy}
+              onComplete={(r, a) =>
+                onCompleteAssessment(blockingAssessment.scope, blockingAssessment.phase, r, a)
+              }
             />
-          ) : null}
+          ) : (
+            <>
+              {activeModule ? <ModuleBody module={activeModule} /> : null}
+
+              {activeModule && activeModule.practical ? (
+                <ModulePractical
+                  key={activeModule.id}
+                  module={activeModule}
+                  isPassed={isActiveComplete}
+                  onPass={(tries) => markComplete(activeModule.id, tries)}
+                />
+              ) : null}
+
+              {sectionPostDue && activeCat ? (
+                <AssessmentPanel
+                  key={`${activeCat}.post`}
+                  form={getAssessmentForm(activeCat, 'post')}
+                  prePercent={prePercentFor(activeCat)}
+                  bands={bands}
+                  submitting={assessmentBusy}
+                  onComplete={(r, a) => onCompleteAssessment(activeCat, 'post', r, a)}
+                />
+              ) : null}
+
+              {pathPostDue ? (
+                <AssessmentPanel
+                  key="path.post"
+                  form={getAssessmentForm('path', 'post')}
+                  prePercent={prePercentFor('path')}
+                  bands={bands}
+                  submitting={assessmentBusy}
+                  onComplete={(r, a) => onCompleteAssessment('path', 'post', r, a)}
+                />
+              ) : null}
+            </>
+          )}
 
           <footer className="nt-lesson-controls">
             <button

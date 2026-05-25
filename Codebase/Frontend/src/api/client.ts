@@ -257,11 +257,55 @@ export async function fetchLearningProgress(): Promise<LearningProgress> {
 export async function saveLearningProgress(
   completedModuleIds: string[],
   lastUnlockedModuleId: string | null,
+  triesByModule?: Record<string, number>,
 ): Promise<void> {
   await apiFetch('/api/learning/progress', {
     method: 'PUT',
-    body: JSON.stringify({ completedModuleIds, lastUnlockedModuleId }),
+    body: JSON.stringify({ completedModuleIds, lastUnlockedModuleId, triesByModule }),
   });
+}
+
+// ── Learning-path pre/post assessments ───────────────────────────────────
+// Knowledge-test scores (objective learning measure). Both endpoints are
+// jwtAuth-gated; callers guard on token like the progress API above.
+export interface AssessmentResultRecord {
+  scope: string;
+  phase: 'pre' | 'post';
+  correct: number;
+  total: number;
+  percent: number;
+}
+
+export async function fetchAssessments(): Promise<AssessmentResultRecord[]> {
+  const r = await apiFetch<{ results: AssessmentResultRecord[] }>('/api/learning/assessment');
+  return r.results ?? [];
+}
+
+export async function saveAssessment(rec: {
+  scope: string;
+  phase: 'pre' | 'post';
+  correct: number;
+  total: number;
+  percent: number;
+  answers: Record<string, number>;
+}): Promise<void> {
+  await apiFetch('/api/learning/assessment', {
+    method: 'POST',
+    body: JSON.stringify(rec),
+  });
+}
+
+// Admin-configured proficiency bands (score range → label). Public GET so the
+// learner-facing result can show the same label the analytics use.
+export interface ProficiencyBandDto {
+  min: number;
+  max: number;
+  label: string;
+}
+
+export async function fetchProficiencyBands(): Promise<ProficiencyBandDto[]> {
+  const r = await apiFetch<{ bands: ProficiencyBandDto[] }>('/api/learning/proficiency-bands');
+  return r.bands ?? [];
 }
 
 export async function submitAnalysis(body: string | FormData): Promise<AnalysisRun> {

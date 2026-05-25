@@ -21,9 +21,16 @@ from __future__ import annotations
 
 import argparse
 import datetime as _dt
+import os
 import sys
 import time
 from pathlib import Path
+
+# Windows without Developer Mode / admin cannot create symlinks, which makes the
+# HuggingFace hub cache throw "WinError 1314" while laying out the model snapshot.
+# Force file copies instead of symlinks. Must be set before huggingface_hub loads.
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS", "1")
+os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
 
 
 def _fmt_srt(seconds: float) -> str:

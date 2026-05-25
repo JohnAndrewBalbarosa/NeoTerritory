@@ -235,6 +235,35 @@ export function initDb(): void {
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
 
+  // Per-module practical attempt counts (JSON map module_id → tries). Added
+  // after learning_progress shipped, so older DBs need the column backfilled.
+  // ALTER ... ADD COLUMN is idempotent here via the duplicate-column catch.
+  try {
+    db.prepare(`ALTER TABLE learning_progress ADD COLUMN tries_by_module TEXT NOT NULL DEFAULT '{}'`).run();
+  } catch {
+    /* column already exists — nothing to do */
+  }
+
+  // ── learning_assessment (pre/post knowledge-test scores) ────────────────
+  // One row per (user, scope, phase). scope is 'path' or a category id
+  // ('foundations' | 'creational' | ...); phase is 'pre' | 'post'. The score
+  // is objective (correct/total), so post − pre measures real learning. A
+  // re-take upserts the same (user, scope, phase) row. answers_json stores the
+  // raw item→choice map for item-level analysis.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_assessment (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    scope TEXT NOT NULL,
+    phase TEXT NOT NULL,
+    correct INTEGER NOT NULL,
+    total INTEGER NOT NULL,
+    percent INTEGER NOT NULL,
+    answers_json TEXT NOT NULL DEFAULT '{}',
+    submitted_at TEXT NOT NULL DEFAULT (datetime('now')),
+    UNIQUE(user_id, scope, phase),
+    FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
+  )`).run();
+
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email
   // entered the ORIGINAL_DEV_EMAILS allowlist, resolveAdminOrg would
