@@ -248,13 +248,13 @@ export class StudioPage {
    * the final post-expansion layout (no mid-mount transition frames).
    */
   async expandAllPatternCards(): Promise<number> {
-    // The class tree must already be mounted (i.e., we're on the
-    // Patterns tab post-analyze). If it's not, fail loud — silent
+    // The documented-source spine must already be mounted (i.e., we're on
+    // the Patterns tab post-analyze). If it's not, fail loud — silent
     // skip would falsely suggest "no cards to expand".
     await this.page
-      .getByTestId('class-tree-view')
+      .getByTestId('documented-source')
       .waitFor({ state: 'visible', timeout: 10_000 })
-      .catch(() => { /* tree may legitimately be empty for negative samples */ });
+      .catch(() => { /* spine may legitimately be absent for negative samples */ });
 
     const toggles = this.page.locator('.pattern-header__toggle');
     const count = await toggles.count();

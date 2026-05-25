@@ -147,6 +147,17 @@ export function generateMarkdown(run: AnalysisRun): string {
         lines.push('');
       }
 
+      const usageForClass = p.className ? (run.classUsageBindings?.[p.className] ?? []) : [];
+      const usageLines = usageForClass
+        .map(b => b.line)
+        .filter((l): l is number => typeof l === 'number');
+      if (usageLines.length > 0) {
+        lines.push('#### Where used');
+        lines.push('');
+        lines.push(`- \`${p.className}\` referenced at: ${usageLines.map(l => `L${l}`).join(', ')}`);
+        lines.push('');
+      }
+
       lines.push('---');
       lines.push('');
     }

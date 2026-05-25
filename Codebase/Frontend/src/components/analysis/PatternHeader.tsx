@@ -55,8 +55,8 @@ export default function PatternHeader({ data, onLineFlash }: PatternHeaderProps)
           <div className="pattern-header__methods">
             <span className="pattern-header__label">Methods to test:</span>
             <ul className="pattern-header__method-list">
-              {data.methodsToTest.map((m, i) => (
-                <li key={i}>
+              {data.methodsToTest.map((m) => (
+                <li key={`${m.name}-${m.line}`}>
                   <button type="button" className="pattern-header__method no-print" onClick={() => onLineFlash?.(m.line)}>
                     <code>{m.name}</code>
                     <span className="pattern-header__method-kind">{m.branchKind}</span>

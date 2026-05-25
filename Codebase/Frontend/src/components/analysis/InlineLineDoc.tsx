@@ -16,7 +16,7 @@ export default function InlineLineDoc({ data, onLineFlash }: InlineLineDocProps)
   return (
     <div className="inline-line-doc" data-line={data.line}>
       {data.notes.map((n, i) => (
-        <p key={i} className="inline-line-doc__note">
+        <p key={`${n.title}-${i}`} className="inline-line-doc__note">
           <span className="inline-line-doc__title">{n.title}</span>
           {n.comment && <span className="inline-line-doc__comment"> — {n.comment}</span>}
           <span className={`inline-line-doc__tag inline-line-doc__tag--${n.source}`}>
@@ -30,8 +30,8 @@ export default function InlineLineDoc({ data, onLineFlash }: InlineLineDocProps)
         )}
         {data.usageLines.length > 0 && (
           <span className="inline-line-doc__usage no-print">
-            used at {data.usageLines.map((l, i) => (
-              <button key={i} type="button" className="inline-line-doc__usage-ref" onClick={() => onLineFlash?.(l)}>
+            used at {data.usageLines.map((l) => (
+              <button key={l} type="button" className="inline-line-doc__usage-ref" onClick={() => onLineFlash?.(l)}>
                 L{l}
               </button>
             ))}

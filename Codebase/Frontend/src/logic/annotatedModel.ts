@@ -1,7 +1,7 @@
 // Single derivation surface for the annotated-source view.
 //
-// Why this exists: SourceView, PatternLegend, ClassBindings, PatternCards,
-// the rival picker, and the class-nav arrows all need to agree on which
+// Why this exists: SourceView, PatternLegend, the documented-source spine
+// (DocumentedSource), the rival picker, and the class-nav arrows all need to agree on which
 // classes are ambiguous, which are resolved, what each line should be
 // coloured as, which subclass tags are still live, and what to show in the
 // legend. Each used to derive that locally with subtly different rules,

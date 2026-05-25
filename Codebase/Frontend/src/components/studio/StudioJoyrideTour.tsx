@@ -156,18 +156,6 @@ const STEPS_BY_TAB: Record<StudioTab, TabSteps> = {
         takeaway: 'Resolve classes top-to-bottom; the badge updates live.',
       },
       {
-        target: '.class-tree-view',
-        title: 'Class tree',
-        body: 'Every detected class lands here with its pattern verdict. A class marked "review" has two or more competing candidates and is waiting for your call.',
-        takeaway: 'Scan the tree to see which classes still need attention.',
-      },
-      {
-        target: '.class-tree-review-cta',
-        title: 'Resolve a class root',
-        body: 'Click the "(review - N patterns)" button on a class. A picker opens with each candidate; choose the pattern that fits. Your verdict propagates to every line under that class.',
-        takeaway: 'One click clears every ambiguous line under the class.',
-      },
-      {
         target: '.src-line.has-ambiguous',
         title: 'Or resolve line-by-line',
         body: 'Each line with multiple candidate patterns shows a popover badge. Click the line to disambiguate that specific line - useful when one class hosts more than one pattern role.',
@@ -180,13 +168,16 @@ const STEPS_BY_TAB: Record<StudioTab, TabSteps> = {
         takeaway: 'Use the arrow to keep moving; the badge counter updates live.',
       },
       {
-        // Docs is now a sub-view of the Patterns tab (the "Documentation"
-        // toggle). The guide only mounts when that sub-view is open, so this
-        // step is gracefully skipped when the user is on the annotated view.
-        target: '.docs-read-guide',
-        title: 'How to read the docs page',
-        body: 'Switch to the "Documentation" sub-view to read the generated docs. The guide at the top explains each section - pattern definitions, code annotations, and where AI commentary lands when present.',
-        takeaway: 'Annotated source and documentation now share the Patterns tab.',
+        target: '.pattern-header',
+        title: 'Pattern explanations',
+        body: 'Each class declaration has a collapsible header. Click it to expand the full teaching card: what the pattern is, why it fired in this file, when to use it, and which methods to test. Per-line notes appear inline beneath each annotated line.',
+        takeaway: 'Everything — pattern guide and annotated source — is in one unified view.',
+      },
+      {
+        target: '.inline-line-doc',
+        title: 'Line-by-line notes',
+        body: 'Under each annotated source line you\'ll find an inline doc block showing the annotation note, the landmark label (e.g. "constructor", "factory method"), and "used at L…" references that jump to where that class is consumed.',
+        takeaway: 'Click any "used at L…" link to flash the usage line in the source.',
       },
     ],
   },
