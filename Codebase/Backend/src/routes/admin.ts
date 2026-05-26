@@ -31,6 +31,7 @@ import {
   clearAiConfig,
   type AiProvider,
 } from '../db/aiConfig';
+import { aggregateQuestionResults, type RawResultRow } from '../services/learningQuestionStats';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
 const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
@@ -236,7 +237,7 @@ interface AvgRow { a: number | null }
 router.get('/users', (_req: Request, res: Response, next: NextFunction) => {
   try {
     const rows = db.prepare(`
-      SELECT u.id, u.username, u.email, u.role, u.created_at, u.last_active,
+      SELECT u.id, u.username, u.email, u.role, u.created_at, u.last_active, u.created_via,
              COUNT(r.id) AS runCount,
              MAX(r.created_at) AS lastRunAt
       FROM users u
@@ -245,6 +246,39 @@ router.get('/users', (_req: Request, res: Response, next: NextFunction) => {
       ORDER BY runCount DESC, u.username ASC
     `).all();
     res.json({ users: rows });
+  } catch (err) { next(err); }
+});
+
+// Per-question learning analytics (D87). Without query params: the aggregate
+// matrix (one row per module+question). With ?moduleId=&questionIndex=: the
+// per-learner drilldown for one question.
+router.get('/stats/learning-questions', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const moduleId = typeof req.query.moduleId === 'string' ? req.query.moduleId : '';
+    const qiRaw = typeof req.query.questionIndex === 'string' ? Number(req.query.questionIndex) : NaN;
+
+    if (moduleId && Number.isInteger(qiRaw)) {
+      // Drilldown: who answered this question and how.
+      const learners = db.prepare(`
+        SELECT u.id AS userId, u.username, u.email,
+               q.selected_index AS selectedIndex,
+               q.is_correct AS isCorrect,
+               q.first_attempt_correct AS firstAttemptCorrect,
+               q.attempts AS attempts
+        FROM learning_question_results q
+        JOIN users u ON u.id = q.user_id
+        WHERE q.module_id = ? AND q.question_index = ?
+        ORDER BY u.username ASC
+      `).all(moduleId, qiRaw);
+      res.json({ learners });
+      return;
+    }
+
+    const rows = db.prepare(`
+      SELECT module_id, question_index, selected_index, first_attempt_correct
+      FROM learning_question_results
+    `).all() as RawResultRow[];
+    res.json({ questions: aggregateQuestionResults(rows) });
   } catch (err) { next(err); }
 });
 
