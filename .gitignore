@@ -270,3 +270,6 @@ local-only/
 mobile-audit-tmp.mjs
 /test/
 /test-results/
+
+# Brainstorming visual-companion scratch (superpowers)
+.superpowers/
