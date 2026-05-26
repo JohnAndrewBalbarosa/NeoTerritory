@@ -1184,3 +1184,33 @@ on the hosted project; CI does not auto-apply).
 Note: per D85 the `pimpl` practical may not detect (idiom disabled); pimpl is the
 final module so an unpassable practical there only blocks "path complete", not
 any downstream module. Left as-is here; detection scope is owned by D85.
+
+## D87 — Admin per-question analytics + provider column + sidebar shell
+
+**Per-question capture.** Theoretical-exam results are recorded per
+(user, module, question) in a SQLite-only table `learning_question_results`
+(user_id, module_id, question_index, selected_index, is_correct,
+first_attempt_correct, attempts, updated_at). Signed-in learners only —
+guests on `devcon*` seats never POST. Forward-only (no historical backfill).
+`first_attempt_correct` is locked on the first recorded row and never
+overwritten; subsequent submits update selected_index/is_correct and bump
+attempts. The headline analytics metric is FIRST-ATTEMPT correct rate, because
+passing an exam requires every answer correct so eventual correctness is
+trivially ~100%.
+
+**Admin Learning tab.** `GET /api/admin/stats/learning-questions` aggregates the
+table into per-(family,module,question) rows; the tab renders a per-family
+heatmap (modules × questions, cell colour = first-try pass rate) with a
+per-learner drilldown via `?moduleId=&questionIndex=`. Question/option text is
+resolved client-side from LEARNING_MODULES, not stored server-side.
+
+**Accounts provider.** SQLite `users` gains `created_via` ('oauth'|'guest'|
+'legacy', default 'legacy'); the Google path writes 'oauth', a one-time backfill
+marks `Devcon%` rows 'guest'. The Users tab gets a Provider column + filter.
+
+**Admin shell.** The flat top `.admin-tab-bar` becomes a left sidebar grouped by
+section (Operations / People / Learning / Research / Config). The
+`data-testid="admin-tab-bar"` anchor is preserved on the new nav so the routes
+manifest + CI smoke stay green. `originalDevsOnly` + PM filtering unchanged.
+
+Both schema changes are SQLite-only (initDb), so no Supabase migration.
