@@ -28,6 +28,16 @@ const PRESENCE_LABELS: Record<PresenceFilter, string> = {
   offline: 'Offline only'
 };
 
+type ProviderFilter = 'all' | 'oauth' | 'guest' | 'legacy';
+const PROVIDER_CYCLE: ProviderFilter[] = ['all', 'oauth', 'guest', 'legacy'];
+const PROVIDER_LABELS: Record<ProviderFilter, string> = {
+  all: 'Provider: all',
+  oauth: 'Google',
+  guest: 'Guest',
+  legacy: 'Legacy',
+};
+const PROVIDER_PILL: Record<string, string> = { oauth: 'Google', guest: 'Guest', legacy: 'Legacy' };
+
 function applySort(users: AdminUser[], key: SortKey): AdminUser[] {
   if (key === 'none') return users;
   return [...users].sort((a, b) => {
@@ -47,6 +57,7 @@ export default function UserTable() {
   const [query, setQuery]     = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('none');
   const [presence, setPresence] = useState<PresenceFilter>('all');
+  const [provider, setProvider] = useState<ProviderFilter>('all');
   const [resetting, setResetting] = useState<'all' | 'selected' | 'offline' | null>(null);
   const [selected, setSelected] = useState<Set<number>>(new Set());
 
@@ -100,6 +111,10 @@ export default function UserTable() {
     setPresence(p => PRESENCE_CYCLE[(PRESENCE_CYCLE.indexOf(p) + 1) % PRESENCE_CYCLE.length]);
   }
 
+  function cycleProvider() {
+    setProvider(p => PROVIDER_CYCLE[(PROVIDER_CYCLE.indexOf(p) + 1) % PROVIDER_CYCLE.length]);
+  }
+
   function toggleSelected(id: number) {
     setSelected(prev => {
       const next = new Set(prev);
@@ -144,6 +159,7 @@ export default function UserTable() {
     : users;
   if (presence === 'online') filtered = filtered.filter(u => isOnline(u.last_active));
   else if (presence === 'offline') filtered = filtered.filter(u => !isOnline(u.last_active));
+  if (provider !== 'all') filtered = filtered.filter(u => (u.created_via ?? 'legacy') === provider);
   const visible = applySort(filtered, sortKey);
 
   const visibleTesterIds = visible.filter(isTesterRow).map(u => u.id);
@@ -216,6 +232,13 @@ export default function UserTable() {
           {PRESENCE_LABELS[presence]}
         </button>
         <button
+          className={`user-ctrl-btn${provider !== 'all' ? ' is-active' : ''}`}
+          onClick={cycleProvider}
+          title="Cycle provider filter (All / Google / Guest / Legacy)"
+        >
+          {PROVIDER_LABELS[provider]}
+        </button>
+        <button
           className={`user-ctrl-btn${sortKey !== 'none' ? ' is-active' : ''}`}
           onClick={cycleSort}
           title="Cycle sort order"
@@ -266,6 +289,7 @@ export default function UserTable() {
                 </th>
                 <th>User</th>
                 <th>Role</th>
+                <th>Provider</th>
                 <th>Runs</th>
                 <th>Last run</th>
                 <th>Created</th>
@@ -298,6 +322,11 @@ export default function UserTable() {
                     <td>
                       <span className="role-pill" data-role={u.role ?? 'user'}>{u.role ?? 'user'}</span>
                     </td>
+                    <td>
+                      <span className="provider-pill" data-provider={u.created_via ?? 'legacy'}>
+                        {PROVIDER_PILL[u.created_via ?? 'legacy'] ?? 'Legacy'}
+                      </span>
+                    </td>
                     <td>{u.runCount ?? 0}</td>
                     <td>{fmtDate(u.lastRunAt)}</td>
                     <td>{fmtDate(u.created_at)}</td>
@@ -306,7 +335,7 @@ export default function UserTable() {
               })}
               {visible.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ textAlign: 'center', color: 'var(--ink-soft)', padding: '20px' }}>
+                  <td colSpan={7} style={{ textAlign: 'center', color: 'var(--ink-soft)', padding: '20px' }}>
                     No users match "{query}"
                   </td>
                 </tr>
