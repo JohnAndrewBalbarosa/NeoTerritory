@@ -267,8 +267,8 @@ function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UpsertResult
   // the seeded NeoTerritory admins.
   const localRole = role === 'admin' && isOriginalDevEmail(safeEmail) ? 'admin' : 'user';
   const info = db.prepare(
-    `INSERT INTO users (username, email, password_hash, role, created_at)
-     VALUES (?, ?, ?, ?, datetime('now'))`
+    `INSERT INTO users (username, email, password_hash, role, created_at, created_via)
+     VALUES (?, ?, ?, ?, datetime('now'), 'oauth')`
   ).run(username, safeEmail, placeholderHash, localRole);
   const id = Number(info.lastInsertRowid);
 
