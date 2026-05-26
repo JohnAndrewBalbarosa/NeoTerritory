@@ -4,13 +4,15 @@ import { fetchHealth, fetchRuns, fetchSample } from '../../api/client';
 import { navigate } from '../../logic/router';
 import MainLayout from '../layout/MainLayout';
 
-// Studio entry. After the learner-merge the standalone studio is no longer a
-// destination for learners — its analysis surface is embedded inside the
-// Learning Path practicals (see StudioSurface). So:
+// Studio entry. After the learner-merge the studio's analysis surface is
+// embedded inside the Learning Path practicals (see StudioSurface), and the
+// product UX never links learners here — "Try it now" goes straight to the
+// learner sign-in, and pattern modules host the studio inline. The /studio
+// route itself still renders for a directly-navigated signed-in session
+// (e.g. operators, or the E2E pipeline harness), so:
 //   - logged-out visits → bounce to the learner sign-in page.
-//   - logged-in admins  → keep the standalone studio (operators may still use
-//     it); admins hitting the /app sign-in entry go to /admin.html.
-//   - logged-in non-admins (developers/learners/guests) → /patterns/learn.
+//   - logged-in admins hitting the /app sign-in entry → /admin.html.
+//   - any other signed-in session → the standalone studio shell.
 export default function StudioApp() {
   const { token, user, setStatus, setMsStatus, setAiConfigured, resetSession } = useAppStore();
   const [ready, setReady] = useState(false);
@@ -30,7 +32,7 @@ export default function StudioApp() {
 
     setReady(true);
 
-    if (isLoggedIn && isAdmin) {
+    if (isLoggedIn) {
       fetchHealth()
         .then((h) => {
           const ms = h.microservice;
@@ -72,21 +74,8 @@ export default function StudioApp() {
     navigate('/student-learning/login');
   }, [ready, isLoggedIn]);
 
-  // Logged-in non-admins never see the standalone studio — the studio now
-  // lives inside the Learning Path practicals. Redirect them there.
-  useEffect(() => {
-    if (!ready) return;
-    if (!isLoggedIn) return;
-    if (isAdmin) return;
-    if (typeof window === 'undefined') return;
-    if (window.location.pathname === '/app') return;
-    navigate('/patterns/learn');
-  }, [ready, isLoggedIn, isAdmin]);
-
   if (!ready) return null;
   if (!isLoggedIn) return null;
-  // Non-admins are mid-redirect to /patterns/learn — render nothing.
-  if (!isAdmin) return null;
 
   return <MainLayout />;
 }
