@@ -1,0 +1,61 @@
+<h2>Admin shell — how should the 10+ tabs be organised?</h2>
+<p class="subtitle">Today it's a flat row of 10 tabs that wrap and feel cramped. Two restructure directions below. Click the one you prefer.</p>
+
+<div class="cards">
+  <div class="card" data-choice="sidebar" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="display:flex;height:230px;font-size:11px;text-align:left;">
+        <div style="width:34%;background:#13141a;border-right:1px solid #2a2b38;padding:10px 8px;display:flex;flex-direction:column;gap:8px;">
+          <div style="color:#7c7f9e;font-size:9px;letter-spacing:.08em;">OPERATIONS</div>
+          <div style="color:#e2e4f0;background:rgba(123,94,167,.18);border-radius:6px;padding:5px 7px;">▦ Runs</div>
+          <div style="color:#7c7f9e;padding:5px 7px;">≣ Logs</div>
+          <div style="color:#7c7f9e;font-size:9px;letter-spacing:.08em;margin-top:6px;">PEOPLE</div>
+          <div style="color:#7c7f9e;padding:5px 7px;">◍ Users</div>
+          <div style="color:#7c7f9e;padding:5px 7px;">✦ Invites</div>
+          <div style="color:#7c7f9e;font-size:9px;letter-spacing:.08em;margin-top:6px;">LEARNING</div>
+          <div style="color:#7c7f9e;padding:5px 7px;">◎ Scores</div>
+          <div style="color:#7c7f9e;font-size:9px;letter-spacing:.08em;margin-top:6px;">RESEARCH</div>
+          <div style="color:#7c7f9e;padding:5px 7px;">⚗ Complexity</div>
+        </div>
+        <div style="flex:1;padding:12px;display:flex;flex-direction:column;gap:8px;">
+          <div style="color:#e2e4f0;font-weight:700;">Runs</div>
+          <div style="background:#1a1b24;border:1px solid #2a2b38;border-radius:8px;height:46px;"></div>
+          <div style="background:#1a1b24;border:1px solid #2a2b38;border-radius:8px;height:70px;"></div>
+          <div style="background:#1a1b24;border:1px solid #2a2b38;border-radius:8px;height:40px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · Left sidebar, grouped by section</h3>
+      <p>Sections (Operations / People / Learning / Research / Config) down the left. Scales past 10 items, never wraps, gives each area a home. (Recommended.)</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="grouped-tabs" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="height:230px;font-size:11px;text-align:left;padding:10px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:14px;align-items:center;border-bottom:1px solid #2a2b38;padding-bottom:8px;flex-wrap:wrap;">
+          <span style="color:#7c7f9e;font-size:9px;">OPERATIONS</span>
+          <span style="color:#e2e4f0;border-bottom:2px solid #7b5ea7;padding-bottom:4px;">Runs</span>
+          <span style="color:#7c7f9e;">Logs</span>
+          <span style="color:#3d3e52;">│</span>
+          <span style="color:#7c7f9e;font-size:9px;">PEOPLE</span>
+          <span style="color:#7c7f9e;">Users</span>
+          <span style="color:#7c7f9e;">Invites</span>
+          <span style="color:#3d3e52;">│</span>
+          <span style="color:#7c7f9e;font-size:9px;">LEARNING</span>
+          <span style="color:#7c7f9e;">Scores</span>
+        </div>
+        <div style="color:#e2e4f0;font-weight:700;margin-top:4px;">Runs</div>
+        <div style="background:#1a1b24;border:1px solid #2a2b38;border-radius:8px;height:50px;"></div>
+        <div style="background:#1a1b24;border:1px solid #2a2b38;border-radius:8px;height:80px;"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Top bar, segmented into labelled groups</h3>
+      <p>Keeps the familiar top bar but inserts section labels + dividers so related tabs cluster. Smaller change, but still wraps on narrow screens with many tabs.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">Tip: both add more padding, larger headings, and consistent panel chrome to kill the "plain/cramped" feel — that part is the same either way.</p>
