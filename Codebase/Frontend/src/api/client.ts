@@ -443,6 +443,16 @@ export async function fetchAdminPerUser(): Promise<{ series: PerUserPoint[] }> {
 export async function fetchAdminUsers(): Promise<{ users: AdminUser[] }> {
   return apiFetch<{ users: AdminUser[] }>('/api/admin/users');
 }
+export async function fetchAdminLearningQuestions(): Promise<{ questions: import('../types/api').AdminLearningQuestionStat[] }> {
+  return apiFetch('/api/admin/stats/learning-questions');
+}
+export async function fetchAdminLearningQuestionDetail(
+  moduleId: string,
+  questionIndex: number,
+): Promise<{ learners: import('../types/api').AdminLearningQuestionLearner[] }> {
+  const qs = `moduleId=${encodeURIComponent(moduleId)}&questionIndex=${questionIndex}`;
+  return apiFetch(`/api/admin/stats/learning-questions?${qs}`);
+}
 
 // Runtime admin-controlled toggles.  Currently a single key —
 // testers_visible_to_users — that hides the devcon* picker on the

@@ -152,6 +152,27 @@ export interface AdminUser {
   lastRunAt?: string;
   created_at?: string;
   last_active?: string;
+  created_via?: 'oauth' | 'guest' | 'legacy';
+}
+
+export interface AdminLearningQuestionStat {
+  family: string;
+  moduleId: string;
+  questionIndex: number;
+  seen: number;
+  firstTryCorrect: number;
+  passRate: number;
+  optionDistribution: number[];
+}
+
+export interface AdminLearningQuestionLearner {
+  userId: number;
+  username: string;
+  email?: string | null;
+  selectedIndex: number;
+  isCorrect: number;
+  firstAttemptCorrect: number;
+  attempts: number;
 }
 
 export interface AdminPerRunFeedbackRow {
