@@ -19,6 +19,7 @@ import CatalogsTab from './components/CatalogsTab';
 import InviteCodesTab from './components/InviteCodesTab';
 import JoinRequestsTab from './components/JoinRequestsTab';
 import FeatureReleasePanel from './components/FeatureReleasePanel';
+import LearningAnalytics from './components/LearningAnalytics';
 import { markAdminRefresh } from '../api/client';
 import {
   IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
@@ -26,12 +27,15 @@ import {
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'learning';
+
+type AdminSection = 'Operations' | 'People' | 'Learning' | 'Research' | 'Config';
 
 interface TabDef {
   id: AdminTab;
   label: string;
   icon: ComponentType<IconProps>;
+  section: AdminSection;
   // When true, the tab is only shown for the original-devs org (thesis
   // team). Other admins do not see Complexity / Reviews because those
   // surfaces are anchored on the thesis study cohort, not arbitrary
@@ -40,17 +44,20 @@ interface TabDef {
 }
 
 const TABS: ReadonlyArray<TabDef> = [
-  { id: 'runs',       label: 'Runs',       icon: IconLayers },
-  { id: 'complexity', label: 'Complexity', icon: IconBeaker,      originalDevsOnly: true },
-  { id: 'users',      label: 'Users',      icon: IconShield },
-  { id: 'reviews',    label: 'Reviews',    icon: IconCheckSquare, originalDevsOnly: true },
-  { id: 'ai',         label: 'AI',         icon: IconCode },
-  { id: 'logs',       label: 'Logs',       icon: IconClipboard },
-  { id: 'catalogs',     label: 'Pattern groups', icon: IconBeaker },
-  { id: 'invites',      label: 'Invites',        icon: IconCheckSquare },
-  { id: 'joinRequests', label: 'Join requests',  icon: IconShield },
-  { id: 'featureReleases', label: 'Feature releases', icon: IconCode, originalDevsOnly: true }
+  { id: 'runs',            label: 'Runs',            icon: IconLayers,      section: 'Operations' },
+  { id: 'logs',            label: 'Logs',            icon: IconClipboard,   section: 'Operations' },
+  { id: 'users',           label: 'Users',           icon: IconShield,      section: 'People' },
+  { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'People' },
+  { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'People' },
+  { id: 'learning',        label: 'Learning',        icon: IconClipboard,   section: 'Learning' },
+  { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Research', originalDevsOnly: true },
+  { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Research', originalDevsOnly: true },
+  { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Research', originalDevsOnly: true },
+  { id: 'ai',              label: 'AI',              icon: IconCode,        section: 'Config' },
+  { id: 'catalogs',        label: 'Pattern groups',  icon: IconBeaker,      section: 'Config' },
 ];
+
+const SECTION_ORDER: AdminSection[] = ['Operations', 'People', 'Learning', 'Research', 'Config'];
 
 // Original-devs detection: the JWT now carries an explicit
 // isOriginalDevs flag (set by /auth/google/exchange when the email is
@@ -314,31 +321,37 @@ export default function AdminApp() {
         </div>
       </header>
 
-      <nav className="admin-tab-bar" aria-label="Admin sections" data-testid="admin-tab-bar">
-        {TABS.filter((t) => {
-          // Research-only tabs (Complexity / Reviews / Feature releases)
-          // are hidden from PM users AND from non-original-devs admins.
-          if (t.originalDevsOnly && isPmAdmin(user)) return false;
-          if (t.originalDevsOnly && !isOriginalDevsAdmin(user)) return false;
-          return true;
-        }).map((tab, index) => {
-          const Icon = tab.icon;
-          return (
-            <button
-              key={tab.id}
-              className={`admin-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-            >
-              <span className="admin-tab-btn__index" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
-              <span className="admin-tab-btn__icon" aria-hidden="true">
-                <Icon size={15} />
-              </span>
-              <span className="admin-tab-btn__label">{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <div className="admin-body">
+        <nav className="admin-tab-bar admin-sidebar" aria-label="Admin sections" data-testid="admin-tab-bar">
+          {SECTION_ORDER.map((section) => {
+            const tabs = TABS.filter((t) => {
+              if (t.section !== section) return false;
+              if (t.originalDevsOnly && isPmAdmin(user)) return false;
+              if (t.originalDevsOnly && !isOriginalDevsAdmin(user)) return false;
+              return true;
+            });
+            if (tabs.length === 0) return null;
+            return (
+              <div className="admin-sidebar__group" key={section}>
+                <p className="admin-sidebar__label">{section}</p>
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      className={`admin-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                    >
+                      <span className="admin-tab-btn__icon" aria-hidden="true"><Icon size={15} /></span>
+                      <span className="admin-tab-btn__label">{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
+        </nav>
 
       {/*
        * Tabs are rendered once on AdminApp mount and kept in the DOM. Switching
@@ -412,12 +425,22 @@ export default function AdminApp() {
         <div hidden={activeTab !== 'joinRequests'}>
           <JoinRequestsTab />
         </div>
+        <div hidden={activeTab !== 'learning'}>
+          <section className="admin-section admin-section--card">
+            <header className="admin-section__head">
+              <h2>Learning scores</h2>
+              <p className="admin-section__hint">First-attempt pass rate per question, grouped by family → module. Click a cell for the per-learner breakdown.</p>
+            </header>
+            <LearningAnalytics />
+          </section>
+        </div>
         {isOriginalDevsAdmin(user) && (
           <div hidden={activeTab !== 'featureReleases'}>
             <FeatureReleasePanel />
           </div>
         )}
       </main>
+      </div>
     </div>
   );
 }
