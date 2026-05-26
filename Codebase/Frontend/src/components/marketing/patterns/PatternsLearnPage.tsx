@@ -10,12 +10,11 @@ import {
   type LearningQuizPractical,
 } from '../../../data/learningModules';
 import {
-  submitAnalysis,
   fetchLearningProgress,
   saveLearningProgress,
 } from '../../../api/client';
 import { useAppStore } from '../../../store/appState';
-import { PATTERN_BOOK_CITATION, WHY_GOF_EXPLAINER } from './patternData';
+import StudioSurface from '../../studio/StudioSurface';
 
 // D77 (round 4): per-module practical check is the unlock gate. The hub
 // keeps the multi-step guided-course UI (hero + progress, three-section
@@ -88,15 +87,6 @@ function computeUnlockedCount(
     else break;
   }
   return Math.min(n, Math.max(steps.length, 1));
-}
-
-// Mirror of backend services/candidateFilter.ts#normalize. Lowercase,
-// strip "<family>." prefix, drop non-alphanum so the microservice's
-// "creational.singleton" matches the practical's slug "singleton" or
-// its display name "Singleton".
-function normalizePatternKey(s: string | null | undefined): string {
-  if (!s) return '';
-  return s.toLowerCase().trim().replace(/^[a-z]+\./, '').replace(/[^a-z0-9]/g, '');
 }
 
 function clampToUnlocked(idx: number, unlockedCount: number): number {
@@ -407,140 +397,50 @@ function QuizPractical({
 function PatternPractical({
   practical, isPassed, onPass,
 }: { practical: LearningPatternPractical; isPassed: boolean; onPass: (tries: number) => void }): JSX.Element {
-  const starter = useMemo(
-    () =>
-      practical.starterCode ??
-      `// Write a C++ class that demonstrates the ${practical.patternName} pattern.\n// The check passes when the analyser's tags include "${practical.patternName}".\n\n`,
-    [practical.patternName, practical.starterCode],
-  );
-  const [code, setCode] = useState<string>(starter);
-  const [status, setStatus] = useState<'idle' | 'running' | 'pass' | 'fail' | 'error'>(
-    isPassed ? 'pass' : 'idle',
-  );
-  const [tags, setTags] = useState<ReadonlyArray<{ patternId: string; patternName: string }>>([]);
-  const [errorMsg, setErrorMsg] = useState<string>('');
-  // Attempt counter for the code-creation exam — counts each analyser run
-  // that actually executed (not editor edits). Forwarded to onPass so the
-  // module records how many tries the learner needed to trigger the pattern.
-  const [tries, setTries] = useState<number>(0);
+  const resetSession = useAppStore((s) => s.resetSession);
+  const setSourceText = useAppStore((s) => s.setSourceText);
+  const setFilename = useAppStore((s) => s.setFilename);
 
-  const targetKey = normalizePatternKey(practical.patternSlug);
-  const targetNameKey = normalizePatternKey(practical.patternName);
-
-  async function handleRun(): Promise<void> {
-    if (!code.trim()) {
-      setStatus('error');
-      setErrorMsg('Write a C++ class first, then run the check.');
-      return;
+  // Start each module's embedded Studio from a clean slate so a previous
+  // module's run never carries over. For order-sensitive patterns (e.g.
+  // PIMPL) seed the editor with the scaffold so the learner can run-then-
+  // modify instead of guessing the exact token shape.
+  useEffect(() => {
+    resetSession();
+    if (practical.starterCode) {
+      setSourceText(practical.starterCode);
+      setFilename(`${practical.patternSlug}-submission.cpp`);
     }
-    setStatus('running');
-    setErrorMsg('');
-    setTags([]);
-    const attempt = tries + 1;
-    setTries(attempt);
-    try {
-      const run = await submitAnalysis(JSON.stringify({
-        code,
-        filename: `${practical.patternSlug}-submission.cpp`,
-      }));
-      const detected = (run.detectedPatterns || []).map((p) => ({
-        patternId: p.patternId,
-        patternName: p.patternName || p.patternId,
-      }));
-      setTags(detected);
-      const hit = detected.some((p) => {
-        const idKey = normalizePatternKey(p.patternId);
-        const nameKey = normalizePatternKey(p.patternName);
-        return idKey === targetKey || idKey === targetNameKey
-            || nameKey === targetKey || nameKey === targetNameKey;
-      });
-      if (hit) {
-        setStatus('pass');
-        onPass(attempt);
-      } else {
-        setStatus('fail');
-      }
-    } catch (err) {
-      setStatus('error');
-      setErrorMsg(err instanceof Error ? err.message : 'Analysis failed.');
-    }
-  }
-
-  function handleReset(): void {
-    setCode(starter);
-    setStatus('idle');
-    setTags([]);
-    setErrorMsg('');
-  }
+    return () => resetSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [practical.patternSlug]);
 
   return (
-    <section className="nt-practical nt-practical--pattern" aria-label="Module practical">
+    <section className="nt-practical nt-practical--studio" aria-label="Module practical">
       <header className="nt-practical__head">
-        <p className="nt-practical__eyebrow">Practical · Trigger the analyser</p>
+        <p className="nt-practical__eyebrow">Practical · Analyse in the Studio</p>
         <h3 className="nt-practical__title">
           Target pattern: <span className="nt-practical__target">{practical.patternName}</span>
         </h3>
-        <p className="nt-practical__prompt">{practical.prompt}</p>
+        <p className="nt-practical__prompt">
+          {practical.prompt} Submit your C++ in the Studio below — the module unlocks the
+          moment the analyser tags <strong>{practical.patternName}</strong>. Open the
+          Patterns tab after analysis to read how each part of your code maps to the pattern.
+        </p>
       </header>
-      <textarea
-        className="nt-practical__editor"
-        spellCheck={false}
-        value={code}
-        onChange={(e) => setCode(e.target.value)}
-        rows={14}
-        aria-label="C++ source for the practical check"
-        disabled={status === 'running'}
-      />
-      <div className="nt-practical__footer">
-        <button
-          type="button"
-          className="nt-lesson-button nt-lesson-button--primary"
-          onClick={handleRun}
-          disabled={status === 'running'}
-        >
-          {status === 'running' ? 'Running…' : status === 'pass' ? 'Re-run check' : 'Run check'}
-        </button>
-        <button
-          type="button"
-          className="nt-lesson-button"
-          onClick={handleReset}
-          disabled={status === 'running'}
-        >
-          Reset
-        </button>
-      </div>
-      {status === 'pass' && (
+      {isPassed && (
         <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
-          ✓ Pass — the analyser tagged your class as <strong>{practical.patternName}</strong>
-          {tags.length > 1 ? ` (alongside ${tags.length - 1} other tag${tags.length - 1 === 1 ? '' : 's'} — ambiguity is fine)` : ''}
-          .
-          {tries > 0 && <span className="nt-practical__tries"> · {tries} attempt{tries === 1 ? '' : 's'}</span>}
+          ✓ Passed — the analyser tagged your class as <strong>{practical.patternName}</strong>.
+          Re-run anytime, or press Next to continue.
         </p>
       )}
-      {status === 'fail' && (
-        <div className="nt-practical__verdict nt-practical__verdict--fail" role="status">
-          <p>
-            ✗ <strong>{practical.patternName}</strong> was not detected.
-            {tags.length > 0
-              ? ' Detected tags: '
-              : ' The analyser returned no pattern tags for your submission.'}
-          </p>
-          {tags.length > 0 && (
-            <ul className="nt-practical__tags">
-              {tags.map((t, i) => (
-                <li key={`${t.patternId}-${i}`}>
-                  <code>{t.patternName || t.patternId}</code>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-      {status === 'error' && (
-        <p className="nt-practical__verdict nt-practical__verdict--fail" role="status">
-          {errorMsg || 'Analyser unavailable. Sign in (Google) and try again — /api/analyze requires authentication.'}
-        </p>
-      )}
+      <div className="nt-practical__studio" data-testid="practical-studio">
+        <StudioSurface
+          targetPatternSlug={practical.patternSlug}
+          targetPatternName={practical.patternName}
+          onPatternDetected={() => onPass(1)}
+        />
+      </div>
     </section>
   );
 }
@@ -558,6 +458,13 @@ export default function PatternsLearnPage(): JSX.Element {
   const { groups, steps } = useMemo(() => buildCategoryGroups(), []);
 
   const token = useAppStore((s) => s.token);
+  const user = useAppStore((s) => s.user);
+  // Guests run on a shared devcon{N} seat: the analyser works (they hold a
+  // token) but their learning progress is NOT persisted server-side. Detect
+  // the guest seat by its username so progress stays in-memory for the visit.
+  const isGuest = (user?.username || '').toLowerCase().startsWith('devcon');
+  // Only signed-in, non-guest learners persist progress to their account.
+  const canPersist = !!token && !isGuest;
 
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
   // Attempts the learner needed to pass each module's practical. Surfaced in
@@ -581,7 +488,9 @@ export default function PatternsLearnPage(): JSX.Element {
   // the current visit. Stale ids that no longer match a module are harmless —
   // computeUnlockedCount only counts ids present in `steps`.
   useEffect(() => {
-    if (!token) {
+    if (!canPersist) {
+      // Guests and signed-out visitors have nothing to load — start empty
+      // and treat progress as resolved so the unlock gate doesn't bounce.
       setProgressLoaded(true);
       return;
     }
@@ -604,14 +513,14 @@ export default function PatternsLearnPage(): JSX.Element {
     return () => {
       cancelled = true;
     };
-  }, [token]);
+  }, [canPersist]);
 
   // Persist the completed set to the account, recording the highest unlocked
   // module id. Fire-and-forget: a failed save never blocks the UI, and the
   // next unlock re-sends the full set so a dropped write self-heals.
   const persistProgress = useCallback(
     (completed: ReadonlySet<string>) => {
-      if (!token) return;
+      if (!canPersist) return;
       const ids = steps.map((s) => s.module.id).filter((id) => completed.has(id));
       const unlocked = computeUnlockedCount(steps, completed);
       const lastUnlockedModuleId =
@@ -620,7 +529,7 @@ export default function PatternsLearnPage(): JSX.Element {
         /* best-effort; resent on next unlock */
       });
     },
-    [token, steps, triesByModule],
+    [canPersist, steps, triesByModule],
   );
 
   // Honor the URL module on first render (clamp only to the valid range, not
@@ -782,9 +691,9 @@ export default function PatternsLearnPage(): JSX.Element {
             Behavioural, and Idioms.
           </p>
           <p className="nt-course-hero__audience">
-            Each module ends with a Summary, a Sources list, and a See-also footer. Use
-            &ldquo;Next&rdquo; to mark the current module read and unlock the one after it.
-            Progress is tracked on this device only.
+            Each pattern module ends with a Studio practical: submit your C++ and the module
+            unlocks once the analyser tags the target pattern. Signed-in learners keep their
+            progress across devices; guests keep it only for the current visit.
           </p>
         </div>
         <div className="nt-course-progress" aria-label={`Practical progress ${progress}%`}>
@@ -931,48 +840,6 @@ export default function PatternsLearnPage(): JSX.Element {
             </button>
           </footer>
         </article>
-      </section>
-
-      {/* Reference & context — moved here from the Pattern Catalog so the
-          citation and the GoF-anchoring rationale live alongside the
-          lessons. These are read-only context cards at the foot of the
-          Learning Path. */}
-      <section className="nt-learn-reference" aria-labelledby="learn-reference-heading">
-        <p className="nt-section-eyebrow" id="learn-reference-heading">
-          Reference &amp; context
-        </p>
-
-        <div className="nt-learn-reference__cards">
-          <article className="nt-patterns__source" aria-labelledby="learn-source">
-            <p className="nt-section-eyebrow">Source &amp; framing</p>
-            <h2 id="learn-source" className="nt-patterns__source-title">
-              Definitions come from Nesteruk 2022 and Gamma et al. 1994
-            </h2>
-            <p className="nt-patterns__source-body">
-              The intent, problem, solution, and idiomatic implementation for every pattern in the
-              catalog are paraphrased from {PATTERN_BOOK_CITATION} and cross-checked against the
-              original Gang of Four reference. Every pattern detail page lists its sources
-              explicitly.
-            </p>
-            <p className="nt-patterns__source-body">
-              Nesteruk&rsquo;s framing is straightforward: a design pattern is a named, idiomatic
-              arrangement of classes and operations that solves a recurring object-oriented design
-              problem. The same problem keeps appearing because the underlying language facts
-              (inheritance, ownership, virtual dispatch) keep producing the same shapes. Giving each
-              shape a name turns a paragraph of structural explanation into one word a reviewer can
-              look up. That is the entire pitch of design patterns - shared vocabulary that
-              compresses architecture into a few familiar shapes.
-            </p>
-          </article>
-
-          <article className="nt-patterns__source" aria-labelledby="learn-why-gof">
-            <p className="nt-section-eyebrow">Why GoF</p>
-            <h2 id="learn-why-gof" className="nt-patterns__source-title">
-              Why the catalog is Gang-of-Four anchored
-            </h2>
-            <p className="nt-patterns__source-body">{WHY_GOF_EXPLAINER}</p>
-          </article>
-        </div>
       </section>
     </main>
   );

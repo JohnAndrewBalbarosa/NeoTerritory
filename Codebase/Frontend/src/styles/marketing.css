@@ -1845,6 +1845,18 @@ body[data-surface] #root {
   display: grid;
   gap: 0.85rem;
 }
+/* Embedded Studio wrapper: the Submit -> Patterns -> Tests surface rendered
+   inside a pattern module's practical. Framed so it reads as a contained
+   panel rather than a full-page studio; the tab UI itself is unchanged. */
+.nt-practical__studio {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 12px;
+  background: var(--surface, rgba(0, 0, 0, 0.02));
+  overflow: hidden;
+}
+.nt-practical__studio .tab-bar {
+  position: static;
+}
 .nt-practical__head {
   display: grid;
   gap: 0.3rem;
@@ -3817,6 +3829,17 @@ body[data-surface] {
   align-items: center;
   gap: 0.75rem;
   margin-top: 0.25rem;
+}
+.nt-signin-guest {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+.nt-signin-guest__btn {
+  font-size: 0.9rem;
+  opacity: 0.85;
 }
 .nt-signin-foot {
   display: flex;

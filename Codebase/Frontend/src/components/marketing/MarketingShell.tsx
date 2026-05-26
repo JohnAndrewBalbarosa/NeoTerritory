@@ -1,5 +1,5 @@
 import { MotionConfig, motion, AnimatePresence } from 'motion/react';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Surface } from '../../logic/router';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
@@ -15,7 +15,7 @@ import PatternDetailPage from './patterns/PatternDetailPage';
 import TourPage from './tour/TourPage';
 import DocsPage from './docs/DocsPage';
 import DocsFullPage from './docs/DocsFullPage';
-import TryItChooser, { TRY_IT_OPEN_EVENT } from './TryItChooser';
+import { TRY_IT_OPEN_EVENT } from './TryItChooser';
 import { navigate } from '../../logic/router';
 
 interface MarketingShellProps {
@@ -34,44 +34,26 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
     }
   }, [surface]);
 
-  // Legacy /auth/choose and /auth used to render a standalone three-card
-  // picker. The homepage TryItChooser popup now owns role selection, so
-  // visits to those URLs land on the hero and we auto-open the popup so
-  // bookmarks keep working without a second click.
+  // Learner-merge: the 4-card chooser is retired. Every "Try it now" CTA
+  // (and the legacy /auth/choose, /auth bookmarks) now goes straight to the
+  // unified learner sign-in page, which offers Google sign-in plus a
+  // "Use guest only" button. Role selection no longer happens up front.
+  const goToLearnerSignIn = useCallback(() => {
+    navigate('/student-learning/login');
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const path = window.location.pathname;
     if (path === '/auth/choose' || path === '/auth') {
-      navigate('/');
-      // Wait one tick so MarketingShell's TRY_IT_OPEN_EVENT listener is
-      // attached (it mounts in the next effect below) before dispatching.
-      const t = setTimeout(() => {
-        window.dispatchEvent(new CustomEvent(TRY_IT_OPEN_EVENT));
-      }, 0);
-      return () => clearTimeout(t);
+      goToLearnerSignIn();
     }
-  }, []);
-
-  // Try-it chooser hoisted to the shell so MarketingNav, WhyPage, TourPage,
-  // HeroLanding feature tiles, etc. all open the SAME modal instead of each
-  // navigating directly to /student-studio (which would land on the tester
-  // seat picker and skip the path-choice screen).
-  const [chooserOpen, setChooserOpen] = useState<boolean>(false);
-  const closeChooser = useCallback(() => setChooserOpen(false), []);
+  }, [goToLearnerSignIn]);
 
   useEffect(() => {
-    function onOpen(): void {
-      setChooserOpen(true);
-    }
-    window.addEventListener(TRY_IT_OPEN_EVENT, onOpen);
-    return () => window.removeEventListener(TRY_IT_OPEN_EVENT, onOpen);
-  }, []);
-
-  // Close the chooser on a real route change so it never lingers across
-  // surfaces (e.g., user opens it on /why, hits Back, lands on /).
-  useEffect(() => {
-    setChooserOpen(false);
-  }, [surface]);
+    window.addEventListener(TRY_IT_OPEN_EVENT, goToLearnerSignIn);
+    return () => window.removeEventListener(TRY_IT_OPEN_EVENT, goToLearnerSignIn);
+  }, [goToLearnerSignIn]);
 
   useEffect(() => {
     document.body.dataset.surface = surface;
@@ -110,7 +92,6 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
         </motion.div>
       </AnimatePresence>
       <MarketingFooter />
-      <TryItChooser open={chooserOpen} onClose={closeChooser} />
       </div>
     </MotionConfig>
   );

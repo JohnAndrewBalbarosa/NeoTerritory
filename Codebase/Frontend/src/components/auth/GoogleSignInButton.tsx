@@ -10,14 +10,15 @@ interface Props {
   // Persisted into the OAuth redirect_to URL so the callback handler
   // can mint a JWT with the right entry flow + land the user on the
   // right post-login page.
+  //   'learner'   — unified developer+student learning intent.
   //   'admin'     — original-devs allowlist tier (/admin/login).
   //   'pm'        — self-serve org owner (/pm/login).
-  //   'developer' — pre-tagged dev intent.
-  //   'student'   — student learning intent.
+  //   'developer' / 'student' — legacy aliases for 'learner', kept for the
+  //     type signature; both route to /patterns/learn.
   //   'new'       — first-timer; backend routes to /onboarding/choose.
   //   'unspecified' — legacy single-button path; kept for the type
   //     signature but no longer used by any caller.
-  role: 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
+  role: 'learner' | 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
   // 'existing' = user expects to find an account; backend will 404 if
   //   no matching membership exists. 'new' = backend creates whatever
   //   the role needs (org for admin/pm, plain user for developer).
@@ -53,15 +54,13 @@ export default function GoogleSignInButton({ role, intent, redirectAfter }: Prop
     setBusy(true);
     setError(null);
     const defaultAfter =
-      role === 'student'
-        ? '/student-learning'
-        : role === 'admin' || role === 'pm'
-          ? '/admin'
-          : role === 'new'
-            ? '/onboarding/choose'
-            : role === 'unspecified'
-              ? '/'
-              : '/studio';
+      role === 'admin' || role === 'pm'
+        ? '/admin'
+        : role === 'new'
+          ? '/onboarding/choose'
+          : role === 'unspecified'
+            ? '/'
+            : '/patterns/learn';
     const after = redirectAfter || defaultAfter;
     const callback = new URL('/auth/callback', window.location.origin);
     callback.searchParams.set('role', role);

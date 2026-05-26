@@ -32,7 +32,7 @@ interface ExchangeUser {
 interface ExchangeResponse {
   token: string;
   user: ExchangeUser;
-  entryFlow: 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
+  entryFlow: 'learner' | 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
   orgCreated?: boolean;
   wasNew?: boolean;
   needsOnboarding?: boolean;
@@ -97,25 +97,23 @@ export default function GoogleCallback() {
     const accessToken = fragment.get('access_token');
     const queryRole = url.searchParams.get('role');
     const queryIntent = url.searchParams.get('intent');
-    const role: 'developer' | 'student' | 'admin' | 'pm' | 'new' =
-      queryRole === 'student'
-        ? 'student'
-        : queryRole === 'admin'
-          ? 'admin'
-          : queryRole === 'pm'
-            ? 'pm'
-            : queryRole === 'new' || queryRole === 'new-user'
-              ? 'new'
-              : 'developer';
+    // 'learner' is the unified developer+student role. Legacy 'student' /
+    // 'developer' query values from in-flight bundles collapse to 'learner'.
+    const role: 'learner' | 'admin' | 'pm' | 'new' =
+      queryRole === 'admin'
+        ? 'admin'
+        : queryRole === 'pm'
+          ? 'pm'
+          : queryRole === 'new' || queryRole === 'new-user'
+            ? 'new'
+            : 'learner';
     const intent: 'existing' | 'new' = queryIntent === 'new' ? 'new' : 'existing';
     const defaultNext =
-      role === 'student'
-        ? '/student-learning'
-        : role === 'admin' || role === 'pm'
-          ? '/admin'
-          : role === 'new'
-            ? '/onboarding/choose'
-            : '/studio';
+      role === 'admin' || role === 'pm'
+        ? '/admin'
+        : role === 'new'
+          ? '/onboarding/choose'
+          : '/patterns/learn';
     const fallbackNext = url.searchParams.get('next') || defaultNext;
 
     if (!accessToken) {

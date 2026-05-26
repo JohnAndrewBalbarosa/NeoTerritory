@@ -7,7 +7,11 @@
 // (Foundations → Creational → Structural → Behavioural → Idioms) drives
 // the linear unlock gate in PatternsLearnPage.
 
-import { PATTERNS } from '../components/marketing/patterns/patternData';
+import {
+  PATTERNS,
+  PATTERN_BOOK_CITATION,
+  WHY_GOF_EXPLAINER,
+} from '../components/marketing/patterns/patternData';
 
 export type LearningCategory =
   | 'foundations'
@@ -134,6 +138,13 @@ const FOUNDATIONS_MODULES: ReadonlyArray<LearningModule> = [
         body:
           'Engineers reuse proven house designs for doors, windows, stairs, and layouts. Developers reuse design patterns for common coding problems the same way — pick a shape that already works, adapt it, ship it.',
       },
+      {
+        heading: 'Where these definitions come from',
+        body:
+          `The intent, problem, solution, and idiomatic implementation for every pattern in this catalog are paraphrased from ${PATTERN_BOOK_CITATION} and cross-checked against the original Gang of Four reference (Gamma et al., 1994). Every pattern detail page lists its sources explicitly.`,
+        note:
+          'Nesteruk’s framing: a design pattern is a named, idiomatic arrangement of classes and operations that solves a recurring object-oriented design problem. The same problem keeps appearing because the underlying language facts (inheritance, ownership, virtual dispatch) keep producing the same shapes. Naming each shape turns a paragraph of structural explanation into one word a reviewer can look up.',
+      },
     ],
     keyTerms: [
       {
@@ -211,6 +222,10 @@ const FOUNDATIONS_MODULES: ReadonlyArray<LearningModule> = [
         heading: 'A fourth bucket — Idioms',
         body:
           'Modern C++ adds idioms that are not strictly GoF but appear often enough to be detectable: Method Chaining, Repository, and PIMPL. This site treats them as a fourth category alongside the three above.',
+      },
+      {
+        heading: 'Why the catalog is Gang-of-Four anchored',
+        body: WHY_GOF_EXPLAINER,
       },
     ],
     summary:

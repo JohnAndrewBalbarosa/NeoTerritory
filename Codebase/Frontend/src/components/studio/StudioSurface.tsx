@@ -112,7 +112,7 @@ export default function StudioSurface({
 
   const {
     activeTab, setActiveTab,
-    setAiStatus, setStatus, status,
+    setAiStatus, setStatus,
     currentRun, gdbAllPassedForRun, reviewsRequired,
   } = useAppStore();
 

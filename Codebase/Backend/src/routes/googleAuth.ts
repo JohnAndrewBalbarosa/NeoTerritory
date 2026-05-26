@@ -100,7 +100,11 @@ async function verifySupabaseToken(token: string): Promise<SupabaseUser | null> 
 //   'new'   — first-timer; backend just mints a JWT with no org and
 //             tells the FE to route to /onboarding/choose.
 //   'unspecified' — legacy single-button path; no longer reached.
-type SignInRole = 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
+// 'learner' is the unified developer+student entry flow: a real account with
+// no org binding and no existing-account 404 gate (a first-time Gmail is
+// auto-registered). 'developer' / 'student' are kept for backward compat with
+// in-flight front-end bundles and both map to 'learner' at the call site.
+type SignInRole = 'learner' | 'developer' | 'student' | 'admin' | 'pm' | 'new' | 'unspecified';
 
 // Ensures an org_memberships row exists tying this local user to the
 // given org id with the given role. Idempotent — re-running on every
@@ -349,12 +353,14 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     const accessToken = typeof body.accessToken === 'string' ? body.accessToken : '';
     const roleRaw = typeof body.role === 'string' ? body.role : '';
     let role: SignInRole;
-    if (roleRaw === 'student') role = 'student';
+    // 'learner' is the canonical unified flow; legacy 'student'/'developer'
+    // values from in-flight bundles collapse to it.
+    if (roleRaw === 'learner' || roleRaw === 'student' || roleRaw === 'developer') role = 'learner';
     else if (roleRaw === 'admin') role = 'admin';
     else if (roleRaw === 'pm') role = 'pm';
     else if (roleRaw === 'new' || roleRaw === 'new-user') role = 'new';
     else if (roleRaw === 'unspecified' || roleRaw === '') role = 'unspecified';
-    else role = 'developer';
+    else role = 'learner';
     const intent: 'existing' | 'new' =
       typeof body.intent === 'string' && body.intent === 'new' ? 'new' : 'existing';
     if (!accessToken) {
@@ -386,7 +392,10 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
     // and instead let the front-end offer a "sign up instead" CTA. We
     // do this BEFORE upserting the local user so no orphan row is
     // created for a failed existing-login attempt.
-    if (intent === 'existing' && (role === 'admin' || role === 'pm' || role === 'developer')) {
+    // The 'learner' flow never hits this gate: a first-time Gmail is always
+    // auto-registered (intent is forced to 'new' on the FE), matching the old
+    // student behaviour. Only admin/pm still verify an existing account.
+    if (intent === 'existing' && (role === 'admin' || role === 'pm')) {
       const priorMembership = existingMembershipRole(probeEmail);
       const isOriginalDevs = isOriginalDevEmail(probeEmail);
       // Admin path: existing only if there is an admin membership OR
@@ -407,21 +416,6 @@ router.post('/google/exchange', async (req: Request, res: Response, next: NextFu
           existing: false,
         });
         return;
-      }
-      // Developer path: existing only if there is a developer
-      // membership OR a prior local users row with this email.
-      if (role === 'developer' && priorMembership !== 'developer') {
-        const localExists = probeEmail
-          ? (db.prepare(`SELECT 1 FROM users WHERE lower(email) = ? AND role = 'user' LIMIT 1`)
-              .get(probeEmail) as { 1?: number } | undefined)
-          : undefined;
-        if (!localExists) {
-          res.status(404).json({
-            error: 'No developer account exists for this email. Sign up first.',
-            existing: false,
-          });
-          return;
-        }
       }
     }
 
