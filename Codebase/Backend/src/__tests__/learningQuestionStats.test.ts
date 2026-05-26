@@ -24,6 +24,18 @@ describe('sanitizeAnswers', () => {
     expect(sanitizeAnswers(undefined)).toEqual([]);
     expect(sanitizeAnswers({} as unknown)).toEqual([]);
   });
+
+  it('dedupes by questionIndex keeping the last answer, in first-seen order', () => {
+    const out = sanitizeAnswers([
+      { questionIndex: 0, selectedIndex: 1, isCorrect: false },
+      { questionIndex: 1, selectedIndex: 3, isCorrect: true },
+      { questionIndex: 0, selectedIndex: 2, isCorrect: true }, // overrides q0
+    ]);
+    expect(out).toEqual([
+      { questionIndex: 0, selectedIndex: 2, isCorrect: 1 },
+      { questionIndex: 1, selectedIndex: 3, isCorrect: 1 },
+    ]);
+  });
 });
 
 describe('aggregateQuestionResults', () => {

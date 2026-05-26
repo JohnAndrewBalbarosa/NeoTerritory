@@ -254,7 +254,10 @@ router.get('/users', (_req: Request, res: Response, next: NextFunction) => {
 // per-learner drilldown for one question.
 router.get('/stats/learning-questions', (req: Request, res: Response, next: NextFunction) => {
   try {
-    const moduleId = typeof req.query.moduleId === 'string' ? req.query.moduleId : '';
+    // Cap moduleId length (parameterized, so no injection risk — this just
+    // keeps a junk query from churning the planner/logs).
+    const rawModuleId = typeof req.query.moduleId === 'string' ? req.query.moduleId : '';
+    const moduleId = rawModuleId.length <= 120 ? rawModuleId : '';
     const qiRaw = typeof req.query.questionIndex === 'string' ? Number(req.query.questionIndex) : NaN;
 
     if (moduleId && Number.isInteger(qiRaw)) {

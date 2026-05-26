@@ -60,7 +60,13 @@ export default function LearningAnalytics(): JSX.Element {
 
   const modules = modulesInCategory(family).filter((mod) => Boolean(mod.theoreticalExam));
   const maxQ = modules.reduce((n, mod) => Math.max(n, mod.theoreticalExam?.questions.length ?? 0), 0);
-  const hasAnyData = stats.length > 0;
+  // Per-family check: the heatmap should show the empty state when THIS family
+  // has no answered questions yet, not only when the whole path is empty.
+  const hasDataForFamily = modules.some((mod) =>
+    Array.from({ length: mod.theoreticalExam?.questions.length ?? 0 }).some((_, qi) =>
+      statByKey.has(`${mod.id}#${qi}`),
+    ),
+  );
 
   if (loading) return <div className="empty-state">Loading learning analytics…</div>;
 
@@ -79,10 +85,11 @@ export default function LearningAnalytics(): JSX.Element {
         ))}
       </nav>
 
-      {!hasAnyData ? (
+      {!hasDataForFamily ? (
         <div className="empty-state">
-          No exam data yet. Per-question results are recorded as signed-in learners
-          take the theoretical exams (analytics is forward-only).
+          No exam data for {CATEGORY_META.find((c) => c.id === family)?.name ?? family} yet.
+          Per-question results are recorded as signed-in learners take the theoretical
+          exams (analytics is forward-only).
         </div>
       ) : (
         <div className="admin-heatmap" role="table" aria-label={`${family} score heatmap`} style={{ ['--qcols' as never]: maxQ }}>

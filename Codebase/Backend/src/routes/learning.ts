@@ -158,24 +158,26 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
       res.status(400).json({ error: 'moduleId required' });
       return;
     }
-    const attempt = Number.isInteger(body.attempt) && (body.attempt as number) > 0 ? (body.attempt as number) : 1;
     const answers = sanitizeAnswers(body.answers);
 
+    // attempts is DB-authoritative: 1 on first insert, +1 each subsequent
+    // submit of this question. We do NOT trust a client-supplied attempt
+    // counter (it feeds the admin drilldown, so it must reflect real submits).
     const upsert = db.prepare(
       `INSERT INTO learning_question_results
          (user_id, module_id, question_index, selected_index, is_correct, first_attempt_correct, attempts, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+       VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
        ON CONFLICT(user_id, module_id, question_index) DO UPDATE SET
          selected_index = excluded.selected_index,
          is_correct     = excluded.is_correct,
-         attempts       = excluded.attempts,
+         attempts       = learning_question_results.attempts + 1,
          updated_at     = datetime('now')`,
     );
     const tx = db.transaction((rows: typeof answers) => {
       for (const a of rows) {
         // On first insert first_attempt_correct = this submit's correctness;
         // the ON CONFLICT branch deliberately omits it so it is never updated.
-        upsert.run(req.user!.id, moduleId, a.questionIndex, a.selectedIndex, a.isCorrect, a.isCorrect, attempt);
+        upsert.run(req.user!.id, moduleId, a.questionIndex, a.selectedIndex, a.isCorrect, a.isCorrect);
       }
     });
     tx(answers);

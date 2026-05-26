@@ -222,6 +222,12 @@ function upsertLocalUser(supaUser: SupabaseUser, role: SignInRole): UpsertResult
       `SELECT id, username, email, role, password_hash FROM users ${matchClause}`
     ).get(email) as UserRow | undefined;
     if (existing) {
+      // This account is authenticating via Google, so its provenance is
+      // OAuth from here on. Correct a stale 'legacy'/'guest' created_via that
+      // predates the Google sign-in (e.g. a legacy account that migrated to
+      // OAuth) so the admin Provider column reflects reality (D87).
+      db.prepare(`UPDATE users SET created_via = 'oauth' WHERE id = ? AND created_via != 'oauth'`)
+        .run(existing.id);
       mirrorRow('users', {
         id: existing.id,
         username: existing.username,

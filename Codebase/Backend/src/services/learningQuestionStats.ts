@@ -3,6 +3,10 @@
 
 const MAX_ANSWERS = 50;
 const MAX_INDEX = 10_000;
+// Defensive cap on how wide optionDistribution can grow. Real exam questions
+// have a handful of options; a pathological selected_index should never blow
+// the aggregate payload up to MAX_INDEX entries.
+const MAX_OPTIONS = 20;
 
 export interface CleanAnswer {
   questionIndex: number;
@@ -11,21 +15,29 @@ export interface CleanAnswer {
 }
 
 // Normalise the PUT /api/learning/answers body.answers array: objects only,
-// non-negative bounded ints, correctness coerced to 0/1, capped at MAX_ANSWERS.
+// non-negative bounded ints, correctness coerced to 0/1, deduped by
+// questionIndex (last answer wins — matches "latest submit counts"), capped at
+// MAX_ANSWERS distinct questions.
 export function sanitizeAnswers(input: unknown): CleanAnswer[] {
   if (!Array.isArray(input)) return [];
-  const out: CleanAnswer[] = [];
+  // Dedup by questionIndex keeping the last valid entry, preserving first-seen
+  // order so the output is stable.
+  const byQuestion = new Map<number, CleanAnswer>();
+  const order: number[] = [];
   for (const raw of input) {
-    if (out.length >= MAX_ANSWERS) break;
     if (!raw || typeof raw !== 'object') continue;
     const r = raw as Record<string, unknown>;
     const qi = Number(r.questionIndex);
     const si = Number(r.selectedIndex);
     if (!Number.isInteger(qi) || qi < 0 || qi > MAX_INDEX) continue;
     if (!Number.isInteger(si) || si < 0 || si > MAX_INDEX) continue;
-    out.push({ questionIndex: qi, selectedIndex: si, isCorrect: r.isCorrect ? 1 : 0 });
+    if (!byQuestion.has(qi)) {
+      if (byQuestion.size >= MAX_ANSWERS) continue;
+      order.push(qi);
+    }
+    byQuestion.set(qi, { questionIndex: qi, selectedIndex: si, isCorrect: r.isCorrect ? 1 : 0 });
   }
-  return out;
+  return order.map((qi) => byQuestion.get(qi)!);
 }
 
 export interface RawResultRow {
@@ -72,7 +84,10 @@ export function aggregateQuestionResults(rows: ReadonlyArray<RawResultRow>): Que
     }
     stat.seen += 1;
     if (row.first_attempt_correct) stat.firstTryCorrect += 1;
-    const opt = row.selected_index;
+    // Clamp the option index so a stray large selected_index (e.g. a row
+    // written before the input cap existed) cannot grow the distribution array
+    // without bound.
+    const opt = Math.min(Math.max(row.selected_index, 0), MAX_OPTIONS);
     while (stat.optionDistribution.length <= opt) stat.optionDistribution.push(0);
     stat.optionDistribution[opt] += 1;
   }
