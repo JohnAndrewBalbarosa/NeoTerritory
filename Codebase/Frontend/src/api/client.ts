@@ -276,6 +276,25 @@ export async function saveLearningProgress(
   });
 }
 
+export interface LearningAnswerInput {
+  questionIndex: number;
+  selectedIndex: number;
+  isCorrect: boolean;
+}
+
+// D87: record per-question theoretical-exam results. Signed-in learners only —
+// callers guard on canPersist. Best-effort; failure never blocks the exam.
+export async function saveLearningAnswers(
+  moduleId: string,
+  attempt: number,
+  answers: LearningAnswerInput[],
+): Promise<void> {
+  await apiFetch('/api/learning/answers', {
+    method: 'PUT',
+    body: JSON.stringify({ moduleId, attempt, answers }),
+  });
+}
+
 export async function submitAnalysis(body: string | FormData): Promise<AnalysisRun> {
   return apiFetch<AnalysisRun>('/api/analyze', { method: 'POST', body });
 }

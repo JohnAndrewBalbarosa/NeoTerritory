@@ -13,6 +13,7 @@ import {
 import {
   fetchLearningProgress,
   saveLearningProgress,
+  saveLearningAnswers,
 } from '../../../api/client';
 import { useAppStore } from '../../../store/appState';
 import StudioSurface from '../../studio/StudioSurface';
@@ -393,9 +394,10 @@ interface TheoreticalExamBlockProps {
   exam: TheoreticalExam;
   isPassed: boolean;
   onPass: (tries: number) => void;
+  onRecordAnswers?: (attempt: number, answers: { questionIndex: number; selectedIndex: number; isCorrect: boolean }[]) => void;
 }
 
-function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass }: TheoreticalExamBlockProps): JSX.Element {
+function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswers }: TheoreticalExamBlockProps): JSX.Element {
   // If the module is already passed (loaded from progress) pre-fill the correct
   // answers so the block renders in a read-only "review" state with green ticks.
   const [answers, setAnswers] = useState<Record<number, number>>(() =>
@@ -425,6 +427,12 @@ function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass }: TheoreticalE
     setTries(attempt);
     setSubmitted(true);
     if (exam.questions.every((q, i) => answers[i] === q.correctIndex)) onPass(attempt);
+    const recorded = exam.questions.map((q, i) => ({
+      questionIndex: i,
+      selectedIndex: answers[i],
+      isCorrect: answers[i] === q.correctIndex,
+    }));
+    onRecordAnswers?.(attempt, recorded);
   }
 
   function handleRetry(): void {
@@ -966,6 +974,12 @@ export default function PatternsLearnPage(): JSX.Element {
               exam={activeModule.theoreticalExam}
               isPassed={isActiveTheoryPassed}
               onPass={(tries) => markTheoryPassed(activeModule.id, tries)}
+              onRecordAnswers={(attempt, recorded) => {
+                if (!canPersist) return;
+                void saveLearningAnswers(activeModule.id, attempt, recorded).catch(() => {
+                  /* best-effort; analytics is forward-only */
+                });
+              }}
             />
           ) : null}
 
