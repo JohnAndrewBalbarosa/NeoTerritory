@@ -1,0 +1,60 @@
+<h2>Learning analytics tab — how to show "score per question"?</h2>
+<p class="subtitle">Both group Family → Module → Question (same thematic order as the learning path) and expand to a per-learner drilldown. Click your preference.</p>
+
+<div class="cards">
+  <div class="card" data-choice="tree" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="height:250px;font-size:11px;text-align:left;padding:12px;display:flex;flex-direction:column;gap:6px;overflow:hidden;">
+        <div style="color:#e2e4f0;font-weight:700;">▾ Foundations <span style="color:#7c7f9e;font-weight:400;">· 13 modules · 78% avg</span></div>
+        <div style="padding-left:14px;color:#cfd2e6;">▾ What is a design pattern? <span style="color:#7c7f9e;">· 3 Q</span></div>
+        <div style="padding-left:28px;display:flex;align-items:center;gap:8px;">
+          <span style="flex:1;">Q1 Which best describes…</span>
+          <span style="width:80px;height:8px;background:#2a2b38;border-radius:4px;overflow:hidden;"><span style="display:block;width:88%;height:100%;background:#4ade80;"></span></span>
+          <span style="color:#4ade80;width:34px;">88%</span>
+        </div>
+        <div style="padding-left:28px;display:flex;align-items:center;gap:8px;">
+          <span style="flex:1;">Q2 Why name a shape…</span>
+          <span style="width:80px;height:8px;background:#2a2b38;border-radius:4px;overflow:hidden;"><span style="display:block;width:54%;height:100%;background:#fbbf24;"></span></span>
+          <span style="color:#fbbf24;width:34px;">54%</span>
+        </div>
+        <div style="padding-left:42px;color:#7c7f9e;border-left:1px solid #2a2b38;margin-left:30px;">↳ 18 learners · 12 ✓ · 6 ✗ — click to expand names</div>
+        <div style="padding-left:14px;color:#cfd2e6;margin-top:2px;">▸ Why patterns matter <span style="color:#7c7f9e;">· 2 Q · 81%</span></div>
+        <div style="color:#e2e4f0;font-weight:700;margin-top:4px;">▸ Creational <span style="color:#7c7f9e;font-weight:400;">· 6 modules · 71%</span></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A · Accordion tree (mirrors the learn sidebar)</h3>
+      <p>Family rolls up module avg; module rolls up its questions; each question shows a pass-rate bar; expand a question for the per-learner ✓/✗ list. Reads exactly like the modules. (Recommended.)</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="heatmap" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="height:250px;font-size:10px;text-align:left;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:hidden;">
+        <div style="display:flex;gap:8px;">
+          <span style="color:#e2e4f0;border-bottom:2px solid #7b5ea7;padding-bottom:3px;">Foundations</span>
+          <span style="color:#7c7f9e;">Creational</span>
+          <span style="color:#7c7f9e;">Structural</span>
+          <span style="color:#7c7f9e;">Behavioural</span>
+        </div>
+        <div style="display:grid;grid-template-columns:120px repeat(4,1fr);gap:4px;align-items:center;">
+          <span style="color:#7c7f9e;">module ↓ / Q →</span>
+          <span style="color:#7c7f9e;text-align:center;">Q1</span><span style="color:#7c7f9e;text-align:center;">Q2</span><span style="color:#7c7f9e;text-align:center;">Q3</span><span style="color:#7c7f9e;text-align:center;">Q4</span>
+          <span style="color:#cfd2e6;">What is a pattern</span>
+          <span style="height:22px;background:#4ade80;border-radius:3px;"></span><span style="height:22px;background:#fbbf24;border-radius:3px;"></span><span style="height:22px;background:#4ade80;border-radius:3px;"></span><span style="height:22px;background:#2a2b38;border-radius:3px;"></span>
+          <span style="color:#cfd2e6;">Why it matters</span>
+          <span style="height:22px;background:#4ade80;border-radius:3px;"></span><span style="height:22px;background:#4ade80;border-radius:3px;"></span><span style="height:22px;background:#f87171;border-radius:3px;"></span><span style="height:22px;background:#2a2b38;border-radius:3px;"></span>
+          <span style="color:#cfd2e6;">Categories</span>
+          <span style="height:22px;background:#fbbf24;border-radius:3px;"></span><span style="height:22px;background:#4ade80;border-radius:3px;"></span><span style="height:22px;background:#2a2b38;border-radius:3px;"></span><span style="height:22px;background:#2a2b38;border-radius:3px;"></span>
+        </div>
+        <div style="color:#7c7f9e;">green = high pass · amber = mid · red = weak · grey = no Q. Click a cell → per-learner drilldown.</div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B · Heatmap matrix (per family)</h3>
+      <p>Modules as rows, questions as columns, cell colour = pass rate. Fastest way to spot weak questions at a glance; click a cell to drill into learners. Denser, less "module-like".</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle">Either way, a per-learner drilldown lists who answered what (signed-in learners only).</p>
