@@ -61,6 +61,20 @@ export function initDb(): void {
     db.prepare(`ALTER TABLE users ADD COLUMN last_active TEXT`).run();
   }
 
+  // created_via: how the account was created — 'oauth' (Google), 'guest'
+  // (Devcon seat), or 'legacy' (username/password incl. seeded admin).
+  // SQLite-only (the Supabase migration for this column does not reach the
+  // admin's SQLite data). Idempotent via the duplicate-column catch (D87).
+  try {
+    db.prepare(`ALTER TABLE users ADD COLUMN created_via TEXT NOT NULL DEFAULT 'legacy'`).run();
+    // One-time backfill: existing Devcon* seats are guests. Safe to run every
+    // boot — only flips rows still on the 'legacy' default.
+    db.prepare(`UPDATE users SET created_via = 'guest'
+                WHERE username LIKE 'Devcon%' AND created_via = 'legacy'`).run();
+  } catch {
+    /* column already exists — nothing to do */
+  }
+
   db.prepare(`CREATE TABLE IF NOT EXISTS jobs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -246,6 +260,24 @@ export function initDb(): void {
   } catch {
     /* column already exists — nothing to do */
   }
+
+  // ── learning_question_results (per-question theoretical-exam results) ────
+  // One row per (user, module, question). first_attempt_correct is locked on
+  // the first recorded row; is_correct/selected_index/attempts reflect the
+  // latest submit. Signed-in learners only — the client guards guests. SQLite
+  // only; no Supabase mirror (D87).
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_question_results (
+    user_id INTEGER NOT NULL,
+    module_id TEXT NOT NULL,
+    question_index INTEGER NOT NULL,
+    selected_index INTEGER NOT NULL,
+    is_correct INTEGER NOT NULL,
+    first_attempt_correct INTEGER NOT NULL,
+    attempts INTEGER NOT NULL DEFAULT 1,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, module_id, question_index),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )`).run();
 
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email
