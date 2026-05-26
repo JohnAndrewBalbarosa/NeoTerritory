@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { learnModuleSlugFromPath, navigate } from '../../../logic/router';
 import {
   CATEGORY_META,
   findLearningModule,
   modulesInCategory,
+  type ExamQuestion,
   type LearningCategory,
   type LearningModule,
-  type LearningPatternPractical,
-  type LearningQuizPractical,
+  type PracticalExam,
+  type TheoreticalExam,
 } from '../../../data/learningModules';
 import {
   fetchLearningProgress,
@@ -16,21 +17,22 @@ import {
 import { useAppStore } from '../../../store/appState';
 import StudioSurface from '../../studio/StudioSurface';
 
-// D77 (round 4): per-module practical check is the unlock gate. The hub
-// keeps the multi-step guided-course UI (hero + progress, three-section
-// sidebar, lesson panel with Previous/Next footer) from earlier rounds,
-// but module N now unlocks only after module N-1's practical passes —
-// either a multiple-choice quiz (Foundations) or a /api/analyze code
-// submission whose detected tags include the target pattern (Creational,
-// Structural, Behavioural, Idioms).
+// D86: the /patterns/learn surface is a 3-level collapsible tree (Family →
+// Module → in-module section anchors) plus a per-module exam flow:
+// Intro → Concepts → Examples → Theoretical Exam → Practical Exam.
 //
-// Other rules:
-//   - Data source is LEARNING_MODULES (Foundations + 4 pattern families).
-//   - URL syncs to /patterns/learn/<module-id>; a deep link to a locked
-//     module bounces to the highest unlocked step.
-//   - "Completed" is per-tab (in-memory). Closing the tab re-locks
-//     everything past module 0. Pattern practicals require the user to
-//     be signed in because /api/analyze is jwtAuth-gated.
+//   - The sidebar is ALWAYS visible (no global collapse). Each family is an
+//     accordion; each module discloses its section anchors that smooth-scroll
+//     to the matching block in the lesson panel.
+//   - Every module ends with a Theoretical Exam (multi-question MCQ). Pattern/
+//     idiom modules also expose a Practical Exam (Studio /api/analyze check),
+//     locked until the theoretical exam passes.
+//   - A module is COMPLETE when its theoretical passes (Foundations) AND its
+//     practical passes if one exists (patterns). The linear cross-module gate
+//     (computeUnlockedCount) then unlocks module N+1.
+//   - Signed-in learners persist completedModuleIds + theoryPassedModuleIds so
+//     a mid-pattern-module refresh keeps the practical unlocked. Guests
+//     (devcon*) keep progress in-memory for the visit only.
 
 interface CourseStep {
   module: LearningModule;
@@ -75,8 +77,8 @@ function indexFromUrl(steps: ReadonlyArray<CourseStep>): number {
 }
 
 // Linear unlock: module 0 is always reachable; module N is reachable only
-// once module N-1's practical has been passed (or, for the rare module
-// without a practical, marked complete via the footer).
+// once module N-1 is complete (theoretical passed + practical passed if one
+// exists). Driven by the completedIds set.
 function computeUnlockedCount(
   steps: ReadonlyArray<CourseStep>,
   completedIds: ReadonlySet<string>,
@@ -95,74 +97,145 @@ function clampToUnlocked(idx: number, unlockedCount: number): number {
   return idx;
 }
 
-// ----- step button + section wrappers (matches old StudentLearningHub CSS) -----
+// ----- in-module section anchors -----
 
-interface StepButtonProps {
-  step: CourseStep;
-  activeIndex: number;
-  isRead: boolean;
-  isLocked: boolean;
-  onClick: () => void;
+interface ModuleAnchor {
+  id: string;
+  label: string;
 }
 
-function StepButton({ step, activeIndex, isRead, isLocked, onClick }: StepButtonProps): JSX.Element {
-  const isActive = step.globalIndex === activeIndex;
-  const status = isLocked ? 'Locked' : isRead ? 'Done' : isActive ? 'Current' : 'Ready';
-  const numberLabel = isLocked ? '\u{1F512}' : isRead ? 'ok' : String(step.globalIndex + 1);
+function anchorId(moduleId: string, section: string): string {
+  return `mod-${moduleId}-${section}`;
+}
+
+// The section anchors a module exposes in the tree. Examples only appears when
+// the module has at least one code-bearing section; the exam anchors mirror the
+// exams the module actually carries.
+function moduleAnchors(module: LearningModule): ReadonlyArray<ModuleAnchor> {
+  const hasExamples = module.sections.some((s) => Boolean(s.code));
+  const list: ModuleAnchor[] = [
+    { id: anchorId(module.id, 'intro'), label: 'Intro' },
+    { id: anchorId(module.id, 'concepts'), label: 'Concepts' },
+  ];
+  if (hasExamples) list.push({ id: anchorId(module.id, 'examples'), label: 'Examples' });
+  if (module.theoreticalExam) list.push({ id: anchorId(module.id, 'theoretical'), label: 'Theoretical Exam' });
+  if (module.practicalExam) list.push({ id: anchorId(module.id, 'practical'), label: 'Practical Exam' });
+  return list;
+}
+
+function prefersReducedMotion(): boolean {
   return (
-    <li>
-      <button
-        type="button"
-        data-active={isActive ? 'true' : undefined}
-        data-completed={isRead ? 'true' : undefined}
-        data-locked={isLocked ? 'true' : undefined}
-        disabled={isLocked}
-        aria-disabled={isLocked || undefined}
-        title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
-        onClick={onClick}
-      >
-        <span className="nt-course-outline__dot" aria-hidden="true">
-          {numberLabel}
-        </span>
-        <span>
-          <small>
-            {step.module.eyebrow} · {status}
-          </small>
-          {step.module.title}
-        </span>
-      </button>
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  );
+}
+
+function scrollToAnchor(id: string): void {
+  if (typeof document === 'undefined') return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
+}
+
+// ----- sidebar tree: family accordion → module rows → section anchors -----
+
+interface ModuleTreeItemProps {
+  step: CourseStep;
+  activeIndex: number;
+  isCompleted: boolean;
+  isLocked: boolean;
+  isExpanded: boolean;
+  onNavigate: () => void;
+  onToggle: () => void;
+  onAnchor: (anchor: ModuleAnchor) => void;
+}
+
+function ModuleTreeItem({
+  step,
+  activeIndex,
+  isCompleted,
+  isLocked,
+  isExpanded,
+  onNavigate,
+  onToggle,
+  onAnchor,
+}: ModuleTreeItemProps): JSX.Element {
+  const isActive = step.globalIndex === activeIndex;
+  const status = isLocked ? 'Locked' : isCompleted ? 'Done' : isActive ? 'Current' : 'Ready';
+  const numberLabel = isLocked ? '\u{1F512}' : isCompleted ? 'ok' : String(step.globalIndex + 1);
+  const anchors = moduleAnchors(step.module);
+  return (
+    <li className="nt-course-tree-item">
+      <div className="nt-course-tree-row">
+        <button
+          type="button"
+          className="nt-course-tree-nav"
+          data-active={isActive ? 'true' : undefined}
+          data-completed={isCompleted ? 'true' : undefined}
+          data-locked={isLocked ? 'true' : undefined}
+          disabled={isLocked}
+          aria-disabled={isLocked || undefined}
+          title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
+          onClick={onNavigate}
+        >
+          <span className="nt-course-outline__dot" aria-hidden="true">
+            {numberLabel}
+          </span>
+          <span>
+            <small>
+              {step.module.eyebrow} · {status}
+            </small>
+            {step.module.title}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="nt-course-tree-disclosure"
+          aria-expanded={isExpanded}
+          aria-label={isExpanded ? `Collapse ${step.module.title} sections` : `Expand ${step.module.title} sections`}
+          disabled={isLocked}
+          onClick={onToggle}
+        >
+          <span aria-hidden="true">{isExpanded ? '▾' : '▸'}</span>
+        </button>
+      </div>
+      {isExpanded && !isLocked ? (
+        <ul className="nt-course-anchors">
+          {anchors.map((a) => (
+            <li key={a.id}>
+              <button type="button" className="nt-course-anchor" onClick={() => onAnchor(a)}>
+                {a.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </li>
   );
 }
 
-interface SectionProps {
-  label: string;
-  children: React.ReactNode;
-}
+// ----- prerequisite banner: what unlocked THIS module, what's needed next -----
 
-function Section({ label, children }: SectionProps): JSX.Element {
-  return (
-    <div className="nt-course-section">
-      <p className="nt-course-section__label">{label}</p>
-      {children}
-    </div>
-  );
+function describeExams(module: LearningModule | undefined): string {
+  if (!module) return '';
+  const parts: string[] = [];
+  if (module.theoreticalExam) {
+    const n = module.theoreticalExam.questions.length;
+    parts.push(`a ${n}-question theoretical exam`);
+  }
+  if (module.practicalExam) {
+    parts.push(`a Studio practical exam (analyser must tag ${module.practicalExam.patternName})`);
+  }
+  if (parts.length === 0) return 'No exam configured — advance via the footer when ready.';
+  if (parts.length === 1) return `Pass ${parts[0]}.`;
+  return `Pass ${parts[0]} first, which unlocks ${parts[1]}.`;
 }
-
-// ----- prerequisite banner: what unlocked THIS module, what's needed for the NEXT -----
 
 interface PrerequisiteBannerProps {
   steps: ReadonlyArray<CourseStep>;
   activeIndex: number;
   isActiveComplete: boolean;
-}
-
-function describePractical(module: LearningModule | undefined): string {
-  if (!module || !module.practical) return 'No practical configured for this module — advance via the footer when ready.';
-  if (module.practical.kind === 'quiz') {
-    return 'A one-question multiple-choice quiz (Check your understanding) on this page.';
-  }
-  return `A code-submission check against the live analyser. Target pattern: ${module.practical.patternName}. Submit a small C++ class that the analyser tags as ${module.practical.patternName}.`;
 }
 
 function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: PrerequisiteBannerProps): JSX.Element | null {
@@ -186,24 +259,22 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
             {isFirst
               ? 'This is the first module of the path — always unlocked.'
               : prev
-                ? <>Previous module &ldquo;<strong>{prev.module.title}</strong>&rdquo; practical must be passed. ✓ Passed.</>
+                ? <>Previous module &ldquo;<strong>{prev.module.title}</strong>&rdquo; must be completed. ✓ Done.</>
                 : 'Always unlocked.'}
           </dd>
         </div>
 
         <div className="nt-lesson-prereq__row">
           <dt>To complete this module</dt>
-          <dd>{describePractical(active.module)}</dd>
+          <dd>{describeExams(active.module)}</dd>
         </div>
 
         <div className="nt-lesson-prereq__row" data-state={isActiveComplete ? 'done' : 'pending'}>
           <dt>Status of this module</dt>
           <dd>
             {isActiveComplete
-              ? '✓ Practical passed — Next is unlocked.'
-              : active.module.practical
-                ? 'Pending — scroll down to the practical block to attempt it.'
-                : 'No practical configured; use the Next button to advance.'}
+              ? '✓ Complete — Next is unlocked.'
+              : 'Pending — scroll to the exams below to attempt them.'}
           </dd>
         </div>
 
@@ -211,7 +282,7 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
           <dt>To unlock the next module</dt>
           <dd>
             {next
-              ? <>Pass the practical for this module to unlock &ldquo;<strong>{next.module.title}</strong>&rdquo;.</>
+              ? <>Complete this module to unlock &ldquo;<strong>{next.module.title}</strong>&rdquo;.</>
               : 'This is the final module of the path — no further unlock.'}
           </dd>
         </div>
@@ -220,12 +291,15 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
   );
 }
 
-// ----- lesson body renderer: one module in isolation -----
+// ----- lesson body: Intro → Concepts → Examples, each anchored -----
 
 function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
+  const conceptSections = module.sections.filter((s) => !s.code);
+  const exampleSections = module.sections.filter((s) => Boolean(s.code));
+
   return (
     <article className="nt-learn__module" aria-labelledby={`mod-${module.id}-title`}>
-      <header className="nt-learn__module-head">
+      <header className="nt-learn__module-head" id={anchorId(module.id, 'intro')}>
         <p className="nt-section-eyebrow">{module.eyebrow}</p>
         <h2 id={`mod-${module.id}-title`} className="nt-learn__module-title">
           {module.title}
@@ -233,44 +307,60 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
         <p className="nt-learn__module-intro">{module.intro}</p>
       </header>
 
-      {module.sections.map((s, idx) => (
-        <section className="nt-learn__module-section" key={`${module.id}-s-${idx}`}>
-          <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-          {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-          {s.bullets && s.bullets.length > 0 ? (
-            <ul className="nt-learn__module-bullets">
-              {s.bullets.map((b, i) => (
-                <li key={`${module.id}-s-${idx}-b-${i}`}>{b}</li>
+      <section className="nt-learn__module-group" id={anchorId(module.id, 'concepts')} aria-label="Concepts">
+        <p className="nt-learn__group-eyebrow">Concepts</p>
+        {conceptSections.map((s, idx) => (
+          <section className="nt-learn__module-section" key={`${module.id}-c-${idx}`}>
+            <h3 className="nt-learn__module-section-head">{s.heading}</h3>
+            {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
+            {s.bullets && s.bullets.length > 0 ? (
+              <ul className="nt-learn__module-bullets">
+                {s.bullets.map((b, i) => (
+                  <li key={`${module.id}-c-${idx}-b-${i}`}>{b}</li>
+                ))}
+              </ul>
+            ) : null}
+            {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
+          </section>
+        ))}
+
+        {module.keyTerms && module.keyTerms.length > 0 ? (
+          <section className="nt-learn__module-section">
+            <h3 className="nt-learn__module-section-head">Key terms</h3>
+            <dl className="nt-learn__module-terms">
+              {module.keyTerms.map((t) => (
+                <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
+                  <dt>{t.term}</dt>
+                  <dd>{t.definition}</dd>
+                </div>
               ))}
-            </ul>
-          ) : null}
-          {s.code ? (
-            <pre className="nt-learn__module-code" aria-label="Code example">
-              {s.code}
-            </pre>
-          ) : null}
-          {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
-        </section>
-      ))}
+            </dl>
+          </section>
+        ) : null}
 
-      {module.keyTerms && module.keyTerms.length > 0 ? (
-        <section className="nt-learn__module-section">
-          <h3 className="nt-learn__module-section-head">Key terms</h3>
-          <dl className="nt-learn__module-terms">
-            {module.keyTerms.map((t) => (
-              <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
-                <dt>{t.term}</dt>
-                <dd>{t.definition}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ) : null}
+        {module.summary ? (
+          <section className="nt-learn__module-summary" aria-label="Module summary">
+            <p className="nt-learn__module-summary-eyebrow">Summary</p>
+            <p className="nt-learn__module-summary-body">{module.summary}</p>
+          </section>
+        ) : null}
+      </section>
 
-      {module.summary ? (
-        <section className="nt-learn__module-summary" aria-label="Module summary">
-          <p className="nt-learn__module-summary-eyebrow">Summary</p>
-          <p className="nt-learn__module-summary-body">{module.summary}</p>
+      {exampleSections.length > 0 ? (
+        <section className="nt-learn__module-group" id={anchorId(module.id, 'examples')} aria-label="Examples">
+          <p className="nt-learn__group-eyebrow">Examples</p>
+          {exampleSections.map((s, idx) => (
+            <section className="nt-learn__module-section" key={`${module.id}-e-${idx}`}>
+              <h3 className="nt-learn__module-section-head">{s.heading}</h3>
+              {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
+              {s.code ? (
+                <pre className="nt-learn__module-code" aria-label="Code example">
+                  {s.code}
+                </pre>
+              ) : null}
+              {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
+            </section>
+          ))}
         </section>
       ) : null}
 
@@ -296,93 +386,135 @@ function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
   );
 }
 
-// ----- per-module practical: quiz OR code-check -----
+// ----- Theoretical Exam: multi-question MCQ, pass = all correct -----
 
-interface ModulePracticalProps {
-  module: LearningModule;
+interface TheoreticalExamBlockProps {
+  moduleId: string;
+  exam: TheoreticalExam;
   isPassed: boolean;
   onPass: (tries: number) => void;
 }
 
-function QuizPractical({
-  practical, isPassed, onPass,
-}: { practical: LearningQuizPractical; isPassed: boolean; onPass: (tries: number) => void }): JSX.Element {
-  const [picked, setPicked] = useState<number | null>(null);
+function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass }: TheoreticalExamBlockProps): JSX.Element {
+  // If the module is already passed (loaded from progress) pre-fill the correct
+  // answers so the block renders in a read-only "review" state with green ticks.
+  const [answers, setAnswers] = useState<Record<number, number>>(() =>
+    isPassed
+      ? Object.fromEntries(exam.questions.map((q, i) => [i, q.correctIndex]))
+      : {},
+  );
   const [submitted, setSubmitted] = useState<boolean>(isPassed);
-  // Attempt counter — how many times the learner submitted before passing.
-  // Surfaced to the learner and (Phase 3) forwarded to analytics as a proxy
-  // for difficulty / mastery on this practical.
   const [tries, setTries] = useState<number>(0);
 
-  const correct = submitted && picked === practical.correctIndex;
-  const wrong = submitted && picked !== null && picked !== practical.correctIndex;
+  const total = exam.questions.length;
+  const allAnswered = exam.questions.every((_, i) => answers[i] != null);
+  const correctCount = exam.questions.reduce(
+    (n, q, i) => n + (answers[i] === q.correctIndex ? 1 : 0),
+    0,
+  );
+  const passed = (submitted && correctCount === total) || isPassed;
+
+  function pick(qIndex: number, optionIndex: number): void {
+    if (passed) return;
+    setAnswers((prev) => ({ ...prev, [qIndex]: optionIndex }));
+  }
 
   function handleSubmit(): void {
-    if (picked === null) return;
+    if (!allAnswered) return;
     const attempt = tries + 1;
     setTries(attempt);
     setSubmitted(true);
-    if (picked === practical.correctIndex) onPass(attempt);
+    if (exam.questions.every((q, i) => answers[i] === q.correctIndex)) onPass(attempt);
   }
 
   function handleRetry(): void {
     setSubmitted(false);
-    setPicked(null);
+    setAnswers({});
   }
 
   return (
-    <section className="nt-practical nt-practical--quiz" aria-label="Module practical">
+    <section
+      className="nt-practical nt-practical--quiz"
+      id={anchorId(moduleId, 'theoretical')}
+      aria-label="Theoretical exam"
+    >
       <header className="nt-practical__head">
-        <p className="nt-practical__eyebrow">Practical · Check your understanding</p>
-        <h3 className="nt-practical__title">{practical.question}</h3>
+        <p className="nt-practical__eyebrow">Theoretical Exam · Check your understanding</p>
+        <h3 className="nt-practical__title">
+          Answer all {total} question{total === 1 ? '' : 's'} correctly to pass.
+        </h3>
       </header>
-      <ol className="nt-practical__choices">
-        {practical.options.map((opt, i) => {
-          const isPickedRow = picked === i;
-          const isCorrectRow = submitted && i === practical.correctIndex;
-          const isWrongPick = submitted && isPickedRow && i !== practical.correctIndex;
+
+      <ol className="nt-exam__questions">
+        {exam.questions.map((q: ExamQuestion, qi) => {
+          const picked = answers[qi];
           return (
-            <li key={i}>
-              <label
-                className="nt-practical__choice"
-                data-picked={isPickedRow ? 'true' : undefined}
-                data-correct={isCorrectRow ? 'true' : undefined}
-                data-wrong={isWrongPick ? 'true' : undefined}
-              >
-                <input
-                  type="radio"
-                  name={`quiz-${practical.question.slice(0, 24)}`}
-                  checked={isPickedRow}
-                  disabled={submitted && correct}
-                  onChange={() => setPicked(i)}
-                />
-                <span>{opt}</span>
-              </label>
+            <li key={`${moduleId}-q-${qi}`} className="nt-exam__question">
+              <p className="nt-exam__prompt">
+                <span className="nt-exam__qnum">Q{qi + 1}.</span> {q.question}
+              </p>
+              <ol className="nt-practical__choices">
+                {q.options.map((opt, oi) => {
+                  const isPickedRow = picked === oi;
+                  const isCorrectRow = submitted && oi === q.correctIndex;
+                  const isWrongPick = submitted && isPickedRow && oi !== q.correctIndex;
+                  return (
+                    <li key={oi}>
+                      <label
+                        className="nt-practical__choice"
+                        data-picked={isPickedRow ? 'true' : undefined}
+                        data-correct={isCorrectRow ? 'true' : undefined}
+                        data-wrong={isWrongPick ? 'true' : undefined}
+                      >
+                        <input
+                          type="radio"
+                          name={`exam-${moduleId}-${qi}`}
+                          checked={isPickedRow}
+                          disabled={passed}
+                          onChange={() => pick(qi, oi)}
+                        />
+                        <span>{opt}</span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ol>
+              {submitted && q.explanation ? (
+                <p
+                  className="nt-exam__explanation"
+                  data-state={picked === q.correctIndex ? 'pass' : 'fail'}
+                >
+                  {picked === q.correctIndex ? '✓ ' : '✗ '}
+                  {q.explanation}
+                </p>
+              ) : null}
             </li>
           );
         })}
       </ol>
+
       <div className="nt-practical__footer">
         {!submitted && (
           <button
             type="button"
             className="nt-lesson-button nt-lesson-button--primary"
             onClick={handleSubmit}
-            disabled={picked === null}
+            disabled={!allAnswered}
+            title={!allAnswered ? 'Answer every question before submitting.' : undefined}
           >
-            Submit answer
+            Submit exam
           </button>
         )}
-        {submitted && correct && (
+        {passed && (
           <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
-            ✓ Correct. {practical.explanation || 'Module unlocked.'}
+            ✓ Theoretical exam passed.
             {tries > 0 && <span className="nt-practical__tries"> · {tries} attempt{tries === 1 ? '' : 's'}</span>}
           </p>
         )}
-        {submitted && wrong && (
+        {submitted && !passed && (
           <>
             <p className="nt-practical__verdict nt-practical__verdict--fail" role="status">
-              ✗ Not quite. {practical.explanation || 'Re-read the section above and try again.'}
+              ✗ {correctCount}/{total} correct. Re-read the sections above and try again.
             </p>
             <button type="button" className="nt-lesson-button" onClick={handleRetry}>
               Try again
@@ -394,62 +526,77 @@ function QuizPractical({
   );
 }
 
-function PatternPractical({
-  practical, isPassed, onPass,
-}: { practical: LearningPatternPractical; isPassed: boolean; onPass: (tries: number) => void }): JSX.Element {
+// ----- Practical Exam: Studio code-check, locked until theoretical passes -----
+
+interface PracticalExamBlockProps {
+  moduleId: string;
+  exam: PracticalExam;
+  isLocked: boolean;
+  isPassed: boolean;
+  onPass: () => void;
+}
+
+function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: PracticalExamBlockProps): JSX.Element {
   const resetSession = useAppStore((s) => s.resetSession);
   const setSourceText = useAppStore((s) => s.setSourceText);
   const setFilename = useAppStore((s) => s.setFilename);
 
-  // Start each module's embedded Studio from a clean slate so a previous
-  // module's run never carries over. For order-sensitive patterns (e.g.
-  // PIMPL) seed the editor with the scaffold so the learner can run-then-
-  // modify instead of guessing the exact token shape.
+  // Seed/clear the embedded Studio only once the practical is actually unlocked,
+  // so a locked module never clobbers the shared session. For order-sensitive
+  // patterns (e.g. PIMPL) seed the scaffold so the learner can run-then-modify.
   useEffect(() => {
+    if (isLocked) return;
     resetSession();
-    if (practical.starterCode) {
-      setSourceText(practical.starterCode);
-      setFilename(`${practical.patternSlug}-submission.cpp`);
+    if (exam.starterCode) {
+      setSourceText(exam.starterCode);
+      setFilename(`${exam.patternSlug}-submission.cpp`);
     }
     return () => resetSession();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [practical.patternSlug]);
+  }, [exam.patternSlug, isLocked]);
 
   return (
-    <section className="nt-practical nt-practical--studio" aria-label="Module practical">
+    <section
+      className="nt-practical nt-practical--studio"
+      id={anchorId(moduleId, 'practical')}
+      aria-label="Practical exam"
+    >
       <header className="nt-practical__head">
-        <p className="nt-practical__eyebrow">Practical · Analyse in the Studio</p>
+        <p className="nt-practical__eyebrow">Practical Exam · Analyse in the Studio</p>
         <h3 className="nt-practical__title">
-          Target pattern: <span className="nt-practical__target">{practical.patternName}</span>
+          Target pattern: <span className="nt-practical__target">{exam.patternName}</span>
         </h3>
         <p className="nt-practical__prompt">
-          {practical.prompt} Submit your C++ in the Studio below — the module unlocks the
-          moment the analyser tags <strong>{practical.patternName}</strong>. Open the
+          {exam.prompt} Submit your C++ in the Studio below — the module unlocks the
+          moment the analyser tags <strong>{exam.patternName}</strong>. Open the
           Patterns tab after analysis to read how each part of your code maps to the pattern.
         </p>
       </header>
-      {isPassed && (
-        <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
-          ✓ Passed — the analyser tagged your class as <strong>{practical.patternName}</strong>.
-          Re-run anytime, or press Next to continue.
-        </p>
+
+      {isLocked ? (
+        <div className="nt-lesson-callout" role="status">
+          <span>Locked</span>
+          Pass the Theoretical Exam above to unlock the Practical Exam for this module.
+        </div>
+      ) : (
+        <>
+          {isPassed && (
+            <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
+              ✓ Passed — the analyser tagged your class as <strong>{exam.patternName}</strong>.
+              Re-run anytime, or press Next to continue.
+            </p>
+          )}
+          <div className="nt-practical__studio" data-testid="practical-studio">
+            <StudioSurface
+              targetPatternSlug={exam.patternSlug}
+              targetPatternName={exam.patternName}
+              onPatternDetected={onPass}
+            />
+          </div>
+        </>
       )}
-      <div className="nt-practical__studio" data-testid="practical-studio">
-        <StudioSurface
-          targetPatternSlug={practical.patternSlug}
-          targetPatternName={practical.patternName}
-          onPatternDetected={() => onPass(1)}
-        />
-      </div>
     </section>
   );
-}
-
-function ModulePractical({ module, isPassed, onPass }: ModulePracticalProps): JSX.Element | null {
-  const p = module.practical;
-  if (!p) return null;
-  if (p.kind === 'quiz') return <QuizPractical practical={p} isPassed={isPassed} onPass={onPass} />;
-  return <PatternPractical practical={p} isPassed={isPassed} onPass={onPass} />;
 }
 
 // ----- page -----
@@ -460,15 +607,15 @@ export default function PatternsLearnPage(): JSX.Element {
   const token = useAppStore((s) => s.token);
   const user = useAppStore((s) => s.user);
   // Guests run on a shared devcon{N} seat: the analyser works (they hold a
-  // token) but their learning progress is NOT persisted server-side. Detect
-  // the guest seat by its username so progress stays in-memory for the visit.
+  // token) but their learning progress is NOT persisted server-side.
   const isGuest = (user?.username || '').toLowerCase().startsWith('devcon');
-  // Only signed-in, non-guest learners persist progress to their account.
   const canPersist = !!token && !isGuest;
 
+  // completedIds = modules fully done (theory + practical-if-any). theoryPassedIds
+  // = modules whose theoretical exam passed (superset of completedIds for pattern
+  // modules mid-flight). triesByModule = theoretical attempt counts.
   const [completedIds, setCompletedIds] = useState<Set<string>>(() => new Set());
-  // Attempts the learner needed to pass each module's practical. Surfaced in
-  // the UI and persisted alongside progress so analytics can read it.
+  const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(() => new Set());
   const [triesByModule, setTriesByModule] = useState<Record<string, number>>({});
 
   const unlockedCount = useMemo(
@@ -476,33 +623,39 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps, completedIds],
   );
 
-  // Whether the account's progress has been resolved yet. Until it is, we must
-  // NOT clamp/bounce the active module to the unlock gate — on a refresh the
-  // progress loads async, and clamping against the empty initial set would
-  // bounce the user back to module 1 before their real progress arrives.
-  // Guests (no token) have nothing to load, so they're "loaded" immediately.
   const [progressLoaded, setProgressLoaded] = useState<boolean>(false);
+  // Only persist after the user has made a local change — guards against
+  // clobbering server progress with the empty initial set on load.
+  const dirtyRef = useRef<boolean>(false);
 
-  // Hydrate progress from the account on mount / sign-in. Progress is stored
-  // server-side per user (jwtAuth), so guests keep only the in-memory set for
-  // the current visit. Stale ids that no longer match a module are harmless —
-  // computeUnlockedCount only counts ids present in `steps`.
+  // Hydrate progress from the account on mount / sign-in.
   useEffect(() => {
     if (!canPersist) {
-      // Guests and signed-out visitors have nothing to load — start empty
-      // and treat progress as resolved so the unlock gate doesn't bounce.
       setProgressLoaded(true);
       return;
     }
     let cancelled = false;
     void fetchLearningProgress()
       .then((p) => {
-        if (cancelled || !p.completedModuleIds?.length) return;
-        setCompletedIds((prev) => {
-          const next = new Set(prev);
-          for (const id of p.completedModuleIds) next.add(id);
-          return next;
-        });
+        if (cancelled) return;
+        const completed = p.completedModuleIds ?? [];
+        const theory = p.theoryPassedModuleIds ?? [];
+        if (completed.length) {
+          setCompletedIds((prev) => {
+            const next = new Set(prev);
+            for (const id of completed) next.add(id);
+            return next;
+          });
+        }
+        // A completed module's theoretical is necessarily passed; union both.
+        if (completed.length || theory.length) {
+          setTheoryPassedIds((prev) => {
+            const next = new Set(prev);
+            for (const id of theory) next.add(id);
+            for (const id of completed) next.add(id);
+            return next;
+          });
+        }
       })
       .catch(() => {
         /* offline / first visit — start empty */
@@ -515,41 +668,27 @@ export default function PatternsLearnPage(): JSX.Element {
     };
   }, [canPersist]);
 
-  // Persist the completed set to the account, recording the highest unlocked
-  // module id. Fire-and-forget: a failed save never blocks the UI, and the
-  // next unlock re-sends the full set so a dropped write self-heals.
-  const persistProgress = useCallback(
-    (completed: ReadonlySet<string>) => {
-      if (!canPersist) return;
-      const ids = steps.map((s) => s.module.id).filter((id) => completed.has(id));
-      const unlocked = computeUnlockedCount(steps, completed);
-      const lastUnlockedModuleId =
-        steps.length > 0 ? steps[Math.max(0, Math.min(unlocked, steps.length) - 1)].module.id : null;
-      void saveLearningProgress(ids, lastUnlockedModuleId, triesByModule).catch(() => {
-        /* best-effort; resent on next unlock */
-      });
-    },
-    [canPersist, steps, triesByModule],
-  );
+  // Persist completed + theory-passed sets whenever they change, but only after
+  // load and only once the learner has actually mutated progress. Fire-and-
+  // forget; idempotent so a dropped write self-heals on the next change.
+  useEffect(() => {
+    if (!canPersist || !progressLoaded || !dirtyRef.current) return;
+    const ids = steps.map((s) => s.module.id).filter((id) => completedIds.has(id));
+    const theoryIds = steps.map((s) => s.module.id).filter((id) => theoryPassedIds.has(id));
+    const unlocked = computeUnlockedCount(steps, completedIds);
+    const lastUnlockedModuleId =
+      steps.length > 0 ? steps[Math.max(0, Math.min(unlocked, steps.length) - 1)].module.id : null;
+    void saveLearningProgress(ids, lastUnlockedModuleId, triesByModule, theoryIds).catch(() => {
+      /* best-effort; resent on next change */
+    });
+  }, [canPersist, progressLoaded, steps, completedIds, theoryPassedIds, triesByModule]);
 
-  // Honor the URL module on first render (clamp only to the valid range, not
-  // to the unlock gate yet). The bounce-to-gate happens later, once progress
-  // has loaded — see the effect below gated on progressLoaded.
   const [activeIndex, setActiveIndex] = useState<number>(() =>
     clampToUnlocked(indexFromUrl(steps), steps.length || 1),
   );
 
-  // The unlock ceiling used by the URL-sync + bounce effects. While progress
-  // is still loading we use the full length (no bounce); once loaded we use
-  // the real unlock count so locked deep links are clamped.
   const navUnlocked = progressLoaded ? unlockedCount : steps.length || 1;
 
-  // Surface a banner whenever the URL clamp silently redirects the user
-  // (deep link / paste of a locked module URL). Without this banner the
-  // user sees foundations-module-1 content while the address bar reads
-  // /patterns/learn/creational-builder for a fraction of a second, and
-  // then the URL flips — they think the system broke or that the
-  // foundation quiz IS the Builder practical.
   const [redirectNotice, setRedirectNotice] = useState<{
     requestedTitle: string;
     requestedId: string;
@@ -558,9 +697,7 @@ export default function PatternsLearnPage(): JSX.Element {
   } | null>(null);
 
   // Keep activeIndex synced when the URL changes (back button, deep links,
-  // see-also click). Clamp to unlockedCount so a deep link to a locked
-  // module bounces to the highest unlocked step instead of slipping past
-  // the gate.
+  // see-also click), clamped to the unlock gate.
   useEffect(() => {
     function recompute(): void {
       setActiveIndex(clampToUnlocked(indexFromUrl(steps), navUnlocked));
@@ -573,16 +710,10 @@ export default function PatternsLearnPage(): JSX.Element {
     };
   }, [steps, navUnlocked]);
 
-  // If unlockedCount shrinks (shouldn't normally — readIds only grows in
-  // this tab — but kept as a safety net) or the URL points past the gate,
-  // rewrite the URL back to the clamped step so the address bar can't
-  // outpace the unlock state. Capture the requested-vs-landed delta into
-  // redirectNotice so the article surface can render a visible banner.
+  // Bounce a locked deep link back to the highest unlocked module and surface a
+  // visible notice describing the gate the user hit.
   useEffect(() => {
     if (steps.length === 0) return;
-    // Wait until the account's progress is known. Bouncing before then would
-    // send a refreshing user (whose URL points at a deep, legitimately
-    // unlocked module) back to module 1 against the empty initial set.
     if (!progressLoaded) return;
     const fromUrl = indexFromUrl(steps);
     const clamped = clampToUnlocked(fromUrl, unlockedCount);
@@ -602,9 +733,6 @@ export default function PatternsLearnPage(): JSX.Element {
     }
   }, [steps, unlockedCount, progressLoaded]);
 
-  // Clear the redirect notice the moment the user has unlocked enough
-  // modules to reach (or pass) the originally requested one — the banner
-  // stops being relevant once the gate they hit no longer applies.
   useEffect(() => {
     if (!redirectNotice) return;
     const requestedIndex = steps.findIndex((s) => s.module.id === redirectNotice.requestedId);
@@ -629,53 +757,92 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps, unlockedCount],
   );
 
-  const markComplete = useCallback(
-    (moduleId: string, tries: number) => {
-      // Record the attempt count (keep the first/lowest if re-passed) for the
-      // module's practical. Phase 3 forwards this to the analytics endpoint.
-      setTriesByModule((prev) =>
-        prev[moduleId] != null ? prev : { ...prev, [moduleId]: tries },
-      );
-      setCompletedIds((prev) => {
-        if (prev.has(moduleId)) return prev;
-        const next = new Set(prev);
-        next.add(moduleId);
-        // Completing a module unlocks the next one — persist the new state to
-        // the account so progress survives refresh / device change.
-        persistProgress(next);
-        return next;
-      });
-    },
-    [persistProgress],
-  );
+  // Theoretical exam passed: record the attempt count, mark theory-passed, and
+  // — for modules with no practical — mark complete (which unlocks the next).
+  const markTheoryPassed = useCallback((moduleId: string, tries: number) => {
+    dirtyRef.current = true;
+    setTriesByModule((prev) => (prev[moduleId] != null ? prev : { ...prev, [moduleId]: tries }));
+    setTheoryPassedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
+    const mod = findLearningModule(moduleId);
+    if (!mod?.practicalExam) {
+      setCompletedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
+    }
+  }, []);
+
+  // Practical exam passed: the module is now complete (theory was the gate to
+  // reach the practical, so it is already in theoryPassedIds).
+  const markPracticalPassed = useCallback((moduleId: string) => {
+    dirtyRef.current = true;
+    setCompletedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
+    setTheoryPassedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
+  }, []);
 
   const goPrev = useCallback(() => {
     if (activeIndex > 0) goToStep(activeIndex - 1);
   }, [activeIndex, goToStep]);
 
   const goNext = useCallback(() => {
-    // Advance only when the current module is complete; the footer button
-    // is disabled otherwise so this is a defence-in-depth check.
     if (!activeStep || !completedIds.has(activeStep.module.id)) return;
     if (activeIndex < steps.length - 1) goToStep(activeIndex + 1);
   }, [activeIndex, activeStep, completedIds, goToStep, steps.length]);
 
-  // Collapsible module outline. Defaults open on wide viewports; the learner
-  // can fold it away to give the lesson body the full width (the path is long,
-  // and on a focused read the outline is noise). State is view-only — no need
-  // to persist a chrome preference server-side.
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  // Sidebar tree open-state — chrome only, not persisted. Default open: the
+  // active module's family + the active module.
+  const [openFamilies, setOpenFamilies] = useState<Set<string>>(() => new Set());
+  const [openModules, setOpenModules] = useState<Set<string>>(() => new Set());
+
+  // Auto-open the active module's family + the active module when navigation
+  // changes which step is active.
+  const activeFamily = activeStep?.category;
+  const activeModuleId = activeStep?.module.id;
+  useEffect(() => {
+    if (activeFamily) setOpenFamilies((prev) => (prev.has(activeFamily) ? prev : new Set(prev).add(activeFamily)));
+    if (activeModuleId) setOpenModules((prev) => (prev.has(activeModuleId) ? prev : new Set(prev).add(activeModuleId)));
+  }, [activeFamily, activeModuleId]);
+
+  const toggleFamily = useCallback((id: string) => {
+    setOpenFamilies((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const toggleModule = useCallback((id: string) => {
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  // Clicking a section anchor: navigate to that module if needed, then scroll.
+  // When navigating across modules the target DOM mounts on the next frame, so
+  // defer the scroll a tick.
+  const handleAnchor = useCallback(
+    (step: CourseStep, anchor: ModuleAnchor) => {
+      if (step.globalIndex === activeIndex) {
+        scrollToAnchor(anchor.id);
+        return;
+      }
+      goToStep(step.globalIndex);
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => scrollToAnchor(anchor.id));
+      });
+    },
+    [activeIndex, goToStep],
+  );
 
   const completedCount = completedIds.size;
   const total = steps.length;
   const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
-  // Total practical attempts across passed modules — a lightweight effort
-  // signal shown beside the progress bar (and persisted to analytics in
-  // Phase 3). Reads the per-module attempt map captured on each pass.
   const totalTries = Object.values(triesByModule).reduce((a, b) => a + b, 0);
   const isFirst = activeIndex === 0;
   const isLast = activeIndex === total - 1;
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
+  const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
 
   return (
     <main className="nt-student nt-student-course" id="main">
@@ -687,20 +854,20 @@ export default function PatternsLearnPage(): JSX.Element {
           </h1>
           <p className="nt-student__lede">
             A {total}-module step-through path across Foundations and the four pattern families.
-            Finish a module to unlock the next — Foundations first, then Creational, Structural,
-            Behavioural, and Idioms.
+            Each module reads Intro → Concepts → Examples, then a Theoretical Exam — and, for
+            pattern modules, a Studio Practical Exam. Complete a module to unlock the next.
           </p>
           <p className="nt-course-hero__audience">
-            Each pattern module ends with a Studio practical: submit your C++ and the module
-            unlocks once the analyser tags the target pattern. Signed-in learners keep their
-            progress across devices; guests keep it only for the current visit.
+            Pass the theoretical exam to unlock the practical exam; pattern modules complete once
+            the analyser tags the target pattern. Signed-in learners keep progress across devices;
+            guests keep it only for the current visit.
           </p>
         </div>
-        <div className="nt-course-progress" aria-label={`Practical progress ${progress}%`}>
+        <div className="nt-course-progress" aria-label={`Module progress ${progress}%`}>
           <span>{progress}%</span>
           <p>
-            {completedCount}/{total} modules passed
-            {totalTries > 0 ? ` · ${totalTries} total attempt${totalTries === 1 ? '' : 's'}` : ''}
+            {completedCount}/{total} modules complete
+            {totalTries > 0 ? ` · ${totalTries} exam attempt${totalTries === 1 ? '' : 's'}` : ''}
           </p>
           <div className="nt-course-progress__bar" aria-hidden="true">
             <i style={{ width: `${progress}%` }} />
@@ -708,58 +875,60 @@ export default function PatternsLearnPage(): JSX.Element {
         </div>
       </section>
 
-      <section
-        className="nt-course-shell"
-        data-sidebar={sidebarOpen ? 'open' : 'collapsed'}
-        aria-label="Learning path"
-      >
-        <aside
-          className="nt-course-sidebar"
-          aria-label="Learning module outline"
-          data-collapsed={sidebarOpen ? undefined : 'true'}
-        >
+      <section className="nt-course-shell" aria-label="Learning path">
+        <aside className="nt-course-sidebar" aria-label="Learning module outline">
           <div className="nt-course-sidebar__head">
-            <button
-              type="button"
-              className="nt-course-sidebar__toggle"
-              aria-expanded={sidebarOpen}
-              aria-label={sidebarOpen ? 'Collapse module outline' : 'Expand module outline'}
-              title={sidebarOpen ? 'Collapse module outline' : 'Expand module outline'}
-              onClick={() => setSidebarOpen((v) => !v)}
-            >
-              {sidebarOpen ? '⟨' : '☰'}
-            </button>
             <p>Modules</p>
             <span>
               {activeIndex + 1}/{total}
             </span>
           </div>
 
-          {sidebarOpen && groups.map((g, idx) => (
-            <Section key={g.meta.id} label={`Section ${idx + 1} · ${g.meta.name}`}>
-              <ol className="nt-course-outline">
-                {g.steps.map((step) => (
-                  <StepButton
-                    key={step.module.id}
-                    step={step}
-                    activeIndex={activeIndex}
-                    isRead={completedIds.has(step.module.id)}
-                    isLocked={step.globalIndex >= unlockedCount}
-                    onClick={() => goToStep(step.globalIndex)}
-                  />
-                ))}
-              </ol>
-            </Section>
-          ))}
+          {groups.map((g, idx) => {
+            const familyOpen = openFamilies.has(g.meta.id);
+            return (
+              <div
+                key={g.meta.id}
+                className={`nt-course-section${familyOpen ? ' is-open' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="nt-course-section__label"
+                  aria-expanded={familyOpen}
+                  onClick={() => toggleFamily(g.meta.id)}
+                >
+                  <span>Section {idx + 1} · {g.meta.name}</span>
+                  <span className="nt-course-section__chev" aria-hidden="true">
+                    {familyOpen ? '▾' : '▸'}
+                  </span>
+                </button>
+                {familyOpen ? (
+                  <div className="nt-course-section__body">
+                    <ol className="nt-course-outline">
+                      {g.steps.map((step) => (
+                        <ModuleTreeItem
+                          key={step.module.id}
+                          step={step}
+                          activeIndex={activeIndex}
+                          isCompleted={completedIds.has(step.module.id)}
+                          isLocked={step.globalIndex >= unlockedCount}
+                          isExpanded={openModules.has(step.module.id)}
+                          onNavigate={() => goToStep(step.globalIndex)}
+                          onToggle={() => toggleModule(step.module.id)}
+                          onAnchor={(a) => handleAnchor(step, a)}
+                        />
+                      ))}
+                    </ol>
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </aside>
 
         <article className="nt-lesson-panel">
           {redirectNotice ? (
-            <aside
-              className="nt-lesson-redirect-notice"
-              role="status"
-              aria-live="polite"
-            >
+            <aside className="nt-lesson-redirect-notice" role="status" aria-live="polite">
               <div className="nt-lesson-redirect-notice__body">
                 <p className="nt-lesson-redirect-notice__title">
                   &ldquo;{redirectNotice.requestedTitle}&rdquo; is locked
@@ -767,8 +936,8 @@ export default function PatternsLearnPage(): JSX.Element {
                 <p className="nt-lesson-redirect-notice__detail">
                   Finish {redirectNotice.requiredCount}{' '}
                   more module{redirectNotice.requiredCount === 1 ? '' : 's'} to unlock it.
-                  You&rsquo;re now on &ldquo;{redirectNotice.landedTitle}&rdquo; — pass its
-                  practical to keep moving forward.
+                  You&rsquo;re now on &ldquo;{redirectNotice.landedTitle}&rdquo; — complete it to
+                  keep moving forward.
                 </p>
               </div>
               <button
@@ -790,12 +959,24 @@ export default function PatternsLearnPage(): JSX.Element {
 
           {activeModule ? <ModuleBody module={activeModule} /> : null}
 
-          {activeModule && activeModule.practical ? (
-            <ModulePractical
-              key={activeModule.id}
-              module={activeModule}
+          {activeModule && activeModule.theoreticalExam ? (
+            <TheoreticalExamBlock
+              key={`${activeModule.id}-theory`}
+              moduleId={activeModule.id}
+              exam={activeModule.theoreticalExam}
+              isPassed={isActiveTheoryPassed}
+              onPass={(tries) => markTheoryPassed(activeModule.id, tries)}
+            />
+          ) : null}
+
+          {activeModule && activeModule.practicalExam ? (
+            <PracticalExamBlock
+              key={`${activeModule.id}-practical`}
+              moduleId={activeModule.id}
+              exam={activeModule.practicalExam}
+              isLocked={!isActiveTheoryPassed}
               isPassed={isActiveComplete}
-              onPass={(tries) => markComplete(activeModule.id, tries)}
+              onPass={() => markPracticalPassed(activeModule.id)}
             />
           ) : null}
 
@@ -816,7 +997,7 @@ export default function PatternsLearnPage(): JSX.Element {
               disabled={!isActiveComplete || isLast}
               title={
                 !isActiveComplete
-                  ? 'Pass the practical above to unlock the next module.'
+                  ? 'Complete this module’s exams to unlock the next module.'
                   : isLast
                   ? 'You finished the last module.'
                   : undefined
@@ -825,7 +1006,7 @@ export default function PatternsLearnPage(): JSX.Element {
               {isLast
                 ? isActiveComplete
                   ? 'Path complete'
-                  : 'Finish the practical'
+                  : 'Finish the exams'
                 : isActiveComplete
                 ? 'Next module'
                 : 'Locked'}

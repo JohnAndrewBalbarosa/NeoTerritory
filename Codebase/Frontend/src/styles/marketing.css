@@ -1163,11 +1163,6 @@ body[data-surface] #root {
   .nt-course-shell {
     grid-template-columns: 330px minmax(0, 1fr);
   }
-  /* Collapsed: the outline folds to just its toggle header so the lesson
-     body takes the full width. The first column shrinks to fit the head. */
-  .nt-course-shell[data-sidebar="collapsed"] {
-    grid-template-columns: max-content minmax(0, 1fr);
-  }
 }
 .nt-course-sidebar,
 .nt-lesson-panel {
@@ -1176,34 +1171,6 @@ body[data-surface] #root {
   background: linear-gradient(180deg, rgba(15, 27, 46, 0.9), rgba(9, 13, 22, 0.92));
   box-shadow: var(--nt-mkt-shadow);
   overflow: hidden;
-}
-/* Collapsed sidebar shows only the head row (toggle + label + counter). */
-.nt-course-sidebar[data-collapsed="true"] {
-  align-self: start;
-}
-.nt-course-sidebar__toggle {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  margin-right: 0.5rem;
-  border: 1px solid var(--nt-mkt-line);
-  border-radius: 8px;
-  background: rgba(0, 209, 216, 0.06);
-  color: var(--nt-mkt-text);
-  font-size: 0.85rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background 160ms var(--nt-mkt-ease), border-color 160ms var(--nt-mkt-ease);
-}
-.nt-course-sidebar__toggle:hover {
-  background: rgba(0, 209, 216, 0.16);
-  border-color: var(--devcon-cyan, #00d1d8);
-}
-.nt-course-sidebar__toggle:focus-visible {
-  outline: 2px solid var(--devcon-cyan, #00d1d8);
-  outline-offset: 2px;
 }
 
 /* Visible "you got bounced back" banner shown when the linear-gate
@@ -1510,6 +1477,85 @@ body[data-surface] #root {
   border-color: rgba(166, 255, 0, 0.44);
   color: var(--devcon-lime, var(--nt-mkt-accent));
 }
+
+/* ---- 3-level tree: module row (nav + disclosure) + section anchors (D86) ----
+   The module nav button reuses the base `.nt-course-outline button` grid; the
+   disclosure and anchor buttons are scoped under `.nt-course-outline` so they
+   out-specify that base rule and reset its grid/padding. */
+.nt-course-tree-item {
+  list-style: none;
+}
+.nt-course-tree-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0.25rem;
+}
+.nt-course-outline .nt-course-tree-nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.nt-course-outline .nt-course-tree-disclosure {
+  flex: 0 0 auto;
+  width: 30px;
+  display: grid;
+  place-items: center;
+  grid-template-columns: none;
+  gap: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--nt-mkt-text-mute);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 160ms var(--nt-mkt-ease), color 160ms var(--nt-mkt-ease);
+}
+.nt-course-outline .nt-course-tree-disclosure:hover:not(:disabled) {
+  background: rgba(0, 209, 216, 0.1);
+  color: var(--nt-mkt-text);
+}
+.nt-course-outline .nt-course-tree-disclosure:focus-visible {
+  outline: 2px solid var(--devcon-cyan, #00d1d8);
+  outline-offset: 2px;
+}
+.nt-course-outline .nt-course-tree-disclosure:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.nt-course-anchors {
+  list-style: none;
+  display: grid;
+  gap: 0.1rem;
+  margin: 0.2rem 0 0.4rem;
+  padding: 0 0 0 2.7rem;
+  border-left: 1px solid var(--nt-mkt-line);
+  margin-left: 1rem;
+}
+.nt-course-outline .nt-course-anchor {
+  display: block;
+  width: 100%;
+  grid-template-columns: none;
+  gap: 0;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--nt-mkt-text-mute);
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 160ms var(--nt-mkt-ease), color 160ms var(--nt-mkt-ease), border-color 160ms var(--nt-mkt-ease);
+}
+.nt-course-outline .nt-course-anchor:hover,
+.nt-course-outline .nt-course-anchor:focus-visible {
+  color: var(--nt-mkt-text);
+  background: rgba(0, 209, 216, 0.07);
+  border-color: rgba(0, 209, 216, 0.22);
+  outline: none;
+}
+
 .nt-course-library-nav {
   display: grid;
   gap: 0.35rem;
@@ -1844,6 +1890,7 @@ body[data-surface] #root {
   background: rgba(0, 209, 216, 0.04);
   display: grid;
   gap: 0.85rem;
+  scroll-margin-top: 96px;
 }
 /* Embedded Studio wrapper: the Submit -> Patterns -> Tests surface rendered
    inside a pattern module's practical. Framed so it reads as a contained
@@ -1883,6 +1930,51 @@ body[data-surface] #root {
   color: var(--nt-mkt-text-soft);
   font-size: 0.92rem;
   line-height: 1.55;
+}
+
+/* ---- Theoretical exam: multi-question bank (D86) ---- */
+.nt-exam__questions {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1.2rem;
+}
+.nt-exam__question {
+  display: grid;
+  gap: 0.6rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+}
+.nt-exam__prompt {
+  margin: 0;
+  color: var(--nt-mkt-text);
+  font-size: 0.98rem;
+  line-height: 1.5;
+  font-weight: 550;
+}
+.nt-exam__qnum {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  margin-right: 0.35rem;
+}
+.nt-exam__explanation {
+  margin: 0;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+.nt-exam__explanation[data-state='pass'] {
+  color: #6ee7a8;
+  background: rgba(110, 231, 168, 0.08);
+}
+.nt-exam__explanation[data-state='fail'] {
+  color: #f3c110;
+  background: rgba(243, 193, 16, 0.08);
 }
 .nt-practical__choices {
   list-style: none;
@@ -4807,6 +4899,21 @@ body[data-surface] {
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--nt-mkt-line);
+  scroll-margin-top: 96px;
+}
+/* Intro → Concepts → Examples groups (D86). Each carries a scroll anchor the
+   sidebar tree targets; scroll-margin keeps the heading clear of the sticky nav. */
+.nt-learn__module-group {
+  margin-top: 1.4rem;
+  scroll-margin-top: 96px;
+}
+.nt-learn__group-eyebrow {
+  margin: 0 0 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--devcon-lime, var(--nt-mkt-accent));
 }
 .nt-learn__module-title {
   font-size: clamp(1.4rem, 0.9rem + 1.4vw, 2rem);

@@ -235,6 +235,18 @@ export function initDb(): void {
     /* column already exists — nothing to do */
   }
 
+  // Per-module theoretical-exam pass state (JSON array of module ids). Separate
+  // from completed_module_ids so a learner who passed a pattern module's
+  // theoretical exam but not yet its practical exam resumes mid-module after a
+  // refresh (the practical block stays unlocked). Added after tries_by_module,
+  // so older DBs need the column backfilled. Idempotent via the duplicate-column
+  // catch (D86).
+  try {
+    db.prepare(`ALTER TABLE learning_progress ADD COLUMN theory_passed_module_ids TEXT NOT NULL DEFAULT '[]'`).run();
+  } catch {
+    /* column already exists — nothing to do */
+  }
+
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email
   // entered the ORIGINAL_DEV_EMAILS allowlist, resolveAdminOrg would

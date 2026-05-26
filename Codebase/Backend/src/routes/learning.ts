@@ -3,9 +3,15 @@
 // router persists that progress per user so the path resumes where the
 // account left off after a refresh or on another device.
 //
-// GET  /api/learning/progress  → { completedModuleIds, lastUnlockedModuleId }
+// GET  /api/learning/progress  → { completedModuleIds, lastUnlockedModuleId,
+//                                   theoryPassedModuleIds }
 // PUT  /api/learning/progress  → upsert the same shape (called every time a
-//                                module is completed, which unlocks the next).
+//                                module's theoretical or practical exam passes,
+//                                which can unlock the next).
+//
+// theoryPassedModuleIds (D86): modules whose theoretical exam has passed. Kept
+// separate from completedModuleIds so a learner who cleared a pattern module's
+// theoretical exam but not its practical exam resumes mid-module after refresh.
 import express, { Request, Response, NextFunction } from 'express';
 import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
@@ -15,6 +21,30 @@ const router = express.Router();
 interface ProgressRow {
   completed_module_ids: string;
   last_unlocked_module_id: string | null;
+  theory_passed_module_ids: string | null;
+}
+
+// Parse a JSON-array-of-strings DB column defensively. A corrupt or non-array
+// payload degrades to an empty list rather than throwing.
+function parseStringArrayColumn(raw: string | null | undefined): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+// Normalise a request-body module-id array: strings only, deduped, length- and
+// count-capped to the same bounds as completedModuleIds.
+function sanitizeModuleIdArray(input: unknown): string[] {
+  if (!Array.isArray(input)) return [];
+  return Array.from(
+    new Set(
+      input.filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= MAX_ID_LEN),
+    ),
+  ).slice(0, MAX_MODULES);
 }
 
 // Module-id sanity bounds — defensive caps so a malformed client cannot store
@@ -47,25 +77,15 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     }
     const row = db
       .prepare(
-        `SELECT completed_module_ids, last_unlocked_module_id
+        `SELECT completed_module_ids, last_unlocked_module_id, theory_passed_module_ids
          FROM learning_progress WHERE user_id = ?`,
       )
       .get(req.user.id) as ProgressRow | undefined;
 
-    let completedModuleIds: string[] = [];
-    if (row) {
-      try {
-        const parsed = JSON.parse(row.completed_module_ids);
-        if (Array.isArray(parsed)) {
-          completedModuleIds = parsed.filter((x): x is string => typeof x === 'string');
-        }
-      } catch {
-        /* corrupt row — treat as empty */
-      }
-    }
     res.json({
-      completedModuleIds,
+      completedModuleIds: parseStringArrayColumn(row?.completed_module_ids),
       lastUnlockedModuleId: row?.last_unlocked_module_id ?? null,
+      theoryPassedModuleIds: parseStringArrayColumn(row?.theory_passed_module_ids),
     });
   } catch (err) {
     next(err);
@@ -82,22 +102,18 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       completedModuleIds?: unknown;
       lastUnlockedModuleId?: unknown;
       triesByModule?: unknown;
+      theoryPassedModuleIds?: unknown;
     };
-    const completedModuleIds = Array.isArray(body.completedModuleIds)
-      ? Array.from(
-          new Set(
-            body.completedModuleIds
-              .filter((x): x is string => typeof x === 'string' && x.length > 0 && x.length <= MAX_ID_LEN),
-          ),
-        ).slice(0, MAX_MODULES)
-      : [];
+    const completedModuleIds = sanitizeModuleIdArray(body.completedModuleIds);
+    const theoryPassedModuleIds = sanitizeModuleIdArray(body.theoryPassedModuleIds);
     const lastUnlockedModuleId =
       typeof body.lastUnlockedModuleId === 'string' && body.lastUnlockedModuleId.length <= MAX_ID_LEN
         ? body.lastUnlockedModuleId
         : null;
 
     const serialized = JSON.stringify(completedModuleIds);
-    if (serialized.length > MAX_PAYLOAD_BYTES) {
+    const theorySerialized = JSON.stringify(theoryPassedModuleIds);
+    if (serialized.length > MAX_PAYLOAD_BYTES || theorySerialized.length > MAX_PAYLOAD_BYTES) {
       res.status(413).json({ error: 'progress payload too large' });
       return;
     }
@@ -106,16 +122,17 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     const triesSerialized = JSON.stringify(triesByModule);
 
     db.prepare(
-      `INSERT INTO learning_progress (user_id, completed_module_ids, last_unlocked_module_id, tries_by_module, updated_at)
-       VALUES (?, ?, ?, ?, datetime('now'))
+      `INSERT INTO learning_progress (user_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, updated_at)
+       VALUES (?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(user_id) DO UPDATE SET
-         completed_module_ids   = excluded.completed_module_ids,
-         last_unlocked_module_id = excluded.last_unlocked_module_id,
-         tries_by_module        = excluded.tries_by_module,
-         updated_at             = datetime('now')`,
-    ).run(req.user.id, serialized, lastUnlockedModuleId, triesSerialized);
+         completed_module_ids      = excluded.completed_module_ids,
+         last_unlocked_module_id   = excluded.last_unlocked_module_id,
+         tries_by_module           = excluded.tries_by_module,
+         theory_passed_module_ids  = excluded.theory_passed_module_ids,
+         updated_at                = datetime('now')`,
+    ).run(req.user.id, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized);
 
-    res.json({ ok: true, completedModuleIds, lastUnlockedModuleId, triesByModule });
+    res.json({ ok: true, completedModuleIds, lastUnlockedModuleId, triesByModule, theoryPassedModuleIds });
   } catch (err) {
     next(err);
   }

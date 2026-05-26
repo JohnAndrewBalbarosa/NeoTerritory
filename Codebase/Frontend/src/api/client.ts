@@ -246,6 +246,11 @@ export async function generateAiSample(
 export interface LearningProgress {
   completedModuleIds: string[];
   lastUnlockedModuleId: string | null;
+  // D86: modules whose theoretical exam has passed. Distinct from
+  // completedModuleIds so a learner mid-pattern-module (theory passed, practical
+  // pending) resumes with the practical block unlocked. Optional so a stale
+  // backend that predates the column degrades gracefully.
+  theoryPassedModuleIds?: string[];
 }
 
 // Per-account learning-path progress. Both endpoints are jwtAuth-gated, so
@@ -258,10 +263,16 @@ export async function saveLearningProgress(
   completedModuleIds: string[],
   lastUnlockedModuleId: string | null,
   triesByModule?: Record<string, number>,
+  theoryPassedModuleIds?: string[],
 ): Promise<void> {
   await apiFetch('/api/learning/progress', {
     method: 'PUT',
-    body: JSON.stringify({ completedModuleIds, lastUnlockedModuleId, triesByModule }),
+    body: JSON.stringify({
+      completedModuleIds,
+      lastUnlockedModuleId,
+      triesByModule,
+      theoryPassedModuleIds,
+    }),
   });
 }
 

@@ -33,34 +33,45 @@ export interface LearningSeeAlso {
   label: string;
 }
 
-export interface LearningQuizPractical {
-  kind: 'quiz';
+// D86: a module ends with a Theoretical Exam (every module) and, for
+// pattern/idiom modules, a Practical Exam. The two replace the old single
+// `practical` (quiz-OR-code) union.
+
+// One multiple-choice item in a theoretical exam bank.
+export interface ExamQuestion {
   question: string;
   options: ReadonlyArray<string>;
   correctIndex: number;
   explanation?: string;
 }
 
-export interface LearningPatternPractical {
-  kind: 'pattern';
-  // Slug from PATTERNS (e.g. 'singleton', 'factory-method'). Compared
+// Theoretical Exam — a small MCQ bank. Pass = every question answered
+// correctly (threshold is the full length). Every module has one.
+export interface TheoreticalExam {
+  kind: 'theoretical';
+  questions: ReadonlyArray<ExamQuestion>;
+}
+
+// Practical Exam — a /api/analyze code-check against the microservice. Only
+// pattern/idiom modules whose pattern the catalog can detect get one;
+// Foundations and non-detectable patterns (Repository) end at the theoretical.
+export interface PracticalExam {
+  kind: 'practical';
+  // Detection slug (alias-resolved), e.g. 'singleton', 'factory'. Compared
   // against detection.patternId / patternName via normalize() so the
   // microservice's "creational.singleton" form matches "Singleton" too.
   patternSlug: string;
   // Display name shown to the user in the verdict line.
   patternName: string;
   family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
-  // Prompt sentence shown above the textarea.
+  // Prompt sentence shown above the Studio.
   prompt: string;
   // Optional editor seed. Patterns with a strict structural shape (e.g.
   // PIMPL needs a forward-declared inner Impl + unique_ptr<Impl> in order)
   // ship a scaffold so the learner can run-then-modify instead of guessing
-  // the exact token shape the analyser requires. Omitted patterns fall back
-  // to the generic "write a class" starter in PatternPractical.
+  // the exact token shape the analyser requires.
   starterCode?: string;
 }
-
-export type LearningPractical = LearningQuizPractical | LearningPatternPractical;
 
 export interface LearningModule {
   id: string;
@@ -72,11 +83,12 @@ export interface LearningModule {
   keyTerms?: ReadonlyArray<{ term: string; definition: string }>;
   summary?: string;
   seeAlso?: ReadonlyArray<LearningSeeAlso>;
-  // Round-3 (linear-gate) practical check. Foundations modules use a
-  // single-question quiz; pattern modules use a /api/analyze code-check
-  // against the microservice. Module N unlocks only when module N-1's
-  // practical is passed.
-  practical?: LearningPractical;
+  // Exams (D86). The theoretical exam gates the practical within a module; a
+  // module is complete when the theoretical passes (Foundations) and the
+  // practical passes if one exists (patterns). The linear cross-module gate
+  // then unlocks module N+1.
+  theoreticalExam?: TheoreticalExam;
+  practicalExam?: PracticalExam;
 }
 
 export interface LearningCategoryMeta {
@@ -596,169 +608,337 @@ const PATTERN_MODULES_RAW: ReadonlyArray<LearningModule> = PATTERNS.map((p) =>
 ).filter((m): m is LearningModule => m !== null);
 
 // -------------------------------------------------------------------------
-// Practicals — one per module, used as the linear-gate unlock criterion.
-// Foundations modules get a single-question multiple-choice quiz; pattern
-// modules get a code-submission check that runs against /api/analyze and
-// passes iff the target patternId / patternName is in the response.
+// Theoretical exams (D86) — one MCQ bank per module, the first gate before a
+// module's practical. Foundations modules end here (no practical exam);
+// pattern modules also expose a Studio practical exam. Pass = every question
+// in the bank answered correctly. Banks were expanded from the round-3
+// single-question quizzes so the exam reads as a real comprehension check.
 // -------------------------------------------------------------------------
 
-const FOUNDATIONS_QUIZZES: Record<string, LearningQuizPractical> = {
-  'foundations-what-is-pattern': {
-    kind: 'quiz',
-    question: 'Which best describes a design pattern?',
-    options: [
-      'A copy-pasteable code library you import.',
-      'A named structural arrangement that solves a recurring design problem.',
-      'A specific framework like Spring or React.',
-      'A unit test template applied to every class.',
-    ],
-    correctIndex: 1,
-    explanation: 'A design pattern is a named, idiomatic shape — not code you import.',
-  },
-  'foundations-why-matters': {
-    kind: 'quiz',
-    question: 'What is the practical value of knowing pattern names?',
-    options: [
-      'They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.',
-      'They guarantee the code will be bug-free.',
-      'They replace the need for testing.',
-      'They are required by the C++ standard.',
-    ],
-    correctIndex: 0,
-    explanation: 'Patterns compress engineering decisions into one shared word.',
-  },
-  'foundations-categories': {
-    kind: 'quiz',
-    question: 'Which sentence correctly maps the three main families?',
-    options: [
-      'Creational connects classes, Structural decides communication, Behavioural makes objects.',
-      'Creational makes objects, Structural connects them, Behavioural decides how they communicate.',
-      'All three families do the same thing under different names.',
-      'Structural is a subset of Behavioural in modern C++.',
-    ],
-    correctIndex: 1,
-    explanation: 'Creational → make. Structural → connect. Behavioural → talk.',
-  },
-  'foundations-oop': {
-    kind: 'quiz',
-    question: 'Why are design patterns described in terms of classes and objects?',
-    options: [
-      'Because patterns predate procedural programming.',
-      'Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.',
-      'Because every language must use OOP.',
-      'Because the C++ compiler enforces patterns natively.',
-    ],
-    correctIndex: 1,
-    explanation: 'Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.',
-  },
-  'foundations-interface-principle': {
-    kind: 'quiz',
-    question: '"Program to an interface, not an implementation" means…',
-    options: [
-      'Always use C++ pure virtual classes.',
-      'Code should depend on what something does, not which concrete class is doing it.',
-      'Replace every class with a template.',
-      'Avoid writing concrete classes entirely.',
-    ],
-    correctIndex: 1,
-    explanation: 'Depend on contracts (what), not identities (who).',
-  },
-  'foundations-code-structure': {
-    kind: 'quiz',
-    question: 'Why do pattern detectors walk an AST instead of grep-searching source text?',
-    options: [
-      'Because grep is too slow.',
-      'Because code is a tree; patterns are shapes in that tree, and matching needs structural context.',
-      'Because AST parsers are required by ISO C++.',
-      'Because text search is forbidden on Linux.',
-    ],
-    correctIndex: 1,
-    explanation: 'Patterns are tree shapes, not text shapes.',
-  },
-  'foundations-real-software': {
-    kind: 'quiz',
-    question: 'Why does recognising patterns matter in real-world codebases?',
-    options: [
-      'Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.',
-      'Patterns are mandated by every linter.',
-      'They make compilation faster.',
-      'They eliminate the need for code review.',
-    ],
-    correctIndex: 0,
-    explanation: 'When docs go stale, the shape is what is still true.',
-  },
-  'foundations-beginner-mistakes': {
-    kind: 'quiz',
-    question: 'What is the most common beginner mistake with design patterns?',
-    options: [
-      'Refusing to use any patterns at all.',
-      'Forcing a pattern onto a problem that does not need it ("pattern fever").',
-      'Always preferring composition over inheritance.',
-      'Reading too many books.',
-    ],
-    correctIndex: 1,
-    explanation: 'Use patterns to solve problems you actually have — not for their own sake.',
-  },
-  'foundations-ambiguity': {
-    kind: 'quiz',
-    question: 'When two patterns fit the same class, the detector should…',
-    options: [
-      'Silently pick one and hide the other.',
-      'Surface both and ask the human — ambiguity is information, not failure.',
-      'Reject the class entirely.',
-      'Rewrite the source to remove ambiguity.',
-    ],
-    correctIndex: 1,
-    explanation: 'Ambiguity tells you human judgement is required.',
-  },
-  'foundations-connotative-definition': {
-    kind: 'quiz',
-    question: 'What kinds of tokens are most useful for distinguishing one pattern from another?',
-    options: [
-      'Any single keyword that appears in the class.',
-      'Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.',
-      'Comments only.',
-      'Function lengths.',
-    ],
-    correctIndex: 1,
-    explanation: 'Add structural descriptions until ambiguity disappears.',
-  },
-  'foundations-structural-rules': {
-    kind: 'quiz',
-    question: 'In the matcher’s vocabulary, what does "must-have" mean for a pattern?',
-    options: [
-      'Every listed token must appear at least once.',
-      'At least one combo from the must-have set must fire for the class to match.',
-      'The class must contain the pattern name as a comment.',
-      'The class must inherit from a sealed base.',
-    ],
-    correctIndex: 1,
-    explanation: 'must-have = at least one combo present. must-not-have = any one match rejects the class.',
-  },
-  'foundations-context-variation': {
-    kind: 'quiz',
-    question: 'How does the analyser handle team-specific naming conventions?',
-    options: [
-      'It refuses to match anything that does not follow Gang-of-Four naming.',
-      'It standardises on language structure for matching; team conventions are layered on top for culture.',
-      'It auto-renames the source.',
-      'It only matches identifiers spelled in PascalCase.',
-    ],
-    correctIndex: 1,
-    explanation: 'Language structure is the universal ground; team style sits on top.',
-  },
-  'foundations-postrequisite': {
-    kind: 'quiz',
-    question: 'After Foundations, what kind of question is the catalog NOT trying to answer?',
-    options: [
-      'Which structural shape this class matches.',
-      'Whether the chosen pattern fits the team’s organisational conventions and goals.',
-      'Which stdlib symbols are present.',
-      'Whether the class declares a constructor.',
-    ],
-    correctIndex: 1,
-    explanation: 'Patterns are also a conversation — the organisational fit is yours to decide.',
-  },
+const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
+  'foundations-what-is-pattern': [
+    {
+      question: 'Which best describes a design pattern?',
+      options: [
+        'A copy-pasteable code library you import.',
+        'A named structural arrangement that solves a recurring design problem.',
+        'A specific framework like Spring or React.',
+        'A unit test template applied to every class.',
+      ],
+      correctIndex: 1,
+      explanation: 'A design pattern is a named, idiomatic shape — not code you import.',
+    },
+    {
+      question: 'Why does naming a recurring shape help a team?',
+      options: [
+        'One word replaces a paragraph of structural explanation.',
+        'It makes the compiler emit faster code.',
+        'It forces every class to inherit from a base.',
+        'It guarantees the design is correct.',
+      ],
+      correctIndex: 0,
+      explanation: 'Naming the shape turns structure into shared vocabulary.',
+    },
+    {
+      question: 'Why does the same design problem keep reappearing across programs?',
+      options: [
+        'Because programmers copy each other’s files.',
+        'Because the underlying language facts (inheritance, ownership, dispatch) keep producing the same shapes.',
+        'Because the C++ standard mandates it.',
+        'Because IDEs auto-generate it.',
+      ],
+      correctIndex: 1,
+      explanation: 'The recurring shape is a consequence of the language, so it is worth naming.',
+    },
+  ],
+  'foundations-why-matters': [
+    {
+      question: 'What is the practical value of knowing pattern names?',
+      options: [
+        'They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.',
+        'They guarantee the code will be bug-free.',
+        'They replace the need for testing.',
+        'They are required by the C++ standard.',
+      ],
+      correctIndex: 0,
+      explanation: 'Patterns compress engineering decisions into one shared word.',
+    },
+    {
+      question: 'How do patterns affect a beginner joining a team?',
+      options: [
+        'They slow onboarding because there is more to memorise.',
+        'A recognised pattern name lets a reviewer read intent in seconds, so the beginner ships faster.',
+        'They make code reviews unnecessary.',
+        'They only matter to architects, not new hires.',
+      ],
+      correctIndex: 1,
+      explanation: 'Pattern literacy collapses the time spent inferring a codebase’s conventions.',
+    },
+  ],
+  'foundations-categories': [
+    {
+      question: 'Which sentence correctly maps the three main families?',
+      options: [
+        'Creational connects classes, Structural decides communication, Behavioural makes objects.',
+        'Creational makes objects, Structural connects them, Behavioural decides how they communicate.',
+        'All three families do the same thing under different names.',
+        'Structural is a subset of Behavioural in modern C++.',
+      ],
+      correctIndex: 1,
+      explanation: 'Creational → make. Structural → connect. Behavioural → talk.',
+    },
+    {
+      question: 'Why does this site treat Idioms as a fourth bucket alongside the three GoF families?',
+      options: [
+        'Because the Gang of Four defined four families.',
+        'Because modern C++ idioms (PIMPL, Method Chaining) are not GoF but appear often enough to detect.',
+        'Because every idiom is also a Creational pattern.',
+        'Because idioms replace Structural patterns.',
+      ],
+      correctIndex: 1,
+      explanation: 'Idioms are common detectable shapes the catalog adds beyond the 23 GoF patterns.',
+    },
+  ],
+  'foundations-oop': [
+    {
+      question: 'Why are design patterns described in terms of classes and objects?',
+      options: [
+        'Because patterns predate procedural programming.',
+        'Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.',
+        'Because every language must use OOP.',
+        'Because the C++ compiler enforces patterns natively.',
+      ],
+      correctIndex: 1,
+      explanation: 'Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.',
+    },
+    {
+      question: 'Which definition matches polymorphism?',
+      options: [
+        'Hiding the internal details of a class.',
+        'A single action that behaves differently depending on the actual object type.',
+        'The blueprint that describes how objects are built.',
+        'Reusing behaviour from a base class.',
+      ],
+      correctIndex: 1,
+      explanation: 'Polymorphism = one action, many forms, resolved by the runtime type.',
+    },
+  ],
+  'foundations-interface-principle': [
+    {
+      question: '"Program to an interface, not an implementation" means…',
+      options: [
+        'Always use C++ pure virtual classes.',
+        'Code should depend on what something does, not which concrete class is doing it.',
+        'Replace every class with a template.',
+        'Avoid writing concrete classes entirely.',
+      ],
+      correctIndex: 1,
+      explanation: 'Depend on contracts (what), not identities (who).',
+    },
+    {
+      question: 'Which patterns rest directly on this principle?',
+      options: [
+        'Strategy, Factory, Adapter, and Bridge.',
+        'Only Singleton.',
+        'No patterns — it is unrelated to patterns.',
+        'Only Creational patterns.',
+      ],
+      correctIndex: 0,
+      explanation: 'They give the abstraction a name and a recognisable shape.',
+    },
+  ],
+  'foundations-code-structure': [
+    {
+      question: 'Why do pattern detectors walk an AST instead of grep-searching source text?',
+      options: [
+        'Because grep is too slow.',
+        'Because code is a tree; patterns are shapes in that tree, and matching needs structural context.',
+        'Because AST parsers are required by ISO C++.',
+        'Because text search is forbidden on Linux.',
+      ],
+      correctIndex: 1,
+      explanation: 'Patterns are tree shapes, not text shapes.',
+    },
+    {
+      question: 'How does CodiNeo keep a detection result traceable to the user’s source?',
+      options: [
+        'It rewrites the source in place.',
+        'It mirrors the parse tree into a virtual copy and runs checks there, never mutating the original.',
+        'It only reports line numbers, never structure.',
+        'It discards the parse tree after analysis.',
+      ],
+      correctIndex: 1,
+      explanation: 'The original parse tree is never mutated, so every result maps back to specific lines.',
+    },
+  ],
+  'foundations-real-software': [
+    {
+      question: 'Why does recognising patterns matter in real-world codebases?',
+      options: [
+        'Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.',
+        'Patterns are mandated by every linter.',
+        'They make compilation faster.',
+        'They eliminate the need for code review.',
+      ],
+      correctIndex: 0,
+      explanation: 'When docs go stale, the shape is what is still true.',
+    },
+    {
+      question: 'Which pairing of system and pattern is plausible?',
+      options: [
+        'A compiler using Visitor to walk its syntax tree.',
+        'A compiler that cannot use any pattern.',
+        'An operating system that forbids Command.',
+        'A UI framework that never observes state.',
+      ],
+      correctIndex: 0,
+      explanation: 'Visitor is a classic fit for traversing compiler ASTs; patterns appear across real systems.',
+    },
+  ],
+  'foundations-beginner-mistakes': [
+    {
+      question: 'What is the most common beginner mistake with design patterns?',
+      options: [
+        'Refusing to use any patterns at all.',
+        'Forcing a pattern onto a problem that does not need it ("pattern fever").',
+        'Always preferring composition over inheritance.',
+        'Reading too many books.',
+      ],
+      correctIndex: 1,
+      explanation: 'Use patterns to solve problems you actually have — not for their own sake.',
+    },
+    {
+      question: 'Why is making classes depend heavily on each other a trap?',
+      options: [
+        'Tight coupling is always faster at runtime.',
+        'Loose connections are easier to change and maintain; tight coupling resists change.',
+        'The compiler rejects loosely coupled code.',
+        'Coupling has no effect on maintenance.',
+      ],
+      correctIndex: 1,
+      explanation: 'Loose coupling beats premature abstraction and rigid dependencies.',
+    },
+  ],
+  'foundations-ambiguity': [
+    {
+      question: 'When two patterns fit the same class, the detector should…',
+      options: [
+        'Silently pick one and hide the other.',
+        'Surface both and ask the human — ambiguity is information, not failure.',
+        'Reject the class entirely.',
+        'Rewrite the source to remove ambiguity.',
+      ],
+      correctIndex: 1,
+      explanation: 'Ambiguity tells you human judgement is required.',
+    },
+    {
+      question: 'Which pair genuinely shares a structural shape?',
+      options: [
+        'Builder and Method Chaining, which both rely on `return *this`.',
+        'Singleton and Observer, which share no structure.',
+        'Factory and Iterator, which are identical.',
+        'Adapter and Singleton, which both restrict instances.',
+      ],
+      correctIndex: 0,
+      explanation: 'Shared shapes (like `return *this`) are why some classes are structurally ambiguous.',
+    },
+  ],
+  'foundations-connotative-definition': [
+    {
+      question: 'What kinds of tokens are most useful for distinguishing one pattern from another?',
+      options: [
+        'Any single keyword that appears in the class.',
+        'Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.',
+        'Comments only.',
+        'Function lengths.',
+      ],
+      correctIndex: 1,
+      explanation: 'Add structural descriptions until ambiguity disappears.',
+    },
+    {
+      question: 'How does adding descriptions change a definition (connotation)?',
+      options: [
+        'It widens what counts, so more things qualify.',
+        'It narrows what counts, so the meaning gets more specific.',
+        'It has no effect on specificity.',
+        'It only changes the name, not the meaning.',
+      ],
+      correctIndex: 1,
+      explanation: 'More descriptions = more specific meaning and fewer things that qualify.',
+    },
+  ],
+  'foundations-structural-rules': [
+    {
+      question: 'In the matcher’s vocabulary, what does "must-have" mean for a pattern?',
+      options: [
+        'Every listed token must appear at least once.',
+        'At least one combo from the must-have set must fire for the class to match.',
+        'The class must contain the pattern name as a comment.',
+        'The class must inherit from a sealed base.',
+      ],
+      correctIndex: 1,
+      explanation: 'must-have = at least one combo present.',
+    },
+    {
+      question: 'What does a "must-not-have" combo do when it fires?',
+      options: [
+        'Nothing — it is only advisory.',
+        'It rejects the class for that pattern even if the rest matches.',
+        'It adds the pattern as a second candidate.',
+        'It renames the class.',
+      ],
+      correctIndex: 1,
+      explanation: 'A single must-not-have match rejects the class for that pattern.',
+    },
+  ],
+  'foundations-context-variation': [
+    {
+      question: 'How does the analyser handle team-specific naming conventions?',
+      options: [
+        'It refuses to match anything that does not follow Gang-of-Four naming.',
+        'It standardises on language structure for matching; team conventions are layered on top for culture.',
+        'It auto-renames the source.',
+        'It only matches identifiers spelled in PascalCase.',
+      ],
+      correctIndex: 1,
+      explanation: 'Language structure is the universal ground; team style sits on top.',
+    },
+    {
+      question: 'Why does a stable, structure-based rule matter for CodiNeo specifically?',
+      options: [
+        'Because detection feeds automatic unit-test generation, which needs a consistent rule.',
+        'Because it makes the UI prettier.',
+        'Because the C++ standard requires it.',
+        'Because team naming is always identical.',
+      ],
+      correctIndex: 0,
+      explanation: 'A stable structural rule is what makes downstream tooling (test generation) reliable.',
+    },
+  ],
+  'foundations-postrequisite': [
+    {
+      question: 'After Foundations, what kind of question is the catalog NOT trying to answer?',
+      options: [
+        'Which structural shape this class matches.',
+        'Whether the chosen pattern fits the team’s organisational conventions and goals.',
+        'Which stdlib symbols are present.',
+        'Whether the class declares a constructor.',
+      ],
+      correctIndex: 1,
+      explanation: 'Patterns are also a conversation — the organisational fit is yours to decide.',
+    },
+    {
+      question: 'The post-Foundations questions are intentionally…',
+      options: [
+        'Closed, with one correct answer the analyser grades.',
+        'Open-ended — every working developer should have an opinion, but there is no single right answer.',
+        'About C++ syntax only.',
+        'Graded by this module before you continue.',
+      ],
+      correctIndex: 1,
+      explanation: 'They are discussion prompts for your next code review, not graded items.',
+    },
+  ],
 };
 
 // Slugs the analyser actually emits — derived from the catalog under
@@ -802,30 +982,675 @@ const PATTERN_SLUG_ALIAS: Record<string, { slug: string; name: string }> = {
   'strategy': { slug: 'strategyinterface', name: 'Strategy Interface' },
 };
 
-// Patterns with NO catalog detector fall back to a quiz so the linear gate
-// stays pass-able. Repository is the only learning pattern that ships no
-// catalog JSON (it is not a Gang-of-Four pattern); every other pattern is now
-// detectable and uses a code-submission practical instead. If a future pattern
-// is removed from the catalog, add a quiz here.
-const NON_DETECTED_QUIZZES: Record<string, LearningQuizPractical> = {
-  repository: {
-    kind: 'quiz',
-    question: 'Repository is not a Gang of Four pattern. Which sentence captures its purpose best?',
-    options: [
-      'Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.',
-      'Guarantee a class has only one instance.',
-      'Wrap an object so it conforms to a different interface.',
-      'Pick which subclass to instantiate at runtime.',
-    ],
-    correctIndex: 0,
-    explanation: 'Repository (Evans 2003, "Domain-Driven Design"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted.',
-  },
+// Repository ships no catalog JSON (it is not a Gang-of-Four pattern), so its
+// module ends at the theoretical exam — no practical. Keyed by router slug.
+const NON_DETECTED_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
+  repository: [
+    {
+      question: 'Repository is not a Gang of Four pattern. Which sentence captures its purpose best?',
+      options: [
+        'Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.',
+        'Guarantee a class has only one instance.',
+        'Wrap an object so it conforms to a different interface.',
+        'Pick which subclass to instantiate at runtime.',
+      ],
+      correctIndex: 0,
+      explanation: 'Repository (Evans 2003, "Domain-Driven Design"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted.',
+    },
+    {
+      question: 'Why does Repository have no practical exam on this site?',
+      options: [
+        'It is too simple to test.',
+        'It ships no catalog detector (not a GoF pattern), so the analyser cannot tag it — the module ends at the theoretical exam.',
+        'Practical exams only exist for Creational patterns.',
+        'Repository is the same as Singleton.',
+      ],
+      correctIndex: 1,
+      explanation: 'Only catalog-detectable patterns get a Studio practical; Repository ends at the theoretical exam.',
+    },
+  ],
 };
 
-function attachPractical(module: LearningModule): LearningModule {
+// Per-pattern theoretical exam banks, keyed by the detectionSlug attachExams
+// computes (alias-resolved). Every detectable pattern/idiom has one so the
+// theoretical gate is a real comprehension check, not a single question.
+// A pattern missing from this map falls back to a generated question built
+// from its catalog copy so the gate always stays pass-able.
+const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
+  // ---- creational ----
+  singleton: [
+    {
+      question: 'What does Singleton guarantee?',
+      options: [
+        'A class has exactly one instance, with a global access point to it.',
+        'A class can be subclassed freely.',
+        'Objects are created from a prototype.',
+        'Construction is split across a builder.',
+      ],
+      correctIndex: 0,
+      explanation: 'Singleton restricts a class to one instance and provides a single access point.',
+    },
+    {
+      question: 'Which structural signal typically marks a Singleton in C++?',
+      options: [
+        'A public constructor and many instances.',
+        'A private/deleted constructor plus a static accessor returning the one instance.',
+        'A pure virtual interface with no implementation.',
+        'A `return *this` chain of setters.',
+      ],
+      correctIndex: 1,
+      explanation: 'Hidden constructor + static accessor is the recognisable shape.',
+    },
+  ],
+  builder: [
+    {
+      question: 'What problem does Builder solve?',
+      options: [
+        'Constructing a complex object step by step, separating construction from representation.',
+        'Ensuring only one instance exists.',
+        'Letting objects notify observers of changes.',
+        'Adapting one interface to another.',
+      ],
+      correctIndex: 0,
+      explanation: 'Builder assembles a complex object incrementally.',
+    },
+    {
+      question: 'Which token shape co-occurs with Builder’s fluent style?',
+      options: [
+        '`return *this;` from setter-style methods so calls chain.',
+        'A static instance accessor.',
+        'A forward-declared inner Impl.',
+        'A visitor double-dispatch.',
+      ],
+      correctIndex: 0,
+      explanation: 'Fluent builders return `*this`, which is why Builder and Method Chaining share a shape.',
+    },
+  ],
+  'method-chaining': [
+    {
+      question: 'What is Method Chaining (a fluent idiom)?',
+      options: [
+        'Methods return the receiver (`*this`) so calls chain into one expression.',
+        'A class guarantees a single instance.',
+        'An algorithm is selected at runtime via an interface.',
+        'A request is wrapped as an object.',
+      ],
+      correctIndex: 0,
+      explanation: 'Method Chaining returns `*this` to enable fluent call chains.',
+    },
+    {
+      question: 'Why is Method Chaining easy to confuse with Builder?',
+      options: [
+        'Both rely on `return *this`, so they share a structural shape.',
+        'Both restrict instances to one.',
+        'Both traverse a tree.',
+        'Both notify observers.',
+      ],
+      correctIndex: 0,
+      explanation: 'The shared `return *this` shape is a built-in ambiguity.',
+    },
+  ],
+  factory: [
+    {
+      question: 'What does Factory Method do?',
+      options: [
+        'Defines an interface for creating an object but lets subclasses decide which class to instantiate.',
+        'Guarantees one instance of a class.',
+        'Composes objects into tree structures.',
+        'Adds behaviour to an object dynamically.',
+      ],
+      correctIndex: 0,
+      explanation: 'Factory Method defers instantiation to subclasses behind a creation interface.',
+    },
+    {
+      question: 'Which principle does Factory Method rest on?',
+      options: [
+        'Program to an interface — callers depend on the product abstraction, not a concrete class.',
+        'Always inherit, never compose.',
+        'Hide every constructor.',
+        'Mutate global state.',
+      ],
+      correctIndex: 0,
+      explanation: 'Callers route through the abstraction, so swapping the concrete product is localised.',
+    },
+  ],
+  'abstract-factory': [
+    {
+      question: 'What does Abstract Factory provide?',
+      options: [
+        'An interface for creating families of related objects without specifying their concrete classes.',
+        'A single global instance.',
+        'A way to traverse a collection.',
+        'A wrapper that changes an interface.',
+      ],
+      correctIndex: 0,
+      explanation: 'Abstract Factory makes whole families of products interchangeable.',
+    },
+    {
+      question: 'How does Abstract Factory differ from Factory Method?',
+      options: [
+        'Abstract Factory creates families of products; Factory Method creates one product via subclassing.',
+        'They are identical.',
+        'Abstract Factory guarantees one instance.',
+        'Factory Method composes trees.',
+      ],
+      correctIndex: 0,
+      explanation: 'Abstract Factory groups several related factory methods into one family interface.',
+    },
+  ],
+  prototype: [
+    {
+      question: 'What does Prototype do?',
+      options: [
+        'Creates new objects by cloning an existing instance (the prototype).',
+        'Restricts a class to one instance.',
+        'Selects an algorithm at runtime.',
+        'Wraps a request as an object.',
+      ],
+      correctIndex: 0,
+      explanation: 'Prototype produces new objects by copying a prototypical instance.',
+    },
+    {
+      question: 'When is Prototype most useful?',
+      options: [
+        'When object construction is expensive or its concrete class is unknown, but a copyable instance exists.',
+        'When you need exactly one instance.',
+        'When you must adapt two interfaces.',
+        'When you traverse a tree of nodes.',
+      ],
+      correctIndex: 0,
+      explanation: 'Cloning sidesteps costly or class-specific construction.',
+    },
+  ],
+  // ---- structural ----
+  adapter: [
+    {
+      question: 'What does Adapter do?',
+      options: [
+        'Converts the interface of a class into another interface clients expect.',
+        'Guarantees a single instance.',
+        'Adds responsibilities to an object dynamically.',
+        'Defines a family of algorithms.',
+      ],
+      correctIndex: 0,
+      explanation: 'Adapter makes incompatible interfaces work together by translating one to the other.',
+    },
+    {
+      question: 'Why can Adapter look like Decorator or Proxy?',
+      options: [
+        'All three hold a wrapped member and forward calls to it.',
+        'All three guarantee one instance.',
+        'All three clone a prototype.',
+        'All three traverse a collection.',
+      ],
+      correctIndex: 0,
+      explanation: 'The wrap-and-forward shape is shared, so these three are structurally ambiguous.',
+    },
+  ],
+  decorator: [
+    {
+      question: 'What does Decorator do?',
+      options: [
+        'Attaches additional responsibilities to an object dynamically, as a flexible alternative to subclassing.',
+        'Restricts a class to one instance.',
+        'Picks a subclass to instantiate.',
+        'Separates an abstraction from its implementation.',
+      ],
+      correctIndex: 0,
+      explanation: 'Decorator layers behaviour around an object without changing its interface.',
+    },
+    {
+      question: 'How does Decorator differ from a plain Adapter?',
+      options: [
+        'Decorator keeps the same interface and adds behaviour; Adapter changes the interface.',
+        'Decorator guarantees a single instance.',
+        'Decorator clones objects.',
+        'They are identical.',
+      ],
+      correctIndex: 0,
+      explanation: 'Same interface + added behaviour is Decorator; interface translation is Adapter.',
+    },
+  ],
+  proxy: [
+    {
+      question: 'What does Proxy do?',
+      options: [
+        'Provides a surrogate or placeholder for another object to control access to it.',
+        'Defines a family of related products.',
+        'Notifies observers of state changes.',
+        'Builds an object step by step.',
+      ],
+      correctIndex: 0,
+      explanation: 'Proxy stands in for the real subject and controls access (lazy load, remote, protection).',
+    },
+    {
+      question: 'What distinguishes Proxy from Decorator structurally in intent?',
+      options: [
+        'Proxy controls access to the same interface; Decorator adds behaviour to it.',
+        'Proxy changes the interface; Decorator restricts instances.',
+        'Proxy clones; Decorator traverses.',
+        'There is no difference at all.',
+      ],
+      correctIndex: 0,
+      explanation: 'Both wrap-and-forward; intent differs — access control vs added responsibility.',
+    },
+  ],
+  bridge: [
+    {
+      question: 'What does Bridge do?',
+      options: [
+        'Decouples an abstraction from its implementation so the two can vary independently.',
+        'Guarantees one instance.',
+        'Wraps a request as an object.',
+        'Clones a prototype.',
+      ],
+      correctIndex: 0,
+      explanation: 'Bridge splits abstraction and implementation into separate hierarchies joined by composition.',
+    },
+    {
+      question: 'Which principle underpins Bridge?',
+      options: [
+        'Program to an interface — the abstraction holds a pointer to an implementor interface.',
+        'Always subclass for every variation.',
+        'Hide all constructors.',
+        'Mutate shared global state.',
+      ],
+      correctIndex: 0,
+      explanation: 'The abstraction composes an implementor abstraction rather than inheriting concretes.',
+    },
+  ],
+  composite: [
+    {
+      question: 'What does Composite do?',
+      options: [
+        'Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.',
+        'Restricts a class to one instance.',
+        'Converts one interface to another.',
+        'Selects an algorithm at runtime.',
+      ],
+      correctIndex: 0,
+      explanation: 'Composite gives leaves and containers a common interface for whole-part trees.',
+    },
+    {
+      question: 'What is the key structural feature of Composite?',
+      options: [
+        'A component interface that both leaves and containers implement; containers hold a collection of components.',
+        'A private constructor and static accessor.',
+        'A `return *this` chain.',
+        'A forward-declared Impl.',
+      ],
+      correctIndex: 0,
+      explanation: 'Uniform component interface + child collection in the container is the shape.',
+    },
+  ],
+  facade: [
+    {
+      question: 'What does Facade do?',
+      options: [
+        'Provides a unified, simpler interface to a set of interfaces in a subsystem.',
+        'Guarantees one instance.',
+        'Adds behaviour dynamically.',
+        'Clones objects.',
+      ],
+      correctIndex: 0,
+      explanation: 'Facade gives a subsystem one simple front door.',
+    },
+    {
+      question: 'Does using a Facade hide the subsystem entirely?',
+      options: [
+        'No — it offers a simpler entry point but clients can still use the subsystem directly if needed.',
+        'Yes — the subsystem becomes inaccessible.',
+        'It deletes the subsystem.',
+        'It restricts the subsystem to one instance.',
+      ],
+      correctIndex: 0,
+      explanation: 'Facade simplifies access without forbidding direct subsystem use.',
+    },
+  ],
+  flyweight: [
+    {
+      question: 'What does Flyweight do?',
+      options: [
+        'Uses sharing to support large numbers of fine-grained objects efficiently by separating intrinsic and extrinsic state.',
+        'Guarantees one instance of a class.',
+        'Converts one interface to another.',
+        'Builds an object step by step.',
+      ],
+      correctIndex: 0,
+      explanation: 'Flyweight shares intrinsic state across many objects; extrinsic state is passed in.',
+    },
+    {
+      question: 'What is "intrinsic" state in Flyweight?',
+      options: [
+        'State shared and stored in the flyweight, independent of context.',
+        'State unique to each use, passed in by the client.',
+        'The single global instance.',
+        'The wrapped subject.',
+      ],
+      correctIndex: 0,
+      explanation: 'Intrinsic = shareable/context-free; extrinsic = supplied per use.',
+    },
+  ],
+  // ---- behavioural ----
+  strategyinterface: [
+    {
+      question: 'What does Strategy do?',
+      options: [
+        'Defines a family of algorithms, encapsulates each, and makes them interchangeable behind one interface.',
+        'Guarantees a single instance.',
+        'Composes objects into trees.',
+        'Clones a prototype.',
+      ],
+      correctIndex: 0,
+      explanation: 'Strategy lets the algorithm vary independently of the clients that use it.',
+    },
+    {
+      question: 'How does a context use a Strategy?',
+      options: [
+        'It holds a pointer to the strategy interface and delegates the varying step to it.',
+        'It inherits from every concrete algorithm.',
+        'It hides its constructor.',
+        'It returns `*this` to chain.',
+      ],
+      correctIndex: 0,
+      explanation: 'The context composes a strategy interface and delegates, so algorithms swap freely.',
+    },
+  ],
+  observer: [
+    {
+      question: 'What does Observer do?',
+      options: [
+        'Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.',
+        'Restricts a class to one instance.',
+        'Converts one interface to another.',
+        'Builds an object step by step.',
+      ],
+      correctIndex: 0,
+      explanation: 'Observer pushes change notifications to a list of subscribers.',
+    },
+    {
+      question: 'What is the subject’s responsibility in Observer?',
+      options: [
+        'Maintain a list of observers and notify them on state change.',
+        'Clone itself on demand.',
+        'Translate interfaces.',
+        'Guarantee a single instance.',
+      ],
+      correctIndex: 0,
+      explanation: 'The subject keeps the observer list and broadcasts updates.',
+    },
+  ],
+  iterator: [
+    {
+      question: 'What does Iterator do?',
+      options: [
+        'Provides sequential access to a collection’s elements without exposing its underlying representation.',
+        'Guarantees one instance.',
+        'Adds behaviour dynamically.',
+        'Decouples abstraction from implementation.',
+      ],
+      correctIndex: 0,
+      explanation: 'Iterator walks a collection without revealing its internal structure.',
+    },
+    {
+      question: 'Why is exposing iteration via an iterator useful?',
+      options: [
+        'Multiple traversals can run independently and the collection’s internals stay hidden.',
+        'It forces the collection to be a singleton.',
+        'It clones every element.',
+        'It changes the collection’s interface to match a client.',
+      ],
+      correctIndex: 0,
+      explanation: 'The iterator encapsulates position, so traversal is decoupled from storage.',
+    },
+  ],
+  command: [
+    {
+      question: 'What does Command do?',
+      options: [
+        'Encapsulates a request as an object, letting you parameterise, queue, log, and undo operations.',
+        'Guarantees a single instance.',
+        'Composes objects into trees.',
+        'Shares fine-grained objects.',
+      ],
+      correctIndex: 0,
+      explanation: 'Command turns an action into a first-class object.',
+    },
+    {
+      question: 'What does turning a request into an object enable?',
+      options: [
+        'Queuing, logging, and undo/redo of operations.',
+        'Guaranteeing one instance.',
+        'Interface translation.',
+        'Cloning prototypes.',
+      ],
+      correctIndex: 0,
+      explanation: 'A reified request can be stored, replayed, and reversed.',
+    },
+  ],
+  state: [
+    {
+      question: 'What does State do?',
+      options: [
+        'Lets an object alter its behaviour when its internal state changes, appearing to change its class.',
+        'Guarantees a single instance.',
+        'Converts one interface to another.',
+        'Builds an object step by step.',
+      ],
+      correctIndex: 0,
+      explanation: 'State delegates behaviour to a state object that can be swapped at runtime.',
+    },
+    {
+      question: 'How does State differ from Strategy structurally?',
+      options: [
+        'They share a shape (delegate to an interface); State transitions between states internally, Strategy is chosen by the client.',
+        'State guarantees one instance.',
+        'State clones prototypes.',
+        'They are unrelated.',
+      ],
+      correctIndex: 0,
+      explanation: 'Same delegation shape; intent differs — internal transitions vs client-chosen algorithm.',
+    },
+  ],
+  'template-method': [
+    {
+      question: 'What does Template Method do?',
+      options: [
+        'Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.',
+        'Guarantees a single instance.',
+        'Composes objects into trees.',
+        'Encapsulates a request as an object.',
+      ],
+      correctIndex: 0,
+      explanation: 'Template Method fixes the algorithm’s structure and lets subclasses fill in steps.',
+    },
+    {
+      question: 'Which mechanism does Template Method rely on?',
+      options: [
+        'A non-virtual base method calling overridable (often virtual) primitive steps.',
+        'A static accessor returning one instance.',
+        '`return *this` chaining.',
+        'A forward-declared Impl.',
+      ],
+      correctIndex: 0,
+      explanation: 'The fixed method calls virtual hook steps the subclass overrides.',
+    },
+  ],
+  'chain-of-responsibility': [
+    {
+      question: 'What does Chain of Responsibility do?',
+      options: [
+        'Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.',
+        'Guarantees one instance.',
+        'Adapts one interface to another.',
+        'Clones a prototype.',
+      ],
+      correctIndex: 0,
+      explanation: 'Each handler either handles the request or forwards it to the next.',
+    },
+    {
+      question: 'What does each handler hold?',
+      options: [
+        'A reference to the next handler in the chain.',
+        'A static single instance.',
+        'A wrapped subject for access control.',
+        'A child collection of components.',
+      ],
+      correctIndex: 0,
+      explanation: 'The "next handler" link is what forms the chain.',
+    },
+  ],
+  mediator: [
+    {
+      question: 'What does Mediator do?',
+      options: [
+        'Encapsulates how a set of objects interact, so they refer to the mediator instead of each other.',
+        'Guarantees a single instance.',
+        'Converts one interface to another.',
+        'Builds an object step by step.',
+      ],
+      correctIndex: 0,
+      explanation: 'Mediator centralises many-to-many communication into one hub.',
+    },
+    {
+      question: 'What coupling problem does Mediator reduce?',
+      options: [
+        'Dense object-to-object references; colleagues talk through the mediator instead.',
+        'Too few instances of a class.',
+        'Interface mismatch between two libraries.',
+        'Expensive object construction.',
+      ],
+      correctIndex: 0,
+      explanation: 'Mediator turns a tangle of direct references into spokes around a hub.',
+    },
+  ],
+  memento: [
+    {
+      question: 'What does Memento do?',
+      options: [
+        'Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.',
+        'Guarantees one instance.',
+        'Adapts one interface to another.',
+        'Composes objects into trees.',
+      ],
+      correctIndex: 0,
+      explanation: 'Memento snapshots state for later restore while keeping internals hidden.',
+    },
+    {
+      question: 'Which roles does Memento define?',
+      options: [
+        'Originator (owns state), Memento (snapshot), Caretaker (holds snapshots).',
+        'Subject and Observer.',
+        'Abstraction and Implementor.',
+        'Component and Leaf.',
+      ],
+      correctIndex: 0,
+      explanation: 'Originator creates/restores; Caretaker stores; Memento is the opaque snapshot.',
+    },
+  ],
+  interpreter: [
+    {
+      question: 'What does Interpreter do?',
+      options: [
+        'Defines a grammar representation and an interpreter that evaluates sentences in the language.',
+        'Guarantees a single instance.',
+        'Converts one interface to another.',
+        'Shares fine-grained objects.',
+      ],
+      correctIndex: 0,
+      explanation: 'Interpreter models grammar rules as classes that evaluate expressions.',
+    },
+    {
+      question: 'How are grammar rules usually represented in Interpreter?',
+      options: [
+        'As a class hierarchy of expression nodes with an `interpret()` operation.',
+        'As a single static instance.',
+        'As a fluent `return *this` chain.',
+        'As a forward-declared Impl.',
+      ],
+      correctIndex: 0,
+      explanation: 'Each rule is an expression class implementing interpret(); composites build the tree.',
+    },
+  ],
+  visitor: [
+    {
+      question: 'What does Visitor do?',
+      options: [
+        'Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.',
+        'Guarantees one instance.',
+        'Adapts one interface to another.',
+        'Builds an object step by step.',
+      ],
+      correctIndex: 0,
+      explanation: 'Visitor externalises operations so new ones don’t touch the element classes.',
+    },
+    {
+      question: 'Which mechanism makes Visitor work?',
+      options: [
+        'Double dispatch — element.accept(visitor) calls visitor.visit(element).',
+        'A static single-instance accessor.',
+        '`return *this` chaining.',
+        'A wrapped subject for access control.',
+      ],
+      correctIndex: 0,
+      explanation: 'accept/visit double dispatch routes to the right visit overload per element type.',
+    },
+  ],
+  // ---- idiom ----
+  pimpl: [
+    {
+      question: 'What does the PIMPL idiom (Pointer to Implementation) do?',
+      options: [
+        'Moves a class’s private members into a hidden implementation type behind a pointer, cutting compile-time coupling.',
+        'Guarantees a single instance.',
+        'Defines a family of algorithms.',
+        'Notifies observers of changes.',
+      ],
+      correctIndex: 0,
+      explanation: 'PIMPL hides implementation details behind an opaque pointer, reducing header dependencies.',
+    },
+    {
+      question: 'Which structural shape does the analyser look for in PIMPL?',
+      options: [
+        'A forward-declared inner Impl plus a std::unique_ptr<Impl> member that owns it.',
+        'A private constructor and static accessor.',
+        'A component interface with a child collection.',
+        'An accept/visit double dispatch.',
+      ],
+      correctIndex: 0,
+      explanation: 'Forward-declared Impl + unique_ptr<Impl> in order is the recognisable PIMPL shape.',
+    },
+  ],
+};
+
+// Build a single fallback theoretical question from a pattern's catalog copy,
+// used only if PATTERN_THEORY has no authored bank for the detection slug. This
+// keeps the theoretical gate pass-able for any future catalog pattern.
+function buildPatternTheoryFallback(patternName: string, intent: string): ReadonlyArray<ExamQuestion> {
+  return [
+    {
+      question: `Which sentence best describes the ${patternName} pattern?`,
+      options: [
+        intent || `The ${patternName} pattern as defined by the Gang of Four.`,
+        'A pattern that guarantees a class has exactly one instance.',
+        'A pattern that converts one interface into another.',
+        'A pattern that composes objects into part-whole trees.',
+      ],
+      correctIndex: 0,
+      explanation: `${patternName}: ${intent}`,
+    },
+  ];
+}
+
+// Attach the theoretical exam (every module) and, for detectable pattern/idiom
+// modules, the practical exam (Studio code-check). Foundations and Repository
+// end at the theoretical exam (D86).
+function attachExams(module: LearningModule): LearningModule {
   if (module.category === 'foundations') {
-    const quiz = FOUNDATIONS_QUIZZES[module.id];
-    if (quiz) return { ...module, practical: quiz };
+    const questions = FOUNDATIONS_THEORY[module.id];
+    if (questions) {
+      return { ...module, theoreticalExam: { kind: 'theoretical', questions } };
+    }
     return module;
   }
   // Pattern modules: derive the target pattern from the slug embedded in
@@ -834,33 +1659,41 @@ function attachPractical(module: LearningModule): LearningModule {
   const slug = module.id.replace(/^[a-z]+-/, '');
   const pattern = PATTERNS.find((p) => p.slug === slug);
   if (!pattern) return module;
-  // If the microservice cannot detect this pattern (no catalog entry),
-  // fall back to a quiz practical so the linear unlock gate stays
-  // pass-able. See pattern_catalog/{creational,structural,behavioural,
-  // idiom} for the supported set.
-  const quiz = NON_DETECTED_QUIZZES[pattern.slug];
-  if (quiz) return { ...module, practical: quiz };
+
+  // Non-detectable pattern (Repository): theoretical exam only, no practical.
+  const nonDetectedTheory = NON_DETECTED_THEORY[pattern.slug];
+  if (nonDetectedTheory) {
+    return { ...module, theoreticalExam: { kind: 'theoretical', questions: nonDetectedTheory } };
+  }
+
   // Honor catalog aliases (e.g. factory-method route → catalog `factory`).
   const alias = PATTERN_SLUG_ALIAS[pattern.slug];
   const detectionSlug = alias?.slug ?? pattern.slug;
   const detectionName = alias?.name ?? pattern.name;
+
+  const theoryQuestions =
+    PATTERN_THEORY[detectionSlug] ??
+    buildPatternTheoryFallback(pattern.name, pattern.intent);
+  const theoreticalExam: TheoreticalExam = { kind: 'theoretical', questions: theoryQuestions };
+
   if (!DETECTED_PATTERN_SLUGS.has(detectionSlug)) {
-    // Defensive: pattern is in PATTERNS but not in DETECTED_PATTERN_SLUGS
-    // and not in NON_DETECTED_QUIZZES — leave the module without a
-    // practical rather than ship one that cannot pass.
-    return module;
+    // Defensive: pattern is in PATTERNS but not detectable and not in
+    // NON_DETECTED_THEORY — ship the theoretical exam alone rather than a
+    // practical that cannot pass.
+    return { ...module, theoreticalExam };
   }
-  const familyName = pattern.family as LearningPatternPractical['family'];
+
+  const familyName = pattern.family as PracticalExam['family'];
   const starterCode = PATTERN_STARTERS[detectionSlug];
-  const practical: LearningPatternPractical = {
-    kind: 'pattern',
+  const practicalExam: PracticalExam = {
+    kind: 'practical',
     patternSlug: detectionSlug,
     patternName: detectionName,
     family: familyName,
     prompt: `Write a small C++ class (or two) that demonstrates the ${pattern.name} pattern. The analyser passes you when the response tags include ${detectionName}, even if other patterns also fire on the same class.`,
     ...(starterCode ? { starterCode } : {}),
   };
-  return { ...module, practical };
+  return { ...module, theoreticalExam, practicalExam };
 }
 
 // Editor seeds for patterns whose detector is order-sensitive enough that a
@@ -889,17 +1722,17 @@ private:
 `,
 };
 
-const FOUNDATIONS_MODULES_WITH_PRACTICAL: ReadonlyArray<LearningModule> =
-  FOUNDATIONS_MODULES.map(attachPractical);
+const FOUNDATIONS_MODULES_WITH_EXAMS: ReadonlyArray<LearningModule> =
+  FOUNDATIONS_MODULES.map(attachExams);
 
-const PATTERN_MODULES: ReadonlyArray<LearningModule> = PATTERN_MODULES_RAW.map(attachPractical);
+const PATTERN_MODULES: ReadonlyArray<LearningModule> = PATTERN_MODULES_RAW.map(attachExams);
 
 // -------------------------------------------------------------------------
 // Public API
 // -------------------------------------------------------------------------
 
 export const LEARNING_MODULES: ReadonlyArray<LearningModule> = [
-  ...FOUNDATIONS_MODULES_WITH_PRACTICAL,
+  ...FOUNDATIONS_MODULES_WITH_EXAMS,
   ...PATTERN_MODULES,
 ];
 

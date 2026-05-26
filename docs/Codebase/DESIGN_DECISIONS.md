@@ -1131,3 +1131,56 @@ SEPARATELY, the D84 merge removed the `class-tree-*` testids that
 positive sample (false green) and must be re-pointed to the `documented-source`
 surface (`.pattern-header[data-pattern]`, `.pattern-header__class`) before it
 gates anything again.
+
+## D86 — Learning module: 3-level tree sidebar + per-module theoretical/practical exams
+
+Supersedes the D77 single-`practical` model for `/patterns/learn`. Two changes:
+
+**(1) Sidebar is a 3-level collapsible tree, never globally collapsed.**
+The old single `sidebarOpen` toggle (whole outline folds away) is removed. The
+sidebar is always visible and renders Family → Module → in-module section
+anchors:
+- Family (`Foundations`/`Creational`/`Structural`/`Behavioural`/`Idioms`) is an
+  accordion header (reuses the pre-existing `.nt-course-section__label` button +
+  `.nt-course-section__chev` + `.is-open` CSS).
+- Each Module row carries a disclosure toggle that reveals its section anchors.
+- Leaf anchors (`Intro`, `Concepts`, `Examples`, `Theoretical Exam`, and
+  `Practical Exam` when present) smooth-scroll to `#mod-<id>-<section>` in the
+  lesson panel (jump, not smooth, under `prefers-reduced-motion`). No sub-routes.
+- Open/closed state is component-local chrome only (not persisted server-side).
+  Default open = the active module's family + the active module.
+
+**(2) Every module body is Intro → Concepts → Examples → Theoretical Exam →
+Practical Exam, with two exams replacing the single `practical`.**
+The `LearningModule.practical` field (and the `LearningQuizPractical` /
+`LearningPatternPractical` / `LearningPractical` union) are replaced by:
+- `theoreticalExam?: TheoreticalExam` — a multi-question MCQ bank
+  (`{ kind:'theoretical'; questions: ExamQuestion[] }`); pass = every answer
+  correct. **Every module has one.**
+- `practicalExam?: PracticalExam` — the Studio analyser code-check
+  (`{ kind:'practical'; patternSlug; patternName; family; prompt; starterCode? }`),
+  reusing the existing `DETECTED_PATTERN_SLUGS` / `PATTERN_SLUG_ALIAS` /
+  `PATTERN_STARTERS` logic and `StudioSurface` detection-slug normalisation.
+  **Pattern/idiom modules only.** Foundations and non-detectable patterns
+  (Repository) have no practical exam and complete at the theoretical exam.
+
+Body section grouping (computed from the flat `sections[]`): Concepts = sections
+without `code` + `keyTerms` + `summary`; Examples = sections with `code`.
+
+**Gating:** within a module the Theoretical Exam must pass first; passing it
+unlocks the Practical Exam. A module is *complete* when its theoretical passes
+(Foundations) **and** its practical passes if one exists (patterns). The existing
+linear cross-module gate (`computeUnlockedCount`) then opens the next module.
+
+**Persistence:** `learning_progress` gains a `theory_passed_module_ids` JSON
+column (resumable mid-module state — theoretical passed but practical not yet).
+GET/PUT `/api/learning/progress` and the frontend `LearningProgress` /
+`fetchLearningProgress` / `saveLearningProgress` gain `theoryPassedModuleIds`.
+Guests (`devcon*`) stay in-memory. The new column is added idempotently via the
+same `ALTER TABLE … ADD COLUMN` + duplicate-column catch as `tries_by_module`,
+and is mirrored in a `supabase/migrations/` entry (`supabase db push` required
+on the hosted project; CI does not auto-apply).
+
+Note: per D85 the `pimpl` practical may not detect (idiom disabled); pimpl is the
+final module so an unpassable practical there only blocks "path complete", not
+any downstream module. Left as-is here; detection scope is owned by D85.
