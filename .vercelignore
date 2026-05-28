@@ -13,11 +13,16 @@
 /.git
 **/node_modules
 
-# Backend / microservice / infra — not needed to build the frontend (already
-# root-anchored because they contain a slash)
+# Backend / infra — not needed to build the frontend (no frontend imports).
 Codebase/Backend
-Codebase/Microservice
 Codebase/Infrastructure
+
+# Microservice: the frontend imports real C++ samples + pattern_catalog JSON as
+# raw assets (src/data/learningContent.ts, PatternAtlas.tsx, SamplePickerModal),
+# so those MUST stay. Only the heavy build output is excluded.
+Codebase/Microservice/build
+Codebase/Microservice/build-wsl
+Codebase/Microservice/build-linux
 
 # Generated / heavy artifacts
 Codebase/Frontend/dist
