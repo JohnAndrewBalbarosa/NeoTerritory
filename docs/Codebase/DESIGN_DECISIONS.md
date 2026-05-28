@@ -1223,7 +1223,7 @@ single AWS box — Vercel serverless has no C++ binary or Docker socket, so the
 analysis "brain" can never move off AWS.
 
 **Hard constraint — mixed content.** A Vercel page is HTTPS; the AWS backend is
-plain HTTP (`http://122.248.192.49:3001`, no TLS, no domain for a cert). Browsers
+plain HTTP (`http://122.248.192.49`, no TLS, no domain for a cert). Browsers
 block an HTTPS page from calling an HTTP origin. Therefore the frontend MUST reach
 the backend through a **server-side proxy**, never a direct browser cross-origin
 call. Vercel rewrites fetch the AWS origin server-side; the browser only ever sees

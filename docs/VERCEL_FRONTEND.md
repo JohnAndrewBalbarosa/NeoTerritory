@@ -9,7 +9,7 @@ created/linked once by a human with the `vercel` CLI (see below). Design rationa
 - A free `https://<project>.vercel.app` URL for the whole frontend — no custom
   domain, no bare public IP.
 - Zero backend rewrite: the C++ binary, Docker test pods, and Express backend stay
-  on the AWS box (`http://122.248.192.49:3001`). Vercel only hosts the UI and
+  on the AWS box (`http://122.248.192.49`). Vercel only hosts the UI and
   **proxies** API traffic to AWS.
 
 ## How it works
@@ -18,7 +18,7 @@ created/linked once by a human with the `vercel` CLI (see below). Design rationa
 
 | Request | Goes to |
 |---------|---------|
-| `/api/*`, `/auth/*`, `/health` | proxied **server-side** to `http://122.248.192.49:3001/...` |
+| `/api/*`, `/auth/*`, `/health` | proxied **server-side** to `http://122.248.192.49/...` |
 | `/admin`, `/admin/*` | `/admin.html` (separate admin bundle) |
 | `/scraper`, `/scraper/*` | `/scraper.html` |
 | everything else | `/index.html` (SPA fallback) |
