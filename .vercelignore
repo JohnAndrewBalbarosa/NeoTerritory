@@ -1,0 +1,31 @@
+# Vercel only builds the Vite frontend (vercel.json: cd Codebase/Frontend).
+# The frontend is self-contained (tsconfig include: ["src"], no Backend imports),
+# so everything else is excluded to keep the source upload small. Without this,
+# the CLI tried to upload ~418MB (node_modules + .git + C++ build) and the upload
+# choked.
+
+# Version control + all dependency trees (reinstalled on Vercel via installCommand)
+.git
+**/node_modules
+
+# Backend / microservice / infra — not needed to build the frontend
+Codebase/Backend
+Codebase/Microservice
+Codebase/Infrastructure
+
+# Generated / heavy artifacts
+Codebase/Frontend/dist
+Codebase/Frontend/playwright-report
+Codebase/Frontend/test-results
+**/*.sqlite
+
+# Repo tooling + docs + tests not used by the frontend build
+docs
+tests
+test-artifacts
+playwright-scratch
+ops
+scripts
+supabase
+.github
+.vercel
