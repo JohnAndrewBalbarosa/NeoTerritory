@@ -1214,3 +1214,48 @@ section (Operations / People / Learning / Research / Config). The
 manifest + CI smoke stay green. `originalDevsOnly` + PM filtering unchanged.
 
 Both schema changes are SQLite-only (initDb), so no Supabase migration.
+
+## D88 — Frontend hostable on Vercel via a server-side proxy; backend + C++ stay on AWS
+**Goal.** Serve the frontend from a free Vercel `*.vercel.app` HTTPS URL (the user
+has no budget for a custom domain and wants more than a bare public IP), while the
+Express backend, the `NeoTerritory` C++ binary, and the Docker test pods stay on the
+single AWS box — Vercel serverless has no C++ binary or Docker socket, so the
+analysis "brain" can never move off AWS.
+
+**Hard constraint — mixed content.** A Vercel page is HTTPS; the AWS backend is
+plain HTTP (`http://122.248.192.49:3001`, no TLS, no domain for a cert). Browsers
+block an HTTPS page from calling an HTTP origin. Therefore the frontend MUST reach
+the backend through a **server-side proxy**, never a direct browser cross-origin
+call. Vercel rewrites fetch the AWS origin server-side; the browser only ever sees
+HTTPS Vercel. This also means:
+- **No `client.ts` changes.** It keeps using relative `/api/*`, `/auth/*`, `/health`.
+- **CORS is irrelevant on the proxy path** (requests are same-origin to Vercel).
+  `CORS_ORIGIN` on AWS stays set for any direct/local use.
+- Auth is unaffected — JWT lives in `localStorage`, sent as `Authorization: Bearer`;
+  there are no cookies, so there is no cross-origin session problem.
+
+**Mechanism (Phase B1, shipped).** A repo-root `vercel.json` builds the existing
+Vite SPA (`Codebase/Frontend`) and rewrites, in order: `/api/*`, `/auth/*`,
+`/health` → the AWS origin; `/admin*` → `/admin.html`; `/scraper*` →
+`/scraper.html`; everything else → `/index.html` (SPA fallback). The AWS origin is
+a fixed public IP (already in CLAUDE.md / ops), not a secret, so it is inlined.
+`vercel.json` lives at the **repo root** (not under `Codebase/`) so it is config,
+not a `docs/Codebase`-mirrored source file.
+
+**SSR is staged, not done in B1.** The app is a 27-surface custom-router Vite SPA
+with three entry points (`index.html`, `admin.html`, `scraper.html`) and is
+authenticated (no SEO need), so a Next.js migration is large and deferred. B1 ships
+the SPA on Vercel statics + proxy (the domain win) on Vercel's SSR-capable platform;
+B2 may server-render only the public/marketing surfaces while authenticated surfaces
+(studio/admin/learning/scraper) stay client-rendered (they depend on `localStorage`).
+
+**Open verification gate.** The streaming test runner uses `EventSource` to
+`/api/analysis/run-events/:runId?token=…`. SSE through Vercel rewrites must be
+confirmed to stream (no buffering/timeout). If it fails, proxy only that endpoint
+through a streaming Next Route Handler, or keep that one call direct once AWS has TLS.
+
+**CI note.** Adding `vercel.json` does not change what existing CI builds/tests
+(same Vite build, same AWS-targeted smoke), so no workflow edit is required yet.
+When Vercel becomes the *production* public origin, repoint the Playwright/manifest
+base URL in the workflows in that same change; the AWS post-deploy smoke
+(`scripts/ci-aws-post-deploy-smoke.mjs`) keeps hitting AWS directly and stays valid.

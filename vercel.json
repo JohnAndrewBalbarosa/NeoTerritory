@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm ci --prefix Codebase/Frontend --no-audit --no-fund",
+  "buildCommand": "cd Codebase/Frontend && npx tsc --noEmit && npx vite build",
+  "outputDirectory": "Codebase/Frontend/dist",
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "http://122.248.192.49:3001/api/:path*" },
+    { "source": "/auth/:path*", "destination": "http://122.248.192.49:3001/auth/:path*" },
+    { "source": "/health", "destination": "http://122.248.192.49:3001/health" },
+    { "source": "/admin", "destination": "/admin.html" },
+    { "source": "/admin/:path*", "destination": "/admin.html" },
+    { "source": "/scraper", "destination": "/scraper.html" },
+    { "source": "/scraper/:path*", "destination": "/scraper.html" },
+    { "source": "/:path*", "destination": "/index.html" }
+  ]
+}
