@@ -3,12 +3,18 @@
 # so everything else is excluded to keep the source upload small. Without this,
 # the CLI tried to upload ~418MB (node_modules + .git + C++ build) and the upload
 # choked.
+#
+# IMPORTANT: bare names use .gitignore semantics and match at ANY depth. A leading
+# "/" anchors a pattern to the repo root. The root-level trees below MUST be
+# anchored, otherwise e.g. "docs" also strips src/components/marketing/docs/ and
+# the frontend build fails with "Cannot find module './docs/DocsPage'".
 
 # Version control + all dependency trees (reinstalled on Vercel via installCommand)
-.git
+/.git
 **/node_modules
 
-# Backend / microservice / infra — not needed to build the frontend
+# Backend / microservice / infra — not needed to build the frontend (already
+# root-anchored because they contain a slash)
 Codebase/Backend
 Codebase/Microservice
 Codebase/Infrastructure
@@ -19,13 +25,14 @@ Codebase/Frontend/playwright-report
 Codebase/Frontend/test-results
 **/*.sqlite
 
-# Repo tooling + docs + tests not used by the frontend build
-docs
-tests
-test-artifacts
-playwright-scratch
-ops
-scripts
-supabase
-.github
-.vercel
+# Root-level repo tooling + docs + tests not used by the frontend build.
+# Leading "/" keeps these from matching same-named folders inside the frontend.
+/docs
+/tests
+/test-artifacts
+/playwright-scratch
+/ops
+/scripts
+/supabase
+/.github
+/.vercel
