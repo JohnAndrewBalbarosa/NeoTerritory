@@ -273,3 +273,5 @@ mobile-audit-tmp.mjs
 
 # Brainstorming visual-companion scratch (superpowers)
 .superpowers/
+
+.vercel
