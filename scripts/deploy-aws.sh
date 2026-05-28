@@ -17,15 +17,19 @@ source "$LIB/preflight.sh"
 source "$LIB/ship.sh"
 # shellcheck source=../ops/bash/deploy/lib/remote-build.sh
 source "$LIB/remote-build.sh"
+# shellcheck source=../ops/bash/deploy/lib/rollback.sh
+source "$LIB/rollback.sh"
 
 ASSUME_YES=0
 RESTART_ONLY=0
 CLEAN=0
+ROLLBACK=0
 for arg in "$@"; do
   case "$arg" in
     -y|--yes) ASSUME_YES=1 ;;
     --restart-only) RESTART_ONLY=1 ;;  # skip ship+build, just bounce pm2 on existing artifacts
     --clean|--from-scratch) CLEAN=1 ;;  # wipe remote app dir + caches before ship → true from-scratch rebuild
+    --rollback) ROLLBACK=1 ;;           # restore .rollback/previous artifact snapshot + bounce pm2
     --source) : ;;  # consumed elsewhere / informational
   esac
 done
@@ -56,11 +60,23 @@ verify_ssh_link
 open_lightsail_ports
 ensure_remote_node
 
+REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
+
+# Rollback short-circuits the whole ship+build pipeline: it only restores the
+# previous artifact snapshot and bounces pm2. Handle it before the deploy prompt.
+if [ "$ROLLBACK" = "1" ]; then
+  echo "-- ROLLBACK MODE: restoring previous artifact snapshot (no ship, no build) --"
+  if ! ask_yes "Roll back $AWS_HOST to the previous artifact snapshot? [y/N]"; then
+    echo "Cancelled."; exit 0
+  fi
+  run_remote_rollback "$REMOTE_APP_DIR"
+  echo "Rollback complete -> http://$AWS_HOST"
+  exit 0
+fi
+
 if ! ask_yes "Proceed with deployment to $AWS_HOST? [y/N]"; then
   echo "Cancelled."; exit 0
 fi
-
-REMOTE_APP_DIR="${REMOTE_APP_DIR:-/home/$AWS_USER/neoterritory}"
 
 if [ "$RESTART_ONLY" = "1" ]; then
   echo "-- RESTART-ONLY MODE: skipping ship + build, bouncing pm2 only --"
@@ -91,6 +107,9 @@ if [ "$CLEAN" != "1" ]; then
 fi
 ship_source       "$REMOTE_APP_DIR"
 write_remote_env  "$REMOTE_APP_DIR"
+# Snapshot the currently-running built artifacts BEFORE the new build clobbers
+# them, so `deploy-aws.sh --rollback` can return to the last-good version.
+snapshot_current_artifacts "$REMOTE_APP_DIR"
 run_remote_build_and_start "$REMOTE_APP_DIR"
 
 echo "Deployed Native Node.js (v2.2-FIX) -> http://$AWS_HOST"
