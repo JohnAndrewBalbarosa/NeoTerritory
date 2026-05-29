@@ -20,6 +20,19 @@ const nextConfig = {
     config.resolve.alias = config.resolve.alias || {};
     // Shared component/CSS/store/api source.
     config.resolve.alias['@frontend'] = FRONTEND_SRC;
+    // This app's own root (route files import `@/components/...`).
+    config.resolve.alias['@'] = __dirname;
+
+    // Support Vite-style `?raw` imports (e.g. learningContent.ts and PatternAtlas
+    // import C++ samples as source strings: `import src from '....cpp?raw'`). Vite
+    // resolves `?raw` natively; webpack needs an explicit asset/source rule so the
+    // default export is the file's text. Mirrors Vite behaviour exactly.
+    config.module = config.module || { rules: [] };
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      resourceQuery: /raw/,
+      type: 'asset/source',
+    });
     // Dedupe React to a SINGLE app-level copy so cross-tree imports from
     // ../Frontend/src don't pull a second react/react-dom from
     // ../Frontend/node_modules ("invalid hook call"). We must NOT alias the bare

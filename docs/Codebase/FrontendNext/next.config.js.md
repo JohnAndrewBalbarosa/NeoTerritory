@@ -17,9 +17,17 @@ existing `Codebase/Frontend/src` tree.
    - Server-side proxy is mandatory: an HTTPS Vercel page cannot fetch the plain-HTTP AWS
      backend (mixed content). The rewrite is fetched by Vercel server-side, so the browser
      only sees HTTPS; this also removes any CORS requirement.
-2. **Source sharing**: `transpilePackages` + a webpack alias (`@frontend → ../Frontend/src`)
-   let the app import the existing components/CSS/store without copying them. Mirrored by a
-   tsconfig `paths` entry so the type-checker resolves the same alias.
+2. **Source sharing**: `experimental.externalDir` + a webpack alias (`@frontend →
+   ../Frontend/src`) let the app import the existing components/CSS/store without copying
+   them. A second alias `@ → __dirname` resolves this app's own files (route files import
+   `@/components/...`). Both are mirrored by tsconfig `paths` so the type-checker agrees.
+3. **React dedup**: `resolve.modules` is prepended with this app's `node_modules` so the
+   shared components don't pull a second React from `../Frontend/node_modules`. We do NOT
+   alias the bare `react`/`react-dom` specifiers — that breaks Next 14's vendored server
+   React with "r.cache is not a function".
+4. **`?raw` assets**: a `module.rules` entry (`resourceQuery: /raw/ → asset/source`) makes
+   Vite-style `import src from '....cpp?raw'` return the file text under webpack, matching
+   Vite. The matching TypeScript ambient type lives in `types/raw-assets.d.ts`.
 
 ## Collaborators
 - `Codebase/Frontend/src/**` — the shared component/CSS/store/api source (read-only import).
