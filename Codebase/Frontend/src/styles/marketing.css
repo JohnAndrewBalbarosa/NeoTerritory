@@ -2202,6 +2202,22 @@ body[data-surface] #root {
   opacity: 0.3;
   cursor: not-allowed;
 }
+/* Practical page (D92): the embedded Studio needs the full panel width — the
+   side ‹ › arrows squeeze it until its tab bar wraps/overlaps. So on the
+   practical page the stage is single-column (side arrows hidden) and the footer
+   carries Prev/Next instead. */
+.nt-pager__stage--practical {
+  grid-template-columns: minmax(0, 1fr);
+}
+.nt-pager__stage--practical .nt-pager__arrow {
+  display: none;
+}
+.nt-pager__page[data-kind='practical'] {
+  padding-inline: clamp(0.4rem, 0.25rem + 0.4vw, 0.8rem);
+}
+.nt-pager__foot[data-kind='practical'] .nt-pager__foot-prev {
+  display: inline-flex;
+}
 .nt-pager__page {
   min-height: 0;
   overflow-y: auto;
@@ -2361,6 +2377,11 @@ body[data-surface] #root {
 }
 .nt-practical__studio .tab-bar {
   position: static;
+  /* Never wrap the Submit/Patterns/Tests/Self-check tabs inside the embedded
+     studio — scroll horizontally instead so they can't stack onto a second row
+     and overlap (belt-and-suspenders alongside the full-width practical page). */
+  flex-wrap: nowrap;
+  overflow-x: auto;
 }
 .nt-practical__head {
   display: grid;

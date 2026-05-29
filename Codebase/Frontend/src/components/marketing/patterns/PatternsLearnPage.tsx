@@ -1183,7 +1183,11 @@ export default function PatternsLearnPage(): JSX.Element {
                 </nav>
               </header>
 
-              <div className="nt-pager__stage">
+              <div
+                className={`nt-pager__stage${
+                  currentPage.kind === 'practical' ? ' nt-pager__stage--practical' : ''
+                }`}
+              >
                 <button
                   type="button"
                   className="nt-pager__arrow nt-pager__arrow--prev"
@@ -1197,6 +1201,7 @@ export default function PatternsLearnPage(): JSX.Element {
 
                 <section
                   className="nt-pager__page"
+                  data-kind={currentPage.kind}
                   key={`${activeModule.id}-${currentPage.kind}`}
                   data-lenis-prevent
                   aria-label={currentPage.label}
@@ -1269,7 +1274,7 @@ export default function PatternsLearnPage(): JSX.Element {
                 </button>
               </div>
 
-              <footer className="nt-pager__foot">
+              <footer className="nt-pager__foot" data-kind={currentPage.kind}>
                 <div className="nt-pager__dots" aria-label="Section progress">
                   {pages.map((p, i) => (
                     <button
