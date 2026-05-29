@@ -38,10 +38,11 @@ export default function TourPage() {
     <main className="nt-tour" id="main">
       <header className="nt-tour__head">
         <p className="nt-section-eyebrow">Guide</p>
-        <h1 className="nt-tour__title">A walk through the studio.</h1>
+        <h1 className="nt-tour__title">A walk through the learning path.</h1>
         <p className="nt-tour__lede">
-          No sign-in needed. Each step shows one thing the studio lets you do, in the order you
-          will meet them.
+          No sign-in needed to look around. Each step shows how a CodiNeo module works —
+          read it, get tested, then prove the pattern in code — in the order you will meet
+          them.
         </p>
       </header>
 

@@ -1,18 +1,12 @@
-// Single source of tour content. Per Sprint 0 doc blueprint:
-// docs/Codebase/Frontend/src/components/marketing/tour/TourPage.tsx.md.
-// The /tour public page reads this. The future in-studio popup walkthrough
-// (D45 follow-up) will read the same file so the two never drift.
+// Single source of tour content for the /tour ("Guide") page.
 //
-// Scope per user direction: the tour mirrors the studio tab walkthrough —
-// sign-in is not part of the studio, and the save-the-run + open-history
-// flows live inside the run-history surface (not on a studio tab), so they
-// are intentionally omitted from this tour.
-//
-// The Self-check step was dropped from this public walkthrough per user
-// direction: the Self-check tab is an admin-gated (thesis-mode) surface, not
-// part of the default studio flow, so it no longer belongs in the
-// "how it works" narrative. The tab still exists in the studio code behind
-// the thesis-mode setting; only its tour entry + screenshot were removed.
+// Product direction (2026-05-29): CodiNeo is a LEARNING product. There is no
+// standalone "developer mode" — the Studio still exists but only as a wrapper
+// used inside a module's Practical Exam (where the analyser checks that the
+// learner implemented the target pattern). So this Guide walks through the
+// LEARNING PATH (pick a module → read → theoretical exam → practical exam →
+// unlock the next), not a standalone studio. The Studio appears as one step:
+// the practical-exam checking surface.
 
 export interface TourStep {
   num: number;
@@ -20,64 +14,54 @@ export interface TourStep {
   title: string;
   paragraph: string;
   takeaway: string;
-  // Path to a screenshot under Codebase/Frontend/public/tour/.
-  // null when no screenshot exists yet — the page renders an SVG diagram fallback.
+  // Path to a screenshot under public/tour/. null renders a labelled placeholder.
   imagePath: string | null;
 }
 
 export const TOUR_STEPS: ReadonlyArray<TourStep> = [
   {
     num: 1,
-    slug: 'land-on-submit',
-    title: 'Land in the Submit tab',
+    slug: 'pick-a-module',
+    title: 'Start on the learning path',
     paragraph:
-      'The Submit tab is where every analysis starts. On your first visit, a Start Here rail appears above the editor with three numbered steps. The rail collapses to a small pill once you have run your first analysis, but it stays around as a re-open affordance.',
-    takeaway: 'You always know where to begin.',
-    imagePath: '/tour/land-on-submit.png',
+      'Everything happens on one guided path. It opens with Foundations, then walks the four Gang-of-Four pattern families — Creational, Structural, Behavioural, and Idioms. You move through modules in order; finishing one unlocks the next, so you always know exactly where to go.',
+    takeaway: 'One guided path, start to finish — nothing to set up.',
+    imagePath: '/tour/learn-path.png',
   },
   {
     num: 2,
-    slug: 'load-a-sample',
-    title: 'Load a sample',
+    slug: 'read-the-module',
+    title: 'Read the module',
     paragraph:
-      'Click "Load sample" to drop a real-world C++ snippet into the editor. Samples are organised by pattern family so you can pick one matching what you want to learn. Samples are full files, not toys — they exercise the matcher the way a real submission would.',
-    takeaway: 'No need to write C++ from scratch to see how the system works.',
-    imagePath: '/tour/load-a-sample.png',
+      'Each module reads Intro → Concepts → Examples. Concepts are explained in plain language with key terms, and the examples are real C++ — the same kind of code the analyser was built to read. The folder sidebar lets you jump straight to any section.',
+    takeaway: 'Concepts first, in plain language, with code you can actually read.',
+    imagePath: '/tour/learn-lesson.png',
   },
   {
     num: 3,
-    slug: 'click-analyze',
-    title: 'Click Analyze',
+    slug: 'theoretical-exam',
+    title: 'Pass the theoretical exam',
     paragraph:
-      'Press the Analyze button under the editor. The C++ microservice spawns, parses your file, builds the virtual parse tree, runs every pattern detector in the catalog, and emits a structural report. Typical run time: under a second for files up to a thousand lines.',
-    takeaway: 'A single click drives the whole detection pipeline.',
-    imagePath: '/tour/click-analyze.png',
+      'Every module ends with a multiple-choice exam. Answer all questions correctly to pass — each answer comes with an explanation of why it is right or wrong, so a miss sends you back to the exact concept to re-read.',
+    takeaway: 'You prove you understood the ideas before moving on.',
+    imagePath: '/tour/learn-exam.png',
   },
   {
     num: 4,
-    slug: 'read-the-card',
-    title: 'Read the pattern card',
+    slug: 'practical-exam',
+    title: 'Prove it in the practical exam',
     paragraph:
-      'Each detected pattern appears as its own card. The card shows the pattern name, the class it was found in, the line range, and the evidence anchors. When two patterns co-emit on the same class — common for Adapter / Proxy / Decorator — the card flags the ambiguity and the AI doc layer disambiguates.',
-    takeaway: 'You see what was detected and why, with line-level pointers.',
-    imagePath: '/tour/read-the-card.png',
+      'Pattern modules add a practical exam inside the built-in Studio. Write (or paste) your C++ implementation and run the analyser — the module unlocks the moment it detects the target pattern in your code. The Studio is just the checking surface here: no separate developer mode, no project to wire up.',
+    takeaway: 'You implement the pattern for real, and the analyser confirms it.',
+    imagePath: '/tour/click-analyze.png',
   },
   {
     num: 5,
-    slug: 'run-tests',
-    title: 'Run the unit tests',
+    slug: 'unlock-next',
+    title: 'Unlock the next module',
     paragraph:
-      'The Tests tab applies the Testing-Trophy strategy to your submission: static analysis (cppcheck), compile-and-run, and per-pattern unit-test scaffolds. One click streams every phase verdict back live, with a per-class pass/fail tree on the left and the gdb / stdout / stderr panes on the right.',
-    takeaway: 'Three test phases, every pattern, one click.',
-    imagePath: '/tour/run-tests.png',
-  },
-  {
-    num: 6,
-    slug: 'generate-docs',
-    title: 'Generate documentation',
-    paragraph:
-      'The Docs tab assembles the auto-generated pattern documentation — class-by-class explanations, evidence anchors back to your source lines, and AI commentary when an AI provider is configured. Export buttons (MD / PDF / DOCX) ship the same content as the printable view.',
-    takeaway: 'Documentation always lands, AI on or off.',
-    imagePath: '/tour/generate-docs.png',
+      'Completing a module — its theoretical exam, plus the practical exam where one exists — unlocks the next. Signed-in learners keep their progress across devices; guests keep it for the current visit. The progress bar up top tracks how far along the whole path you are.',
+    takeaway: 'Linear progress that remembers where you left off.',
+    imagePath: '/tour/learn-path.png',
   },
 ];
