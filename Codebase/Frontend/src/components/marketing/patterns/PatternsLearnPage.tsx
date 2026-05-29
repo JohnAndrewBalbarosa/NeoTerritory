@@ -18,19 +18,19 @@ import {
 import { useAppStore } from '../../../store/appState';
 import StudioSurface from '../../studio/StudioSurface';
 
-// D86: the /patterns/learn surface is a 3-level collapsible tree (Family →
-// Module → in-module section anchors) plus a per-module exam flow:
-// Intro → Concepts → Examples → Theoretical Exam → Practical Exam.
+// D90: the /patterns/learn lesson panel is a SIDE-ARROW PAGER. Instead of one
+// long scrolling page, each module's sections show one per view — Intro →
+// Concepts → Examples → Theoretical Exam → Practical Exam — flanked by ‹ ›
+// arrows that step through them and then roll into the next module once the
+// exams pass. The folder sidebar (Sections → Modules → Subsections) stays; its
+// subsection clicks jump the pager straight to that section's page.
 //
-//   - The sidebar is ALWAYS visible (no global collapse). Each family is an
-//     accordion; each module discloses its section anchors that smooth-scroll
-//     to the matching block in the lesson panel.
-//   - Every module ends with a Theoretical Exam (multi-question MCQ). Pattern/
-//     idiom modules also expose a Practical Exam (Studio /api/analyze check),
-//     locked until the theoretical exam passes.
 //   - A module is COMPLETE when its theoretical passes (Foundations) AND its
 //     practical passes if one exists (patterns). The linear cross-module gate
-//     (computeUnlockedCount) then unlocks module N+1.
+//     (computeUnlockedCount) then unlocks module N+1; the › arrow only spills
+//     into the next module when the current one is complete.
+//   - Within a module you can page freely to any section (the Practical page
+//     shows its own "locked" callout until the theoretical passes).
 //   - Signed-in learners persist completedModuleIds + theoryPassedModuleIds so
 //     a mid-pattern-module refresh keeps the practical unlocked. Guests
 //     (devcon*) keep progress in-memory for the visit only.
@@ -105,10 +105,12 @@ function clampToUnlocked(idx: number, unlockedCount: number): number {
   return idx;
 }
 
-// ----- in-module section anchors -----
+// ----- in-module section identity (shared by the pager + the sidebar) -----
 
-interface ModuleAnchor {
-  id: string;
+type LessonPageKind = 'intro' | 'concepts' | 'examples' | 'theoretical' | 'practical';
+
+interface LessonPage {
+  kind: LessonPageKind;
   label: string;
 }
 
@@ -116,38 +118,22 @@ function anchorId(moduleId: string, section: string): string {
   return `mod-${moduleId}-${section}`;
 }
 
-// The section anchors a module exposes in the tree. Examples only appears when
-// the module has at least one code-bearing section; the exam anchors mirror the
-// exams the module actually carries.
-function moduleAnchors(module: LearningModule): ReadonlyArray<ModuleAnchor> {
+// The ordered pages a module exposes. Examples only appears when the module has
+// at least one code-bearing section; the exam pages mirror the exams the module
+// actually carries. This is the single source for both the pager steps and the
+// sidebar subsection list, so they can never drift.
+function lessonPagesFor(module: LearningModule | undefined): ReadonlyArray<LessonPage> {
+  if (!module) return [];
   const hasExamples = module.sections.some((s) => Boolean(s.code));
-  const list: ModuleAnchor[] = [
-    { id: anchorId(module.id, 'intro'), label: 'Intro' },
-    { id: anchorId(module.id, 'concepts'), label: 'Concepts' },
+  const pages: LessonPage[] = [
+    { kind: 'intro', label: 'Intro' },
+    { kind: 'concepts', label: 'Concepts' },
   ];
-  if (hasExamples) list.push({ id: anchorId(module.id, 'examples'), label: 'Examples' });
-  if (module.theoreticalExam) list.push({ id: anchorId(module.id, 'theoretical'), label: 'Theoretical Exam' });
-  if (module.practicalExam) list.push({ id: anchorId(module.id, 'practical'), label: 'Practical Exam' });
-  return list;
+  if (hasExamples) pages.push({ kind: 'examples', label: 'Examples' });
+  if (module.theoreticalExam) pages.push({ kind: 'theoretical', label: 'Theoretical Exam' });
+  if (module.practicalExam) pages.push({ kind: 'practical', label: 'Practical Exam' });
+  return pages;
 }
-
-function prefersReducedMotion(): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
-}
-
-function scrollToAnchor(id: string): void {
-  if (typeof document === 'undefined') return;
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
-}
-
-// (The old always-expanded family→module→anchor tree component was replaced by the
-// drill-down folder rendered inline in the page — Sections → Modules → Subsections.)
 
 // ----- prerequisite banner: what unlocked THIS module, what's needed next -----
 
@@ -161,7 +147,7 @@ function describeExams(module: LearningModule | undefined): string {
   if (module.practicalExam) {
     parts.push(`a Studio practical exam (analyser must tag ${module.practicalExam.patternName})`);
   }
-  if (parts.length === 0) return 'No exam configured — advance via the footer when ready.';
+  if (parts.length === 0) return 'No exam configured — advance with the › arrow when ready.';
   if (parts.length === 1) return `Pass ${parts[0]}.`;
   return `Pass ${parts[0]} first, which unlocks ${parts[1]}.`;
 }
@@ -207,8 +193,8 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
           <dt>Status of this module</dt>
           <dd>
             {isActiveComplete
-              ? '✓ Complete — Next is unlocked.'
-              : 'Pending — scroll to the exams below to attempt them.'}
+              ? '✓ Complete — the Next arrow is unlocked.'
+              : 'Pending — step to the exam pages with › to attempt them.'}
           </dd>
         </div>
 
@@ -225,98 +211,108 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
   );
 }
 
-// ----- lesson body: Intro → Concepts → Examples, each anchored -----
+// ----- lesson bodies: one per pager page (Intro / Concepts / Examples) -----
 
-function ModuleBody({ module }: { module: LearningModule }): JSX.Element {
+function IntroBody({ module }: { module: LearningModule }): JSX.Element {
+  return (
+    <header className="nt-learn__module-head" id={anchorId(module.id, 'intro')}>
+      <p className="nt-section-eyebrow">{module.eyebrow}</p>
+      <h2 id={`mod-${module.id}-title`} className="nt-learn__module-title">
+        {module.title}
+      </h2>
+      <p className="nt-learn__module-intro">{module.intro}</p>
+    </header>
+  );
+}
+
+function ConceptsBody({ module }: { module: LearningModule }): JSX.Element {
   const conceptSections = module.sections.filter((s) => !s.code);
-  const exampleSections = module.sections.filter((s) => Boolean(s.code));
 
   return (
-    <article className="nt-learn__module" aria-labelledby={`mod-${module.id}-title`}>
-      <header className="nt-learn__module-head" id={anchorId(module.id, 'intro')}>
-        <p className="nt-section-eyebrow">{module.eyebrow}</p>
-        <h2 id={`mod-${module.id}-title`} className="nt-learn__module-title">
-          {module.title}
-        </h2>
-        <p className="nt-learn__module-intro">{module.intro}</p>
-      </header>
-
-      <section className="nt-learn__module-group" id={anchorId(module.id, 'concepts')} aria-label="Concepts">
-        <p className="nt-learn__group-eyebrow">Concepts</p>
-        {conceptSections.map((s, idx) => (
-          <section className="nt-learn__module-section" key={`${module.id}-c-${idx}`}>
-            <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-            {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-            {s.bullets && s.bullets.length > 0 ? (
-              <ul className="nt-learn__module-bullets">
-                {s.bullets.map((b, i) => (
-                  <li key={`${module.id}-c-${idx}-b-${i}`}>{b}</li>
-                ))}
-              </ul>
-            ) : null}
-            {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
-          </section>
-        ))}
-
-        {module.keyTerms && module.keyTerms.length > 0 ? (
-          <section className="nt-learn__module-section">
-            <h3 className="nt-learn__module-section-head">Key terms</h3>
-            <dl className="nt-learn__module-terms">
-              {module.keyTerms.map((t) => (
-                <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
-                  <dt>{t.term}</dt>
-                  <dd>{t.definition}</dd>
-                </div>
+    <section className="nt-learn__module-group" id={anchorId(module.id, 'concepts')} aria-label="Concepts">
+      <p className="nt-learn__group-eyebrow">Concepts</p>
+      {conceptSections.map((s, idx) => (
+        <section className="nt-learn__module-section" key={`${module.id}-c-${idx}`}>
+          <h3 className="nt-learn__module-section-head">{s.heading}</h3>
+          {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
+          {s.bullets && s.bullets.length > 0 ? (
+            <ul className="nt-learn__module-bullets">
+              {s.bullets.map((b, i) => (
+                <li key={`${module.id}-c-${idx}-b-${i}`}>{b}</li>
               ))}
-            </dl>
-          </section>
-        ) : null}
+            </ul>
+          ) : null}
+          {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
+        </section>
+      ))}
 
-        {module.summary ? (
-          <section className="nt-learn__module-summary" aria-label="Module summary">
-            <p className="nt-learn__module-summary-eyebrow">Summary</p>
-            <p className="nt-learn__module-summary-body">{module.summary}</p>
-          </section>
-        ) : null}
-      </section>
-
-      {exampleSections.length > 0 ? (
-        <section className="nt-learn__module-group" id={anchorId(module.id, 'examples')} aria-label="Examples">
-          <p className="nt-learn__group-eyebrow">Examples</p>
-          {exampleSections.map((s, idx) => (
-            <section className="nt-learn__module-section" key={`${module.id}-e-${idx}`}>
-              <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-              {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-              {s.code ? (
-                <pre className="nt-learn__module-code" aria-label="Code example">
-                  {s.code}
-                </pre>
-              ) : null}
-              {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
-            </section>
-          ))}
+      {module.keyTerms && module.keyTerms.length > 0 ? (
+        <section className="nt-learn__module-section">
+          <h3 className="nt-learn__module-section-head">Key terms</h3>
+          <dl className="nt-learn__module-terms">
+            {module.keyTerms.map((t) => (
+              <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
+                <dt>{t.term}</dt>
+                <dd>{t.definition}</dd>
+              </div>
+            ))}
+          </dl>
         </section>
       ) : null}
 
-      {module.seeAlso && module.seeAlso.length > 0 ? (
-        <footer className="nt-learn__module-see-also" aria-label="Related modules">
-          <p className="nt-learn__module-see-also-eyebrow">See also</p>
-          <ul className="nt-learn__module-see-also-list">
-            {module.seeAlso.map((sa) => (
-              <li key={`${module.id}-sa-${sa.moduleId}`}>
-                <button
-                  type="button"
-                  className="nt-learn__module-see-also-link"
-                  onClick={() => navigate(`/patterns/learn/${sa.moduleId}`)}
-                >
-                  {sa.label} →
-                </button>
-              </li>
-            ))}
-          </ul>
-        </footer>
+      {module.summary ? (
+        <section className="nt-learn__module-summary" aria-label="Module summary">
+          <p className="nt-learn__module-summary-eyebrow">Summary</p>
+          <p className="nt-learn__module-summary-body">{module.summary}</p>
+        </section>
       ) : null}
-    </article>
+    </section>
+  );
+}
+
+function ExamplesBody({ module }: { module: LearningModule }): JSX.Element | null {
+  const exampleSections = module.sections.filter((s) => Boolean(s.code));
+  if (exampleSections.length === 0) return null;
+
+  return (
+    <section className="nt-learn__module-group" id={anchorId(module.id, 'examples')} aria-label="Examples">
+      <p className="nt-learn__group-eyebrow">Examples</p>
+      {exampleSections.map((s, idx) => (
+        <section className="nt-learn__module-section" key={`${module.id}-e-${idx}`}>
+          <h3 className="nt-learn__module-section-head">{s.heading}</h3>
+          {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
+          {s.code ? (
+            <pre className="nt-learn__module-code" aria-label="Code example">
+              {s.code}
+            </pre>
+          ) : null}
+          {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
+        </section>
+      ))}
+    </section>
+  );
+}
+
+function SeeAlsoFooter({ module }: { module: LearningModule }): JSX.Element | null {
+  if (!module.seeAlso || module.seeAlso.length === 0) return null;
+
+  return (
+    <footer className="nt-learn__module-see-also" aria-label="Related modules">
+      <p className="nt-learn__module-see-also-eyebrow">See also</p>
+      <ul className="nt-learn__module-see-also-list">
+        {module.seeAlso.map((sa) => (
+          <li key={`${module.id}-sa-${sa.moduleId}`}>
+            <button
+              type="button"
+              className="nt-learn__module-see-also-link"
+              onClick={() => navigate(`/patterns/learn/${sa.moduleId}`)}
+            >
+              {sa.label} →
+            </button>
+          </li>
+        ))}
+      </ul>
+    </footer>
   );
 }
 
@@ -455,7 +451,7 @@ function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswer
         {submitted && !passed && (
           <>
             <p className="nt-practical__verdict nt-practical__verdict--fail" role="status">
-              ✗ {correctCount}/{total} correct. Re-read the sections above and try again.
+              ✗ {correctCount}/{total} correct. Re-read the Concepts page and try again.
             </p>
             <button type="button" className="nt-lesson-button" onClick={handleRetry}>
               Try again
@@ -517,14 +513,14 @@ function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: Prac
       {isLocked ? (
         <div className="nt-lesson-callout" role="status">
           <span>Locked</span>
-          Pass the Theoretical Exam above to unlock the Practical Exam for this module.
+          Pass the Theoretical Exam (the previous page) to unlock the Practical Exam for this module.
         </div>
       ) : (
         <>
           {isPassed && (
             <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
               ✓ Passed — the analyser tagged your class as <strong>{exam.patternName}</strong>.
-              Re-run anytime, or press Next to continue.
+              Re-run anytime, or press the › arrow to continue.
             </p>
           )}
           <div className="nt-practical__studio" data-testid="practical-studio">
@@ -718,14 +714,79 @@ export default function PatternsLearnPage(): JSX.Element {
     setTheoryPassedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
   }, []);
 
-  const goPrev = useCallback(() => {
-    if (activeIndex > 0) goToStep(activeIndex - 1);
-  }, [activeIndex, goToStep]);
+  // ---- pager: one section per view, navigated by the side ‹ › arrows ----
+  const pages = useMemo(() => lessonPagesFor(activeModule), [activeModule]);
+  const [pageIndex, setPageIndex] = useState<number>(0);
+  // When the active module changes, the next render resets the pager to this
+  // target: 'first' (Intro) on forward nav, 'last' when stepping back into the
+  // previous module, or an explicit index for a sidebar subsection jump.
+  const pendingPageRef = useRef<number | 'first' | 'last'>('first');
 
-  const goNext = useCallback(() => {
+  useEffect(() => {
+    const n = pages.length;
+    const p = pendingPageRef.current;
+    let target = 0;
+    if (p === 'last') target = Math.max(0, n - 1);
+    else if (typeof p === 'number') target = Math.min(Math.max(0, p), Math.max(0, n - 1));
+    setPageIndex(target);
+    pendingPageRef.current = 'first';
+  }, [pages]);
+
+  const safePage = Math.min(pageIndex, Math.max(0, pages.length - 1));
+  const currentPage = pages[safePage];
+
+  const isFirst = activeIndex === 0;
+  const total = steps.length;
+  const isLast = activeIndex === total - 1;
+  const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
+  const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
+
+  const atFirstPage = safePage <= 0;
+  const atLastPage = safePage >= pages.length - 1;
+  // ‹ : page back within the module, else roll into the previous module's last
+  // page. Disabled only at the very first page of the very first module.
+  const goPrevPage = useCallback(() => {
+    if (safePage > 0) {
+      setPageIndex(safePage - 1);
+      return;
+    }
+    if (activeIndex > 0) {
+      pendingPageRef.current = 'last';
+      goToStep(activeIndex - 1);
+    }
+  }, [safePage, activeIndex, goToStep]);
+
+  // › : page forward within the module (free — the Practical page shows its own
+  // locked callout), else roll into the next module, gated by completion.
+  const goNextPage = useCallback(() => {
+    if (safePage < pages.length - 1) {
+      setPageIndex(safePage + 1);
+      return;
+    }
     if (!activeStep || !completedIds.has(activeStep.module.id)) return;
-    if (activeIndex < steps.length - 1) goToStep(activeIndex + 1);
-  }, [activeIndex, activeStep, completedIds, goToStep, steps.length]);
+    if (activeIndex < steps.length - 1) {
+      pendingPageRef.current = 'first';
+      goToStep(activeIndex + 1);
+    }
+  }, [safePage, pages.length, activeStep, completedIds, activeIndex, steps.length, goToStep]);
+
+  const prevDisabled = atFirstPage && isFirst;
+  const nextIsModuleAdvance = atLastPage;
+  const nextDisabled = atLastPage && (!isActiveComplete || isLast);
+  const nextLabel = !atLastPage
+    ? 'Next ›'
+    : isLast
+      ? isActiveComplete
+        ? 'Path complete'
+        : 'Finish the exams'
+      : isActiveComplete
+        ? 'Next module ›'
+        : 'Locked';
+  const nextGateTitle = nextDisabled
+    ? isLast
+      ? 'You finished the last module.'
+      : 'Complete this module’s exams to unlock the next module.'
+    : undefined;
 
   // Sidebar drill-down folder — chrome only, not persisted. Defaults to the
   // active module's subsections so the rail shows where you are; the back button
@@ -748,37 +809,33 @@ export default function PatternsLearnPage(): JSX.Element {
     }
   }, [activeFamily, activeModuleId]);
 
-  // Clicking a section anchor: navigate to that module if needed, then scroll.
-  // When navigating across modules the target DOM mounts on the next frame, so
-  // defer the scroll a tick.
-  const handleAnchor = useCallback(
-    (step: CourseStep, anchor: ModuleAnchor) => {
+  // Clicking a sidebar subsection: navigate to that module if needed, then jump
+  // the pager straight to the matching page (no scrolling).
+  const handlePageJump = useCallback(
+    (step: CourseStep, kind: LessonPageKind) => {
+      const targetPages = lessonPagesFor(findLearningModule(step.module.id));
+      const pi = Math.max(0, targetPages.findIndex((p) => p.kind === kind));
       if (step.globalIndex === activeIndex) {
-        scrollToAnchor(anchor.id);
-        return;
+        setPageIndex(pi);
+      } else {
+        pendingPageRef.current = pi;
+        goToStep(step.globalIndex);
       }
-      goToStep(step.globalIndex);
-      window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => scrollToAnchor(anchor.id));
-      });
     },
     [activeIndex, goToStep],
   );
 
   const completedCount = completedIds.size;
-  const total = steps.length;
   const progress = total > 0 ? Math.round((completedCount / total) * 100) : 0;
   const totalTries = Object.values(triesByModule).reduce((a, b) => a + b, 0);
-  const isFirst = activeIndex === 0;
-  const isLast = activeIndex === total - 1;
-  const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
-  const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
 
   // Resolve the folder level currently shown in the sidebar.
   const navGroup =
     nav.level !== 'sections' ? groups.find((g) => g.meta.id === nav.sectionId) : undefined;
   const navStep =
     nav.level === 'subsections' ? steps.find((s) => s.module.id === nav.moduleId) : undefined;
+
+  const familyName = CATEGORY_META.find((m) => m.id === activeStep?.category)?.name ?? '';
 
   return (
     <main className="nt-student nt-student-course" id="main">
@@ -790,8 +847,8 @@ export default function PatternsLearnPage(): JSX.Element {
           </h1>
           <p className="nt-student__lede">
             A {total}-module step-through path across Foundations and the four pattern families.
-            Each module reads Intro → Concepts → Examples, then a Theoretical Exam — and, for
-            pattern modules, a Studio Practical Exam. Complete a module to unlock the next.
+            Each module pages through Intro → Concepts → Examples, then a Theoretical Exam — and, for
+            pattern modules, a Studio Practical Exam. Use the ‹ › arrows; complete a module to unlock the next.
           </p>
           <p className="nt-course-hero__audience">
             Pass the theoretical exam to unlock the practical exam; pattern modules complete once
@@ -901,7 +958,7 @@ export default function PatternsLearnPage(): JSX.Element {
             </>
           ) : null}
 
-          {/* Level 3 — Subsections (anchors) of the chosen module. Click to jump to that block. */}
+          {/* Level 3 — Subsections (pages) of the chosen module. Click to jump the pager there. */}
           {nav.level === 'subsections' && navGroup && navStep ? (
             <>
               <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
@@ -915,24 +972,29 @@ export default function PatternsLearnPage(): JSX.Element {
               </div>
               <p className="nt-course-folder__crumb">{navStep.module.title}</p>
               <ul className="nt-course-folder nt-course-folder--anchors">
-                {moduleAnchors(navStep.module).map((a) => (
-                  <li key={a.id}>
-                    <button
-                      type="button"
-                      className="nt-course-folder__row nt-course-folder__row--anchor"
-                      onClick={() => handleAnchor(navStep, a)}
-                    >
-                      <span className="nt-course-folder__icon" aria-hidden="true">¶</span>
-                      <span className="nt-course-folder__label">{a.label}</span>
-                    </button>
-                  </li>
-                ))}
+                {lessonPagesFor(navStep.module).map((p) => {
+                  const here =
+                    navStep.globalIndex === activeIndex && currentPage?.kind === p.kind;
+                  return (
+                    <li key={p.kind}>
+                      <button
+                        type="button"
+                        className="nt-course-folder__row nt-course-folder__row--anchor"
+                        data-active={here ? 'true' : undefined}
+                        onClick={() => handlePageJump(navStep, p.kind)}
+                      >
+                        <span className="nt-course-folder__icon" aria-hidden="true">¶</span>
+                        <span className="nt-course-folder__label">{p.label}</span>
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             </>
           ) : null}
         </aside>
 
-        <article className="nt-lesson-panel">
+        <article className="nt-lesson-panel nt-lesson-pager">
           {redirectNotice ? (
             <aside className="nt-lesson-redirect-notice" role="status" aria-live="polite">
               <div className="nt-lesson-redirect-notice__body">
@@ -957,81 +1019,160 @@ export default function PatternsLearnPage(): JSX.Element {
             </aside>
           ) : null}
 
-          <PrerequisiteBanner
-            steps={steps}
-            activeIndex={activeIndex}
-            isActiveComplete={isActiveComplete}
-          />
+          {activeModule && currentPage ? (
+            <>
+              <header className="nt-pager__head">
+                <div className="nt-pager__head-main">
+                  <p className="nt-pager__eyebrow">
+                    {familyName} · Module {activeIndex + 1} of {total}
+                  </p>
+                  <h2 className="nt-pager__module-title">{activeModule.title}</h2>
+                </div>
+                <nav className="nt-pager__steprail" aria-label="Module sections">
+                  {pages.map((p, i) => {
+                    const isCur = i === safePage;
+                    const practicalLocked = p.kind === 'practical' && !isActiveTheoryPassed;
+                    return (
+                      <button
+                        key={p.kind}
+                        type="button"
+                        className="nt-pager__steptab"
+                        data-active={isCur ? 'true' : undefined}
+                        data-locked={practicalLocked ? 'true' : undefined}
+                        onClick={() => setPageIndex(i)}
+                      >
+                        <span className="nt-pager__steptab-n" aria-hidden="true">{i + 1}</span>
+                        {p.label}
+                      </button>
+                    );
+                  })}
+                </nav>
+              </header>
 
-          {activeModule ? <ModuleBody module={activeModule} /> : null}
+              <div className="nt-pager__stage">
+                <button
+                  type="button"
+                  className="nt-pager__arrow nt-pager__arrow--prev"
+                  onClick={goPrevPage}
+                  disabled={prevDisabled}
+                  aria-label={atFirstPage ? 'Previous module' : 'Previous section'}
+                  title={prevDisabled ? 'Start of the path.' : undefined}
+                >
+                  ‹
+                </button>
 
-          {activeModule && activeModule.theoreticalExam ? (
-            <TheoreticalExamBlock
-              key={`${activeModule.id}-theory`}
-              moduleId={activeModule.id}
-              exam={activeModule.theoreticalExam}
-              isPassed={isActiveTheoryPassed}
-              onPass={(tries) => markTheoryPassed(activeModule.id, tries)}
-              onRecordAnswers={(attempt, recorded) => {
-                if (!canPersist) return;
-                void saveLearningAnswers(activeModule.id, attempt, recorded).catch(() => {
-                  /* best-effort; analytics is forward-only */
-                });
-              }}
-            />
+                <section
+                  className="nt-pager__page"
+                  key={`${activeModule.id}-${currentPage.kind}`}
+                  data-lenis-prevent
+                  aria-label={currentPage.label}
+                >
+                  {currentPage.kind === 'intro' ? (
+                    <>
+                      <IntroBody module={activeModule} />
+                      <PrerequisiteBanner
+                        steps={steps}
+                        activeIndex={activeIndex}
+                        isActiveComplete={isActiveComplete}
+                      />
+                    </>
+                  ) : null}
+
+                  {currentPage.kind === 'concepts' ? (
+                    <>
+                      <ConceptsBody module={activeModule} />
+                      {!activeModule.sections.some((s) => Boolean(s.code)) ? (
+                        <SeeAlsoFooter module={activeModule} />
+                      ) : null}
+                    </>
+                  ) : null}
+
+                  {currentPage.kind === 'examples' ? (
+                    <>
+                      <ExamplesBody module={activeModule} />
+                      <SeeAlsoFooter module={activeModule} />
+                    </>
+                  ) : null}
+
+                  {currentPage.kind === 'theoretical' && activeModule.theoreticalExam ? (
+                    <TheoreticalExamBlock
+                      key={`${activeModule.id}-theory`}
+                      moduleId={activeModule.id}
+                      exam={activeModule.theoreticalExam}
+                      isPassed={isActiveTheoryPassed}
+                      onPass={(tries) => markTheoryPassed(activeModule.id, tries)}
+                      onRecordAnswers={(attempt, recorded) => {
+                        if (!canPersist) return;
+                        void saveLearningAnswers(activeModule.id, attempt, recorded).catch(() => {
+                          /* best-effort; analytics is forward-only */
+                        });
+                      }}
+                    />
+                  ) : null}
+
+                  {currentPage.kind === 'practical' && activeModule.practicalExam ? (
+                    <PracticalExamBlock
+                      key={`${activeModule.id}-practical`}
+                      moduleId={activeModule.id}
+                      exam={activeModule.practicalExam}
+                      isLocked={!isActiveTheoryPassed}
+                      isPassed={isActiveComplete}
+                      onPass={() => markPracticalPassed(activeModule.id)}
+                    />
+                  ) : null}
+                </section>
+
+                <button
+                  type="button"
+                  className="nt-pager__arrow nt-pager__arrow--next"
+                  onClick={goNextPage}
+                  disabled={nextDisabled}
+                  aria-label={nextIsModuleAdvance ? 'Next module' : 'Next section'}
+                  title={nextGateTitle}
+                >
+                  ›
+                </button>
+              </div>
+
+              <footer className="nt-pager__foot">
+                <div className="nt-pager__dots" aria-label="Section progress">
+                  {pages.map((p, i) => (
+                    <button
+                      key={p.kind}
+                      type="button"
+                      className="nt-pager__dot"
+                      data-active={i === safePage ? 'true' : undefined}
+                      aria-label={`Go to ${p.label}`}
+                      title={p.label}
+                      onClick={() => setPageIndex(i)}
+                    />
+                  ))}
+                  <span className="nt-pager__counter">
+                    {currentPage.label} · step {safePage + 1} of {pages.length}
+                  </span>
+                </div>
+
+                <div className="nt-pager__foot-actions">
+                  <button
+                    type="button"
+                    className="nt-lesson-button nt-pager__catalog"
+                    onClick={() => navigate('/patterns')}
+                  >
+                    ← Catalog
+                  </button>
+                  <button
+                    type="button"
+                    className="nt-lesson-button nt-lesson-button--primary"
+                    onClick={goNextPage}
+                    disabled={nextDisabled}
+                    title={nextGateTitle}
+                  >
+                    {nextLabel}
+                  </button>
+                </div>
+              </footer>
+            </>
           ) : null}
-
-          {activeModule && activeModule.practicalExam ? (
-            <PracticalExamBlock
-              key={`${activeModule.id}-practical`}
-              moduleId={activeModule.id}
-              exam={activeModule.practicalExam}
-              isLocked={!isActiveTheoryPassed}
-              isPassed={isActiveComplete}
-              onPass={() => markPracticalPassed(activeModule.id)}
-            />
-          ) : null}
-
-          <footer className="nt-lesson-controls">
-            <button
-              type="button"
-              className="nt-lesson-button"
-              disabled={isFirst}
-              onClick={goPrev}
-            >
-              Previous
-            </button>
-
-            <button
-              type="button"
-              className="nt-lesson-button nt-lesson-button--primary"
-              onClick={isLast ? undefined : goNext}
-              disabled={!isActiveComplete || isLast}
-              title={
-                !isActiveComplete
-                  ? 'Complete this module’s exams to unlock the next module.'
-                  : isLast
-                  ? 'You finished the last module.'
-                  : undefined
-              }
-            >
-              {isLast
-                ? isActiveComplete
-                  ? 'Path complete'
-                  : 'Finish the exams'
-                : isActiveComplete
-                ? 'Next module'
-                : 'Locked'}
-            </button>
-
-            <button
-              type="button"
-              className="nt-lesson-button"
-              onClick={() => navigate('/patterns')}
-            >
-              ← Back to catalog
-            </button>
-          </footer>
         </article>
       </section>
     </main>

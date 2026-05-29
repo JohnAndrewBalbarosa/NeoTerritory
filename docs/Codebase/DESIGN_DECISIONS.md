@@ -1364,3 +1364,40 @@ on Vercel" win is fully intact while the UI is CSR. In short: **CSR for the UI/a
 server-side proxy for the backend.** The routes-manifest smoke still passes because its
 `toBeVisible` waits for the client mount (testids appear after hydration, as they already
 did for the ssr:false auth surfaces).
+
+## D90 — Learning module reader = side-arrow pager (one section per view)
+**Per user request (2026-05-29).** The `/patterns/learn` lesson panel was one long
+scrolling page (Prerequisite → Intro → Concepts → Examples → Theoretical → Practical
+stacked, with the sidebar subsection anchors smooth-scrolling to each block). It is now a
+**side-arrow pager**: each module section is its own page shown one at a time, flanked by
+‹ › arrows on the edges of the lesson panel, with a horizontal step rail in the head and
+position dots in the foot. The goal was "halos kita lahat sa viewport" — fit each section
+in the viewport instead of scrolling a long column.
+
+**Pages.** `lessonPagesFor(module)` is the single source of the ordered sections — Intro,
+Concepts, Examples (only when the module has code-bearing sections), Theoretical Exam (if
+present), Practical Exam (if present). The sidebar subsection list renders from the SAME
+function, so the rail and the pager can never drift; clicking a subsection jumps the pager
+to that page (no scrolling).
+
+**Navigation + gating (unchanged semantics).** Within a module you can page freely to any
+section (the Practical page shows its own "locked" callout until the theoretical passes).
+The › arrow only **rolls into the next module** when the current module is COMPLETE
+(theoretical + practical-if-any), preserving the linear `computeUnlockedCount` gate; ‹ at
+the first page rolls back into the previous module's last page. The per-module page index
+is local UI state (not in the URL); the URL still carries only `/patterns/learn/<moduleId>`.
+Module changes reset the page via a `pendingPageRef` ('first' on forward nav, 'last' on
+backward, or an explicit index for a sidebar jump).
+
+**Render model.** Only the current page is mounted (keyed by `module.id + page.kind`) so the
+enter animation replays and — importantly — the heavy `PracticalExamBlock` (which seeds the
+shared Studio session on mount/unlock) is never mounted while off-screen. Trade-off: paging
+away from an in-progress theoretical exam discards unsaved picks (answers only persist on
+submit); acceptable since the exam is normally completed on its page. CSS lives under
+`.nt-lesson-pager` / `.nt-pager__*` in `marketing.css`, reusing the existing tokens
+(elevated panel, cyan/lime accents); the deck is height-bounded so the arrows + dots stay
+in view and long sections scroll inside the page region only. Reduced-motion disables the
+page-enter animation.
+
+**Guide kept in sync.** The `/tour` Guide step copy + screenshots were updated to show the
+paged reader (the CLAUDE.md "Guide reflects the product" expectation).

@@ -2048,6 +2048,255 @@ body[data-surface] #root {
   background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
 }
 
+/* ---------- D90: in-module side-arrow pager ---------- */
+/* The lesson panel becomes a fixed-height "deck": a head (module + step rail),
+   a stage flanked by ‹ › arrows showing ONE section at a time, and a foot with
+   dots + the gated Next control. Each section is sized to sit in the viewport;
+   long sections scroll inside the page region only. */
+.nt-lesson-pager {
+  display: flex;
+  flex-direction: column;
+  /* Fill most of the viewport (minus the learn topbar + course hero) so a
+     section reads as a near-full-screen page, while staying bounded so the
+     ‹ › arrows + dots are always in view. */
+  min-height: min(720px, calc(100vh - 132px));
+  max-height: calc(100vh - 88px);
+}
+.nt-pager__head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.8rem 1.4rem;
+  flex-wrap: wrap;
+  padding: 0.95rem clamp(1.2rem, 0.8rem + 1.6vw, 1.9rem);
+  border-bottom: 1px solid var(--nt-mkt-line);
+  background:
+    radial-gradient(circle at top right, rgba(138, 43, 226, 0.16), transparent 46%),
+    rgba(255, 255, 255, 0.02);
+}
+.nt-pager__head-main {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+.nt-pager__eyebrow {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-pager__module-title {
+  margin: 0;
+  color: var(--nt-mkt-text);
+  font-size: clamp(1.15rem, 0.9rem + 1vw, 1.6rem);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+/* Horizontal step rail — clickable section pills, the in-context echo of the
+   sidebar subsections. Scrolls sideways on narrow widths instead of wrapping. */
+.nt-pager__steprail {
+  display: flex;
+  gap: 0.4rem;
+  max-width: 100%;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+  scrollbar-width: thin;
+  scrollbar-color: var(--nt-mkt-line) transparent;
+}
+.nt-pager__steptab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  padding: 0.4rem 0.7rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms var(--nt-mkt-ease), border-color 160ms var(--nt-mkt-ease),
+    color 160ms var(--nt-mkt-ease);
+}
+.nt-pager__steptab-n {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+}
+.nt-pager__steptab:hover {
+  border-color: rgba(0, 209, 216, 0.4);
+  color: var(--nt-mkt-text);
+}
+.nt-pager__steptab[data-active='true'] {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  color: #081018;
+}
+.nt-pager__steptab[data-active='true'] .nt-pager__steptab-n {
+  background: rgba(8, 16, 24, 0.22);
+  color: #081018;
+}
+.nt-pager__steptab[data-locked='true'] {
+  opacity: 0.55;
+}
+.nt-pager__steptab[data-locked='true']::after {
+  content: '\u{1F512}';
+  font-size: 0.7rem;
+}
+.nt-pager__stage {
+  position: relative;
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: stretch;
+  min-height: 0;
+}
+.nt-pager__arrow {
+  align-self: center;
+  flex: 0 0 auto;
+  width: 46px;
+  height: 46px;
+  margin: 0 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--nt-mkt-line-strong);
+  border-radius: 999px;
+  background: rgba(10, 16, 26, 0.72);
+  color: var(--nt-mkt-text);
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 160ms var(--nt-mkt-ease), border-color 160ms var(--nt-mkt-ease),
+    transform 160ms var(--nt-mkt-ease);
+}
+.nt-pager__arrow:hover:not(:disabled) {
+  border-color: rgba(0, 209, 216, 0.5);
+  background: rgba(0, 209, 216, 0.12);
+}
+.nt-pager__arrow--prev:hover:not(:disabled) {
+  transform: translateX(-2px);
+}
+.nt-pager__arrow--next:hover:not(:disabled) {
+  transform: translateX(2px);
+}
+.nt-pager__arrow:focus-visible {
+  outline: 2px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  outline-offset: 2px;
+}
+.nt-pager__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+.nt-pager__page {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(1.3rem, 0.9rem + 1.8vw, 2rem) 0.4rem;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  scrollbar-width: thin;
+  scrollbar-color: var(--nt-mkt-line) transparent;
+  animation: nt-pager-in 340ms var(--nt-mkt-ease, ease) both;
+}
+.nt-pager__page::-webkit-scrollbar {
+  width: 8px;
+}
+.nt-pager__page::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+@keyframes nt-pager-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-pager__page {
+    animation: none;
+  }
+}
+/* Inside the pager the prereq banner + exam blocks drop their long-scroll outer
+   margins — the page region owns the padding now. */
+.nt-pager__page > .nt-lesson-prereq,
+.nt-pager__page > .nt-practical {
+  margin: 0;
+}
+.nt-pager__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem 1rem;
+  flex-wrap: wrap;
+  padding: 0.8rem clamp(1.2rem, 0.8rem + 1.6vw, 1.9rem);
+  border-top: 1px solid var(--nt-mkt-line);
+  background: rgba(255, 255, 255, 0.02);
+}
+.nt-pager__dots {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.nt-pager__dot {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: none;
+  border-radius: 999px;
+  background: var(--nt-mkt-line-strong);
+  cursor: pointer;
+  transition: width 180ms var(--nt-mkt-ease), background 180ms var(--nt-mkt-ease);
+}
+.nt-pager__dot[data-active='true'] {
+  width: 24px;
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+}
+.nt-pager__counter {
+  margin-left: 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.04em;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-pager__foot-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.nt-pager__catalog {
+  min-height: 40px;
+}
+@media (max-width: 720px) {
+  .nt-lesson-pager {
+    min-height: min(620px, calc(100vh - 88px));
+    max-height: none;
+  }
+  .nt-pager__arrow {
+    width: 40px;
+    height: 40px;
+    margin: 0 0.25rem;
+    font-size: 1.45rem;
+  }
+}
+
 /* ---------- Per-module practical (D77 round 4) ---------- */
 .nt-practical {
   margin: 1.25rem clamp(1.4rem, 1rem + 2vw, 2.2rem);

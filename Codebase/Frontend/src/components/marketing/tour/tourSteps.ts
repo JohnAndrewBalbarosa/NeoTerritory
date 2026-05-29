@@ -33,8 +33,8 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'read-the-module',
     title: 'Read the module',
     paragraph:
-      'Each module reads Intro → Concepts → Examples. Concepts are explained in plain language with key terms, and the examples are real C++ — the same kind of code the analyser was built to read. The folder sidebar lets you jump straight to any section.',
-    takeaway: 'Concepts first, in plain language, with code you can actually read.',
+      'Each module steps through Intro → Concepts → Examples one page at a time — tap the ‹ › arrows on the sides (or the step rail across the top) to move between them, so a section sits in the viewport instead of one long scroll. Concepts are explained in plain language with key terms, and the examples are real C++ — the same kind of code the analyser was built to read.',
+    takeaway: 'One section per page, stepped with the side arrows — concepts first, in plain language.',
     imagePath: '/tour/learn-lesson.png',
   },
   {
@@ -42,7 +42,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'theoretical-exam',
     title: 'Pass the theoretical exam',
     paragraph:
-      'Every module ends with a multiple-choice exam. Answer all questions correctly to pass — each answer comes with an explanation of why it is right or wrong, so a miss sends you back to the exact concept to re-read.',
+      'After the reading pages comes the Theoretical Exam — its own page of multiple-choice questions. Answer all of them correctly to pass; each answer carries an explanation of why it is right or wrong, so a miss sends you back to the exact Concepts page to re-read.',
     takeaway: 'You prove you understood the ideas before moving on.',
     imagePath: '/tour/learn-exam.png',
   },
@@ -51,7 +51,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'practical-exam',
     title: 'Prove it in the practical exam',
     paragraph:
-      'Pattern modules add a practical exam with the Studio embedded right inside the module — the same Submit / Patterns / Tests tabs, but with no standalone topbar and no separate developer mode. Write (or paste) your C++ and run the analyser; the module unlocks the moment it detects the target pattern in your code.',
+      'Pattern modules end on a Practical Exam page with the Studio embedded right inside the module — the same Submit / Patterns / Tests tabs, but with no standalone topbar and no separate developer mode. Write (or paste) your C++ and run the analyser; the module completes the moment it detects the target pattern in your code.',
     takeaway: 'The Studio is just the checking surface here — you implement the pattern, the analyser confirms it.',
     imagePath: '/tour/learn-practical.png',
   },
@@ -60,7 +60,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'unlock-next',
     title: 'Unlock the next module',
     paragraph:
-      'Completing a module — its theoretical exam, plus the practical exam where one exists — unlocks the next. Signed-in learners keep their progress across devices; guests keep it for the current visit. The progress bar up top tracks how far along the whole path you are.',
+      'Completing a module — its theoretical exam, plus the practical exam where one exists — unlocks the next, and the › arrow rolls straight into it. Signed-in learners keep their progress across devices; guests keep it for the current visit. The progress bar up top tracks how far along the whole path you are.',
     takeaway: 'Linear progress that remembers where you left off.',
     imagePath: '/tour/learn-path.png',
   },
