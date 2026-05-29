@@ -1346,3 +1346,21 @@ As of 2026-05-29:
   studio — a larger, separately-verifiable effort deferred to B3. `remote-build.sh` still
   builds the Vite dist on AWS (now unused by the API-only server, but harmless); trimming it
   is a B3 item.
+
+**CORRECTION (2026-05-29) — render the UI client-side (CSR), not SSR.** The earlier B2.1
+plan server-rendered the public/marketing surfaces "for first paint." That was a misread of
+the goal: this is an animation-heavy authenticated developer tool, not an SEO/marketing
+site, and server-rendering the marketing pages made the `motion`/`lenis` reveals janky
+(pre-rendered HTML fighting the client reveal on hydration). **All UI surfaces now render
+client-side** — `MarketingSurface` loads `MarketingShell` via `next/dynamic({ ssr:false })`,
+matching the auth/tool surfaces, so animations play from a clean client mount exactly like
+the original Vite SPA. There is no SSR page-rendering left.
+
+This does NOT weaken the actual objective, which was **"make Vercel the backend"**: the
+browser only talks to Vercel, which proxies `/api`·`/auth`·`/health` to AWS **server-side**
+(`next.config` rewrites + the `AWS_BACKEND_ORIGIN` server env). That proxy — not page SSR —
+is what hides the AWS origin, the backend code path, and the `.env`. So the "hidden backend
+on Vercel" win is fully intact while the UI is CSR. In short: **CSR for the UI/animations,
+server-side proxy for the backend.** The routes-manifest smoke still passes because its
+`toBeVisible` waits for the client mount (testids appear after hydration, as they already
+did for the ssr:false auth surfaces).

@@ -5,9 +5,10 @@
 
 ## Logic Summary
 `Codebase/FrontendNext` is the Next.js (App Router) host that replaces the Vite SPA as the
-public frontend served from `neoterritory.vercel.app`. It server-renders the first-paint
-HTML of the existing React surfaces and proxies all backend traffic to the AWS box. It does
-not reimplement any UI: it **reuses the components under `Codebase/Frontend/src` verbatim**
+public frontend served from `neoterritory.vercel.app`. It renders the existing React
+surfaces **client-side (CSR, `ssr:false`)** for smooth animations and proxies all backend
+traffic to the AWS box server-side. It does not reimplement any UI: it **reuses the
+components under `Codebase/Frontend/src` verbatim**
 via a build-time source alias, and adds only the Next shell (root layout, route segments,
 the proxy config, and any streaming Route Handlers).
 
@@ -31,15 +32,20 @@ entry (`@frontend/* → ../Frontend/src/*`). `Codebase/Frontend/src` therefore r
 single source of UI until B2.3 internalises it. This is a deliberate, temporary cross-tree
 import for the migration window, recorded in D89.
 
-## SSR/CSR split
+## Rendering model — CSR everywhere (D89 correction, 2026-05-29)
+Every surface renders **client-side** (`next/dynamic({ ssr:false })`). There is no SSR page
+rendering. Rationale: the app is animation-heavy (`motion`/`lenis`) and authenticated (no SEO
+need), so server-rendering the HTML made the animations janky for zero payoff. Client
+rendering plays the reveals from a clean mount, exactly like the original Vite SPA.
 - **Public/marketing surfaces** (`/`, `/learn`, `/about`, `/mechanics`, `/patterns`,
-  `/patterns/<slug>`, `/tour`, `/docs`, `/docs/full`, plus the retired-path 404s) render on
-  the server for first paint, then hydrate. Because the components use `motion`/`lenis`/
-  browser APIs, most carry `'use client'`; Next still emits their initial HTML.
+  `/patterns/<slug>`, `/tour`, `/docs`, `/docs/full`, plus the retired-path 404s) →
+  `MarketingSurface` (`ssr:false`) → `MarketingShell`.
 - **Auth-gated surfaces** (`/patterns/learn[/*]`, `/studio` + aliases, `/admin[/*]`,
-  `/scraper`, `/auth/callback`, `*/login`, `/onboarding/*`) are thin `'use client'` routes:
-  their meaningful content depends on the `localStorage` JWT, so the server HTML is a shell
-  that hydrates and then fetches through the proxy. No behaviour change vs. the Vite app.
+  `/scraper`, `/auth/callback`, `*/login`, `/onboarding/*`) → their own `ssr:false` wrappers;
+  meaningful content depends on the `localStorage` JWT, fetched through the proxy after mount.
+- **"Vercel is the backend" is the proxy, not SSR.** `next.config` rewrites forward
+  `/api`·`/auth`·`/health` to AWS server-side (`AWS_BACKEND_ORIGIN`), so the browser only sees
+  Vercel and the AWS origin + `.env` stay hidden. That is the entire server-side surface.
 
 ## Proxy
 `next.config.js` rewrites mirror the retired `vercel.json`: `/api/:path*`, `/auth/:path*`,

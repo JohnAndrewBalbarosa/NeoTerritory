@@ -13,10 +13,10 @@ custom-router `useSurface()` switch.
 - `layout.tsx` (has its own `.md`): root `<html>/<body>`, imports the shared global CSS
   (`@frontend/styles/marketing.css`), declares fonts (Inter / JetBrains Mono / Montserrat)
   and default metadata. Wraps `children`. Server Component.
-- `page.tsx`: the home surface (`/`). Mounts the existing `HeroLanding` (and, through it,
-  the marketing chrome) as a client surface. Server-rendered first paint, then hydrates.
-- Further segments are added in B2.1b, each a thin file that renders the existing component
-  for that surface (public → server-rendered HTML; auth-gated → `'use client'` shell):
+- `page.tsx`: the home surface (`/`). Renders `MarketingSurface` (surface="hero"), which
+  loads `MarketingShell` client-side (`ssr:false`) — see the D89 CSR correction.
+- Each surface is a thin route file that renders the existing component **client-side**
+  (`ssr:false`); there is no SSR page rendering (CSR everywhere for smooth animations):
   `learn/`, `about/`, `mechanics/`, `patterns/` (+ `[slug]/`, `learn/`), `tour/`,
   `docs/` (+ `full/`), `studio/` (+ aliases), `admin/`, `scraper/`, `auth/callback/`,
   the `*/login` group, `onboarding/`, and `not-found.tsx` for retired/unknown paths.

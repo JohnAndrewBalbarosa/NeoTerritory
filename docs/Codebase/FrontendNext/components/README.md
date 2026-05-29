@@ -8,6 +8,13 @@ Thin Next-side client wrappers that adapt the shared `@frontend` components to A
 route segments. They contain no UI of their own — they exist only to carry the `'use client'`
 boundary and pass route-derived props into the reused Vite components.
 
+**All surfaces render client-side (CSR).** `MarketingSurface` loads `MarketingShell` via
+`next/dynamic({ ssr:false })`, same as the auth/tool wrappers. This is deliberate (D89
+correction, 2026-05-29): the app is animation-heavy (`motion`/`lenis`) and authenticated,
+so server-rendering its HTML hurt the animations for no SEO gain. Vercel hosts the CSR app
+and proxies `/api`·`/auth`·`/health` to AWS server-side — that proxy (not page SSR) is what
+makes Vercel the apparent backend and hides the AWS origin + `.env`.
+
 ## RouterBridge.tsx (navigation compat — B2.2, D89)
 `RouterBridge.tsx` wires the shared custom router to Next's App Router. The shared
 components navigate via `navigate()`/`replaceUrl()` (in `@frontend/logic/router`), which use
@@ -26,8 +33,9 @@ content until the slug is threaded as a route prop (tracked for B3).
   `app/about/...`, `app/mechanics/...`, `app/patterns*`, `app/tour/...`, `app/docs/...`,
   `app/research/...`, `app/why/...`, `app/not-found.tsx`) renders `<MarketingSurface
   surface="X" />`. The shell provides nav + footer + motion + lenis + the Try-It chooser and
-  switches on the `surface` prop, exactly as the Vite `App.tsx` did. Next server-renders the
-  initial HTML; the shell hydrates on the client.
+  switches on the `surface` prop, exactly as the Vite `App.tsx` did. `MarketingShell` is
+  loaded via `next/dynamic({ ssr:false })`, so it renders client-only (no SSR) — animations
+  play from a clean mount.
 
 ## Auth-gated wrappers (browser-only islands)
 Auth surfaces have no SSR value (they need the localStorage JWT + browser APIs), so each is
