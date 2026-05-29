@@ -85,7 +85,7 @@ export default function GoogleCallback() {
   const setAuth = useAppStore((s) => s.setAuth);
   const [phase, setPhase] = useState<'verifying' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [errorCanSignUp, setErrorCanSignUp] = useState<{ role: 'admin' | 'developer' | 'pm' } | null>(null);
+  const [errorCanSignUp, setErrorCanSignUp] = useState<{ role: 'admin' | 'learner' | 'pm' } | null>(null);
   // Ref to lock the destination once resolved. Prevents any stale URL
   // `next` param from leaking into the navigation between the fetch
   // resolve and the actual browser nav.
@@ -134,17 +134,17 @@ export default function GoogleCallback() {
             status?: number;
             existing?: boolean;
             allowed?: boolean;
-            attemptedRole?: 'admin' | 'developer' | 'pm';
+            attemptedRole?: 'admin' | 'learner' | 'pm';
           };
           err.status = r.status;
           err.existing = body.existing === false ? false : undefined;
           err.allowed = body.allowed === false ? false : undefined;
-          // The admin tier is hidden from the UI (no /auth/choose admin
-          // card). If a user deep-linked to /admin/login and hit an
-          // error, collapse it into the PM fallback CTA so the recovery
-          // path matches what the chooser actually exposes.
+          // The admin tier is hidden from the UI (no admin card in the
+          // sign-in flow). If a user deep-linked to /admin/login and hit an
+          // error, collapse it into the PM fallback CTA; everyone else
+          // recovers via the learner sign-in (developer mode was retired).
           err.attemptedRole =
-            role === 'admin' || role === 'pm' ? 'pm' : 'developer';
+            role === 'admin' || role === 'pm' ? 'pm' : 'learner';
           throw err;
         }
         return body as ExchangeResponse;
@@ -163,7 +163,7 @@ export default function GoogleCallback() {
         destinationRef.current = resolveDestination(data, fallbackNext);
         landAt(destinationRef.current);
       })
-      .catch((err: Error & { status?: number; existing?: boolean; allowed?: boolean; attemptedRole?: 'admin' | 'developer' | 'pm' }) => {
+      .catch((err: Error & { status?: number; existing?: boolean; allowed?: boolean; attemptedRole?: 'admin' | 'learner' | 'pm' }) => {
         setPhase('error');
         setErrorMsg(err.message || 'Sign-in failed.');
         if (err.status === 404 && err.existing === false && err.attemptedRole) {
@@ -183,7 +183,7 @@ export default function GoogleCallback() {
         ? '/admin/login'
         : errorCanSignUp.role === 'pm'
           ? '/pm/login'
-          : '/developer/login';
+          : '/student-learning/login';
     navigate(`${target}?intent=new`);
   }
 
@@ -222,7 +222,9 @@ export default function GoogleCallback() {
                 >
                   {errorCanSignUp.role === 'pm'
                     ? 'Switch to PM sign-in instead →'
-                    : `Sign up as ${errorCanSignUp.role} instead →`}
+                    : errorCanSignUp.role === 'learner'
+                      ? 'Create your learner account →'
+                      : `Sign up as ${errorCanSignUp.role} instead →`}
                 </button>
               )}
               <button type="button" className="ghost-btn" onClick={() => navigate('/')}>

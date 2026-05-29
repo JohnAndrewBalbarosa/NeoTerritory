@@ -126,9 +126,10 @@ export const CATEGORY_META: ReadonlyArray<LearningCategoryMeta> = [
 ];
 
 // -------------------------------------------------------------------------
-// Foundations modules — ported from StudentLearningHub.INTRO_LESSONS and
-// tightened so each module reads as a standalone reference. Citations
-// trimmed to those actually relevant to the module's claim.
+// Foundations modules — the canonical intro lessons (formerly the legacy
+// StudentLearningHub's INTRO_LESSONS, since retired) tightened so each module
+// reads as a standalone reference. Citations trimmed to those actually
+// relevant to the module's claim.
 // -------------------------------------------------------------------------
 
 const FOUNDATIONS_MODULES: ReadonlyArray<LearningModule> = [

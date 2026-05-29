@@ -1,8 +1,7 @@
 import { useEffect } from 'react';
 
-// Body scroll lock shared by full-screen overlays / modal pages (the
-// TryItChooser "/choose" popup, the seat-claim step, and any other dialog
-// that should pin the page behind it).
+// Body scroll lock shared by full-screen overlays / modal pages (any dialog
+// or sheet that should pin the page behind it while it is open).
 //
 // Why ref-counted: more than one overlay can be open at once (e.g. a modal
 // stacked over the chooser). A naive "set overflow hidden on mount, restore

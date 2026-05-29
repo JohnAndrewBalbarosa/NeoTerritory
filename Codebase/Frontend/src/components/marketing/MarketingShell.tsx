@@ -8,7 +8,6 @@ import HeroLanding from './HeroLanding';
 import LearningPage from './LearningPage';
 import AboutPage from './AboutPage';
 import NotFoundPage from './NotFoundPage';
-import StudentLearningHub from './StudentLearningHub';
 import MechanicsPage from './mechanics/MechanicsPage';
 import PatternsPage from './patterns/PatternsPage';
 import PatternDetailPage from './patterns/PatternDetailPage';
@@ -26,8 +25,8 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
 
   // D77: redirect legacy /student-learning to /patterns/learn so old
-  // bookmarks keep working. This runs in an effect so the redirect
-  // happens after first paint (preventing a blank flash).
+  // bookmarks keep working. The surface renders nothing (the StudentLearningHub
+  // was retired) and this effect routes to the new learning home on mount.
   useEffect(() => {
     if (surface === 'studentLearning') {
       navigate('/patterns/learn');
@@ -82,7 +81,9 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'learn' && <LearningPage />}
           {surface === 'about' && <AboutPage />}
           {surface === 'notFound' && <NotFoundPage />}
-          {surface === 'studentLearning' && <StudentLearningHub />}
+          {/* studentLearning is a legacy redirect-only surface (see effect
+              above) — it renders nothing and immediately routes to
+              /patterns/learn. The old StudentLearningHub was removed. */}
           {surface === 'mechanics' && <MechanicsPage />}
           {surface === 'patterns' && <PatternsPage />}
           {surface === 'patternDetail' && <PatternDetailPage />}
