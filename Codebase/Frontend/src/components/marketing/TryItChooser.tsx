@@ -2,25 +2,19 @@ import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import SeatClaimPanel from '../auth/SeatClaimPanel';
 import { useFeatureReleases } from '../../hooks/useFeatureReleases';
-import { useAppStore } from '../../store/appState';
 import { useScrollLock } from '../../hooks/useScrollLock';
 
 // Homepage chooser popup. Single public-facing auth surface across the
 // marketing site: every "Try it now" / hero / nav CTA dispatches
-// TRY_IT_OPEN_EVENT and MarketingShell mounts this modal. Three cards
-// (Tester / Student / Developer), plus a nested seat-claim step for
-// the Tester (Guest) path.
+// TRY_IT_OPEN_EVENT and MarketingShell mounts this modal.
 //
-// PM / admin sign-in is intentionally HIDDEN from this public popup —
-// admins reach the OAuth flow via either:
-//   1. The /auth/choose page (URL-addressable two-button picker), or
-//   2. The /admin route, which renders an admin sign-in card with a
-//      "Sign in with Google" button (and a hidden legacy
-//      username/password fallback for the seeded thesis admin).
-//
-// The previous /choose entry page and the /login seat-pick page are gone;
-// any public seat-claim, sign-in, or pick-a-role flow now goes through
-// this component.
+// Product is learning-only (no developer mode; the Studio is only the
+// practical-exam wrapper inside a module). So both public paths land on the
+// LEARNING PATH (/patterns/learn):
+//   - Guest: claim an open guest seat, then start learning (progress in-memory).
+//   - Sign in: Google OAuth, then learn with progress saved across devices.
+// PM sign-in is hidden behind the `pm-accounts` flag (org management). Admins
+// reach OAuth via the /admin route. The retired /choose + /login pages are gone.
 
 export const TRY_IT_OPEN_EVENT = 'nt:open-try-it-chooser';
 
@@ -37,7 +31,7 @@ interface TryItChooserProps {
 type View = 'choices' | 'seatClaim';
 
 interface ChoiceCard {
-  id: 'tester' | 'student-learning' | 'developer' | 'pm';
+  id: 'tester' | 'student-learning' | 'pm';
   eyebrow: string;
   title: string;
   blurb: string;
@@ -47,35 +41,28 @@ const CARDS: ReadonlyArray<ChoiceCard> = [
   {
     id: 'tester',
     eyebrow: 'Guest',
-    title: 'Try as guest',
+    title: 'Start as a guest',
     blurb:
-      'Continue as a guest to try the analyzer. No account, no saved history — good for a one-time look around.',
+      'Claim an open guest seat and jump straight into the learning path — no account needed. Progress is kept for this visit only.',
   },
   {
     id: 'student-learning',
-    eyebrow: 'Learn first',
-    title: 'Student Learning',
+    eyebrow: 'Sign in',
+    title: 'Sign in to save progress',
     blurb:
-      'Walk through the lessons and see the patterns before running your own code. Reading is free; no sign-in needed.',
-  },
-  {
-    id: 'developer',
-    eyebrow: 'Account',
-    title: 'Sign in or create account',
-    blurb:
-      'Sign in with Google. Whether your account is new or existing, we set it up automatically — then you go straight to /studio, with your runs and history saved.',
+      'Sign in with Google to keep your module progress across devices. Reading the lessons is free — sign-in just remembers where you left off.',
   },
 ];
 
 // Optional PM card — only injected when the `pm-accounts` feature flag is
 // released. The card lives outside the base CARDS so existing visitors
-// without the flag see the unchanged three-card chooser.
+// without the flag see the unchanged learner chooser.
 const PM_CARD: ChoiceCard = {
   id: 'pm',
   eyebrow: 'Project manager',
   title: 'I manage a CodiNeo org',
   blurb:
-    "PM sign-in: manage testers, invite developers, and switch between the studio and admin sides. Backend auto-routes via Google OAuth.",
+    'PM sign-in: manage testers and the admin side. Backend auto-routes via Google OAuth.',
 };
 
 export default function TryItChooser({ open, onClose }: TryItChooserProps) {
@@ -104,10 +91,9 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
 
-  // Mirror the admin's tester-visibility toggle: when an admin has
-  // flipped testers off, the Tester (Guest) card disappears from the
-  // popup so a public visitor only sees Learning + Developer. The
-  // /auth/test-accounts endpoint already publishes `testersHidden`.
+  // Mirror the admin's tester-visibility toggle: when an admin has flipped
+  // testers off, the Guest card disappears so a public visitor only sees the
+  // Sign-in path. The /auth/test-accounts endpoint publishes `testersHidden`.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -129,52 +115,22 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
 
   function pickCard(card: ChoiceCard): void {
     if (card.id === 'tester') {
-      // Drop any stale entry-flow stamp so MainLayout treats this user
-      // as a research participant.
+      // Guest path: clear any stale entry-flow stamp, then claim a seat below.
       try { sessionStorage.removeItem('nt-entry-flow'); } catch { /* ignore */ }
       setView('seatClaim');
       return;
     }
     if (card.id === 'student-learning') {
-      // Stamp the entry flow before navigating so MainLayout / GoogleCallback
-      // know this is a real-account path when the user finishes OAuth.
-      try { sessionStorage.setItem('nt-entry-flow', 'student'); } catch { /* ignore */ }
+      // Stamp the learner entry flow before navigating so GoogleCallback lands
+      // the user on the learning path after OAuth.
+      try { sessionStorage.setItem('nt-entry-flow', 'learner'); } catch { /* ignore */ }
       onClose();
       navigate('/student-learning/login');
       return;
     }
-    if (card.id === 'developer') {
-      // Account path. Two cases per the homepage spec:
-      //   1. Already signed in → skip OAuth entirely, go straight to
-      //      /studio (auth is rehydrated from localStorage at store init,
-      //      so this survives a refresh).
-      //   2. Not signed in → hand off to the same Google sign-in surface
-      //      the student path uses (GoogleSignInPage), but with
-      //      intent=new so the backend create-or-sign-in upsert runs.
-      //      intent=new is the universal path: a brand-new Gmail gets a
-      //      developer account auto-created, an existing email is matched
-      //      to its row — neither hits the intent=existing 404. role
-      //      'developer' resolves next=/studio, so GoogleCallback lands
-      //      the user directly in the studio (no onboarding detour, since
-      //      needsOnboarding is only set for the 'new' role).
-      //
-      // The previous target, /auth/choose, is a retired surface that
-      // MarketingShell bounces back to '/', which is why clicking Account
-      // looped the user back to the homepage instead of authenticating.
-      const { token, user } = useAppStore.getState();
-      if (token && user) {
-        onClose();
-        navigate('/studio');
-        return;
-      }
-      try { sessionStorage.setItem('nt-entry-flow', 'developer'); } catch { /* ignore */ }
-      onClose();
-      navigate('/developer/login?intent=new');
-      return;
-    }
     if (card.id === 'pm') {
-      // PM-accounts feature flag path. Stamp the entry flow and land
-      // on /pm/login (the Google sign-in surface keyed to the PM role).
+      // PM-accounts feature flag path. Stamp the entry flow and land on
+      // /pm/login (the Google sign-in surface keyed to the PM role).
       try { sessionStorage.setItem('nt-entry-flow', 'pm'); } catch { /* ignore */ }
       onClose();
       navigate('/pm/login');
@@ -183,8 +139,10 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
   }
 
   function onSeatClaimed(): void {
+    // Learning-only: a claimed guest lands on the learning path, not a
+    // standalone studio (the Studio now lives inside module practicals).
     onClose();
-    navigate('/studio');
+    navigate('/patterns/learn');
   }
 
   return (
@@ -204,8 +162,8 @@ export default function TryItChooser({ open, onClose }: TryItChooserProps) {
                 How do you want to start?
               </h2>
               <p className="nt-tryit__lede">
-                The analyzer stays the same behind every path. Pick the one that matches how you
-                want to use it.
+                Both paths open the same learning path. Pick whether you want to keep your
+                progress.
               </p>
               <button
                 type="button"

@@ -37,7 +37,6 @@ const RETIRED_PATHS = new Set<string>(['/choose', '/login', '/seat-selection', '
 const STUDIO_ALIASES = [
   '/app',
   '/studio',
-  '/developer',
   '/student-studio',
 ];
 
@@ -53,7 +52,6 @@ export function pathToSurface(path: string): Surface {
   // bookmarks still land on a working chooser without a separate page.
   if (path === '/onboarding' || path.startsWith('/onboarding/')) return 'onboarding';
   if (
-    path === '/developer/login' ||
     path === '/student-learning/login' ||
     path === '/admin/login' ||
     path === '/pm/login' ||

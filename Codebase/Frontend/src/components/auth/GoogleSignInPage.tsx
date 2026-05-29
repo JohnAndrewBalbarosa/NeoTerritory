@@ -21,7 +21,7 @@ function resolveRole(pathname: string): Role {
   if (pathname.startsWith('/admin/login')) return 'admin';
   if (pathname.startsWith('/pm/login')) return 'pm';
   if (pathname.startsWith('/new-user/login')) return 'new';
-  // /student-learning/login and /developer/login both resolve to learner.
+  // /student-learning/login (and any other learner entry) resolves to learner.
   return 'learner';
 }
 
@@ -54,13 +54,12 @@ function resolveLede(role: Role): string {
   return 'Sign in with Google. Afterwards, the onboarding wizard will ask whether you are an admin or a developer.';
 }
 
-// Keep per-path testids stable so the routes manifest selectors don't move
-// even though /developer/login now resolves to the learner role.
+// Per-path testids pinned to the routes manifest selectors. (The /developer/login
+// entry was retired with developer mode; learners use /student-learning/login.)
 function resolveTestId(pathname: string): string {
   if (pathname.startsWith('/admin/login')) return 'admin-login';
   if (pathname.startsWith('/pm/login')) return 'pm-login';
   if (pathname.startsWith('/new-user/login')) return 'new-user-login';
-  if (pathname.startsWith('/developer/login')) return 'developer-login';
   return 'student-login';
 }
 

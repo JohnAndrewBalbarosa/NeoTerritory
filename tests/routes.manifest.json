@@ -64,13 +64,6 @@
       "expectSelector": "[data-testid=\"admin-login\"]"
     },
     {
-      "path": "/developer/login",
-      "name": "developer-google-login",
-      "auth": "public",
-      "expectStatus": 200,
-      "expectSelector": "[data-testid=\"developer-login\"]"
-    },
-    {
       "path": "/pm/login",
       "name": "pm-google-login",
       "auth": "public",
