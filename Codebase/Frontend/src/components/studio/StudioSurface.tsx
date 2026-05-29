@@ -157,12 +157,19 @@ export default function StudioSurface({
     if (!targetPatternSlug || !onPatternDetected || detectedReported) return;
     const targetKey = normalizePatternKey(targetPatternSlug);
     const targetNameKey = normalizePatternKey(targetPatternName);
-    const hit = (run.detectedPatterns || []).some((p) => {
-      const idKey = normalizePatternKey(p.patternId);
-      const nameKey = normalizePatternKey(p.patternName);
-      return idKey === targetKey || idKey === targetNameKey
-          || nameKey === targetKey || nameKey === targetNameKey;
-    });
+    const matchesTarget = (key: string): boolean => key === targetKey || key === targetNameKey;
+    // The target counts as "detected" if it is among the confidently-tagged
+    // patterns OR among the AMBIGUOUS candidates (D92): when the analyser can't
+    // separate same-structure rivals it returns them all as candidates, so if the
+    // module's target pattern is one of them we still auto-resolve to it. The
+    // per-module autoTag gate in PracticalExamBlock then decides whether this
+    // auto-passes (autoTag on) or waits for a manual pick (semantic-differentiation
+    // exams set autoTag off, so the learner must choose among the candidates).
+    const hit =
+      (run.detectedPatterns || []).some(
+        (p) => matchesTarget(normalizePatternKey(p.patternId)) || matchesTarget(normalizePatternKey(p.patternName)),
+      ) ||
+      (run.ranking?.ambiguousCandidates || []).some((c) => matchesTarget(normalizePatternKey(c)));
     if (hit) {
       setDetectedReported(true);
       onPatternDetected(run);
