@@ -4,6 +4,7 @@ import type { AdminLearningRaw } from '../../types/api';
 import { isAuthError } from '../lib/silenceAuthErrors';
 import InstructorStudents from './InstructorStudents';
 import InstructorModules from './InstructorModules';
+import InstructorKpis from './InstructorKpis';
 import LearningAnalytics from './LearningAnalytics';
 
 // Instructor dashboard container (D91). Fetches the RAW learning payload once on
@@ -44,6 +45,9 @@ export default function InstructorDashboard(): JSX.Element {
 
   return (
     <div className="instructor-dashboard">
+      {/* KPI row (D92 Track A) — client-side from the already-fetched raw payload. */}
+      {raw && <InstructorKpis raw={raw} />}
+
       <nav className="instructor-segmented" role="tablist" aria-label="Instructor sub-views">
         {SUBVIEWS.map((s) => (
           <button

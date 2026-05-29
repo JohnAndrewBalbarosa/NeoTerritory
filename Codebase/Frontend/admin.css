@@ -504,6 +504,10 @@ body{position:relative;}
    list. Reuses the existing admin tokens (surface / accent / green-amber-red /
    radius). Does not restyle existing components. */
 
+/* Instructor dashboard KPI row (D92 Track A) — reuses .admin-stats grid + .stat-card. */
+.instructor-kpis{margin-bottom:18px;}
+.instructor-kpi__title{font-size:15px;line-height:1.25;}
+
 /* Segmented control switching Students | Modules | Questions. */
 .instructor-segmented{display:inline-flex;gap:2px;padding:3px;margin-bottom:18px;border:1px solid var(--border);border-radius:999px;background:var(--surface2);}
 .instructor-seg-btn{appearance:none;border:none;background:transparent;color:var(--ink-soft);font:600 12.5px/1 var(--ui-font);letter-spacing:.02em;padding:7px 16px;border-radius:999px;cursor:pointer;transition:color 160ms,background 160ms;}
