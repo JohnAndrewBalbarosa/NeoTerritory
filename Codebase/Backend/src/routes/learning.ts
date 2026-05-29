@@ -16,6 +16,7 @@ import express, { Request, Response, NextFunction } from 'express';
 import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { sanitizeAnswers } from '../services/learningQuestionStats';
+import { mirrorRow } from '../services/supabaseLogger';
 
 const router = express.Router();
 
@@ -133,6 +134,19 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
          updated_at                = datetime('now')`,
     ).run(req.user.id, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized);
 
+    // Mirror to Supabase (best-effort, keyed by email — D91). SQLite above is
+    // the source of truth; this never blocks the learner.
+    if (req.user.email) {
+      mirrorRow('learning_progress', {
+        user_email: req.user.email.toLowerCase(),
+        completed_module_ids: completedModuleIds,
+        last_unlocked_module_id: lastUnlockedModuleId,
+        tries_by_module: triesByModule,
+        theory_passed_module_ids: theoryPassedModuleIds,
+        updated_at: new Date().toISOString(),
+      });
+    }
+
     res.json({ ok: true, completedModuleIds, lastUnlockedModuleId, triesByModule, theoryPassedModuleIds });
   } catch (err) {
     next(err);
@@ -181,6 +195,48 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
       }
     });
     tx(answers);
+
+    // Append-only exam-attempt log (D91): one row per submit with the score +
+    // pass flag so the Instructor tab can chart improvement and count
+    // pass/fail. attempt_no is DB-derived (prior attempts for this user+module
+    // + 1) so it reflects real submits, not a client-supplied counter.
+    const correctCount = answers.reduce((n, a) => n + (a.isCorrect ? 1 : 0), 0);
+    const totalQuestions = answers.length;
+    const passed = totalQuestions > 0 && correctCount === totalQuestions ? 1 : 0;
+    const priorRow = db
+      .prepare(`SELECT COUNT(*) AS n FROM learning_exam_attempts WHERE user_id = ? AND module_id = ?`)
+      .get(req.user.id, moduleId) as { n: number } | undefined;
+    const attemptNo = (priorRow?.n ?? 0) + 1;
+    db.prepare(
+      `INSERT INTO learning_exam_attempts
+         (user_id, module_id, attempt_no, correct_count, total_questions, passed, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
+    ).run(req.user.id, moduleId, attemptNo, correctCount, totalQuestions, passed);
+
+    // Mirror to Supabase (best-effort, keyed by email — D91).
+    const email = req.user.email ? req.user.email.toLowerCase() : null;
+    if (email) {
+      const nowIso = new Date().toISOString();
+      for (const a of answers) {
+        mirrorRow('learning_question_results', {
+          user_email: email,
+          module_id: moduleId,
+          question_index: a.questionIndex,
+          selected_index: a.selectedIndex,
+          is_correct: a.isCorrect,
+          updated_at: nowIso,
+        });
+      }
+      mirrorRow('learning_exam_attempts', {
+        user_email: email,
+        module_id: moduleId,
+        attempt_no: attemptNo,
+        correct_count: correctCount,
+        total_questions: totalQuestions,
+        passed,
+        created_at: nowIso,
+      });
+    }
 
     res.json({ ok: true, recorded: answers.length });
   } catch (err) {

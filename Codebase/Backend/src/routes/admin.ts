@@ -285,6 +285,75 @@ router.get('/stats/learning-questions', (req: Request, res: Response, next: Next
   } catch (err) { next(err); }
 });
 
+// Raw learning dataset for the Instructor tab (D91). Returns per-user rows so
+// the admin client does ALL aggregation (scores, pass/fail, improvement,
+// module difficulty) from start to finish — no server-side rollup here. Reads
+// SQLite (the source of truth; Supabase holds the durable mirror). Guests
+// (devcon*) never appear: they don't record learning data.
+router.get('/stats/learning-raw', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const students = db.prepare(`
+      SELECT u.id AS userId, u.username, u.email, u.created_via AS createdVia
+      FROM users u
+      WHERE u.id IN (
+        SELECT user_id FROM learning_progress
+        UNION SELECT user_id FROM learning_question_results
+        UNION SELECT user_id FROM learning_exam_attempts
+      )
+      ORDER BY u.username ASC
+    `).all();
+
+    const safeArr = (s: string | null | undefined): string[] => {
+      if (!s) return [];
+      try {
+        const p = JSON.parse(s);
+        return Array.isArray(p) ? p.filter((x): x is string => typeof x === 'string') : [];
+      } catch { return []; }
+    };
+    const safeObj = (s: string | null | undefined): Record<string, number> => {
+      if (!s) return {};
+      try {
+        const p = JSON.parse(s);
+        return p && typeof p === 'object' && !Array.isArray(p) ? (p as Record<string, number>) : {};
+      } catch { return {}; }
+    };
+    const progressRows = db.prepare(`
+      SELECT user_id AS userId, completed_module_ids AS completed,
+             last_unlocked_module_id AS lastUnlocked, tries_by_module AS tries,
+             theory_passed_module_ids AS theoryPassed, updated_at AS updatedAt
+      FROM learning_progress
+    `).all() as Array<{
+      userId: number; completed: string; lastUnlocked: string | null;
+      tries: string; theoryPassed: string; updatedAt: string;
+    }>;
+    const progress = progressRows.map((r) => ({
+      userId: r.userId,
+      completedModuleIds: safeArr(r.completed),
+      lastUnlockedModuleId: r.lastUnlocked,
+      triesByModule: safeObj(r.tries),
+      theoryPassedModuleIds: safeArr(r.theoryPassed),
+      updatedAt: r.updatedAt,
+    }));
+
+    const questionResults = db.prepare(`
+      SELECT user_id AS userId, module_id AS moduleId, question_index AS questionIndex,
+             selected_index AS selectedIndex, is_correct AS isCorrect,
+             first_attempt_correct AS firstAttemptCorrect, attempts, updated_at AS updatedAt
+      FROM learning_question_results
+    `).all();
+
+    const examAttempts = db.prepare(`
+      SELECT id, user_id AS userId, module_id AS moduleId, attempt_no AS attemptNo,
+             correct_count AS correctCount, total_questions AS totalQuestions,
+             passed, created_at AS createdAt
+      FROM learning_exam_attempts
+      ORDER BY created_at ASC
+    `).all();
+
+    res.json({ students, progress, questionResults, examAttempts });
+  } catch (err) { next(err); }
+});
+
 // Five-minute window matches the admin UI's "online" indicator. A user with no
 // last_active row, or last_active older than this, is considered offline and
 // safe to reset without dropping their session.

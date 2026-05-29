@@ -99,7 +99,13 @@ export function isSupabaseLoggerEnabled(): boolean {
 // rebroadcasts, replays). The conflict column must be a unique
 // constraint or PK on the Supabase side.
 const UPSERT_BY_PK: Record<string, string> = {
-  users: 'id'
+  users: 'id',
+  // Learning-analytics mirror (D91), keyed by email — the durable cross-DB
+  // identity org_memberships uses (the JWT carries only the SQLite int id +
+  // email, no Supabase UUID for non-org learners). learning_exam_attempts is
+  // append-only, so it is intentionally NOT listed (plain INSERT).
+  learning_progress: 'user_email',
+  learning_question_results: 'user_email,module_id,question_index'
 };
 
 export function mirrorRow(table: string, row: Record<string, unknown>): void {

@@ -1401,3 +1401,49 @@ page-enter animation.
 
 **Guide kept in sync.** The `/tour` Guide step copy + screenshots were updated to show the
 paged reader (the CLAUDE.md "Guide reflects the product" expectation).
+
+## D91 — Instructor analytics dashboard (learning scores) + Supabase mirror keyed by email
+**Per user request (2026-05-29).** The course operators (formerly "admin") get an
+instructor-facing analytics surface. Naming: the admin **"Learning" tab is renamed
+"Instructor"** in the UI AND in the docs — refer to it as the **Instructor tab**, not
+"admin", everywhere this feature surfaces.
+
+**What already existed (SQLite, signed-in learners only — guests `devcon*` excluded by the
+client guard):** `learning_progress` (completed / theory-passed / tries / last-unlocked) and
+`learning_question_results` (per question: selected, is_correct, first_attempt_correct,
+attempts), plus the per-question first-try pass-rate heatmap + drilldown (`LearningAnalytics.tsx`,
+`/api/admin/stats/learning-questions`). This decision adds the student-centric view,
+improvement-over-time, module-difficulty ranking, raw-data-for-client-aggregation, downloads,
+and the Supabase copy.
+
+**Append-only attempt history.** New SQLite table `learning_exam_attempts` (id, user_id,
+module_id, attempt_no, correct_count, total_questions, passed, created_at) — ONE row per
+theoretical-exam *submit* (vs `learning_question_results` which upserts latest state). It is
+written in the existing `PUT /api/learning/answers` handler (the body already carries
+`{moduleId, attempt, answers[]}`, so correct/total/passed are derivable) — **no learner-client
+change**. This unlocks score-over-time + pass/fail counts.
+
+**Storage = Supabase, implemented as a MIRROR (not a rewrite).** The whole backend is
+SQLite-primary with a best-effort Supabase mirror (`services/supabaseLogger.ts` `mirrorRow()`
+→ PostgREST; users/org_memberships/logs all do this). Learning follows suit: SQLite stays the
+**source of truth + read path**; the three learning tables are mirrored to Supabase keyed by
+**`user_email`** (the durable cross-DB identity org_memberships uses — the JWT carries only the
+SQLite int id + email, no Supabase UUID for non-org learners). `learning_progress` +
+`learning_question_results` upsert by email (+ module/question); `learning_exam_attempts` is
+append-only. Supabase is the durable, console-queryable copy; it is **not** the authoritative
+read source (a Postgres read path doesn't exist in this backend — out of scope; flagged).
+
+**Client-side aggregation contract.** New admin endpoint `GET /api/admin/stats/learning-raw`
+(reads SQLite) returns RAW per-user rows: `{students, progress, questionResults, examAttempts}`.
+The Instructor UI does ALL aggregation client-side (per-student scores/attempts/pass-fail/
+improvement; module difficulty). Question/option text is resolved client-side from
+`data/learningModules.ts` (per D87 — not stored server-side).
+
+**Difficulty ranking + display-only grouping.** Module difficulty `D = 1 −
+moduleFirstTryPassRate`; ranked hardest-first, top-3 + expand-all. Modules of near-equal
+difficulty (binned by rounded D) share a display rank ("Rank 6: Module 4 & Module 19") — a
+REPRESENTATION-only grouping; DB rows stay per-module.
+
+**Improvement** = primary: eventual-correct-rate − first-try-rate (recovery through retries,
+available from `learning_question_results`); secondary: per-module first→latest attempt-score
+trend from `learning_exam_attempts`.

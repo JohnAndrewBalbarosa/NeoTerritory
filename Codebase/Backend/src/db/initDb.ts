@@ -279,6 +279,26 @@ export function initDb(): void {
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`).run();
 
+  // ── learning_exam_attempts (append-only theoretical-exam submit log, D91) ─
+  // One row per exam SUBMIT (not per question): the score + pass flag at that
+  // moment, with a server timestamp. Unlike learning_question_results (which
+  // upserts latest state), this is append-only so the Instructor tab can chart
+  // improvement over time and count pass/fail attempts. Written in the
+  // PUT /api/learning/answers handler; signed-in learners only.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_exam_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    module_id TEXT NOT NULL,
+    attempt_no INTEGER NOT NULL,
+    correct_count INTEGER NOT NULL,
+    total_questions INTEGER NOT NULL,
+    passed INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_lea_user_module
+    ON learning_exam_attempts(user_id, module_id)`).run();
+
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email
   // entered the ORIGINAL_DEV_EMAILS allowlist, resolveAdminOrg would
