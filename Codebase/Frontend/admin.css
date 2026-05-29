@@ -552,3 +552,65 @@ body{position:relative;}
 .provider-pill[data-provider="oauth"]{color:var(--cyan);border-color:color-mix(in oklab, var(--cyan) 45%, transparent);background:color-mix(in oklab, var(--cyan) 12%, transparent);}
 .provider-pill[data-provider="guest"]{color:var(--amber);border-color:color-mix(in oklab, var(--amber) 45%, transparent);background:color-mix(in oklab, var(--amber) 12%, transparent);}
 .provider-pill[data-provider="legacy"]{color:var(--ink-soft);}
+
+/* === COURSES TAB (D92 Track B-UI) === */
+/* Learning-CMS module list + editor modal. Reuses admin tokens (surface /
+   border / accent / pill / admin-table / admin-catalog-field inputs +
+   admin-feature-row__toggle). Scoped to .courses-* so no other component
+   restyles. */
+.courses-head{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;}
+.courses-head > div{min-width:0;}
+.courses-table-wrap{overflow-x:auto;margin-top:8px;}
+.courses-table tbody tr{cursor:default;}
+.courses-table tbody tr:hover{background:transparent;}
+.courses-cell-title{display:flex;flex-direction:column;gap:3px;min-width:0;}
+.courses-cell-title strong{color:var(--ink);font-weight:600;}
+.courses-cell-id{font-family:var(--code-font);font-size:11px;color:var(--ink-soft);}
+.courses-cat-pill{text-transform:capitalize;color:var(--purple);border-color:color-mix(in oklab, var(--purple) 40%, transparent);background:color-mix(in oklab, var(--purple) 12%, transparent);}
+.courses-cell-dim{color:var(--ink-dim);}
+.courses-toggle{min-width:96px;padding:6px 12px;font-size:11px;}
+.courses-row-actions{display:flex;gap:8px;justify-content:flex-end;white-space:nowrap;}
+.courses-delete-btn:hover:not(:disabled){border-color:var(--red);color:var(--red);background:color-mix(in oklab, var(--red) 8%, transparent);}
+
+/* Editor modal — same overlay treatment as the log-delete modal but wider and
+   scrollable for the long form. */
+.courses-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:flex-start;justify-content:center;z-index:120;padding:24px 16px;overflow-y:auto;animation:fade-in 180ms ease both;}
+.courses-modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);width:min(760px,100%);max-width:100%;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;max-height:calc(100vh - 48px);}
+.courses-modal__head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:18px 22px;border-bottom:1px solid var(--border);}
+.courses-modal__head h3{margin:0;font-size:17px;color:var(--ink);}
+.courses-modal__body{flex:1;overflow-y:auto;padding:18px 22px;display:flex;flex-direction:column;gap:18px;}
+.courses-modal__foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--border);}
+
+.courses-fieldset{border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px 16px;margin:0;display:flex;flex-direction:column;gap:12px;}
+.courses-fieldset > legend{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-soft);padding:0 6px;}
+.courses-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+@media(max-width:560px){.courses-grid{grid-template-columns:1fr;}}
+.courses-fieldset textarea,.courses-fieldset select{padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;font-family:inherit;width:100%;box-sizing:border-box;}
+.courses-fieldset textarea:focus,.courses-fieldset select:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.courses-fieldset textarea{resize:vertical;line-height:1.5;}
+.courses-code{font-family:var(--code-font);font-size:12px;}
+
+.courses-subcard{border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface2);padding:12px 14px;display:flex;flex-direction:column;gap:10px;}
+.courses-subcard__head{display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.courses-subcard__head strong{font-size:13px;color:var(--ink);}
+.courses-subcard__actions{display:flex;gap:6px;}
+
+.courses-toggle-row{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--ink);cursor:pointer;}
+.courses-toggle-row input[type="checkbox"]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;}
+
+.courses-options{display:flex;flex-direction:column;gap:8px;border:1px dashed var(--border);border-radius:var(--radius-sm);padding:10px 12px;}
+.courses-options__label{font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);}
+.courses-option-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;}
+.courses-option-row input[type="radio"]{width:16px;height:16px;accent-color:var(--green);cursor:pointer;}
+.courses-option-row input[type="text"]{padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;width:100%;box-sizing:border-box;}
+.courses-option-row input[type="text"]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.courses-pair-row{display:grid;grid-template-columns:minmax(120px,1fr) 2fr auto;gap:8px;align-items:center;}
+.courses-pair-row input{padding:7px 10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;width:100%;box-sizing:border-box;}
+.courses-pair-row input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.courses-sortorder input[type="number"]{width:120px;padding:9px 11px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--ink);font-size:13px;}
+.courses-sortorder input[type="number"]:focus{outline:2px solid var(--accent);outline-offset:1px;}
+
+.courses-errorlist{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:3px;}
+.courses-errorlist li{font-size:12.5px;}

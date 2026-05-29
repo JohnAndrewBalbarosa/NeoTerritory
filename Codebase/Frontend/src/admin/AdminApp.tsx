@@ -20,14 +20,15 @@ import InviteCodesTab from './components/InviteCodesTab';
 import JoinRequestsTab from './components/JoinRequestsTab';
 import FeatureReleasePanel from './components/FeatureReleasePanel';
 import InstructorDashboard from './components/InstructorDashboard';
+import CoursesTab from './components/CoursesTab';
 import { markAdminRefresh } from '../api/client';
 import {
-  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
+  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode, IconBook
 } from '../components/icons/Icons';
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'learning';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'learning' | 'courses';
 
 type AdminSection = 'Operations' | 'People' | 'Instructor' | 'Research' | 'Config';
 
@@ -50,6 +51,7 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'People' },
   { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'People' },
   { id: 'learning',        label: 'Instructor',      icon: IconClipboard,   section: 'Instructor' },
+  { id: 'courses',         label: 'Courses',         icon: IconBook,        section: 'Instructor' },
   { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Research', originalDevsOnly: true },
   { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Research', originalDevsOnly: true },
   { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Research', originalDevsOnly: true },
@@ -433,6 +435,9 @@ export default function AdminApp() {
             </header>
             <InstructorDashboard />
           </section>
+        </div>
+        <div hidden={activeTab !== 'courses'}>
+          <CoursesTab />
         </div>
         {isOriginalDevsAdmin(user) && (
           <div hidden={activeTab !== 'featureReleases'}>
