@@ -82,8 +82,8 @@ function OnboardingChoose() {
           >
             <span className="nt-auth-choose__card-title">I&rsquo;ll administer an organization</span>
             <span className="nt-auth-choose__card-body">
-              Gagawa ng bagong org sa&rsquo;yo. Pwede ka rin mag-invite ng developers
-              by email or magbigay ng invite codes.
+              We&rsquo;ll create a new org for you. You can also invite developers
+              by email or hand out invite codes.
             </span>
             <span className="nt-auth-choose__card-cta">Continue as admin →</span>
           </button>
@@ -97,8 +97,8 @@ function OnboardingChoose() {
           >
             <span className="nt-auth-choose__card-title">I&rsquo;m a developer</span>
             <span className="nt-auth-choose__card-body">
-              Solo developer (open-standards catalog), may invite code, o
-              magrequest na mag-join sa admin&rsquo;s org.
+              Solo developer (open-standards catalog), have an invite code, or
+              request to join your admin&rsquo;s org.
             </span>
             <span className="nt-auth-choose__card-cta">Continue as developer →</span>
           </button>
@@ -159,7 +159,7 @@ function OnboardingAdmin() {
           <p className="nt-section-eyebrow">Onboarding · Step 2 of 2 (Admin)</p>
           <h1 className="nt-entry__title">Set up your organization</h1>
           <p className="nt-entry__lede">
-            Mag-iinvite ka rin agad ng developers? Optional &mdash; you can come
+            Want to invite developers right away? Optional &mdash; you can come
             back to this in your admin page.
           </p>
         </header>
@@ -190,7 +190,7 @@ function OnboardingAdmin() {
             <small className="nt-onboarding-hint">
               Detected {inviteEmails.length} valid email
               {inviteEmails.length === 1 ? '' : 's'}. Comma, semicolon, or newline
-              separated. Bawat isa mag-receive ng invite via email.
+              separated. Each one receives an invite via email.
             </small>
           </label>
 
@@ -264,7 +264,7 @@ function OnboardingDeveloper() {
       <section className="nt-entry-shell nt-onboarding-shell">
         <header className="nt-entry__hero">
           <p className="nt-section-eyebrow">Onboarding · Step 2 of 2 (Developer)</p>
-          <h1 className="nt-entry__title">Solo o may organization na?</h1>
+          <h1 className="nt-entry__title">Solo, or part of an organization?</h1>
           <p className="nt-entry__lede">Pick one to finish setup.</p>
         </header>
 
