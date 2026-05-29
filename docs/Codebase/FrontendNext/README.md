@@ -47,6 +47,20 @@ import for the migration window, recorded in D89.
 is mandatory (an HTTPS Vercel page cannot call the plain-HTTP AWS box — mixed content);
 it also removes any CORS need and keeps `client.ts` relative paths unchanged. See D88/D89.
 
+## Vite-ism handling (shared source under webpack)
+The shared `Frontend/src` uses a few Vite-only mechanisms; the Next build handles them
+without forking the source:
+- **`?raw` imports** (C++ samples as strings, in `learningContent.ts`/`PatternAtlas.tsx`):
+  a webpack `asset/source` rule in `next.config.js` + ambient types in
+  `types/raw-assets.d.ts`. Works in both bundlers.
+- **`import.meta.glob`** (was in `SamplePickerModal.tsx`, Vite-only): replaced by a
+  generated explicit-`?raw` manifest `Frontend/src/components/analysis/
+  sampleSources.generated.ts` (built by `scripts/gen-sample-sources.mjs`). Bundler-agnostic;
+  behaviour-identical for the Vite app.
+- **`import.meta.env.VITE_*` / `.PROD`** (GoogleSignInPage, useOverflowGuard): optional-
+  chained, so they degrade to `undefined` under webpack without crashing. Functional env
+  parity (e.g. an admin gate key) is wired via Vercel env vars if needed.
+
 ## Doc-mirror granularity
 Per D89, this tree documents at folder-README granularity plus a `.md` for each non-trivial
 file (root layout, `next.config.js`, Route Handlers). Framework boilerplate (`package.json`,

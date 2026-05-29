@@ -17,8 +17,22 @@ boundary and pass route-derived props into the reused Vite components.
   switches on the `surface` prop, exactly as the Vite `App.tsx` did. Next server-renders the
   initial HTML; the shell hydrates on the client.
 
+## Auth-gated wrappers (browser-only islands)
+Auth surfaces have no SSR value (they need the localStorage JWT + browser APIs), so each is
+a `'use client'` wrapper that loads its component via `next/dynamic` with `ssr: false`. This
+renders them client-only — avoiding `window`/`localStorage` access during prerender — and
+keeps their heavy bundles off the server path. Wrappers:
+- `StudioSurface.tsx` → `@frontend/components/studio/StudioApp` (routes: /studio, /app,
+  /developer, /student-studio)
+- `SignInSurface.tsx` → `@frontend/components/auth/GoogleSignInPage` (routes: */login)
+- `LearnHubSurface.tsx` → `@frontend/components/learn/StudentLearningShell` (routes:
+  /patterns/learn[/<moduleId>])
+- `AuthCallbackSurface.tsx` → `@frontend/components/auth/GoogleCallback` (/auth/callback)
+- `OnboardingSurface.tsx` → `@frontend/components/auth/OnboardingFlow` (/onboarding/*)
+
 ## Notes
-- Slug-bearing routes (`patterns/[slug]`) currently let the reused detail component read the
-  slug client-side (window-guarded); threading the slug as a prop for full SSR is a B2.2 item.
-- Auth-gated surfaces do NOT use this wrapper; each mounts its own top component directly as
-  a `'use client'` route (B2.1b-2 / B2.1b-3).
+- Slug-bearing routes (`patterns/[slug]`, `patterns/learn/[moduleId]`) currently let the
+  reused component read the slug client-side (window-guarded); threading the slug as a prop
+  for full SSR is a B2.2 item.
+- The admin (`/admin`) and scraper (`/scraper`) entry points (separate Vite HTML entries)
+  are ported in B2.1b-3.

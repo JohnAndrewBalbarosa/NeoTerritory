@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-
-// Bundle every C++ sample under Codebase/Microservice/samples/ as raw text.
-// Vite glob with `?raw` returns a string per matching file. The path is
-// relative to this file: ../../ -> src, then up four to Codebase/, then
-// into Microservice/samples.
-const RAW_SAMPLES = import.meta.glob(
-  '../../../../Microservice/samples/**/*.cpp',
-  { eager: true, query: '?raw', import: 'default' },
-) as Record<string, string>;
+// Every C++ sample under Codebase/Microservice/samples/ as raw text. Previously a Vite
+// `import.meta.glob(...?raw)`; that is Vite-only and breaks under Next.js/webpack, so it
+// is now a generated explicit-?raw import map (works in both bundlers — D89). Regenerate
+// with `node scripts/gen-sample-sources.mjs` when samples are added/removed. The map keys
+// preserve the old glob path format so buildSamples() below is unchanged.
+import { RAW_SAMPLES } from './sampleSources.generated';
 
 interface Sample {
   family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
