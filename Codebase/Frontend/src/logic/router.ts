@@ -114,8 +114,23 @@ export function learnModuleSlugFromPath(path: string): string {
 
 const NAV_EVENT = 'nt:navigate';
 
+// Compat bridge (D89). Under the Next.js host, the custom pushState navigation below is
+// invisible to Next's App Router, so SPA links would change the URL without loading the
+// matching route segment. A Next-side bridge (FrontendNext/components/RouterBridge) registers
+// Next's router here; navigate()/replaceUrl() then delegate to it. In the Vite app the
+// registry stays null and the original pushState + event behavior is used unchanged.
+type ExternalNavigator = (path: string, opts?: { replace?: boolean }) => void;
+let externalNavigator: ExternalNavigator | null = null;
+export function setExternalNavigator(fn: ExternalNavigator | null): void {
+  externalNavigator = fn;
+}
+
 export function navigate(path: string): void {
   if (typeof window === 'undefined') return;
+  if (externalNavigator) {
+    externalNavigator(path);
+    return;
+  }
   if (window.location.pathname === path) return;
   window.history.pushState(null, '', path);
   window.dispatchEvent(new CustomEvent(NAV_EVENT));
@@ -130,6 +145,10 @@ export function navigate(path: string): void {
 // already says `/studio`.
 export function replaceUrl(path: string): void {
   if (typeof window === 'undefined') return;
+  if (externalNavigator) {
+    externalNavigator(path, { replace: true });
+    return;
+  }
   const samePath = window.location.pathname === path;
   const hasFragment = window.location.hash.length > 0;
   if (samePath && !hasFragment) return;

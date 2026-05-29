@@ -8,6 +8,18 @@ Thin Next-side client wrappers that adapt the shared `@frontend` components to A
 route segments. They contain no UI of their own — they exist only to carry the `'use client'`
 boundary and pass route-derived props into the reused Vite components.
 
+## RouterBridge.tsx (navigation compat — B2.2, D89)
+`RouterBridge.tsx` wires the shared custom router to Next's App Router. The shared
+components navigate via `navigate()`/`replaceUrl()` (in `@frontend/logic/router`), which use
+`history.pushState` — invisible to Next, so links would change the URL without loading the
+route. RouterBridge (mounted once in the root layout) registers Next's `router.push`/
+`router.replace` via `setExternalNavigator()`; `navigate()` then delegates to Next. In the
+Vite app the registry stays null (unchanged pushState behavior). Surface→surface navigation
+re-mounts the target route segment, so the reused components render correctly. Known
+limitation: slug→slug within one dynamic route (e.g. `/patterns/a`→`/patterns/b`) does not
+re-mount, so a component that reads its slug from `window` only on mount can show stale
+content until the slug is threaded as a route prop (tracked for B3).
+
 ## Files
 - `MarketingSurface.tsx` — `'use client'` wrapper around `@frontend/components/marketing/
   MarketingShell`. Every public/marketing route segment (`app/page.tsx`, `app/learn/...`,
