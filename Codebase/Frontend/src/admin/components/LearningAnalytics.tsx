@@ -72,18 +72,25 @@ export default function LearningAnalytics(): JSX.Element {
 
   return (
     <div className="admin-learn-analytics">
-      <nav className="admin-learn-families" aria-label="Pattern family">
-        {CATEGORY_META.map((c) => (
-          <button
-            key={c.id}
-            type="button"
-            className={`admin-learn-family-btn${family === c.id ? ' is-active' : ''}`}
-            onClick={() => { setFamily(c.id); setDrill(null); }}
-          >
-            {c.name}
-          </button>
-        ))}
-      </nav>
+      <section className="instructor-card">
+        <header className="instructor-card__head">
+          <div className="instructor-card__title">
+            <h3>Question heatmap</h3>
+            <span className="instructor-card__count">first-try pass rate by question</span>
+          </div>
+          <nav className="admin-learn-families" aria-label="Pattern family">
+            {CATEGORY_META.map((c) => (
+              <button
+                key={c.id}
+                type="button"
+                className={`admin-learn-family-btn${family === c.id ? ' is-active' : ''}`}
+                onClick={() => { setFamily(c.id); setDrill(null); }}
+              >
+                {c.name}
+              </button>
+            ))}
+          </nav>
+        </header>
 
       {!hasDataForFamily ? (
         <div className="empty-state">
@@ -132,6 +139,7 @@ export default function LearningAnalytics(): JSX.Element {
           })}
         </div>
       )}
+      </section>
 
       {drill && (
         <div className="admin-section admin-section--card" style={{ marginTop: 16 }}>

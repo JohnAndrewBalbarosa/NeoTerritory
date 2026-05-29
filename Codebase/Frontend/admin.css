@@ -19,6 +19,12 @@
   --red: #f87171;
   --cyan: #22d3ee;
   --purple: #a78bfa;
+  /* DevCon accent ramp — used by the Instructor charts (difficulty bars + the
+     pass/fail donut). Kept as standalone tokens so the "DevCon vibe" reads the
+     same across both themes. */
+  --devcon-cyan: #00d1d8;
+  --devcon-lime: #a6ff00;
+  --devcon-purple: #8a2be2;
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.5);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);
@@ -55,6 +61,11 @@
   --red: #dc2626;
   --cyan: #0891b2;
   --purple: #7c3aed;
+  /* DevCon ramp, light-mode: the neon lime/cyan are illegible on white, so
+     deepen them for AA contrast while keeping the same hue family. */
+  --devcon-cyan: #0891b2;
+  --devcon-lime: #4d7c0f;
+  --devcon-purple: #7c3aed;
   --shadow-sm: 0 1px 4px rgba(15,23,42,0.06);
   --shadow-md: 0 2px 12px rgba(15,23,42,0.08);
   --shadow-lg: 0 8px 32px rgba(15,23,42,0.12);
@@ -528,24 +539,109 @@ body{position:relative;}
 .instructor-improvement[data-sign="zero"]{color:var(--ink-soft);}
 .instructor-students-table .pill{font-variant-numeric:tabular-nums;}
 
-/* Per-student drilldown card. */
-.instructor-drilldown{margin-top:16px;padding:16px 18px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface2);}
-.instructor-drilldown h3{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--ink);}
+/* Per-student drilldown — framed as a sibling .instructor-card; the card shell
+   plus the polish block below own its border/radius/background/h3. */
 .instructor-drilldown td[data-correct="false"]{color:var(--red);}
 .instructor-drilldown td[data-correct="true"]{color:var(--green);}
 
-/* Module-difficulty rank list — grouped ties render as one row. */
+/* Module-difficulty rank list — grouped ties render as one rank row, each
+   module stacked with its own difficulty bar (see the polish block below). */
 .instructor-rank-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:8px;}
 .instructor-rank-row{display:flex;gap:14px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);}
 .instructor-rank-badge{flex:0 0 auto;font-family:var(--code-font);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);padding:4px 10px;border:1px solid var(--accent);border-radius:999px;background:var(--accent-soft);white-space:nowrap;}
 .instructor-rank-modules{display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;min-width:0;}
-.instructor-rank-module{display:inline-flex;align-items:baseline;gap:8px;}
-.instructor-rank-amp{color:var(--ink-dim);font-weight:700;}
 .instructor-rank-pill{font-size:13px;font-weight:600;color:var(--ink);padding:2px 0;border-bottom:2px solid var(--border-bright);}
 .instructor-rank-pill[data-bucket="high"]{border-bottom-color:var(--green);}
 .instructor-rank-pill[data-bucket="mid"]{border-bottom-color:var(--amber);}
 .instructor-rank-pill[data-bucket="low"]{border-bottom-color:var(--red);}
 .instructor-rank-meta{font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+
+/* === INSTRUCTOR DASHBOARD POLISH (D92 Track A) === */
+/* Card-frames the Students table + Modules ranking + Questions heatmap so each
+   sub-view reads as a dashboard card (like a real LMS) rather than a naked
+   table. Plus the bar/pie chart primitive styles (BarRow + PieChart), which
+   live only in styles.css — admin.html doesn't load styles.css, so they must
+   be mirrored here for the Instructor charts to render styled. All tokenised
+   so light + dark both stay intentional. */
+
+/* Dashboard card shell — same surface/border/radius/shadow as .chart-panel. */
+.instructor-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:0;overflow:hidden;}
+.instructor-card + .instructor-card{margin-top:16px;}
+.instructor-card__head{display:flex;flex-wrap:wrap;gap:12px 16px;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border);}
+.instructor-card__title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0;}
+.instructor-card__title h3{margin:0;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:var(--ink);}
+.instructor-card__count{font-size:11px;font-weight:600;color:var(--ink-soft);padding:2px 9px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);white-space:nowrap;}
+.instructor-card__tools{display:flex;flex-wrap:wrap;gap:10px 14px;align-items:center;}
+.instructor-card__hint{margin:14px 20px 0;font-size:12px;color:var(--ink-soft);line-height:1.5;}
+.instructor-card__foot{display:flex;flex-wrap:wrap;gap:8px;padding:14px 20px 18px;}
+.instructor-card__foot:empty{display:none;}
+
+/* Horizontal-scroll wrapper so wide tables never blow out the card edge. The
+   card clips (overflow:hidden) so the scrollbar stays inside the rounded frame. */
+.instructor-table-wrap{overflow-x:auto;}
+.instructor-card .admin-table{font-size:12.5px;}
+/* Sticky, uppercase-muted header that reads against the card surface. */
+.instructor-card .admin-table thead th{position:sticky;top:0;z-index:1;background:var(--surface2);color:var(--ink-soft);font-size:10px;letter-spacing:0.07em;white-space:nowrap;}
+.instructor-card .admin-table th,.instructor-card .admin-table td{padding:13px 16px;}
+.instructor-card .admin-table th.num,.instructor-card .admin-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.instructor-card .admin-table tbody tr:hover{background:color-mix(in oklab,var(--accent) 8%,transparent);}
+.instructor-students-table tbody tr.is-open td{background:color-mix(in oklab,var(--accent) 12%,transparent);}
+.instructor-students-table tbody td strong{color:var(--ink);font-weight:600;}
+.instructor-students-table tbody td small{color:var(--ink-soft);}
+
+/* Improvement chip — green ↑ / red ↓ pill, neutral dash on zero. */
+.instructor-improvement{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:11.5px;font-variant-numeric:tabular-nums;padding:3px 9px;border-radius:999px;border:1px solid transparent;}
+.instructor-improvement__arrow{font-size:9px;line-height:1;}
+.instructor-improvement[data-sign="pos"]{color:var(--green);background:color-mix(in oklab,var(--green) 12%,transparent);border-color:color-mix(in oklab,var(--green) 30%,transparent);}
+.instructor-improvement[data-sign="neg"]{color:var(--red);background:color-mix(in oklab,var(--red) 12%,transparent);border-color:color-mix(in oklab,var(--red) 30%,transparent);}
+.instructor-improvement[data-sign="zero"]{color:var(--ink-soft);background:var(--surface2);border-color:var(--border);}
+
+/* Drilldown is now a sibling .instructor-card — drop the old standalone frame. */
+.instructor-drilldown{margin-top:16px;padding:0;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface);}
+.instructor-drilldown h3{margin:0;font-size:13px;}
+.instructor-drilldown .admin-table td[data-correct="false"]{color:var(--red);}
+.instructor-drilldown .admin-table td[data-correct="true"]{color:var(--green);}
+
+/* Modules ranking — each module gets a difficulty BarRow. */
+.instructor-modules .instructor-rank-list{margin:14px 20px 0;}
+.instructor-rank-row{align-items:stretch;background:var(--surface2);}
+.instructor-rank-badge{align-self:flex-start;}
+.instructor-rank-module{display:flex;flex-direction:column;gap:6px;flex:1 1 100%;min-width:0;}
+.instructor-rank-module__top{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;}
+.instructor-rank-modules{flex:1;gap:14px;}
+/* Difficulty-ramp legend in the card header. */
+.instructor-ramp-legend{display:inline-flex;align-items:center;gap:7px;font-size:10px;letter-spacing:0.04em;text-transform:uppercase;color:var(--ink-soft);}
+.instructor-ramp-legend__bar{width:64px;height:7px;border-radius:999px;background:linear-gradient(90deg,var(--devcon-cyan),var(--devcon-purple),var(--devcon-lime));}
+
+/* Dashboard pass/fail donut panel — constrained so the donut sits left with
+   its legend, not stretched full width. */
+.instructor-overview-chart{margin-bottom:18px;max-width:420px;}
+.instructor-overview-chart .stats-pie{border:none;background:transparent;padding:0;align-items:flex-start;flex-direction:row;gap:18px;}
+.instructor-overview-chart .stats-pie figcaption strong{display:none;}
+
+/* ── BarRow primitive (used by Modules + Stats tab; not defined elsewhere) ── */
+.stat-bar-row{display:grid;grid-template-columns:minmax(72px,auto) 1fr minmax(34px,auto);align-items:center;gap:12px;margin:5px 0;}
+.stat-bar-label{font-size:11.5px;color:var(--ink-soft);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.stat-bar-track{position:relative;height:9px;border-radius:999px;background:var(--surface2);border:1px solid var(--border);overflow:hidden;}
+.stat-bar-fill{height:100%;border-radius:999px;min-width:2px;transition:width 400ms cubic-bezier(0.16,1,0.3,1);}
+.stat-bar-value{font-size:11.5px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right;}
+
+/* ── PieChart primitive (mirrored from styles.css; admin.html lacks it) ── */
+.stats-pies-row{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));gap:16px;margin-top:14px;}
+@media(max-width:720px){.stats-pies-row{grid-template-columns:1fr;}}
+.stats-pie{margin:0;padding:12px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface2);display:flex;flex-direction:column;align-items:center;gap:10px;}
+.stats-pie figcaption{width:100%;}
+.stats-pie figcaption strong{display:block;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:6px;text-align:center;}
+.stats-pie-legend{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:5px;font-size:11.5px;}
+.stats-pie-legend li{display:grid;grid-template-columns:12px 1fr auto;align-items:center;gap:8px;color:var(--ink-soft);}
+.stats-pie-swatch{width:10px;height:10px;border-radius:2px;display:block;}
+.stats-pie-label{color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stats-pie-value{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-weight:600;}
+
+@media(max-width:560px){
+  .instructor-card__head{align-items:flex-start;}
+  .instructor-overview-chart .stats-pie{flex-direction:column;align-items:center;}
+}
 
 /* Provider pill in the Users table (D87) */
 .provider-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid var(--border-bright);}

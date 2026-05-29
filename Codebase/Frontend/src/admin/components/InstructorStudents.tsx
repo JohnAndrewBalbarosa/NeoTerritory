@@ -73,46 +73,54 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
 
   return (
     <div className="instructor-students">
-      <div className="instructor-toolbar">
-        <div className="instructor-sortgroup" role="group" aria-label="Sort students">
-          {SORTS.map((s) => (
-            <button
-              key={s.key}
-              type="button"
-              className={`user-ctrl-btn${sort === s.key ? ' is-active' : ''}`}
-              onClick={() => setSort(s.key)}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-        <div className="instructor-downloads">
-          <button type="button" className="ghost-btn" onClick={onDownloadCsv}>
-            Download CSV
-          </button>
-          <button
-            type="button"
-            className="ghost-btn"
-            onClick={() => downloadJson('instructor-learning-raw.json', raw)}
-            title="Raw dataset (all per-user rows)"
-          >
-            Download JSON
-          </button>
-        </div>
-      </div>
+      <section className="instructor-card">
+        <header className="instructor-card__head">
+          <div className="instructor-card__title">
+            <h3>Students</h3>
+            <span className="instructor-card__count">{rows.length} with activity</span>
+          </div>
+          <div className="instructor-card__tools">
+            <div className="instructor-sortgroup" role="group" aria-label="Sort students">
+              {SORTS.map((s) => (
+                <button
+                  key={s.key}
+                  type="button"
+                  className={`user-ctrl-btn${sort === s.key ? ' is-active' : ''}`}
+                  onClick={() => setSort(s.key)}
+                >
+                  {s.label}
+                </button>
+              ))}
+            </div>
+            <div className="instructor-downloads">
+              <button type="button" className="ghost-btn" onClick={onDownloadCsv}>
+                Download CSV
+              </button>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => downloadJson('instructor-learning-raw.json', raw)}
+                title="Raw dataset (all per-user rows)"
+              >
+                Download JSON
+              </button>
+            </div>
+          </div>
+        </header>
 
+        <div className="instructor-table-wrap">
       <table className="admin-table instructor-students-table">
         <thead>
           <tr>
             <th>Student</th>
             <th>Modules</th>
-            <th>Seen</th>
-            <th>Wrong</th>
-            <th>First-try</th>
-            <th>Eventual</th>
-            <th>Improvement</th>
+            <th className="num">Seen</th>
+            <th className="num">Wrong</th>
+            <th className="num">First-try</th>
+            <th className="num">Eventual</th>
+            <th className="num">Improvement</th>
             <th>Pass / fail</th>
-            <th>Attempts</th>
+            <th className="num">Attempts</th>
           </tr>
         </thead>
         <tbody>
@@ -130,15 +138,18 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
                   {r.email && <><br /><small>{r.email}</small></>}
                 </td>
                 <td>{r.modulesCompleted} done · {r.theoryPassed} theory</td>
-                <td>{r.seen}</td>
-                <td>{r.wrong}</td>
-                <td>{pct(r.firstTryRate)}</td>
-                <td>{pct(r.eventualRate)}</td>
-                <td>
+                <td className="num">{r.seen}</td>
+                <td className="num">{r.wrong}</td>
+                <td className="num">{pct(r.firstTryRate)}</td>
+                <td className="num">{pct(r.eventualRate)}</td>
+                <td className="num">
                   <span
                     className="instructor-improvement"
                     data-sign={r.improvement > 0 ? 'pos' : r.improvement < 0 ? 'neg' : 'zero'}
                   >
+                    <span className="instructor-improvement__arrow" aria-hidden="true">
+                      {r.improvement > 0 ? '▲' : r.improvement < 0 ? '▼' : '–'}
+                    </span>
                     {r.improvement > 0 ? '+' : ''}{pct(r.improvement)}
                   </span>
                 </td>
@@ -146,61 +157,67 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
                   <span className="pill pill-green">{r.passCount}</span>{' '}
                   <span className="pill pill-red">{r.failCount}</span>
                 </td>
-                <td>{r.questionAttempts}</td>
+                <td className="num">{r.questionAttempts}</td>
               </tr>
             );
           })}
         </tbody>
       </table>
+        </div>
+      </section>
 
       {openUserId !== null && (
-        <div className="instructor-drilldown">
-          <h3>
-            {rows.find((r) => r.userId === openUserId)?.username} · answers by question
-          </h3>
+        <section className="instructor-card instructor-drilldown">
+          <header className="instructor-card__head">
+            <div className="instructor-card__title">
+              <h3>{rows.find((r) => r.userId === openUserId)?.username}</h3>
+              <span className="instructor-card__count">answers by question</span>
+            </div>
+            <button
+              type="button"
+              className="ghost-btn"
+              onClick={() => setOpenUserId(null)}
+            >
+              Close
+            </button>
+          </header>
           {drill.length === 0 ? (
             <div className="empty-state">No answered questions for this student yet.</div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>Module</th>
-                  <th>Question</th>
-                  <th>Their answer</th>
-                  <th>Correct answer</th>
-                  <th>Result</th>
-                  <th>First try</th>
-                  <th>Attempts</th>
-                </tr>
-              </thead>
-              <tbody className="runs-disabled">
-                {drill.map((d) => (
-                  <tr key={`${d.moduleId}#${d.questionIndex}`}>
-                    <td><small>{d.moduleTitle}</small></td>
-                    <td>{d.questionText}</td>
-                    <td data-correct={d.isCorrect ? 'true' : 'false'}>{d.selectedText}</td>
-                    <td>{d.correctText}</td>
-                    <td>
-                      <span className={`pill ${d.isCorrect ? 'pill-green' : 'pill-red'}`}>
-                        {d.isCorrect ? 'Right' : 'Wrong'}
-                      </span>
-                    </td>
-                    <td>{d.firstAttemptCorrect ? '✓' : '✗'}</td>
-                    <td>{d.attempts}</td>
+            <div className="instructor-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Module</th>
+                    <th>Question</th>
+                    <th>Their answer</th>
+                    <th>Correct answer</th>
+                    <th>Result</th>
+                    <th>First try</th>
+                    <th className="num">Attempts</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="runs-disabled">
+                  {drill.map((d) => (
+                    <tr key={`${d.moduleId}#${d.questionIndex}`}>
+                      <td><small>{d.moduleTitle}</small></td>
+                      <td>{d.questionText}</td>
+                      <td data-correct={d.isCorrect ? 'true' : 'false'}>{d.selectedText}</td>
+                      <td>{d.correctText}</td>
+                      <td>
+                        <span className={`pill ${d.isCorrect ? 'pill-green' : 'pill-red'}`}>
+                          {d.isCorrect ? 'Right' : 'Wrong'}
+                        </span>
+                      </td>
+                      <td>{d.firstAttemptCorrect ? '✓' : '✗'}</td>
+                      <td className="num">{d.attempts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-          <button
-            type="button"
-            className="ghost-btn"
-            style={{ marginTop: 12 }}
-            onClick={() => setOpenUserId(null)}
-          >
-            Close
-          </button>
-        </div>
+        </section>
       )}
     </div>
   );

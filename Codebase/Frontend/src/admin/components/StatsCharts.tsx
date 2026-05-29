@@ -23,9 +23,9 @@ const FAMILY_COLOR: Record<string, string> = {
 };
 const FAMILY_ORDER = ['creational', 'structural', 'behavioural', 'idiom'] as const;
 
-interface PieSlice { label: string; value: number; color: string }
+export interface PieSlice { label: string; value: number; color: string }
 
-function PieChart({ slices, title, ariaLabel }: { slices: PieSlice[]; title: string; ariaLabel: string }) {
+export function PieChart({ slices, title, ariaLabel }: { slices: PieSlice[]; title: string; ariaLabel: string }) {
   const positive = slices.filter(s => s.value > 0);
   const total = positive.reduce((s, x) => s + x.value, 0);
   if (total <= 0) return <div className="empty-state">{title}: no data.</div>;
