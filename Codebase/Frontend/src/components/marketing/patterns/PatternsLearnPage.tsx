@@ -475,13 +475,34 @@ interface PracticalExamBlockProps {
   exam: PracticalExam;
   isLocked: boolean;
   isPassed: boolean;
+  // D92 auto-tag: when false the learner must click a manual confirm button
+  // after detection fires; when true (default) detection auto-resolves.
+  autoTag: boolean;
   onPass: () => void;
 }
 
-function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: PracticalExamBlockProps): JSX.Element {
+function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, autoTag, onPass }: PracticalExamBlockProps): JSX.Element {
   const resetSession = useAppStore((s) => s.resetSession);
   const setSourceText = useAppStore((s) => s.setSourceText);
   const setFilename = useAppStore((s) => s.setFilename);
+  // D92 detection_and_tests: the "all Studio unit tests passed for the current
+  // run" flag. Reset to false on every new analysis (setCurrentRun), so it is
+  // inherently per-run. The surface is remounted per module (key=moduleId), so
+  // both this flag and the detection latch below are per-module.
+  const gdbAllPassedForRun = useAppStore((s) => s.gdbAllPassedForRun);
+
+  // D92 pass-mode gate. 'detection' (default) = pass on tag alone (today's
+  // behaviour). 'detection_and_tests' additionally requires every Studio unit
+  // test to pass before the practical completes.
+  const passMode = exam.passMode ?? 'detection';
+
+  // Whether the analyser has tagged the target pattern in the current run.
+  // Latched per mount (StudioSurface itself only fires onPatternDetected once
+  // per mount; we mirror that here so the manual/test gates can read it).
+  const [detected, setDetected] = useState<boolean>(false);
+  // onPass fires at most once per mount. Held in a ref so the effect below can
+  // gate on it without re-subscribing.
+  const passedRef = useRef<boolean>(false);
 
   // Seed/clear the embedded Studio only once the practical is actually unlocked,
   // so a locked module never clobbers the shared session. For order-sensitive
@@ -497,6 +518,36 @@ function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: Prac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exam.patternSlug, isLocked]);
 
+  // Single place that completes the practical, honouring the pass-mode gate and
+  // the at-most-once latch. Manual-confirm (autoTag === false) routes through
+  // here too, so the tests gate still applies to a manual confirmation.
+  const tryComplete = useCallback(() => {
+    if (passedRef.current) return;
+    if (!detected) return;
+    if (passMode === 'detection_and_tests' && !gdbAllPassedForRun) return;
+    passedRef.current = true;
+    onPass();
+  }, [detected, passMode, gdbAllPassedForRun, onPass]);
+
+  // StudioSurface fires this once when it tags the target pattern. We only
+  // record detection here; the effect below (auto-tag) or the manual-confirm
+  // button (autoTag === false) decides when the practical actually completes,
+  // so the pass-mode gate is enforced uniformly in one place (tryComplete).
+  const handleDetected = useCallback(() => {
+    setDetected(true);
+  }, []);
+
+  // Re-evaluate completion whenever detection lands or the tests flip to green
+  // (detection_and_tests). Skipped entirely when autoTag is false — that path
+  // waits for the explicit manual-confirm click instead.
+  useEffect(() => {
+    if (!autoTag) return;
+    tryComplete();
+  }, [autoTag, detected, gdbAllPassedForRun, tryComplete]);
+
+  const testsGate = passMode === 'detection_and_tests';
+  const testsSatisfied = !testsGate || gdbAllPassedForRun;
+
   return (
     <section
       className="nt-practical nt-practical--studio"
@@ -509,9 +560,11 @@ function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: Prac
           Target pattern: <span className="nt-practical__target">{exam.patternName}</span>
         </h3>
         <p className="nt-practical__prompt">
-          {exam.prompt} Submit your C++ in the Studio below — the module unlocks the
-          moment the analyser tags <strong>{exam.patternName}</strong>. Open the
-          Patterns tab after analysis to read how each part of your code maps to the pattern.
+          {exam.prompt} Submit your C++ in the Studio below — the module completes the
+          moment the analyser tags <strong>{exam.patternName}</strong>
+          {testsGate ? ' and you pass all unit tests in the Tests tab' : ''}
+          {!autoTag ? ', then confirm the tag below' : ''}. Open the Patterns tab after
+          analysis to read how each part of your code maps to the pattern.
         </p>
       </header>
 
@@ -522,17 +575,51 @@ function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: Prac
         </div>
       ) : (
         <>
-          {isPassed && (
+          {isPassed ? (
             <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
               ✓ Passed — the analyser tagged your class as <strong>{exam.patternName}</strong>.
               Re-run anytime, or press the › arrow to continue.
             </p>
-          )}
+          ) : detected ? (
+            // Detection landed but the practical hasn't completed yet — explain
+            // exactly what's still outstanding (tests and/or manual confirm).
+            <p className="nt-practical__verdict nt-practical__verdict--progress" role="status">
+              ✓ Pattern detected
+              {testsGate
+                ? testsSatisfied
+                  ? ' — unit tests passed'
+                  : ' — now pass all unit tests in the Tests tab'
+                : ''}
+              {!autoTag ? ' — confirm the tag below to complete this module' : ''}
+              {autoTag && !testsGate ? '.' : ''}
+            </p>
+          ) : null}
+
+          {!autoTag && !isPassed ? (
+            <div className="nt-practical__footer">
+              <button
+                type="button"
+                className="nt-lesson-button nt-lesson-button--primary"
+                onClick={tryComplete}
+                disabled={!detected || (testsGate && !gdbAllPassedForRun)}
+                title={
+                  !detected
+                    ? `Analyse your code first — the analyser must tag ${exam.patternName}.`
+                    : testsGate && !gdbAllPassedForRun
+                      ? 'Pass all unit tests in the Tests tab first.'
+                      : undefined
+                }
+              >
+                Confirm: my class implements {exam.patternName}
+              </button>
+            </div>
+          ) : null}
+
           <div className="nt-practical__studio" data-testid="practical-studio">
             <StudioSurface
               targetPatternSlug={exam.patternSlug}
               targetPatternName={exam.patternName}
-              onPatternDetected={onPass}
+              onPatternDetected={handleDetected}
             />
           </div>
         </>
@@ -1164,6 +1251,7 @@ export default function PatternsLearnPage(): JSX.Element {
                       exam={activeModule.practicalExam}
                       isLocked={!isActiveTheoryPassed}
                       isPassed={isActiveComplete}
+                      autoTag={activeModule.autoTag !== false}
                       onPass={() => markPracticalPassed(activeModule.id)}
                     />
                   ) : null}

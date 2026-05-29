@@ -2512,6 +2512,13 @@ body[data-surface] #root {
   border: 1px solid rgba(255, 76, 76, 0.42);
   color: var(--nt-mkt-text);
 }
+/* D92: in-progress status — pattern detected, but a tests/manual-confirm gate
+   still stands before the practical completes. Amber to read as "not done yet". */
+.nt-practical__verdict--progress {
+  background: rgba(255, 184, 0, 0.08);
+  border: 1px solid rgba(255, 184, 0, 0.42);
+  color: var(--nt-mkt-text);
+}
 .nt-practical__tries {
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.8rem;
