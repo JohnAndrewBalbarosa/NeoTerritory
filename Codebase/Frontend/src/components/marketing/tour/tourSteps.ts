@@ -51,9 +51,9 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'practical-exam',
     title: 'Prove it in the practical exam',
     paragraph:
-      'Pattern modules add a practical exam inside the built-in Studio. Write (or paste) your C++ implementation and run the analyser — the module unlocks the moment it detects the target pattern in your code. The Studio is just the checking surface here: no separate developer mode, no project to wire up.',
-    takeaway: 'You implement the pattern for real, and the analyser confirms it.',
-    imagePath: '/tour/click-analyze.png',
+      'Pattern modules add a practical exam with the Studio embedded right inside the module — the same Submit / Patterns / Tests tabs, but with no standalone topbar and no separate developer mode. Write (or paste) your C++ and run the analyser; the module unlocks the moment it detects the target pattern in your code.',
+    takeaway: 'The Studio is just the checking surface here — you implement the pattern, the analyser confirms it.',
+    imagePath: '/tour/learn-practical.png',
   },
   {
     num: 5,
