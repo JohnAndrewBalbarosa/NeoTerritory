@@ -481,10 +481,113 @@ public:
     ],
   },
   {
+    id: 'foundations-same-structure',
+    category: 'foundations',
+    title: 'When two patterns look identical',
+    eyebrow: 'Foundations · Module 11',
+    intro:
+      'Module 9 said ambiguity is built in. This module is the resolving idea: when two patterns share the same class diagram, you tell them apart by INTENT, and intent shows up in the lexemes, the collaborators, and the call-site shape — never in the skeleton itself. This is the same vocabulary the analyser uses to break a near-tie.',
+    sections: [
+      {
+        heading: 'Structure alone is ambiguous — three classic collisions',
+        body:
+          'A class diagram answers "what shape is this?" It does not answer "what is this FOR?" Several Gang-of-Four patterns deliberately share one shape, so the diagram cannot separate them:',
+        bullets: [
+          'Strategy vs State — both are a context holding a pointer to a polymorphic interface and delegating to it. Identical UML.',
+          'Adapter vs Decorator vs Proxy — all three own (or hold) one member of an interface type and forward calls to it. Same wrapping skeleton.',
+          'Builder vs plain method-chaining — both have setters that end in `return *this` so calls can be chained. Same fluent shape.',
+        ],
+        note:
+          'If you only read the boxes and arrows, each pair above is the same picture. That is by design, not a defect in the catalog.',
+      },
+      {
+        heading: 'The resolving idea: intent lives in the lexemes',
+        body:
+          'Intent leaves fingerprints in the tokens. The analyser groups those tokens into lexeme categories (see pattern_catalog/lexeme_categories.json) and reads the COMBINATION, not any single keyword. A few concrete C++ cues:',
+        bullets: [
+          'Self-return `return *this` (the self_return category) → a fluent/chaining shape. To call it Builder rather than bare method-chaining, you also need a terminator that returns a *product* (a `build()` / `finalize()` that hands back the constructed object). No terminator ⇒ it is just chaining.',
+          'An owned member of an interface type that is forwarded to, PLUS an added responsibility around the forward (logging, a new method, behaviour layered on the call) → Decorator. A bare forward with no added behaviour, just translating one interface to another → plain Adapter.',
+          'A nested wrap at the call site — `new Loud(new Plain())` or `make_unique<Loud>(make_unique<Plain>())` → confident Decorator composition; the Adapter detector treats that exact nesting as a NEGATIVE (a "Decorator giveaway").',
+          'A held state object combined with a transition call that swaps it — `setState(...)` / `changeState(...)` / `this->state_ = ...` → State. If the policy object is set once by the CALLER and never self-swapped, that is Strategy.',
+        ],
+        code:
+          'class Pizza {\n'
+          + 'public:\n'
+          + '  Pizza& setSize(int s)    { size_ = s; return *this; }   // self_return → fluent\n'
+          + '  Pizza& addTopping(T t)   { tops_.push_back(t); return *this; }\n'
+          + '  Recipe build() const;    // terminator returns a PRODUCT → Builder, not bare chaining\n'
+          + 'private:\n'
+          + '  int size_; std::vector<T> tops_;\n'
+          + '};',
+      },
+      {
+        heading: 'Intent also shows in collaborators and call-site shape',
+        bullets: [
+          'Collaborators — what other types must be present for this to make sense? Decorator and the thing it decorates implement the SAME interface (so a decorator can wrap another decorator); an Adapter bridges TWO unrelated interfaces. Same skeleton, different cast of collaborators.',
+          'Call-site shape — how the object is built and used. Builder reads as a chain that ends in a terminator; Decorator reads as a constructor wrapping a constructor; State reads as a transition call flipping the held member mid-flight.',
+          'Negative signals — the absence of an expected token is evidence too. "Fluent setters but no terminator" argues against Builder; "a wrapped member but no forwarding call" argues against Decorator.',
+        ],
+        note:
+          'This is the connotative-definition rule (Module 10) applied to disambiguation: add descriptions — lexeme combos, collaborators, call-site shape — until only one pattern still fits.',
+      },
+      {
+        heading: 'How an analyser scores a near-tie',
+        body:
+          'When two candidates share a shape, a tool should not bluff a confident pick. CodiNeo scores each candidate per LINE, then compares them. The mechanics, conceptually:',
+        bullets: [
+          'Each catalog pattern carries weighted signals — callsites, expected collaborators, global functions — plus negative signals with negative weights. Every regex hit adds (or, for negatives, subtracts) its catalog-authored weight on the line it fired.',
+          'Per line, the pattern wins that line only if its own signal weight beats the opposing weight (rival patterns\' hits on that line PLUS this pattern\'s own negative-signal weight). Wins become "successes"; every non-blank in-scope line is a "trial".',
+          'The line score is the Wilson score-interval lower bound of successes/trials (a 95% lower bound, z = 1.96) — not the raw average. Wilson is deliberately conservative: a pattern that wins 3 of 3 lines does NOT get a perfect score, because three trials is thin evidence.',
+          'A candidate is "confident" only above ~0.85. If the top two scores sit within ~0.10 of each other, the verdict flips to "ambiguous" and BOTH candidates are surfaced — exactly the honest answer from Module 9, now produced by the math instead of a guess.',
+        ],
+        note:
+          'So identical structure does not force a wrong confident pick. It surfaces as a near-tie, and a near-tie is reported as ambiguity for a human to resolve with the intent context the code does not carry.',
+      },
+    ],
+    keyTerms: [
+      {
+        term: 'lexeme',
+        definition:
+          'A meaningful token (or fixed combo of consecutive tokens) the analyser reads as a signal — e.g. `return *this`, `make_unique`, `override {`. Bare single keywords are rejected as too thin.',
+      },
+      {
+        term: 'callsite signal',
+        definition:
+          'A regex over how the class is constructed and used at the call site (e.g. a nested `new X(new Y())` wrap, or chained fluent setters) — evidence of intent that the class body alone may not show.',
+      },
+      {
+        term: 'collaborator',
+        definition:
+          'Another type that must be present for the pattern to make sense (e.g. a Decorator and its component share one interface; an Adapter bridges two). The cast of collaborators separates same-shaped patterns.',
+      },
+      {
+        term: 'negative signal',
+        definition:
+          'A catalog signal with a NEGATIVE weight whose presence argues AGAINST a pattern (e.g. nested constructors count against Adapter because they are a Decorator giveaway). Absence of an expected token is evidence too.',
+      },
+      {
+        term: 'ambiguity',
+        definition:
+          'When the top two candidate scores fall within the delta (~0.10), the analyser reports BOTH rather than bluffing a confident pick — the structural tie made explicit.',
+      },
+      {
+        term: 'Wilson lower bound',
+        definition:
+          'The 95% Wilson score-interval lower bound of per-line wins/trials (z = 1.96). A conservative score that refuses to be confident on thin evidence, so near-ties surface as ambiguous.',
+      },
+    ],
+    summary:
+      'Identical structure is resolved by intent, and intent lives in the lexemes, collaborators, and call-site shape — not the class diagram. A line-by-line Wilson score lets near-ties surface as "ambiguous" instead of a wrong confident pick.',
+    seeAlso: [
+      { moduleId: 'foundations-ambiguity', label: 'Ambiguity is built in to design patterns' },
+      { moduleId: 'foundations-connotative-definition', label: 'The connotative-definition rule' },
+    ],
+  },
+  {
     id: 'foundations-structural-rules',
     category: 'foundations',
     title: 'Each pattern has a structural rule',
-    eyebrow: 'Foundations · Module 11',
+    eyebrow: 'Foundations · Module 12',
     intro:
       'Each design pattern in this catalog comes with a "correct structure" section that lists the exact token combos the analyser requires.',
     sections: [
@@ -512,7 +615,7 @@ public:
     id: 'foundations-context-variation',
     category: 'foundations',
     title: 'Patterns vary by team and codebase',
-    eyebrow: 'Foundations · Module 12',
+    eyebrow: 'Foundations · Module 13',
     intro:
       'Two teams that both claim to use Builder can write code that looks different. CodiNeo does not pick one team\'s convention as universal truth — it standardises on language-level structure so detection stays consistent.',
     sections: [
@@ -540,7 +643,7 @@ public:
     id: 'foundations-postrequisite',
     category: 'foundations',
     title: 'Post-Foundations open questions',
-    eyebrow: 'Foundations · Module 13',
+    eyebrow: 'Foundations · Module 14',
     intro:
       'Before you move into the pattern catalog, sit with the questions below. They are intentionally open-ended — there is no single right answer, but every working developer should have an opinion on each.',
     sections: [
@@ -882,6 +985,60 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       ],
       correctIndex: 1,
       explanation: 'More descriptions = more specific meaning and fewer things that qualify.',
+    },
+  ],
+  'foundations-same-structure': [
+    {
+      question:
+        'Two classes have the exact same class diagram. What tells them apart?',
+      options: [
+        'Nothing — identical structure means they are the same pattern.',
+        'The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.',
+        'Whichever class name sorts first alphabetically.',
+        'The number of lines in each class.',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Several Gang-of-Four patterns share a shape on purpose. Intent leaves fingerprints in the tokens and collaborators; the diagram cannot separate them.',
+    },
+    {
+      question:
+        'A class has fluent setters that all `return *this`. What extra signal makes it Builder rather than plain method-chaining?',
+      options: [
+        'It is always Builder whenever `return *this` appears.',
+        'A terminator method that returns a constructed product (e.g. `build()` / `finalize()`).',
+        'The class must be named with the suffix "Builder".',
+        'It must use raw `new` somewhere in the body.',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Self-return is the shared fluent shape. Builder adds a terminator that hands back the product; with no terminator it is just method-chaining.',
+    },
+    {
+      question:
+        'You see `new Loud(new Plain())` at the call site. How does this nesting weigh in the analyser?',
+      options: [
+        'It is a positive Decorator signal and a negative (anti-) signal for Adapter.',
+        'It is a positive Adapter signal.',
+        'It is ignored — only the class body matters.',
+        'It proves the class is a Singleton.',
+      ],
+      correctIndex: 0,
+      explanation:
+        'Nested construction is confident Decorator composition; the Adapter detector treats that exact nesting as a "Decorator giveaway" negative signal.',
+    },
+    {
+      question:
+        'When two candidate patterns score within the ambiguity delta (~0.10) of each other, what does the analyser do?',
+      options: [
+        'Pick the first one it found and report it as confident.',
+        'Report BOTH candidates as ambiguous and leave the call to a human.',
+        'Discard both and report no pattern.',
+        'Raise both scores to 1.0 so they tie at the top.',
+      ],
+      correctIndex: 1,
+      explanation:
+        'A near-tie is surfaced as ambiguity rather than a bluffed confident pick — the conservative Wilson lower bound is what makes the tie show up instead of a wrong winner.',
     },
   ],
   'foundations-structural-rules': [

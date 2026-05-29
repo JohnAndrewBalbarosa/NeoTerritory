@@ -46,7 +46,7 @@ describe('learningModules.seed.json parity', () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it('contains more than 35 modules (the current path is 39)', () => {
+  it('contains more than 35 modules (the current path is 40)', () => {
     const rows = loadSeed();
     expect(rows.length).toBeGreaterThan(35);
   });

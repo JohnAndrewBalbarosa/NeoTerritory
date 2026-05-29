@@ -80,6 +80,28 @@ function resolveLearningSeedPath(): string | null {
   return null;
 }
 
+// Read + parse the checked-in learning seed JSON into rows. Returns null when
+// the file is missing or unreadable (callers log + skip gracefully) and []
+// when it parses to a non-array. Shared by seedLearningModulesIfEmpty (empty-
+// table full seed) and ensureSeedLearningModules (additive insert-missing).
+function readLearningSeedRows(): LearningModuleSeedRow[] | null {
+  const seedPath = resolveLearningSeedPath();
+  if (!seedPath) {
+    // eslint-disable-next-line no-console
+    console.warn('[initDb] learning seed JSON not found — skipping learning_modules seed');
+    return null;
+  }
+  try {
+    const raw = fs.readFileSync(seedPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as LearningModuleSeedRow[]) : [];
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[initDb] failed to read/parse learning seed JSON — skipping:', err);
+    return null;
+  }
+}
+
 // Seed learning_modules from the checked-in JSON, but ONLY when the table is
 // empty. Once seeded, content is admin-owned (the CMS) — we never overwrite
 // instructor edits on a later boot. If the seed file is missing we log and skip
@@ -92,24 +114,8 @@ export function seedLearningModulesIfEmpty(database: Database): void {
       .get() as { n: number } | undefined;
     if ((existing?.n ?? 0) > 0) return; // already seeded — never overwrite
 
-    const seedPath = resolveLearningSeedPath();
-    if (!seedPath) {
-      // eslint-disable-next-line no-console
-      console.warn('[initDb] learning seed JSON not found — skipping learning_modules seed');
-      return;
-    }
-
-    let rows: LearningModuleSeedRow[];
-    try {
-      const raw = fs.readFileSync(seedPath, 'utf8');
-      const parsed = JSON.parse(raw);
-      rows = Array.isArray(parsed) ? (parsed as LearningModuleSeedRow[]) : [];
-    } catch (err) {
-      // eslint-disable-next-line no-console
-      console.warn('[initDb] failed to read/parse learning seed JSON — skipping:', err);
-      return;
-    }
-    if (rows.length === 0) return;
+    const rows = readLearningSeedRows();
+    if (!rows || rows.length === 0) return;
 
     const insert = database.prepare(`
       INSERT INTO learning_modules (
@@ -173,10 +179,116 @@ export function seedLearningModulesIfEmpty(database: Database): void {
     }
 
     // eslint-disable-next-line no-console
-    console.log(`[initDb] seeded ${rows.length} learning modules from ${path.basename(seedPath)}`);
+    console.log(`[initDb] seeded ${rows.length} learning modules from learningModules.seed.json`);
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn('[initDb] seedLearningModulesIfEmpty skipped:', err);
+  }
+}
+
+// Additively insert any seed module whose module_id is NOT already present.
+//
+// seedLearningModulesIfEmpty only runs on a virgin table, so a NEW seed module
+// (e.g. D92 Track E's `foundations-same-structure`) would never reach a DB that
+// was seeded under an older build. This pass closes that gap WITHOUT an empty-
+// table reset: it diffs the checked-in seed against the existing module_ids and
+// INSERT OR IGNOREs only the genuinely-missing ones.
+//
+// It NEVER overwrites an existing row — instructor edits and previously-seeded
+// modules are untouched (INSERT OR IGNORE no-ops on a PK collision; we also pre-
+// filter to ids not in the table). New rows land published + auto_tag + is_seed
+// with their seed sort_order, and are mirrored to Supabase best-effort.
+//
+// Accepted edge (documented): if an admin FORCE-deletes a seed module
+// (the `?force=1` hard delete guarded for is_seed rows), this pass re-inserts it
+// on the next boot. That is acceptable for "core" seed content — it is treated
+// as canonical and self-heals; an instructor who wants it gone should UNPUBLISH
+// it (published=0 survives reboots) rather than force-delete.
+export function ensureSeedLearningModules(database: Database): void {
+  try {
+    const rows = readLearningSeedRows();
+    if (!rows || rows.length === 0) return;
+
+    const existingRows = database
+      .prepare(`SELECT module_id FROM learning_modules`)
+      .all() as Array<{ module_id: string }>;
+    const present = new Set(existingRows.map((r) => r.module_id));
+
+    const missing = rows.filter(
+      (r) => r && typeof r.moduleId === 'string' && r.moduleId && !present.has(r.moduleId),
+    );
+    if (missing.length === 0) return; // every seed id already present — nothing to do
+
+    // INSERT OR IGNORE is belt-and-suspenders: the pre-filter already excludes
+    // present ids, and OR IGNORE guarantees we never clobber a row on a PK race.
+    const insert = database.prepare(`
+      INSERT OR IGNORE INTO learning_modules (
+        module_id, category, title, eyebrow, intro,
+        sections_json, key_terms_json, summary, see_also_json,
+        theoretical_json, practical_json,
+        published, auto_tag, sort_order, is_seed, created_at, updated_at
+      ) VALUES (
+        @module_id, @category, @title, @eyebrow, @intro,
+        @sections_json, @key_terms_json, @summary, @see_also_json,
+        @theoretical_json, @practical_json,
+        1, 1, @sort_order, 1, datetime('now'), datetime('now')
+      )
+    `);
+
+    const insertMissing = database.transaction((seedRows: LearningModuleSeedRow[]) => {
+      for (const r of seedRows) {
+        insert.run({
+          module_id: r.moduleId,
+          category: r.category,
+          title: r.title,
+          eyebrow: r.eyebrow ?? '',
+          intro: r.intro ?? '',
+          sections_json: JSON.stringify(r.sections ?? []),
+          key_terms_json: JSON.stringify(r.keyTerms ?? []),
+          summary: r.summary ?? null,
+          see_also_json: JSON.stringify(r.seeAlso ?? []),
+          theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
+          practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
+          sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
+        });
+      }
+    });
+    insertMissing(missing);
+
+    // Mirror the freshly-inserted rows to Supabase (best-effort; JSON fields as
+    // JS objects so PostgREST stores jsonb). Keyed by module_id (UPSERT_BY_PK).
+    const nowIso = new Date().toISOString();
+    for (const r of missing) {
+      mirrorRow('learning_modules', {
+        module_id: r.moduleId,
+        category: r.category,
+        title: r.title,
+        eyebrow: r.eyebrow ?? '',
+        intro: r.intro ?? '',
+        sections_json: r.sections ?? [],
+        key_terms_json: r.keyTerms ?? [],
+        summary: r.summary ?? null,
+        see_also_json: r.seeAlso ?? [],
+        theoretical_json: r.theoreticalExam ?? null,
+        practical_json: r.practicalExam ?? null,
+        published: 1,
+        auto_tag: 1,
+        sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
+        is_seed: 1,
+        created_at: nowIso,
+        updated_at: nowIso,
+      });
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(
+      `[initDb] inserted ${missing.length} missing seed learning module(s): ${missing
+        .map((r) => r.moduleId)
+        .join(', ')}`,
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[initDb] ensureSeedLearningModules skipped:', err);
   }
 }
 
@@ -477,6 +589,9 @@ export function initDb(): void {
 
   // Seed once when the table is empty (never overwrites instructor edits).
   seedLearningModulesIfEmpty(db);
+  // Additively insert any NEW seed module missing from an already-seeded DB
+  // (e.g. D92 Track E). Never overwrites existing rows — insert-missing only.
+  ensureSeedLearningModules(db);
 
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email
