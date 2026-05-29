@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { User, AnalysisRun, AppStatus, MsState, Annotation, PatternEducation } from '../types/api';
+import { sourceKeyOf, loadResolutions, saveResolutions, clearResolutions } from '../logic/resolutionPersistence';
 
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
@@ -189,6 +190,10 @@ export const useAppStore = create<AppState>((set) => ({
       window.localStorage.removeItem(TOKEN_KEY);
       window.localStorage.removeItem(USER_KEY);
     }
+    // Drop persisted per-class resolutions on logout (hygiene — they are
+    // source-keyed, not user-keyed). NOT cleared on resetSession, so a
+    // resolution survives re-analysis within a session.
+    clearResolutions();
     set({
       token: null,
       user: null,
@@ -215,28 +220,50 @@ export const useAppStore = create<AppState>((set) => ({
     submissionFiles: []
   }),
 
-  setCurrentRun: (run) => set({
-    currentRun: run,
-    activeTab: run ? 'annotated' : 'submit',
-    // A fresh run invalidates GDB pass state AND the cached results — the
-    // runner is bound to the run's identity, so new code = new session.
-    gdbAllPassedForRun: false,
-    lastGdbResults: null,
-    lastGdbRunKey: null,
-    gdbBusy: false,
-    gdbBusyForKey: null,
-    gdbInflightSkeleton: [],
-    gdbError: null,
-    gdbUnavailable: null,
-    gdbCooldownUntil: null,
-    gdbBudgetRemaining: null,
-    gdbAmbiguousBlock: null,
-    pendingGdbAutoRun: false,
-    programStdin: ''
+  setCurrentRun: (run) => {
+    // Re-hydrate any per-class resolution previously saved for THIS source, so
+    // re-analysing byte-identical code (after a reload / HMR / redeploy) keeps
+    // the learner's pick and the test runner's ambiguity gate stays cleared.
+    // The run's own / server-saved values win; the persisted map only fills
+    // gaps. Detection/scoring is untouched — this only restores the tag map.
+    let next = run;
+    if (run) {
+      const saved = loadResolutions(sourceKeyOf(run));
+      if (Object.keys(saved).length > 0) {
+        next = { ...run, classResolvedPatterns: { ...saved, ...(run.classResolvedPatterns || {}) } };
+      }
+    }
+    set({
+      currentRun: next,
+      activeTab: run ? 'annotated' : 'submit',
+      // A fresh run invalidates GDB pass state AND the cached results — the
+      // runner is bound to the run's identity, so new code = new session.
+      gdbAllPassedForRun: false,
+      lastGdbResults: null,
+      lastGdbRunKey: null,
+      gdbBusy: false,
+      gdbBusyForKey: null,
+      gdbInflightSkeleton: [],
+      gdbError: null,
+      gdbUnavailable: null,
+      gdbCooldownUntil: null,
+      gdbBudgetRemaining: null,
+      gdbAmbiguousBlock: null,
+      pendingGdbAutoRun: false,
+      programStdin: ''
+    });
+  },
+  patchCurrentRun: (patch) => set((s) => {
+    if (!s.currentRun) return { currentRun: s.currentRun };
+    const merged = { ...s.currentRun, ...patch };
+    // Persist whenever the resolution map changes (covers both resolve and
+    // unresolve, the only writers — SourceView routes both through here).
+    // Keyed by source, so it restores on the next analysis of the same code.
+    if (patch.classResolvedPatterns !== undefined) {
+      saveResolutions(sourceKeyOf(merged), merged.classResolvedPatterns || {});
+    }
+    return { currentRun: merged };
   }),
-  patchCurrentRun: (patch) => set((s) => ({
-    currentRun: s.currentRun ? { ...s.currentRun, ...patch } : s.currentRun
-  })),
   setSourceText: (text) => set({ sourceText: text }),
   setFilename: (name) => set({ filename: name }),
   setStatus: (status) => set({ status }),
