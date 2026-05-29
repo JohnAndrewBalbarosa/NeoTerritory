@@ -884,7 +884,11 @@ export default function PatternsLearnPage(): JSX.Element {
       </section>
 
       <section className="nt-course-shell" aria-label="Learning path">
-        <aside className="nt-course-sidebar" aria-label="Learning module outline">
+        <aside
+          className="nt-course-sidebar"
+          aria-label="Learning module outline"
+          data-lenis-prevent
+        >
           <div className="nt-course-sidebar__head">
             <p>Modules</p>
             <span>

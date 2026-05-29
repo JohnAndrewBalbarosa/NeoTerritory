@@ -1164,13 +1164,24 @@ body[data-surface] #root {
     grid-template-columns: 330px minmax(0, 1fr);
   }
 }
-.nt-course-sidebar,
+/* Content panel — the elevated, primary reading surface (raised gradient + drop
+   shadow). It is intentionally the brighter, "floating" surface. */
 .nt-lesson-panel {
   border: 1px solid var(--nt-mkt-line);
   border-radius: var(--nt-mkt-radius-lg);
   background: linear-gradient(180deg, rgba(15, 27, 46, 0.9), rgba(9, 13, 22, 0.92));
   box-shadow: var(--nt-mkt-shadow);
   overflow: hidden;
+}
+/* Module sidebar — a recessed navigation rail, deliberately quieter than the
+   content panel so the two are easy to tell apart at a glance: flatter, darker,
+   and inset (sunken) rather than raised. No drop shadow. */
+.nt-course-sidebar {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  background: rgba(6, 9, 15, 0.72);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 18px 42px -30px rgba(0, 0, 0, 0.85);
 }
 
 /* Visible "you got bounced back" banner shown when the linear-gate
@@ -1316,11 +1327,33 @@ body[data-surface] #root {
 }
 .nt-course-sidebar {
   position: sticky;
-  top: 88px;
+  top: 24px;
+  /* Stay pinned in the viewport, but keep the WHOLE module tree reachable: cap
+     the rail to the viewport height and scroll INSIDE it, instead of letting it
+     run off the bottom of the screen (which hid the lower modules while it was
+     stuck and the content scrolled past it). */
+  max-height: calc(100vh - 48px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--nt-mkt-line) transparent;
+}
+/* Slim, unobtrusive scrollbar for the rail (WebKit). */
+.nt-course-sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+.nt-course-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
 }
 @media (max-width: 979px) {
   .nt-course-sidebar {
     position: static;
+    /* On stacked mobile layout the rail is in normal flow — let it grow with
+       its content instead of becoming a short scroll box. */
+    max-height: none;
+    overflow: visible;
   }
 }
 .nt-course-sidebar__head {
@@ -1330,6 +1363,13 @@ body[data-surface] #root {
   gap: 1rem;
   padding: 1rem 1.1rem;
   border-bottom: 1px solid var(--nt-mkt-line);
+  /* Keep the "Modules · N/total" header visible while the rail scrolls inside
+     itself, so the learner always sees where they are in the tree. */
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: rgba(8, 11, 18, 0.97);
+  backdrop-filter: blur(6px);
 }
 .nt-course-sidebar__head p,
 .nt-course-sidebar__head span {
