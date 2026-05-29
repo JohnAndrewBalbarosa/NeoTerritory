@@ -395,6 +395,14 @@ function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswer
               <p className="nt-exam__prompt">
                 <span className="nt-exam__qnum">Q{qi + 1}.</span> {q.question}
               </p>
+              {/* D92 (Track D): code-bearing differentiation question — show the
+                  ambiguous C++ snippet so the learner picks by semantic intent.
+                  Read-only; grading stays client-side via correctIndex. */}
+              {q.code ? (
+                <pre className="nt-learn__module-code" aria-label="Code to differentiate">
+                  {q.code}
+                </pre>
+              ) : null}
               <ol className="nt-practical__choices">
                 {q.options.map((opt, oi) => {
                   const isPickedRow = picked === oi;

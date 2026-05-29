@@ -67,9 +67,13 @@ const seeAlsoSchema = z
   .strip();
 
 // One MCQ item. correctIndex must be an integer that indexes into options.
+// D92 (Track D): `code` is an optional C++ snippet for a differentiation
+// question — the CMS may author code-bearing items the learner reads and then
+// picks the pattern by semantic intent. Opaque to grading (still correctIndex).
 const examQuestionSchema = z
   .object({
     question: z.string().min(1, 'question text required').max(LONG_TEXT),
+    code: z.string().max(LONG_TEXT).optional(),
     options: z
       .array(z.string().min(1, 'option text required').max(LONG_TEXT))
       .min(2, 'at least two options')

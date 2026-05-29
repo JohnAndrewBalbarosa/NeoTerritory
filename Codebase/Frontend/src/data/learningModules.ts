@@ -43,6 +43,13 @@ export interface ExamQuestion {
   options: ReadonlyArray<string>;
   correctIndex: number;
   explanation?: string;
+  // D92 (Track D): code-bearing differentiation question — the learner reads
+  // the C++ snippet and picks the pattern by SEMANTIC intent, not structure.
+  // Rendered as a read-only code block above the options; grading is still
+  // entirely client-side via `correctIndex` (no analyser, no auto-tag). Rides
+  // inside theoreticalExam.questions[] → theoretical_json, so it is opaque JSON
+  // to the backend/DB — the seed dump carries it; no schema migration needed.
+  code?: string;
 }
 
 // Theoretical Exam — a small MCQ bank. Pass = every question answered
@@ -987,10 +994,20 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       explanation: 'More descriptions = more specific meaning and fewer things that qualify.',
     },
   ],
+  // D92 (Track D) — the "differentiation exam". MOST items are code-bearing:
+  // the learner is GIVEN a structurally-ambiguous C++ class and must pick the
+  // pattern by SEMANTIC intent, not the class skeleton. Each code snippet is
+  // genuinely the labelled pattern; the explanation names the resolving cue
+  // (who drives the swap, added-responsibility vs bare-forward vs access-
+  // control, terminator-returns-a-product). Graded entirely client-side via
+  // correctIndex — no analyser, no auto-tag. Cues are grounded in
+  // pattern_catalog/{behavioural/strategy_interface,state}.json and
+  // {structural/adapter,decorator,proxy}.json.
   'foundations-same-structure': [
     {
+      // Conceptual anchor (non-code) — keep one as the framing question.
       question:
-        'Two classes have the exact same class diagram. What tells them apart?',
+        'Two classes have the exact same class diagram. What is the ONLY thing that can tell them apart?',
       options: [
         'Nothing — identical structure means they are the same pattern.',
         'The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.',
@@ -999,46 +1016,151 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       ],
       correctIndex: 1,
       explanation:
-        'Several Gang-of-Four patterns share a shape on purpose. Intent leaves fingerprints in the tokens and collaborators; the diagram cannot separate them.',
+        'Several Gang-of-Four patterns share a shape on purpose. The boxes-and-arrows answer "what shape is this?", never "what is this FOR?" — intent leaves fingerprints in the tokens, collaborators, and call-site, and that is what separates same-shaped patterns.',
     },
     {
+      // Strategy vs State — identical UML (context holds a polymorphic pointer
+      // and delegates). Resolving cue: WHO drives the swap. Here the OBJECT
+      // transitions its own held member (changeState within handle) → State.
       question:
-        'A class has fluent setters that all `return *this`. What extra signal makes it Builder rather than plain method-chaining?',
+        'Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?',
+      code:
+        'class TrafficLight {\n'
+        + 'public:\n'
+        + '  void next() {\n'
+        + '    state_->handle(*this);   // delegate to the current state...\n'
+        + '  }\n'
+        + '  void changeState(std::unique_ptr<LightState> s) {\n'
+        + '    state_ = std::move(s);   // ...which transitions the held member itself\n'
+        + '  }\n'
+        + 'private:\n'
+        + '  std::unique_ptr<LightState> state_;\n'
+        + '};',
       options: [
-        'It is always Builder whenever `return *this` appears.',
-        'A terminator method that returns a constructed product (e.g. `build()` / `finalize()`).',
-        'The class must be named with the suffix "Builder".',
-        'It must use raw `new` somewhere in the body.',
+        'Strategy — the algorithm is chosen once by the client.',
+        'State — the object transitions its own held member at runtime.',
+        'Adapter — it translates one interface to another.',
+        'Proxy — it controls access to a real subject.',
       ],
       correctIndex: 1,
       explanation:
-        'Self-return is the shared fluent shape. Builder adds a terminator that hands back the product; with no terminator it is just method-chaining.',
+        'The resolving cue is WHO drives the swap. A transition call (changeState / setState / this->state_ = ...) invoked as part of handling input means the object flips its own held member mid-flight — that is State. If the policy object were set once by the caller and never self-swapped, the same skeleton would read as Strategy.',
     },
     {
+      // Strategy vs State — the contrast case. Here the policy is injected by
+      // the CALLER (constructor + setStrategy) and never self-swapped → Strategy.
       question:
-        'You see `new Loud(new Plain())` at the call site. How does this nesting weigh in the analyser?',
+        'Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern is THIS class?',
+      code:
+        'class Compressor {\n'
+        + 'public:\n'
+        + '  explicit Compressor(std::unique_ptr<CompressionPolicy> p)\n'
+        + '    : policy_(std::move(p)) {}\n'
+        + '  void setStrategy(std::unique_ptr<CompressionPolicy> p) {\n'
+        + '    policy_ = std::move(p);  // the CLIENT swaps the policy\n'
+        + '  }\n'
+        + '  Bytes run(const Bytes& in) { return policy_->compress(in); }\n'
+        + 'private:\n'
+        + '  std::unique_ptr<CompressionPolicy> policy_;\n'
+        + '};',
       options: [
-        'It is a positive Decorator signal and a negative (anti-) signal for Adapter.',
-        'It is a positive Adapter signal.',
-        'It is ignored — only the class body matters.',
-        'It proves the class is a Singleton.',
-      ],
-      correctIndex: 0,
-      explanation:
-        'Nested construction is confident Decorator composition; the Adapter detector treats that exact nesting as a "Decorator giveaway" negative signal.',
-    },
-    {
-      question:
-        'When two candidate patterns score within the ambiguity delta (~0.10) of each other, what does the analyser do?',
-      options: [
-        'Pick the first one it found and report it as confident.',
-        'Report BOTH candidates as ambiguous and leave the call to a human.',
-        'Discard both and report no pattern.',
-        'Raise both scores to 1.0 so they tie at the top.',
+        'State — the object drives its own transitions.',
+        'Strategy — the client injects/sets the policy; the object never self-swaps it.',
+        'Decorator — it wraps a component and adds behaviour.',
+        'Builder — it assembles a product step by step.',
       ],
       correctIndex: 1,
       explanation:
-        'A near-tie is surfaced as ambiguity rather than a bluffed confident pick — the conservative Wilson lower bound is what makes the tie show up instead of a wrong winner.',
+        'The swap is driven from OUTSIDE: a constructor injection plus a setStrategy() the caller controls, and run() never reassigns policy_ itself. Client-driven, externally-set policy with no self-transition is Strategy. (Compare the previous question, where the object called changeState on itself → State.)',
+    },
+    {
+      // Adapter vs Decorator vs Proxy — all three hold/own one member of an
+      // interface type and forward to it. Resolving cue: this one ADDS a
+      // responsibility (logging) around the forward AND shares the wrappee's
+      // interface → Decorator. (Nested new X(new Y()) at the call site is the
+      // confident Decorator-composition giveaway per the catalog.)
+      question:
+        'Adapter, Decorator, and Proxy all hold a member of an interface type and forward calls to it — the same wrapping skeleton. Which pattern is the class below?',
+      code:
+        'class LoggingStream : public Stream {       // SAME interface as the wrappee\n'
+        + 'public:\n'
+        + '  explicit LoggingStream(std::unique_ptr<Stream> inner)\n'
+        + '    : inner_(std::move(inner)) {}\n'
+        + '  void write(const std::string& data) override {\n'
+        + '    log("writing " + std::to_string(data.size()) + " bytes");  // ADDED responsibility\n'
+        + '    inner_->write(data);                    // ...then forward unchanged\n'
+        + '  }\n'
+        + 'private:\n'
+        + '  std::unique_ptr<Stream> inner_;\n'
+        + '};\n'
+        + '// call site: new LoggingStream(new FileStream())  // nested wrap',
+      options: [
+        'Adapter — it converts one interface into a different one.',
+        'Decorator — it shares the wrappee’s interface and layers behaviour on the forward.',
+        'Proxy — it controls or defers access to the real subject.',
+        'State — it swaps a held state object.',
+      ],
+      correctIndex: 1,
+      explanation:
+        'Two cues resolve it to Decorator: (1) it implements the SAME interface it wraps (`: public Stream`, so a decorator can wrap another decorator), and (2) it ADDS a responsibility — the log() call — around an otherwise-unchanged forward. The nested `new LoggingStream(new FileStream())` at the call site is the confident Decorator-composition signal (and the Adapter detector treats that exact nesting as a "Decorator giveaway" negative). A bare forward that just translated interfaces with no added behaviour would be Adapter.',
+    },
+    {
+      // Adapter vs Proxy — Proxy is distinguished by access_control_caching
+      // (lazy init / mutex / cache). This one lazily creates the real subject
+      // behind an if-guard → Virtual Proxy. (Adapter declares
+      // negative_signature_categories: ["access_control_caching"] precisely so
+      // a guarded/lazy class cannot collapse into Adapter.)
+      question:
+        'This class also holds a member of the same interface and forwards to it. Adapter or Proxy?',
+      code:
+        'class ImageProxy : public Image {\n'
+        + 'public:\n'
+        + '  void draw() override {\n'
+        + '    if (!real_) {                              // access control: lazy init guard\n'
+        + '      real_ = std::make_unique<HiResImage>(path_);\n'
+        + '    }\n'
+        + '    real_->draw();                             // forward only after the guard\n'
+        + '  }\n'
+        + 'private:\n'
+        + '  std::unique_ptr<HiResImage> real_;\n'
+        + '  std::string path_;\n'
+        + '};',
+      options: [
+        'Adapter — it adapts HiResImage to the Image interface.',
+        'Proxy — it controls access to the real subject (here, lazy creation).',
+        'Decorator — it adds a visible responsibility to draw().',
+        'Strategy — the caller injects the algorithm.',
+      ],
+      correctIndex: 1,
+      explanation:
+        'The deciding cue is access control: the `if (!real_) … make_unique<HiResImage>()` guard defers creating the real subject until first use — a canonical Virtual Proxy. Forwarding happens only behind that gate. Adapter explicitly declares access_control_caching as a negative signature so a lazy/guarded class cannot be mistaken for it; Adapter is a bare interface translation with no gate.',
+    },
+    {
+      // Builder vs plain method-chaining — both end setters in `return *this`.
+      // Resolving cue: a terminator that returns a PRODUCT. Here build()
+      // returns Pizza → Builder. Without it, the same fluent shape is bare
+      // method chaining.
+      question:
+        'Both Builder and plain method-chaining use fluent setters that `return *this`. What makes the class below specifically a Builder?',
+      code:
+        'class PizzaBuilder {\n'
+        + 'public:\n'
+        + '  PizzaBuilder& setSize(int s)        { size_ = s; return *this; }\n'
+        + '  PizzaBuilder& addTopping(Topping t) { tops_.push_back(t); return *this; }\n'
+        + '  Pizza build() const;                // terminator hands back a PRODUCT\n'
+        + 'private:\n'
+        + '  int size_;\n'
+        + '  std::vector<Topping> tops_;\n'
+        + '};',
+      options: [
+        'Any class with `return *this` is automatically a Builder.',
+        'A terminator method (build()) that returns a constructed product — not just the chainable `*this`.',
+        'The class name ends in "Builder".',
+        'It stores its fields in a std::vector.',
+      ],
+      correctIndex: 1,
+      explanation:
+        'The shared fluent shape is `return *this` on the setters — that alone is just method-chaining. Builder adds a terminator (build() / finalize()) that returns the constructed PRODUCT (here a Pizza). The terminator is the semantic cue; neither the class name nor the field types decide it.',
     },
   ],
   'foundations-structural-rules': [
