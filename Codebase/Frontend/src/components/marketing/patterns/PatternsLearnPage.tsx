@@ -214,14 +214,13 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
 // ----- lesson bodies: one per pager page (Intro / Concepts / Examples) -----
 
 function IntroBody({ module }: { module: LearningModule }): JSX.Element {
+  // The module title + family eyebrow already live in the pager head (visible on
+  // every page), so the Intro page shows only the lead-in paragraph instead of
+  // repeating them — keeps the reading area dense rather than header-heavy.
   return (
-    <header className="nt-learn__module-head" id={anchorId(module.id, 'intro')}>
-      <p className="nt-section-eyebrow">{module.eyebrow}</p>
-      <h2 id={`mod-${module.id}-title`} className="nt-learn__module-title">
-        {module.title}
-      </h2>
-      <p className="nt-learn__module-intro">{module.intro}</p>
-    </header>
+    <p className="nt-learn__module-intro nt-learn__module-intro--lead" id={anchorId(module.id, 'intro')}>
+      {module.intro}
+    </p>
   );
 }
 
@@ -1159,6 +1158,17 @@ export default function PatternsLearnPage(): JSX.Element {
                     onClick={() => navigate('/patterns')}
                   >
                     ← Catalog
+                  </button>
+                  {/* Prev mirror — hidden on desktop (the side ‹ arrow owns it),
+                      shown on mobile where the side arrows are removed. */}
+                  <button
+                    type="button"
+                    className="nt-lesson-button nt-pager__foot-prev"
+                    onClick={goPrevPage}
+                    disabled={prevDisabled}
+                    aria-label={atFirstPage ? 'Previous module' : 'Previous section'}
+                  >
+                    ‹ Prev
                   </button>
                   <button
                     type="button"
