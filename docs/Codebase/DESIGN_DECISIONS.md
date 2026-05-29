@@ -1259,3 +1259,56 @@ through a streaming Next Route Handler, or keep that one call direct once AWS ha
 When Vercel becomes the *production* public origin, repoint the Playwright/manifest
 base URL in the workflows in that same change; the AWS post-deploy smoke
 (`scripts/ci-aws-post-deploy-smoke.mjs`) keeps hitting AWS directly and stays valid.
+
+## D89 — Full Next.js (App Router) migration; new app shares the existing `Frontend/src`
+**Supersedes the B2 deferral in D88.** The user chose a full per-route Next.js
+migration (confirmed three times) over the lighter Vite-SSG or thin-shell options. This
+records the durable shape so it is not re-derived inconsistently.
+
+**Honest scope of the SSR win.** The marketing UI is animation/interaction-driven
+(`motion`, `lenis`, `react-joyride`, magnetic buttons; `marketing.css` ≈188KB) and the
+authenticated surfaces render from a `localStorage` JWT the server cannot see. So in Next
+App Router terms nearly every surface is a `'use client'` component. Next still
+server-renders the **first-paint HTML** of client components (real markup in view-source,
+faster FCP), but there is **no meaningful server-side *data* rendering** to gain here.
+"SSR everything" for this app = "server-rendered first paint + clean Next hosting", not
+RSC data fetching. This is accepted.
+
+**App location + source sharing.** The Next app lives at `Codebase/FrontendNext/` (kept
+**separate** from `Codebase/Frontend/` so the live Vite build the production site depends
+on cannot be destabilised mid-migration). To avoid duplicating the 188KB CSS, the assets,
+and the whole shared infra (`store/appState`, `hooks/*`, `api/client.ts`), the Next app
+**shares the existing `Codebase/Frontend/src`** via a webpack alias + `transpilePackages`
+in `next.config.js` and a tsconfig `paths` mapping (e.g. `@frontend/* → ../Frontend/src/*`).
+Components are reused verbatim, not copied. `Codebase/Frontend/src` therefore stays the
+single source of UI components until B2.3; what B2.3 deletes is the Vite-specific wrapper
+(`index.html`, `admin.html`, `scraper.html`, the three `main.tsx`, `vite.config.ts`) and,
+once the last cross-tree import is internalised, the `src` tree is moved under the Next app.
+
+**Proxy invariant (unchanged from D88).** `next.config.js` `rewrites()` mirror the current
+`vercel.json`: `/api/:path*`, `/auth/:path*`, `/health` → `http://122.248.192.49/...` via
+`AWS_BACKEND_ORIGIN`. No CORS, no `client.ts` change, JWT stays in `localStorage`. AWS
+backend + C++ binary + Docker pods are untouched.
+
+**Routing.** The custom `src/logic/router.ts` pure helpers (`pathToSurface`,
+`patternSlugFromPath`, `learnModuleSlugFromPath`) are reused server-side; the client-only
+hooks (`useSurface`/`usePath`/`navigate`/`replaceUrl`) are replaced by Next
+`useRouter`/`usePathname`/`<Link>` in B2.2 behind a `useSurface` compat bridge derived from
+the Next pathname, retired in B2.3.
+
+**Docs-mirror granularity (reconciling the hard rule with a framework migration).**
+`docs/Codebase/FrontendNext/` documents the app at **route-group/folder-README**
+granularity plus a `.md` for each non-trivial file (root layout, `next.config.js` proxy,
+Route Handlers like the SSE streamer). Framework-mandated boilerplate and one-line
+`'use client'` re-export route files are covered by their parent folder README rather than
+a per-file `.md`, so the mirror stays meaningful without dozens of trivial specs. Each
+spec lands before/with the source file it describes.
+
+**AWS-UI decision (deferred to B2.3).** After the Vite build is gone, Express's
+`express.static(frontendDir)` + catch-all `index.html` in `Codebase/Backend/server.ts`
+become dead. B2.3 will (recommended) make AWS API-only and record the final call here.
+
+**Live-site safety.** The production Vercel project keeps building the Vite app
+(`vercel.json`) until a `next build` is proven green; only then is the Vercel project
+Root Directory flipped to `Codebase/FrontendNext`. Frontend rollback stays `vercel
+rollback`; backend rollback stays `scripts/deploy-aws.sh --rollback`.

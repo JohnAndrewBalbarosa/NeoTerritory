@@ -1,0 +1,28 @@
+{
+  "name": "neoterritory-frontend-next",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Next.js (App Router) host for the NeoTerritory frontend — see docs/Codebase/FrontendNext. Shares components from ../Frontend/src (D89).",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "lenis": "^1.1.13",
+    "motion": "^11.15.0",
+    "next": "^14.2.15",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "react-joyride": "^3.1.0",
+    "zustand": "^4.5.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.4.0"
+  }
+}

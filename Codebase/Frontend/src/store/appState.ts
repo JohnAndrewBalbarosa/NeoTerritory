@@ -4,6 +4,20 @@ import { User, AnalysisRun, AppStatus, MsState, Annotation, PatternEducation } f
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
 
+// SSR-safe localStorage access. Under Next.js the store module is evaluated on the
+// server during prerender, where `window`/`localStorage` do not exist; an unguarded
+// read throws "localStorage is not defined". In the browser (Vite or hydrated Next)
+// this behaves exactly as a direct localStorage call. See D89.
+const canUseDom = typeof window !== 'undefined';
+function readStored(key: string): string | null {
+  if (!canUseDom) return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 // 'docs' is no longer a top-level studio tab — the generated documentation
 // now lives as a sub-view inside the Patterns (annotated) tab. The union is
 // kept tight so a stale 'docs' activeTab can't be set anywhere.
@@ -116,10 +130,10 @@ interface AppState {
 }
 
 export const useAppStore = create<AppState>((set) => ({
-  token: localStorage.getItem(TOKEN_KEY) || null,
+  token: readStored(TOKEN_KEY),
   user: (() => {
     try {
-      const raw = localStorage.getItem(USER_KEY);
+      const raw = readStored(USER_KEY);
       return raw ? (JSON.parse(raw) as User) : null;
     } catch {
       return null;
@@ -163,14 +177,18 @@ export const useAppStore = create<AppState>((set) => ({
   submissionFiles: [],
 
   setAuth: (token, user) => {
-    localStorage.setItem(TOKEN_KEY, token);
-    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    if (canUseDom) {
+      window.localStorage.setItem(TOKEN_KEY, token);
+      window.localStorage.setItem(USER_KEY, JSON.stringify(user));
+    }
     set({ token, user });
   },
 
   clearAuth: () => {
-    localStorage.removeItem(TOKEN_KEY);
-    localStorage.removeItem(USER_KEY);
+    if (canUseDom) {
+      window.localStorage.removeItem(TOKEN_KEY);
+      window.localStorage.removeItem(USER_KEY);
+    }
     set({
       token: null,
       user: null,
