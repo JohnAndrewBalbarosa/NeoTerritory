@@ -27,3 +27,4 @@ export * from './auth';
 export * from './survey';
 export * from './gdb';
 export * from './patternGroups';
+export * from './learning';

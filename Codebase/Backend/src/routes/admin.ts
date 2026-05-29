@@ -9,7 +9,11 @@ import { LEGACY_ORIGINAL_DEVS_ORG_ID } from '../services/orgScope';
 import {
   createPatternGroupSchema,
   patchPatternGroupSchema,
+  validateLearningModule,
+  patchLearningModuleSchema,
+  type LearningModuleInput,
 } from '../payloadValidator';
+import { mirrorRow } from '../services/supabaseLogger';
 import {
   bumpCatalogEpoch,
   listDefaultCatalogPatterns,
@@ -2119,6 +2123,370 @@ router.delete('/catalogs/:id', (req: Request, res: Response, next: NextFunction)
       targetKind: 'org_pattern_catalog',
       targetId: String(id),
       detail: JSON.stringify({ orgId, removed: info.changes }),
+    });
+    res.json({ removed: info.changes });
+  } catch (err) { next(err); }
+});
+
+// ── Learning CMS — module CRUD (D92) ────────────────────────────────────────
+// Admin-owned source of truth for learning content. The public learner read is
+// GET /api/learning/modules (published only); these routes manage ALL modules
+// incl. drafts. Every row is the frozen LearningModuleDTO document plus the
+// control fields (published / autoTag / sortOrder / isSeed). module_id is the
+// immutable PK the learner-progress tables key on, so PUT never changes it and
+// hard-delete is guarded for seed rows. Each mutation is audited + mirrored to
+// Supabase (keyed by module_id).
+
+interface LearningModuleAdminRow {
+  module_id: string;
+  category: string;
+  title: string;
+  eyebrow: string;
+  intro: string;
+  sections_json: string;
+  key_terms_json: string;
+  summary: string | null;
+  see_also_json: string;
+  theoretical_json: string | null;
+  practical_json: string | null;
+  published: number;
+  auto_tag: number;
+  sort_order: number;
+  is_seed: number;
+  updated_at: string;
+}
+
+// Defensive array/object parsers for the _json columns. Corrupt JSON degrades
+// to []/null so the admin list never 500s on a hand-edited row.
+function parseJsonArr(raw: string | null | undefined): unknown[] {
+  if (!raw) return [];
+  try { const p = JSON.parse(raw); return Array.isArray(p) ? p : []; } catch { return []; }
+}
+function parseJsonObj(raw: string | null | undefined): unknown {
+  if (!raw) return null;
+  try { const p = JSON.parse(raw); return p && typeof p === 'object' && !Array.isArray(p) ? p : null; }
+  catch { return null; }
+}
+
+// Row → admin DTO: the LearningModuleDTO wire shape + the control fields the
+// admin UI edits (published / autoTag / sortOrder / isSeed / updatedAt).
+function learningRowToAdminDto(row: LearningModuleAdminRow): Record<string, unknown> {
+  const dto: Record<string, unknown> = {
+    id: row.module_id,
+    category: row.category,
+    title: row.title,
+    eyebrow: row.eyebrow,
+    intro: row.intro,
+    sections: parseJsonArr(row.sections_json),
+    keyTerms: parseJsonArr(row.key_terms_json),
+    seeAlso: parseJsonArr(row.see_also_json),
+    autoTag: row.auto_tag !== 0,
+    published: row.published !== 0,
+    sortOrder: row.sort_order,
+    isSeed: row.is_seed !== 0,
+    updatedAt: row.updated_at,
+  };
+  if (row.summary != null) dto.summary = row.summary;
+  const theoretical = parseJsonObj(row.theoretical_json);
+  if (theoretical) dto.theoreticalExam = theoretical;
+  const practical = parseJsonObj(row.practical_json);
+  if (practical) dto.practicalExam = practical;
+  return dto;
+}
+
+// Build the column set shared by INSERT + the Supabase mirror, from a validated
+// module input + resolved control values. JSON fields stay JS objects for the
+// mirror; the SQLite layer stringifies separately.
+function learningMirrorPayload(
+  value: LearningModuleInput,
+  control: { published: number; autoTag: number; sortOrder: number; isSeed: number },
+  updatedAtIso: string,
+): Record<string, unknown> {
+  return {
+    module_id: value.id,
+    category: value.category,
+    title: value.title,
+    eyebrow: value.eyebrow ?? '',
+    intro: value.intro ?? '',
+    sections_json: value.sections ?? [],
+    key_terms_json: value.keyTerms ?? [],
+    summary: value.summary ?? null,
+    see_also_json: value.seeAlso ?? [],
+    theoretical_json: value.theoreticalExam ?? null,
+    practical_json: value.practicalExam ?? null,
+    published: control.published,
+    auto_tag: control.autoTag,
+    sort_order: control.sortOrder,
+    is_seed: control.isSeed,
+    updated_at: updatedAtIso,
+  };
+}
+
+// GET all modules (incl. drafts) for the admin CMS list.
+router.get('/learning/modules', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const rows = db.prepare(`
+      SELECT module_id, category, title, eyebrow, intro,
+             sections_json, key_terms_json, summary, see_also_json,
+             theoretical_json, practical_json,
+             published, auto_tag, sort_order, is_seed, updated_at
+      FROM learning_modules
+      ORDER BY sort_order ASC, module_id ASC
+    `).all() as LearningModuleAdminRow[];
+    res.json({ modules: rows.map(learningRowToAdminDto) });
+  } catch (err) { next(err); }
+});
+
+// Create a module. Requires a unique id (409 on dup). published/autoTag/sortOrder
+// optional → default 1/1/0. created_by_user_id = the acting admin.
+router.post('/learning/modules', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = validateLearningModule(req.body);
+    if (!result.ok) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    const value = result.value;
+
+    const exists = db.prepare(`SELECT 1 FROM learning_modules WHERE module_id = ?`).get(value.id);
+    if (exists) {
+      res.status(409).json({ error: `A module with id "${value.id}" already exists` });
+      return;
+    }
+
+    const published = value.published === false ? 0 : 1;
+    const autoTag = value.autoTag === false ? 0 : 1;
+    const sortOrder = typeof value.sortOrder === 'number' ? value.sortOrder : 0;
+
+    db.prepare(`
+      INSERT INTO learning_modules (
+        module_id, category, title, eyebrow, intro,
+        sections_json, key_terms_json, summary, see_also_json,
+        theoretical_json, practical_json,
+        published, auto_tag, sort_order, is_seed, created_by_user_id,
+        created_at, updated_at
+      ) VALUES (
+        @module_id, @category, @title, @eyebrow, @intro,
+        @sections_json, @key_terms_json, @summary, @see_also_json,
+        @theoretical_json, @practical_json,
+        @published, @auto_tag, @sort_order, 0, @created_by_user_id,
+        datetime('now'), datetime('now')
+      )
+    `).run({
+      module_id: value.id,
+      category: value.category,
+      title: value.title,
+      eyebrow: value.eyebrow ?? '',
+      intro: value.intro ?? '',
+      sections_json: JSON.stringify(value.sections ?? []),
+      key_terms_json: JSON.stringify(value.keyTerms ?? []),
+      summary: value.summary ?? null,
+      see_also_json: JSON.stringify(value.seeAlso ?? []),
+      theoretical_json: value.theoreticalExam ? JSON.stringify(value.theoreticalExam) : null,
+      practical_json: value.practicalExam ? JSON.stringify(value.practicalExam) : null,
+      published,
+      auto_tag: autoTag,
+      sort_order: sortOrder,
+      created_by_user_id: req.user?.id ?? null,
+    });
+
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'learning.module.create',
+      targetKind: 'learning_module',
+      targetId: value.id,
+      detail: JSON.stringify({ category: value.category, published, autoTag, sortOrder }),
+    });
+    mirrorRow(
+      'learning_modules',
+      learningMirrorPayload(value, { published, autoTag, sortOrder, isSeed: 0 }, new Date().toISOString()),
+    );
+
+    res.status(201).json({ id: value.id });
+  } catch (err) { next(err); }
+});
+
+// Full-document update. module_id (the PK) is IMMUTABLE — a body id that differs
+// from the path is rejected. published/autoTag/sortOrder default to the existing
+// row's values when omitted so a content-only PUT does not silently republish.
+router.put('/learning/modules/:moduleId', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const moduleId = String(req.params.moduleId);
+    const existing = db.prepare(
+      `SELECT module_id, published, auto_tag, sort_order, is_seed FROM learning_modules WHERE module_id = ?`,
+    ).get(moduleId) as
+      | { module_id: string; published: number; auto_tag: number; sort_order: number; is_seed: number }
+      | undefined;
+    if (!existing) {
+      res.status(404).json({ error: 'Module not found' });
+      return;
+    }
+
+    const result = validateLearningModule(req.body);
+    if (!result.ok) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+    const value = result.value;
+    if (value.id !== moduleId) {
+      res.status(400).json({ error: 'module id is immutable — it cannot be changed on update' });
+      return;
+    }
+
+    const published = value.published === undefined ? existing.published : value.published ? 1 : 0;
+    const autoTag = value.autoTag === undefined ? existing.auto_tag : value.autoTag ? 1 : 0;
+    const sortOrder = typeof value.sortOrder === 'number' ? value.sortOrder : existing.sort_order;
+
+    db.prepare(`
+      UPDATE learning_modules SET
+        category = @category,
+        title = @title,
+        eyebrow = @eyebrow,
+        intro = @intro,
+        sections_json = @sections_json,
+        key_terms_json = @key_terms_json,
+        summary = @summary,
+        see_also_json = @see_also_json,
+        theoretical_json = @theoretical_json,
+        practical_json = @practical_json,
+        published = @published,
+        auto_tag = @auto_tag,
+        sort_order = @sort_order,
+        updated_at = datetime('now')
+      WHERE module_id = @module_id
+    `).run({
+      module_id: moduleId,
+      category: value.category,
+      title: value.title,
+      eyebrow: value.eyebrow ?? '',
+      intro: value.intro ?? '',
+      sections_json: JSON.stringify(value.sections ?? []),
+      key_terms_json: JSON.stringify(value.keyTerms ?? []),
+      summary: value.summary ?? null,
+      see_also_json: JSON.stringify(value.seeAlso ?? []),
+      theoretical_json: value.theoreticalExam ? JSON.stringify(value.theoreticalExam) : null,
+      practical_json: value.practicalExam ? JSON.stringify(value.practicalExam) : null,
+      published,
+      auto_tag: autoTag,
+      sort_order: sortOrder,
+    });
+
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'learning.module.update',
+      targetKind: 'learning_module',
+      targetId: moduleId,
+      detail: JSON.stringify({ category: value.category, published, autoTag, sortOrder }),
+    });
+    mirrorRow(
+      'learning_modules',
+      learningMirrorPayload(
+        value,
+        { published, autoTag, sortOrder, isSeed: existing.is_seed },
+        new Date().toISOString(),
+      ),
+    );
+
+    res.json({ id: moduleId });
+  } catch (err) { next(err); }
+});
+
+// PATCH the control fields only (published / autoTag / sortOrder). Content is
+// untouched. Used by the Canvas-style publish toggle + drag-reorder.
+router.patch('/learning/modules/:moduleId', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const moduleId = String(req.params.moduleId);
+    const parsed = patchLearningModuleSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: parsed.error.issues[0]?.message ?? 'invalid patch' });
+      return;
+    }
+    const existing = db.prepare(
+      `SELECT module_id, category, title, eyebrow, intro, sections_json, key_terms_json,
+              summary, see_also_json, theoretical_json, practical_json,
+              published, auto_tag, sort_order, is_seed
+       FROM learning_modules WHERE module_id = ?`,
+    ).get(moduleId) as LearningModuleAdminRow | undefined;
+    if (!existing) {
+      res.status(404).json({ error: 'Module not found' });
+      return;
+    }
+
+    const patch = parsed.data;
+    const published = patch.published === undefined ? existing.published : patch.published ? 1 : 0;
+    const autoTag = patch.autoTag === undefined ? existing.auto_tag : patch.autoTag ? 1 : 0;
+    const sortOrder = patch.sortOrder === undefined ? existing.sort_order : patch.sortOrder;
+
+    db.prepare(`
+      UPDATE learning_modules
+      SET published = ?, auto_tag = ?, sort_order = ?, updated_at = datetime('now')
+      WHERE module_id = ?
+    `).run(published, autoTag, sortOrder, moduleId);
+
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'learning.module.patch',
+      targetKind: 'learning_module',
+      targetId: moduleId,
+      detail: JSON.stringify({ published, autoTag, sortOrder }),
+    });
+    // Mirror the whole row (control change + unchanged content) so Supabase
+    // stays a faithful copy. JSON cols passed as parsed objects.
+    mirrorRow('learning_modules', {
+      module_id: existing.module_id,
+      category: existing.category,
+      title: existing.title,
+      eyebrow: existing.eyebrow,
+      intro: existing.intro,
+      sections_json: parseJsonArr(existing.sections_json),
+      key_terms_json: parseJsonArr(existing.key_terms_json),
+      summary: existing.summary,
+      see_also_json: parseJsonArr(existing.see_also_json),
+      theoretical_json: parseJsonObj(existing.theoretical_json),
+      practical_json: parseJsonObj(existing.practical_json),
+      published,
+      auto_tag: autoTag,
+      sort_order: sortOrder,
+      is_seed: existing.is_seed,
+      updated_at: new Date().toISOString(),
+    });
+
+    res.json({ id: moduleId, published: published !== 0, autoTag: autoTag !== 0, sortOrder });
+  } catch (err) { next(err); }
+});
+
+// Hard delete. Seed rows are guarded: deleting one requires ?force=1 (the UI
+// steers to unpublish instead, which preserves learner progress). Custom rows
+// delete freely. NOTE: per-user progress rows reference module_id but are NOT
+// FK-cascaded here — deleting a module intentionally leaves historical progress
+// rows intact (they simply stop resolving to a live module).
+router.delete('/learning/modules/:moduleId', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const moduleId = String(req.params.moduleId);
+    const row = db.prepare(`SELECT is_seed FROM learning_modules WHERE module_id = ?`).get(moduleId) as
+      | { is_seed: number }
+      | undefined;
+    if (!row) {
+      res.status(404).json({ error: 'Module not found' });
+      return;
+    }
+    const force = req.query.force === '1' || req.query.force === 'true';
+    if (row.is_seed === 1 && !force) {
+      res.status(409).json({ error: 'Seed module — unpublish instead, or pass ?force=1' });
+      return;
+    }
+
+    const info = db.prepare(`DELETE FROM learning_modules WHERE module_id = ?`).run(moduleId);
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'learning.module.delete',
+      targetKind: 'learning_module',
+      targetId: moduleId,
+      detail: JSON.stringify({ isSeed: row.is_seed === 1, forced: force, removed: info.changes }),
     });
     res.json({ removed: info.changes });
   } catch (err) { next(err); }

@@ -1,3 +1,5 @@
+import type { LearningModuleDTO } from '../data/learningModules';
+
 export interface User {
   id: number;
   username: string;
@@ -224,6 +226,33 @@ export interface AdminLearningRaw {
   progress: LearningRawProgress[];
   questionResults: LearningRawQuestionResult[];
   examAttempts: LearningRawExamAttempt[];
+}
+
+// ── Learning CMS (D92) ────────────────────────────────────────────────────
+// LearningModuleDTO is the frozen wire shape (= the frontend LearningModule).
+// The public GET returns published modules in that exact shape; the admin GET
+// adds the CMS control fields. Re-exported so consumers can import the DTO from
+// the api types module alongside these response shapes.
+export type { LearningModuleDTO };
+
+// Public GET /api/learning/modules.
+export interface LearningModulesResponse {
+  modules: LearningModuleDTO[];
+}
+
+// One row in the admin CMS list — the DTO plus the control fields the admin
+// edits. published/autoTag are surfaced as booleans (the backend stores 0/1).
+export type AdminLearningModule = LearningModuleDTO & {
+  published: boolean;
+  autoTag: boolean;
+  sortOrder: number;
+  isSeed: boolean;
+  updatedAt: string;
+};
+
+// Admin GET /api/admin/learning/modules.
+export interface AdminLearningModulesResponse {
+  modules: AdminLearningModule[];
 }
 
 export interface AdminPerRunFeedbackRow {

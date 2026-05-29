@@ -1,6 +1,10 @@
 import bcrypt from 'bcryptjs';
+import fs from 'fs';
+import path from 'path';
+import type { Database } from 'better-sqlite3';
 import db from './database';
 import { initEtlSchema } from './etlSchema';
+import { mirrorRow } from '../services/supabaseLogger';
 // TEST SEED — REMOVE FOR PRODUCTION (delete _testSeed/ + this import + the calls below)
 import { seedDevconUsers, ensureTestFolders } from './_testSeed/devconUsers';
 
@@ -38,6 +42,142 @@ function seedAdminAccount(): void {
   // Idempotent upsert: ensure role is admin and password matches env.
   db.prepare(`UPDATE users SET role = 'admin', password_hash = ? WHERE id = ?`)
     .run(hash, existing.id);
+}
+
+// One module row in the checked-in seed JSON (produced by
+// scripts/dump-learning-seed.mjs from the frontend LEARNING_MODULES). moduleId
+// + sortOrder are load-bearing (see D92). Sub-objects are passed through and
+// re-serialized verbatim, so practicalExam.passMode rides along unchanged.
+interface LearningModuleSeedRow {
+  moduleId: string;
+  category: string;
+  title: string;
+  eyebrow?: string;
+  intro?: string;
+  sections?: unknown;
+  keyTerms?: unknown;
+  summary?: string | null;
+  seeAlso?: unknown;
+  theoreticalExam?: unknown;
+  practicalExam?: unknown;
+  sortOrder?: number;
+}
+
+// Resolve the seed JSON across dev (tsx/ts-node from src/) and prod (compiled
+// dist/). tsc does NOT copy non-.ts assets, so the file lives only under
+// src/db/seeds; from a dist/ build we hop back to src/. Returns the first
+// existing candidate, else null.
+function resolveLearningSeedPath(): string | null {
+  const candidates = [
+    path.join(__dirname, 'seeds', 'learningModules.seed.json'),
+    // From compiled dist/db → repo src/db/seeds.
+    path.join(__dirname, '..', '..', 'src', 'db', 'seeds', 'learningModules.seed.json'),
+    path.join(__dirname, '..', '..', '..', 'src', 'db', 'seeds', 'learningModules.seed.json'),
+  ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) return candidate;
+  }
+  return null;
+}
+
+// Seed learning_modules from the checked-in JSON, but ONLY when the table is
+// empty. Once seeded, content is admin-owned (the CMS) — we never overwrite
+// instructor edits on a later boot. If the seed file is missing we log and skip
+// gracefully (the public GET falls back to the bundled static modules client-
+// side). Each inserted row is also mirrored to Supabase (best-effort).
+export function seedLearningModulesIfEmpty(database: Database): void {
+  try {
+    const existing = database
+      .prepare(`SELECT COUNT(*) AS n FROM learning_modules`)
+      .get() as { n: number } | undefined;
+    if ((existing?.n ?? 0) > 0) return; // already seeded — never overwrite
+
+    const seedPath = resolveLearningSeedPath();
+    if (!seedPath) {
+      // eslint-disable-next-line no-console
+      console.warn('[initDb] learning seed JSON not found — skipping learning_modules seed');
+      return;
+    }
+
+    let rows: LearningModuleSeedRow[];
+    try {
+      const raw = fs.readFileSync(seedPath, 'utf8');
+      const parsed = JSON.parse(raw);
+      rows = Array.isArray(parsed) ? (parsed as LearningModuleSeedRow[]) : [];
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[initDb] failed to read/parse learning seed JSON — skipping:', err);
+      return;
+    }
+    if (rows.length === 0) return;
+
+    const insert = database.prepare(`
+      INSERT INTO learning_modules (
+        module_id, category, title, eyebrow, intro,
+        sections_json, key_terms_json, summary, see_also_json,
+        theoretical_json, practical_json,
+        published, auto_tag, sort_order, is_seed, created_at, updated_at
+      ) VALUES (
+        @module_id, @category, @title, @eyebrow, @intro,
+        @sections_json, @key_terms_json, @summary, @see_also_json,
+        @theoretical_json, @practical_json,
+        1, 1, @sort_order, 1, datetime('now'), datetime('now')
+      )
+    `);
+
+    const insertAll = database.transaction((seedRows: LearningModuleSeedRow[]) => {
+      for (const r of seedRows) {
+        if (!r || typeof r.moduleId !== 'string' || !r.moduleId) continue;
+        insert.run({
+          module_id: r.moduleId,
+          category: r.category,
+          title: r.title,
+          eyebrow: r.eyebrow ?? '',
+          intro: r.intro ?? '',
+          sections_json: JSON.stringify(r.sections ?? []),
+          key_terms_json: JSON.stringify(r.keyTerms ?? []),
+          summary: r.summary ?? null,
+          see_also_json: JSON.stringify(r.seeAlso ?? []),
+          theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
+          practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
+          sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
+        });
+      }
+    });
+    insertAll(rows);
+
+    // Mirror each seeded row to Supabase (best-effort; JSON fields as JS objects
+    // so PostgREST stores jsonb). Keyed by module_id (UPSERT_BY_PK).
+    const nowIso = new Date().toISOString();
+    for (const r of rows) {
+      if (!r || typeof r.moduleId !== 'string' || !r.moduleId) continue;
+      mirrorRow('learning_modules', {
+        module_id: r.moduleId,
+        category: r.category,
+        title: r.title,
+        eyebrow: r.eyebrow ?? '',
+        intro: r.intro ?? '',
+        sections_json: r.sections ?? [],
+        key_terms_json: r.keyTerms ?? [],
+        summary: r.summary ?? null,
+        see_also_json: r.seeAlso ?? [],
+        theoretical_json: r.theoreticalExam ?? null,
+        practical_json: r.practicalExam ?? null,
+        published: 1,
+        auto_tag: 1,
+        sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
+        is_seed: 1,
+        created_at: nowIso,
+        updated_at: nowIso,
+      });
+    }
+
+    // eslint-disable-next-line no-console
+    console.log(`[initDb] seeded ${rows.length} learning modules from ${path.basename(seedPath)}`);
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[initDb] seedLearningModulesIfEmpty skipped:', err);
+  }
 }
 
 export function initDb(): void {
@@ -298,6 +438,45 @@ export function initDb(): void {
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_lea_user_module
     ON learning_exam_attempts(user_id, module_id)`).run();
+
+  // ── learning_modules (DB-backed Learning CMS, D92) ──────────────────────
+  // One row per learning module, keyed by module_id (PK = the sacred id the
+  // learner-progress tables reference). Stored as one nested inline-JSON
+  // document (NOT normalized) — the learner needs the whole active module at
+  // once and a module is read/written whole (matches the
+  // org_pattern_catalogs.json_payload precedent). The _json columns hold the
+  // sections / key-terms / see-also arrays + the theoretical/practical exam
+  // objects; practical_json carries the practical INCLUDING its optional
+  // passMode. published / auto_tag / sort_order / is_seed drive the public
+  // GET ordering + the publish gate. SQLite is the source of truth; rows are
+  // mirrored to Supabase (jsonb cols) via mirrorRow() keyed by module_id.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_modules (
+    module_id TEXT PRIMARY KEY,
+    category TEXT NOT NULL,
+    title TEXT NOT NULL,
+    eyebrow TEXT NOT NULL DEFAULT '',
+    intro TEXT NOT NULL DEFAULT '',
+    sections_json TEXT NOT NULL DEFAULT '[]',
+    key_terms_json TEXT NOT NULL DEFAULT '[]',
+    summary TEXT,
+    see_also_json TEXT NOT NULL DEFAULT '[]',
+    theoretical_json TEXT,
+    practical_json TEXT,
+    published INTEGER NOT NULL DEFAULT 1,
+    auto_tag INTEGER NOT NULL DEFAULT 1,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_seed INTEGER NOT NULL DEFAULT 0,
+    created_by_user_id INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_modules_cat_order
+    ON learning_modules(category, sort_order)`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_modules_published
+    ON learning_modules(published)`).run();
+
+  // Seed once when the table is empty (never overwrites instructor edits).
+  seedLearningModulesIfEmpty(db);
 
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email

@@ -2,7 +2,8 @@ import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
   ReviewSchema, AdminUser, AdminLogEntry, AdminLogFilters, AdminReview, AdminOverview,
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
-  SurveySummary, ComplexityData, F1Metrics
+  SurveySummary, ComplexityData, F1Metrics,
+  LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -251,6 +252,14 @@ export interface LearningProgress {
   // pending) resumes with the practical block unlocked. Optional so a stale
   // backend that predates the column degrades gracefully.
   theoryPassedModuleIds?: string[];
+}
+
+// D92: public learning content (no auth). Returns the published modules in the
+// frozen LearningModuleDTO wire shape, ordered for the linear unlock gate.
+// Callers fall back to the bundled static LEARNING_MODULES on error / empty.
+export async function fetchLearningModules(): Promise<LearningModuleDTO[]> {
+  const res = await apiFetch<LearningModulesResponse>('/api/learning/modules');
+  return res.modules ?? [];
 }
 
 // Per-account learning-path progress. Both endpoints are jwtAuth-gated, so
@@ -919,6 +928,62 @@ export async function deletePatternGroup(id: number): Promise<{ removed: number 
   return apiFetch<{ removed: number }>(`/api/admin/pattern-groups/${id}`, {
     method: 'DELETE',
   });
+}
+
+// ── Learning CMS admin CRUD (D92) ───────────────────────────────────────────
+// Admin-gated (jwtAuth + requireAdmin on the server). Mirror the catalogs /
+// pattern-group fn style: plain apiFetch + JSON bodies. The list returns ALL
+// modules incl. drafts; the public fetchLearningModules() above returns only
+// published ones.
+export async function fetchAdminLearningModules(): Promise<AdminLearningModule[]> {
+  const res = await apiFetch<AdminLearningModulesResponse>('/api/admin/learning/modules');
+  return res.modules ?? [];
+}
+
+// Create. Body = the module DTO fields + optional published/autoTag/sortOrder.
+// 409 on duplicate id (the id is the immutable PK).
+export async function createLearningModule(
+  payload: LearningModuleDTO & { published?: boolean; autoTag?: boolean; sortOrder?: number },
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>('/api/admin/learning/modules', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+// Full-document update. module id is immutable — it must equal moduleId.
+export async function updateLearningModule(
+  moduleId: string,
+  payload: LearningModuleDTO & { published?: boolean; autoTag?: boolean; sortOrder?: number },
+): Promise<{ id: string }> {
+  return apiFetch<{ id: string }>(`/api/admin/learning/modules/${encodeURIComponent(moduleId)}`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+// Control-field-only patch (publish toggle / reorder). Content is untouched.
+export async function patchLearningModule(
+  moduleId: string,
+  payload: { published?: boolean; autoTag?: boolean; sortOrder?: number },
+): Promise<{ id: string; published: boolean; autoTag: boolean; sortOrder: number }> {
+  return apiFetch<{ id: string; published: boolean; autoTag: boolean; sortOrder: number }>(
+    `/api/admin/learning/modules/${encodeURIComponent(moduleId)}`,
+    { method: 'PATCH', body: JSON.stringify(payload) },
+  );
+}
+
+// Delete. Seed modules require force=true (?force=1) — the UI steers to
+// unpublish instead, which preserves learner progress.
+export async function deleteLearningModule(
+  moduleId: string,
+  force = false,
+): Promise<{ removed: number }> {
+  const qs = force ? '?force=1' : '';
+  return apiFetch<{ removed: number }>(
+    `/api/admin/learning/modules/${encodeURIComponent(moduleId)}${qs}`,
+    { method: 'DELETE' },
+  );
 }
 
 // Re-export TesterAccount so consumers can avoid touching the type module directly.

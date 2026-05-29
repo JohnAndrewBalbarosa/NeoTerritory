@@ -38,6 +38,73 @@ function parseStringArrayColumn(raw: string | null | undefined): string[] {
   }
 }
 
+// Defensive parse for a learning_modules `_json` array column (sections /
+// keyTerms / seeAlso). Corrupt JSON or a non-array degrades to [] — never a
+// 500. Returns unknown[] so the DTO reconstruction stays loose (the wire shape
+// is validated on write, not re-validated on every public read).
+function parseJsonArrayColumn(raw: string | null | undefined): unknown[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+// Defensive parse for a nullable JSON-object column (theoretical_json /
+// practical_json). Corrupt JSON or a non-object degrades to null.
+function parseJsonObjectColumn(raw: string | null | undefined): unknown {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+// Raw learning_modules row (public-read subset). Drafts (published = 0) are
+// filtered out in the query, so this route only ever reconstructs live modules.
+interface LearningModuleRow {
+  module_id: string;
+  category: string;
+  title: string;
+  eyebrow: string;
+  intro: string;
+  sections_json: string;
+  key_terms_json: string;
+  summary: string | null;
+  see_also_json: string;
+  theoretical_json: string | null;
+  practical_json: string | null;
+  auto_tag: number;
+}
+
+// Reconstruct a LearningModuleDTO (the frozen wire contract = LearningModule)
+// from a DB row: parse the _json columns defensively, rename module_id → id,
+// coerce auto_tag → autoTag boolean. passMode rides inside practicalExam. Omits
+// `summary` when null so the DTO matches the optional-field shape exactly.
+function rowToDto(row: LearningModuleRow): Record<string, unknown> {
+  const dto: Record<string, unknown> = {
+    id: row.module_id,
+    category: row.category,
+    title: row.title,
+    eyebrow: row.eyebrow,
+    intro: row.intro,
+    sections: parseJsonArrayColumn(row.sections_json),
+    keyTerms: parseJsonArrayColumn(row.key_terms_json),
+    seeAlso: parseJsonArrayColumn(row.see_also_json),
+    autoTag: row.auto_tag !== 0,
+  };
+  if (row.summary != null) dto.summary = row.summary;
+  const theoretical = parseJsonObjectColumn(row.theoretical_json);
+  if (theoretical) dto.theoreticalExam = theoretical;
+  const practical = parseJsonObjectColumn(row.practical_json);
+  if (practical) dto.practicalExam = practical;
+  return dto;
+}
+
 // Normalise a request-body module-id array: strings only, deduped, length- and
 // count-capped to the same bounds as completedModuleIds.
 function sanitizeModuleIdArray(input: unknown): string[] {
@@ -70,6 +137,32 @@ function sanitizeTries(input: unknown): Record<string, number> {
   }
   return out;
 }
+
+// ── Public learning content (D92 DB-backed CMS) ────────────────────────────
+// PUBLIC (no auth): the learner page reads its content here. Returns only
+// published modules ordered by sort_order ASC, each reconstructed into the
+// frozen LearningModuleDTO wire shape. Defensive parsing means a corrupt _json
+// column degrades that field to []/null rather than 500-ing the whole page —
+// the learner path (and the routes-manifest smoke) must never break. A short
+// public cache header lets the CDN/browser hold the content briefly.
+router.get('/modules', (_req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const rows = db
+      .prepare(
+        `SELECT module_id, category, title, eyebrow, intro,
+                sections_json, key_terms_json, summary, see_also_json,
+                theoretical_json, practical_json, auto_tag
+         FROM learning_modules
+         WHERE published = 1
+         ORDER BY sort_order ASC`,
+      )
+      .all() as LearningModuleRow[];
+    res.set('Cache-Control', 'public, max-age=60');
+    res.json({ modules: rows.map(rowToDto) });
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
   try {

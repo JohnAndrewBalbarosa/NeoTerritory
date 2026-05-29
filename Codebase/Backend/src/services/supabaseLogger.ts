@@ -105,7 +105,11 @@ const UPSERT_BY_PK: Record<string, string> = {
   // email, no Supabase UUID for non-org learners). learning_exam_attempts is
   // append-only, so it is intentionally NOT listed (plain INSERT).
   learning_progress: 'user_email',
-  learning_question_results: 'user_email,module_id,question_index'
+  learning_question_results: 'user_email,module_id,question_index',
+  // Learning CMS content (D92). One row per module, keyed by module_id (the
+  // stable PK). Re-mirrored on every admin create/update/patch + on first
+  // seed, so it upserts by module_id.
+  learning_modules: 'module_id'
 };
 
 export function mirrorRow(table: string, row: Record<string, unknown>): void {
