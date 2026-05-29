@@ -29,10 +29,13 @@ keeps their heavy bundles off the server path. Wrappers:
   /patterns/learn[/<moduleId>])
 - `AuthCallbackSurface.tsx` → `@frontend/components/auth/GoogleCallback` (/auth/callback)
 - `OnboardingSurface.tsx` → `@frontend/components/auth/OnboardingFlow` (/onboarding/*)
+- `AdminSurface.tsx` → `@frontend/admin/AdminApp` (/admin; was admin.html). Tabs are React
+  state, not path segments, so /admin is a single route; /admin/login is separate.
+- `ScraperSurface.tsx` → `@frontend/components/scraper/ScraperPanel` (/scraper; was
+  scraper.html). The route page also imports `@frontend/styles/scraper.css` (the global
+  marketing.css comes from the layout).
 
 ## Notes
 - Slug-bearing routes (`patterns/[slug]`, `patterns/learn/[moduleId]`) currently let the
   reused component read the slug client-side (window-guarded); threading the slug as a prop
   for full SSR is a B2.2 item.
-- The admin (`/admin`) and scraper (`/scraper`) entry points (separate Vite HTML entries)
-  are ported in B2.1b-3.
