@@ -2,14 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { learnModuleSlugFromPath, navigate } from '../../../logic/router';
 import {
   CATEGORY_META,
-  findLearningModule,
-  modulesInCategory,
   type ExamQuestion,
   type LearningCategory,
   type LearningModule,
   type PracticalExam,
   type TheoreticalExam,
 } from '../../../data/learningModules';
+import { useLearningModules } from '../../../data/useLearningModules';
 import {
   fetchLearningProgress,
   saveLearningProgress,
@@ -53,14 +52,21 @@ type LearnNavView =
   | { level: 'modules'; sectionId: LearningCategory }
   | { level: 'subsections'; sectionId: LearningCategory; moduleId: string };
 
-function buildCategoryGroups(): {
+// Pure builder: the loaded module source is injected as `modulesInCat` (the
+// static one, or the API-backed one from useLearningModules). Ordering is
+// unchanged — CATEGORY_META order outer, then the per-category order the source
+// yields (the API already returns sort_order; the static list keeps its array
+// order). D92 Track C.
+function buildCategoryGroups(
+  modulesInCat: (category: LearningCategory) => ReadonlyArray<LearningModule>,
+): {
   groups: ReadonlyArray<CategoryGroup>;
   steps: ReadonlyArray<CourseStep>;
 } {
   const steps: CourseStep[] = [];
   const groups: CategoryGroup[] = [];
   CATEGORY_META.forEach((meta) => {
-    const inCat = modulesInCategory(meta.id);
+    const inCat = modulesInCat(meta.id);
     if (inCat.length === 0) return;
     const grouped: CourseStep[] = inCat.map((module) => {
       const step: CourseStep = {
@@ -538,7 +544,25 @@ function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, onPass }: Prac
 // ----- page -----
 
 export default function PatternsLearnPage(): JSX.Element {
-  const { groups, steps } = useMemo(() => buildCategoryGroups(), []);
+  // D92 Track C: content source. Loads published modules from the CMS API and
+  // falls back to the bundled static LEARNING_MODULES on any error/empty, so the
+  // page renders identically whether the API is up, down, or unseeded.
+  const {
+    loaded: contentLoaded,
+    findModule,
+    modulesInCategory: modulesInCat,
+    modules,
+  } = useLearningModules();
+
+  // Rebuild the path whenever the loaded module list changes (static → api).
+  // Same {groups, steps} ordering as before; the unlock math + clamping already
+  // recompute off `steps`.
+  const { groups, steps } = useMemo(
+    () => buildCategoryGroups(modulesInCat),
+    // modulesInCat is memoised on `modules`; depend on the list to refresh.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [modules],
+  );
 
   const token = useAppStore((s) => s.token);
   const user = useAppStore((s) => s.user);
@@ -679,7 +703,7 @@ export default function PatternsLearnPage(): JSX.Element {
 
   const activeStep = steps[activeIndex];
   const activeModule: LearningModule | undefined = activeStep
-    ? findLearningModule(activeStep.module.id)
+    ? findModule(activeStep.module.id)
     : undefined;
 
   const goToStep = useCallback(
@@ -699,11 +723,11 @@ export default function PatternsLearnPage(): JSX.Element {
     dirtyRef.current = true;
     setTriesByModule((prev) => (prev[moduleId] != null ? prev : { ...prev, [moduleId]: tries }));
     setTheoryPassedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
-    const mod = findLearningModule(moduleId);
+    const mod = findModule(moduleId);
     if (!mod?.practicalExam) {
       setCompletedIds((prev) => (prev.has(moduleId) ? prev : new Set(prev).add(moduleId)));
     }
-  }, []);
+  }, [findModule]);
 
   // Practical exam passed: the module is now complete (theory was the gate to
   // reach the practical, so it is already in theoryPassedIds).
@@ -812,7 +836,7 @@ export default function PatternsLearnPage(): JSX.Element {
   // the pager straight to the matching page (no scrolling).
   const handlePageJump = useCallback(
     (step: CourseStep, kind: LessonPageKind) => {
-      const targetPages = lessonPagesFor(findLearningModule(step.module.id));
+      const targetPages = lessonPagesFor(findModule(step.module.id));
       const pi = Math.max(0, targetPages.findIndex((p) => p.kind === kind));
       if (step.globalIndex === activeIndex) {
         setPageIndex(pi);
@@ -821,7 +845,7 @@ export default function PatternsLearnPage(): JSX.Element {
         goToStep(step.globalIndex);
       }
     },
-    [activeIndex, goToStep],
+    [activeIndex, goToStep, findModule],
   );
 
   const completedCount = completedIds.size;
@@ -835,6 +859,30 @@ export default function PatternsLearnPage(): JSX.Element {
     nav.level === 'subsections' ? steps.find((s) => s.module.id === nav.moduleId) : undefined;
 
   const familyName = CATEGORY_META.find((m) => m.id === activeStep?.category)?.name ?? '';
+
+  // D92 Track C: hold the full path render until the content source has resolved
+  // (API or static fallback). Reuses the nt-student shell so the skip-link
+  // target (#main) and page chrome stay consistent; the routes-manifest
+  // data-testid lives on the parent StudentLearningShell, so this gate never
+  // affects the smoke. The existing progressLoaded gating for the unlock math is
+  // separate and still applies once we render below.
+  if (!contentLoaded) {
+    return (
+      <main className="nt-student nt-student-course" id="main">
+        <section className="nt-course-hero" aria-labelledby="learn-heading">
+          <div>
+            <p className="nt-section-eyebrow">Patterns · Learn</p>
+            <h1 id="learn-heading" className="nt-student__title">
+              Learning Path
+            </h1>
+            <p className="nt-student__lede" role="status" aria-live="polite">
+              Loading the learning path…
+            </p>
+          </div>
+        </section>
+      </main>
+    );
+  }
 
   return (
     <main className="nt-student nt-student-course" id="main">
