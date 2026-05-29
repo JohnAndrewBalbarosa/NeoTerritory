@@ -1323,18 +1323,26 @@ bridge (`RouterBridge` + `setExternalNavigator`) is in. One open item: SSE `run-
 *streaming* through the proxy is route-verified (AWS answers, not a Next 404) but not yet
 exercised end-to-end with a logged-in run.
 
-**B2.3 is DEFERRED as coupled cleanup (not yet done).** Retiring the Vite app, making AWS
-API-only, and repointing CI are tightly coupled and touch the LIVE AWS backend (which the
-whole site now proxies to) via the push-to-main auto-deploy, plus CI Playwright that tests
-the backend-served frontend — none fully verifiable without CI runs. Until B2.3:
-- `Codebase/Frontend/src` stays the single source of UI components (FrontendNext imports it
-  via `@frontend`); the Vite app remains buildable and AWS still builds+serves it as a
-  harmless, unused fallback. No CI drift (the manifest routes still exist; CI still tests
-  the Vite build which still works).
-- When B2.3 runs: make `Codebase/Backend/server.ts` API-only (drop `express.static` + the
-  index.html catch-all), drop the Vite build phase in `ops/bash/deploy/lib/remote-build.sh`,
-  repoint the Playwright/manifest CI (`ci.yml`, `routes-manifest.yml`, `playwright-e2e.yml`)
-  to build+serve the Next app, then delete the Vite wrapper (`index.html`, `admin.html`,
-  `scraper.html`, the three `main.tsx`, `vite.config.ts`) while keeping `Frontend/src` +
-  assets + deps. Use `scripts/deploy-aws.sh --rollback` as the safety net for the AWS step.
-  The AWS post-deploy smoke does NOT assert HTML at `/`, so API-only won't fail it.
+**B2.3 — AWS API-only + CI repoint DONE; full Vite deletion intentionally NOT done.**
+As of 2026-05-29:
+- `Codebase/Backend/server.ts` is **API-only**: `express.static`, the `/` and `/admin`
+  index.html sends, and the SPA catch-all are removed. `/` returns a small JSON pointer
+  (status ok + `frontend: https://neoterritory.vercel.app`) so health checks hitting `/`
+  still 200. `/api`·`/auth`·`/health` (the proxy contract) are unchanged. Verified locally:
+  `/health`,`/api`,`/`→200 JSON; `/studio`,`/admin`→404 (no SPA). The AWS post-deploy smoke
+  does not assert HTML at `/`, so it passes; `scripts/deploy-aws.sh --rollback` is the net.
+- CI repointed off the backend-served frontend: `ci-smoke.mjs` is now a backend API-only
+  smoke (no browser/HTML); `routes-manifest.yml` builds + `next start`s the Next app and
+  runs the manifest spec against `:3000` (public routes SSR standalone); `playwright-e2e.yml`
+  keeps building the Vite app but serves it via `vite preview` on `:4173` (proxying /api to
+  the API-only backend via the new `preview.proxy` in `vite.config.ts`) and runs the studio
+  all-samples gate against it. `playwright.config.ts` reads `PLAYWRIGHT_BASE_URL`, so the
+  env override is all that's needed.
+- **The Vite wrapper is intentionally KEPT** (`index.html`, `admin.html`, `scraper.html`,
+  the three `main.tsx`, `vite.config.ts`): it is still the source of the studio E2E gate
+  (`playwright-e2e` → vite preview) AND `Frontend/src` remains the shared component source
+  the Next app imports via `@frontend`. Fully deleting it requires migrating the heavy
+  `all-samples` studio E2E (the system's core quality gate, D68) to run against the Next
+  studio — a larger, separately-verifiable effort deferred to B3. `remote-build.sh` still
+  builds the Vite dist on AWS (now unused by the API-only server, but harmless); trimming it
+  is a B3 item.

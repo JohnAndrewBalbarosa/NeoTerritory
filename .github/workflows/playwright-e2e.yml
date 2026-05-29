@@ -26,9 +26,11 @@ jobs:
     timeout-minutes: 30
     env:
       CI: "true"
-      # The studio defaults to 127.0.0.1:3001 once the stack is up.
-      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001"
-      # Use the legacy CJS Vite path for `vite preview` to keep noise low.
+      # B2.3 / D89: the backend is API-only now, so it no longer serves the SPA. The
+      # built Vite frontend is served by `vite preview` on :4173 (proxying /api,/auth,
+      # /health to the backend on :3001 via vite.config preview.proxy). Studio E2E runs
+      # against the preview server.
+      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:4173"
       NODE_NO_WARNINGS: "1"
 
     steps:
@@ -78,7 +80,7 @@ jobs:
         run: |
           npm run build || echo "Backend has no build step or it failed; continuing if dist/ exists"
 
-      - name: Start the studio stack (backend serves built frontend)
+      - name: Start the backend (API-only) for /api
         working-directory: Codebase/Backend
         env:
           PORT: "3001"
@@ -123,6 +125,22 @@ jobs:
             sleep 2
           done
           curl -fsS "http://127.0.0.1:3001/api/health"
+
+      - name: Serve built frontend (vite preview)
+        working-directory: Codebase/Frontend
+        run: |
+          set -euo pipefail
+          # Backend is API-only now (B2.3) — serve the built dist with vite preview, which
+          # proxies /api,/auth,/health to the backend on :3001 (vite.config preview.proxy).
+          npx vite preview --port 4173 --host 127.0.0.1 &
+          for i in $(seq 1 60); do
+            if curl -fsS -o /dev/null "http://127.0.0.1:4173/"; then
+              echo "vite preview up after ${i} attempt(s)."
+              break
+            fi
+            sleep 2
+          done
+          curl -fsS -o /dev/null "http://127.0.0.1:4173/"
 
       - name: Run Playwright spec — all-samples.spec.ts
         working-directory: Codebase/Frontend

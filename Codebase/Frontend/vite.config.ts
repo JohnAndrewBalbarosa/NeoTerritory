@@ -35,6 +35,18 @@ export default defineConfig({
       '/health': 'http://localhost:3001',
     },
   },
+  // `vite preview` serves the built dist for CI E2E (playwright-e2e.yml) now that the
+  // backend is API-only and no longer serves the SPA. Mirror the dev proxy so /api,/auth,
+  // /health reach the local backend during preview. (B2.3 / D89.)
+  preview: {
+    port: 4173,
+    host: '127.0.0.1',
+    proxy: {
+      '/api': 'http://localhost:3001',
+      '/auth': 'http://localhost:3001',
+      '/health': 'http://localhost:3001',
+    },
+  },
   assetsInclude: ['**/*.cpp'],
   build: {
     outDir: 'dist',

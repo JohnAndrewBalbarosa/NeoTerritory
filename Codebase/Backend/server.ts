@@ -67,17 +67,10 @@ import { uploadsDir } from './src/config/paths';
 import { httpsAdapter } from './src/middleware/httpsHandler';
 
 const app = express();
-// Prefer the built Vite output. In production the compiled backend lives at
-// Backend/dist/, so we walk up to Codebase/ and look for Frontend/dist first.
-// Falls back to the raw Frontend/ source dir for ts-node dev runs where the
-// build hasn't happened yet (Vite dev server normally serves it instead).
-const frontendCandidates = [
-  path.join(__dirname, '..', '..', 'Frontend', 'dist'),  // dist mode
-  path.join(__dirname, '..', 'Frontend', 'dist'),         // ts-node mode
-  path.join(__dirname, '..', '..', 'Frontend'),
-  path.join(__dirname, '..', 'Frontend'),
-];
-const frontendDir = frontendCandidates.find((p) => fs.existsSync(path.join(p, 'index.html'))) || frontendCandidates[0];
+// API-only backend (B2.3 / D89). The frontend is served by the Next.js app on Vercel
+// (neoterritory.vercel.app), which reaches this backend through Vercel rewrites
+// (/api, /auth, /health). This Express app no longer serves any frontend HTML or assets;
+// the C++ analysis binary and Docker test pods continue to run here unchanged.
 
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
 
@@ -104,8 +97,7 @@ app.use(cors({
   credentials: true
 }));
 
-// Static frontend
-app.use(express.static(frontendDir));
+// No static frontend — API-only. The Next.js app on Vercel serves the UI.
 
 // Rate limiters
 // Bumped from 10 to 100 per 15-min window so a single-host empirical
@@ -182,32 +174,19 @@ app.post('/api/sealed/ping', verifySealedEnvelope, (req: Request, res: Response)
   res.json({ ok: true, echoedDayUtc: env?.dayUtc, echoedNonce: env?.nonce });
 });
 
-app.get('/', (_req: Request, res: Response) => {
-  res.sendFile(path.join(frontendDir, 'index.html'));
-});
-
-// Admin SPA lives in its own Vite bundle (admin.html). Serve it for
-// /admin EXACT only — everything under /admin/* (currently just
-// /admin/login) must fall through to the main SPA's catch-all so
-// GoogleSignInPage can render with role='admin' and the manifest
-// data-testid="admin-login" assertion finds its anchor. AdminApp
-// does no client-side path routing (purely tab state) so the admin
-// SPA never needs to own sub-routes.
-//
-// Gate: when ADMIN_GATE_KEY is set, /admin only serves the SPA if the
-// request carries ?key=<value> matching the env. Other requests fall
-// through to the public homepage. This is security-through-obscurity
-// for the developer-side admin entry — casual visitors who type /admin
-// do not see the admin login. The OAuth callback at /admin/login is
-// NOT gated; only the dashboard landing path is.
-const ADMIN_GATE_KEY = process.env.ADMIN_GATE_KEY || '';
-app.get('/admin', (req: Request, res: Response) => {
-  if (ADMIN_GATE_KEY && req.query.key !== ADMIN_GATE_KEY) {
-    res.redirect('/');
-    return;
-  }
-  res.sendFile(path.join(frontendDir, 'admin.html'));
-});
+// Root + the former SPA entry points now live on Vercel (Next.js). The bare backend
+// origin is API-only: respond with a small JSON pointer instead of HTML so health
+// checks hitting `/` still get a 200, and so old `/admin` bookmarks land on JSON rather
+// than a 404. The real admin UI is https://neoterritory.vercel.app/admin.
+const apiOnlyInfo = (_req: Request, res: Response): void => {
+  res.json({
+    service: 'NeoTerritory analysis backend',
+    status: 'ok',
+    frontend: 'https://neoterritory.vercel.app',
+    api: '/api',
+  });
+};
+app.get('/', apiOnlyInfo);
 
 app.get('/api', (_req: Request, res: Response) => {
   res.json({
@@ -224,9 +203,7 @@ app.get('/api', (_req: Request, res: Response) => {
   });
 });
 
-app.get(/^(?!\/api).*/, (_req: Request, res: Response) => {
-  res.sendFile(path.join(frontendDir, 'index.html'));
-});
+// No SPA catch-all — API-only. Unknown non-API paths fall through to the 404 handler.
 
 // Error handler
 app.use(errorHandler);

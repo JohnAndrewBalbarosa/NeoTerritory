@@ -26,7 +26,7 @@ jobs:
     timeout-minutes: 20
     env:
       CI: "true"
-      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001"
+      PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3000"
       NODE_NO_WARNINGS: "1"
 
     steps:
@@ -44,66 +44,41 @@ jobs:
         run: |
           node tests/scripts/print-routes.mjs >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Install system build prerequisites
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y build-essential cmake ninja-build
-
-      - name: Install Frontend dependencies
+      # B2.3 / D89: the public frontend is now the Next app on Vercel. CI builds and
+      # serves it with `next start` and runs the manifest spec against it. Public/marketing
+      # routes server-render standalone; /api proxies to AWS via next.config (not needed
+      # for the public route+testid smoke). No C++/backend build required here.
+      - name: Install Frontend dependencies (shared src + Playwright)
         working-directory: Codebase/Frontend
         run: npm ci --no-audit --no-fund
 
-      - name: Install Backend dependencies
-        working-directory: Codebase/Backend
-        run: npm ci --no-audit --no-fund
+      - name: Install FrontendNext dependencies
+        working-directory: Codebase/FrontendNext
+        run: npm install --no-audit --no-fund
 
       - name: Install Playwright (Chromium only, with deps)
         working-directory: Codebase/Frontend
         run: npx playwright install --with-deps chromium
 
-      - name: Build the C++ microservice
-        run: |
-          cmake -S Codebase/Microservice -B Codebase/Microservice/build -G Ninja -DCMAKE_BUILD_TYPE=Release
-          cmake --build Codebase/Microservice/build --target NeoTerritory --parallel
+      - name: Build the Next app
+        working-directory: Codebase/FrontendNext
+        run: npx next build
 
-      - name: Build Frontend (production)
-        working-directory: Codebase/Frontend
-        run: |
-          npx tsc --noEmit
-          npx vite build
-
-      - name: Build Backend (TypeScript)
-        working-directory: Codebase/Backend
-        run: npm run build || echo "Backend has no build step or it failed; continuing if dist/ exists"
-
-      - name: Start the studio stack
-        working-directory: Codebase/Backend
+      - name: Start the Next app
+        working-directory: Codebase/FrontendNext
         env:
-          PORT: "3001"
-          HOST: "127.0.0.1"
-          NODE_ENV: "production"
-          DEV_TEST_MODE: "true"
-          ANTHROPIC_API_KEY: ""
-          NEOTERRITORY_BIN: "${{ github.workspace }}/Codebase/Microservice/build/NeoTerritory"
-          NEOTERRITORY_CATALOG: "${{ github.workspace }}/Codebase/Microservice/pattern_catalog"
-          SEED_TEST_USERS: "1"
-          MAX_TEST_USERS: "20"
-          ENABLE_TEST_RUNNER: "0"
+          AWS_BACKEND_ORIGIN: "http://122.248.192.49"
         run: |
           set -euo pipefail
-          if [ -f dist/server.js ]; then
-            node dist/server.js &
-          else
-            npx tsx src/server.ts &
-          fi
+          npx next start -p 3000 &
           for i in $(seq 1 60); do
-            if curl -fsS "http://127.0.0.1:3001/api/health" > /dev/null; then
-              echo "Studio is up after ${i} attempt(s)."
+            if curl -fsS -o /dev/null "http://127.0.0.1:3000/"; then
+              echo "Next app up after ${i} attempt(s)."
               break
             fi
             sleep 2
           done
-          curl -fsS "http://127.0.0.1:3001/api/health"
+          curl -fsS -o /dev/null "http://127.0.0.1:3000/"
 
       - name: Run manifest-driven Playwright spec
         working-directory: Codebase/Frontend
