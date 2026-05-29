@@ -1447,3 +1447,56 @@ REPRESENTATION-only grouping; DB rows stay per-module.
 **Improvement** = primary: eventual-correct-rate − first-try-rate (recovery through retries,
 available from `learning_question_results`); secondary: per-module first→latest attempt-score
 trend from `learning_exam_attempts`.
+
+## D92 — DB-backed Learning CMS + Instructor dashboard redesign + pass-mode/auto-tag/publish
+**Per user request (2026-05-29).** The Instructor dashboard is being redesigned (polished LMS
+look in the DevCon palette), and the learning content — today 100% hardcoded in
+`learningModules.ts` (39 modules + ~65 exam banks) — becomes a **full DB-backed CMS** so
+instructors can add/edit courses + theoretical/practical exams, with Canvas-style
+publish/unpublish, a per-practical pass-mode toggle, and auto-tagging. Built in parallel
+tracks (see the plan file).
+
+**Storage = inline-JSON `learning_modules`, SQLite source-of-truth + Supabase mirror.** One
+row per module keyed by `module_id` (PK), with `sections_json` / `key_terms_json` /
+`see_also_json` / `theoretical_json` / `practical_json` TEXT columns plus scalar
+`category/title/eyebrow/intro/summary`, `published`, `auto_tag`, `sort_order`, `is_seed`.
+NOT normalized: a module is one nested document read/written whole (matches the
+`org_pattern_catalogs.json_payload` precedent; the learner needs the whole active module at
+once). Mirrored to Supabase (jsonb cols) via `mirrorRow()` keyed by `module_id`; CI does not
+auto-apply — manual `npx supabase db push`.
+
+**IDs are sacred (the load-bearing invariant).** The seed emits exactly today's module ids
+(`foundations-*`, `${category}-${slug}`) with `sort_order` = current array index, so the
+linear unlock gate and all per-user progress (`learning_progress`,
+`learning_question_results`, `learning_exam_attempts` — keyed to `module_id` + question
+index) survive untouched. `module_id` is an **immutable PK** in the CMS (a rename = delete +
+create, and the UI warns it discards progress). A seed-parity test asserts the seeded id-set
+equals `LEARNING_MODULES`.
+
+**Seed only when empty.** `seedLearningModulesIfEmpty()` skips if `COUNT(*) > 0` — content is
+admin-owned once seeded; never overwrite instructor edits. The seed source is a checked-in
+`Codebase/Backend/src/db/seeds/learningModules.seed.json` produced by `scripts/dump-learning-seed.mjs`
+from the built `LEARNING_MODULES` (no cross-package TS import into the backend).
+
+**Async learner page WITH static fallback.** `PatternsLearnPage` loads content from
+`GET /api/learning/modules` via a new `useLearningModules()` hook, gated by a `contentLoaded`
+flag (sibling to the existing `progressLoaded`). On any fetch error / unseeded DB it **falls
+back to the bundled static `LEARNING_MODULES`**, so the page (and the routes-manifest smoke)
+never break and the frontend can deploy before the seed runs. `learningModules.ts` stays the
+type home + seed source. `LearningModuleDTO` (= `LearningModule`) is the frozen wire contract.
+
+**Back-compat defaults.** `passMode` absent ⇒ `'detection'` (pattern detection alone passes —
+today's behaviour); `autoTag` absent ⇒ `true` (detection auto-completes; manual tagging stays
+available). `'detection_and_tests'` additionally requires the existing `gdbAllPassedForRun`
+store flag. Global auto-tag default lives in `app_settings.learning_auto_tag_default`.
+
+**Publish/unpublish.** `published` column; the public GET returns only `published=1`; drafts
+are excluded from the learner `steps` + gate; progress rows for an unpublished module persist
+and restore on re-publish; admins preview drafts via the admin GET. Hard delete is guarded for
+`is_seed` rows (`?force=1`); the UI steers to unpublish instead.
+
+**New module E (same-structure disambiguation).** Authored in `learningModules.ts`
+(`foundations-same-structure`, after the connotative-definition module): teaches telling
+identical-structure patterns apart by intent/lexeme (surfacing `patternRankingService` +
+`pattern_catalog` lexeme/Wilson concepts). Theoretical-only; **live ranking evidence deferred**
+to a later pass (would couple a detectable target to the live engine) — documented here.

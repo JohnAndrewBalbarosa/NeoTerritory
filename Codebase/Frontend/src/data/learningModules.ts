@@ -71,6 +71,11 @@ export interface PracticalExam {
   // ship a scaffold so the learner can run-then-modify instead of guessing
   // the exact token shape the analyser requires.
   starterCode?: string;
+  // D92 pass-mode gate. 'detection' (default / today's behaviour): the
+  // practical passes the instant the analyser tags the target pattern.
+  // 'detection_and_tests': it also requires every Studio unit test to pass
+  // (the gdbAllPassedForRun store flag) before completing. Absent ⇒ 'detection'.
+  passMode?: 'detection' | 'detection_and_tests';
 }
 
 export interface LearningModule {
@@ -89,7 +94,18 @@ export interface LearningModule {
   // then unlocks module N+1.
   theoreticalExam?: TheoreticalExam;
   practicalExam?: PracticalExam;
+  // D92 auto-tagging. When true (default), the practical auto-resolves the
+  // module's target pattern from the analyser's tags — no manual tag step
+  // required (manual tagging stays available). When false, the learner must
+  // confirm the tag manually. Absent ⇒ true (today's behaviour).
+  autoTag?: boolean;
 }
+
+// D92: the DB-backed CMS (learning_modules table) stores and serves modules in
+// exactly this shape. LearningModuleDTO is the frozen wire contract between the
+// backend (GET /api/learning/modules + admin CRUD) and the client; it equals
+// LearningModule so the learner page is source-agnostic (static seed or DB).
+export type LearningModuleDTO = LearningModule;
 
 export interface LearningCategoryMeta {
   id: LearningCategory;
