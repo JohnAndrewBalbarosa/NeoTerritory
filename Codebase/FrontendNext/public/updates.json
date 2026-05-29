@@ -1,0 +1,2038 @@
+{
+  "schema": 1,
+  "generatedAt": "2026-05-12T02:47:16.903Z",
+  "releases": [
+    {
+      "version": "0.1.0",
+      "date": "2026-05-12",
+      "label": "0.1.0 — 2026-05-12",
+      "buckets": {
+        "Added": [
+          {
+            "scope": "gdb-runner",
+            "subject": "stateless re-run + drop trophy E2E explainer from studio",
+            "hash": "04a777d"
+          },
+          {
+            "scope": "about+screencap",
+            "subject": "role delegation copy + dynamic-aware pattern-card capture",
+            "hash": "22e4318"
+          },
+          {
+            "scope": "entry+docs",
+            "subject": "static tester picker, /choose required, docs sidebar, alpha-only trophy framing",
+            "hash": "d18b403"
+          },
+          {
+            "scope": "tests",
+            "subject": "static-analysis phase via cppcheck; integration + e2e removed with reasoning",
+            "hash": "30113aa"
+          },
+          {
+            "scope": "docs",
+            "subject": "drop AI-pending placeholders, use beginner fallbacks",
+            "hash": "0400b86"
+          },
+          {
+            "scope": "deploy",
+            "subject": "record deployed SHA on AWS + add diff-since-deploy dispatcher",
+            "hash": "177f37d"
+          },
+          {
+            "scope": "backend",
+            "subject": "NEOTERRITORY_BIN_WSL=1 spawns microservice via wsl.exe",
+            "hash": "167c7f9"
+          },
+          {
+            "scope": "tour",
+            "subject": "capture all 8 studio screenshots locally + bypass tile-picker login in capture script",
+            "hash": "7560dde"
+          },
+          {
+            "scope": "research",
+            "subject": "bento + click-to-popup tiles; design-rationale section with 2020-2026 citations",
+            "hash": "f2b98eb"
+          },
+          {
+            "scope": "studio+docs+mechanics+joyride",
+            "subject": "docs pending banner gone, Stage 4 JSON-parser visualization, session-aware Joyride, Method semantic-from-structure note",
+            "hash": "9a0c7c8"
+          },
+          {
+            "scope": "patterns",
+            "subject": "per-pattern sources[], Why-GoF block, /research evidence section; fix Testing button silent no-op",
+            "hash": "2536a2e"
+          },
+          {
+            "scope": "marketing",
+            "subject": "patterns citation header + tokens popover; chooser studio sub-choice (tester vs account)",
+            "hash": "6d7d3b8"
+          },
+          {
+            "scope": null,
+            "subject": "Trophy-aware studio, /research+/about split, AVP-ready home, Playwright all-samples spec + GHA E2E gate",
+            "hash": "21a1c27"
+          },
+          {
+            "scope": "marketing",
+            "subject": "unify /patterns (drop All/GoF), inline SVG diagrams for home+mechanics, Playwright marketing-capture script",
+            "hash": "1564269"
+          },
+          {
+            "scope": "marketing+studio",
+            "subject": "refinement turn — tab-aware Joyride, Try-it chooser, /learn into /patterns, 7 more patterns from Nesteruk 2022, simpler topbar",
+            "hash": "876f8e0"
+          },
+          {
+            "scope": "marketing+studio",
+            "subject": "expansion turn — Nesteruk 2022 reference + thesis bibliography, full-coverage non-sticky nav, sample picker, in-studio Joyride tour, Playwright capture",
+            "hash": "e38866b"
+          },
+          {
+            "scope": "marketing",
+            "subject": "Sprints 0-12 — features-first home, audience-first IA, new surfaces (/why /mechanics /patterns /tour /research), thesis-rewritten /about",
+            "hash": "b623496"
+          },
+          {
+            "scope": "analyze",
+            "subject": "per-file 1000-token cap with live counter and server gate",
+            "hash": "e27a11a"
+          },
+          {
+            "scope": "supabase",
+            "subject": "mirror users to cloud + GitHub-secret sync helper",
+            "hash": "1ff9daf"
+          },
+          {
+            "scope": "auth",
+            "subject": "Google sign-in for Developer + Student via Supabase, Tester keeps seat",
+            "hash": "1abc49f"
+          },
+          {
+            "scope": null,
+            "subject": "tools/dev-setup folder + EntryChoice hides Tester card when admin toggle is off",
+            "hash": "5255649"
+          },
+          {
+            "scope": null,
+            "subject": "tools/dev-setup for other devs + tester-toggle hides Tester card on EntryChoice",
+            "hash": "3cb9289"
+          },
+          {
+            "scope": "setup",
+            "subject": "install gcloud CLI + automate Google OAuth provisioning",
+            "hash": "5f1d1d5"
+          },
+          {
+            "scope": null,
+            "subject": "admin tester-toggle + automated local Supabase CLI + AWS Supabase removal",
+            "hash": "d8cde4d"
+          },
+          {
+            "scope": null,
+            "subject": "survey-gated run persistence + static-only doc banner + solid title + AI probe",
+            "hash": "361f556"
+          },
+          {
+            "scope": "ui+ops",
+            "subject": "drop confidence chrome, add Supabase auth scaffolding, sync guard, studio-aware merge workflow",
+            "hash": "0c2e6ba"
+          },
+          {
+            "scope": "test-runner",
+            "subject": "stream per-phase verdicts via shared idempotent runId",
+            "hash": "fa1eb46"
+          },
+          {
+            "scope": "deploy",
+            "subject": "add --clean flag to deploy-aws.sh for from-scratch AWS rebuild",
+            "hash": "38f1750"
+          },
+          {
+            "scope": "frontend",
+            "subject": "Learn tab is overview-only with referral; Module 1 covers ambiguity + connotative-definition rule",
+            "hash": "c99655e"
+          },
+          {
+            "scope": "microservice",
+            "subject": "negative_signature_categories gate; eliminates Adapter false positives",
+            "hash": "4198aa1"
+          },
+          {
+            "scope": "microservice",
+            "subject": "combo-based connotation dictionary, no naming-convention basis",
+            "hash": "47fed4f"
+          },
+          {
+            "scope": "microservice",
+            "subject": "connotation-rule candidate filter — strict AND of lexeme category and grammar",
+            "hash": "8b6ff8e"
+          },
+          {
+            "scope": "start",
+            "subject": "port kill switch — detect and free held :3001/:5173 before binding",
+            "hash": "2d19932"
+          },
+          {
+            "scope": "ui",
+            "subject": "rename studio tabs, add icon set, polish entry-choice",
+            "hash": "3b1e84e"
+          },
+          {
+            "scope": "catalog",
+            "subject": "D37 step 1 — per-pattern fallback_doc templates",
+            "hash": "aec7916"
+          },
+          {
+            "scope": "infra",
+            "subject": "default Docker test-runner pods + firejail fallback ON",
+            "hash": "05a7c3d"
+          },
+          {
+            "scope": "scripts",
+            "subject": "unified flag-based scripts/rebuild.sh + start.sh rebuild",
+            "hash": "9394984"
+          },
+          {
+            "scope": "admin",
+            "subject": "compound log filtering — user, type, dates, online, activity",
+            "hash": "5ae6df4"
+          },
+          {
+            "scope": "admin",
+            "subject": "add TN to F1 metrics; cascade per-run survey with run",
+            "hash": "831783d"
+          },
+          {
+            "scope": null,
+            "subject": "add learner and developer entry paths",
+            "hash": "509ff28"
+          },
+          {
+            "scope": null,
+            "subject": "apply devcon-inspired UI theme",
+            "hash": "1571916"
+          },
+          {
+            "scope": "tagging",
+            "subject": "multi-pattern propagation with bidirectional hierarchy spread",
+            "hash": "4a94d4b"
+          },
+          {
+            "scope": "docs",
+            "subject": "add Documentation tab with MD/PDF/DOCX export",
+            "hash": "7f519fc"
+          },
+          {
+            "scope": "pod",
+            "subject": "tighten per-user pod and file upload limits",
+            "hash": "fd7a517"
+          },
+          {
+            "scope": "deploy",
+            "subject": "add smoke test + --restart-only recovery flag",
+            "hash": "0dd3a44"
+          },
+          {
+            "scope": "deploy",
+            "subject": "add visible progress + heartbeat so deploy never looks stuck",
+            "hash": "eb50163"
+          },
+          {
+            "scope": "frontend",
+            "subject": "single class-rooted tree with mainDesignPattern + review status",
+            "hash": "5e6b685"
+          },
+          {
+            "scope": "learning",
+            "subject": "add 'Before you start' prerequisite checklist to each lesson",
+            "hash": "55ff199"
+          },
+          {
+            "scope": "deploy",
+            "subject": "forward ENABLE_TEST_RUNNER + TEST_RUNNER_SANDBOX so per-user pods serve /api/runs in prod",
+            "hash": "f83c9c1"
+          },
+          {
+            "scope": "hooks",
+            "subject": "regenerate docs/auto on every commit when source changes",
+            "hash": "8613ed5"
+          },
+          {
+            "scope": "docs",
+            "subject": "auto-generate ops/scripts reference from annotated source",
+            "hash": "4222005"
+          },
+          {
+            "scope": "learn",
+            "subject": "per-pattern top-level routes",
+            "hash": "36acba7"
+          },
+          {
+            "scope": "learn",
+            "subject": "split into per-family pages with lesson sidebar and studio prefill",
+            "hash": "a44dcb7"
+          },
+          {
+            "scope": "learn",
+            "subject": "add pattern-catalog curriculum modules",
+            "hash": "accb067"
+          },
+          {
+            "scope": "backend",
+            "subject": "swap bcrypt->bcryptjs, add optional HTTPS listener, add axios",
+            "hash": "b5a2f01"
+          },
+          {
+            "scope": "scripts",
+            "subject": "add --aws/--both/--local flags and remote bootstrapping",
+            "hash": "820a322"
+          },
+          {
+            "scope": null,
+            "subject": "integrate AWS deployment and auto-installation; switch to Fastify; refactor key management",
+            "hash": "b3732c6"
+          },
+          {
+            "scope": "deploy",
+            "subject": "production-mode hardening — Lightsail port-open + CORS + reachability probe",
+            "hash": "abcb4da"
+          },
+          {
+            "scope": "supabase",
+            "subject": "wide mirror — every admin-visible table syncs to Supabase",
+            "hash": "feffa07"
+          },
+          {
+            "scope": "deploy",
+            "subject": "pre-flight supabase connectivity probe",
+            "hash": "f2e0570"
+          },
+          {
+            "scope": "ai+deploy",
+            "subject": "Gemini provider + auto-chmod + Supabase key-shape guard",
+            "hash": "0d715a9"
+          },
+          {
+            "scope": "deploy",
+            "subject": "lightsail-launch.sh — first-boot provisioning for AWS Lightsail",
+            "hash": "21c396d"
+          },
+          {
+            "scope": "deploy",
+            "subject": "add --source ship mode (remote builds image from tarball)",
+            "hash": "c00617e"
+          },
+          {
+            "scope": "theme,motion",
+            "subject": "light-mode-aware effects + spring transitions with blur",
+            "hash": "3fe25c9"
+          },
+          {
+            "scope": "deploy",
+            "subject": "one-shot AWS deploy script + Supabase admin-log mirror",
+            "hash": "3984c62"
+          },
+          {
+            "scope": "ui",
+            "subject": "viewport overflow guard + ReactBits-style polish on studio + admin",
+            "hash": "0cceaa3"
+          },
+          {
+            "scope": "annotated",
+            "subject": "recursive cascade + transitive per-class revert",
+            "hash": "7d7cc3d"
+          },
+          {
+            "scope": "learn",
+            "subject": "static Pattern Atlas — tag, source, generated test, explanation per pattern",
+            "hash": "51f34ed"
+          },
+          {
+            "scope": "about",
+            "subject": "real Andrew + Miryl entries with skills + image gallery, fed by scraper distiller",
+            "hash": "a289e09"
+          },
+          {
+            "scope": "annotated",
+            "subject": "tagged-class masterlist + per-class revert affordance",
+            "hash": "199352e"
+          },
+          {
+            "scope": "scraper",
+            "subject": "hydrate lazy images + collect from <img>, srcset, SVG <image>, video poster, CSS background-image",
+            "hash": "e6eaa1f"
+          },
+          {
+            "scope": "scraper",
+            "subject": "auto-scroll the picked container until lazy-load is exhausted",
+            "hash": "84e637b"
+          },
+          {
+            "scope": "start",
+            "subject": "add prod mode that runs npm run build + node dist + vite preview",
+            "hash": "34c4e5f"
+          },
+          {
+            "scope": "annotated",
+            "subject": "add Not-this-pattern affordance on inheritance-driven parents",
+            "hash": "0f5fe30"
+          },
+          {
+            "scope": "scraper",
+            "subject": "land deferred D35 manual-login scraper behind admin + env flag",
+            "hash": "5973505"
+          },
+          {
+            "scope": "frontend",
+            "subject": "add public marketing surface (hero, learn, about) + path router",
+            "hash": "29e1b78"
+          },
+          {
+            "scope": "annotated",
+            "subject": "drive subclass cascade from inheritance_driven_patterns.json",
+            "hash": "fa1c4af"
+          },
+          {
+            "scope": "annotated",
+            "subject": "centralised model, subclass cascade, Review consolidation",
+            "hash": "8a53e36"
+          },
+          {
+            "scope": "annotated",
+            "subject": "split decided panel; gate accuracy on user disambiguation",
+            "hash": "4bf5b96"
+          },
+          {
+            "scope": "annotated",
+            "subject": "strict per-line colors, chrome greying, popover dedup",
+            "hash": "f5c3d37"
+          },
+          {
+            "scope": "annotated",
+            "subject": "full-catalog rival picker on every class decl",
+            "hash": "2ffd066"
+          },
+          {
+            "scope": "admin-survey",
+            "subject": "three dedicated tables + multi-sheet XLSX export",
+            "hash": "6442c3e"
+          },
+          {
+            "scope": "admin-survey",
+            "subject": "full Questionnaire B labels + per-question distribution + CSV export",
+            "hash": "24a4580"
+          },
+          {
+            "scope": "heartbeat",
+            "subject": "consolidate microservice + docker + AI + per-user pod polling onto heartbeat",
+            "hash": "47d8f50"
+          },
+          {
+            "scope": "workflow",
+            "subject": "sequential tab gating + locked validation tab until gdb passes",
+            "hash": "a8f65db"
+          },
+          {
+            "scope": "heartbeat+review",
+            "subject": "piggy-back health on heartbeat, single save+submit button",
+            "hash": "5d90a3c"
+          },
+          {
+            "scope": "payload+stdin+timeout+cta",
+            "subject": "payload validator folder, program-input stdin, 60s run cap, single submit-and-save button, family-aware pattern freq",
+            "hash": "21bfadf"
+          },
+          {
+            "scope": "pods",
+            "subject": "diagnose docker disabled state — env vs PATH vs daemon",
+            "hash": "d040e10"
+          },
+          {
+            "scope": "pods",
+            "subject": "auto-build cpp-pod image on boot, default ON, expose Docker status in status card",
+            "hash": "8d30dd4"
+          },
+          {
+            "scope": "gdb+pods",
+            "subject": "split console output panes, per-tester Docker pod isolation",
+            "hash": "837f172"
+          },
+          {
+            "scope": "annotated+stats",
+            "subject": "tighten ambiguity to microservice-tagged, add pies, 7-day window, drop nav center",
+            "hash": "84664d3"
+          },
+          {
+            "scope": "stats+gdb+annotated",
+            "subject": "test-run accuracy, session-bound GDB, sticky nav, distribution rename",
+            "hash": "5758a69"
+          },
+          {
+            "scope": "annotated+admin+auth",
+            "subject": "tag propagation, side-by-side wrap, tokens regression, 5-min admin poll, seat reclaim",
+            "hash": "6eb2874"
+          },
+          {
+            "scope": "runner+admin+nav",
+            "subject": "nav scope-aware, GDB faster, admin unthrottled, log-purge cascade, runs in Logs tab, per-user moved to Users",
+            "hash": "c99159b"
+          },
+          {
+            "scope": "runner+admin",
+            "subject": "write each user file to runDir, add audit log + run delete, exclude admins from totals",
+            "hash": "bc84dc6"
+          },
+          {
+            "scope": "logs+ui",
+            "subject": "persistent slot retention, class-nav cross-tab, modal centering, frontend log tab",
+            "hash": "b63de07"
+          },
+          {
+            "scope": "test-runner",
+            "subject": "full-source bundle + introspect.hpp middleman, flexible templates",
+            "hash": "2ef3136"
+          },
+          {
+            "scope": null,
+            "subject": "two-phase GDB runner (compile then test), tagged-vs-missing class pills",
+            "hash": "757a203"
+          },
+          {
+            "scope": null,
+            "subject": "brace-matched class scope, GDB Chrome-tabs + ephemeral runs + rate limit, file cap env",
+            "hash": "96d74f5"
+          },
+          {
+            "scope": "tier-2",
+            "subject": "multi-file submission, GDB Runner tab, sealed envelope, deploy doc",
+            "hash": "8c3c3e2"
+          },
+          {
+            "scope": null,
+            "subject": "hoist scoring banner, last-tab Submit, JWT autogen, bootstrap.ps1",
+            "hash": "41f727c"
+          },
+          {
+            "scope": "auth",
+            "subject": "revoke JWT on sign-out, disable claimed seats, defer queue/EC2",
+            "hash": "de08c19"
+          },
+          {
+            "scope": "scoring",
+            "subject": "replace arbitrary constants with Wilson 95% CI lower bound",
+            "hash": "b894038"
+          },
+          {
+            "scope": null,
+            "subject": "line-coverage probability score, review sub-tabs, single run-prompt",
+            "hash": "4b29f80"
+          },
+          {
+            "scope": null,
+            "subject": "scope-locked retag, scoring explainer, review-tab gating, gate URLs",
+            "hash": "4d807c4"
+          },
+          {
+            "scope": null,
+            "subject": "light/dark theme toggle, wider seat picker, F1 table, admin gate skip",
+            "hash": "6fb8a83"
+          },
+          {
+            "scope": null,
+            "subject": "tab-bound heartbeat, admin presence filter, restore React HTML mounts",
+            "hash": "4e87057"
+          },
+          {
+            "scope": null,
+            "subject": "per-class color propagation, drop auto-modal, beginner pattern cards",
+            "hash": "553b0b2"
+          },
+          {
+            "scope": null,
+            "subject": "impl-fit templates, per-class retag picker, selective seat reset",
+            "hash": "6c21116"
+          },
+          {
+            "scope": null,
+            "subject": "input maxLength constraints and STRIDE security doc",
+            "hash": "6a463da"
+          },
+          {
+            "scope": null,
+            "subject": "collapsible pattern cards, wider tester login, user search",
+            "hash": "20b01c8"
+          },
+          {
+            "scope": null,
+            "subject": "scope propagation on resolve + class validation checklist",
+            "hash": "75a13d6"
+          },
+          {
+            "scope": null,
+            "subject": "global scope coloring + admin tabs (Runs, Complexity, F1 metrics)",
+            "hash": "e35d7a1"
+          },
+          {
+            "scope": null,
+            "subject": "enrich pattern catalog with C++ lexemes and false-positive guards",
+            "hash": "a5f818f"
+          },
+          {
+            "scope": null,
+            "subject": "per-line grey gradient for contested pattern overlap",
+            "hash": "f925861"
+          },
+          {
+            "scope": null,
+            "subject": "tabbed studio, async AI commentary, survey pipeline",
+            "hash": "0c0081f"
+          },
+          {
+            "scope": null,
+            "subject": "grey-on-ambiguous, vivid-on-confident annotation color policy",
+            "hash": "cbf5267"
+          },
+          {
+            "scope": null,
+            "subject": "line-click popover with pattern colors and ambiguity surface",
+            "hash": "ff1180e"
+          },
+          {
+            "scope": null,
+            "subject": "tester seat claim, scope-based annotations, catalog lexemes",
+            "hash": "0d8da42"
+          }
+        ],
+        "Fixed": [
+          {
+            "scope": "why+theme",
+            "subject": "flip text tokens in light mode + add 2020-2026 cited evidence section",
+            "hash": "a887882"
+          },
+          {
+            "scope": "studio",
+            "subject": "restore #status-title as sr-only aria-live region",
+            "hash": "840bc5e"
+          },
+          {
+            "scope": "test-runner",
+            "subject": "make cppcheck phase work + drop alpha-testing copy from runner UI",
+            "hash": "6beb120"
+          },
+          {
+            "scope": "studio",
+            "subject": "remove StartHereRail; joyride auto-fires once per session, never per-tab",
+            "hash": "4a922a6"
+          },
+          {
+            "scope": "thesis",
+            "subject": "remove duplicate xmlns:wp on w:document root",
+            "hash": "04102c3"
+          },
+          {
+            "scope": "run-tests",
+            "subject": "surface 'no patterns' + dispatch failures instead of silent SSE close",
+            "hash": "9d7745f"
+          },
+          {
+            "scope": "home",
+            "subject": "bento grid always packs into a rectangle (no missing cells)",
+            "hash": "1912a0d"
+          },
+          {
+            "scope": "e2e",
+            "subject": "widen Strategy class regex; tolerate samples with no class tree",
+            "hash": "4b62932"
+          },
+          {
+            "scope": "e2e",
+            "subject": "single shared seat + resolve ambiguity by picking first candidate",
+            "hash": "51e746e"
+          },
+          {
+            "scope": "e2e",
+            "subject": "bypass picker, fill editor from disk + release seat in afterEach + bump MAX_TEST_USERS",
+            "hash": "c6d8291"
+          },
+          {
+            "scope": "e2e",
+            "subject": "pre-dismiss StartHereRail + Joyride tours in spec init script",
+            "hash": "6ca6ffd"
+          },
+          {
+            "scope": "ci",
+            "subject": "set ENABLE_TEST_RUNNER=1 — NODE_ENV=production blocks the compiler-based runner by default",
+            "hash": "0fb0b79"
+          },
+          {
+            "scope": "e2e",
+            "subject": "bypass tester UI via /auth/claim + skip surveys via nt-entry-flow=developer",
+            "hash": "28bb9a3"
+          },
+          {
+            "scope": "ci",
+            "subject": "seed Devcon test users in Playwright workflow + add /mechanics Trophy-vs-data-structure section",
+            "hash": "3f9c3be"
+          },
+          {
+            "scope": "auth",
+            "subject": "GoogleCallback stuck on \"Signed in\" — race between replaceState + navigate",
+            "hash": "853f68c"
+          },
+          {
+            "scope": "auth",
+            "subject": "match users table schema (password_hash, NOT NULL email)",
+            "hash": "7a39874"
+          },
+          {
+            "scope": "test-runner",
+            "subject": "include className in dedup key + atomic single-batch finalize",
+            "hash": "67cfaff"
+          },
+          {
+            "scope": "test-runner",
+            "subject": "fall back to local sandbox when pod compile fails opaquely",
+            "hash": "02f0cdd"
+          },
+          {
+            "scope": null,
+            "subject": "gdb runner ci — use dedicated singleton class and relax classText filter",
+            "hash": "24bd9fa"
+          },
+          {
+            "scope": null,
+            "subject": "disable pod wiring in annotated-source CI path",
+            "hash": "10728ed"
+          },
+          {
+            "scope": null,
+            "subject": "gate pod warmup for CI claim and analyze flows",
+            "hash": "339bb27"
+          },
+          {
+            "scope": "cmake",
+            "subject": "include runtime sources for syntactic entrypoint",
+            "hash": "4c47d53"
+          },
+          {
+            "scope": "ci",
+            "subject": "include dev dependencies in production no-leak job",
+            "hash": "3b78ae9"
+          },
+          {
+            "scope": "cmake",
+            "subject": "include Modules/Source headers for transform internals",
+            "hash": "850ccc8"
+          },
+          {
+            "scope": "ci",
+            "subject": "align linux include path and install dev deps in prod-check job",
+            "hash": "d70b675"
+          },
+          {
+            "scope": "docker",
+            "subject": "pass Backend/.env to runtime container so JWT_SECRET persists",
+            "hash": "b0154ff"
+          },
+          {
+            "scope": "test-runner",
+            "subject": "unit-test driver compile-error fixes",
+            "hash": "47f605f"
+          },
+          {
+            "scope": "microservice",
+            "subject": "skip *.fallback_doc.json sidecars in pattern catalog loader",
+            "hash": "6f19815"
+          },
+          {
+            "scope": "start",
+            "subject": "force run_rebuild_list to return 0 so set -e doesn't kill the run",
+            "hash": "19cb9a8"
+          },
+          {
+            "scope": "start",
+            "subject": "resolve microservice BIN_PATH on WSL and multi-config builds",
+            "hash": "899959e"
+          },
+          {
+            "scope": "rebuild",
+            "subject": "resolve microservice binary path on WSL and multi-config builds",
+            "hash": "ea05b28"
+          },
+          {
+            "scope": "annotated",
+            "subject": "stop pattern cross-pollination across classes",
+            "hash": "55c297a"
+          },
+          {
+            "scope": "reviews",
+            "subject": "resolve questions.xml from source when dist lacks asset",
+            "hash": "c2e1f83"
+          },
+          {
+            "scope": "admin",
+            "subject": "persist tabs across switches; seed tester seats; rate-limit refreshes",
+            "hash": "3edd6ee"
+          },
+          {
+            "scope": "dispatcher",
+            "subject": "suppress false-positive pattern emission via negative signals",
+            "hash": "115aae0"
+          },
+          {
+            "scope": "backend",
+            "subject": "remove --poll flag dropped by tsx 4.21",
+            "hash": "f551f4e"
+          },
+          {
+            "scope": null,
+            "subject": "make microservice cmake macos aware",
+            "hash": "2ed9f3d"
+          },
+          {
+            "scope": "catalog",
+            "subject": "probe both root depths for pattern_catalog in dev and compiled modes",
+            "hash": "c6a3ac2"
+          },
+          {
+            "scope": "microservice",
+            "subject": "add build-wsl candidates and fix root resolution depth",
+            "hash": "5bfa413"
+          },
+          {
+            "scope": "templates",
+            "subject": "replace nt::touch(void_expr()) with (void)(expr()) across all pattern test templates",
+            "hash": "d7936df"
+          },
+          {
+            "scope": "validator",
+            "subject": "raise token limit to 500; add live counter in frontend",
+            "hash": "06a5fcb"
+          },
+          {
+            "scope": "pod",
+            "subject": "raise default memory limit from 48m to 256m",
+            "hash": "72f484b"
+          },
+          {
+            "scope": "ranking",
+            "subject": "compare signal weights, not raw hit counts, in per-line win condition",
+            "hash": "0ebf6f5"
+          },
+          {
+            "scope": null,
+            "subject": "GDB template path in dist mode, class tree review-first sort, handlePickClass stale closure",
+            "hash": "eccdd21"
+          },
+          {
+            "scope": "validator",
+            "subject": "raise token limit to 500; add live counter in frontend",
+            "hash": "d825f0c"
+          },
+          {
+            "scope": "deploy",
+            "subject": "white-page root cause + RAM-aware build + tolerant smoke test",
+            "hash": "8344443"
+          },
+          {
+            "scope": "deploy",
+            "subject": "revert parallel node builds (1GB Lightsail OOM) + raise SSH keepalive",
+            "hash": "a6e9739"
+          },
+          {
+            "scope": "podManager",
+            "subject": "unblock per-user pod compile by tar-streaming files + adding exec to /work tmpfs",
+            "hash": "6e54779"
+          },
+          {
+            "scope": "frontend",
+            "subject": "make GDB runner session-based across tab switches",
+            "hash": "595ad5c"
+          },
+          {
+            "scope": "deploy",
+            "subject": "clean root-owned dist+node_modules and quote sandbox env value",
+            "hash": "386c7c1"
+          },
+          {
+            "scope": "api",
+            "subject": "correct /api/sample paths under compiled dist + enable docker pods in deploy env",
+            "hash": "37d08eb"
+          },
+          {
+            "scope": "repo",
+            "subject": "force LF for *.sh to prevent WSL bash CRLF errors",
+            "hash": "bbf7321"
+          },
+          {
+            "scope": "server",
+            "subject": "drop upgrade-insecure-requests + HSTS until SSL is wired",
+            "hash": "24d9d8b"
+          },
+          {
+            "scope": "server",
+            "subject": "serve Frontend/dist not Frontend/ source in production",
+            "hash": "eb8f4e0"
+          },
+          {
+            "scope": "deploy",
+            "subject": "bind 0.0.0.0, ship full env, fix dotenv path + microservice resolution",
+            "hash": "a36f873"
+          },
+          {
+            "scope": "scripts",
+            "subject": "rename-then-delete fallback for cross-platform node_modules",
+            "hash": "2033082"
+          },
+          {
+            "scope": "scripts",
+            "subject": "detect cross-platform node_modules and reinstall",
+            "hash": "cbbae65"
+          },
+          {
+            "scope": "about",
+            "subject": "align principles with CLAUDE.md, replace mismatched team photos",
+            "hash": "2d3c58a"
+          },
+          {
+            "scope": "build",
+            "subject": "env-tagged CMake build dirs + scrub absolute paths",
+            "hash": "d7fd65d"
+          },
+          {
+            "scope": "scripts",
+            "subject": "add UTF-8 BOM to PS1 files and quote $i in deploy probe",
+            "hash": "b582f64"
+          },
+          {
+            "scope": "frontend",
+            "subject": "regenerate lockfile to restore rollup optional dependency",
+            "hash": "7e50c98"
+          },
+          {
+            "scope": null,
+            "subject": "default production backend bind host to 0.0.0.0",
+            "hash": "2dd24ce"
+          },
+          {
+            "scope": null,
+            "subject": "serve frontend from correct production path",
+            "hash": "ea2e212"
+          },
+          {
+            "scope": "deploy",
+            "subject": "auto-copy SSH key off /mnt/c when WSL+NTFS blocks chmod 600",
+            "hash": "16fc6d0"
+          },
+          {
+            "scope": "docker",
+            "subject": "also COPY Microservice/pattern_catalog into frontend-builder",
+            "hash": "bccdf40"
+          },
+          {
+            "scope": "docker",
+            "subject": "mirror repo layout in frontend-builder so cross-dir ?raw imports resolve",
+            "hash": "3654038"
+          },
+          {
+            "scope": "docker",
+            "subject": "include devDeps for backend build, then prune",
+            "hash": "265d6dc"
+          },
+          {
+            "scope": "deploy",
+            "subject": "switch source-ship to allowlist — only build-essential paths",
+            "hash": "ec6e539"
+          },
+          {
+            "scope": "annotated",
+            "subject": "strip-aware rebuild of ambiguousLines + inScopePatterns",
+            "hash": "ba3b9e4"
+          },
+          {
+            "scope": "verify",
+            "subject": "retry docker daemon up to 30s instead of giving up immediately",
+            "hash": "6f894de"
+          },
+          {
+            "scope": "annotated",
+            "subject": "per-(className, canonical-pattern) strip on activePatterns + allAnnotations",
+            "hash": "b4c28b4"
+          },
+          {
+            "scope": "deploy",
+            "subject": "make Lightsail deploy actually work (frontend build, native deps, k8s exclusion)",
+            "hash": "f638f57"
+          },
+          {
+            "scope": "studio,admin",
+            "subject": "pin .src-popover (and other fixed descendants) to viewport again",
+            "hash": "b5c5011"
+          },
+          {
+            "scope": "scraper",
+            "subject": "pin overlay to viewport top-right even when host page transforms <body>",
+            "hash": "64ff036"
+          },
+          {
+            "scope": "annotated",
+            "subject": "strip propagated descendant tags by canonical name",
+            "hash": "ff01fa4"
+          },
+          {
+            "scope": "scraper",
+            "subject": "extract per immediate child of picked container, not flattened innerText",
+            "hash": "27d5689"
+          },
+          {
+            "scope": "annotated",
+            "subject": "cascade counts only matcher-tagged patterns on the child",
+            "hash": "c333ee6"
+          },
+          {
+            "scope": "annotated",
+            "subject": "strip microservice annotations for dropped subclass classes",
+            "hash": "1a56a9a"
+          },
+          {
+            "scope": "annotated",
+            "subject": "subclass cascade locks children to parent's pattern; rebuild Review card",
+            "hash": "115f635"
+          },
+          {
+            "scope": "annotated",
+            "subject": "align greying with picker; CamelCase canonicalisation; click-to-undo",
+            "hash": "0baf72a"
+          },
+          {
+            "scope": "annotated",
+            "subject": "exclude Review sentinel from ambiguity counts and rival chips",
+            "hash": "bad05ea"
+          },
+          {
+            "scope": "annotated",
+            "subject": "trigger rival picker on scope-union ambiguity",
+            "hash": "3e4f254"
+          },
+          {
+            "scope": "backend",
+            "subject": "cache imageExists so /api/health returns under WSL2",
+            "hash": "6bbc271"
+          },
+          {
+            "scope": "review",
+            "subject": "route per-run Likert through run_feedback, not manual-review",
+            "hash": "709291a"
+          },
+          {
+            "scope": "review+backend",
+            "subject": "one-click save+submit really fires both, lock + 3s redirect, idempotent submissions",
+            "hash": "5f52b26"
+          },
+          {
+            "scope": "admin+db",
+            "subject": "full activity-table cascade + ON DELETE CASCADE migration on FKs",
+            "hash": "889f424"
+          },
+          {
+            "scope": "admin",
+            "subject": "cascade manual_pattern_decisions before deleting analysis_runs",
+            "hash": "a42e77f"
+          },
+          {
+            "scope": "review",
+            "subject": "single constant-label button — \"Save and submit for validation\"",
+            "hash": "ecca1a2"
+          },
+          {
+            "scope": "validation",
+            "subject": "dedup tagged classes across patternKey formats, drop per-row save buttons",
+            "hash": "d5cbc7e"
+          },
+          {
+            "scope": "validation+admin",
+            "subject": "drop quick-rating popup, hide saved actions, dedupe tagged rows by resolved tag, add idiom family to pies",
+            "hash": "ac4d918"
+          },
+          {
+            "scope": "start.sh",
+            "subject": "force linux TMPDIR so tsx ipc pipe works under WSL",
+            "hash": "ab5918c"
+          },
+          {
+            "scope": "annotated+pods",
+            "subject": "drop AI loading gate, make every Docker call non-blocking",
+            "hash": "85f9f4a"
+          },
+          {
+            "scope": "annotated",
+            "subject": "wait for microservice tags before rendering, document docker disabled path",
+            "hash": "6d4ecc2"
+          },
+          {
+            "scope": "annotated+gdb",
+            "subject": "override colour authoritative, CTA auto-runs, skipped tests no longer count as fails",
+            "hash": "06b442c"
+          },
+          {
+            "scope": "annotated",
+            "subject": "class ambiguity uses the SAME signal as the popover badge",
+            "hash": "0dbd02f"
+          },
+          {
+            "scope": "annotated",
+            "subject": "two-step ambiguity — class must be tagged first, then in-scope competitor flips it",
+            "hash": "9204f25"
+          },
+          {
+            "scope": "annotated",
+            "subject": "nav + missing pill STRICT to microservice-tagged classes with multi-pattern conflict",
+            "hash": "7d07299"
+          },
+          {
+            "scope": "annotated+stats+gdb",
+            "subject": "in-scope counts as tagged, family pie restricted to 3, pie math, auto-expand errors",
+            "hash": "b72d0b8"
+          },
+          {
+            "scope": "annotated+stats",
+            "subject": "annotation-driven ambiguity, missing==ambiguous, viewport-corner nav, chip tooltips, sorted distribution",
+            "hash": "55d2f1f"
+          },
+          {
+            "scope": "annotated",
+            "subject": "pull in-scope-ambiguous classes into population, restructure shell, gate review on GDB pass",
+            "hash": "26c6817"
+          },
+          {
+            "scope": "introspect+annotated",
+            "subject": "kill nt::nt double namespace, ambiguity-aware tag pill, side-by-side cards",
+            "hash": "0a58626"
+          },
+          {
+            "scope": "runner+gdb-tab",
+            "subject": "templates compile cleanly, criteria emit, tree UI, ambiguity gate, full logging",
+            "hash": "e437745"
+          },
+          {
+            "scope": "auth",
+            "subject": "stop revoking JWT on pagehide beacon",
+            "hash": "5573208"
+          },
+          {
+            "scope": "frontend",
+            "subject": "style survey modals, silence admin pre-auth 401 race",
+            "hash": "aea84bc"
+          },
+          {
+            "scope": null,
+            "subject": "probe singleton accessor, ambiguous-only class nav, multi-file save/load",
+            "hash": "2666e61"
+          },
+          {
+            "scope": null,
+            "subject": "bottom-right class-nav overlay, singleton template uses std::is_copy_constructible",
+            "hash": "c6305d9"
+          },
+          {
+            "scope": "admin",
+            "subject": "drop token-error banner, move online pill to topbar",
+            "hash": "f1db377"
+          },
+          {
+            "scope": null,
+            "subject": "autoconfig test runner, write tag-progress on resolve, trim heuristic usage",
+            "hash": "351c422"
+          },
+          {
+            "scope": null,
+            "subject": "confine retag color to class scope, Chrome-tab file picker in Submit",
+            "hash": "005e3f6"
+          },
+          {
+            "scope": null,
+            "subject": "orphan Review tags, retag chip clarity, WCAG contrast helper",
+            "hash": "6c363f4"
+          },
+          {
+            "scope": null,
+            "subject": "surface microservice patterns despite SIGSEGV exit code",
+            "hash": "d9c3c13"
+          },
+          {
+            "scope": null,
+            "subject": "drop duplicate .src-line rule shadowing per-pattern colors",
+            "hash": "ca7ed2f"
+          }
+        ],
+        "Changed": [
+          {
+            "scope": "studio",
+            "subject": "flatten layout to one natural page scroll + slim topbar",
+            "hash": "2a51db4"
+          },
+          {
+            "scope": "site",
+            "subject": "rename /research → /docs, sidebar layout, JSX extracted into sections/",
+            "hash": "e978e4f"
+          },
+          {
+            "scope": "marketing+studio",
+            "subject": "Sprint -1a/-1b triage — kill motion overload, open StudentLearningHub, add Start Here studio rail",
+            "hash": "00c4e40"
+          },
+          {
+            "scope": "rebuild",
+            "subject": "split into per-component scripts, opt-in rebuilds in start.sh",
+            "hash": "2a912bf"
+          },
+          {
+            "scope": "frontend",
+            "subject": "rename lib→logic; sync sidebar/popup ambiguity; add rebuild scripts",
+            "hash": "458d392"
+          },
+          {
+            "scope": "cascade",
+            "subject": "decouple subclass tagging; nuanced cases a-f + undo",
+            "hash": "e0e01ed"
+          },
+          {
+            "scope": "dispatcher",
+            "subject": "revert negative-signal suppression; add observability",
+            "hash": "35b2228"
+          },
+          {
+            "scope": "deploy",
+            "subject": "make remote build incremental + parallel to cut deploy time",
+            "hash": "eeeab50"
+          },
+          {
+            "scope": "ops",
+            "subject": "regroup shell modules under ops/{bash,powershell}/",
+            "hash": "ec78116"
+          },
+          {
+            "scope": "start.ps1",
+            "subject": "decouple into scripts/start/{lib,commands}/ modules",
+            "hash": "541d9ce"
+          },
+          {
+            "scope": "start.sh",
+            "subject": "decouple into scripts/start/{lib,commands}/ modules",
+            "hash": "fc2fe20"
+          },
+          {
+            "scope": "annotated",
+            "subject": "drop Revert chip, transitive undo on existing button",
+            "hash": "15e8ab4"
+          },
+          {
+            "scope": "backend",
+            "subject": "masterlist + docker watcher for non-blocking /api/health",
+            "hash": "7dfcc5d"
+          },
+          {
+            "scope": null,
+            "subject": "pin source popover top-right, drop the redundant retag system",
+            "hash": "eff692c"
+          },
+          {
+            "scope": null,
+            "subject": "replace centered retag modal with upper-right inspector",
+            "hash": "517e953"
+          },
+          {
+            "scope": null,
+            "subject": "migrate frontend+backend to TypeScript and harden security",
+            "hash": "4481ce1"
+          }
+        ],
+        "Docs": [
+          {
+            "scope": "thesis",
+            "subject": "embed Activity/UseCase/Class diagrams above their captions",
+            "hash": "b291241"
+          },
+          {
+            "scope": "thesis",
+            "subject": "trophy refs, defense PPT, promote Diagrams to its own H2",
+            "hash": "2e994a3"
+          },
+          {
+            "scope": "testing",
+            "subject": "split user-code testing from product-self testing across surfaces",
+            "hash": "9cc2e00"
+          },
+          {
+            "scope": "thesis",
+            "subject": "split Ch5/Ch6, add Use Case diagram (PUML+MMD+PNG+SVG)",
+            "hash": "8ef1d74"
+          },
+          {
+            "scope": "thesis",
+            "subject": "refresh algorithm + use cases, expand Ch2, add Ch5, fill Ch4",
+            "hash": "3ad94d8"
+          },
+          {
+            "scope": null,
+            "subject": "define CI and production pod warmup separation",
+            "hash": "c2f4cc0"
+          },
+          {
+            "scope": null,
+            "subject": "lock dev-only step diagnostics and CI no-leak blueprint",
+            "hash": "eab6c6e"
+          },
+          {
+            "scope": "design",
+            "subject": "D37 — AI auto-documentation pipeline contract",
+            "hash": "b64151b"
+          },
+          {
+            "scope": "claude",
+            "subject": "rebuild default is always full; AI never auto-adds --skip-*",
+            "hash": "d9a7220"
+          },
+          {
+            "scope": "rules",
+            "subject": "require git push after commit each prompt",
+            "hash": "bf4f4d7"
+          },
+          {
+            "scope": "claude",
+            "subject": "add rebuild decision matrix for AI-driven minimal rebuilds",
+            "hash": "0eef75f"
+          },
+          {
+            "scope": null,
+            "subject": "remove homepage scope section",
+            "hash": "333bd17"
+          },
+          {
+            "scope": null,
+            "subject": "make homepage beginner friendly",
+            "hash": "8db4ad7"
+          },
+          {
+            "scope": null,
+            "subject": "simplify homepage for learners",
+            "hash": "b47681f"
+          },
+          {
+            "scope": null,
+            "subject": "align homepage with thesis brief",
+            "hash": "24ba497"
+          },
+          {
+            "scope": null,
+            "subject": "define local docker session host",
+            "hash": "cf208b0"
+          },
+          {
+            "scope": "ops",
+            "subject": "add docstrings for ensure_node_modules / build_microservice / write_dev_env",
+            "hash": "34aa74b"
+          },
+          {
+            "scope": null,
+            "subject": "reinforce mandatory commit rule in AGENTS.md",
+            "hash": "8557759"
+          },
+          {
+            "scope": "infra",
+            "subject": "document docker pod migration plan + current disabled state",
+            "hash": "01239d3"
+          }
+        ],
+        "Internal": [
+          {
+            "scope": "gitignore",
+            "subject": "cover the screenshots/ path the studio walkthrough actually writes to",
+            "hash": "e485501"
+          },
+          {
+            "scope": "playwright",
+            "subject": "codify algorithm-known limits + D63 audit baseline",
+            "hash": "d6f3b9b"
+          },
+          {
+            "scope": "playwright",
+            "subject": "resolve ambiguity before reading pattern badges",
+            "hash": "0ca3f5c"
+          },
+          {
+            "scope": "playwright",
+            "subject": "fix isVisible race + scope e2e gate to all-samples.spec.ts",
+            "hash": "26a2ff1"
+          },
+          {
+            "scope": "deploy",
+            "subject": "add post-deploy-smoke job for live AWS verification",
+            "hash": "80a68ac"
+          },
+          {
+            "scope": "backend",
+            "subject": "wire vitest, extract candidateFilter, assert cppcheck phase",
+            "hash": "8d83867"
+          },
+          {
+            "scope": "playwright",
+            "subject": "cover 15 samples with structural + regression contracts",
+            "hash": "6e1ad93"
+          },
+          {
+            "scope": "playwright",
+            "subject": "harden selectors with data-testid + crash-safe seat release",
+            "hash": "588f645"
+          },
+          {
+            "scope": null,
+            "subject": "Revert \"docs(testing): split user-code testing from product-self testing across surfaces\"",
+            "hash": "2e97793"
+          },
+          {
+            "scope": "e2e",
+            "subject": "dynamic-aware studio screenshot pipeline",
+            "hash": "5189e7e"
+          },
+          {
+            "scope": null,
+            "subject": "fe(studio): pin topbar with self-scroll fallback + hide lede on narrow widths",
+            "hash": "91950ae"
+          },
+          {
+            "scope": null,
+            "subject": "fix+feat: real-account users skip tester gates + admin toggle for review survey",
+            "hash": "0d93a5f"
+          },
+          {
+            "scope": "eval",
+            "subject": "add accuracy probe + new-joiner code tour",
+            "hash": "9f3bb18"
+          },
+          {
+            "scope": "deploy",
+            "subject": "trigger redeploy with new Supabase + Google OAuth env",
+            "hash": "be6fb2d"
+          },
+          {
+            "scope": null,
+            "subject": "fe(design): minor marketing polish + admin topbar/tab/section refresh",
+            "hash": "9846282"
+          },
+          {
+            "scope": null,
+            "subject": "deploy(aws): propagate AUTH_PROVIDER + AUTH_SUPABASE_ANON_KEY + GOOGLE_OAUTH_*",
+            "hash": "c7836b1"
+          },
+          {
+            "scope": "supabase",
+            "subject": "trim local stack to auth-only + env-write helper",
+            "hash": "cc67784"
+          },
+          {
+            "scope": "ui-merge",
+            "subject": "three-way Miryl+Jo adoption with Miryl-priority + build gate",
+            "hash": "0d4bbfc"
+          },
+          {
+            "scope": null,
+            "subject": "add merge-jo-ui workflow — selective UI adoption from Branch-ni-jo into main",
+            "hash": "b219198"
+          },
+          {
+            "scope": null,
+            "subject": "fix template literals in gdb-runner diagnostic log (bash mangled backticks)",
+            "hash": "b2be29b"
+          },
+          {
+            "scope": null,
+            "subject": "assert compile_run passed and log all phase verdicts in gdb-runner",
+            "hash": "f751043"
+          },
+          {
+            "scope": null,
+            "subject": "remove pod activities from gdb-runner — CI runners too constrained for Docker pods",
+            "hash": "0a47abc"
+          },
+          {
+            "scope": null,
+            "subject": "fix deploy --quiet error and add real Docker cpp-pod test",
+            "hash": "67a0649"
+          },
+          {
+            "scope": null,
+            "subject": "disable pod Docker mode in gdb-runner job to prevent background image build blocking step",
+            "hash": "226fca0"
+          },
+          {
+            "scope": null,
+            "subject": "cache playwright chromium browser binary across runs",
+            "hash": "90e5de5"
+          },
+          {
+            "scope": null,
+            "subject": "pass microservice binary to gdb-runner job via artifact",
+            "hash": "1df29b4"
+          },
+          {
+            "scope": null,
+            "subject": "backend: store enriched detected patterns in pending analysis",
+            "hash": "9d54723"
+          },
+          {
+            "scope": null,
+            "subject": "fail gdb api flow when run-tests returns empty results",
+            "hash": "bc61681"
+          },
+          {
+            "scope": null,
+            "subject": "disable pod warmup on claim in gdb runner flow",
+            "hash": "c59c20c"
+          },
+          {
+            "scope": null,
+            "subject": "pin kind cluster name for image load step",
+            "hash": "e293c0e"
+          },
+          {
+            "scope": null,
+            "subject": "seed tester accounts for API flow checks",
+            "hash": "8a789d7"
+          },
+          {
+            "scope": null,
+            "subject": "CI: decouple pipeline into backend, frontend, playwright, pod, gdb, and output gates",
+            "hash": "6947e14"
+          },
+          {
+            "scope": null,
+            "subject": "CI: build microservice first and add kind pod integration gate",
+            "hash": "3ee186a"
+          },
+          {
+            "scope": "ci",
+            "subject": "trigger provenance check after parser-fix",
+            "hash": "013f44f"
+          },
+          {
+            "scope": null,
+            "subject": "Fix CI deploy job condition by moving secret checks to runtime",
+            "hash": "d7814a9"
+          },
+          {
+            "scope": "ci",
+            "subject": "trigger github actions smoke run",
+            "hash": "48d10da"
+          },
+          {
+            "scope": "cd",
+            "subject": "support rsa/private key secret variants for aws deploy",
+            "hash": "14005bb"
+          },
+          {
+            "scope": "cd",
+            "subject": "auto-deploy to aws after passing checks",
+            "hash": "ffdb4bc"
+          },
+          {
+            "scope": null,
+            "subject": "add frontend/backend merge smoke checks with playwright",
+            "hash": "7535723"
+          },
+          {
+            "scope": null,
+            "subject": "scope ui guard to teammate actors and detach from build jobs",
+            "hash": "2cadf16"
+          },
+          {
+            "scope": null,
+            "subject": "enforce ui-only file scope for teammate pushes",
+            "hash": "1e947c7"
+          },
+          {
+            "scope": null,
+            "subject": "enable github actions workflow",
+            "hash": "7131293"
+          },
+          {
+            "scope": null,
+            "subject": "remove --poll in dev script package",
+            "hash": "e7a9afe"
+          },
+          {
+            "scope": null,
+            "subject": "ui updates",
+            "hash": "c49f834"
+          },
+          {
+            "scope": null,
+            "subject": "update current home page to branding of devcon",
+            "hash": "d63f758"
+          },
+          {
+            "scope": null,
+            "subject": "ignore scheduled_tasks.lock and node_modules.stale dirs",
+            "hash": "1903812"
+          },
+          {
+            "scope": null,
+            "subject": "remove accidentally committed lock and stale node_modules",
+            "hash": "8394ec0"
+          },
+          {
+            "scope": null,
+            "subject": "point deploy target to new Lightsail instance 122.248.192.49",
+            "hash": "8fbe4e3"
+          },
+          {
+            "scope": null,
+            "subject": "capture current workspace state",
+            "hash": "c12f436"
+          },
+          {
+            "scope": "gitignore",
+            "subject": "block .pem/.key/ssh creds and scripts/.env.deploy",
+            "hash": "801b057"
+          },
+          {
+            "scope": null,
+            "subject": "Revert \"feat(annotated): add Not-this-pattern affordance on inheritance-driven parents\"",
+            "hash": "a4c5379"
+          },
+          {
+            "scope": null,
+            "subject": "Revert \"feat(annotated): full-catalog rival picker on every class decl\"",
+            "hash": "8a6c90d"
+          },
+          {
+            "scope": null,
+            "subject": "Build backend in image; improve scripts & docker",
+            "hash": "37b0c98"
+          },
+          {
+            "scope": null,
+            "subject": "Consolidate root scripts and update hosts",
+            "hash": "6682307"
+          },
+          {
+            "scope": "admin",
+            "subject": "move Survey responses under the Reviews tab",
+            "hash": "2142537"
+          },
+          {
+            "scope": "scripts",
+            "subject": "requirements verifier is STRICT and SEQUENTIAL by default",
+            "hash": "769b346"
+          },
+          {
+            "scope": "scripts",
+            "subject": "shared requirements verifier wired into all entry scripts",
+            "hash": "a1e148c"
+          },
+          {
+            "scope": "scripts",
+            "subject": "unify dev pipeline into start.ps1 / start.sh",
+            "hash": "4bb90e9"
+          },
+          {
+            "scope": null,
+            "subject": "remove agent.jo.md (Jo-Branch leftover)",
+            "hash": "c69849d"
+          },
+          {
+            "scope": null,
+            "subject": "ui: lock in local UI changes before pull + add agent.jo.md",
+            "hash": "4d9751f"
+          },
+          {
+            "scope": null,
+            "subject": "Add last_active, admin log controls & UI improvements",
+            "hash": "173996c"
+          },
+          {
+            "scope": null,
+            "subject": "add clean-browser scripts for fresh Chromium sessions",
+            "hash": "496f613"
+          },
+          {
+            "scope": null,
+            "subject": "Add fonts, popover resolve actions and UI refresh",
+            "hash": "339ea7d"
+          },
+          {
+            "scope": null,
+            "subject": "Add per-line pattern overrides and AI status UI",
+            "hash": "4e20935"
+          },
+          {
+            "scope": null,
+            "subject": "Add pattern lexeme hints & UI state overrides",
+            "hash": "774a303"
+          },
+          {
+            "scope": null,
+            "subject": "Add scope-aware source view and annotation popover",
+            "hash": "4e5415d"
+          },
+          {
+            "scope": null,
+            "subject": "Refine drawer UI; disable run inspect & counts",
+            "hash": "a42b29e"
+          },
+          {
+            "scope": null,
+            "subject": "Revert \"Add alpha diagnostics and runtime Devcon seat keys\"",
+            "hash": "4d18bb0"
+          },
+          {
+            "scope": null,
+            "subject": "Add alpha diagnostics and runtime Devcon seat keys",
+            "hash": "1ad703d"
+          },
+          {
+            "scope": null,
+            "subject": "Final",
+            "hash": "50b25bd"
+          },
+          {
+            "scope": null,
+            "subject": "Replace analyzer with microservice + AI docs",
+            "hash": "7b402f8"
+          },
+          {
+            "scope": null,
+            "subject": "Add microservice modules and backend analysis services",
+            "hash": "319682c"
+          },
+          {
+            "scope": null,
+            "subject": "Add inert stub implementations and cleanups",
+            "hash": "097fed3"
+          },
+          {
+            "scope": null,
+            "subject": "Add analysis modules, trees, hashing & tests",
+            "hash": "e46e328"
+          },
+          {
+            "scope": null,
+            "subject": "Add header interfaces for parsing and hashing",
+            "hash": "e0b014d"
+          },
+          {
+            "scope": null,
+            "subject": "Add Microservice headers, docs and CMake",
+            "hash": "f2495e3"
+          },
+          {
+            "scope": null,
+            "subject": "Make docs/Codebase the source of truth",
+            "hash": "62e03d2"
+          },
+          {
+            "scope": null,
+            "subject": "Update docs for live class-analysis flow",
+            "hash": "844ecc2"
+          },
+          {
+            "scope": null,
+            "subject": "Add branch/contract evidence types; fix SQL quotes",
+            "hash": "8561eb2"
+          },
+          {
+            "scope": null,
+            "subject": "Clean ignored artifacts and align frontend docs",
+            "hash": "2ebd803"
+          },
+          {
+            "scope": null,
+            "subject": "Update SyntacticBrokenAST parsing and backend config",
+            "hash": "1212d41"
+          },
+          {
+            "scope": null,
+            "subject": "Add Diffing subsystem core and docs",
+            "hash": "bcd931e"
+          },
+          {
+            "scope": null,
+            "subject": "Reorganize and update Codebase documentation",
+            "hash": "bbff65c"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor SyntacticBrokenAST docs & core code",
+            "hash": "87a92cd"
+          },
+          {
+            "scope": null,
+            "subject": "Use .cpp.md suffix in PatternMiddleman docs",
+            "hash": "ddc1c12"
+          },
+          {
+            "scope": null,
+            "subject": "Move legacy samples and update creational modules",
+            "hash": "894582e"
+          },
+          {
+            "scope": null,
+            "subject": "Move project files into Codebase/ directory",
+            "hash": "2a149be"
+          },
+          {
+            "scope": null,
+            "subject": "Reorganize docs into docs/Codebase",
+            "hash": "f4f760c"
+          },
+          {
+            "scope": null,
+            "subject": "Add generated Codebase docs and docgen tools",
+            "hash": "89d786b"
+          },
+          {
+            "scope": null,
+            "subject": "Consolidate docs into docs/ and add compiled docs",
+            "hash": "1141895"
+          },
+          {
+            "scope": null,
+            "subject": "Restructure ParseTree headers and rename sources",
+            "hash": "d8b7600"
+          },
+          {
+            "scope": null,
+            "subject": "Validate file pairing and track scope collisions",
+            "hash": "46d580b"
+          },
+          {
+            "scope": null,
+            "subject": "Add Node/Express backend for code transformation",
+            "hash": "fdc56b2"
+          },
+          {
+            "scope": null,
+            "subject": "Add factory invocation tracing and FNV-1a hashes",
+            "hash": "f68cb29"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor creational transform evidence",
+            "hash": "45e5e4c"
+          },
+          {
+            "scope": null,
+            "subject": "Add factory->base transform & pattern view",
+            "hash": "76fb0a4"
+          },
+          {
+            "scope": null,
+            "subject": "Move creational transforms; add structural hooks",
+            "hash": "dac63ba"
+          },
+          {
+            "scope": null,
+            "subject": "Add parse-tree hash-links and codegen internals",
+            "hash": "0c8d031"
+          },
+          {
+            "scope": null,
+            "subject": "Add Docker-only mode and Minikube recovery",
+            "hash": "84222b0"
+          },
+          {
+            "scope": null,
+            "subject": "Add frontend UI and restructure codebase",
+            "hash": "502629a"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor parse_tree_code_generator into .inl files",
+            "hash": "616bb63"
+          },
+          {
+            "scope": null,
+            "subject": "Track transform decisions & singleton->builder support",
+            "hash": "072b6be"
+          },
+          {
+            "scope": null,
+            "subject": "Detect object/fallthrough factory returns",
+            "hash": "dc4de39"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor code structure for improved readability and maintainability",
+            "hash": "a7f3219"
+          },
+          {
+            "scope": null,
+            "subject": "Ignore NeoTerritory.slnx and Setup.vdproj",
+            "hash": "444bcc5"
+          },
+          {
+            "scope": null,
+            "subject": "Add behavioural/creational pattern detectors and docs",
+            "hash": "9797217"
+          },
+          {
+            "scope": null,
+            "subject": "Add session/runtime scripts and refactor AST APIs",
+            "hash": "c53f8cc"
+          },
+          {
+            "scope": null,
+            "subject": "Remove suggested RRL statement from docs",
+            "hash": "b29b621"
+          },
+          {
+            "scope": null,
+            "subject": "File-aware symbol hashes and shadow filtering",
+            "hash": "ebb5e47"
+          },
+          {
+            "scope": null,
+            "subject": "Add Windows setup script and update k8s apply path",
+            "hash": "f4c1355"
+          },
+          {
+            "scope": null,
+            "subject": "Add session-orchestration infra and deploy scripts",
+            "hash": "1f9da63"
+          },
+          {
+            "scope": null,
+            "subject": "Add software requirements and renumber tables",
+            "hash": "d970154"
+          },
+          {
+            "scope": null,
+            "subject": "Lower baseline storage and add GitHub references",
+            "hash": "d4204c2"
+          },
+          {
+            "scope": null,
+            "subject": "Add system specifications for NeoTerritory",
+            "hash": "9dcb067"
+          },
+          {
+            "scope": null,
+            "subject": "Output test artifacts to TestResults directory",
+            "hash": "13d5b01"
+          },
+          {
+            "scope": null,
+            "subject": "Add shadow AST, source units & contextual hashes",
+            "hash": "fd41c25"
+          },
+          {
+            "scope": null,
+            "subject": "Add line-hash tracing and lexical hooks",
+            "hash": "0ce15b7"
+          },
+          {
+            "scope": null,
+            "subject": "Enhance class symbol tracking and reporting",
+            "hash": "b2fadb4"
+          },
+          {
+            "scope": null,
+            "subject": "Add SyntacticBrokenAST pipeline and outputs",
+            "hash": "cd1d8e4"
+          },
+          {
+            "scope": null,
+            "subject": "Add creational pattern detectors and token updates",
+            "hash": "0cbe0b2"
+          },
+          {
+            "scope": null,
+            "subject": "Switch to ParseTree-based AST pipeline",
+            "hash": "99be776"
+          },
+          {
+            "scope": null,
+            "subject": "Add project instructions and IDE config files",
+            "hash": "2c24177"
+          },
+          {
+            "scope": null,
+            "subject": "Add CFG-based syntactic tree construction and function call detection",
+            "hash": "7e529b3"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor AST pipeline and modularize function parsing",
+            "hash": "5090f17"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor and modularize preprocessor stripping logic",
+            "hash": "036380c"
+          },
+          {
+            "scope": null,
+            "subject": "Add preprocessor and namespace stripping to AST input",
+            "hash": "45b17fc"
+          },
+          {
+            "scope": null,
+            "subject": "Co-authored-by: Kollin123 <Kollin123@users.noreply.github.com>",
+            "hash": "0e59c7d"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor CMakeLists.txt for compiler settings and remove outdated documentation files",
+            "hash": "7a9ce86"
+          },
+          {
+            "scope": null,
+            "subject": "Refactor CMakeLists.txt for improved source handling",
+            "hash": "7a6dbdb"
+          },
+          {
+            "scope": null,
+            "subject": "Restructure project directories and add CMake config",
+            "hash": "9140eab"
+          },
+          {
+            "scope": null,
+            "subject": "Improve AST handling and lexer support for char literals (#10)",
+            "hash": "23459e9"
+          },
+          {
+            "scope": null,
+            "subject": "Add initial SyntacticBrokenAST module and VSCode configs",
+            "hash": "78aabd1"
+          },
+          {
+            "scope": null,
+            "subject": "Delete .github/workflows/blank.yml",
+            "hash": "6fac20d"
+          },
+          {
+            "scope": null,
+            "subject": "Create auto-defaults workflow for new issues",
+            "hash": "d1923f5"
+          },
+          {
+            "scope": null,
+            "subject": "Complete cancelled PR #1: Add project documentation with team info, timeline, and contribution guidelines (#2)",
+            "hash": "8fa8b3d"
+          },
+          {
+            "scope": null,
+            "subject": "Initial plan (#1)",
+            "hash": "652f7ce"
+          },
+          {
+            "scope": null,
+            "subject": "Initial commit",
+            "hash": "bcaad8e"
+          }
+        ]
+      }
+    }
+  ]
+}

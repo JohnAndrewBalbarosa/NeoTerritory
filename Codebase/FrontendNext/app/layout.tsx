@@ -14,6 +14,11 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Second global stylesheet (the --devcon-* theme tokens + shared classes). The
+            Vite index.html linked this as /styles.css alongside marketing.css; it is served
+            from FrontendNext/public/styles.css. Without it the theme variables are undefined
+            and the UI/animations break. */}
+        <link rel="stylesheet" href="/styles.css" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
