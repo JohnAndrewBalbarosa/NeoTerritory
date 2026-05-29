@@ -175,6 +175,57 @@ export interface AdminLearningQuestionLearner {
   attempts: number;
 }
 
+// ── Instructor dashboard: raw learning payload (D91) ──────────────────────────
+// The Instructor tab fetches RAW per-user rows from
+// GET /api/admin/stats/learning-raw and does ALL aggregation client-side
+// (per-student scores, module difficulty). Question/option text is resolved
+// client-side from data/learningModules.ts (per D87 — not stored server-side).
+
+export interface LearningRawStudent {
+  userId: number;
+  username: string;
+  email: string | null;
+  createdVia: string;
+}
+
+export interface LearningRawProgress {
+  userId: number;
+  completedModuleIds: string[];
+  lastUnlockedModuleId: string | null;
+  triesByModule: Record<string, number>;
+  theoryPassedModuleIds: string[];
+  updatedAt: string;
+}
+
+export interface LearningRawQuestionResult {
+  userId: number;
+  moduleId: string;
+  questionIndex: number;
+  selectedIndex: number;
+  isCorrect: number;
+  firstAttemptCorrect: number;
+  attempts: number;
+  updatedAt: string;
+}
+
+export interface LearningRawExamAttempt {
+  id: number;
+  userId: number;
+  moduleId: string;
+  attemptNo: number;
+  correctCount: number;
+  totalQuestions: number;
+  passed: number;
+  createdAt: string;
+}
+
+export interface AdminLearningRaw {
+  students: LearningRawStudent[];
+  progress: LearningRawProgress[];
+  questionResults: LearningRawQuestionResult[];
+  examAttempts: LearningRawExamAttempt[];
+}
+
 export interface AdminPerRunFeedbackRow {
   id: number;
   runId: string;

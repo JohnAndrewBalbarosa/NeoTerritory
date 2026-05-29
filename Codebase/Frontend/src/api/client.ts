@@ -453,6 +453,11 @@ export async function fetchAdminLearningQuestionDetail(
   const qs = `moduleId=${encodeURIComponent(moduleId)}&questionIndex=${questionIndex}`;
   return apiFetch(`/api/admin/stats/learning-questions?${qs}`);
 }
+// Raw per-user learning rows for the Instructor tab (D91). The client does all
+// aggregation; question/option text is resolved from the catalog client-side.
+export async function fetchAdminLearningRaw(): Promise<import('../types/api').AdminLearningRaw> {
+  return apiFetch('/api/admin/stats/learning-raw');
+}
 
 // Runtime admin-controlled toggles.  Currently a single key —
 // testers_visible_to_users — that hides the devcon* picker on the

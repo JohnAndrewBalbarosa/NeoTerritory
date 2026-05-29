@@ -19,7 +19,7 @@ import CatalogsTab from './components/CatalogsTab';
 import InviteCodesTab from './components/InviteCodesTab';
 import JoinRequestsTab from './components/JoinRequestsTab';
 import FeatureReleasePanel from './components/FeatureReleasePanel';
-import LearningAnalytics from './components/LearningAnalytics';
+import InstructorDashboard from './components/InstructorDashboard';
 import { markAdminRefresh } from '../api/client';
 import {
   IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode
@@ -29,7 +29,7 @@ import { useAdminUsers } from './hooks/useAdminUsers';
 
 type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'learning';
 
-type AdminSection = 'Operations' | 'People' | 'Learning' | 'Research' | 'Config';
+type AdminSection = 'Operations' | 'People' | 'Instructor' | 'Research' | 'Config';
 
 interface TabDef {
   id: AdminTab;
@@ -49,7 +49,7 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'users',           label: 'Users',           icon: IconShield,      section: 'People' },
   { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'People' },
   { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'People' },
-  { id: 'learning',        label: 'Learning',        icon: IconClipboard,   section: 'Learning' },
+  { id: 'learning',        label: 'Instructor',      icon: IconClipboard,   section: 'Instructor' },
   { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Research', originalDevsOnly: true },
   { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Research', originalDevsOnly: true },
   { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Research', originalDevsOnly: true },
@@ -57,7 +57,7 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'catalogs',        label: 'Pattern groups',  icon: IconBeaker,      section: 'Config' },
 ];
 
-const SECTION_ORDER: AdminSection[] = ['Operations', 'People', 'Learning', 'Research', 'Config'];
+const SECTION_ORDER: AdminSection[] = ['Operations', 'People', 'Instructor', 'Research', 'Config'];
 
 // Original-devs detection: the JWT now carries an explicit
 // isOriginalDevs flag (set by /auth/google/exchange when the email is
@@ -428,10 +428,10 @@ export default function AdminApp() {
         <div hidden={activeTab !== 'learning'}>
           <section className="admin-section admin-section--card">
             <header className="admin-section__head">
-              <h2>Learning scores</h2>
-              <p className="admin-section__hint">First-attempt pass rate per question, grouped by family → module. Click a cell for the per-learner breakdown.</p>
+              <h2>Instructor analytics</h2>
+              <p className="admin-section__hint">Course-operator view of learner scores: per-student progress and improvement, module difficulty ranking, and the per-question heatmap. All metrics are computed from raw learning data; each view offers a download.</p>
             </header>
-            <LearningAnalytics />
+            <InstructorDashboard />
           </section>
         </div>
         {isOriginalDevsAdmin(user) && (

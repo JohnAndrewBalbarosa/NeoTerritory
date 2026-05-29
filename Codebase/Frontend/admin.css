@@ -499,6 +499,50 @@ body{position:relative;}
 .admin-heatmap__cell[data-bucket="low"]{background:var(--red);}
 .admin-heatmap__cell[data-bucket="none"]{background:var(--surface2);color:var(--ink-dim);cursor:default;}
 
+/* === INSTRUCTOR TAB (D91) === */
+/* Course-operator analytics: segmented control + Students table + module-rank
+   list. Reuses the existing admin tokens (surface / accent / green-amber-red /
+   radius). Does not restyle existing components. */
+
+/* Segmented control switching Students | Modules | Questions. */
+.instructor-segmented{display:inline-flex;gap:2px;padding:3px;margin-bottom:18px;border:1px solid var(--border);border-radius:999px;background:var(--surface2);}
+.instructor-seg-btn{appearance:none;border:none;background:transparent;color:var(--ink-soft);font:600 12.5px/1 var(--ui-font);letter-spacing:.02em;padding:7px 16px;border-radius:999px;cursor:pointer;transition:color 160ms,background 160ms;}
+.instructor-seg-btn:hover{color:var(--ink);}
+.instructor-seg-btn.is-active{color:var(--ink);background:var(--surface);box-shadow:var(--shadow-sm);}
+
+/* Toolbar row: sort/hint on the left, downloads on the right. */
+.instructor-toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.instructor-sortgroup{display:inline-flex;flex-wrap:wrap;gap:6px;}
+.instructor-downloads{display:inline-flex;gap:8px;flex-wrap:wrap;}
+
+/* Students table — extends .admin-table; rows are clickable to expand. */
+.instructor-students-table td{vertical-align:middle;font-variant-numeric:tabular-nums;}
+.instructor-students-table tbody tr.is-open{background:rgba(123,94,167,0.08);}
+.instructor-improvement{font-weight:700;font-variant-numeric:tabular-nums;}
+.instructor-improvement[data-sign="pos"]{color:var(--green);}
+.instructor-improvement[data-sign="neg"]{color:var(--red);}
+.instructor-improvement[data-sign="zero"]{color:var(--ink-soft);}
+.instructor-students-table .pill{font-variant-numeric:tabular-nums;}
+
+/* Per-student drilldown card. */
+.instructor-drilldown{margin-top:16px;padding:16px 18px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface2);}
+.instructor-drilldown h3{margin:0 0 12px;font-size:14px;font-weight:700;color:var(--ink);}
+.instructor-drilldown td[data-correct="false"]{color:var(--red);}
+.instructor-drilldown td[data-correct="true"]{color:var(--green);}
+
+/* Module-difficulty rank list — grouped ties render as one row. */
+.instructor-rank-list{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:8px;}
+.instructor-rank-row{display:flex;gap:14px;align-items:flex-start;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);}
+.instructor-rank-badge{flex:0 0 auto;font-family:var(--code-font);font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);padding:4px 10px;border:1px solid var(--accent);border-radius:999px;background:var(--accent-soft);white-space:nowrap;}
+.instructor-rank-modules{display:flex;flex-wrap:wrap;align-items:center;gap:4px 2px;min-width:0;}
+.instructor-rank-module{display:inline-flex;align-items:baseline;gap:8px;}
+.instructor-rank-amp{color:var(--ink-dim);font-weight:700;}
+.instructor-rank-pill{font-size:13px;font-weight:600;color:var(--ink);padding:2px 0;border-bottom:2px solid var(--border-bright);}
+.instructor-rank-pill[data-bucket="high"]{border-bottom-color:var(--green);}
+.instructor-rank-pill[data-bucket="mid"]{border-bottom-color:var(--amber);}
+.instructor-rank-pill[data-bucket="low"]{border-bottom-color:var(--red);}
+.instructor-rank-meta{font-size:11px;color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+
 /* Provider pill in the Users table (D87) */
 .provider-pill{display:inline-block;padding:2px 9px;border-radius:999px;font-size:11px;font-weight:600;border:1px solid var(--border-bright);}
 .provider-pill[data-provider="oauth"]{color:var(--cyan);border-color:color-mix(in oklab, var(--cyan) 45%, transparent);background:color-mix(in oklab, var(--cyan) 12%, transparent);}
