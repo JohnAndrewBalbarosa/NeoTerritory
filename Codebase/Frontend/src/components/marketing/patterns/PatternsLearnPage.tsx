@@ -46,6 +46,13 @@ interface CategoryGroup {
   steps: ReadonlyArray<CourseStep>;
 }
 
+// Sidebar drill-down folder state: one level visible at a time, with a back
+// button — Sections → Modules → Subsections (D86 revision per user request).
+type LearnNavView =
+  | { level: 'sections' }
+  | { level: 'modules'; sectionId: LearningCategory }
+  | { level: 'subsections'; sectionId: LearningCategory; moduleId: string };
+
 function buildCategoryGroups(): {
   groups: ReadonlyArray<CategoryGroup>;
   steps: ReadonlyArray<CourseStep>;
@@ -139,82 +146,8 @@ function scrollToAnchor(id: string): void {
   el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
 }
 
-// ----- sidebar tree: family accordion → module rows → section anchors -----
-
-interface ModuleTreeItemProps {
-  step: CourseStep;
-  activeIndex: number;
-  isCompleted: boolean;
-  isLocked: boolean;
-  isExpanded: boolean;
-  onNavigate: () => void;
-  onToggle: () => void;
-  onAnchor: (anchor: ModuleAnchor) => void;
-}
-
-function ModuleTreeItem({
-  step,
-  activeIndex,
-  isCompleted,
-  isLocked,
-  isExpanded,
-  onNavigate,
-  onToggle,
-  onAnchor,
-}: ModuleTreeItemProps): JSX.Element {
-  const isActive = step.globalIndex === activeIndex;
-  const status = isLocked ? 'Locked' : isCompleted ? 'Done' : isActive ? 'Current' : 'Ready';
-  const numberLabel = isLocked ? '\u{1F512}' : isCompleted ? 'ok' : String(step.globalIndex + 1);
-  const anchors = moduleAnchors(step.module);
-  return (
-    <li className="nt-course-tree-item">
-      <div className="nt-course-tree-row">
-        <button
-          type="button"
-          className="nt-course-tree-nav"
-          data-active={isActive ? 'true' : undefined}
-          data-completed={isCompleted ? 'true' : undefined}
-          data-locked={isLocked ? 'true' : undefined}
-          disabled={isLocked}
-          aria-disabled={isLocked || undefined}
-          title={isLocked ? 'Finish the previous module to unlock this one.' : undefined}
-          onClick={onNavigate}
-        >
-          <span className="nt-course-outline__dot" aria-hidden="true">
-            {numberLabel}
-          </span>
-          <span>
-            <small>
-              {step.module.eyebrow} · {status}
-            </small>
-            {step.module.title}
-          </span>
-        </button>
-        <button
-          type="button"
-          className="nt-course-tree-disclosure"
-          aria-expanded={isExpanded}
-          aria-label={isExpanded ? `Collapse ${step.module.title} sections` : `Expand ${step.module.title} sections`}
-          disabled={isLocked}
-          onClick={onToggle}
-        >
-          <span aria-hidden="true">{isExpanded ? '▾' : '▸'}</span>
-        </button>
-      </div>
-      {isExpanded && !isLocked ? (
-        <ul className="nt-course-anchors">
-          {anchors.map((a) => (
-            <li key={a.id}>
-              <button type="button" className="nt-course-anchor" onClick={() => onAnchor(a)}>
-                {a.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
-    </li>
-  );
-}
+// (The old always-expanded family→module→anchor tree component was replaced by the
+// drill-down folder rendered inline in the page — Sections → Modules → Subsections.)
 
 // ----- prerequisite banner: what unlocked THIS module, what's needed next -----
 
@@ -794,37 +727,26 @@ export default function PatternsLearnPage(): JSX.Element {
     if (activeIndex < steps.length - 1) goToStep(activeIndex + 1);
   }, [activeIndex, activeStep, completedIds, goToStep, steps.length]);
 
-  // Sidebar tree open-state — chrome only, not persisted. Default open: the
-  // active module's family + the active module.
-  const [openFamilies, setOpenFamilies] = useState<Set<string>>(() => new Set());
-  const [openModules, setOpenModules] = useState<Set<string>>(() => new Set());
-
-  // Auto-open the active module's family + the active module when navigation
-  // changes which step is active.
+  // Sidebar drill-down folder — chrome only, not persisted. Defaults to the
+  // active module's subsections so the rail shows where you are; the back button
+  // walks up to that module's section, then to all sections.
   const activeFamily = activeStep?.category;
   const activeModuleId = activeStep?.module.id;
+
+  const [nav, setNav] = useState<LearnNavView>(() =>
+    activeStep
+      ? { level: 'subsections', sectionId: activeStep.category, moduleId: activeStep.module.id }
+      : { level: 'sections' },
+  );
+
+  // Follow the active module: when it changes (folder click, Next/Prev, deep
+  // link), surface that module's subsections. Manual back/drill that doesn't
+  // change the active module is preserved (this effect only fires on change).
   useEffect(() => {
-    if (activeFamily) setOpenFamilies((prev) => (prev.has(activeFamily) ? prev : new Set(prev).add(activeFamily)));
-    if (activeModuleId) setOpenModules((prev) => (prev.has(activeModuleId) ? prev : new Set(prev).add(activeModuleId)));
+    if (activeFamily && activeModuleId) {
+      setNav({ level: 'subsections', sectionId: activeFamily, moduleId: activeModuleId });
+    }
   }, [activeFamily, activeModuleId]);
-
-  const toggleFamily = useCallback((id: string) => {
-    setOpenFamilies((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const toggleModule = useCallback((id: string) => {
-    setOpenModules((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }, []);
 
   // Clicking a section anchor: navigate to that module if needed, then scroll.
   // When navigating across modules the target DOM mounts on the next frame, so
@@ -851,6 +773,12 @@ export default function PatternsLearnPage(): JSX.Element {
   const isLast = activeIndex === total - 1;
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
   const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
+
+  // Resolve the folder level currently shown in the sidebar.
+  const navGroup =
+    nav.level !== 'sections' ? groups.find((g) => g.meta.id === nav.sectionId) : undefined;
+  const navStep =
+    nav.level === 'subsections' ? steps.find((s) => s.module.id === nav.moduleId) : undefined;
 
   return (
     <main className="nt-student nt-student-course" id="main">
@@ -889,53 +817,119 @@ export default function PatternsLearnPage(): JSX.Element {
           aria-label="Learning module outline"
           data-lenis-prevent
         >
-          <div className="nt-course-sidebar__head">
-            <p>Modules</p>
-            <span>
-              {activeIndex + 1}/{total}
-            </span>
-          </div>
+          {/* Level 1 — Sections (families). Enter one to see its modules. */}
+          {nav.level === 'sections' ? (
+            <>
+              <div className="nt-course-sidebar__head">
+                <p>Modules</p>
+                <span>{completedCount}/{total} done</span>
+              </div>
+              <ul className="nt-course-folder">
+                {groups.map((g, idx) => {
+                  const sectionDone = g.steps.filter((s) => completedIds.has(s.module.id)).length;
+                  const hasActive = activeFamily === g.meta.id;
+                  return (
+                    <li key={g.meta.id}>
+                      <button
+                        type="button"
+                        className="nt-course-folder__row"
+                        data-active={hasActive ? 'true' : undefined}
+                        onClick={() => setNav({ level: 'modules', sectionId: g.meta.id })}
+                      >
+                        <span className="nt-course-folder__icon" aria-hidden="true">▦</span>
+                        <span className="nt-course-folder__label">
+                          <small>Section {idx + 1}</small>
+                          {g.meta.name}
+                        </span>
+                        <span className="nt-course-folder__meta">
+                          {sectionDone}/{g.steps.length}
+                        </span>
+                        <span className="nt-course-folder__chev" aria-hidden="true">›</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
 
-          {groups.map((g, idx) => {
-            const familyOpen = openFamilies.has(g.meta.id);
-            return (
-              <div
-                key={g.meta.id}
-                className={`nt-course-section${familyOpen ? ' is-open' : ''}`}
-              >
+          {/* Level 2 — Modules in the chosen section. Enter one to study it + see its subsections. */}
+          {nav.level === 'modules' && navGroup ? (
+            <>
+              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
                 <button
                   type="button"
-                  className="nt-course-section__label"
-                  aria-expanded={familyOpen}
-                  onClick={() => toggleFamily(g.meta.id)}
+                  className="nt-course-back"
+                  onClick={() => setNav({ level: 'sections' })}
                 >
-                  <span>Section {idx + 1} · {g.meta.name}</span>
-                  <span className="nt-course-section__chev" aria-hidden="true">
-                    {familyOpen ? '▾' : '▸'}
-                  </span>
+                  ‹ All sections
                 </button>
-                {familyOpen ? (
-                  <div className="nt-course-section__body">
-                    <ol className="nt-course-outline">
-                      {g.steps.map((step) => (
-                        <ModuleTreeItem
-                          key={step.module.id}
-                          step={step}
-                          activeIndex={activeIndex}
-                          isCompleted={completedIds.has(step.module.id)}
-                          isLocked={step.globalIndex >= unlockedCount}
-                          isExpanded={openModules.has(step.module.id)}
-                          onNavigate={() => goToStep(step.globalIndex)}
-                          onToggle={() => toggleModule(step.module.id)}
-                          onAnchor={(a) => handleAnchor(step, a)}
-                        />
-                      ))}
-                    </ol>
-                  </div>
-                ) : null}
               </div>
-            );
-          })}
+              <p className="nt-course-folder__crumb">{navGroup.meta.name}</p>
+              <ul className="nt-course-folder">
+                {navGroup.steps.map((step) => {
+                  const locked = step.globalIndex >= unlockedCount;
+                  const done = completedIds.has(step.module.id);
+                  const active = step.globalIndex === activeIndex;
+                  return (
+                    <li key={step.module.id}>
+                      <button
+                        type="button"
+                        className="nt-course-folder__row"
+                        data-active={active ? 'true' : undefined}
+                        data-locked={locked ? 'true' : undefined}
+                        data-done={done ? 'true' : undefined}
+                        disabled={locked}
+                        title={locked ? 'Finish the previous module to unlock this one.' : undefined}
+                        onClick={() => goToStep(step.globalIndex)}
+                      >
+                        <span className="nt-course-folder__icon" aria-hidden="true">
+                          {locked ? '\u{1F512}' : done ? '✓' : step.globalIndex + 1}
+                        </span>
+                        <span className="nt-course-folder__label">
+                          <small>{step.module.eyebrow}</small>
+                          {step.module.title}
+                        </span>
+                        {!locked ? (
+                          <span className="nt-course-folder__chev" aria-hidden="true">›</span>
+                        ) : null}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          ) : null}
+
+          {/* Level 3 — Subsections (anchors) of the chosen module. Click to jump to that block. */}
+          {nav.level === 'subsections' && navGroup && navStep ? (
+            <>
+              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
+                <button
+                  type="button"
+                  className="nt-course-back"
+                  onClick={() => setNav({ level: 'modules', sectionId: navGroup.meta.id })}
+                >
+                  ‹ {navGroup.meta.name}
+                </button>
+              </div>
+              <p className="nt-course-folder__crumb">{navStep.module.title}</p>
+              <ul className="nt-course-folder nt-course-folder--anchors">
+                {moduleAnchors(navStep.module).map((a) => (
+                  <li key={a.id}>
+                    <button
+                      type="button"
+                      className="nt-course-folder__row nt-course-folder__row--anchor"
+                      onClick={() => handleAnchor(navStep, a)}
+                    >
+                      <span className="nt-course-folder__icon" aria-hidden="true">¶</span>
+                      <span className="nt-course-folder__label">{a.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
         </aside>
 
         <article className="nt-lesson-panel">
