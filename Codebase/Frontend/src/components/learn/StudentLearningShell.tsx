@@ -13,8 +13,15 @@ export default function StudentLearningShell() {
 
   useEffect(() => {
     if (!token) {
-      navigate('/student-learning/login');
+      // Briefly show the "Redirecting to sign-in…" placeholder (below) before navigating,
+      // instead of an instant jump. This makes the redirect legible to the user and keeps
+      // the data-testid="student-learning-shell" anchor reliably present for the routes
+      // manifest smoke under Next's router (which navigates away faster than the old Vite
+      // pushState did, racing the assertion). See D89 / routes-manifest.
+      const t = setTimeout(() => navigate('/student-learning/login'), 1200);
+      return () => clearTimeout(t);
     }
+    return undefined;
   }, [token]);
 
   useEffect(() => {
