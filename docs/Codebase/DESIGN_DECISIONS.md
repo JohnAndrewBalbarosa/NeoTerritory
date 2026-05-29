@@ -1312,3 +1312,29 @@ become dead. B2.3 will (recommended) make AWS API-only and record the final call
 (`vercel.json`) until a `next build` is proven green; only then is the Vercel project
 Root Directory flipped to `Codebase/FrontendNext`. Frontend rollback stays `vercel
 rollback`; backend rollback stays `scripts/deploy-aws.sh --rollback`.
+
+**STATUS — flip is LIVE (B2.1 + B2.2 done).** As of 2026-05-29, `neoterritory.vercel.app`
+serves the Next app. Vercel project: Root Directory = `Codebase/FrontendNext`, framework =
+`nextjs` (set via API after `vercel login`); `FrontendNext/vercel.json` installs both
+FrontendNext and `../Frontend` deps so the externalDir type-check resolves on Vercel.
+Verified live: all public routes server-render real HTML, auth surfaces hydrate,
+`/api/*`·`/auth/*`·`/health` proxy to AWS, git push → auto Next prod deploy. B2.2 nav compat
+bridge (`RouterBridge` + `setExternalNavigator`) is in. One open item: SSE `run-events`
+*streaming* through the proxy is route-verified (AWS answers, not a Next 404) but not yet
+exercised end-to-end with a logged-in run.
+
+**B2.3 is DEFERRED as coupled cleanup (not yet done).** Retiring the Vite app, making AWS
+API-only, and repointing CI are tightly coupled and touch the LIVE AWS backend (which the
+whole site now proxies to) via the push-to-main auto-deploy, plus CI Playwright that tests
+the backend-served frontend — none fully verifiable without CI runs. Until B2.3:
+- `Codebase/Frontend/src` stays the single source of UI components (FrontendNext imports it
+  via `@frontend`); the Vite app remains buildable and AWS still builds+serves it as a
+  harmless, unused fallback. No CI drift (the manifest routes still exist; CI still tests
+  the Vite build which still works).
+- When B2.3 runs: make `Codebase/Backend/server.ts` API-only (drop `express.static` + the
+  index.html catch-all), drop the Vite build phase in `ops/bash/deploy/lib/remote-build.sh`,
+  repoint the Playwright/manifest CI (`ci.yml`, `routes-manifest.yml`, `playwright-e2e.yml`)
+  to build+serve the Next app, then delete the Vite wrapper (`index.html`, `admin.html`,
+  `scraper.html`, the three `main.tsx`, `vite.config.ts`) while keeping `Frontend/src` +
+  assets + deps. Use `scripts/deploy-aws.sh --rollback` as the safety net for the AWS step.
+  The AWS post-deploy smoke does NOT assert HTML at `/`, so API-only won't fail it.
