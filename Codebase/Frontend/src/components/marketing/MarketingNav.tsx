@@ -28,6 +28,8 @@ const PRIMARY_LINKS: Array<{ path: string; label: string; surface: Surface | nul
   { path: '/tour', label: 'Guide', surface: 'tour' },
   { path: '/docs', label: 'Docs', surface: 'docs' },
   { path: '/about', label: 'About', surface: 'about' },
+  { path: '/pre-test', label: 'Pre-test', surface: 'preTest' },
+  { path: '/post-test', label: 'Post-test', surface: 'postTest' },
 ];
 
 export default function MarketingNav({ current }: MarketingNavProps) {
