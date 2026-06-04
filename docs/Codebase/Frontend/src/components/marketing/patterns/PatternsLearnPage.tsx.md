@@ -10,6 +10,7 @@ Learning-path surface for the patterns curriculum. This page owns the section-le
 - The main body must start directly with the learning card / content stack.
 - Do not render a second title block inside the main content area.
 - Do not add a subtitle or description under the title when the topbar already carries the page identity.
+- The body hero wrapper currently shaped like `<section className="nt-course-hero" ...>` is the duplicate block to remove from the main flow.
 
 ## Layout Flow
 
@@ -54,6 +55,7 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 
 - Keep `Learning Path` in the topbar header only.
 - Remove the same label from the main content tree.
+- Delete the body-level `nt-course-hero` section instead of trying to hide it with CSS.
 - Preserve the card and sidebar interaction; only move the heading placement.
 
 ## Acceptance Checks
@@ -61,3 +63,4 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 - The topbar shows a centered `Learning Path` title.
 - The body does not repeat the same title.
 - The first visible content under the header is the learning card or lesson panel.
+- No `nt-course-hero` title block remains inside the main content area.
