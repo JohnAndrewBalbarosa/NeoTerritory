@@ -228,6 +228,43 @@ export interface AdminLearningRaw {
   examAttempts: LearningRawExamAttempt[];
 }
 
+// Raw learning-assessment data (pre-test / post-test / post-test-2). The
+// client interprets the result entirely in-browser; the backend stores only
+// raw selected answers and the assessment metadata needed to reconstruct the
+// submission history.
+export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2';
+
+export interface LearningAssessmentAnswerInput {
+  moduleId: string;
+  questionIndex: number;
+  selectedIndex: number;
+}
+
+export interface LearningAssessmentAttemptRaw {
+  id: number;
+  assessmentType: LearningAssessmentType;
+  sessionId: string | null;
+  questionCount: number;
+  createdAt: string;
+}
+
+export interface LearningAssessmentAnswerRaw {
+  id: number;
+  attemptId: number;
+  assessmentType: LearningAssessmentType;
+  assessmentIndex: number;
+  moduleId: string;
+  questionIndex: number;
+  selectedIndex: number;
+  sessionId: string | null;
+  createdAt: string;
+}
+
+export interface LearningAssessmentsResponse {
+  attempts: LearningAssessmentAttemptRaw[];
+  answers: LearningAssessmentAnswerRaw[];
+}
+
 // ── Learning CMS (D92) ────────────────────────────────────────────────────
 // LearningModuleDTO is the frozen wire shape (= the frontend LearningModule).
 // The public GET returns published modules in that exact shape; the admin GET

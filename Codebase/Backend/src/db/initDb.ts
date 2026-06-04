@@ -565,6 +565,41 @@ export function initDb(): void {
   // passMode. published / auto_tag / sort_order / is_seed drive the public
   // GET ordering + the publish gate. SQLite is the source of truth; rows are
   // mirrored to Supabase (jsonb cols) via mirrorRow() keyed by module_id.
+  // â”€â”€ learning_assessment_attempts (raw pre/post-test submissions) â”€â”€
+  // Raw-only store: the backend keeps the assessment type, session, and
+  // question count, but never the derived score/pass state. Interpretation
+  // stays in the client so the same raw submission can be re-scored later if
+  // the module bank changes.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_assessment_attempts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    session_id TEXT,
+    assessment_type TEXT NOT NULL,
+    question_count INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_attempts_user
+    ON learning_assessment_attempts(user_id, assessment_type, created_at DESC)`).run();
+
+  // One raw answer row per question in an assessment attempt.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_assessment_answers (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    attempt_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    session_id TEXT,
+    assessment_type TEXT NOT NULL,
+    assessment_index INTEGER NOT NULL,
+    module_id TEXT NOT NULL,
+    question_index INTEGER NOT NULL,
+    selected_index INTEGER NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY(attempt_id) REFERENCES learning_assessment_attempts(id) ON DELETE CASCADE,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_answers_attempt
+    ON learning_assessment_answers(attempt_id, assessment_index)`).run();
+
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_modules (
     module_id TEXT PRIMARY KEY,
     category TEXT NOT NULL,

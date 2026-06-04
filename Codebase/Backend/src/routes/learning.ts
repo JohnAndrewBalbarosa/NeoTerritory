@@ -26,6 +26,28 @@ interface ProgressRow {
   theory_passed_module_ids: string | null;
 }
 
+type AssessmentType = 'pretest' | 'posttest' | 'posttest2';
+
+interface AssessmentAttemptRow {
+  id: number;
+  assessmentType: AssessmentType;
+  sessionId: string | null;
+  questionCount: number;
+  createdAt: string;
+}
+
+interface AssessmentAnswerRow {
+  id: number;
+  attemptId: number;
+  assessmentType: AssessmentType;
+  assessmentIndex: number;
+  moduleId: string;
+  questionIndex: number;
+  selectedIndex: number;
+  sessionId: string | null;
+  createdAt: string;
+}
+
 // Parse a JSON-array-of-strings DB column defensively. A corrupt or non-array
 // payload degrades to an empty list rather than throwing.
 function parseStringArrayColumn(raw: string | null | undefined): string[] {
@@ -62,6 +84,36 @@ function parseJsonObjectColumn(raw: string | null | undefined): unknown {
   } catch {
     return null;
   }
+}
+
+interface SanitizedAssessmentAnswer {
+  moduleId: string;
+  questionIndex: number;
+  selectedIndex: number;
+}
+
+function sanitizeAssessmentType(raw: unknown): AssessmentType | null {
+  return raw === 'pretest' || raw === 'posttest' || raw === 'posttest2' ? raw : null;
+}
+
+function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] {
+  if (!Array.isArray(input)) return [];
+  const out: SanitizedAssessmentAnswer[] = [];
+  for (const raw of input) {
+    if (!raw || typeof raw !== 'object') continue;
+    const r = raw as Record<string, unknown>;
+    const moduleId = typeof r.moduleId === 'string' && r.moduleId.length > 0 && r.moduleId.length <= MAX_ID_LEN
+      ? r.moduleId
+      : '';
+    const questionIndex = Number(r.questionIndex);
+    const selectedIndex = Number(r.selectedIndex);
+    if (!moduleId) continue;
+    if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 10_000) continue;
+    if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 10_000) continue;
+    out.push({ moduleId, questionIndex, selectedIndex });
+    if (out.length >= 50) break;
+  }
+  return out;
 }
 
 // Raw learning_modules row (public-read subset). Drafts (published = 0) are
@@ -198,6 +250,7 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       lastUnlockedModuleId?: unknown;
       triesByModule?: unknown;
       theoryPassedModuleIds?: unknown;
+      sessionId?: unknown;
     };
     const completedModuleIds = sanitizeModuleIdArray(body.completedModuleIds);
     const theoryPassedModuleIds = sanitizeModuleIdArray(body.theoryPassedModuleIds);
@@ -329,6 +382,121 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
     }
 
     res.json({ ok: true, recorded: answers.length });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const attempts = db.prepare(`
+      SELECT id, assessment_type AS assessmentType, session_id AS sessionId,
+             question_count AS questionCount, created_at AS createdAt
+      FROM learning_assessment_attempts
+      WHERE user_id = ?
+      ORDER BY created_at ASC, id ASC
+    `).all(req.user.id) as AssessmentAttemptRow[];
+
+    const answers = db.prepare(`
+      SELECT a.id, a.attempt_id AS attemptId, a.assessment_type AS assessmentType,
+             a.assessment_index AS assessmentIndex, a.module_id AS moduleId,
+             a.question_index AS questionIndex, a.selected_index AS selectedIndex,
+             a.session_id AS sessionId, a.created_at AS createdAt
+      FROM learning_assessment_answers a
+      WHERE a.user_id = ?
+      ORDER BY a.created_at ASC, a.assessment_index ASC, a.id ASC
+    `).all(req.user.id) as AssessmentAnswerRow[];
+
+    res.json({ attempts, answers });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const body = (req.body ?? {}) as {
+      assessmentType?: unknown;
+      sessionId?: unknown;
+      answers?: unknown;
+    };
+    const assessmentType = sanitizeAssessmentType(body.assessmentType);
+    if (!assessmentType) {
+      res.status(400).json({ error: 'assessmentType required' });
+      return;
+    }
+
+    const answers = sanitizeAssessmentAnswers(body.answers);
+    if (answers.length === 0) {
+      res.status(400).json({ error: 'answers required' });
+      return;
+    }
+
+    const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
+    const insertAttempt = db.prepare(`
+      INSERT INTO learning_assessment_attempts
+        (user_id, session_id, assessment_type, question_count, created_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+    `);
+    const attemptInfo = insertAttempt.run(req.user.id, sessionId, assessmentType, answers.length);
+    const attemptId = Number(attemptInfo.lastInsertRowid);
+
+    const insertAnswer = db.prepare(`
+      INSERT INTO learning_assessment_answers
+        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, selected_index, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `);
+    const tx = db.transaction((rows: SanitizedAssessmentAnswer[]) => {
+      rows.forEach((answer, assessmentIndex) => {
+        insertAnswer.run(
+          attemptId,
+          req.user!.id,
+          sessionId,
+          assessmentType,
+          assessmentIndex,
+          answer.moduleId,
+          answer.questionIndex,
+          answer.selectedIndex,
+        );
+      });
+    });
+    tx(answers);
+
+    if (req.user.email) {
+      const email = req.user.email.toLowerCase();
+      const nowIso = new Date().toISOString();
+      mirrorRow('learning_assessment_attempts', {
+        user_email: email,
+        session_id: sessionId,
+        assessment_type: assessmentType,
+        question_count: answers.length,
+        created_at: nowIso,
+      });
+      answers.forEach((answer, assessmentIndex) => {
+        mirrorRow('learning_assessment_answers', {
+          user_email: email,
+          session_id: sessionId,
+          assessment_type: assessmentType,
+          assessment_index: assessmentIndex,
+          module_id: answer.moduleId,
+          question_index: answer.questionIndex,
+          selected_index: answer.selectedIndex,
+          created_at: nowIso,
+        });
+      });
+    }
+
+    res.json({ ok: true, recorded: answers.length, attemptId });
   } catch (err) {
     next(err);
   }

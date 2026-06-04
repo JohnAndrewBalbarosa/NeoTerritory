@@ -3,7 +3,8 @@ import {
   ReviewSchema, AdminUser, AdminLogEntry, AdminLogFilters, AdminReview, AdminOverview,
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
   SurveySummary, ComplexityData, F1Metrics,
-  LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse
+  LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse,
+  LearningAssessmentAnswerInput, LearningAssessmentType, LearningAssessmentsResponse
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -303,6 +304,21 @@ export async function saveLearningAnswers(
   await apiFetch('/api/learning/answers', {
     method: 'PUT',
     body: JSON.stringify({ moduleId, attempt, answers }),
+  });
+}
+
+export async function fetchLearningAssessments(): Promise<LearningAssessmentsResponse> {
+  return apiFetch<LearningAssessmentsResponse>('/api/learning/assessments');
+}
+
+export async function saveLearningAssessment(payload: {
+  assessmentType: LearningAssessmentType;
+  sessionId?: string | null;
+  answers: LearningAssessmentAnswerInput[];
+}): Promise<void> {
+  await apiFetch('/api/learning/assessments', {
+    method: 'PUT',
+    body: JSON.stringify(payload),
   });
 }
 

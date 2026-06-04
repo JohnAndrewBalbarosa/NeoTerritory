@@ -368,6 +368,13 @@ export default function PatternsLearnPage(): JSX.Element {
     () => pageGroups.find((group) => group.key === currentPage?.kind) ?? pageGroups[0] ?? null,
     [currentPage, pageGroups],
   );
+  const currentGroupPageIndex = useMemo(() => {
+    if (!currentGroup || !currentPage) return 0;
+    const idx = currentGroup.pages.findIndex(
+      (p) => p.kind === currentPage.kind && p.subIndex === currentPage.subIndex,
+    );
+    return idx >= 0 ? idx : 0;
+  }, [currentGroup, currentPage]);
   const theoreticalQuestionCount = activeModule?.theoreticalExam?.questions.length ?? 0;
   const currentTheoryAnswers = activeModule ? theoryAnswers[activeModule.id] ?? {} : {};
   const isTheoryPassed = !!(
@@ -686,7 +693,7 @@ export default function PatternsLearnPage(): JSX.Element {
                   <p className="nt-pager__section-meta">
                     <span>{currentGroup.label}</span>
                     <strong>
-                      Step {pageIndex + 1} of {currentGroup.pages.length}
+                      Step {currentGroupPageIndex + 1} of {currentGroup.pages.length}
                     </strong>
                   </p>
                 ) : null}

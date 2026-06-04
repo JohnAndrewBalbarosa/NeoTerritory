@@ -2,6 +2,7 @@ import { MotionConfig, motion, AnimatePresence } from 'motion/react';
 import { useCallback, useEffect } from 'react';
 import { Surface } from '../../logic/router';
 import { useAppStore } from '../../store/appState';
+import { fetchLearningAssessments } from '../../api/client';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
 import MarketingFooter from './MarketingFooter';
@@ -28,6 +29,9 @@ interface MarketingShellProps {
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
+  const token = useAppStore((s) => s.token);
+  const userId = useAppStore((s) => s.user?.id ?? null);
+  const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
 
   // D77: redirect legacy /student-learning to /patterns/learn so old
   // bookmarks keep working. The surface renders nothing (the StudentLearningHub
@@ -43,6 +47,24 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
       navigate('/patterns/learn');
     }
   }, [preTestCompleted, surface]);
+
+  useEffect(() => {
+    if (!token || !userId) return;
+    let cancelled = false;
+    fetchLearningAssessments()
+      .then((data) => {
+        if (cancelled) return;
+        if (data.attempts.some((attempt) => attempt.assessmentType === 'pretest')) {
+          setPreTestCompleted(true);
+        }
+      })
+      .catch(() => {
+        // Best-effort sync only. Local storage still keeps the current session gate alive.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [setPreTestCompleted, token, userId]);
 
   // Learner-merge: the 4-card chooser is retired. Every "Try it now" CTA
   // (and the legacy /auth/choose, /auth bookmarks) now goes straight to the

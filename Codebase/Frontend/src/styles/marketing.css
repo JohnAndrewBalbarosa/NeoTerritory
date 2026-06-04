@@ -2543,6 +2543,12 @@ body[data-surface] #root {
   color: var(--nt-mkt-text);
   line-height: 1.5;
 }
+.nt-assessment__module {
+  margin: 0 0 0.35rem;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.45;
+  font-size: 0.86rem;
+}
 .nt-assessment__num {
   font-family: 'JetBrains Mono', monospace;
   color: var(--devcon-cyan, #00d1d8);
