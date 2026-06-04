@@ -7719,6 +7719,11 @@ body[data-surface] {
   background: rgba(0, 0, 0, 0.18);
   backdrop-filter: blur(8px);
 }
+.nt-learn-shell__bar--learn {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+}
 .nt-learn-shell__brand {
   display: inline-flex;
   align-items: center;
@@ -7729,6 +7734,15 @@ body[data-surface] {
   color: var(--nt-mkt-text);
   font: inherit;
   padding: 0;
+}
+.nt-learn-shell__title {
+  justify-self: center;
+  margin: 0;
+  font-size: clamp(1.2rem, 1rem + 0.9vw, 1.65rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--nt-mkt-text);
+  text-align: center;
 }
 .nt-learn-shell__wordmark {
   font-weight: 700;
@@ -7748,6 +7762,7 @@ body[data-surface] {
   align-items: center;
   gap: 0.9rem;
   font-size: 0.85rem;
+  justify-self: end;
 }
 .nt-learn-shell__email {
   opacity: 0.7;
@@ -7775,6 +7790,12 @@ body[data-surface] {
   .nt-learn-shell__bar {
     padding: 0.65rem 0.9rem;
     gap: 0.6rem;
+  }
+  .nt-learn-shell__bar--learn {
+    grid-template-columns: minmax(0, 0.85fr) auto minmax(0, 0.85fr);
+  }
+  .nt-learn-shell__title {
+    font-size: clamp(1.02rem, 0.95rem + 0.4vw, 1.2rem);
   }
   .nt-learn-shell__email {
     display: none;

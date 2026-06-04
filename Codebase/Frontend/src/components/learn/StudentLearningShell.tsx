@@ -51,7 +51,7 @@ export default function StudentLearningShell() {
       <a href="#main" className="nt-skip-link">
         Skip to main content
       </a>
-      <header className="nt-learn-shell__bar">
+      <header className="nt-learn-shell__bar nt-learn-shell__bar--learn">
         <button
           type="button"
           className="nt-learn-shell__brand"
@@ -62,6 +62,7 @@ export default function StudentLearningShell() {
           <span className="nt-learn-shell__divider" aria-hidden="true">/</span>
           <span className="nt-learn-shell__crumb">Learning</span>
         </button>
+        <h1 className="nt-learn-shell__title">Learning Path</h1>
         <div className="nt-learn-shell__bar-right">
           {user?.email && (
             <span className="nt-learn-shell__email" title={user.email}>

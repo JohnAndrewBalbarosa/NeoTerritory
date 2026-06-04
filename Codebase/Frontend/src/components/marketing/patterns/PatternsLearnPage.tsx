@@ -494,14 +494,6 @@ export default function PatternsLearnPage(): JSX.Element {
 
   return (
     <main className="nt-student nt-student-course">
-      <section className="nt-course-hero" aria-labelledby="learn-heading">
-        <div className="nt-course-hero__center">
-          <h1 id="learn-heading" className="nt-student__title">
-            Learning Path
-          </h1>
-        </div>
-      </section>
-
       <section className="nt-course-shell" aria-label="Learning path">
         <aside className="nt-course-sidebar" aria-label="Learning module outline" data-lenis-prevent>
           {nav.level === 'sections' ? (
