@@ -85,6 +85,15 @@ function computeUnlockedCount(steps: ReadonlyArray<CourseStep>, completedIds: Re
   return Math.min(n, Math.max(steps.length, 1));
 }
 
+function readUnlockAllOverride(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return window.localStorage.getItem('nt_learning_unlock_all') === '1';
+  } catch {
+    return false;
+  }
+}
+
 function lessonPagesFor(module: LearningModule | undefined): ReadonlyArray<LessonPage> {
   if (!module) return [];
 
@@ -340,6 +349,7 @@ function PracticalExamBlock({
 
 export default function PatternsLearnPage(): JSX.Element {
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
+  const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
   const { groups, steps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
 
@@ -349,6 +359,7 @@ export default function PatternsLearnPage(): JSX.Element {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [seededLeafView, setSeededLeafView] = useState(false);
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
+  const effectivePreTestCompleted = preTestCompleted || unlockAll;
 
   const activeStep = steps[activeIndex];
   const activeModule = useMemo(
@@ -358,8 +369,15 @@ export default function PatternsLearnPage(): JSX.Element {
   const pages = useMemo(() => lessonPagesFor(activeModule), [activeModule]);
   const pageGroups = useMemo(() => lessonPageGroupsFor(activeModule), [activeModule]);
   const currentPage = pages[pageIndex] || pages[0];
-  const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
-  const unlockedCount = useMemo(() => computeUnlockedCount(steps, completedIds), [steps, completedIds]);
+  const effectiveCompletedIds = useMemo(
+    () => (unlockAll ? new Set(steps.map((step) => step.module.id)) : completedIds),
+    [unlockAll, steps, completedIds],
+  );
+  const isActiveComplete = !!(activeStep && effectiveCompletedIds.has(activeStep.module.id));
+  const unlockedCount = useMemo(
+    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, completedIds)),
+    [unlockAll, steps, completedIds],
+  );
   const defaultLeafGroup = useMemo(() => {
     if (pageGroups.length === 0) return null;
     return pageGroups.find((group) => group.key !== 'intro') ?? pageGroups[0];
@@ -378,9 +396,12 @@ export default function PatternsLearnPage(): JSX.Element {
   const theoreticalQuestionCount = activeModule?.theoreticalExam?.questions.length ?? 0;
   const currentTheoryAnswers = activeModule ? theoryAnswers[activeModule.id] ?? {} : {};
   const isTheoryPassed = !!(
-    activeModule?.theoreticalExam &&
-    activeModule.theoreticalExam.questions.length > 0 &&
-    activeModule.theoreticalExam.questions.every((q, i) => currentTheoryAnswers[i] === q.correctIndex)
+    unlockAll ||
+    (
+      activeModule?.theoreticalExam &&
+      activeModule.theoreticalExam.questions.length > 0 &&
+      activeModule.theoreticalExam.questions.every((q, i) => currentTheoryAnswers[i] === q.correctIndex)
+    )
   );
   const isFinalTheoryPage =
     currentPage?.kind === 'theoretical' &&
@@ -388,6 +409,12 @@ export default function PatternsLearnPage(): JSX.Element {
     currentPage.subIndex === theoreticalQuestionCount - 1;
   const isTheoryGatePage = isFinalTheoryPage;
   const isSubmitGate = isFinalTheoryPage && !activeModule?.practicalExam;
+
+  useEffect(() => {
+    if (unlockAll && steps.length > 0) {
+      setCompletedIds(new Set(steps.map((step) => step.module.id)));
+    }
+  }, [unlockAll, steps]);
 
   useEffect(() => {
     if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
@@ -426,8 +453,8 @@ export default function PatternsLearnPage(): JSX.Element {
   }, [activeStep, activeModule, contentLoaded, currentPage, pageGroups]);
 
   useEffect(() => {
-    if (!preTestCompleted) navigate('/pre-test');
-  }, [preTestCompleted]);
+    if (!effectivePreTestCompleted) navigate('/pre-test');
+  }, [effectivePreTestCompleted]);
 
   const goToStep = useCallback(
     (index: number, nextPageIndex = 0) => {
@@ -452,13 +479,18 @@ export default function PatternsLearnPage(): JSX.Element {
       }
     }
 
+    if (unlockAll && activeIndex === steps.length - 1 && pageIndex === pages.length - 1) {
+      navigate('/student-dashboard');
+      return;
+    }
+
     if (pageIndex < pages.length - 1) {
       setPageIndex(pageIndex + 1);
       return;
     }
 
     const canAdvanceToNextModule =
-      isActiveComplete || (isSubmitGate && isTheoryPassed);
+      unlockAll || isActiveComplete || (isSubmitGate && isTheoryPassed);
 
     if (activeIndex < steps.length - 1 && canAdvanceToNextModule) {
       goToStep(activeIndex + 1);
@@ -494,7 +526,7 @@ export default function PatternsLearnPage(): JSX.Element {
     [activeIndex, findModule, goToStep],
   );
 
-  if (!preTestCompleted) {
+  if (!effectivePreTestCompleted) {
     return (
       <main className="nt-test-page" data-testid="learn-gate-page">
         <div className="nt-test-page__shell">
