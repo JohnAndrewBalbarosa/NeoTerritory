@@ -253,14 +253,10 @@ function TheoreticalExamBlock({
   moduleId,
   exam,
   subIndex,
-  isPassed,
-  onPass,
 }: {
   moduleId: string;
   exam: TheoreticalExam;
   subIndex?: number;
-  isPassed: boolean;
-  onPass: () => void;
 }): JSX.Element | null {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const qi = subIndex ?? 0;
@@ -289,18 +285,6 @@ function TheoreticalExamBlock({
           </li>
         ))}
       </ol>
-
-      {qi === exam.questions.length - 1 ? (
-        <div className="nt-exam__submit-zone">
-          {!isPassed ? (
-            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onPass}>
-              Submit Exam
-            </button>
-          ) : (
-            <p className="nt-exam__verdict nt-exam__verdict--pass">Verified.</p>
-          )}
-        </div>
-      ) : null}
     </section>
   );
 }
@@ -345,7 +329,6 @@ export default function PatternsLearnPage(): JSX.Element {
   const [pageIndex, setPageIndex] = useState(0);
   const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
-  const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
   const [seededLeafView, setSeededLeafView] = useState(false);
 
   const activeStep = steps[activeIndex];
@@ -357,7 +340,6 @@ export default function PatternsLearnPage(): JSX.Element {
   const pageGroups = useMemo(() => lessonPageGroupsFor(activeModule), [activeModule]);
   const currentPage = pages[pageIndex] || pages[0];
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
-  const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
   const unlockedCount = useMemo(() => computeUnlockedCount(steps, completedIds), [steps, completedIds]);
   const defaultLeafGroup = useMemo(() => {
     if (pageGroups.length === 0) return null;
@@ -367,6 +349,12 @@ export default function PatternsLearnPage(): JSX.Element {
     () => pageGroups.find((group) => group.key === currentPage?.kind) ?? pageGroups[0] ?? null,
     [currentPage, pageGroups],
   );
+  const theoreticalQuestionCount = activeModule?.theoreticalExam?.questions.length ?? 0;
+  const isFinalTheoryPage =
+    currentPage?.kind === 'theoretical' &&
+    theoreticalQuestionCount > 0 &&
+    currentPage.subIndex === theoreticalQuestionCount - 1;
+  const shouldSubmitWithNext = isFinalTheoryPage;
 
   useEffect(() => {
     if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
@@ -421,9 +409,25 @@ export default function PatternsLearnPage(): JSX.Element {
   );
 
   const goNextPage = () => {
-    if (pageIndex < pages.length - 1) setPageIndex(pageIndex + 1);
-    else if (activeIndex < steps.length - 1 && isActiveComplete) goToStep(activeIndex + 1);
-    else if (activeIndex < steps.length - 1) alert('Complete exams to unlock next module.');
+    if (shouldSubmitWithNext && activeModule) {
+      if (!activeModule.practicalExam) {
+        setCompletedIds((prev) => new Set(prev).add(activeModule.id));
+      }
+    }
+
+    if (pageIndex < pages.length - 1) {
+      setPageIndex(pageIndex + 1);
+      return;
+    }
+
+    if (activeIndex < steps.length - 1 && (isActiveComplete || (shouldSubmitWithNext && !activeModule?.practicalExam))) {
+      goToStep(activeIndex + 1);
+      return;
+    }
+
+    if (activeIndex < steps.length - 1) {
+      alert('Complete exams to unlock next module.');
+    }
   };
 
   const goPrevPage = () => {
@@ -491,14 +495,10 @@ export default function PatternsLearnPage(): JSX.Element {
   return (
     <main className="nt-student nt-student-course">
       <section className="nt-course-hero" aria-labelledby="learn-heading">
-        <div>
-          <p className="nt-section-eyebrow">Patterns / Learn</p>
+        <div className="nt-course-hero__center">
           <h1 id="learn-heading" className="nt-student__title">
             Learning Path
           </h1>
-          <p className="nt-student__lede">
-            A {steps.length}-module step-through path across Foundations and the four pattern families.
-          </p>
         </div>
       </section>
 
@@ -686,11 +686,7 @@ export default function PatternsLearnPage(): JSX.Element {
                     <TheoreticalExamBlock
                       moduleId={activeModule.id}
                       exam={activeModule.theoreticalExam}
-                      isPassed={isActiveTheoryPassed}
                       subIndex={currentPage.subIndex}
-                      onPass={() => {
-                        setTheoryPassedIds((prev) => new Set(prev).add(activeModule.id));
-                      }}
                     />
                   ) : null}
                   {currentPage.kind === 'practical' && activeModule.practicalExam ? (
@@ -700,7 +696,6 @@ export default function PatternsLearnPage(): JSX.Element {
                       isPassed={isActiveComplete}
                       onPass={() => {
                         setCompletedIds((prev) => new Set(prev).add(activeModule.id));
-                        setTheoryPassedIds((prev) => new Set(prev).add(activeModule.id));
                       }}
                     />
                   ) : null}
@@ -715,7 +710,8 @@ export default function PatternsLearnPage(): JSX.Element {
                   className="nt-pager__arrow nt-pager__arrow--next"
                   onClick={goNextPage}
                   disabled={pageIndex === pages.length - 1 && activeIndex === steps.length - 1}
-                  aria-label="Next"
+                  data-submit={shouldSubmitWithNext ? 'true' : undefined}
+                  aria-label={shouldSubmitWithNext ? 'Submit exam and continue' : 'Next'}
                 >
                   &gt;
                 </button>

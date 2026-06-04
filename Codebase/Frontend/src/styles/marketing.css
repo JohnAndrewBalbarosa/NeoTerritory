@@ -1098,23 +1098,18 @@ body[data-surface] #root {
   margin-top: 1rem;
 }
 .nt-course-hero {
-  display: grid;
-  gap: 1.2rem;
-  align-items: end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   /* Was clamp(3rem…6rem) on top — far too tall for a tool page; trimmed so the
      reading deck sits higher and more of it lands in the first viewport. */
-  padding: clamp(1.4rem, 1rem + 1.8vw, 2.5rem) 0 clamp(1rem, 0.75rem + 1.2vw, 1.6rem);
+  padding: clamp(1.2rem, 1rem + 1.4vw, 2rem) 0 clamp(1rem, 0.75rem + 1.2vw, 1.35rem);
 }
-@media (min-width: 900px) {
-  .nt-course-hero {
-    grid-template-columns: minmax(0, 1fr) 260px;
-  }
-}
-.nt-course-hero .nt-student__title,
-.nt-course-hero .nt-student__lede {
-  margin-left: 0;
-  margin-right: 0;
-  text-align: left;
+.nt-course-hero__center {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 .nt-course-hero__audience {
   max-width: 760px;
@@ -2214,6 +2209,18 @@ body[data-surface] #root {
 .nt-pager__arrow:disabled {
   opacity: 0.3;
   cursor: not-allowed;
+}
+.nt-pager__arrow--next[data-submit='true'] {
+  border-color: transparent;
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  color: #081018;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08), 0 0 18px rgba(0, 209, 216, 0.25);
+}
+.nt-pager__arrow--next[data-submit='true']:hover:not(:disabled),
+.nt-pager__arrow--next[data-submit='true']:focus-visible {
+  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
+  border-color: transparent;
+  color: #081018;
 }
 /* Practical page (D92): the embedded Studio needs the full panel width — the
    side ‹ › arrows squeeze it until its tab bar wraps/overlaps. So on the
