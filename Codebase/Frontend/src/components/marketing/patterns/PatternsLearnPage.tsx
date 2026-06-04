@@ -35,6 +35,8 @@ interface LessonPageGroup {
   pages: ReadonlyArray<LessonPage>;
 }
 
+type TheoryAnswerMap = Record<number, number>;
+
 type LearnNavView =
   | { level: 'sections' }
   | { level: 'modules'; sectionId: LearningCategory }
@@ -253,12 +255,19 @@ function TheoreticalExamBlock({
   moduleId,
   exam,
   subIndex,
+  answers,
+  onAnswerChange,
+  isPassed,
+  isSubmitGate,
 }: {
   moduleId: string;
   exam: TheoreticalExam;
   subIndex?: number;
+  answers: TheoryAnswerMap;
+  onAnswerChange: (questionIndex: number, optionIndex: number) => void;
+  isPassed: boolean;
+  isSubmitGate: boolean;
 }): JSX.Element | null {
-  const [answers, setAnswers] = useState<Record<number, number>>({});
   const qi = subIndex ?? 0;
   const q = exam.questions[qi];
   if (!q) return null;
@@ -278,13 +287,22 @@ function TheoreticalExamBlock({
                 type="radio"
                 name={`q-${qi}`}
                 checked={answers[qi] === i}
-                onChange={() => setAnswers({ ...answers, [qi]: i })}
+                onChange={() => onAnswerChange(qi, i)}
               />
               <span>{opt}</span>
             </label>
           </li>
         ))}
       </ol>
+      {isPassed ? (
+        <p className="nt-exam__status nt-exam__status--pass">
+          {isSubmitGate
+            ? 'All answers are correct. The Next arrow can submit this module.'
+            : 'Theory passed. The Next arrow opens the practical exam.'}
+        </p>
+      ) : (
+        <p className="nt-exam__status">Answer every question correctly before the module unlocks.</p>
+      )}
     </section>
   );
 }
@@ -330,6 +348,7 @@ export default function PatternsLearnPage(): JSX.Element {
   const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [seededLeafView, setSeededLeafView] = useState(false);
+  const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
 
   const activeStep = steps[activeIndex];
   const activeModule = useMemo(
@@ -350,11 +369,18 @@ export default function PatternsLearnPage(): JSX.Element {
     [currentPage, pageGroups],
   );
   const theoreticalQuestionCount = activeModule?.theoreticalExam?.questions.length ?? 0;
+  const currentTheoryAnswers = activeModule ? theoryAnswers[activeModule.id] ?? {} : {};
+  const isTheoryPassed = !!(
+    activeModule?.theoreticalExam &&
+    activeModule.theoreticalExam.questions.length > 0 &&
+    activeModule.theoreticalExam.questions.every((q, i) => currentTheoryAnswers[i] === q.correctIndex)
+  );
   const isFinalTheoryPage =
     currentPage?.kind === 'theoretical' &&
     theoreticalQuestionCount > 0 &&
     currentPage.subIndex === theoreticalQuestionCount - 1;
-  const shouldSubmitWithNext = isFinalTheoryPage;
+  const isTheoryGatePage = isFinalTheoryPage;
+  const isSubmitGate = isFinalTheoryPage && !activeModule?.practicalExam;
 
   useEffect(() => {
     if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
@@ -409,7 +435,11 @@ export default function PatternsLearnPage(): JSX.Element {
   );
 
   const goNextPage = () => {
-    if (shouldSubmitWithNext && activeModule) {
+    if (isTheoryGatePage && activeModule) {
+      if (!isTheoryPassed) {
+        alert('Answer every question correctly before continuing this module.');
+        return;
+      }
       if (!activeModule.practicalExam) {
         setCompletedIds((prev) => new Set(prev).add(activeModule.id));
       }
@@ -420,7 +450,10 @@ export default function PatternsLearnPage(): JSX.Element {
       return;
     }
 
-    if (activeIndex < steps.length - 1 && (isActiveComplete || (shouldSubmitWithNext && !activeModule?.practicalExam))) {
+    const canAdvanceToNextModule =
+      isActiveComplete || (isSubmitGate && isTheoryPassed);
+
+    if (activeIndex < steps.length - 1 && canAdvanceToNextModule) {
       goToStep(activeIndex + 1);
       return;
     }
@@ -679,6 +712,18 @@ export default function PatternsLearnPage(): JSX.Element {
                       moduleId={activeModule.id}
                       exam={activeModule.theoreticalExam}
                       subIndex={currentPage.subIndex}
+                      answers={currentTheoryAnswers}
+                      onAnswerChange={(questionIndex, optionIndex) => {
+                        setTheoryAnswers((prev) => ({
+                          ...prev,
+                          [activeModule.id]: {
+                            ...(prev[activeModule.id] ?? {}),
+                            [questionIndex]: optionIndex,
+                          },
+                        }));
+                      }}
+                      isPassed={isTheoryPassed}
+                      isSubmitGate={isSubmitGate}
                     />
                   ) : null}
                   {currentPage.kind === 'practical' && activeModule.practicalExam ? (
@@ -702,8 +747,8 @@ export default function PatternsLearnPage(): JSX.Element {
                   className="nt-pager__arrow nt-pager__arrow--next"
                   onClick={goNextPage}
                   disabled={pageIndex === pages.length - 1 && activeIndex === steps.length - 1}
-                  data-submit={shouldSubmitWithNext ? 'true' : undefined}
-                  aria-label={shouldSubmitWithNext ? 'Submit exam and continue' : 'Next'}
+                  data-submit={isSubmitGate ? 'true' : undefined}
+                  aria-label={isSubmitGate ? 'Submit exam and continue' : 'Next'}
                 >
                   &gt;
                 </button>
