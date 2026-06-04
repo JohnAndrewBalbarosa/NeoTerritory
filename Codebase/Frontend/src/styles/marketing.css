@@ -1160,6 +1160,7 @@ body[data-surface] #root {
   display: grid;
   gap: 1rem;
   align-items: start;
+  min-width: 0;
 }
 @media (min-width: 980px) {
   .nt-course-shell {
@@ -1176,6 +1177,7 @@ body[data-surface] #root {
   background: linear-gradient(180deg, rgba(15, 27, 46, 0.9), rgba(9, 13, 22, 0.92));
   box-shadow: var(--nt-mkt-shadow);
   overflow: hidden;
+  min-width: 0;
 }
 /* Module sidebar — a recessed navigation rail, deliberately quieter than the
    content panel so the two are easy to tell apart at a glance: flatter, darker,
@@ -1186,6 +1188,9 @@ body[data-surface] #root {
   background: rgba(6, 9, 15, 0.72);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.02),
     inset 0 18px 42px -30px rgba(0, 0, 0, 0.85);
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* Visible "you got bounced back" banner shown when the linear-gate
@@ -1358,6 +1363,13 @@ body[data-surface] #root {
        its content instead of becoming a short scroll box. */
     max-height: none;
     overflow: visible;
+    width: 100%;
+  }
+  .nt-course-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .nt-course-folder__row:hover:not(:disabled) {
+    transform: none;
   }
 }
 .nt-course-sidebar__head {
@@ -1388,6 +1400,14 @@ body[data-surface] #root {
 }
 .nt-course-sidebar__head span {
   color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-sidebar__head p,
+.nt-course-sidebar__head span,
+.nt-course-folder__crumb,
+.nt-course-folder__label,
+.nt-course-folder__label small {
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 /* ===== Drill-down folder navigator: Sections -> Modules -> Subsections ===== */
@@ -1429,6 +1449,7 @@ body[data-surface] #root {
   display: flex;
   flex-direction: column;
   gap: 0.32rem;
+  min-width: 0;
 }
 .nt-course-folder__row {
   width: 100%;
@@ -1443,6 +1464,8 @@ body[data-surface] #root {
   text-align: left;
   cursor: pointer;
   transition: background 160ms ease, border-color 160ms ease, transform 120ms ease;
+  box-sizing: border-box;
+  min-width: 0;
 }
 .nt-course-folder__row:hover:not(:disabled) {
   background: rgba(45, 107, 255, 0.12);
@@ -1527,7 +1550,7 @@ body[data-surface] #root {
   margin-left: 0.2rem;
 }
 .nt-course-folder__row--leaf {
-  margin-left: 1rem;
+  margin-left: 0.75rem;
   padding-left: 0.72rem;
 }
 .nt-course-folder__row--anchor .nt-course-folder__icon {
@@ -2124,6 +2147,29 @@ body[data-surface] #root {
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
+.nt-pager__section-meta {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.2rem;
+  text-align: right;
+  min-width: 0;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-pager__section-meta span {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-pager__section-meta strong {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+}
 .nt-pager__stage {
   position: relative;
   flex: 1 1 auto;
@@ -2182,9 +2228,6 @@ body[data-surface] #root {
 .nt-pager__page[data-kind='practical'] {
   padding-inline: clamp(0.4rem, 0.25rem + 0.4vw, 0.8rem);
 }
-.nt-pager__foot[data-kind='practical'] .nt-pager__foot-prev {
-  display: inline-flex;
-}
 .nt-pager__page {
   min-height: 0;
   overflow-y: auto;
@@ -2227,57 +2270,6 @@ body[data-surface] #root {
 .nt-pager__page > .nt-practical {
   margin: 0;
 }
-.nt-pager__foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem 1rem;
-  flex-wrap: wrap;
-  padding: 0.8rem clamp(1.2rem, 0.8rem + 1.6vw, 1.9rem);
-  border-top: 1px solid var(--nt-mkt-line);
-  background: rgba(255, 255, 255, 0.02);
-}
-.nt-pager__dots {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.nt-pager__dot {
-  width: 9px;
-  height: 9px;
-  padding: 0;
-  border: none;
-  border-radius: 999px;
-  background: var(--nt-mkt-line-strong);
-  cursor: pointer;
-  transition: width 180ms var(--nt-mkt-ease), background 180ms var(--nt-mkt-ease);
-}
-.nt-pager__dot[data-active='true'] {
-  width: 24px;
-  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
-}
-.nt-pager__counter {
-  margin-left: 0.4rem;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.76rem;
-  letter-spacing: 0.04em;
-  color: var(--nt-mkt-text-soft);
-}
-.nt-pager__foot-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-.nt-pager__catalog {
-  min-height: 40px;
-}
-/* Footer Prev — desktop hides it (the side ‹ arrow owns "previous"); mobile
-   shows it because the side arrows are removed there. */
-.nt-pager__foot-prev {
-  display: none;
-  min-height: 40px;
-}
 /* Intro page lead-in: the module title lives only in the pager head now, so the
    Intro page opens straight on this paragraph, set a touch larger than body. */
 .nt-learn__module-intro--lead {
@@ -2304,21 +2296,6 @@ body[data-surface] #root {
   .nt-pager__head,
   .nt-pager__foot {
     padding: 0.7rem 0.9rem;
-  }
-  .nt-pager__foot {
-    gap: 0.6rem 0.8rem;
-  }
-  .nt-pager__foot-prev {
-    display: inline-flex;
-  }
-  .nt-pager__foot-actions {
-    flex: 1 1 100%;
-    justify-content: space-between;
-  }
-  .nt-pager__catalog {
-    order: 3;
-    flex: 1 1 100%;
-    margin-top: 0.2rem;
   }
 }
 

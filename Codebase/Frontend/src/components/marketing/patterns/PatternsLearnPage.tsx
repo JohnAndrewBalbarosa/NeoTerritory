@@ -363,6 +363,10 @@ export default function PatternsLearnPage(): JSX.Element {
     if (pageGroups.length === 0) return null;
     return pageGroups.find((group) => group.key !== 'intro') ?? pageGroups[0];
   }, [pageGroups]);
+  const currentGroup = useMemo(
+    () => pageGroups.find((group) => group.key === currentPage?.kind) ?? pageGroups[0] ?? null,
+    [currentPage, pageGroups],
+  );
 
   useEffect(() => {
     if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
@@ -653,6 +657,14 @@ export default function PatternsLearnPage(): JSX.Element {
                   </p>
                   <h2 className="nt-pager__module-title">{activeModule.title}</h2>
                 </div>
+                {currentGroup ? (
+                  <p className="nt-pager__section-meta">
+                    <span>{currentGroup.label}</span>
+                    <strong>
+                      Step {pageIndex + 1} of {currentGroup.pages.length}
+                    </strong>
+                  </p>
+                ) : null}
               </header>
 
               <div className={`nt-pager__stage${currentPage.kind === 'practical' ? ' nt-pager__stage--practical' : ''}`}>
@@ -708,23 +720,6 @@ export default function PatternsLearnPage(): JSX.Element {
                   &gt;
                 </button>
               </div>
-
-              <footer className="nt-pager__foot">
-                <button type="button" className="nt-lesson-button" onClick={goPrevPage} disabled={pageIndex === 0 && activeIndex === 0}>
-                  Previous
-                </button>
-                <span className="nt-pager__counter-text">
-                  Step {pageIndex + 1} of {pages.length}
-                </span>
-                <button
-                  type="button"
-                  className="nt-lesson-button nt-lesson-button--primary"
-                  onClick={goNextPage}
-                  disabled={pageIndex === pages.length - 1 && activeIndex === steps.length - 1}
-                >
-                  Next
-                </button>
-              </footer>
             </>
           ) : null}
         </article>
