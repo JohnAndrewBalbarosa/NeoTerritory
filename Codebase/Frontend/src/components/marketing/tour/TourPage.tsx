@@ -40,9 +40,9 @@ export default function TourPage() {
         <p className="nt-section-eyebrow">Guide</p>
         <h1 className="nt-tour__title">A walk through the learning path.</h1>
         <p className="nt-tour__lede">
-          No sign-in needed to look around. Each step shows how a CodiNeo module works —
-          read it, get tested, then prove the pattern in code — in the order you will meet
-          them.
+          No sign-in needed to look around. The guide now mirrors the current UI: the
+          pre-test gate, the centered learning-path topbar, the leaf-level sidebar, the
+          green submit state on the final theory step, and the raw-only post-test flow.
         </p>
       </header>
 
@@ -87,7 +87,7 @@ export default function TourPage() {
           className="nt-tour__cta-btn"
           onClick={dispatchTryItChooserOpen}
         >
-          Try it now
+          Open learner flow
         </button>
       </div>
     </main>
