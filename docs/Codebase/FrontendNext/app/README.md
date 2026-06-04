@@ -18,8 +18,9 @@ custom-router `useSurface()` switch.
 - Each surface is a thin route file that renders the existing component **client-side**
   (`ssr:false`); there is no SSR page rendering (CSR everywhere for smooth animations):
   `learn/`, `about/`, `mechanics/`, `patterns/` (+ `[slug]/`, `learn/`), `tour/`,
-  `docs/` (+ `full/`), `studio/` (+ aliases), `admin/`, `scraper/`, `auth/callback/`,
-  the `*/login` group, `onboarding/`, and `not-found.tsx` for retired/unknown paths.
+  `docs/` (+ `full/`), `studio/` (+ aliases), `student-dashboard/`, `admin/`,
+  `scraper/`, `auth/callback/`, the `*/login` group, `onboarding/`, and
+  `not-found.tsx` for retired/unknown paths.
 
 ## Mapping to the custom router
 Route → surface follows `@frontend/logic/router#pathToSurface`. The pure slug helpers

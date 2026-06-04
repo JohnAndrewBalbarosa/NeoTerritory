@@ -40,8 +40,9 @@ rendering plays the reveals from a clean mount, exactly like the original Vite S
 - **Public/marketing surfaces** (`/`, `/learn`, `/about`, `/mechanics`, `/patterns`,
   `/patterns/<slug>`, `/tour`, `/docs`, `/docs/full`, plus the retired-path 404s) →
   `MarketingSurface` (`ssr:false`) → `MarketingShell`.
-- **Auth-gated surfaces** (`/patterns/learn[/*]`, `/studio` + aliases, `/admin[/*]`,
-  `/scraper`, `/auth/callback`, `*/login`, `/onboarding/*`) → their own `ssr:false` wrappers;
+- **Auth-gated surfaces** (`/patterns/learn[/*]`, `/studio` + aliases, `/student-dashboard`,
+  `/admin[/*]`, `/scraper`, `/auth/callback`, `*/login`, `/onboarding/*`) → their own
+  `ssr:false` wrappers;
   meaningful content depends on the `localStorage` JWT, fetched through the proxy after mount.
 - **"Vercel is the backend" is the proxy, not SSR.** `next.config` rewrites forward
   `/api`·`/auth`·`/health` to AWS server-side (`AWS_BACKEND_ORIGIN`), so the browser only sees

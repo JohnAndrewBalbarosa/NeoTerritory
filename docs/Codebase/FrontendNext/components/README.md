@@ -47,6 +47,8 @@ keeps their heavy bundles off the server path. Wrappers:
 - `SignInSurface.tsx` → `@frontend/components/auth/GoogleSignInPage` (routes: */login)
 - `LearnHubSurface.tsx` → `@frontend/components/learn/StudentLearningShell` (routes:
   /patterns/learn[/<moduleId>])
+- `StudentDashboardSurface.tsx` → `@frontend/components/learn/StudentDashboard`
+  (route: /student-dashboard, visible only after first full module completion)
 - `AuthCallbackSurface.tsx` → `@frontend/components/auth/GoogleCallback` (/auth/callback)
 - `OnboardingSurface.tsx` → `@frontend/components/auth/OnboardingFlow` (/onboarding/*)
 - `AdminSurface.tsx` → `@frontend/admin/AdminApp` (/admin; was admin.html). Tabs are React
