@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../../logic/router';
 import {
   CATEGORY_META,
@@ -346,6 +346,7 @@ export default function PatternsLearnPage(): JSX.Element {
   const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
+  const [seededLeafView, setSeededLeafView] = useState(false);
 
   const activeStep = steps[activeIndex];
   const activeModule = useMemo(
@@ -358,6 +359,24 @@ export default function PatternsLearnPage(): JSX.Element {
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
   const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
   const unlockedCount = useMemo(() => computeUnlockedCount(steps, completedIds), [steps, completedIds]);
+  const defaultLeafGroup = useMemo(() => {
+    if (pageGroups.length === 0) return null;
+    return pageGroups.find((group) => group.key !== 'intro') ?? pageGroups[0];
+  }, [pageGroups]);
+
+  useEffect(() => {
+    if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
+    const targetPage = defaultLeafGroup.pages[0] || pages[0];
+    const targetIndex = pages.findIndex((p) => p.kind === targetPage.kind && p.subIndex === targetPage.subIndex);
+    setNav({
+      level: 'pages',
+      sectionId: activeStep.category,
+      moduleId: activeModule.id,
+      groupKey: defaultLeafGroup.key,
+    });
+    setPageIndex(targetIndex >= 0 ? targetIndex : 0);
+    setSeededLeafView(true);
+  }, [activeStep, activeModule, contentLoaded, defaultLeafGroup, pages, seededLeafView]);
 
   const goToStep = useCallback(
     (index: number, nextPageIndex = 0) => {

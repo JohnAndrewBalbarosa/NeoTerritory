@@ -1,9 +1,16 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { useAppStore } from '../../store/appState';
 import { navigate } from '../../logic/router';
 
 export default function PreTestPage() {
+  const preTestCompleted = useAppStore((s) => s.preTestCompleted);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
+
+  useEffect(() => {
+    if (preTestCompleted) {
+      navigate('/patterns/learn');
+    }
+  }, [preTestCompleted]);
 
   const handleFinish = () => {
     setPreTestCompleted(true);
@@ -11,25 +18,40 @@ export default function PreTestPage() {
   };
 
   return (
-    <div className="nt-test-page" data-testid="pre-test-page" style={{ padding: '4rem 2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <div style={{ backgroundColor: '#22c55e', color: 'white', padding: '0.2rem 0.6rem', borderRadius: '4px', display: 'inline-block', marginBottom: '1rem', fontSize: '0.8rem', fontWeight: 'bold' }}>LIVE</div>
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', fontWeight: 700 }}>Baseline Assessment: Pre-Test</h1>
-      <p style={{ fontSize: '1.2rem', lineHeight: 1.6, color: 'var(--text-muted)' }}>
-        Welcome to NeoTerritory LMS. Before you begin the learning path, please complete this baseline assessment. 
-        This will help us measure your progress as you go through the modules.
-      </p>
-      
-      <div style={{ marginTop: '3rem', padding: '2rem', border: '1px solid var(--border-subtle)', borderRadius: '12px', background: 'var(--bg-card)' }}>
-        <p style={{ marginBottom: '2rem' }}><em>[Placeholder] In a real LMS, this would contain baseline questions about C++ Design Patterns...</em></p>
-        
-        <button 
-          className="nt-lesson-button nt-lesson-button--primary"
-          onClick={handleFinish}
-          style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}
-        >
-          Finish Pre-test & Start Learning
-        </button>
+    <main className="nt-test-page" data-testid="pre-test-page">
+      <div className="nt-test-page__shell">
+        <header className="nt-test-page__hero">
+          <p className="nt-test-page__eyebrow">Learning gate</p>
+          <div className="nt-test-page__badge">LIVE</div>
+          <h1 className="nt-test-page__title">Baseline Assessment: Pre-Test</h1>
+          <p className="nt-test-page__lede">
+            Before you enter the learning path, complete the baseline check so the app can route you
+            straight into the module tree and keep this session scoped to your progress.
+          </p>
+        </header>
+
+        <section className="nt-test-page__panel">
+          <div className="nt-test-page__panel-head">
+            <span className="nt-test-page__panel-kicker">What this unlocks</span>
+            <h2 className="nt-test-page__panel-title">Direct access to the learning path</h2>
+          </div>
+
+          <p className="nt-test-page__panel-copy">
+            In the full flow, this section would contain the diagnostic questions that determine your
+            starting point. For now, the finish action marks the current session as pre-tested and sends
+            you into the leaf-level learning view.
+          </p>
+
+          <div className="nt-test-page__callout">
+            <strong>Result</strong>
+            <span>Once completed, the app will skip this gate on revisit and open the learning path directly.</span>
+          </div>
+
+          <button type="button" className="nt-lesson-button nt-lesson-button--primary nt-test-page__cta" onClick={handleFinish}>
+            Finish Pre-test &amp; Start Learning
+          </button>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

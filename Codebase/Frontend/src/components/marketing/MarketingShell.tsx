@@ -1,6 +1,7 @@
 import { MotionConfig, motion, AnimatePresence } from 'motion/react';
 import { useCallback, useEffect } from 'react';
 import { Surface } from '../../logic/router';
+import { useAppStore } from '../../store/appState';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
 import MarketingFooter from './MarketingFooter';
@@ -26,6 +27,7 @@ interface MarketingShellProps {
 
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
+  const preTestCompleted = useAppStore((s) => s.preTestCompleted);
 
   // D77: redirect legacy /student-learning to /patterns/learn so old
   // bookmarks keep working. The surface renders nothing (the StudentLearningHub
@@ -35,6 +37,12 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
       navigate('/patterns/learn');
     }
   }, [surface]);
+
+  useEffect(() => {
+    if (surface === 'preTest' && preTestCompleted) {
+      navigate('/patterns/learn');
+    }
+  }, [preTestCompleted, surface]);
 
   // Learner-merge: the 4-card chooser is retired. Every "Try it now" CTA
   // (and the legacy /auth/choose, /auth bookmarks) now goes straight to the

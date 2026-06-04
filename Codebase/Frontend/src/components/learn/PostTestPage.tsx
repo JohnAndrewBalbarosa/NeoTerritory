@@ -1,15 +1,28 @@
-import React from 'react';
-
 export default function PostTestPage() {
   return (
-    <div className="nt-test-page" data-testid="post-test-page" style={{ padding: '4rem 2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', fontWeight: 700 }}>Post-Test</h1>
-      <p style={{ fontSize: '1.2rem', lineHeight: 1.6, color: 'var(--text-muted)' }}>
-        Congratulations on completing the module! Please take this post-test to measure your learning progress and mastery of the patterns covered.
-      </p>
-      <div style={{ marginTop: '3rem', padding: '2rem', border: '1px solid var(--border-subtle)', borderRadius: '12px' }}>
-        <p><em>Test questions will be loaded here...</em></p>
+    <main className="nt-test-page" data-testid="post-test-page">
+      <div className="nt-test-page__shell">
+        <header className="nt-test-page__hero">
+          <p className="nt-test-page__eyebrow">Learning outcome</p>
+          <div className="nt-test-page__badge nt-test-page__badge--alt">POST</div>
+          <h1 className="nt-test-page__title">Post-Test</h1>
+          <p className="nt-test-page__lede">
+            Use this checkpoint after a module run to measure what stuck, what needs review, and
+            whether the current learning path should continue to the next leaf.
+          </p>
+        </header>
+
+        <section className="nt-test-page__panel">
+          <div className="nt-test-page__panel-head">
+            <span className="nt-test-page__panel-kicker">Assessment layout</span>
+            <h2 className="nt-test-page__panel-title">Questions will render here</h2>
+          </div>
+
+          <div className="nt-test-page__placeholder">
+            <p>Progress questions, answer cards, and feedback states will be mounted in this panel.</p>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

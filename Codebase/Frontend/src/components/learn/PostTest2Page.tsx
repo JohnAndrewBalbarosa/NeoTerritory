@@ -1,15 +1,28 @@
-import React from 'react';
-
 export default function PostTest2Page() {
   return (
-    <div className="nt-test-page" data-testid="post-test-2-page" style={{ padding: '4rem 2rem', maxWidth: '800px', margin: '0 auto' }}>
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', fontWeight: 700 }}>Post-Test (Part 2)</h1>
-      <p style={{ fontSize: '1.2rem', lineHeight: 1.6, color: 'var(--text-muted)' }}>
-        This is the second part of the post-test. Please answer these additional questions to complete your evaluation.
-      </p>
-      <div style={{ marginTop: '3rem', padding: '2rem', border: '1px solid var(--border-subtle)', borderRadius: '12px' }}>
-        <p><em>Additional test questions will be loaded here...</em></p>
+    <main className="nt-test-page" data-testid="post-test-2-page">
+      <div className="nt-test-page__shell">
+        <header className="nt-test-page__hero">
+          <p className="nt-test-page__eyebrow">Learning outcome</p>
+          <div className="nt-test-page__badge nt-test-page__badge--alt">POST 2</div>
+          <h1 className="nt-test-page__title">Post-Test, Part 2</h1>
+          <p className="nt-test-page__lede">
+            The second checkpoint extends the post-test flow with follow-up questions and a final
+            verification pass before the session is considered complete.
+          </p>
+        </header>
+
+        <section className="nt-test-page__panel">
+          <div className="nt-test-page__panel-head">
+            <span className="nt-test-page__panel-kicker">Assessment layout</span>
+            <h2 className="nt-test-page__panel-title">Additional questions will render here</h2>
+          </div>
+
+          <div className="nt-test-page__placeholder">
+            <p>Use this surface for the follow-up items, results summary, and completion confirmation.</p>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

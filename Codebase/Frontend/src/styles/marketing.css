@@ -7837,6 +7837,146 @@ body[data-surface] {
   }
 }
 
+/* Learning gate / assessment pages */
+.nt-test-page {
+  min-height: calc(100vh - 72px);
+  padding: clamp(1.25rem, 3vw, 3rem);
+  background:
+    radial-gradient(circle at top left, rgba(0, 209, 216, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(138, 43, 226, 0.14), transparent 32%),
+    linear-gradient(180deg, rgba(13, 15, 20, 0.98), rgba(9, 13, 22, 0.98));
+}
+.nt-test-page__shell {
+  width: min(100%, 920px);
+  margin: 0 auto;
+  display: grid;
+  gap: 1.25rem;
+}
+.nt-test-page__hero,
+.nt-test-page__panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: var(--nt-mkt-radius-lg);
+  background: linear-gradient(180deg, rgba(15, 27, 46, 0.94), rgba(11, 17, 29, 0.94));
+  box-shadow: var(--nt-mkt-shadow);
+}
+.nt-test-page__hero {
+  padding: clamp(1.5rem, 1.1rem + 2vw, 2.4rem);
+  display: grid;
+  gap: 0.85rem;
+}
+.nt-test-page__hero::before,
+.nt-test-page__panel::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 2px;
+  background: linear-gradient(90deg, var(--nt-mkt-accent), var(--nt-mkt-accent-2));
+  opacity: 0.85;
+}
+.nt-test-page__eyebrow {
+  margin: 0;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-test-page__badge {
+  justify-self: start;
+  padding: 0.28rem 0.7rem;
+  border-radius: 999px;
+  background: rgba(166, 255, 0, 0.12);
+  border: 1px solid rgba(166, 255, 0, 0.28);
+  color: var(--devcon-lime, var(--nt-mkt-accent));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  width: fit-content;
+}
+.nt-test-page__badge--alt {
+  background: rgba(0, 209, 216, 0.12);
+  border-color: rgba(0, 209, 216, 0.28);
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-test-page__title {
+  margin: 0;
+  font-size: clamp(2rem, 1.35rem + 2.2vw, 3.4rem);
+  line-height: 0.98;
+  letter-spacing: -0.04em;
+}
+.nt-test-page__lede {
+  margin: 0;
+  max-width: 72ch;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.65;
+  font-size: clamp(1rem, 0.92rem + 0.35vw, 1.12rem);
+}
+.nt-test-page__panel {
+  padding: clamp(1.35rem, 1rem + 1.2vw, 2rem);
+  display: grid;
+  gap: 1rem;
+}
+.nt-test-page__panel-head {
+  display: grid;
+  gap: 0.2rem;
+}
+.nt-test-page__panel-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-test-page__panel-title {
+  margin: 0;
+  font-size: clamp(1.2rem, 1rem + 0.75vw, 1.65rem);
+  letter-spacing: -0.02em;
+}
+.nt-test-page__panel-copy {
+  margin: 0;
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.65;
+}
+.nt-test-page__callout {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(0, 209, 216, 0.28);
+  border-radius: 14px;
+  background: rgba(0, 209, 216, 0.06);
+}
+.nt-test-page__callout strong {
+  color: var(--nt-mkt-text);
+}
+.nt-test-page__callout span {
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.5;
+}
+.nt-test-page__placeholder {
+  padding: 1.1rem 1.2rem;
+  border: 1px dashed var(--nt-mkt-line-strong);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--nt-mkt-text-soft);
+  line-height: 1.6;
+}
+.nt-test-page__cta {
+  width: fit-content;
+  min-width: min(100%, 280px);
+}
+@media (max-width: 640px) {
+  .nt-test-page {
+    min-height: calc(100vh - 64px);
+    padding: 1rem;
+  }
+  .nt-test-page__cta {
+    width: 100%;
+  }
+}
+
 /* Survey-missed checkbox grid — used by RunSurveyModal and the v4
    per-run F1 ground-truth question inside AmbiguousTab. Lists the
    non-detected patterns the participant might have intended. */

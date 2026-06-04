@@ -4,6 +4,10 @@ import { sourceKeyOf, loadResolutions, saveResolutions, clearResolutions } from 
 
 const TOKEN_KEY = 'nt_token';
 const USER_KEY = 'nt_user';
+const LMS_SCOPE_PREFIX = 'nt_lms';
+const LMS_SESSION_KEY = `${LMS_SCOPE_PREFIX}_session_id`;
+const LMS_PRETEST_KEY = `${LMS_SCOPE_PREFIX}_pretest_completed`;
+const LMS_COMPLETED_KEY = `${LMS_SCOPE_PREFIX}_completed_items`;
 
 // SSR-safe localStorage access. Under Next.js the store module is evaluated on the
 // server during prerender, where `window`/`localStorage` do not exist; an unguarded
@@ -18,6 +22,72 @@ function readStored(key: string): string | null {
     return null;
   }
 }
+
+function readStoredJson<T>(key: string): T | null {
+  const raw = readStored(key);
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string): void {
+  if (!canUseDom) return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore storage failures and keep the state in memory.
+  }
+}
+
+function lmsScopeForUser(user: User | null): string {
+  const scope = user?.email || user?.username;
+  return (scope || 'guest').trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '_');
+}
+
+function scopedKey(prefix: string, scope: string): string {
+  return `${prefix}:${scope}`;
+}
+
+function readScopedSessionId(scope: string): string {
+  const key = scopedKey(LMS_SESSION_KEY, scope);
+  const existing = readStored(key);
+  if (existing) return existing;
+  const generated =
+    typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `lms_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  writeStored(key, generated);
+  return generated;
+}
+
+function readScopedBoolean(prefix: string, scope: string): boolean {
+  return readStored(scopedKey(prefix, scope)) === 'true';
+}
+
+function readScopedStringArray(prefix: string, scope: string): string[] {
+  const raw = readStored(scopedKey(prefix, scope));
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed) ? parsed.filter((v): v is string => typeof v === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+function persistScopedStringArray(prefix: string, scope: string, items: string[]): void {
+  writeStored(scopedKey(prefix, scope), JSON.stringify(items));
+}
+
+function persistScopedBoolean(prefix: string, scope: string, value: boolean): void {
+  writeStored(scopedKey(prefix, scope), value ? 'true' : 'false');
+}
+
+const storedUser = readStoredJson<User>(USER_KEY);
+const storedScope = lmsScopeForUser(storedUser);
 
 // 'docs' is no longer a top-level studio tab — the generated documentation
 // now lives as a sub-view inside the Patterns (annotated) tab. The union is
@@ -140,14 +210,7 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   token: readStored(TOKEN_KEY),
-  user: (() => {
-    try {
-      const raw = readStored(USER_KEY);
-      return raw ? (JSON.parse(raw) as User) : null;
-    } catch {
-      return null;
-    }
-  })(),
+  user: storedUser,
   currentRun: null,
   sourceText: '',
   filename: 'snippet.cpp',
@@ -183,6 +246,9 @@ export const useAppStore = create<AppState>((set) => ({
   maxTokensPerFile: 1000,
   pendingRunSurveyForRunKey: null,
   linePatternOverrides: {},
+  preTestCompleted: readScopedBoolean(LMS_PRETEST_KEY, storedScope),
+  completedItems: readScopedStringArray(LMS_COMPLETED_KEY, storedScope),
+  lmsSessionId: readScopedSessionId(storedScope),
   submissionFiles: [],
 
   setAuth: (token, user) => {
@@ -190,7 +256,14 @@ export const useAppStore = create<AppState>((set) => ({
       window.localStorage.setItem(TOKEN_KEY, token);
       window.localStorage.setItem(USER_KEY, JSON.stringify(user));
     }
-    set({ token, user });
+    const scope = lmsScopeForUser(user);
+    set({
+      token,
+      user,
+      preTestCompleted: readScopedBoolean(LMS_PRETEST_KEY, scope),
+      completedItems: readScopedStringArray(LMS_COMPLETED_KEY, scope),
+      lmsSessionId: readScopedSessionId(scope),
+    });
   },
 
   clearAuth: () => {
@@ -208,6 +281,9 @@ export const useAppStore = create<AppState>((set) => ({
       currentRun: null,
       sessionRanAnalyze: false,
       sessionReviewedEnd: false,
+      preTestCompleted: false,
+      completedItems: [],
+      lmsSessionId: null,
       activeTab: 'submit',
       aiStatus: 'idle',
       aiJobId: null,
@@ -308,12 +384,28 @@ export const useAppStore = create<AppState>((set) => ({
   setLinePatternOverride: (line, patternKey) => set((s) => ({
     linePatternOverrides: { ...s.linePatternOverrides, [line]: patternKey }
   })),
-  setPreTestCompleted: (v) => set({ preTestCompleted: v }),
-  setCompletedItems: (items) => set({ completedItems: items }),
-  addCompletedItem: (id) => set((s) => ({
-    completedItems: s.completedItems.includes(id) ? s.completedItems : [...s.completedItems, id]
-  })),
-  setLmsSessionId: (id) => set({ lmsSessionId: id }),
+  setPreTestCompleted: (v) => set((s) => {
+    const scope = lmsScopeForUser(s.user);
+    persistScopedBoolean(LMS_PRETEST_KEY, scope, v);
+    return { preTestCompleted: v };
+  }),
+  setCompletedItems: (items) => set((s) => {
+    const scope = lmsScopeForUser(s.user);
+    persistScopedStringArray(LMS_COMPLETED_KEY, scope, items);
+    return { completedItems: items };
+  }),
+  addCompletedItem: (id) => set((s) => {
+    if (s.completedItems.includes(id)) return { completedItems: s.completedItems };
+    const next = [...s.completedItems, id];
+    const scope = lmsScopeForUser(s.user);
+    persistScopedStringArray(LMS_COMPLETED_KEY, scope, next);
+    return { completedItems: next };
+  }),
+  setLmsSessionId: (id) => set((s) => {
+    const scope = lmsScopeForUser(s.user);
+    if (id) writeStored(scopedKey(LMS_SESSION_KEY, scope), id);
+    return { lmsSessionId: id };
+  }),
   clearLinePatternOverride: (line) => set((s) => {
     const next = { ...s.linePatternOverrides };
     delete next[line];
