@@ -52,6 +52,14 @@ const COLUMNS: ReadonlyArray<FooterColumn> = [
       { label: 'Source on GitHub', path: 'https://github.com/JohnAndrewBalbarosa/NeoTerritory', external: true },
     ],
   },
+  {
+    title: 'Tests',
+    links: [
+      { label: 'Pre-test', path: '/pre-test' },
+      { label: 'Post-test', path: '/post-test' },
+      { label: 'Post-test (Part 2)', path: '/post-test-2' },
+    ],
+  },
 ];
 
 export default function MarketingFooter() {

@@ -27,6 +27,9 @@ export type Surface =
   | 'tour'
   | 'docs'
   | 'docsFull'
+  | 'preTest'
+  | 'postTest'
+  | 'postTest2'
   | 'notFound';
 
 // Paths retired by the auth-surface consolidation. They render the 404
@@ -43,6 +46,9 @@ const STUDIO_ALIASES = [
 export function pathToSurface(path: string): Surface {
   if (path === '/' || path === '') return 'hero';
   if (RETIRED_PATHS.has(path)) return 'notFound';
+  if (path === '/pre-test') return 'preTest';
+  if (path === '/post-test') return 'postTest';
+  if (path === '/post-test-2') return 'postTest2';
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';
   if (path === '/auth/callback') return 'googleCallback';

@@ -14,6 +14,9 @@ import PatternDetailPage from './patterns/PatternDetailPage';
 import TourPage from './tour/TourPage';
 import DocsPage from './docs/DocsPage';
 import DocsFullPage from './docs/DocsFullPage';
+import PreTestPage from '../learn/PreTestPage';
+import PostTestPage from '../learn/PostTestPage';
+import PostTest2Page from '../learn/PostTest2Page';
 import { TRY_IT_OPEN_EVENT } from './TryItChooser';
 import { navigate } from '../../logic/router';
 
@@ -90,6 +93,9 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
           {surface === 'tour' && <TourPage />}
           {surface === 'docs' && <DocsPage />}
           {surface === 'docsFull' && <DocsFullPage />}
+          {surface === 'preTest' && <PreTestPage />}
+          {surface === 'postTest' && <PostTestPage />}
+          {surface === 'postTest2' && <PostTest2Page />}
         </motion.div>
       </AnimatePresence>
       <MarketingFooter />
