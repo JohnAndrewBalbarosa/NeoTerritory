@@ -85,6 +85,9 @@ interface AppState {
   maxTokensPerFile: number;
   pendingRunSurveyForRunKey: string | null;
   linePatternOverrides: Record<number, string>;
+  // LMS Progress (Khan Academy Style)
+  preTestCompleted: boolean;
+  completedItems: string[]; // IDs of lessons/quizzes finished
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
   // tabbing away and back (or running an analysis) doesn't drop the user's
   // other files. Empty array = legacy single-file mode (AnalysisForm seeds
@@ -125,6 +128,9 @@ interface AppState {
   setPendingRunSurvey: (key: string | null) => void;
   setLinePatternOverride: (line: number, patternKey: string) => void;
   clearLinePatternOverride: (line: number) => void;
+  setPreTestCompleted: (v: boolean) => void;
+  setCompletedItems: (items: string[]) => void;
+  addCompletedItem: (id: string) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
   setSubmissionFiles: (files: Array<{ id: string; name: string; text: string }>) => void;
@@ -299,6 +305,11 @@ export const useAppStore = create<AppState>((set) => ({
   setMaxTokensPerFile: (v) => set({ maxTokensPerFile: Math.max(100, Math.min(20_000, Math.floor(v))) }),
   setLinePatternOverride: (line, patternKey) => set((s) => ({
     linePatternOverrides: { ...s.linePatternOverrides, [line]: patternKey }
+  })),
+  setPreTestCompleted: (v) => set({ preTestCompleted: v }),
+  setCompletedItems: (items) => set({ completedItems: items }),
+  addCompletedItem: (id) => set((s) => ({
+    completedItems: s.completedItems.includes(id) ? s.completedItems : [...s.completedItems, id]
   })),
   clearLinePatternOverride: (line) => set((s) => {
     const next = { ...s.linePatternOverrides };

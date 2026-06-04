@@ -639,6 +639,8 @@ function PracticalExamBlock({ moduleId, exam, isLocked, isPassed, autoTag, onPas
 // ----- page -----
 
 export default function PatternsLearnPage(): JSX.Element {
+  const preTestCompleted = useAppStore((s) => s.preTestCompleted);
+
   // D92 Track C: content source. Loads published modules from the CMS API and
   // falls back to the bundled static LEARNING_MODULES on any error/empty, so the
   // page renders identically whether the API is up, down, or unseeded.
@@ -955,6 +957,28 @@ export default function PatternsLearnPage(): JSX.Element {
 
   const familyName = CATEGORY_META.find((m) => m.id === activeStep?.category)?.name ?? '';
 
+  if (!preTestCompleted) {
+    return (
+      <main className="nt-student nt-student-course" id="main">
+        <section className="nt-course-hero">
+          <div style={{ textAlign: 'center', padding: '4rem 1rem', width: '100%' }}>
+            <h1 className="nt-student__title">Learning Path Locked</h1>
+            <p className="nt-student__lede">
+              Please complete the Pre-test baseline assessment to unlock your personalized learning path.
+            </p>
+            <button 
+              className="nt-lesson-button nt-lesson-button--primary"
+              onClick={() => navigate('/pre-test')}
+              style={{ marginTop: '2rem', padding: '1rem 3rem', fontSize: '1.2rem' }}
+            >
+              Start Pre-test
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
   // D92 Track C: hold the full path render until the content source has resolved
   // (API or static fallback). Reuses the nt-student shell so the skip-link
   // target (#main) and page chrome stay consistent; the routes-manifest
@@ -1012,128 +1036,82 @@ export default function PatternsLearnPage(): JSX.Element {
 
       <section className="nt-course-shell" aria-label="Learning path">
         <aside
-          className="nt-course-sidebar"
+          className="nt-course-sidebar nt-course-sidebar--lms"
           aria-label="Learning module outline"
           data-lenis-prevent
         >
-          {/* Level 1 — Sections (families). Enter one to see its modules. */}
-          {nav.level === 'sections' ? (
-            <>
-              <div className="nt-course-sidebar__head">
-                <p>Modules</p>
-                <span>{completedCount}/{total} done</span>
-              </div>
-              <ul className="nt-course-folder">
-                {groups.map((g, idx) => {
-                  const sectionDone = g.steps.filter((s) => completedIds.has(s.module.id)).length;
-                  const hasActive = activeFamily === g.meta.id;
-                  return (
-                    <li key={g.meta.id}>
-                      <button
-                        type="button"
-                        className="nt-course-folder__row"
-                        data-active={hasActive ? 'true' : undefined}
-                        onClick={() => setNav({ level: 'modules', sectionId: g.meta.id })}
-                      >
-                        <span className="nt-course-folder__icon" aria-hidden="true">▦</span>
-                        <span className="nt-course-folder__label">
-                          <small>Section {idx + 1}</small>
-                          {g.meta.name}
-                        </span>
-                        <span className="nt-course-folder__meta">
-                          {sectionDone}/{g.steps.length}
-                        </span>
-                        <span className="nt-course-folder__chev" aria-hidden="true">›</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : null}
+          <div className="nt-course-sidebar__head">
+            <p>Course Content</p>
+            <span>{progress}% complete</span>
+          </div>
 
-          {/* Level 2 — Modules in the chosen section. Enter one to study it + see its subsections. */}
-          {nav.level === 'modules' && navGroup ? (
-            <>
-              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
-                <button
-                  type="button"
-                  className="nt-course-back"
-                  onClick={() => setNav({ level: 'sections' })}
-                >
-                  ‹ All sections
-                </button>
-              </div>
-              <p className="nt-course-folder__crumb">{navGroup.meta.name}</p>
-              <ul className="nt-course-folder">
-                {navGroup.steps.map((step) => {
-                  const locked = step.globalIndex >= unlockedCount;
-                  const done = completedIds.has(step.module.id);
-                  const active = step.globalIndex === activeIndex;
-                  return (
-                    <li key={step.module.id}>
-                      <button
-                        type="button"
-                        className="nt-course-folder__row"
-                        data-active={active ? 'true' : undefined}
-                        data-locked={locked ? 'true' : undefined}
-                        data-done={done ? 'true' : undefined}
-                        disabled={locked}
-                        title={locked ? 'Finish the previous module to unlock this one.' : undefined}
-                        onClick={() => goToStep(step.globalIndex)}
-                      >
-                        <span className="nt-course-folder__icon" aria-hidden="true">
-                          {locked ? '\u{1F512}' : done ? '✓' : step.globalIndex + 1}
-                        </span>
-                        <span className="nt-course-folder__label">
-                          <small>{step.module.eyebrow}</small>
-                          {step.module.title}
-                        </span>
-                        {!locked ? (
-                          <span className="nt-course-folder__chev" aria-hidden="true">›</span>
-                        ) : null}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : null}
+          <div className="nt-lms-sidebar__scroll">
+            {groups.map((group, gIdx) => (
+              <div key={group.meta.id} className="nt-lms-section">
+                <h3 className="nt-lms-section__title">
+                  <span className="nt-lms-section__num">{gIdx + 1}</span>
+                  {group.meta.name}
+                </h3>
+                <ul className="nt-lms-module-list">
+                  {group.steps.map((step) => {
+                    const isModActive = step.globalIndex === activeIndex;
+                    const isModDone = completedIds.has(step.module.id);
+                    const isModLocked = step.globalIndex > unlockedCount;
+                    const modPages = lessonPagesFor(step.module);
 
-          {/* Level 3 — Subsections (pages) of the chosen module. Click to jump the pager there. */}
-          {nav.level === 'subsections' && navGroup && navStep ? (
-            <>
-              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
-                <button
-                  type="button"
-                  className="nt-course-back"
-                  onClick={() => setNav({ level: 'modules', sectionId: navGroup.meta.id })}
-                >
-                  ‹ {navGroup.meta.name}
-                </button>
+                    return (
+                      <li key={step.module.id} className="nt-lms-module-item" data-active={isModActive ? 'true' : undefined}>
+                        <button 
+                          className="nt-lms-module__trigger"
+                          onClick={() => goToStep(step.globalIndex)}
+                          disabled={isModLocked}
+                        >
+                          <span className="nt-lms-module__status">
+                            {isModLocked ? '🔒' : isModDone ? '✓' : '○'}
+                          </span>
+                          <span className="nt-lms-module__label">{step.module.title}</span>
+                        </button>
+
+                        {isModActive && (
+                          <ul className="nt-lms-page-list">
+                            {modPages.map((p) => {
+                              const isPageActive = currentPage?.kind === p.kind;
+                              const itemId = `${step.module.id}-${p.kind}`;
+                              // In a real LMS we'd track per-page completion; 
+                              // here we'll use a mix of theoretical/practical status.
+                              let isPageDone = false;
+                              if (p.kind === 'theoretical') isPageDone = theoryPassedIds.has(step.module.id);
+                              if (p.kind === 'practical') isPageDone = completedIds.has(step.module.id);
+                              if (p.kind === 'intro' || p.kind === 'concepts' || p.kind === 'examples') {
+                                // For now, we'll mark as done if the module is finished
+                                isPageDone = isModDone;
+                              }
+
+                              return (
+                                <li key={p.kind} className="nt-lms-page-item">
+                                  <button
+                                    className="nt-lms-page__link"
+                                    data-active={isPageActive ? 'true' : undefined}
+                                    data-done={isPageDone ? 'true' : undefined}
+                                    onClick={() => handlePageJump(step, p.kind)}
+                                  >
+                                    <span className="nt-lms-page__icon">
+                                      {p.kind === 'theoretical' ? '📝' : p.kind === 'practical' ? '💻' : '📄'}
+                                    </span>
+                                    {p.label}
+                                  </button>
+                                </li>
+                              );
+                            })}
+                          </ul>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
               </div>
-              <p className="nt-course-folder__crumb">{navStep.module.title}</p>
-              <ul className="nt-course-folder nt-course-folder--anchors">
-                {lessonPagesFor(navStep.module).map((p) => {
-                  const here =
-                    navStep.globalIndex === activeIndex && currentPage?.kind === p.kind;
-                  return (
-                    <li key={p.kind}>
-                      <button
-                        type="button"
-                        className="nt-course-folder__row nt-course-folder__row--anchor"
-                        data-active={here ? 'true' : undefined}
-                        onClick={() => handlePageJump(navStep, p.kind)}
-                      >
-                        <span className="nt-course-folder__icon" aria-hidden="true">¶</span>
-                        <span className="nt-course-folder__label">{p.label}</span>
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : null}
+            ))}
+          </div>
         </aside>
 
         <article className="nt-lesson-panel nt-lesson-pager">
