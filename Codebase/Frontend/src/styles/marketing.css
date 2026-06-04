@@ -1450,8 +1450,26 @@ body[data-surface] #root {
   transform: translateX(2px);
 }
 .nt-course-folder__row[data-active='true'] {
+  position: relative;
   background: rgba(0, 209, 216, 0.12);
-  border-color: rgba(0, 209, 216, 0.42);
+  border-color: rgba(0, 209, 216, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(0, 209, 216, 0.16);
+  overflow: hidden;
+}
+.nt-course-folder__row[data-active='true']::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--devcon-cyan, var(--nt-mkt-accent)), var(--devcon-purple, var(--nt-mkt-accent-2)));
+}
+.nt-course-folder__row[data-active='true'] .nt-course-folder__icon {
+  background: rgba(0, 209, 216, 0.18);
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-folder__row[data-active='true'] .nt-course-folder__label small,
+.nt-course-folder__row[data-active='true'] .nt-course-folder__chev {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
 }
 .nt-course-folder__row[data-locked='true'],
 .nt-course-folder__row:disabled {
@@ -2105,64 +2123,6 @@ body[data-surface] #root {
   font-size: clamp(1.05rem, 0.92rem + 0.6vw, 1.35rem);
   line-height: 1.15;
   letter-spacing: -0.02em;
-}
-/* Horizontal step rail — clickable section pills, the in-context echo of the
-   sidebar subsections. Scrolls sideways on narrow widths instead of wrapping. */
-.nt-pager__steprail {
-  display: flex;
-  gap: 0.4rem;
-  max-width: 100%;
-  overflow-x: auto;
-  padding-bottom: 0.2rem;
-  scrollbar-width: thin;
-  scrollbar-color: var(--nt-mkt-line) transparent;
-}
-.nt-pager__steptab {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  white-space: nowrap;
-  padding: 0.4rem 0.7rem;
-  border: 1px solid var(--nt-mkt-line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  color: var(--nt-mkt-text-soft);
-  font-size: 0.78rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 160ms var(--nt-mkt-ease), border-color 160ms var(--nt-mkt-ease),
-    color 160ms var(--nt-mkt-ease);
-}
-.nt-pager__steptab-n {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.68rem;
-}
-.nt-pager__steptab:hover {
-  border-color: rgba(0, 209, 216, 0.4);
-  color: var(--nt-mkt-text);
-}
-.nt-pager__steptab[data-active='true'] {
-  border-color: transparent;
-  background: linear-gradient(135deg, var(--devcon-lime), var(--devcon-cyan));
-  color: #081018;
-}
-.nt-pager__steptab[data-active='true'] .nt-pager__steptab-n {
-  background: rgba(8, 16, 24, 0.22);
-  color: #081018;
-}
-.nt-pager__steptab[data-locked='true'] {
-  opacity: 0.55;
-}
-.nt-pager__steptab[data-locked='true']::after {
-  content: '\u{1F512}';
-  font-size: 0.7rem;
 }
 .nt-pager__stage {
   position: relative;

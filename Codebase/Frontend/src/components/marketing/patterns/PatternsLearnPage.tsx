@@ -379,6 +379,28 @@ export default function PatternsLearnPage(): JSX.Element {
   }, [activeStep, activeModule, contentLoaded, defaultLeafGroup, pages, seededLeafView]);
 
   useEffect(() => {
+    if (!contentLoaded || !activeStep || !activeModule || !currentPage || pageGroups.length === 0) return;
+    const syncedGroup = pageGroups.find((group) => group.key === currentPage.kind) ?? pageGroups[0];
+    if (!syncedGroup) return;
+    setNav((prev) => {
+      if (
+        prev.level === 'pages' &&
+        prev.sectionId === activeStep.category &&
+        prev.moduleId === activeModule.id &&
+        prev.groupKey === syncedGroup.key
+      ) {
+        return prev;
+      }
+      return {
+        level: 'pages',
+        sectionId: activeStep.category,
+        moduleId: activeModule.id,
+        groupKey: syncedGroup.key,
+      };
+    });
+  }, [activeStep, activeModule, contentLoaded, currentPage, pageGroups]);
+
+  useEffect(() => {
     if (!preTestCompleted) navigate('/pre-test');
   }, [preTestCompleted]);
 
@@ -631,22 +653,6 @@ export default function PatternsLearnPage(): JSX.Element {
                   </p>
                   <h2 className="nt-pager__module-title">{activeModule.title}</h2>
                 </div>
-                <nav className="nt-pager__steprail" aria-label="Module sections">
-                  {pages.map((p, i) => (
-                    <button
-                      key={`${p.kind}-${p.subIndex ?? 'x'}`}
-                      type="button"
-                      className="nt-pager__steptab"
-                      data-active={i === pageIndex ? 'true' : undefined}
-                      onClick={() => setPageIndex(i)}
-                    >
-                      <span className="nt-pager__steptab-n" aria-hidden="true">
-                        {i + 1}
-                      </span>
-                      {p.label}
-                    </button>
-                  ))}
-                </nav>
               </header>
 
               <div className={`nt-pager__stage${currentPage.kind === 'practical' ? ' nt-pager__stage--practical' : ''}`}>
