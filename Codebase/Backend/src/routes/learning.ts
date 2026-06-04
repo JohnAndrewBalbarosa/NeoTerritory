@@ -215,17 +215,19 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
 
     const triesByModule = sanitizeTries(body.triesByModule);
     const triesSerialized = JSON.stringify(triesByModule);
+    const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
 
     db.prepare(
-      `INSERT INTO learning_progress (user_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, updated_at)
-       VALUES (?, ?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(user_id) DO UPDATE SET
+      `INSERT INTO learning_progress (user_id, session_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+       ON CONFLICT(user_id, session_id) DO UPDATE SET
          completed_module_ids      = excluded.completed_module_ids,
          last_unlocked_module_id   = excluded.last_unlocked_module_id,
          tries_by_module           = excluded.tries_by_module,
          theory_passed_module_ids  = excluded.theory_passed_module_ids,
          updated_at                = datetime('now')`,
-    ).run(req.user.id, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized);
+    ).run(req.user.id, sessionId, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized);
+
 
     // Mirror to Supabase (best-effort, keyed by email — D91). SQLite above is
     // the source of truth; this never blocks the learner.
@@ -256,7 +258,7 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
       res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    const body = (req.body ?? {}) as { moduleId?: unknown; attempt?: unknown; answers?: unknown };
+    const body = (req.body ?? {}) as { moduleId?: unknown; attempt?: unknown; answers?: unknown; sessionId?: unknown };
     const moduleId =
       typeof body.moduleId === 'string' && body.moduleId.length > 0 && body.moduleId.length <= MAX_ID_LEN
         ? body.moduleId
@@ -266,15 +268,15 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
       return;
     }
     const answers = sanitizeAnswers(body.answers);
+    const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
 
     // attempts is DB-authoritative: 1 on first insert, +1 each subsequent
-    // submit of this question. We do NOT trust a client-supplied attempt
-    // counter (it feeds the admin drilldown, so it must reflect real submits).
+    // submit of this question.
     const upsert = db.prepare(
       `INSERT INTO learning_question_results
-         (user_id, module_id, question_index, selected_index, is_correct, first_attempt_correct, attempts, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, 1, datetime('now'))
-       ON CONFLICT(user_id, module_id, question_index) DO UPDATE SET
+         (user_id, session_id, module_id, question_index, selected_index, is_correct, first_attempt_correct, attempts, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
+       ON CONFLICT(user_id, session_id, module_id, question_index) DO UPDATE SET
          selected_index = excluded.selected_index,
          is_correct     = excluded.is_correct,
          attempts       = learning_question_results.attempts + 1,
@@ -282,29 +284,24 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
     );
     const tx = db.transaction((rows: typeof answers) => {
       for (const a of rows) {
-        // On first insert first_attempt_correct = this submit's correctness;
-        // the ON CONFLICT branch deliberately omits it so it is never updated.
-        upsert.run(req.user!.id, moduleId, a.questionIndex, a.selectedIndex, a.isCorrect, a.isCorrect);
+        upsert.run(req.user!.id, sessionId, moduleId, a.questionIndex, a.selectedIndex, a.isCorrect, a.isCorrect);
       }
     });
     tx(answers);
 
-    // Append-only exam-attempt log (D91): one row per submit with the score +
-    // pass flag so the Instructor tab can chart improvement and count
-    // pass/fail. attempt_no is DB-derived (prior attempts for this user+module
-    // + 1) so it reflects real submits, not a client-supplied counter.
+    // Append-only exam-attempt log (D91)
     const correctCount = answers.reduce((n, a) => n + (a.isCorrect ? 1 : 0), 0);
     const totalQuestions = answers.length;
     const passed = totalQuestions > 0 && correctCount === totalQuestions ? 1 : 0;
     const priorRow = db
-      .prepare(`SELECT COUNT(*) AS n FROM learning_exam_attempts WHERE user_id = ? AND module_id = ?`)
-      .get(req.user.id, moduleId) as { n: number } | undefined;
+      .prepare(`SELECT COUNT(*) AS n FROM learning_exam_attempts WHERE user_id = ? AND session_id IS ? AND module_id = ?`)
+      .get(req.user.id, sessionId, moduleId) as { n: number } | undefined;
     const attemptNo = (priorRow?.n ?? 0) + 1;
     db.prepare(
       `INSERT INTO learning_exam_attempts
-         (user_id, module_id, attempt_no, correct_count, total_questions, passed, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))`,
-    ).run(req.user.id, moduleId, attemptNo, correctCount, totalQuestions, passed);
+         (user_id, session_id, module_id, attempt_no, correct_count, total_questions, passed, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+    ).run(req.user.id, sessionId, moduleId, attemptNo, correctCount, totalQuestions, passed);
 
     // Mirror to Supabase (best-effort, keyed by email — D91).
     const email = req.user.email ? req.user.email.toLowerCase() : null;

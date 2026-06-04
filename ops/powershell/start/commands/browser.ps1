@@ -64,6 +64,7 @@ function Get-CleanChromeArgs {
   param([string]$ProfileDir, [string]$Target)
   return @(
     "--user-data-dir=$ProfileDir",
+    '--remote-debugging-port=9222',
     '--no-first-run','--no-default-browser-check','--disable-extensions','--disable-default-apps',
     '--disable-sync','--disable-translate','--disable-background-networking',
     '--disable-background-timer-throttling','--disable-backgrounding-occluded-windows',

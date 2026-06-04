@@ -485,12 +485,16 @@ export function initDb(): void {
   // module is completed (which unlocks the next), so the path resumes where
   // the user left off after a refresh or on another device.
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_progress (
-    user_id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
+    session_id TEXT,
     completed_module_ids TEXT NOT NULL DEFAULT '[]',
     last_unlocked_module_id TEXT,
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, session_id),
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
+
+  ensureColumn('learning_progress', 'session_id', 'session_id TEXT');
 
   // Per-module practical attempt counts (JSON map module_id → tries). Added
   // after learning_progress shipped, so older DBs need the column backfilled.
@@ -514,12 +518,10 @@ export function initDb(): void {
   }
 
   // ── learning_question_results (per-question theoretical-exam results) ────
-  // One row per (user, module, question). first_attempt_correct is locked on
-  // the first recorded row; is_correct/selected_index/attempts reflect the
-  // latest submit. Signed-in learners only — the client guards guests. SQLite
-  // only; no Supabase mirror (D87).
+  // One row per (user, session, module, question).
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_question_results (
     user_id INTEGER NOT NULL,
+    session_id TEXT,
     module_id TEXT NOT NULL,
     question_index INTEGER NOT NULL,
     selected_index INTEGER NOT NULL,
@@ -527,29 +529,30 @@ export function initDb(): void {
     first_attempt_correct INTEGER NOT NULL,
     attempts INTEGER NOT NULL DEFAULT 1,
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
-    PRIMARY KEY (user_id, module_id, question_index),
+    PRIMARY KEY (user_id, session_id, module_id, question_index),
     FOREIGN KEY (user_id) REFERENCES users(id)
   )`).run();
 
+  ensureColumn('learning_question_results', 'session_id', 'session_id TEXT');
+
   // ── learning_exam_attempts (append-only theoretical-exam submit log, D91) ─
-  // One row per exam SUBMIT (not per question): the score + pass flag at that
-  // moment, with a server timestamp. Unlike learning_question_results (which
-  // upserts latest state), this is append-only so the Instructor tab can chart
-  // improvement over time and count pass/fail attempts. Written in the
-  // PUT /api/learning/answers handler; signed-in learners only.
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_exam_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
+    session_id TEXT,
     module_id TEXT NOT NULL,
     attempt_no INTEGER NOT NULL,
     correct_count INTEGER NOT NULL,
     total_questions INTEGER NOT NULL,
     passed INTEGER NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
+
+  ensureColumn('learning_exam_attempts', 'session_id', 'session_id TEXT');
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_lea_user_module
-    ON learning_exam_attempts(user_id, module_id)`).run();
+    ON learning_exam_attempts(user_id, session_id, module_id)`).run();
+
 
   // ── learning_modules (DB-backed Learning CMS, D92) ──────────────────────
   // One row per learning module, keyed by module_id (PK = the sacred id the

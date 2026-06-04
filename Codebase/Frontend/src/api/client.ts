@@ -273,6 +273,7 @@ export async function saveLearningProgress(
   lastUnlockedModuleId: string | null,
   triesByModule?: Record<string, number>,
   theoryPassedModuleIds?: string[],
+  sessionId?: string,
 ): Promise<void> {
   await apiFetch('/api/learning/progress', {
     method: 'PUT',
@@ -281,6 +282,7 @@ export async function saveLearningProgress(
       lastUnlockedModuleId,
       triesByModule,
       theoryPassedModuleIds,
+      sessionId,
     }),
   });
 }

@@ -88,6 +88,7 @@ interface AppState {
   // LMS Progress (Khan Academy Style)
   preTestCompleted: boolean;
   completedItems: string[]; // IDs of lessons/quizzes finished
+  lmsSessionId: string | null; // Unique ID for research session
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
   // tabbing away and back (or running an analysis) doesn't drop the user's
   // other files. Empty array = legacy single-file mode (AnalysisForm seeds
@@ -131,6 +132,7 @@ interface AppState {
   setPreTestCompleted: (v: boolean) => void;
   setCompletedItems: (items: string[]) => void;
   addCompletedItem: (id: string) => void;
+  setLmsSessionId: (id: string | null) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
   setSubmissionFiles: (files: Array<{ id: string; name: string; text: string }>) => void;
@@ -311,6 +313,7 @@ export const useAppStore = create<AppState>((set) => ({
   addCompletedItem: (id) => set((s) => ({
     completedItems: s.completedItems.includes(id) ? s.completedItems : [...s.completedItems, id]
   })),
+  setLmsSessionId: (id) => set({ lmsSessionId: id }),
   clearLinePatternOverride: (line) => set((s) => {
     const next = { ...s.linePatternOverrides };
     delete next[line];
