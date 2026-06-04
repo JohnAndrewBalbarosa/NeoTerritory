@@ -378,6 +378,10 @@ export default function PatternsLearnPage(): JSX.Element {
     setSeededLeafView(true);
   }, [activeStep, activeModule, contentLoaded, defaultLeafGroup, pages, seededLeafView]);
 
+  useEffect(() => {
+    if (!preTestCompleted) navigate('/pre-test');
+  }, [preTestCompleted]);
+
   const goToStep = useCallback(
     (index: number, nextPageIndex = 0) => {
       if (index >= 0 && index < steps.length) {
@@ -422,12 +426,32 @@ export default function PatternsLearnPage(): JSX.Element {
 
   if (!preTestCompleted) {
     return (
-      <div style={{ textAlign: 'center', padding: '10rem' }}>
-        <h1>Locked</h1>
-        <button type="button" onClick={() => navigate('/pre-test')}>
-          Pre-test
-        </button>
-      </div>
+      <main className="nt-test-page" data-testid="learn-gate-page">
+        <div className="nt-test-page__shell">
+          <header className="nt-test-page__hero">
+            <p className="nt-test-page__eyebrow">Learning gate</p>
+            <div className="nt-test-page__badge nt-test-page__badge--alt">PRE</div>
+            <h1 className="nt-test-page__title">Pre-test required</h1>
+            <p className="nt-test-page__lede">
+              Complete the baseline check first. The app will route you to the pre-test now, then bring
+              you back here after it is marked complete.
+            </p>
+          </header>
+
+          <section className="nt-test-page__panel">
+            <div className="nt-test-page__panel-head">
+              <span className="nt-test-page__panel-kicker">Next step</span>
+              <h2 className="nt-test-page__panel-title">Opening the baseline assessment</h2>
+            </div>
+            <p className="nt-test-page__panel-copy">
+              If the redirect is blocked, use the button below to open the pre-test manually.
+            </p>
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary nt-test-page__cta" onClick={() => navigate('/pre-test')}>
+              Open Pre-test
+            </button>
+          </section>
+        </div>
+      </main>
     );
   }
 

@@ -2,13 +2,15 @@ import { useState } from 'react';
 import { navigate } from '../../logic/router';
 import GoogleSignInButton from './GoogleSignInButton';
 import { useAppStore } from '../../store/appState';
+import { resolveLearnerLanding } from '../../logic/learnerRouting';
 import { fetchTesterAccounts, claimSeat, fetchRuns, fetchSample } from '../../api/client';
 import type { User } from '../../types/api';
 
 // Sign-in page. After the learner-merge, the former 'developer' and 'student'
 // entry flows are unified into a single 'learner' role: both /developer/login
 // and /student-learning/login land here, sign in with Google, and route to
-// /patterns/learn. admin / pm / new keep their own behaviour.
+// the learner gate or learning path based on pre-test state. admin / pm / new
+// keep their own behaviour.
 //
 // The learner page also offers a "Use guest only" button: it claims an open
 // guest seat (a real but shared session) so the analyser works inside the
@@ -26,7 +28,8 @@ function resolveRole(pathname: string): Role {
 }
 
 function resolveNext(role: Role): string {
-  if (role === 'learner') return '/patterns/learn';
+  const preTestCompleted = useAppStore.getState().preTestCompleted;
+  if (role === 'learner') return resolveLearnerLanding(preTestCompleted);
   if (role === 'admin' || role === 'pm') {
     const key = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_ADMIN_GATE_KEY;
     return key ? `/admin?key=${encodeURIComponent(key)}` : '/admin';
@@ -86,7 +89,7 @@ function GuestOnlyButton(): JSX.Element {
       const { token, user } = await claimSeat(open.username);
       setAuth(token, user as User);
       await Promise.all([fetchRuns(), fetchSample()]).catch(() => {});
-      navigate('/patterns/learn');
+      navigate(resolveLearnerLanding(useAppStore.getState().preTestCompleted));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Could not start a guest session. Try again.');
     } finally {

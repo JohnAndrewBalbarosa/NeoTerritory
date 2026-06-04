@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { resolveLearnerLanding } from '../../logic/learnerRouting';
+import { useAppStore } from '../../store/appState';
 
 interface GoogleStatus {
   configured: boolean;
@@ -14,7 +16,7 @@ interface Props {
   //   'admin'     — original-devs allowlist tier (/admin/login).
   //   'pm'        — self-serve org owner (/pm/login).
   //   'developer' / 'student' — legacy aliases for 'learner', kept for the
-  //     type signature; both route to /patterns/learn.
+  //     type signature; the learner target resolves to pre-test or the learning path depending on session state.
   //   'new'       — first-timer; backend routes to /onboarding/choose.
   //   'unspecified' — legacy single-button path; kept for the type
   //     signature but no longer used by any caller.
@@ -38,6 +40,7 @@ interface Props {
  * button in environments where Supabase auth hasn't been provisioned.
  */
 export default function GoogleSignInButton({ role, intent, redirectAfter }: Props) {
+  const preTestCompleted = useAppStore((s) => s.preTestCompleted);
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +63,7 @@ export default function GoogleSignInButton({ role, intent, redirectAfter }: Prop
           ? '/onboarding/choose'
           : role === 'unspecified'
             ? '/'
-            : '/patterns/learn';
+            : resolveLearnerLanding(preTestCompleted);
     const after = redirectAfter || defaultAfter;
     const callback = new URL('/auth/callback', window.location.origin);
     callback.searchParams.set('role', role);
