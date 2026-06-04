@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { navigate } from '../../../logic/router';
 import {
   CATEGORY_META,
@@ -38,7 +38,8 @@ interface LessonPageGroup {
 type LearnNavView =
   | { level: 'sections' }
   | { level: 'modules'; sectionId: LearningCategory }
-  | { level: 'subsections'; sectionId: LearningCategory; moduleId: string };
+  | { level: 'subsections'; sectionId: LearningCategory; moduleId: string }
+  | { level: 'pages'; sectionId: LearningCategory; moduleId: string; groupKey: LessonPageKind };
 
 function anchorId(moduleId: string, section: string, sub?: number): string {
   return `mod-${moduleId}-${section}${sub != null ? `-${sub}` : ''}`;
@@ -343,7 +344,6 @@ export default function PatternsLearnPage(): JSX.Element {
   const [activeIndex, setActiveIndex] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
   const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
-  const [openPageGroup, setOpenPageGroup] = useState<LessonPageKind>('intro');
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
 
@@ -358,10 +358,6 @@ export default function PatternsLearnPage(): JSX.Element {
   const isActiveComplete = !!(activeStep && completedIds.has(activeStep.module.id));
   const isActiveTheoryPassed = !!(activeStep && theoryPassedIds.has(activeStep.module.id));
   const unlockedCount = useMemo(() => computeUnlockedCount(steps, completedIds), [steps, completedIds]);
-
-  useEffect(() => {
-    setOpenPageGroup('intro');
-  }, [activeStep?.module.id]);
 
   const goToStep = useCallback(
     (index: number, nextPageIndex = 0) => {
@@ -387,7 +383,8 @@ export default function PatternsLearnPage(): JSX.Element {
       const prevIdx = activeIndex - 1;
       setActiveIndex(prevIdx);
       setPageIndex(lessonPagesFor(steps[prevIdx].module).length - 1);
-      setOpenPageGroup('intro');
+      const prevStep = steps[prevIdx];
+      setNav({ level: 'subsections', sectionId: prevStep.category, moduleId: prevStep.module.id });
     }
   };
 
@@ -398,7 +395,6 @@ export default function PatternsLearnPage(): JSX.Element {
         0,
         targetPages.findIndex((p) => p.kind === target.kind && p.subIndex === target.subIndex),
       );
-      setOpenPageGroup(target.kind);
       if (step.globalIndex === activeIndex) setPageIndex(pi);
       else goToStep(step.globalIndex, pi);
     },
@@ -419,7 +415,9 @@ export default function PatternsLearnPage(): JSX.Element {
   if (!contentLoaded || !activeModule) return <div>Loading...</div>;
 
   const navGroup = nav.level !== 'sections' ? groups.find((g) => g.meta.id === nav.sectionId) : null;
-  const navStep = nav.level === 'subsections' ? steps.find((s) => s.module.id === nav.moduleId) : null;
+  const navStep = nav.level === 'subsections' || nav.level === 'pages' ? steps.find((s) => s.module.id === nav.moduleId) : null;
+  const navPageGroup = nav.level === 'pages' ? pageGroups.find((g) => g.key === nav.groupKey) : null;
+  const navStepModuleId = navStep?.module.id ?? '';
 
   return (
     <main className="nt-student nt-student-course">
@@ -525,57 +523,57 @@ export default function PatternsLearnPage(): JSX.Element {
               <p className="nt-course-folder__crumb">{navStep.module.title}</p>
 
               {pageGroups.map((group) => {
-                const open = openPageGroup === group.key;
                 return (
-                  <div key={group.key} className={`nt-course-section${open ? ' is-open' : ''}`}>
-                    <div className="nt-course-tree-row">
-                      <button
-                        type="button"
-                        className="nt-course-outline nt-course-tree-nav"
-                        onClick={() => {
-                          const first = group.pages[0];
-                          if (first) jumpToPage(navStep, first);
-                        }}
-                      >
-                        <span className="nt-course-outline__dot" aria-hidden="true">
-                          {group.pages.length}
-                        </span>
-                        <span>
-                          <small>{group.label}</small>
-                          {group.pages[0]?.label}
-                        </span>
-                      </button>
-                      <button
-                        type="button"
-                        className="nt-course-tree-disclosure"
-                        onClick={() => setOpenPageGroup(open ? 'intro' : group.key)}
-                        aria-label={open ? `Collapse ${group.label}` : `Expand ${group.label}`}
-                      >
-                        {open ? 'v' : '>'}
-                      </button>
-                    </div>
-
-                    {open ? (
-                      <div className="nt-course-section__body">
-                        <ul className="nt-course-anchors">
-                          {group.pages.map((p) => (
-                            <li key={`${p.kind}-${p.subIndex ?? 'x'}`}>
-                              <button
-                                type="button"
-                                className="nt-course-anchor"
-                                data-active={currentPage.kind === p.kind && currentPage.subIndex === p.subIndex ? 'true' : undefined}
-                                onClick={() => jumpToPage(navStep, p)}
-                              >
-                                {p.label}
-                              </button>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    ) : null}
-                  </div>
+                  <button
+                    key={group.key}
+                    type="button"
+                    className="nt-course-folder__row nt-course-folder__row--anchor nt-course-folder__row--branch"
+                    onClick={() => setNav({ level: 'pages', sectionId: navGroup.meta.id, moduleId: navStepModuleId, groupKey: group.key })}
+                  >
+                    <span className="nt-course-folder__icon" aria-hidden="true">
+                      {group.pages.length}
+                    </span>
+                    <span className="nt-course-folder__label">
+                      <small>{group.label}</small>
+                      {group.pages[0]?.label}
+                    </span>
+                    <span className="nt-course-folder__chev" aria-hidden="true">
+                      &gt;
+                    </span>
+                  </button>
                 );
               })}
+            </>
+          ) : null}
+
+          {nav.level === 'pages' && navGroup && navStep && navPageGroup ? (
+            <>
+              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
+                <button type="button" className="nt-course-back" onClick={() => setNav({ level: 'subsections', sectionId: navGroup.meta.id, moduleId: navStepModuleId })}>
+                  &lt; {navStep.module.title}
+                </button>
+              </div>
+              <p className="nt-course-folder__crumb">{navPageGroup.label}</p>
+              <ul className="nt-course-folder">
+                {navPageGroup.pages.map((p, i) => (
+                  <li key={`${p.kind}-${p.subIndex ?? 'x'}`}>
+                    <button
+                      type="button"
+                      className="nt-course-folder__row nt-course-folder__row--anchor nt-course-folder__row--leaf"
+                      data-active={currentPage.kind === p.kind && currentPage.subIndex === p.subIndex ? 'true' : undefined}
+                      onClick={() => jumpToPage(navStep, p)}
+                    >
+                      <span className="nt-course-folder__icon" aria-hidden="true">
+                        {i + 1}
+                      </span>
+                      <span className="nt-course-folder__label">
+                        <small>{navPageGroup.label}</small>
+                        {p.label}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
             </>
           ) : null}
         </aside>

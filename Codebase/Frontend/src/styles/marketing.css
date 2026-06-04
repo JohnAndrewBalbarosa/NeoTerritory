@@ -1505,6 +1505,13 @@ body[data-surface] #root {
 .nt-course-folder__row--anchor {
   padding: 0.52rem 0.8rem;
 }
+.nt-course-folder__row--branch {
+  margin-left: 0.2rem;
+}
+.nt-course-folder__row--leaf {
+  margin-left: 1rem;
+  padding-left: 0.72rem;
+}
 .nt-course-folder__row--anchor .nt-course-folder__icon {
   flex-basis: 1.4rem;
   height: 1.4rem;
