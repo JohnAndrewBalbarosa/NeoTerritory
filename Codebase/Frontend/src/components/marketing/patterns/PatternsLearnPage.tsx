@@ -45,100 +45,113 @@ interface CategoryGroup {
   steps: ReadonlyArray<CourseStep>;
 }
 
-// Sidebar drill-down folder state: one level visible at a time, with a back
-// button — Sections → Modules → Subsections (D86 revision per user request).
+// Sidebar drill-down folder state: one level visible at a time
 type LearnNavView =
   | { level: 'sections' }
   | { level: 'modules'; sectionId: LearningCategory }
   | { level: 'subsections'; sectionId: LearningCategory; moduleId: string };
 
-// Pure builder: the loaded module source is injected as `modulesInCat` (the
-// static one, or the API-backed one from useLearningModules). Ordering is
-// unchanged — CATEGORY_META order outer, then the per-category order the source
-// yields (the API already returns sort_order; the static list keeps its array
-// order). D92 Track C.
-function buildCategoryGroups(
-  modulesInCat: (category: LearningCategory) => ReadonlyArray<LearningModule>,
-): {
-  groups: ReadonlyArray<CategoryGroup>;
-  steps: ReadonlyArray<CourseStep>;
-} {
-  const steps: CourseStep[] = [];
-  const groups: CategoryGroup[] = [];
-  CATEGORY_META.forEach((meta) => {
-    const inCat = modulesInCat(meta.id);
-    if (inCat.length === 0) return;
-    const grouped: CourseStep[] = inCat.map((module) => {
-      const step: CourseStep = {
-        module,
-        category: meta.id,
-        globalIndex: steps.length,
-      };
-      steps.push(step);
-      return step;
-    });
-    groups.push({ meta, steps: grouped });
-  });
-  return { groups, steps };
-}
-
-function indexFromUrl(steps: ReadonlyArray<CourseStep>): number {
-  if (typeof window === 'undefined') return 0;
-  const slug = learnModuleSlugFromPath(window.location.pathname);
-  if (!slug) return 0;
-  const idx = steps.findIndex((s) => s.module.id === slug);
-  return idx >= 0 ? idx : 0;
-}
-
-// Linear unlock: module 0 is always reachable; module N is reachable only
-// once module N-1 is complete (theoretical passed + practical passed if one
-// exists). Driven by the completedIds set.
-function computeUnlockedCount(
-  steps: ReadonlyArray<CourseStep>,
-  completedIds: ReadonlySet<string>,
-): number {
-  let n = 1;
-  for (let i = 0; i < steps.length - 1; i++) {
-    if (completedIds.has(steps[i].module.id)) n++;
-    else break;
-  }
-  return Math.min(n, Math.max(steps.length, 1));
-}
-
-function clampToUnlocked(idx: number, unlockedCount: number): number {
-  if (idx < 0) return 0;
-  if (idx >= unlockedCount) return Math.max(0, unlockedCount - 1);
-  return idx;
-}
-
-// ----- in-module section identity (shared by the pager + the sidebar) -----
-
-type LessonPageKind = 'intro' | 'concepts' | 'examples' | 'theoretical' | 'practical';
-
-interface LessonPage {
-  kind: LessonPageKind;
-  label: string;
-}
-
-function anchorId(moduleId: string, section: string): string {
-  return `mod-${moduleId}-${section}`;
-}
-
-// The ordered pages a module exposes. Examples only appears when the module has
-// at least one code-bearing section; the exam pages mirror the exams the module
-// actually carries. This is the single source for both the pager steps and the
-// sidebar subsection list, so they can never drift.
 function lessonPagesFor(module: LearningModule | undefined): ReadonlyArray<LessonPage> {
   if (!module) return [];
-  const hasExamples = module.sections.some((s) => Boolean(s.code));
-  const pages: LessonPage[] = [
-    { kind: 'intro', label: 'Intro' },
-    { kind: 'concepts', label: 'Concepts' },
-  ];
-  if (hasExamples) pages.push({ kind: 'examples', label: 'Examples' });
-  if (module.theoreticalExam) pages.push({ kind: 'theoretical', label: 'Theoretical Exam' });
-  if (module.practicalExam) pages.push({ kind: 'practical', label: 'Practical Exam' });
+  const pages: LessonPage[] = [{ kind: 'intro', label: 'Introduction' }];
+
+  // Granular: one page per concept section
+  module.sections.filter(s => !s.code).forEach((s, i) => {
+    pages.push({ kind: 'concepts', label: s.heading || `Concept ${i+1}`, subIndex: i });
+  });
+
+  // Granular: one page per example
+  module.sections.filter(s => !!s.code).forEach((s, i) => {
+    pages.push({ kind: 'examples', label: s.heading || `Example ${i+1}`, subIndex: i });
+  });
+
+  // Granular: one page per quiz question
+  if (module.theoreticalExam) {
+    module.theoreticalExam.questions.forEach((_, i) => {
+      pages.push({ kind: 'theoretical', label: `Quiz Q${i+1}`, subIndex: i });
+    });
+  }
+
+  if (module.practicalExam) {
+    pages.push({ kind: 'practical', label: 'Practical Exam' });
+  }
   return pages;
+}
+
+export default function PatternsLearnPage(): JSX.Element {
+  const preTestCompleted = useAppStore((s) => s.preTestCompleted);
+  const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
+  const { groups, steps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [pageIndex, setPageIndex] = useState(0);
+  const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
+
+  const activeStep = steps[activeIndex];
+  const activeModule = findModule(activeStep?.module.id);
+  const pages = useMemo(() => lessonPagesFor(activeModule), [activeModule]);
+  const currentPage = pages[pageIndex] || pages[0];
+
+  // Auto-sync sidebar depth with current lesson
+  useEffect(() => {
+    if (activeStep) {
+      setNav({ level: 'subsections', sectionId: activeStep.category, moduleId: activeStep.module.id });
+    }
+  }, [activeIndex]);
+
+  if (!preTestCompleted) return <PreTestGate />;
+
+  return (
+    <main className="nt-student nt-student-course--viewport">
+      <section className="nt-course-shell">
+        <aside className="nt-course-sidebar--hierarchical">
+          {nav.level === 'sections' && (
+            <CategoryList groups={groups} onSelect={(id) => setNav({ level: 'modules', sectionId: id })} />
+          )}
+          {nav.level === 'modules' && (
+            <ModuleList 
+              group={groups.find(g => g.meta.id === nav.sectionId)!} 
+              onBack={() => setNav({ level: 'sections' })}
+              onSelect={(mId) => setNav({ level: 'subsections', sectionId: nav.sectionId, moduleId: mId })}
+            />
+          )}
+          {nav.level === 'subsections' && (
+            <SubsectionList 
+              step={steps.find(s => s.module.id === nav.moduleId)!}
+              onBack={() => setNav({ level: 'modules', sectionId: nav.sectionId })}
+              activePageKind={currentPage.kind}
+              activeSubIndex={currentPage.subIndex}
+              onJump={(kind, sub) => {
+                const idx = pages.findIndex(p => p.kind === kind && p.subIndex === sub);
+                setPageIndex(idx >= 0 ? idx : 0);
+              }}
+            />
+          )}
+        </aside>
+
+        <article className="nt-lesson-panel--viewport">
+          <div className="nt-pager__viewport-container">
+            <header className="nt-pager__header-sticky">
+              <h2>{activeModule?.title} <small>— {currentPage.label}</small></h2>
+            </header>
+            
+            <section className="nt-pager__content-no-scroll">
+              <div className="nt-pager__granular-card">
+                {/* Dynamically render only the specific subpage content */}
+                <GranularContent module={activeModule!} page={currentPage} />
+              </div>
+            </section>
+
+            <footer className="nt-pager__footer-sticky">
+              <button onClick={() => setPageIndex(p => Math.max(0, p - 1))}>Previous</button>
+              <span>{pageIndex + 1} / {pages.length}</span>
+              <button className="primary" onClick={() => setPageIndex(p => Math.min(pages.length - 1, p + 1))}>Next</button>
+            </footer>
+          </div>
+        </article>
+      </section>
+    </main>
+  );
 }
 
 // ----- prerequisite banner: what unlocked THIS module, what's needed next -----
@@ -220,120 +233,107 @@ function PrerequisiteBanner({ steps, activeIndex, isActiveComplete }: Prerequisi
 // ----- lesson bodies: one per pager page (Intro / Concepts / Examples) -----
 
 function IntroBody({ module }: { module: LearningModule }): JSX.Element {
-  // The module title + family eyebrow already live in the pager head (visible on
-  // every page), so the Intro page shows only the lead-in paragraph instead of
-  // repeating them — keeps the reading area dense rather than header-heavy.
   return (
-    <p className="nt-learn__module-intro nt-learn__module-intro--lead" id={anchorId(module.id, 'intro')}>
-      {module.intro}
-    </p>
+    <div className="nt-learn__granular-page">
+      <p className="nt-learn__module-intro nt-learn__module-intro--lead" id={anchorId(module.id, 'intro')}>
+        {module.intro}
+      </p>
+    </div>
   );
 }
 
-function ConceptsBody({ module }: { module: LearningModule }): JSX.Element {
+function ConceptsBody({ module, subIndex }: { module: LearningModule; subIndex?: number }): JSX.Element {
   const conceptSections = module.sections.filter((s) => !s.code);
+  const section = subIndex != null ? conceptSections[subIndex] : null;
+
+  if (!section) return <div />;
 
   return (
-    <section className="nt-learn__module-group" id={anchorId(module.id, 'concepts')} aria-label="Concepts">
-      <p className="nt-learn__group-eyebrow">Concepts</p>
-      {conceptSections.map((s, idx) => (
-        <section className="nt-learn__module-section" key={`${module.id}-c-${idx}`}>
-          <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-          {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-          {s.bullets && s.bullets.length > 0 ? (
-            <ul className="nt-learn__module-bullets">
-              {s.bullets.map((b, i) => (
-                <li key={`${module.id}-c-${idx}-b-${i}`}>{b}</li>
-              ))}
-            </ul>
-          ) : null}
-          {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
-        </section>
-      ))}
-
-      {module.keyTerms && module.keyTerms.length > 0 ? (
-        <section className="nt-learn__module-section">
-          <h3 className="nt-learn__module-section-head">Key terms</h3>
-          <dl className="nt-learn__module-terms">
-            {module.keyTerms.map((t) => (
-              <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
-                <dt>{t.term}</dt>
-                <dd>{t.definition}</dd>
-              </div>
+    <div className="nt-learn__granular-page" id={anchorId(module.id, 'concepts', subIndex)}>
+      <section className="nt-learn__module-section">
+        <h3 className="nt-learn__module-section-head">{section.heading}</h3>
+        {section.body ? <p className="nt-learn__module-section-body">{section.body}</p> : null}
+        {section.bullets && section.bullets.length > 0 ? (
+          <ul className="nt-learn__module-bullets">
+            {section.bullets.map((b, i) => (
+              <li key={`${module.id}-c-${subIndex}-b-${i}`}>{b}</li>
             ))}
-          </dl>
-        </section>
-      ) : null}
+          </ul>
+        ) : null}
+        {section.note ? <p className="nt-learn__module-note">{section.note}</p> : null}
+      </section>
 
-      {module.summary ? (
-        <section className="nt-learn__module-summary" aria-label="Module summary">
-          <p className="nt-learn__module-summary-eyebrow">Summary</p>
-          <p className="nt-learn__module-summary-body">{module.summary}</p>
-        </section>
-      ) : null}
-    </section>
+      {/* Show key terms and summary only on the last concept page */}
+      {subIndex === conceptSections.length - 1 && (
+        <>
+          {module.keyTerms && module.keyTerms.length > 0 && (
+            <section className="nt-learn__module-section">
+              <h3 className="nt-learn__module-section-head">Key terms</h3>
+              <dl className="nt-learn__module-terms">
+                {module.keyTerms.map((t) => (
+                  <div className="nt-learn__module-term" key={`${module.id}-t-${t.term}`}>
+                    <dt>{t.term}</dt>
+                    <dd>{t.definition}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
+          {module.summary && (
+            <section className="nt-learn__module-summary">
+              <p className="nt-learn__module-summary-eyebrow">Summary</p>
+              <p className="nt-learn__module-summary-body">{module.summary}</p>
+            </section>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
-function ExamplesBody({ module }: { module: LearningModule }): JSX.Element | null {
+function ExamplesBody({ module, subIndex }: { module: LearningModule; subIndex?: number }): JSX.Element | null {
   const exampleSections = module.sections.filter((s) => Boolean(s.code));
-  if (exampleSections.length === 0) return null;
+  const section = subIndex != null ? exampleSections[subIndex] : null;
+
+  if (!section) return null;
 
   return (
-    <section className="nt-learn__module-group" id={anchorId(module.id, 'examples')} aria-label="Examples">
-      <p className="nt-learn__group-eyebrow">Examples</p>
-      {exampleSections.map((s, idx) => (
-        <section className="nt-learn__module-section" key={`${module.id}-e-${idx}`}>
-          <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-          {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-          {s.code ? (
-            <pre className="nt-learn__module-code" aria-label="Code example">
-              {s.code}
-            </pre>
-          ) : null}
-          {s.note ? <p className="nt-learn__module-note">{s.note}</p> : null}
-        </section>
-      ))}
-    </section>
+    <div className="nt-learn__granular-page" id={anchorId(module.id, 'examples', subIndex)}>
+      <section className="nt-learn__module-section">
+        <h3 className="nt-learn__module-section-head">{section.heading}</h3>
+        {section.body ? <p className="nt-learn__module-section-body">{section.body}</p> : null}
+        {section.code ? (
+          <pre className="nt-learn__module-code" aria-label="Code example">
+            {section.code}
+          </pre>
+        ) : null}
+        {section.note ? <p className="nt-learn__module-note">{section.note}</p> : null}
+      </section>
+      
+      {subIndex === exampleSections.length - 1 && <SeeAlsoFooter module={module} />}
+    </div>
   );
 }
 
-function SeeAlsoFooter({ module }: { module: LearningModule }): JSX.Element | null {
-  if (!module.seeAlso || module.seeAlso.length === 0) return null;
-
-  return (
-    <footer className="nt-learn__module-see-also" aria-label="Related modules">
-      <p className="nt-learn__module-see-also-eyebrow">See also</p>
-      <ul className="nt-learn__module-see-also-list">
-        {module.seeAlso.map((sa) => (
-          <li key={`${module.id}-sa-${sa.moduleId}`}>
-            <button
-              type="button"
-              className="nt-learn__module-see-also-link"
-              onClick={() => navigate(`/patterns/learn/${sa.moduleId}`)}
-            >
-              {sa.label} →
-            </button>
-          </li>
-        ))}
-      </ul>
-    </footer>
-  );
-}
-
-// ----- Theoretical Exam: multi-question MCQ, pass = all correct -----
+// ----- Theoretical Exam: multi-page MCQ, one question per subIndex -----
 
 interface TheoreticalExamBlockProps {
   moduleId: string;
   exam: TheoreticalExam;
   isPassed: boolean;
+  subIndex?: number;
   onPass: (tries: number) => void;
   onRecordAnswers?: (attempt: number, answers: { questionIndex: number; selectedIndex: number; isCorrect: boolean }[]) => void;
 }
 
-function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswers }: TheoreticalExamBlockProps): JSX.Element {
-  // If the module is already passed (loaded from progress) pre-fill the correct
-  // answers so the block renders in a read-only "review" state with green ticks.
+function TheoreticalExamBlock({ 
+  moduleId, exam, isPassed, subIndex, onPass, onRecordAnswers 
+}: TheoreticalExamBlockProps): JSX.Element {
+  // Persistence for answers across sub-pages is tricky here if we remount.
+  // We'll use the AppStore or a parent-lifted state if needed, but for now
+  // let's try reading from the store if we have it, otherwise local.
+  // Actually, TheoreticalExamBlock is keyed by moduleId, so it stays mounted
+  // while we page through questions.
   const [answers, setAnswers] = useState<Record<number, number>>(() =>
     isPassed
       ? Object.fromEntries(exam.questions.map((q, i) => [i, q.correctIndex]))
@@ -342,8 +342,12 @@ function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswer
   const [submitted, setSubmitted] = useState<boolean>(isPassed);
   const [tries, setTries] = useState<number>(0);
 
+  const qi = subIndex ?? 0;
+  const q = exam.questions[qi];
   const total = exam.questions.length;
+  const isLastQ = qi === total - 1;
   const allAnswered = exam.questions.every((_, i) => answers[i] != null);
+
   const correctCount = exam.questions.reduce(
     (n, q, i) => n + (answers[i] === q.correctIndex ? 1 : 0),
     0,
@@ -351,7 +355,7 @@ function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswer
   const passed = (submitted && correctCount === total) || isPassed;
 
   function pick(qIndex: number, optionIndex: number): void {
-    if (passed) return;
+    if (passed || submitted) return;
     setAnswers((prev) => ({ ...prev, [qIndex]: optionIndex }));
   }
 
@@ -369,112 +373,71 @@ function TheoreticalExamBlock({ moduleId, exam, isPassed, onPass, onRecordAnswer
     onRecordAnswers?.(attempt, recorded);
   }
 
-  function handleRetry(): void {
-    setSubmitted(false);
-    setAnswers({});
-  }
-
   return (
-    <section
-      className="nt-practical nt-practical--quiz"
-      id={anchorId(moduleId, 'theoretical')}
-      aria-label="Theoretical exam"
-    >
-      <header className="nt-practical__head">
-        <p className="nt-practical__eyebrow">Theoretical Exam · Check your understanding</p>
-        <h3 className="nt-practical__title">
-          Answer all {total} question{total === 1 ? '' : 's'} correctly to pass.
-        </h3>
+    <div className="nt-learn__granular-page nt-exam--single-q">
+      <header className="nt-exam__q-header">
+        <span className="nt-exam__q-badge">Question {qi + 1} of {total}</span>
       </header>
 
-      <ol className="nt-exam__questions">
-        {exam.questions.map((q: ExamQuestion, qi) => {
-          const picked = answers[qi];
-          return (
-            <li key={`${moduleId}-q-${qi}`} className="nt-exam__question">
-              <p className="nt-exam__prompt">
-                <span className="nt-exam__qnum">Q{qi + 1}.</span> {q.question}
-              </p>
-              {/* D92 (Track D): code-bearing differentiation question — show the
-                  ambiguous C++ snippet so the learner picks by semantic intent.
-                  Read-only; grading stays client-side via correctIndex. */}
-              {q.code ? (
-                <pre className="nt-learn__module-code" aria-label="Code to differentiate">
-                  {q.code}
-                </pre>
-              ) : null}
-              <ol className="nt-practical__choices">
-                {q.options.map((opt, oi) => {
-                  const isPickedRow = picked === oi;
-                  const isCorrectRow = submitted && oi === q.correctIndex;
-                  const isWrongPick = submitted && isPickedRow && oi !== q.correctIndex;
-                  return (
-                    <li key={oi}>
-                      <label
-                        className="nt-practical__choice"
-                        data-picked={isPickedRow ? 'true' : undefined}
-                        data-correct={isCorrectRow ? 'true' : undefined}
-                        data-wrong={isWrongPick ? 'true' : undefined}
-                      >
-                        <input
-                          type="radio"
-                          name={`exam-${moduleId}-${qi}`}
-                          checked={isPickedRow}
-                          disabled={passed}
-                          onChange={() => pick(qi, oi)}
-                        />
-                        <span>{opt}</span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ol>
-              {submitted && q.explanation ? (
-                <p
-                  className="nt-exam__explanation"
-                  data-state={picked === q.correctIndex ? 'pass' : 'fail'}
+      <section className="nt-exam__question">
+        <p className="nt-exam__prompt">{q.question}</p>
+        {q.code && (
+          <pre className="nt-learn__module-code">{q.code}</pre>
+        )}
+        <ol className="nt-practical__choices">
+          {q.options.map((opt, oi) => {
+            const picked = answers[qi];
+            const isPickedRow = picked === oi;
+            const isCorrectRow = submitted && oi === q.correctIndex;
+            const isWrongPick = submitted && isPickedRow && oi !== q.correctIndex;
+            return (
+              <li key={oi}>
+                <label
+                  className="nt-practical__choice"
+                  data-picked={isPickedRow ? 'true' : undefined}
+                  data-correct={isCorrectRow ? 'true' : undefined}
+                  data-wrong={isWrongPick ? 'true' : undefined}
                 >
-                  {picked === q.correctIndex ? '✓ ' : '✗ '}
-                  {q.explanation}
-                </p>
-              ) : null}
-            </li>
-          );
-        })}
-      </ol>
+                  <input
+                    type="radio"
+                    name={`exam-${moduleId}-${qi}`}
+                    checked={isPickedRow}
+                    disabled={passed || submitted}
+                    onChange={() => pick(qi, oi)}
+                  />
+                  <span>{opt}</span>
+                </label>
+              </li>
+            );
+          })}
+        </ol>
+      </section>
 
-      <div className="nt-practical__footer">
-        {!submitted && (
-          <button
-            type="button"
-            className="nt-lesson-button nt-lesson-button--primary"
-            onClick={handleSubmit}
-            disabled={!allAnswered}
-            title={!allAnswered ? 'Answer every question before submitting.' : undefined}
-          >
-            Submit exam
-          </button>
-        )}
-        {passed && (
-          <p className="nt-practical__verdict nt-practical__verdict--pass" role="status">
-            ✓ Theoretical exam passed.
-            {tries > 0 && <span className="nt-practical__tries"> · {tries} attempt{tries === 1 ? '' : 's'}</span>}
-          </p>
-        )}
-        {submitted && !passed && (
-          <>
-            <p className="nt-practical__verdict nt-practical__verdict--fail" role="status">
-              ✗ {correctCount}/{total} correct. Re-read the Concepts page and try again.
-            </p>
-            <button type="button" className="nt-lesson-button" onClick={handleRetry}>
-              Try again
+      {isLastQ && (
+        <div className="nt-exam__submit-zone">
+          {!submitted && (
+            <button
+              type="button"
+              className="nt-lesson-button nt-lesson-button--primary"
+              onClick={handleSubmit}
+              disabled={!allAnswered}
+            >
+              Submit final answers
             </button>
-          </>
-        )}
-      </div>
-    </section>
+          )}
+          {passed && <p className="nt-practical__verdict nt-practical__verdict--pass">✓ Passed!</p>}
+          {submitted && !passed && (
+            <div className="nt-practical__verdict nt-practical__verdict--fail">
+              <p>✗ {correctCount}/{total} correct. Go back and check your answers.</p>
+              <button type="button" className="nt-lesson-button" onClick={() => { setSubmitted(false); setAnswers({}); }}>Retry Exam</button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
+
 
 // ----- Practical Exam: Studio code-check, locked until theoretical passes -----
 
@@ -666,7 +629,11 @@ export default function PatternsLearnPage(): JSX.Element {
   // Guests run on a shared devcon{N} seat: the analyser works (they hold a
   // token) but their learning progress is NOT persisted server-side.
   const isGuest = (user?.username || '').toLowerCase().startsWith('devcon');
-  const canPersist = !!token && !isGuest;
+  const lmsSessionId = useAppStore((s) => s.lmsSessionId);
+  const setLmsSessionId = useAppStore((s) => s.setLmsSessionId);
+  // D92 (User Direction): Guests save progress for research but don't load it
+  // back, ensuring an ephemeral experience for them while the backend collects data.
+  const canPersist = !!token;
 
   // completedIds = modules fully done (theory + practical-if-any). theoryPassedIds
   // = modules whose theoretical exam passed (superset of completedIds for pattern
@@ -687,7 +654,9 @@ export default function PatternsLearnPage(): JSX.Element {
 
   // Hydrate progress from the account on mount / sign-in.
   useEffect(() => {
-    if (!canPersist) {
+    // D92 (User Direction): Guests skip loading (ephemeral session) but still 
+    // allow saving for backend research.
+    if (!token || isGuest) {
       setProgressLoaded(true);
       return;
     }
@@ -1036,85 +1005,104 @@ export default function PatternsLearnPage(): JSX.Element {
 
       <section className="nt-course-shell" aria-label="Learning path">
         <aside
-          className="nt-course-sidebar nt-course-sidebar--lms"
+          className="nt-course-sidebar nt-course-sidebar--hierarchical"
           aria-label="Learning module outline"
           data-lenis-prevent
         >
-          <div className="nt-course-sidebar__head">
-            <p>Course Content</p>
-            <span>{progress}% complete</span>
-          </div>
-
-          <div className="nt-lms-sidebar__scroll">
-            {groups.map((group, gIdx) => (
-              <div key={group.meta.id} className="nt-lms-section">
-                <h3 className="nt-lms-section__title">
-                  <span className="nt-lms-section__num">{gIdx + 1}</span>
-                  {group.meta.name}
-                </h3>
-                <ul className="nt-lms-module-list">
-                  {group.steps.map((step) => {
-                    const isModActive = step.globalIndex === activeIndex;
-                    const isModDone = completedIds.has(step.module.id);
-                    const isModLocked = step.globalIndex > unlockedCount;
-                    const modPages = lessonPagesFor(step.module);
-
-                    return (
-                      <li key={step.module.id} className="nt-lms-module-item" data-active={isModActive ? 'true' : undefined}>
-                        <button 
-                          className="nt-lms-module__trigger"
-                          onClick={() => goToStep(step.globalIndex)}
-                          disabled={isModLocked}
-                        >
-                          <span className="nt-lms-module__status">
-                            {isModLocked ? '🔒' : isModDone ? '✓' : '○'}
-                          </span>
-                          <span className="nt-lms-module__label">{step.module.title}</span>
-                        </button>
-
-                        {isModActive && (
-                          <ul className="nt-lms-page-list">
-                            {modPages.map((p) => {
-                              const isPageActive = currentPage?.kind === p.kind;
-                              const itemId = `${step.module.id}-${p.kind}`;
-                              // In a real LMS we'd track per-page completion; 
-                              // here we'll use a mix of theoretical/practical status.
-                              let isPageDone = false;
-                              if (p.kind === 'theoretical') isPageDone = theoryPassedIds.has(step.module.id);
-                              if (p.kind === 'practical') isPageDone = completedIds.has(step.module.id);
-                              if (p.kind === 'intro' || p.kind === 'concepts' || p.kind === 'examples') {
-                                // For now, we'll mark as done if the module is finished
-                                isPageDone = isModDone;
-                              }
-
-                              return (
-                                <li key={p.kind} className="nt-lms-page-item">
-                                  <button
-                                    className="nt-lms-page__link"
-                                    data-active={isPageActive ? 'true' : undefined}
-                                    data-done={isPageDone ? 'true' : undefined}
-                                    onClick={() => handlePageJump(step, p.kind)}
-                                  >
-                                    <span className="nt-lms-page__icon">
-                                      {p.kind === 'theoretical' ? '📝' : p.kind === 'practical' ? '💻' : '📄'}
-                                    </span>
-                                    {p.label}
-                                  </button>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
+          {/* Level 1 — Sections (Families) */}
+          {nav.level === 'sections' && (
+            <>
+              <div className="nt-course-sidebar__head">
+                <p>Course Content</p>
+                <span>{progress}% complete</span>
               </div>
-            ))}
-          </div>
+              <ul className="nt-lms-folder">
+                {groups.map((g, idx) => (
+                  <li key={g.meta.id}>
+                    <button
+                      className="nt-lms-folder__row"
+                      onClick={() => setNav({ level: 'modules', sectionId: g.meta.id })}
+                    >
+                      <span className="nt-lms-folder__icon">▦</span>
+                      <span className="nt-lms-folder__label">
+                        <small>Category {idx + 1}</small>
+                        {g.meta.name}
+                      </span>
+                      <span className="nt-lms-folder__chev">›</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+
+          {/* Level 2 — Modules in Section */}
+          {nav.level === 'modules' && navGroup && (
+            <>
+              <div className="nt-course-sidebar__head">
+                <button className="nt-lms-back" onClick={() => setNav({ level: 'sections' })}>
+                  ‹ All Categories
+                </button>
+              </div>
+              <p className="nt-lms-folder__crumb">{navGroup.meta.name}</p>
+              <ul className="nt-lms-folder">
+                {navGroup.steps.map((step) => {
+                  const isModDone = completedIds.has(step.module.id);
+                  const isModLocked = step.globalIndex > unlockedCount;
+                  return (
+                    <li key={step.module.id}>
+                      <button
+                        className="nt-lms-folder__row"
+                        data-active={step.globalIndex === activeIndex ? 'true' : undefined}
+                        disabled={isModLocked}
+                        onClick={() => setNav({ level: 'subsections', sectionId: navGroup.meta.id, moduleId: step.module.id })}
+                      >
+                        <span className="nt-lms-folder__icon">
+                          {isModLocked ? '🔒' : isModDone ? '✓' : '○'}
+                        </span>
+                        <span className="nt-lms-folder__label">{step.module.title}</span>
+                        {!isModLocked && <span className="nt-lms-folder__chev">›</span>}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
+
+          {/* Level 3 — Subsections in Module */}
+          {nav.level === 'subsections' && navGroup && navStep && (
+            <>
+              <div className="nt-course-sidebar__head">
+                <button className="nt-lms-back" onClick={() => setNav({ level: 'modules', sectionId: navGroup.meta.id })}>
+                  ‹ {navGroup.meta.name}
+                </button>
+              </div>
+              <p className="nt-lms-folder__crumb">{navStep.module.title}</p>
+              <ul className="nt-lms-folder">
+                {lessonPagesFor(navStep.module).map((p) => {
+                  const isPageActive = navStep.globalIndex === activeIndex && currentPage?.kind === p.kind;
+                  return (
+                    <li key={p.kind}>
+                      <button
+                        className="nt-lms-folder__row"
+                        data-active={isPageActive ? 'true' : undefined}
+                        onClick={() => handlePageJump(navStep, p.kind)}
+                      >
+                        <span className="nt-lms-folder__icon">
+                          {p.kind === 'theoretical' ? '📝' : p.kind === 'practical' ? '💻' : '📄'}
+                        </span>
+                        <span className="nt-lms-folder__label">{p.label}</span>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </>
+          )}
         </aside>
 
-        <article className="nt-lesson-panel nt-lesson-pager">
+        <article className="nt-lesson-panel nt-lesson-pager nt-lesson-pager--viewport">
           {redirectNotice ? (
             <aside className="nt-lesson-redirect-notice" role="status" aria-live="polite">
               <div className="nt-lesson-redirect-notice__body">
@@ -1140,59 +1128,31 @@ export default function PatternsLearnPage(): JSX.Element {
           ) : null}
 
           {activeModule && currentPage ? (
-            <>
-              <header className="nt-pager__head">
-                <div className="nt-pager__head-main">
-                  <p className="nt-pager__eyebrow">
-                    {familyName} · Module {activeIndex + 1} of {total}
-                  </p>
-                  <h2 className="nt-pager__module-title">{activeModule.title}</h2>
+            <div className="nt-pager__container">
+              <header className="nt-pager__header-sticky">
+                <div className="nt-pager__meta-top">
+                  <p className="nt-pager__category-label">{familyName}</p>
+                  <h2 className="nt-pager__main-title">
+                    {activeModule.title} <span className="nt-pager__step-name">— {currentPage.label}</span>
+                  </h2>
                 </div>
-                <nav className="nt-pager__steprail" aria-label="Module sections">
-                  {pages.map((p, i) => {
-                    const isCur = i === safePage;
-                    const practicalLocked = p.kind === 'practical' && !isActiveTheoryPassed;
-                    return (
-                      <button
-                        key={p.kind}
-                        type="button"
-                        className="nt-pager__steptab"
-                        data-active={isCur ? 'true' : undefined}
-                        data-locked={practicalLocked ? 'true' : undefined}
-                        onClick={() => setPageIndex(i)}
-                      >
-                        <span className="nt-pager__steptab-n" aria-hidden="true">{i + 1}</span>
-                        {p.label}
-                      </button>
-                    );
-                  })}
-                </nav>
+                <div className="nt-pager__step-progress">
+                  {pages.map((p, i) => (
+                    <button
+                      key={p.kind}
+                      className="nt-pager__step-dot"
+                      data-active={i === safePage ? 'true' : undefined}
+                      data-done={(p.kind === 'theoretical' && isActiveTheoryPassed) || (p.kind === 'practical' && isActiveComplete) ? 'true' : undefined}
+                      onClick={() => setPageIndex(i)}
+                      title={p.label}
+                    />
+                  ))}
+                </div>
               </header>
 
-              <div
-                className={`nt-pager__stage${
-                  currentPage.kind === 'practical' ? ' nt-pager__stage--practical' : ''
-                }`}
-              >
-                <button
-                  type="button"
-                  className="nt-pager__arrow nt-pager__arrow--prev"
-                  onClick={goPrevPage}
-                  disabled={prevDisabled}
-                  aria-label={atFirstPage ? 'Previous module' : 'Previous section'}
-                  title={prevDisabled ? 'Start of the path.' : undefined}
-                >
-                  ‹
-                </button>
-
-                <section
-                  className="nt-pager__page"
-                  data-kind={currentPage.kind}
-                  key={`${activeModule.id}-${currentPage.kind}`}
-                  data-lenis-prevent
-                  aria-label={currentPage.label}
-                >
-                  {currentPage.kind === 'intro' ? (
+                <section className="nt-pager__content-area" data-lenis-prevent>
+                <div className="nt-pager__card">
+                  {currentPage.kind === 'intro' && (
                     <>
                       <IntroBody module={activeModule} />
                       <PrerequisiteBanner
@@ -1201,36 +1161,21 @@ export default function PatternsLearnPage(): JSX.Element {
                         isActiveComplete={isActiveComplete}
                       />
                     </>
-                  ) : null}
-
-                  {currentPage.kind === 'concepts' ? (
-                    <>
-                      <ConceptsBody module={activeModule} />
-                      {!activeModule.sections.some((s) => Boolean(s.code)) ? (
-                        <SeeAlsoFooter module={activeModule} />
-                      ) : null}
-                    </>
-                  ) : null}
-
-                  {currentPage.kind === 'examples' ? (
-                    <>
-                      <ExamplesBody module={activeModule} />
-                      <SeeAlsoFooter module={activeModule} />
-                    </>
-                  ) : null}
-
+                  )}
+                  {currentPage.kind === 'concepts' && <ConceptsBody module={activeModule} subIndex={currentPage.subIndex} />}
+                  {currentPage.kind === 'examples' && <ExamplesBody module={activeModule} subIndex={currentPage.subIndex} />}
+                  
                   {currentPage.kind === 'theoretical' && activeModule.theoreticalExam ? (
                     <TheoreticalExamBlock
                       key={`${activeModule.id}-theory`}
                       moduleId={activeModule.id}
                       exam={activeModule.theoreticalExam}
                       isPassed={isActiveTheoryPassed}
+                      subIndex={currentPage.subIndex}
                       onPass={(tries) => markTheoryPassed(activeModule.id, tries)}
                       onRecordAnswers={(attempt, recorded) => {
                         if (!canPersist) return;
-                        void saveLearningAnswers(activeModule.id, attempt, recorded).catch(() => {
-                          /* best-effort; analytics is forward-only */
-                        });
+                        void saveLearningAnswers(activeModule.id, attempt, recorded, lmsSessionId || undefined).catch(() => {});
                       }}
                     />
                   ) : null}
@@ -1246,69 +1191,42 @@ export default function PatternsLearnPage(): JSX.Element {
                       onPass={() => markPracticalPassed(activeModule.id)}
                     />
                   ) : null}
-                </section>
+
+                  {isActiveComplete && isLast && (
+                    <div className="nt-lms-final-gate">
+                      <h3>🎉 Path Complete!</h3>
+                      <p>You have finished the entire learning course. Take the final post-test to finalize your assessment.</p>
+                      <button className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/post-test')}>
+                        Take Final Post-test
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </section>
+
+              <footer className="nt-pager__footer-sticky">
+                <button
+                  className="nt-lesson-button"
+                  disabled={prevDisabled}
+                  onClick={goPrevPage}
+                >
+                  ‹ Previous
+                </button>
+                
+                <span className="nt-pager__counter-text">
+                  Step {safePage + 1} of {pages.length}
+                </span>
 
                 <button
-                  type="button"
-                  className="nt-pager__arrow nt-pager__arrow--next"
+                  className="nt-lesson-button nt-lesson-button--primary"
                   onClick={goNextPage}
                   disabled={nextDisabled}
-                  aria-label={nextIsModuleAdvance ? 'Next module' : 'Next section'}
                   title={nextGateTitle}
                 >
-                  ›
+                  {nextLabel} ›
                 </button>
-              </div>
-
-              <footer className="nt-pager__foot" data-kind={currentPage.kind}>
-                <div className="nt-pager__dots" aria-label="Section progress">
-                  {pages.map((p, i) => (
-                    <button
-                      key={p.kind}
-                      type="button"
-                      className="nt-pager__dot"
-                      data-active={i === safePage ? 'true' : undefined}
-                      aria-label={`Go to ${p.label}`}
-                      title={p.label}
-                      onClick={() => setPageIndex(i)}
-                    />
-                  ))}
-                  <span className="nt-pager__counter">
-                    {currentPage.label} · step {safePage + 1} of {pages.length}
-                  </span>
-                </div>
-
-                <div className="nt-pager__foot-actions">
-                  <button
-                    type="button"
-                    className="nt-lesson-button nt-pager__catalog"
-                    onClick={() => navigate('/patterns')}
-                  >
-                    ← Catalog
-                  </button>
-                  {/* Prev mirror — hidden on desktop (the side ‹ arrow owns it),
-                      shown on mobile where the side arrows are removed. */}
-                  <button
-                    type="button"
-                    className="nt-lesson-button nt-pager__foot-prev"
-                    onClick={goPrevPage}
-                    disabled={prevDisabled}
-                    aria-label={atFirstPage ? 'Previous module' : 'Previous section'}
-                  >
-                    ‹ Prev
-                  </button>
-                  <button
-                    type="button"
-                    className="nt-lesson-button nt-lesson-button--primary"
-                    onClick={goNextPage}
-                    disabled={nextDisabled}
-                    title={nextGateTitle}
-                  >
-                    {nextLabel}
-                  </button>
-                </div>
               </footer>
-            </>
+            </div>
           ) : null}
         </article>
       </section>
