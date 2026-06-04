@@ -16,6 +16,11 @@ Reached after Express accepts a request and before controller logic executes.
 
 Maps HTTP routes to middleware and controllers. The main surface area is easiest to track through symbols such as express and router. It collaborates directly with express and ../controllers/authController.
 
+Learning-seat note:
+- `GET /test-accounts` only exposes the seat list that already exists in SQLite. When `testers_visible_to_users` is on, the route should return the Devcon pool; when it is off, the frontend will see an empty list even though the rows still exist.
+- `GET /google/status` is the availability gate for the Google sign-in UI. If the route reports disabled, the frontend hides the Google button and the user stays on the guest/legacy path.
+- When the browser reports "no guest seats" during local development, the first thing to verify is the frontend-to-backend path, not the seed data.
+
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid

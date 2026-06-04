@@ -16,6 +16,10 @@ Backend process entrypoint: it starts before any API request can reach auth or t
 
 Bootstraps the Express backend, middleware stack, routes, database initialization, and filesystem layout. The main surface area is easiest to track through symbols such as express, helmet, cors, and morgan. It collaborates directly with dotenv, express, helmet, and cors.
 
+Auth startup caution:
+- Auth route modules snapshot environment values when they load. If Google sign-in reports unavailable even though the backend `.env` has Supabase values, check the bootstrap order and the live process environment before changing the Google route itself.
+- The guest-seat list is SQLite-backed. If the browser shows no seats, verify that the frontend is reaching this backend process and not a different service.
+
 ## Program Flow
 This diagram follows the action path in plain words. Decision diamonds show where the file can stop, branch, or repeat work instead of simply passing through a straight line.
 ```mermaid
