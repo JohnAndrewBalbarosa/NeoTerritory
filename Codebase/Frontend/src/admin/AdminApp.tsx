@@ -125,13 +125,7 @@ export default function AdminApp() {
   const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
-  const [expandedSections, setExpandedSections] = useState<Record<AdminSection, boolean>>({
-    Operations: true,
-    People: true,
-    Instructor: true,
-    Research: true,
-    Config: true,
-  });
+  const [expandedSection, setExpandedSection] = useState<AdminSection>(TAB_SECTION_MAP.runs);
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
@@ -154,11 +148,6 @@ export default function AdminApp() {
       clearAuth();
     }
   }, [token, user, clearAuth]);
-
-  useEffect(() => {
-    const section = TAB_SECTION_MAP[activeTab];
-    setExpandedSections((current) => (current[section] ? current : { ...current, [section]: true }));
-  }, [activeTab]);
 
   async function onAdminLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -262,11 +251,11 @@ export default function AdminApp() {
   function setTab(tab: AdminTab) {
     setActiveTab(tab);
     const section = TAB_SECTION_MAP[tab];
-    setExpandedSections((current) => (current[section] ? current : { ...current, [section]: true }));
+    setExpandedSection(section);
   }
 
   function toggleSection(section: AdminSection) {
-    setExpandedSections((current) => ({ ...current, [section]: !current[section] }));
+    setExpandedSection(section);
   }
 
   return (
@@ -365,7 +354,7 @@ export default function AdminApp() {
               return true;
             });
             if (tabs.length === 0) return null;
-            const isOpen = expandedSections[section];
+            const isOpen = expandedSection === section;
             return (
               <div className="admin-sidebar__group" key={section}>
                 <button

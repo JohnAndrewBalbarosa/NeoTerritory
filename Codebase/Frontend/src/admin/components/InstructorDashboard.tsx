@@ -14,8 +14,6 @@ import { PieChart, type PieSlice } from './StatsCharts';
 const DEVCON_PASS = '#a6ff00';
 const DEVCON_FAIL = '#ff5c7a';
 
-// Pass vs fail donut for the dashboard top, computed client-side from the
-// already-fetched raw payload (exam attempts) — no extra request.
 function ExamOutcomePie({ raw }: { raw: AdminLearningRaw }): JSX.Element | null {
   const slices = useMemo<PieSlice[]>(() => {
     let passed = 0;
@@ -30,7 +28,7 @@ function ExamOutcomePie({ raw }: { raw: AdminLearningRaw }): JSX.Element | null 
     ];
   }, [raw]);
 
-  const total = slices.reduce((s, x) => s + x.value, 0);
+  const total = slices.reduce((sum, slice) => sum + slice.value, 0);
 
   return (
     <section className="chart-panel instructor-overview-chart">
@@ -47,29 +45,36 @@ function ExamOutcomePie({ raw }: { raw: AdminLearningRaw }): JSX.Element | null 
   );
 }
 
-// Instructor dashboard container (D91). Fetches the RAW learning payload once on
-// mount and hosts three sub-views via a segmented control:
-//   • Students  — per-student scores / attempts / pass-fail / improvement.
-//   • Modules   — module difficulty ranking (hardest-first, grouped ties).
-//   • Questions — the existing per-question heatmap (LearningAnalytics), reused
-//                 unchanged; it fetches its own per-question stats.
-// Students + Modules aggregate the single raw payload client-side, so they
-// share one fetch and never re-hit the API on sub-view switches.
+type SubView = 'overview' | 'students' | 'modules' | 'questions';
 
-type SubView = 'students' | 'modules' | 'questions';
-
-const SUBVIEWS: ReadonlyArray<{ id: SubView; label: string }> = [
-  { id: 'students', label: 'Students' },
-  { id: 'modules', label: 'Modules' },
-  { id: 'questions', label: 'Questions' },
+const SUBVIEWS: ReadonlyArray<{ id: Exclude<SubView, 'overview'>; label: string; description: string }> = [
+  {
+    id: 'students',
+    label: 'Students',
+    description: 'Per-learner progress, improvement, and question-level drilldown.',
+  },
+  {
+    id: 'modules',
+    label: 'Modules',
+    description: 'Hardest-first module ranking with difficulty bars and CSV export.',
+  },
+  {
+    id: 'questions',
+    label: 'Questions',
+    description: 'Module-by-question heatmap and raw learner answer drilldown.',
+  },
 ];
 
-export default function InstructorDashboard({ initialView = 'students' }: { initialView?: SubView }): JSX.Element {
+function viewLabel(view: SubView): string {
+  if (view === 'overview') return 'Overview';
+  return SUBVIEWS.find((item) => item.id === view)?.label ?? 'Overview';
+}
+
+export default function InstructorDashboard({ initialView = 'students' }: { initialView?: Exclude<SubView, 'overview'> }): JSX.Element {
   const [raw, setRaw] = useState<AdminLearningRaw | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<SubView>(initialView);
 
-  // Sync with prop when admin shell tabs change
   useEffect(() => {
     setView(initialView);
   }, [initialView]);
@@ -77,54 +82,95 @@ export default function InstructorDashboard({ initialView = 'students' }: { init
   useEffect(() => {
     let cancelled = false;
     fetchAdminLearningRaw()
-      .then((d) => { if (!cancelled) setRaw(d); })
+      .then((d) => {
+        if (!cancelled) setRaw(d);
+      })
       .catch((e: unknown) => {
         if (cancelled) return;
-        // A pre-auth 401 race resolves to an empty dataset rather than a red
-        // banner (same pattern as the other admin panels).
-        if (isAuthError(e)) { setRaw({ students: [], progress: [], questionResults: [], examAttempts: [] }); return; }
+        if (isAuthError(e)) {
+          setRaw({ students: [], progress: [], questionResults: [], examAttempts: [] });
+          return;
+        }
         setError(e instanceof Error ? e.message : 'Failed to load learning data');
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
+  function openView(next: Exclude<SubView, 'overview'>): void {
+    setView(next);
+  }
+
+  function backToOverview(): void {
+    setView('overview');
+  }
+
+  const activeLabel = viewLabel(view);
+
   return (
-    <div className="instructor-dashboard instructor-dashboard--nested">
-      <nav className="instructor-rail" role="tablist" aria-label="Instructor sub-views">
-        {SUBVIEWS.map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            role="tab"
-            aria-selected={view === s.id}
-            className={`instructor-rail-btn${view === s.id ? ' is-active' : ''}`}
-            onClick={() => setView(s.id)}
-          >
-            {s.label}
+    <div className="instructor-dashboard instructor-dashboard--folder">
+      <header className="instructor-dashboard__head">
+        <div className="instructor-breadcrumbs" aria-label="Instructor navigation">
+          <span className="instructor-breadcrumbs__root">Instructor</span>
+          <span className="instructor-breadcrumbs__sep" aria-hidden="true">/</span>
+          <span className="instructor-breadcrumbs__current">{activeLabel}</span>
+        </div>
+        {view !== 'overview' ? (
+          <button type="button" className="ghost-btn instructor-back-btn" onClick={backToOverview}>
+            Back to overview
           </button>
-        ))}
-      </nav>
+        ) : (
+          <span className="instructor-dashboard__hint">Choose a folder below to drill into the learner data.</span>
+        )}
+      </header>
 
-      <div className="instructor-content">
-        {/* KPI row (D92 Track A) — client-side from the already-fetched raw payload. */}
-        {raw && view !== 'questions' && <InstructorKpis raw={raw} />}
+      {view === 'overview' && raw && <InstructorKpis raw={raw} />}
+      {view === 'overview' && raw && <ExamOutcomePie raw={raw} />}
 
-        {/* Pass/fail donut (D92 Track A) — also derived from the same raw payload. */}
-        {raw && view !== 'questions' && <ExamOutcomePie raw={raw} />}
-
-        {/* Students + Modules need the raw payload; Questions is self-fetching. */}
-        {view === 'questions' ? (
-          <LearningAnalytics />
-        ) : error ? (
+      {view === 'overview' ? (
+        error ? (
           <div className="empty-state admin-error" role="alert">{error}</div>
         ) : raw === null ? (
           <div className="empty-state">Loading instructor analytics…</div>
-        ) : view === 'students' ? (
-          <InstructorStudents raw={raw} />
         ) : (
-          <InstructorModules raw={raw} />
-        )}
-      </div>
+          <section className="instructor-card instructor-launchpad">
+            <header className="instructor-card__head">
+              <div className="instructor-card__title">
+                <h3>Open a folder</h3>
+                <span className="instructor-card__count">nested drilldowns</span>
+              </div>
+              <div className="instructor-card__tools">
+                <span className="admin-section__hint">The sidebar stays clean; use the cards below to enter a view.</span>
+              </div>
+            </header>
+            <div className="instructor-launchpad__grid" role="list" aria-label="Instructor folders">
+              {SUBVIEWS.map((subview) => (
+                <button
+                  key={subview.id}
+                  type="button"
+                  className="instructor-launchcard"
+                  onClick={() => openView(subview.id)}
+                  role="listitem"
+                >
+                  <span className="instructor-launchcard__label">{subview.label}</span>
+                  <span className="instructor-launchcard__desc">{subview.description}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )
+      ) : error ? (
+        <div className="empty-state admin-error" role="alert">{error}</div>
+      ) : raw === null ? (
+        <div className="empty-state">Loading instructor analytics…</div>
+      ) : view === 'students' ? (
+        <InstructorStudents raw={raw} />
+      ) : view === 'modules' ? (
+        <InstructorModules raw={raw} />
+      ) : (
+        <LearningAnalytics />
+      )}
     </div>
   );
 }
