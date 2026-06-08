@@ -1448,18 +1448,19 @@ REPRESENTATION-only grouping; DB rows stay per-module.
 available from `learning_question_results`); secondary: per-module first→latest attempt-score
 trend from `learning_exam_attempts`.
 
-## D92 — DB-backed Learning CMS + Instructor dashboard redesign + pass-mode/auto-tag/publish
+## D92 — DB-backed Learning CMS + Instructor dashboard redesign + pass-mode/publish
 **Per user request (2026-05-29).** The Instructor dashboard is being redesigned (polished LMS
 look in the DevCon palette), and the learning content — today 100% hardcoded in
 `learningModules.ts` (39 modules + ~65 exam banks) — becomes a **full DB-backed CMS** so
 instructors can add/edit courses + theoretical/practical exams, with Canvas-style
-publish/unpublish, a per-practical pass-mode toggle, and auto-tagging. Built in parallel
+publish/unpublish, a per-practical pass-mode toggle, and pre-authored question tags in the
+module JSON. Built in parallel
 tracks (see the plan file).
 
 **Storage = inline-JSON `learning_modules`, SQLite source-of-truth + Supabase mirror.** One
 row per module keyed by `module_id` (PK), with `sections_json` / `key_terms_json` /
 `see_also_json` / `theoretical_json` / `practical_json` TEXT columns plus scalar
-`category/title/eyebrow/intro/summary`, `published`, `auto_tag`, `sort_order`, `is_seed`.
+`category/title/eyebrow/intro/summary`, `published`, `sort_order`, `is_seed`.
 NOT normalized: a module is one nested document read/written whole (matches the
 `org_pattern_catalogs.json_payload` precedent; the learner needs the whole active module at
 once). Mirrored to Supabase (jsonb cols) via `mirrorRow()` keyed by `module_id`; CI does not
@@ -1486,9 +1487,9 @@ never break and the frontend can deploy before the seed runs. `learningModules.t
 type home + seed source. `LearningModuleDTO` (= `LearningModule`) is the frozen wire contract.
 
 **Back-compat defaults.** `passMode` absent ⇒ `'detection'` (pattern detection alone passes —
-today's behaviour); `autoTag` absent ⇒ `true` (detection auto-completes; manual tagging stays
-available). `'detection_and_tests'` additionally requires the existing `gdbAllPassedForRun`
-store flag. Global auto-tag default lives in `app_settings.learning_auto_tag_default`.
+today's behaviour). `'detection_and_tests'` additionally requires the existing
+`gdbAllPassedForRun` store flag. The question banks themselves already carry authored tags in
+the module JSON, so the runtime does not retag them at load time.
 
 **Publish/unpublish.** `published` column; the public GET returns only `published=1`; drafts
 are excluded from the learner `steps` + gate; progress rows for an unpublished module persist
@@ -1508,4 +1509,4 @@ to a later pass (would couple a detectable target to the live engine) — docume
 
 **Heatmap refinement.** The Instructor question heatmap stays a distinct drilldown surface with module rows, question columns, and learner-answer details on click. The score percentage remains visible in the cell, but the user can move back to the instructor summary without losing the current group context.
 
-**Boundary.** The prompt textbox does not auto-enable anything. It produces a preview of proposed toggles, and the operator must explicitly confirm before persistence. The source of truth for the actual flag state remains the existing backend settings contract.
+**Boundary.** The prompt textbox does not auto-enable anything. It produces a preview of proposed toggles, and the operator must explicitly confirm before persistence. The source of truth for the actual module state remains the module publish field and the authored JSON question tags, not a runtime tagging step in the UI.

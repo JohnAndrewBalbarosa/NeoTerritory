@@ -12,6 +12,7 @@ The Instructor surface should feel navigable like a file tree:
 - one active branch at a time
 - a clear drilldown path from summary to modules to questions
 - no need to scroll through unrelated analytics to get to the heatmap
+- module publish state should be visible as on/off, while question tags are already present in the module JSON
 
 ## Navigation Rule
 
@@ -48,7 +49,7 @@ The student view should answer who is progressing, who is stalled, and who is re
 
 ### Modules
 
-The module view should answer which module is hardest and how the ranking compares across the curriculum.
+The module view should answer which module is hardest, how the ranking compares across the curriculum, and which modules are currently on or off in the model-backed course catalog.
 
 ### Questions
 
@@ -60,6 +61,7 @@ The question view should answer where the heatmap is strongest or weakest and ex
 - Switching subviews should not clear the nav context.
 - The sub-navigation should follow the same structural rule as the learning-path sidebar: file-tree nesting, persistent branches, and active-state driven highlighting.
 - The heatmap view should keep the rest of the Instructor context accessible so the user can step back without losing the analytics frame.
+- Do not add a runtime tagging step here; the JSON question tags already exist in the catalog and the Instructor area only consumes them.
 
 ## Acceptance Checks
 
@@ -67,3 +69,4 @@ The question view should answer where the heatmap is strongest or weakest and ex
 - The user can move from student summary to modules to heatmap without losing context.
 - Raw data is fetched once and reused across subviews.
 - The heatmap remains reachable as a distinct subsection, not as an embedded afterthought.
+- The module list uses explicit on/off publish state instead of runtime tagging to determine visibility.

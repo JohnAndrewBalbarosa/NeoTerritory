@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Render the question heatmap and the question-level drilldown for the Instructor surface. This is the per-question analytics view: first-try pass rates, module rows, question columns, and a detail panel for learner answers.
+Render the question heatmap and the question-level drilldown for the Instructor surface. This is the per-question analytics view: first-try pass rates, module rows, question columns, and a detail panel for learner answers. The questions themselves are already tagged in the module JSON, so this view only reads and displays those prepared labels.
 
 ## Layout Goal
 
@@ -54,6 +54,7 @@ flowchart TD
 ## Implementation Notes
 
 - Resolve question text from the course catalog, not from stored analytics rows.
+- Resolve Bloom tags and module state from the course catalog JSON, not from a runtime tagging step.
 - Keep the drilldown anchored to the exact cell the user clicked.
 - Preserve the current group selection when the drilldown closes.
 - The sidebar/rail concept should feel like the learning-path navigation model, but it should stay visually aligned with the Instructor dashboard theme.
@@ -64,3 +65,4 @@ flowchart TD
 - Empty cells do not pretend to contain data.
 - Clicking a populated cell opens the learner answer drilldown.
 - Closing the drilldown returns the user to the same heatmap context.
+- The view shows prepared question tags and module on/off state instead of running runtime tagging in the Instructor UI.

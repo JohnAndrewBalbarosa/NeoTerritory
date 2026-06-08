@@ -4,7 +4,7 @@
 - Owner: Frontend
 
 ## Logic Summary
-Operator-facing admin shell for the Instructor analytics surface, feature-release control, and review tools. This folder owns the admin dashboard layout, the persistent section navigation, the prompt-driven toggle policy entrypoint, and the instructor heatmap drilldown.
+Operator-facing admin shell for the Instructor analytics surface, feature-release control, and review tools. This folder owns the admin dashboard layout, the persistent section navigation, the prompt-driven toggle policy entrypoint, and the instructor heatmap drilldown. The Instructor course models themselves are publish/on-off records backed by pre-authored JSON question banks, not runtime question tagging.
 
 ## Ownership Boundary
 This folder owns presentation, navigation, and request orchestration only. It must not own scoring math, feature-flag persistence, or question-result aggregation. Those belong to the backend admin endpoints and the shared admin data/logic contracts.
@@ -39,6 +39,7 @@ flowchart TD
 - Each top-level group should expand into subsection items so the operator can navigate like a directory tree.
 - The Instructor area should expose its own nested navigation so the analyst can move from summary to modules to question heatmap without losing context.
 - Default-off feature toggles remain off until the operator explicitly applies the prompt-driven policy.
+- Instructor modules should be flipped on or off at the module/model level; the question JSON is already tagged.
 
 ## Acceptance Checks
 
@@ -47,3 +48,4 @@ flowchart TD
 - The Instructor area exposes a drilldown path for the heatmap instead of hiding everything behind a flat dashboard.
 - The feature-release panel defaults to off for all toggles until a prompt or manual action changes them.
 - The admin surface keeps prompt policy, analytics, and review tools separate.
+- The Instructor analytics surface should not rely on runtime tagging to populate question labels.
