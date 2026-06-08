@@ -35,6 +35,10 @@ import {
   clearAiConfig,
   type AiProvider,
 } from '../db/aiConfig';
+import {
+  generateFeatureReleasePlan,
+  type FeatureReleasePlannerFlag,
+} from '../services/featureReleasePlannerService';
 import { aggregateQuestionResults, type RawResultRow } from '../services/learningQuestionStats';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
@@ -232,6 +236,43 @@ router.put('/ai-config', (req: Request<unknown, unknown, AiConfigBody>, res: Res
       detail: `provider=${provider} model=${model || '(default)'} hasKey=${snap.hasKey}`,
     });
     res.json(snap);
+  } catch (err) { next(err); }
+});
+
+interface FeatureReleasePlanBody {
+  prompt?: unknown;
+  featureFlags?: unknown;
+}
+
+router.post('/feature-release-plan', async (req: Request<unknown, unknown, FeatureReleasePlanBody>, res: Response, next: NextFunction) => {
+  try {
+    const prompt = typeof req.body?.prompt === 'string' ? req.body.prompt.trim() : '';
+    const rawFlags = Array.isArray(req.body?.featureFlags) ? req.body.featureFlags : [];
+    const featureFlags: FeatureReleasePlannerFlag[] = rawFlags
+      .map((item) => {
+        if (!item || typeof item !== 'object') return null;
+        const flag = item as Record<string, unknown>;
+        const key = typeof flag.key === 'string' ? flag.key.trim() : '';
+        if (!key) return null;
+        return {
+          key,
+          label: typeof flag.label === 'string' ? flag.label.trim() : key,
+          description: typeof flag.description === 'string' ? flag.description.trim() : '',
+        };
+      })
+      .filter((item): item is FeatureReleasePlannerFlag => Boolean(item));
+
+    if (!prompt) {
+      res.status(400).json({ error: 'prompt is required' });
+      return;
+    }
+    if (featureFlags.length === 0) {
+      res.status(400).json({ error: 'featureFlags is required' });
+      return;
+    }
+
+    const plan = await generateFeatureReleasePlan({ prompt, flags: featureFlags });
+    res.json(plan);
   } catch (err) { next(err); }
 });
 

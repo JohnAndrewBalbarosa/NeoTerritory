@@ -292,6 +292,38 @@ export interface AdminLearningModulesResponse {
   modules: AdminLearningModule[];
 }
 
+export interface AdminFeatureReleasePlannerFlag {
+  key: string;
+  label: string;
+  description: string;
+}
+
+export interface AdminFeatureReleaseToggleDecision {
+  key: string;
+  label: string;
+  enabled: boolean;
+  reason: string;
+  matchedModules: string[];
+  matchedTopics: string[];
+}
+
+export interface AdminFeatureReleaseLearningScope {
+  moduleId: string;
+  title: string;
+  category: string;
+  sections: string[];
+  topics: string[];
+  reason: string;
+}
+
+export interface AdminFeatureReleasePlan {
+  schemaVersion: 'feature-release-plan-v1';
+  source: 'ai' | 'heuristic';
+  summary: string;
+  toggles: AdminFeatureReleaseToggleDecision[];
+  requiredLearning: AdminFeatureReleaseLearningScope[];
+}
+
 export interface AdminPerRunFeedbackRow {
   id: number;
   runId: string;

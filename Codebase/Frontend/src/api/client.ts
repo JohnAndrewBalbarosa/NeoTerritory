@@ -4,7 +4,8 @@ import {
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
   SurveySummary, ComplexityData, F1Metrics,
   LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse,
-  LearningAssessmentAnswerInput, LearningAssessmentType, LearningAssessmentsResponse
+  LearningAssessmentAnswerInput, LearningAssessmentType, LearningAssessmentsResponse,
+  AdminFeatureReleasePlan, AdminFeatureReleasePlannerFlag
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -527,6 +528,17 @@ export async function setFeatureReleases(
       body: JSON.stringify({ value })
     }
   );
+}
+
+export async function previewFeatureReleasePlan(payload: {
+  prompt: string;
+  featureFlags: AdminFeatureReleasePlannerFlag[];
+}): Promise<AdminFeatureReleasePlan> {
+  return apiFetch<AdminFeatureReleasePlan>('/api/admin/feature-release-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
 }
 
 // Public read of the feature-release map. Piggy-backs on /auth/test-accounts

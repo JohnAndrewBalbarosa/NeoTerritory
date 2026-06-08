@@ -1,18 +1,15 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   fetchAdminSettings,
+  previewFeatureReleasePlan,
   setFeatureReleases,
   type AdminSettings,
 } from '../../api/client';
 import { FEATURE_FLAGS } from '../../data/featureRegistry';
-
-interface TogglePreview {
-  key: string;
-  label: string;
-  current: boolean;
-  next: boolean;
-  explanation: string;
-}
+import type {
+  AdminFeatureReleasePlan,
+  AdminFeatureReleaseToggleDecision,
+} from '../../types/api';
 
 // Prompt-driven feature-release policy editor.
 // Default state is OFF (implicit deny).
@@ -24,12 +21,14 @@ export default function FeatureReleasePanel() {
   const [error, setError] = useState<string | null>(null);
 
   const [promptText, setPromptText] = useState('');
-  const [showPreview, setShowPreview] = useState(false);
+  const [plan, setPlan] = useState<AdminFeatureReleasePlan | null>(null);
+  const [planState, setPlanState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
 
-  // Initialize all flags as OFF by default
   const offMap = useMemo(() => {
     const out: Record<string, boolean> = {};
-    FEATURE_FLAGS.forEach(f => out[f.key] = false);
+    FEATURE_FLAGS.forEach((flag) => {
+      out[flag.key] = false;
+    });
     return out;
   }, []);
 
@@ -38,7 +37,6 @@ export default function FeatureReleasePanel() {
     fetchAdminSettings()
       .then((s: AdminSettings) => {
         if (cancelled) return;
-        // Merge: Default OFF < Persistent state
         setMap({ ...offMap, ...(s.feature_releases || {}) });
         setLoaded(true);
       })
@@ -47,46 +45,63 @@ export default function FeatureReleasePanel() {
         setError(err instanceof Error ? err.message : 'Failed to load feature releases');
         setLoaded(true);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [offMap]);
 
-  const previewList = useMemo<TogglePreview[]>(() => {
-    if (!promptText.trim()) return [];
+  useEffect(() => {
+    const prompt = promptText.trim();
+    if (!prompt) {
+      setPlan(null);
+      setPlanState('idle');
+      return;
+    }
 
-    const p = promptText.toLowerCase();
-    return FEATURE_FLAGS.map(flag => {
-      let next = map[flag.key] ?? false;
-      let explanation = "No change inferred.";
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      setPlanState('loading');
+      previewFeatureReleasePlan({
+        prompt,
+        featureFlags: FEATURE_FLAGS.map((flag) => ({
+          key: flag.key,
+          label: flag.label,
+          description: flag.description,
+        })),
+      })
+        .then((nextPlan) => {
+          if (cancelled) return;
+          setPlan(nextPlan);
+          setPlanState('ready');
+        })
+        .catch(() => {
+          if (cancelled) return;
+          setPlan(null);
+          setPlanState('failed');
+        });
+    }, 650);
 
-      const includesFlag = p.includes(flag.key.toLowerCase()) || p.includes(flag.label.toLowerCase());
-      const isEnable = p.includes('enable') || p.includes('on') || p.includes('show') || p.includes('release');
-      const isDisable = p.includes('disable') || p.includes('off') || p.includes('hide');
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [promptText]);
 
-      if (includesFlag) {
-        if (isEnable) {
-          next = true;
-          explanation = `Prompt mentions "${flag.label}" and an enable command.`;
-        } else if (isDisable) {
-          next = false;
-          explanation = `Prompt mentions "${flag.label}" and a disable command.`;
-        }
-      } else if (p.includes('enable all') || p.includes('release all') || p.includes('show all')) {
-        next = true;
-        explanation = 'Global enable command detected.';
-      } else if (p.includes('disable all') || p.includes('hide all') || p.includes('off all')) {
-        next = false;
-        explanation = 'Global disable command detected.';
-      }
-
+  const previewList = useMemo<Array<AdminFeatureReleaseToggleDecision & { current: boolean }>>(() => {
+    const planned = new Map((plan?.toggles || []).map((toggle) => [toggle.key, toggle]));
+    return FEATURE_FLAGS.map((flag) => {
+      const chosen = planned.get(flag.key);
       return {
         key: flag.key,
         label: flag.label,
         current: map[flag.key] ?? false,
-        next,
-        explanation
+        enabled: chosen?.enabled ?? false,
+        reason: chosen?.reason ?? 'No AI plan yet. Defaults to OFF.',
+        matchedModules: chosen?.matchedModules ?? [],
+        matchedTopics: chosen?.matchedTopics ?? [],
       };
     });
-  }, [promptText, map]);
+  }, [plan, map]);
 
   async function savePolicy(nextMap: Record<string, boolean>): Promise<void> {
     if (saving) return;
@@ -95,8 +110,9 @@ export default function FeatureReleasePanel() {
     try {
       const res = await setFeatureReleases(nextMap);
       setMap({ ...offMap, ...(res.value || {}) });
-      setShowPreview(false);
       setPromptText('');
+      setPlan(null);
+      setPlanState('idle');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Save failed');
     } finally {
@@ -106,8 +122,8 @@ export default function FeatureReleasePanel() {
 
   const applyPreview = () => {
     const nextMap = { ...map };
-    previewList.forEach(p => {
-      nextMap[p.key] = p.next;
+    previewList.forEach((item) => {
+      nextMap[item.key] = item.enabled;
     });
     savePolicy(nextMap);
   };
@@ -118,8 +134,7 @@ export default function FeatureReleasePanel() {
     try {
       await setFeatureReleases(optimistic);
     } catch (err: unknown) {
-      // Revert on error
-      fetchAdminSettings().then(s => setMap({ ...offMap, ...(s.feature_releases || {}) }));
+      fetchAdminSettings().then((s) => setMap({ ...offMap, ...(s.feature_releases || {}) }));
       setError(err instanceof Error ? err.message : 'Manual toggle save failed');
     }
   }
@@ -129,8 +144,8 @@ export default function FeatureReleasePanel() {
       <header className="admin-section__head">
         <h2>Feature releases</h2>
         <p className="admin-section__hint">
-          Prompt-driven deployment gate. Default state is <strong>OFF</strong>.
-          Use the prompt to preview changes before confirming.
+          Prompt-driven deployment gate. Default state is <strong>OFF</strong> until the AI plan says otherwise.
+          The prompt uses the same provider configuration as the auto-documentation flow.
         </p>
       </header>
 
@@ -143,18 +158,19 @@ export default function FeatureReleasePanel() {
             <label htmlFor="feature-prompt">Policy Prompt</label>
             <textarea
               id="feature-prompt"
-              placeholder="e.g. 'Enable student-learning and hide pm-accounts'"
+              placeholder="Describe the project architecture, business flow, and what should be enabled or hidden."
               value={promptText}
-              onChange={(e) => {
-                setPromptText(e.target.value);
-                setShowPreview(true);
-              }}
+              onChange={(e) => setPromptText(e.target.value)}
             />
             <div className="admin-prompt-actions">
               <button
                 type="button"
                 className="ghost-btn"
-                onClick={() => { setPromptText(''); setShowPreview(false); }}
+                onClick={() => {
+                  setPromptText('');
+                  setPlan(null);
+                  setPlanState('idle');
+                }}
                 disabled={!promptText}
               >
                 Clear
@@ -162,41 +178,85 @@ export default function FeatureReleasePanel() {
             </div>
           </div>
 
-          {showPreview && previewList.length > 0 && (
-            <div className="admin-policy-preview">
-              <h3>Preview Changes</h3>
-              <ul className="admin-feature-list">
-                {previewList.filter(p => p.current !== p.next).map(p => (
-                  <li key={p.key} className="admin-feature-row admin-feature-row--preview">
-                    <div className="admin-feature-row__meta">
-                      <p className="admin-feature-row__label">{p.label}</p>
-                      <p className="admin-feature-row__explanation">{p.explanation}</p>
-                    </div>
-                    <div className="admin-feature-row__delta">
-                      <span className={`tag ${p.current ? 'tag--on' : 'tag--off'}`}>
-                        {p.current ? 'ON' : 'OFF'}
-                      </span>
-                      <span className="arrow">→</span>
-                      <span className={`tag ${p.next ? 'tag--on' : 'tag--off'}`}>
-                        {p.next ? 'ON' : 'OFF'}
-                      </span>
-                    </div>
-                  </li>
-                ))}
-                {previewList.every(p => p.current === p.next) && (
-                  <li className="admin-section__hint">No changes inferred from prompt.</li>
-                )}
-              </ul>
-              <button
-                type="button"
-                className="ghost-btn admin-policy-confirm"
-                disabled={saving || previewList.every(p => p.current === p.next)}
-                onClick={applyPreview}
-              >
-                {saving ? 'Saving...' : 'Confirm and Save Changes'}
-              </button>
-            </div>
-          )}
+          <div className="admin-policy-preview">
+            <h3>AI plan</h3>
+            {planState === 'loading' && (
+              <p className="admin-section__hint">Generating JSON plan from the prompt and module catalog&hellip;</p>
+            )}
+            {planState === 'failed' && (
+              <p className="admin-login-error" role="alert">
+                AI preview failed. The panel is still safe default-off until a valid plan arrives.
+              </p>
+            )}
+            {plan && (
+              <>
+                <p className="admin-section__hint">{plan.summary}</p>
+                <div className="admin-plan-scope">
+                  <h4>Required modules</h4>
+                  {plan.requiredLearning.length === 0 ? (
+                    <p className="admin-section__hint">No module scope was required by the AI plan.</p>
+                  ) : (
+                    <ul className="admin-scope-list">
+                      {plan.requiredLearning.map((mod) => (
+                        <li key={mod.moduleId} className="admin-scope-card">
+                          <strong>{mod.title}</strong>
+                          <p>{mod.reason}</p>
+                          <div className="admin-scope-meta">
+                            <span>{mod.category}</span>
+                            <span>{mod.sections.length} sections</span>
+                            <span>{mod.topics.length} topics</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+
+            <h3>Toggle preview</h3>
+            <ul className="admin-feature-list">
+              {previewList.map((item) => (
+                <li
+                  key={item.key}
+                  className={`admin-feature-row admin-feature-row--preview${item.current === item.enabled ? '' : ' is-changed'}`}
+                >
+                  <div className="admin-feature-row__meta">
+                    <p className="admin-feature-row__label">{item.label}</p>
+                    <p className="admin-feature-row__explanation">{item.reason}</p>
+                    {item.matchedModules.length > 0 && (
+                      <p className="admin-feature-row__desc">
+                        Modules: {item.matchedModules.join(', ')}
+                      </p>
+                    )}
+                    {item.matchedTopics.length > 0 && (
+                      <p className="admin-feature-row__desc">
+                        Topics: {item.matchedTopics.slice(0, 6).join(', ')}
+                      </p>
+                    )}
+                  </div>
+                  <div className="admin-feature-row__delta">
+                    <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>
+                      {item.current ? 'ON' : 'OFF'}
+                    </span>
+                    <span className="arrow">→</span>
+                    <span className={`tag ${item.enabled ? 'tag--on' : 'tag--off'}`}>
+                      {item.enabled ? 'ON' : 'OFF'}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <button
+              type="button"
+              className="ghost-btn admin-policy-confirm"
+              disabled={saving || !plan}
+              onClick={applyPreview}
+            >
+              {saving ? 'Saving...' : 'Confirm and Save Changes'}
+            </button>
+          </div>
 
           <div className="admin-manual-overrides">
             <h3>Current State / Manual Overrides</h3>
