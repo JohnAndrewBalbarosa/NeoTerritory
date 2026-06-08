@@ -15,6 +15,7 @@ The important detail is that questions are not tagged at runtime as a first pass
 The course planner and assessment flow both depend on this catalog being stable and explicit:
 - course planning decides which model entries are published.
 - the course planner now groups AI output by section first, then flattens the enabled modules for compatibility.
+- admin planning reads the full catalog, while learner delivery keeps reading the published-only catalog.
 - assessments pick from already-tagged questions.
 - practical work stays separated from theoretical MCQs.
 - future content changes happen by updating the catalog, not by reinterpreting free text.

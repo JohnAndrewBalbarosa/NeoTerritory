@@ -356,6 +356,18 @@ export interface AdminCoursePlanLearningScope {
   reason: string;
 }
 
+export interface AdminCoursePlanDiagnostics {
+  aiAttempted: boolean;
+  aiSucceeded: boolean;
+  catalogModuleCount: number;
+  selectedSectionCount: number;
+  selectedModuleCount: number;
+  emptyPlan: boolean;
+  message: string;
+  fallbackReason?: 'no_provider' | 'invalid_json' | 'ai_error' | 'ai_empty' | 'empty_catalog';
+  aiError?: string;
+}
+
 export interface AdminCoursePlan {
   schemaVersion: 'course-plan-v1';
   source: 'ai' | 'heuristic';
@@ -363,6 +375,7 @@ export interface AdminCoursePlan {
   sections: AdminCoursePlanSectionDecision[];
   modules: AdminCoursePlanModuleDecision[];
   requiredLearning: AdminCoursePlanLearningScope[];
+  diagnostics?: AdminCoursePlanDiagnostics;
 }
 
 export interface AdminPerRunFeedbackRow {

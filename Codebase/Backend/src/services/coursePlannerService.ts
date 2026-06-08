@@ -26,6 +26,18 @@ export interface CoursePlanScope {
   reason: string;
 }
 
+export interface CoursePlanDiagnostics {
+  aiAttempted: boolean;
+  aiSucceeded: boolean;
+  catalogModuleCount: number;
+  selectedSectionCount: number;
+  selectedModuleCount: number;
+  emptyPlan: boolean;
+  message: string;
+  fallbackReason?: 'no_provider' | 'invalid_json' | 'ai_error' | 'ai_empty' | 'empty_catalog';
+  aiError?: string;
+}
+
 export interface CoursePlan {
   schemaVersion: 'course-plan-v1';
   source: 'ai' | 'heuristic';
@@ -33,6 +45,7 @@ export interface CoursePlan {
   sections: CoursePlanSectionDecision[];
   modules: CoursePlanModuleDecision[];
   requiredLearning: CoursePlanScope[];
+  diagnostics: CoursePlanDiagnostics;
 }
 
 interface PlannerInput {
@@ -131,7 +144,7 @@ const PATTERN_CATALOG: PatternCatalogEntry[] = [
     intent: 'Translate one interface into another the caller expects.',
     whenToUse: 'An existing type has the right behavior but the wrong shape or method names.',
     avoidWhen: 'The wrapper keeps the same interface and mainly adds behavior or gates access.',
-    signals: ['wrong interface', 'translation', 'wrap legacy', 'compatibility layer'],
+    signals: ['wrong interface', 'translation', 'convert', 'map payload', 'partner api', 'old api', 'wrap legacy', 'request shape', 'compatibility layer'],
   },
   {
     slug: 'proxy',
@@ -140,7 +153,7 @@ const PATTERN_CATALOG: PatternCatalogEntry[] = [
     intent: 'Stand in for an object and control access to it.',
     whenToUse: 'The real object is expensive, remote, lazy, cached, or needs access control.',
     avoidWhen: 'The wrapper only adds behavior and does not gate or defer access.',
-    signals: ['lazy load', 'cache', 'access control', 'gate', 'remote object'],
+    signals: ['lazy load', 'cache', 'access control', 'gate', 'remote object', 'slow service', 'defer call'],
   },
   {
     slug: 'decorator',
@@ -167,7 +180,7 @@ const PATTERN_CATALOG: PatternCatalogEntry[] = [
     intent: 'Notify subscribers when state changes.',
     whenToUse: 'One subject must fan out changes to many listeners.',
     avoidWhen: 'The code is a direct one-to-one call path.',
-    signals: ['subscribe', 'notify', 'listeners', 'events', 'pub sub'],
+    signals: ['subscribe', 'notify', 'listeners', 'events', 'pub sub', 'live update', 'status changes'],
   },
   {
     slug: 'iterator',
@@ -266,7 +279,7 @@ const PATTERN_CATALOG: PatternCatalogEntry[] = [
     intent: 'Expose a simple entry point to a complex subsystem.',
     whenToUse: 'A thin wrapper should reduce the number of calls a client must know.',
     avoidWhen: 'The caller already needs the fine-grained subsystem details.',
-    signals: ['simple entry point', 'subsystem wrapper', 'hide complexity', 'one-stop api'],
+    signals: ['simple entry point', 'subsystem wrapper', 'hide complexity', 'one-stop api', 'dashboard entry point'],
   },
   {
     slug: 'flyweight',
@@ -351,6 +364,9 @@ const SYSTEM_PROMPT = [
   '- Do not include OFF modules inside a selected section.',
   '- Prefer a narrow scope. Do not select unrelated sections.',
   '- Minimize the number of sections and modules included.',
+  '- Minimize does not mean return nothing when the brief has a clear architecture problem.',
+  '- If the brief clearly maps to one design pattern, include that one pattern module.',
+  '- Return an empty sections array only when no provided module matches the project at all.',
   '- If multiple patterns can solve the same need, choose only the single best fit.',
   '- Do not show extra fallback patterns just because they are related.',
   '- Prefer the most specific pattern over a broad one.',
@@ -460,6 +476,39 @@ function scoreOverlap(haystack: string, needles: string[]): number {
   return score;
 }
 
+function findPatternForModule(mod: LearningModulePlannerEntry): PatternCatalogEntry | null {
+  const moduleKey = normalizeSectionId(`${mod.moduleId} ${mod.title}`);
+  return PATTERN_CATALOG.find((pattern) => {
+    const slug = normalizeSectionId(pattern.slug);
+    const name = normalizeSectionId(pattern.name);
+    return moduleKey.includes(slug) || moduleKey.includes(name);
+  }) ?? null;
+}
+
+function scorePatternMatch(prompt: string, pattern: PatternCatalogEntry): number {
+  const promptTokens = extractTokens(prompt);
+  const promptText = String(prompt || '').toLowerCase();
+  const patternText = [
+    pattern.slug,
+    pattern.name,
+    pattern.intent,
+    pattern.whenToUse,
+    ...pattern.signals,
+  ].join(' ');
+  let score = scoreOverlap(prompt, extractTokens(patternText));
+  if (promptText.includes(pattern.name.toLowerCase())) score += 8;
+  if (promptText.includes(pattern.slug.replace(/-/g, ' '))) score += 8;
+  for (const signal of pattern.signals) {
+    const signalText = signal.toLowerCase();
+    const signalTokens = extractTokens(signal);
+    if (signalText && promptText.includes(signalText)) score += 6;
+    if (signalTokens.length > 0 && signalTokens.every((token) => promptTokens.includes(token))) {
+      score += 2 + signalTokens.length;
+    }
+  }
+  return score;
+}
+
 function pickTopics(mod: LearningModulePlannerEntry): string[] {
   return uniqueStrings([
     ...mod.sections.flatMap((s) => s.topics).slice(0, 8),
@@ -511,8 +560,16 @@ function buildCoursePlanFromDecisions(
   requiredLearning: CoursePlanScope[],
   summary: string,
   source: 'ai' | 'heuristic',
+  diagnostics: Partial<CoursePlanDiagnostics> = {},
 ): CoursePlan {
   const sections = buildNormalizedSections(digest, decisions);
+  const selectedModuleCount = decisions.filter((decision) => decision.published).length;
+  const computedDiagnostics = {
+    catalogModuleCount: digest.length,
+    selectedSectionCount: sections.length,
+    selectedModuleCount,
+    emptyPlan: selectedModuleCount === 0,
+  };
   return {
     schemaVersion: 'course-plan-v1',
     source,
@@ -520,39 +577,66 @@ function buildCoursePlanFromDecisions(
     sections,
     modules: decisions,
     requiredLearning,
+    diagnostics: {
+      aiAttempted: source === 'ai',
+      aiSucceeded: source === 'ai',
+      ...computedDiagnostics,
+      message: selectedModuleCount === 0
+        ? 'No modules were selected.'
+        : `${selectedModuleCount} module${selectedModuleCount === 1 ? '' : 's'} selected.`,
+      ...diagnostics,
+      ...computedDiagnostics,
+    },
   };
 }
 
-function heuristicPlan(input: PlannerInput, digest: LearningModulePlannerEntry[]): CoursePlan {
+function heuristicPlan(
+  input: PlannerInput,
+  digest: LearningModulePlannerEntry[],
+  diagnostics: Partial<CoursePlanDiagnostics> = {},
+): CoursePlan {
+  const fallbackSummary = diagnostics.message ?? 'Using local prompt-to-course heuristic.';
   const scored = digest.map((mod) => {
+    const pattern = findPatternForModule(mod);
     const hay = [
       mod.title,
       mod.intro,
       ...mod.sections.map((s) => `${s.heading} ${s.body} ${s.topics.join(' ')}`),
       mod.questionTopics.join(' '),
     ].join(' ');
+    const moduleScore = scoreOverlap(input.prompt, extractTokens(hay));
+    const patternScore = pattern ? scorePatternMatch(input.prompt, pattern) : 0;
     return {
       mod,
-      score: scoreOverlap(input.prompt, extractTokens(hay)),
+      pattern,
+      moduleScore,
+      patternScore,
+      score: moduleScore + (patternScore * 3),
     };
   });
 
-  const bestByCategory = new Map<string, { moduleId: string; score: number }>();
-  for (const item of scored) {
-    if (item.score <= 0) continue;
-    const current = bestByCategory.get(item.mod.category);
-    if (!current || item.score > current.score) {
-      bestByCategory.set(item.mod.category, { moduleId: item.mod.moduleId, score: item.score });
-    }
-  }
+  const rankedPatternMatches = scored
+    .filter((item) => item.patternScore >= 2)
+    .sort((a, b) => b.score - a.score);
+  const rankedModuleMatches = scored
+    .filter((item) => item.moduleScore >= 2)
+    .sort((a, b) => b.score - a.score);
+  const ranked = rankedPatternMatches.length > 0 ? rankedPatternMatches : rankedModuleMatches;
+  const bestScore = ranked[0]?.score ?? 0;
+  const selectedIds = new Set(
+    ranked
+      .filter((item) => item.score >= Math.max(2, bestScore * 0.7))
+      .slice(0, 4)
+      .map((item) => item.mod.moduleId),
+  );
 
-  const decisions = scored.map(({ mod }) => {
-    const published = bestByCategory.get(mod.category)?.moduleId === mod.moduleId;
+  const decisions = scored.map(({ mod, pattern }) => {
+    const published = selectedIds.has(mod.moduleId);
     return buildModuleDecision(
       mod,
       published,
       published
-        ? `Matched prompt language to ${mod.title}.`
+        ? `Matched ${pattern?.name ?? mod.title} to the project brief.`
         : 'No strong prompt match; defaulting OFF.',
       published ? mod.sections.slice(0, 3).map((s) => s.heading) : [],
       published ? pickTopics(mod) : [],
@@ -578,8 +662,14 @@ function heuristicPlan(input: PlannerInput, digest: LearningModulePlannerEntry[]
     digest,
     decisions,
     requiredLearning,
-    'AI provider unavailable; using a prompt-to-course heuristic.',
+    fallbackSummary,
     'heuristic',
+    {
+      aiAttempted: false,
+      aiSucceeded: false,
+      message: 'Using local heuristic fallback.',
+      ...diagnostics,
+    },
   );
 }
 
@@ -771,27 +861,66 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
       ? raw.summary.trim()
       : 'AI plan generated successfully.',
     'ai',
+    {
+      aiAttempted: true,
+      aiSucceeded: true,
+      message: 'AI returned a valid JSON course plan.',
+    },
   );
 }
 
 export async function generateCoursePlan(input: PlannerInput): Promise<CoursePlan> {
-  const digest = buildPlannerDigest();
+  const digest = buildPlannerDigest({ includeUnpublished: true });
   const provider = pickProvider();
   const payload = {
     prompt: input.prompt.trim(),
     modules: digest,
   };
 
-  if (!provider) return heuristicPlan(input, digest);
+  if (digest.length === 0) {
+    return heuristicPlan(input, digest, {
+      fallbackReason: 'empty_catalog',
+      message: 'No learning modules exist in the catalog.',
+    });
+  }
+
+  if (!provider) {
+    return heuristicPlan(input, digest, {
+      fallbackReason: 'no_provider',
+      message: 'AI provider is not configured; using local heuristic fallback.',
+    });
+  }
 
   try {
     const raw = provider.provider === 'gemini'
       ? await callGemini(provider.apiKey, provider.model, payload)
       : await callAnthropic(provider.apiKey, provider.model, payload);
     const parsed = safeJsonParse(raw);
-    if (!parsed) return heuristicPlan(input, digest);
-    return normalizePlan(parsed, digest);
-  } catch {
-    return heuristicPlan(input, digest);
+    if (!parsed) {
+      return heuristicPlan(input, digest, {
+        aiAttempted: true,
+        aiSucceeded: false,
+        fallbackReason: 'invalid_json',
+        message: 'AI returned invalid JSON; using local heuristic fallback.',
+      });
+    }
+    const plan = normalizePlan(parsed, digest);
+    if (plan.diagnostics.emptyPlan) {
+      return heuristicPlan(input, digest, {
+        aiAttempted: true,
+        aiSucceeded: true,
+        fallbackReason: 'ai_empty',
+        message: 'AI returned valid JSON but selected no modules; using local heuristic fallback.',
+      });
+    }
+    return plan;
+  } catch (err) {
+    return heuristicPlan(input, digest, {
+      aiAttempted: true,
+      aiSucceeded: false,
+      fallbackReason: 'ai_error',
+      aiError: err instanceof Error ? err.message : String(err),
+      message: 'AI request failed; using local heuristic fallback.',
+    });
   }
 }

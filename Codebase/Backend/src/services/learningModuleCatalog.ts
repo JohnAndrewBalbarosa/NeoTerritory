@@ -133,12 +133,17 @@ function toCatalogEntry(row: LearningModuleRow): LearningModuleCatalogJson {
   };
 }
 
-export function listLearningModuleCatalog(): LearningModuleCatalogJson[] {
+interface LearningModuleCatalogOptions {
+  includeUnpublished?: boolean;
+}
+
+export function listLearningModuleCatalog(options: LearningModuleCatalogOptions = {}): LearningModuleCatalogJson[] {
+  const where = options.includeUnpublished ? '' : 'WHERE published = 1';
   const rows = db.prepare(`
     SELECT module_id, category, title, eyebrow, intro, sections_json, key_terms_json, summary,
            see_also_json, theoretical_json, practical_json, auto_tag
     FROM learning_modules
-    WHERE published = 1
+    ${where}
     ORDER BY sort_order ASC
   `).all() as LearningModuleRow[];
   return rows.map(toCatalogEntry);
@@ -167,8 +172,8 @@ function extractTopics(text: string): string[] {
   return Array.from(new Set(words)).slice(0, 8);
 }
 
-export function buildPlannerDigest(): LearningModulePlannerEntry[] {
-  return listLearningModuleCatalog().map((module) => {
+export function buildPlannerDigest(options: LearningModuleCatalogOptions = {}): LearningModulePlannerEntry[] {
+  return listLearningModuleCatalog(options).map((module) => {
     const sections = module.sections.map((section) => {
       const body = [section.body, section.note, ...(section.bullets || [])].filter(Boolean).join(' ');
       return {

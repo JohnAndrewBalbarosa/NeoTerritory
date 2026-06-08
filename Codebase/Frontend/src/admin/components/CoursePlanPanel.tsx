@@ -152,6 +152,27 @@ export default function CoursePlanPanel({
           {plan && (
             <>
               <p className="admin-section__hint">{plan.summary}</p>
+              {plan.diagnostics && (
+                <div
+                  className={`admin-plan-diagnostics${plan.diagnostics.fallbackReason ? ' is-warning' : ' is-ok'}`}
+                  role="status"
+                >
+                  <div>
+                    <strong>{plan.source === 'ai' ? 'AI plan' : 'Fallback plan'}</strong>
+                    <p>{plan.diagnostics.message}</p>
+                    {plan.diagnostics.aiError && <p>AI error: {plan.diagnostics.aiError}</p>}
+                  </div>
+                  <div className="admin-plan-diagnostics__chips">
+                    <span className="tag tag--on">{plan.diagnostics.catalogModuleCount} catalog</span>
+                    <span className={plan.diagnostics.selectedModuleCount > 0 ? 'tag tag--on' : 'tag tag--off'}>
+                      {plan.diagnostics.selectedModuleCount} selected
+                    </span>
+                    {plan.diagnostics.fallbackReason && (
+                      <span className="tag tag--off">{plan.diagnostics.fallbackReason}</span>
+                    )}
+                  </div>
+                </div>
+              )}
               <div className="admin-plan-scope">
                 <h4>Required learning</h4>
                 {plan.requiredLearning.length === 0 ? (
