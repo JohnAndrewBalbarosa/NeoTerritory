@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { patchLearningModule, previewCoursePlan } from '../../api/client';
 import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
-import { buildModuleSwitchboard, countSwitchboard } from '../../logic/moduleSwitchboard';
+import { buildModuleSwitchboard, countSwitchboard, groupModuleSwitchboard } from '../../logic/moduleSwitchboard';
 
 interface CoursePlanPanelProps {
   modules: ReadonlyArray<AdminLearningModule>;
@@ -41,22 +41,24 @@ export default function CoursePlanPanel({
   }
 
   const switchboard = useMemo(
-    () => buildModuleSwitchboard(modules, plan?.modules),
+    () => buildModuleSwitchboard(modules, plan),
     [modules, plan],
+  );
+  const groupedSwitchboard = useMemo(
+    () => groupModuleSwitchboard(switchboard),
+    [switchboard],
   );
   const changedPreview = useMemo(
     () => switchboard.filter((item) => item.currentPublished !== item.effectivePublished),
     [switchboard],
   );
   const counts = useMemo(() => countSwitchboard(switchboard), [switchboard]);
-  const enabledPreview = useMemo(
-    () => switchboard.filter((item) => item.effectivePublished),
-    [switchboard],
+  const activeSections = useMemo(
+    () => groupedSwitchboard.filter((section) => section.effectiveOn > 0),
+    [groupedSwitchboard],
   );
-  const disabledPreview = useMemo(
-    () => switchboard.filter((item) => !item.effectivePublished),
-    [switchboard],
-  );
+  const prunedSections = Math.max(groupedSwitchboard.length - activeSections.length, 0);
+  const offModules = Math.max(counts.off, 0);
 
   async function applyPlan(): Promise<void> {
     if (saving || !plan) return;
@@ -177,47 +179,69 @@ export default function CoursePlanPanel({
             <div className="admin-plan-board__head">
               <h3>Modules by AI</h3>
               <p className="admin-section__hint">
-                {counts.on} on, {counts.off} off.
+                {activeSections.length} sections on, {prunedSections} pruned, {counts.on} modules on, {offModules} modules off.
               </p>
             </div>
 
-            <ul className="admin-feature-list admin-feature-list--compact">
-              {enabledPreview.length === 0 ? (
-                <li className="admin-feature-row admin-feature-row--preview">
-                  <div className="admin-feature-row__meta">
-                    <p className="admin-feature-row__label">No modules switched on</p>
-                    <p className="admin-feature-row__explanation">
-                      The AI kept everything off, which means the prompt did not require a publish change.
-                    </p>
-                  </div>
-                </li>
-              ) : enabledPreview.map((item) => (
-                <li
-                  key={item.moduleId}
-                  className={`admin-feature-row admin-feature-row--preview${item.currentPublished === item.effectivePublished ? '' : ' is-changed'}`}
-                >
-                  <div className="admin-feature-row__meta">
-                    <p className="admin-feature-row__label">{item.title}</p>
-                    <p className="admin-feature-row__explanation">{item.reason}</p>
-                    {item.matchedSections.length > 0 && (
-                      <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
-                    )}
-                    {item.matchedTopics.length > 0 && (
-                      <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
-                    )}
-                  </div>
-                  <div className="admin-feature-row__delta">
-                    <span className={`tag ${item.currentPublished ? 'tag--on' : 'tag--off'}`}>{item.currentPublished ? 'ON' : 'OFF'}</span>
-                    <span className="arrow" aria-hidden="true">&rarr;</span>
-                    <span className={`tag ${item.effectivePublished ? 'tag--on' : 'tag--off'}`}>{item.effectivePublished ? 'ON' : 'OFF'}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {activeSections.length === 0 ? (
+              <div className="admin-plan-empty">
+                <p className="admin-feature-row__label">No sections switched on</p>
+                <p className="admin-feature-row__explanation">
+                  The AI kept every section off, so the learner path stays unpublished.
+                </p>
+              </div>
+            ) : (
+              <div className="admin-plan-sections">
+                {activeSections.map((section) => {
+                  const visibleRows = section.rows.filter((row) => row.effectivePublished);
+                  const hiddenCount = Math.max(section.rows.length - visibleRows.length, 0);
+                  return (
+                    <article key={section.sectionId} className="admin-plan-section-card">
+                      <div className="admin-plan-section-card__head">
+                        <div>
+                          <h4>{section.section}</h4>
+                          <p className="admin-section__hint">
+                            {section.effectiveOn} modules on · {hiddenCount} modules off inside this section
+                          </p>
+                        </div>
+                        <div className="admin-plan-section-card__counts">
+                          <span className="tag tag--on">{section.currentOn} current on</span>
+                          <span className="tag tag--on">{section.effectiveOn} effective on</span>
+                        </div>
+                      </div>
+                      <ul className="admin-plan-section-list">
+                        {visibleRows.map((item) => (
+                          <li
+                            key={item.moduleId}
+                            className={`admin-feature-row admin-feature-row--preview${item.currentPublished === item.effectivePublished ? '' : ' is-changed'}`}
+                          >
+                            <div className="admin-feature-row__meta">
+                              <p className="admin-feature-row__label">{item.title}</p>
+                              <p className="admin-feature-row__explanation">{item.reason}</p>
+                              {item.matchedSections.length > 0 && (
+                                <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
+                              )}
+                              {item.matchedTopics.length > 0 && (
+                                <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
+                              )}
+                            </div>
+                            <div className="admin-feature-row__delta">
+                              <span className={`tag ${item.currentPublished ? 'tag--on' : 'tag--off'}`}>{item.currentPublished ? 'ON' : 'OFF'}</span>
+                              <span className="arrow" aria-hidden="true">&rarr;</span>
+                              <span className={`tag ${item.effectivePublished ? 'tag--on' : 'tag--off'}`}>{item.effectivePublished ? 'ON' : 'OFF'}</span>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </article>
+                  );
+                })}
+              </div>
+            )}
 
             <div className="admin-plan-board__actions">
               <p className="admin-section__hint">
-                {disabledPreview.length} modules stay off unless turned on by AI.
+                {offModules} modules stay off unless turned on by AI. Missing sections are pruned automatically.
               </p>
             </div>
           </div>

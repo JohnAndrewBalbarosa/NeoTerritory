@@ -680,6 +680,13 @@ body{position:relative;}
 .admin-plan-board__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 .admin-plan-board__head h3{margin:0;font-size:13px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;}
 .admin-plan-board__actions{display:flex;justify-content:flex-start;gap:10px;flex-wrap:wrap;}
+.admin-plan-empty{padding:12px 14px;border:1px dashed var(--border-bright);border-radius:var(--radius-md);background:rgba(255,255,255,0.02);display:flex;flex-direction:column;gap:4px;}
+.admin-plan-sections{display:flex;flex-direction:column;gap:12px;max-height:460px;overflow:auto;padding-right:4px;}
+.admin-plan-section-card{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);padding:12px;display:flex;flex-direction:column;gap:10px;}
+.admin-plan-section-card__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.admin-plan-section-card__head h4{margin:0;font-size:13px;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;}
+.admin-plan-section-card__counts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.admin-plan-section-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
 .admin-plan-board__details{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);padding:10px 12px;}
 .admin-plan-board__details summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:600;color:var(--ink);}
 .admin-plan-board__details summary span{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}

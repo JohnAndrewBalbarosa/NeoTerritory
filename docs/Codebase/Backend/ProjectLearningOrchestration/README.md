@@ -66,7 +66,7 @@ Implementation note:
 - The contract should carry required patterns, excluded patterns, required competencies, and any project-specific exceptions.
 
 ### Step 2 - System Feature Toggle Policy
-The system converts the AI response into model-backed publish toggles with implicit deny. Only the structural design patterns and modules needed for the project are turned on. The actual toggle targets live in the module catalog and learning models, not in the general config surface. Config is reserved for adding structural pattern families outside the GoF catalog.
+The system converts the AI response into model-backed publish toggles with implicit deny. The AI response is section-first: each module category is treated as a section, only sections that should be ON appear in the JSON, and any section that is missing is treated as OFF. Only the structural design patterns and modules needed for the project are turned on. The actual toggle targets live in the module catalog and learning models, not in the general config surface. Config is reserved for adding structural pattern families outside the GoF catalog.
 
 Quick summary: keep the default state off and open only the required learning paths.
 
@@ -156,7 +156,7 @@ Implementation note:
 
 ## Acceptance Checks
 - A project brief can be transformed into a structured learning scope without exposing the full catalog.
-- The system defaults to implicit deny and enables only the required pattern modules for the project.
+- The system defaults to implicit deny and enables only the required pattern sections/modules for the project.
 - Course publish state is resolved from the model catalog, not from generic config, unless the team is extending beyond the GoF pattern set.
 - The module catalog already carries tagged theoretical and practical questions, so runtime only selects from prepared content.
 - A passing pretest bypasses the matching module sections for that user on that project.

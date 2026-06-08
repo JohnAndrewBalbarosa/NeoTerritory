@@ -14,6 +14,7 @@ The important detail is that questions are not tagged at runtime as a first pass
 
 The course planner and assessment flow both depend on this catalog being stable and explicit:
 - course planning decides which model entries are published.
+- the course planner now groups AI output by section first, then flattens the enabled modules for compatibility.
 - assessments pick from already-tagged questions.
 - practical work stays separated from theoretical MCQs.
 - future content changes happen by updating the catalog, not by reinterpreting free text.
@@ -88,4 +89,3 @@ flowchart TD
 - Theoretical and practical exams remain separate in the catalog.
 - The runtime can pick random or filtered questions without inventing new tags.
 - The course planner can toggle the model entry without needing a config-level override for GoF modules.
-

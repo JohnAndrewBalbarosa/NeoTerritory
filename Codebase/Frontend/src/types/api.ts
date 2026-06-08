@@ -341,6 +341,12 @@ export interface AdminCoursePlanModuleDecision {
   matchedTopics: string[];
 }
 
+export interface AdminCoursePlanSectionDecision {
+  sectionId: string;
+  section: string;
+  modules: AdminCoursePlanModuleDecision[];
+}
+
 export interface AdminCoursePlanLearningScope {
   moduleId: string;
   title: string;
@@ -354,6 +360,7 @@ export interface AdminCoursePlan {
   schemaVersion: 'course-plan-v1';
   source: 'ai' | 'heuristic';
   summary: string;
+  sections: AdminCoursePlanSectionDecision[];
   modules: AdminCoursePlanModuleDecision[];
   requiredLearning: AdminCoursePlanLearningScope[];
 }

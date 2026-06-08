@@ -11,6 +11,12 @@ export interface CoursePlanModuleDecision {
   matchedTopics: string[];
 }
 
+export interface CoursePlanSectionDecision {
+  sectionId: string;
+  section: string;
+  modules: CoursePlanModuleDecision[];
+}
+
 export interface CoursePlanScope {
   moduleId: string;
   title: string;
@@ -24,6 +30,7 @@ export interface CoursePlan {
   schemaVersion: 'course-plan-v1';
   source: 'ai' | 'heuristic';
   summary: string;
+  sections: CoursePlanSectionDecision[];
   modules: CoursePlanModuleDecision[];
   requiredLearning: CoursePlanScope[];
 }
@@ -36,6 +43,39 @@ const DEFAULT_MAX_TOKENS = 8192;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+
+const SECTION_ORDER = ['foundations', 'creational', 'structural', 'behavioural', 'idioms'] as const;
+const SECTION_LABELS: Record<(typeof SECTION_ORDER)[number], string> = {
+  foundations: 'Foundations',
+  creational: 'Creational',
+  structural: 'Structural',
+  behavioural: 'Behavioural',
+  idioms: 'Idioms',
+};
+
+function normalizeSectionId(value: string): string {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+}
+
+function sectionLabelFromId(sectionId: string): string {
+  const normalized = normalizeSectionId(sectionId);
+  const known = SECTION_LABELS[normalized as keyof typeof SECTION_LABELS];
+  if (known) return known;
+  return normalized.replace(/(^|-)\w/g, (match) => match.replace('-', '').toUpperCase());
+}
+
+function sectionSortIndex(sectionId: string): number {
+  const normalized = normalizeSectionId(sectionId);
+  const idx = SECTION_ORDER.indexOf(normalized as (typeof SECTION_ORDER)[number]);
+  return idx === -1 ? SECTION_ORDER.length : idx;
+}
+
+function uniqueStrings(values: ReadonlyArray<string>): string[] {
+  return Array.from(new Set(values.filter((value) => typeof value === 'string' && value.trim().length > 0)));
+}
 
 interface PatternCatalogEntry {
   slug: string;
@@ -298,14 +338,18 @@ const SYSTEM_PROMPT = [
   'You are an admin-side course planning assistant.',
   'You receive a project brief and a JSON catalog of learning modules.',
   'Your job is to infer the minimum required design patterns from the brief,',
-  'then decide which courses should be published ON or OFF by default,',
-  'and which modules, sections, and topics are required for the project.',
+  'then decide which learning sections and modules should be ON for the project.',
   '',
   'Rules:',
   '- Return one JSON object only. No prose, no markdown, no code fences.',
-  '- Use the provided modules exactly; every module must appear in modules.',
-  '- Default all modules to published=false unless the prompt strongly requires them.',
-  '- Prefer a narrow scope. Do not publish unrelated modules.',
+  '- Use the provided modules exactly.',
+  '- Treat each module category as a section.',
+  '- Return only sections that should be ON.',
+  '- Sections that are missing from the JSON are OFF.',
+  '- Sections that appear but contain no modules are dropped during parsing.',
+  '- Inside each section, list only the modules that should be ON.',
+  '- Do not include OFF modules inside a selected section.',
+  '- Prefer a narrow scope. Do not select unrelated sections.',
   '- First infer the needed design patterns from the project brief using the catalog below.',
   '- Then map those patterns to the minimum module set in the provided module catalog.',
   '- Only keep foundational modules when they are direct prerequisites for a selected pattern.',
@@ -319,15 +363,21 @@ const SYSTEM_PROMPT = [
   'Return this schema exactly:',
   '{',
   '  "summary": "string",',
-  '  "modules": [',
+  '  "sections": [',
   '    {',
-  '      "moduleId": "string",',
-  '      "title": "string",',
-  '      "category": "string",',
-  '      "published": true,',
-  '      "reason": "string",',
-  '      "matchedSections": ["string"],',
-  '      "matchedTopics": ["string"]',
+  '      "sectionId": "string",',
+  '      "section": "string",',
+  '      "modules": [',
+  '        {',
+  '          "moduleId": "string",',
+  '          "title": "string",',
+  '          "category": "string",',
+  '          "published": true,',
+  '          "reason": "string",',
+  '          "matchedSections": ["string"],',
+  '          "matchedTopics": ["string"]',
+  '        }',
+  '      ]',
   '    }',
   '  ],',
   '  "requiredLearning": [',
@@ -343,9 +393,26 @@ const SYSTEM_PROMPT = [
   '}'
 ].join('\n');
 
+interface ParsedPlanModule {
+  moduleId?: string;
+  title?: string;
+  category?: string;
+  published?: boolean;
+  reason?: string;
+  matchedSections?: string[];
+  matchedTopics?: string[];
+}
+
+interface ParsedPlanSection {
+  sectionId?: string;
+  section?: string;
+  modules?: ParsedPlanModule[];
+}
+
 interface ParsedPlan {
   summary?: string;
-  modules?: Array<Partial<CoursePlanModuleDecision> & { moduleId?: string }>;
+  sections?: ParsedPlanSection[];
+  modules?: ParsedPlanModule[];
   requiredLearning?: Array<Partial<CoursePlanScope> & { moduleId?: string }>;
 }
 
@@ -387,8 +454,71 @@ function scoreOverlap(haystack: string, needles: string[]): number {
   return score;
 }
 
+function pickTopics(mod: LearningModulePlannerEntry): string[] {
+  return uniqueStrings([
+    ...mod.sections.flatMap((s) => s.topics).slice(0, 8),
+    ...mod.questionTopics.slice(0, 4),
+  ]).slice(0, 8);
+}
+
+function buildModuleDecision(
+  mod: LearningModulePlannerEntry,
+  published: boolean,
+  reason: string,
+  matchedSections: string[],
+  matchedTopics: string[],
+): CoursePlanModuleDecision {
+  return {
+    moduleId: mod.moduleId,
+    title: mod.title,
+    category: mod.category,
+    published,
+    reason,
+    matchedSections: uniqueStrings(matchedSections).slice(0, 3),
+    matchedTopics: uniqueStrings(matchedTopics).slice(0, 8),
+  };
+}
+
+function buildNormalizedSections(digest: LearningModulePlannerEntry[], decisions: ReadonlyArray<CoursePlanModuleDecision>): CoursePlanSectionDecision[] {
+  const bySection = new Map<string, CoursePlanModuleDecision[]>();
+  for (const mod of digest) {
+    const decision = decisions.find((entry) => entry.moduleId === mod.moduleId);
+    if (!decision?.published) continue;
+    const sectionId = normalizeSectionId(mod.category);
+    const bucket = bySection.get(sectionId) ?? [];
+    bucket.push(decision);
+    bySection.set(sectionId, bucket);
+  }
+
+  return Array.from(bySection.entries())
+    .sort(([a], [b]) => sectionSortIndex(a) - sectionSortIndex(b))
+    .map(([sectionId, rows]) => ({
+      sectionId,
+      section: sectionLabelFromId(sectionId),
+      modules: rows,
+    }));
+}
+
+function buildCoursePlanFromDecisions(
+  digest: LearningModulePlannerEntry[],
+  decisions: CoursePlanModuleDecision[],
+  requiredLearning: CoursePlanScope[],
+  summary: string,
+  source: 'ai' | 'heuristic',
+): CoursePlan {
+  const sections = buildNormalizedSections(digest, decisions);
+  return {
+    schemaVersion: 'course-plan-v1',
+    source,
+    summary,
+    sections,
+    modules: decisions,
+    requiredLearning,
+  };
+}
+
 function heuristicPlan(input: PlannerInput, digest: LearningModulePlannerEntry[]): CoursePlan {
-  const modules = digest.map((mod) => {
+  const decisions = digest.map((mod) => {
     const hay = [
       mod.title,
       mod.intro,
@@ -397,20 +527,18 @@ function heuristicPlan(input: PlannerInput, digest: LearningModulePlannerEntry[]
     ].join(' ');
     const score = scoreOverlap(input.prompt, extractTokens(hay));
     const published = score > 0;
-    return {
-      moduleId: mod.moduleId,
-      title: mod.title,
-      category: mod.category,
+    return buildModuleDecision(
+      mod,
       published,
-      reason: published
+      published
         ? `Matched prompt language to ${mod.title}.`
         : 'No strong prompt match; defaulting OFF.',
-      matchedSections: published ? mod.sections.slice(0, 3).map((s) => s.heading) : [],
-      matchedTopics: published ? [...new Set(mod.sections.flatMap((s) => s.topics).slice(0, 8).concat(mod.questionTopics.slice(0, 4)))] : [],
-    };
+      published ? mod.sections.slice(0, 3).map((s) => s.heading) : [],
+      published ? pickTopics(mod) : [],
+    );
   });
 
-  const requiredLearning = modules
+  const requiredLearning = decisions
     .filter((m) => m.published)
     .map((m) => {
       const mod = digest.find((d) => d.moduleId === m.moduleId)!;
@@ -419,19 +547,19 @@ function heuristicPlan(input: PlannerInput, digest: LearningModulePlannerEntry[]
         title: m.title,
         category: m.category,
         sections: mod.sections.slice(0, 4).map((s) => s.heading),
-        topics: [...new Set(mod.sections.flatMap((s) => s.topics).slice(0, 8))],
+        topics: pickTopics(mod),
         reason: `Prompt overlaps with ${m.title}.`,
       };
     })
     .slice(0, 12);
 
-  return {
-    schemaVersion: 'course-plan-v1',
-    source: 'heuristic',
-    summary: 'AI provider unavailable; using a prompt-to-course heuristic.',
-    modules,
+  return buildCoursePlanFromDecisions(
+    digest,
+    decisions,
     requiredLearning,
-  };
+    'AI provider unavailable; using a prompt-to-course heuristic.',
+    'heuristic',
+  );
 }
 
 async function callAnthropic(apiKey: string, model: string, payload: unknown): Promise<string> {
@@ -508,50 +636,121 @@ async function callGemini(apiKey: string, model: string, payload: unknown): Prom
 
 function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): CoursePlan {
   const digestById = new Map(digest.map((m) => [m.moduleId, m]));
+  const rawSections = Array.isArray(raw.sections) ? raw.sections : [];
+  const sectionMode = rawSections.length > 0;
+  const moduleEntries = new Map<string, ParsedPlanModule>();
+  const moduleSectionLabels = new Map<string, string>();
+
+  if (sectionMode) {
+    for (const rawSection of rawSections) {
+      const sectionId = normalizeSectionId(
+        typeof rawSection.sectionId === 'string' && rawSection.sectionId.trim().length > 0
+          ? rawSection.sectionId
+          : rawSection.section || '',
+      );
+      if (!sectionId) continue;
+      const sectionLabel = typeof rawSection.section === 'string' && rawSection.section.trim().length > 0
+        ? rawSection.section.trim()
+        : sectionLabelFromId(sectionId);
+      const sectionDigest = digest.filter((mod) => normalizeSectionId(mod.category) === sectionId);
+      if (sectionDigest.length === 0) continue;
+      for (const rawModule of rawSection.modules ?? []) {
+        const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
+        if (!moduleId || !digestById.has(moduleId)) continue;
+        moduleEntries.set(moduleId, rawModule);
+        moduleSectionLabels.set(moduleId, sectionLabel);
+      }
+    }
+  } else {
+    for (const rawModule of raw.modules || []) {
+      const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
+      if (!moduleId || !digestById.has(moduleId)) continue;
+      moduleEntries.set(moduleId, rawModule);
+    }
+  }
 
   const modules = digest.map((mod) => {
-    const entry = (raw.modules || []).find((item) => item.moduleId === mod.moduleId);
-    const published = entry?.published === true;
-    return {
-      moduleId: mod.moduleId,
-      title: entry?.title || mod.title,
-      category: entry?.category || mod.category,
+    const entry = moduleEntries.get(mod.moduleId);
+    const published = sectionMode ? moduleEntries.has(mod.moduleId) : entry?.published === true;
+    const matchedSections = sectionMode
+      ? (moduleSectionLabels.get(mod.moduleId) ? [moduleSectionLabels.get(mod.moduleId)!] : [])
+      : uniqueStrings(Array.isArray(entry?.matchedSections) ? entry.matchedSections.filter((v): v is string => typeof v === 'string') : []);
+    const matchedTopics = sectionMode
+      ? pickTopics(mod)
+      : uniqueStrings(Array.isArray(entry?.matchedTopics) ? entry.matchedTopics.filter((v): v is string => typeof v === 'string') : []);
+    return buildModuleDecision(
+      mod,
       published,
-      reason: typeof entry?.reason === 'string' && entry.reason.trim()
+      typeof entry?.reason === 'string' && entry.reason.trim()
         ? entry.reason
         : (published ? 'AI selected this course for publishing.' : 'AI left this course off by default.'),
-      matchedSections: Array.isArray(entry?.matchedSections) ? entry.matchedSections.filter((v): v is string => typeof v === 'string') : [],
-      matchedTopics: Array.isArray(entry?.matchedTopics) ? entry.matchedTopics.filter((v): v is string => typeof v === 'string') : [],
-    };
+      matchedSections,
+      matchedTopics,
+    );
   });
 
-  const requiredLearning = (raw.requiredLearning || [])
-    .map((entry) => {
-      const moduleId = typeof entry.moduleId === 'string' ? entry.moduleId : '';
-      const mod = digestById.get(moduleId);
+  const sections = sectionMode
+    ? rawSections
+        .map((rawSection) => {
+          const sectionId = normalizeSectionId(
+            typeof rawSection.sectionId === 'string' && rawSection.sectionId.trim().length > 0
+              ? rawSection.sectionId
+              : rawSection.section || '',
+          );
+          if (!sectionId) return null;
+          const sectionLabel = typeof rawSection.section === 'string' && rawSection.section.trim().length > 0
+            ? rawSection.section.trim()
+            : sectionLabelFromId(sectionId);
+          const sectionDigest = digest.filter((mod) => normalizeSectionId(mod.category) === sectionId);
+          if (sectionDigest.length === 0) return null;
+          const moduleIds = new Set(
+            (rawSection.modules ?? [])
+              .map((entry) => (typeof entry.moduleId === 'string' ? entry.moduleId.trim() : ''))
+              .filter((moduleId) => moduleId.length > 0 && digestById.has(moduleId)),
+          );
+          if (moduleIds.size === 0) return null;
+          const grouped = sectionDigest
+            .map((mod) => modules.find((decision) => decision.moduleId === mod.moduleId))
+            .filter((decision): decision is CoursePlanModuleDecision => Boolean(decision && decision.published));
+          if (grouped.length === 0) return null;
+          return {
+            sectionId,
+            section: sectionLabel,
+            modules: grouped,
+          };
+        })
+        .filter((value): value is CoursePlanSectionDecision => Boolean(value))
+        .sort((a, b) => sectionSortIndex(a.sectionId) - sectionSortIndex(b.sectionId))
+    : buildNormalizedSections(digest, modules);
+
+  const requiredLearning = modules
+    .filter((m) => m.published)
+    .map((m) => {
+      const mod = digestById.get(m.moduleId);
       if (!mod) return null;
       return {
-        moduleId,
-        title: typeof entry.title === 'string' ? entry.title : mod.title,
-        category: typeof entry.category === 'string' ? entry.category : mod.category,
-        sections: Array.isArray(entry.sections) ? entry.sections.filter((v): v is string => typeof v === 'string') : mod.sections.map((s) => s.heading),
-        topics: Array.isArray(entry.topics) ? entry.topics.filter((v): v is string => typeof v === 'string') : mod.sections.flatMap((s) => s.topics),
-        reason: typeof entry.reason === 'string' && entry.reason.trim()
-          ? entry.reason
+        moduleId: m.moduleId,
+        title: m.title,
+        category: m.category,
+        sections: mod.sections.slice(0, 4).map((s) => s.heading),
+        topics: pickTopics(mod),
+        reason: typeof moduleEntries.get(m.moduleId)?.reason === 'string' && moduleEntries.get(m.moduleId)!.reason!.trim()
+          ? moduleEntries.get(m.moduleId)!.reason!.trim()
           : 'Required by the project prompt.',
       };
     })
-    .filter((v): v is CoursePlanScope => Boolean(v));
+    .filter((value): value is CoursePlanScope => Boolean(value))
+    .slice(0, 12);
 
-  return {
-    schemaVersion: 'course-plan-v1',
-    source: 'ai',
-    summary: typeof raw.summary === 'string' && raw.summary.trim()
-      ? raw.summary.trim()
-      : 'AI plan generated successfully.',
+  return buildCoursePlanFromDecisions(
+    digest,
     modules,
     requiredLearning,
-  };
+    typeof raw.summary === 'string' && raw.summary.trim()
+      ? raw.summary.trim()
+      : 'AI plan generated successfully.',
+    'ai',
+  );
 }
 
 export async function generateCoursePlan(input: PlannerInput): Promise<CoursePlan> {

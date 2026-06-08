@@ -32,7 +32,7 @@ export default function CoursesTab() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState>(null);
-  const [previewPlan, setPreviewPlan] = useState<AdminCoursePlan['modules'] | null>(null);
+  const [previewPlan, setPreviewPlan] = useState<AdminCoursePlan | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
@@ -160,10 +160,10 @@ export default function CoursesTab() {
 
       {error && <p className="admin-login-error" role="alert">{error}</p>}
 
-      <CoursePlanPanel
+  <CoursePlanPanel
         modules={sorted}
         onApplied={reload}
-        onPreviewChange={(plan) => setPreviewPlan(plan?.modules ?? null)}
+        onPreviewChange={setPreviewPlan}
       />
 
       {!loaded && <p className="admin-section__hint">Loading coursesâ€¦</p>}
