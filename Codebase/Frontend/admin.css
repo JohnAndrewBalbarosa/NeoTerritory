@@ -686,6 +686,8 @@ body{position:relative;}
 .admin-plan-section-card__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 .admin-plan-section-card__head h4{margin:0;font-size:13px;color:var(--ink);text-transform:uppercase;letter-spacing:.05em;}
 .admin-plan-section-card__counts{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.admin-plan-section-card__meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);}
+.admin-plan-section-card__summary{font-size:11px;color:var(--ink-soft);letter-spacing:.02em;}
 .admin-plan-section-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px;}
 .admin-plan-board__details{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);padding:10px 12px;}
 .admin-plan-board__details summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:600;color:var(--ink);}

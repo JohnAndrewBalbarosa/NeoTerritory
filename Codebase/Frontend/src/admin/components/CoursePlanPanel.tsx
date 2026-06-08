@@ -195,6 +195,7 @@ export default function CoursePlanPanel({
                 {activeSections.map((section) => {
                   const visibleRows = section.rows.filter((row) => row.effectivePublished);
                   const hiddenCount = Math.max(section.rows.length - visibleRows.length, 0);
+                  const changedCount = section.rows.filter((row) => row.currentPublished !== row.effectivePublished).length;
                   return (
                     <article key={section.sectionId} className="admin-plan-section-card">
                       <div className="admin-plan-section-card__head">
@@ -208,6 +209,20 @@ export default function CoursePlanPanel({
                           <span className="tag tag--on">{section.currentOn} current on</span>
                           <span className="tag tag--on">{section.effectiveOn} effective on</span>
                         </div>
+                      </div>
+                      <div className="admin-plan-section-card__meta">
+                        <span className="tag tag--on">{section.sectionId}</span>
+                        <span className="admin-plan-section-card__summary">
+                          {visibleRows.length} module{visibleRows.length === 1 ? '' : 's'} on
+                        </span>
+                        <span className="admin-plan-section-card__summary">
+                          {hiddenCount} hidden by implicit deny
+                        </span>
+                        {changedCount > 0 && (
+                          <span className="admin-plan-section-card__summary">
+                            {changedCount} pending change{changedCount === 1 ? '' : 's'}
+                          </span>
+                        )}
                       </div>
                       <ul className="admin-plan-section-list">
                         {visibleRows.map((item) => (
