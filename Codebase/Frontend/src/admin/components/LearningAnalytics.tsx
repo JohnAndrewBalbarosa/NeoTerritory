@@ -142,35 +142,57 @@ export default function LearningAnalytics(): JSX.Element {
       </section>
 
       {drill && (
-        <div className="admin-section admin-section--card" style={{ marginTop: 16 }}>
+        <div className="admin-section admin-section--card admin-heatmap-drilldown" style={{ marginTop: 24 }}>
           <header className="admin-section__head">
-            <h2>{findLearningModule(drill.moduleId)?.title} · Q{drill.qi + 1}</h2>
-            <p className="admin-section__hint">{questionText(drill.moduleId, drill.qi)}</p>
+            <div className="admin-section__title-row">
+              <h2>{findLearningModule(drill.moduleId)?.title} · Question {drill.qi + 1}</h2>
+              <button type="button" className="ghost-btn ghost-btn--sm" onClick={() => setDrill(null)}>
+                Close Drilldown
+              </button>
+            </div>
+            <p className="admin-section__hint">
+              <strong>Question:</strong> {questionText(drill.moduleId, drill.qi)}
+            </p>
           </header>
           {learners === null ? (
             <div className="empty-state">Loading learners…</div>
           ) : learners.length === 0 ? (
             <div className="empty-state">No learners have answered this question yet.</div>
           ) : (
-            <table className="admin-table">
-              <thead>
-                <tr><th>Learner</th><th>Selected</th><th>First try</th><th>Attempts</th></tr>
-              </thead>
-              <tbody className="runs-disabled">
-                {learners.map((l) => (
-                  <tr key={l.userId}>
-                    <td><strong>{l.username}</strong>{l.email && <><br /><small>{l.email}</small></>}</td>
-                    <td>{optionLabel(drill.moduleId, drill.qi, l.selectedIndex)}</td>
-                    <td>{l.firstAttemptCorrect ? '✓' : '✗'}</td>
-                    <td>{l.attempts}</td>
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Learner</th>
+                    <th>Selected Answer</th>
+                    <th className="u-text-center">First Try</th>
+                    <th className="u-text-center">Total Attempts</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="runs-disabled">
+                  {learners.map((l) => (
+                    <tr key={l.userId}>
+                      <td>
+                        <div className="learner-meta">
+                          <strong>{l.username}</strong>
+                          {l.email && <span className="learner-meta__email">{l.email}</span>}
+                        </div>
+                      </td>
+                      <td className="u-text-italic">
+                        {optionLabel(drill.moduleId, drill.qi, l.selectedIndex)}
+                      </td>
+                      <td className="u-text-center">
+                        <span className={`status-icon ${l.firstAttemptCorrect ? 'is-pass' : 'is-fail'}`}>
+                          {l.firstAttemptCorrect ? '✓' : '✗'}
+                        </span>
+                      </td>
+                      <td className="u-text-center">{l.attempts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-          <button type="button" className="ghost-btn" style={{ marginTop: 12 }} onClick={() => setDrill(null)}>
-            Close drilldown
-          </button>
         </div>
       )}
     </div>

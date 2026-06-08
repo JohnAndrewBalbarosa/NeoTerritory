@@ -28,7 +28,7 @@ import {
 import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
 
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'learning' | 'courses';
+type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'instructor-students' | 'instructor-modules' | 'instructor-questions' | 'courses';
 
 type AdminSection = 'Operations' | 'People' | 'Instructor' | 'Research' | 'Config';
 
@@ -50,8 +50,10 @@ const TABS: ReadonlyArray<TabDef> = [
   { id: 'users',           label: 'Users',           icon: IconShield,      section: 'People' },
   { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'People' },
   { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'People' },
-  { id: 'learning',        label: 'Instructor',      icon: IconClipboard,   section: 'Instructor' },
-  { id: 'courses',         label: 'Courses',         icon: IconBook,        section: 'Instructor' },
+  { id: 'instructor-students',  label: 'Students',   icon: IconShield,      section: 'Instructor' },
+  { id: 'instructor-modules',   label: 'Modules',    icon: IconLayers,      section: 'Instructor' },
+  { id: 'instructor-questions', label: 'Questions',  icon: IconClipboard,   section: 'Instructor' },
+  { id: 'courses',              label: 'Courses',    icon: IconBook,        section: 'Instructor' },
   { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Research', originalDevsOnly: true },
   { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Research', originalDevsOnly: true },
   { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Research', originalDevsOnly: true },
@@ -60,6 +62,15 @@ const TABS: ReadonlyArray<TabDef> = [
 ];
 
 const SECTION_ORDER: AdminSection[] = ['Operations', 'People', 'Instructor', 'Research', 'Config'];
+const TAB_SECTION_MAP: Record<AdminTab, AdminSection> = TABS.reduce((acc, tab) => {
+  acc[tab.id] = tab.section;
+  return acc;
+}, {} as Record<AdminTab, AdminSection>);
+
+const SECTION_CHILDREN: Record<AdminSection, AdminTab[]> = SECTION_ORDER.reduce((acc, section) => {
+  acc[section] = TABS.filter((tab) => tab.section === section).map((tab) => tab.id);
+  return acc;
+}, {} as Record<AdminSection, AdminTab[]>);
 
 // Original-devs detection: the JWT now carries an explicit
 // isOriginalDevs flag (set by /auth/google/exchange when the email is
@@ -114,6 +125,13 @@ export default function AdminApp() {
   const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
   const [refreshKey, setRefreshKey] = useState(0);
+  const [expandedSections, setExpandedSections] = useState<Record<AdminSection, boolean>>({
+    Operations: true,
+    People: true,
+    Instructor: true,
+    Research: true,
+    Config: true,
+  });
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
@@ -136,6 +154,11 @@ export default function AdminApp() {
       clearAuth();
     }
   }, [token, user, clearAuth]);
+
+  useEffect(() => {
+    const section = TAB_SECTION_MAP[activeTab];
+    setExpandedSections((current) => (current[section] ? current : { ...current, [section]: true }));
+  }, [activeTab]);
 
   async function onAdminLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -236,6 +259,16 @@ export default function AdminApp() {
     refreshAdminUsers();
   }
 
+  function setTab(tab: AdminTab) {
+    setActiveTab(tab);
+    const section = TAB_SECTION_MAP[tab];
+    setExpandedSections((current) => (current[section] ? current : { ...current, [section]: true }));
+  }
+
+  function toggleSection(section: AdminSection) {
+    setExpandedSections((current) => ({ ...current, [section]: !current[section] }));
+  }
+
   return (
     <div className="admin-shell">
       <AuroraBackground variant="warm" className="admin-aurora" />
@@ -326,30 +359,44 @@ export default function AdminApp() {
       <div className="admin-body">
         <nav className="admin-tab-bar admin-sidebar" aria-label="Admin sections" data-testid="admin-tab-bar">
           {SECTION_ORDER.map((section) => {
-            const tabs = TABS.filter((t) => {
-              if (t.section !== section) return false;
+            const tabs = SECTION_CHILDREN[section].map((id) => TABS.find((tab) => tab.id === id)!).filter((t) => {
               if (t.originalDevsOnly && isPmAdmin(user)) return false;
               if (t.originalDevsOnly && !isOriginalDevsAdmin(user)) return false;
               return true;
             });
             if (tabs.length === 0) return null;
+            const isOpen = expandedSections[section];
             return (
               <div className="admin-sidebar__group" key={section}>
-                <p className="admin-sidebar__label">{section}</p>
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      className={`admin-tab-btn${activeTab === tab.id ? ' is-active' : ''}`}
-                      type="button"
-                      onClick={() => setActiveTab(tab.id)}
-                    >
-                      <span className="admin-tab-btn__icon" aria-hidden="true"><Icon size={15} /></span>
-                      <span className="admin-tab-btn__label">{tab.label}</span>
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  className="admin-sidebar__section"
+                  aria-expanded={isOpen}
+                  onClick={() => toggleSection(section)}
+                >
+                  <span className="admin-sidebar__section-caret" aria-hidden="true">
+                    {isOpen ? '▾' : '▸'}
+                  </span>
+                  <span className="admin-sidebar__section-label">{section}</span>
+                </button>
+                {isOpen && (
+                  <div className="admin-sidebar__children" role="group" aria-label={`${section} items`}>
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      return (
+                        <button
+                          key={tab.id}
+                          className={`admin-tab-btn admin-tab-btn--child${activeTab === tab.id ? ' is-active' : ''}`}
+                          type="button"
+                          onClick={() => setTab(tab.id)}
+                        >
+                          <span className="admin-tab-btn__icon" aria-hidden="true"><Icon size={15} /></span>
+                          <span className="admin-tab-btn__label">{tab.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -427,13 +474,17 @@ export default function AdminApp() {
         <div hidden={activeTab !== 'joinRequests'}>
           <JoinRequestsTab />
         </div>
-        <div hidden={activeTab !== 'learning'}>
+        <div hidden={activeTab !== 'instructor-students' && activeTab !== 'instructor-modules' && activeTab !== 'instructor-questions'}>
           <section className="admin-section admin-section--card">
             <header className="admin-section__head">
               <h2>Instructor analytics</h2>
               <p className="admin-section__hint">Course-operator view of learner scores: per-student progress and improvement, module difficulty ranking, and the per-question heatmap. All metrics are computed from raw learning data; each view offers a download.</p>
             </header>
-            <InstructorDashboard />
+            <InstructorDashboard initialView={
+              activeTab === 'instructor-modules' ? 'modules' :
+              activeTab === 'instructor-questions' ? 'questions' :
+              'students'
+            } />
           </section>
         </div>
         <div hidden={activeTab !== 'courses'}>

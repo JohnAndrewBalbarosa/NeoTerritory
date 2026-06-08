@@ -64,10 +64,15 @@ const SUBVIEWS: ReadonlyArray<{ id: SubView; label: string }> = [
   { id: 'questions', label: 'Questions' },
 ];
 
-export default function InstructorDashboard(): JSX.Element {
+export default function InstructorDashboard({ initialView = 'students' }: { initialView?: SubView }): JSX.Element {
   const [raw, setRaw] = useState<AdminLearningRaw | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<SubView>('students');
+  const [view, setView] = useState<SubView>(initialView);
+
+  // Sync with prop when admin shell tabs change
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
 
   useEffect(() => {
     let cancelled = false;
@@ -84,21 +89,15 @@ export default function InstructorDashboard(): JSX.Element {
   }, []);
 
   return (
-    <div className="instructor-dashboard">
-      {/* KPI row (D92 Track A) — client-side from the already-fetched raw payload. */}
-      {raw && <InstructorKpis raw={raw} />}
-
-      {/* Pass/fail donut (D92 Track A) — also derived from the same raw payload. */}
-      {raw && <ExamOutcomePie raw={raw} />}
-
-      <nav className="instructor-segmented" role="tablist" aria-label="Instructor sub-views">
+    <div className="instructor-dashboard instructor-dashboard--nested">
+      <nav className="instructor-rail" role="tablist" aria-label="Instructor sub-views">
         {SUBVIEWS.map((s) => (
           <button
             key={s.id}
             type="button"
             role="tab"
             aria-selected={view === s.id}
-            className={`instructor-seg-btn${view === s.id ? ' is-active' : ''}`}
+            className={`instructor-rail-btn${view === s.id ? ' is-active' : ''}`}
             onClick={() => setView(s.id)}
           >
             {s.label}
@@ -106,18 +105,26 @@ export default function InstructorDashboard(): JSX.Element {
         ))}
       </nav>
 
-      {/* Students + Modules need the raw payload; Questions is self-fetching. */}
-      {view === 'questions' ? (
-        <LearningAnalytics />
-      ) : error ? (
-        <div className="empty-state admin-error" role="alert">{error}</div>
-      ) : raw === null ? (
-        <div className="empty-state">Loading instructor analytics…</div>
-      ) : view === 'students' ? (
-        <InstructorStudents raw={raw} />
-      ) : (
-        <InstructorModules raw={raw} />
-      )}
+      <div className="instructor-content">
+        {/* KPI row (D92 Track A) — client-side from the already-fetched raw payload. */}
+        {raw && view !== 'questions' && <InstructorKpis raw={raw} />}
+
+        {/* Pass/fail donut (D92 Track A) — also derived from the same raw payload. */}
+        {raw && view !== 'questions' && <ExamOutcomePie raw={raw} />}
+
+        {/* Students + Modules need the raw payload; Questions is self-fetching. */}
+        {view === 'questions' ? (
+          <LearningAnalytics />
+        ) : error ? (
+          <div className="empty-state admin-error" role="alert">{error}</div>
+        ) : raw === null ? (
+          <div className="empty-state">Loading instructor analytics…</div>
+        ) : view === 'students' ? (
+          <InstructorStudents raw={raw} />
+        ) : (
+          <InstructorModules raw={raw} />
+        )}
+      </div>
     </div>
   );
 }
