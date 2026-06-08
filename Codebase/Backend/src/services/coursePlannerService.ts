@@ -100,6 +100,16 @@ interface PatternCatalogEntry {
   signals: string[];
 }
 
+interface PatternContextGuide {
+  mainConcept: string;
+  neededConcepts: string[];
+  neededWhen: string[];
+  notNeededWhen: string[];
+  subScenarios: string[];
+  distinguishFrom: string[];
+  selectionTest: string;
+}
+
 const PATTERN_CATALOG: PatternCatalogEntry[] = [
   {
     slug: 'singleton',
@@ -337,14 +347,581 @@ const PATTERN_CATALOG: PatternCatalogEntry[] = [
   },
 ];
 
+const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
+  singleton: {
+    mainConcept: 'Keep exactly one authoritative instance alive for a resource whose duplication would break correctness or coordination.',
+    neededConcepts: ['single ownership', 'controlled construction', 'shared lifetime', 'global access boundary', 'test/reset strategy'],
+    neededWhen: [
+      'one process-wide configuration, license, logger, scheduler, hardware gateway, or shared resource registry must stay unique',
+      'different callers need the same authoritative object and duplicate instances would create conflicting state',
+      'the project brief says there must be one shared coordinator and the lifetime is application-wide',
+    ],
+    notNeededWhen: [
+      'the request only wants convenient access to a normal dependency',
+      'there can be one instance per tenant, user, request, tab, or test case',
+      'dependency injection or explicit ownership would keep the design clearer',
+    ],
+    subScenarios: [
+      'one audit logger writes ordered events for the whole process',
+      'one feature-flag registry reloads configuration for all services',
+      'one hardware controller owns a physical device connection',
+    ],
+    distinguishFrom: ['Factory Method creates objects but does not require uniqueness', 'Proxy controls access but may wrap many real objects', 'Service locator/global variable is not enough reason by itself'],
+    selectionTest: 'Would two live instances create incorrect behavior, conflicting state, or duplicated ownership? If not, do not choose Singleton.',
+  },
+  'factory-method': {
+    mainConcept: 'Move product creation behind a polymorphic creation method so callers depend on an interface rather than a concrete class.',
+    neededConcepts: ['product interface', 'creator boundary', 'subclass or override decides concrete type', 'late binding of creation'],
+    neededWhen: [
+      'the project chooses a concrete exporter, parser, gateway, report generator, or connector based on platform, input type, or deployment',
+      'callers must create products without naming concrete classes',
+      'new product variants should be added without editing the caller flow',
+    ],
+    notNeededWhen: [
+      'only one concrete product exists and is unlikely to vary',
+      'the problem is about a family of compatible products, which points to Abstract Factory',
+      'the object has many optional construction steps, which points to Builder',
+    ],
+    subScenarios: [
+      'create CSV, PDF, or DOCX exporters from a common exporter interface',
+      'choose a payment gateway adapter for region-specific deployments',
+      'let each document workflow create its own validator implementation',
+    ],
+    distinguishFrom: ['Abstract Factory creates related families', 'Builder assembles one complex product step by step', 'Strategy swaps behavior after creation rather than deciding construction'],
+    selectionTest: 'Is the main pain that the caller should not know which concrete product to instantiate?',
+  },
+  builder: {
+    mainConcept: 'Assemble one complex object through named steps, then produce a final configured product.',
+    neededConcepts: ['staged construction', 'optional parts', 'validation before build', 'readable construction flow', 'final product boundary'],
+    neededWhen: [
+      'constructors have many optional parameters, conditional fields, or invalid combinations',
+      'a report, query, UI layout, request payload, or configuration object is built over several steps',
+      'the build process should be readable and validated before use',
+    ],
+    notNeededWhen: [
+      'a small constructor or object literal is clear enough',
+      'the fluent API only mutates and returns the same object without producing a final product',
+      'the goal is choosing a concrete subtype rather than assembling one object',
+    ],
+    subScenarios: [
+      'build an onboarding workflow with optional notifications, approvals, and audit settings',
+      'build a search query with filters, sorting, pagination, and projections',
+      'build a document export request with metadata, layout options, and destination settings',
+    ],
+    distinguishFrom: ['Method Chaining is fluent API style, not necessarily staged product construction', 'Factory Method chooses a product type', 'Prototype clones an existing configured object'],
+    selectionTest: 'Is the complexity in assembling one product with many choices or steps?',
+  },
+  'method-chaining': {
+    mainConcept: 'Return the same object from operations so a sequence of configuration or actions reads as one fluent expression.',
+    neededConcepts: ['fluent API', 'same-object return', 'ordered calls', 'readability over ceremony'],
+    neededWhen: [
+      'the project needs an ergonomic configuration surface for filters, rules, validation, or UI setup',
+      'calls naturally form a readable sequence and each call modifies the same working object',
+      'the API is internal or controlled enough that chained mutability is acceptable',
+    ],
+    notNeededWhen: [
+      'there must be a separate immutable final product, which points to Builder',
+      'call order is complex and easy to misuse without validation',
+      'the chain hides important side effects or error handling',
+    ],
+    subScenarios: [
+      'configure a validation rule set with require().min().max().message()',
+      'compose table filters with where().sort().limit()',
+      'set up a test fixture with user().role().withProject()',
+    ],
+    distinguishFrom: ['Builder usually has a terminal build step', 'Pipeline/Chain of Responsibility passes work across different handlers', 'Fluent style alone is not a GoF structural need'],
+    selectionTest: 'Is the main requirement a fluent setup API on the same object rather than object family selection or complex construction?',
+  },
+  adapter: {
+    mainConcept: 'Translate an existing interface or payload into the interface the client expects without changing either side.',
+    neededConcepts: ['incompatible interfaces', 'translation layer', 'legacy or vendor boundary', 'method/name/payload mapping'],
+    neededWhen: [
+      'a partner API, legacy module, external SDK, or old service has the right behavior but the wrong interface',
+      'the system must map request/response shapes, naming conventions, protocols, or units',
+      'new code needs a stable internal contract while external contracts differ',
+    ],
+    notNeededWhen: [
+      'the wrapper keeps the same interface and adds behavior, which points to Decorator',
+      'the wrapper controls access, caching, lazy loading, or remote calls, which points to Proxy',
+      'the wrapper only simplifies several subsystem calls, which points to Facade',
+    ],
+    subScenarios: [
+      'convert an old billing SDK into the app payment interface',
+      'map a vendor shipping response into an internal shipment DTO',
+      'wrap a legacy C++ class whose method names do not match the new service contract',
+    ],
+    distinguishFrom: ['Facade simplifies a subsystem but does not mainly convert an incompatible interface', 'Decorator preserves interface while adding behavior', 'Bridge separates two dimensions that both vary'],
+    selectionTest: 'Is the main pain that one usable thing has the wrong shape for the caller?',
+  },
+  proxy: {
+    mainConcept: 'Place a substitute object in front of a real object to control when and how the real object is accessed.',
+    neededConcepts: ['same client-facing contract', 'access gate', 'lazy load', 'cache', 'remote call boundary', 'permission check'],
+    neededWhen: [
+      'the real object is expensive, remote, protected, slow, cached, or should load only on demand',
+      'access needs auditing, authorization, throttling, retry, or lifecycle control',
+      'callers should interact with a stand-in without knowing the real object details',
+    ],
+    notNeededWhen: [
+      'the goal is interface conversion, which points to Adapter',
+      'the wrapper merely adds optional behavior layers without gating access, which points to Decorator',
+      'the code only needs a simpler entry point to many services, which points to Facade',
+    ],
+    subScenarios: [
+      'lazy-load a large document only when its content is requested',
+      'cache calls to a remote pricing service behind the same interface',
+      'check role permissions before forwarding repository operations',
+    ],
+    distinguishFrom: ['Decorator adds behavior while preserving direct access intent', 'Adapter changes interface shape', 'Facade exposes a new simpler API'],
+    selectionTest: 'Is the wrapper mainly controlling access, lifetime, cost, or remoteness of a real object?',
+  },
+  decorator: {
+    mainConcept: 'Wrap an object with one or more optional behavior layers while keeping the same interface.',
+    neededConcepts: ['same interface', 'runtime composition', 'stackable behavior', 'open extension without subclass explosion'],
+    neededWhen: [
+      'features such as logging, validation, compression, encryption, metrics, or formatting must be combined dynamically',
+      'behavior should be added to individual objects without changing the base class',
+      'many optional combinations would make inheritance unwieldy',
+    ],
+    notNeededWhen: [
+      'the wrapper changes method names or payload shape, which points to Adapter',
+      'the wrapper gates access, lazy loading, or remote communication, which points to Proxy',
+      'there is only one simple behavior and no need for runtime stacking',
+    ],
+    subScenarios: [
+      'wrap a notification sender with retry, logging, and metrics decorators',
+      'decorate a stream with compression and encryption',
+      'decorate a report renderer with watermarking and audit stamps',
+    ],
+    distinguishFrom: ['Proxy controls access to the real object', 'Adapter changes interface', 'Chain of Responsibility passes a request through handlers that may stop processing'],
+    selectionTest: 'Do optional behavior layers need to stack around the same interface at runtime?',
+  },
+  strategy: {
+    mainConcept: 'Put interchangeable algorithms behind a common interface so one can be selected without changing the caller.',
+    neededConcepts: ['algorithm family', 'common operation', 'runtime or configuration selection', 'caller decoupled from implementation'],
+    neededWhen: [
+      'pricing, ranking, routing, validation, export formatting, scoring, or retry policy has multiple algorithms',
+      'the algorithm choice depends on project, tenant, user preference, configuration, or environment',
+      'new algorithms should be added without rewriting the orchestration flow',
+    ],
+    notNeededWhen: [
+      'behavior changes because the object moves through internal states, which points to State',
+      'the flow skeleton is fixed but subclass steps vary, which points to Template Method',
+      'there is only one stable algorithm and a small branch is enough',
+    ],
+    subScenarios: [
+      'choose cheapest, fastest, or balanced delivery routing',
+      'swap fraud scoring algorithms per merchant tier',
+      'select markdown, HTML, or PDF rendering strategy behind one export action',
+    ],
+    distinguishFrom: ['State changes behavior because of internal state transitions', 'Command represents an action object', 'Factory Method chooses which object to create'],
+    selectionTest: 'Is the project asking for interchangeable ways to perform the same operation?',
+  },
+  observer: {
+    mainConcept: 'Let a subject notify many subscribers when state changes without hard-coding those subscribers.',
+    neededConcepts: ['subject', 'subscribers/listeners', 'event notification', 'one-to-many dependency', 'decoupled updates'],
+    neededWhen: [
+      'changes in one object must update dashboards, notifications, logs, caches, or integrations',
+      'subscribers can be added or removed without editing the subject',
+      'the brief describes events, live status updates, pub/sub, webhooks, or listeners',
+    ],
+    notNeededWhen: [
+      'there is exactly one known receiver and a direct call is clearer',
+      'a request must be handled by one handler in a chain, which points to Chain of Responsibility',
+      'many peer objects need central coordination, which points to Mediator',
+    ],
+    subScenarios: [
+      'order status updates notify email, analytics, and inventory listeners',
+      'project readiness changes update PM dashboard and audit trail',
+      'sensor reading changes publish live UI updates',
+    ],
+    distinguishFrom: ['Mediator centralizes peer communication', 'Chain of Responsibility routes one request through handlers', 'Command stores an action for later execution'],
+    selectionTest: 'Does one subject need to fan out state-change notifications to multiple independent listeners?',
+  },
+  iterator: {
+    mainConcept: 'Expose a standard way to traverse a collection without revealing its internal storage shape.',
+    neededConcepts: ['collection traversal', 'next/current protocol', 'hidden storage', 'uniform enumeration'],
+    neededWhen: [
+      'clients must walk trees, pages, database cursors, custom containers, or filtered result sets uniformly',
+      'the collection internals may change but traversal code should not',
+      'multiple traversal orders or lazy paging are part of the design',
+    ],
+    notNeededWhen: [
+      'a normal array/list loop is enough and storage is already public',
+      'the problem is processing a request through handlers, which points to Chain of Responsibility',
+      'the project needs object-tree uniform behavior, which points to Composite',
+    ],
+    subScenarios: [
+      'paginate search results without exposing API paging details',
+      'walk a tree of folders with depth-first or breadth-first order',
+      'iterate over records streamed from a remote data source',
+    ],
+    distinguishFrom: ['Composite models tree objects uniformly', 'Visitor performs operations over object structures', 'Chain of Responsibility routes requests'],
+    selectionTest: 'Is the main need controlled traversal over a collection whose internals should stay hidden?',
+  },
+  command: {
+    mainConcept: 'Represent a request or action as an object so it can be queued, logged, retried, replayed, undone, or scheduled.',
+    neededConcepts: ['action object', 'receiver', 'execute method', 'queue/history', 'undo/retry metadata'],
+    neededWhen: [
+      'user actions, jobs, workflow steps, or service calls must be stored and executed later',
+      'the system needs undo/redo, retry, audit logs, queues, macros, or transaction-like batching',
+      'senders should not know the receiver implementation',
+    ],
+    notNeededWhen: [
+      'the action is always called immediately with no need to store or replay it',
+      'the project needs interchangeable algorithms, which points to Strategy',
+      'the project only needs event notification, which points to Observer',
+    ],
+    subScenarios: [
+      'queue export jobs as command objects',
+      'store editor operations for undo and redo',
+      'retry failed integration calls using serialized commands',
+    ],
+    distinguishFrom: ['Observer notifies subscribers about events', 'Strategy chooses an algorithm', 'Memento stores state snapshots rather than executable actions'],
+    selectionTest: 'Does the action need to become data that can be stored, passed around, delayed, or reversed?',
+  },
+  composite: {
+    mainConcept: 'Model part-whole trees so leaves and groups can be treated through the same interface.',
+    neededConcepts: ['tree structure', 'leaf and composite nodes', 'uniform operation', 'recursive composition'],
+    neededWhen: [
+      'the domain is hierarchical: folders/files, menus/items, org units, UI components, product bundles, permissions, or learning paths',
+      'clients should call the same operation on a single item or a group',
+      'tree operations need recursion without type-specific caller branches',
+    ],
+    notNeededWhen: [
+      'the structure is flat or only a list of unrelated items',
+      'the project only needs traversal of a collection, which points to Iterator',
+      'new operations over a stable tree are the real problem, which may point to Visitor',
+    ],
+    subScenarios: [
+      'calculate total cost of product bundles and individual products',
+      'render nested menus and single menu items uniformly',
+      'evaluate permissions across groups and users with one operation',
+    ],
+    distinguishFrom: ['Iterator traverses collections', 'Visitor adds operations to stable structures', 'Facade simplifies subsystem access'],
+    selectionTest: 'Do individual objects and object groups need the same client-facing operation?',
+  },
+  'template-method': {
+    mainConcept: 'Define a fixed algorithm skeleton in a base class while letting subclasses override selected steps.',
+    neededConcepts: ['base algorithm', 'hook methods', 'subclass variation', 'fixed order of steps', 'inversion of control'],
+    neededWhen: [
+      'several workflows share the same sequence but differ in validation, formatting, authorization, or persistence steps',
+      'the order of the algorithm must stay consistent across variants',
+      'inheritance is already the accepted extension mechanism',
+    ],
+    notNeededWhen: [
+      'the variant should be swapped dynamically at runtime, which points to Strategy',
+      'composition is preferred over inheritance for this extension point',
+      'there is no stable shared algorithm skeleton',
+    ],
+    subScenarios: [
+      'document import pipeline with fixed parse-validate-save steps but format-specific parsing',
+      'payment workflow with common authorization/capture flow and provider-specific hooks',
+      'report generation where the header/footer steps vary by report type',
+    ],
+    distinguishFrom: ['Strategy composes interchangeable algorithms', 'Factory Method varies object creation', 'Chain of Responsibility passes requests across handlers'],
+    selectionTest: 'Is there a shared algorithm order that must stay fixed while certain steps vary by subclass?',
+  },
+  state: {
+    mainConcept: 'Move state-specific behavior into state objects so an object changes behavior when its internal state changes.',
+    neededConcepts: ['state object', 'context object', 'transitions', 'state-specific rules', 'mode-dependent behavior'],
+    neededWhen: [
+      'an order, ticket, workflow, session, machine, or document behaves differently across lifecycle states',
+      'large conditionals check status/mode before every operation',
+      'state transitions have rules and side effects that should be explicit',
+    ],
+    notNeededWhen: [
+      'there are only one or two simple branches and they are stable',
+      'the behavior choice is an external policy rather than internal lifecycle, which points to Strategy',
+      'the project needs event notifications for state changes, which points to Observer',
+    ],
+    subScenarios: [
+      'support ticket behavior changes in open, pending, resolved, and closed states',
+      'checkout session changes allowed actions after payment authorization',
+      'document approval flow moves through draft, review, approved, and archived modes',
+    ],
+    distinguishFrom: ['Strategy selects algorithms externally', 'Template Method fixes a workflow skeleton', 'Memento snapshots state for restoration'],
+    selectionTest: 'Is behavior primarily determined by the object current lifecycle state and transition rules?',
+  },
+  repository: {
+    mainConcept: 'Hide persistence details behind a collection-like domain interface.',
+    neededConcepts: ['domain persistence boundary', 'query abstraction', 'storage independence', 'unit-testable data access'],
+    neededWhen: [
+      'domain logic should not depend on SQL, HTTP storage calls, ORM details, or cache implementation',
+      'data access must be mocked or swapped across SQLite, Supabase, files, or services',
+      'business rules should speak in domain objects and queries rather than database tables',
+    ],
+    notNeededWhen: [
+      'the project is a tiny CRUD screen where the ORM already gives a clean boundary',
+      'the issue is translating an external interface, which points to Adapter',
+      'the problem is choosing among algorithms rather than persistence access',
+    ],
+    subScenarios: [
+      'fetch learning modules through a course repository while hiding SQLite tables',
+      'persist assessment attempts without instructor logic knowing the database schema',
+      'swap local storage and remote API in tests behind one repository interface',
+    ],
+    distinguishFrom: ['Adapter translates incompatible APIs', 'Facade simplifies a subsystem', 'DAO is often lower-level table access while Repository is domain-facing'],
+    selectionTest: 'Is the main goal keeping domain/business code independent from storage implementation?',
+  },
+  pimpl: {
+    mainConcept: 'In C++, hide implementation details behind an opaque pointer to reduce header coupling and preserve ABI boundaries.',
+    neededConcepts: ['forward declaration', 'opaque Impl type', 'unique_ptr/shared pointer ownership', 'stable public header', 'rebuild isolation'],
+    neededWhen: [
+      'headers expose private dependencies that cause compile-time coupling or ABI churn',
+      'library users should not rebuild when implementation details change',
+      'the public class API is stable but internals are large or platform-specific',
+    ],
+    notNeededWhen: [
+      'the class is tiny and compile-time coupling is not a concern',
+      'the problem is runtime interface translation, which points to Adapter',
+      'the project is not dealing with C++ header or binary compatibility boundaries',
+    ],
+    subScenarios: [
+      'hide platform-specific window implementation from a cross-platform header',
+      'reduce rebuilds caused by private third-party includes',
+      'ship a stable SDK header while changing internal data structures',
+    ],
+    distinguishFrom: ['Bridge separates abstraction and implementation as two varying dimensions', 'Adapter changes interface compatibility', 'Facade simplifies subsystem calls'],
+    selectionTest: 'Is the problem specifically C++ header dependency, build time, or ABI stability?',
+  },
+  prototype: {
+    mainConcept: 'Create new objects by cloning an existing configured object instead of constructing from scratch.',
+    neededConcepts: ['clone operation', 'configured exemplar', 'copy semantics', 'deep/shallow copy rules'],
+    neededWhen: [
+      'object creation is expensive, complex, or based on a preconfigured template',
+      'many similar objects differ only in small fields',
+      'runtime-loaded prototypes should create new instances without knowing concrete classes',
+    ],
+    notNeededWhen: [
+      'direct construction is simple and cheap',
+      'the issue is choosing a product subtype by input, which points to Factory Method',
+      'the issue is step-by-step assembly, which points to Builder',
+    ],
+    subScenarios: [
+      'clone a configured report template and override date range',
+      'duplicate game/UI objects with preset defaults',
+      'create workflow instances from saved template workflows',
+    ],
+    distinguishFrom: ['Factory Method creates through a creator method', 'Builder constructs through steps', 'Memento captures state for restoration but is not a factory by itself'],
+    selectionTest: 'Is cloning a configured exemplar clearer or cheaper than rebuilding the object from scratch?',
+  },
+  'abstract-factory': {
+    mainConcept: 'Create families of related compatible products without naming their concrete classes.',
+    neededConcepts: ['product family', 'compatible variants', 'factory interface', 'environment/theme/provider family'],
+    neededWhen: [
+      'the system must create several related objects that must belong to the same platform, tenant, theme, provider, or environment',
+      'callers should not mix incompatible concrete products',
+      'new product families should be introduced with one factory implementation',
+    ],
+    notNeededWhen: [
+      'only one product type is being created, which points to Factory Method',
+      'the object has many optional setup steps, which points to Builder',
+      'compatibility between products does not matter',
+    ],
+    subScenarios: [
+      'create matching UI button, input, and modal components for each theme',
+      'create compatible payment authorization, capture, and refund clients per provider',
+      'create cloud-specific storage, queue, and secrets clients for AWS or Azure',
+    ],
+    distinguishFrom: ['Factory Method creates one product type', 'Builder assembles one product', 'Bridge separates abstraction and implementation dimensions'],
+    selectionTest: 'Does the project need a set of related products that must stay compatible as a family?',
+  },
+  bridge: {
+    mainConcept: 'Separate an abstraction from its implementation so both dimensions can vary independently.',
+    neededConcepts: ['abstraction hierarchy', 'implementation hierarchy', 'composition link', 'two independent axes of change'],
+    neededWhen: [
+      'the design has two growing dimensions such as shape/rendering API, report/output channel, device/remote control, or notification/provider',
+      'inheritance would create a class explosion from every combination',
+      'abstractions and implementations should evolve or be swapped independently',
+    ],
+    notNeededWhen: [
+      'the issue is adapting one incompatible existing interface, which points to Adapter',
+      'there is only one dimension of variation',
+      'the wrapper mainly controls access or cost, which points to Proxy',
+    ],
+    subScenarios: [
+      'reports vary by report type and output renderer independently',
+      'remote controls vary separately from TV/radio device implementations',
+      'notifications vary by message type and delivery provider independently',
+    ],
+    distinguishFrom: ['Adapter retrofits an existing incompatible interface', 'Strategy swaps one algorithm family', 'Abstract Factory creates compatible product families'],
+    selectionTest: 'Are there two independent dimensions that would otherwise multiply subclasses?',
+  },
+  facade: {
+    mainConcept: 'Expose a simple, task-oriented entry point over a complex subsystem.',
+    neededConcepts: ['subsystem boundary', 'simplified API', 'workflow aggregation', 'client shielding'],
+    neededWhen: [
+      'clients currently need to call many services/classes in the right order',
+      'the project needs a dashboard/service/API that hides subsystem complexity',
+      'the subsystem remains available internally but common workflows need a simple front door',
+    ],
+    notNeededWhen: [
+      'the main problem is interface incompatibility with one external type, which points to Adapter',
+      'the wrapper adds optional behavior while preserving interface, which points to Decorator',
+      'the wrapper controls access to one real object, which points to Proxy',
+    ],
+    subScenarios: [
+      'one checkout service coordinates cart, payment, inventory, and notification services',
+      'one course readiness service hides assessments, module progress, and evidence reads',
+      'one export facade coordinates template, renderer, storage, and audit subsystems',
+    ],
+    distinguishFrom: ['Adapter converts interfaces', 'Mediator coordinates peer objects internally', 'Repository hides persistence rather than a broad subsystem workflow'],
+    selectionTest: 'Does the project need a simpler entry point over several subsystem operations?',
+  },
+  flyweight: {
+    mainConcept: 'Share immutable intrinsic state across many similar objects while keeping unique extrinsic state outside.',
+    neededConcepts: ['intrinsic state', 'extrinsic state', 'object sharing', 'memory pressure', 'factory/cache of shared instances'],
+    neededWhen: [
+      'there are thousands or millions of similar objects with repeated immutable data',
+      'memory usage is important and shared state can be separated cleanly from per-instance state',
+      'the same descriptors, glyphs, styles, tiles, permissions, or metadata repeat often',
+    ],
+    notNeededWhen: [
+      'object count is small or memory is not a concern',
+      'each object has mostly unique state that cannot be shared',
+      'the need is caching expensive remote calls, which points more to Proxy or caching service',
+    ],
+    subScenarios: [
+      'share text glyph metadata while storing per-character position separately',
+      'share map tile definitions for many map placements',
+      'share immutable role/permission descriptors across many users',
+    ],
+    distinguishFrom: ['Singleton enforces exactly one instance of a resource', 'Prototype clones configured objects', 'Proxy may cache access but not split intrinsic/extrinsic object state'],
+    selectionTest: 'Can repeated immutable state be factored out and shared across many objects to reduce memory?',
+  },
+  'chain-of-responsibility': {
+    mainConcept: 'Pass a request along a sequence of handlers until one handles it or the chain finishes.',
+    neededConcepts: ['handler interface', 'next handler', 'request routing', 'optional handling', 'decoupled sender'],
+    neededWhen: [
+      'more than one component may handle a request and the sender should not choose which one',
+      'authorization, validation, escalation, fallback, or classification happens through ordered handlers',
+      'handlers may stop processing or pass the request onward',
+    ],
+    notNeededWhen: [
+      'every step must always run as a fixed workflow',
+      'one central object coordinates peers, which points to Mediator',
+      'the requirement is notification fan-out, which points to Observer',
+    ],
+    subScenarios: [
+      'support ticket escalates from bot to agent to manager',
+      'request validation tries tenant rule, project rule, then global fallback',
+      'approval request moves through handlers until one has authority',
+    ],
+    distinguishFrom: ['Observer notifies many listeners', 'Command stores executable requests', 'Template Method fixes an algorithm order inside inheritance'],
+    selectionTest: 'Can the sender issue a request without knowing which handler will deal with it?',
+  },
+  mediator: {
+    mainConcept: 'Centralize complex communication between related peer objects so they do not directly depend on each other.',
+    neededConcepts: ['central coordinator', 'peer components', 'reduced coupling', 'interaction rules'],
+    neededWhen: [
+      'many UI widgets, workflow participants, or domain components trigger changes in each other',
+      'direct peer-to-peer calls create tangled dependencies',
+      'one coordinator can enforce business interaction rules',
+    ],
+    notNeededWhen: [
+      'the problem is one subject notifying many listeners, which points to Observer',
+      'a request should pass through a handler chain, which points to Chain of Responsibility',
+      'simple direct collaboration between two objects is clear enough',
+    ],
+    subScenarios: [
+      'form fields update validation, submit state, and dependent dropdowns through a form mediator',
+      'chat room coordinates messages between users',
+      'course planner coordinates prompt, module list, preview, and apply actions',
+    ],
+    distinguishFrom: ['Observer is event fan-out from a subject', 'Facade is a simple external entry point', 'Controller/service orchestration is only Mediator when it reduces peer coupling'],
+    selectionTest: 'Are several peer components communicating too much directly and needing a central coordinator?',
+  },
+  visitor: {
+    mainConcept: 'Add new operations over a stable object structure without changing the object classes.',
+    neededConcepts: ['stable element hierarchy', 'visitor interface', 'accept method', 'double dispatch', 'operation extension'],
+    neededWhen: [
+      'the object structure is stable but new operations such as export, validation, metrics, or rendering keep appearing',
+      'operations need type-specific logic across many element classes',
+      'changing every element class for each new operation is undesirable',
+    ],
+    notNeededWhen: [
+      'the element class hierarchy changes often',
+      'there is only one operation and normal methods are clearer',
+      'the issue is traversing a collection, which points to Iterator',
+    ],
+    subScenarios: [
+      'run validation, rendering, and metrics visitors over an AST',
+      'export a stable document object model to PDF, HTML, and JSON',
+      'calculate costs, constraints, and audit data over stable workflow nodes',
+    ],
+    distinguishFrom: ['Iterator traverses elements', 'Composite models the tree itself', 'Interpreter evaluates language grammar'],
+    selectionTest: 'Is the object structure stable while operations over it change frequently?',
+  },
+  interpreter: {
+    mainConcept: 'Represent grammar rules as objects and evaluate sentences or expressions in a small language.',
+    neededConcepts: ['grammar', 'expression tree', 'terminal/nonterminal expressions', 'context', 'evaluation rules'],
+    neededWhen: [
+      'the project has a small rule language, expression syntax, query DSL, filter grammar, or policy language',
+      'grammar rules are stable enough to model as classes',
+      'the system needs to parse and evaluate domain-specific expressions repeatedly',
+    ],
+    notNeededWhen: [
+      'the input is simple key-value configuration with no grammar',
+      'a full parser generator or existing query engine is more appropriate',
+      'the goal is just selecting algorithms, which points to Strategy',
+    ],
+    subScenarios: [
+      'evaluate simple access-control expressions',
+      'parse filter syntax like status:open AND priority:high',
+      'interpret formula rules for scoring or eligibility',
+    ],
+    distinguishFrom: ['Strategy chooses among algorithms', 'Visitor may operate over an AST after parsing', 'Chain of Responsibility routes requests'],
+    selectionTest: 'Is there a small language or grammar that needs object-modeled evaluation?',
+  },
+  memento: {
+    mainConcept: 'Capture and restore an object internal state without exposing that internal state to outside code.',
+    neededConcepts: ['originator', 'memento snapshot', 'caretaker/history', 'encapsulation', 'restore operation'],
+    neededWhen: [
+      'the system needs undo, rollback, checkpoints, drafts, or restore points',
+      'state snapshots must be stored without exposing private fields',
+      'a caretaker/history should manage snapshots without understanding internals',
+    ],
+    notNeededWhen: [
+      'the requirement is to log executable actions, which points to Command',
+      'normal persistence/audit history is enough and no restore is needed',
+      'the object state is already public and trivial to copy safely',
+    ],
+    subScenarios: [
+      'save editor document checkpoints for undo',
+      'capture workflow state before risky transitions',
+      'restore form builder configuration to a previous version',
+    ],
+    distinguishFrom: ['Command stores actions and can implement undo through inverse commands', 'Prototype clones objects for creation', 'State models behavior by lifecycle mode'],
+    selectionTest: 'Does the project need encapsulated state snapshots that can later restore an object?',
+  },
+};
+
 function buildPatternCatalogPrompt(): string {
-  return PATTERN_CATALOG.map((pattern) => [
-    `${pattern.name} [${pattern.family}] (${pattern.slug})`,
-    `intent: ${pattern.intent}`,
-    `whenToUse: ${pattern.whenToUse}`,
-    `avoidWhen: ${pattern.avoidWhen}`,
-    `signals: ${pattern.signals.join(', ')}`,
-  ].join(' | ')).join('\n');
+  return PATTERN_CATALOG.map((pattern) => {
+    const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
+    if (!guide) {
+      return [
+        `${pattern.name} [${pattern.family}] (${pattern.slug})`,
+        `intent: ${pattern.intent}`,
+        `whenToUse: ${pattern.whenToUse}`,
+        `avoidWhen: ${pattern.avoidWhen}`,
+        `signals: ${pattern.signals.join(', ')}`,
+      ].join(' | ');
+    }
+
+    return [
+      `${pattern.name} [${pattern.family}] (${pattern.slug})`,
+      `intent: ${pattern.intent}`,
+      `mainConcept: ${guide.mainConcept}`,
+      `neededConcepts: ${guide.neededConcepts.join('; ')}`,
+      `useWhen: ${guide.neededWhen.join('; ')}`,
+      `doNotUseWhen: ${guide.notNeededWhen.join('; ')}`,
+      `subScenarios: ${guide.subScenarios.join('; ')}`,
+      `distinguishFrom: ${guide.distinguishFrom.join('; ')}`,
+      `selectionTest: ${guide.selectionTest}`,
+      `signals: ${pattern.signals.join(', ')}`,
+    ].join('\n');
+  }).join('\n\n');
 }
 
 const SYSTEM_PROMPT = [
@@ -373,6 +950,11 @@ const SYSTEM_PROMPT = [
   '- If a module or section is optional, keep it OFF.',
   '- When two or more patterns are plausible, pick the one with the clearest direct match and exclude the rest.',
   '- First infer the needed design patterns from the project brief using the catalog below.',
+  '- Match by structural/business situation, not by pattern name alone.',
+  '- For every candidate pattern, check mainConcept, useWhen, doNotUseWhen, subScenarios, distinguishFrom, and selectionTest.',
+  '- Select a pattern only when the brief satisfies its selectionTest and at least one concrete useWhen or subScenario.',
+  '- Reject a pattern when the brief mainly matches its doNotUseWhen guidance, even if some signal words appear.',
+  '- Treat subScenarios as examples for context, not as an exhaustive list.',
   '- Then map those patterns to the minimum module set in the provided module catalog.',
   '- Only keep foundational modules when they are direct prerequisites for a selected pattern.',
   '- Foundations are the baseline learning block: keep them ON whenever the project needs any course plan at all.',
@@ -490,11 +1072,18 @@ function findPatternForModule(mod: LearningModulePlannerEntry): PatternCatalogEn
 function scorePatternMatch(prompt: string, pattern: PatternCatalogEntry): number {
   const promptTokens = extractTokens(prompt);
   const promptText = String(prompt || '').toLowerCase();
+  const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
   const patternText = [
     pattern.slug,
     pattern.name,
     pattern.intent,
     pattern.whenToUse,
+    guide?.mainConcept ?? '',
+    guide?.selectionTest ?? '',
+    ...(guide?.neededConcepts ?? []),
+    ...(guide?.neededWhen ?? []),
+    ...(guide?.subScenarios ?? []),
+    ...(guide?.distinguishFrom ?? []),
     ...pattern.signals,
   ].join(' ');
   let score = scoreOverlap(prompt, extractTokens(patternText));
