@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This service turns a project brief into a JSON course plan for admin review. It sends a hidden system prompt to the configured AI provider and passes the current learning-module catalog as data.
+This service turns a project brief into a JSON course plan for admin review. It sends a hidden system prompt to the configured AI provider and passes only planner-controlled learning modules as data.
 
 The prompt contains a detailed pattern guide. For each supported design pattern, the guide explains:
 - the main concept.
@@ -19,13 +19,13 @@ The prompt contains a detailed pattern guide. For each supported design pattern,
 
 ### Why It Matters In The Flow
 
-The admin prompt should not need to explain JSON shape or pattern theory. The project manager writes only the project brief. The system prompt owns the schema, the baseline-foundation policy, and the pattern-selection rubric.
+The admin prompt should not need to explain JSON shape or pattern theory. The project manager writes only the project brief. The system prompt owns the schema and pattern-selection rubric. Baseline foundation modules are not described to the model and are enforced later by backend policy.
 
 The planner uses implicit deny:
 - missing sections are off.
 - missing modules are off.
 - selected pattern modules are on.
-- baseline foundation modules remain on when any project course plan exists.
+- baseline foundation modules remain on by server policy and are not AI-controlled.
 
 ## Planner Flow
 
@@ -61,5 +61,8 @@ Before selecting a pattern, the prompt tells the model to check:
 - The user prompt can stay as a normal project brief.
 - The hidden system prompt contains the required JSON shape.
 - The hidden system prompt contains detailed use and non-use guidance per pattern.
+- The hidden system prompt does not mention baseline foundation policy.
+- The AI payload excludes baseline foundation modules.
+- Backend normalization forces baseline foundation modules on.
 - Fallback heuristic scoring reads the same pattern guide fields used by the AI prompt.
 - The planner still returns the existing `course-plan-v1` response shape.

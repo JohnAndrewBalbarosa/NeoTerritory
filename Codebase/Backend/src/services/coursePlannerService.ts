@@ -956,9 +956,6 @@ const SYSTEM_PROMPT = [
   '- Reject a pattern when the brief mainly matches its doNotUseWhen guidance, even if some signal words appear.',
   '- Treat subScenarios as examples for context, not as an exhaustive list.',
   '- Then map those patterns to the minimum module set in the provided module catalog.',
-  '- Only keep foundational modules when they are direct prerequisites for a selected pattern.',
-  '- Foundations are the baseline learning block: keep them ON whenever the project needs any course plan at all.',
-  '- Minimize the pattern modules first; do not minimize away the baseline foundations.',
   '- Prefer direct pattern modules and exact matching sections/topics over broad intro material.',
   '- Keep strings concise. Keep reason fields short.',
   '- Keep matchedSections and matchedTopics small. Prefer at most 3 sections and at most 8 topics per module.',
@@ -1149,6 +1146,10 @@ function buildNormalizedSections(digest: LearningModulePlannerEntry[], decisions
     }));
 }
 
+function plannerControlledModules(digest: ReadonlyArray<LearningModulePlannerEntry>): LearningModulePlannerEntry[] {
+  return digest.filter((mod) => !mod.isFoundationBaseline);
+}
+
 function buildCoursePlanFromDecisions(
   digest: LearningModulePlannerEntry[],
   decisions: CoursePlanModuleDecision[],
@@ -1191,7 +1192,7 @@ function heuristicPlan(
   diagnostics: Partial<CoursePlanDiagnostics> = {},
 ): CoursePlan {
   const fallbackSummary = diagnostics.message ?? 'Using local prompt-to-course heuristic.';
-  const scored = digest.map((mod) => {
+  const scoredCandidates = plannerControlledModules(digest).map((mod) => {
     const pattern = findPatternForModule(mod);
     const hay = [
       mod.title,
@@ -1210,10 +1211,10 @@ function heuristicPlan(
     };
   });
 
-  const rankedPatternMatches = scored
+  const rankedPatternMatches = scoredCandidates
     .filter((item) => item.patternScore >= 2)
     .sort((a, b) => b.score - a.score);
-  const rankedModuleMatches = scored
+  const rankedModuleMatches = scoredCandidates
     .filter((item) => item.moduleScore >= 2)
     .sort((a, b) => b.score - a.score);
   const ranked = rankedPatternMatches.length > 0 ? rankedPatternMatches : rankedModuleMatches;
@@ -1224,20 +1225,20 @@ function heuristicPlan(
       .slice(0, 4)
       .map((item) => item.mod.moduleId),
   );
-  if (selectedIds.size > 0) {
-    for (const mod of digest) {
-      if (mod.isFoundationBaseline) selectedIds.add(mod.moduleId);
-    }
+  for (const mod of digest) {
+    if (mod.isFoundationBaseline) selectedIds.add(mod.moduleId);
   }
 
-  const decisions = scored.map(({ mod, pattern }) => {
+  const patternByModuleId = new Map(scoredCandidates.map((item) => [item.mod.moduleId, item.pattern]));
+  const decisions = digest.map((mod) => {
     const published = selectedIds.has(mod.moduleId);
+    const pattern = patternByModuleId.get(mod.moduleId);
     return buildModuleDecision(
       mod,
       published,
       published
         ? (mod.isFoundationBaseline
-            ? 'Foundations stay ON as the baseline learning block.'
+            ? 'System baseline module; enforced ON outside AI planning.'
             : `Matched ${pattern?.name ?? mod.title} to the project brief.`)
         : 'No strong prompt match; defaulting OFF.',
       published ? pickSections(mod) : [],
@@ -1255,7 +1256,9 @@ function heuristicPlan(
         category: m.category,
         sections: mod.sections.slice(0, 4).map((s) => s.heading),
         topics: pickTopics(mod),
-        reason: `Prompt overlaps with ${m.title}.`,
+        reason: mod.isFoundationBaseline
+          ? 'System baseline module; enforced ON outside AI planning.'
+          : `Prompt overlaps with ${m.title}.`,
       };
     })
     .slice(0, 12);
@@ -1353,9 +1356,6 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
   const sectionMode = rawSections.length > 0;
   const moduleEntries = new Map<string, ParsedPlanModule>();
   const moduleSectionLabels = new Map<string, string>();
-  const hasAnySelectedModule = sectionMode
-    ? rawSections.some((rawSection) => Array.isArray(rawSection.modules) && rawSection.modules.length > 0)
-    : (Array.isArray(raw.modules) && raw.modules.length > 0);
 
   if (sectionMode) {
     for (const rawSection of rawSections) {
@@ -1372,7 +1372,8 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
       if (sectionDigest.length === 0) continue;
       for (const rawModule of rawSection.modules ?? []) {
         const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
-        if (!moduleId || !digestById.has(moduleId)) continue;
+        const mod = digestById.get(moduleId);
+        if (!moduleId || !mod || mod.isFoundationBaseline) continue;
         moduleEntries.set(moduleId, rawModule);
         moduleSectionLabels.set(moduleId, sectionLabel);
       }
@@ -1380,7 +1381,8 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
   } else {
     for (const rawModule of raw.modules || []) {
       const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
-      if (!moduleId || !digestById.has(moduleId)) continue;
+      const mod = digestById.get(moduleId);
+      if (!moduleId || !mod || mod.isFoundationBaseline) continue;
       moduleEntries.set(moduleId, rawModule);
     }
   }
@@ -1388,7 +1390,7 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
   const modules = digest.map((mod) => {
     const entry = moduleEntries.get(mod.moduleId);
     const published = mod.isFoundationBaseline
-      ? hasAnySelectedModule || entry?.published === true
+      ? true
       : sectionMode ? moduleEntries.has(mod.moduleId) : entry?.published === true;
     const matchedSections = published
       ? (mod.isFoundationBaseline
@@ -1412,7 +1414,7 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
       mod,
       published,
       mod.isFoundationBaseline
-        ? 'Foundations stay ON as the baseline learning block.'
+        ? 'System baseline module; enforced ON outside AI planning.'
         : typeof entry?.reason === 'string' && entry.reason.trim()
         ? entry.reason
         : (published ? 'AI selected this course for publishing.' : 'AI left this course off by default.'),
@@ -1433,9 +1435,11 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
         category: m.category,
         sections: pickSections(mod, 4),
         topics: pickTopics(mod),
-        reason: typeof moduleEntries.get(m.moduleId)?.reason === 'string' && moduleEntries.get(m.moduleId)!.reason!.trim()
-          ? moduleEntries.get(m.moduleId)!.reason!.trim()
-          : 'Required by the project prompt.',
+        reason: mod.isFoundationBaseline
+          ? 'System baseline module; enforced ON outside AI planning.'
+          : typeof moduleEntries.get(m.moduleId)?.reason === 'string' && moduleEntries.get(m.moduleId)!.reason!.trim()
+            ? moduleEntries.get(m.moduleId)!.reason!.trim()
+            : 'Required by the project prompt.',
       };
     })
     .filter((value): value is CoursePlanScope => Boolean(value))
@@ -1459,16 +1463,17 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
 
 export async function generateCoursePlan(input: PlannerInput): Promise<CoursePlan> {
   const digest = buildPlannerDigest({ includeUnpublished: true });
+  const plannerModules = plannerControlledModules(digest);
   const provider = pickProvider();
   const payload = {
     prompt: input.prompt.trim(),
-    modules: digest,
+    modules: plannerModules,
   };
 
-  if (digest.length === 0) {
+  if (plannerModules.length === 0) {
     return heuristicPlan(input, digest, {
       fallbackReason: 'empty_catalog',
-      message: 'No learning modules exist in the catalog.',
+      message: 'No planner-controllable learning modules exist in the catalog.',
     });
   }
 
