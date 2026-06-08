@@ -688,14 +688,14 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
 
           {/* ── Publishing controls (module on/off) ── */}
           <fieldset className="courses-fieldset">
-            <legend>Publishing</legend>
+            <legend>On / Off</legend>
             <label className="courses-toggle-row">
               <input type="checkbox" checked={draft.published} onChange={(e) => patch({ published: e.target.checked })} disabled={saving} />
-              <span>Published (visible to learners)</span>
+              <span>On (visible to learners)</span>
             </label>
             <p className="admin-section__hint">
-              Questions are already tagged in the module JSON. Use publish/unpublish
-              to control whether the module is on or off.
+              Questions are already tagged in the module JSON. Use On/Off to control
+              whether the module is visible to learners.
             </p>
             <label className="admin-catalog-field courses-sortorder">
               <span>Sort order</span>

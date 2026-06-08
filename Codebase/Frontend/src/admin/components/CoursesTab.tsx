@@ -131,11 +131,10 @@ export default function CoursesTab() {
           <p className="eyebrow">Learning CMS</p>
           <h2>Courses</h2>
           <p className="admin-section__hint">
-            Author and manage learning modules including unpublished entries.
-            Publish flips a module between unpublished and published (Canvas-style).
-            Question tags are already stored in the module JSON, so visibility is
-            controlled only by publish/unpublish. Seed courses are protected from
-            deletion; unpublish to hide them while keeping learner progress.
+            Author and manage learning modules using a simple On/Off switch.
+            Questions are already stored in the module JSON, so visibility is
+            controlled only by the module state. Seed courses are protected from
+            deletion; turn them Off to hide them while keeping learner progress.
           </p>
         </div>
         <button
@@ -164,7 +163,7 @@ export default function CoursesTab() {
               <tr>
                 <th>Module</th>
                 <th>Category</th>
-                <th>Published</th>
+                <th>On / Off</th>
                 <th>Seed</th>
                 <th aria-label="Actions" />
               </tr>
@@ -193,7 +192,7 @@ export default function CoursesTab() {
                         aria-pressed={m.published}
                         data-testid={`courses-publish-${m.id}`}
                       >
-                        {rowSaving ? 'Saving…' : m.published ? 'Published' : 'Unpublished'}
+                        {rowSaving ? 'Saving…' : m.published ? 'On' : 'Off'}
                       </button>
                     </td>
                     <td>
