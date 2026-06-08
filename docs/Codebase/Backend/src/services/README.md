@@ -35,6 +35,7 @@ These documents explain the local implementation by covering reusable analysis, 
 - featureTogglePolicyService.js.md : Turns project scope into implicit-deny feature toggles.
 - assessmentOrchestrationService.js.md : Runs the project-scoped pretest, module bypass, and posttest loop.
 - readinessEvidenceService.js.md : Packages code runs, answers, scores, and raw results for project-manager review.
+- learningModuleCatalog.ts.md : Owns the canonical module catalog, authored Bloom tags, and separate theoretical/practical banks.
 
 ## Reading Hint
 - Read `classDeclarationAnalysisService.js.md` before `aiDocumentationService.js.md`; AI documentation depends on the target list produced by analysis.

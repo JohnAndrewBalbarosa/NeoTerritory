@@ -68,6 +68,35 @@ flowchart TD
 }
 ```
 
+### LearningModuleCatalogEntry
+
+```json
+{
+  "moduleId": "adapter",
+  "title": "Adapter",
+  "published": false,
+  "family": "structural",
+  "source": "model",
+  "theoreticalExam": {
+    "kind": "theoretical",
+    "questions": [
+      {
+        "questionId": "adapter-q1",
+        "question": "Which sentence best describes Adapter?",
+        "choices": ["...", "..."],
+        "correctIndex": 1,
+        "taxonomy": "remembering",
+        "topicTags": ["intent", "conversion"]
+      }
+    ]
+  },
+  "practicalExam": {
+    "kind": "practical",
+    "enabled": true
+  }
+}
+```
+
 ### ToggleManifest
 
 ```json
@@ -75,8 +104,8 @@ flowchart TD
   "projectId": "proj-1024",
   "scopeVersion": "scope-7",
   "toggles": [
-    { "key": "pattern.adapter", "enabled": true },
-    { "key": "pattern.builder", "enabled": false }
+    { "key": "module.adapter", "enabled": true },
+    { "key": "module.builder", "enabled": false }
   ]
 }
 ```
@@ -90,7 +119,9 @@ flowchart TD
   "moduleId": "adapter",
   "attemptType": "pretest",
   "decision": "pass",
-  "score": 92
+  "score": 92,
+  "questionTags": ["remembering", "understanding"],
+  "practical": false
 }
 ```
 
@@ -103,7 +134,13 @@ flowchart TD
   "summaryStatus": "ready",
   "codeRuns": [],
   "answers": [],
-  "rawResults": []
+  "rawResults": [],
+  "downloads": [
+    {
+      "type": "xlsx",
+      "name": "readiness-audit.xlsx"
+    }
+  ]
 }
 ```
 
@@ -113,3 +150,6 @@ flowchart TD
 - The toggle manifest can represent both enabled and denied patterns.
 - The assessment record can represent pretest and posttest attempts with the same shape.
 - The evidence bundle can carry summary results and raw inspection data together.
+- The module catalog entry carries pre-authored Bloom tags before runtime assessment starts.
+- Practical and theoretical question banks stay separated in the catalog shape.
+- The PM bundle can point to spreadsheet exports without losing raw rows.

@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This service converts the project-learning scope into feature toggles with implicit deny. It decides which pattern modules, topic sections, and assessment gates should be visible for the current project.
+This service converts the project-learning scope into model-backed publish toggles with implicit deny. It decides which pattern modules, topic sections, and assessment gates should be visible for the current project.
 
 Everything starts off disabled. Only the AI-approved scope becomes enabled.
 
@@ -20,6 +20,8 @@ This service is policy, not content:
 - it does not teach the pattern.
 - it does not score the intern.
 - it only decides what can be reached.
+- it operates on the module model/catalog entries rather than a generic config blob.
+- general config is reserved for adding structural pattern families outside the GoF catalog.
 
 ## Service Flow
 
@@ -46,9 +48,9 @@ flowchart TD
 {
   "projectId": "proj-1024",
   "scopeVersion": "scope-7",
-  "requiredPatterns": ["adapter", "facade"],
+  "requiredModules": ["adapter", "facade"],
   "requiredTopics": ["module-boundaries", "dependency-direction"],
-  "excludedPatterns": ["builder"]
+  "excludedModules": ["builder"]
 }
 ```
 
@@ -59,9 +61,9 @@ flowchart TD
   "projectId": "proj-1024",
   "scopeVersion": "scope-7",
   "toggles": [
-    { "key": "pattern.adapter", "enabled": true },
-    { "key": "pattern.facade", "enabled": true },
-    { "key": "pattern.builder", "enabled": false }
+    { "key": "module.adapter", "enabled": true },
+    { "key": "module.facade", "enabled": true },
+    { "key": "module.builder", "enabled": false }
   ],
   "implicitDeny": true,
   "status": "applied"
@@ -74,3 +76,5 @@ flowchart TD
 - Only the scoped patterns and topics are enabled.
 - Excluded modules remain disabled even if they appear in the broader catalog.
 - The policy can be re-evaluated when the scope version changes.
+- Module publish state is resolved from the learning model catalog.
+- Config is only used when the org wants to add structural pattern families outside the GoF set.

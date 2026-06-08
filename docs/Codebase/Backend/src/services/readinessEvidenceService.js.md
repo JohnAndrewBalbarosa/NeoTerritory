@@ -9,6 +9,7 @@
 This service packages the proof that the project manager needs for review. It collects code runs, theoretical answers, exam results, raw result data, and any derived readiness signal into a reviewable evidence bundle.
 
 The PM is getting a suggestion tool, not a blind verdict. This service keeps the evidence visible so a human can audit the recommendation.
+It should also keep a short local retention window for recent runs. The default review store should preserve the latest 150 runs locally, and the PM should be able to download a spreadsheet export that includes response rows, log rows, and raw performance measurements such as elapsed time, CPU-like timing, and space usage when those metrics are captured.
 
 ### Why It Matters In The Flow
 
@@ -50,7 +51,9 @@ flowchart TD
   "codeRuns": [],
   "answers": [],
   "scores": [],
-  "rawResults": []
+  "rawResults": [],
+  "performanceMetrics": [],
+  "logs": []
 }
 ```
 
@@ -65,7 +68,17 @@ flowchart TD
   "codeRuns": [],
   "answers": [],
   "scores": [],
-  "rawResults": []
+  "rawResults": [],
+  "exports": [
+    {
+      "type": "xlsx",
+      "name": "readiness-audit.xlsx"
+    },
+    {
+      "type": "csv",
+      "name": "readiness-audit.csv"
+    }
+  ]
 }
 ```
 
@@ -75,3 +88,5 @@ flowchart TD
 - The service keeps code runs and exam answers available for audit.
 - The service can support a suggestion-based review without hiding the underlying data.
 - The service preserves the original result data instead of collapsing it into a single opaque score.
+- The service can retain the latest 150 runs locally for quick review.
+- The PM can download spreadsheet exports with response rows, logs, and raw performance data.

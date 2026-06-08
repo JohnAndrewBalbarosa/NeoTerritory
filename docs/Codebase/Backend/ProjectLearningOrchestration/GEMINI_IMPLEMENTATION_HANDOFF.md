@@ -25,6 +25,15 @@ Implement a backend workflow where:
 5. Passing a posttest ends the module; failing it repeats the module.
 6. The project manager reviews a ready suggestion plus all evidence needed for manual verification.
 
+## Catalog Assumption
+
+The learning-module catalog is already authored before runtime. Each module entry should already contain:
+- pre-tagged Bloom taxonomy labels on theoretical questions
+- a separate practical exam block when the module supports hands-on work
+- publish state on the module model entry itself
+
+Runtime should only validate and select from that catalog. It should not create new Bloom tags, invent new questions, or rebuild the theoretical/practical split at request time.
+
 ## Proposed Code Files
 
 Create these files under `Backend/src`:
@@ -36,6 +45,7 @@ Create these files under `Backend/src`:
 - `services/featureTogglePolicyService.js`
 - `services/assessmentOrchestrationService.js`
 - `services/readinessEvidenceService.js`
+- `services/learningModuleCatalog.ts`
 
 If the project needs persistence, add the smallest possible storage helpers in the existing `db` area instead of building a new subsystem.
 
@@ -71,7 +81,7 @@ Do not:
 
 Responsibilities:
 - convert project briefs into structured scope
-- convert scope into implicit-deny toggles
+- convert scope into implicit-deny toggles against the module catalog
 - run pretest/posttest orchestration
 - package readiness evidence for PM review
 
@@ -132,8 +142,8 @@ Response:
   "scopeVersion": "scope-7",
   "implicitDeny": true,
   "toggles": [
-    { "key": "pattern.adapter", "enabled": true },
-    { "key": "pattern.builder", "enabled": false }
+    { "key": "module.adapter", "enabled": true },
+    { "key": "module.builder", "enabled": false }
   ],
   "status": "applied"
 }
@@ -271,6 +281,7 @@ Rules:
 - default all toggles to off
 - enable only what the scope requires
 - keep excluded patterns off even if they appear elsewhere
+- resolve publish state from the module model catalog rather than a generic config blob
 
 ### `assessmentOrchestrationService.js`
 
@@ -285,6 +296,7 @@ Rules:
 - pretest pass means bypass the module sections
 - posttest pass means complete the module
 - posttest fail means repeat the module
+- do not tag questions at runtime; use the authored taxonomy tags from the module catalog
 
 ### `readinessEvidenceService.js`
 
@@ -300,6 +312,8 @@ Rules:
 - keep summary and raw evidence together
 - never hide answer data from the PM review surface
 - preserve traceability to the exact intern and project
+- retain a local window of recent runs for fast review when the implementation needs it
+- support spreadsheet export for response rows, logs, and raw performance data
 
 ### `projectLearningOrchestrationController.js`
 
@@ -366,4 +380,5 @@ Keep errors structured and backend-safe. Do not leak raw internal stack traces t
 - The assessment service supports bypass, repeat, and complete outcomes.
 - The evidence service returns both summary status and raw evidence.
 - The PM review endpoint exposes code runs, answers, results, and raw data.
+- The catalog assumption keeps question tagging in the authored model instead of in runtime request handling.
 - All files compile or parse consistently with the repository's existing backend style.

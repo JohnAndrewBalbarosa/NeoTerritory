@@ -66,7 +66,7 @@ Implementation note:
 - The contract should carry required patterns, excluded patterns, required competencies, and any project-specific exceptions.
 
 ### Step 2 - System Feature Toggle Policy
-The system converts the AI response into feature toggles with implicit deny. Only the structural design patterns and modules needed for the project are turned on.
+The system converts the AI response into model-backed publish toggles with implicit deny. Only the structural design patterns and modules needed for the project are turned on. The actual toggle targets live in the module catalog and learning models, not in the general config surface. Config is reserved for adding structural pattern families outside the GoF catalog.
 
 Quick summary: keep the default state off and open only the required learning paths.
 
@@ -91,7 +91,7 @@ Implementation note:
 - Anything outside the project scope should remain invisible or inaccessible in the learning runtime.
 
 ### Step 3 - Intern Pretest, Study, and Posttest
-The intern starts with a pretest aligned only to the required scope. Passing the pretest bypasses the matching learning modules or sections. If the pretest fails, the intern studies the enabled modules. After each module, a posttest checks whether the material was understood.
+The intern starts with a pretest aligned only to the required scope. Passing the pretest bypasses the matching learning modules or sections. If the pretest fails, the intern studies the enabled modules. After each module, a posttest checks whether the material was understood. The theoretical and practical question banks are pre-authored in the module models, and each question is already tagged before the learner ever sees it.
 
 Quick summary: remove already-known material, then verify learning with posttests.
 
@@ -124,6 +124,7 @@ Implementation note:
 
 ### Step 4 - Project Manager Readiness Review
 Once the system marks a user ready, the project manager sees a suggestion package, not an opaque verdict. The review surface should expose the code runs, theoretical exam answers, exam scores, and raw result data so the manager can audit the decision.
+The review surface should also retain a local window of recent runs and offer spreadsheet exports when the operator wants to inspect responses, logs, or raw time/space measurements outside the UI.
 
 Quick summary: surface evidence, not just a green status.
 
@@ -156,15 +157,19 @@ Implementation note:
 ## Acceptance Checks
 - A project brief can be transformed into a structured learning scope without exposing the full catalog.
 - The system defaults to implicit deny and enables only the required pattern modules for the project.
+- Course publish state is resolved from the model catalog, not from generic config, unless the team is extending beyond the GoF pattern set.
+- The module catalog already carries tagged theoretical and practical questions, so runtime only selects from prepared content.
 - A passing pretest bypasses the matching module sections for that user on that project.
 - A failing pretest routes the user into the enabled study modules.
 - A module posttest can end the module or send the user back through the module again.
 - The project manager can review readiness with code runs, answers, scores, and raw evidence data.
 - The PM view remains a suggestion layer and does not suppress the underlying evidence.
+- The review system can keep the latest 150 runs locally for fast inspection and export them to spreadsheet format.
 
 ## Boundary Notes
 - Keep the orchestration contract separate from the raw assessment payloads.
 - Keep feature toggle policy separate from the learning content itself.
+- Keep config separate from the module catalog unless the request is to add non-GoF structural pattern families.
 - Keep final review evidence separate from the readiness decision so manual auditing stays possible.
 
 ## Reading Order
