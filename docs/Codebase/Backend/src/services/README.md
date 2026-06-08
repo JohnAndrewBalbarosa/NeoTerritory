@@ -30,6 +30,11 @@ These documents explain the local implementation by covering reusable analysis, 
 - classDeclarationAnalysisService.js.md : Runs lexical analysis, subtree construction, cross-reference detection, and target selection for one complete class declaration.
 - aiDocumentationService.js.md : Builds backend AI documentation requests from detected code units and normalizes generated documentation.
 - logService.js.md : Persists structured analysis logs without old refactor or transform-output fields.
+- projectLearningContracts.js.md : Defines the shared data shapes for project brief intake, scope resolution, toggle policy, assessment records, and readiness evidence.
+- projectSpecIntakeService.js.md : Converts a project manager brief into a normalized project-learning scope.
+- featureTogglePolicyService.js.md : Turns project scope into implicit-deny feature toggles.
+- assessmentOrchestrationService.js.md : Runs the project-scoped pretest, module bypass, and posttest loop.
+- readinessEvidenceService.js.md : Packages code runs, answers, scores, and raw results for project-manager review.
 
 ## Reading Hint
 - Read `classDeclarationAnalysisService.js.md` before `aiDocumentationService.js.md`; AI documentation depends on the target list produced by analysis.

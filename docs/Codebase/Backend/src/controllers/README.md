@@ -25,6 +25,7 @@ flowchart TD
 These documents explain the local implementation by covering Implements HTTP endpoint behavior after routing and before response serialization.
 - authController.js.md : Implements HTTP endpoint behavior after routing and before response serialization.
 - transformController.js.md : Handles live class-analysis requests, delegates analysis, requests AI documentation, and returns diagnostics or targets.
+- projectLearningOrchestrationController.js.md : Handles project-learning intake, assessment, and review requests, then delegates to orchestration services.
 
 ## Reading Hint
 - This folder is mostly leaf-level. Read the local file docs to understand the logic in this area.

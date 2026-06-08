@@ -29,6 +29,7 @@ These documents explain the local implementation by covering Maps HTTP routes to
 - auth.js.md : Maps HTTP routes to middleware and controllers.
 - health.js.md : Maps HTTP routes to middleware and controllers.
 - transform.js.md : Maps the live class-analysis JSON endpoint and the legacy upload endpoint to their controller paths.
+- projectLearningOrchestration.js.md : Maps the project-manager intake, intern assessment, and readiness review endpoints to their controller paths.
 
 ## Reading Hint
 - This folder is mostly leaf-level. Read the local file docs to understand the logic in this area.

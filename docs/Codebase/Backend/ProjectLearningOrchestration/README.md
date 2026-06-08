@@ -12,16 +12,13 @@ This folder owns the orchestration boundary for project-specific learning plans 
 Do not place generic runtime infrastructure or unrelated CRUD here. Those belong under the normal backend service surface or other existing subsystem folders.
 
 ## Planned Code Shape
-This document is the blueprint for the future backend implementation. The intended structure should stay logic-first:
+This document is the blueprint for the future backend implementation. The implementation-facing docs now live under `docs/Codebase/Backend/src/` so the actual code handoff stays aligned with the backend source tree.
 
-- `src/routes/projectLearningOrchestration/`
-- `src/controllers/projectLearningOrchestration/`
-- `src/services/projectSpecIntake/`
-- `src/services/patternScopeResolution/`
-- `src/services/featureTogglePolicy/`
-- `src/services/assessmentOrchestration/`
-- `src/services/readinessEvidence/`
-- `src/repositories/readinessReview/`
+Use this folder as the high-level map, then read the route, controller, and service docs under `Backend/src`.
+
+- Route doc: `docs/Codebase/Backend/src/routes/projectLearningOrchestration.js.md`
+- Controller doc: `docs/Codebase/Backend/src/controllers/projectLearningOrchestrationController.js.md`
+- Service docs: `docs/Codebase/Backend/src/services/*.js.md`
 
 The route layer should stay thin. Controllers should translate HTTP requests into orchestration commands. Services should own the project brief parsing, scope narrowing, assessment flow, and evidence packaging.
 

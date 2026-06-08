@@ -76,3 +76,4 @@ These child folders continue the subsystem by covering Small backend utilities u
 
 ## Reading Hint
 - Use the child folder groups to navigate deeper into this subsystem.
+- For the tailored project-learning workflow, read `routes/projectLearningOrchestration.js.md`, then `controllers/projectLearningOrchestrationController.js.md`, then the new service docs in `services/`.
