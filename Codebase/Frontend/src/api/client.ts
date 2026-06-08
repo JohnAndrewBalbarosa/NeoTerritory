@@ -5,7 +5,7 @@ import {
   SurveySummary, ComplexityData, F1Metrics,
   LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse,
   LearningAssessmentAnswerInput, LearningAssessmentType, LearningAssessmentsResponse,
-  AdminFeatureReleasePlan, AdminFeatureReleasePlannerFlag
+  AdminFeatureReleasePlan, AdminFeatureReleasePlannerFlag, AdminCoursePlan
 } from '../types/api';
 
 const TOKEN_KEY = 'nt_token';
@@ -535,6 +535,16 @@ export async function previewFeatureReleasePlan(payload: {
   featureFlags: AdminFeatureReleasePlannerFlag[];
 }): Promise<AdminFeatureReleasePlan> {
   return apiFetch<AdminFeatureReleasePlan>('/api/admin/feature-release-plan', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function previewCoursePlan(payload: {
+  prompt: string;
+}): Promise<AdminCoursePlan> {
+  return apiFetch<AdminCoursePlan>('/api/admin/course-plan', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),

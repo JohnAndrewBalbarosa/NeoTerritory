@@ -13,6 +13,7 @@ import {
 } from '../../api/client';
 import type { AdminLearningModule } from '../../types/api';
 import type { LearningCategory } from '../../data/learningModules';
+import CoursePlanPanel from './CoursePlanPanel';
 import CourseEditor from './CourseEditor';
 
 const CATEGORY_ORDER: ReadonlyArray<{ id: LearningCategory; label: string }> = [
@@ -169,6 +170,8 @@ export default function CoursesTab() {
       </header>
 
       {error && <p className="admin-login-error" role="alert">{error}</p>}
+
+      <CoursePlanPanel modules={sorted} onApplied={reload} />
 
       {!loaded && <p className="admin-section__hint">Loading courses…</p>}
       {loaded && sorted.length === 0 && (

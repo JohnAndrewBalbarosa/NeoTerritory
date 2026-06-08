@@ -324,6 +324,33 @@ export interface AdminFeatureReleasePlan {
   requiredLearning: AdminFeatureReleaseLearningScope[];
 }
 
+export interface AdminCoursePlanModuleDecision {
+  moduleId: string;
+  title: string;
+  category: string;
+  published: boolean;
+  reason: string;
+  matchedSections: string[];
+  matchedTopics: string[];
+}
+
+export interface AdminCoursePlanLearningScope {
+  moduleId: string;
+  title: string;
+  category: string;
+  sections: string[];
+  topics: string[];
+  reason: string;
+}
+
+export interface AdminCoursePlan {
+  schemaVersion: 'course-plan-v1';
+  source: 'ai' | 'heuristic';
+  summary: string;
+  modules: AdminCoursePlanModuleDecision[];
+  requiredLearning: AdminCoursePlanLearningScope[];
+}
+
 export interface AdminPerRunFeedbackRow {
   id: number;
   runId: string;
