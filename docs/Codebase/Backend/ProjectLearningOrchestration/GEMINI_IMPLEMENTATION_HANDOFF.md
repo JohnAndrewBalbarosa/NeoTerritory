@@ -313,7 +313,7 @@ Rules:
 - never hide answer data from the PM review surface
 - preserve traceability to the exact intern and project
 - retain a local window of recent runs for fast review when the implementation needs it
-- support spreadsheet export for response rows, logs, and raw performance data
+- support Excel (`.xlsx`) export for response rows, logs, and raw performance data
 
 ### `projectLearningOrchestrationController.js`
 

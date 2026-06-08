@@ -121,7 +121,8 @@ flowchart TD
   "decision": "pass",
   "score": 92,
   "questionTags": ["remembering", "understanding"],
-  "practical": false
+  "practical": false,
+  "remarks": "Instructor note only; no open-ended exam item."
 }
 ```
 
@@ -153,3 +154,4 @@ flowchart TD
 - The module catalog entry carries pre-authored Bloom tags before runtime assessment starts.
 - Practical and theoretical question banks stay separated in the catalog shape.
 - The PM bundle can point to spreadsheet exports without losing raw rows.
+- Free-text belongs in remarks metadata, not in an open-ended exam question.

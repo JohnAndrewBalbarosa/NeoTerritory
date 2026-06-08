@@ -9,6 +9,7 @@
 This service runs the project-scoped pretest, module study bypass, and posttest loop. It decides whether the intern already knows the scoped material, whether they should skip a module, and whether they need to repeat the module after a failed posttest.
 
 The service does not create or retag questions at runtime. It consumes the authored module catalog, where each question already carries its Bloom taxonomy tag and practical/theoretical classification.
+It also does not introduce open-ended exam items. Any human note or instructor comment belongs in remarks metadata, while the actual assessment questions remain MCQ or practical.
 
 ### Why It Matters In The Flow
 
@@ -21,6 +22,7 @@ Keep the pass/fail loop local:
 - failed pretest routes into module study.
 - posttest controls repetition or completion.
 - question tags already exist in the module catalog before the attempt is scored.
+- remarks are separate metadata and not a question type.
 
 ## Service Flow
 
