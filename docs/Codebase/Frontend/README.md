@@ -1,7 +1,7 @@
 # Frontend
 
 - Folder: docs/Codebase/Frontend
-- Descendant source docs: 15
+- Descendant source docs: 29
 - Generated on: 2026-04-23
 - Alignment update: 2026-04-25
 
@@ -54,6 +54,10 @@ These child folders continue the subsystem by covering visual system and compone
 These child folders continue the subsystem by covering route-sized HTML fragments loaded by the client router.
 - pages/ : Route-sized workflow screens for dashboard, live analysis, result inspection, suggested fixes, and output download.
 
+### Admin Operations
+These child folders continue the subsystem by covering the operator dashboard shell, prompt-driven feature-release control, and Instructor analytics surfaces.
+- src/admin/ : Admin shell, prompt policy editor, and Instructor heatmap / drilldown navigation.
+
 ## Documents By Logic
 ### Shell Entrypoints
 These documents explain the local implementation by covering Defines the shell document for the hash-routed frontend application.
@@ -61,4 +65,5 @@ These documents explain the local implementation by covering Defines the shell d
 
 ## Reading Hint
 - Read the shell first, then the API boundary, then the pages in user workflow order. Any analysis result shown in this folder should trace back to backend or microservice output, not frontend-only inference.
+- For admin-side changes, start with `src/admin/README.md` and the component docs under `src/admin/components/`.
 

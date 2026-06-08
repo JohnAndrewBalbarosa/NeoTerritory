@@ -1500,3 +1500,12 @@ and restore on re-publish; admins preview drafts via the admin GET. Hard delete 
 identical-structure patterns apart by intent/lexeme (surfacing `patternRankingService` +
 `pattern_catalog` lexeme/Wilson concepts). Theoretical-only; **live ranking evidence deferred**
 to a later pass (would couple a detectable target to the live engine) — documented here.
+
+## D93 — Admin prompt-driven feature-release policy + Instructor sidebar drilldown
+**Per user request (2026-06-08).** The admin side gets a prompt textbox for feature-release policy. The operator types a release brief, the UI previews the inferred toggles, and the default state remains off until the operator confirms the change. This is a policy editor, not an automatic ship switch: implicit deny stays the baseline, and manual override remains explicit.
+
+**Sidebar concept, not style clone.** The Admin shell keeps a persistent grouped sidebar that behaves like the learning-path nav in concept only: section headers, active-item highlighting, and drilldown continuity. The Instructor area gets its own nested navigation so summary, module difficulty, and question heatmap remain distinct but easy to traverse.
+
+**Heatmap refinement.** The Instructor question heatmap stays a distinct drilldown surface with module rows, question columns, and learner-answer details on click. The score percentage remains visible in the cell, but the user can move back to the instructor summary without losing the current group context.
+
+**Boundary.** The prompt textbox does not auto-enable anything. It produces a preview of proposed toggles, and the operator must explicitly confirm before persistence. The source of truth for the actual flag state remains the existing backend settings contract.
