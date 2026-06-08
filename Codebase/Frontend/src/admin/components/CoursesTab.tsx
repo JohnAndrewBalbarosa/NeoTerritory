@@ -1,6 +1,6 @@
 // Courses tab (D92 Track B-UI). The admin CMS for learning modules: lists ALL
 // modules (incl. drafts) grouped by category then sortOrder, with Canvas-style
-// publish/draft + auto-tag toggles (optimistic PATCH with rollback, mirroring
+// publish/draft toggles (optimistic PATCH with rollback, mirroring
 // CatalogsTab), an is_seed badge, and Edit / Delete actions. Create + Edit open
 // the CourseEditor modal; Delete guards seed rows (409 ⇒ offer "unpublish
 // instead", which preserves learner progress per D92).
@@ -70,10 +70,10 @@ export default function CoursesTab() {
     setModules((prev) => prev.map((m) => (m.id === id ? { ...m, ...next } : m)));
   }
 
-  // Optimistic control-field PATCH (publish / auto-tag) with rollback.
+  // Optimistic control-field PATCH (publish only) with rollback.
   async function toggleField(
     module: AdminLearningModule,
-    field: 'published' | 'autoTag',
+    field: 'published',
     nextValue: boolean,
   ): Promise<void> {
     if (savingId) return;
@@ -85,7 +85,6 @@ export default function CoursesTab() {
       const res = await patchLearningModule(module.id, { [field]: nextValue });
       applyUpdate(module.id, {
         published: res.published,
-        autoTag: res.autoTag,
         sortOrder: res.sortOrder,
       });
     } catch (err: unknown) {
@@ -104,7 +103,7 @@ export default function CoursesTab() {
     setError(null);
     try {
       const res = await patchLearningModule(module.id, { published: false });
-      applyUpdate(module.id, { published: res.published, autoTag: res.autoTag, sortOrder: res.sortOrder });
+      applyUpdate(module.id, { published: res.published, sortOrder: res.sortOrder });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Unpublish failed');
     } finally {
@@ -153,10 +152,10 @@ export default function CoursesTab() {
           <h2>Courses</h2>
           <p className="admin-section__hint">
             Author and manage learning modules — including drafts. Publish flips a
-            module between draft and live (Canvas-style); auto-tag controls whether
-            the practical auto-resolves its target pattern. Seed courses are
-            protected from deletion; unpublish to hide them while keeping learner
-            progress.
+            module between draft and live (Canvas-style). Question tags are
+            already stored in the module JSON, so visibility is controlled only
+            by publish/unpublish. Seed courses are protected from deletion;
+            unpublish to hide them while keeping learner progress.
           </p>
         </div>
         <button
@@ -186,7 +185,6 @@ export default function CoursesTab() {
                 <th>Module</th>
                 <th>Category</th>
                 <th>Published</th>
-                <th>Auto-tag</th>
                 <th>Seed</th>
                 <th aria-label="Actions" />
               </tr>
@@ -216,18 +214,6 @@ export default function CoursesTab() {
                         data-testid={`courses-publish-${m.id}`}
                       >
                         {rowSaving ? 'Saving…' : m.published ? 'Published' : 'Draft'}
-                      </button>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        className={`admin-feature-row__toggle courses-toggle${m.autoTag ? ' is-on' : ''}`}
-                        onClick={() => toggleField(m, 'autoTag', !m.autoTag)}
-                        disabled={rowSaving}
-                        aria-pressed={m.autoTag}
-                        data-testid={`courses-autotag-${m.id}`}
-                      >
-                        {rowSaving ? 'Saving…' : m.autoTag ? 'On' : 'Off'}
                       </button>
                     </td>
                     <td>

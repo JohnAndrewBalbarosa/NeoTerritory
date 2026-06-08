@@ -89,7 +89,6 @@ interface CourseDraft {
   keyTerms: TermDraft[];
   seeAlso: SeeAlsoDraft[];
   published: boolean;
-  autoTag: boolean;
   sortOrder: number;
 }
 
@@ -137,7 +136,6 @@ function toDraft(source: AdminLearningModule | null): CourseDraft {
       keyTerms: [],
       seeAlso: [],
       published: false,
-      autoTag: true,
       sortOrder: 0,
     };
   }
@@ -184,7 +182,6 @@ function toDraft(source: AdminLearningModule | null): CourseDraft {
       label: s.label,
     })),
     published: source.published,
-    autoTag: source.autoTag,
     sortOrder: source.sortOrder,
   };
 }
@@ -238,7 +235,7 @@ function validate(draft: CourseDraft): string[] {
 // ── Serialize draft → DTO (drop empty optionals) ───────────────────────────
 function toPayload(
   draft: CourseDraft,
-): LearningModuleDTO & { published?: boolean; autoTag?: boolean; sortOrder?: number } {
+): LearningModuleDTO & { published?: boolean; sortOrder?: number } {
   const sections: LearningSection[] = draft.sections.map((s) => {
     const bullets = textToBullets(s.bulletsText);
     const section: LearningSection = { heading: s.heading.trim() };
@@ -251,7 +248,6 @@ function toPayload(
 
   const payload: LearningModuleDTO & {
     published?: boolean;
-    autoTag?: boolean;
     sortOrder?: number;
   } = {
     id: draft.id.trim(),
@@ -261,7 +257,6 @@ function toPayload(
     intro: draft.intro.trim(),
     sections,
     published: draft.published,
-    autoTag: draft.autoTag,
     sortOrder: draft.sortOrder,
   };
 
@@ -691,17 +686,17 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
             <button type="button" className="ghost-btn" onClick={addSeeAlso} disabled={saving}>+ Add link</button>
           </fieldset>
 
-          {/* ── Publishing controls (mirrors list toggles, editable here too) ── */}
+          {/* ── Publishing controls (module on/off) ── */}
           <fieldset className="courses-fieldset">
             <legend>Publishing</legend>
             <label className="courses-toggle-row">
               <input type="checkbox" checked={draft.published} onChange={(e) => patch({ published: e.target.checked })} disabled={saving} />
               <span>Published (visible to learners)</span>
             </label>
-            <label className="courses-toggle-row">
-              <input type="checkbox" checked={draft.autoTag} onChange={(e) => patch({ autoTag: e.target.checked })} disabled={saving} />
-              <span>Auto-tag (practical auto-resolves the target pattern)</span>
-            </label>
+            <p className="admin-section__hint">
+              Questions are already tagged in the module JSON. Use publish/unpublish
+              to control whether the module is on or off.
+            </p>
             <label className="admin-catalog-field courses-sortorder">
               <span>Sort order</span>
               <input
