@@ -21,7 +21,7 @@ function completionRatio(done: number, total: number): number {
 export default function StudentDashboard(): JSX.Element {
   const token = useAppStore((s) => s.token);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
-  const { modules, loaded } = useLearningModules();
+  const { modules, switchboard, loaded } = useLearningModules();
   const [progress, setProgress] = useState<LearningProgress | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -109,6 +109,8 @@ export default function StudentDashboard(): JSX.Element {
   const completedSet = new Set(progressSnapshot.completedModuleIds);
   const theoryPassedSet = new Set(progressSnapshot.theoryPassedModuleIds ?? []);
   const totalModules = modules.length;
+  const visibilityOn = switchboard.filter((row) => row.effectivePublished).length;
+  const visibilityOff = Math.max(switchboard.length - visibilityOn, 0);
   const completedCount = unlockAll ? totalModules : completedSet.size;
   const theoryCount = unlockAll ? totalModules : theoryPassedSet.size;
   const remainingCount = Math.max(totalModules - completedCount, 0);
@@ -187,6 +189,13 @@ export default function StudentDashboard(): JSX.Element {
           <p style={styles.cardLabel}>Completed modules</p>
           <div style={styles.metric}>{completedCount}</div>
           <p style={styles.cardCopy}>Finished modules in the current learner path.</p>
+        </article>
+        <article style={styles.card}>
+          <p style={styles.cardLabel}>Module visibility</p>
+          <div style={styles.metric}>{visibilityOn}/{switchboard.length}</div>
+          <p style={styles.cardCopy}>
+            {visibilityOff} modules are off in the switchboard and hidden from the learner path.
+          </p>
         </article>
         <article style={styles.card}>
           <p style={styles.cardLabel}>Theory passed</p>

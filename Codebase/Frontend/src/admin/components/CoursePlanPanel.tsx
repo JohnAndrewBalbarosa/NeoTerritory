@@ -1,23 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { patchLearningModule, previewCoursePlan } from '../../api/client';
 import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
+import { buildModuleSwitchboard, countSwitchboard } from '../../logic/moduleSwitchboard';
 
 interface CoursePlanPanelProps {
   modules: ReadonlyArray<AdminLearningModule>;
   onApplied: () => Promise<void> | void;
+  onPreviewChange?: (plan: AdminCoursePlan | null) => void;
 }
 
-interface ModulePreviewRow {
-  id: string;
-  title: string;
-  current: boolean;
-  next: boolean;
-  reason: string;
-  matchedSections: string[];
-  matchedTopics: string[];
-}
-
-export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelProps): JSX.Element {
+export default function CoursePlanPanel({
+  modules,
+  onApplied,
+  onPreviewChange,
+}: CoursePlanPanelProps): JSX.Element {
   const [promptText, setPromptText] = useState('');
   const [plan, setPlan] = useState<AdminCoursePlan | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
@@ -29,6 +25,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
     const prompt = promptText.trim();
     if (!prompt) {
       setPlan(null);
+      onPreviewChange?.(null);
       setState('idle');
       return;
     }
@@ -40,11 +37,13 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
         .then((nextPlan) => {
           if (cancelled) return;
           setPlan(nextPlan);
+          onPreviewChange?.(nextPlan);
           setState('ready');
         })
         .catch((err: unknown) => {
           if (cancelled) return;
           setPlan(null);
+          onPreviewChange?.(null);
           setState('failed');
           setError(err instanceof Error ? err.message : 'Course plan failed');
         });
@@ -54,35 +53,24 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [promptText]);
+  }, [onPreviewChange, promptText]);
 
-  const modulePreview = useMemo<ModulePreviewRow[]>(() => {
-    const byId = new Map((plan?.modules || []).map((item) => [item.moduleId, item]));
-    return modules.map((module) => {
-      const chosen = byId.get(module.id);
-      return {
-        id: module.id,
-        title: module.title,
-        current: module.published,
-        next: chosen?.published ?? false,
-        reason: chosen?.reason ?? 'No AI plan yet. Defaults to OFF.',
-        matchedSections: chosen?.matchedSections ?? [],
-        matchedTopics: chosen?.matchedTopics ?? [],
-      };
-    });
-  }, [modules, plan]);
-
-  const changedPreview = useMemo(
-    () => modulePreview.filter((item) => item.current !== item.next),
-    [modulePreview],
+  const switchboard = useMemo(
+    () => buildModuleSwitchboard(modules, plan?.modules),
+    [modules, plan],
   );
+  const changedPreview = useMemo(
+    () => switchboard.filter((item) => item.currentPublished !== item.effectivePublished),
+    [switchboard],
+  );
+  const counts = useMemo(() => countSwitchboard(switchboard), [switchboard]);
   const enabledPreview = useMemo(
-    () => modulePreview.filter((item) => item.next),
-    [modulePreview],
+    () => switchboard.filter((item) => item.effectivePublished),
+    [switchboard],
   );
   const disabledPreview = useMemo(
-    () => modulePreview.filter((item) => !item.next),
-    [modulePreview],
+    () => switchboard.filter((item) => !item.effectivePublished),
+    [switchboard],
   );
 
   async function applyPlan(): Promise<void> {
@@ -92,11 +80,12 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
     setResultMessage(null);
     try {
       await Promise.all(
-        changedPreview.map((item) => patchLearningModule(item.id, { published: item.next })),
+        changedPreview.map((item) => patchLearningModule(item.moduleId, { published: item.effectivePublished })),
       );
       await onApplied();
       setPromptText('');
       setPlan(null);
+      onPreviewChange?.(null);
       setState('idle');
       setResultMessage('AI course plan applied. Modules now follow implicit deny.');
     } catch (err: unknown) {
@@ -134,6 +123,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
               onClick={() => {
                 setPromptText('');
                 setPlan(null);
+                onPreviewChange?.(null);
                 setState('idle');
                 setResultMessage(null);
               }}
@@ -178,7 +168,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
             <div className="admin-plan-board__head">
               <h3>Modules by AI</h3>
               <p className="admin-section__hint">
-                {enabledPreview.length} on, {disabledPreview.length} off.
+                {counts.on} on, {counts.off} off.
               </p>
             </div>
 
@@ -194,8 +184,8 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
                 </li>
               ) : enabledPreview.map((item) => (
                 <li
-                  key={item.id}
-                  className={`admin-feature-row admin-feature-row--preview${item.current === item.next ? '' : ' is-changed'}`}
+                  key={item.moduleId}
+                  className={`admin-feature-row admin-feature-row--preview${item.currentPublished === item.effectivePublished ? '' : ' is-changed'}`}
                 >
                   <div className="admin-feature-row__meta">
                     <p className="admin-feature-row__label">{item.title}</p>
@@ -208,9 +198,9 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
                     )}
                   </div>
                   <div className="admin-feature-row__delta">
-                    <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>{item.current ? 'ON' : 'OFF'}</span>
+                    <span className={`tag ${item.currentPublished ? 'tag--on' : 'tag--off'}`}>{item.currentPublished ? 'ON' : 'OFF'}</span>
                     <span className="arrow" aria-hidden="true">&rarr;</span>
-                    <span className={`tag ${item.next ? 'tag--on' : 'tag--off'}`}>{item.next ? 'ON' : 'OFF'}</span>
+                    <span className={`tag ${item.effectivePublished ? 'tag--on' : 'tag--off'}`}>{item.effectivePublished ? 'ON' : 'OFF'}</span>
                   </div>
                 </li>
               ))}

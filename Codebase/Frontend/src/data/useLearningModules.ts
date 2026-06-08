@@ -5,6 +5,7 @@ import {
   type LearningCategory,
   type LearningModule,
 } from './learningModules';
+import { buildModuleSwitchboard } from '../logic/moduleSwitchboard';
 
 // D92 (Track C): the learner page sources its content from the DB-backed CMS
 // (GET /api/learning/modules, published-only, sort_order) WITH a static
@@ -20,6 +21,7 @@ export type LearningModulesSource = 'api' | 'static';
 
 export interface UseLearningModules {
   modules: ReadonlyArray<LearningModule>;
+  switchboard: ReturnType<typeof buildModuleSwitchboard>;
   loaded: boolean;
   source: LearningModulesSource;
   findModule: (id: string) => LearningModule | undefined;
@@ -78,5 +80,10 @@ export function useLearningModules(): UseLearningModules {
     [modules],
   );
 
-  return { modules, loaded, source, findModule, modulesInCategory };
+  const switchboard = useMemo(
+    () => buildModuleSwitchboard(modules),
+    [modules],
+  );
+
+  return { modules, switchboard, loaded, source, findModule, modulesInCategory };
 }

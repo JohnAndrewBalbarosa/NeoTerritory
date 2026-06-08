@@ -4,10 +4,11 @@ import {
   patchLearningModule,
   deleteLearningModule,
 } from '../../api/client';
-import type { AdminLearningModule } from '../../types/api';
+import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
 import type { LearningCategory } from '../../data/learningModules';
 import CoursePlanPanel from './CoursePlanPanel';
 import CourseEditor from './CourseEditor';
+import { buildModuleSwitchboard } from '../../logic/moduleSwitchboard';
 
 const CATEGORY_ORDER: ReadonlyArray<{ id: LearningCategory; label: string }> = [
   { id: 'foundations', label: 'Foundations' },
@@ -31,6 +32,7 @@ export default function CoursesTab() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState>(null);
+  const [previewPlan, setPreviewPlan] = useState<AdminCoursePlan['modules'] | null>(null);
 
   const reload = useCallback(async (): Promise<void> => {
     try {
@@ -56,6 +58,15 @@ export default function CoursesTab() {
       return a.id.localeCompare(b.id);
     });
   }, [modules]);
+
+  const switchboard = useMemo(
+    () => buildModuleSwitchboard(sorted, previewPlan ?? undefined),
+    [previewPlan, sorted],
+  );
+  const switchboardById = useMemo(
+    () => new Map(switchboard.map((row) => [row.moduleId, row])),
+    [switchboard],
+  );
 
   function applyUpdate(id: string, next: Partial<AdminLearningModule>): void {
     setModules((prev) => prev.map((m) => (m.id === id ? { ...m, ...next } : m)));
@@ -149,7 +160,11 @@ export default function CoursesTab() {
 
       {error && <p className="admin-login-error" role="alert">{error}</p>}
 
-      <CoursePlanPanel modules={sorted} onApplied={reload} />
+      <CoursePlanPanel
+        modules={sorted}
+        onApplied={reload}
+        onPreviewChange={(plan) => setPreviewPlan(plan?.modules ?? null)}
+      />
 
       {!loaded && <p className="admin-section__hint">Loading coursesâ€¦</p>}
       {loaded && sorted.length === 0 && (
@@ -170,6 +185,10 @@ export default function CoursesTab() {
             </thead>
             <tbody className="runs-disabled">
               {sorted.map((m) => {
+                const rowState = switchboardById.get(m.id);
+                const effectiveOn = rowState?.effectivePublished ?? m.published;
+                const currentOn = rowState?.currentPublished ?? m.published;
+                const rowChanged = rowState ? rowState.currentPublished !== rowState.effectivePublished : false;
                 const rowBusy = busyId === m.id;
                 const rowSaving = savingId === m.id;
                 return (
@@ -186,13 +205,14 @@ export default function CoursesTab() {
                     <td>
                       <button
                         type="button"
-                        className={`admin-feature-row__toggle courses-toggle${m.published ? ' is-on' : ''}`}
+                        className={`admin-feature-row__toggle courses-toggle${effectiveOn ? ' is-on' : ''}${rowChanged ? ' is-preview' : ''}`}
                         onClick={() => togglePublished(m, !m.published)}
                         disabled={rowSaving}
-                        aria-pressed={m.published}
+                        aria-pressed={effectiveOn}
+                        title={rowChanged ? `Current: ${currentOn ? 'On' : 'Off'} · AI preview: ${effectiveOn ? 'On' : 'Off'}` : undefined}
                         data-testid={`courses-publish-${m.id}`}
                       >
-                        {rowSaving ? 'Saving…' : m.published ? 'On' : 'Off'}
+                        {rowSaving ? 'Saving…' : effectiveOn ? 'On' : 'Off'}
                       </button>
                     </td>
                     <td>
