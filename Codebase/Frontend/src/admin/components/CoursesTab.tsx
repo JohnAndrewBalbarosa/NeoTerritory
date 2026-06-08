@@ -189,6 +189,7 @@ export default function CoursesTab() {
                 const effectiveOn = rowState?.effectivePublished ?? m.published;
                 const currentOn = rowState?.currentPublished ?? m.published;
                 const rowChanged = rowState ? rowState.currentPublished !== rowState.effectivePublished : false;
+                const rowLocked = rowState?.protectedBaseline ?? m.category === 'foundations';
                 const rowBusy = busyId === m.id;
                 const rowSaving = savingId === m.id;
                 return (
@@ -207,13 +208,16 @@ export default function CoursesTab() {
                         type="button"
                         className={`admin-feature-row__toggle courses-toggle${effectiveOn ? ' is-on' : ''}${rowChanged ? ' is-preview' : ''}`}
                         onClick={() => togglePublished(m, !m.published)}
-                        disabled={rowSaving}
+                        disabled={rowSaving || rowLocked}
                         aria-pressed={effectiveOn}
-                        title={rowChanged ? `Current: ${currentOn ? 'On' : 'Off'} · AI preview: ${effectiveOn ? 'On' : 'Off'}` : undefined}
+                        title={rowLocked
+                          ? 'Foundations stay on as the baseline learning block.'
+                          : (rowChanged ? `Current: ${currentOn ? 'On' : 'Off'} · AI preview: ${effectiveOn ? 'On' : 'Off'}` : undefined)}
                         data-testid={`courses-publish-${m.id}`}
                       >
                         {rowSaving ? 'Saving…' : effectiveOn ? 'On' : 'Off'}
                       </button>
+                      {rowLocked && <span className="pill pill-amber courses-row-lock">baseline</span>}
                     </td>
                     <td>
                       {m.isSeed ? (

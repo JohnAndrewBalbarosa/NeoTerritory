@@ -4,7 +4,7 @@ import type {
   AdminCoursePlanSectionDecision,
   AdminLearningModule,
 } from '../types/api';
-import type { LearningModule } from '../data/learningModules';
+import { isFoundationModule, type LearningModule } from '../data/learningModules';
 
 export type ModuleSwitchState = 'on' | 'off';
 
@@ -12,6 +12,7 @@ export interface ModuleSwitchRow {
   moduleId: string;
   title: string;
   category: string;
+  protectedBaseline: boolean;
   currentState: ModuleSwitchState;
   effectiveState: ModuleSwitchState;
   currentPublished: boolean;
@@ -76,16 +77,23 @@ export function buildModuleSwitchboard(
     const hasPublishedField = Object.prototype.hasOwnProperty.call(module, 'published');
     const currentPublished = hasPublishedField ? Boolean((module as AdminLearningModule).published) : true;
     const chosen = planById.get(module.id);
-    const effectivePublished = chosen?.published ?? currentPublished;
+    const protectedBaseline = isFoundationModule(module);
+    const effectivePublished = protectedBaseline ? true : (chosen?.published ?? currentPublished);
     return {
       moduleId: module.id,
       title: module.title,
       category: module.category,
+      protectedBaseline,
       currentState: stateOf(currentPublished),
       effectiveState: stateOf(effectivePublished),
       currentPublished,
       effectivePublished,
-      reason: normalizeText(chosen?.reason, currentPublished ? 'Current module stays ON.' : 'Current module stays OFF.'),
+      reason: normalizeText(
+        protectedBaseline
+          ? 'Foundations stay ON as the baseline learning block.'
+          : chosen?.reason,
+        currentPublished ? 'Current module stays ON.' : 'Current module stays OFF.',
+      ),
       matchedSections: normalizeList(chosen?.matchedSections),
       matchedTopics: normalizeList(chosen?.matchedTopics),
     };

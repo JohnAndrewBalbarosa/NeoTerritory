@@ -375,6 +375,8 @@ const SYSTEM_PROMPT = [
   '- First infer the needed design patterns from the project brief using the catalog below.',
   '- Then map those patterns to the minimum module set in the provided module catalog.',
   '- Only keep foundational modules when they are direct prerequisites for a selected pattern.',
+  '- Foundations are the baseline learning block: keep them ON whenever the project needs any course plan at all.',
+  '- Minimize the pattern modules first; do not minimize away the baseline foundations.',
   '- Prefer direct pattern modules and exact matching sections/topics over broad intro material.',
   '- Keep strings concise. Keep reason fields short.',
   '- Keep matchedSections and matchedTopics small. Prefer at most 3 sections and at most 8 topics per module.',
@@ -516,6 +518,10 @@ function pickTopics(mod: LearningModulePlannerEntry): string[] {
   ]).slice(0, 8);
 }
 
+function pickSections(mod: LearningModulePlannerEntry, limit = 3): string[] {
+  return uniqueStrings(mod.sections.slice(0, limit).map((section) => section.heading));
+}
+
 function buildModuleDecision(
   mod: LearningModulePlannerEntry,
   published: boolean,
@@ -629,6 +635,11 @@ function heuristicPlan(
       .slice(0, 4)
       .map((item) => item.mod.moduleId),
   );
+  if (selectedIds.size > 0) {
+    for (const mod of digest) {
+      if (mod.isFoundationBaseline) selectedIds.add(mod.moduleId);
+    }
+  }
 
   const decisions = scored.map(({ mod, pattern }) => {
     const published = selectedIds.has(mod.moduleId);
@@ -636,9 +647,11 @@ function heuristicPlan(
       mod,
       published,
       published
-        ? `Matched ${pattern?.name ?? mod.title} to the project brief.`
+        ? (mod.isFoundationBaseline
+            ? 'Foundations stay ON as the baseline learning block.'
+            : `Matched ${pattern?.name ?? mod.title} to the project brief.`)
         : 'No strong prompt match; defaulting OFF.',
-      published ? mod.sections.slice(0, 3).map((s) => s.heading) : [],
+      published ? pickSections(mod) : [],
       published ? pickTopics(mod) : [],
     );
   });
@@ -751,6 +764,9 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
   const sectionMode = rawSections.length > 0;
   const moduleEntries = new Map<string, ParsedPlanModule>();
   const moduleSectionLabels = new Map<string, string>();
+  const hasAnySelectedModule = sectionMode
+    ? rawSections.some((rawSection) => Array.isArray(rawSection.modules) && rawSection.modules.length > 0)
+    : (Array.isArray(raw.modules) && raw.modules.length > 0);
 
   if (sectionMode) {
     for (const rawSection of rawSections) {
@@ -782,57 +798,40 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
 
   const modules = digest.map((mod) => {
     const entry = moduleEntries.get(mod.moduleId);
-    const published = sectionMode ? moduleEntries.has(mod.moduleId) : entry?.published === true;
-    const matchedSections = sectionMode
-      ? (moduleSectionLabels.get(mod.moduleId) ? [moduleSectionLabels.get(mod.moduleId)!] : [])
-      : uniqueStrings(Array.isArray(entry?.matchedSections) ? entry.matchedSections.filter((v): v is string => typeof v === 'string') : []);
-    const matchedTopics = sectionMode
-      ? pickTopics(mod)
-      : uniqueStrings(Array.isArray(entry?.matchedTopics) ? entry.matchedTopics.filter((v): v is string => typeof v === 'string') : []);
+    const published = mod.isFoundationBaseline
+      ? hasAnySelectedModule || entry?.published === true
+      : sectionMode ? moduleEntries.has(mod.moduleId) : entry?.published === true;
+    const matchedSections = published
+      ? (mod.isFoundationBaseline
+          ? pickSections(mod)
+          : (
+              sectionMode
+                ? (moduleSectionLabels.get(mod.moduleId) ? [moduleSectionLabels.get(mod.moduleId)!] : pickSections(mod))
+                : uniqueStrings(Array.isArray(entry?.matchedSections) ? entry.matchedSections.filter((v): v is string => typeof v === 'string') : pickSections(mod))
+            ))
+      : [];
+    const matchedTopics = published
+      ? (mod.isFoundationBaseline
+          ? pickTopics(mod)
+          : (
+              sectionMode
+                ? pickTopics(mod)
+                : uniqueStrings(Array.isArray(entry?.matchedTopics) ? entry.matchedTopics.filter((v): v is string => typeof v === 'string') : pickTopics(mod))
+            ))
+      : [];
     return buildModuleDecision(
       mod,
       published,
-      typeof entry?.reason === 'string' && entry.reason.trim()
+      mod.isFoundationBaseline
+        ? 'Foundations stay ON as the baseline learning block.'
+        : typeof entry?.reason === 'string' && entry.reason.trim()
         ? entry.reason
         : (published ? 'AI selected this course for publishing.' : 'AI left this course off by default.'),
       matchedSections,
       matchedTopics,
     );
   });
-
-  const sections = sectionMode
-    ? rawSections
-        .map((rawSection) => {
-          const sectionId = normalizeSectionId(
-            typeof rawSection.sectionId === 'string' && rawSection.sectionId.trim().length > 0
-              ? rawSection.sectionId
-              : rawSection.section || '',
-          );
-          if (!sectionId) return null;
-          const sectionLabel = typeof rawSection.section === 'string' && rawSection.section.trim().length > 0
-            ? rawSection.section.trim()
-            : sectionLabelFromId(sectionId);
-          const sectionDigest = digest.filter((mod) => normalizeSectionId(mod.category) === sectionId);
-          if (sectionDigest.length === 0) return null;
-          const moduleIds = new Set(
-            (rawSection.modules ?? [])
-              .map((entry) => (typeof entry.moduleId === 'string' ? entry.moduleId.trim() : ''))
-              .filter((moduleId) => moduleId.length > 0 && digestById.has(moduleId)),
-          );
-          if (moduleIds.size === 0) return null;
-          const grouped = sectionDigest
-            .map((mod) => modules.find((decision) => decision.moduleId === mod.moduleId))
-            .filter((decision): decision is CoursePlanModuleDecision => Boolean(decision && decision.published));
-          if (grouped.length === 0) return null;
-          return {
-            sectionId,
-            section: sectionLabel,
-            modules: grouped,
-          };
-        })
-        .filter((value): value is CoursePlanSectionDecision => Boolean(value))
-        .sort((a, b) => sectionSortIndex(a.sectionId) - sectionSortIndex(b.sectionId))
-    : buildNormalizedSections(digest, modules);
+  const sections = buildNormalizedSections(digest, modules);
 
   const requiredLearning = modules
     .filter((m) => m.published)
@@ -843,7 +842,7 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
         moduleId: m.moduleId,
         title: m.title,
         category: m.category,
-        sections: mod.sections.slice(0, 4).map((s) => s.heading),
+        sections: pickSections(mod, 4),
         topics: pickTopics(mod),
         reason: typeof moduleEntries.get(m.moduleId)?.reason === 'string' && moduleEntries.get(m.moduleId)!.reason!.trim()
           ? moduleEntries.get(m.moduleId)!.reason!.trim()

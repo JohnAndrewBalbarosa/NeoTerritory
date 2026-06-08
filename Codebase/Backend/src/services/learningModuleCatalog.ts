@@ -154,6 +154,7 @@ export interface LearningModulePlannerEntry {
   category: string;
   title: string;
   intro: string;
+  isFoundationBaseline: boolean;
   sections: Array<{
     heading: string;
     body: string;
@@ -188,6 +189,7 @@ export function buildPlannerDigest(options: LearningModuleCatalogOptions = {}): 
       category: module.category,
       title: module.title,
       intro: module.intro.slice(0, 280),
+      isFoundationBaseline: module.category === 'foundations',
       sections,
       questionTopics: Array.from(new Set(questionTopics)),
     };

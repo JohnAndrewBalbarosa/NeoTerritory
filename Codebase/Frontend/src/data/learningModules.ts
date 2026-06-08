@@ -41,6 +41,13 @@ export type BloomTaxonomy =
   | 'evaluating'
   | 'creating';
 
+export const FOUNDATION_CATEGORY: LearningCategory = 'foundations';
+export const FOUNDATION_BYPASS_TAXONOMIES = ['remembering', 'understanding', 'applying'] as const;
+
+export function isFoundationModule(module: Pick<LearningModule, 'category'>): boolean {
+  return module.category === FOUNDATION_CATEGORY;
+}
+
 // D86: a module ends with a Theoretical Exam (every module) and, for
 // pattern/idiom modules, a Practical Exam. The two replace the old single
 // `practical` (quiz-OR-code) union.

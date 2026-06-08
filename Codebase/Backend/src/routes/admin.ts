@@ -2273,7 +2273,7 @@ router.post('/learning/modules', (req: Request, res: Response, next: NextFunctio
       return;
     }
 
-    const published = value.published === false ? 0 : 1;
+    const published = value.category === 'foundations' ? 1 : (value.published === false ? 0 : 1);
     const autoTag = value.autoTag === false ? 0 : 1;
     const sortOrder = typeof value.sortOrder === 'number' ? value.sortOrder : 0;
 
@@ -2333,9 +2333,9 @@ router.put('/learning/modules/:moduleId', (req: Request, res: Response, next: Ne
   try {
     const moduleId = String(req.params.moduleId);
     const existing = db.prepare(
-      `SELECT module_id, published, auto_tag, sort_order, is_seed FROM learning_modules WHERE module_id = ?`,
+      `SELECT module_id, category, published, auto_tag, sort_order, is_seed FROM learning_modules WHERE module_id = ?`,
     ).get(moduleId) as
-      | { module_id: string; published: number; auto_tag: number; sort_order: number; is_seed: number }
+      | { module_id: string; category: string; published: number; auto_tag: number; sort_order: number; is_seed: number }
       | undefined;
     if (!existing) {
       res.status(404).json({ error: 'Module not found' });
@@ -2353,7 +2353,9 @@ router.put('/learning/modules/:moduleId', (req: Request, res: Response, next: Ne
       return;
     }
 
-    const published = value.published === undefined ? existing.published : value.published ? 1 : 0;
+    const published = value.category === 'foundations' || existing.category === 'foundations'
+      ? 1
+      : (value.published === undefined ? existing.published : value.published ? 1 : 0);
     const autoTag = value.autoTag === undefined ? existing.auto_tag : value.autoTag ? 1 : 0;
     const sortOrder = typeof value.sortOrder === 'number' ? value.sortOrder : existing.sort_order;
 
@@ -2434,7 +2436,9 @@ router.patch('/learning/modules/:moduleId', (req: Request, res: Response, next: 
     }
 
     const patch = parsed.data;
-    const published = patch.published === undefined ? existing.published : patch.published ? 1 : 0;
+    const published = existing.category === 'foundations'
+      ? 1
+      : (patch.published === undefined ? existing.published : patch.published ? 1 : 0);
     const autoTag = patch.autoTag === undefined ? existing.auto_tag : patch.autoTag ? 1 : 0;
     const sortOrder = patch.sortOrder === undefined ? existing.sort_order : patch.sortOrder;
 

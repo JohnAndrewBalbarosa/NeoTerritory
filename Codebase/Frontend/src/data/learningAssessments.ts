@@ -1,4 +1,11 @@
-import type { BloomTaxonomy, ExamQuestion, LearningModule } from './learningModules';
+import type { LearningAssessmentAnswerRaw, LearningAssessmentAttemptRaw, LearningAssessmentsResponse } from '../types/api';
+import {
+  FOUNDATION_BYPASS_TAXONOMIES,
+  type BloomTaxonomy,
+  type ExamQuestion,
+  type LearningModule,
+  isFoundationModule,
+} from './learningModules';
 
 export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
 
@@ -118,7 +125,12 @@ export function buildLearningAssessmentQuestions(
   modules: ReadonlyArray<LearningModule>,
   assessmentType: LearningAssessmentType,
 ): LearningAssessmentQuestion[] {
-  const eligible = modules.filter((module) => module.theoreticalExam?.questions.length);
+  const foundationEligible = modules.filter(
+    (module) => module.category === 'foundations' && module.theoreticalExam?.questions.length,
+  );
+  const eligible = assessmentType === 'pretest' && foundationEligible.length > 0
+    ? foundationEligible
+    : modules.filter((module) => module.theoreticalExam?.questions.length);
   if (assessmentType === 'practical') return [];
   const plan = BLOOM_PATHS[assessmentType];
   const rotated = seededShuffle(eligible, `${assessmentType}:module-order`);
@@ -175,4 +187,113 @@ export function gradeLearningAssessment(
   const scorePercent = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
 
   return { results, correctCount, totalCount, scorePercent };
+}
+
+export interface FoundationPretestEvidence {
+  passed: boolean;
+  masteredTaxonomies: BloomTaxonomy[];
+  missingTaxonomies: BloomTaxonomy[];
+  correctCount: number;
+  totalCount: number;
+  latestAttemptId: number | null;
+  matchedModuleIds: string[];
+}
+
+function isFoundationTaxonomy(value: BloomTaxonomy | null | undefined): value is (typeof FOUNDATION_BYPASS_TAXONOMIES)[number] {
+  return typeof value === 'string' && (FOUNDATION_BYPASS_TAXONOMIES as ReadonlyArray<BloomTaxonomy>).includes(value);
+}
+
+function latestPretestAttempt(attempts: ReadonlyArray<LearningAssessmentAttemptRaw>): LearningAssessmentAttemptRaw | null {
+  const pretests = attempts.filter((attempt) => attempt.assessmentType === 'pretest');
+  if (pretests.length === 0) return null;
+  const sorted = [...pretests].sort((a, b) => {
+    const timeCompare = String(a.createdAt).localeCompare(String(b.createdAt));
+    if (timeCompare !== 0) return timeCompare;
+    return a.id - b.id;
+  });
+  return sorted[sorted.length - 1] ?? null;
+}
+
+export function evaluateFoundationPretest(
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+  answers: Record<number, number | null | undefined>,
+): FoundationPretestEvidence {
+  const mastered = new Set<BloomTaxonomy>();
+  const matchedModuleIds = new Set<string>();
+  let correctCount = 0;
+
+  for (const item of questions) {
+    const selected = answers[item.assessmentIndex];
+    const selectedIndex = Number.isInteger(selected) ? Number(selected) : null;
+    const isCorrect = selectedIndex != null && selectedIndex === item.question.correctIndex;
+    if (!isCorrect) continue;
+    correctCount += 1;
+    if (isFoundationTaxonomy(item.taxonomy)) {
+      mastered.add(item.taxonomy);
+      matchedModuleIds.add(item.moduleId);
+    }
+  }
+
+  const masteredTaxonomies = FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => mastered.has(taxonomy));
+  return {
+    passed: FOUNDATION_BYPASS_TAXONOMIES.every((taxonomy) => mastered.has(taxonomy)),
+    masteredTaxonomies,
+    missingTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => !mastered.has(taxonomy)),
+    correctCount,
+    totalCount: questions.length,
+    latestAttemptId: null,
+    matchedModuleIds: Array.from(matchedModuleIds),
+  };
+}
+
+function isAnsweredCorrectly(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {
+  const question = module.theoreticalExam?.questions[answer.questionIndex];
+  if (!question) return false;
+  return answer.selectedIndex === question.correctIndex;
+}
+
+export function evaluateFoundationPretestFromAssessments(
+  modules: ReadonlyArray<LearningModule>,
+  assessments: LearningAssessmentsResponse,
+): FoundationPretestEvidence {
+  const moduleById = new Map(modules.map((module) => [module.id, module]));
+  const latestAttempt = latestPretestAttempt(assessments.attempts);
+  if (!latestAttempt) {
+    return {
+      passed: false,
+      masteredTaxonomies: [],
+      missingTaxonomies: [...FOUNDATION_BYPASS_TAXONOMIES],
+      correctCount: 0,
+      totalCount: 0,
+      latestAttemptId: null,
+      matchedModuleIds: [],
+    };
+  }
+
+  const answers = assessments.answers.filter((answer) => answer.attemptId === latestAttempt.id);
+  const mastered = new Set<BloomTaxonomy>();
+  const matchedModuleIds = new Set<string>();
+  let correctCount = 0;
+
+  for (const answer of answers) {
+    if (answer.assessmentType !== 'pretest') continue;
+    const module = moduleById.get(answer.moduleId);
+    if (!module || !isFoundationModule(module)) continue;
+    const taxonomy = answer.questionTaxonomy as BloomTaxonomy | null;
+    if (!isFoundationTaxonomy(taxonomy)) continue;
+    if (!isAnsweredCorrectly(answer, module)) continue;
+    mastered.add(taxonomy);
+    matchedModuleIds.add(module.id);
+    correctCount += 1;
+  }
+
+  return {
+    passed: FOUNDATION_BYPASS_TAXONOMIES.every((taxonomy) => mastered.has(taxonomy)),
+    masteredTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => mastered.has(taxonomy)),
+    missingTaxonomies: FOUNDATION_BYPASS_TAXONOMIES.filter((taxonomy) => !mastered.has(taxonomy)),
+    correctCount,
+    totalCount: answers.length,
+    latestAttemptId: latestAttempt.id,
+    matchedModuleIds: Array.from(matchedModuleIds),
+  };
 }

@@ -181,7 +181,7 @@ function toDraft(source: AdminLearningModule | null): CourseDraft {
       moduleId: s.moduleId,
       label: s.label,
     })),
-    published: source.published,
+    published: source.category === 'foundations' ? true : source.published,
     sortOrder: source.sortOrder,
   };
 }
@@ -256,7 +256,7 @@ function toPayload(
     eyebrow: draft.eyebrow.trim(),
     intro: draft.intro.trim(),
     sections,
-    published: draft.published,
+    published: draft.category === 'foundations' ? true : draft.published,
     sortOrder: draft.sortOrder,
   };
 
@@ -467,7 +467,10 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
                 <span>Category</span>
                 <select
                   value={draft.category}
-                  onChange={(e) => patch({ category: e.target.value as LearningCategory })}
+                  onChange={(e) => {
+                    const category = e.target.value as LearningCategory;
+                    patch({ category, ...(category === 'foundations' ? { published: true } : {}) });
+                  }}
                   disabled={saving}
                 >
                   {CATEGORIES.map((c) => (
@@ -690,12 +693,17 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
           <fieldset className="courses-fieldset">
             <legend>On / Off</legend>
             <label className="courses-toggle-row">
-              <input type="checkbox" checked={draft.published} onChange={(e) => patch({ published: e.target.checked })} disabled={saving} />
+              <input
+                type="checkbox"
+                checked={draft.published}
+                onChange={(e) => patch({ published: e.target.checked })}
+                disabled={saving || draft.category === 'foundations'}
+              />
               <span>On (visible to learners)</span>
             </label>
             <p className="admin-section__hint">
               Questions are already tagged in the module JSON. Use On/Off to control
-              whether the module is visible to learners.
+              whether the module is visible to learners. Foundations stay on as the baseline block.
             </p>
             <label className="admin-catalog-field courses-sortorder">
               <span>Sort order</span>

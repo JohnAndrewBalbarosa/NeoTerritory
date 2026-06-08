@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../../logic/router';
+import { fetchLearningAssessments, saveLearningAssessment } from '../../../api/client';
 import {
   CATEGORY_META,
+  isFoundationModule,
   type LearningCategory,
   type LearningModule,
   type PracticalExam,
   type TheoreticalExam,
 } from '../../../data/learningModules';
+import {
+  evaluateFoundationPretestFromAssessments,
+  type FoundationPretestEvidence,
+} from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
-import { saveLearningAssessment } from '../../../api/client';
 
 interface CourseStep {
   module: LearningModule;
@@ -157,10 +162,12 @@ function PrerequisiteBanner({
   steps,
   activeIndex,
   isActiveComplete,
+  foundationBypassed,
 }: {
   steps: ReadonlyArray<CourseStep>;
   activeIndex: number;
   isActiveComplete: boolean;
+  foundationBypassed: boolean;
 }): JSX.Element | null {
   const active = steps[activeIndex];
   if (!active) return null;
@@ -195,7 +202,13 @@ function PrerequisiteBanner({
 
         <div className="nt-lesson-prereq__row" data-state={isActiveComplete ? 'done' : 'pending'}>
           <dt>Status of this module</dt>
-          <dd>{isActiveComplete ? 'Complete - the Next arrow is unlocked.' : 'Pending - step to the exam pages with > to attempt them.'}</dd>
+          <dd>
+            {isActiveComplete
+              ? (foundationBypassed && isFoundationModule(active.module)
+                  ? 'Bypassed by pretest mastery - the Next arrow is unlocked.'
+                  : 'Complete - the Next arrow is unlocked.')
+              : 'Pending - step to the exam pages with > to attempt them.'}
+          </dd>
         </div>
 
         <div className="nt-lesson-prereq__row">
@@ -369,7 +382,9 @@ function PracticalExamBlock({
 }
 
 export default function PatternsLearnPage(): JSX.Element {
+  const token = useAppStore((s) => s.token);
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
+  const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
   const { groups, steps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
@@ -383,7 +398,21 @@ export default function PatternsLearnPage(): JSX.Element {
   const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
-  const effectivePreTestCompleted = preTestCompleted || unlockAll;
+  const [foundationEvidence, setFoundationEvidence] = useState<FoundationPretestEvidence>({
+    passed: false,
+    masteredTaxonomies: [],
+    missingTaxonomies: ['remembering', 'understanding', 'applying'],
+    correctCount: 0,
+    totalCount: 0,
+    latestAttemptId: null,
+    matchedModuleIds: [],
+  });
+  const [assessmentStatus, setAssessmentStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
+  const foundationModuleIds = useMemo(
+    () => steps.filter((step) => isFoundationModule(step.module)).map((step) => step.module.id),
+    [steps],
+  );
+  const effectivePreTestCompleted = preTestCompleted || unlockAll || foundationEvidence.passed;
 
   const activeStep = steps[activeIndex];
   const activeModule = useMemo(
@@ -394,13 +423,20 @@ export default function PatternsLearnPage(): JSX.Element {
   const pageGroups = useMemo(() => lessonPageGroupsFor(activeModule), [activeModule]);
   const currentPage = pages[pageIndex] || pages[0];
   const effectiveCompletedIds = useMemo(
-    () => (unlockAll ? new Set(steps.map((step) => step.module.id)) : completedIds),
-    [unlockAll, steps, completedIds],
+    () => {
+      if (unlockAll) return new Set(steps.map((step) => step.module.id));
+      const next = new Set(completedIds);
+      if (foundationEvidence.passed) {
+        foundationModuleIds.forEach((moduleId) => next.add(moduleId));
+      }
+      return next;
+    },
+    [unlockAll, steps, completedIds, foundationEvidence.passed, foundationModuleIds],
   );
   const isActiveComplete = !!(activeStep && effectiveCompletedIds.has(activeStep.module.id));
   const unlockedCount = useMemo(
-    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, completedIds)),
-    [unlockAll, steps, completedIds],
+    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, effectiveCompletedIds)),
+    [unlockAll, steps, effectiveCompletedIds],
   );
   const defaultLeafGroup = useMemo(() => {
     if (pageGroups.length === 0) return null;
@@ -434,6 +470,61 @@ export default function PatternsLearnPage(): JSX.Element {
   const isTheoryGatePage = isFinalTheoryPage;
   const isSubmitGate = isFinalTheoryPage && !activeModule?.practicalExam;
   const isPracticalDone = !!(activeModule && practicalDone.has(activeModule.id));
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!token) {
+      setFoundationEvidence({
+        passed: false,
+        masteredTaxonomies: [],
+        missingTaxonomies: ['remembering', 'understanding', 'applying'],
+        correctCount: 0,
+        totalCount: 0,
+        latestAttemptId: null,
+        matchedModuleIds: [],
+      });
+      setAssessmentStatus('ready');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (!contentLoaded) {
+      setAssessmentStatus('loading');
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setAssessmentStatus('loading');
+    fetchLearningAssessments()
+      .then((assessments) => {
+        if (cancelled) return;
+        const evidence = evaluateFoundationPretestFromAssessments(steps.map((step) => step.module), assessments);
+        setFoundationEvidence(evidence);
+        if (evidence.passed && !preTestCompleted) {
+          setPreTestCompleted(true);
+        }
+        setAssessmentStatus('ready');
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setFoundationEvidence({
+          passed: false,
+          masteredTaxonomies: [],
+          missingTaxonomies: ['remembering', 'understanding', 'applying'],
+          correctCount: 0,
+          totalCount: 0,
+          latestAttemptId: null,
+          matchedModuleIds: [],
+        });
+        setAssessmentStatus('failed');
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [contentLoaded, preTestCompleted, setPreTestCompleted, steps, token]);
 
   useEffect(() => {
     if (unlockAll && steps.length > 0) {
@@ -478,8 +569,8 @@ export default function PatternsLearnPage(): JSX.Element {
   }, [activeStep, activeModule, contentLoaded, currentPage, pageGroups]);
 
   useEffect(() => {
-    if (!effectivePreTestCompleted) navigate('/pre-test');
-  }, [effectivePreTestCompleted]);
+    if (!effectivePreTestCompleted && assessmentStatus !== 'loading') navigate('/pre-test');
+  }, [assessmentStatus, effectivePreTestCompleted]);
 
   const goToStep = useCallback(
     (index: number, nextPageIndex = 0) => {
@@ -551,6 +642,23 @@ export default function PatternsLearnPage(): JSX.Element {
     [activeIndex, findModule, goToStep],
   );
 
+  if (!effectivePreTestCompleted && assessmentStatus === 'loading') {
+    return (
+      <main className="nt-test-page" data-testid="learn-gate-page">
+        <div className="nt-test-page__shell">
+          <header className="nt-test-page__hero">
+            <p className="nt-test-page__eyebrow">Learning gate</p>
+            <div className="nt-test-page__badge nt-test-page__badge--alt">PRE</div>
+            <h1 className="nt-test-page__title">Checking baseline mastery</h1>
+            <p className="nt-test-page__lede">
+              Reading saved assessment history before deciding whether the foundations stay open.
+            </p>
+          </header>
+        </div>
+      </main>
+    );
+  }
+
   if (!effectivePreTestCompleted) {
     return (
       <main className="nt-test-page" data-testid="learn-gate-page">
@@ -576,6 +684,11 @@ export default function PatternsLearnPage(): JSX.Element {
             <button type="button" className="nt-lesson-button nt-lesson-button--primary nt-test-page__cta" onClick={() => navigate('/pre-test')}>
               Open Pre-test
             </button>
+            {assessmentStatus === 'failed' ? (
+              <p className="nt-test-page__panel-copy">
+                Saved assessment history could not be read, so the page is falling back to the local pre-test flag.
+              </p>
+            ) : null}
           </section>
         </div>
       </main>
@@ -598,7 +711,7 @@ export default function PatternsLearnPage(): JSX.Element {
               <div className="nt-course-sidebar__head">
                 <p>Modules</p>
                 <span>
-                  {completedIds.size}/{steps.length} done
+                  {effectiveCompletedIds.size}/{steps.length} done
                 </span>
               </div>
               <ul className="nt-course-folder">
@@ -637,8 +750,9 @@ export default function PatternsLearnPage(): JSX.Element {
               <ul className="nt-course-folder">
                 {navGroup.steps.map((s) => {
                   const locked = s.globalIndex >= unlockedCount;
-                  const done = completedIds.has(s.module.id);
+                  const done = effectiveCompletedIds.has(s.module.id);
                   const active = s.globalIndex === activeIndex;
+                  const bypassed = foundationEvidence.passed && isFoundationModule(s.module);
                   return (
                     <li key={s.module.id}>
                       <button
@@ -647,6 +761,7 @@ export default function PatternsLearnPage(): JSX.Element {
                         data-active={active ? 'true' : undefined}
                         data-locked={locked ? 'true' : undefined}
                         data-done={done ? 'true' : undefined}
+                        data-bypassed={bypassed ? 'true' : undefined}
                         disabled={locked}
                         title={locked ? 'Finish the previous module to unlock this one.' : undefined}
                         onClick={() => setNav({ level: 'subsections', sectionId: navGroup.meta.id, moduleId: s.module.id })}
@@ -657,6 +772,7 @@ export default function PatternsLearnPage(): JSX.Element {
                         <span className="nt-course-folder__label">
                           <small>{s.module.eyebrow}</small>
                           {s.module.title}
+                          {bypassed ? ' · Bypassed by pretest' : ''}
                         </span>
                         {!locked ? (
                           <span className="nt-course-folder__chev" aria-hidden="true">
@@ -832,7 +948,12 @@ export default function PatternsLearnPage(): JSX.Element {
                   ) : null}
 
                   {currentPage.kind === 'intro' ? (
-                    <PrerequisiteBanner steps={steps} activeIndex={activeIndex} isActiveComplete={isActiveComplete} />
+                    <PrerequisiteBanner
+                      steps={steps}
+                      activeIndex={activeIndex}
+                      isActiveComplete={isActiveComplete}
+                      foundationBypassed={foundationEvidence.passed}
+                    />
                   ) : null}
                 </section>
 
@@ -854,3 +975,4 @@ export default function PatternsLearnPage(): JSX.Element {
     </main>
   );
 }
+

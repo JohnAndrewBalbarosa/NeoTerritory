@@ -182,6 +182,7 @@ export default function CoursePlanPanel({
                     {plan.requiredLearning.map((item) => (
                       <li key={item.moduleId} className="admin-scope-card">
                         <strong>{item.title}</strong>
+                        {item.category === 'foundations' ? <span className="pill pill-amber admin-scope-lock">baseline</span> : null}
                         <p>{item.reason}</p>
                         <div className="admin-scope-meta">
                           <span>{item.category}</span>
@@ -253,6 +254,9 @@ export default function CoursePlanPanel({
                           >
                             <div className="admin-feature-row__meta">
                               <p className="admin-feature-row__label">{item.title}</p>
+                              {item.protectedBaseline ? (
+                                <p className="admin-feature-row__desc">Baseline foundations stay on.</p>
+                              ) : null}
                               <p className="admin-feature-row__explanation">{item.reason}</p>
                               {item.matchedSections.length > 0 && (
                                 <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>

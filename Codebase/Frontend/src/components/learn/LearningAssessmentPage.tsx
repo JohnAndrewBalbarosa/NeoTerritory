@@ -5,6 +5,7 @@ import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
   buildLearningAssessmentQuestions,
+  evaluateFoundationPretest,
   gradeLearningAssessment,
   LEARNING_ASSESSMENT_META,
   type LearningAssessmentType,
@@ -64,11 +65,13 @@ export default function LearningAssessmentPage({
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gateNotice, setGateNotice] = useState<string | null>(null);
 
   useEffect(() => {
     setAnswers({});
     setSubmitted(false);
     setError(null);
+    setGateNotice(null);
   }, [assessmentType]);
 
   const graded = useMemo(
@@ -88,6 +91,9 @@ export default function LearningAssessmentPage({
     setError(null);
     setSaving(true);
     try {
+      const pretestGate = assessmentType === 'pretest'
+        ? evaluateFoundationPretest(questions, answers)
+        : null;
       await saveLearningAssessment({
         assessmentType,
         sessionId: lmsSessionId,
@@ -101,6 +107,15 @@ export default function LearningAssessmentPage({
       });
 
       if (assessmentType === 'pretest') {
+        if (!pretestGate?.passed) {
+          setGateNotice(
+            `Foundations stay locked until you answer remembering, understanding, and applying correctly. ` +
+              `Mastered levels: ${pretestGate?.masteredTaxonomies.join(', ') || 'none'}.`,
+          );
+          setSubmitted(true);
+          return;
+        }
+        setGateNotice('Foundation baseline unlocked for this learner.');
         setPreTestCompleted(true);
       }
 
@@ -228,6 +243,7 @@ export default function LearningAssessmentPage({
                 <p className="nt-assessment__gain">
                   Only raw selected answers were stored. The score above was computed client-side from the live module bank.
                 </p>
+                {gateNotice ? <p className="nt-assessment__gain">{gateNotice}</p> : null}
               </div>
             ) : null}
 
