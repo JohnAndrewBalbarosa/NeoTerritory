@@ -23,8 +23,8 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
   const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
+  const [offPopupOpen, setOffPopupOpen] = useState(false);
 
   useEffect(() => {
     const prompt = promptText.trim();
@@ -99,7 +99,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
       setPromptText('');
       setPlan(null);
       setState('idle');
-      setDetailsOpen(false);
+      setOffPopupOpen(false);
       setResultMessage('AI course plan applied. Modules now follow implicit deny.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to apply course plan');
@@ -178,9 +178,9 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
 
           <div className="admin-plan-board">
             <div className="admin-plan-board__head">
-              <h3>Published by AI</h3>
+              <h3>Modules by AI</h3>
               <p className="admin-section__hint">
-                {enabledPreview.length} modules enabled, {disabledPreview.length} modules implicitly denied.
+                {enabledPreview.length} published, {disabledPreview.length} unpublished.
               </p>
             </div>
 
@@ -188,9 +188,9 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
               {enabledPreview.length === 0 ? (
                 <li className="admin-feature-row admin-feature-row--preview">
                   <div className="admin-feature-row__meta">
-                    <p className="admin-feature-row__label">No modules selected</p>
+                    <p className="admin-feature-row__label">No published modules</p>
                     <p className="admin-feature-row__explanation">
-                      The AI kept everything OFF, which means the prompt did not require a publish change.
+                      The AI kept everything unpublished, which means the prompt did not require a publish change.
                     </p>
                   </div>
                 </li>
@@ -218,46 +218,16 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
               ))}
             </ul>
 
-            <details
-              className="admin-plan-board__details"
-              open={detailsOpen}
-              onToggle={(e) => setDetailsOpen((e.currentTarget as HTMLDetailsElement).open)}
-            >
-              <summary>
-                Implicit deny list
-                <span>{disabledPreview.length} OFF</span>
-              </summary>
-              <div className="admin-plan-board__details-body">
-                <p className="admin-section__hint">
-                  These courses stay OFF unless the AI explicitly turns them on.
-                </p>
-                <ul className="admin-feature-list admin-feature-list--compact">
-                  {disabledPreview.slice(0, 12).map((item) => (
-                    <li key={item.id} className="admin-feature-row admin-feature-row--preview">
-                      <div className="admin-feature-row__meta">
-                        <p className="admin-feature-row__label">{item.title}</p>
-                        <p className="admin-feature-row__explanation">
-                          {item.current ? 'Will turn OFF' : 'Stays OFF by default'}
-                        </p>
-                      </div>
-                      <div className="admin-feature-row__delta">
-                        <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>{item.current ? 'ON' : 'OFF'}</span>
-                        <span className="arrow" aria-hidden="true">&rarr;</span>
-                        <span className={`tag ${item.next ? 'tag--on' : 'tag--off'}`}>{item.next ? 'ON' : 'OFF'}</span>
-                      </div>
-                    </li>
-                  ))}
-                  {disabledPreview.length > 12 ? (
-                    <li className="admin-feature-row admin-feature-row--preview">
-                      <div className="admin-feature-row__meta">
-                        <p className="admin-feature-row__label">+{disabledPreview.length - 12} more OFF modules</p>
-                        <p className="admin-feature-row__explanation">Hidden to keep the plan compact.</p>
-                      </div>
-                    </li>
-                  ) : null}
-                </ul>
-              </div>
-            </details>
+            <div className="admin-plan-board__actions">
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setOffPopupOpen(true)}
+                disabled={disabledPreview.length === 0}
+              >
+                View unpublished modules ({disabledPreview.length})
+              </button>
+            </div>
           </div>
 
           <button
@@ -268,6 +238,51 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
           >
             {saving ? 'Saving...' : 'Apply AI course plan'}
           </button>
+
+          {offPopupOpen && (
+            <div className="admin-plan-modal" role="dialog" aria-modal="true" aria-label="Unpublished modules">
+              <div className="admin-plan-modal__panel">
+                <header className="admin-plan-modal__head">
+                  <div>
+                    <h3>Unpublished modules</h3>
+                    <p className="admin-section__hint">
+                      These modules stay off unless the AI explicitly publishes them.
+                    </p>
+                  </div>
+                  <button type="button" className="ghost-btn" onClick={() => setOffPopupOpen(false)}>
+                    Close
+                  </button>
+                </header>
+                <div className="admin-plan-modal__body">
+                  {disabledPreview.length === 0 ? (
+                    <div className="empty-state">No unpublished modules in this plan.</div>
+                  ) : (
+                    <ul className="admin-feature-list admin-feature-list--compact">
+                      {disabledPreview.map((item) => (
+                        <li key={item.id} className="admin-feature-row admin-feature-row--preview">
+                          <div className="admin-feature-row__meta">
+                            <p className="admin-feature-row__label">{item.title}</p>
+                            <p className="admin-feature-row__explanation">{item.reason}</p>
+                            {item.matchedSections.length > 0 && (
+                              <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
+                            )}
+                            {item.matchedTopics.length > 0 && (
+                              <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
+                            )}
+                          </div>
+                          <div className="admin-feature-row__delta">
+                            <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>{item.current ? 'ON' : 'OFF'}</span>
+                            <span className="arrow" aria-hidden="true">&rarr;</span>
+                            <span className={`tag ${item.next ? 'tag--on' : 'tag--off'}`}>{item.next ? 'ON' : 'OFF'}</span>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </section>

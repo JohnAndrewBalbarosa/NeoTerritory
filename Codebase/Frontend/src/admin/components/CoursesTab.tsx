@@ -1,10 +1,3 @@
-// Courses tab (D92 Track B-UI). The admin CMS for learning modules: lists ALL
-// modules (incl. drafts) grouped by category then sortOrder, with Canvas-style
-// publish/draft toggles (optimistic PATCH with rollback, mirroring
-// CatalogsTab), an is_seed badge, and Edit / Delete actions. Create + Edit open
-// the CourseEditor modal; Delete guards seed rows (409 ⇒ offer "unpublish
-// instead", which preserves learner progress per D92).
-
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchAdminLearningModules,
@@ -24,7 +17,6 @@ const CATEGORY_ORDER: ReadonlyArray<{ id: LearningCategory; label: string }> = [
   { id: 'idioms', label: 'Idioms' },
 ];
 
-// Editor target: null when closed; { source: null } = create; otherwise edit.
 type EditorState = { source: AdminLearningModule | null } | null;
 
 function categoryRank(category: LearningCategory): number {
@@ -56,7 +48,6 @@ export default function CoursesTab() {
     void reload();
   }, [reload]);
 
-  // Sorted view: category rank, then sortOrder, then id (stable tiebreak).
   const sorted = useMemo(() => {
     return [...modules].sort((a, b) => {
       const byCat = categoryRank(a.category) - categoryRank(b.category);
@@ -70,23 +61,15 @@ export default function CoursesTab() {
     setModules((prev) => prev.map((m) => (m.id === id ? { ...m, ...next } : m)));
   }
 
-  // Optimistic control-field PATCH (publish only) with rollback.
-  async function toggleField(
-    module: AdminLearningModule,
-    field: 'published',
-    nextValue: boolean,
-  ): Promise<void> {
+  async function togglePublished(module: AdminLearningModule, nextValue: boolean): Promise<void> {
     if (savingId) return;
     setSavingId(module.id);
     setError(null);
     const snapshot = modules;
-    applyUpdate(module.id, { [field]: nextValue } as Partial<AdminLearningModule>);
+    applyUpdate(module.id, { published: nextValue });
     try {
-      const res = await patchLearningModule(module.id, { [field]: nextValue });
-      applyUpdate(module.id, {
-        published: res.published,
-        sortOrder: res.sortOrder,
-      });
+      const res = await patchLearningModule(module.id, { published: nextValue });
+      applyUpdate(module.id, { published: res.published, sortOrder: res.sortOrder });
     } catch (err: unknown) {
       setModules(snapshot);
       setError(err instanceof Error ? err.message : 'Toggle failed');
@@ -95,8 +78,6 @@ export default function CoursesTab() {
     }
   }
 
-  // Unpublish in place — the steer-to path for a guarded seed delete. Preserves
-  // learner progress (D92): progress rows persist and restore on re-publish.
   async function unpublish(module: AdminLearningModule): Promise<void> {
     if (busyId) return;
     setBusyId(module.id);
@@ -123,7 +104,6 @@ export default function CoursesTab() {
       await deleteLearningModule(module.id);
       await reload();
     } catch (err: unknown) {
-      // Seed rows 409 without ?force=1. Steer to unpublish instead of forcing.
       const message = err instanceof Error ? err.message : 'Delete failed';
       const steer = window.confirm(
         `${message}\n\nThis looks like a protected (seed) course. Unpublish it instead? ` +
@@ -151,11 +131,11 @@ export default function CoursesTab() {
           <p className="eyebrow">Learning CMS</p>
           <h2>Courses</h2>
           <p className="admin-section__hint">
-            Author and manage learning modules — including drafts. Publish flips a
-            module between draft and live (Canvas-style). Question tags are
-            already stored in the module JSON, so visibility is controlled only
-            by publish/unpublish. Seed courses are protected from deletion;
-            unpublish to hide them while keeping learner progress.
+            Author and manage learning modules including unpublished entries.
+            Publish flips a module between unpublished and published (Canvas-style).
+            Question tags are already stored in the module JSON, so visibility is
+            controlled only by publish/unpublish. Seed courses are protected from
+            deletion; unpublish to hide them while keeping learner progress.
           </p>
         </div>
         <button
@@ -172,7 +152,7 @@ export default function CoursesTab() {
 
       <CoursePlanPanel modules={sorted} onApplied={reload} />
 
-      {!loaded && <p className="admin-section__hint">Loading courses…</p>}
+      {!loaded && <p className="admin-section__hint">Loading coursesâ€¦</p>}
       {loaded && sorted.length === 0 && (
         <p className="admin-section__hint">No courses yet. Create one to get started.</p>
       )}
@@ -208,12 +188,12 @@ export default function CoursesTab() {
                       <button
                         type="button"
                         className={`admin-feature-row__toggle courses-toggle${m.published ? ' is-on' : ''}`}
-                        onClick={() => toggleField(m, 'published', !m.published)}
+                        onClick={() => togglePublished(m, !m.published)}
                         disabled={rowSaving}
                         aria-pressed={m.published}
                         data-testid={`courses-publish-${m.id}`}
                       >
-                        {rowSaving ? 'Saving…' : m.published ? 'Published' : 'Draft'}
+                        {rowSaving ? 'Saving…' : m.published ? 'Published' : 'Unpublished'}
                       </button>
                     </td>
                     <td>

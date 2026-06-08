@@ -679,10 +679,16 @@ body{position:relative;}
 .admin-plan-board{display:flex;flex-direction:column;gap:12px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface2);padding:16px;}
 .admin-plan-board__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
 .admin-plan-board__head h3{margin:0;font-size:13px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;}
+.admin-plan-board__actions{display:flex;justify-content:flex-start;gap:10px;flex-wrap:wrap;}
 .admin-plan-board__details{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);padding:10px 12px;}
 .admin-plan-board__details summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:600;color:var(--ink);}
 .admin-plan-board__details summary span{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
 .admin-plan-board__details-body{padding-top:10px;display:flex;flex-direction:column;gap:10px;}
+.admin-plan-modal{position:fixed;inset:0;background:rgba(6,10,16,0.72);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:80;}
+.admin-plan-modal__panel{width:min(980px,100%);max-height:min(82vh,860px);overflow:hidden;display:flex;flex-direction:column;gap:14px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:0 30px 80px rgba(0,0,0,0.45);padding:18px;}
+.admin-plan-modal__head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;}
+.admin-plan-modal__head h3{margin:0;font-size:14px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;}
+.admin-plan-modal__body{overflow:auto;padding-right:4px;}
 .admin-feature-row__explanation{font-size:11.5px;color:var(--ink-soft);font-style:italic;margin-top:2px;}
 .admin-feature-row__delta{display:flex;align-items:center;gap:10px;}
 .admin-feature-row__delta .arrow{color:var(--ink-dim);font-weight:700;}
