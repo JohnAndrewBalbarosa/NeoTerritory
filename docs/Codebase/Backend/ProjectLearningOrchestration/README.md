@@ -19,6 +19,7 @@ Use this folder as the high-level map, then read the route, controller, and serv
 - Route doc: `docs/Codebase/Backend/src/routes/projectLearningOrchestration.js.md`
 - Controller doc: `docs/Codebase/Backend/src/controllers/projectLearningOrchestrationController.js.md`
 - Service docs: `docs/Codebase/Backend/src/services/*.js.md`
+- Gemini handoff: `docs/Codebase/Backend/ProjectLearningOrchestration/GEMINI_IMPLEMENTATION_HANDOFF.md`
 
 The route layer should stay thin. Controllers should translate HTTP requests into orchestration commands. Services should own the project brief parsing, scope narrowing, assessment flow, and evidence packaging.
 
