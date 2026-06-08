@@ -232,12 +232,16 @@ export interface AdminLearningRaw {
 // client interprets the result entirely in-browser; the backend stores only
 // raw selected answers and the assessment metadata needed to reconstruct the
 // submission history.
-export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2';
+export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
+export type BloomTaxonomy = 'remembering' | 'understanding' | 'applying' | 'analyzing' | 'evaluating' | 'creating';
 
 export interface LearningAssessmentAnswerInput {
   moduleId: string;
   questionIndex: number;
   selectedIndex: number;
+  responseText?: string | null;
+  questionTaxonomy?: BloomTaxonomy | null;
+  questionKind?: 'theoretical' | 'practical';
 }
 
 export interface LearningAssessmentAttemptRaw {
@@ -256,6 +260,9 @@ export interface LearningAssessmentAnswerRaw {
   moduleId: string;
   questionIndex: number;
   selectedIndex: number;
+  responseText: string | null;
+  questionTaxonomy: BloomTaxonomy | null;
+  questionKind: 'theoretical' | 'practical';
   sessionId: string | null;
   createdAt: string;
 }

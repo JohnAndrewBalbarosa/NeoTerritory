@@ -33,6 +33,14 @@ export interface LearningSeeAlso {
   label: string;
 }
 
+export type BloomTaxonomy =
+  | 'remembering'
+  | 'understanding'
+  | 'applying'
+  | 'analyzing'
+  | 'evaluating'
+  | 'creating';
+
 // D86: a module ends with a Theoretical Exam (every module) and, for
 // pattern/idiom modules, a Practical Exam. The two replace the old single
 // `practical` (quiz-OR-code) union.
@@ -50,6 +58,7 @@ export interface ExamQuestion {
   // inside theoreticalExam.questions[] → theoretical_json, so it is opaque JSON
   // to the backend/DB — the seed dump carries it; no schema migration needed.
   code?: string;
+  taxonomy?: BloomTaxonomy;
 }
 
 // Theoretical Exam — a small MCQ bank. Pass = every question answered
@@ -78,6 +87,7 @@ export interface PracticalExam {
   // ship a scaffold so the learner can run-then-modify instead of guessing
   // the exact token shape the analyser requires.
   starterCode?: string;
+  taxonomy?: BloomTaxonomy;
   // D92 pass-mode gate. 'detection' (default / today's behaviour): the
   // practical passes the instant the analyser tags the target pattern.
   // 'detection_and_tests': it also requires every Studio unit test to pass
@@ -118,6 +128,48 @@ export interface LearningCategoryMeta {
   id: LearningCategory;
   name: string;
   gist: string;
+}
+
+function hashString(input: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < input.length; i += 1) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function seededShuffle<T>(items: ReadonlyArray<T>, seed: string): T[] {
+  const out = [...items];
+  let state = hashString(seed) || 1;
+  const rand = () => {
+    state ^= state << 13;
+    state ^= state >>> 17;
+    state ^= state << 5;
+    return (state >>> 0) / 0x100000000;
+  };
+  for (let i = out.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(rand() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
+  }
+  return out;
+}
+
+function inferBloomTaxonomy(question: ExamQuestion, index: number, moduleId: string): BloomTaxonomy {
+  if (question.taxonomy) return question.taxonomy;
+  const raw = `${moduleId} ${question.question} ${question.explanation || ''} ${(question.code || '')}`.toLowerCase();
+  if (/(design|write|create|build|refactor|implement|construct)/.test(raw)) return 'creating';
+  if (/(evaluate|better|best|trade[- ]?off|compliance|judge|critique)/.test(raw)) return 'evaluating';
+  if (/(analyz|compare|why does|why is|detect|spot|break down|distinguish|difference|which of these|which pattern)/.test(raw)) return 'analyzing';
+  if (/(apply|use|scenario|what would you do|how would you|choose the right|solve)/.test(raw)) return 'applying';
+  if (/(understand|explain|describe|summarize|why does this mean|in your own words)/.test(raw)) return 'understanding';
+  if (/(what is|which of the following|define|name|identify|list|match)/.test(raw)) return 'remembering';
+  return (index % 2 === 0 ? 'understanding' : 'applying');
+}
+
+function tagQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>): ExamQuestion[] {
+  const tagged = questions.map((q, index) => ({ ...q, taxonomy: inferBloomTaxonomy(q, index, moduleId) }));
+  return seededShuffle(tagged, `${moduleId}:theory`);
 }
 
 export const CATEGORY_META: ReadonlyArray<LearningCategoryMeta> = [
@@ -1945,7 +1997,7 @@ function attachExams(module: LearningModule): LearningModule {
   if (module.category === 'foundations') {
     const questions = FOUNDATIONS_THEORY[module.id];
     if (questions) {
-      return { ...module, theoreticalExam: { kind: 'theoretical', questions } };
+      return { ...module, theoreticalExam: { kind: 'theoretical', questions: tagQuestions(module.id, questions) } };
     }
     return module;
   }
@@ -1959,7 +2011,7 @@ function attachExams(module: LearningModule): LearningModule {
   // Non-detectable pattern (Repository): theoretical exam only, no practical.
   const nonDetectedTheory = NON_DETECTED_THEORY[pattern.slug];
   if (nonDetectedTheory) {
-    return { ...module, theoreticalExam: { kind: 'theoretical', questions: nonDetectedTheory } };
+    return { ...module, theoreticalExam: { kind: 'theoretical', questions: tagQuestions(module.id, nonDetectedTheory) } };
   }
 
   // Honor catalog aliases (e.g. factory-method route → catalog `factory`).
@@ -1970,7 +2022,7 @@ function attachExams(module: LearningModule): LearningModule {
   const theoryQuestions =
     PATTERN_THEORY[detectionSlug] ??
     buildPatternTheoryFallback(pattern.name, pattern.intent);
-  const theoreticalExam: TheoreticalExam = { kind: 'theoretical', questions: theoryQuestions };
+  const theoreticalExam: TheoreticalExam = { kind: 'theoretical', questions: tagQuestions(module.id, theoryQuestions) };
 
   if (!DETECTED_PATTERN_SLUGS.has(detectionSlug)) {
     // Defensive: pattern is in PATTERNS but not detectable and not in
@@ -1986,6 +2038,7 @@ function attachExams(module: LearningModule): LearningModule {
     patternSlug: detectionSlug,
     patternName: detectionName,
     family: familyName,
+    taxonomy: pattern.family === 'Structural' ? 'analyzing' : 'applying',
     prompt: `Write a small C++ class (or two) that demonstrates the ${pattern.name} pattern. The analyser passes you when the response tags include ${detectionName}, even if other patterns also fire on the same class.`,
     ...(starterCode ? { starterCode } : {}),
   };

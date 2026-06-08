@@ -26,7 +26,7 @@ interface ProgressRow {
   theory_passed_module_ids: string | null;
 }
 
-type AssessmentType = 'pretest' | 'posttest' | 'posttest2';
+type AssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
 
 interface AssessmentAttemptRow {
   id: number;
@@ -44,6 +44,9 @@ interface AssessmentAnswerRow {
   moduleId: string;
   questionIndex: number;
   selectedIndex: number;
+  responseText: string | null;
+  questionTaxonomy: string | null;
+  questionKind: string;
   sessionId: string | null;
   createdAt: string;
 }
@@ -90,10 +93,13 @@ interface SanitizedAssessmentAnswer {
   moduleId: string;
   questionIndex: number;
   selectedIndex: number;
+  responseText: string;
+  questionTaxonomy: string;
+  questionKind: 'theoretical' | 'practical';
 }
 
 function sanitizeAssessmentType(raw: unknown): AssessmentType | null {
-  return raw === 'pretest' || raw === 'posttest' || raw === 'posttest2' ? raw : null;
+  return raw === 'pretest' || raw === 'posttest' || raw === 'posttest2' || raw === 'practical' ? raw : null;
 }
 
 function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] {
@@ -107,10 +113,17 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
       : '';
     const questionIndex = Number(r.questionIndex);
     const selectedIndex = Number(r.selectedIndex);
+    const responseText = typeof r.responseText === 'string' ? r.responseText.trim().slice(0, 8000) : '';
+    const questionTaxonomy = typeof r.questionTaxonomy === 'string' ? r.questionTaxonomy.trim().slice(0, 32) : '';
+    const questionKind = r.questionKind === 'practical' ? 'practical' : 'theoretical';
     if (!moduleId) continue;
     if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 10_000) continue;
-    if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 10_000) continue;
-    out.push({ moduleId, questionIndex, selectedIndex });
+    if (questionKind === 'theoretical') {
+      if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 10_000) continue;
+    } else if (!responseText) {
+      continue;
+    }
+    out.push({ moduleId, questionIndex, selectedIndex: questionKind === 'theoretical' ? selectedIndex : -1, responseText, questionTaxonomy, questionKind });
     if (out.length >= 50) break;
   }
   return out;
@@ -402,10 +415,12 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
       ORDER BY created_at ASC, id ASC
     `).all(req.user.id) as AssessmentAttemptRow[];
 
-    const answers = db.prepare(`
+  const answers = db.prepare(`
       SELECT a.id, a.attempt_id AS attemptId, a.assessment_type AS assessmentType,
              a.assessment_index AS assessmentIndex, a.module_id AS moduleId,
              a.question_index AS questionIndex, a.selected_index AS selectedIndex,
+             a.response_text AS responseText, a.question_taxonomy AS questionTaxonomy,
+             a.question_kind AS questionKind,
              a.session_id AS sessionId, a.created_at AS createdAt
       FROM learning_assessment_answers a
       WHERE a.user_id = ?
@@ -453,8 +468,8 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
 
     const insertAnswer = db.prepare(`
       INSERT INTO learning_assessment_answers
-        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, selected_index, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, selected_index, response_text, question_taxonomy, question_kind, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
     const tx = db.transaction((rows: SanitizedAssessmentAnswer[]) => {
       rows.forEach((answer, assessmentIndex) => {
@@ -467,6 +482,9 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
           answer.moduleId,
           answer.questionIndex,
           answer.selectedIndex,
+          answer.responseText || null,
+          answer.questionTaxonomy || null,
+          answer.questionKind,
         );
       });
     });
@@ -491,6 +509,9 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
           module_id: answer.moduleId,
           question_index: answer.questionIndex,
           selected_index: answer.selectedIndex,
+          response_text: answer.responseText || null,
+          question_taxonomy: answer.questionTaxonomy || null,
+          question_kind: answer.questionKind,
           created_at: nowIso,
         });
       });

@@ -9,6 +9,7 @@ import {
 } from '../../../data/learningModules';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
+import { saveLearningAssessment } from '../../../api/client';
 
 interface CourseStep {
   module: LearningModule;
@@ -286,6 +287,11 @@ function TheoreticalExamBlock({
       <p className="nt-exam__prompt">
         <span className="nt-exam__qnum">Q{qi + 1}</span>
         {q.question}
+        {q.taxonomy ? (
+          <span className="nt-assessment__taxonomy" data-taxonomy={q.taxonomy}>
+            {q.taxonomy}
+          </span>
+        ) : null}
       </p>
 
       <ol className="nt-exam__questions">
@@ -320,12 +326,18 @@ function PracticalExamBlock({
   moduleId,
   exam,
   isPassed,
-  onPass,
+  answer,
+  saving,
+  onAnswerChange,
+  onSave,
 }: {
   moduleId: string;
   exam: PracticalExam;
   isPassed: boolean;
-  onPass: () => void;
+  answer: string;
+  saving: boolean;
+  onAnswerChange: (next: string) => void;
+  onSave: () => void;
 }): JSX.Element {
   return (
     <section className="nt-practical nt-practical--studio" id={anchorId(moduleId, 'practical')} aria-label="Practical exam">
@@ -337,9 +349,18 @@ function PracticalExamBlock({
         <p className="nt-practical__prompt">{exam.prompt}</p>
       </header>
       {!isPassed ? (
-        <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onPass}>
-          Confirm
-        </button>
+        <div className="nt-practical__composer">
+          <textarea
+            className="nt-practical__editor"
+            value={answer}
+            onChange={(e) => onAnswerChange(e.target.value)}
+            placeholder="Paste the practical answer or Studio code output here..."
+            rows={10}
+          />
+          <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onSave} disabled={saving}>
+            {saving ? 'Saving...' : 'Save Practical Answer'}
+          </button>
+        </div>
       ) : (
         <p className="nt-practical__verdict nt-practical__verdict--pass">Verified.</p>
       )}
@@ -359,6 +380,9 @@ export default function PatternsLearnPage(): JSX.Element {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [seededLeafView, setSeededLeafView] = useState(false);
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
+  const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
+  const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
+  const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
   const effectivePreTestCompleted = preTestCompleted || unlockAll;
 
   const activeStep = steps[activeIndex];
@@ -409,6 +433,7 @@ export default function PatternsLearnPage(): JSX.Element {
     currentPage.subIndex === theoreticalQuestionCount - 1;
   const isTheoryGatePage = isFinalTheoryPage;
   const isSubmitGate = isFinalTheoryPage && !activeModule?.practicalExam;
+  const isPracticalDone = !!(activeModule && practicalDone.has(activeModule.id));
 
   useEffect(() => {
     if (unlockAll && steps.length > 0) {
@@ -769,9 +794,39 @@ export default function PatternsLearnPage(): JSX.Element {
                     <PracticalExamBlock
                       moduleId={activeModule.id}
                       exam={activeModule.practicalExam}
-                      isPassed={isActiveComplete}
-                      onPass={() => {
-                        setCompletedIds((prev) => new Set(prev).add(activeModule.id));
+                      isPassed={isActiveComplete || isPracticalDone}
+                      answer={practicalAnswers[activeModule.id] || ''}
+                      saving={!!practicalSaving[activeModule.id]}
+                      onAnswerChange={(next) => setPracticalAnswers((prev) => ({ ...prev, [activeModule.id]: next }))}
+                      onSave={async () => {
+                        const answerText = (practicalAnswers[activeModule.id] || '').trim();
+                        const practicalExam = activeModule.practicalExam;
+                        if (!practicalExam) return;
+                        if (!answerText) {
+                          alert('Paste the practical answer or code output before saving.');
+                          return;
+                        }
+                        setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: true }));
+                        try {
+                          await saveLearningAssessment({
+                            assessmentType: 'practical',
+                            sessionId: null,
+                            answers: [{
+                              moduleId: activeModule.id,
+                              questionIndex: 0,
+                              selectedIndex: -1,
+                              responseText: answerText,
+                              questionTaxonomy: practicalExam.taxonomy || 'applying',
+                              questionKind: 'practical',
+                            }],
+                          });
+                          setPracticalDone((prev) => new Set(prev).add(activeModule.id));
+                          setCompletedIds((prev) => new Set(prev).add(activeModule.id));
+                        } catch (err) {
+                          alert(err instanceof Error ? err.message : 'Could not save practical answer.');
+                        } finally {
+                          setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: false }));
+                        }
                       }}
                     />
                   ) : null}

@@ -95,6 +95,8 @@ export default function LearningAssessmentPage({
           moduleId: question.moduleId,
           questionIndex: question.questionIndex,
           selectedIndex: Number(answers[question.assessmentIndex]),
+          questionTaxonomy: question.taxonomy,
+          questionKind: 'theoretical',
         })),
       });
 
@@ -182,6 +184,9 @@ export default function LearningAssessmentPage({
                   <li key={`${item.moduleId}#${item.questionIndex}`}>
                     <p className="nt-assessment__module">
                       <span className="nt-assessment__band">{item.moduleEyebrow}</span> {item.moduleTitle}
+                      <span className="nt-assessment__taxonomy" data-taxonomy={item.taxonomy}>
+                        {item.taxonomy}
+                      </span>
                     </p>
                     <p className="nt-assessment__prompt">
                       <span className="nt-assessment__num">Q{item.assessmentIndex + 1}</span>

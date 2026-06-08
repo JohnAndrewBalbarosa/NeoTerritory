@@ -593,12 +593,30 @@ export function initDb(): void {
     module_id TEXT NOT NULL,
     question_index INTEGER NOT NULL,
     selected_index INTEGER NOT NULL,
+    response_text TEXT,
+    question_taxonomy TEXT,
+    question_kind TEXT NOT NULL DEFAULT 'theoretical',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY(attempt_id) REFERENCES learning_assessment_attempts(id) ON DELETE CASCADE,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_answers_attempt
     ON learning_assessment_answers(attempt_id, assessment_index)`).run();
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN response_text TEXT`).run();
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN question_taxonomy TEXT`).run();
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN question_kind TEXT NOT NULL DEFAULT 'theoretical'`).run();
+  } catch {
+    /* column already exists */
+  }
 
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_modules (
     module_id TEXT PRIMARY KEY,

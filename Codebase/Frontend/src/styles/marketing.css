@@ -2361,6 +2361,10 @@ body[data-surface] #root {
   font-size: 0.92rem;
   line-height: 1.55;
 }
+.nt-practical__composer {
+  display: grid;
+  gap: 0.8rem;
+}
 
 /* ---- Theoretical exam: multi-question bank (D86) ---- */
 .nt-exam__questions {
@@ -2460,6 +2464,25 @@ body[data-surface] #root {
   background: #ffffff;
   color: var(--nt-mkt-text);
 }
+.nt-assessment__taxonomy {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 0.6rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--nt-mkt-line, rgba(255, 255, 255, 0.1));
+  color: var(--nt-mkt-text-soft);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.nt-assessment__taxonomy[data-taxonomy='remembering'] { color: #8ad8ff; }
+.nt-assessment__taxonomy[data-taxonomy='understanding'] { color: #86efac; }
+.nt-assessment__taxonomy[data-taxonomy='applying'] { color: #fbbf24; }
+.nt-assessment__taxonomy[data-taxonomy='analyzing'] { color: #f9a8d4; }
+.nt-assessment__taxonomy[data-taxonomy='evaluating'] { color: #c4b5fd; }
+.nt-assessment__taxonomy[data-taxonomy='creating'] { color: #fca5a5; }
 .nt-practical__footer {
   display: flex;
   gap: 0.6rem;
