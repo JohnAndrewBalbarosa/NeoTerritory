@@ -6,10 +6,10 @@ Render the Instructor analytics surface and its nested navigation. This componen
 
 ## Layout Goal
 
-The Instructor surface should feel navigable like the learning path:
+The Instructor surface should feel navigable like a file tree:
 
 - a persistent subsection rail
-- one active subsection at a time
+- one active branch at a time
 - a clear drilldown path from summary to modules to questions
 - no need to scroll through unrelated analytics to get to the heatmap
 
@@ -58,12 +58,12 @@ The question view should answer where the heatmap is strongest or weakest and ex
 
 - Keep the raw-data fetch shared across the Instructor subviews.
 - Switching subviews should not clear the nav context.
-- The sub-navigation should follow the same conceptual rule as the learning-path sidebar: grouped, persistent, and active-state driven.
+- The sub-navigation should follow the same structural rule as the learning-path sidebar: file-tree nesting, persistent branches, and active-state driven highlighting.
 - The heatmap view should keep the rest of the Instructor context accessible so the user can step back without losing the analytics frame.
 
 ## Acceptance Checks
 
-- The Instructor section exposes one persistent nested navigation model.
+- The Instructor section exposes one persistent file-tree navigation model.
 - The user can move from student summary to modules to heatmap without losing context.
 - Raw data is fetched once and reused across subviews.
 - The heatmap remains reachable as a distinct subsection, not as an embedded afterthought.

@@ -15,10 +15,10 @@ The shell should feel like a control room, not a generic settings page:
 
 ## Sidebar Rule
 
-- Keep the sidebar grouped by concept, not just by raw route names.
-- Use section headers, active-item highlighting, and nested drilldown cues.
-- The concept should echo the learning-path navigation model: persistent, grouped, and progressive.
-- Do not copy the learning-path visual style; copy the navigation logic only.
+- Keep the sidebar grouped as a nested file-tree, with top-level branches for `Operations`, `People`, `Instructor`, `Research`, and `Config`.
+- Use expand/collapse branches, active-item highlighting, and nested drilldown cues.
+- The structure should mirror the learning-path sidebar's nesting model, but the visual styling should remain admin-specific.
+- Do not flatten the tree into a single row of tabs.
 
 ## Prompt Policy Rule
 
@@ -36,7 +36,7 @@ flowchart TD
     D0{"Authorized?"}
     N1["Show sign-in"]
     N2["Render shell"]
-    N3["Render grouped sidebar"]
+    N3["Render file-tree sidebar"]
     N4["Open feature prompt panel"]
     N5["Open Instructor analytics"]
     N6["Open heatmap drilldown"]
@@ -77,8 +77,8 @@ Keep AI, catalogs, and release controls together. These items answer "what can t
 
 ## Acceptance Checks
 
-- The admin shell renders one persistent grouped navigation rail.
-- The current section remains highlighted during tab switches.
+- The admin shell renders one persistent file-tree navigation rail.
+- The current branch remains highlighted during tab switches.
 - Prompt-driven release policy starts from the off state.
 - Instructor analytics keep a nested drilldown path for questions and modules.
 - The shell does not collapse into a single flat settings page.

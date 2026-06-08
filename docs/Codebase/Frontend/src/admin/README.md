@@ -34,15 +34,16 @@ flowchart TD
 
 ## Navigation Contract
 
-- The admin shell should keep one persistent sidebar, grouped by functional section.
-- The sidebar should behave like the learning-path sidebar in concept only: grouped navigation, active-item highlighting, and drilldown continuity.
+- The admin shell should keep one persistent sidebar with a file-tree layout.
+- The sidebar should use nested groups and child items for `Operations`, `People`, `Instructor`, `Research`, and `Config`, matching the learner module sidebar's nesting model rather than its visual style.
+- Each top-level group should expand into subsection items so the operator can navigate like a directory tree.
 - The Instructor area should expose its own nested navigation so the analyst can move from summary to modules to question heatmap without losing context.
 - Default-off feature toggles remain off until the operator explicitly applies the prompt-driven policy.
 
 ## Acceptance Checks
 
-- The admin shell renders one grouped navigation rail.
-- The sidebar keeps the active section visible while the user changes panels.
+- The admin shell renders one persistent file-tree navigation rail.
+- The sidebar keeps the active branch visible while the user changes panels.
 - The Instructor area exposes a drilldown path for the heatmap instead of hiding everything behind a flat dashboard.
 - The feature-release panel defaults to off for all toggles until a prompt or manual action changes them.
 - The admin surface keeps prompt policy, analytics, and review tools separate.
