@@ -129,8 +129,9 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
   return out;
 }
 
-// Raw learning_modules row (public-read subset). Drafts (published = 0) are
-// filtered out in the query, so this route only ever reconstructs live modules.
+// Raw learning_modules row (public-read subset). Most drafts (published = 0)
+// are filtered out in the query, but foundation modules are included even when
+// their published bit is off so the learner path matches the baseline policy.
 interface LearningModuleRow {
   module_id: string;
   category: string;
@@ -204,12 +205,13 @@ function sanitizeTries(input: unknown): Record<string, number> {
 }
 
 // ── Public learning content (D92 DB-backed CMS) ────────────────────────────
-// PUBLIC (no auth): the learner page reads its content here. Returns only
-// published modules ordered by sort_order ASC, each reconstructed into the
-// frozen LearningModuleDTO wire shape. Defensive parsing means a corrupt _json
-// column degrades that field to []/null rather than 500-ing the whole page —
-// the learner path (and the routes-manifest smoke) must never break. A short
-// public cache header lets the CDN/browser hold the content briefly.
+// PUBLIC (no auth): the learner page reads its content here. Returns published
+// modules plus baseline foundation modules ordered by sort_order ASC, each
+// reconstructed into the frozen LearningModuleDTO wire shape. Defensive
+// parsing means a corrupt _json column degrades that field to []/null rather
+// than 500-ing the whole page — the learner path (and the routes-manifest
+// smoke) must never break. Responses are non-cacheable so the learner view
+// reflects admin publish changes immediately.
 router.get('/modules', (_req: Request, res: Response, next: NextFunction): void => {
   try {
     const rows = db
@@ -218,7 +220,7 @@ router.get('/modules', (_req: Request, res: Response, next: NextFunction): void 
                 sections_json, key_terms_json, summary, see_also_json,
                 theoretical_json, practical_json, auto_tag
          FROM learning_modules
-         WHERE published = 1
+         WHERE published = 1 OR category = 'foundations'
          ORDER BY sort_order ASC`,
       )
       .all() as LearningModuleRow[];

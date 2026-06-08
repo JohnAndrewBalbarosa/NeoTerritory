@@ -8,7 +8,7 @@ import {
 import { buildModuleSwitchboard } from '../logic/moduleSwitchboard';
 
 // D92 (Track C): the learner page sources its content from the DB-backed CMS
-// (GET /api/learning/modules, published-only, sort_order) WITH a static
+// (GET /api/learning/modules, published modules + baseline foundations, sort_order) WITH a static
 // fallback. On ANY error, an unseeded DB, or an empty response we fall back to
 // the bundled static LEARNING_MODULES — so the page (and the routes-manifest
 // Playwright smoke) never break and the frontend can ship before the seed runs.
@@ -87,3 +87,4 @@ export function useLearningModules(): UseLearningModules {
 
   return { modules, switchboard, loaded, source, findModule, modulesInCategory };
 }
+
