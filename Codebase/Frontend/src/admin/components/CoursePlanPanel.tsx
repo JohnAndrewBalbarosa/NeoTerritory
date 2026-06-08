@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { patchLearningModule, previewCoursePlan } from '../../api/client';
 import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
 import { buildModuleSwitchboard, countSwitchboard } from '../../logic/moduleSwitchboard';
@@ -21,39 +21,24 @@ export default function CoursePlanPanel({
   const [error, setError] = useState<string | null>(null);
   const [resultMessage, setResultMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    const prompt = promptText.trim();
-    if (!prompt) {
+  async function runPreview(promptValue?: string): Promise<void> {
+    const prompt = (promptValue ?? promptText).trim();
+    if (!prompt || saving) return;
+    setError(null);
+    setResultMessage(null);
+    setState('loading');
+    try {
+      const nextPlan = await previewCoursePlan({ prompt });
+      setPlan(nextPlan);
+      onPreviewChange?.(nextPlan);
+      setState('ready');
+    } catch (err: unknown) {
       setPlan(null);
       onPreviewChange?.(null);
-      setState('idle');
-      return;
+      setState('failed');
+      setError(err instanceof Error ? err.message : 'Course plan failed');
     }
-
-    let cancelled = false;
-    const timer = setTimeout(() => {
-      setState('loading');
-      previewCoursePlan({ prompt })
-        .then((nextPlan) => {
-          if (cancelled) return;
-          setPlan(nextPlan);
-          onPreviewChange?.(nextPlan);
-          setState('ready');
-        })
-        .catch((err: unknown) => {
-          if (cancelled) return;
-          setPlan(null);
-          onPreviewChange?.(null);
-          setState('failed');
-          setError(err instanceof Error ? err.message : 'Course plan failed');
-        });
-    }, 650);
-
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [onPreviewChange, promptText]);
+  }
 
   const switchboard = useMemo(
     () => buildModuleSwitchboard(modules, plan?.modules),
@@ -108,13 +93,30 @@ export default function CoursePlanPanel({
       {resultMessage && <p className="admin-success-pill" role="status">{resultMessage}</p>}
 
       <div className="admin-policy-editor">
-        <div className="admin-prompt-box">
+        <form
+          className="admin-prompt-box"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void runPreview();
+          }}
+        >
           <label htmlFor="course-plan-prompt">Course Prompt</label>
           <textarea
             id="course-plan-prompt"
             placeholder="Describe the project architecture and business flow. The AI will choose which modules should turn on."
             value={promptText}
-            onChange={(e) => setPromptText(e.target.value)}
+            onChange={(e) => {
+              setPromptText(e.target.value);
+              setPlan(null);
+              onPreviewChange?.(null);
+              setState('idle');
+            }}
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                (e.currentTarget.form as HTMLFormElement | null)?.requestSubmit();
+              }
+            }}
           />
           <div className="admin-prompt-actions">
             <button
@@ -131,8 +133,15 @@ export default function CoursePlanPanel({
             >
               Clear
             </button>
+            <button
+              type="submit"
+              className="primary-btn"
+              disabled={!promptText.trim() || saving}
+            >
+              {state === 'loading' ? 'Sending…' : 'Send prompt'}
+            </button>
           </div>
-        </div>
+        </form>
 
         <div className="admin-policy-preview">
           <h3>AI course plan</h3>
