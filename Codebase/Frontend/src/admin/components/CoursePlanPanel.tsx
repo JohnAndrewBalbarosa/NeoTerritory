@@ -7,12 +7,24 @@ interface CoursePlanPanelProps {
   onApplied: () => Promise<void> | void;
 }
 
+interface ModulePreviewRow {
+  id: string;
+  title: string;
+  current: boolean;
+  next: boolean;
+  reason: string;
+  matchedSections: string[];
+  matchedTopics: string[];
+}
+
 export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelProps): JSX.Element {
   const [promptText, setPromptText] = useState('');
   const [plan, setPlan] = useState<AdminCoursePlan | null>(null);
   const [state, setState] = useState<'idle' | 'loading' | 'ready' | 'failed'>('idle');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [resultMessage, setResultMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const prompt = promptText.trim();
@@ -45,7 +57,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
     };
   }, [promptText]);
 
-  const modulePreview = useMemo(() => {
+  const modulePreview = useMemo<ModulePreviewRow[]>(() => {
     const byId = new Map((plan?.modules || []).map((item) => [item.moduleId, item]));
     return modules.map((module) => {
       const chosen = byId.get(module.id);
@@ -61,18 +73,34 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
     });
   }, [modules, plan]);
 
+  const changedPreview = useMemo(
+    () => modulePreview.filter((item) => item.current !== item.next),
+    [modulePreview],
+  );
+  const enabledPreview = useMemo(
+    () => modulePreview.filter((item) => item.next),
+    [modulePreview],
+  );
+  const disabledPreview = useMemo(
+    () => modulePreview.filter((item) => !item.next),
+    [modulePreview],
+  );
+
   async function applyPlan(): Promise<void> {
     if (saving || !plan) return;
     setSaving(true);
     setError(null);
+    setResultMessage(null);
     try {
       await Promise.all(
-        modulePreview.map((item) => patchLearningModule(item.id, { published: item.next })),
+        changedPreview.map((item) => patchLearningModule(item.id, { published: item.next })),
       );
       await onApplied();
       setPromptText('');
       setPlan(null);
       setState('idle');
+      setDetailsOpen(false);
+      setResultMessage('AI course plan applied. Modules now follow implicit deny.');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to apply course plan');
     } finally {
@@ -90,6 +118,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
       </header>
 
       {error && <p className="admin-login-error" role="alert">{error}</p>}
+      {resultMessage && <p className="admin-success-pill" role="status">{resultMessage}</p>}
 
       <div className="admin-policy-editor">
         <div className="admin-prompt-box">
@@ -108,6 +137,7 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
                 setPromptText('');
                 setPlan(null);
                 setState('idle');
+                setResultMessage(null);
               }}
               disabled={!promptText}
             >
@@ -146,36 +176,94 @@ export default function CoursePlanPanel({ modules, onApplied }: CoursePlanPanelP
             </>
           )}
 
-          <h3>Publish preview</h3>
-          <ul className="admin-feature-list">
-            {modulePreview.map((item) => (
-              <li
-                key={item.id}
-                className={`admin-feature-row admin-feature-row--preview${item.current === item.next ? '' : ' is-changed'}`}
-              >
-                <div className="admin-feature-row__meta">
-                  <p className="admin-feature-row__label">{item.title}</p>
-                  <p className="admin-feature-row__explanation">{item.reason}</p>
-                  {item.matchedSections.length > 0 && (
-                    <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
-                  )}
-                  {item.matchedTopics.length > 0 && (
-                    <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
-                  )}
-                </div>
-                <div className="admin-feature-row__delta">
-                  <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>{item.current ? 'ON' : 'OFF'}</span>
-                  <span className="arrow">→</span>
-                  <span className={`tag ${item.next ? 'tag--on' : 'tag--off'}`}>{item.next ? 'ON' : 'OFF'}</span>
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="admin-plan-board">
+            <div className="admin-plan-board__head">
+              <h3>Published by AI</h3>
+              <p className="admin-section__hint">
+                {enabledPreview.length} modules enabled, {disabledPreview.length} modules implicitly denied.
+              </p>
+            </div>
+
+            <ul className="admin-feature-list admin-feature-list--compact">
+              {enabledPreview.length === 0 ? (
+                <li className="admin-feature-row admin-feature-row--preview">
+                  <div className="admin-feature-row__meta">
+                    <p className="admin-feature-row__label">No modules selected</p>
+                    <p className="admin-feature-row__explanation">
+                      The AI kept everything OFF, which means the prompt did not require a publish change.
+                    </p>
+                  </div>
+                </li>
+              ) : enabledPreview.map((item) => (
+                <li
+                  key={item.id}
+                  className={`admin-feature-row admin-feature-row--preview${item.current === item.next ? '' : ' is-changed'}`}
+                >
+                  <div className="admin-feature-row__meta">
+                    <p className="admin-feature-row__label">{item.title}</p>
+                    <p className="admin-feature-row__explanation">{item.reason}</p>
+                    {item.matchedSections.length > 0 && (
+                      <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
+                    )}
+                    {item.matchedTopics.length > 0 && (
+                      <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
+                    )}
+                  </div>
+                  <div className="admin-feature-row__delta">
+                    <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>{item.current ? 'ON' : 'OFF'}</span>
+                    <span className="arrow" aria-hidden="true">&rarr;</span>
+                    <span className={`tag ${item.next ? 'tag--on' : 'tag--off'}`}>{item.next ? 'ON' : 'OFF'}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <details
+              className="admin-plan-board__details"
+              open={detailsOpen}
+              onToggle={(e) => setDetailsOpen((e.currentTarget as HTMLDetailsElement).open)}
+            >
+              <summary>
+                Implicit deny list
+                <span>{disabledPreview.length} OFF</span>
+              </summary>
+              <div className="admin-plan-board__details-body">
+                <p className="admin-section__hint">
+                  These courses stay OFF unless the AI explicitly turns them on.
+                </p>
+                <ul className="admin-feature-list admin-feature-list--compact">
+                  {disabledPreview.slice(0, 12).map((item) => (
+                    <li key={item.id} className="admin-feature-row admin-feature-row--preview">
+                      <div className="admin-feature-row__meta">
+                        <p className="admin-feature-row__label">{item.title}</p>
+                        <p className="admin-feature-row__explanation">
+                          {item.current ? 'Will turn OFF' : 'Stays OFF by default'}
+                        </p>
+                      </div>
+                      <div className="admin-feature-row__delta">
+                        <span className={`tag ${item.current ? 'tag--on' : 'tag--off'}`}>{item.current ? 'ON' : 'OFF'}</span>
+                        <span className="arrow" aria-hidden="true">&rarr;</span>
+                        <span className={`tag ${item.next ? 'tag--on' : 'tag--off'}`}>{item.next ? 'ON' : 'OFF'}</span>
+                      </div>
+                    </li>
+                  ))}
+                  {disabledPreview.length > 12 ? (
+                    <li className="admin-feature-row admin-feature-row--preview">
+                      <div className="admin-feature-row__meta">
+                        <p className="admin-feature-row__label">+{disabledPreview.length - 12} more OFF modules</p>
+                        <p className="admin-feature-row__explanation">Hidden to keep the plan compact.</p>
+                      </div>
+                    </li>
+                  ) : null}
+                </ul>
+              </div>
+            </details>
+          </div>
 
           <button
             type="button"
             className="ghost-btn admin-policy-confirm"
-            disabled={saving || !plan}
+            disabled={saving || !plan || changedPreview.length === 0}
             onClick={() => { void applyPlan(); }}
           >
             {saving ? 'Saving...' : 'Apply AI course plan'}

@@ -675,6 +675,14 @@ body{position:relative;}
 .admin-scope-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);}
 .admin-feature-row--preview.is-changed{border-style:dashed;}
 .admin-feature-row--preview{background:rgba(255,255,255,0.02);border-style:dashed;}
+.admin-feature-list--compact{max-height:280px;overflow:auto;padding-right:4px;}
+.admin-plan-board{display:flex;flex-direction:column;gap:12px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface2);padding:16px;}
+.admin-plan-board__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.admin-plan-board__head h3{margin:0;font-size:13px;color:var(--ink);text-transform:uppercase;letter-spacing:.06em;}
+.admin-plan-board__details{border:1px solid var(--border);border-radius:var(--radius-md);background:var(--surface);padding:10px 12px;}
+.admin-plan-board__details summary{cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:12px;font-weight:600;color:var(--ink);}
+.admin-plan-board__details summary span{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+.admin-plan-board__details-body{padding-top:10px;display:flex;flex-direction:column;gap:10px;}
 .admin-feature-row__explanation{font-size:11.5px;color:var(--ink-soft);font-style:italic;margin-top:2px;}
 .admin-feature-row__delta{display:flex;align-items:center;gap:10px;}
 .admin-feature-row__delta .arrow{color:var(--ink-dim);font-weight:700;}
@@ -683,6 +691,7 @@ body{position:relative;}
 .tag--off{background:var(--red);color:#fff;}
 .admin-policy-confirm{align-self:flex-start;background:var(--accent);color:#fff;border:none;}
 .admin-policy-confirm:hover:not(:disabled){background:var(--accent-hover);box-shadow:0 0 12px var(--accent-glow);}
+.admin-success-pill{padding:10px 14px;border:1px solid rgba(74,222,128,0.35);border-radius:var(--radius-md);background:rgba(74,222,128,0.08);color:var(--green,#4ade80);font-size:12px;}
 
 /* === INSTRUCTOR NESTED RAIL === */
 .instructor-dashboard--nested{display:flex;gap:24px;align-items:flex-start;}
