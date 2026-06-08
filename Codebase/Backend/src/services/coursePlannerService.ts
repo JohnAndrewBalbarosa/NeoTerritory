@@ -350,6 +350,12 @@ const SYSTEM_PROMPT = [
   '- Inside each section, list only the modules that should be ON.',
   '- Do not include OFF modules inside a selected section.',
   '- Prefer a narrow scope. Do not select unrelated sections.',
+  '- Minimize the number of sections and modules included.',
+  '- If multiple patterns can solve the same need, choose only the single best fit.',
+  '- Do not show extra fallback patterns just because they are related.',
+  '- Prefer the most specific pattern over a broad one.',
+  '- If a module or section is optional, keep it OFF.',
+  '- When two or more patterns are plausible, pick the one with the clearest direct match and exclude the rest.',
   '- First infer the needed design patterns from the project brief using the catalog below.',
   '- Then map those patterns to the minimum module set in the provided module catalog.',
   '- Only keep foundational modules when they are direct prerequisites for a selected pattern.',
@@ -518,15 +524,30 @@ function buildCoursePlanFromDecisions(
 }
 
 function heuristicPlan(input: PlannerInput, digest: LearningModulePlannerEntry[]): CoursePlan {
-  const decisions = digest.map((mod) => {
+  const scored = digest.map((mod) => {
     const hay = [
       mod.title,
       mod.intro,
       ...mod.sections.map((s) => `${s.heading} ${s.body} ${s.topics.join(' ')}`),
       mod.questionTopics.join(' '),
     ].join(' ');
-    const score = scoreOverlap(input.prompt, extractTokens(hay));
-    const published = score > 0;
+    return {
+      mod,
+      score: scoreOverlap(input.prompt, extractTokens(hay)),
+    };
+  });
+
+  const bestByCategory = new Map<string, { moduleId: string; score: number }>();
+  for (const item of scored) {
+    if (item.score <= 0) continue;
+    const current = bestByCategory.get(item.mod.category);
+    if (!current || item.score > current.score) {
+      bestByCategory.set(item.mod.category, { moduleId: item.mod.moduleId, score: item.score });
+    }
+  }
+
+  const decisions = scored.map(({ mod }) => {
+    const published = bestByCategory.get(mod.category)?.moduleId === mod.moduleId;
     return buildModuleDecision(
       mod,
       published,

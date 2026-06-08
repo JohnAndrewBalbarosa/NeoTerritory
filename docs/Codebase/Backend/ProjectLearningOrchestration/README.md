@@ -66,7 +66,7 @@ Implementation note:
 - The contract should carry required patterns, excluded patterns, required competencies, and any project-specific exceptions.
 
 ### Step 2 - System Feature Toggle Policy
-The system converts the AI response into model-backed publish toggles with implicit deny. The AI response is section-first: each module category is treated as a section, only sections that should be ON appear in the JSON, and any section that is missing is treated as OFF. Only the structural design patterns and modules needed for the project are turned on. The actual toggle targets live in the module catalog and learning models, not in the general config surface. Config is reserved for adding structural pattern families outside the GoF catalog.
+The system converts the AI response into model-backed publish toggles with implicit deny. The AI response is section-first: each module category is treated as a section, only sections that should be ON appear in the JSON, and any section that is missing is treated as OFF. Only the structural design patterns and modules needed for the project are turned on. Lean selection applies inside the planner too: if one pattern is enough, the planner should keep only the single best fit and leave related fallbacks off. The actual toggle targets live in the module catalog and learning models, not in the general config surface. Config is reserved for adding structural pattern families outside the GoF catalog.
 
 Quick summary: keep the default state off and open only the required learning paths.
 
