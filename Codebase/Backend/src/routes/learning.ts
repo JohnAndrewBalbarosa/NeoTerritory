@@ -222,7 +222,7 @@ router.get('/modules', (_req: Request, res: Response, next: NextFunction): void 
          ORDER BY sort_order ASC`,
       )
       .all() as LearningModuleRow[];
-    res.set('Cache-Control', 'public, max-age=60');
+    res.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
     res.json({ modules: rows.map(rowToDto) });
   } catch (err) {
     next(err);

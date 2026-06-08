@@ -260,7 +260,9 @@ export interface LearningProgress {
 // frozen LearningModuleDTO wire shape, ordered for the linear unlock gate.
 // Callers fall back to the bundled static LEARNING_MODULES on error / empty.
 export async function fetchLearningModules(): Promise<LearningModuleDTO[]> {
-  const res = await apiFetch<LearningModulesResponse>('/api/learning/modules');
+  const res = await apiFetch<LearningModulesResponse>('/api/learning/modules', {
+    cache: 'no-store',
+  });
   return res.modules ?? [];
 }
 
