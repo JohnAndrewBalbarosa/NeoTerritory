@@ -32,7 +32,7 @@ interface PlannerInput {
   prompt: string;
 }
 
-const DEFAULT_MAX_TOKENS = 4096;
+const DEFAULT_MAX_TOKENS = 8192;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -49,6 +49,8 @@ const SYSTEM_PROMPT = [
   '- Default all modules to published=false unless the prompt strongly requires them.',
   '- Prefer a narrow scope. Do not publish unrelated modules.',
   '- Decide required learning by matching the prompt against module titles, sections, and topics.',
+  '- Keep strings concise. Keep reason fields short.',
+  '- Keep matchedSections and matchedTopics small. Prefer at most 3 sections and at most 8 topics per module.',
   '',
   'Return this schema exactly:',
   '{',
@@ -197,29 +199,47 @@ async function callAnthropic(apiKey: string, model: string, payload: unknown): P
 
 async function callGemini(apiKey: string, model: string, payload: unknown): Promise<string> {
   const url = `${GEMINI_API_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(apiKey)}`;
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 30000);
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        systemInstruction: { role: 'system', parts: [{ text: SYSTEM_PROMPT }] },
-        contents: [{ role: 'user', parts: [{ text: JSON.stringify(payload) }] }],
-        generationConfig: {
-          maxOutputTokens: DEFAULT_MAX_TOKENS,
-          responseMimeType: 'application/json',
-          temperature: 0.2,
-        },
-      }),
-      signal: ctrl.signal,
-    });
-    if (!response.ok) throw new Error(await response.text().catch(() => ''));
-    const data = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
-    return (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
-  } finally {
-    clearTimeout(timer);
+  const attempts = [0, 750, 1750];
+  let lastError = 'unknown';
+
+  for (let i = 0; i < attempts.length; i += 1) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 30000);
+    try {
+      if (attempts[i] > 0) {
+        await new Promise((resolve) => setTimeout(resolve, attempts[i]));
+      }
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          systemInstruction: { role: 'system', parts: [{ text: SYSTEM_PROMPT }] },
+          contents: [{ role: 'user', parts: [{ text: JSON.stringify(payload) }] }],
+          generationConfig: {
+            maxOutputTokens: DEFAULT_MAX_TOKENS,
+            responseMimeType: 'application/json',
+            temperature: 0.2,
+          },
+        }),
+        signal: ctrl.signal,
+      });
+      if (!response.ok) {
+        lastError = await response.text().catch(() => `${response.status} ${response.statusText}`);
+        if (response.status === 429 || response.status === 500 || response.status === 503) continue;
+        throw new Error(lastError);
+      }
+      const data = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
+      return (data.candidates?.[0]?.content?.parts || []).map((p) => p.text || '').join('');
+    } catch (err) {
+      lastError = err instanceof Error ? err.message : String(err);
+      if (i < attempts.length - 1) continue;
+      throw new Error(lastError);
+    } finally {
+      clearTimeout(timer);
+    }
   }
+
+  throw new Error(lastError);
 }
 
 function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): CoursePlan {
