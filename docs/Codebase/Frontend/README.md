@@ -6,7 +6,7 @@
 - Alignment update: 2026-04-25
 
 ## Logic Summary
-Operator-facing browser shell for the NeoTerritory analysis workflow. This area groups the entrypoint, route fragments, scripts, and styles that let a user type source in the live editor, wait for a complete class declaration, call backend analysis, and inspect documentation or unit-test targets returned from the pipeline.
+Operator-facing browser shell for the NeoTerritory analysis workflow. This area groups the entrypoint, route fragments, scripts, and styles that let a user type source in the live editor, wait for a complete class declaration, call backend analysis, and inspect documentation or unit-test targets returned from the pipeline. The same area now carries the responsive hardening pass for studio, admin, marketing, docs, and learning shells so mobile layouts stay readable without changing runtime behavior.
 
 ## Ownership Boundary
 The frontend owns navigation, live editor state, class-boundary trigger status, diagnostics presentation, and target previews. It must not own lexical analysis, AST parsing, pattern detection, transformation rules, AI documentation prompt assembly, documentation tagging, unit-test generation, or output-file layout. Those concerns belong to the backend bridge and the C++ microservice docs under `docs/Codebase/Microservice`.
@@ -20,6 +20,8 @@ The frontend is the human-facing surface for a backend-orchestrated microservice
 
 ## Subsystem Story
 This folder mixes concrete shell documents with deeper child subsystems. Read `index.html.md` first for the persistent browser frame, then read `scripts/analysis.js.md` for the class-boundary trigger, then `scripts/api.js.md` for the backend contract, then `pages/analysis-new.html.md` for the live analysis page.
+
+For mobile work, start with the shared stylesheet docs and then follow the shell-specific docs for the surface you are changing. The primary responsive ownership now sits in `styles.css`, `admin.css`, and `src/styles/marketing.css`.
 
 ## Folder Flow
 ```mermaid
@@ -66,4 +68,5 @@ These documents explain the local implementation by covering Defines the shell d
 ## Reading Hint
 - Read the shell first, then the API boundary, then the pages in user workflow order. Any analysis result shown in this folder should trace back to backend or microservice output, not frontend-only inference.
 - For admin-side changes, start with `src/admin/README.md` and the component docs under `src/admin/components/`.
+- For responsive cleanup, inspect the shared CSS files before changing component markup so the desktop shell stays stable while mobile rules absorb the layout work.
 

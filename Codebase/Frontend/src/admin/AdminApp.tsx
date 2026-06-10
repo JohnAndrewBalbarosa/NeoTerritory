@@ -174,7 +174,7 @@ export default function AdminApp() {
       <div className="admin-shell admin-shell--login">
         <AuroraBackground variant="warm" className="admin-aurora" />
         <main className="admin-login-wrap">
-          <section className="admin-section admin-section--card admin-login-card">
+          <section className="admin-section admin-section--card admin-login-card" data-testid="admin-login-shell">
             <header className="admin-section__head">
               <p className="eyebrow">CodiNeo · Admin</p>
               <h1 className="brand-title">Sign in as PM / admin</h1>

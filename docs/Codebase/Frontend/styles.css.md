@@ -32,9 +32,12 @@ The `:root` block exposes:
 - Bottom grid (`section.bottom-grid`) — comment threads panel and run history panel.
 - Source modal (`dialog.source-modal`) — confirmation dialog for overwriting unsaved edits.
 - CodeMirror overrides — line-active highlight, finding-line highlight, comment-anchor highlight.
+- Responsive hardening — mobile and tablet breakpoints for the topbar, tab bars, login surfaces, run list, source view, and side-by-side result panes.
 
 ## Acceptance Checks
 
 - All colors used in component selectors resolve through `:root` design tokens (no raw hex inside section blocks except for severity badges).
 - The stylesheet ships no vendor prefixes for browsers older than the CodeMirror baseline (modern evergreen).
 - The stylesheet does not reference any image asset; iconography is text and CSS only.
+- Narrow viewports keep the studio usable without horizontal page overflow.
+- Tab bars and action rows collapse into touch-friendly stacks instead of compressing into unreadable rows.

@@ -4,7 +4,7 @@
 - Owner: Frontend
 
 ## Logic Summary
-Admin-side panels that power the shell-level navigation, feature-release prompt control, and instructor analytics surfaces. Instructor learning content is model-backed and already tagged in JSON; the admin layer only turns modules on or off and reads the prepared question data.
+Admin-side panels that power the shell-level navigation, feature-release prompt control, instructor analytics surfaces, and mobile-friendly operator layouts. Instructor learning content is model-backed and already tagged in JSON; the admin layer only turns modules on or off and reads the prepared question data.
 
 ## Subsystem Story
 Read the component docs in this order:
@@ -32,3 +32,4 @@ flowchart TD
 - Heatmap drilldown remains readable after the sidebar redesign.
 - Question tagging comes from the module JSON, not from a runtime tagging step in the Instructor UI.
 - Complexity export controls stay inside the Complexity tab, below the charts, and export the saved-run dataset rather than a synthetic summary.
+- Narrow viewports keep action rows, downloads, and tables legible instead of forcing sideways page scrolling.

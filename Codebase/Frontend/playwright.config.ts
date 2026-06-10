@@ -38,5 +38,15 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'], viewport: { width: 1440, height: 900 } },
     },
+    {
+      name: 'mobile',
+      use: { ...devices['iPhone 14'], viewport: { width: 390, height: 844 } },
+      testMatch: /mobile-layout\.spec\.ts/,
+    },
+    {
+      name: 'tablet',
+      use: { ...devices['iPad (gen 7)'], viewport: { width: 768, height: 1024 } },
+      testMatch: /mobile-layout\.spec\.ts/,
+    },
   ],
 });
