@@ -6,7 +6,7 @@
 
 ## Goal
 
-Make the repository easier for a smaller model to modify safely by giving it stable boundaries, names, read order, and slice rules. The model should work one subsystem at a time, preserve current behavior, and verify every slice before moving on.
+Make the repository easier for a smaller model to modify safely by giving it stable boundaries, names, read order, slice rules, docs architecture, root hygiene, and Git hygiene. The model should work one subsystem at a time, preserve current behavior, and verify every slice before moving on.
 
 The target architecture is not "new framework everywhere." It is the current NeoTerritory shape made stricter:
 
@@ -15,6 +15,8 @@ The target architecture is not "new framework everywhere." It is the current Neo
 - Microservice owns deterministic C++ analysis only.
 - Infrastructure owns local/runtime/container setup.
 - Docs mirror the intended code structure and explain future movement before code moves.
+- The repository root stays lean: source, docs, manifests, and deliberate fixtures stay visible; generated output, caches, scratch files, and secrets stay out.
+- Git hygiene is part of architecture: tracked source and blueprint files are intentional, while local artifacts and machine-specific files remain untracked.
 
 ## Repo Map
 
@@ -23,17 +25,18 @@ flowchart TD
     Start["Task request"]
     D0["Read docs blueprint"]
     D1["Pick subsystem"]
+    D2["Check root and git hygiene"]
     F["Frontend UI"]
     B["Backend orchestration"]
     M["Microservice analysis"]
     I["Infrastructure runtime"]
     V["Verify slice"]
     End["Commit slice"]
-    Start --> D0 --> D1
-    D1 --> F
-    D1 --> B
-    D1 --> M
-    D1 --> I
+    Start --> D0 --> D1 --> D2
+    D2 --> F
+    D2 --> B
+    D2 --> M
+    D2 --> I
     F --> V
     B --> V
     M --> V
@@ -42,6 +45,25 @@ flowchart TD
 ```
 
 ## Architecture Boundaries
+
+### Docs Architecture
+
+Owns:
+- `docs/Codebase` as the blueprint mirror for current or planned implementation paths.
+- Folder `README.md` files that state read order, ownership, and out-of-scope material.
+- File-level markdown mirrors that explain the local file, function, or bounded subsystem.
+- Mermaid diagrams that stay local to the documented unit and use short labels.
+
+Does not own:
+- ad hoc design notes that do not map to code or a blueprint boundary.
+- documentation-only support folders that would pollute the future code structure.
+- generated output or build artifacts disguised as docs.
+
+Clean shape:
+- Each major subsystem folder has a `README.md`.
+- Each major module folder has a `README.md` when a reader needs a starting point.
+- File docs mirror source paths with `.md` appended.
+- Docs describe ownership first, implementation detail second.
 
 ### Frontend
 
@@ -131,6 +153,38 @@ Clean shape:
 - Runtime layout rules live under `Infrastructure/runtime-layout`.
 - Session orchestration stays under `Infrastructure/session-orchestration`.
 
+### Root Hygiene
+
+Owns:
+- the shape of the repository root.
+- the small set of root-level files that act as entrypoints or manifests.
+- the decision to keep generated output and scratch files out of the root.
+
+Does not own:
+- module implementation files that belong under `Backend`, `Frontend`, `Microservice`, or `Infrastructure`.
+- temporary notes, local experiments, downloaded archives, or hidden work files.
+
+Clean shape:
+- Root-level files should be intentional and few.
+- Generated folders and machine-local debris stay in ignored or local-only locations.
+- New top-level files should be rare and justified by cross-repo ownership.
+
+### Git Hygiene
+
+Owns:
+- tracked versus untracked policy for source, docs, fixtures, and generated artifacts.
+- local scratch files, secrets, cache directories, and editor state.
+- cleanup discipline for accidentally tracked build output.
+
+Does not own:
+- business behavior or feature logic.
+- source edits outside the hygiene boundaries above.
+
+Clean shape:
+- Source, manifests, lockfiles, blueprint docs, and deliberate fixtures are tracked.
+- Build output, dependency caches, runtime logs, temporary exports, scratch files, and sensitive local files stay untracked.
+- Tracked generated artifacts are exceptional and should be called out explicitly when they must exist.
+
 ## Naming Rules
 
 ### Global
@@ -182,6 +236,7 @@ Clean shape:
 - Durable design decisions go in `docs/Codebase/DESIGN_DECISIONS.md`.
 - File-level docs should show local flow only, not the whole system.
 - Mermaid diagrams must use short node labels and stay local to the documented unit.
+- Docs for root hygiene or Git hygiene should describe policy, not cleanup history, unless the cleanup itself is the intended deliverable.
 
 ## Small-Model Execution Contract
 
@@ -197,6 +252,7 @@ Update docs before code when the task changes architecture, flow, naming, or con
 Use existing naming conventions from the touched folder.
 Add focused tests for changed behavior.
 Run the narrowest relevant verification, then the broader check if the touched code is shared.
+Respect docs architecture, root hygiene, and Git hygiene before changing implementation files.
 End with git status, commit, and push when files changed.
 ```
 
@@ -216,11 +272,14 @@ If it cannot answer those from docs and code inspection, it should stop and ask.
 
 - Keep `docs/Codebase/CLEAN_CODE_ARCHITECTURE_PLAN.md` linked from the root docs README.
 - Record new cross-subsystem design rules in `DESIGN_DECISIONS.md`.
+- Keep `docs/Codebase/README.md` as the blueprint entrypoint for read order and boundary discovery.
+- Keep `docs/Codebase/.gitignore.md` as the policy note for tracked versus local artifacts.
 - Do not start file renames until the owner subsystem has a README that states its boundary.
 
 Acceptance:
 - A new session can find the clean-code plan from `docs/Codebase/README.md`.
 - The decision log states that this plan is the canonical naming and slice contract.
+- The docs root explains where root hygiene and Git hygiene live.
 
 ### Slice 2: Backend Service Boundaries
 
@@ -279,6 +338,17 @@ Acceptance:
 Acceptance:
 - Normal feature commits do not include generated churn.
 - Source changes can be reviewed without build artifact noise.
+
+### Slice 7: Docs And Hygiene Alignment
+
+- Update the docs mirror when root ownership or artifact policy changes.
+- Keep root files sparse and intentional.
+- Keep sensitive or local-only files out of Git by default.
+
+Acceptance:
+- The blueprint entrypoint tells readers where to start and where not to wander.
+- The hygiene note reflects current tracked and untracked policy.
+- Root-level clutter is treated as a design problem, not just a cleanup task.
 
 ## Clean Code Review Checklist
 

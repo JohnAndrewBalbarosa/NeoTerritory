@@ -86,6 +86,7 @@ coverage/
 !.env.example
 !.env.deploy.example
 scripts/.env.deploy
+.claude/settings.local.json
 
 # Local secrets — never commit
 *.secret
@@ -104,6 +105,7 @@ test-artifacts/local-unittest-*.py
 test-artifacts/local-unittest-*.mjs
 test-artifacts/local-unittest-*.sh
 test-artifacts/soak-runs/
+/test-artifacts/
 
 # Thesis docx backups (kept locally before destructive edits — never push)
 *.backup-pre-*.docx
@@ -132,6 +134,7 @@ test-artifacts/soak-runs/
 /THESIS 3 DEFENSE- PPT CONTENT.docx
 /CodiNeo - Thesis 3 Defense.pptx
 /NOTES-FOR-DOCS-WRITER.txt
+/cody_codineo_mascot_transparent.svg
 # Catch root-level docx/pptx/pdf so future scratch drafts don't slip
 # in. Anything under docs/ remains tracked since the rules are root-anchored.
 /*.docx
