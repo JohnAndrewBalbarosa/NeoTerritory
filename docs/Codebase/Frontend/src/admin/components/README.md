@@ -9,10 +9,11 @@ Admin-side panels that power the shell-level navigation, feature-release prompt 
 ## Subsystem Story
 Read the component docs in this order:
 1. `FeatureReleasePanel.tsx.md` - prompt textbox and explicit default-off toggle preview.
-2. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and pattern audit.
-3. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
-4. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
-5. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
+2. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and apply flow.
+3. `CoursePlanPatternAudit.tsx.md` - the reusable pattern audit block embedded in the preview.
+4. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
+5. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
+6. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
 
 ## Folder Flow
 ```mermaid
@@ -29,6 +30,7 @@ flowchart TD
 ## Acceptance Checks
 
 - Prompt-driven toggle control stays separate from instructor analytics.
+- Course-plan preview keeps its audit block isolated in a dedicated component.
 - Instructor navigation stays separate from heatmap detail rendering.
 - Heatmap drilldown remains readable after the sidebar redesign.
 - Question tagging comes from the module JSON, not from a runtime tagging step in the Instructor UI.

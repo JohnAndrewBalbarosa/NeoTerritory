@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { patchLearningModule, previewCoursePlan } from '../../api/client';
 import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
 import { buildModuleSwitchboard, countSwitchboard, groupModuleSwitchboard } from '../../logic/moduleSwitchboard';
+import CoursePlanPatternAudit from './CoursePlanPatternAudit';
 
 interface CoursePlanPanelProps {
   modules: ReadonlyArray<AdminLearningModule>;
@@ -140,7 +141,7 @@ export default function CoursePlanPanel({
               className="primary-btn"
               disabled={!promptText.trim() || saving}
             >
-              {state === 'loading' ? 'Sending…' : 'Send prompt'}
+              {state === 'loading' ? 'Sending...' : 'Send prompt'}
             </button>
           </div>
         </form>
@@ -174,27 +175,7 @@ export default function CoursePlanPanel({
                 </div>
               )}
               {plan.diagnostics?.patternAudit?.length ? (
-                <details className="admin-plan-diagnostics__audit" open>
-                  <summary>Pattern audit</summary>
-                  <ul className="admin-scope-list">
-                    {plan.diagnostics.patternAudit.map((item) => (
-                      <li key={item.slug} className="admin-scope-card">
-                        <strong>{item.name}</strong>
-                        <div className="admin-scope-meta">
-                          <span>{item.family}</span>
-                          <span>score {Math.round(item.score)}</span>
-                          <span className={item.selected ? 'tag tag--on' : 'tag tag--off'}>
-                            {item.selected ? 'selected' : 'rejected'}
-                          </span>
-                        </div>
-                        {item.matchedEvidence.length > 0 && (
-                          <p>{item.matchedEvidence.slice(0, 4).join(', ')}</p>
-                        )}
-                        {item.rejectedReason && <p>{item.rejectedReason}</p>}
-                      </li>
-                    ))}
-                  </ul>
-                </details>
+                <CoursePlanPatternAudit entries={plan.diagnostics.patternAudit} />
               ) : null}
               <div className="admin-plan-scope">
                 <h4>Required learning</h4>
@@ -247,7 +228,7 @@ export default function CoursePlanPanel({
                         <div>
                           <h4>{section.section}</h4>
                           <p className="admin-section__hint">
-                            {section.effectiveOn} modules on · {hiddenCount} modules off inside this section
+                            {section.effectiveOn} modules on &middot; {hiddenCount} modules off inside this section
                           </p>
                         </div>
                         <div className="admin-plan-section-card__counts">
@@ -317,7 +298,6 @@ export default function CoursePlanPanel({
           >
             {saving ? 'Saving...' : 'Apply AI course plan'}
           </button>
-
         </div>
       </div>
     </section>
