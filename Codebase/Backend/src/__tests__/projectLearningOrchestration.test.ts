@@ -22,6 +22,45 @@ describe('Project Learning Orchestration Flow', () => {
     businessProcess: 'Intake staff creates a patient case; partner data is normalized; several backend services are coordinated; status changes notify dashboards; billing and scheduling actions are stored for retry; department-specific policies choose prioritization.'
   };
 
+  const documentWorkflowBrief: ProjectBriefInput = {
+    projectId: 'proj-456',
+    projectTitle: 'Legal document approval workflow',
+    businessSpecs: [
+      'Every contract must follow the same review pipeline: draft intake, compliance review, finance approval, executive signoff, and archive.',
+      'Departments may customize what happens inside each approval step but cannot change the overall order.',
+      'A contract moves between draft, under review, rejected, approved, and archived, and actions available to staff change by lifecycle stage.',
+      'Approvers need queued approval and rejection actions with audit history and retry support.'
+    ],
+    architectureSpecs: [
+      'Keep the approval skeleton stable while letting departments override step details.',
+      'Avoid spreading lifecycle if statements across screens.'
+    ],
+    businessProcess: 'A contract enters a fixed approval flow, changes state over time, and stores approval actions for audit and retry.'
+  };
+
+  const repositoryBrief: ProjectBriefInput = {
+    projectId: 'proj-789',
+    projectTitle: 'Claims case storage boundary',
+    businessSpecs: [
+      'Case workers need one business-facing way to search, save, and retrieve claims regardless of whether data is in SQL, archived files, or a vendor case store.',
+      'The domain workflow should not know query syntax or storage location.',
+      'Storage may change by region and retention policy.'
+    ],
+    architectureSpecs: [
+      'Hide persistence details from claims workflow code.',
+      'Keep search and save operations behind a domain collection boundary.'
+    ],
+    businessProcess: 'Claim cases are saved, queried, and loaded through one domain data access boundary while storage implementations vary.'
+  };
+
+  const vagueBrief: ProjectBriefInput = {
+    projectId: 'proj-000',
+    projectTitle: 'Operations dashboard',
+    businessSpecs: ['Build a dashboard for managers to see operational data.'],
+    architectureSpecs: ['Keep it simple.'],
+    businessProcess: 'Managers view metrics.'
+  };
+
   it('should convert an implicit brief into a scoped learning plan', () => {
     const scope = intakeService.intakeProjectBrief(mockBrief);
     expect(scope.projectId).toBe('proj-123');
@@ -36,6 +75,31 @@ describe('Project Learning Orchestration Flow', () => {
     expect((scope.requiredTopics ?? []).length).toBeGreaterThan(0);
     expect(scope.notes[0]).toBe('implicit deny applied');
     expect(scope.confidence).toBe('high');
+  });
+
+  it('should infer template-method style workflows without requiring an adapter cue', () => {
+    const scope = intakeService.intakeProjectBrief(documentWorkflowBrief);
+    expect(scope.requiredPatterns).toEqual(expect.arrayContaining([
+      'template-method',
+      'command',
+      'state',
+    ]));
+    expect(scope.requiredPatterns).not.toContain('adapter');
+    expect(scope.confidence).toBe('medium');
+  });
+
+  it('should keep repository briefs on the storage boundary instead of the adapter path', () => {
+    const scope = intakeService.intakeProjectBrief(repositoryBrief);
+    expect(scope.requiredPatterns).toEqual(expect.arrayContaining(['repository']));
+    expect(scope.requiredPatterns).not.toContain('adapter');
+    expect(scope.confidence).toBe('low');
+  });
+
+  it('should stay low confidence on a vague brief rather than inventing a pattern', () => {
+    const scope = intakeService.intakeProjectBrief(vagueBrief);
+    expect(scope.requiredPatterns).toEqual([]);
+    expect(scope.requiredModules).toEqual([]);
+    expect(scope.confidence).toBe('low');
   });
 
   it('should resolve toggles based on scope', () => {

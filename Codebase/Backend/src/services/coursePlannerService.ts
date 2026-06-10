@@ -36,6 +36,17 @@ export interface CoursePlanDiagnostics {
   message: string;
   fallbackReason?: 'no_provider' | 'invalid_json' | 'ai_error' | 'ai_empty' | 'empty_catalog';
   aiError?: string;
+  patternAudit?: PatternAuditEntry[];
+}
+
+export interface PatternAuditEntry {
+  slug: string;
+  name: string;
+  family: PatternCatalogEntry['family'];
+  score: number;
+  selected: boolean;
+  matchedEvidence: string[];
+  rejectedReason?: string;
 }
 
 export interface CoursePlan {
@@ -89,6 +100,89 @@ function sectionSortIndex(sectionId: string): number {
 
 function uniqueStrings(values: ReadonlyArray<string>): string[] {
   return Array.from(new Set(values.filter((value) => typeof value === 'string' && value.trim().length > 0)));
+}
+
+function normalizePromptText(value: string): string {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[`"'()[\]{}:,./\\<>!?;=+\-*]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function collectPhraseHits(promptText: string, promptTokens: string[], phrases: ReadonlyArray<string>, weight: number, prefix: string): { score: number; evidence: string[] } {
+  let score = 0;
+  const evidence: string[] = [];
+  for (const phrase of uniqueStrings(phrases)) {
+    const normalizedPhrase = normalizePromptText(phrase);
+    if (!normalizedPhrase) continue;
+    const phraseTokens = extractTokens(phrase);
+    const exactMatch = promptText.includes(normalizedPhrase);
+    const tokenMatch = phraseTokens.length >= 2 && phraseTokens.every((token) => promptTokens.includes(token));
+    if (exactMatch || tokenMatch) {
+      score += weight;
+      evidence.push(`${prefix}:${phrase}`);
+    }
+  }
+  return { score, evidence };
+}
+
+function collectPatternEvidence(prompt: string, pattern: PatternCatalogEntry): { score: number; matchedEvidence: string[] } {
+  const promptText = normalizePromptText(prompt);
+  const promptTokens = extractTokens(prompt);
+  const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
+
+  let score = 0;
+  const matchedEvidence: string[] = [];
+
+  const slugHit = promptText.includes(normalizePromptText(pattern.slug.replace(/-/g, ' ')));
+  const nameHit = promptText.includes(normalizePromptText(pattern.name));
+  if (slugHit) {
+    score += 10;
+    matchedEvidence.push(`name:${pattern.slug}`);
+  }
+  if (nameHit && pattern.name.toLowerCase() !== pattern.slug.replace(/-/g, ' ')) {
+    score += 10;
+    matchedEvidence.push(`title:${pattern.name}`);
+  }
+
+  const signalHits = collectPhraseHits(promptText, promptTokens, pattern.signals, 7, 'signal');
+  score += signalHits.score;
+  matchedEvidence.push(...signalHits.evidence);
+
+  const businessCueHits = collectPhraseHits(promptText, promptTokens, PATTERN_BUSINESS_CUES[pattern.slug] ?? [], 6, 'cue');
+  score += businessCueHits.score;
+  matchedEvidence.push(...businessCueHits.evidence);
+
+  if (guide) {
+    const neededWhenHits = collectPhraseHits(promptText, promptTokens, guide.neededWhen, 4, 'useWhen');
+    const subScenarioHits = collectPhraseHits(promptText, promptTokens, guide.subScenarios, 4, 'scenario');
+    const neededConceptHits = collectPhraseHits(promptText, promptTokens, guide.neededConcepts, 2, 'concept');
+    const selectionTestHits = collectPhraseHits(promptText, promptTokens, guide.selectionTest ? [guide.selectionTest] : [], 3, 'test');
+    const distinguishHits = collectPhraseHits(promptText, promptTokens, guide.distinguishFrom, 1, 'contrast');
+    const mainConceptHits = collectPhraseHits(promptText, promptTokens, guide.mainConcept ? [guide.mainConcept] : [], 1, 'concept');
+
+    score += neededWhenHits.score;
+    score += subScenarioHits.score;
+    score += neededConceptHits.score;
+    score += selectionTestHits.score;
+    score += distinguishHits.score;
+    score += mainConceptHits.score;
+
+    matchedEvidence.push(
+      ...neededWhenHits.evidence,
+      ...subScenarioHits.evidence,
+      ...neededConceptHits.evidence,
+      ...selectionTestHits.evidence,
+      ...distinguishHits.evidence,
+      ...mainConceptHits.evidence,
+    );
+  }
+
+  return {
+    score,
+    matchedEvidence: uniqueStrings(matchedEvidence),
+  };
 }
 
 export interface PatternCatalogEntry {
@@ -348,6 +442,35 @@ export const PATTERN_CATALOG: PatternCatalogEntry[] = [
   },
 ];
 
+const PATTERN_BUSINESS_CUES: Record<string, string[]> = {
+  adapter: ['compatibility layer', 'interface translation', 'partner integrations', 'different request formats', 'normalized'],
+  facade: ['single front door', 'one consistent process', 'several backend services', 'subsystem boundary'],
+  strategy: ['decision rules', 'pricing rules', 'prioritization rules', 'policy variation'],
+  observer: ['live updates', 'live status updates', 'status notifications', 'event fan-out'],
+  command: ['queued actions', 'queued for audit', 'audit trail', 'possible retry', 'retryable work'],
+  proxy: ['access control', 'lazy access', 'remote boundary'],
+  decorator: ['optional behavior layers', 'stacked enrichment', 'non-breaking extension'],
+  composite: ['tree structure', 'whole-part model', 'uniform operations'],
+  singleton: ['single owner', 'shared instance', 'unique resource'],
+  builder: ['staged setup', 'optional configuration', 'final product'],
+  'factory-method': ['chosen creation', 'caller hides concrete choice', 'product selection'],
+  'abstract-factory': ['compatible family', 'product set', 'provider family'],
+  'method-chaining': ['fluent setup', 'same object return', 'configuration chain'],
+  'template-method': ['fixed algorithm order', 'shared workflow skeleton', 'approval pipeline', 'review pipeline', 'subclass steps', 'hook methods'],
+  bridge: ['independent variation', 'two changing dimensions', 'separate layers'],
+  'chain-of-responsibility': ['handler pipeline', 'progressive checks', 'fallthrough routing'],
+  mediator: ['central coordinator', 'reduced chatter', 'orchestrated workflow'],
+  visitor: ['new operations', 'stable structure', 'external inspection'],
+  interpreter: ['grammar-driven rules', 'mini language', 'expression evaluation'],
+  memento: ['snapshot restore', 'undo checkpoints', 'history safety'],
+  state: ['mode-based behavior', 'lifecycle transitions', 'state-driven rules'],
+  iterator: ['controlled traversal', 'collection walk', 'hidden storage'],
+  repository: ['storage boundary', 'domain persistence', 'data hiding'],
+  pimpl: ['implementation hiding', 'stable headers', 'compile-time isolation'],
+  prototype: ['clone existing config', 'copy a template', 'cheap duplication'],
+  flyweight: ['shared intrinsic data', 'memory reuse', 'many small objects'],
+};
+
 export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
   singleton: {
     mainConcept: 'Keep exactly one authoritative instance alive for a resource whose duplication would break correctness or coordination.',
@@ -605,8 +728,8 @@ export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
     mainConcept: 'Define a fixed algorithm skeleton in a base class while letting subclasses override selected steps.',
     neededConcepts: ['base algorithm', 'hook methods', 'subclass variation', 'fixed order of steps', 'inversion of control'],
     neededWhen: [
-      'several workflows share the same sequence but differ in validation, formatting, authorization, or persistence steps',
-      'the order of the algorithm must stay consistent across variants',
+      'several workflows share the same sequence, such as an approval pipeline, onboarding checklist, or review gate, but differ in validation, formatting, authorization, or persistence steps',
+      'the order of the workflow must stay consistent across departments, clients, or document types',
       'inheritance is already the accepted extension mechanism',
     ],
     notNeededWhen: [
@@ -615,12 +738,12 @@ export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
       'there is no stable shared algorithm skeleton',
     ],
     subScenarios: [
-      'document import pipeline with fixed parse-validate-save steps but format-specific parsing',
-      'payment workflow with common authorization/capture flow and provider-specific hooks',
+      'document approval pipeline with fixed intake-review-approve-archive order but department-specific checks',
+      'customer onboarding flow with common stages and team-specific hook methods',
       'report generation where the header/footer steps vary by report type',
     ],
     distinguishFrom: ['Strategy composes interchangeable algorithms', 'Factory Method varies object creation', 'Chain of Responsibility passes requests across handlers'],
-    selectionTest: 'Is there a shared algorithm order that must stay fixed while certain steps vary by subclass?',
+    selectionTest: 'Is there a shared algorithm order or business workflow that must stay fixed while certain steps vary by subclass?',
   },
   state: {
     mainConcept: 'Move state-specific behavior into state objects so an object changes behavior when its internal state changes.',
@@ -648,6 +771,7 @@ export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
     neededConcepts: ['domain persistence boundary', 'query abstraction', 'storage independence', 'unit-testable data access'],
     neededWhen: [
       'domain logic should not depend on SQL, HTTP storage calls, ORM details, or cache implementation',
+      'the project needs a business-facing search, save, and retrieve boundary over claims, cases, documents, or records',
       'data access must be mocked or swapped across SQLite, Supabase, files, or services',
       'business rules should speak in domain objects and queries rather than database tables',
     ],
@@ -658,6 +782,7 @@ export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
     ],
     subScenarios: [
       'fetch learning modules through a course repository while hiding SQLite tables',
+      'search, save, and retrieve claims through one domain boundary while storage implementation varies',
       'persist assessment attempts without instructor logic knowing the database schema',
       'swap local storage and remote API in tests behind one repository interface',
     ],
@@ -1074,34 +1199,7 @@ export function findPatternForModule(mod: LearningModulePlannerEntry): PatternCa
 }
 
 export function scorePatternMatch(prompt: string, pattern: PatternCatalogEntry): number {
-  const promptTokens = extractTokens(prompt);
-  const promptText = String(prompt || '').toLowerCase();
-  const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
-  const patternText = [
-    pattern.slug,
-    pattern.name,
-    pattern.intent,
-    pattern.whenToUse,
-    guide?.mainConcept ?? '',
-    guide?.selectionTest ?? '',
-    ...(guide?.neededConcepts ?? []),
-    ...(guide?.neededWhen ?? []),
-    ...(guide?.subScenarios ?? []),
-    ...(guide?.distinguishFrom ?? []),
-    ...pattern.signals,
-  ].join(' ');
-  let score = scoreOverlap(prompt, extractTokens(patternText));
-  if (promptText.includes(pattern.name.toLowerCase())) score += 8;
-  if (promptText.includes(pattern.slug.replace(/-/g, ' '))) score += 8;
-  for (const signal of pattern.signals) {
-    const signalText = signal.toLowerCase();
-    const signalTokens = extractTokens(signal);
-    if (signalText && promptText.includes(signalText)) score += 6;
-    if (signalTokens.length > 0 && signalTokens.every((token) => promptTokens.includes(token))) {
-      score += 2 + signalTokens.length;
-    }
-  }
-  return score;
+  return collectPatternEvidence(prompt, pattern).score;
 }
 
 function pickTopics(mod: LearningModulePlannerEntry): string[] {
@@ -1208,30 +1306,31 @@ function heuristicPlan(
       mod.questionTopics.join(' '),
     ].join(' ');
     const moduleScore = scoreOverlap(input.prompt, extractTokens(hay));
+    const patternMatch = pattern ? collectPatternEvidence(input.prompt, pattern) : { score: 0, matchedEvidence: [] };
     const patternScore = pattern ? scorePatternMatch(input.prompt, pattern) : 0;
     return {
       mod,
       pattern,
       moduleScore,
       patternScore,
-      score: moduleScore + (patternScore * 3),
+      matchedEvidence: patternMatch.matchedEvidence,
+      score: moduleScore + patternScore,
     };
   });
 
-  const rankedPatternMatches = scoredCandidates
-    .filter((item) => item.patternScore >= 2)
-    .sort((a, b) => b.score - a.score);
-  const rankedModuleMatches = scoredCandidates
-    .filter((item) => item.moduleScore >= 2)
-    .sort((a, b) => b.score - a.score);
-  const ranked = rankedPatternMatches.length > 0 ? rankedPatternMatches : rankedModuleMatches;
+  const ranked = [...scoredCandidates].sort((a, b) => b.score - a.score);
   const bestScore = ranked[0]?.score ?? 0;
+  const selectionFloor = bestScore >= 12 ? Math.max(8, Math.round(bestScore * 0.6)) : Number.POSITIVE_INFINITY;
   const selectedIds = new Set(
     ranked
-      .filter((item) => item.score >= Math.max(2, bestScore * 0.7))
+      .filter((item) => item.score >= selectionFloor)
+      .filter((item) => item.patternScore >= 8 || item.moduleScore >= 2)
       .slice(0, BUSINESS_PATTERN_SELECTION_LIMIT)
       .map((item) => item.mod.moduleId),
   );
+  if (selectedIds.size === 0 && bestScore >= 18 && ranked[0]) {
+    selectedIds.add(ranked[0].mod.moduleId);
+  }
   for (const mod of digest) {
     if (mod.isFoundationBaseline) selectedIds.add(mod.moduleId);
   }
@@ -1270,6 +1369,22 @@ function heuristicPlan(
     })
     .slice(0, 12);
 
+  const patternAudit = ranked.slice(0, 8).map((item) => ({
+    slug: item.pattern?.slug ?? item.mod.moduleId,
+    name: item.pattern?.name ?? item.mod.title,
+    family: item.pattern?.family ?? 'Idioms',
+    score: item.score,
+    selected: selectedIds.has(item.mod.moduleId),
+    matchedEvidence: uniqueStrings(item.matchedEvidence).slice(0, 6),
+    rejectedReason: selectedIds.has(item.mod.moduleId)
+      ? undefined
+      : item.score < selectionFloor
+      ? 'Below the selection floor for this prompt.'
+      : item.patternScore < 8 && item.moduleScore < 2
+      ? 'Not enough direct business evidence.'
+      : 'A stronger pattern ranked ahead of it.',
+  })) satisfies PatternAuditEntry[];
+
   return buildCoursePlanFromDecisions(
     digest,
     decisions,
@@ -1280,6 +1395,7 @@ function heuristicPlan(
       aiAttempted: false,
       aiSucceeded: false,
       message: 'Using local heuristic fallback.',
+      patternAudit,
       ...diagnostics,
     },
   );

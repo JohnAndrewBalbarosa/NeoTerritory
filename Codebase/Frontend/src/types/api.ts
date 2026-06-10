@@ -366,6 +366,17 @@ export interface AdminCoursePlanDiagnostics {
   message: string;
   fallbackReason?: 'no_provider' | 'invalid_json' | 'ai_error' | 'ai_empty' | 'empty_catalog';
   aiError?: string;
+  patternAudit?: AdminPatternAuditEntry[];
+}
+
+export interface AdminPatternAuditEntry {
+  slug: string;
+  name: string;
+  family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
+  score: number;
+  selected: boolean;
+  matchedEvidence: string[];
+  rejectedReason?: string;
 }
 
 export interface AdminCoursePlan {

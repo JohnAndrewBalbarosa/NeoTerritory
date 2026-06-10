@@ -21,6 +21,8 @@ Keep extraction disciplined:
 - the service should separate required patterns from optional background topics.
 - the service should surface uncertainty instead of silently broadening the scope.
 - the service should allow several distinct patterns when each one reflects a different business force.
+- the selector should consider the full pattern catalog, not a small hand-picked subset.
+- the selector should stay low-confidence or empty on vague briefs instead of forcing an Adapter-shaped answer.
 
 ## Service Flow
 
@@ -83,3 +85,6 @@ flowchart TD
 - The service keeps required and excluded patterns separate.
 - The service can flag uncertainty without stopping the workflow.
 - The service can infer multiple distinct patterns from one brief when the business forces are separate.
+- The selector does not require a cue match before a pattern can be considered.
+- Template-method style briefs can be selected through the shared pattern guide instead of falling back to Adapter.
+- Vague briefs remain low confidence instead of being forced into the top-ranked pattern.

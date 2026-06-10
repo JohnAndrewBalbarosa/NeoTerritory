@@ -31,6 +31,7 @@ const PATTERN_TOPIC_HINTS: Record<string, string[]> = {
   'factory-method': ['chosen creation', 'caller hides concrete choice', 'product selection'],
   'abstract-factory': ['compatible family', 'product set', 'provider family'],
   'method-chaining': ['fluent setup', 'same object return', 'configuration chain'],
+  'template-method': ['fixed algorithm order', 'approval pipeline', 'review pipeline', 'shared workflow skeleton', 'subclass steps', 'hook methods'],
   bridge: ['independent variation', 'two changing dimensions', 'separate layers'],
   'chain-of-responsibility': ['handler pipeline', 'progressive checks', 'fallthrough routing'],
   mediator: ['central coordinator', 'reduced chatter', 'orchestrated workflow'],
@@ -211,12 +212,20 @@ function rankPatterns(text: string): RankedPatternMatch[] {
 function selectPatterns(text: string): RankedPatternMatch[] {
   const ranked = rankPatterns(text);
   const bestScore = ranked[0]?.score ?? 0;
-  const threshold = Math.max(4, Math.round(bestScore * 0.55));
+  if (bestScore < 8) {
+    return [];
+  }
+
+  const threshold = Math.max(8, Math.round(bestScore * 0.6));
   const selected = ranked
-    .filter((item) => item.cueMatches > 0)
     .filter((item) => item.score >= threshold)
     .slice(0, BUSINESS_PATTERN_SELECTION_LIMIT);
-  return selected.length > 0 ? selected : ranked.slice(0, Math.min(1, ranked.length));
+
+  if (selected.length > 0) {
+    return selected;
+  }
+
+  return ranked.length > 0 ? ranked.slice(0, Math.min(1, ranked.length)) : [];
 }
 
 function buildRequiredTopics(text: string, selectedPatterns: RankedPatternMatch[]): string[] {

@@ -29,6 +29,8 @@ The planner uses implicit deny:
 - selected pattern modules are on.
 - baseline foundation modules remain on by server policy and are not AI-controlled.
 
+The fallback heuristic now emits a compact pattern audit so the admin preview can explain why the top candidates won or lost. The audit keeps the strong matches visible without turning the panel into an opaque score dump.
+
 ## Planner Flow
 
 ```mermaid
@@ -58,6 +60,8 @@ Before selecting a pattern, the prompt tells the model to check:
 - whether a `doNotUseWhen` condition is the stronger match.
 - whether a nearby pattern is more specific.
 
+The backend heuristic follows the same business-language rule set. It does not default to Adapter just because the prompt mentions integration-like language, and it keeps low-signal briefs from auto-selecting a random top pattern.
+
 ## Acceptance Checks
 
 - The user prompt can stay as a normal project brief.
@@ -69,4 +73,5 @@ Before selecting a pattern, the prompt tells the model to check:
 - The AI payload excludes baseline foundation modules.
 - Backend normalization forces baseline foundation modules on.
 - Fallback heuristic scoring reads the same pattern guide fields used by the AI prompt.
+- The fallback preview exposes a pattern audit with the strongest candidates, their scores, and a short rejection reason when they are not selected.
 - The planner still returns the existing `course-plan-v1` response shape.
