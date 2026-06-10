@@ -1510,3 +1510,17 @@ to a later pass (would couple a detectable target to the live engine) — docume
 **Heatmap refinement.** The Instructor question heatmap stays a distinct drilldown surface with module rows, question columns, and learner-answer details on click. The score percentage remains visible in the cell, but the user can move back to the instructor summary without losing the current group context.
 
 **Boundary.** The prompt textbox does not auto-enable anything. It produces a preview of proposed toggles, and the operator must explicitly confirm before persistence. The source of truth for the actual module state remains the module publish field and the authored JSON question tags, not a runtime tagging step in the UI.
+
+## D94 - Clean-code architecture plan is the smaller-model execution contract
+**Per user request (2026-06-10).** Repo-wide clean-code work is governed by
+`docs/Codebase/CLEAN_CODE_ARCHITECTURE_PLAN.md`. That file is the canonical architecture,
+naming, and slice contract for GPT-5.5 xhigh planning and GPT-5.4 mini medium-context
+implementation.
+
+**Boundary.** The plan does not authorize broad rewrites. A smaller model must work one
+vertical slice at a time, preserve subsystem ownership, update docs before architectural or
+contract changes, and avoid unrelated dirty files or generated output.
+
+**Naming authority.** The naming table in the plan is the default for new Backend,
+Frontend, Microservice, Infrastructure, API, DB, CSS, and docs names unless a touched folder
+has a stronger existing local convention.

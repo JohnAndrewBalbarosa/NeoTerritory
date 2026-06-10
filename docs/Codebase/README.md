@@ -92,6 +92,7 @@ The repo collapses all root scripts into a single cross-platform dispatcher. Sub
 ### Project Notes
 These documents explain the local implementation by covering Keeps loose repository-level notes outside the formal docs set.
 - Notes.md : Keeps loose repository-level notes outside the formal docs set.
+- CLEAN_CODE_ARCHITECTURE_PLAN.md : Canonical clean-code architecture, naming, and small-model execution contract for repo-wide implementation slices.
 
 ### Repository Hygiene
 These documents explain which generated or machine-local artifacts must stay out of Git before normal pushes or force-push cleanups.
