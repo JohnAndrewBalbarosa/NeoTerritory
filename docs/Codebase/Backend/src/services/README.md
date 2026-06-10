@@ -31,6 +31,7 @@ These documents explain the local implementation by covering reusable analysis, 
 - aiDocumentationService.js.md : Builds backend AI documentation requests from detected code units and normalizes generated documentation.
 - logService.js.md : Persists structured analysis logs without old refactor or transform-output fields.
 - projectLearningContracts.js.md : Defines the shared data shapes for project brief intake, scope resolution, toggle policy, assessment records, and readiness evidence.
+- coursePlannerService.ts.md : Builds the admin course plan and carries the shared business-pattern guide used by intake.
 - projectSpecIntakeService.js.md : Converts a project manager brief into a normalized project-learning scope.
 - featureTogglePolicyService.js.md : Turns project scope into implicit-deny feature toggles.
 - assessmentOrchestrationService.js.md : Runs the project-scoped pretest, module bypass, and posttest loop.

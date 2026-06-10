@@ -56,6 +56,7 @@ const DEFAULT_MAX_TOKENS = 8192;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_VERSION = '2023-06-01';
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+export const BUSINESS_PATTERN_SELECTION_LIMIT = 5;
 
 const SECTION_ORDER = ['foundations', 'creational', 'structural', 'behavioural', 'idioms'] as const;
 const SECTION_LABELS: Record<(typeof SECTION_ORDER)[number], string> = {
@@ -90,7 +91,7 @@ function uniqueStrings(values: ReadonlyArray<string>): string[] {
   return Array.from(new Set(values.filter((value) => typeof value === 'string' && value.trim().length > 0)));
 }
 
-interface PatternCatalogEntry {
+export interface PatternCatalogEntry {
   slug: string;
   name: string;
   family: 'Creational' | 'Structural' | 'Behavioural' | 'Idioms';
@@ -100,7 +101,7 @@ interface PatternCatalogEntry {
   signals: string[];
 }
 
-interface PatternContextGuide {
+export interface PatternContextGuide {
   mainConcept: string;
   neededConcepts: string[];
   neededWhen: string[];
@@ -110,7 +111,7 @@ interface PatternContextGuide {
   selectionTest: string;
 }
 
-const PATTERN_CATALOG: PatternCatalogEntry[] = [
+export const PATTERN_CATALOG: PatternCatalogEntry[] = [
   {
     slug: 'singleton',
     name: 'Singleton',
@@ -347,7 +348,7 @@ const PATTERN_CATALOG: PatternCatalogEntry[] = [
   },
 ];
 
-const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
+export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
   singleton: {
     mainConcept: 'Keep exactly one authoritative instance alive for a resource whose duplication would break correctness or coordination.',
     neededConcepts: ['single ownership', 'controlled construction', 'shared lifetime', 'global access boundary', 'test/reset strategy'],
@@ -896,7 +897,7 @@ const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
   },
 };
 
-function buildPatternCatalogPrompt(): string {
+export function buildPatternCatalogPrompt(): string {
   return PATTERN_CATALOG.map((pattern) => {
     const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
     if (!guide) {
@@ -926,6 +927,8 @@ function buildPatternCatalogPrompt(): string {
 
 const SYSTEM_PROMPT = [
   'You are an admin-side course planning assistant.',
+  'Assume the model knows little or nothing about design-pattern theory.',
+  'Explain and select patterns from business workflows, org structure, and runtime pressure, not from pattern jargon alone.',
   'You receive a project brief and a JSON catalog of learning modules.',
   'Your job is to infer the minimum required design patterns from the brief,',
   'then decide which learning sections and modules should be ON for the project.',
@@ -943,8 +946,11 @@ const SYSTEM_PROMPT = [
   '- Minimize the number of sections and modules included.',
   '- Minimize does not mean return nothing when the brief has a clear architecture problem.',
   '- If the brief clearly maps to one design pattern, include that one pattern module.',
+  '- If the brief clearly shows several different business forces, it is normal to select up to 5 distinct patterns.',
+  '- Do not collapse separate concerns into one broad pattern when the brief supports multiple specific ones.',
   '- Return an empty sections array only when no provided module matches the project at all.',
-  '- If multiple patterns can solve the same need, choose only the single best fit.',
+  '- If multiple patterns can solve the same need, choose only the single best fit for that specific need.',
+  '- When the prompt has separate needs, select the best pattern for each need up to the 5-pattern limit.',
   '- Do not show extra fallback patterns just because they are related.',
   '- Prefer the most specific pattern over a broad one.',
   '- If a module or section is optional, keep it OFF.',
@@ -959,6 +965,7 @@ const SYSTEM_PROMPT = [
   '- Prefer direct pattern modules and exact matching sections/topics over broad intro material.',
   '- Keep strings concise. Keep reason fields short.',
   '- Keep matchedSections and matchedTopics small. Prefer at most 3 sections and at most 8 topics per module.',
+  '- Explain the pattern in business terms when possible: the reason should mention the operational pressure, not the textbook label.',
   '',
   'Pattern catalog:',
   buildPatternCatalogPrompt(),
@@ -1057,7 +1064,7 @@ function scoreOverlap(haystack: string, needles: string[]): number {
   return score;
 }
 
-function findPatternForModule(mod: LearningModulePlannerEntry): PatternCatalogEntry | null {
+export function findPatternForModule(mod: LearningModulePlannerEntry): PatternCatalogEntry | null {
   const moduleKey = normalizeSectionId(`${mod.moduleId} ${mod.title}`);
   return PATTERN_CATALOG.find((pattern) => {
     const slug = normalizeSectionId(pattern.slug);
@@ -1066,7 +1073,7 @@ function findPatternForModule(mod: LearningModulePlannerEntry): PatternCatalogEn
   }) ?? null;
 }
 
-function scorePatternMatch(prompt: string, pattern: PatternCatalogEntry): number {
+export function scorePatternMatch(prompt: string, pattern: PatternCatalogEntry): number {
   const promptTokens = extractTokens(prompt);
   const promptText = String(prompt || '').toLowerCase();
   const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
@@ -1222,7 +1229,7 @@ function heuristicPlan(
   const selectedIds = new Set(
     ranked
       .filter((item) => item.score >= Math.max(2, bestScore * 0.7))
-      .slice(0, 4)
+      .slice(0, BUSINESS_PATTERN_SELECTION_LIMIT)
       .map((item) => item.mod.moduleId),
   );
   for (const mod of digest) {
@@ -1468,6 +1475,7 @@ export async function generateCoursePlan(input: PlannerInput): Promise<CoursePla
   const payload = {
     prompt: input.prompt.trim(),
     modules: plannerModules,
+    selectionLimit: BUSINESS_PATTERN_SELECTION_LIMIT,
   };
 
   if (plannerModules.length === 0) {

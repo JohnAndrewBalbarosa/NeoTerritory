@@ -8,7 +8,7 @@
 
 This service turns a project brief into a JSON course plan for admin review. It sends a hidden system prompt to the configured AI provider and passes only planner-controlled learning modules as data.
 
-The prompt contains a detailed pattern guide. For each supported design pattern, the guide explains:
+The prompt contains a detailed pattern guide. For each supported design pattern, the guide explains the pattern in business terms, not textbook theory. For each supported design pattern, the guide explains:
 - the main concept.
 - the concepts that must be present before the pattern is needed.
 - situations where the pattern is needed.
@@ -20,6 +20,8 @@ The prompt contains a detailed pattern guide. For each supported design pattern,
 ### Why It Matters In The Flow
 
 The admin prompt should not need to explain JSON shape or pattern theory. The project manager writes only the project brief. The system prompt owns the schema and pattern-selection rubric. Baseline foundation modules are not described to the model and are enforced later by backend policy.
+
+The prompt now allows several distinct patterns when the brief clearly contains several independent business forces. Up to five pattern modules can be selected when the scenario supports them, but the model should still stay narrow and avoid redundant fallbacks.
 
 The planner uses implicit deny:
 - missing sections are off.
@@ -61,6 +63,8 @@ Before selecting a pattern, the prompt tells the model to check:
 - The user prompt can stay as a normal project brief.
 - The hidden system prompt contains the required JSON shape.
 - The hidden system prompt contains detailed use and non-use guidance per pattern.
+- The hidden system prompt teaches patterns through business scenarios, not only through technical jargon.
+- The hidden system prompt allows up to five distinct pattern modules when the brief supports multiple forces.
 - The hidden system prompt does not mention baseline foundation policy.
 - The AI payload excludes baseline foundation modules.
 - Backend normalization forces baseline foundation modules on.

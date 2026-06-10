@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This service turns a project manager's natural-language brief into a structured learning scope. It pulls out the architectural requirements, business-process constraints, and the structural design patterns the intern actually needs to study.
+This service turns a project manager's natural-language brief into a structured learning scope. It scores the brief against the shared business-pattern guide, then pulls out the architectural requirements, business-process constraints, and the structural design patterns the intern actually needs to study.
 
 This is the first narrowing stage in the workflow. The output should be project-specific, not catalog-wide.
 
@@ -20,6 +20,7 @@ Keep extraction disciplined:
 - the service should not invent patterns that were not supported by the brief.
 - the service should separate required patterns from optional background topics.
 - the service should surface uncertainty instead of silently broadening the scope.
+- the service should allow several distinct patterns when each one reflects a different business force.
 
 ## Service Flow
 
@@ -67,10 +68,10 @@ flowchart TD
 {
   "projectId": "proj-1024",
   "scopeVersion": "scope-7",
-  "requiredPatterns": ["adapter", "facade"],
-  "requiredTopics": ["module boundaries", "dependency direction"],
+  "requiredPatterns": ["adapter", "facade", "observer", "command", "strategy"],
+  "requiredTopics": ["compatibility layer", "single front door", "live updates", "queued actions", "policy variation"],
   "excludedPatterns": ["builder", "singleton"],
-  "confidence": "medium",
+  "confidence": "high",
   "status": "normalized"
 }
 ```
@@ -81,3 +82,4 @@ flowchart TD
 - The service does not expand the project into the full design-pattern catalog.
 - The service keeps required and excluded patterns separate.
 - The service can flag uncertainty without stopping the workflow.
+- The service can infer multiple distinct patterns from one brief when the business forces are separate.
