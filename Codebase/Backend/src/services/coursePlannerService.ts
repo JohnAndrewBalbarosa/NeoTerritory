@@ -1,5 +1,11 @@
 import { pickProvider } from './aiDocumentationService';
 import { buildPlannerDigest, type LearningModulePlannerEntry } from './learningModuleCatalog';
+import {
+  PATTERN_EVIDENCE_HINTS as PATTERN_BUSINESS_CUES,
+  extractPatternTokens as extractTokens,
+  scorePatternEvidence,
+  uniquePatternStrings as uniqueStrings,
+} from './patternEvidenceService';
 
 export interface CoursePlanModuleDecision {
   moduleId: string;
@@ -98,91 +104,8 @@ function sectionSortIndex(sectionId: string): number {
   return idx === -1 ? SECTION_ORDER.length : idx;
 }
 
-function uniqueStrings(values: ReadonlyArray<string>): string[] {
-  return Array.from(new Set(values.filter((value) => typeof value === 'string' && value.trim().length > 0)));
-}
-
-function normalizePromptText(value: string): string {
-  return String(value || '')
-    .toLowerCase()
-    .replace(/[`"'()[\]{}:,./\\<>!?;=+\-*]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function collectPhraseHits(promptText: string, promptTokens: string[], phrases: ReadonlyArray<string>, weight: number, prefix: string): { score: number; evidence: string[] } {
-  let score = 0;
-  const evidence: string[] = [];
-  for (const phrase of uniqueStrings(phrases)) {
-    const normalizedPhrase = normalizePromptText(phrase);
-    if (!normalizedPhrase) continue;
-    const phraseTokens = extractTokens(phrase);
-    const exactMatch = promptText.includes(normalizedPhrase);
-    const tokenMatch = phraseTokens.length >= 2 && phraseTokens.every((token) => promptTokens.includes(token));
-    if (exactMatch || tokenMatch) {
-      score += weight;
-      evidence.push(`${prefix}:${phrase}`);
-    }
-  }
-  return { score, evidence };
-}
-
 function collectPatternEvidence(prompt: string, pattern: PatternCatalogEntry): { score: number; matchedEvidence: string[] } {
-  const promptText = normalizePromptText(prompt);
-  const promptTokens = extractTokens(prompt);
-  const guide = PATTERN_CONTEXT_GUIDE[pattern.slug];
-
-  let score = 0;
-  const matchedEvidence: string[] = [];
-
-  const slugHit = promptText.includes(normalizePromptText(pattern.slug.replace(/-/g, ' ')));
-  const nameHit = promptText.includes(normalizePromptText(pattern.name));
-  if (slugHit) {
-    score += 10;
-    matchedEvidence.push(`name:${pattern.slug}`);
-  }
-  if (nameHit && pattern.name.toLowerCase() !== pattern.slug.replace(/-/g, ' ')) {
-    score += 10;
-    matchedEvidence.push(`title:${pattern.name}`);
-  }
-
-  const signalHits = collectPhraseHits(promptText, promptTokens, pattern.signals, 7, 'signal');
-  score += signalHits.score;
-  matchedEvidence.push(...signalHits.evidence);
-
-  const businessCueHits = collectPhraseHits(promptText, promptTokens, PATTERN_BUSINESS_CUES[pattern.slug] ?? [], 6, 'cue');
-  score += businessCueHits.score;
-  matchedEvidence.push(...businessCueHits.evidence);
-
-  if (guide) {
-    const neededWhenHits = collectPhraseHits(promptText, promptTokens, guide.neededWhen, 4, 'useWhen');
-    const subScenarioHits = collectPhraseHits(promptText, promptTokens, guide.subScenarios, 4, 'scenario');
-    const neededConceptHits = collectPhraseHits(promptText, promptTokens, guide.neededConcepts, 2, 'concept');
-    const selectionTestHits = collectPhraseHits(promptText, promptTokens, guide.selectionTest ? [guide.selectionTest] : [], 3, 'test');
-    const distinguishHits = collectPhraseHits(promptText, promptTokens, guide.distinguishFrom, 1, 'contrast');
-    const mainConceptHits = collectPhraseHits(promptText, promptTokens, guide.mainConcept ? [guide.mainConcept] : [], 1, 'concept');
-
-    score += neededWhenHits.score;
-    score += subScenarioHits.score;
-    score += neededConceptHits.score;
-    score += selectionTestHits.score;
-    score += distinguishHits.score;
-    score += mainConceptHits.score;
-
-    matchedEvidence.push(
-      ...neededWhenHits.evidence,
-      ...subScenarioHits.evidence,
-      ...neededConceptHits.evidence,
-      ...selectionTestHits.evidence,
-      ...distinguishHits.evidence,
-      ...mainConceptHits.evidence,
-    );
-  }
-
-  return {
-    score,
-    matchedEvidence: uniqueStrings(matchedEvidence),
-  };
+  return scorePatternEvidence(prompt, pattern, PATTERN_CONTEXT_GUIDE[pattern.slug], PATTERN_BUSINESS_CUES[pattern.slug] ?? []);
 }
 
 export interface PatternCatalogEntry {
@@ -441,35 +364,6 @@ export const PATTERN_CATALOG: PatternCatalogEntry[] = [
     signals: ['snapshot', 'undo', 'restore', 'checkpoint', 'rollback'],
   },
 ];
-
-const PATTERN_BUSINESS_CUES: Record<string, string[]> = {
-  adapter: ['compatibility layer', 'interface translation', 'partner integrations', 'different request formats', 'normalized'],
-  facade: ['single front door', 'one consistent process', 'several backend services', 'subsystem boundary'],
-  strategy: ['decision rules', 'pricing rules', 'prioritization rules', 'policy variation'],
-  observer: ['live updates', 'live status updates', 'status notifications', 'event fan-out'],
-  command: ['queued actions', 'queued for audit', 'audit trail', 'possible retry', 'retryable work'],
-  proxy: ['access control', 'lazy access', 'remote boundary'],
-  decorator: ['optional behavior layers', 'stacked enrichment', 'non-breaking extension'],
-  composite: ['tree structure', 'whole-part model', 'uniform operations'],
-  singleton: ['single owner', 'shared instance', 'unique resource'],
-  builder: ['staged setup', 'optional configuration', 'final product'],
-  'factory-method': ['chosen creation', 'caller hides concrete choice', 'product selection'],
-  'abstract-factory': ['compatible family', 'product set', 'provider family'],
-  'method-chaining': ['fluent setup', 'same object return', 'configuration chain'],
-  'template-method': ['fixed algorithm order', 'shared workflow skeleton', 'approval pipeline', 'review pipeline', 'subclass steps', 'hook methods'],
-  bridge: ['independent variation', 'two changing dimensions', 'separate layers'],
-  'chain-of-responsibility': ['handler pipeline', 'progressive checks', 'fallthrough routing'],
-  mediator: ['central coordinator', 'reduced chatter', 'orchestrated workflow'],
-  visitor: ['new operations', 'stable structure', 'external inspection'],
-  interpreter: ['grammar-driven rules', 'mini language', 'expression evaluation'],
-  memento: ['snapshot restore', 'undo checkpoints', 'history safety'],
-  state: ['mode-based behavior', 'lifecycle transitions', 'state-driven rules'],
-  iterator: ['controlled traversal', 'collection walk', 'hidden storage'],
-  repository: ['storage boundary', 'domain persistence', 'data hiding'],
-  pimpl: ['implementation hiding', 'stable headers', 'compile-time isolation'],
-  prototype: ['clone existing config', 'copy a template', 'cheap duplication'],
-  flyweight: ['shared intrinsic data', 'memory reuse', 'many small objects'],
-};
 
 export const PATTERN_CONTEXT_GUIDE: Record<string, PatternContextGuide> = {
   singleton: {
@@ -1167,17 +1061,6 @@ function safeJsonParse(text: string): ParsedPlan | null {
     }
     return null;
   }
-}
-
-function extractTokens(text: string): string[] {
-  return Array.from(new Set(
-    String(text || '')
-      .toLowerCase()
-      .replace(/[`"'()[\]{}:,./\\<>!?;=+\-*]/g, ' ')
-      .split(/\s+/)
-      .map((w) => w.trim())
-      .filter((w) => w.length >= 4),
-  ));
 }
 
 function scoreOverlap(haystack: string, needles: string[]): number {

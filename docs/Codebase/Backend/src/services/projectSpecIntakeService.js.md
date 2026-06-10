@@ -10,6 +10,8 @@ This service turns a project manager's natural-language brief into a structured 
 
 This is the first narrowing stage in the workflow. The output should be project-specific, not catalog-wide.
 
+The shared cue map, tokenization, and evidence scoring now come from `patternEvidenceService.ts` so the intake stage uses the same pattern language as the course planner.
+
 ### Why It Matters In The Flow
 
 The AI prompt from the project manager is intentionally broad. This service makes it actionable by converting the prompt into a deterministic scope that the rest of the system can use.
@@ -23,6 +25,7 @@ Keep extraction disciplined:
 - the service should allow several distinct patterns when each one reflects a different business force.
 - the selector should consider the full pattern catalog, not a small hand-picked subset.
 - the selector should stay low-confidence or empty on vague briefs instead of forcing an Adapter-shaped answer.
+- the cue vocabulary and evidence scoring should stay in sync with the planner through the shared helper.
 
 ## Service Flow
 
@@ -88,3 +91,4 @@ flowchart TD
 - The selector does not require a cue match before a pattern can be considered.
 - Template-method style briefs can be selected through the shared pattern guide instead of falling back to Adapter.
 - Vague briefs remain low confidence instead of being forced into the top-ranked pattern.
+- The cue vocabulary and shared scoring helper live in `patternEvidenceService.ts`.

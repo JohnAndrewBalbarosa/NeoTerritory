@@ -62,6 +62,8 @@ Before selecting a pattern, the prompt tells the model to check:
 
 The backend heuristic follows the same business-language rule set. It does not default to Adapter just because the prompt mentions integration-like language, and it keeps low-signal briefs from auto-selecting a random top pattern.
 
+The shared cue vocabulary and evidence scorer now live in `patternEvidenceService.ts`, so the planner and intake flow evaluate the same pattern language before the AI fallback or local ranking decides anything.
+
 ## Acceptance Checks
 
 - The user prompt can stay as a normal project brief.
@@ -73,5 +75,6 @@ The backend heuristic follows the same business-language rule set. It does not d
 - The AI payload excludes baseline foundation modules.
 - Backend normalization forces baseline foundation modules on.
 - Fallback heuristic scoring reads the same pattern guide fields used by the AI prompt.
+- The shared cue vocabulary and phrase-hit scoring live in `patternEvidenceService.ts`.
 - The fallback preview exposes a pattern audit with the strongest candidates, their scores, and a short rejection reason when they are not selected.
 - The planner still returns the existing `course-plan-v1` response shape.

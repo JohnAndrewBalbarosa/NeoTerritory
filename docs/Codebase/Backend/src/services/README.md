@@ -30,6 +30,7 @@ These documents explain the local implementation by covering reusable analysis, 
 - classDeclarationAnalysisService.js.md : Runs lexical analysis, subtree construction, cross-reference detection, and target selection for one complete class declaration.
 - aiDocumentationService.js.md : Builds backend AI documentation requests from detected code units and normalizes generated documentation.
 - logService.js.md : Persists structured analysis logs without old refactor or transform-output fields.
+- patternEvidenceService.ts.md : Shares the normalization, cue map, phrase-hit, and evidence scoring logic used by the planner and project intake flow.
 - projectLearningContracts.js.md : Defines the shared data shapes for project brief intake, scope resolution, toggle policy, assessment records, and readiness evidence.
 - coursePlannerService.ts.md : Builds the admin course plan and carries the shared business-pattern guide used by intake.
 - projectSpecIntakeService.js.md : Converts a project manager brief into a normalized project-learning scope.
@@ -40,4 +41,5 @@ These documents explain the local implementation by covering reusable analysis, 
 
 ## Reading Hint
 - Read `classDeclarationAnalysisService.js.md` before `aiDocumentationService.js.md`; AI documentation depends on the target list produced by analysis.
+- Read `patternEvidenceService.ts.md` before `coursePlannerService.ts.md` or `projectSpecIntakeService.js.md`; both services depend on the shared cue and scoring vocabulary.
 
