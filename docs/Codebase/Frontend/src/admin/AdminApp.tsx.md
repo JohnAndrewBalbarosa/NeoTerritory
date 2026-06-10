@@ -12,6 +12,7 @@ The shell should feel like a control room, not a generic settings page:
 - a top status row for API / microservice / AI / online presence
 - the Instructor area should keep its own drilldown path
 - feature-release controls should be visually separate from instructor analytics
+- the Complexity tab keeps its download actions inside the panel, below the charts
 
 ## Sidebar Rule
 

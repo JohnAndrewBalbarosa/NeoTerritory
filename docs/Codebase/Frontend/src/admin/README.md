@@ -15,6 +15,7 @@ Read the files in this order when tracing the admin side:
 2. `components/FeatureReleasePanel.tsx.md` - prompt textbox plus default-off toggle policy.
 3. `components/InstructorDashboard.tsx.md` - the Instructor sub-navigation and section switching.
 4. `components/LearningAnalytics.tsx.md` - the per-question heatmap and drilldown.
+5. `components/ComplexityTab.tsx.md` - the saved-run complexity graphs and download actions.
 
 ## Folder Flow
 ```mermaid
@@ -49,3 +50,4 @@ flowchart TD
 - The feature-release panel defaults to off for all toggles until a prompt or manual action changes them.
 - The admin surface keeps prompt policy, analytics, and review tools separate.
 - The Instructor analytics surface should not rely on runtime tagging to populate question labels.
+- The Complexity tab owns its export controls and keeps them below the charts.

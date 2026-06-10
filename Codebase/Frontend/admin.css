@@ -371,6 +371,8 @@ body{position:relative;}
 .complexity-coef-table{border-collapse:collapse;font-size:13px;margin-bottom:12px;}
 .complexity-coef-table td{padding:5px 12px;border-bottom:1px solid var(--border);vertical-align:top;}
 .complexity-coef-table td:first-child{font-weight:600;color:var(--ink-soft);white-space:nowrap;width:140px;}
+.complexity-export-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:14px;align-items:center;padding-top:4px;}
+.complexity-export-row h2{margin-bottom:4px;}
 
 /* F1 TABLE */
 .f1-badge{font-weight:700;font-variant-numeric:tabular-nums;}

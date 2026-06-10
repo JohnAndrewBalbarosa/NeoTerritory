@@ -1246,7 +1246,13 @@ router.get('/stats/survey-summary', (_req: Request, res: Response, next: NextFun
 
 // ─── Complexity data + OLS regression ────────────────────────────────────────
 
-interface ComplexityRunRow { id: number; source_text: string; analysis_json: string }
+interface ComplexityRunRow {
+  id: number;
+  source_name: string;
+  created_at: string;
+  source_text: string;
+  analysis_json: string;
+}
 
 function olsRegression(points: Array<{ x: number; y: number }>): {
   slope: number; intercept: number; r2: number; n: number; interpretation: string
@@ -1377,13 +1383,23 @@ router.get('/stats/test-runs', (_req: Request, res: Response, next: NextFunction
 
 router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFunction) => {
   try {
-    const rows = db.prepare(`SELECT id, source_text, analysis_json FROM analysis_runs`)
+    const rows = db.prepare(`SELECT id, source_name, created_at, source_text, analysis_json FROM analysis_runs`)
       .all() as ComplexityRunRow[];
 
     type PointData = { x: number; y: number };
     const regressionInput: PointData[] = [];
     const points: Array<{
-      runId: number; tokens: number; loc: number; patternCount: number; totalTargets: number; totalMs: number; items: number; serverWallUs: number; analysisKb: number
+      runId: number;
+      sourceName: string;
+      createdAt: string;
+      tokens: number;
+      loc: number;
+      patternCount: number;
+      totalTargets: number;
+      totalMs: number;
+      items: number;
+      serverWallUs: number;
+      analysisKb: number;
     }> = [];
 
     // Token count is a better predictor of analyzer cost than line count:
@@ -1435,7 +1451,19 @@ router.get('/stats/complexity-data', (_req: Request, res: Response, next: NextFu
       // unitless item count) and removes the bytes-per-item assumption.
       const analysisKb = Math.round((row.analysis_json?.length || 0) / 1024 * 100) / 100;
       if (totalMs === 0 && serverWallUs === 0) continue;
-      points.push({ runId: row.id, tokens, loc, patternCount, totalTargets, totalMs, items, serverWallUs, analysisKb });
+      points.push({
+        runId: row.id,
+        sourceName: row.source_name,
+        createdAt: row.created_at,
+        tokens,
+        loc,
+        patternCount,
+        totalTargets,
+        totalMs,
+        items,
+        serverWallUs,
+        analysisKb,
+      });
       regressionInput.push({ x: tokens, y: totalMs });
     }
 

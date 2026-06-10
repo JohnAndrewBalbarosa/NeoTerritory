@@ -11,6 +11,7 @@ Read the component docs in this order:
 1. `FeatureReleasePanel.tsx.md` - prompt textbox and explicit default-off toggle preview.
 2. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
 3. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
+4. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
 
 ## Folder Flow
 ```mermaid
@@ -30,3 +31,4 @@ flowchart TD
 - Instructor navigation stays separate from heatmap detail rendering.
 - Heatmap drilldown remains readable after the sidebar redesign.
 - Question tagging comes from the module JSON, not from a runtime tagging step in the Instructor UI.
+- Complexity export controls stay inside the Complexity tab, below the charts, and export the saved-run dataset rather than a synthetic summary.

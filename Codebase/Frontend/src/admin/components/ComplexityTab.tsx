@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { fetchAdminComplexityData, fetchAdminCronbach, fetchAdminF1Metrics, type CronbachData } from '../../api/client';
 import { ComplexityData, F1Metrics, ComplexityPoint, RegressionResult } from '../../types/api';
+import { downloadCsv, downloadJson } from '../logic/toCsv';
 import { isAuthError } from '../lib/silenceAuthErrors';
 
 // ─── Line chart (token-sorted, with regression overlay) ─────────────────────
@@ -87,6 +88,36 @@ function GenericRegressionChart({ points, regression, xKey, yKey, xLabel, yLabel
 function F1Badge({ value }: { value: number }) {
   const color = value >= 0.7 ? '#10b981' : value >= 0.5 ? '#f59e0b' : '#ef4444';
   return <span className="f1-badge" style={{ color }}>{(value * 100).toFixed(1)}%</span>;
+}
+
+function downloadComplexityCsv(points: ComplexityPoint[]): void {
+  const headers = [
+    'runId',
+    'sourceName',
+    'createdAt',
+    'tokens',
+    'loc',
+    'patternCount',
+    'totalTargets',
+    'totalMs',
+    'items',
+    'serverWallUs',
+    'analysisKb',
+  ];
+  const rows = points.map((point) => [
+    point.runId,
+    point.sourceName,
+    point.createdAt,
+    point.tokens,
+    point.loc,
+    point.patternCount,
+    point.totalTargets,
+    point.totalMs,
+    point.items ?? '',
+    point.serverWallUs ?? '',
+    point.analysisKb ?? '',
+  ]);
+  downloadCsv('complexity-data.csv', headers, rows);
 }
 
 // ─── ComplexityTab ────────────────────────────────────────────────────────────
@@ -210,6 +241,37 @@ export default function ComplexityTab() {
             <code> items_processed</code> entry ≈ one structural-rep node held in RAM during
             analysis, at near-constant bytes per item.
           </p>
+        </section>
+      )}
+
+      {complexity && (
+        <section className="admin-section">
+          <div className="complexity-export-row">
+            <div>
+              <h2>Export complexity data</h2>
+              <p className="empty-state-muted">
+                Download the saved-run complexity dataset from this panel.
+                CSV gives one row per saved run; JSON keeps the full endpoint payload with regressions.
+              </p>
+            </div>
+            <div className="instructor-downloads">
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => downloadComplexityCsv(complexity.points)}
+                disabled={!complexity.points.length}
+              >
+                Download CSV
+              </button>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => downloadJson('complexity-data.json', complexity)}
+              >
+                Download JSON
+              </button>
+            </div>
+          </div>
         </section>
       )}
 

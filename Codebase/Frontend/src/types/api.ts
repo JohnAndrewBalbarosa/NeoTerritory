@@ -586,6 +586,8 @@ export interface SurveySummary {
 
 export interface ComplexityPoint {
   runId:        number;
+  sourceName:   string;
+  createdAt:    string;
   // Token count is the regression's independent variable (a coarse C++
   // tokenizer counts identifiers, numbers, and individual punctuation).
   // `loc` is kept for parity with older charts that displayed line counts.
