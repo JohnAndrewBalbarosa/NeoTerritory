@@ -90,7 +90,7 @@ export function buildModuleSwitchboard(
       effectivePublished,
       reason: normalizeText(
         protectedBaseline
-          ? 'Foundations stay ON as the baseline learning block.'
+          ? 'Foundations stay ON as required learning.'
           : chosen?.reason,
         currentPublished ? 'Current module stays ON.' : 'Current module stays OFF.',
       ),

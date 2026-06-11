@@ -42,6 +42,7 @@ flowchart TD
 - Default-off feature toggles remain off until the operator explicitly applies the prompt-driven policy.
 - Instructor modules should be flipped on or off at the module/model level; the question JSON is already tagged.
 - On mobile, the sidebar and top action row should stack instead of squeezing the tree into a horizontal strip.
+- When the admin body collapses to a column, its children must stretch to the viewport width; wide tables should scroll inside their own wrappers rather than force the whole document wider.
 
 ## Acceptance Checks
 

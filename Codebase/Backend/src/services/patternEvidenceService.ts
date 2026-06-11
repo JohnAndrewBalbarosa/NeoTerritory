@@ -2,6 +2,7 @@ export interface PatternEvidencePattern {
   slug: string;
   name: string;
   signals: string[];
+  avoidWhen?: string;
 }
 
 export interface PatternEvidenceGuide {
@@ -16,7 +17,10 @@ export interface PatternEvidenceGuide {
 
 export interface PatternEvidenceResult {
   score: number;
+  positiveScore: number;
+  negativeScore: number;
   matchedEvidence: string[];
+  avoidedEvidence: string[];
 }
 
 export interface PatternTopicGroup {
@@ -205,8 +209,25 @@ export function scorePatternEvidence(
     );
   }
 
+  const positiveScore = score;
+  const avoidedEvidence: string[] = [];
+  let negativeScore = 0;
+  if (guide) {
+    const avoidHits = collectPatternPhraseHits(promptText, promptTokens, guide.notNeededWhen, 6, 'avoid');
+    negativeScore += avoidHits.score;
+    avoidedEvidence.push(...avoidHits.matchedEvidence);
+  }
+  if (pattern.avoidWhen) {
+    const avoidWhenHits = collectPatternPhraseHits(promptText, promptTokens, [pattern.avoidWhen], 4, 'avoid');
+    negativeScore += avoidWhenHits.score;
+    avoidedEvidence.push(...avoidWhenHits.matchedEvidence);
+  }
+
   return {
-    score,
+    score: Math.max(0, positiveScore - negativeScore),
+    positiveScore,
+    negativeScore,
     matchedEvidence: uniquePatternStrings(matchedEvidence),
+    avoidedEvidence: uniquePatternStrings(avoidedEvidence),
   };
 }

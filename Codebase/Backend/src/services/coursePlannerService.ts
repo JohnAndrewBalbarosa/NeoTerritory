@@ -40,9 +40,33 @@ export interface CoursePlanDiagnostics {
   selectedModuleCount: number;
   emptyPlan: boolean;
   message: string;
-  fallbackReason?: 'no_provider' | 'invalid_json' | 'ai_error' | 'ai_empty' | 'empty_catalog';
+  fallbackReason?: 'no_provider' | 'invalid_json' | 'invalid_structure' | 'ai_error' | 'ai_empty' | 'empty_catalog' | 'adapter_overselected' | 'pattern_diversity_low';
   aiError?: string;
+  aiValidation?: CoursePlanAiValidationDiagnostics;
+  patternDiversity?: CoursePlanPatternDiversityDiagnostics;
   patternAudit?: PatternAuditEntry[];
+}
+
+export interface CoursePlanAiValidationDiagnostics {
+  status: 'passed' | 'failed';
+  mode: 'sections' | 'modules' | 'mixed' | 'none';
+  issues: string[];
+  acceptedModuleIds: string[];
+}
+
+export interface CoursePlanPatternDiversityAdapterDiagnostics {
+  selected: boolean;
+  score: number;
+  matchedEvidence: string[];
+  avoidedEvidence: string[];
+  blockedReason?: 'weak_evidence' | 'proxy_conflict' | 'facade_conflict' | 'decorator_conflict';
+}
+
+export interface CoursePlanPatternDiversityDiagnostics {
+  selectedSlugs: string[];
+  selectedFamilies: Partial<Record<PatternCatalogEntry['family'], number>>;
+  diversityScore: number;
+  adapter: CoursePlanPatternDiversityAdapterDiagnostics;
 }
 
 export interface PatternAuditEntry {
@@ -104,8 +128,18 @@ function sectionSortIndex(sectionId: string): number {
   return idx === -1 ? SECTION_ORDER.length : idx;
 }
 
-function collectPatternEvidence(prompt: string, pattern: PatternCatalogEntry): { score: number; matchedEvidence: string[] } {
+function collectPatternEvidence(prompt: string, pattern: PatternCatalogEntry) {
   return scorePatternEvidence(prompt, pattern, PATTERN_CONTEXT_GUIDE[pattern.slug], PATTERN_BUSINESS_CUES[pattern.slug] ?? []);
+}
+
+function emptyPatternEvidence(): ReturnType<typeof scorePatternEvidence> {
+  return {
+    score: 0,
+    positiveScore: 0,
+    negativeScore: 0,
+    matchedEvidence: [],
+    avoidedEvidence: [],
+  };
 }
 
 export interface PatternCatalogEntry {
@@ -1114,7 +1148,7 @@ function buildModuleDecision(
   };
 }
 
-function buildNormalizedSections(digest: LearningModulePlannerEntry[], decisions: ReadonlyArray<CoursePlanModuleDecision>): CoursePlanSectionDecision[] {
+function buildNormalizedSections(digest: ReadonlyArray<LearningModulePlannerEntry>, decisions: ReadonlyArray<CoursePlanModuleDecision>): CoursePlanSectionDecision[] {
   const bySection = new Map<string, CoursePlanModuleDecision[]>();
   for (const mod of digest) {
     const decision = decisions.find((entry) => entry.moduleId === mod.moduleId);
@@ -1139,9 +1173,9 @@ function plannerControlledModules(digest: ReadonlyArray<LearningModulePlannerEnt
 }
 
 function buildCoursePlanFromDecisions(
-  digest: LearningModulePlannerEntry[],
-  decisions: CoursePlanModuleDecision[],
-  requiredLearning: CoursePlanScope[],
+  digest: ReadonlyArray<LearningModulePlannerEntry>,
+  decisions: ReadonlyArray<CoursePlanModuleDecision>,
+  requiredLearning: ReadonlyArray<CoursePlanScope>,
   summary: string,
   source: 'ai' | 'heuristic',
   diagnostics: Partial<CoursePlanDiagnostics> = {},
@@ -1159,8 +1193,8 @@ function buildCoursePlanFromDecisions(
     source,
     summary,
     sections,
-    modules: decisions,
-    requiredLearning,
+    modules: [...decisions],
+    requiredLearning: [...requiredLearning],
     diagnostics: {
       aiAttempted: source === 'ai',
       aiSucceeded: source === 'ai',
@@ -1189,7 +1223,7 @@ function heuristicPlan(
       mod.questionTopics.join(' '),
     ].join(' ');
     const moduleScore = scoreOverlap(input.prompt, extractTokens(hay));
-    const patternMatch = pattern ? collectPatternEvidence(input.prompt, pattern) : { score: 0, matchedEvidence: [] };
+    const patternMatch = pattern ? collectPatternEvidence(input.prompt, pattern) : emptyPatternEvidence();
     const patternScore = pattern ? scorePatternMatch(input.prompt, pattern) : 0;
     return {
       mod,
@@ -1227,13 +1261,14 @@ function heuristicPlan(
       published,
       published
         ? (mod.isFoundationBaseline
-            ? 'System baseline module; enforced ON outside AI planning.'
+            ? 'Required foundation module; enforced ON outside AI planning.'
             : `Matched ${pattern?.name ?? mod.title} to the project brief.`)
         : 'No strong prompt match; defaulting OFF.',
       published ? pickSections(mod) : [],
       published ? pickTopics(mod) : [],
     );
   });
+  const patternDiversity = buildPatternDiversityDiagnostics(input.prompt, digest, selectedIds);
 
   const requiredLearning = decisions
     .filter((m) => m.published)
@@ -1246,7 +1281,7 @@ function heuristicPlan(
         sections: mod.sections.slice(0, 4).map((s) => s.heading),
         topics: pickTopics(mod),
         reason: mod.isFoundationBaseline
-          ? 'System baseline module; enforced ON outside AI planning.'
+          ? 'Required foundation module; enforced ON outside AI planning.'
           : `Prompt overlaps with ${m.title}.`,
       };
     })
@@ -1278,6 +1313,7 @@ function heuristicPlan(
       aiAttempted: false,
       aiSucceeded: false,
       message: 'Using local heuristic fallback.',
+      patternDiversity,
       patternAudit,
       ...diagnostics,
     },
@@ -1356,71 +1392,299 @@ async function callGemini(apiKey: string, model: string, payload: unknown): Prom
   throw new Error(lastError);
 }
 
-function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): CoursePlan {
+function findPatternBySlug(slug: string): PatternCatalogEntry | null {
+  return PATTERN_CATALOG.find((pattern) => normalizeSectionId(pattern.slug) === normalizeSectionId(slug)) ?? null;
+}
+
+function buildPatternDiversityDiagnostics(
+  prompt: string,
+  digest: ReadonlyArray<LearningModulePlannerEntry>,
+  selectedModuleIds: ReadonlySet<string>,
+): CoursePlanPatternDiversityDiagnostics {
+  const selectedPatterns = digest
+    .filter((mod) => selectedModuleIds.has(mod.moduleId) && !mod.isFoundationBaseline)
+    .map((mod) => findPatternForModule(mod))
+    .filter((pattern): pattern is PatternCatalogEntry => Boolean(pattern));
+  const selectedSlugs = uniqueStrings(selectedPatterns.map((pattern) => pattern.slug));
+  const selectedFamilies = selectedPatterns.reduce<Partial<Record<PatternCatalogEntry['family'], number>>>((acc, pattern) => {
+    acc[pattern.family] = (acc[pattern.family] ?? 0) + 1;
+    return acc;
+  }, {});
+  const familyCount = Object.keys(selectedFamilies).length;
+  const diversityScore = selectedSlugs.length === 0
+    ? 0
+    : Math.min(100, (familyCount * 30) + Math.max(0, selectedSlugs.length - familyCount) * 10);
+
+  const adapterModule = digest.find((mod) => findPatternForModule(mod)?.slug === 'adapter');
+  const adapterPattern = findPatternBySlug('adapter');
+  const adapterEvidence = adapterPattern
+    ? collectPatternEvidence(prompt, adapterPattern)
+    : emptyPatternEvidence();
+  const adapterSelected = adapterModule ? selectedModuleIds.has(adapterModule.moduleId) : selectedSlugs.includes('adapter');
+  const structuralCompetitors = ['proxy', 'facade', 'decorator']
+    .map((slug) => findPatternBySlug(slug))
+    .filter((pattern): pattern is PatternCatalogEntry => Boolean(pattern))
+    .map((pattern) => {
+      const evidence = collectPatternEvidence(prompt, pattern);
+      return {
+        pattern,
+        evidence,
+      };
+    })
+    .sort((a, b) => b.evidence.score - a.evidence.score);
+  const strongestCompetitor = structuralCompetitors[0];
+  const explicitAdapterEvidence = adapterEvidence.matchedEvidence.some((item) => /^(signal|cue|useWhen|scenario|concept|test):/.test(item) && /translation|compatibility|wrong interface|wrong shape|request shape|map payload|partner api|legacy|normalize/i.test(item));
+  let blockedReason: CoursePlanPatternDiversityAdapterDiagnostics['blockedReason'];
+  if (adapterSelected) {
+    if (strongestCompetitor && strongestCompetitor.evidence.score > adapterEvidence.score) {
+      blockedReason = `${strongestCompetitor.pattern.slug}_conflict` as CoursePlanPatternDiversityAdapterDiagnostics['blockedReason'];
+    } else if (!explicitAdapterEvidence) {
+      blockedReason = 'weak_evidence';
+    }
+  } else if (!explicitAdapterEvidence && strongestCompetitor) {
+    blockedReason = `${strongestCompetitor.pattern.slug}_conflict` as CoursePlanPatternDiversityAdapterDiagnostics['blockedReason'];
+  }
+
+  const avoidedEvidence = strongestCompetitor
+    ? uniqueStrings([
+        ...adapterEvidence.avoidedEvidence,
+        ...strongestCompetitor.evidence.matchedEvidence.slice(0, 6),
+        `avoided:${strongestCompetitor.pattern.name}`,
+      ])
+    : uniqueStrings(adapterEvidence.avoidedEvidence);
+
+  return {
+    selectedSlugs,
+    selectedFamilies,
+    diversityScore,
+    adapter: {
+      selected: adapterSelected,
+      score: adapterEvidence.score,
+      matchedEvidence: uniqueStrings(adapterEvidence.matchedEvidence).slice(0, 8),
+      avoidedEvidence,
+      blockedReason,
+    },
+  };
+}
+
+function issueCode(issue: string): string {
+  return issue.split(':', 1)[0];
+}
+
+function fallbackReasonFromValidation(issues: string[]): CoursePlanDiagnostics['fallbackReason'] | undefined {
+  const codes = issues.map(issueCode);
+  if (codes.length === 1 && codes[0] === 'empty_selected_plan') return 'ai_empty';
+  if (codes.some((code) => [
+    'mixed_sections_modules',
+    'unknown_section',
+    'unknown_module',
+    'duplicate_module',
+    'foundation_module_selected',
+    'required_learning_outside_selected_scope',
+    'empty_selected_plan',
+    'selection_limit_exceeded',
+  ].includes(code))) {
+    return 'invalid_structure';
+  }
+  if (codes.includes('adapter_overselected')) return 'adapter_overselected';
+  if (codes.includes('pattern_diversity_low')) return 'pattern_diversity_low';
+  return undefined;
+}
+
+interface AiSelectionState {
+  mode: CoursePlanAiValidationDiagnostics['mode'];
+  issues: string[];
+  acceptedModuleIds: string[];
+  selectedEntries: Map<string, ParsedPlanModule>;
+  moduleSectionLabels: Map<string, string>;
+}
+
+interface AiPlanValidationResult {
+  plan: CoursePlan | null;
+  validation: CoursePlanAiValidationDiagnostics;
+  patternDiversity: CoursePlanPatternDiversityDiagnostics;
+  selection: AiSelectionState;
+}
+
+function validateAiPlan(raw: ParsedPlan, digest: ReadonlyArray<LearningModulePlannerEntry>, prompt: string): AiPlanValidationResult {
   const digestById = new Map(digest.map((m) => [m.moduleId, m]));
   const rawSections = Array.isArray(raw.sections) ? raw.sections : [];
+  const rawModules = Array.isArray(raw.modules) ? raw.modules : [];
   const sectionMode = rawSections.length > 0;
-  const moduleEntries = new Map<string, ParsedPlanModule>();
+  const moduleMode = rawModules.length > 0;
+  const mode: CoursePlanAiValidationDiagnostics['mode'] = sectionMode && moduleMode
+    ? 'mixed'
+    : sectionMode
+    ? 'sections'
+    : moduleMode
+    ? 'modules'
+    : 'none';
+  const issues: string[] = [];
+  const selectedEntries = new Map<string, ParsedPlanModule>();
   const moduleSectionLabels = new Map<string, string>();
+  const seenModuleIds = new Set<string>();
 
-  if (sectionMode) {
+  if (mode === 'mixed') {
+    issues.push('mixed_sections_modules');
+  }
+
+  function registerModule(rawModule: ParsedPlanModule, sectionLabel?: string): void {
+    const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
+    if (!moduleId) {
+      issues.push('unknown_module:missing');
+      return;
+    }
+    const mod = digestById.get(moduleId);
+    if (!mod) {
+      issues.push(`unknown_module:${moduleId}`);
+      return;
+    }
+    if (mod.isFoundationBaseline) {
+      issues.push(`foundation_module_selected:${moduleId}`);
+      return;
+    }
+    if (seenModuleIds.has(moduleId)) {
+      issues.push(`duplicate_module:${moduleId}`);
+      return;
+    }
+    seenModuleIds.add(moduleId);
+    selectedEntries.set(moduleId, rawModule);
+    if (sectionLabel) moduleSectionLabels.set(moduleId, sectionLabel);
+  }
+
+  if (mode === 'sections' || mode === 'mixed') {
     for (const rawSection of rawSections) {
-      const sectionId = normalizeSectionId(
-        typeof rawSection.sectionId === 'string' && rawSection.sectionId.trim().length > 0
-          ? rawSection.sectionId
-          : rawSection.section || '',
-      );
-      if (!sectionId) continue;
+      const sectionSource = typeof rawSection.sectionId === 'string' && rawSection.sectionId.trim().length > 0
+        ? rawSection.sectionId
+        : rawSection.section || '';
+      const sectionId = normalizeSectionId(sectionSource);
+      if (!sectionId) {
+        issues.push(`unknown_section:${String(sectionSource || 'missing')}`);
+        continue;
+      }
+      if (!digest.some((mod) => normalizeSectionId(mod.category) === sectionId)) {
+        issues.push(`unknown_section:${sectionId}`);
+        continue;
+      }
+      if (sectionId === 'foundations') {
+        issues.push(`foundation_module_selected:${sectionId}`);
+        continue;
+      }
       const sectionLabel = typeof rawSection.section === 'string' && rawSection.section.trim().length > 0
         ? rawSection.section.trim()
         : sectionLabelFromId(sectionId);
-      const sectionDigest = digest.filter((mod) => normalizeSectionId(mod.category) === sectionId);
-      if (sectionDigest.length === 0) continue;
       for (const rawModule of rawSection.modules ?? []) {
-        const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
-        const mod = digestById.get(moduleId);
-        if (!moduleId || !mod || mod.isFoundationBaseline) continue;
-        moduleEntries.set(moduleId, rawModule);
-        moduleSectionLabels.set(moduleId, sectionLabel);
+        registerModule(rawModule, sectionLabel);
       }
-    }
-  } else {
-    for (const rawModule of raw.modules || []) {
-      const moduleId = typeof rawModule.moduleId === 'string' ? rawModule.moduleId.trim() : '';
-      const mod = digestById.get(moduleId);
-      if (!moduleId || !mod || mod.isFoundationBaseline) continue;
-      moduleEntries.set(moduleId, rawModule);
     }
   }
 
+  if (mode === 'modules' || mode === 'mixed') {
+    for (const rawModule of rawModules) {
+      registerModule(rawModule);
+    }
+  }
+
+  const acceptedModuleIds = Array.from(selectedEntries.keys());
+
+  if (Array.isArray(raw.requiredLearning)) {
+    for (const rawRequired of raw.requiredLearning) {
+      const requiredId = typeof rawRequired?.moduleId === 'string' ? rawRequired.moduleId.trim() : '';
+      if (!requiredId || !selectedEntries.has(requiredId)) {
+        issues.push(`required_learning_outside_selected_scope:${requiredId || 'missing'}`);
+      }
+    }
+  }
+
+  if (acceptedModuleIds.length === 0) {
+    issues.push('empty_selected_plan');
+  }
+  if (acceptedModuleIds.length > BUSINESS_PATTERN_SELECTION_LIMIT) {
+    issues.push(`selection_limit_exceeded:${acceptedModuleIds.length}`);
+  }
+
+  const adapterModule = digest.find((mod) => findPatternForModule(mod)?.slug === 'adapter');
+  const adapterPattern = findPatternBySlug('adapter');
+  const adapterEvidence = adapterPattern
+    ? collectPatternEvidence(prompt, adapterPattern)
+    : emptyPatternEvidence();
+  const adapterSelected = Boolean(adapterModule && selectedEntries.has(adapterModule.moduleId));
+  const adapterCompetitors = ['proxy', 'facade', 'decorator']
+    .map((slug) => findPatternBySlug(slug))
+    .filter((pattern): pattern is PatternCatalogEntry => Boolean(pattern))
+    .map((pattern) => ({
+      pattern,
+      evidence: collectPatternEvidence(prompt, pattern),
+    }))
+    .sort((a, b) => b.evidence.score - a.evidence.score);
+  const strongestCompetitor = adapterCompetitors[0];
+  const explicitAdapterEvidence = adapterEvidence.matchedEvidence.some((item) => /^(signal|cue|useWhen|scenario|concept|test):/.test(item) && /translation|compatibility|wrong interface|wrong shape|request shape|map payload|partner api|legacy|normalize/i.test(item));
+  if (
+    adapterSelected
+    && (
+      acceptedModuleIds.length === 1
+      || !explicitAdapterEvidence
+      || (strongestCompetitor && strongestCompetitor.evidence.score > adapterEvidence.score)
+    )
+  ) {
+    issues.push('adapter_overselected');
+  }
+
+  const selectedPatternSlugs = uniqueStrings(
+    acceptedModuleIds
+      .map((moduleId) => findPatternForModule(digestById.get(moduleId)!))
+      .filter((pattern): pattern is PatternCatalogEntry => Boolean(pattern))
+      .map((pattern) => pattern.slug),
+  );
+  const selectedPatternFamilies = uniqueStrings(
+    acceptedModuleIds
+      .map((moduleId) => findPatternForModule(digestById.get(moduleId)!))
+      .filter((pattern): pattern is PatternCatalogEntry => Boolean(pattern))
+      .map((pattern) => pattern.family),
+  ) as Array<PatternCatalogEntry['family']>;
+  const selectedFamilyCount = selectedPatternFamilies.length;
+  const diversityScore = selectedPatternSlugs.length === 0
+    ? 0
+    : Math.min(100, (selectedFamilyCount * 30) + Math.max(0, selectedPatternSlugs.length - selectedFamilyCount) * 10);
+  if (acceptedModuleIds.length > 1 && diversityScore < 45) {
+    issues.push('pattern_diversity_low');
+  }
+
+  const validation: CoursePlanAiValidationDiagnostics = {
+    status: issues.length === 0 ? 'passed' : 'failed',
+    mode,
+    issues: uniqueStrings(issues),
+    acceptedModuleIds,
+  };
+
   const modules = digest.map((mod) => {
-    const entry = moduleEntries.get(mod.moduleId);
+    const entry = selectedEntries.get(mod.moduleId);
     const published = mod.isFoundationBaseline
       ? true
-      : sectionMode ? moduleEntries.has(mod.moduleId) : entry?.published === true;
+      : selectedEntries.has(mod.moduleId);
     const matchedSections = published
       ? (mod.isFoundationBaseline
           ? pickSections(mod)
           : (
-              sectionMode
+              mode === 'sections' || mode === 'mixed'
                 ? (moduleSectionLabels.get(mod.moduleId) ? [moduleSectionLabels.get(mod.moduleId)!] : pickSections(mod))
-                : uniqueStrings(Array.isArray(entry?.matchedSections) ? entry.matchedSections.filter((v): v is string => typeof v === 'string') : pickSections(mod))
+                : uniqueStrings(Array.isArray(entry?.matchedSections) ? entry.matchedSections.filter((value): value is string => typeof value === 'string') : pickSections(mod))
             ))
       : [];
     const matchedTopics = published
       ? (mod.isFoundationBaseline
           ? pickTopics(mod)
           : (
-              sectionMode
+              mode === 'sections' || mode === 'mixed'
                 ? pickTopics(mod)
-                : uniqueStrings(Array.isArray(entry?.matchedTopics) ? entry.matchedTopics.filter((v): v is string => typeof v === 'string') : pickTopics(mod))
+                : uniqueStrings(Array.isArray(entry?.matchedTopics) ? entry.matchedTopics.filter((value): value is string => typeof value === 'string') : pickTopics(mod))
             ))
       : [];
     return buildModuleDecision(
       mod,
       published,
       mod.isFoundationBaseline
-        ? 'System baseline module; enforced ON outside AI planning.'
+        ? 'Required foundation module; enforced ON outside AI planning.'
         : typeof entry?.reason === 'string' && entry.reason.trim()
         ? entry.reason
         : (published ? 'AI selected this course for publishing.' : 'AI left this course off by default.'),
@@ -1429,6 +1693,10 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
     );
   });
   const sections = buildNormalizedSections(digest, modules);
+  const selectedIds = new Set(acceptedModuleIds);
+  for (const mod of digest) {
+    if (mod.isFoundationBaseline) selectedIds.add(mod.moduleId);
+  }
 
   const requiredLearning = modules
     .filter((m) => m.published)
@@ -1442,29 +1710,48 @@ function normalizePlan(raw: ParsedPlan, digest: LearningModulePlannerEntry[]): C
         sections: pickSections(mod, 4),
         topics: pickTopics(mod),
         reason: mod.isFoundationBaseline
-          ? 'System baseline module; enforced ON outside AI planning.'
-          : typeof moduleEntries.get(m.moduleId)?.reason === 'string' && moduleEntries.get(m.moduleId)!.reason!.trim()
-            ? moduleEntries.get(m.moduleId)!.reason!.trim()
+          ? 'Required foundation module; enforced ON outside AI planning.'
+          : typeof selectedEntries.get(m.moduleId)?.reason === 'string' && selectedEntries.get(m.moduleId)!.reason!.trim()
+            ? selectedEntries.get(m.moduleId)!.reason!.trim()
             : 'Required by the project prompt.',
       };
     })
     .filter((value): value is CoursePlanScope => Boolean(value))
     .slice(0, 12);
 
-  return buildCoursePlanFromDecisions(
-    digest,
-    modules,
-    requiredLearning,
-    typeof raw.summary === 'string' && raw.summary.trim()
-      ? raw.summary.trim()
-      : 'AI plan generated successfully.',
-    'ai',
-    {
-      aiAttempted: true,
-      aiSucceeded: true,
-      message: 'AI returned a valid JSON course plan.',
+  const patternDiversity = buildPatternDiversityDiagnostics(prompt, digest, selectedIds);
+
+  const plan = validation.status === 'passed'
+    ? buildCoursePlanFromDecisions(
+        digest,
+        modules,
+        requiredLearning,
+        typeof raw.summary === 'string' && raw.summary.trim()
+          ? raw.summary.trim()
+          : 'AI plan generated successfully.',
+        'ai',
+        {
+          aiAttempted: true,
+          aiSucceeded: true,
+          message: 'AI returned a valid JSON course plan.',
+          aiValidation: validation,
+          patternDiversity,
+        },
+      )
+    : null;
+
+  return {
+    plan,
+    validation,
+    patternDiversity,
+    selection: {
+      mode,
+      issues: uniqueStrings(issues),
+      acceptedModuleIds,
+      selectedEntries,
+      moduleSectionLabels,
     },
-  );
+  };
 }
 
 export async function generateCoursePlan(input: PlannerInput): Promise<CoursePlan> {
@@ -1504,16 +1791,25 @@ export async function generateCoursePlan(input: PlannerInput): Promise<CoursePla
         message: 'AI returned invalid JSON; using local heuristic fallback.',
       });
     }
-    const plan = normalizePlan(parsed, digest);
-    if (plan.diagnostics.emptyPlan) {
+    const aiResult = validateAiPlan(parsed, digest, input.prompt);
+    if (!aiResult.plan) {
+      const fallbackReason = fallbackReasonFromValidation(aiResult.validation.issues) ?? 'invalid_structure';
       return heuristicPlan(input, digest, {
         aiAttempted: true,
         aiSucceeded: true,
-        fallbackReason: 'ai_empty',
-        message: 'AI returned valid JSON but selected no modules; using local heuristic fallback.',
+        fallbackReason,
+        aiValidation: aiResult.validation,
+        patternDiversity: aiResult.patternDiversity,
+        message: fallbackReason === 'adapter_overselected'
+          ? 'AI selected a weak Adapter plan; using local heuristic fallback.'
+          : fallbackReason === 'pattern_diversity_low'
+          ? 'AI selected a narrow pattern mix; using local heuristic fallback.'
+          : fallbackReason === 'ai_empty'
+          ? 'AI returned valid JSON but selected no modules; using local heuristic fallback.'
+          : 'AI returned structurally invalid JSON for the course plan; using local heuristic fallback.',
       });
     }
-    return plan;
+    return aiResult.plan;
   } catch (err) {
     return heuristicPlan(input, digest, {
       aiAttempted: true,

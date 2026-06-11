@@ -364,8 +364,10 @@ export interface AdminCoursePlanDiagnostics {
   selectedModuleCount: number;
   emptyPlan: boolean;
   message: string;
-  fallbackReason?: 'no_provider' | 'invalid_json' | 'ai_error' | 'ai_empty' | 'empty_catalog';
+  fallbackReason?: AdminCoursePlanFallbackReason;
   aiError?: string;
+  aiValidation?: AdminCoursePlanAiValidation | null;
+  patternDiversity?: AdminCoursePlanPatternDiversity | null;
   patternAudit?: AdminPatternAuditEntry[];
 }
 
@@ -379,6 +381,38 @@ export interface AdminPatternAuditEntry {
   rejectedReason?: string;
 }
 
+export type AdminCoursePlanFallbackReason =
+  | 'no_provider'
+  | 'invalid_json'
+  | 'invalid_structure'
+  | 'ai_error'
+  | 'ai_empty'
+  | 'empty_catalog'
+  | 'adapter_overselected'
+  | 'pattern_diversity_low';
+
+export interface AdminCoursePlanAiValidation {
+  status: 'passed' | 'failed';
+  mode: 'sections' | 'modules' | 'mixed' | 'none';
+  issues: string[];
+  acceptedModuleIds: string[];
+}
+
+export interface AdminCoursePlanPatternDiversityAdapter {
+  selected: boolean;
+  score: number;
+  matchedEvidence: string[];
+  avoidedEvidence: string[];
+  blockedReason?: 'weak_evidence' | 'proxy_conflict' | 'facade_conflict' | 'decorator_conflict';
+}
+
+export interface AdminCoursePlanPatternDiversity {
+  selectedSlugs: string[];
+  selectedFamilies: Partial<Record<'Creational' | 'Structural' | 'Behavioural' | 'Idioms', number>>;
+  diversityScore: number;
+  adapter: AdminCoursePlanPatternDiversityAdapter;
+}
+
 export interface AdminCoursePlan {
   schemaVersion: 'course-plan-v1';
   source: 'ai' | 'heuristic';
@@ -386,7 +420,7 @@ export interface AdminCoursePlan {
   sections: AdminCoursePlanSectionDecision[];
   modules: AdminCoursePlanModuleDecision[];
   requiredLearning: AdminCoursePlanLearningScope[];
-  diagnostics?: AdminCoursePlanDiagnostics;
+  diagnostics: AdminCoursePlanDiagnostics;
 }
 
 export interface AdminPerRunFeedbackRow {

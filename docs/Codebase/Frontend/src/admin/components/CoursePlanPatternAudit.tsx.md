@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Render the reusable pattern-audit block inside the course-plan preview. This component owns only the audit subsection: pattern names, families, scores, selection state, evidence, and rejection reasons.
+Render the reusable pattern-audit block inside the course-plan preview. This component owns only the audit subsection: pattern names, families, scores, selection state, evidence, and rejection reasons, and it appears under the verification strip before the module lists.
 
 ## Layout Goal
 
@@ -44,3 +44,4 @@ flowchart TD
 - The audit block stays visually identical to the original course-plan preview section.
 - The parent panel can import the component and pass the raw pattern-audit entries without reshaping them.
 - Pattern evidence and rejection reasons remain inline and readable on narrow viewports.
+- The audit block remains below verification and above the required and AI-enabled module lists.

@@ -67,6 +67,10 @@ export default function CoursesTab() {
     () => new Map(switchboard.map((row) => [row.moduleId, row])),
     [switchboard],
   );
+  const requiredPreviewIds = useMemo(
+    () => new Set((previewPlan?.requiredLearning ?? []).map((item) => item.moduleId)),
+    [previewPlan],
+  );
 
   function applyUpdate(id: string, next: Partial<AdminLearningModule>): void {
     setModules((prev) => prev.map((m) => (m.id === id ? { ...m, ...next } : m)));
@@ -160,13 +164,13 @@ export default function CoursesTab() {
 
       {error && <p className="admin-login-error" role="alert">{error}</p>}
 
-  <CoursePlanPanel
+      <CoursePlanPanel
         modules={sorted}
         onApplied={reload}
         onPreviewChange={setPreviewPlan}
       />
 
-      {!loaded && <p className="admin-section__hint">Loading coursesâ€¦</p>}
+      {!loaded && <p className="admin-section__hint">Loading courses...</p>}
       {loaded && sorted.length === 0 && (
         <p className="admin-section__hint">No courses yet. Create one to get started.</p>
       )}
@@ -189,7 +193,9 @@ export default function CoursesTab() {
                 const effectiveOn = rowState?.effectivePublished ?? m.published;
                 const currentOn = rowState?.currentPublished ?? m.published;
                 const rowChanged = rowState ? rowState.currentPublished !== rowState.effectivePublished : false;
-                const rowLocked = rowState?.protectedBaseline ?? m.category === 'foundations';
+                const rowLocked = Boolean(
+                  rowState?.protectedBaseline || m.category === 'foundations' || requiredPreviewIds.has(m.id),
+                );
                 const rowBusy = busyId === m.id;
                 const rowSaving = savingId === m.id;
                 return (
@@ -211,21 +217,27 @@ export default function CoursesTab() {
                         disabled={rowSaving || rowLocked}
                         aria-pressed={effectiveOn}
                         title={rowLocked
-                          ? 'Foundations stay on as the baseline learning block.'
-                          : (rowChanged ? `Current: ${currentOn ? 'On' : 'Off'} · AI preview: ${effectiveOn ? 'On' : 'Off'}` : undefined)}
+                          ? 'Required modules stay on for the learning path.'
+                          : (rowChanged
+                            ? `Current: ${currentOn ? 'On' : 'Off'} · AI preview: ${effectiveOn ? 'On' : 'Off'}`
+                            : undefined)}
                         data-testid={`courses-publish-${m.id}`}
                       >
-                        {rowSaving ? 'Saving…' : effectiveOn ? 'On' : 'Off'}
+                        {rowSaving ? 'Saving...' : effectiveOn ? 'On' : 'Off'}
                       </button>
-                      {rowLocked && <span className="pill pill-amber courses-row-lock">baseline</span>}
+                      {rowLocked && (
+                        <span className="pill pill-amber courses-row-lock" data-testid="courses-row-required-badge">
+                          required
+                        </span>
+                      )}
                     </td>
                     <td>
                       {m.isSeed ? (
-                        <span className="pill pill-amber" title="Built-in seed course — protected from deletion">
+                        <span className="pill pill-amber" title="Built-in seed course - protected from deletion">
                           seed
                         </span>
                       ) : (
-                        <span className="courses-cell-dim">—</span>
+                        <span className="courses-cell-dim">-</span>
                       )}
                     </td>
                     <td className="courses-row-actions">
@@ -245,7 +257,7 @@ export default function CoursesTab() {
                         disabled={rowBusy}
                         data-testid={`courses-delete-${m.id}`}
                       >
-                        {rowBusy ? '…' : 'Delete'}
+                        {rowBusy ? '...' : 'Delete'}
                       </button>
                     </td>
                   </tr>

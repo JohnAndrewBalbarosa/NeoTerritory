@@ -8,7 +8,9 @@
 
 This test pins the admin planner UI/API surface. It mocks provider selection so the planner stays on the local heuristic path, then feeds in a Devcon-style student delegation brief.
 
-The brief is meant to prove that the planner does not collapse to Adapter alone. The heuristic should surface multiple non-adapter pattern modules when the brief clearly asks for a repository boundary, state-driven actions, and runtime strategy selection. Queued review work and fan-out cues stay in the brief so the planner has enough context to stay diverse.
+The brief is meant to prove that the planner does not collapse to Adapter alone. The heuristic should surface multiple non-adapter pattern modules when the brief clearly asks for a repository boundary, state-driven actions, and runtime strategy selection. Queued review work and fan-out cues stay in the brief so the planner has enough context to stay diverse. The same surface also needs to survive stricter AI validation, including all-or-nothing section/module parsing and the new diversity diagnostics.
+
+The stricter AI coverage now also checks that the backend rejects unknown sections, unknown modules, direct foundation selections, required-learning leakage, empty-but-valid AI plans, and low-diversity responses that stay trapped inside one family.
 
 ### Why It Matters In The Flow
 
@@ -40,3 +42,7 @@ flowchart TD
 - The selected patterns include `repository`, `state`, and `strategy`.
 - Adapter is not the only selected pattern and should not dominate the plan.
 - The pattern audit remains visible so the admin preview can explain the selection.
+- The accepted AI path can expose validation and diversity diagnostics without weakening the fallback behavior.
+- Empty but valid AI JSON falls back as `ai_empty`.
+- Low-diversity structural plans fall back as `pattern_diversity_low`.
+- Direct foundation selections and unknown ids are rejected before the plan is accepted.

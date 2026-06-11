@@ -1,8 +1,95 @@
 import { useMemo, useState } from 'react';
 import { patchLearningModule, previewCoursePlan } from '../../api/client';
-import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
-import { buildModuleSwitchboard, countSwitchboard, groupModuleSwitchboard } from '../../logic/moduleSwitchboard';
+import type {
+  AdminCoursePlan,
+  AdminCoursePlanAiValidation,
+  AdminCoursePlanPatternDiversity,
+  AdminLearningModule,
+} from '../../types/api';
+import { buildModuleSwitchboard, groupModuleSwitchboard } from '../../logic/moduleSwitchboard';
 import CoursePlanPatternAudit from './CoursePlanPatternAudit';
+
+type VerificationState = 'verified' | 'fallback' | 'failed';
+
+function humanizeReason(value: string): string {
+  return value.replace(/_/g, ' ');
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/0+$/, '').replace(/\.$/, '');
+}
+
+function summarizeValidation(validation: AdminCoursePlanAiValidation | null | undefined): string | null {
+  if (!validation) return null;
+  const pieces = [
+    `${validation.status} in ${validation.mode} mode`,
+    `${validation.acceptedModuleIds.length} accepted`,
+  ];
+  if (validation.issues.length > 0) {
+    pieces.push(`issues: ${validation.issues.map(humanizeReason).join(', ')}`);
+  }
+  return pieces.length > 0 ? pieces.join(' | ') : null;
+}
+
+function summarizeDiversity(diversity: AdminCoursePlanPatternDiversity | null | undefined): string | null {
+  if (!diversity) return null;
+  const familyCount = Object.keys(diversity.selectedFamilies).length;
+  const pieces = [
+    `score ${formatNumber(diversity.diversityScore)}`,
+    `${diversity.selectedSlugs.length} patterns`,
+    `${familyCount} families`,
+  ];
+  if (diversity.adapter.blockedReason) {
+    pieces.push(`adapter ${humanizeReason(diversity.adapter.blockedReason)}`);
+  }
+  return pieces.join(' | ');
+}
+
+function describeRequiredReason(value: string): string {
+  return value.replace(/\bbaseline\b/gi, 'required');
+}
+
+function resolveVerificationState(plan: AdminCoursePlan): {
+  state: VerificationState;
+  title: string;
+  detail: string;
+} {
+  const diagnostics = plan.diagnostics;
+  const validation = diagnostics?.aiValidation ?? null;
+  const fallbackReason = diagnostics?.fallbackReason ?? null;
+  const aiSucceeded = diagnostics?.aiSucceeded ?? plan.source === 'ai';
+  const fallbackUsed = Boolean(fallbackReason) || plan.source === 'heuristic' || !aiSucceeded;
+  const validationFailed = validation?.status === 'failed' && !fallbackUsed;
+  if (validationFailed) {
+    return {
+      state: 'failed',
+      title: 'Verification failed',
+      detail:
+        summarizeValidation(validation)
+        ?? diagnostics?.aiError
+        ?? diagnostics?.message
+        ?? 'The AI plan did not pass verification.',
+    };
+  }
+  if (fallbackUsed) {
+    return {
+      state: 'fallback',
+      title: 'Fallback used',
+      detail:
+        summarizeValidation(validation)
+        ?? diagnostics?.message
+        ?? (fallbackReason ? `Fallback reason: ${humanizeReason(fallbackReason)}` : 'The heuristic fallback generated this plan.'),
+    };
+  }
+  return {
+    state: 'verified',
+    title: 'Verified',
+    detail:
+      summarizeValidation(validation)
+      ?? diagnostics?.message
+      ?? 'The AI plan passed verification.',
+  };
+}
 
 interface CoursePlanPanelProps {
   modules: ReadonlyArray<AdminLearningModule>;
@@ -45,21 +132,47 @@ export default function CoursePlanPanel({
     () => buildModuleSwitchboard(modules, plan),
     [modules, plan],
   );
-  const groupedSwitchboard = useMemo(
-    () => groupModuleSwitchboard(switchboard),
-    [switchboard],
-  );
   const changedPreview = useMemo(
     () => switchboard.filter((item) => item.currentPublished !== item.effectivePublished),
     [switchboard],
   );
-  const counts = useMemo(() => countSwitchboard(switchboard), [switchboard]);
-  const activeSections = useMemo(
-    () => groupedSwitchboard.filter((section) => section.effectiveOn > 0),
-    [groupedSwitchboard],
+  const requiredLearningIds = useMemo(
+    () => new Set((plan?.requiredLearning ?? []).map((item) => item.moduleId)),
+    [plan],
   );
-  const prunedSections = Math.max(groupedSwitchboard.length - activeSections.length, 0);
-  const offModules = Math.max(counts.off, 0);
+  const aiEnabledRows = useMemo(
+    () => switchboard.filter(
+      (item) => item.effectivePublished && !item.protectedBaseline && !requiredLearningIds.has(item.moduleId),
+    ),
+    [requiredLearningIds, switchboard],
+  );
+  const aiGroups = useMemo(
+    () => groupModuleSwitchboard(aiEnabledRows),
+    [aiEnabledRows],
+  );
+  const aiChangedCount = useMemo(
+    () => aiEnabledRows.filter((item) => item.currentPublished !== item.effectivePublished).length,
+    [aiEnabledRows],
+  );
+  const requiredModules = useMemo(
+    () => {
+      const seen = new Set<string>();
+      return (plan?.requiredLearning ?? []).filter((item) => {
+        if (seen.has(item.moduleId)) return false;
+        seen.add(item.moduleId);
+        return requiredLearningIds.has(item.moduleId);
+      });
+    },
+    [plan, requiredLearningIds],
+  );
+  const diagnostics = plan?.diagnostics ?? null;
+  const verification = plan ? resolveVerificationState(plan) : null;
+  const verificationToneClass = verification ? `is-${verification.state}` : '';
+  const validationSummary = summarizeValidation(diagnostics?.aiValidation ?? null);
+  const diversitySummary = summarizeDiversity(diagnostics?.patternDiversity ?? null);
+  const aiResponseState = diagnostics
+    ? (diagnostics.aiSucceeded ? 'AI response accepted' : diagnostics.aiAttempted ? 'AI response rejected' : 'AI response not attempted')
+    : null;
 
   async function applyPlan(): Promise<void> {
     if (saving || !plan) return;
@@ -146,148 +259,187 @@ export default function CoursePlanPanel({
           </div>
         </form>
 
-        <div className="admin-policy-preview">
-          <h3>AI course plan</h3>
-          {state === 'loading' && <p className="admin-section__hint">Generating JSON course plan&hellip;</p>}
-          {state === 'failed' && <p className="admin-login-error" role="alert">AI preview failed. Default OFF stays intact.</p>}
-          {plan && (
-            <>
-              <p className="admin-section__hint">{plan.summary}</p>
-              {plan.diagnostics && (
-                <div
-                  className={`admin-plan-diagnostics${plan.diagnostics.fallbackReason ? ' is-warning' : ' is-ok'}`}
-                  role="status"
-                >
-                  <div>
+      <div className="admin-policy-preview">
+        <h3>AI course plan</h3>
+        {state === 'loading' && <p className="admin-section__hint">Generating JSON course plan&hellip;</p>}
+        {state === 'failed' && <p className="admin-login-error" role="alert">AI preview failed. Default OFF stays intact.</p>}
+        {plan && (
+          <>
+            <p className="admin-section__hint">{plan.summary}</p>
+            {verification && diagnostics && (
+              <div
+                className={`admin-plan-verification ${verificationToneClass}`}
+                role="status"
+                data-testid="course-plan-verification-strip"
+              >
+                <div className="admin-plan-verification__copy">
+                  <div className="admin-plan-verification__title-row">
+                    <span className={`tag ${verification.state === 'failed' ? 'tag--off' : 'tag--on'}`}>{verification.title}</span>
                     <strong>{plan.source === 'ai' ? 'AI plan' : 'Fallback plan'}</strong>
-                    <p>{plan.diagnostics.message}</p>
-                    {plan.diagnostics.aiError && <p>AI error: {plan.diagnostics.aiError}</p>}
                   </div>
-                  <div className="admin-plan-diagnostics__chips">
-                    <span className="tag tag--on">{plan.diagnostics.catalogModuleCount} catalog</span>
-                    <span className={plan.diagnostics.selectedModuleCount > 0 ? 'tag tag--on' : 'tag tag--off'}>
-                      {plan.diagnostics.selectedModuleCount} selected
-                    </span>
-                    {plan.diagnostics.fallbackReason && (
-                      <span className="tag tag--off">{plan.diagnostics.fallbackReason}</span>
-                    )}
-                  </div>
+                  <p>{verification.detail}</p>
+                  {diagnostics.aiError && <p>AI error: {diagnostics.aiError}</p>}
+                  {validationSummary && <p>AI validation: {validationSummary}</p>}
+                  {diversitySummary && <p>Pattern diversity: {diversitySummary}</p>}
                 </div>
-              )}
-              {plan.diagnostics?.patternAudit?.length ? (
-                <CoursePlanPatternAudit entries={plan.diagnostics.patternAudit} />
-              ) : null}
-              <div className="admin-plan-scope">
-                <h4>Required learning</h4>
-                {plan.requiredLearning.length === 0 ? (
-                  <p className="admin-section__hint">No required learning modules were selected.</p>
-                ) : (
-                  <ul className="admin-scope-list">
-                    {plan.requiredLearning.map((item) => (
-                      <li key={item.moduleId} className="admin-scope-card">
-                        <strong>{item.title}</strong>
-                        {item.category === 'foundations' ? <span className="pill pill-amber admin-scope-lock">baseline</span> : null}
-                        <p>{item.reason}</p>
-                        <div className="admin-scope-meta">
-                          <span>{item.category}</span>
-                          <span>{item.sections.length} sections</span>
-                          <span>{item.topics.length} topics</span>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-
-          <div className="admin-plan-board">
-            <div className="admin-plan-board__head">
-              <h3>Modules by AI</h3>
-              <p className="admin-section__hint">
-                {activeSections.length} sections on, {prunedSections} pruned, {counts.on} modules on, {offModules} modules off.
-              </p>
-            </div>
-
-            {activeSections.length === 0 ? (
-              <div className="admin-plan-empty">
-                <p className="admin-feature-row__label">No sections switched on</p>
-                <p className="admin-feature-row__explanation">
-                  The AI kept every section off, so the learner path stays unpublished.
-                </p>
-              </div>
-            ) : (
-              <div className="admin-plan-sections">
-                {activeSections.map((section) => {
-                  const visibleRows = section.rows.filter((row) => row.effectivePublished);
-                  const hiddenCount = Math.max(section.rows.length - visibleRows.length, 0);
-                  const changedCount = section.rows.filter((row) => row.currentPublished !== row.effectivePublished).length;
-                  return (
-                    <article key={section.sectionId} className="admin-plan-section-card">
-                      <div className="admin-plan-section-card__head">
-                        <div>
-                          <h4>{section.section}</h4>
-                          <p className="admin-section__hint">
-                            {section.effectiveOn} modules on &middot; {hiddenCount} modules off inside this section
-                          </p>
-                        </div>
-                        <div className="admin-plan-section-card__counts">
-                          <span className="tag tag--on">{section.currentOn} current on</span>
-                          <span className="tag tag--on">{section.effectiveOn} effective on</span>
-                        </div>
-                      </div>
-                      <div className="admin-plan-section-card__meta">
-                        <span className="tag tag--on">{section.sectionId}</span>
-                        <span className="admin-plan-section-card__summary">
-                          {visibleRows.length} module{visibleRows.length === 1 ? '' : 's'} on
-                        </span>
-                        <span className="admin-plan-section-card__summary">
-                          {hiddenCount} hidden by implicit deny
-                        </span>
-                        {changedCount > 0 && (
-                          <span className="admin-plan-section-card__summary">
-                            {changedCount} pending change{changedCount === 1 ? '' : 's'}
-                          </span>
-                        )}
-                      </div>
-                      <ul className="admin-plan-section-list">
-                        {visibleRows.map((item) => (
-                          <li
-                            key={item.moduleId}
-                            className={`admin-feature-row admin-feature-row--preview${item.currentPublished === item.effectivePublished ? '' : ' is-changed'}`}
-                          >
-                            <div className="admin-feature-row__meta">
-                              <p className="admin-feature-row__label">{item.title}</p>
-                              {item.protectedBaseline ? (
-                                <p className="admin-feature-row__desc">Baseline foundations stay on.</p>
-                              ) : null}
-                              <p className="admin-feature-row__explanation">{item.reason}</p>
-                              {item.matchedSections.length > 0 && (
-                                <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
-                              )}
-                              {item.matchedTopics.length > 0 && (
-                                <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
-                              )}
-                            </div>
-                            <div className="admin-feature-row__delta">
-                              <span className={`tag ${item.currentPublished ? 'tag--on' : 'tag--off'}`}>{item.currentPublished ? 'ON' : 'OFF'}</span>
-                              <span className="arrow" aria-hidden="true">&rarr;</span>
-                              <span className={`tag ${item.effectivePublished ? 'tag--on' : 'tag--off'}`}>{item.effectivePublished ? 'ON' : 'OFF'}</span>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </article>
-                  );
-                })}
+                <div className="admin-plan-diagnostics__chips">
+                  {aiResponseState && (
+                    <span className={diagnostics.aiSucceeded ? 'tag tag--on' : 'tag tag--off'}>
+                      {aiResponseState}
+                    </span>
+                  )}
+                  <span className="tag tag--on">{diagnostics.catalogModuleCount} catalog</span>
+                  <span className={diagnostics.selectedSectionCount > 0 ? 'tag tag--on' : 'tag tag--off'}>
+                    {diagnostics.selectedSectionCount} sections
+                  </span>
+                  <span className={diagnostics.selectedModuleCount > 0 ? 'tag tag--on' : 'tag tag--off'}>
+                    {diagnostics.selectedModuleCount} modules
+                  </span>
+                  <span className={diagnostics.aiSucceeded ? 'tag tag--on' : 'tag tag--off'}>
+                    {diagnostics.aiSucceeded ? 'AI success' : 'AI pending'}
+                  </span>
+                  {diagnostics.fallbackReason && (
+                    <span className="tag tag--off">{humanizeReason(diagnostics.fallbackReason)}</span>
+                  )}
+                  {diagnostics.aiValidation && (
+                    <span className="tag tag--on">
+                      validation {diagnostics.aiValidation.status}
+                    </span>
+                  )}
+                  {diagnostics.patternDiversity && (
+                    <span className="tag tag--on">
+                      diversity {formatNumber(diagnostics.patternDiversity.diversityScore)}
+                    </span>
+                  )}
+                </div>
               </div>
             )}
+            {plan.diagnostics?.patternAudit?.length ? (
+              <CoursePlanPatternAudit entries={plan.diagnostics.patternAudit} />
+            ) : null}
+            <div className="admin-plan-board" data-testid="course-plan-ai-enabled-board">
+              <div className="admin-plan-board__head">
+                <div>
+                  <h3>AI-enabled modules</h3>
+                  <p className="admin-section__hint">
+                    {aiEnabledRows.length} non-required module{aiEnabledRows.length === 1 ? '' : 's'} enabled by the plan.
+                  </p>
+                </div>
+                <div className="admin-plan-board__counts">
+                  <span className="tag tag--on">{aiEnabledRows.length} enabled</span>
+                  <span className="tag tag--on">{aiGroups.length} sections</span>
+                  {aiChangedCount > 0 && (
+                    <span className="tag tag--off">{aiChangedCount} pending change{aiChangedCount === 1 ? '' : 's'}</span>
+                  )}
+                </div>
+              </div>
 
-            <div className="admin-plan-board__actions">
-              <p className="admin-section__hint">
-                {offModules} modules stay off unless turned on by AI. Missing sections are pruned automatically.
-              </p>
+              {aiEnabledRows.length === 0 ? (
+                <div className="admin-plan-empty">
+                  <p className="admin-feature-row__label">No non-foundation modules were enabled</p>
+                  <p className="admin-feature-row__explanation">
+                    Required modules stay below this board and continue to be labeled separately.
+                  </p>
+                </div>
+              ) : (
+                <div className="admin-plan-sections">
+                  {aiGroups.map((section) => {
+                    const changedCount = section.rows.filter((row) => row.currentPublished !== row.effectivePublished).length;
+                    return (
+                      <article key={section.sectionId} className="admin-plan-section-card">
+                        <div className="admin-plan-section-card__head">
+                          <div>
+                            <h4>{section.section}</h4>
+                            <p className="admin-section__hint">
+                              {section.effectiveOn} AI-enabled module{section.effectiveOn === 1 ? '' : 's'} in this section
+                            </p>
+                          </div>
+                          <div className="admin-plan-section-card__counts">
+                            <span className="tag tag--on">{section.currentOn} current on</span>
+                            <span className="tag tag--on">{section.effectiveOn} effective on</span>
+                          </div>
+                        </div>
+                        <div className="admin-plan-section-card__meta">
+                          <span className="tag tag--on">{section.sectionId}</span>
+                          <span className="admin-plan-section-card__summary">
+                            {section.rows.length} module{section.rows.length === 1 ? '' : 's'} enabled
+                          </span>
+                          <span className="admin-plan-section-card__summary">
+                            {section.currentOff} currently off
+                          </span>
+                          {changedCount > 0 && (
+                            <span className="admin-plan-section-card__summary">
+                              {changedCount} pending change{changedCount === 1 ? '' : 's'}
+                            </span>
+                          )}
+                        </div>
+                        <ul className="admin-plan-section-list">
+                          {section.rows.map((item) => (
+                            <li
+                              key={item.moduleId}
+                              className={`admin-feature-row admin-feature-row--preview admin-plan-ai-row${item.currentPublished === item.effectivePublished ? '' : ' is-changed'}`}
+                              data-testid="course-plan-ai-enabled-row"
+                            >
+                              <div className="admin-feature-row__meta">
+                                <p className="admin-feature-row__label">{item.title}</p>
+                                <p className="admin-feature-row__explanation">{item.reason}</p>
+                                {item.matchedSections.length > 0 && (
+                                  <p className="admin-feature-row__desc">Sections: {item.matchedSections.join(', ')}</p>
+                                )}
+                                {item.matchedTopics.length > 0 && (
+                                  <p className="admin-feature-row__desc">Topics: {item.matchedTopics.slice(0, 6).join(', ')}</p>
+                                )}
+                              </div>
+                              <div className="admin-feature-row__delta">
+                                <span className={`tag ${item.currentPublished ? 'tag--on' : 'tag--off'}`}>{item.currentPublished ? 'ON' : 'OFF'}</span>
+                                <span className="arrow" aria-hidden="true">&rarr;</span>
+                                <span className={`tag ${item.effectivePublished ? 'tag--on' : 'tag--off'}`}>{item.effectivePublished ? 'ON' : 'OFF'}</span>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
             </div>
+            <div className="admin-plan-scope" data-testid="course-plan-required-modules">
+              <div className="admin-plan-scope__head">
+                <h4>Required modules</h4>
+                <p className="admin-section__hint">
+                  Foundation, default, and prompt-mandated modules stay required.
+                </p>
+              </div>
+              {requiredModules.length === 0 ? (
+                <p className="admin-section__hint">No required modules were selected.</p>
+              ) : (
+                <ul className="admin-scope-list">
+                  {requiredModules.map((item) => (
+                    <li key={item.moduleId} className="admin-scope-card">
+                      <div className="admin-scope-card__head">
+                        <strong>{item.title}</strong>
+                        <span className="pill pill-amber admin-scope-lock" data-testid="course-plan-required-badge">required</span>
+                      </div>
+                      <p>{item.category === 'foundations' ? 'Required foundation module.' : describeRequiredReason(item.reason)}</p>
+                      <div className="admin-scope-meta">
+                        <span>{item.category}</span>
+                        <span>{item.sections.length} sections</span>
+                        <span>{item.topics.length} topics</span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
+          <div className="admin-plan-board__actions">
+            {plan && (
+              <p className="admin-section__hint">
+                Only the modules enabled by the plan appear above. Required modules remain below and stay on.
+              </p>
+            )}
           </div>
 
           <button
