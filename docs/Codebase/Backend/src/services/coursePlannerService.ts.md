@@ -31,6 +31,8 @@ The planner uses implicit deny:
 
 The fallback heuristic now emits a compact pattern audit so the admin preview can explain why the top candidates won or lost. The audit keeps the strong matches visible without turning the panel into an opaque score dump.
 
+The admin planner API surface is pinned by `docs/Codebase/Backend/src/__tests__/coursePlannerService.test.ts.md`, which keeps the heuristic fallback deterministic for a Devcon-style student delegation brief.
+
 ## Planner Flow
 
 ```mermaid
@@ -78,3 +80,4 @@ The shared cue vocabulary and evidence scorer now live in `patternEvidenceServic
 - The shared cue vocabulary and phrase-hit scoring live in `patternEvidenceService.ts`.
 - The fallback preview exposes a pattern audit with the strongest candidates, their scores, and a short rejection reason when they are not selected.
 - The planner still returns the existing `course-plan-v1` response shape.
+- The admin planner test surface keeps the heuristic fallback focused on a Devcon-style brief and verifies that the plan is not reduced to Adapter alone.

@@ -16,6 +16,8 @@ The shared cue map, tokenization, and evidence scoring now come from `patternEvi
 
 The AI prompt from the project manager is intentionally broad. This service makes it actionable by converting the prompt into a deterministic scope that the rest of the system can use.
 
+The project orchestration API surface is pinned by `docs/Codebase/Backend/src/__tests__/projectLearningOrchestration.test.ts.md`, which keeps the scope, toggle, and assessment path deterministic for a Devcon-style student delegation brief.
+
 ### What To Watch While Reading
 
 Keep extraction disciplined:
@@ -89,6 +91,6 @@ flowchart TD
 - The service can flag uncertainty without stopping the workflow.
 - The service can infer multiple distinct patterns from one brief when the business forces are separate.
 - The selector does not require a cue match before a pattern can be considered.
-- Template-method style briefs can be selected through the shared pattern guide instead of falling back to Adapter.
+- Devcon-style briefs can resolve to command, observer, repository, state, and strategy without collapsing to Adapter.
 - Vague briefs remain low confidence instead of being forced into the top-ranked pattern.
 - The cue vocabulary and shared scoring helper live in `patternEvidenceService.ts`.

@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This service converts the project-learning scope into model-backed publish toggles with implicit deny. It decides which pattern modules, topic sections, and assessment gates should be visible for the current project.
+This service converts the project-learning scope into model-backed publish toggles with implicit deny. It parses `src/config/projectLearningTogglePolicy.json`, validates that the config covers the full pattern catalog, and then decides which pattern modules, topic sections, and assessment gates should be visible for the current project.
 
 Everything starts off disabled. Only the AI-approved scope becomes enabled.
 
@@ -20,16 +20,16 @@ This service is policy, not content:
 - it does not teach the pattern.
 - it does not score the intern.
 - it only decides what can be reached.
-- it operates on the module model/catalog entries rather than a generic config blob.
-- general config is reserved for adding structural pattern families outside the GoF catalog.
-- it now covers the wider pattern set, including later structural and behavioral modules such as facade, command, strategy, observer, and the other supported families.
+- it operates on the repo-owned toggle policy JSON instead of local hardcoded arrays.
+- the JSON config carries aliases and module hints, while project scopes still carry the actual per-project decisions.
+- it now covers the full supported pattern set, including `template-method`, repository, and other non-original prompt candidates.
 
 ## Service Flow
 
 ```mermaid
 flowchart TD
     Start["Receive scope"]
-    N0["Load catalog"]
+    N0["Load JSON policy"]
     N1["Apply deny default"]
     N2["Enable required items"]
     N3["Hide excluded items"]
@@ -42,6 +42,14 @@ flowchart TD
     N3 --> N4
     N4 --> End
 ```
+
+## Config Contract
+
+Read `docs/Codebase/Backend/src/config/projectLearningTogglePolicy.json.md` first when changing available toggles. The service validates:
+- schema version.
+- `pattern.*` and `topic.*` key prefixes.
+- pattern coverage against `PATTERN_CATALOG`.
+- string-array aliases and module hints.
 
 ## Input Contract
 
@@ -78,6 +86,6 @@ flowchart TD
 - Only the scoped patterns and topics are enabled.
 - Excluded modules remain disabled even if they appear in the broader catalog.
 - The policy can be re-evaluated when the scope version changes.
-- Module publish state is resolved from the learning model catalog.
-- Config is only used when the org wants to add structural pattern families outside the GoF set.
+- Toggle candidates are loaded from `projectLearningTogglePolicy.json`.
+- The JSON config covers every `PATTERN_CATALOG` slug.
 - Pattern keys now cover the broader supported catalog, not just the initial partial set.

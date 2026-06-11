@@ -45,17 +45,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "Which best describes a design pattern?",
-          "options": [
-            "A copy-pasteable code library you import.",
-            "A named structural arrangement that solves a recurring design problem.",
-            "A specific framework like Spring or React.",
-            "A unit test template applied to every class."
-          ],
-          "correctIndex": 1,
-          "explanation": "A design pattern is a named, idiomatic shape — not code you import."
-        },
-        {
           "question": "Why does naming a recurring shape help a team?",
           "options": [
             "One word replaces a paragraph of structural explanation.",
@@ -64,7 +53,8 @@
             "It guarantees the design is correct."
           ],
           "correctIndex": 0,
-          "explanation": "Naming the shape turns structure into shared vocabulary."
+          "explanation": "Naming the shape turns structure into shared vocabulary.",
+          "taxonomy": "analyzing"
         },
         {
           "question": "Why does the same design problem keep reappearing across programs?",
@@ -75,7 +65,20 @@
             "Because IDEs auto-generate it."
           ],
           "correctIndex": 1,
-          "explanation": "The recurring shape is a consequence of the language, so it is worth naming."
+          "explanation": "The recurring shape is a consequence of the language, so it is worth naming.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "Which best describes a design pattern?",
+          "options": [
+            "A copy-pasteable code library you import.",
+            "A named structural arrangement that solves a recurring design problem.",
+            "A specific framework like Spring or React.",
+            "A unit test template applied to every class."
+          ],
+          "correctIndex": 1,
+          "explanation": "A design pattern is a named, idiomatic shape — not code you import.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -128,7 +131,8 @@
             "They are required by the C++ standard."
           ],
           "correctIndex": 0,
-          "explanation": "Patterns compress engineering decisions into one shared word."
+          "explanation": "Patterns compress engineering decisions into one shared word.",
+          "taxonomy": "remembering"
         },
         {
           "question": "How do patterns affect a beginner joining a team?",
@@ -139,7 +143,8 @@
             "They only matter to architects, not new hires."
           ],
           "correctIndex": 1,
-          "explanation": "Pattern literacy collapses the time spent inferring a codebase’s conventions."
+          "explanation": "Pattern literacy collapses the time spent inferring a codebase’s conventions.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -211,7 +216,8 @@
             "Structural is a subset of Behavioural in modern C++."
           ],
           "correctIndex": 1,
-          "explanation": "Creational → make. Structural → connect. Behavioural → talk."
+          "explanation": "Creational → make. Structural → connect. Behavioural → talk.",
+          "taxonomy": "understanding"
         },
         {
           "question": "Why does this site treat Idioms as a fourth bucket alongside the three GoF families?",
@@ -222,7 +228,8 @@
             "Because idioms replace Structural patterns."
           ],
           "correctIndex": 1,
-          "explanation": "Idioms are common detectable shapes the catalog adds beyond the 23 GoF patterns."
+          "explanation": "Idioms are common detectable shapes the catalog adds beyond the 23 GoF patterns.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -289,7 +296,8 @@
             "Because the C++ compiler enforces patterns natively."
           ],
           "correctIndex": 1,
-          "explanation": "Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism."
+          "explanation": "Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.",
+          "taxonomy": "creating"
         },
         {
           "question": "Which definition matches polymorphism?",
@@ -300,7 +308,8 @@
             "Reusing behaviour from a base class."
           ],
           "correctIndex": 1,
-          "explanation": "Polymorphism = one action, many forms, resolved by the runtime type."
+          "explanation": "Polymorphism = one action, many forms, resolved by the runtime type.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -343,7 +352,8 @@
             "Avoid writing concrete classes entirely."
           ],
           "correctIndex": 1,
-          "explanation": "Depend on contracts (what), not identities (who)."
+          "explanation": "Depend on contracts (what), not identities (who).",
+          "taxonomy": "creating"
         },
         {
           "question": "Which patterns rest directly on this principle?",
@@ -354,7 +364,8 @@
             "Only Creational patterns."
           ],
           "correctIndex": 0,
-          "explanation": "They give the abstraction a name and a recognisable shape."
+          "explanation": "They give the abstraction a name and a recognisable shape.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -398,17 +409,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "Why do pattern detectors walk an AST instead of grep-searching source text?",
-          "options": [
-            "Because grep is too slow.",
-            "Because code is a tree; patterns are shapes in that tree, and matching needs structural context.",
-            "Because AST parsers are required by ISO C++.",
-            "Because text search is forbidden on Linux."
-          ],
-          "correctIndex": 1,
-          "explanation": "Patterns are tree shapes, not text shapes."
-        },
-        {
           "question": "How does CodiNeo keep a detection result traceable to the user’s source?",
           "options": [
             "It rewrites the source in place.",
@@ -417,7 +417,20 @@
             "It discards the parse tree after analysis."
           ],
           "correctIndex": 1,
-          "explanation": "The original parse tree is never mutated, so every result maps back to specific lines."
+          "explanation": "The original parse tree is never mutated, so every result maps back to specific lines.",
+          "taxonomy": "analyzing"
+        },
+        {
+          "question": "Why do pattern detectors walk an AST instead of grep-searching source text?",
+          "options": [
+            "Because grep is too slow.",
+            "Because code is a tree; patterns are shapes in that tree, and matching needs structural context.",
+            "Because AST parsers are required by ISO C++.",
+            "Because text search is forbidden on Linux."
+          ],
+          "correctIndex": 1,
+          "explanation": "Patterns are tree shapes, not text shapes.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -458,17 +471,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "Why does recognising patterns matter in real-world codebases?",
-          "options": [
-            "Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.",
-            "Patterns are mandated by every linter.",
-            "They make compilation faster.",
-            "They eliminate the need for code review."
-          ],
-          "correctIndex": 0,
-          "explanation": "When docs go stale, the shape is what is still true."
-        },
-        {
           "question": "Which pairing of system and pattern is plausible?",
           "options": [
             "A compiler using Visitor to walk its syntax tree.",
@@ -477,7 +479,20 @@
             "A UI framework that never observes state."
           ],
           "correctIndex": 0,
-          "explanation": "Visitor is a classic fit for traversing compiler ASTs; patterns appear across real systems."
+          "explanation": "Visitor is a classic fit for traversing compiler ASTs; patterns appear across real systems.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "Why does recognising patterns matter in real-world codebases?",
+          "options": [
+            "Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.",
+            "Patterns are mandated by every linter.",
+            "They make compilation faster.",
+            "They eliminate the need for code review."
+          ],
+          "correctIndex": 0,
+          "explanation": "When docs go stale, the shape is what is still true.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -513,17 +528,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What is the most common beginner mistake with design patterns?",
-          "options": [
-            "Refusing to use any patterns at all.",
-            "Forcing a pattern onto a problem that does not need it (\"pattern fever\").",
-            "Always preferring composition over inheritance.",
-            "Reading too many books."
-          ],
-          "correctIndex": 1,
-          "explanation": "Use patterns to solve problems you actually have — not for their own sake."
-        },
-        {
           "question": "Why is making classes depend heavily on each other a trap?",
           "options": [
             "Tight coupling is always faster at runtime.",
@@ -532,7 +536,20 @@
             "Coupling has no effect on maintenance."
           ],
           "correctIndex": 1,
-          "explanation": "Loose coupling beats premature abstraction and rigid dependencies."
+          "explanation": "Loose coupling beats premature abstraction and rigid dependencies.",
+          "taxonomy": "analyzing"
+        },
+        {
+          "question": "What is the most common beginner mistake with design patterns?",
+          "options": [
+            "Refusing to use any patterns at all.",
+            "Forcing a pattern onto a problem that does not need it (\"pattern fever\").",
+            "Always preferring composition over inheritance.",
+            "Reading too many books."
+          ],
+          "correctIndex": 1,
+          "explanation": "Use patterns to solve problems you actually have — not for their own sake.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -587,7 +604,8 @@
             "Rewrite the source to remove ambiguity."
           ],
           "correctIndex": 1,
-          "explanation": "Ambiguity tells you human judgement is required."
+          "explanation": "Ambiguity tells you human judgement is required.",
+          "taxonomy": "evaluating"
         },
         {
           "question": "Which pair genuinely shares a structural shape?",
@@ -598,7 +616,8 @@
             "Adapter and Singleton, which both restrict instances."
           ],
           "correctIndex": 0,
-          "explanation": "Shared shapes (like `return *this`) are why some classes are structurally ambiguous."
+          "explanation": "Shared shapes (like `return *this`) are why some classes are structurally ambiguous.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -638,17 +657,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What kinds of tokens are most useful for distinguishing one pattern from another?",
-          "options": [
-            "Any single keyword that appears in the class.",
-            "Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.",
-            "Comments only.",
-            "Function lengths."
-          ],
-          "correctIndex": 1,
-          "explanation": "Add structural descriptions until ambiguity disappears."
-        },
-        {
           "question": "How does adding descriptions change a definition (connotation)?",
           "options": [
             "It widens what counts, so more things qualify.",
@@ -657,7 +665,20 @@
             "It only changes the name, not the meaning."
           ],
           "correctIndex": 1,
-          "explanation": "More descriptions = more specific meaning and fewer things that qualify."
+          "explanation": "More descriptions = more specific meaning and fewer things that qualify.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What kinds of tokens are most useful for distinguishing one pattern from another?",
+          "options": [
+            "Any single keyword that appears in the class.",
+            "Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.",
+            "Comments only.",
+            "Function lengths."
+          ],
+          "correctIndex": 1,
+          "explanation": "Add structural descriptions until ambiguity disappears.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -754,29 +775,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "Two classes have the exact same class diagram. What is the ONLY thing that can tell them apart?",
-          "options": [
-            "Nothing — identical structure means they are the same pattern.",
-            "The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.",
-            "Whichever class name sorts first alphabetically.",
-            "The number of lines in each class."
-          ],
-          "correctIndex": 1,
-          "explanation": "Several Gang-of-Four patterns share a shape on purpose. The boxes-and-arrows answer \"what shape is this?\", never \"what is this FOR?\" — intent leaves fingerprints in the tokens, collaborators, and call-site, and that is what separates same-shaped patterns."
-        },
-        {
-          "question": "Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?",
-          "code": "class TrafficLight {\npublic:\n  void next() {\n    state_->handle(*this);   // delegate to the current state...\n  }\n  void changeState(std::unique_ptr<LightState> s) {\n    state_ = std::move(s);   // ...which transitions the held member itself\n  }\nprivate:\n  std::unique_ptr<LightState> state_;\n};",
-          "options": [
-            "Strategy — the algorithm is chosen once by the client.",
-            "State — the object transitions its own held member at runtime.",
-            "Adapter — it translates one interface to another.",
-            "Proxy — it controls access to a real subject."
-          ],
-          "correctIndex": 1,
-          "explanation": "The resolving cue is WHO drives the swap. A transition call (changeState / setState / this->state_ = ...) invoked as part of handling input means the object flips its own held member mid-flight — that is State. If the policy object were set once by the caller and never self-swapped, the same skeleton would read as Strategy."
-        },
-        {
           "question": "Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern is THIS class?",
           "code": "class Compressor {\npublic:\n  explicit Compressor(std::unique_ptr<CompressionPolicy> p)\n    : policy_(std::move(p)) {}\n  void setStrategy(std::unique_ptr<CompressionPolicy> p) {\n    policy_ = std::move(p);  // the CLIENT swaps the policy\n  }\n  Bytes run(const Bytes& in) { return policy_->compress(in); }\nprivate:\n  std::unique_ptr<CompressionPolicy> policy_;\n};",
           "options": [
@@ -786,31 +784,8 @@
             "Builder — it assembles a product step by step."
           ],
           "correctIndex": 1,
-          "explanation": "The swap is driven from OUTSIDE: a constructor injection plus a setStrategy() the caller controls, and run() never reassigns policy_ itself. Client-driven, externally-set policy with no self-transition is Strategy. (Compare the previous question, where the object called changeState on itself → State.)"
-        },
-        {
-          "question": "Adapter, Decorator, and Proxy all hold a member of an interface type and forward calls to it — the same wrapping skeleton. Which pattern is the class below?",
-          "code": "class LoggingStream : public Stream {       // SAME interface as the wrappee\npublic:\n  explicit LoggingStream(std::unique_ptr<Stream> inner)\n    : inner_(std::move(inner)) {}\n  void write(const std::string& data) override {\n    log(\"writing \" + std::to_string(data.size()) + \" bytes\");  // ADDED responsibility\n    inner_->write(data);                    // ...then forward unchanged\n  }\nprivate:\n  std::unique_ptr<Stream> inner_;\n};\n// call site: new LoggingStream(new FileStream())  // nested wrap",
-          "options": [
-            "Adapter — it converts one interface into a different one.",
-            "Decorator — it shares the wrappee’s interface and layers behaviour on the forward.",
-            "Proxy — it controls or defers access to the real subject.",
-            "State — it swaps a held state object."
-          ],
-          "correctIndex": 1,
-          "explanation": "Two cues resolve it to Decorator: (1) it implements the SAME interface it wraps (`: public Stream`, so a decorator can wrap another decorator), and (2) it ADDS a responsibility — the log() call — around an otherwise-unchanged forward. The nested `new LoggingStream(new FileStream())` at the call site is the confident Decorator-composition signal (and the Adapter detector treats that exact nesting as a \"Decorator giveaway\" negative). A bare forward that just translated interfaces with no added behaviour would be Adapter."
-        },
-        {
-          "question": "This class also holds a member of the same interface and forwards to it. Adapter or Proxy?",
-          "code": "class ImageProxy : public Image {\npublic:\n  void draw() override {\n    if (!real_) {                              // access control: lazy init guard\n      real_ = std::make_unique<HiResImage>(path_);\n    }\n    real_->draw();                             // forward only after the guard\n  }\nprivate:\n  std::unique_ptr<HiResImage> real_;\n  std::string path_;\n};",
-          "options": [
-            "Adapter — it adapts HiResImage to the Image interface.",
-            "Proxy — it controls access to the real subject (here, lazy creation).",
-            "Decorator — it adds a visible responsibility to draw().",
-            "Strategy — the caller injects the algorithm."
-          ],
-          "correctIndex": 1,
-          "explanation": "The deciding cue is access control: the `if (!real_) … make_unique<HiResImage>()` guard defers creating the real subject until first use — a canonical Virtual Proxy. Forwarding happens only behind that gate. Adapter explicitly declares access_control_caching as a negative signature so a lazy/guarded class cannot be mistaken for it; Adapter is a bare interface translation with no gate."
+          "explanation": "The swap is driven from OUTSIDE: a constructor injection plus a setStrategy() the caller controls, and run() never reassigns policy_ itself. Client-driven, externally-set policy with no self-transition is Strategy. (Compare the previous question, where the object called changeState on itself → State.)",
+          "taxonomy": "creating"
         },
         {
           "question": "Both Builder and plain method-chaining use fluent setters that `return *this`. What makes the class below specifically a Builder?",
@@ -822,7 +797,59 @@
             "It stores its fields in a std::vector."
           ],
           "correctIndex": 1,
-          "explanation": "The shared fluent shape is `return *this` on the setters — that alone is just method-chaining. Builder adds a terminator (build() / finalize()) that returns the constructed PRODUCT (here a Pizza). The terminator is the semantic cue; neither the class name nor the field types decide it."
+          "explanation": "The shared fluent shape is `return *this` on the setters — that alone is just method-chaining. Builder adds a terminator (build() / finalize()) that returns the constructed PRODUCT (here a Pizza). The terminator is the semantic cue; neither the class name nor the field types decide it.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "Adapter, Decorator, and Proxy all hold a member of an interface type and forward calls to it — the same wrapping skeleton. Which pattern is the class below?",
+          "code": "class LoggingStream : public Stream {       // SAME interface as the wrappee\npublic:\n  explicit LoggingStream(std::unique_ptr<Stream> inner)\n    : inner_(std::move(inner)) {}\n  void write(const std::string& data) override {\n    log(\"writing \" + std::to_string(data.size()) + \" bytes\");  // ADDED responsibility\n    inner_->write(data);                    // ...then forward unchanged\n  }\nprivate:\n  std::unique_ptr<Stream> inner_;\n};\n// call site: new LoggingStream(new FileStream())  // nested wrap",
+          "options": [
+            "Adapter — it converts one interface into a different one.",
+            "Decorator — it shares the wrappee’s interface and layers behaviour on the forward.",
+            "Proxy — it controls or defers access to the real subject.",
+            "State — it swaps a held state object."
+          ],
+          "correctIndex": 1,
+          "explanation": "Two cues resolve it to Decorator: (1) it implements the SAME interface it wraps (`: public Stream`, so a decorator can wrap another decorator), and (2) it ADDS a responsibility — the log() call — around an otherwise-unchanged forward. The nested `new LoggingStream(new FileStream())` at the call site is the confident Decorator-composition signal (and the Adapter detector treats that exact nesting as a \"Decorator giveaway\" negative). A bare forward that just translated interfaces with no added behaviour would be Adapter.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "Two classes have the exact same class diagram. What is the ONLY thing that can tell them apart?",
+          "options": [
+            "Nothing — identical structure means they are the same pattern.",
+            "The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.",
+            "Whichever class name sorts first alphabetically.",
+            "The number of lines in each class."
+          ],
+          "correctIndex": 1,
+          "explanation": "Several Gang-of-Four patterns share a shape on purpose. The boxes-and-arrows answer \"what shape is this?\", never \"what is this FOR?\" — intent leaves fingerprints in the tokens, collaborators, and call-site, and that is what separates same-shaped patterns.",
+          "taxonomy": "remembering"
+        },
+        {
+          "question": "This class also holds a member of the same interface and forwards to it. Adapter or Proxy?",
+          "code": "class ImageProxy : public Image {\npublic:\n  void draw() override {\n    if (!real_) {                              // access control: lazy init guard\n      real_ = std::make_unique<HiResImage>(path_);\n    }\n    real_->draw();                             // forward only after the guard\n  }\nprivate:\n  std::unique_ptr<HiResImage> real_;\n  std::string path_;\n};",
+          "options": [
+            "Adapter — it adapts HiResImage to the Image interface.",
+            "Proxy — it controls access to the real subject (here, lazy creation).",
+            "Decorator — it adds a visible responsibility to draw().",
+            "Strategy — the caller injects the algorithm."
+          ],
+          "correctIndex": 1,
+          "explanation": "The deciding cue is access control: the `if (!real_) … make_unique<HiResImage>()` guard defers creating the real subject until first use — a canonical Virtual Proxy. Forwarding happens only behind that gate. Adapter explicitly declares access_control_caching as a negative signature so a lazy/guarded class cannot be mistaken for it; Adapter is a bare interface translation with no gate.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?",
+          "code": "class TrafficLight {\npublic:\n  void next() {\n    state_->handle(*this);   // delegate to the current state...\n  }\n  void changeState(std::unique_ptr<LightState> s) {\n    state_ = std::move(s);   // ...which transitions the held member itself\n  }\nprivate:\n  std::unique_ptr<LightState> state_;\n};",
+          "options": [
+            "Strategy — the algorithm is chosen once by the client.",
+            "State — the object transitions its own held member at runtime.",
+            "Adapter — it translates one interface to another.",
+            "Proxy — it controls access to a real subject."
+          ],
+          "correctIndex": 1,
+          "explanation": "The resolving cue is WHO drives the swap. A transition call (changeState / setState / this->state_ = ...) invoked as part of handling input means the object flips its own held member mid-flight — that is State. If the policy object were set once by the caller and never self-swapped, the same skeleton would read as Strategy.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -869,7 +896,8 @@
             "The class must inherit from a sealed base."
           ],
           "correctIndex": 1,
-          "explanation": "must-have = at least one combo present."
+          "explanation": "must-have = at least one combo present.",
+          "taxonomy": "remembering"
         },
         {
           "question": "What does a \"must-not-have\" combo do when it fires?",
@@ -880,7 +908,8 @@
             "It renames the class."
           ],
           "correctIndex": 1,
-          "explanation": "A single must-not-have match rejects the class for that pattern."
+          "explanation": "A single must-not-have match rejects the class for that pattern.",
+          "taxonomy": "remembering"
         }
       ]
     },
@@ -927,7 +956,8 @@
             "It only matches identifiers spelled in PascalCase."
           ],
           "correctIndex": 1,
-          "explanation": "Language structure is the universal ground; team style sits on top."
+          "explanation": "Language structure is the universal ground; team style sits on top.",
+          "taxonomy": "understanding"
         },
         {
           "question": "Why does a stable, structure-based rule matter for CodiNeo specifically?",
@@ -938,7 +968,8 @@
             "Because team naming is always identical."
           ],
           "correctIndex": 0,
-          "explanation": "A stable structural rule is what makes downstream tooling (test generation) reliable."
+          "explanation": "A stable structural rule is what makes downstream tooling (test generation) reliable.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -986,7 +1017,8 @@
             "Whether the class declares a constructor."
           ],
           "correctIndex": 1,
-          "explanation": "Patterns are also a conversation — the organisational fit is yours to decide."
+          "explanation": "Patterns are also a conversation — the organisational fit is yours to decide.",
+          "taxonomy": "understanding"
         },
         {
           "question": "The post-Foundations questions are intentionally…",
@@ -997,7 +1029,8 @@
             "Graded by this module before you continue."
           ],
           "correctIndex": 1,
-          "explanation": "They are discussion prompts for your next code review, not graded items."
+          "explanation": "They are discussion prompts for your next code review, not graded items.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -1065,7 +1098,8 @@
             "Construction is split across a builder."
           ],
           "correctIndex": 0,
-          "explanation": "Singleton restricts a class to one instance and provides a single access point."
+          "explanation": "Singleton restricts a class to one instance and provides a single access point.",
+          "taxonomy": "understanding"
         },
         {
           "question": "Which structural signal typically marks a Singleton in C++?",
@@ -1076,7 +1110,8 @@
             "A `return *this` chain of setters."
           ],
           "correctIndex": 1,
-          "explanation": "Hidden constructor + static accessor is the recognisable shape."
+          "explanation": "Hidden constructor + static accessor is the recognisable shape.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -1085,6 +1120,7 @@
       "patternSlug": "singleton",
       "patternName": "Singleton",
       "family": "Creational",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Singleton pattern. The analyser passes you when the response tags include Singleton, even if other patterns also fire on the same class."
     },
     "sortOrder": 14
@@ -1142,17 +1178,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Factory Method do?",
-          "options": [
-            "Defines an interface for creating an object but lets subclasses decide which class to instantiate.",
-            "Guarantees one instance of a class.",
-            "Composes objects into tree structures.",
-            "Adds behaviour to an object dynamically."
-          ],
-          "correctIndex": 0,
-          "explanation": "Factory Method defers instantiation to subclasses behind a creation interface."
-        },
-        {
           "question": "Which principle does Factory Method rest on?",
           "options": [
             "Program to an interface — callers depend on the product abstraction, not a concrete class.",
@@ -1161,7 +1186,20 @@
             "Mutate global state."
           ],
           "correctIndex": 0,
-          "explanation": "Callers route through the abstraction, so swapping the concrete product is localised."
+          "explanation": "Callers route through the abstraction, so swapping the concrete product is localised.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does Factory Method do?",
+          "options": [
+            "Defines an interface for creating an object but lets subclasses decide which class to instantiate.",
+            "Guarantees one instance of a class.",
+            "Composes objects into tree structures.",
+            "Adds behaviour to an object dynamically."
+          ],
+          "correctIndex": 0,
+          "explanation": "Factory Method defers instantiation to subclasses behind a creation interface.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -1170,6 +1208,7 @@
       "patternSlug": "factory",
       "patternName": "Factory",
       "family": "Creational",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Factory Method pattern. The analyser passes you when the response tags include Factory, even if other patterns also fire on the same class."
     },
     "sortOrder": 15
@@ -1226,17 +1265,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What problem does Builder solve?",
-          "options": [
-            "Constructing a complex object step by step, separating construction from representation.",
-            "Ensuring only one instance exists.",
-            "Letting objects notify observers of changes.",
-            "Adapting one interface to another."
-          ],
-          "correctIndex": 0,
-          "explanation": "Builder assembles a complex object incrementally."
-        },
-        {
           "question": "Which token shape co-occurs with Builder’s fluent style?",
           "options": [
             "`return *this;` from setter-style methods so calls chain.",
@@ -1245,7 +1273,20 @@
             "A visitor double-dispatch."
           ],
           "correctIndex": 0,
-          "explanation": "Fluent builders return `*this`, which is why Builder and Method Chaining share a shape."
+          "explanation": "Fluent builders return `*this`, which is why Builder and Method Chaining share a shape.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "What problem does Builder solve?",
+          "options": [
+            "Constructing a complex object step by step, separating construction from representation.",
+            "Ensuring only one instance exists.",
+            "Letting objects notify observers of changes.",
+            "Adapting one interface to another."
+          ],
+          "correctIndex": 0,
+          "explanation": "Builder assembles a complex object incrementally.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -1254,6 +1295,7 @@
       "patternSlug": "builder",
       "patternName": "Builder",
       "family": "Creational",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Builder pattern. The analyser passes you when the response tags include Builder, even if other patterns also fire on the same class."
     },
     "sortOrder": 16
@@ -1310,17 +1352,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What is Method Chaining (a fluent idiom)?",
-          "options": [
-            "Methods return the receiver (`*this`) so calls chain into one expression.",
-            "A class guarantees a single instance.",
-            "An algorithm is selected at runtime via an interface.",
-            "A request is wrapped as an object."
-          ],
-          "correctIndex": 0,
-          "explanation": "Method Chaining returns `*this` to enable fluent call chains."
-        },
-        {
           "question": "Why is Method Chaining easy to confuse with Builder?",
           "options": [
             "Both rely on `return *this`, so they share a structural shape.",
@@ -1329,7 +1360,20 @@
             "Both notify observers."
           ],
           "correctIndex": 0,
-          "explanation": "The shared `return *this` shape is a built-in ambiguity."
+          "explanation": "The shared `return *this` shape is a built-in ambiguity.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "What is Method Chaining (a fluent idiom)?",
+          "options": [
+            "Methods return the receiver (`*this`) so calls chain into one expression.",
+            "A class guarantees a single instance.",
+            "An algorithm is selected at runtime via an interface.",
+            "A request is wrapped as an object."
+          ],
+          "correctIndex": 0,
+          "explanation": "Method Chaining returns `*this` to enable fluent call chains.",
+          "taxonomy": "remembering"
         }
       ]
     },
@@ -1338,6 +1382,7 @@
       "patternSlug": "method-chaining",
       "patternName": "Method Chaining",
       "family": "Creational",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Method Chaining pattern. The analyser passes you when the response tags include Method Chaining, even if other patterns also fire on the same class."
     },
     "sortOrder": 17
@@ -1394,17 +1439,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Adapter do?",
-          "options": [
-            "Converts the interface of a class into another interface clients expect.",
-            "Guarantees a single instance.",
-            "Adds responsibilities to an object dynamically.",
-            "Defines a family of algorithms."
-          ],
-          "correctIndex": 0,
-          "explanation": "Adapter makes incompatible interfaces work together by translating one to the other."
-        },
-        {
           "question": "Why can Adapter look like Decorator or Proxy?",
           "options": [
             "All three hold a wrapped member and forward calls to it.",
@@ -1413,7 +1447,20 @@
             "All three traverse a collection."
           ],
           "correctIndex": 0,
-          "explanation": "The wrap-and-forward shape is shared, so these three are structurally ambiguous."
+          "explanation": "The wrap-and-forward shape is shared, so these three are structurally ambiguous.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does Adapter do?",
+          "options": [
+            "Converts the interface of a class into another interface clients expect.",
+            "Guarantees a single instance.",
+            "Adds responsibilities to an object dynamically.",
+            "Defines a family of algorithms."
+          ],
+          "correctIndex": 0,
+          "explanation": "Adapter makes incompatible interfaces work together by translating one to the other.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -1422,6 +1469,7 @@
       "patternSlug": "adapter",
       "patternName": "Adapter",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Adapter pattern. The analyser passes you when the response tags include Adapter, even if other patterns also fire on the same class."
     },
     "sortOrder": 18
@@ -1487,7 +1535,8 @@
             "Builds an object step by step."
           ],
           "correctIndex": 0,
-          "explanation": "Proxy stands in for the real subject and controls access (lazy load, remote, protection)."
+          "explanation": "Proxy stands in for the real subject and controls access (lazy load, remote, protection).",
+          "taxonomy": "understanding"
         },
         {
           "question": "What distinguishes Proxy from Decorator structurally in intent?",
@@ -1498,7 +1547,8 @@
             "There is no difference at all."
           ],
           "correctIndex": 0,
-          "explanation": "Both wrap-and-forward; intent differs — access control vs added responsibility."
+          "explanation": "Both wrap-and-forward; intent differs — access control vs added responsibility.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -1507,6 +1557,7 @@
       "patternSlug": "proxy",
       "patternName": "Proxy",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Proxy pattern. The analyser passes you when the response tags include Proxy, even if other patterns also fire on the same class."
     },
     "sortOrder": 19
@@ -1571,7 +1622,8 @@
             "Separates an abstraction from its implementation."
           ],
           "correctIndex": 0,
-          "explanation": "Decorator layers behaviour around an object without changing its interface."
+          "explanation": "Decorator layers behaviour around an object without changing its interface.",
+          "taxonomy": "understanding"
         },
         {
           "question": "How does Decorator differ from a plain Adapter?",
@@ -1582,7 +1634,8 @@
             "They are identical."
           ],
           "correctIndex": 0,
-          "explanation": "Same interface + added behaviour is Decorator; interface translation is Adapter."
+          "explanation": "Same interface + added behaviour is Decorator; interface translation is Adapter.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -1591,6 +1644,7 @@
       "patternSlug": "decorator",
       "patternName": "Decorator",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Decorator pattern. The analyser passes you when the response tags include Decorator, even if other patterns also fire on the same class."
     },
     "sortOrder": 20
@@ -1656,7 +1710,8 @@
             "Clones a prototype."
           ],
           "correctIndex": 0,
-          "explanation": "Strategy lets the algorithm vary independently of the clients that use it."
+          "explanation": "Strategy lets the algorithm vary independently of the clients that use it.",
+          "taxonomy": "applying"
         },
         {
           "question": "How does a context use a Strategy?",
@@ -1667,7 +1722,8 @@
             "It returns `*this` to chain."
           ],
           "correctIndex": 0,
-          "explanation": "The context composes a strategy interface and delegates, so algorithms swap freely."
+          "explanation": "The context composes a strategy interface and delegates, so algorithms swap freely.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -1676,6 +1732,7 @@
       "patternSlug": "strategyinterface",
       "patternName": "Strategy Interface",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Strategy pattern. The analyser passes you when the response tags include Strategy Interface, even if other patterns also fire on the same class."
     },
     "sortOrder": 21
@@ -1725,17 +1782,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Observer do?",
-          "options": [
-            "Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.",
-            "Restricts a class to one instance.",
-            "Converts one interface to another.",
-            "Builds an object step by step."
-          ],
-          "correctIndex": 0,
-          "explanation": "Observer pushes change notifications to a list of subscribers."
-        },
-        {
           "question": "What is the subject’s responsibility in Observer?",
           "options": [
             "Maintain a list of observers and notify them on state change.",
@@ -1744,7 +1790,20 @@
             "Guarantee a single instance."
           ],
           "correctIndex": 0,
-          "explanation": "The subject keeps the observer list and broadcasts updates."
+          "explanation": "The subject keeps the observer list and broadcasts updates.",
+          "taxonomy": "remembering"
+        },
+        {
+          "question": "What does Observer do?",
+          "options": [
+            "Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.",
+            "Restricts a class to one instance.",
+            "Converts one interface to another.",
+            "Builds an object step by step."
+          ],
+          "correctIndex": 0,
+          "explanation": "Observer pushes change notifications to a list of subscribers.",
+          "taxonomy": "remembering"
         }
       ]
     },
@@ -1753,6 +1812,7 @@
       "patternSlug": "observer",
       "patternName": "Observer",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Observer pattern. The analyser passes you when the response tags include Observer, even if other patterns also fire on the same class."
     },
     "sortOrder": 22
@@ -1802,17 +1862,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Iterator do?",
-          "options": [
-            "Provides sequential access to a collection’s elements without exposing its underlying representation.",
-            "Guarantees one instance.",
-            "Adds behaviour dynamically.",
-            "Decouples abstraction from implementation."
-          ],
-          "correctIndex": 0,
-          "explanation": "Iterator walks a collection without revealing its internal structure."
-        },
-        {
           "question": "Why is exposing iteration via an iterator useful?",
           "options": [
             "Multiple traversals can run independently and the collection’s internals stay hidden.",
@@ -1821,7 +1870,20 @@
             "It changes the collection’s interface to match a client."
           ],
           "correctIndex": 0,
-          "explanation": "The iterator encapsulates position, so traversal is decoupled from storage."
+          "explanation": "The iterator encapsulates position, so traversal is decoupled from storage.",
+          "taxonomy": "analyzing"
+        },
+        {
+          "question": "What does Iterator do?",
+          "options": [
+            "Provides sequential access to a collection’s elements without exposing its underlying representation.",
+            "Guarantees one instance.",
+            "Adds behaviour dynamically.",
+            "Decouples abstraction from implementation."
+          ],
+          "correctIndex": 0,
+          "explanation": "Iterator walks a collection without revealing its internal structure.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -1830,6 +1892,7 @@
       "patternSlug": "iterator",
       "patternName": "Iterator",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Iterator pattern. The analyser passes you when the response tags include Iterator, even if other patterns also fire on the same class."
     },
     "sortOrder": 23
@@ -1887,7 +1950,8 @@
             "Shares fine-grained objects."
           ],
           "correctIndex": 0,
-          "explanation": "Command turns an action into a first-class object."
+          "explanation": "Command turns an action into a first-class object.",
+          "taxonomy": "understanding"
         },
         {
           "question": "What does turning a request into an object enable?",
@@ -1898,7 +1962,8 @@
             "Cloning prototypes."
           ],
           "correctIndex": 0,
-          "explanation": "A reified request can be stored, replayed, and reversed."
+          "explanation": "A reified request can be stored, replayed, and reversed.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -1907,6 +1972,7 @@
       "patternSlug": "command",
       "patternName": "Command",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Command pattern. The analyser passes you when the response tags include Command, even if other patterns also fire on the same class."
     },
     "sortOrder": 24
@@ -1956,17 +2022,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Composite do?",
-          "options": [
-            "Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.",
-            "Restricts a class to one instance.",
-            "Converts one interface to another.",
-            "Selects an algorithm at runtime."
-          ],
-          "correctIndex": 0,
-          "explanation": "Composite gives leaves and containers a common interface for whole-part trees."
-        },
-        {
           "question": "What is the key structural feature of Composite?",
           "options": [
             "A component interface that both leaves and containers implement; containers hold a collection of components.",
@@ -1975,7 +2030,20 @@
             "A forward-declared Impl."
           ],
           "correctIndex": 0,
-          "explanation": "Uniform component interface + child collection in the container is the shape."
+          "explanation": "Uniform component interface + child collection in the container is the shape.",
+          "taxonomy": "remembering"
+        },
+        {
+          "question": "What does Composite do?",
+          "options": [
+            "Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.",
+            "Restricts a class to one instance.",
+            "Converts one interface to another.",
+            "Selects an algorithm at runtime."
+          ],
+          "correctIndex": 0,
+          "explanation": "Composite gives leaves and containers a common interface for whole-part trees.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -1984,6 +2052,7 @@
       "patternSlug": "composite",
       "patternName": "Composite",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Composite pattern. The analyser passes you when the response tags include Composite, even if other patterns also fire on the same class."
     },
     "sortOrder": 25
@@ -2033,17 +2102,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Template Method do?",
-          "options": [
-            "Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.",
-            "Guarantees a single instance.",
-            "Composes objects into trees.",
-            "Encapsulates a request as an object."
-          ],
-          "correctIndex": 0,
-          "explanation": "Template Method fixes the algorithm’s structure and lets subclasses fill in steps."
-        },
-        {
           "question": "Which mechanism does Template Method rely on?",
           "options": [
             "A non-virtual base method calling overridable (often virtual) primitive steps.",
@@ -2052,7 +2110,20 @@
             "A forward-declared Impl."
           ],
           "correctIndex": 0,
-          "explanation": "The fixed method calls virtual hook steps the subclass overrides."
+          "explanation": "The fixed method calls virtual hook steps the subclass overrides.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does Template Method do?",
+          "options": [
+            "Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.",
+            "Guarantees a single instance.",
+            "Composes objects into trees.",
+            "Encapsulates a request as an object."
+          ],
+          "correctIndex": 0,
+          "explanation": "Template Method fixes the algorithm’s structure and lets subclasses fill in steps.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -2061,6 +2132,7 @@
       "patternSlug": "template-method",
       "patternName": "Template Method",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Template Method pattern. The analyser passes you when the response tags include Template Method, even if other patterns also fire on the same class."
     },
     "sortOrder": 26
@@ -2110,17 +2182,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does State do?",
-          "options": [
-            "Lets an object alter its behaviour when its internal state changes, appearing to change its class.",
-            "Guarantees a single instance.",
-            "Converts one interface to another.",
-            "Builds an object step by step."
-          ],
-          "correctIndex": 0,
-          "explanation": "State delegates behaviour to a state object that can be swapped at runtime."
-        },
-        {
           "question": "How does State differ from Strategy structurally?",
           "options": [
             "They share a shape (delegate to an interface); State transitions between states internally, Strategy is chosen by the client.",
@@ -2129,7 +2190,20 @@
             "They are unrelated."
           ],
           "correctIndex": 0,
-          "explanation": "Same delegation shape; intent differs — internal transitions vs client-chosen algorithm."
+          "explanation": "Same delegation shape; intent differs — internal transitions vs client-chosen algorithm.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does State do?",
+          "options": [
+            "Lets an object alter its behaviour when its internal state changes, appearing to change its class.",
+            "Guarantees a single instance.",
+            "Converts one interface to another.",
+            "Builds an object step by step."
+          ],
+          "correctIndex": 0,
+          "explanation": "State delegates behaviour to a state object that can be swapped at runtime.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -2138,6 +2212,7 @@
       "patternSlug": "state",
       "patternName": "State",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the State pattern. The analyser passes you when the response tags include State, even if other patterns also fire on the same class."
     },
     "sortOrder": 27
@@ -2195,7 +2270,8 @@
             "Pick which subclass to instantiate at runtime."
           ],
           "correctIndex": 0,
-          "explanation": "Repository (Evans 2003, \"Domain-Driven Design\"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted."
+          "explanation": "Repository (Evans 2003, \"Domain-Driven Design\"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted.",
+          "taxonomy": "creating"
         },
         {
           "question": "Why does Repository have no practical exam on this site?",
@@ -2206,7 +2282,8 @@
             "Repository is the same as Singleton."
           ],
           "correctIndex": 1,
-          "explanation": "Only catalog-detectable patterns get a Studio practical; Repository ends at the theoretical exam."
+          "explanation": "Only catalog-detectable patterns get a Studio practical; Repository ends at the theoretical exam.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -2245,17 +2322,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does the PIMPL idiom (Pointer to Implementation) do?",
-          "options": [
-            "Moves a class’s private members into a hidden implementation type behind a pointer, cutting compile-time coupling.",
-            "Guarantees a single instance.",
-            "Defines a family of algorithms.",
-            "Notifies observers of changes."
-          ],
-          "correctIndex": 0,
-          "explanation": "PIMPL hides implementation details behind an opaque pointer, reducing header dependencies."
-        },
-        {
           "question": "Which structural shape does the analyser look for in PIMPL?",
           "options": [
             "A forward-declared inner Impl plus a std::unique_ptr<Impl> member that owns it.",
@@ -2264,7 +2330,20 @@
             "An accept/visit double dispatch."
           ],
           "correctIndex": 0,
-          "explanation": "Forward-declared Impl + unique_ptr<Impl> in order is the recognisable PIMPL shape."
+          "explanation": "Forward-declared Impl + unique_ptr<Impl> in order is the recognisable PIMPL shape.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does the PIMPL idiom (Pointer to Implementation) do?",
+          "options": [
+            "Moves a class’s private members into a hidden implementation type behind a pointer, cutting compile-time coupling.",
+            "Guarantees a single instance.",
+            "Defines a family of algorithms.",
+            "Notifies observers of changes."
+          ],
+          "correctIndex": 0,
+          "explanation": "PIMPL hides implementation details behind an opaque pointer, reducing header dependencies.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -2273,6 +2352,7 @@
       "patternSlug": "pimpl",
       "patternName": "PIMPL (Pointer to Implementation)",
       "family": "Idioms",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the PIMPL (Pointer to Implementation) pattern. The analyser passes you when the response tags include PIMPL (Pointer to Implementation), even if other patterns also fire on the same class.",
       "starterCode": "// PIMPL idiom — the analyser passes when it tags \"Pimpl\".\n// The shape it looks for, in order, inside ONE class body:\n//   1. a forward-declared inner struct/class (e.g. `struct Impl;`)\n//   2. a std::unique_ptr<Impl> member that owns it\n// Try running this as-is, then rename Impl / add your own methods.\n#include <memory>\n\nclass Widget {\npublic:\n  Widget();\n  ~Widget();\n  void doThing();\n\nprivate:\n  struct Impl;                  // forward-declared implementation\n  std::unique_ptr<Impl> impl_;  // owns the hidden Impl\n};\n"
     },
@@ -2319,7 +2399,8 @@
             "Wraps a request as an object."
           ],
           "correctIndex": 0,
-          "explanation": "Prototype produces new objects by copying a prototypical instance."
+          "explanation": "Prototype produces new objects by copying a prototypical instance.",
+          "taxonomy": "understanding"
         },
         {
           "question": "When is Prototype most useful?",
@@ -2330,7 +2411,8 @@
             "When you traverse a tree of nodes."
           ],
           "correctIndex": 0,
-          "explanation": "Cloning sidesteps costly or class-specific construction."
+          "explanation": "Cloning sidesteps costly or class-specific construction.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -2339,6 +2421,7 @@
       "patternSlug": "prototype",
       "patternName": "Prototype",
       "family": "Creational",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Prototype pattern. The analyser passes you when the response tags include Prototype, even if other patterns also fire on the same class."
     },
     "sortOrder": 30
@@ -2384,7 +2467,8 @@
             "A wrapper that changes an interface."
           ],
           "correctIndex": 0,
-          "explanation": "Abstract Factory makes whole families of products interchangeable."
+          "explanation": "Abstract Factory makes whole families of products interchangeable.",
+          "taxonomy": "understanding"
         },
         {
           "question": "How does Abstract Factory differ from Factory Method?",
@@ -2395,7 +2479,8 @@
             "Factory Method composes trees."
           ],
           "correctIndex": 0,
-          "explanation": "Abstract Factory groups several related factory methods into one family interface."
+          "explanation": "Abstract Factory groups several related factory methods into one family interface.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -2404,6 +2489,7 @@
       "patternSlug": "abstract-factory",
       "patternName": "Abstract Factory",
       "family": "Creational",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Abstract Factory pattern. The analyser passes you when the response tags include Abstract Factory, even if other patterns also fire on the same class."
     },
     "sortOrder": 31
@@ -2449,7 +2535,8 @@
             "Clones a prototype."
           ],
           "correctIndex": 0,
-          "explanation": "Bridge splits abstraction and implementation into separate hierarchies joined by composition."
+          "explanation": "Bridge splits abstraction and implementation into separate hierarchies joined by composition.",
+          "taxonomy": "creating"
         },
         {
           "question": "Which principle underpins Bridge?",
@@ -2460,7 +2547,8 @@
             "Mutate shared global state."
           ],
           "correctIndex": 0,
-          "explanation": "The abstraction composes an implementor abstraction rather than inheriting concretes."
+          "explanation": "The abstraction composes an implementor abstraction rather than inheriting concretes.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -2469,6 +2557,7 @@
       "patternSlug": "bridge",
       "patternName": "Bridge",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Bridge pattern. The analyser passes you when the response tags include Bridge, even if other patterns also fire on the same class."
     },
     "sortOrder": 32
@@ -2514,7 +2603,8 @@
             "Clones objects."
           ],
           "correctIndex": 0,
-          "explanation": "Facade gives a subsystem one simple front door."
+          "explanation": "Facade gives a subsystem one simple front door.",
+          "taxonomy": "understanding"
         },
         {
           "question": "Does using a Facade hide the subsystem entirely?",
@@ -2525,7 +2615,8 @@
             "It restricts the subsystem to one instance."
           ],
           "correctIndex": 0,
-          "explanation": "Facade simplifies access without forbidding direct subsystem use."
+          "explanation": "Facade simplifies access without forbidding direct subsystem use.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -2534,6 +2625,7 @@
       "patternSlug": "facade",
       "patternName": "Facade",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Facade pattern. The analyser passes you when the response tags include Facade, even if other patterns also fire on the same class."
     },
     "sortOrder": 33
@@ -2579,7 +2671,8 @@
             "Builds an object step by step."
           ],
           "correctIndex": 0,
-          "explanation": "Flyweight shares intrinsic state across many objects; extrinsic state is passed in."
+          "explanation": "Flyweight shares intrinsic state across many objects; extrinsic state is passed in.",
+          "taxonomy": "understanding"
         },
         {
           "question": "What is \"intrinsic\" state in Flyweight?",
@@ -2590,7 +2683,8 @@
             "The wrapped subject."
           ],
           "correctIndex": 0,
-          "explanation": "Intrinsic = shareable/context-free; extrinsic = supplied per use."
+          "explanation": "Intrinsic = shareable/context-free; extrinsic = supplied per use.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -2599,6 +2693,7 @@
       "patternSlug": "flyweight",
       "patternName": "Flyweight",
       "family": "Structural",
+      "taxonomy": "analyzing",
       "prompt": "Write a small C++ class (or two) that demonstrates the Flyweight pattern. The analyser passes you when the response tags include Flyweight, even if other patterns also fire on the same class."
     },
     "sortOrder": 34
@@ -2636,17 +2731,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Chain of Responsibility do?",
-          "options": [
-            "Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.",
-            "Guarantees one instance.",
-            "Adapts one interface to another.",
-            "Clones a prototype."
-          ],
-          "correctIndex": 0,
-          "explanation": "Each handler either handles the request or forwards it to the next."
-        },
-        {
           "question": "What does each handler hold?",
           "options": [
             "A reference to the next handler in the chain.",
@@ -2655,7 +2739,20 @@
             "A child collection of components."
           ],
           "correctIndex": 0,
-          "explanation": "The \"next handler\" link is what forms the chain."
+          "explanation": "The \"next handler\" link is what forms the chain.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does Chain of Responsibility do?",
+          "options": [
+            "Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.",
+            "Guarantees one instance.",
+            "Adapts one interface to another.",
+            "Clones a prototype."
+          ],
+          "correctIndex": 0,
+          "explanation": "Each handler either handles the request or forwards it to the next.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -2664,6 +2761,7 @@
       "patternSlug": "chain-of-responsibility",
       "patternName": "Chain of Responsibility",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Chain of Responsibility pattern. The analyser passes you when the response tags include Chain of Responsibility, even if other patterns also fire on the same class."
     },
     "sortOrder": 35
@@ -2709,7 +2807,8 @@
             "Builds an object step by step."
           ],
           "correctIndex": 0,
-          "explanation": "Mediator centralises many-to-many communication into one hub."
+          "explanation": "Mediator centralises many-to-many communication into one hub.",
+          "taxonomy": "understanding"
         },
         {
           "question": "What coupling problem does Mediator reduce?",
@@ -2720,7 +2819,8 @@
             "Expensive object construction."
           ],
           "correctIndex": 0,
-          "explanation": "Mediator turns a tangle of direct references into spokes around a hub."
+          "explanation": "Mediator turns a tangle of direct references into spokes around a hub.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -2729,6 +2829,7 @@
       "patternSlug": "mediator",
       "patternName": "Mediator",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Mediator pattern. The analyser passes you when the response tags include Mediator, even if other patterns also fire on the same class."
     },
     "sortOrder": 36
@@ -2766,17 +2867,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Visitor do?",
-          "options": [
-            "Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.",
-            "Guarantees one instance.",
-            "Adapts one interface to another.",
-            "Builds an object step by step."
-          ],
-          "correctIndex": 0,
-          "explanation": "Visitor externalises operations so new ones don’t touch the element classes."
-        },
-        {
           "question": "Which mechanism makes Visitor work?",
           "options": [
             "Double dispatch — element.accept(visitor) calls visitor.visit(element).",
@@ -2785,7 +2875,20 @@
             "A wrapped subject for access control."
           ],
           "correctIndex": 0,
-          "explanation": "accept/visit double dispatch routes to the right visit overload per element type."
+          "explanation": "accept/visit double dispatch routes to the right visit overload per element type.",
+          "taxonomy": "applying"
+        },
+        {
+          "question": "What does Visitor do?",
+          "options": [
+            "Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.",
+            "Guarantees one instance.",
+            "Adapts one interface to another.",
+            "Builds an object step by step."
+          ],
+          "correctIndex": 0,
+          "explanation": "Visitor externalises operations so new ones don’t touch the element classes.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -2794,6 +2897,7 @@
       "patternSlug": "visitor",
       "patternName": "Visitor",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Visitor pattern. The analyser passes you when the response tags include Visitor, even if other patterns also fire on the same class."
     },
     "sortOrder": 37
@@ -2831,17 +2935,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Interpreter do?",
-          "options": [
-            "Defines a grammar representation and an interpreter that evaluates sentences in the language.",
-            "Guarantees a single instance.",
-            "Converts one interface to another.",
-            "Shares fine-grained objects."
-          ],
-          "correctIndex": 0,
-          "explanation": "Interpreter models grammar rules as classes that evaluate expressions."
-        },
-        {
           "question": "How are grammar rules usually represented in Interpreter?",
           "options": [
             "As a class hierarchy of expression nodes with an `interpret()` operation.",
@@ -2850,7 +2943,20 @@
             "As a forward-declared Impl."
           ],
           "correctIndex": 0,
-          "explanation": "Each rule is an expression class implementing interpret(); composites build the tree."
+          "explanation": "Each rule is an expression class implementing interpret(); composites build the tree.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "What does Interpreter do?",
+          "options": [
+            "Defines a grammar representation and an interpreter that evaluates sentences in the language.",
+            "Guarantees a single instance.",
+            "Converts one interface to another.",
+            "Shares fine-grained objects."
+          ],
+          "correctIndex": 0,
+          "explanation": "Interpreter models grammar rules as classes that evaluate expressions.",
+          "taxonomy": "evaluating"
         }
       ]
     },
@@ -2859,6 +2965,7 @@
       "patternSlug": "interpreter",
       "patternName": "Interpreter",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Interpreter pattern. The analyser passes you when the response tags include Interpreter, even if other patterns also fire on the same class."
     },
     "sortOrder": 38
@@ -2896,17 +3003,6 @@
       "kind": "theoretical",
       "questions": [
         {
-          "question": "What does Memento do?",
-          "options": [
-            "Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.",
-            "Guarantees one instance.",
-            "Adapts one interface to another.",
-            "Composes objects into trees."
-          ],
-          "correctIndex": 0,
-          "explanation": "Memento snapshots state for later restore while keeping internals hidden."
-        },
-        {
           "question": "Which roles does Memento define?",
           "options": [
             "Originator (owns state), Memento (snapshot), Caretaker (holds snapshots).",
@@ -2915,7 +3011,20 @@
             "Component and Leaf."
           ],
           "correctIndex": 0,
-          "explanation": "Originator creates/restores; Caretaker stores; Memento is the opaque snapshot."
+          "explanation": "Originator creates/restores; Caretaker stores; Memento is the opaque snapshot.",
+          "taxonomy": "creating"
+        },
+        {
+          "question": "What does Memento do?",
+          "options": [
+            "Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.",
+            "Guarantees one instance.",
+            "Adapts one interface to another.",
+            "Composes objects into trees."
+          ],
+          "correctIndex": 0,
+          "explanation": "Memento snapshots state for later restore while keeping internals hidden.",
+          "taxonomy": "understanding"
         }
       ]
     },
@@ -2924,6 +3033,7 @@
       "patternSlug": "memento",
       "patternName": "Memento",
       "family": "Behavioural",
+      "taxonomy": "applying",
       "prompt": "Write a small C++ class (or two) that demonstrates the Memento pattern. The analyser passes you when the response tags include Memento, even if other patterns also fire on the same class."
     },
     "sortOrder": 39

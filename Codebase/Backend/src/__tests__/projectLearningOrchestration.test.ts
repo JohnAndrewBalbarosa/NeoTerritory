@@ -2,24 +2,26 @@ import { describe, it, expect } from 'vitest';
 import * as intakeService from '../services/projectSpecIntakeService';
 import * as policyService from '../services/featureTogglePolicyService';
 import * as assessmentService from '../services/assessmentOrchestrationService';
+import { PATTERN_CATALOG } from '../services/coursePlannerService';
 import { ProjectBriefInput } from '../services/projectLearningContracts';
 
 describe('Project Learning Orchestration Flow', () => {
-  const mockBrief: ProjectBriefInput = {
-    projectId: 'proj-123',
-    projectTitle: 'Healthcare operations platform',
+  const devconDelegationBrief: ProjectBriefInput = {
+    projectId: 'proj-devcon',
+    projectTitle: 'Devcon student module delegation',
     businessSpecs: [
-      'A hospital wants one onboarding workflow for insurance checks, appointment scheduling, lab requests, and billing notifications.',
-      'External partners use different request formats, but internal teams want one consistent process.',
-      'Managers need live status updates whenever a patient case changes, and actions must be queued for audit and possible retry.',
-      'Pricing and prioritization rules vary by department and can change per contract.'
+      'Conference volunteers and student interns move through one stable enrollment flow, but onboarding, practice, check-ins, and certification can vary by cohort.',
+      'Progress records belong behind one repository boundary so the learning workflow does not need storage details.',
+      'Student journey state should unlock or hide actions as milestones change, and dashboards must fan out updates to instructors and mentors.',
+      'Different cohorts choose different prioritization rules at runtime, and review actions must be queued for audit and retry.'
     ],
     architectureSpecs: [
-      'Keep partner integrations separated from internal workflows.',
-      'Do not make every screen know all subsystem details.',
-      'Allow different decision rules without rewriting the workflow.'
+      'Keep the workflow skeleton stable while allowing step overrides per cohort.',
+      'Keep storage behind a repository boundary and broadcast milestone changes through observers.',
+      'Do not use Adapter to model the delegation layer.',
+      'Do not use Singleton to model the delegation layer.'
     ],
-    businessProcess: 'Intake staff creates a patient case; partner data is normalized; several backend services are coordinated; status changes notify dashboards; billing and scheduling actions are stored for retry; department-specific policies choose prioritization.'
+    businessProcess: 'Mentors enroll students, delegate modules by readiness, persist progress, notify dashboards when milestones change, and switch review policy per cohort without changing the overall workflow skeleton.'
   };
 
   const documentWorkflowBrief: ProjectBriefInput = {
@@ -61,17 +63,23 @@ describe('Project Learning Orchestration Flow', () => {
     businessProcess: 'Managers view metrics.'
   };
 
-  it('should convert an implicit brief into a scoped learning plan', () => {
-    const scope = intakeService.intakeProjectBrief(mockBrief);
-    expect(scope.projectId).toBe('proj-123');
+  it('should convert a Devcon delegation brief into a scoped learning plan', () => {
+    const scope = intakeService.intakeProjectBrief(devconDelegationBrief);
+    expect(scope.projectId).toBe('proj-devcon');
     expect(scope.requiredPatterns).toEqual(expect.arrayContaining([
-      'adapter',
-      'facade',
-      'observer',
       'command',
+      'observer',
+      'repository',
+      'state',
       'strategy',
     ]));
-    expect(scope.requiredModules.some((moduleId) => moduleId.includes('facade'))).toBe(true);
+    expect(scope.requiredPatterns).not.toContain('adapter');
+    expect(scope.excludedPatterns).toEqual(expect.arrayContaining(['adapter', 'singleton']));
+    expect(scope.requiredModules.some((moduleId) => moduleId.includes('command'))).toBe(true);
+    expect(scope.requiredModules.some((moduleId) => moduleId.includes('repository'))).toBe(true);
+    expect(scope.requiredModules.some((moduleId) => moduleId.includes('state'))).toBe(true);
+    expect(scope.requiredModules.some((moduleId) => moduleId.includes('observer'))).toBe(true);
+    expect(scope.requiredModules.some((moduleId) => moduleId.includes('strategy'))).toBe(true);
     expect((scope.requiredTopics ?? []).length).toBeGreaterThan(0);
     expect(scope.notes[0]).toBe('implicit deny applied');
     expect(scope.confidence).toBe('high');
@@ -103,24 +111,41 @@ describe('Project Learning Orchestration Flow', () => {
   });
 
   it('should resolve toggles based on scope', () => {
-    const scope = intakeService.intakeProjectBrief(mockBrief);
+    const scope = intakeService.intakeProjectBrief(devconDelegationBrief);
     const manifest = policyService.resolveTogglePolicy(scope);
     
     const adapterToggle = manifest.toggles.find(t => t.key === 'pattern.adapter');
-    expect(adapterToggle?.enabled).toBe(true);
+    expect(adapterToggle?.enabled).toBe(false);
 
-    const facadeToggle = manifest.toggles.find((t) => t.key === 'pattern.facade');
-    expect(facadeToggle?.enabled).toBe(true);
+    const singletonToggle = manifest.toggles.find((t) => t.key === 'pattern.singleton');
+    expect(singletonToggle?.enabled).toBe(false);
 
-    const builderToggle = manifest.toggles.find(t => t.key === 'pattern.builder');
-    expect(builderToggle?.enabled).toBe(false);
+    const commandToggle = manifest.toggles.find((t) => t.key === 'pattern.command');
+    expect(commandToggle?.enabled).toBe(true);
+
+    const repositoryToggle = manifest.toggles.find((t) => t.key === 'pattern.repository');
+    expect(repositoryToggle?.enabled).toBe(true);
+
+    const observerToggle = manifest.toggles.find((t) => t.key === 'pattern.observer');
+    expect(observerToggle?.enabled).toBe(true);
+
+    const strategyToggle = manifest.toggles.find((t) => t.key === 'pattern.strategy');
+    expect(strategyToggle?.enabled).toBe(true);
+  });
+
+  it('should load a JSON toggle policy that covers every catalog pattern', () => {
+    const config = policyService.loadTogglePolicyConfig();
+    const policySlugs = config.patterns.map((pattern) => pattern.slug).sort();
+    const catalogSlugs = PATTERN_CATALOG.map((pattern) => pattern.slug).sort();
+    expect(policySlugs).toEqual(catalogSlugs);
+    expect(config.patterns.some((pattern) => pattern.toggleKey === 'pattern.template-method')).toBe(true);
   });
 
   it('should score a pretest and suggest bypass if passed', () => {
     const pretestAttempt = {
       projectId: 'proj-123',
       internId: 'int-456',
-      moduleId: 'adapter',
+      moduleId: 'command',
       attemptType: 'pretest' as const,
       answers: [
         { questionId: 'q1', answer: 'This is a long enough answer to pass' }
@@ -135,7 +160,7 @@ describe('Project Learning Orchestration Flow', () => {
     const posttestAttempt = {
       projectId: 'proj-123',
       internId: 'int-456',
-      moduleId: 'adapter',
+      moduleId: 'command',
       attemptType: 'posttest' as const,
       answers: [
         { questionId: 'q1', answer: 'This is a very long and detailed answer to pass the posttest' }

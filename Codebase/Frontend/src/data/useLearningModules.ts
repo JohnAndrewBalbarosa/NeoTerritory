@@ -4,6 +4,7 @@ import {
   LEARNING_MODULES,
   type LearningCategory,
   type LearningModule,
+  normalizeLearningModules,
 } from './learningModules';
 import { buildModuleSwitchboard } from '../logic/moduleSwitchboard';
 
@@ -29,7 +30,7 @@ export interface UseLearningModules {
 }
 
 export function useLearningModules(): UseLearningModules {
-  const [modules, setModules] = useState<ReadonlyArray<LearningModule>>(LEARNING_MODULES);
+  const [modules, setModules] = useState<ReadonlyArray<LearningModule>>(normalizeLearningModules(LEARNING_MODULES));
   const [loaded, setLoaded] = useState<boolean>(false);
   const [source, setSource] = useState<LearningModulesSource>('static');
 
@@ -38,7 +39,7 @@ export function useLearningModules(): UseLearningModules {
 
     function fallBackToStatic(): void {
       if (cancelled) return;
-      setModules(LEARNING_MODULES);
+      setModules(normalizeLearningModules(LEARNING_MODULES));
       setSource('static');
       setLoaded(true);
     }
@@ -51,7 +52,7 @@ export function useLearningModules(): UseLearningModules {
           fallBackToStatic();
           return;
         }
-        setModules(apiModules);
+        setModules(normalizeLearningModules(apiModules));
         setSource('api');
         setLoaded(true);
       })

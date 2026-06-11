@@ -50,6 +50,28 @@
       "expectSelector": "[data-testid=\"student-learning-shell\"]"
     },
     {
+      "path": "/pre-test",
+      "name": "pre-test-assessment",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"pretest-page\"]",
+      "expectText": ["Baseline Assessment: Pre-Test"]
+    },
+    {
+      "path": "/post-test",
+      "name": "post-test-assessment",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"posttest-page\"]"
+    },
+    {
+      "path": "/post-test-2",
+      "name": "post-test-2-assessment",
+      "auth": "public",
+      "expectStatus": 200,
+      "expectSelector": "[data-testid=\"posttest2-page\"]"
+    },
+    {
       "path": "/admin",
       "name": "admin-dashboard",
       "auth": "admin",

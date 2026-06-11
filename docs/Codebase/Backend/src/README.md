@@ -1,7 +1,7 @@
 # src
 
 - Folder: docs/Codebase/Backend/src
-- Descendant source docs: 14
+- Descendant source docs: 17
 - Generated on: 2026-04-23
 
 ## Logic Summary
@@ -54,6 +54,10 @@ flowchart TD
 These child folders continue the subsystem by covering reusable backend support for class analysis, AI documentation, and structured logging.
 - services/ : Reusable backend support services for analysis, AI documentation, and logs.
 
+### Tests
+These child folders continue the subsystem by covering service-level backend verification for the admin planner API and the project orchestration API.
+- __tests__/ : Service-level backend tests for the admin planner and project orchestration flows.
+
 ### Controllers
 These child folders continue the subsystem by covering controller behavior for concrete backend request handling after routing and middleware have finished preliminary work.
 - controllers/ : Controller layer for live class analysis and related request handling.
@@ -77,3 +81,4 @@ These child folders continue the subsystem by covering Small backend utilities u
 ## Reading Hint
 - Use the child folder groups to navigate deeper into this subsystem.
 - For the tailored project-learning workflow, read `routes/projectLearningOrchestration.js.md`, then `controllers/projectLearningOrchestrationController.js.md`, then the new service docs in `services/`.
+- For backend verification of that workflow, read the `__tests__/` docs after the service docs.

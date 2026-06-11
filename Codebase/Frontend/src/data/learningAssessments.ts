@@ -4,6 +4,7 @@ import {
   type BloomTaxonomy,
   type ExamQuestion,
   type LearningModule,
+  normalizeLearningModules,
   isFoundationModule,
 } from './learningModules';
 
@@ -54,9 +55,46 @@ function seededShuffle<T>(items: ReadonlyArray<T>, seed: string): T[] {
 function pickQuestionForTaxonomy(module: LearningModule, taxonomy: BloomTaxonomy): [ExamQuestion, number] | null {
   const qs = module.theoreticalExam?.questions || [];
   const exact = qs.findIndex((q) => q.taxonomy === taxonomy);
-  if (exact >= 0) return [qs[exact], exact];
-  if (qs.length > 0) return [qs[0], 0];
-  return null;
+  return exact >= 0 ? [qs[exact], exact] : null;
+}
+
+interface AssessmentQuestionCandidate {
+  module: LearningModule;
+  picked: [ExamQuestion, number];
+  questionKey: string;
+}
+
+function collectQuestionCandidates(
+  modules: ReadonlyArray<LearningModule>,
+  taxonomy: BloomTaxonomy,
+): AssessmentQuestionCandidate[] {
+  return modules.flatMap((module) => {
+    const picked = pickQuestionForTaxonomy(module, taxonomy);
+    if (!picked) return [];
+    return [{
+      module,
+      picked,
+      questionKey: `${module.id}:${picked[1]}`,
+    }];
+  });
+}
+
+function chooseQuestionCandidate(
+  modules: ReadonlyArray<LearningModule>,
+  taxonomy: BloomTaxonomy,
+  assessmentType: Exclude<LearningAssessmentType, 'practical'>,
+  assessmentIndex: number,
+  usedModuleIds: Set<string>,
+  usedQuestionKeys: Set<string>,
+): AssessmentQuestionCandidate {
+  const candidates = collectQuestionCandidates(modules, taxonomy);
+  if (candidates.length === 0) {
+    throw new Error(`Assessment ${assessmentType} requires a ${taxonomy} question, but the module bank has none after normalization.`);
+  }
+
+  return candidates.find((candidate) => !usedModuleIds.has(candidate.module.id) && !usedQuestionKeys.has(candidate.questionKey))
+    ?? candidates.find((candidate) => !usedQuestionKeys.has(candidate.questionKey))
+    ?? candidates[assessmentIndex % candidates.length];
 }
 
 export interface LearningAssessmentAnswerInput {
@@ -125,18 +163,29 @@ export function buildLearningAssessmentQuestions(
   modules: ReadonlyArray<LearningModule>,
   assessmentType: LearningAssessmentType,
 ): LearningAssessmentQuestion[] {
-  const foundationEligible = modules.filter(
+  const normalizedModules = normalizeLearningModules(modules);
+  const foundationEligible = normalizedModules.filter(
     (module) => module.category === 'foundations' && module.theoreticalExam?.questions.length,
   );
   const eligible = assessmentType === 'pretest' && foundationEligible.length > 0
     ? foundationEligible
-    : modules.filter((module) => module.theoreticalExam?.questions.length);
+    : normalizedModules.filter((module) => module.theoreticalExam?.questions.length);
   if (assessmentType === 'practical') return [];
   const plan = BLOOM_PATHS[assessmentType];
   const rotated = seededShuffle(eligible, `${assessmentType}:module-order`);
-  return rotated.slice(0, 8).map((module, assessmentIndex) => {
-    const taxonomy = plan[assessmentIndex % plan.length];
-    const picked = pickQuestionForTaxonomy(module, taxonomy) ?? [module.theoreticalExam!.questions[0], 0];
+  const usedModuleIds = new Set<string>();
+  const usedQuestionKeys = new Set<string>();
+  return plan.map((taxonomy, assessmentIndex) => {
+    const { module, picked, questionKey } = chooseQuestionCandidate(
+      rotated,
+      taxonomy,
+      assessmentType,
+      assessmentIndex,
+      usedModuleIds,
+      usedQuestionKeys,
+    );
+    usedModuleIds.add(module.id);
+    usedQuestionKeys.add(questionKey);
     return {
       assessmentType,
       assessmentIndex,

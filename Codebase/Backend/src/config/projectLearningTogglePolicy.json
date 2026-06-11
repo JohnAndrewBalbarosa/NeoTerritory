@@ -1,0 +1,198 @@
+{
+  "schemaVersion": 1,
+  "patterns": [
+    {
+      "slug": "singleton",
+      "toggleKey": "pattern.singleton",
+      "aliases": ["single instance", "shared instance", "global access"],
+      "moduleHints": ["creational-singleton", "singleton"]
+    },
+    {
+      "slug": "factory-method",
+      "toggleKey": "pattern.factory-method",
+      "aliases": ["factory", "factory method", "product selection"],
+      "moduleHints": ["creational-factory-method", "factory-method", "factory"]
+    },
+    {
+      "slug": "builder",
+      "toggleKey": "pattern.builder",
+      "aliases": ["staged build", "step by step", "complex construction"],
+      "moduleHints": ["creational-builder", "builder"]
+    },
+    {
+      "slug": "method-chaining",
+      "toggleKey": "pattern.method-chaining",
+      "aliases": ["fluent api", "fluent setup", "configuration chain"],
+      "moduleHints": ["creational-method-chaining", "method-chaining"]
+    },
+    {
+      "slug": "adapter",
+      "toggleKey": "pattern.adapter",
+      "aliases": ["compatibility layer", "interface translation", "request shape"],
+      "moduleHints": ["structural-adapter", "adapter"]
+    },
+    {
+      "slug": "proxy",
+      "toggleKey": "pattern.proxy",
+      "aliases": ["access control", "lazy access", "remote boundary"],
+      "moduleHints": ["structural-proxy", "proxy"]
+    },
+    {
+      "slug": "decorator",
+      "toggleKey": "pattern.decorator",
+      "aliases": ["optional behavior", "stacked enrichment", "layered wrapper"],
+      "moduleHints": ["structural-decorator", "decorator"]
+    },
+    {
+      "slug": "strategy",
+      "toggleKey": "pattern.strategy",
+      "aliases": ["policy variation", "runtime choice", "swappable rules"],
+      "moduleHints": ["behavioural-strategy", "strategy"]
+    },
+    {
+      "slug": "observer",
+      "toggleKey": "pattern.observer",
+      "aliases": ["live updates", "status notifications", "event fan out"],
+      "moduleHints": ["behavioural-observer", "observer"]
+    },
+    {
+      "slug": "iterator",
+      "toggleKey": "pattern.iterator",
+      "aliases": ["controlled traversal", "collection walk", "hidden storage"],
+      "moduleHints": ["behavioural-iterator", "iterator"]
+    },
+    {
+      "slug": "command",
+      "toggleKey": "pattern.command",
+      "aliases": ["queued actions", "retryable work", "audit trail"],
+      "moduleHints": ["behavioural-command", "command"]
+    },
+    {
+      "slug": "composite",
+      "toggleKey": "pattern.composite",
+      "aliases": ["tree structure", "whole part", "uniform operations"],
+      "moduleHints": ["structural-composite", "composite"]
+    },
+    {
+      "slug": "template-method",
+      "toggleKey": "pattern.template-method",
+      "aliases": ["fixed algorithm order", "workflow skeleton", "approval pipeline"],
+      "moduleHints": ["behavioural-template-method", "template-method"]
+    },
+    {
+      "slug": "state",
+      "toggleKey": "pattern.state",
+      "aliases": ["lifecycle transitions", "mode based behavior", "state driven rules"],
+      "moduleHints": ["behavioural-state", "state"]
+    },
+    {
+      "slug": "repository",
+      "toggleKey": "pattern.repository",
+      "aliases": ["storage boundary", "domain persistence", "data hiding"],
+      "moduleHints": ["idioms-repository", "repository"]
+    },
+    {
+      "slug": "facade",
+      "toggleKey": "pattern.facade",
+      "aliases": ["single front door", "subsystem boundary", "coordinated services"],
+      "moduleHints": ["structural-facade", "facade"]
+    },
+    {
+      "slug": "bridge",
+      "toggleKey": "pattern.bridge",
+      "aliases": ["independent variation", "two changing dimensions", "separate layers"],
+      "moduleHints": ["structural-bridge", "bridge"]
+    },
+    {
+      "slug": "chain-of-responsibility",
+      "toggleKey": "pattern.chain-of-responsibility",
+      "aliases": ["handler pipeline", "progressive checks", "fallthrough routing"],
+      "moduleHints": ["behavioural-chain-of-responsibility", "chain-of-responsibility"]
+    },
+    {
+      "slug": "mediator",
+      "toggleKey": "pattern.mediator",
+      "aliases": ["central coordinator", "reduced chatter", "orchestrated workflow"],
+      "moduleHints": ["behavioural-mediator", "mediator"]
+    },
+    {
+      "slug": "visitor",
+      "toggleKey": "pattern.visitor",
+      "aliases": ["new operations", "stable structure", "external inspection"],
+      "moduleHints": ["behavioural-visitor", "visitor"]
+    },
+    {
+      "slug": "interpreter",
+      "toggleKey": "pattern.interpreter",
+      "aliases": ["grammar rules", "mini language", "expression evaluation"],
+      "moduleHints": ["behavioural-interpreter", "interpreter"]
+    },
+    {
+      "slug": "memento",
+      "toggleKey": "pattern.memento",
+      "aliases": ["snapshot restore", "undo checkpoints", "history safety"],
+      "moduleHints": ["behavioural-memento", "memento"]
+    },
+    {
+      "slug": "abstract-factory",
+      "toggleKey": "pattern.abstract-factory",
+      "aliases": ["compatible family", "product set", "provider family"],
+      "moduleHints": ["creational-abstract-factory", "abstract-factory"]
+    },
+    {
+      "slug": "prototype",
+      "toggleKey": "pattern.prototype",
+      "aliases": ["clone template", "copy existing", "cheap duplication"],
+      "moduleHints": ["creational-prototype", "prototype"]
+    },
+    {
+      "slug": "flyweight",
+      "toggleKey": "pattern.flyweight",
+      "aliases": ["shared intrinsic data", "memory reuse", "many small objects"],
+      "moduleHints": ["structural-flyweight", "flyweight"]
+    },
+    {
+      "slug": "pimpl",
+      "toggleKey": "pattern.pimpl",
+      "aliases": ["implementation hiding", "stable headers", "compile time isolation"],
+      "moduleHints": ["idioms-pimpl", "pimpl"]
+    }
+  ],
+  "topics": [
+    {
+      "topic": "module boundaries",
+      "toggleKey": "topic.module-boundaries",
+      "aliases": ["module-boundaries", "subsystem boundary", "workflow coordination"]
+    },
+    {
+      "topic": "dependency direction",
+      "toggleKey": "topic.dependency-direction",
+      "aliases": ["dependency-direction", "coupling", "external dependency"]
+    },
+    {
+      "topic": "interface design",
+      "toggleKey": "topic.interface-design",
+      "aliases": ["interface-design", "compatibility layer", "request shape"]
+    },
+    {
+      "topic": "auditability",
+      "toggleKey": "topic.auditability",
+      "aliases": ["audit", "audit trail", "traceability"]
+    },
+    {
+      "topic": "live updates",
+      "toggleKey": "topic.live-updates",
+      "aliases": ["live-updates", "status updates", "notify dashboards"]
+    },
+    {
+      "topic": "queued work",
+      "toggleKey": "topic.queued-work",
+      "aliases": ["queued-work", "retry", "replay"]
+    },
+    {
+      "topic": "policy variation",
+      "toggleKey": "topic.policy-variation",
+      "aliases": ["policy-variation", "rules vary", "department-specific"]
+    }
+  ]
+}

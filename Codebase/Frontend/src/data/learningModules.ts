@@ -174,9 +174,42 @@ function inferBloomTaxonomy(question: ExamQuestion, index: number, moduleId: str
   return (index % 2 === 0 ? 'understanding' : 'applying');
 }
 
+function inferPracticalTaxonomy(family: PracticalExam['family']): BloomTaxonomy {
+  return family === 'Structural' ? 'analyzing' : 'applying';
+}
+
 function tagQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>): ExamQuestion[] {
   const tagged = questions.map((q, index) => ({ ...q, taxonomy: inferBloomTaxonomy(q, index, moduleId) }));
   return seededShuffle(tagged, `${moduleId}:theory`);
+}
+
+function normalizeTheoryQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>): ExamQuestion[] {
+  return questions.map((q, index) => ({ ...q, taxonomy: inferBloomTaxonomy(q, index, moduleId) }));
+}
+
+export function normalizeLearningModule(module: LearningModule): LearningModule {
+  const theoreticalExam = module.theoreticalExam
+    ? {
+        ...module.theoreticalExam,
+        questions: normalizeTheoryQuestions(module.id, module.theoreticalExam.questions),
+      }
+    : undefined;
+  const practicalExam = module.practicalExam
+    ? {
+        ...module.practicalExam,
+        taxonomy: module.practicalExam.taxonomy ?? inferPracticalTaxonomy(module.practicalExam.family),
+      }
+    : undefined;
+  if (!theoreticalExam && !practicalExam) return module;
+  return {
+    ...module,
+    ...(theoreticalExam ? { theoreticalExam } : {}),
+    ...(practicalExam ? { practicalExam } : {}),
+  };
+}
+
+export function normalizeLearningModules(modules: ReadonlyArray<LearningModule>): LearningModule[] {
+  return modules.map((module) => normalizeLearningModule(module));
 }
 
 export const CATEGORY_META: ReadonlyArray<LearningCategoryMeta> = [
