@@ -98,10 +98,19 @@ function LearningAssessmentContent({
     if (assessmentType !== 'pretest') return [];
     return graded.results.filter((r) => !r.isCorrect).map((r) => r.moduleId);
   }, [assessmentType, graded.results]);
+  const learningListModuleIds = useMemo(() => {
+    if (assessmentType !== 'pretest') return [];
+    const ids = new Set(eliminatedModuleIds);
+    if (levelSubmitted) {
+      failedInThisLevelIds.forEach((id) => ids.add(id));
+    }
+    return Array.from(ids);
+  }, [assessmentType, eliminatedModuleIds, failedInThisLevelIds, levelSubmitted]);
+  const currentLevelQuestionCount = questions.length;
+  const activeModuleCount = assessmentType === 'pretest' ? activeModuleIds.size : 0;
 
   const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
   const allAnswered = questions.length > 0 && answeredCount === questions.length;
-  const answeredTotal = allQuestions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
   const levelProgress = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
     return allQuestions.reduce<Array<{
@@ -252,13 +261,20 @@ function LearningAssessmentContent({
           <div className="nt-test-page__panel-head">
             <span className="nt-test-page__panel-kicker">
               {assessmentType === 'pretest'
-                ? `Level ${currentLevel}: ${currentTaxonomy} (${answeredCount}/${questions.length} answered, ${answeredTotal} saved so far)`
+                ? `Level ${currentLevel}: ${currentTaxonomy} (${answeredCount}/${currentLevelQuestionCount} answered, ${activeModuleCount} still active, ${learningListModuleIds.length} to learn)`
                 : `${answeredCount}/${questions.length} answered`}
             </span>
             <h2 className="nt-test-page__panel-title">Adaptive Bloom's Assessment</h2>
           </div>
 
           <section className="nt-assessment" data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
+            {assessmentType === 'pretest' && activeModuleCount > 0 && currentLevelQuestionCount !== activeModuleCount ? (
+              <p className="nt-assessment__hint">
+                This Bloom level has {currentLevelQuestionCount} question{currentLevelQuestionCount === 1 ? '' : 's'} for {activeModuleCount} still-active module{activeModuleCount === 1 ? '' : 's'}.
+                Modules without a {currentTaxonomy} question stay in the pool for the next level.
+              </p>
+            ) : null}
+
             {assessmentType === 'pretest' ? (
               <div className="nt-assessment__stepper" aria-label="Bloom assessment progress">
                 {levelProgress.map((level) => (
@@ -323,7 +339,7 @@ function LearningAssessmentContent({
                     )}
                     {failedInThisLevelIds.length > 0 && (
                       <p className="nt-assessment__gain nt-assessment__gain--fail">
-                        Modules eliminated and added to study list:{' '}
+                        Modules added to learning list ({learningListModuleIds.length} total):{' '}
                         <strong>
                           {failedInThisLevelIds
                             .map((id) => modules.find((m) => m.id === id)?.title)
@@ -331,6 +347,17 @@ function LearningAssessmentContent({
                         </strong>
                       </p>
                     )}
+                    {(currentLevel === 6 || activeModuleIds.size === 0) && activeModuleIds.size > 0 ? (
+                      <p className="nt-assessment__gain">
+                        Modules exempted by pre-test mastery:{' '}
+                        <strong>
+                          {Array.from(activeModuleIds)
+                            .map((id) => modules.find((m) => m.id === id)?.title)
+                            .filter(Boolean)
+                            .join(', ')}
+                        </strong>
+                      </p>
+                    ) : null}
                   </>
                 ) : (
                   <>

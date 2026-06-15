@@ -25,25 +25,6 @@ export interface LearningAssessmentQuestion {
   taxonomy: BloomTaxonomy;
 }
 
-const BLOOM_PATHS: Record<Exclude<LearningAssessmentType, 'practical'>, BloomTaxonomy[]> = {
-  pretest: [
-    // Level 1: Remembering (6)
-    'remembering', 'remembering', 'remembering', 'remembering', 'remembering', 'remembering',
-    // Level 2: Understanding (6)
-    'understanding', 'understanding', 'understanding', 'understanding', 'understanding', 'understanding',
-    // Level 3: Applying (6)
-    'applying', 'applying', 'applying', 'applying', 'applying', 'applying',
-    // Level 4: Analyzing (6)
-    'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing',
-    // Level 5: Evaluating (6)
-    'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating',
-    // Level 6: Creating (6)
-    'creating', 'creating', 'creating', 'creating', 'creating', 'creating',
-  ],
-  posttest: ['analyzing', 'evaluating', 'creating', 'analyzing', 'evaluating', 'creating', 'applying', 'analyzing'],
-  posttest2: ['remembering', 'applying', 'analyzing', 'evaluating', 'creating', 'understanding', 'applying', 'evaluating'],
-};
-
 function hashString(input: string): number {
   let h = 2166136261;
   for (let i = 0; i < input.length; i += 1) {
@@ -69,11 +50,12 @@ function seededShuffle<T>(items: ReadonlyArray<T>, seed: string): T[] {
   return out;
 }
 
-function pickQuestionForTaxonomy(module: LearningModule, taxonomy: BloomTaxonomy): [ExamQuestion, number] | null {
+function pickQuestionsForTaxonomy(module: LearningModule, taxonomy: BloomTaxonomy): Array<[ExamQuestion, number]> {
   const qs = module.theoreticalExam?.questions || [];
   const target = taxonomy.toLowerCase();
-  const exact = qs.findIndex((q) => (q.taxonomy || '').toLowerCase() === target);
-  return exact >= 0 ? [qs[exact], exact] : null;
+  return qs
+    .map((q, i) => [q, i] as [ExamQuestion, number])
+    .filter(([q]) => (q.taxonomy || '').toLowerCase() === target);
 }
 
 interface AssessmentQuestionCandidate {
@@ -87,33 +69,13 @@ function collectQuestionCandidates(
   taxonomy: BloomTaxonomy,
 ): AssessmentQuestionCandidate[] {
   return modules.flatMap((module) => {
-    const picked = pickQuestionForTaxonomy(module, taxonomy);
-    if (!picked) return [];
-    return [{
+    const pickedSet = pickQuestionsForTaxonomy(module, taxonomy);
+    return pickedSet.map((picked) => ({
       module,
       picked,
       questionKey: `${module.id}:${picked[1]}`,
-    }];
+    }));
   });
-}
-function chooseQuestionCandidate(
-  modules: ReadonlyArray<LearningModule>,
-  taxonomy: BloomTaxonomy,
-  assessmentType: Exclude<LearningAssessmentType, 'practical'>,
-  assessmentIndex: number,
-  usedModuleIds: Set<string>,
-  usedQuestionKeys: Set<string>,
-): AssessmentQuestionCandidate {
-  const candidates = collectQuestionCandidates(modules, taxonomy);
-  if (candidates.length === 0) {
-    throw new Error(`Assessment ${assessmentType} requires a ${taxonomy} question, but the module bank has none after normalization.`);
-  }
-
-  return (
-    candidates.find((candidate) => !usedModuleIds.has(candidate.module.id) && !usedQuestionKeys.has(candidate.questionKey))
-    ?? candidates.find((candidate) => !usedQuestionKeys.has(candidate.questionKey))
-    ?? candidates[assessmentIndex % candidates.length]
-  );
 }
 
 export interface LearningAssessmentAnswerInput {
@@ -228,44 +190,48 @@ export function buildLearningAssessmentQuestions(
   assessmentType: LearningAssessmentType,
 ): LearningAssessmentQuestion[] {
   const normalizedModules = normalizeLearningModules(modules);
-
-  // Include all modules for pretest to ensure we can find enough questions
-  // across all 6 Bloom levels for the 36-question bank.
   const eligible = normalizedModules.filter((module) => module.theoreticalExam?.questions.length);
 
   if (assessmentType === 'practical') return [];
-  const plan = BLOOM_PATHS[assessmentType];
-  const rotated = seededShuffle(eligible, `${assessmentType}:module-order`);
-  const usedModuleIds = new Set<string>();
-  const usedQuestionKeys = new Set<string>();
 
-  try {
-    return plan.map((taxonomy, assessmentIndex) => {
-      const { module, picked, questionKey } = chooseQuestionCandidate(
-        rotated,
-        taxonomy,
-        assessmentType,
-        assessmentIndex,
-        usedModuleIds,
-        usedQuestionKeys,
-      );
-      usedModuleIds.add(module.id);
-      usedQuestionKeys.add(questionKey);
-      return {
-        assessmentType,
-        assessmentIndex,
-        moduleId: module.id,
-        moduleTitle: module.title,
-        moduleEyebrow: module.eyebrow,
-        questionIndex: picked[1],
-        question: picked[0],
-        taxonomy,
-      };
-    });
-  } catch (err) {
-    console.error('Failed to build adaptive assessment:', err);
-    return []; // Return empty and let the UI handle the 'Unavailable' state gracefully
+  const taxonomies: BloomTaxonomy[] = ['remembering', 'understanding', 'applying', 'analyzing', 'evaluating', 'creating'];
+
+  if (assessmentType === 'pretest' || assessmentType === 'posttest' || assessmentType === 'posttest2') {
+    const questions: Omit<LearningAssessmentQuestion, 'assessmentIndex'>[] = [];
+
+    // We want a question for every module at every taxonomy level (240 total if 40 modules)
+    for (const taxonomy of taxonomies) {
+      for (const module of eligible) {
+        const candidates = collectQuestionCandidates([module], taxonomy);
+        if (candidates.length > 0) {
+          // Select a candidate using a seeded shuffle for variety if multiple questions exist for the same taxonomy
+          const shuffledCandidates = seededShuffle(candidates, `${assessmentType}:${module.id}:${taxonomy}`);
+          const candidate = shuffledCandidates[0];
+
+          questions.push({
+            assessmentType,
+            moduleId: module.id,
+            moduleTitle: module.title,
+            moduleEyebrow: module.eyebrow,
+            questionIndex: candidate.picked[1],
+            question: candidate.picked[0],
+            taxonomy,
+          });
+        }
+      }
+    }
+
+    // Shuffle the final array so Bloom levels are mixed
+    const shuffledQuestions = seededShuffle(questions, `${assessmentType}:final-shuffle`);
+
+    // Assign assessmentIndex correctly from 0 to 239
+    return shuffledQuestions.map((q, index) => ({
+      ...q,
+      assessmentIndex: index,
+    }));
   }
+
+  return [];
 }
 
 export interface LearningAssessmentResult {

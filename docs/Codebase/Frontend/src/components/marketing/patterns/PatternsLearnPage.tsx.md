@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, the progress/step tracking, the current lesson card, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
+Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, progress reads/writes through the learning API, the current lesson card, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
 
 ## Topbar Rule
 
@@ -29,25 +29,35 @@ flowchart TD
     Start["Open learning path"]
     N0["Load modules"]
     N1["Fetch assessments"]
-    D0{"Fresh pre-test passed?"}
-    N2["Show lesson card"]
-    N3["Redirect pre-test"]
-    N4["Advance path"]
+    N2["Derive outcomes"]
+    D0{"Fresh pre-test?"}
+    N3["Hide exempt modules"]
+    N4["Show lesson card"]
+    N5["Save progress"]
+    N6["Redirect pre-test"]
     End["Stay in learning flow"]
     Start --> N0
-    N0 --> N1
-    N1 --> D0
-    D0 -->|yes| N2 --> N4 --> End
-    D0 -->|no| N3 --> End
+    N0 --> N1 --> N2 --> D0
+    D0 -->|yes| N3 --> N4 --> N5 --> End
+    D0 -->|no| N6 --> End
 ```
 
 ## Fresh Pre-Test Gate
 
 - The page calls `fetchLearningAssessments()` for signed-in learners after the live module bank is loaded.
 - It passes those attempts into `evaluateFoundationPretestFromAssessments(...)`.
+- It also passes the same attempts into `derivePretestModuleOutcomes(...)` to learn which modules are failed, partially mastered, or fully exempt.
 - That helper ignores pre-test attempts older than the backend `courseUpdatedAt` value.
 - A fresh passing pre-test can set the local `preTestCompleted` flag, but the server-backed attempt remains the durable gate.
 - When the server read fails, the page marks assessment loading as failed and falls back to local state only long enough to keep the UI recoverable; the learner can still open the pre-test manually.
+
+## Personalized Module Path
+
+- `fetchLearningProgress()` seeds completed and theory-passed module ids for the signed-in learner.
+- Completed modules and fully pre-test-exempt modules are removed from the learner-visible path.
+- Mastered Bloom levels from pre-test outcomes are removed from that module's visible theory/practical question pages.
+- Final theory-gate logic must use the filtered visible quiz pages, not the full authored question bank.
+- `saveLearningProgress()` persists new theory-passed and completed ids after theory or practical completion.
 
 ## Admin Reset Verification
 
@@ -62,11 +72,11 @@ Preview-only AI plans must not reset learners. A preview only changes admin-loca
 
 ## Reading Map
 
-Read this file as: fresh pre-test gate first, then centered topbar title and direct-to-content learning shell.
+Read this file as: fresh pre-test gate first, then personalized path filtering, then centered topbar title and direct-to-content learning shell.
 
 Where it sits in the run: after the learner enters `/patterns/learn` or a nested module route.
 
-Names worth recognizing while reading: assessment history, `courseUpdatedAt`, foundation evidence, centered topbar title, lesson card, sidebar highlight, and navigation arrows.
+Names worth recognizing while reading: assessment history, `courseUpdatedAt`, foundation evidence, pre-test module outcomes, progress snapshot, centered topbar title, lesson card, sidebar highlight, and navigation arrows.
 
 It leans on nearby contracts or tools such as the page shell layout and the existing learning-path state.
 
@@ -81,6 +91,9 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 
 - A stale saved pre-test redirects the learner to `/pre-test`.
 - A fresh saved passing pre-test opens the lesson surface.
+- Completed and pre-test-exempt modules are hidden for that user.
+- Mastered Bloom levels no longer show as quiz/practical pages for that module.
+- The final visible theory page gates module completion after mastered levels are removed.
 - Admin module create/update/patch/delete and applied AI plan changes are reflected through `courseUpdatedAt`.
 - AI course plan preview alone does not reset the learner gate.
 - The topbar shows a centered `Learning Path` title.

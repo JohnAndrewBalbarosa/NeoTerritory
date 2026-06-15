@@ -23,19 +23,6 @@ const BLOOM_LEVELS: BloomTaxonomy[] = [
   'creating',
 ];
 
-const BLOOM_PATHS: Record<'pretest' | 'posttest' | 'posttest2', BloomTaxonomy[]> = {
-  pretest: [
-    'remembering', 'remembering', 'remembering', 'remembering', 'remembering', 'remembering',
-    'understanding', 'understanding', 'understanding', 'understanding', 'understanding', 'understanding',
-    'applying', 'applying', 'applying', 'applying', 'applying', 'applying',
-    'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing',
-    'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating',
-    'creating', 'creating', 'creating', 'creating', 'creating', 'creating',
-  ],
-  posttest: ['analyzing', 'evaluating', 'creating', 'analyzing', 'evaluating', 'creating', 'applying', 'analyzing'],
-  posttest2: ['remembering', 'applying', 'analyzing', 'evaluating', 'creating', 'understanding', 'applying', 'evaluating'],
-};
-
 function stripQuestionTaxonomy(question: ExamQuestion): ExamQuestion {
   const { taxonomy: _taxonomy, ...rest } = question;
   return rest;
@@ -70,6 +57,16 @@ function collectTaxonomies(modules: ReadonlyArray<LearningModule>): BloomTaxonom
     }
   }
   return Array.from(seen);
+}
+
+function expectedModuleTaxonomyBuckets(modules: ReadonlyArray<LearningModule>): string[] {
+  return normalizeLearningModules(modules)
+    .flatMap((module) => Array.from(new Set(
+      (module.theoreticalExam?.questions ?? [])
+        .map((question) => question.taxonomy)
+        .filter((taxonomy): taxonomy is BloomTaxonomy => typeof taxonomy === 'string'),
+    )).map((taxonomy) => `${module.id}:${taxonomy}`))
+    .sort();
 }
 
 function buildCompactModuleBank(): LearningModule {
@@ -125,24 +122,28 @@ describe('learning module taxonomy normalization', () => {
 
 describe('buildLearningAssessmentQuestions', () => {
   it.each([
-    ['pretest', BLOOM_PATHS.pretest],
-    ['posttest', BLOOM_PATHS.posttest],
-    ['posttest2', BLOOM_PATHS.posttest2],
-  ] as const)('matches the %s Bloom path', (assessmentType, expectedPath) => {
+    'pretest',
+    'posttest',
+    'posttest2',
+  ] as const)('emits one exact Bloom bucket per eligible module for %s', (assessmentType) => {
+    const modules = LEARNING_MODULES.map(stripModuleTaxonomy);
     const questions = buildLearningAssessmentQuestions(
-      LEARNING_MODULES.map(stripModuleTaxonomy),
+      modules,
       assessmentType,
     );
-    expect(questions).toHaveLength(expectedPath.length);
-    expect(questions.map((item) => item.taxonomy)).toEqual(expectedPath);
-    expect(questions.map((item) => item.question.taxonomy)).toEqual(expectedPath);
+    expect(questions.map((item) => `${item.moduleId}:${item.taxonomy}`).sort()).toEqual(
+      expectedModuleTaxonomyBuckets(modules),
+    );
+    expect(questions.every((item) => item.assessmentType === assessmentType)).toBe(true);
+    expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
+    expect(new Set(questions.map((item) => item.assessmentIndex)).size).toBe(questions.length);
   });
 
-  it('reuses exact-taxonomy questions when the eligible module pool is compact', () => {
+  it('uses each available exact taxonomy once when the eligible module pool is compact', () => {
     const questions = buildLearningAssessmentQuestions([buildCompactModuleBank()], 'posttest');
-    expect(questions).toHaveLength(BLOOM_PATHS.posttest.length);
-    expect(questions.map((item) => item.taxonomy)).toEqual(BLOOM_PATHS.posttest);
-    expect(questions.map((item) => item.question.taxonomy)).toEqual(BLOOM_PATHS.posttest);
+    expect(questions).toHaveLength(BLOOM_LEVELS.length);
+    expect(questions.map((item) => item.taxonomy).sort()).toEqual(BLOOM_LEVELS.slice().sort());
+    expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
   });
 });
 

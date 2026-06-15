@@ -2,7 +2,7 @@
 
 ## Sole job
 
-This module builds the pre-test, post-test, and post-test-2 question sets, grades those answers locally, and derives the foundation bypass evidence used by the learner gate. It also evaluates saved server assessment history against the current course freshness timestamp.
+This module builds the pre-test, post-test, and post-test-2 question sets, grades those answers locally, and derives the foundation bypass evidence used by the learner gate. Per-module mastery/exemption is owned by `pretestModuleOutcomes.ts` so this file stays focused on assessment question shape and raw-answer interpretation.
 
 ## Program Flow
 
@@ -10,8 +10,8 @@ This module builds the pre-test, post-test, and post-test-2 question sets, grade
 flowchart TD
     Start["Receive modules"]
     Norm["Normalize taxonomy"]
-    Plan["Read Bloom path"]
-    Match["Find exact question"]
+    Plan["Walk Bloom levels"]
+    Match["Pick module question"]
     Emit["Return assessment set"]
     Grade["Score answers"]
 
@@ -34,12 +34,11 @@ flowchart TD
     Start --> N0 --> N1 --> N2 --> N3 --> N4 --> End
 ```
 
-## Exact-Match Rule
+## Assessment Selection Rule
 
-- Assessment paths request specific Bloom levels in a fixed sequence.
-- `buildLearningAssessmentQuestions(...)` now searches the full eligible module pool for an exact taxonomy match.
-- It prefers unused modules and questions first, then reuses an exact-taxonomy question when the catalog is compact.
-- If the catalog cannot satisfy the requested level, the function throws instead of silently substituting a wrong-taxonomy question.
+- The pre-test walks each Bloom taxonomy and includes one matching question for every module that has that taxonomy available.
+- Post-test surfaces reuse the same exact-taxonomy selection path so stored answers retain module and taxonomy metadata.
+- Missing taxonomy buckets are skipped for that module rather than filled with a wrong-taxonomy fallback.
 - The builder normalizes API-shaped modules before selection, so a missing taxonomy field in seed-loaded data does not break the assessment contract.
 
 ## Foundation Gate
@@ -52,6 +51,7 @@ The foundation pretest still passes only when the learner demonstrates the bypas
 There are two evaluation paths:
 - `evaluateFoundationPretest(...)` grades the current in-browser submission before it is saved.
 - `evaluateFoundationPretestFromAssessments(...)` reads persisted attempts and ignores any pre-test whose `createdAt` is older than `courseUpdatedAt`.
+- `derivePretestModuleOutcomes(...)` in the logic folder consumes the same saved attempts to derive per-module mastered Bloom levels, failed modules, and fully exempt modules.
 
 The backend stores raw selections, free-text responses, question metadata, and the global `course_updated_at` setting. This module performs the client-side interpretation of that saved evidence.
 
@@ -65,9 +65,9 @@ The backend stores raw selections, free-text responses, question metadata, and t
 
 ## Acceptance Checks
 
-- Pre-test, post-test, and post-test-2 sequences match their requested Bloom paths.
+- Pre-test, post-test, and post-test-2 questions keep exact Bloom taxonomy labels.
 - No wrong-taxonomy fallback is used during question selection.
-- Compact catalogs may reuse exact-taxonomy questions instead of failing on uniqueness alone.
+- Modules missing a taxonomy bucket are skipped for that bucket without hiding later buckets.
 - Foundation personas remain distinguishable by mastered and missing taxonomies.
 - Saved pre-test evidence older than `courseUpdatedAt` fails the gate.
 - A saved fresh passing pre-test can unlock the path without relying on local-only state.

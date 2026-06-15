@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../../logic/router';
-import { fetchLearningAssessments, saveLearningAssessment } from '../../../api/client';
+import { fetchLearningAssessments, fetchLearningProgress, saveLearningAssessment, saveLearningProgress } from '../../../api/client';
 import {
   CATEGORY_META,
   isFoundationModule,
@@ -18,6 +18,7 @@ import {
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
+import { derivePretestModuleOutcomes, type PretestModuleOutcomes } from '../../../logic/pretestModuleOutcomes';
 
 interface CourseStep {
   module: LearningModule;
@@ -51,6 +52,27 @@ type LearnNavView =
   | { level: 'modules'; sectionId: LearningCategory }
   | { level: 'subsections'; sectionId: LearningCategory; moduleId: string }
   | { level: 'pages'; sectionId: LearningCategory; moduleId: string; groupKey: LessonPageKind };
+
+const BLOOM_LEVELS: BloomTaxonomy[] = [
+  'remembering',
+  'understanding',
+  'applying',
+  'analyzing',
+  'evaluating',
+  'creating',
+];
+
+const EMPTY_PRETEST_OUTCOMES: PretestModuleOutcomes = {
+  latestAttemptId: null,
+  masteredBloomLevelsByModuleId: {},
+  failedModuleIds: [],
+  exemptModuleIds: [],
+  perfectModuleIds: [],
+};
+
+function bloomLevelForTaxonomy(taxonomy: BloomTaxonomy | undefined): number {
+  return taxonomy ? BLOOM_LEVELS.indexOf(taxonomy) + 1 : 0;
+}
 
 function anchorId(moduleId: string, section: string, sub?: number): string {
   return `mod-${moduleId}-${section}${sub != null ? `-${sub}` : ''}`;
@@ -94,6 +116,12 @@ function computeUnlockedCount(steps: ReadonlyArray<CourseStep>, completedIds: Re
   return Math.min(n, Math.max(steps.length, 1));
 }
 
+function lastUnlockedModuleIdFor(steps: ReadonlyArray<CourseStep>, completedIds: ReadonlySet<string>): string | null {
+  if (steps.length === 0) return null;
+  const unlockedCount = computeUnlockedCount(steps, completedIds);
+  return steps[Math.max(0, Math.min(unlockedCount, steps.length) - 1)]?.module.id ?? null;
+}
+
 function readUnlockAllOverride(): boolean {
   if (typeof window === 'undefined') return false;
   try {
@@ -108,14 +136,6 @@ function lessonPagesFor(
   masteredLevels: number[] = [],
 ): ReadonlyArray<LessonPage> {
   if (!module) return [];
-  const BLOOM_LEVELS: BloomTaxonomy[] = [
-    'remembering',
-    'understanding',
-    'applying',
-    'analyzing',
-    'evaluating',
-    'creating',
-  ];
 
   const pages: LessonPage[] = [{ kind: 'intro', label: 'Introduction' }];
 
@@ -132,7 +152,7 @@ function lessonPagesFor(
   if (module.theoreticalExam) {
     module.theoreticalExam.questions.forEach((q, i) => {
       const taxonomy = q.taxonomy || 'remembering';
-      const level = BLOOM_LEVELS.indexOf(taxonomy) + 1;
+      const level = bloomLevelForTaxonomy(taxonomy);
       if (!masteredLevels.includes(level)) {
         pages.push({ kind: 'theoretical', label: `Quiz Q${i + 1}`, subIndex: i });
       }
@@ -141,7 +161,7 @@ function lessonPagesFor(
 
   if (module.practicalExam) {
     const taxonomy = module.practicalExam.taxonomy || 'creating';
-    const level = BLOOM_LEVELS.indexOf(taxonomy) + 1;
+    const level = bloomLevelForTaxonomy(taxonomy);
     if (!masteredLevels.includes(level)) {
       pages.push({ kind: 'practical', label: 'Practical Exam' });
     }
@@ -411,19 +431,32 @@ export default function PatternsLearnPage(): JSX.Element {
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
   const masteredLevelsByModule = useAppStore((s) => s.masteredLevelsByModule);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
+  const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
-  const { groups, steps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
+  const { steps: allSteps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
   const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
+  const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
   const [seededLeafView, setSeededLeafView] = useState(false);
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
   const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
+  const [pretestModuleOutcomes, setPretestModuleOutcomes] = useState<PretestModuleOutcomes>(EMPTY_PRETEST_OUTCOMES);
+  const hiddenModuleIds = useMemo(() => {
+    const hidden = new Set(completedIds);
+    pretestModuleOutcomes.exemptModuleIds.forEach((moduleId) => hidden.add(moduleId));
+    return hidden;
+  }, [completedIds, pretestModuleOutcomes.exemptModuleIds]);
+  const visibleModulesInCategory = useCallback(
+    (category: LearningCategory) => modulesInCat(category).filter((module) => !hiddenModuleIds.has(module.id)),
+    [hiddenModuleIds, modulesInCat],
+  );
+  const { groups, steps } = useMemo(() => buildCategoryGroups(visibleModulesInCategory), [visibleModulesInCategory]);
   const [foundationEvidence, setFoundationEvidence] = useState<FoundationPretestEvidence>({
     passed: false,
     masteredTaxonomies: [],
@@ -435,8 +468,8 @@ export default function PatternsLearnPage(): JSX.Element {
   });
   const [assessmentStatus, setAssessmentStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
   const foundationModuleIds = useMemo(
-    () => steps.filter((step) => isFoundationModule(step.module)).map((step) => step.module.id),
-    [steps],
+    () => allSteps.filter((step) => isFoundationModule(step.module)).map((step) => step.module.id),
+    [allSteps],
   );
   const effectivePreTestCompleted = preTestCompleted || unlockAll || foundationEvidence.passed;
 
@@ -447,8 +480,15 @@ export default function PatternsLearnPage(): JSX.Element {
   );
 
   const activeModuleMasteredLevels = useMemo(
-    () => (activeModule ? masteredLevelsByModule[activeModule.id] || [] : []),
-    [activeModule, masteredLevelsByModule],
+    () => {
+      if (!activeModule) return [];
+      const localLevels = masteredLevelsByModule[activeModule.id] || [];
+      const pretestLevels = (pretestModuleOutcomes.masteredBloomLevelsByModuleId[activeModule.id] || [])
+        .map(bloomLevelForTaxonomy)
+        .filter((level) => level > 0);
+      return Array.from(new Set([...localLevels, ...pretestLevels])).sort((a, b) => a - b);
+    },
+    [activeModule, masteredLevelsByModule, pretestModuleOutcomes.masteredBloomLevelsByModuleId],
   );
 
   const pages = useMemo(
@@ -462,14 +502,15 @@ export default function PatternsLearnPage(): JSX.Element {
   const currentPage = pages[pageIndex] || pages[0];
   const effectiveCompletedIds = useMemo(
     () => {
-      if (unlockAll) return new Set(steps.map((step) => step.module.id));
+      if (unlockAll) return new Set(allSteps.map((step) => step.module.id));
       const next = new Set(completedIds);
+      pretestModuleOutcomes.exemptModuleIds.forEach((moduleId) => next.add(moduleId));
       if (foundationEvidence.passed) {
         foundationModuleIds.forEach((moduleId) => next.add(moduleId));
       }
       return next;
     },
-    [unlockAll, steps, completedIds, foundationEvidence.passed, foundationModuleIds],
+    [unlockAll, allSteps, completedIds, foundationEvidence.passed, foundationModuleIds, pretestModuleOutcomes.exemptModuleIds],
   );
   const isActiveComplete = !!(activeStep && effectiveCompletedIds.has(activeStep.module.id));
   const unlockedCount = useMemo(
@@ -491,22 +532,35 @@ export default function PatternsLearnPage(): JSX.Element {
     );
     return idx >= 0 ? idx : 0;
   }, [currentGroup, currentPage]);
-  const theoreticalQuestionCount = activeModule?.theoreticalExam?.questions.length ?? 0;
+  const visibleTheoryQuestionIndexes = useMemo(
+    () => pages
+      .filter((page) => page.kind === 'theoretical' && typeof page.subIndex === 'number')
+      .map((page) => page.subIndex as number),
+    [pages],
+  );
+  const visibleTheoryQuestionCount = visibleTheoryQuestionIndexes.length;
+  const hasVisiblePracticalPage = pages.some((page) => page.kind === 'practical');
   const currentTheoryAnswers = activeModule ? theoryAnswers[activeModule.id] ?? {} : {};
   const isTheoryPassed = !!(
     unlockAll ||
+    (activeModule && theoryPassedIds.has(activeModule.id)) ||
     (
       activeModule?.theoreticalExam &&
-      activeModule.theoreticalExam.questions.length > 0 &&
-      activeModule.theoreticalExam.questions.every((q, i) => isAnswerCorrect(q, currentTheoryAnswers[i]))
+      (
+        visibleTheoryQuestionIndexes.length === 0 ||
+        visibleTheoryQuestionIndexes.every((questionIndex) => {
+          const question = activeModule.theoreticalExam?.questions[questionIndex];
+          return !!question && isAnswerCorrect(question, currentTheoryAnswers[questionIndex]);
+        })
+      )
     )
   );
   const isFinalTheoryPage =
     currentPage?.kind === 'theoretical' &&
-    theoreticalQuestionCount > 0 &&
-    currentPage.subIndex === theoreticalQuestionCount - 1;
+    visibleTheoryQuestionCount > 0 &&
+    currentPage.subIndex === visibleTheoryQuestionIndexes[visibleTheoryQuestionIndexes.length - 1];
   const isTheoryGatePage = isFinalTheoryPage;
-  const isSubmitGate = isFinalTheoryPage && !activeModule?.practicalExam;
+  const isSubmitGate = isFinalTheoryPage && !hasVisiblePracticalPage;
   const isPracticalDone = !!(activeModule && practicalDone.has(activeModule.id));
 
   useEffect(() => {
@@ -524,8 +578,11 @@ export default function PatternsLearnPage(): JSX.Element {
     fetchLearningAssessments()
       .then((assessments) => {
         if (cancelled) return;
-        const evidence = evaluateFoundationPretestFromAssessments(steps.map((step) => step.module), assessments);
+        const modules = allSteps.map((step) => step.module);
+        const evidence = evaluateFoundationPretestFromAssessments(modules, assessments);
+        const outcomes = derivePretestModuleOutcomes(modules, assessments);
         setFoundationEvidence(evidence);
+        setPretestModuleOutcomes(outcomes);
         if (evidence.passed && !preTestCompleted) {
           setPreTestCompleted(true);
         }
@@ -542,19 +599,67 @@ export default function PatternsLearnPage(): JSX.Element {
           latestAttemptId: null,
           matchedModuleIds: [],
         });
+        setPretestModuleOutcomes(EMPTY_PRETEST_OUTCOMES);
         setAssessmentStatus('failed');
       });
 
     return () => {
       cancelled = true;
     };
-  }, [contentLoaded, preTestCompleted, setPreTestCompleted, steps, token]);
+  }, [allSteps, contentLoaded, preTestCompleted, setPreTestCompleted, token]);
 
   useEffect(() => {
-    if (unlockAll && steps.length > 0) {
-      setCompletedIds(new Set(steps.map((step) => step.module.id)));
+    if (!token || !contentLoaded || unlockAll) return;
+    let cancelled = false;
+
+    fetchLearningProgress()
+      .then((progress) => {
+        if (cancelled) return;
+        setCompletedIds(new Set(progress.completedModuleIds));
+        setTheoryPassedIds(new Set(progress.theoryPassedModuleIds ?? []));
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          console.error('Failed to load learning progress:', err);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [contentLoaded, token, unlockAll]);
+
+  useEffect(() => {
+    if (unlockAll && allSteps.length > 0) {
+      const moduleIds = allSteps.map((step) => step.module.id);
+      setCompletedIds(new Set(moduleIds));
+      setTheoryPassedIds(new Set(moduleIds));
     }
-  }, [unlockAll, steps]);
+  }, [allSteps, unlockAll]);
+
+  const persistLearningProgress = useCallback(
+    (nextCompletedIds: Set<string>, nextTheoryPassedIds: Set<string>) => {
+      if (!token || unlockAll) return;
+      const lastUnlockedModuleId = lastUnlockedModuleIdFor(allSteps, nextCompletedIds);
+      saveLearningProgress(
+        Array.from(nextCompletedIds),
+        lastUnlockedModuleId,
+        undefined,
+        Array.from(nextTheoryPassedIds),
+        lmsSessionId ?? undefined,
+      ).catch((err) => {
+        console.error('Failed to save learning progress:', err);
+      });
+    },
+    [allSteps, lmsSessionId, token, unlockAll],
+  );
+
+  useEffect(() => {
+    if (activeIndex >= steps.length && steps.length > 0) {
+      setActiveIndex(steps.length - 1);
+      setPageIndex(0);
+    }
+  }, [activeIndex, steps.length]);
 
   useEffect(() => {
     if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
@@ -609,22 +714,52 @@ export default function PatternsLearnPage(): JSX.Element {
   );
 
   const goNextPage = () => {
+    const isLastPage = pageIndex >= pages.length - 1;
+
+    if (
+      activeModule &&
+      isLastPage &&
+      !isActiveComplete &&
+      visibleTheoryQuestionCount === 0 &&
+      !hasVisiblePracticalPage
+    ) {
+      const nextCompletedIds = new Set(completedIds).add(activeModule.id);
+      const nextTheoryPassedIds = new Set(theoryPassedIds).add(activeModule.id);
+      setTheoryPassedIds(nextTheoryPassedIds);
+      setCompletedIds(nextCompletedIds);
+      setPageIndex(0);
+      persistLearningProgress(nextCompletedIds, nextTheoryPassedIds);
+      return;
+    }
+
     if (isTheoryGatePage && activeModule) {
       if (!isTheoryPassed) {
         alert('Answer every question correctly before continuing this module.');
         return;
       }
-      if (!activeModule.practicalExam) {
-        setCompletedIds((prev) => new Set(prev).add(activeModule.id));
+
+      const nextTheoryPassedIds = new Set(theoryPassedIds).add(activeModule.id);
+      if (!theoryPassedIds.has(activeModule.id)) {
+        setTheoryPassedIds(nextTheoryPassedIds);
       }
+
+      if (!hasVisiblePracticalPage) {
+        const nextCompletedIds = new Set(completedIds).add(activeModule.id);
+        setCompletedIds(nextCompletedIds);
+        setPageIndex(0);
+        persistLearningProgress(nextCompletedIds, nextTheoryPassedIds);
+        return;
+      }
+
+      persistLearningProgress(completedIds, nextTheoryPassedIds);
     }
 
-    if (unlockAll && activeIndex === steps.length - 1 && pageIndex === pages.length - 1) {
+    if (unlockAll && activeIndex === steps.length - 1 && isLastPage) {
       navigate('/student-dashboard');
       return;
     }
 
-    if (pageIndex < pages.length - 1) {
+    if (!isLastPage) {
       setPageIndex(pageIndex + 1);
       return;
     }
@@ -721,6 +856,33 @@ export default function PatternsLearnPage(): JSX.Element {
     );
   }
 
+  if (contentLoaded && steps.length === 0) {
+    return (
+      <main className="nt-test-page" data-testid="learn-complete-page">
+        <div className="nt-test-page__shell">
+          <header className="nt-test-page__hero">
+            <p className="nt-test-page__eyebrow">Learning path</p>
+            <div className="nt-test-page__badge nt-test-page__badge--alt">DONE</div>
+            <h1 className="nt-test-page__title">No modules left to learn</h1>
+            <p className="nt-test-page__lede">
+              Completed and pre-test-exempt modules are hidden for this learner.
+            </p>
+          </header>
+
+          <section className="nt-test-page__panel">
+            <div className="nt-test-page__panel-head">
+              <span className="nt-test-page__panel-kicker">Personalized path</span>
+              <h2 className="nt-test-page__panel-title">Everything visible is already complete</h2>
+            </div>
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary nt-test-page__cta" onClick={() => navigate('/student-dashboard')}>
+              Open dashboard
+            </button>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
   if (!contentLoaded || !activeModule) return <div>Loading...</div>;
 
   const navGroup = nav.level !== 'sections' ? groups.find((g) => g.meta.id === nav.sectionId) : null;
@@ -737,7 +899,7 @@ export default function PatternsLearnPage(): JSX.Element {
               <div className="nt-course-sidebar__head">
                 <p>Modules</p>
                 <span>
-                  {effectiveCompletedIds.size}/{steps.length} done
+                  {steps.length} to learn
                 </span>
               </div>
               <ul className="nt-course-folder">
@@ -952,7 +1114,7 @@ export default function PatternsLearnPage(): JSX.Element {
                         try {
                           await saveLearningAssessment({
                             assessmentType: 'practical',
-                            sessionId: null,
+                            sessionId: lmsSessionId,
                             answers: [{
                               moduleId: activeModule.id,
                               questionIndex: 0,
@@ -962,8 +1124,13 @@ export default function PatternsLearnPage(): JSX.Element {
                               questionKind: 'practical',
                             }],
                           });
+                          const nextTheoryPassedIds = new Set(theoryPassedIds).add(activeModule.id);
+                          const nextCompletedIds = new Set(completedIds).add(activeModule.id);
+                          setTheoryPassedIds(nextTheoryPassedIds);
                           setPracticalDone((prev) => new Set(prev).add(activeModule.id));
-                          setCompletedIds((prev) => new Set(prev).add(activeModule.id));
+                          setCompletedIds(nextCompletedIds);
+                          setPageIndex(0);
+                          persistLearningProgress(nextCompletedIds, nextTheoryPassedIds);
                         } catch (err) {
                           alert(err instanceof Error ? err.message : 'Could not save practical answer.');
                         } finally {

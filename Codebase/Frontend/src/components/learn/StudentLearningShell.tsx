@@ -36,7 +36,16 @@ export default function StudentLearningShell() {
     fetchLearningAssessments()
       .then((data) => {
         if (cancelled) return;
-        const fresh = hasFreshSavedPretest(data);
+
+        // For registered users, automatically skip the pre-test if already fresh.
+        // Guests (shared Devcon seats) are allowed to re-take it to ensure their
+        // ephemeral session feels independent from previous occupants.
+        const state = useAppStore.getState();
+        const user = state.user;
+        const email = (user?.email || '').toLowerCase();
+        const isGuest = !email || email.endsWith('@test.local') || email.endsWith('@guest.neoterritory.local');
+
+        const fresh = isGuest ? state.preTestCompleted : hasFreshSavedPretest(data);
         setPreTestCompleted(fresh);
         setPretestGate(fresh ? 'fresh' : 'needs-pretest');
         if (!fresh) {
