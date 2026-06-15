@@ -6,6 +6,10 @@ import {
   type LearningModule,
   normalizeLearningModules,
   isFoundationModule,
+  isAnswerCorrect,
+  isMcqQuestion,
+  isIdentificationQuestion,
+  isStudioQuestion,
 } from './learningModules';
 
 export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
@@ -22,7 +26,20 @@ export interface LearningAssessmentQuestion {
 }
 
 const BLOOM_PATHS: Record<Exclude<LearningAssessmentType, 'practical'>, BloomTaxonomy[]> = {
-  pretest: ['remembering', 'understanding', 'applying', 'remembering', 'understanding', 'applying', 'analyzing', 'remembering'],
+  pretest: [
+    // Level 1: Remembering (6)
+    'remembering', 'remembering', 'remembering', 'remembering', 'remembering', 'remembering',
+    // Level 2: Understanding (6)
+    'understanding', 'understanding', 'understanding', 'understanding', 'understanding', 'understanding',
+    // Level 3: Applying (6)
+    'applying', 'applying', 'applying', 'applying', 'applying', 'applying',
+    // Level 4: Analyzing (6)
+    'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing',
+    // Level 5: Evaluating (6)
+    'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating',
+    // Level 6: Creating (6)
+    'creating', 'creating', 'creating', 'creating', 'creating', 'creating',
+  ],
   posttest: ['analyzing', 'evaluating', 'creating', 'analyzing', 'evaluating', 'creating', 'applying', 'analyzing'],
   posttest2: ['remembering', 'applying', 'analyzing', 'evaluating', 'creating', 'understanding', 'applying', 'evaluating'],
 };
@@ -54,7 +71,8 @@ function seededShuffle<T>(items: ReadonlyArray<T>, seed: string): T[] {
 
 function pickQuestionForTaxonomy(module: LearningModule, taxonomy: BloomTaxonomy): [ExamQuestion, number] | null {
   const qs = module.theoreticalExam?.questions || [];
-  const exact = qs.findIndex((q) => q.taxonomy === taxonomy);
+  const target = taxonomy.toLowerCase();
+  const exact = qs.findIndex((q) => (q.taxonomy || '').toLowerCase() === target);
   return exact >= 0 ? [qs[exact], exact] : null;
 }
 
@@ -78,7 +96,6 @@ function collectQuestionCandidates(
     }];
   });
 }
-
 function chooseQuestionCandidate(
   modules: ReadonlyArray<LearningModule>,
   taxonomy: BloomTaxonomy,
@@ -92,9 +109,11 @@ function chooseQuestionCandidate(
     throw new Error(`Assessment ${assessmentType} requires a ${taxonomy} question, but the module bank has none after normalization.`);
   }
 
-  return candidates.find((candidate) => !usedModuleIds.has(candidate.module.id) && !usedQuestionKeys.has(candidate.questionKey))
+  return (
+    candidates.find((candidate) => !usedModuleIds.has(candidate.module.id) && !usedQuestionKeys.has(candidate.questionKey))
     ?? candidates.find((candidate) => !usedQuestionKeys.has(candidate.questionKey))
-    ?? candidates[assessmentIndex % candidates.length];
+    ?? candidates[assessmentIndex % candidates.length]
+  );
 }
 
 export interface LearningAssessmentAnswerInput {
@@ -104,6 +123,51 @@ export interface LearningAssessmentAnswerInput {
   responseText?: string | null;
   questionTaxonomy?: BloomTaxonomy | null;
   questionKind?: 'theoretical' | 'practical';
+}
+
+export function hasLearningAssessmentAnswer(question: ExamQuestion, answer: unknown): boolean {
+  if (isMcqQuestion(question)) {
+    return typeof answer === 'number' && Number.isInteger(answer) && answer >= 0;
+  }
+  if (isIdentificationQuestion(question)) {
+    if (Array.isArray(answer)) {
+      return answer.length > 0 && answer.every((token) => typeof token === 'string' && token.trim().length > 0);
+    }
+    return typeof answer === 'string' && answer.trim().length > 0;
+  }
+  if (isStudioQuestion(question)) {
+    return answer === true;
+  }
+  return false;
+}
+
+function serializeAssessmentResponse(question: ExamQuestion, answer: unknown): string | null {
+  if (isIdentificationQuestion(question)) {
+    return Array.isArray(answer) ? JSON.stringify(answer) : String(answer);
+  }
+  if (isStudioQuestion(question)) {
+    return answer === true ? 'true' : null;
+  }
+  return typeof answer === 'string' ? answer : null;
+}
+
+export function buildLearningAssessmentAnswerInputs(
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+  answers: Record<number, unknown>,
+): LearningAssessmentAnswerInput[] {
+  return questions
+    .filter((question) => hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex]))
+    .map((question) => {
+      const answer = answers[question.assessmentIndex];
+      return {
+        moduleId: question.moduleId,
+        questionIndex: question.questionIndex,
+        selectedIndex: typeof answer === 'number' ? answer : -1,
+        responseText: serializeAssessmentResponse(question.question, answer),
+        questionTaxonomy: question.taxonomy,
+        questionKind: 'theoretical' as const,
+      };
+    });
 }
 
 export interface LearningAssessmentMeta {
@@ -164,39 +228,44 @@ export function buildLearningAssessmentQuestions(
   assessmentType: LearningAssessmentType,
 ): LearningAssessmentQuestion[] {
   const normalizedModules = normalizeLearningModules(modules);
-  const foundationEligible = normalizedModules.filter(
-    (module) => module.category === 'foundations' && module.theoreticalExam?.questions.length,
-  );
-  const eligible = assessmentType === 'pretest' && foundationEligible.length > 0
-    ? foundationEligible
-    : normalizedModules.filter((module) => module.theoreticalExam?.questions.length);
+
+  // Include all modules for pretest to ensure we can find enough questions
+  // across all 6 Bloom levels for the 36-question bank.
+  const eligible = normalizedModules.filter((module) => module.theoreticalExam?.questions.length);
+
   if (assessmentType === 'practical') return [];
   const plan = BLOOM_PATHS[assessmentType];
   const rotated = seededShuffle(eligible, `${assessmentType}:module-order`);
   const usedModuleIds = new Set<string>();
   const usedQuestionKeys = new Set<string>();
-  return plan.map((taxonomy, assessmentIndex) => {
-    const { module, picked, questionKey } = chooseQuestionCandidate(
-      rotated,
-      taxonomy,
-      assessmentType,
-      assessmentIndex,
-      usedModuleIds,
-      usedQuestionKeys,
-    );
-    usedModuleIds.add(module.id);
-    usedQuestionKeys.add(questionKey);
-    return {
-      assessmentType,
-      assessmentIndex,
-      moduleId: module.id,
-      moduleTitle: module.title,
-      moduleEyebrow: module.eyebrow,
-      questionIndex: picked[1],
-      question: picked[0],
-      taxonomy,
-    };
-  });
+
+  try {
+    return plan.map((taxonomy, assessmentIndex) => {
+      const { module, picked, questionKey } = chooseQuestionCandidate(
+        rotated,
+        taxonomy,
+        assessmentType,
+        assessmentIndex,
+        usedModuleIds,
+        usedQuestionKeys,
+      );
+      usedModuleIds.add(module.id);
+      usedQuestionKeys.add(questionKey);
+      return {
+        assessmentType,
+        assessmentIndex,
+        moduleId: module.id,
+        moduleTitle: module.title,
+        moduleEyebrow: module.eyebrow,
+        questionIndex: picked[1],
+        question: picked[0],
+        taxonomy,
+      };
+    });
+  } catch (err) {
+    console.error('Failed to build adaptive assessment:', err);
+    return []; // Return empty and let the UI handle the 'Unavailable' state gracefully
+  }
 }
 
 export interface LearningAssessmentResult {
@@ -210,7 +279,7 @@ export interface LearningAssessmentResult {
 
 export function gradeLearningAssessment(
   questions: ReadonlyArray<LearningAssessmentQuestion>,
-  answers: Record<number, number | null | undefined>,
+  answers: Record<number, any>,
 ): {
   results: LearningAssessmentResult[];
   correctCount: number;
@@ -219,13 +288,17 @@ export function gradeLearningAssessment(
 } {
   const results = questions.map((item) => {
     const selected = answers[item.assessmentIndex];
-    const selectedIndex = Number.isInteger(selected) ? Number(selected) : null;
-    const isCorrect = selectedIndex != null && selectedIndex === item.question.correctIndex;
+    const isCorrect = isAnswerCorrect(item.question, selected);
+    // For legacy reasons we still return correctIndex if it's MCQ, otherwise -1
+    const correctIndex = 'correctIndex' in item.question ? item.question.correctIndex : -1;
+    // selectedIndex is also legacy for MCQ
+    const selectedIndex = typeof selected === 'number' ? selected : null;
+
     return {
       assessmentIndex: item.assessmentIndex,
       moduleId: item.moduleId,
       questionIndex: item.questionIndex,
-      correctIndex: item.question.correctIndex,
+      correctIndex,
       selectedIndex,
       isCorrect,
     };
@@ -252,8 +325,15 @@ function isFoundationTaxonomy(value: BloomTaxonomy | null | undefined): value is
   return typeof value === 'string' && (FOUNDATION_BYPASS_TAXONOMIES as ReadonlyArray<BloomTaxonomy>).includes(value);
 }
 
-function latestPretestAttempt(attempts: ReadonlyArray<LearningAssessmentAttemptRaw>): LearningAssessmentAttemptRaw | null {
-  const pretests = attempts.filter((attempt) => attempt.assessmentType === 'pretest');
+function latestPretestAttempt(
+  attempts: ReadonlyArray<LearningAssessmentAttemptRaw>,
+  courseUpdatedAt?: string,
+): LearningAssessmentAttemptRaw | null {
+  const pretests = attempts.filter((attempt) => {
+    if (attempt.assessmentType !== 'pretest') return false;
+    if (courseUpdatedAt && new Date(attempt.createdAt) < new Date(courseUpdatedAt)) return false;
+    return true;
+  });
   if (pretests.length === 0) return null;
   const sorted = [...pretests].sort((a, b) => {
     const timeCompare = String(a.createdAt).localeCompare(String(b.createdAt));
@@ -265,7 +345,7 @@ function latestPretestAttempt(attempts: ReadonlyArray<LearningAssessmentAttemptR
 
 export function evaluateFoundationPretest(
   questions: ReadonlyArray<LearningAssessmentQuestion>,
-  answers: Record<number, number | null | undefined>,
+  answers: Record<number, any>,
 ): FoundationPretestEvidence {
   const mastered = new Set<BloomTaxonomy>();
   const matchedModuleIds = new Set<string>();
@@ -273,8 +353,7 @@ export function evaluateFoundationPretest(
 
   for (const item of questions) {
     const selected = answers[item.assessmentIndex];
-    const selectedIndex = Number.isInteger(selected) ? Number(selected) : null;
-    const isCorrect = selectedIndex != null && selectedIndex === item.question.correctIndex;
+    const isCorrect = isAnswerCorrect(item.question, selected);
     if (!isCorrect) continue;
     correctCount += 1;
     if (isFoundationTaxonomy(item.taxonomy)) {
@@ -298,7 +377,9 @@ export function evaluateFoundationPretest(
 function isAnsweredCorrectly(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {
   const question = module.theoreticalExam?.questions[answer.questionIndex];
   if (!question) return false;
-  return answer.selectedIndex === question.correctIndex;
+  // identification questions might store responseText instead of selectedIndex
+  const userAnswer = question.type === 'mcq' ? answer.selectedIndex : answer.responseText;
+  return isAnswerCorrect(question, userAnswer);
 }
 
 export function evaluateFoundationPretestFromAssessments(
@@ -306,7 +387,7 @@ export function evaluateFoundationPretestFromAssessments(
   assessments: LearningAssessmentsResponse,
 ): FoundationPretestEvidence {
   const moduleById = new Map(modules.map((module) => [module.id, module]));
-  const latestAttempt = latestPretestAttempt(assessments.attempts);
+  const latestAttempt = latestPretestAttempt(assessments.attempts, assessments.courseUpdatedAt);
   if (!latestAttempt) {
     return {
       passed: false,

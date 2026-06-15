@@ -43,7 +43,11 @@ export type SettingKey =
   // instruction is the per-request line wrapped around the injected
   // pattern JSON. Admin edits both from the AI-sample prompt editor.
   | 'ai_sample_system_prompt'
-  | 'ai_sample_injection_instruction';
+  | 'ai_sample_injection_instruction'
+  // Global course version timestamp (ISO). Updated whenever an admin
+  // publishes/unpublishes a module or applies a new AI plan. Students
+  // must have a pretest newer than this to access module content.
+  | 'course_updated_at';
 
 const DEFAULT_F1_NORM_PROFILE = {
   label: 'Intermediate C++ · weak on design patterns',
@@ -76,7 +80,8 @@ const DEFAULTS: Record<SettingKey, string> = {
   feature_releases: '{}',
   f1_norm_profile: JSON.stringify(DEFAULT_F1_NORM_PROFILE),
   ai_sample_system_prompt: DEFAULT_AI_SAMPLE_SYSTEM_PROMPT,
-  ai_sample_injection_instruction: DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION
+  ai_sample_injection_instruction: DEFAULT_AI_SAMPLE_INJECTION_INSTRUCTION,
+  course_updated_at: '2024-01-01T00:00:00.000Z'
 };
 
 interface Row { value: string }

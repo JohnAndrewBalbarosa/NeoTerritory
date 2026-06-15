@@ -1,6 +1,9 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppStore } from '../../store/appState';
 import { navigate } from '../../logic/router';
+import { fetchLearningAssessments } from '../../api/client';
+import { preTestPathForNext } from '../../logic/learnerRouting';
+import { hasFreshSavedPretest } from '../../logic/pretestFreshness';
 import PatternsLearnPage from '../marketing/patterns/PatternsLearnPage';
 
 // Standalone learner home. Lives outside MarketingShell so the homepage
@@ -10,19 +13,50 @@ import PatternsLearnPage from '../marketing/patterns/PatternsLearnPage';
 // a follow-up; this shell is the gate that unlocks it).
 export default function StudentLearningShell() {
   const { token, user, clearAuth } = useAppStore();
+  const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
+  const [pretestGate, setPretestGate] = useState<'checking' | 'fresh' | 'needs-pretest'>('checking');
 
   useEffect(() => {
     if (!token) {
-      // Briefly show the "Redirecting to sign-in…" placeholder (below) before navigating,
-      // instead of an instant jump. This makes the redirect legible to the user and keeps
-      // the data-testid="student-learning-shell" anchor reliably present for the routes
-      // manifest smoke under Next's router (which navigates away faster than the old Vite
-      // pushState did, racing the assertion). See D89 / routes-manifest.
       const t = setTimeout(() => navigate('/student-learning/login'), 1200);
       return () => clearTimeout(t);
     }
     return undefined;
   }, [token]);
+
+  useEffect(() => {
+    if (!token || !user?.id) {
+      setPretestGate('checking');
+      return;
+    }
+
+    let cancelled = false;
+    setPretestGate('checking');
+
+    fetchLearningAssessments()
+      .then((data) => {
+        if (cancelled) return;
+        const fresh = hasFreshSavedPretest(data);
+        setPreTestCompleted(fresh);
+        setPretestGate(fresh ? 'fresh' : 'needs-pretest');
+        if (!fresh) {
+          const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+          navigate(preTestPathForNext(next));
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.error('Failed to verify pre-test freshness:', err);
+        setPreTestCompleted(false);
+        setPretestGate('needs-pretest');
+        const next = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+        navigate(preTestPathForNext(next));
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [setPreTestCompleted, token, user?.id]);
 
   useEffect(() => {
     document.body.dataset.surface = 'studentLearningShell';
@@ -41,6 +75,22 @@ export default function StudentLearningShell() {
       >
         <p className="nt-learn-shell__redirect-msg">
           Redirecting to sign-in&hellip;
+        </p>
+      </div>
+    );
+  }
+
+  if (pretestGate !== 'fresh') {
+    return (
+      <div
+        className="nt-learn-shell nt-learn-shell--redirect"
+        data-testid="student-learning-shell"
+        data-state={pretestGate === 'checking' ? 'checking-pretest' : 'redirecting-pretest'}
+      >
+        <p className="nt-learn-shell__redirect-msg">
+          {pretestGate === 'checking'
+            ? 'Checking pre-test status...'
+            : 'Redirecting to pre-test...'}
         </p>
       </div>
     );

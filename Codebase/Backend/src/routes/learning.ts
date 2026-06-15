@@ -17,6 +17,7 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { sanitizeAnswers } from '../services/learningQuestionStats';
 import { mirrorRow } from '../services/supabaseLogger';
+import { getSetting } from '../db/appSettings';
 
 const router = express.Router();
 
@@ -118,12 +119,26 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
     const questionKind = r.questionKind === 'practical' ? 'practical' : 'theoretical';
     if (!moduleId) continue;
     if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 10_000) continue;
+
+    const hasValidIndex = Number.isInteger(selectedIndex) && selectedIndex >= 0 && selectedIndex <= 10_000;
+
     if (questionKind === 'theoretical') {
-      if (!Number.isInteger(selectedIndex) || selectedIndex < 0 || selectedIndex > 10_000) continue;
+      // D92 adaptive pre-test: MCQ uses selectedIndex; Identification and
+      // Studio questions use responseText. Allow either.
+      if (!hasValidIndex && !responseText) continue;
     } else if (!responseText) {
+      // Practical exam (Studio) ALWAYS uses responseText.
       continue;
     }
-    out.push({ moduleId, questionIndex, selectedIndex: questionKind === 'theoretical' ? selectedIndex : -1, responseText, questionTaxonomy, questionKind });
+
+    out.push({
+      moduleId,
+      questionIndex,
+      selectedIndex: hasValidIndex ? selectedIndex : -1,
+      responseText,
+      questionTaxonomy,
+      questionKind,
+    });
     if (out.length >= 50) break;
   }
   return out;
@@ -417,7 +432,7 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
       ORDER BY created_at ASC, id ASC
     `).all(req.user.id) as AssessmentAttemptRow[];
 
-  const answers = db.prepare(`
+    const answers = db.prepare(`
       SELECT a.id, a.attempt_id AS attemptId, a.assessment_type AS assessmentType,
              a.assessment_index AS assessmentIndex, a.module_id AS moduleId,
              a.question_index AS questionIndex, a.selected_index AS selectedIndex,
@@ -429,7 +444,9 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
       ORDER BY a.created_at ASC, a.assessment_index ASC, a.id ASC
     `).all(req.user.id) as AssessmentAnswerRow[];
 
-    res.json({ attempts, answers });
+    const courseUpdatedAt = getSetting('course_updated_at');
+
+    res.json({ attempts, answers, courseUpdatedAt });
   } catch (err) {
     next(err);
   }

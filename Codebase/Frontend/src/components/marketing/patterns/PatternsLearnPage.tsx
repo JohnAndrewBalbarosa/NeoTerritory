@@ -4,10 +4,13 @@ import { fetchLearningAssessments, saveLearningAssessment } from '../../../api/c
 import {
   CATEGORY_META,
   isFoundationModule,
+  isAnswerCorrect,
+  isMcqQuestion,
   type LearningCategory,
   type LearningModule,
   type PracticalExam,
   type TheoreticalExam,
+  type BloomTaxonomy,
 } from '../../../data/learningModules';
 import {
   evaluateFoundationPretestFromAssessments,
@@ -41,7 +44,7 @@ interface LessonPageGroup {
   pages: ReadonlyArray<LessonPage>;
 }
 
-type TheoryAnswerMap = Record<number, number>;
+type TheoryAnswerMap = Record<number, any>;
 
 type LearnNavView =
   | { level: 'sections' }
@@ -100,8 +103,19 @@ function readUnlockAllOverride(): boolean {
   }
 }
 
-function lessonPagesFor(module: LearningModule | undefined): ReadonlyArray<LessonPage> {
+function lessonPagesFor(
+  module: LearningModule | undefined,
+  masteredLevels: number[] = [],
+): ReadonlyArray<LessonPage> {
   if (!module) return [];
+  const BLOOM_LEVELS: BloomTaxonomy[] = [
+    'remembering',
+    'understanding',
+    'applying',
+    'analyzing',
+    'evaluating',
+    'creating',
+  ];
 
   const pages: LessonPage[] = [{ kind: 'intro', label: 'Introduction' }];
 
@@ -116,22 +130,33 @@ function lessonPagesFor(module: LearningModule | undefined): ReadonlyArray<Lesso
   });
 
   if (module.theoreticalExam) {
-    module.theoreticalExam.questions.forEach((_, i) => {
-      pages.push({ kind: 'theoretical', label: `Quiz Q${i + 1}`, subIndex: i });
+    module.theoreticalExam.questions.forEach((q, i) => {
+      const taxonomy = q.taxonomy || 'remembering';
+      const level = BLOOM_LEVELS.indexOf(taxonomy) + 1;
+      if (!masteredLevels.includes(level)) {
+        pages.push({ kind: 'theoretical', label: `Quiz Q${i + 1}`, subIndex: i });
+      }
     });
   }
 
   if (module.practicalExam) {
-    pages.push({ kind: 'practical', label: 'Practical Exam' });
+    const taxonomy = module.practicalExam.taxonomy || 'creating';
+    const level = BLOOM_LEVELS.indexOf(taxonomy) + 1;
+    if (!masteredLevels.includes(level)) {
+      pages.push({ kind: 'practical', label: 'Practical Exam' });
+    }
   }
 
   return pages;
 }
 
-function lessonPageGroupsFor(module: LearningModule | undefined): ReadonlyArray<LessonPageGroup> {
+function lessonPageGroupsFor(
+  module: LearningModule | undefined,
+  masteredLevels: number[] = [],
+): ReadonlyArray<LessonPageGroup> {
   if (!module) return [];
 
-  const pages = lessonPagesFor(module);
+  const pages = lessonPagesFor(module, masteredLevels);
   const groups: LessonPageGroup[] = [
     { key: 'intro', label: 'Intro', pages: pages.filter((p) => p.kind === 'intro') },
     { key: 'concepts', label: 'Concepts', pages: pages.filter((p) => p.kind === 'concepts') },
@@ -293,7 +318,7 @@ function TheoreticalExamBlock({
 }): JSX.Element | null {
   const qi = subIndex ?? 0;
   const q = exam.questions[qi];
-  if (!q) return null;
+  if (!q || !isMcqQuestion(q)) return null;
 
   return (
     <section className="nt-exam__question" id={anchorId(moduleId, 'theoretical', subIndex)}>
@@ -384,6 +409,7 @@ function PracticalExamBlock({
 export default function PatternsLearnPage(): JSX.Element {
   const token = useAppStore((s) => s.token);
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
+  const masteredLevelsByModule = useAppStore((s) => s.masteredLevelsByModule);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
@@ -419,8 +445,20 @@ export default function PatternsLearnPage(): JSX.Element {
     () => (activeStep ? findModule(activeStep.module.id) : undefined),
     [activeStep, findModule],
   );
-  const pages = useMemo(() => lessonPagesFor(activeModule), [activeModule]);
-  const pageGroups = useMemo(() => lessonPageGroupsFor(activeModule), [activeModule]);
+
+  const activeModuleMasteredLevels = useMemo(
+    () => (activeModule ? masteredLevelsByModule[activeModule.id] || [] : []),
+    [activeModule, masteredLevelsByModule],
+  );
+
+  const pages = useMemo(
+    () => lessonPagesFor(activeModule, activeModuleMasteredLevels),
+    [activeModule, activeModuleMasteredLevels],
+  );
+  const pageGroups = useMemo(
+    () => lessonPageGroupsFor(activeModule, activeModuleMasteredLevels),
+    [activeModule, activeModuleMasteredLevels],
+  );
   const currentPage = pages[pageIndex] || pages[0];
   const effectiveCompletedIds = useMemo(
     () => {
@@ -460,7 +498,7 @@ export default function PatternsLearnPage(): JSX.Element {
     (
       activeModule?.theoreticalExam &&
       activeModule.theoreticalExam.questions.length > 0 &&
-      activeModule.theoreticalExam.questions.every((q, i) => currentTheoryAnswers[i] === q.correctIndex)
+      activeModule.theoreticalExam.questions.every((q, i) => isAnswerCorrect(q, currentTheoryAnswers[i]))
     )
   );
   const isFinalTheoryPage =
@@ -473,21 +511,7 @@ export default function PatternsLearnPage(): JSX.Element {
 
   useEffect(() => {
     let cancelled = false;
-    if (!token) {
-      setFoundationEvidence({
-        passed: false,
-        masteredTaxonomies: [],
-        missingTaxonomies: ['remembering', 'understanding', 'applying'],
-        correctCount: 0,
-        totalCount: 0,
-        latestAttemptId: null,
-        matchedModuleIds: [],
-      });
-      setAssessmentStatus('ready');
-      return () => {
-        cancelled = true;
-      };
-    }
+    if (!token) return;
 
     if (!contentLoaded) {
       setAssessmentStatus('loading');
@@ -623,7 +647,8 @@ export default function PatternsLearnPage(): JSX.Element {
     else if (activeIndex > 0) {
       const prevIdx = activeIndex - 1;
       setActiveIndex(prevIdx);
-      setPageIndex(lessonPagesFor(steps[prevIdx].module).length - 1);
+      const prevModule = steps[prevIdx].module;
+      setPageIndex(lessonPagesFor(prevModule, masteredLevelsByModule[prevModule.id] || []).length - 1);
       const prevStep = steps[prevIdx];
       setNav({ level: 'subsections', sectionId: prevStep.category, moduleId: prevStep.module.id });
     }
@@ -631,7 +656,8 @@ export default function PatternsLearnPage(): JSX.Element {
 
   const jumpToPage = useCallback(
     (step: CourseStep, target: LessonPage) => {
-      const targetPages = lessonPagesFor(findModule(step.module.id));
+      const targetModule = findModule(step.module.id);
+      const targetPages = lessonPagesFor(targetModule, masteredLevelsByModule[step.module.id] || []);
       const pi = Math.max(
         0,
         targetPages.findIndex((p) => p.kind === target.kind && p.subIndex === target.subIndex),
@@ -639,7 +665,7 @@ export default function PatternsLearnPage(): JSX.Element {
       if (step.globalIndex === activeIndex) setPageIndex(pi);
       else goToStep(step.globalIndex, pi);
     },
-    [activeIndex, findModule, goToStep],
+    [activeIndex, findModule, goToStep, masteredLevelsByModule],
   );
 
   if (!effectivePreTestCompleted && assessmentStatus === 'loading') {
@@ -772,7 +798,7 @@ export default function PatternsLearnPage(): JSX.Element {
                         <span className="nt-course-folder__label">
                           <small>{s.module.eyebrow}</small>
                           {s.module.title}
-                          {bypassed ? ' · Bypassed by pretest' : ''}
+                          {bypassed ? ' - Bypassed by pretest' : ''}
                         </span>
                         {!locked ? (
                           <span className="nt-course-folder__chev" aria-hidden="true">

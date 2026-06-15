@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
   evaluateFoundationPretest,
+  hasLearningAssessmentAnswer,
   type LearningAssessmentQuestion,
 } from '../learningAssessments';
 import {
@@ -22,7 +24,14 @@ const BLOOM_LEVELS: BloomTaxonomy[] = [
 ];
 
 const BLOOM_PATHS: Record<'pretest' | 'posttest' | 'posttest2', BloomTaxonomy[]> = {
-  pretest: ['remembering', 'understanding', 'applying', 'remembering', 'understanding', 'applying', 'analyzing', 'remembering'],
+  pretest: [
+    'remembering', 'remembering', 'remembering', 'remembering', 'remembering', 'remembering',
+    'understanding', 'understanding', 'understanding', 'understanding', 'understanding', 'understanding',
+    'applying', 'applying', 'applying', 'applying', 'applying', 'applying',
+    'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing', 'analyzing',
+    'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating', 'evaluating',
+    'creating', 'creating', 'creating', 'creating', 'creating', 'creating',
+  ],
   posttest: ['analyzing', 'evaluating', 'creating', 'analyzing', 'evaluating', 'creating', 'applying', 'analyzing'],
   posttest2: ['remembering', 'applying', 'analyzing', 'evaluating', 'creating', 'understanding', 'applying', 'evaluating'],
 };
@@ -74,6 +83,7 @@ function buildCompactModuleBank(): LearningModule {
     theoreticalExam: {
       kind: 'theoretical',
       questions: BLOOM_LEVELS.map((taxonomy) => ({
+        type: 'mcq',
         question: `${taxonomy} question`,
         options: ['A', 'B'],
         correctIndex: 0,
@@ -97,6 +107,7 @@ function buildQuestion(
     questionIndex: assessmentIndex,
     taxonomy,
     question: {
+      type: 'mcq',
       question: `Question ${assessmentIndex}`,
       options: ['A', 'B'],
       correctIndex,
@@ -186,5 +197,67 @@ describe('evaluateFoundationPretest', () => {
       expect(result.correctCount).toBe(persona.correctCount);
       expect(result.totalCount).toBe(3);
     }
+  });
+});
+
+describe('assessment answer serialization', () => {
+  it('recognizes answered MCQ, identification, and studio values', () => {
+    const mcq = buildQuestion(0, 'remembering').question;
+    const identification: ExamQuestion = {
+      type: 'identification',
+      question: 'Name the moving parts',
+      scenario: 'A creator object selects a concrete product.',
+      expectedTokens: ['creator', 'product'],
+    };
+    const studio: ExamQuestion = {
+      type: 'studio',
+      prompt: 'Detect the target pattern',
+      targetPatternSlug: 'factory-method',
+    };
+
+    expect(hasLearningAssessmentAnswer(mcq, 0)).toBe(true);
+    expect(hasLearningAssessmentAnswer(mcq, -1)).toBe(false);
+    expect(hasLearningAssessmentAnswer(identification, ['creator', 'product'])).toBe(true);
+    expect(hasLearningAssessmentAnswer(identification, ['creator', ''])).toBe(false);
+    expect(hasLearningAssessmentAnswer(studio, true)).toBe(true);
+    expect(hasLearningAssessmentAnswer(studio, false)).toBe(false);
+  });
+
+  it('serializes only actually answered questions', () => {
+    const questions: LearningAssessmentQuestion[] = [
+      buildQuestion(0, 'remembering'),
+      {
+        ...buildQuestion(1, 'understanding'),
+        question: {
+          type: 'identification',
+          question: 'Identify roles',
+          scenario: 'A subject notifies observers.',
+          expectedTokens: ['subject', 'observer'],
+        },
+      },
+      {
+        ...buildQuestion(2, 'applying'),
+        question: {
+          type: 'studio',
+          prompt: 'Run the analyzer',
+          targetPatternSlug: 'observer',
+        },
+      },
+      buildQuestion(3, 'analyzing'),
+    ];
+
+    const serialized = buildLearningAssessmentAnswerInputs(questions, {
+      0: 1,
+      1: ['subject', 'observer'],
+      2: true,
+    });
+
+    expect(serialized).toEqual([
+      expect.objectContaining({ moduleId: 'foundations-0', selectedIndex: 1, responseText: null }),
+      expect.objectContaining({ moduleId: 'foundations-1', selectedIndex: -1, responseText: '["subject","observer"]' }),
+      expect.objectContaining({ moduleId: 'foundations-2', selectedIndex: -1, responseText: 'true' }),
+    ]);
+    expect(serialized).toHaveLength(3);
+    expect(serialized.some((answer) => answer.moduleId === 'foundations-3')).toBe(false);
   });
 });

@@ -3,6 +3,8 @@ import { useCallback, useEffect } from 'react';
 import { Surface } from '../../logic/router';
 import { useAppStore } from '../../store/appState';
 import { fetchLearningAssessments } from '../../api/client';
+import { resolvePreTestNext } from '../../logic/learnerRouting';
+import { hasFreshSavedPretest } from '../../logic/pretestFreshness';
 import { useLenis } from './effects/useLenis';
 import MarketingNav from './MarketingNav';
 import MarketingFooter from './MarketingFooter';
@@ -28,7 +30,6 @@ interface MarketingShellProps {
 
 export default function MarketingShell({ surface }: MarketingShellProps) {
   useLenis(true);
-  const preTestCompleted = useAppStore((s) => s.preTestCompleted);
   const token = useAppStore((s) => s.token);
   const userId = useAppStore((s) => s.user?.id ?? null);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
@@ -43,28 +44,26 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
   }, [surface]);
 
   useEffect(() => {
-    if (surface === 'preTest' && preTestCompleted) {
-      navigate('/patterns/learn');
-    }
-  }, [preTestCompleted, surface]);
-
-  useEffect(() => {
     if (!token || !userId) return;
     let cancelled = false;
     fetchLearningAssessments()
       .then((data) => {
         if (cancelled) return;
-        if (data.attempts.some((attempt) => attempt.assessmentType === 'pretest')) {
-          setPreTestCompleted(true);
+        const fresh = hasFreshSavedPretest(data);
+        setPreTestCompleted(fresh);
+        if (fresh && surface === 'preTest') {
+          const next = new URL(window.location.href).searchParams.get('next');
+          navigate(resolvePreTestNext(next));
         }
       })
       .catch(() => {
-        // Best-effort sync only. Local storage still keeps the current session gate alive.
+        // Fail closed: local storage must not bypass stale or unavailable server data.
+        setPreTestCompleted(false);
       });
     return () => {
       cancelled = true;
     };
-  }, [setPreTestCompleted, token, userId]);
+  }, [setPreTestCompleted, surface, token, userId]);
 
   // Learner-merge: the 4-card chooser is retired. Every "Try it now" CTA
   // (and the legacy /auth/choose, /auth bookmarks) now goes straight to the

@@ -4,50 +4,22 @@ import { saveLearningAssessment } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
+  buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
-  evaluateFoundationPretest,
   gradeLearningAssessment,
+  hasLearningAssessmentAnswer,
   LEARNING_ASSESSMENT_META,
   type LearningAssessmentType,
 } from '../../data/learningAssessments';
+import { AdaptiveAssessmentProvider, useAdaptiveAssessment } from './AdaptiveAssessmentProvider';
+import { BloomQuestionRenderer } from './BloomQuestionRenderer';
 
 interface LearningAssessmentPageProps {
   assessmentType: LearningAssessmentType;
   autoAdvance?: boolean;
 }
 
-function AssessmentChoice({
-  name,
-  id,
-  label,
-  picked,
-  correct,
-  wrong,
-  onSelect,
-}: {
-  name: string;
-  id: string;
-  label: string;
-  picked: boolean;
-  correct: boolean;
-  wrong: boolean;
-  onSelect: () => void;
-}): JSX.Element {
-  return (
-    <label
-      htmlFor={id}
-      className="nt-assessment__choice"
-      data-picked={picked ? 'true' : undefined}
-      data-correct={correct ? 'true' : undefined}
-      data-wrong={wrong ? 'true' : undefined}
-    >
-      <input id={id} type="radio" name={name} checked={picked} onChange={onSelect} />
-      <span>{label}</span>
-    </label>
-  );
-}
-
-export default function LearningAssessmentPage({
+function LearningAssessmentContent({
   assessmentType,
   autoAdvance = false,
 }: LearningAssessmentPageProps): JSX.Element {
@@ -56,84 +28,180 @@ export default function LearningAssessmentPage({
   const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
 
-  const questions = useMemo(
+  const {
+    currentLevel,
+    status,
+    activeModuleIds,
+    eliminatedModuleIds,
+    nextLevel,
+    eliminateModules,
+    initializeActiveModules,
+    getTaxonomyForLevel,
+    getLevelForTaxonomy,
+  } = useAdaptiveAssessment();
+
+  const allQuestions = useMemo(
     () => (loaded ? buildLearningAssessmentQuestions(modules, assessmentType) : []),
     [assessmentType, loaded, modules],
   );
 
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [submitted, setSubmitted] = useState(false);
+  useEffect(() => {
+    if (
+      loaded &&
+      allQuestions.length > 0 &&
+      assessmentType === 'pretest' &&
+      activeModuleIds.size === 0 &&
+      eliminatedModuleIds.size === 0
+    ) {
+      initializeActiveModules([...new Set(allQuestions.map((q) => q.moduleId))]);
+    }
+  }, [
+    loaded,
+    allQuestions,
+    assessmentType,
+    activeModuleIds.size,
+    eliminatedModuleIds.size,
+    initializeActiveModules,
+  ]);
+
+  const currentTaxonomy = getTaxonomyForLevel(currentLevel);
+  const questions = useMemo(() => {
+    if (assessmentType !== 'pretest') return allQuestions;
+    return allQuestions.filter((q) => q.taxonomy === currentTaxonomy && activeModuleIds.has(q.moduleId));
+  }, [allQuestions, assessmentType, currentTaxonomy, activeModuleIds]);
+
+  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [levelSubmitted, setLevelSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [gateNotice, setGateNotice] = useState<string | null>(null);
 
   useEffect(() => {
     setAnswers({});
-    setSubmitted(false);
-    setError(null);
-    setGateNotice(null);
   }, [assessmentType]);
+
+  useEffect(() => {
+    setLevelSubmitted(false);
+    setError(null);
+  }, [assessmentType, currentLevel]);
 
   const graded = useMemo(
     () => gradeLearningAssessment(questions, answers),
     [answers, questions],
   );
 
-  const answeredCount = questions.filter((q) => Number.isInteger(answers[q.assessmentIndex])).length;
-  const allAnswered = questions.length > 0 && answeredCount === questions.length;
+  const advancingModuleIds = useMemo(() => {
+    if (assessmentType !== 'pretest') return [];
+    return graded.results.filter((r) => r.isCorrect).map((r) => r.moduleId);
+  }, [assessmentType, graded.results]);
 
-  const handleSubmit = async (): Promise<void> => {
+  const failedInThisLevelIds = useMemo(() => {
+    if (assessmentType !== 'pretest') return [];
+    return graded.results.filter((r) => !r.isCorrect).map((r) => r.moduleId);
+  }, [assessmentType, graded.results]);
+
+  const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
+  const allAnswered = questions.length > 0 && answeredCount === questions.length;
+  const answeredTotal = allQuestions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
+  const levelProgress = useMemo(() => {
+    if (assessmentType !== 'pretest') return [];
+    return allQuestions.reduce<Array<{
+      level: number;
+      taxonomy: ReturnType<typeof getTaxonomyForLevel>;
+      total: number;
+      answered: number;
+      active: boolean;
+    }>>((acc, question) => {
+      const level = getLevelForTaxonomy(question.taxonomy);
+      let entry = acc.find((item) => item.level === level);
+      if (!entry) {
+        entry = {
+          level,
+          taxonomy: question.taxonomy,
+          total: 0,
+          answered: 0,
+          active: level === currentLevel,
+        };
+        acc.push(entry);
+      }
+      if (activeModuleIds.has(question.moduleId) || hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])) {
+        entry.total += 1;
+      }
+      if (hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])) {
+        entry.answered += 1;
+      }
+      return acc;
+    }, []).sort((a, b) => a.level - b.level);
+  }, [activeModuleIds, allQuestions, answers, assessmentType, currentLevel, getLevelForTaxonomy]);
+
+  const handleSubmitLevel = async (): Promise<void> => {
     if (!allAnswered) {
-      setError('Answer every question before submitting.');
+      setError('Answer every question in this level before submitting.');
       return;
     }
 
     setError(null);
     setSaving(true);
     try {
-      const pretestGate = assessmentType === 'pretest'
-        ? evaluateFoundationPretest(questions, answers)
-        : null;
-      await saveLearningAssessment({
-        assessmentType,
-        sessionId: lmsSessionId,
-        answers: questions.map((question) => ({
-          moduleId: question.moduleId,
-          questionIndex: question.questionIndex,
-          selectedIndex: Number(answers[question.assessmentIndex]),
-          questionTaxonomy: question.taxonomy,
-          questionKind: 'theoretical',
-        })),
-      });
-
       if (assessmentType === 'pretest') {
-        if (!pretestGate?.passed) {
-          setGateNotice(
-            `Foundations stay locked until you answer remembering, understanding, and applying correctly. ` +
-              `Mastered levels: ${pretestGate?.masteredTaxonomies.join(', ') || 'none'}.`,
-          );
-          setSubmitted(true);
-          return;
+        const { setMasteredLevels, masteredLevelsByModule } = useAppStore.getState();
+
+        graded.results.forEach((result) => {
+          if (result.isCorrect) {
+            const existing = masteredLevelsByModule[result.moduleId] || [];
+            setMasteredLevels(result.moduleId, [...new Set([...existing, currentLevel])]);
+          }
+        });
+
+        if (failedInThisLevelIds.length > 0) {
+          eliminateModules(failedInThisLevelIds);
         }
-        setGateNotice('Foundation baseline unlocked for this learner.');
-        setPreTestCompleted(true);
-      }
 
-      if (autoAdvance) {
-        navigate(meta.nextPath);
-        return;
+        const nextActiveSize = activeModuleIds.size - failedInThisLevelIds.length;
+        if (currentLevel === 6 || nextActiveSize === 0) {
+          await finalizeAssessment();
+        } else {
+          setLevelSubmitted(true);
+        }
+      } else {
+        await finalizeAssessment();
       }
-
-      setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save the assessment.');
+      setError(err instanceof Error ? err.message : 'Could not save the level results.');
     } finally {
       setSaving(false);
     }
   };
 
+  const finalizeAssessment = async () => {
+    const finalAnswers = buildLearningAssessmentAnswerInputs(
+      assessmentType === 'pretest' ? allQuestions : questions,
+      answers,
+    );
+
+    await saveLearningAssessment({
+      assessmentType,
+      sessionId: lmsSessionId,
+      answers: finalAnswers,
+    });
+
+    if (assessmentType === 'pretest') {
+      setPreTestCompleted(true);
+    }
+
+    if (autoAdvance) {
+      navigate(meta.nextPath);
+      return;
+    }
+
+    setLevelSubmitted(true);
+  };
+
   const handleContinue = (): void => {
-    navigate(meta.nextPath);
+    if (assessmentType === 'pretest' && status === 'in_progress' && currentLevel < 6 && activeModuleIds.size > 0) {
+      nextLevel();
+    } else {
+      navigate(meta.nextPath);
+    }
   };
 
   if (!loaded) {
@@ -152,7 +220,7 @@ export default function LearningAssessmentPage({
     );
   }
 
-  if (questions.length === 0) {
+  if (allQuestions.length === 0) {
     return (
       <main className="nt-test-page" data-testid={`${assessmentType}-page`}>
         <div className="nt-test-page__shell">
@@ -183,18 +251,36 @@ export default function LearningAssessmentPage({
         <section className="nt-test-page__panel">
           <div className="nt-test-page__panel-head">
             <span className="nt-test-page__panel-kicker">
-              {answeredCount}/{questions.length} answered
+              {assessmentType === 'pretest'
+                ? `Level ${currentLevel}: ${currentTaxonomy} (${answeredCount}/${questions.length} answered, ${answeredTotal} saved so far)`
+                : `${answeredCount}/${questions.length} answered`}
             </span>
-            <h2 className="nt-test-page__panel-title">Raw answers only, local scoring in the browser</h2>
+            <h2 className="nt-test-page__panel-title">Adaptive Bloom's Assessment</h2>
           </div>
 
           <section className="nt-assessment" data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
+            {assessmentType === 'pretest' ? (
+              <div className="nt-assessment__stepper" aria-label="Bloom assessment progress">
+                {levelProgress.map((level) => (
+                  <div
+                    key={level.level}
+                    className="nt-assessment__step"
+                    data-active={level.active}
+                    data-complete={level.answered > 0 && level.answered === level.total}
+                    data-empty={level.total === 0}
+                  >
+                    <span className="nt-assessment__step-num">{level.level}</span>
+                    <span className="nt-assessment__step-label">{level.taxonomy}</span>
+                    <span className="nt-assessment__step-count">{level.answered}/{level.total}</span>
+                  </div>
+                ))}
+              </div>
+            ) : null}
+
             <ol className="nt-assessment__items">
               {questions.map((item) => {
                 const selected = answers[item.assessmentIndex];
-                const picked = Number.isInteger(selected) ? Number(selected) : null;
-                const showResult = submitted || autoAdvance;
-                const answeredState = picked != null;
+                const showResult = levelSubmitted;
                 return (
                   <li key={`${item.moduleId}#${item.questionIndex}`}>
                     <p className="nt-assessment__module">
@@ -203,85 +289,96 @@ export default function LearningAssessmentPage({
                         {item.taxonomy}
                       </span>
                     </p>
-                    <p className="nt-assessment__prompt">
-                      <span className="nt-assessment__num">Q{item.assessmentIndex + 1}</span>
-                      {item.question.question}
-                    </p>
-                    {item.question.code ? <pre className="nt-assessment__code">{item.question.code}</pre> : null}
-                    <ol className="nt-assessment__choices">
-                      {item.question.options.map((option, optionIndex) => {
-                        const correct = showResult && optionIndex === item.question.correctIndex;
-                        const wrong = showResult && answeredState && picked !== item.question.correctIndex && picked === optionIndex;
-                        return (
-                          <li key={`${item.moduleId}#${item.questionIndex}#${optionIndex}`}>
-                            <AssessmentChoice
-                              name={`${item.moduleId}-${item.questionIndex}`}
-                              id={`${item.moduleId}-${item.questionIndex}-${optionIndex}`}
-                              label={option}
-                              picked={picked === optionIndex}
-                              correct={correct}
-                              wrong={wrong}
-                              onSelect={() => {
-                                setError(null);
-                                setAnswers((prev) => ({ ...prev, [item.assessmentIndex]: optionIndex }));
-                              }}
-                            />
-                          </li>
-                        );
-                      })}
-                    </ol>
+                    <BloomQuestionRenderer
+                      question={item.question}
+                      userAnswer={selected}
+                      showResult={showResult}
+                      onAnswer={(val) => {
+                        setError(null);
+                        setAnswers((prev) => ({ ...prev, [item.assessmentIndex]: val }));
+                      }}
+                    />
                   </li>
                 );
               })}
             </ol>
 
-            {submitted ? (
+            {levelSubmitted ? (
               <div className="nt-assessment__result" role="status" aria-live="polite">
                 <p className="nt-assessment__score">
-                  Browser score: <strong>{graded.correctCount}/{graded.totalCount}</strong> ({graded.scorePercent}%)
+                  {assessmentType === 'pretest' ? `Level ${currentLevel}` : 'Assessment'} score:{' '}
+                  <strong>{graded.correctCount}/{graded.totalCount}</strong>
                 </p>
-                <p className="nt-assessment__gain">
-                  Only raw selected answers were stored. The score above was computed client-side from the live module bank.
-                </p>
-                {gateNotice ? <p className="nt-assessment__gain">{gateNotice}</p> : null}
+                {assessmentType === 'pretest' ? (
+                  <>
+                    {advancingModuleIds.length > 0 && (
+                      <p className="nt-assessment__gain">
+                        Modules advancing to Level {currentLevel + 1}:{' '}
+                        <strong>
+                          {advancingModuleIds
+                            .map((id) => modules.find((m) => m.id === id)?.title)
+                            .join(', ')}
+                        </strong>
+                      </p>
+                    )}
+                    {failedInThisLevelIds.length > 0 && (
+                      <p className="nt-assessment__gain nt-assessment__gain--fail">
+                        Modules eliminated and added to study list:{' '}
+                        <strong>
+                          {failedInThisLevelIds
+                            .map((id) => modules.find((m) => m.id === id)?.title)
+                            .join(', ')}
+                        </strong>
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    {graded.correctCount === graded.totalCount ? (
+                      <p className="nt-assessment__gain">Excellent! You have mastered this assessment.</p>
+                    ) : (
+                      <p className="nt-assessment__gain">You missed some questions in this level.</p>
+                    )}
+                  </>
+                )}
               </div>
             ) : null}
 
             {error ? <p className="nt-assessment__hint" role="alert">{error}</p> : null}
 
             <div className="nt-assessment__footer">
-              {!submitted ? (
-                <>
-                  <button
-                    type="button"
-                    className="nt-lesson-button nt-lesson-button--primary"
-                    onClick={handleSubmit}
-                    disabled={saving}
-                  >
-                    {saving ? 'Saving...' : meta.submitLabel}
-                  </button>
-                  <p className="nt-assessment__hint">
-                    Selected answers are saved as raw data only. Interpretation stays in the browser.
-                  </p>
-                </>
+              {!levelSubmitted ? (
+                <button
+                  type="button"
+                  className="nt-lesson-button nt-lesson-button--primary"
+                  onClick={handleSubmitLevel}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : assessmentType === 'pretest' ? 'Submit Level' : meta.submitLabel}
+                </button>
               ) : (
-                <>
-                  <button
-                    type="button"
-                    className="nt-lesson-button nt-lesson-button--primary"
-                    onClick={handleContinue}
-                  >
-                    {meta.continueLabel}
-                  </button>
-                  <p className="nt-assessment__hint">
-                    The database has the raw answers. Continue when you are ready.
-                  </p>
-                </>
+                <button
+                  type="button"
+                  className="nt-lesson-button nt-lesson-button--primary"
+                  onClick={handleContinue}
+                >
+                  {status === 'completed' || currentLevel === 6 || (assessmentType === 'pretest' && activeModuleIds.size === 0)
+                    ? meta.continueLabel
+                    : 'Continue to Next Level'}
+                </button>
               )}
             </div>
           </section>
         </section>
       </div>
     </main>
+  );
+}
+
+export default function LearningAssessmentPage(props: LearningAssessmentPageProps): JSX.Element {
+  return (
+    <AdaptiveAssessmentProvider>
+      <LearningAssessmentContent {...props} />
+    </AdaptiveAssessmentProvider>
   );
 }

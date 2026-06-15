@@ -2337,6 +2337,9 @@ router.post('/learning/modules', (req: Request, res: Response, next: NextFunctio
       created_by_user_id: req.user?.id ?? null,
     });
 
+    // Bump global course version so student pre-tests become stale.
+    setSetting('course_updated_at', new Date().toISOString());
+
     logAudit({
       actorUserId: req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,
@@ -2421,6 +2424,9 @@ router.put('/learning/modules/:moduleId', (req: Request, res: Response, next: Ne
       sort_order: sortOrder,
     });
 
+    // Bump global course version so student pre-tests become stale.
+    setSetting('course_updated_at', new Date().toISOString());
+
     logAudit({
       actorUserId: req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,
@@ -2475,6 +2481,9 @@ router.patch('/learning/modules/:moduleId', (req: Request, res: Response, next: 
       SET published = ?, auto_tag = ?, sort_order = ?, updated_at = datetime('now')
       WHERE module_id = ?
     `).run(published, autoTag, sortOrder, moduleId);
+
+    // Bump global course version so student pre-tests become stale.
+    setSetting('course_updated_at', new Date().toISOString());
 
     logAudit({
       actorUserId: req.user?.id ?? null,
@@ -2531,6 +2540,10 @@ router.delete('/learning/modules/:moduleId', (req: Request, res: Response, next:
     }
 
     const info = db.prepare(`DELETE FROM learning_modules WHERE module_id = ?`).run(moduleId);
+
+    // Bump global course version so student pre-tests become stale.
+    setSetting('course_updated_at', new Date().toISOString());
+
     logAudit({
       actorUserId: req.user?.id ?? null,
       actorUsername: req.user?.username ?? null,

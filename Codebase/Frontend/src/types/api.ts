@@ -4,7 +4,7 @@ export interface User {
   id: number;
   username: string;
   email: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'guest';
   // Populated by /auth/google/exchange when the user is signed in via
   // Supabase OAuth with admin intent. Both fields are optional so the
   // legacy username/password path (which doesn't know about org
@@ -235,6 +235,35 @@ export interface AdminLearningRaw {
 export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
 export type BloomTaxonomy = 'remembering' | 'understanding' | 'applying' | 'analyzing' | 'evaluating' | 'creating';
 
+export interface BaseExamQuestion {
+  taxonomy?: BloomTaxonomy;
+  explanation?: string;
+}
+
+export interface McqQuestion extends BaseExamQuestion {
+  type: 'mcq';
+  question: string;
+  options: ReadonlyArray<string>;
+  correctIndex: number;
+  code?: string;
+}
+
+export interface IdentificationQuestion extends BaseExamQuestion {
+  type: 'identification';
+  question: string;
+  scenario: string;
+  expectedTokens: ReadonlyArray<string>;
+}
+
+export interface StudioQuestion extends BaseExamQuestion {
+  type: 'studio';
+  prompt: string;
+  targetPatternSlug: string;
+  starterCode?: string;
+}
+
+export type ExamQuestion = McqQuestion | IdentificationQuestion | StudioQuestion;
+
 export interface LearningAssessmentAnswerInput {
   moduleId: string;
   questionIndex: number;
@@ -270,6 +299,7 @@ export interface LearningAssessmentAnswerRaw {
 export interface LearningAssessmentsResponse {
   attempts: LearningAssessmentAttemptRaw[];
   answers: LearningAssessmentAnswerRaw[];
+  courseUpdatedAt?: string;
 }
 
 // ── Learning CMS (D92) ────────────────────────────────────────────────────

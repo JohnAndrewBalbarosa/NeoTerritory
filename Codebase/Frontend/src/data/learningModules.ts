@@ -52,20 +52,88 @@ export function isFoundationModule(module: Pick<LearningModule, 'category'>): bo
 // pattern/idiom modules, a Practical Exam. The two replace the old single
 // `practical` (quiz-OR-code) union.
 
-// One multiple-choice item in a theoretical exam bank.
-export interface ExamQuestion {
+export interface BaseExamQuestion {
+  taxonomy?: BloomTaxonomy;
+  explanation?: string;
+}
+
+export interface McqQuestion extends BaseExamQuestion {
+  type: 'mcq';
   question: string;
   options: ReadonlyArray<string>;
   correctIndex: number;
-  explanation?: string;
   // D92 (Track D): code-bearing differentiation question — the learner reads
   // the C++ snippet and picks the pattern by SEMANTIC intent, not structure.
-  // Rendered as a read-only code block above the options; grading is still
-  // entirely client-side via `correctIndex` (no analyser, no auto-tag). Rides
-  // inside theoreticalExam.questions[] → theoretical_json, so it is opaque JSON
-  // to the backend/DB — the seed dump carries it; no schema migration needed.
   code?: string;
-  taxonomy?: BloomTaxonomy;
+}
+
+export interface IdentificationQuestion extends BaseExamQuestion {
+  type: 'identification';
+  question: string;
+  scenario: string;
+  expectedTokens: ReadonlyArray<string>;
+}
+
+export interface StudioQuestion extends BaseExamQuestion {
+  type: 'studio';
+  prompt: string;
+  targetPatternSlug: string;
+  starterCode?: string;
+}
+
+// One item in a theoretical exam bank.
+export type ExamQuestion = McqQuestion | IdentificationQuestion | StudioQuestion;
+
+export function isMcqQuestion(q: ExamQuestion): q is McqQuestion {
+  return q.type === 'mcq' || (!q.type && Array.isArray((q as any).options));
+}
+
+export function isIdentificationQuestion(q: ExamQuestion): q is IdentificationQuestion {
+  return q.type === 'identification';
+}
+
+export function isStudioQuestion(q: ExamQuestion): q is StudioQuestion {
+  return q.type === 'studio';
+}
+
+/**
+ * Validates if an answer is correct for a given question.
+ * Answer types:
+ * - mcq: number (correctIndex)
+ * - identification: string[] (matched against expectedTokens)
+ * - studio: boolean (pass/fail from analyzer)
+ */
+export function isAnswerCorrect(question: ExamQuestion, answer: any): boolean {
+  if (isMcqQuestion(question)) {
+    return typeof answer === 'number' && answer === question.correctIndex;
+  }
+  if (isIdentificationQuestion(question)) {
+    let tokens: string[] = [];
+    if (Array.isArray(answer)) {
+      tokens = answer;
+    } else if (typeof answer === 'string') {
+      try {
+        tokens = JSON.parse(answer);
+        if (!Array.isArray(tokens)) tokens = [answer];
+      } catch {
+        // Fallback: split by comma if not JSON
+        tokens = answer.split(',').map(t => t.trim());
+      }
+    }
+
+    if (tokens.length !== question.expectedTokens.length) return false;
+    return question.expectedTokens.every((token, i) => {
+      const userToken = (tokens[i] || '').trim().toLowerCase();
+      const expectedToken = token.trim().toLowerCase();
+      return userToken === expectedToken;
+    });
+  }
+  if (isStudioQuestion(question)) {
+    // Phase 3 will use real analyzer feedback.
+    // For Phase 2, we assume a truthy answer means pass.
+    return !!answer;
+  }
+  return false;
 }
 
 // Theoretical Exam — a small MCQ bank. Pass = every question answered
@@ -164,7 +232,17 @@ function seededShuffle<T>(items: ReadonlyArray<T>, seed: string): T[] {
 
 function inferBloomTaxonomy(question: ExamQuestion, index: number, moduleId: string): BloomTaxonomy {
   if (question.taxonomy) return question.taxonomy;
-  const raw = `${moduleId} ${question.question} ${question.explanation || ''} ${(question.code || '')}`.toLowerCase();
+
+  let text = '';
+  if (question.type === 'mcq') {
+    text = `${question.question} ${question.explanation || ''} ${question.code || ''}`;
+  } else if (question.type === 'identification') {
+    text = `${question.question} ${question.scenario} ${question.explanation || ''}`;
+  } else if (question.type === 'studio') {
+    text = `${question.prompt} ${question.targetPatternSlug} ${question.explanation || ''}`;
+  }
+
+  const raw = `${moduleId} ${text}`.toLowerCase();
   if (/(design|write|create|build|refactor|implement|construct)/.test(raw)) return 'creating';
   if (/(evaluate|better|best|trade[- ]?off|compliance|judge|critique)/.test(raw)) return 'evaluating';
   if (/(analyz|compare|why does|why is|detect|spot|break down|distinguish|difference|which of these|which pattern)/.test(raw)) return 'analyzing';
@@ -836,8 +914,7 @@ const PATTERN_MODULES_RAW: ReadonlyArray<LearningModule> = PATTERNS.map((p) =>
 
 const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   'foundations-what-is-pattern': [
-    {
-      question: 'Which best describes a design pattern?',
+    { type: 'mcq', question: 'Which best describes a design pattern?',
       options: [
         'A copy-pasteable code library you import.',
         'A named structural arrangement that solves a recurring design problem.',
@@ -847,8 +924,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'A design pattern is a named, idiomatic shape — not code you import.',
     },
-    {
-      question: 'Why does naming a recurring shape help a team?',
+    { type: 'mcq', question: 'Why does naming a recurring shape help a team?',
       options: [
         'One word replaces a paragraph of structural explanation.',
         'It makes the compiler emit faster code.',
@@ -858,8 +934,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Naming the shape turns structure into shared vocabulary.',
     },
-    {
-      question: 'Why does the same design problem keep reappearing across programs?',
+    { type: 'mcq', question: 'Why does the same design problem keep reappearing across programs?',
       options: [
         'Because programmers copy each other’s files.',
         'Because the underlying language facts (inheritance, ownership, dispatch) keep producing the same shapes.',
@@ -871,8 +946,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-why-matters': [
-    {
-      question: 'What is the practical value of knowing pattern names?',
+    { type: 'mcq', question: 'What is the practical value of knowing pattern names?',
       options: [
         'They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.',
         'They guarantee the code will be bug-free.',
@@ -882,8 +956,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Patterns compress engineering decisions into one shared word.',
     },
-    {
-      question: 'How do patterns affect a beginner joining a team?',
+    { type: 'mcq', question: 'How do patterns affect a beginner joining a team?',
       options: [
         'They slow onboarding because there is more to memorise.',
         'A recognised pattern name lets a reviewer read intent in seconds, so the beginner ships faster.',
@@ -895,8 +968,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-categories': [
-    {
-      question: 'Which sentence correctly maps the three main families?',
+    { type: 'mcq', question: 'Which sentence correctly maps the three main families?',
       options: [
         'Creational connects classes, Structural decides communication, Behavioural makes objects.',
         'Creational makes objects, Structural connects them, Behavioural decides how they communicate.',
@@ -906,8 +978,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Creational → make. Structural → connect. Behavioural → talk.',
     },
-    {
-      question: 'Why does this site treat Idioms as a fourth bucket alongside the three GoF families?',
+    { type: 'mcq', question: 'Why does this site treat Idioms as a fourth bucket alongside the three GoF families?',
       options: [
         'Because the Gang of Four defined four families.',
         'Because modern C++ idioms (PIMPL, Method Chaining) are not GoF but appear often enough to detect.',
@@ -919,8 +990,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-oop': [
-    {
-      question: 'Why are design patterns described in terms of classes and objects?',
+    { type: 'mcq', question: 'Why are design patterns described in terms of classes and objects?',
       options: [
         'Because patterns predate procedural programming.',
         'Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.',
@@ -930,8 +1000,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.',
     },
-    {
-      question: 'Which definition matches polymorphism?',
+    { type: 'mcq', question: 'Which definition matches polymorphism?',
       options: [
         'Hiding the internal details of a class.',
         'A single action that behaves differently depending on the actual object type.',
@@ -943,8 +1012,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-interface-principle': [
-    {
-      question: '"Program to an interface, not an implementation" means…',
+    { type: 'mcq', question: '"Program to an interface, not an implementation" means…',
       options: [
         'Always use C++ pure virtual classes.',
         'Code should depend on what something does, not which concrete class is doing it.',
@@ -954,8 +1022,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Depend on contracts (what), not identities (who).',
     },
-    {
-      question: 'Which patterns rest directly on this principle?',
+    { type: 'mcq', question: 'Which patterns rest directly on this principle?',
       options: [
         'Strategy, Factory, Adapter, and Bridge.',
         'Only Singleton.',
@@ -967,8 +1034,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-code-structure': [
-    {
-      question: 'Why do pattern detectors walk an AST instead of grep-searching source text?',
+    { type: 'mcq', question: 'Why do pattern detectors walk an AST instead of grep-searching source text?',
       options: [
         'Because grep is too slow.',
         'Because code is a tree; patterns are shapes in that tree, and matching needs structural context.',
@@ -978,8 +1044,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Patterns are tree shapes, not text shapes.',
     },
-    {
-      question: 'How does CodiNeo keep a detection result traceable to the user’s source?',
+    { type: 'mcq', question: 'How does CodiNeo keep a detection result traceable to the user’s source?',
       options: [
         'It rewrites the source in place.',
         'It mirrors the parse tree into a virtual copy and runs checks there, never mutating the original.',
@@ -991,8 +1056,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-real-software': [
-    {
-      question: 'Why does recognising patterns matter in real-world codebases?',
+    { type: 'mcq', question: 'Why does recognising patterns matter in real-world codebases?',
       options: [
         'Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.',
         'Patterns are mandated by every linter.',
@@ -1002,8 +1066,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'When docs go stale, the shape is what is still true.',
     },
-    {
-      question: 'Which pairing of system and pattern is plausible?',
+    { type: 'mcq', question: 'Which pairing of system and pattern is plausible?',
       options: [
         'A compiler using Visitor to walk its syntax tree.',
         'A compiler that cannot use any pattern.',
@@ -1015,8 +1078,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-beginner-mistakes': [
-    {
-      question: 'What is the most common beginner mistake with design patterns?',
+    { type: 'mcq', question: 'What is the most common beginner mistake with design patterns?',
       options: [
         'Refusing to use any patterns at all.',
         'Forcing a pattern onto a problem that does not need it ("pattern fever").',
@@ -1026,8 +1088,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Use patterns to solve problems you actually have — not for their own sake.',
     },
-    {
-      question: 'Why is making classes depend heavily on each other a trap?',
+    { type: 'mcq', question: 'Why is making classes depend heavily on each other a trap?',
       options: [
         'Tight coupling is always faster at runtime.',
         'Loose connections are easier to change and maintain; tight coupling resists change.',
@@ -1039,8 +1100,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-ambiguity': [
-    {
-      question: 'When two patterns fit the same class, the detector should…',
+    { type: 'mcq', question: 'When two patterns fit the same class, the detector should…',
       options: [
         'Silently pick one and hide the other.',
         'Surface both and ask the human — ambiguity is information, not failure.',
@@ -1050,8 +1110,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Ambiguity tells you human judgement is required.',
     },
-    {
-      question: 'Which pair genuinely shares a structural shape?',
+    { type: 'mcq', question: 'Which pair genuinely shares a structural shape?',
       options: [
         'Builder and Method Chaining, which both rely on `return *this`.',
         'Singleton and Observer, which share no structure.',
@@ -1063,8 +1122,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-connotative-definition': [
-    {
-      question: 'What kinds of tokens are most useful for distinguishing one pattern from another?',
+    { type: 'mcq', question: 'What kinds of tokens are most useful for distinguishing one pattern from another?',
       options: [
         'Any single keyword that appears in the class.',
         'Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.',
@@ -1074,8 +1132,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Add structural descriptions until ambiguity disappears.',
     },
-    {
-      question: 'How does adding descriptions change a definition (connotation)?',
+    { type: 'mcq', question: 'How does adding descriptions change a definition (connotation)?',
       options: [
         'It widens what counts, so more things qualify.',
         'It narrows what counts, so the meaning gets more specific.',
@@ -1098,6 +1155,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   'foundations-same-structure': [
     {
       // Conceptual anchor (non-code) — keep one as the framing question.
+      type: 'mcq',
       question:
         'Two classes have the exact same class diagram. What is the ONLY thing that can tell them apart?',
       options: [
@@ -1114,6 +1172,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       // Strategy vs State — identical UML (context holds a polymorphic pointer
       // and delegates). Resolving cue: WHO drives the swap. Here the OBJECT
       // transitions its own held member (changeState within handle) → State.
+      type: 'mcq',
       question:
         'Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?',
       code:
@@ -1141,6 +1200,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     {
       // Strategy vs State — the contrast case. Here the policy is injected by
       // the CALLER (constructor + setStrategy) and never self-swapped → Strategy.
+      type: 'mcq',
       question:
         'Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern is THIS class?',
       code:
@@ -1171,6 +1231,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       // responsibility (logging) around the forward AND shares the wrappee's
       // interface → Decorator. (Nested new X(new Y()) at the call site is the
       // confident Decorator-composition giveaway per the catalog.)
+      type: 'mcq',
       question:
         'Adapter, Decorator, and Proxy all hold a member of an interface type and forward calls to it — the same wrapping skeleton. Which pattern is the class below?',
       code:
@@ -1202,6 +1263,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       // behind an if-guard → Virtual Proxy. (Adapter declares
       // negative_signature_categories: ["access_control_caching"] precisely so
       // a guarded/lazy class cannot collapse into Adapter.)
+      type: 'mcq',
       question:
         'This class also holds a member of the same interface and forwards to it. Adapter or Proxy?',
       code:
@@ -1232,6 +1294,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       // Resolving cue: a terminator that returns a PRODUCT. Here build()
       // returns Pizza → Builder. Without it, the same fluent shape is bare
       // method chaining.
+      type: 'mcq',
       question:
         'Both Builder and plain method-chaining use fluent setters that `return *this`. What makes the class below specifically a Builder?',
       code:
@@ -1256,8 +1319,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-structural-rules': [
-    {
-      question: 'In the matcher’s vocabulary, what does "must-have" mean for a pattern?',
+    { type: 'mcq', question: 'In the matcher’s vocabulary, what does "must-have" mean for a pattern?',
       options: [
         'Every listed token must appear at least once.',
         'At least one combo from the must-have set must fire for the class to match.',
@@ -1267,8 +1329,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'must-have = at least one combo present.',
     },
-    {
-      question: 'What does a "must-not-have" combo do when it fires?',
+    { type: 'mcq', question: 'What does a "must-not-have" combo do when it fires?',
       options: [
         'Nothing — it is only advisory.',
         'It rejects the class for that pattern even if the rest matches.',
@@ -1280,8 +1341,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-context-variation': [
-    {
-      question: 'How does the analyser handle team-specific naming conventions?',
+    { type: 'mcq', question: 'How does the analyser handle team-specific naming conventions?',
       options: [
         'It refuses to match anything that does not follow Gang-of-Four naming.',
         'It standardises on language structure for matching; team conventions are layered on top for culture.',
@@ -1291,8 +1351,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Language structure is the universal ground; team style sits on top.',
     },
-    {
-      question: 'Why does a stable, structure-based rule matter for CodiNeo specifically?',
+    { type: 'mcq', question: 'Why does a stable, structure-based rule matter for CodiNeo specifically?',
       options: [
         'Because detection feeds automatic unit-test generation, which needs a consistent rule.',
         'Because it makes the UI prettier.',
@@ -1304,8 +1363,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'foundations-postrequisite': [
-    {
-      question: 'After Foundations, what kind of question is the catalog NOT trying to answer?',
+    { type: 'mcq', question: 'After Foundations, what kind of question is the catalog NOT trying to answer?',
       options: [
         'Which structural shape this class matches.',
         'Whether the chosen pattern fits the team’s organisational conventions and goals.',
@@ -1315,8 +1373,7 @@ const FOUNDATIONS_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 1,
       explanation: 'Patterns are also a conversation — the organisational fit is yours to decide.',
     },
-    {
-      question: 'The post-Foundations questions are intentionally…',
+    { type: 'mcq', question: 'The post-Foundations questions are intentionally…',
       options: [
         'Closed, with one correct answer the analyser grades.',
         'Open-ended — every working developer should have an opinion, but there is no single right answer.',
@@ -1374,8 +1431,7 @@ const PATTERN_SLUG_ALIAS: Record<string, { slug: string; name: string }> = {
 // module ends at the theoretical exam — no practical. Keyed by router slug.
 const NON_DETECTED_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   repository: [
-    {
-      question: 'Repository is not a Gang of Four pattern. Which sentence captures its purpose best?',
+    { type: 'mcq', question: 'Repository is not a Gang of Four pattern. Which sentence captures its purpose best?',
       options: [
         'Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.',
         'Guarantee a class has only one instance.',
@@ -1385,8 +1441,7 @@ const NON_DETECTED_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Repository (Evans 2003, "Domain-Driven Design"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted.',
     },
-    {
-      question: 'Why does Repository have no practical exam on this site?',
+    { type: 'mcq', question: 'Why does Repository have no practical exam on this site?',
       options: [
         'It is too simple to test.',
         'It ships no catalog detector (not a GoF pattern), so the analyser cannot tag it — the module ends at the theoretical exam.',
@@ -1408,31 +1463,71 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   // ---- creational ----
   singleton: [
     {
-      question: 'What does Singleton guarantee?',
+      type: 'mcq',
+      taxonomy: 'remembering',
+      question: 'What is the primary purpose of the Singleton pattern?',
       options: [
-        'A class has exactly one instance, with a global access point to it.',
-        'A class can be subclassed freely.',
-        'Objects are created from a prototype.',
-        'Construction is split across a builder.',
+        'To allow multiple instances of a class.',
+        'To ensure a class has only one instance and provides a global point of access.',
+        'To clone existing objects.',
+        'To separate construction from representation.',
       ],
-      correctIndex: 0,
+      correctIndex: 1,
       explanation: 'Singleton restricts a class to one instance and provides a single access point.',
     },
     {
-      question: 'Which structural signal typically marks a Singleton in C++?',
+      type: 'mcq',
+      taxonomy: 'understanding',
+      question: 'Which C++ mechanism is most critical for enforcing the Singleton constraint?',
       options: [
-        'A public constructor and many instances.',
-        'A private/deleted constructor plus a static accessor returning the one instance.',
-        'A pure virtual interface with no implementation.',
-        'A `return *this` chain of setters.',
+        'Using "virtual" keywords.',
+        'Making the constructor private or deleted.',
+        'Inheriting from a base class.',
+        'Using "friend" classes.',
       ],
       correctIndex: 1,
-      explanation: 'Hidden constructor + static accessor is the recognisable shape.',
+      explanation: 'Hiding the constructor prevents external instantiation, ensuring control over the instance count.',
+    },
+    {
+      type: 'identification',
+      taxonomy: 'applying',
+      question: 'List the three structural elements required to implement this pattern in C++.',
+      scenario: 'You are building a ConfigurationManager that reads settings from a file. Multiple parts of your app need these settings, but you must avoid the overhead of re-reading the file or having conflicting copies of the data.',
+      expectedTokens: ['private constructor', 'static instance', 'getInstance method'],
+      explanation: 'A private constructor prevents instantiation, a static member holds the instance, and a static method provides access.',
+    },
+    {
+      type: 'identification',
+      taxonomy: 'analyzing',
+      question: 'What is the two-word term for this deferred creation?',
+      scenario: 'You are comparing a global object to this pattern. A global object is created when the program starts, even if it is never used. This pattern can defer creation until the instance is actually needed.',
+      expectedTokens: ['lazy', 'initialization'],
+      explanation: 'Lazy initialization means the instance is created only when it is first requested, saving resources.',
+    },
+    {
+      type: 'mcq',
+      taxonomy: 'evaluating',
+      question: 'What is a major disadvantage of overusing Singletons in a large codebase?',
+      options: [
+        'It makes the code too fast.',
+        'It introduces global state, making unit testing and dependency tracking difficult.',
+        'It requires too much memory.',
+        'It forces all classes to be static.',
+      ],
+      correctIndex: 1,
+      explanation: 'Singletons can hide dependencies and make unit tests non-deterministic due to shared state.',
+    },
+    {
+      type: 'studio',
+      taxonomy: 'creating',
+      prompt: 'Implement a class that ensures only one instance of "DatabaseStore" can exist and provides a static method to access it. Ensure the constructor is not accessible from outside.',
+      targetPatternSlug: 'singleton',
+      starterCode: 'class DatabaseStore {\npublic:\n  // TODO: implement instance() accessor\n\nprivate:\n  DatabaseStore() = default;\n};',
+      explanation: 'The student must implement the static accessor and ensure the instance is managed correctly.',
     },
   ],
   builder: [
-    {
-      question: 'What problem does Builder solve?',
+    { type: 'mcq', question: 'What problem does Builder solve?',
       options: [
         'Constructing a complex object step by step, separating construction from representation.',
         'Ensuring only one instance exists.',
@@ -1442,8 +1537,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Builder assembles a complex object incrementally.',
     },
-    {
-      question: 'Which token shape co-occurs with Builder’s fluent style?',
+    { type: 'mcq', question: 'Which token shape co-occurs with Builder’s fluent style?',
       options: [
         '`return *this;` from setter-style methods so calls chain.',
         'A static instance accessor.',
@@ -1455,8 +1549,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'method-chaining': [
-    {
-      question: 'What is Method Chaining (a fluent idiom)?',
+    { type: 'mcq', question: 'What is Method Chaining (a fluent idiom)?',
       options: [
         'Methods return the receiver (`*this`) so calls chain into one expression.',
         'A class guarantees a single instance.',
@@ -1466,8 +1559,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Method Chaining returns `*this` to enable fluent call chains.',
     },
-    {
-      question: 'Why is Method Chaining easy to confuse with Builder?',
+    { type: 'mcq', question: 'Why is Method Chaining easy to confuse with Builder?',
       options: [
         'Both rely on `return *this`, so they share a structural shape.',
         'Both restrict instances to one.',
@@ -1479,8 +1571,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   factory: [
-    {
-      question: 'What does Factory Method do?',
+    { type: 'mcq', question: 'What does Factory Method do?',
       options: [
         'Defines an interface for creating an object but lets subclasses decide which class to instantiate.',
         'Guarantees one instance of a class.',
@@ -1490,8 +1581,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Factory Method defers instantiation to subclasses behind a creation interface.',
     },
-    {
-      question: 'Which principle does Factory Method rest on?',
+    { type: 'mcq', question: 'Which principle does Factory Method rest on?',
       options: [
         'Program to an interface — callers depend on the product abstraction, not a concrete class.',
         'Always inherit, never compose.',
@@ -1503,8 +1593,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'abstract-factory': [
-    {
-      question: 'What does Abstract Factory provide?',
+    { type: 'mcq', question: 'What does Abstract Factory provide?',
       options: [
         'An interface for creating families of related objects without specifying their concrete classes.',
         'A single global instance.',
@@ -1514,8 +1603,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Abstract Factory makes whole families of products interchangeable.',
     },
-    {
-      question: 'How does Abstract Factory differ from Factory Method?',
+    { type: 'mcq', question: 'How does Abstract Factory differ from Factory Method?',
       options: [
         'Abstract Factory creates families of products; Factory Method creates one product via subclassing.',
         'They are identical.',
@@ -1527,8 +1615,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   prototype: [
-    {
-      question: 'What does Prototype do?',
+    { type: 'mcq', question: 'What does Prototype do?',
       options: [
         'Creates new objects by cloning an existing instance (the prototype).',
         'Restricts a class to one instance.',
@@ -1538,8 +1625,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Prototype produces new objects by copying a prototypical instance.',
     },
-    {
-      question: 'When is Prototype most useful?',
+    { type: 'mcq', question: 'When is Prototype most useful?',
       options: [
         'When object construction is expensive or its concrete class is unknown, but a copyable instance exists.',
         'When you need exactly one instance.',
@@ -1553,31 +1639,71 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   // ---- structural ----
   adapter: [
     {
-      question: 'What does Adapter do?',
+      type: 'mcq',
+      taxonomy: 'remembering',
+      question: 'What is the primary purpose of the Adapter pattern?',
       options: [
-        'Converts the interface of a class into another interface clients expect.',
-        'Guarantees a single instance.',
-        'Adds responsibilities to an object dynamically.',
-        'Defines a family of algorithms.',
+        'To convert the interface of a class into another interface clients expect.',
+        'To ensure a class has only one instance.',
+        'To add responsibilities to an object dynamically.',
+        'To define a family of algorithms.',
       ],
       correctIndex: 0,
       explanation: 'Adapter makes incompatible interfaces work together by translating one to the other.',
     },
     {
-      question: 'Why can Adapter look like Decorator or Proxy?',
+      type: 'mcq',
+      taxonomy: 'understanding',
+      question: 'What is the difference between a Class Adapter and an Object Adapter?',
       options: [
-        'All three hold a wrapped member and forward calls to it.',
-        'All three guarantee one instance.',
-        'All three clone a prototype.',
-        'All three traverse a collection.',
+        'Class Adapter uses multiple inheritance; Object Adapter uses composition.',
+        'Object Adapter uses multiple inheritance; Class Adapter uses composition.',
+        'There is no difference in C++.',
+        'Class Adapter is only for creational patterns.',
       ],
       correctIndex: 0,
-      explanation: 'The wrap-and-forward shape is shared, so these three are structurally ambiguous.',
+      explanation: 'Class Adapters inherit from both interfaces, while Object Adapters wrap an instance of the adaptee.',
+    },
+    {
+      type: 'identification',
+      taxonomy: 'applying',
+      question: 'What are the two primary techniques used to implement this bridge between interfaces?',
+      scenario: 'You are bridging a legacy OldPrinter (with method printOld()) to a new IPrinter interface (with method print()).',
+      expectedTokens: ['composition', 'forwarding'],
+      explanation: 'In an Object Adapter, you use composition to hold the adaptee and forwarding to call its methods.',
+    },
+    {
+      type: 'identification',
+      taxonomy: 'analyzing',
+      question: 'Which pattern does this implementation now resemble?',
+      scenario: 'You have a class that wraps another to match an interface. You decide to add a logging step inside the wrapper method before calling the inner object.',
+      expectedTokens: ['decorator'],
+      explanation: 'If the wrapper adds behaviour rather than just translating the interface, it moves toward the Decorator pattern.',
+    },
+    {
+      type: 'mcq',
+      taxonomy: 'evaluating',
+      question: 'When should you prefer Adapter over Bridge?',
+      options: [
+        'When you want to make existing, unrelated classes work together without changing their source.',
+        'When you are designing a new system from scratch and want to decouple abstraction from implementation.',
+        'When you need to restrict a class to one instance.',
+        'When you need to clone objects.',
+      ],
+      correctIndex: 0,
+      explanation: 'Adapter is usually applied to existing systems to fix interface mismatches; Bridge is used upfront during design.',
+    },
+    {
+      type: 'studio',
+      taxonomy: 'creating',
+      prompt: 'Implement a wrapper that makes a "LegacyJSONParser" (which has a parseLegacy() method) work with a modern "IDataService" interface (which expects a process() method).',
+      targetPatternSlug: 'adapter',
+      starterCode: 'class IDataService {\npublic:\n  virtual void process() = 0;\n};\n\nclass LegacyJSONParser {\npublic:\n  void parseLegacy() { /* ... */ }\n};',
+      explanation: 'The student must create an adapter class that implements IDataService and delegates to LegacyJSONParser.',
     },
   ],
   decorator: [
-    {
-      question: 'What does Decorator do?',
+    { type: 'mcq', question: 'What does Decorator do?',
       options: [
         'Attaches additional responsibilities to an object dynamically, as a flexible alternative to subclassing.',
         'Restricts a class to one instance.',
@@ -1587,8 +1713,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Decorator layers behaviour around an object without changing its interface.',
     },
-    {
-      question: 'How does Decorator differ from a plain Adapter?',
+    { type: 'mcq', question: 'How does Decorator differ from a plain Adapter?',
       options: [
         'Decorator keeps the same interface and adds behaviour; Adapter changes the interface.',
         'Decorator guarantees a single instance.',
@@ -1600,8 +1725,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   proxy: [
-    {
-      question: 'What does Proxy do?',
+    { type: 'mcq', question: 'What does Proxy do?',
       options: [
         'Provides a surrogate or placeholder for another object to control access to it.',
         'Defines a family of related products.',
@@ -1611,8 +1735,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Proxy stands in for the real subject and controls access (lazy load, remote, protection).',
     },
-    {
-      question: 'What distinguishes Proxy from Decorator structurally in intent?',
+    { type: 'mcq', question: 'What distinguishes Proxy from Decorator structurally in intent?',
       options: [
         'Proxy controls access to the same interface; Decorator adds behaviour to it.',
         'Proxy changes the interface; Decorator restricts instances.',
@@ -1624,8 +1747,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   bridge: [
-    {
-      question: 'What does Bridge do?',
+    { type: 'mcq', question: 'What does Bridge do?',
       options: [
         'Decouples an abstraction from its implementation so the two can vary independently.',
         'Guarantees one instance.',
@@ -1635,8 +1757,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Bridge splits abstraction and implementation into separate hierarchies joined by composition.',
     },
-    {
-      question: 'Which principle underpins Bridge?',
+    { type: 'mcq', question: 'Which principle underpins Bridge?',
       options: [
         'Program to an interface — the abstraction holds a pointer to an implementor interface.',
         'Always subclass for every variation.',
@@ -1648,8 +1769,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   composite: [
-    {
-      question: 'What does Composite do?',
+    { type: 'mcq', question: 'What does Composite do?',
       options: [
         'Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.',
         'Restricts a class to one instance.',
@@ -1659,8 +1779,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Composite gives leaves and containers a common interface for whole-part trees.',
     },
-    {
-      question: 'What is the key structural feature of Composite?',
+    { type: 'mcq', question: 'What is the key structural feature of Composite?',
       options: [
         'A component interface that both leaves and containers implement; containers hold a collection of components.',
         'A private constructor and static accessor.',
@@ -1672,8 +1791,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   facade: [
-    {
-      question: 'What does Facade do?',
+    { type: 'mcq', question: 'What does Facade do?',
       options: [
         'Provides a unified, simpler interface to a set of interfaces in a subsystem.',
         'Guarantees one instance.',
@@ -1683,8 +1801,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Facade gives a subsystem one simple front door.',
     },
-    {
-      question: 'Does using a Facade hide the subsystem entirely?',
+    { type: 'mcq', question: 'Does using a Facade hide the subsystem entirely?',
       options: [
         'No — it offers a simpler entry point but clients can still use the subsystem directly if needed.',
         'Yes — the subsystem becomes inaccessible.',
@@ -1696,8 +1813,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   flyweight: [
-    {
-      question: 'What does Flyweight do?',
+    { type: 'mcq', question: 'What does Flyweight do?',
       options: [
         'Uses sharing to support large numbers of fine-grained objects efficiently by separating intrinsic and extrinsic state.',
         'Guarantees one instance of a class.',
@@ -1707,8 +1823,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Flyweight shares intrinsic state across many objects; extrinsic state is passed in.',
     },
-    {
-      question: 'What is "intrinsic" state in Flyweight?',
+    { type: 'mcq', question: 'What is "intrinsic" state in Flyweight?',
       options: [
         'State shared and stored in the flyweight, independent of context.',
         'State unique to each use, passed in by the client.',
@@ -1722,31 +1837,71 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   // ---- behavioural ----
   strategyinterface: [
     {
-      question: 'What does Strategy do?',
+      type: 'mcq',
+      taxonomy: 'remembering',
+      question: 'What does the Strategy pattern define?',
       options: [
-        'Defines a family of algorithms, encapsulates each, and makes them interchangeable behind one interface.',
-        'Guarantees a single instance.',
-        'Composes objects into trees.',
-        'Clones a prototype.',
+        'A family of algorithms, encapsulated and made interchangeable.',
+        'A single global instance of an algorithm.',
+        'A way to compose objects into tree structures.',
+        'A method for cloning objects.',
       ],
       correctIndex: 0,
-      explanation: 'Strategy lets the algorithm vary independently of the clients that use it.',
+      explanation: 'Strategy lets the algorithm vary independently from the clients that use it.',
     },
     {
-      question: 'How does a context use a Strategy?',
+      type: 'mcq',
+      taxonomy: 'understanding',
+      question: 'Why is Strategy often preferred over using a large switch-case or if-else block for algorithm selection?',
       options: [
-        'It holds a pointer to the strategy interface and delegates the varying step to it.',
-        'It inherits from every concrete algorithm.',
-        'It hides its constructor.',
-        'It returns `*this` to chain.',
+        'It is faster to compile.',
+        'It follows the Open/Closed Principle, allowing new algorithms to be added without modifying the context.',
+        'It uses less memory.',
+        'It makes the code shorter.',
+      ],
+      correctIndex: 1,
+      explanation: 'Strategy encapsulates variations, so adding a new one doesn\'t require changing existing code.',
+    },
+    {
+      type: 'identification',
+      taxonomy: 'applying',
+      question: 'List three OOP concepts used to make these algorithms interchangeable at runtime.',
+      scenario: 'A Navigator class needs to switch between Walking, Driving, and Cycling routes at runtime depending on user choice.',
+      expectedTokens: ['interface', 'composition', 'polymorphism'],
+      explanation: 'The context holds an interface (composition) and calls methods that behave differently (polymorphism).',
+    },
+    {
+      type: 'identification',
+      taxonomy: 'analyzing',
+      question: 'Which pattern does this transition logic resemble?',
+      scenario: 'A Navigator class switches its routing algorithm automatically when it detects the device battery is low, changing its internal behavior based on its internal state.',
+      expectedTokens: ['state'],
+      explanation: 'When an object changes its behavior based on internal state transitions, it aligns with the State pattern.',
+    },
+    {
+      type: 'mcq',
+      taxonomy: 'evaluating',
+      question: 'What is a key difference between Strategy and Template Method?',
+      options: [
+        'Strategy uses composition to vary the entire algorithm; Template Method uses inheritance to vary parts of it.',
+        'Strategy uses inheritance; Template Method uses composition.',
+        'There is no difference.',
+        'Strategy is only for creational patterns.',
       ],
       correctIndex: 0,
-      explanation: 'The context composes a strategy interface and delegates, so algorithms swap freely.',
+      explanation: 'Strategy is object-based (composition), while Template Method is class-based (inheritance).',
+    },
+    {
+      type: 'studio',
+      taxonomy: 'creating',
+      prompt: 'Implement a "PaymentContext" that can use different "PaymentMethod" objects (e.g., CreditCard, PayPal) to process a transaction. Define the interface and the context.',
+      targetPatternSlug: 'strategyinterface',
+      starterCode: 'class PaymentMethod {\npublic:\n  virtual void pay(int amount) = 0;\n};\n\nclass PaymentContext {\npublic:\n  // TODO: implement\n};',
+      explanation: 'The student must implement a context that holds a PaymentMethod pointer and a method to execute the payment.',
     },
   ],
   observer: [
-    {
-      question: 'What does Observer do?',
+    { type: 'mcq', question: 'What does Observer do?',
       options: [
         'Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.',
         'Restricts a class to one instance.',
@@ -1756,8 +1911,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Observer pushes change notifications to a list of subscribers.',
     },
-    {
-      question: 'What is the subject’s responsibility in Observer?',
+    { type: 'mcq', question: 'What is the subject’s responsibility in Observer?',
       options: [
         'Maintain a list of observers and notify them on state change.',
         'Clone itself on demand.',
@@ -1769,8 +1923,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   iterator: [
-    {
-      question: 'What does Iterator do?',
+    { type: 'mcq', question: 'What does Iterator do?',
       options: [
         'Provides sequential access to a collection’s elements without exposing its underlying representation.',
         'Guarantees one instance.',
@@ -1780,8 +1933,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Iterator walks a collection without revealing its internal structure.',
     },
-    {
-      question: 'Why is exposing iteration via an iterator useful?',
+    { type: 'mcq', question: 'Why is exposing iteration via an iterator useful?',
       options: [
         'Multiple traversals can run independently and the collection’s internals stay hidden.',
         'It forces the collection to be a singleton.',
@@ -1793,8 +1945,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   command: [
-    {
-      question: 'What does Command do?',
+    { type: 'mcq', question: 'What does Command do?',
       options: [
         'Encapsulates a request as an object, letting you parameterise, queue, log, and undo operations.',
         'Guarantees a single instance.',
@@ -1804,8 +1955,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Command turns an action into a first-class object.',
     },
-    {
-      question: 'What does turning a request into an object enable?',
+    { type: 'mcq', question: 'What does turning a request into an object enable?',
       options: [
         'Queuing, logging, and undo/redo of operations.',
         'Guaranteeing one instance.',
@@ -1817,8 +1967,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   state: [
-    {
-      question: 'What does State do?',
+    { type: 'mcq', question: 'What does State do?',
       options: [
         'Lets an object alter its behaviour when its internal state changes, appearing to change its class.',
         'Guarantees a single instance.',
@@ -1828,8 +1977,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'State delegates behaviour to a state object that can be swapped at runtime.',
     },
-    {
-      question: 'How does State differ from Strategy structurally?',
+    { type: 'mcq', question: 'How does State differ from Strategy structurally?',
       options: [
         'They share a shape (delegate to an interface); State transitions between states internally, Strategy is chosen by the client.',
         'State guarantees one instance.',
@@ -1841,8 +1989,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'template-method': [
-    {
-      question: 'What does Template Method do?',
+    { type: 'mcq', question: 'What does Template Method do?',
       options: [
         'Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.',
         'Guarantees a single instance.',
@@ -1852,8 +1999,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Template Method fixes the algorithm’s structure and lets subclasses fill in steps.',
     },
-    {
-      question: 'Which mechanism does Template Method rely on?',
+    { type: 'mcq', question: 'Which mechanism does Template Method rely on?',
       options: [
         'A non-virtual base method calling overridable (often virtual) primitive steps.',
         'A static accessor returning one instance.',
@@ -1865,8 +2011,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   'chain-of-responsibility': [
-    {
-      question: 'What does Chain of Responsibility do?',
+    { type: 'mcq', question: 'What does Chain of Responsibility do?',
       options: [
         'Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.',
         'Guarantees one instance.',
@@ -1876,8 +2021,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Each handler either handles the request or forwards it to the next.',
     },
-    {
-      question: 'What does each handler hold?',
+    { type: 'mcq', question: 'What does each handler hold?',
       options: [
         'A reference to the next handler in the chain.',
         'A static single instance.',
@@ -1889,8 +2033,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   mediator: [
-    {
-      question: 'What does Mediator do?',
+    { type: 'mcq', question: 'What does Mediator do?',
       options: [
         'Encapsulates how a set of objects interact, so they refer to the mediator instead of each other.',
         'Guarantees a single instance.',
@@ -1900,8 +2043,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Mediator centralises many-to-many communication into one hub.',
     },
-    {
-      question: 'What coupling problem does Mediator reduce?',
+    { type: 'mcq', question: 'What coupling problem does Mediator reduce?',
       options: [
         'Dense object-to-object references; colleagues talk through the mediator instead.',
         'Too few instances of a class.',
@@ -1913,8 +2055,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   memento: [
-    {
-      question: 'What does Memento do?',
+    { type: 'mcq', question: 'What does Memento do?',
       options: [
         'Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.',
         'Guarantees one instance.',
@@ -1924,8 +2065,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Memento snapshots state for later restore while keeping internals hidden.',
     },
-    {
-      question: 'Which roles does Memento define?',
+    { type: 'mcq', question: 'Which roles does Memento define?',
       options: [
         'Originator (owns state), Memento (snapshot), Caretaker (holds snapshots).',
         'Subject and Observer.',
@@ -1937,8 +2077,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   interpreter: [
-    {
-      question: 'What does Interpreter do?',
+    { type: 'mcq', question: 'What does Interpreter do?',
       options: [
         'Defines a grammar representation and an interpreter that evaluates sentences in the language.',
         'Guarantees a single instance.',
@@ -1948,8 +2087,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Interpreter models grammar rules as classes that evaluate expressions.',
     },
-    {
-      question: 'How are grammar rules usually represented in Interpreter?',
+    { type: 'mcq', question: 'How are grammar rules usually represented in Interpreter?',
       options: [
         'As a class hierarchy of expression nodes with an `interpret()` operation.',
         'As a single static instance.',
@@ -1961,8 +2099,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
     },
   ],
   visitor: [
-    {
-      question: 'What does Visitor do?',
+    { type: 'mcq', question: 'What does Visitor do?',
       options: [
         'Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.',
         'Guarantees one instance.',
@@ -1972,8 +2109,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Visitor externalises operations so new ones don’t touch the element classes.',
     },
-    {
-      question: 'Which mechanism makes Visitor work?',
+    { type: 'mcq', question: 'Which mechanism makes Visitor work?',
       options: [
         'Double dispatch — element.accept(visitor) calls visitor.visit(element).',
         'A static single-instance accessor.',
@@ -1986,8 +2122,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
   ],
   // ---- idiom ----
   pimpl: [
-    {
-      question: 'What does the PIMPL idiom (Pointer to Implementation) do?',
+    { type: 'mcq', question: 'What does the PIMPL idiom (Pointer to Implementation) do?',
       options: [
         'Moves a class’s private members into a hidden implementation type behind a pointer, cutting compile-time coupling.',
         'Guarantees a single instance.',
@@ -1997,8 +2132,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'PIMPL hides implementation details behind an opaque pointer, reducing header dependencies.',
     },
-    {
-      question: 'Which structural shape does the analyser look for in PIMPL?',
+    { type: 'mcq', question: 'Which structural shape does the analyser look for in PIMPL?',
       options: [
         'A forward-declared inner Impl plus a std::unique_ptr<Impl> member that owns it.',
         'A private constructor and static accessor.',
@@ -2016,8 +2150,7 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
 // keeps the theoretical gate pass-able for any future catalog pattern.
 function buildPatternTheoryFallback(patternName: string, intent: string): ReadonlyArray<ExamQuestion> {
   return [
-    {
-      question: `Which sentence best describes the ${patternName} pattern?`,
+    { type: 'mcq', question: `Which sentence best describes the ${patternName} pattern?`,
       options: [
         intent || `The ${patternName} pattern as defined by the Gang of Four.`,
         'A pattern that guarantees a class has exactly one instance.',

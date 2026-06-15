@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, the progress/step tracking, and the current lesson card. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
+Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, the progress/step tracking, the current lesson card, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
 
 ## Topbar Rule
 
@@ -27,27 +27,46 @@ The page already has nested learning state, so repeating `Learning Path` in the 
 ```mermaid
 flowchart TD
     Start["Open learning path"]
-    N0["Render centered topbar title"]
-    N1["Skip duplicate body heading"]
+    N0["Load modules"]
+    N1["Fetch assessments"]
+    D0{"Fresh pre-test passed?"}
     N2["Show lesson card"]
-    N3["Highlight active sidebar item"]
-    N4["Advance with next / previous"]
+    N3["Redirect pre-test"]
+    N4["Advance path"]
     End["Stay in learning flow"]
     Start --> N0
     N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
+    N1 --> D0
+    D0 -->|yes| N2 --> N4 --> End
+    D0 -->|no| N3 --> End
 ```
+
+## Fresh Pre-Test Gate
+
+- The page calls `fetchLearningAssessments()` for signed-in learners after the live module bank is loaded.
+- It passes those attempts into `evaluateFoundationPretestFromAssessments(...)`.
+- That helper ignores pre-test attempts older than the backend `courseUpdatedAt` value.
+- A fresh passing pre-test can set the local `preTestCompleted` flag, but the server-backed attempt remains the durable gate.
+- When the server read fails, the page marks assessment loading as failed and falls back to local state only long enough to keep the UI recoverable; the learner can still open the pre-test manually.
+
+## Admin Reset Verification
+
+The page must treat these admin changes as reset triggers because they bump the backend course timestamp:
+- module create
+- module full update
+- module publish / auto-tag / sort-order patch
+- module delete
+- applied AI course plan, because applying the plan sends module publish patches
+
+Preview-only AI plans must not reset learners. A preview only changes admin-local comparison state and should not make this page redirect a learner who already has a fresh pre-test.
 
 ## Reading Map
 
-Read this file as: centered topbar title and direct-to-content learning shell.
+Read this file as: fresh pre-test gate first, then centered topbar title and direct-to-content learning shell.
 
 Where it sits in the run: after the learner enters `/patterns/learn` or a nested module route.
 
-Names worth recognizing while reading: centered topbar title, lesson card, sidebar highlight, and navigation arrows.
+Names worth recognizing while reading: assessment history, `courseUpdatedAt`, foundation evidence, centered topbar title, lesson card, sidebar highlight, and navigation arrows.
 
 It leans on nearby contracts or tools such as the page shell layout and the existing learning-path state.
 
@@ -60,6 +79,10 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 
 ## Acceptance Checks
 
+- A stale saved pre-test redirects the learner to `/pre-test`.
+- A fresh saved passing pre-test opens the lesson surface.
+- Admin module create/update/patch/delete and applied AI plan changes are reflected through `courseUpdatedAt`.
+- AI course plan preview alone does not reset the learner gate.
 - The topbar shows a centered `Learning Path` title.
 - The body does not repeat the same title.
 - The first visible content under the header is the learning card or lesson panel.

@@ -7961,13 +7961,177 @@ body[data-surface] {
   width: fit-content;
   min-width: min(100%, 280px);
 }
+.nt-assessment__stepper {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.55rem;
+  margin-bottom: 1.1rem;
+}
+.nt-assessment__step {
+  min-width: 0;
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.nt-assessment__step[data-active='true'] {
+  border-color: rgba(0, 209, 216, 0.65);
+  background: rgba(0, 209, 216, 0.09);
+}
+.nt-assessment__step[data-complete='true'] {
+  border-color: rgba(166, 255, 0, 0.45);
+}
+.nt-assessment__step[data-empty='true'] {
+  opacity: 0.55;
+}
+.nt-assessment__step-num,
+.nt-assessment__step-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--nt-mkt-text-mute);
+}
+.nt-assessment__step-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--nt-mkt-text);
+  font-size: 0.84rem;
+  text-transform: capitalize;
+}
+.nt-bloom-question {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.95rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.025);
+}
+.nt-bloom-question__prompt {
+  margin: 0;
+  color: var(--nt-mkt-text);
+  line-height: 1.5;
+}
+.nt-bloom-question__code {
+  margin: 0;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.28);
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+.nt-bloom-question__options,
+.nt-bloom-question__inputs {
+  display: grid;
+  gap: 0.45rem;
+}
+.nt-bloom-question__option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 8px;
+  color: var(--nt-mkt-text-soft);
+  cursor: pointer;
+}
+.nt-bloom-question__option[data-selected='true'] {
+  border-color: var(--devcon-cyan, #00d1d8);
+  background: rgba(0, 209, 216, 0.08);
+  color: var(--nt-mkt-text);
+}
+.nt-bloom-question__option[data-correct='true'] {
+  border-color: rgba(166, 255, 0, 0.6);
+  background: rgba(166, 255, 0, 0.1);
+}
+.nt-bloom-question__option[data-wrong='true'] {
+  border-color: rgba(255, 76, 76, 0.55);
+  background: rgba(255, 76, 76, 0.08);
+}
+.nt-bloom-question__scenario {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.18);
+  color: var(--nt-mkt-text-soft);
+}
+.nt-bloom-question__scenario p {
+  margin: 0;
+  line-height: 1.5;
+}
+.nt-bloom-question__field {
+  display: grid;
+  gap: 0.35rem;
+}
+.nt-bloom-question__field label {
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.84rem;
+}
+.nt-bloom-question__field input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--nt-mkt-text);
+  font: inherit;
+}
+.nt-bloom-question__field input.nt-input--correct {
+  border-color: rgba(166, 255, 0, 0.62);
+}
+.nt-bloom-question__field input.nt-input--wrong {
+  border-color: rgba(255, 76, 76, 0.58);
+}
+.nt-bloom-question__expected,
+.nt-bloom-question__explanation {
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.86rem;
+}
+.nt-bloom-question__explanation {
+  margin: 0;
+  line-height: 1.5;
+}
+.nt-bloom-question__success-banner {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(166, 255, 0, 0.45);
+  border-radius: 8px;
+  background: rgba(166, 255, 0, 0.09);
+  color: var(--nt-mkt-text);
+}
+.nt-studio-frame {
+  min-height: 420px;
+  overflow: hidden;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 10px;
+}
 @media (max-width: 640px) {
   .nt-test-page {
     min-height: calc(100vh - 64px);
     padding: 1rem;
   }
+  .nt-assessment {
+    margin: 0;
+    padding: 0.9rem;
+  }
+  .nt-assessment__stepper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nt-assessment__footer,
+  .nt-assessment__footer .nt-lesson-button {
+    width: 100%;
+  }
   .nt-test-page__cta {
     width: 100%;
+  }
+}
+@media (min-width: 641px) and (max-width: 980px) {
+  .nt-assessment__stepper {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

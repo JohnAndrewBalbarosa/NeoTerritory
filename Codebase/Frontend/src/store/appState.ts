@@ -8,6 +8,7 @@ const LMS_SCOPE_PREFIX = 'nt_lms';
 const LMS_SESSION_KEY = `${LMS_SCOPE_PREFIX}_session_id`;
 const LMS_PRETEST_KEY = `${LMS_SCOPE_PREFIX}_pretest_completed`;
 const LMS_COMPLETED_KEY = `${LMS_SCOPE_PREFIX}_completed_items`;
+const LMS_MASTERED_LEVELS_KEY = `${LMS_SCOPE_PREFIX}_mastered_levels`;
 
 // SSR-safe localStorage access. Under Next.js the store module is evaluated on the
 // server during prerender, where `window`/`localStorage` do not exist; an unguarded
@@ -78,12 +79,27 @@ function readScopedStringArray(prefix: string, scope: string): string[] {
   }
 }
 
+function readScopedJsonRecord<T>(prefix: string, scope: string): Record<string, T> {
+  const raw = readStored(scopedKey(prefix, scope));
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
 function persistScopedStringArray(prefix: string, scope: string, items: string[]): void {
   writeStored(scopedKey(prefix, scope), JSON.stringify(items));
 }
 
 function persistScopedBoolean(prefix: string, scope: string, value: boolean): void {
   writeStored(scopedKey(prefix, scope), value ? 'true' : 'false');
+}
+
+function persistScopedJsonRecord(prefix: string, scope: string, record: Record<string, unknown>): void {
+  writeStored(scopedKey(prefix, scope), JSON.stringify(record));
 }
 
 const storedUser = readStoredJson<User>(USER_KEY);
@@ -158,6 +174,7 @@ interface AppState {
   // LMS Progress (Khan Academy Style)
   preTestCompleted: boolean;
   completedItems: string[]; // IDs of lessons/quizzes finished
+  masteredLevelsByModule: Record<string, number[]>; // moduleId -> mastered level numbers (1-6)
   lmsSessionId: string | null; // Unique ID for research session
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
   // tabbing away and back (or running an analysis) doesn't drop the user's
@@ -202,6 +219,7 @@ interface AppState {
   setPreTestCompleted: (v: boolean) => void;
   setCompletedItems: (items: string[]) => void;
   addCompletedItem: (id: string) => void;
+  setMasteredLevels: (moduleId: string, levels: number[]) => void;
   setLmsSessionId: (id: string | null) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
@@ -248,6 +266,7 @@ export const useAppStore = create<AppState>((set) => ({
   linePatternOverrides: {},
   preTestCompleted: readScopedBoolean(LMS_PRETEST_KEY, storedScope),
   completedItems: readScopedStringArray(LMS_COMPLETED_KEY, storedScope),
+  masteredLevelsByModule: readScopedJsonRecord<number[]>(LMS_MASTERED_LEVELS_KEY, storedScope),
   lmsSessionId: readScopedSessionId(storedScope),
   submissionFiles: [],
 
@@ -262,6 +281,7 @@ export const useAppStore = create<AppState>((set) => ({
       user,
       preTestCompleted: readScopedBoolean(LMS_PRETEST_KEY, scope),
       completedItems: readScopedStringArray(LMS_COMPLETED_KEY, scope),
+      masteredLevelsByModule: readScopedJsonRecord<number[]>(LMS_MASTERED_LEVELS_KEY, scope),
       lmsSessionId: readScopedSessionId(scope),
     });
   },
@@ -283,6 +303,7 @@ export const useAppStore = create<AppState>((set) => ({
       sessionReviewedEnd: false,
       preTestCompleted: false,
       completedItems: [],
+      masteredLevelsByModule: {},
       lmsSessionId: null,
       activeTab: 'submit',
       aiStatus: 'idle',
@@ -400,6 +421,12 @@ export const useAppStore = create<AppState>((set) => ({
     const scope = lmsScopeForUser(s.user);
     persistScopedStringArray(LMS_COMPLETED_KEY, scope, next);
     return { completedItems: next };
+  }),
+  setMasteredLevels: (moduleId, levels) => set((s) => {
+    const next = { ...s.masteredLevelsByModule, [moduleId]: levels };
+    const scope = lmsScopeForUser(s.user);
+    persistScopedJsonRecord(LMS_MASTERED_LEVELS_KEY, scope, next);
+    return { masteredLevelsByModule: next };
   }),
   setLmsSessionId: (id) => set((s) => {
     const scope = lmsScopeForUser(s.user);
