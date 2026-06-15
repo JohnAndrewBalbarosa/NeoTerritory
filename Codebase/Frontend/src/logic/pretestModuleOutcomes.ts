@@ -1,5 +1,6 @@
 import type { LearningAssessmentsResponse } from '../types/api';
 import {
+  BLOOM_TAXONOMIES,
   isAnswerCorrect,
   type BloomTaxonomy,
   type LearningModule,
@@ -15,9 +16,19 @@ export interface PretestModuleOutcome {
 export interface PretestModuleOutcomes {
   latestAttemptId: number | null;
   masteredBloomLevelsByModuleId: Record<string, BloomTaxonomy[]>;
+  bloomMasteryByModuleId: Record<string, number>;
   failedModuleIds: string[];
   exemptModuleIds: string[];
   perfectModuleIds: string[];
+}
+
+export function masteryLevelForBloomLevels(levels: ReadonlyArray<BloomTaxonomy>): number {
+  let highest = 0;
+  for (const level of levels) {
+    const numericLevel = BLOOM_TAXONOMIES.indexOf(level) + 1;
+    if (numericLevel > highest) highest = numericLevel;
+  }
+  return highest;
 }
 
 function toTime(value: string | undefined): number | null {
@@ -25,6 +36,23 @@ function toTime(value: string | undefined): number | null {
   const utcValue = value.includes('T') || value.includes('Z') ? value : `${value.replace(' ', 'T')}Z`;
   const time = new Date(utcValue).getTime();
   return Number.isFinite(time) ? time : null;
+}
+
+export function bloomLevelForTaxonomy(taxonomy: BloomTaxonomy | undefined | null): number {
+  return taxonomy ? BLOOM_TAXONOMIES.indexOf(taxonomy) + 1 : 0;
+}
+
+export function bloomTaxonomiesThroughLevel(level: number): BloomTaxonomy[] {
+  const ceiling = Math.max(0, Math.min(6, Math.floor(level)));
+  return BLOOM_TAXONOMIES.slice(0, ceiling);
+}
+
+export function bloomMasteryFromTaxonomies(taxonomies: Iterable<BloomTaxonomy>): number {
+  let maxLevel = 0;
+  for (const taxonomy of taxonomies) {
+    maxLevel = Math.max(maxLevel, bloomLevelForTaxonomy(taxonomy));
+  }
+  return Math.max(0, Math.min(6, maxLevel));
 }
 
 function latestFreshPretestAttempt(assessments: LearningAssessmentsResponse): number | null {
@@ -58,6 +86,7 @@ export function derivePretestModuleOutcomes(
     return {
       latestAttemptId: null,
       masteredBloomLevelsByModuleId: {},
+      bloomMasteryByModuleId: {},
       failedModuleIds: [],
       exemptModuleIds: [],
       perfectModuleIds: [],
@@ -77,6 +106,7 @@ export function derivePretestModuleOutcomes(
   }
 
   const masteredBloomLevelsByModuleId: Record<string, BloomTaxonomy[]> = {};
+  const bloomMasteryByModuleId: Record<string, number> = {};
   const failedModuleIds: string[] = [];
   const exemptModuleIds: string[] = [];
   const perfectModuleIds: string[] = [];
@@ -114,6 +144,7 @@ export function derivePretestModuleOutcomes(
 
     if (masteredBloomLevels.length > 0) {
       masteredBloomLevelsByModuleId[module.id] = masteredBloomLevels;
+      bloomMasteryByModuleId[module.id] = bloomMasteryFromTaxonomies(masteredBloomLevels);
     }
 
     if (hasIncorrectAnswer) {
@@ -128,12 +159,14 @@ export function derivePretestModuleOutcomes(
     if (allAvailableTaxonomiesCorrect) {
       exemptModuleIds.push(module.id);
       perfectModuleIds.push(module.id);
+      bloomMasteryByModuleId[module.id] = 6;
     }
   }
 
   return {
     latestAttemptId,
     masteredBloomLevelsByModuleId,
+    bloomMasteryByModuleId,
     failedModuleIds,
     exemptModuleIds,
     perfectModuleIds,

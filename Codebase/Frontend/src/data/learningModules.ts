@@ -41,6 +41,15 @@ export type BloomTaxonomy =
   | 'evaluating'
   | 'creating';
 
+export const BLOOM_TAXONOMIES: ReadonlyArray<BloomTaxonomy> = [
+  'remembering',
+  'understanding',
+  'applying',
+  'analyzing',
+  'evaluating',
+  'creating',
+];
+
 export const FOUNDATION_CATEGORY: LearningCategory = 'foundations';
 export const FOUNDATION_BYPASS_TAXONOMIES = ['remembering', 'understanding', 'applying'] as const;
 
@@ -262,7 +271,13 @@ function tagQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>):
 }
 
 function normalizeTheoryQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>): ExamQuestion[] {
-  return questions.map((q, index) => ({ ...q, taxonomy: inferBloomTaxonomy(q, index, moduleId) }));
+  const tagged = questions.map((q, index) => ({ ...q, taxonomy: inferBloomTaxonomy(q, index, moduleId) }));
+  if (tagged.length === 0) return [];
+
+  return BLOOM_TAXONOMIES.map((taxonomy, index) => {
+    const exact = tagged.find((question) => question.taxonomy === taxonomy);
+    return { ...(exact ?? tagged[index % tagged.length]), taxonomy };
+  });
 }
 
 export function normalizeLearningModule(module: LearningModule): LearningModule {

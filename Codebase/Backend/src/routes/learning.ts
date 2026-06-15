@@ -4,7 +4,7 @@
 // account left off after a refresh or on another device.
 //
 // GET  /api/learning/progress  → { completedModuleIds, lastUnlockedModuleId,
-//                                   theoryPassedModuleIds }
+//                                   theoryPassedModuleIds, bloomMasteryByModule }
 // PUT  /api/learning/progress  → upsert the same shape (called every time a
 //                                module's theoretical or practical exam passes,
 //                                which can unlock the next).
@@ -25,6 +25,7 @@ interface ProgressRow {
   completed_module_ids: string;
   last_unlocked_module_id: string | null;
   theory_passed_module_ids: string | null;
+  bloom_mastery_by_module: string | null;
 }
 
 type AssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
@@ -219,6 +220,31 @@ function sanitizeTries(input: unknown): Record<string, number> {
   return out;
 }
 
+// Sanitize the per-module Bloom mastery map: keys follow the same module-id
+// bounds as the other progress maps, values clamp to the 0..6 mastery scale.
+function sanitizeBloomMasteryByModule(input: unknown): Record<string, number> {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {};
+  const out: Record<string, number> = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(input as Record<string, unknown>)) {
+    if (n >= MAX_MODULES) break;
+    if (typeof k !== 'string' || !k || k.length > MAX_ID_LEN) continue;
+    const num = typeof v === 'number' && Number.isFinite(v) ? Math.round(v) : 0;
+    out[k] = Math.min(6, Math.max(0, num));
+    n += 1;
+  }
+  return out;
+}
+
+function parseBloomMasteryByModule(raw: string | null | undefined): Record<string, number> {
+  if (!raw) return {};
+  try {
+    return sanitizeBloomMasteryByModule(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
 // ── Public learning content (D92 DB-backed CMS) ────────────────────────────
 // PUBLIC (no auth): the learner page reads its content here. Returns published
 // modules plus baseline foundation modules ordered by sort_order ASC, each
@@ -254,7 +280,7 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     }
     const row = db
       .prepare(
-        `SELECT completed_module_ids, last_unlocked_module_id, theory_passed_module_ids
+        `SELECT completed_module_ids, last_unlocked_module_id, theory_passed_module_ids, bloom_mastery_by_module
          FROM learning_progress WHERE user_id = ?`,
       )
       .get(req.user.id) as ProgressRow | undefined;
@@ -263,6 +289,7 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       completedModuleIds: parseStringArrayColumn(row?.completed_module_ids),
       lastUnlockedModuleId: row?.last_unlocked_module_id ?? null,
       theoryPassedModuleIds: parseStringArrayColumn(row?.theory_passed_module_ids),
+      bloomMasteryByModule: parseBloomMasteryByModule(row?.bloom_mastery_by_module),
     });
   } catch (err) {
     next(err);
@@ -280,10 +307,12 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       lastUnlockedModuleId?: unknown;
       triesByModule?: unknown;
       theoryPassedModuleIds?: unknown;
+      bloomMasteryByModule?: unknown;
       sessionId?: unknown;
     };
     const completedModuleIds = sanitizeModuleIdArray(body.completedModuleIds);
     const theoryPassedModuleIds = sanitizeModuleIdArray(body.theoryPassedModuleIds);
+    const bloomMasteryByModule = sanitizeBloomMasteryByModule(body.bloomMasteryByModule);
     const lastUnlockedModuleId =
       typeof body.lastUnlockedModuleId === 'string' && body.lastUnlockedModuleId.length <= MAX_ID_LEN
         ? body.lastUnlockedModuleId
@@ -291,7 +320,12 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
 
     const serialized = JSON.stringify(completedModuleIds);
     const theorySerialized = JSON.stringify(theoryPassedModuleIds);
-    if (serialized.length > MAX_PAYLOAD_BYTES || theorySerialized.length > MAX_PAYLOAD_BYTES) {
+    const bloomSerialized = JSON.stringify(bloomMasteryByModule);
+    if (
+      serialized.length > MAX_PAYLOAD_BYTES ||
+      theorySerialized.length > MAX_PAYLOAD_BYTES ||
+      bloomSerialized.length > MAX_PAYLOAD_BYTES
+    ) {
       res.status(413).json({ error: 'progress payload too large' });
       return;
     }
@@ -301,15 +335,16 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
 
     db.prepare(
-      `INSERT INTO learning_progress (user_id, session_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+      `INSERT INTO learning_progress (user_id, session_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, bloom_mastery_by_module, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(user_id, session_id) DO UPDATE SET
          completed_module_ids      = excluded.completed_module_ids,
          last_unlocked_module_id   = excluded.last_unlocked_module_id,
          tries_by_module           = excluded.tries_by_module,
          theory_passed_module_ids  = excluded.theory_passed_module_ids,
+         bloom_mastery_by_module   = excluded.bloom_mastery_by_module,
          updated_at                = datetime('now')`,
-    ).run(req.user.id, sessionId, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized);
+    ).run(req.user.id, sessionId, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized, bloomSerialized);
 
 
     // Mirror to Supabase (best-effort, keyed by email — D91). SQLite above is
@@ -321,11 +356,19 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
         last_unlocked_module_id: lastUnlockedModuleId,
         tries_by_module: triesByModule,
         theory_passed_module_ids: theoryPassedModuleIds,
+        bloom_mastery_by_module: bloomMasteryByModule,
         updated_at: new Date().toISOString(),
       });
     }
 
-    res.json({ ok: true, completedModuleIds, lastUnlockedModuleId, triesByModule, theoryPassedModuleIds });
+    res.json({
+      ok: true,
+      completedModuleIds,
+      lastUnlockedModuleId,
+      triesByModule,
+      theoryPassedModuleIds,
+      bloomMasteryByModule,
+    });
   } catch (err) {
     next(err);
   }

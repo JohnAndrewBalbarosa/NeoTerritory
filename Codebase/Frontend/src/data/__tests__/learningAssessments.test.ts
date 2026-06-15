@@ -121,29 +121,54 @@ describe('learning module taxonomy normalization', () => {
 });
 
 describe('buildLearningAssessmentQuestions', () => {
-  it.each([
-    'pretest',
-    'posttest',
-    'posttest2',
-  ] as const)('emits one exact Bloom bucket per eligible module for %s', (assessmentType) => {
+  it('emits one exact Bloom bucket per eligible module for each pretest level', () => {
     const modules = LEARNING_MODULES.map(stripModuleTaxonomy);
     const questions = buildLearningAssessmentQuestions(
       modules,
-      assessmentType,
+      'pretest',
     );
     expect(questions.map((item) => `${item.moduleId}:${item.taxonomy}`).sort()).toEqual(
       expectedModuleTaxonomyBuckets(modules),
     );
-    expect(questions.every((item) => item.assessmentType === assessmentType)).toBe(true);
+    expect(questions.every((item) => item.assessmentType === 'pretest')).toBe(true);
     expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
     expect(new Set(questions.map((item) => item.assessmentIndex)).size).toBe(questions.length);
   });
 
-  it('uses each available exact taxonomy once when the eligible module pool is compact', () => {
-    const questions = buildLearningAssessmentQuestions([buildCompactModuleBank()], 'posttest');
+  it.each([
+    ['posttest', 'evaluating'],
+    ['posttest2', 'creating'],
+  ] as const)('emits one question per eligible module for %s', (assessmentType, expectedTaxonomy) => {
+    const modules = LEARNING_MODULES.map(stripModuleTaxonomy);
+    const eligible = normalizeLearningModules(modules).filter((module) => module.theoreticalExam?.questions.length);
+    const questions = buildLearningAssessmentQuestions(modules, assessmentType);
+    expect(questions).toHaveLength(eligible.length);
+    expect(new Set(questions.map((item) => item.moduleId))).toEqual(new Set(eligible.map((module) => module.id)));
+    expect(questions.every((item) => item.taxonomy === expectedTaxonomy)).toBe(true);
+    expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
+  });
+
+  it('uses each Bloom taxonomy once when the eligible module pool is compact in pretest mode', () => {
+    const questions = buildLearningAssessmentQuestions([buildCompactModuleBank()], 'pretest');
     expect(questions).toHaveLength(BLOOM_LEVELS.length);
     expect(questions.map((item) => item.taxonomy).sort()).toEqual(BLOOM_LEVELS.slice().sort());
     expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
+  });
+
+  it('normalizes sparse module banks to six Bloom-level pretest questions', () => {
+    const sparseModule: LearningModule = {
+      ...buildCompactModuleBank(),
+      id: 'sparse-bank',
+      theoreticalExam: {
+        kind: 'theoretical',
+        questions: buildCompactModuleBank().theoreticalExam!.questions.slice(0, 2),
+      },
+    };
+
+    const questions = buildLearningAssessmentQuestions([sparseModule], 'pretest');
+    expect(questions).toHaveLength(6);
+    expect(questions.map((item) => item.taxonomy).sort()).toEqual(BLOOM_LEVELS.slice().sort());
+    expect(questions.every((item) => item.moduleId === 'sparse-bank')).toBe(true);
   });
 });
 

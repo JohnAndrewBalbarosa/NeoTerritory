@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { LearningAssessmentsResponse } from '../../types/api';
 import type { LearningModule } from '../../data/learningModules';
-import { derivePretestModuleOutcomes } from '../pretestModuleOutcomes';
+import { derivePretestModuleOutcomes, masteryLevelForBloomLevels } from '../pretestModuleOutcomes';
 
 function moduleFixture(
   id: string,
@@ -202,6 +202,11 @@ describe('derivePretestModuleOutcomes', () => {
       'module-c': ['analyzing'],
       'module-d': ['remembering', 'understanding'],
     });
+    expect(result.bloomMasteryByModuleId).toEqual({
+      'module-a': 6,
+      'module-c': 6,
+      'module-d': 6,
+    });
     expect(result.failedModuleIds).toEqual(['module-b']);
     expect(result.exemptModuleIds).toEqual(['module-a', 'module-c', 'module-d']);
     expect(result.perfectModuleIds).toEqual(['module-a', 'module-c', 'module-d']);
@@ -262,8 +267,19 @@ describe('derivePretestModuleOutcomes', () => {
     expect(result.masteredBloomLevelsByModuleId).toEqual({
       'module-a': ['remembering'],
     });
+    expect(result.bloomMasteryByModuleId).toEqual({
+      'module-a': 1,
+    });
     expect(result.failedModuleIds).toEqual([]);
     expect(result.exemptModuleIds).toEqual([]);
     expect(result.perfectModuleIds).toEqual([]);
+  });
+});
+
+describe('masteryLevelForBloomLevels', () => {
+  it('collapses mastered Bloom levels to the highest level number', () => {
+    expect(masteryLevelForBloomLevels([])).toBe(0);
+    expect(masteryLevelForBloomLevels(['remembering'])).toBe(1);
+    expect(masteryLevelForBloomLevels(['remembering', 'evaluating', 'applying'])).toBe(5);
   });
 });

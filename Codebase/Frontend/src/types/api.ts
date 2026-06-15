@@ -196,6 +196,7 @@ export interface LearningRawProgress {
   lastUnlockedModuleId: string | null;
   triesByModule: Record<string, number>;
   theoryPassedModuleIds: string[];
+  bloomMasteryByModule: Record<string, number>;
   updatedAt: string;
 }
 

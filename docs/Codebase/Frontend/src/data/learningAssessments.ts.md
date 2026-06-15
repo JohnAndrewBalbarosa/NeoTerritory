@@ -36,10 +36,10 @@ flowchart TD
 
 ## Assessment Selection Rule
 
-- The pre-test walks each Bloom taxonomy and includes one matching question for every module that has that taxonomy available.
-- Post-test surfaces reuse the same exact-taxonomy selection path so stored answers retain module and taxonomy metadata.
-- Missing taxonomy buckets are skipped for that module rather than filled with a wrong-taxonomy fallback.
-- The builder normalizes API-shaped modules before selection, so a missing taxonomy field in seed-loaded data does not break the assessment contract.
+- The pre-test builds six Bloom stages and each stage contains one question per learner-visible module.
+- Post-test and post-test-2 each contain one question per learner-visible module, using later Bloom stages for checkpoint coverage.
+- The builder normalizes API-shaped modules before selection, so every module with a theoretical bank exposes one question per Bloom level.
+- Sparse authored banks reuse available questions as fallback during normalization while keeping the emitted taxonomy at the intended Bloom level.
 
 ## Foundation Gate
 
@@ -65,9 +65,10 @@ The backend stores raw selections, free-text responses, question metadata, and t
 
 ## Acceptance Checks
 
-- Pre-test, post-test, and post-test-2 questions keep exact Bloom taxonomy labels.
-- No wrong-taxonomy fallback is used during question selection.
-- Modules missing a taxonomy bucket are skipped for that bucket without hiding later buckets.
+- Pre-test stage counts match the learner-visible module count.
+- Post-test and post-test-2 question counts match the learner-visible module count.
+- Pre-test, post-test, and post-test-2 questions keep the intended Bloom taxonomy labels.
+- Sparse module banks still expose six Bloom-level pre-test questions after normalization.
 - Foundation personas remain distinguishable by mastered and missing taxonomies.
 - Saved pre-test evidence older than `courseUpdatedAt` fails the gate.
 - A saved fresh passing pre-test can unlock the path without relying on local-only state.

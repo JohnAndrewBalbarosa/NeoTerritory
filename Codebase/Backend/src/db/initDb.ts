@@ -517,6 +517,15 @@ export function initDb(): void {
     /* column already exists — nothing to do */
   }
 
+  // Per-module Bloom mastery state (JSON map module_id -> score 0..6). Stored
+  // with the rest of the learner progress so the snapshot survives refreshes
+  // and device changes.
+  try {
+    db.prepare(`ALTER TABLE learning_progress ADD COLUMN bloom_mastery_by_module TEXT NOT NULL DEFAULT '{}'`).run();
+  } catch {
+    /* column already exists — nothing to do */
+  }
+
   // ── learning_question_results (per-question theoretical-exam results) ────
   // One row per (user, session, module, question).
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_question_results (

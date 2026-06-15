@@ -254,6 +254,9 @@ export interface LearningProgress {
   // pending) resumes with the practical block unlocked. Optional so a stale
   // backend that predates the column degrades gracefully.
   theoryPassedModuleIds?: string[];
+  // Highest Bloom level mastered per module for this learner. 0/undefined means
+  // no mastery; 6 means the module can be exempted from learner-side work.
+  bloomMasteryByModule?: Record<string, number>;
 }
 
 // D92: public learning content (no auth). Returns the published modules in the
@@ -278,6 +281,7 @@ export async function saveLearningProgress(
   triesByModule?: Record<string, number>,
   theoryPassedModuleIds?: string[],
   sessionId?: string,
+  bloomMasteryByModule?: Record<string, number>,
 ): Promise<void> {
   await apiFetch('/api/learning/progress', {
     method: 'PUT',
@@ -287,6 +291,7 @@ export async function saveLearningProgress(
       triesByModule,
       theoryPassedModuleIds,
       sessionId,
+      bloomMasteryByModule,
     }),
   });
 }

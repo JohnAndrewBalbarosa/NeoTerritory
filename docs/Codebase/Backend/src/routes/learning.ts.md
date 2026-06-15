@@ -15,6 +15,8 @@ The route treats SQLite as the source of truth. Supabase mirrors are best-effort
 
 The learning path relies on this router to make pre-test gating durable across refreshes and devices. The frontend can keep a local pre-test flag for immediate UI continuity, but the route-level assessment history and `courseUpdatedAt` value decide whether a saved passing pre-test is still fresh after admin course edits.
 
+Per-module Bloom mastery also lives in the learner progress snapshot. The value is a JSON map of `moduleId -> 0..6`, where `0` means no saved mastery and `6` means the module can be exempted for that learner.
+
 ## Learner Module Flow
 
 ```mermaid
@@ -55,11 +57,24 @@ flowchart TD
     Start --> N0 --> N1 --> N2 --> N3 --> N4 --> End
 ```
 
+## Progress Write Flow
+
+```mermaid
+flowchart TD
+    Start["Save progress"]
+    N0["Sanitize ids"]
+    N1["Clamp Bloom map"]
+    N2["Upsert row"]
+    N3["Mirror best effort"]
+    End["Return snapshot"]
+    Start --> N0 --> N1 --> N2 --> N3 --> End
+```
+
 ## Route Contracts
 
 - `GET /api/learning/modules` is public and returns published modules plus foundation modules, ordered by `sort_order`.
-- `GET /api/learning/progress` requires auth and returns completed module ids, last unlocked module id, and theoretical-pass module ids.
-- `PUT /api/learning/progress` requires auth and upserts sanitized progress for the user and optional session.
+- `GET /api/learning/progress` requires auth and returns completed module ids, last unlocked module id, theoretical-pass module ids, and `bloomMasteryByModule`.
+- `PUT /api/learning/progress` requires auth and upserts sanitized progress for the user and optional session; `bloomMasteryByModule` values are clamped to `0..6`.
 - `PUT /api/learning/answers` requires auth and records module theoretical exam answers plus an append-only exam attempt row.
 - `GET /api/learning/assessments` requires auth and returns `attempts`, `answers`, and `courseUpdatedAt`.
 - `PUT /api/learning/assessments` requires auth and records pre-test, post-test, post-test-2, or practical assessment answers as an append-only attempt.
@@ -87,5 +102,6 @@ Preview-only AI course plans do not call this router, do not mutate modules, and
 - Public module reads stay non-cacheable so learner content reflects admin changes promptly.
 - Assessment history includes `courseUpdatedAt` alongside attempts and answers.
 - Assessment writes are append-only and preserve old attempts for analytics.
+- Progress reads and writes preserve the per-user, per-module Bloom mastery map.
 - Freshness is enforced by comparing attempt creation time to `courseUpdatedAt` and requiring recorded answer rows, not by deleting learner data.
 - Preview-only AI course plan generation cannot reset learners.

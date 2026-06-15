@@ -1,5 +1,6 @@
 import type { LearningAssessmentAnswerRaw, LearningAssessmentAttemptRaw, LearningAssessmentsResponse } from '../types/api';
 import {
+  BLOOM_TAXONOMIES,
   FOUNDATION_BYPASS_TAXONOMIES,
   type BloomTaxonomy,
   type ExamQuestion,
@@ -194,17 +195,17 @@ export function buildLearningAssessmentQuestions(
 
   if (assessmentType === 'practical') return [];
 
-  const taxonomies: BloomTaxonomy[] = ['remembering', 'understanding', 'applying', 'analyzing', 'evaluating', 'creating'];
-
   if (assessmentType === 'pretest' || assessmentType === 'posttest' || assessmentType === 'posttest2') {
     const questions: Omit<LearningAssessmentQuestion, 'assessmentIndex'>[] = [];
+    const taxonomies: ReadonlyArray<BloomTaxonomy> =
+      assessmentType === 'pretest'
+        ? BLOOM_TAXONOMIES
+        : [assessmentType === 'posttest' ? 'evaluating' : 'creating'];
 
-    // We want a question for every module at every taxonomy level (240 total if 40 modules)
     for (const taxonomy of taxonomies) {
       for (const module of eligible) {
         const candidates = collectQuestionCandidates([module], taxonomy);
         if (candidates.length > 0) {
-          // Select a candidate using a seeded shuffle for variety if multiple questions exist for the same taxonomy
           const shuffledCandidates = seededShuffle(candidates, `${assessmentType}:${module.id}:${taxonomy}`);
           const candidate = shuffledCandidates[0];
 
@@ -221,10 +222,8 @@ export function buildLearningAssessmentQuestions(
       }
     }
 
-    // Shuffle the final array so Bloom levels are mixed
     const shuffledQuestions = seededShuffle(questions, `${assessmentType}:final-shuffle`);
 
-    // Assign assessmentIndex correctly from 0 to 239
     return shuffledQuestions.map((q, index) => ({
       ...q,
       assessmentIndex: index,

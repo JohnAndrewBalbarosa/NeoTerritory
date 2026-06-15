@@ -26,6 +26,7 @@ describe('perStudentRows', () => {
         lastUnlockedModuleId: MOD_B,
         triesByModule: { [MOD_A]: 2 },
         theoryPassedModuleIds: [MOD_A],
+        bloomMasteryByModule: { [MOD_A]: 6 },
         updatedAt: '2026-05-29T00:00:00Z',
       }],
       questionResults: [

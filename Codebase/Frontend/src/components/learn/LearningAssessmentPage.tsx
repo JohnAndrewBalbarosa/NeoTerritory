@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../logic/router';
-import { saveLearningAssessment } from '../../api/client';
+import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
@@ -11,6 +11,7 @@ import {
   LEARNING_ASSESSMENT_META,
   type LearningAssessmentType,
 } from '../../data/learningAssessments';
+import { bloomTaxonomiesThroughLevel } from '../../logic/pretestModuleOutcomes';
 import { AdaptiveAssessmentProvider, useAdaptiveAssessment } from './AdaptiveAssessmentProvider';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
 
@@ -19,12 +20,30 @@ interface LearningAssessmentPageProps {
   autoAdvance?: boolean;
 }
 
+function clampBloomLevel(level: number): number {
+  return Math.max(0, Math.min(6, Math.floor(level)));
+}
+
+function masteryLevelFromStoredLevels(levels: ReadonlyArray<number> | undefined): number {
+  return clampBloomLevel(Math.max(0, ...(levels ?? [])));
+}
+
+function masteryMapFromLocalStore(masteredLevelsByModule: Record<string, number[]>): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const [moduleId, levels] of Object.entries(masteredLevelsByModule)) {
+    const level = masteryLevelFromStoredLevels(levels);
+    if (level > 0) out[moduleId] = level;
+  }
+  return out;
+}
+
 function LearningAssessmentContent({
   assessmentType,
   autoAdvance = false,
 }: LearningAssessmentPageProps): JSX.Element {
   const meta = LEARNING_ASSESSMENT_META[assessmentType];
   const { modules, loaded } = useLearningModules();
+  const token = useAppStore((s) => s.token);
   const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
 
@@ -157,7 +176,8 @@ function LearningAssessmentContent({
         graded.results.forEach((result) => {
           if (result.isCorrect) {
             const existing = masteredLevelsByModule[result.moduleId] || [];
-            setMasteredLevels(result.moduleId, [...new Set([...existing, currentLevel])]);
+            const nextLevel = Math.max(masteryLevelFromStoredLevels(existing), currentLevel);
+            setMasteredLevels(result.moduleId, bloomTaxonomiesThroughLevel(nextLevel).map((_, index) => index + 1));
           }
         });
 
@@ -195,6 +215,25 @@ function LearningAssessmentContent({
 
     if (assessmentType === 'pretest') {
       setPreTestCompleted(true);
+      if (token) {
+        try {
+          const progress = await fetchLearningProgress();
+          const bloomMasteryByModule = {
+            ...(progress.bloomMasteryByModule ?? {}),
+            ...masteryMapFromLocalStore(useAppStore.getState().masteredLevelsByModule),
+          };
+          await saveLearningProgress(
+            progress.completedModuleIds,
+            progress.lastUnlockedModuleId,
+            undefined,
+            progress.theoryPassedModuleIds ?? [],
+            lmsSessionId ?? undefined,
+            bloomMasteryByModule,
+          );
+        } catch (err) {
+          console.error('Failed to persist Bloom mastery progress:', err);
+        }
+      }
     }
 
     if (autoAdvance) {

@@ -343,11 +343,13 @@ router.get('/stats/learning-raw', (_req: Request, res: Response, next: NextFunct
     const progressRows = db.prepare(`
       SELECT user_id AS userId, completed_module_ids AS completed,
              last_unlocked_module_id AS lastUnlocked, tries_by_module AS tries,
-             theory_passed_module_ids AS theoryPassed, updated_at AS updatedAt
+             theory_passed_module_ids AS theoryPassed,
+             bloom_mastery_by_module AS bloomMastery,
+             updated_at AS updatedAt
       FROM learning_progress
     `).all() as Array<{
       userId: number; completed: string; lastUnlocked: string | null;
-      tries: string; theoryPassed: string; updatedAt: string;
+      tries: string; theoryPassed: string; bloomMastery: string | null; updatedAt: string;
     }>;
     const progress = progressRows.map((r) => ({
       userId: r.userId,
@@ -355,6 +357,7 @@ router.get('/stats/learning-raw', (_req: Request, res: Response, next: NextFunct
       lastUnlockedModuleId: r.lastUnlocked,
       triesByModule: safeObj(r.tries),
       theoryPassedModuleIds: safeArr(r.theoryPassed),
+      bloomMasteryByModule: safeObj(r.bloomMastery),
       updatedAt: r.updatedAt,
     }));
 
