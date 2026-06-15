@@ -1,16 +1,20 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore } from '../store/appState';
-import { sendHeartbeat, sendDisconnectBeacon, fetchHealth } from '../api/client';
+import { sendHeartbeat, sendDisconnectBeacon, fetchHealth, refreshGuest } from '../api/client';
 
-// Beat once every 30s. Backend grace window is 90s, so even one missed beat
+// Beat once every 60s. Backend grace window is 600s, so even one missed beat
 // is fine, but two in a row will free the seat.
-const HEARTBEAT_INTERVAL_MS = 30 * 1000;
+const HEARTBEAT_INTERVAL_MS = 60 * 1000;
+// Refresh guest token every 15 minutes to maintain the 30-minute rolling session.
+const GUEST_REFRESH_INTERVAL_MS = 15 * 60 * 1000;
 
 // Fired immediately on mount once authenticated; not waited on so the UI
 // renders without a roundtrip.
 export function useHeartbeat() {
   const token = useAppStore(s => s.token);
+  const user = useAppStore(s => s.user);
   const tokenRef = useRef(token);
+  const lastGuestRefreshRef = useRef(0);
   tokenRef.current = token;
 
   useEffect(() => {
@@ -22,6 +26,18 @@ export function useHeartbeat() {
       // Beat even when tab is hidden: a backgrounded tab keeps its seat as
       // long as the browser keeps the timer alive.
       void sendHeartbeat();
+
+      // Guest Refresh Logic: keep the 10m rolling session alive every 2m.
+      if (user?.role === 'guest' && Date.now() - lastGuestRefreshRef.current > GUEST_REFRESH_INTERVAL_MS) {
+        lastGuestRefreshRef.current = Date.now();
+        void refreshGuest().then(({ token, user }) => {
+          useAppStore.getState().setAuth(token, user);
+        }).catch(err => {
+          console.error('Guest session refresh failed:', err);
+          // If refresh fails (e.g. 401), apiFetch already clears auth/redirects.
+        });
+      }
+
       // Piggy-back the health probe onto every heartbeat so the studio's
       // status card (microservice / docker / livePods) stays fresh
       // without a second polling timer. Errors are swallowed — the status
@@ -90,5 +106,5 @@ export function useHeartbeat() {
       window.removeEventListener('pagehide', onPageHide);
       document.removeEventListener('visibilitychange', onVisibilityChange);
     };
-  }, [token]);
+  }, [token, user?.role]);
 }

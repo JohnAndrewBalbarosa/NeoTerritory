@@ -1,3 +1,5 @@
+import { useAppStore } from '../store/appState';
+import { navigate } from '../logic/router';
 import {
   AnalysisRun, RunListItem, HealthStatus, TesterAccount, User,
   ReviewSchema, AdminUser, AdminLogEntry, AdminLogFilters, AdminReview, AdminOverview,
@@ -11,7 +13,7 @@ import {
 const TOKEN_KEY = 'nt_token';
 
 function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
+  return useAppStore.getState().token || localStorage.getItem(TOKEN_KEY);
 }
 
 // Transient flag set by the admin dashboard's "Refresh" button. While true,
@@ -70,6 +72,8 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}, timeou
   if (response.status === 401) {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('nt_user');
+    useAppStore.getState().clearAuth();
+    navigate('/');
     throw new Error((data as { error?: string }).error || 'Session expired — please sign in.');
   }
 
@@ -1020,6 +1024,16 @@ export async function patchLearningModule(
   );
 }
 
+// Bulk publish/unpublish toggle.
+export async function bulkUpdateLearningModules(
+  updates: Array<{ id: string; published: boolean }>,
+): Promise<{ ok: boolean; updatedCount: number }> {
+  return apiFetch<{ ok: boolean; updatedCount: number }>('/api/admin/learning/bulk', {
+    method: 'PATCH',
+    body: JSON.stringify({ updates }),
+  });
+}
+
 // Delete. Seed modules require force=true (?force=1) — the UI steers to
 // unpublish instead, which preserves learner progress.
 export async function deleteLearningModule(
@@ -1035,3 +1049,19 @@ export async function deleteLearningModule(
 
 // Re-export TesterAccount so consumers can avoid touching the type module directly.
 export type { TesterAccount };
+
+export async function provisionGuest(): Promise<{ token: string; user: User }> {
+  const response = await fetch('/auth/guest', {
+    method: 'POST',
+    headers: { 'Accept': 'application/json' },
+  });
+  const data = await response.json().catch(() => ({})) as { token?: string; user?: User; error?: string };
+  if (!response.ok) throw new Error(data.error || `Guest provision failed (${response.status})`);
+  return { token: data.token!, user: data.user! };
+}
+
+export async function refreshGuest(): Promise<{ token: string; user: User }> {
+  return apiFetch<{ token: string; user: User }>('/auth/guest/refresh', {
+    method: 'POST',
+  });
+}

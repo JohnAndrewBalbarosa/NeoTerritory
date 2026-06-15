@@ -36,6 +36,9 @@ function readStoredJson<T>(key: string): T | null {
 
 function writeStored(key: string, value: string): void {
   if (!canUseDom) return;
+  // Guest persistence gate: do not persist anything that belongs to a guest scope.
+  // Scoped keys look like "prefix:guest".
+  if (key.endsWith(':guest')) return;
   try {
     window.localStorage.setItem(key, value);
   } catch {
@@ -44,8 +47,15 @@ function writeStored(key: string, value: string): void {
 }
 
 function lmsScopeForUser(user: User | null): string {
-  const scope = user?.email || user?.username;
-  return (scope || 'guest').trim().toLowerCase().replace(/[^a-z0-9._-]+/g, '_');
+  // Persistent users have a real email (Google/Supabase). Guests (shared devcon
+  // accounts or generated Guest_XXXX accounts) use the literal 'guest' scope so
+  // their progress is ephemeral and lost on hard refresh.
+  if (!user || user.role === 'guest') return 'guest';
+  const email = (user.email || '').toLowerCase().trim();
+  if (!email || email.endsWith('@test.local') || email.endsWith('@guest.neoterritory.local')) {
+    return 'guest';
+  }
+  return email.replace(/[^a-z0-9._-]+/g, '_');
 }
 
 function scopedKey(prefix: string, scope: string): string {
@@ -271,18 +281,30 @@ export const useAppStore = create<AppState>((set) => ({
   submissionFiles: [],
 
   setAuth: (token, user) => {
-    if (canUseDom) {
+    // Only persist the session if the user is a registered account (real email).
+    // Guest sessions (shared devcon accounts or temporary Guest_XXXX accounts)
+    // are ephemeral and lost on refresh.
+    const isGuest = lmsScopeForUser(user) === 'guest';
+    if (canUseDom && !isGuest && user) {
       window.localStorage.setItem(TOKEN_KEY, token);
       window.localStorage.setItem(USER_KEY, JSON.stringify(user));
     }
     const scope = lmsScopeForUser(user);
-    set({
-      token,
-      user,
-      preTestCompleted: readScopedBoolean(LMS_PRETEST_KEY, scope),
-      completedItems: readScopedStringArray(LMS_COMPLETED_KEY, scope),
-      masteredLevelsByModule: readScopedJsonRecord<number[]>(LMS_MASTERED_LEVELS_KEY, scope),
-      lmsSessionId: readScopedSessionId(scope),
+    set((s) => {
+      // D93: If the user ID hasn't changed (e.g. a token refresh), preserve the
+      // in-memory progress. Re-reading from the scope would wipe it for guests
+      // since their scope is non-persisted.
+      if (s.user?.id && user?.id && s.user.id === user.id) {
+        return { token, user };
+      }
+      return {
+        token,
+        user,
+        preTestCompleted: readScopedBoolean(LMS_PRETEST_KEY, scope),
+        completedItems: readScopedStringArray(LMS_COMPLETED_KEY, scope),
+        masteredLevelsByModule: readScopedJsonRecord<number[]>(LMS_MASTERED_LEVELS_KEY, scope),
+        lmsSessionId: readScopedSessionId(scope),
+      };
     });
   },
 

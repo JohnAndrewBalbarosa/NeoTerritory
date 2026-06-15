@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../logic/router';
-import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress } from '../../api/client';
+import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress, refreshGuest } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
@@ -212,6 +212,17 @@ function LearningAssessmentContent({
       sessionId: lmsSessionId,
       answers: finalAnswers,
     });
+
+    // D93: proactive session refresh for guests on major action completion.
+    const user = useAppStore.getState().user;
+    if (user?.role === 'guest') {
+      try {
+        const { token: freshToken, user: freshUser } = await refreshGuest();
+        useAppStore.getState().setAuth(freshToken, freshUser);
+      } catch (err) {
+        console.warn('[assessment] proactive guest refresh failed:', err);
+      }
+    }
 
     if (assessmentType === 'pretest') {
       setPreTestCompleted(true);

@@ -89,6 +89,65 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   }
 };
 
+export const registerGuest = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const suffix = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const username = `Guest_${suffix}`;
+    // Guests have no email/password but DB requires them. We use placeholder values.
+    const email = `${username.toLowerCase()}@guest.neoterritory.local`;
+    const passwordPlaceholder = Math.random().toString(36);
+    const hash = await bcrypt.hash(passwordPlaceholder, 10);
+
+    const stmt = db.prepare(
+      "INSERT INTO users (username, email, password_hash, role, created_via, created_at) VALUES (?, ?, ?, 'guest', 'guest', datetime('now'))"
+    );
+    const info = stmt.run(username, email, hash);
+    const newUserId = Number(info.lastInsertRowid);
+
+    const role = 'guest';
+    const token = jwt.sign(
+      { id: newUserId, username, email, role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '30m' }
+    );
+
+    logEvent(newUserId, 'register_guest', `Guest registered: ${username}`);
+    mirrorRow('users', {
+      id: newUserId, username, email, role,
+      created_via: 'guest',
+      created_at: new Date().toISOString(),
+    });
+
+    res.status(201).json({
+      ok: true,
+      token,
+      user: { id: newUserId, username, email, role }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const refreshGuestToken = async (req: Request, res: Response): Promise<void> => {
+  if (!req.user) {
+    res.status(401).json({ error: 'Unauthorized' });
+    return;
+  }
+
+  try {
+    const { id, username, email, role } = req.user;
+    const token = jwt.sign(
+      { id, username, email, role },
+      process.env.JWT_SECRET as string,
+      { expiresIn: '30m' }
+    );
+
+    res.json({ ok: true, token, user: { id, username, email, role } });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to refresh token' });
+  }
+};
+
 
 interface ClaimResult {
   ok: boolean;
@@ -126,7 +185,7 @@ function claimSeatTransaction(username: string): ClaimResult {
 // Tester seat is freed if no heartbeat lands within this many seconds. Picked
 // large enough to survive a brief network blip (frontend beats every 30s) but
 // small enough that closing a tab returns the seat within ~2 minutes.
-export const HEARTBEAT_GRACE_SECONDS = 90;
+export const HEARTBEAT_GRACE_SECONDS = 600;
 
 // Heartbeat endpoint. Browsers POST here every ~30s while the tab lives. We
 // just touch last_active; the absence of beats is what frees a seat.
@@ -220,6 +279,22 @@ export const claimSeat = async (req: Request, res: Response, next: NextFunction)
       return;
     }
     const role = user.role || 'user';
+
+    // Reset learning progress for the claimed seat so every tester session
+    // starts with a fresh slate. Shared Devcon seats should not inherit
+    // progress from previous users.
+    try {
+      db.transaction(() => {
+        db.prepare('DELETE FROM learning_progress WHERE user_id = ?').run(user.id);
+        db.prepare('DELETE FROM learning_question_results WHERE user_id = ?').run(user.id);
+        db.prepare('DELETE FROM learning_exam_attempts WHERE user_id = ?').run(user.id);
+        db.prepare('DELETE FROM learning_assessment_attempts WHERE user_id = ?').run(user.id);
+        db.prepare('DELETE FROM learning_assessment_answers WHERE user_id = ?').run(user.id);
+      })();
+    } catch (err) {
+      console.warn(`[claim_seat] failed to reset progress for user ${user.id}:`, err);
+    }
+
     const token = jwt.sign(
       { id: user.id, username: user.username, email: user.email, role },
       process.env.JWT_SECRET as string,

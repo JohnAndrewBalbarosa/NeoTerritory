@@ -5,9 +5,11 @@ import GoogleCallback from './components/auth/GoogleCallback';
 import GoogleSignInPage from './components/auth/GoogleSignInPage';
 import OnboardingFlow from './components/auth/OnboardingFlow';
 import StudentLearningShell from './components/learn/StudentLearningShell';
+import { useHeartbeat } from './hooks/useHeartbeat';
 
 export default function App() {
   const surface = useSurface();
+  useHeartbeat();
 
   if (surface === 'googleCallback') return <GoogleCallback />;
   if (surface === 'googleSignIn')   return <GoogleSignInPage />;
