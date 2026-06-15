@@ -124,10 +124,20 @@ export default function AdminApp() {
   // shared hook, which resets its internal interval.
   const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('runs');
+  const [mountedTabs, setMountedTabs] = useState<Set<AdminTab>>(new Set(['runs']));
   const [refreshKey, setRefreshKey] = useState(0);
   const [expandedSection, setExpandedSection] = useState<AdminSection>(TAB_SECTION_MAP.runs);
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
+
+  useEffect(() => {
+    setMountedTabs(prev => {
+      if (prev.has(activeTab)) return prev;
+      const next = new Set(prev);
+      next.add(activeTab);
+      return next;
+    });
+  }, [activeTab]);
 
   // Legacy username/password form is now a collapsible fallback. The
   // primary admin sign-in is Google OAuth via /admin/login → callback →
@@ -244,6 +254,7 @@ export default function AdminApp() {
     // adminRefreshLimiter can hard-cap explicit refreshes (12/min/user).
     // Background polling never sets this flag, so it stays unaffected.
     markAdminRefresh(2000);
+    setMountedTabs(new Set([activeTab]));
     setRefreshKey(k => k + 1);
     refreshAdminUsers();
   }
@@ -392,94 +403,116 @@ export default function AdminApp() {
         </nav>
 
       {/*
-       * Tabs are rendered once on AdminApp mount and kept in the DOM. Switching
-       * tabs only toggles `hidden`, so each tab's `useEffect(() => fetch(), [])`
+       * Tabs are lazily mounted when first visited and kept in the DOM. Switching
+       * to a visited tab only toggles `hidden`, so each tab's `useEffect(() => fetch(), [])`
        * runs exactly once per refresh epoch. The top-right `Refresh` button is
        * the only re-fetch trigger: bumping `refreshKey` remounts <main>, which
-       * forces every tab to re-run its initial fetch in lockstep. This stops
-       * the per-switch network spam without lifting state into a context.
+       * forces only the active tab to re-run its initial fetch. This stops
+       * the initial mount network spam without lifting state into a context.
        */}
       <main className="admin-main" key={refreshKey}>
-        <div hidden={activeTab !== 'runs'}>
-          <RunsTab />
-        </div>
-        <div hidden={activeTab !== 'complexity'}>
-          <ComplexityTab />
-        </div>
-        <div hidden={activeTab !== 'users'}>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Users</h2>
-              <p className="admin-section__hint">Tester accounts, online presence, and seat reset controls.</p>
-            </header>
-            <UserTable />
-          </section>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Per-user activity</h2>
-              <p className="admin-section__hint">Run counts and recent activity per tester.</p>
-            </header>
-            <PerUserActivity />
-          </section>
-        </div>
-        <div hidden={activeTab !== 'reviews'}>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Reviews</h2>
-              <p className="admin-section__hint">Per-pattern reviewer answers submitted from the studio.</p>
-            </header>
-            <ReviewsPanel />
-          </section>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Survey responses</h2>
-              <p className="admin-section__hint">Per-run + end-of-session feedback ratings and free-text answers.</p>
-            </header>
-            <SurveyStats />
-          </section>
-        </div>
-        <div hidden={activeTab !== 'ai'}>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>AI provider configuration</h2>
-              <p className="admin-section__hint">
-                Pick the provider, model, and API key the documentation + commentary jobs should call.
-                Changes take effect on the next AI request — no redeploy. Setting the provider to
-                &ldquo;None&rdquo; clears the row and falls back to environment variables.
-              </p>
-            </header>
-            <AiConfigPanel />
-          </section>
-        </div>
-        <div hidden={activeTab !== 'logs'}>
-          <LogsView />
-        </div>
-        <div hidden={activeTab !== 'catalogs'}>
-          <CatalogsTab />
-        </div>
-        <div hidden={activeTab !== 'invites'}>
-          <InviteCodesTab />
-        </div>
-        <div hidden={activeTab !== 'joinRequests'}>
-          <JoinRequestsTab />
-        </div>
-        <div hidden={activeTab !== 'instructor-students' && activeTab !== 'instructor-modules' && activeTab !== 'instructor-questions'}>
-          <section className="admin-section admin-section--card">
-            <header className="admin-section__head">
-              <h2>Instructor analytics</h2>
-              <p className="admin-section__hint">Course-operator view of learner scores: per-student progress and improvement, module difficulty ranking, and the per-question heatmap. All metrics are computed from raw learning data; each view offers a download.</p>
-            </header>
-            <InstructorDashboard initialView={
-              activeTab === 'instructor-modules' ? 'modules' :
-              activeTab === 'instructor-questions' ? 'questions' :
-              'students'
-            } />
-          </section>
-        </div>
-        <div hidden={activeTab !== 'courses'}>
-          <CoursesTab />
-        </div>
-        {isOriginalDevsAdmin(user) && (
+        {mountedTabs.has('runs') && (
+          <div hidden={activeTab !== 'runs'}>
+            <RunsTab />
+          </div>
+        )}
+        {mountedTabs.has('complexity') && (
+          <div hidden={activeTab !== 'complexity'}>
+            <ComplexityTab />
+          </div>
+        )}
+        {mountedTabs.has('users') && (
+          <div hidden={activeTab !== 'users'}>
+            <section className="admin-section admin-section--card">
+              <header className="admin-section__head">
+                <h2>Users</h2>
+                <p className="admin-section__hint">Tester accounts, online presence, and seat reset controls.</p>
+              </header>
+              <UserTable />
+            </section>
+            <section className="admin-section admin-section--card">
+              <header className="admin-section__head">
+                <h2>Per-user activity</h2>
+                <p className="admin-section__hint">Run counts and recent activity per tester.</p>
+              </header>
+              <PerUserActivity />
+            </section>
+          </div>
+        )}
+        {mountedTabs.has('reviews') && (
+          <div hidden={activeTab !== 'reviews'}>
+            <section className="admin-section admin-section--card">
+              <header className="admin-section__head">
+                <h2>Reviews</h2>
+                <p className="admin-section__hint">Per-pattern reviewer answers submitted from the studio.</p>
+              </header>
+              <ReviewsPanel />
+            </section>
+            <section className="admin-section admin-section--card">
+              <header className="admin-section__head">
+                <h2>Survey responses</h2>
+                <p className="admin-section__hint">Per-run + end-of-session feedback ratings and free-text answers.</p>
+              </header>
+              <SurveyStats />
+            </section>
+          </div>
+        )}
+        {mountedTabs.has('ai') && (
+          <div hidden={activeTab !== 'ai'}>
+            <section className="admin-section admin-section--card">
+              <header className="admin-section__head">
+                <h2>AI provider configuration</h2>
+                <p className="admin-section__hint">
+                  Pick the provider, model, and API key the documentation + commentary jobs should call.
+                  Changes take effect on the next AI request — no redeploy. Setting the provider to
+                  &ldquo;None&rdquo; clears the row and falls back to environment variables.
+                </p>
+              </header>
+              <AiConfigPanel />
+            </section>
+          </div>
+        )}
+        {mountedTabs.has('logs') && (
+          <div hidden={activeTab !== 'logs'}>
+            <LogsView />
+          </div>
+        )}
+        {mountedTabs.has('catalogs') && (
+          <div hidden={activeTab !== 'catalogs'}>
+            <CatalogsTab />
+          </div>
+        )}
+        {mountedTabs.has('invites') && (
+          <div hidden={activeTab !== 'invites'}>
+            <InviteCodesTab />
+          </div>
+        )}
+        {mountedTabs.has('joinRequests') && (
+          <div hidden={activeTab !== 'joinRequests'}>
+            <JoinRequestsTab />
+          </div>
+        )}
+        {(mountedTabs.has('instructor-students') || mountedTabs.has('instructor-modules') || mountedTabs.has('instructor-questions')) && (
+          <div hidden={activeTab !== 'instructor-students' && activeTab !== 'instructor-modules' && activeTab !== 'instructor-questions'}>
+            <section className="admin-section admin-section--card">
+              <header className="admin-section__head">
+                <h2>Instructor analytics</h2>
+                <p className="admin-section__hint">Course-operator view of learner scores: per-student progress and improvement, module difficulty ranking, and the per-question heatmap. All metrics are computed from raw learning data; each view offers a download.</p>
+              </header>
+              <InstructorDashboard initialView={
+                activeTab === 'instructor-modules' ? 'modules' :
+                activeTab === 'instructor-questions' ? 'questions' :
+                'students'
+              } />
+            </section>
+          </div>
+        )}
+        {mountedTabs.has('courses') && (
+          <div hidden={activeTab !== 'courses'}>
+            <CoursesTab />
+          </div>
+        )}
+        {isOriginalDevsAdmin(user) && mountedTabs.has('featureReleases') && (
           <div hidden={activeTab !== 'featureReleases'}>
             <FeatureReleasePanel />
           </div>

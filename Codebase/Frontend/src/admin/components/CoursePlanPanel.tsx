@@ -45,10 +45,6 @@ function summarizeDiversity(diversity: AdminCoursePlanPatternDiversity | null | 
   return pieces.join(' | ');
 }
 
-function describeRequiredReason(value: string): string {
-  return value.replace(/\bbaseline\b/gi, 'required');
-}
-
 function resolveVerificationState(plan: AdminCoursePlan): {
   state: VerificationState;
   title: string;
@@ -154,17 +150,7 @@ export default function CoursePlanPanel({
     () => aiEnabledRows.filter((item) => item.currentPublished !== item.effectivePublished).length,
     [aiEnabledRows],
   );
-  const requiredModules = useMemo(
-    () => {
-      const seen = new Set<string>();
-      return (plan?.requiredLearning ?? []).filter((item) => {
-        if (seen.has(item.moduleId)) return false;
-        seen.add(item.moduleId);
-        return requiredLearningIds.has(item.moduleId);
-      });
-    },
-    [plan, requiredLearningIds],
-  );
+
   const diagnostics = plan?.diagnostics ?? null;
   const verification = plan ? resolveVerificationState(plan) : null;
   const verificationToneClass = verification ? `is-${verification.state}` : '';
@@ -337,9 +323,6 @@ export default function CoursePlanPanel({
               {aiEnabledRows.length === 0 ? (
                 <div className="admin-plan-empty">
                   <p className="admin-feature-row__label">No non-foundation modules were enabled</p>
-                  <p className="admin-feature-row__explanation">
-                    Required modules stay below this board and continue to be labeled separately.
-                  </p>
                 </div>
               ) : (
                 <div className="admin-plan-sections">
@@ -404,47 +387,20 @@ export default function CoursePlanPanel({
                 </div>
               )}
             </div>
-            <div className="admin-plan-scope" data-testid="course-plan-required-modules">
-              <div className="admin-plan-scope__head">
-                <h4>Required modules</h4>
-                <p className="admin-section__hint">
-                  Foundation, default, and prompt-mandated modules stay required.
-                </p>
-              </div>
-              {requiredModules.length === 0 ? (
-                <p className="admin-section__hint">No required modules were selected.</p>
-              ) : (
-                <ul className="admin-scope-list">
-                  {requiredModules.map((item) => (
-                    <li key={item.moduleId} className="admin-scope-card">
-                      <div className="admin-scope-card__head">
-                        <strong>{item.title}</strong>
-                        <span className="pill pill-amber admin-scope-lock" data-testid="course-plan-required-badge">required</span>
-                      </div>
-                      <p>{item.category === 'foundations' ? 'Required foundation module.' : describeRequiredReason(item.reason)}</p>
-                      <div className="admin-scope-meta">
-                        <span>{item.category}</span>
-                        <span>{item.sections.length} sections</span>
-                        <span>{item.topics.length} topics</span>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+
           </>
         )}
           <div className="admin-plan-board__actions">
             {plan && (
               <p className="admin-section__hint">
-                Only the modules enabled by the plan appear above. Required modules remain below and stay on.
+                Only the modules enabled by the plan appear above. Required modules are marked in the main table.
               </p>
             )}
           </div>
 
           <button
             type="button"
-            className="ghost-btn admin-policy-confirm"
+            className="primary-btn admin-policy-confirm"
             disabled={saving || !plan || changedPreview.length === 0}
             onClick={() => { void applyPlan(); }}
           >

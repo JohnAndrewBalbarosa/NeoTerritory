@@ -1,0 +1,378 @@
+{
+  "moduleId": "creational-singleton",
+  "bank": [
+    {
+      "type": "mcq",
+      "taxonomy": "remembering",
+      "question": "Which of these is the primary purpose of the Singleton pattern?",
+      "options": [
+        "To allow multiple instances of a class",
+        "To ensure a class has only one instance and provides a global point of access",
+        "To separate object creation from its representation",
+        "To convert the interface of a class into another interface"
+      ],
+      "correctIndex": 1,
+      "explanation": "Singleton restricts instantiation to a single object."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "remembering",
+      "question": "Which access modifier is typically used for a Singleton's constructor?",
+      "options": ["public", "protected", "private", "friend"],
+      "correctIndex": 2,
+      "explanation": "A private constructor prevents external instantiation."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "remembering",
+      "question": "What is the standard name for the static method that returns the Singleton instance?",
+      "options": ["getInstance()", "createNew()", "build()", "alloc()"],
+      "correctIndex": 0,
+      "explanation": "getInstance() is the idiomatic name for the static accessor."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "remembering",
+      "question": "In C++, which keyword is often used to ensure a variable is initialized only once in a multi-threaded environment within a function?",
+      "options": ["volatile", "mutable", "static", "extern"],
+      "correctIndex": 2,
+      "explanation": "Static local variables (Meyer's Singleton) are thread-safe in C++11."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "remembering",
+      "question": "Which Gang of Four category does Singleton belong to?",
+      "options": ["Structural", "Behavioural", "Creational", "Idioms"],
+      "correctIndex": 2,
+      "explanation": "Singleton is a creational pattern as it deals with object creation."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "remembering",
+      "question": "True or False: A Singleton class should be able to be cloned easily.",
+      "options": ["True", "False"],
+      "correctIndex": 1,
+      "explanation": "Cloning should be disabled to maintain a single instance."
+    },
+
+    {
+      "type": "mcq",
+      "taxonomy": "understanding",
+      "question": "Why is the constructor made private in a Singleton?",
+      "options": [
+        "To improve runtime performance",
+        "To prevent other classes from using 'new' to create instances",
+        "Because static methods cannot access public constructors",
+        "To allow only subclasses to create instances"
+      ],
+      "correctIndex": 1,
+      "explanation": "Privatizing the constructor enforces the single-instance constraint."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "understanding",
+      "question": "What is the difference between a global variable and a Singleton?",
+      "options": [
+        "Global variables are always thread-safe, Singletons are not",
+        "A Singleton can be lazily initialized; a global variable is typically initialized at startup",
+        "Global variables are more memory efficient",
+        "There is no difference"
+      ],
+      "correctIndex": 1,
+      "explanation": "Singletons provide controlled access and lazy initialization."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "understanding",
+      "question": "In a Meyer's Singleton implementation, when exactly is the instance created?",
+      "options": [
+        "When the program starts",
+        "The first time the static accessor method is called",
+        "When the class is first defined",
+        "When the compiler finishes parsing the file"
+      ],
+      "correctIndex": 1,
+      "explanation": "Static local variables are initialized on the first pass through their definition."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "understanding",
+      "question": "Why is 'delete' often used with the copy constructor and assignment operator in a Singleton?",
+      "options": [
+        "To save memory",
+        "To prevent duplication of the unique instance",
+        "To allow the compiler to optimize the class",
+        "It is required by the C++ standard for all static classes"
+      ],
+      "correctIndex": 1,
+      "explanation": "Deleting copy operations prevents accidental duplication."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "understanding",
+      "question": "Which of these is a drawback of using Singleton?",
+      "options": [
+        "It makes unit testing difficult by introducing global state",
+        "It uses more memory than standard objects",
+        "It cannot be used with inheritance",
+        "It is too slow for real-time applications"
+      ],
+      "correctIndex": 0,
+      "explanation": "Global state in Singletons can lead to hidden dependencies and test interference."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "understanding",
+      "question": "How does the 'Double-Checked Locking' pattern relate to Singleton?",
+      "options": [
+        "It is a way to create two instances instead of one",
+        "It is an older technique for making Singleton thread-safe during lazy initialization",
+        "It is used to delete the Singleton instance",
+        "It is only used for Builder patterns"
+      ],
+      "correctIndex": 1,
+      "explanation": "Double-checked locking was once a common way to implement lazy thread-safe singletons."
+    },
+
+    {
+      "type": "identification",
+      "taxonomy": "applying",
+      "question": "Identify the necessary C++ components to implement this scenario.",
+      "scenario": "A system needs a centralized 'TelemetryManager' that collects logs from all components. You must ensure that only one manager exists and it is initialized only when first needed.",
+      "expectedTokens": ["static", "private", "getInstance", "TelemetryManager"]
+    },
+    {
+      "type": "identification",
+      "taxonomy": "applying",
+      "question": "What structural keywords would you use to prevent a Singleton from being copied?",
+      "scenario": "You are writing a 'DatabaseConnection' class and want to ensure no one can copy the object using 'DatabaseConnection backup = original;'.",
+      "expectedTokens": ["delete", "copy", "constructor"]
+    },
+    {
+      "type": "identification",
+      "taxonomy": "applying",
+      "question": "Fill in the missing parts of a Meyer's Singleton.",
+      "scenario": "static Logger& get() { ______ Logger instance; return instance; }",
+      "expectedTokens": ["static"]
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "applying",
+      "question": "You are designing a print spooler for an OS. Multiple apps send jobs, but only one manager should coordinate with the hardware. Which pattern fits?",
+      "options": ["Factory Method", "Singleton", "Adapter", "Observer"],
+      "correctIndex": 1,
+      "explanation": "A single coordinator (spooler) is a classic Singleton use case."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "applying",
+      "question": "If you have a config file that needs to be accessed by 50 different classes, how would Singleton help?",
+      "options": [
+        "It would create 50 copies of the config",
+        "It provides a single, shared source of truth for the config data",
+        "It prevents the config file from being edited",
+        "It makes the config file load faster"
+      ],
+      "correctIndex": 1,
+      "explanation": "Singleton centralizes shared state like configuration."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "applying",
+      "question": "When refactoring a legacy codebase full of global variables, why might you choose Singleton as an intermediate step?",
+      "options": [
+        "To keep using globals without change",
+        "To encapsulate the global state and control access to it",
+        "To make the code harder to read",
+        "Because Singletons are faster than globals"
+      ],
+      "correctIndex": 1,
+      "explanation": "Singleton encapsulates the 'global' into a class with controlled access."
+    },
+
+    {
+      "type": "identification",
+      "taxonomy": "analyzing",
+      "question": "Analyze the following code. What pattern is it TRYING to be, and what is missing?",
+      "scenario": "class App { public: App() {} static App& get() { static App a; return a; } };",
+      "expectedTokens": ["private", "constructor"]
+    },
+    {
+      "type": "identification",
+      "taxonomy": "analyzing",
+      "question": "Find the potential thread-safety issue tokens.",
+      "scenario": "Logger* get() { if (!inst) inst = new Logger(); return inst; }",
+      "expectedTokens": ["race", "condition", "mutex", "lock"]
+    },
+    {
+      "type": "identification",
+      "taxonomy": "analyzing",
+      "question": "Identify why this is NOT a Singleton.",
+      "scenario": "class Hub { public: static Hub instance; };",
+      "expectedTokens": ["global", "initialization", "order", "constructor"]
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "analyzing",
+      "question": "In the following snippet, what prevents inheritance-based duplication?\n\nclass S { private: S() = default; };",
+      "code": "class S { private: S() = default; };",
+      "options": [
+        "The default keyword",
+        "The private constructor",
+        "The class name is too short",
+        "Nothing prevents it"
+      ],
+      "correctIndex": 1,
+      "explanation": "A private constructor prevents subclasses from initializing the base part."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "analyzing",
+      "question": "Which of these lines is the 'terminator' or 'accessor' that triggers creation in this Meyer's Singleton?\n\nstatic S& get() { static S inst; return inst; }",
+      "code": "static S& get() { static S inst; return inst; }",
+      "options": [
+        "static S& get()",
+        "static S inst;",
+        "return inst;",
+        "The entire function"
+      ],
+      "correctIndex": 1,
+      "explanation": "The static local declaration is where the one-time initialization happens."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "analyzing",
+      "question": "Analyze the impact of using a Singleton for a Database connection in a high-concurrency web server.",
+      "options": [
+        "It will be very fast because there's only one connection",
+        "The single connection will become a bottleneck for all threads",
+        "It is the best way to scale a database",
+        "It will use more memory than a connection pool"
+      ],
+      "correctIndex": 1,
+      "explanation": "A single resource (Singleton) can become a point of contention in parallel systems."
+    },
+
+    {
+      "type": "mcq",
+      "taxonomy": "evaluating",
+      "question": "Evaluate this claim: 'Singleton is just a fancy name for a global variable.'",
+      "options": [
+        "True: they are functionally identical and share the same risks.",
+        "False: Singleton provides encapsulation, lazy initialization, and a namespace.",
+        "True: The C++ compiler treats them exactly the same way.",
+        "False: Globals are always thread-safe, Singletons never are."
+      ],
+      "correctIndex": 1,
+      "explanation": "Singleton offers structural and lifecycle advantages over raw globals."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "evaluating",
+      "question": "When would Dependency Injection be a BETTER choice than Singleton?",
+      "options": [
+        "Always, Singleton should never be used.",
+        "When you need to swap implementations for different environments (e.g., Mock vs Real).",
+        "When you want to increase coupling between classes.",
+        "When you only have one instance anyway."
+      ],
+      "correctIndex": 1,
+      "explanation": "DI allows for easier testing and lower coupling than hard-coded Singletons."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "evaluating",
+      "question": "Critique the use of Singleton for a 'MathUtils' class that only contains pure functions like squareRoot() and sin().",
+      "options": [
+        "Excellent choice: it ensures everyone uses the same math.",
+        "Poor choice: static methods on a non-instantiable class (or a namespace) are better as no state is held.",
+        "Excellent choice: it saves memory by not creating multiple MathUtils objects.",
+        "Poor choice: it will make the math calculations slower."
+      ],
+      "correctIndex": 1,
+      "explanation": "Stateless utility classes don't need the complexity of Singleton."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "evaluating",
+      "question": "Assess the 'Static Initialization Order Fiasco' risk when using a public static member as a Singleton vs a Meyer's Singleton.",
+      "options": [
+        "Public static members are safer.",
+        "Meyer's Singleton (static local) is safer as it guarantees initialization upon first use.",
+        "Both have the same risk.",
+        "C++ does not have an initialization order fiasco."
+      ],
+      "correctIndex": 1,
+      "explanation": "Meyer's Singleton avoids the fiasco by using local-static initialization timing."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "evaluating",
+      "question": "In a plugin-based architecture where modules are loaded/unloaded at runtime, what is a major risk of using Singletons in the main app?",
+      "options": [
+        "The Singleton instance might outlive the code that defined it if not handled carefully.",
+        "Plugins cannot see the main app's Singletons.",
+        "Singletons use too much CPU.",
+        "There is no risk."
+      ],
+      "correctIndex": 0,
+      "explanation": "Lifecycle management across dynamic boundaries is tricky with Singletons."
+    },
+    {
+      "type": "mcq",
+      "taxonomy": "evaluating",
+      "question": "Why might a 'Monostate' pattern be preferred over a Singleton in some C++ designs?",
+      "options": [
+        "Monostate is faster.",
+        "Monostate allows multiple instances but shares the state, making the pattern transparent to users.",
+        "Monostate uses less memory.",
+        "Monostate is a GoF pattern, Singleton is not."
+      ],
+      "correctIndex": 1,
+      "explanation": "Monostate hides the 'single-instance' nature from the client code."
+    },
+
+    {
+      "type": "studio",
+      "taxonomy": "creating",
+      "prompt": "Implement a basic Meyer's Singleton called 'ConfigurationManager'.",
+      "targetPatternSlug": "singleton",
+      "starterCode": "class ConfigurationManager {\npublic:\n  // Add static accessor and member methods\nprivate:\n  // Add necessary restrictions\n};"
+    },
+    {
+      "type": "studio",
+      "taxonomy": "creating",
+      "prompt": "Create a thread-safe Logger singleton using a private constructor and a static instance pointer.",
+      "targetPatternSlug": "singleton",
+      "starterCode": "#include <mutex>\nclass Logger {\npublic:\n  static Logger* getInstance();\nprivate:\n  Logger() = default;\n  static Logger* instance;\n  static std::mutex mtx;\n};"
+    },
+    {
+      "type": "studio",
+      "taxonomy": "creating",
+      "prompt": "Implement a Singleton 'SoundEngine' that specifically deletes the copy constructor and assignment operator.",
+      "targetPatternSlug": "singleton",
+      "starterCode": "class SoundEngine {\npublic:\n  static SoundEngine& get() {\n    static SoundEngine instance;\n    return instance;\n  }\n  // Disable copying here\nprivate:\n  SoundEngine() = default;\n};"
+    },
+    {
+      "type": "studio",
+      "taxonomy": "creating",
+      "prompt": "Refactor this global variable into a Singleton class named 'FileSystem'.",
+      "targetPatternSlug": "singleton",
+      "starterCode": "// Global: FileSystem* g_fs = new FileSystem();\nclass FileSystem {\n  // Implement Singleton here\n};"
+    },
+    {
+      "type": "studio",
+      "taxonomy": "creating",
+      "prompt": "Implement a Singleton 'SessionManager' that carries a private 'sessionId' string and a public 'getSessionId()' method.",
+      "targetPatternSlug": "singleton",
+      "starterCode": "#include <string>\nclass SessionManager {\n  // Implement Singleton with sessionId state\n};"
+    },
+    {
+      "type": "studio",
+      "taxonomy": "creating",
+      "prompt": "Implement a 'Database' singleton that uses a private inner 'Impl' class (PIMPL) to hide its connection details, combining two patterns.",
+      "targetPatternSlug": "singleton",
+      "starterCode": "#include <memory>\nclass Database {\npublic:\n  static Database& get();\nprivate:\n  Database();\n  struct Impl;\n  std::unique_ptr<Impl> pimpl_;\n};"
+    }
+  ]
+}

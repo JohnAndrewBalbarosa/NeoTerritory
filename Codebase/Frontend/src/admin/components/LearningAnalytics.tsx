@@ -12,6 +12,9 @@ import {
   findLearningModule,
   modulesInCategory,
   type LearningCategory,
+  isMcqQuestion,
+  isIdentificationQuestion,
+  isStudioQuestion,
 } from '../../data/learningModules';
 import { passRateBucket } from '../logic/passRateBucket';
 
@@ -20,12 +23,18 @@ import { passRateBucket } from '../logic/passRateBucket';
 function questionText(moduleId: string, qi: number): string {
   const mod = findLearningModule(moduleId);
   const q = mod?.theoreticalExam?.questions[qi];
-  return q ? q.question : `Q${qi + 1}`;
+  if (!q) return `Q${qi + 1}`;
+  if (isMcqQuestion(q) || isIdentificationQuestion(q)) return q.question;
+  if (isStudioQuestion(q)) return q.prompt;
+  return `Q${qi + 1}`;
 }
 function optionLabel(moduleId: string, qi: number, oi: number): string {
   const mod = findLearningModule(moduleId);
-  const opt = mod?.theoreticalExam?.questions[qi]?.options[oi];
-  return opt ?? `Option ${oi + 1}`;
+  const q = mod?.theoreticalExam?.questions[qi];
+  if (q && isMcqQuestion(q)) {
+    return q.options[oi] ?? `Option ${oi + 1}`;
+  }
+  return `Option ${oi + 1}`;
 }
 
 export default function LearningAnalytics(): JSX.Element {

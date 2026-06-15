@@ -127,7 +127,7 @@ export function seedLearningModulesIfEmpty(database: Database): void {
         @module_id, @category, @title, @eyebrow, @intro,
         @sections_json, @key_terms_json, @summary, @see_also_json,
         @theoretical_json, @practical_json,
-        1, 1, @sort_order, 1, datetime('now'), datetime('now')
+        @published, 1, @sort_order, 1, datetime('now'), datetime('now')
       )
     `);
 
@@ -146,6 +146,7 @@ export function seedLearningModulesIfEmpty(database: Database): void {
           see_also_json: JSON.stringify(r.seeAlso ?? []),
           theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
           practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
+          published: r.category === 'foundations' ? 1 : 0,
           sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         });
       }
@@ -169,7 +170,7 @@ export function seedLearningModulesIfEmpty(database: Database): void {
         see_also_json: r.seeAlso ?? [],
         theoretical_json: r.theoreticalExam ?? null,
         practical_json: r.practicalExam ?? null,
-        published: 1,
+        published: r.category === 'foundations' ? 1 : 0,
         auto_tag: 1,
         sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         is_seed: 1,
@@ -231,7 +232,7 @@ export function ensureSeedLearningModules(database: Database): void {
         @module_id, @category, @title, @eyebrow, @intro,
         @sections_json, @key_terms_json, @summary, @see_also_json,
         @theoretical_json, @practical_json,
-        1, 1, @sort_order, 1, datetime('now'), datetime('now')
+        @published, 1, @sort_order, 1, datetime('now'), datetime('now')
       )
     `);
 
@@ -249,6 +250,7 @@ export function ensureSeedLearningModules(database: Database): void {
           see_also_json: JSON.stringify(r.seeAlso ?? []),
           theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
           practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
+          published: r.category === 'foundations' ? 1 : 0,
           sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         });
       }
@@ -271,7 +273,7 @@ export function ensureSeedLearningModules(database: Database): void {
         see_also_json: r.seeAlso ?? [],
         theoretical_json: r.theoreticalExam ?? null,
         practical_json: r.practicalExam ?? null,
-        published: 1,
+        published: r.category === 'foundations' ? 1 : 0,
         auto_tag: 1,
         sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         is_seed: 1,

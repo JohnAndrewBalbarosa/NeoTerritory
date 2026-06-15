@@ -16,7 +16,12 @@ import type {
   AdminLearningRaw,
   LearningRawQuestionResult,
 } from '../../types/api';
-import { findLearningModule } from '../../data/learningModules';
+import {
+  findLearningModule,
+  isMcqQuestion,
+  isIdentificationQuestion,
+  isStudioQuestion,
+} from '../../data/learningModules';
 
 // ── Per-student summary ───────────────────────────────────────────────────────
 
@@ -160,16 +165,27 @@ export interface StudentDrilldownRow {
 }
 
 function questionTextFor(moduleId: string, qi: number): string {
-  return findLearningModule(moduleId)?.theoreticalExam?.questions[qi]?.question ?? `Q${qi + 1}`;
+  const q = findLearningModule(moduleId)?.theoreticalExam?.questions[qi];
+  if (!q) return `Q${qi + 1}`;
+  if (isMcqQuestion(q) || isIdentificationQuestion(q)) return q.question;
+  if (isStudioQuestion(q)) return q.prompt;
+  return `Q${qi + 1}`;
 }
 
 function optionTextFor(moduleId: string, qi: number, oi: number): string {
-  const opt = findLearningModule(moduleId)?.theoreticalExam?.questions[qi]?.options[oi];
-  return opt ?? `Option ${oi + 1}`;
+  const q = findLearningModule(moduleId)?.theoreticalExam?.questions[qi];
+  if (q && isMcqQuestion(q)) {
+    return q.options[oi] ?? `Option ${oi + 1}`;
+  }
+  return `Option ${oi + 1}`;
 }
 
 function correctIndexFor(moduleId: string, qi: number): number {
-  return findLearningModule(moduleId)?.theoreticalExam?.questions[qi]?.correctIndex ?? -1;
+  const q = findLearningModule(moduleId)?.theoreticalExam?.questions[qi];
+  if (q && isMcqQuestion(q)) {
+    return q.correctIndex;
+  }
+  return -1;
 }
 
 // All of one student's per-(module,question) results, joined to the catalog so

@@ -19,6 +19,12 @@
   --red: #f87171;
   --cyan: #22d3ee;
   --purple: #a78bfa;
+  --on-accent: #ffffff;
+  --on-green: #0b0c10;
+  --on-amber: #0b0c10;
+  --on-red: #ffffff;
+  --on-purple: #ffffff;
+  --on-cyan: #0b0c10;
   /* DevCon accent ramp — used by the Instructor charts (difficulty bars + the
      pass/fail donut). Kept as standalone tokens so the "DevCon vibe" reads the
      same across both themes. */
@@ -695,6 +701,7 @@ body{position:relative;}
 .admin-scope-meta{display:flex;flex-wrap:wrap;gap:8px;font-size:10px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-dim);}
 .admin-feature-row--preview.is-changed{border-style:dashed;}
 .admin-feature-row--preview{background:rgba(255,255,255,0.02);border-style:dashed;}
+:root[data-theme="light"] .admin-feature-row--preview{background:rgba(79,60,138,0.05);}
 .admin-feature-list--compact{max-height:280px;overflow:auto;padding-right:4px;}
 .admin-plan-board{display:flex;flex-direction:column;gap:12px;border:1px solid var(--border);border-radius:var(--radius-lg);background:var(--surface2);padding:16px;min-width:0;}
 .admin-plan-board__head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
@@ -817,6 +824,22 @@ body{position:relative;}
 .courses-row-actions{display:flex;gap:8px;justify-content:flex-end;white-space:nowrap;min-width:0;}
 .courses-row-lock{align-self:flex-start;}
 .courses-delete-btn:hover:not(:disabled){border-color:var(--red);color:var(--red);background:color-mix(in oklab, var(--red) 8%, transparent);}
+
+.courses-bulk-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 560px) {
+  .courses-bulk-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+}
 
 /* Editor modal — same overlay treatment as the log-delete modal but wider and
    scrollable for the long form. */

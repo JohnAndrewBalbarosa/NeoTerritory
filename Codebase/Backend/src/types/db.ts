@@ -3,7 +3,8 @@ export interface UserRow {
   username: string;
   email: string;
   password_hash: string;
-  role: 'admin' | 'user';
+  role: 'admin' | 'user' | 'guest';
+  created_via?: string;
   created_at: string;
 }
 

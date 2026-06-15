@@ -3,25 +3,20 @@
 > Commit + push cadence is owned by `CLAUDE.md` ("Commit + Push Cadence" section): every prompt with code or doc changes must end with `git commit` AND `git push` on the current branch. Codex inherits the rule through this file; do not duplicate it here.
 
 ## Primary Boundary
-Codex works on documentation architecture only unless Drew explicitly says to edit actual code.
+Codex works on both documentation architecture and actual code implementation.
 
-Default allowed scope:
+Allowed scope:
 - `docs/**`
+- `Codebase/**`
+- `tools/**`
 - `AGENTS.md`
 - `.codex/**`
 - `CLAUDE.md`
+- Build files, source files, header files
+- Frontend and backend runtime files
+- Test implementation files
 
-Default blocked scope:
-- `Codebase/**`
-- `tools/**`
-- build files
-- source files
-- header files
-- frontend runtime files
-- backend runtime files
-- test implementation files
-
-If a request is about architecture, flow, Mermaid diagrams, file structure, design-pattern logic, middleman design, migration planning, or implementation guidance, Codex must express the answer through Markdown documents under `docs/Codebase`.
+If a request is about architecture, flow, Mermaid diagrams, file structure, design-pattern logic, middleman design, migration planning, or implementation guidance, Codex must express the answer through Markdown documents under `docs/Codebase` AND implement the corresponding code changes in the `Codebase/` directory.
 
 ## Docs Are The Blueprint
 The `docs/Codebase` tree is the intended implementation blueprint. Folder names and Markdown file names should be treated as future code folder/file structure.
@@ -60,10 +55,10 @@ Entrypoint rule:
 - When a source subsystem sits directly under `docs/Codebase/Microservice/Modules/Source`, prefer a real entry file such as `main.cpp.md` as the first read
 - When a header subsystem sits directly under `docs/Codebase/Microservice/Modules/Header`, prefer a real entry file such as `main.hpp.md` as the first read
 
-## Implementation Handoff
-Claude or another implementation agent will implement actual code based on the docs. Codex should make the docs clear enough for that implementation agent to follow without guessing.
+## Implementation Responsibility
+Codex is responsible for implementing actual code based on its own documentation.
 
-Codex should document:
+Codex should document and then implement:
 - intended file and folder structure
 - ownership boundaries
 - shared logic
@@ -79,13 +74,15 @@ Do not document source line numbers as stable references:
 - prefer file paths, function names, folder ownership, and Mermaid flow boundaries instead
 - line numbers may be used only in temporary review comments, not in durable docs under `docs/Codebase`
 
-Codex should not implement:
-- C++ logic
-- JavaScript logic
+Codex is authorized to implement:
+- JavaScript/TypeScript logic
 - build scripts
 - generated runtime files
 - test code
-- source/header refactors
+
+Codex should not implement:
+- C++ logic
+- source/header refactors for C++
 
 ## Mermaid Rules
 Mermaid diagrams must use short phrases per node and show logical flow. If a process is detailed, split it into multiple small Mermaid blocks inside the same Markdown file.
@@ -109,12 +106,12 @@ When a flow is split into multiple Mermaid blocks:
 - add a short note explaining why that slice is separated from the next one
 - make the major purpose of the code visible either in the slice title, the quick summary, or the Mermaid node labels
 
-## If Code Changes Seem Needed
-Do not edit code. Instead:
+## If Code Changes Are Needed
+Codex should:
 1. Update the relevant docs under `docs/Codebase`.
-2. Add a clear implementation note.
-3. Add acceptance checks for Claude.
-4. Stop at the docs boundary.
+2. Implement the code changes directly in the `Codebase/` directory.
+3. Verify the changes using existing or new tests.
+4. Follow the commit + push cadence owned by `CLAUDE.md`.
 
 ## Rebuild Boundary
 Codex never invokes rebuild scripts (`scripts/rebuild.sh`, `start.sh rebuild`, or any of the legacy shims). If a doc change implies a rebuild is required for verification, say so in the doc and let Claude run it. The canonical rebuild surface is documented in `CLAUDE.md` under "Rebuild Decision Matrix" — link to that section instead of re-explaining flags here.

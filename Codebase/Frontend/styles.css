@@ -23,6 +23,12 @@
   --red: #f87171;
   --cyan: #22d3ee;
   --purple: #a78bfa;
+  --on-accent: #ffffff;
+  --on-green: #0b0c10;
+  --on-amber: #0b0c10;
+  --on-red: #ffffff;
+  --on-purple: #ffffff;
+  --on-cyan: #0b0c10;
   --shadow-sm: 0 2px 8px rgba(0,0,0,0.4);
   --shadow-md: 0 4px 20px rgba(0,0,0,0.5);
   --shadow-lg: 0 8px 40px rgba(0,0,0,0.6);

@@ -10,6 +10,7 @@
 import { useMemo, useState } from 'react';
 import { createLearningModule, updateLearningModule } from '../../api/client';
 import type { AdminLearningModule } from '../../types/api';
+import { isMcqQuestion } from '../../data/learningModules';
 import type {
   LearningCategory,
   LearningModuleDTO,
@@ -157,13 +158,15 @@ function toDraft(source: AdminLearningModule | null): CourseDraft {
       note: s.note ?? '',
     })),
     hasTheoretical: Boolean(theoretical),
-    questions: (theoretical?.questions ?? []).map((q) => ({
-      key: nextKey('q'),
-      question: q.question,
-      options: [...q.options],
-      correctIndex: q.correctIndex,
-      explanation: q.explanation ?? '',
-    })),
+    questions: (theoretical?.questions ?? [])
+      .filter(isMcqQuestion)
+      .map((q) => ({
+        key: nextKey('q'),
+        question: q.question,
+        options: [...q.options],
+        correctIndex: q.correctIndex,
+        explanation: q.explanation ?? '',
+      })),
     hasPractical: Boolean(practical),
     patternSlug: practical?.patternSlug ?? '',
     patternName: practical?.patternName ?? '',
@@ -278,6 +281,7 @@ function toPayload(
       const correctText = q.options[q.correctIndex]?.trim() ?? '';
       const correctIndex = Math.max(0, options.indexOf(correctText));
       const item: ExamQuestion = {
+        type: 'mcq',
         question: q.question.trim(),
         options,
         correctIndex,

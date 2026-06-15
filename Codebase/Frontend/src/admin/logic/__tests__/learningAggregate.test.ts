@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { AdminLearningRaw } from '../../../types/api';
-import { findLearningModule } from '../../../data/learningModules';
+import { findLearningModule, isMcqQuestion } from '../../../data/learningModules';
 import {
   perStudentRows,
   moduleDifficulty,
@@ -116,7 +116,10 @@ describe('moduleDifficulty', () => {
 describe('studentDrilldown', () => {
   it('joins a student answer to catalog question + option text', () => {
     // Arrange — answer MOD_A Q0 with the wrong option (catalog correctIndex is 1).
-    const correctIndex = findLearningModule(MOD_A)?.theoreticalExam?.questions[0]?.correctIndex ?? -1;
+    const q0 = findLearningModule(MOD_A)?.theoreticalExam?.questions[0];
+    if (!q0 || !isMcqQuestion(q0)) throw new Error('MOD_A Q0 should be an MCQ');
+
+    const correctIndex = q0.correctIndex;
     const wrongIndex = correctIndex === 0 ? 2 : 0;
     const raw: AdminLearningRaw = {
       ...emptyRaw(),
@@ -127,13 +130,12 @@ describe('studentDrilldown', () => {
 
     // Act
     const [row] = studentDrilldown(raw, 1);
-    const q0 = findLearningModule(MOD_A)?.theoreticalExam?.questions[0];
 
     // Assert
-    expect(row.questionText).toBe(q0?.question);
-    expect(row.selectedText).toBe(q0?.options[wrongIndex]);
+    expect(row.questionText).toBe(q0.question);
+    expect(row.selectedText).toBe(q0.options[wrongIndex]);
     expect(row.correctIndex).toBe(correctIndex);
-    expect(row.correctText).toBe(q0?.options[correctIndex]);
+    expect(row.correctText).toBe(q0.options[correctIndex]);
     expect(row.isCorrect).toBe(false);
     expect(row.firstAttemptCorrect).toBe(false);
     expect(row.attempts).toBe(2);

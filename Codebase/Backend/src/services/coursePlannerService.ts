@@ -1019,6 +1019,8 @@ const SYSTEM_PROMPT = [
   '- Keep strings concise. Keep reason fields short.',
   '- Keep matchedSections and matchedTopics small. Prefer at most 3 sections and at most 8 topics per module.',
   '- Explain the pattern in business terms when possible: the reason should mention the operational pressure, not the textbook label.',
+  '- Do not select the "Adapter" pattern merely because the prompt mentions "integrations", "APIs", or "connecting systems". Only select Adapter if the brief explicitly describes incompatible interfaces or a need for a translation layer.',
+  '- If you select the Adapter pattern, your "reason" MUST include at least one of these exact words: "translation", "compatibility", "wrong shape", or "legacy".',
   '',
   'Pattern catalog:',
   buildPatternCatalogPrompt(),

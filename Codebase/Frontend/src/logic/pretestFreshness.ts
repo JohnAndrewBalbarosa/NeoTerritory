@@ -2,7 +2,10 @@ import type { LearningAssessmentsResponse } from '../types/api';
 
 function toTime(value: string | undefined): number | null {
   if (!value) return null;
-  const time = new Date(value).getTime();
+  // SQLite datetime('now') returns 'YYYY-MM-DD HH:MM:SS'. JS Date()
+  // parses that as local time unless it has a 'Z' or offset. Force UTC.
+  const utcValue = value.includes('T') || value.includes('Z') ? value : value.replace(' ', 'T') + 'Z';
+  const time = new Date(utcValue).getTime();
   return Number.isFinite(time) ? time : null;
 }
 

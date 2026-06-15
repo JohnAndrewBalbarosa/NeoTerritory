@@ -585,4 +585,75 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
   }
 });
 
+// ── Bulk updates (D92 CMS control) ─────────────────────────────────────────
+// PATCH /api/learning/bulk (guarded by jwtAuth): update the 'published'
+// status of multiple modules in a single transaction. foundation modules
+// cannot be unpublished — unpublishing one throws a 400 to abort the batch.
+router.patch('/bulk', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    const body = (req.body ?? {}) as { updates?: unknown };
+    if (!Array.isArray(body.updates)) {
+      res.status(400).json({ error: 'updates array required' });
+      return;
+    }
+
+    // Filter and sanitize updates. Cap count to MAX_MODULES.
+    const updates = (body.updates as any[])
+      .filter((u): u is { id: string; published: boolean } =>
+        u && typeof u === 'object' &&
+        typeof u.id === 'string' && u.id.length > 0 && u.id.length <= MAX_ID_LEN &&
+        typeof u.published === 'boolean',
+      )
+      .slice(0, MAX_MODULES);
+
+    if (updates.length === 0) {
+      res.status(400).json({ error: 'valid updates required' });
+      return;
+    }
+
+    const tx = db.transaction((rows: { id: string; published: boolean }[]) => {
+      let count = 0;
+      const nowIso = new Date().toISOString();
+
+      for (const update of rows) {
+        // Business logic: foundation modules must stay published.
+        if (update.published === false) {
+          const row = db.prepare('SELECT category FROM learning_modules WHERE module_id = ?').get(update.id) as
+            | { category: string }
+            | undefined;
+          if (row?.category === 'foundations') {
+            throw new Error(`Cannot unpublish foundation module: ${update.id}`);
+          }
+        }
+
+        const info = db.prepare(
+          `UPDATE learning_modules
+           SET published = ?, updated_at = datetime('now')
+           WHERE module_id = ?`,
+        ).run(update.published ? 1 : 0, update.id);
+
+        if (info.changes > 0) {
+          count += info.changes;
+          // Mirror to Supabase (best-effort partial update)
+          mirrorRow('learning_modules', {
+            module_id: update.id,
+            published: update.published ? 1 : 0,
+            updated_at: nowIso,
+          });
+        }
+      }
+      return count;
+    });
+
+    const updatedCount = tx(updates);
+    res.json({ ok: true, updatedCount });
+  } catch (err) {
+    if (err instanceof Error && err.message.includes('Cannot unpublish foundation module')) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    next(err);
+  }
+});
+
 export default router;

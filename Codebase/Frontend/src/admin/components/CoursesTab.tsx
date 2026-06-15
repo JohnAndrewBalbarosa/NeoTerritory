@@ -3,6 +3,7 @@ import {
   fetchAdminLearningModules,
   patchLearningModule,
   deleteLearningModule,
+  bulkUpdateLearningModules,
 } from '../../api/client';
 import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
 import type { LearningCategory } from '../../data/learningModules';
@@ -27,9 +28,10 @@ function categoryRank(category: LearningCategory): number {
 
 export default function CoursesTab() {
   const [modules, setModules] = useState<ReadonlyArray<AdminLearningModule>>([]);
+  const [localPublished, setLocalPublished] = useState<Record<string, boolean>>({});
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savingId, setSavingId] = useState<string | null>(null);
+  const [isSavingBulk, setIsSavingBulk] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [editor, setEditor] = useState<EditorState>(null);
   const [previewPlan, setPreviewPlan] = useState<AdminCoursePlan | null>(null);
@@ -38,6 +40,12 @@ export default function CoursesTab() {
     try {
       const list = await fetchAdminLearningModules();
       setModules(list);
+      // Initialize local toggles from the source of truth
+      const toggles: Record<string, boolean> = {};
+      for (const m of list) {
+        toggles[m.id] = m.published;
+      }
+      setLocalPublished(toggles);
       setError(null);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to load courses');
@@ -76,20 +84,35 @@ export default function CoursesTab() {
     setModules((prev) => prev.map((m) => (m.id === id ? { ...m, ...next } : m)));
   }
 
-  async function togglePublished(module: AdminLearningModule, nextValue: boolean): Promise<void> {
-    if (savingId) return;
-    setSavingId(module.id);
+  const hasPendingChanges = useMemo(() => {
+    return modules.some((m) => localPublished[m.id] !== m.published);
+  }, [modules, localPublished]);
+
+  function togglePublished(module: AdminLearningModule, nextValue: boolean): void {
+    setLocalPublished((prev) => ({ ...prev, [module.id]: nextValue }));
+  }
+
+  async function saveBulk(): Promise<void> {
+    if (isSavingBulk) return;
+    setIsSavingBulk(true);
     setError(null);
-    const snapshot = modules;
-    applyUpdate(module.id, { published: nextValue });
+
+    const updates = modules
+      .filter((m) => localPublished[m.id] !== m.published)
+      .map((m) => ({ id: m.id, published: localPublished[m.id] }));
+
+    if (updates.length === 0) {
+      setIsSavingBulk(false);
+      return;
+    }
+
     try {
-      const res = await patchLearningModule(module.id, { published: nextValue });
-      applyUpdate(module.id, { published: res.published, sortOrder: res.sortOrder });
+      await bulkUpdateLearningModules(updates);
+      await reload();
     } catch (err: unknown) {
-      setModules(snapshot);
-      setError(err instanceof Error ? err.message : 'Toggle failed');
+      setError(err instanceof Error ? err.message : 'Bulk update failed');
     } finally {
-      setSavingId(null);
+      setIsSavingBulk(false);
     }
   }
 
@@ -190,14 +213,17 @@ export default function CoursesTab() {
             <tbody className="runs-disabled">
               {sorted.map((m) => {
                 const rowState = switchboardById.get(m.id);
-                const effectiveOn = rowState?.effectivePublished ?? m.published;
-                const currentOn = rowState?.currentPublished ?? m.published;
-                const rowChanged = rowState ? rowState.currentPublished !== rowState.effectivePublished : false;
+                const effectiveOn = localPublished[m.id] ?? m.published;
+                const currentOn = m.published;
+                const rowChanged = effectiveOn !== currentOn;
                 const rowLocked = Boolean(
                   rowState?.protectedBaseline || m.category === 'foundations' || requiredPreviewIds.has(m.id),
                 );
                 const rowBusy = busyId === m.id;
-                const rowSaving = savingId === m.id;
+
+                const levels = new Set((m.theoreticalExam?.questions ?? []).map(q => q.taxonomy?.toLowerCase()));
+                const incompleteBank = levels.size < 6;
+
                 return (
                   <tr key={m.id} data-testid={`courses-row-${m.id}`}>
                     <td>
@@ -205,6 +231,13 @@ export default function CoursesTab() {
                         <strong>{m.title}</strong>
                         <code className="courses-cell-id">{m.id}</code>
                       </div>
+                      {incompleteBank && (
+                        <div className="courses-cell-health">
+                          <span className="pill pill-amber" title="This module is missing Bloom levels. The pre-test will use randomized fallback questions for missing levels.">
+                            ⚠️ Incomplete Bank
+                          </span>
+                        </div>
+                      )}
                     </td>
                     <td>
                       <span className="pill courses-cat-pill">{m.category}</span>
@@ -213,17 +246,17 @@ export default function CoursesTab() {
                       <button
                         type="button"
                         className={`admin-feature-row__toggle courses-toggle${effectiveOn ? ' is-on' : ''}${rowChanged ? ' is-preview' : ''}`}
-                        onClick={() => togglePublished(m, !m.published)}
-                        disabled={rowSaving || rowLocked}
+                        onClick={() => togglePublished(m, !effectiveOn)}
+                        disabled={isSavingBulk || rowLocked}
                         aria-pressed={effectiveOn}
                         title={rowLocked
                           ? 'Required modules stay on for the learning path.'
                           : (rowChanged
-                            ? `Current: ${currentOn ? 'On' : 'Off'} · AI preview: ${effectiveOn ? 'On' : 'Off'}`
+                            ? `Current: ${currentOn ? 'On' : 'Off'} · Local: ${effectiveOn ? 'On' : 'Off'}`
                             : undefined)}
                         data-testid={`courses-publish-${m.id}`}
                       >
-                        {rowSaving ? 'Saving...' : effectiveOn ? 'On' : 'Off'}
+                        {effectiveOn ? 'On' : 'Off'}
                       </button>
                       {rowLocked && (
                         <span className="pill pill-amber courses-row-lock" data-testid="courses-row-required-badge">
@@ -265,6 +298,23 @@ export default function CoursesTab() {
               })}
             </tbody>
           </table>
+
+          <div className="courses-bulk-actions">
+            <button
+              type="button"
+              className="primary-btn"
+              onClick={saveBulk}
+              disabled={!hasPendingChanges || isSavingBulk}
+              data-testid="courses-save-bulk"
+            >
+              {isSavingBulk ? 'Saving Changes...' : 'Save Visibility Changes'}
+            </button>
+            {hasPendingChanges && !isSavingBulk && (
+              <p className="admin-section__hint">
+                You have pending visibility changes. Click Save to apply them.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
