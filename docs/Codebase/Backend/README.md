@@ -46,6 +46,6 @@ These documents explain the local implementation by covering Declares backend sc
 - package.json.md : Declares backend scripts and runtime dependencies.
 
 ## Reading Hint
-- Read `src/routes/transform.js.md`, then `src/controllers/transformController.js.md`, then `src/services/classDeclarationAnalysisService.js.md` and `src/services/aiDocumentationService.js.md`.
+- Read `src/routes/transform.js.md`, then `src/controllers/transformController.js.md`, then `src/services/classDeclarationAnalysisService.js.md` and `src/services/aiDocumentationService.ts.md`.
 - For the tailored project-to-learning loop, start with `ProjectLearningOrchestration/README.md`.
 

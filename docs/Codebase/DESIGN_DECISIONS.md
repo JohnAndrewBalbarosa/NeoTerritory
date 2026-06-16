@@ -457,7 +457,7 @@ Backing this with schema-level guarantees:
 **True Negative metric**: the `/api/admin/stats/f1-metrics` endpoint now returns `overall.tn` — the count of manual review decisions where the user said "no pattern here" AND the system also detected nothing. Per-pattern TN is intentionally NOT computed because every line where neither side mentions pattern X is a TN for X, which collapses to "every line in the corpus" and carries no information. The admin Complexity tab shows TN in the Overall row only; per-pattern rows render `—`.
 
 ## D37 — AI auto-documentation pipeline (workshop-graduate persona, chunked, fallback)
-The microservice owns pattern detection and accuracy scoring; AI is **not** added to that path. AI is used **only** for auto-documentation of the already-tagged classes. The earlier, simpler spec at `docs/Codebase/Backend/src/services/aiDocumentationService.js.md` is now extended with the rules below; that file is the canonical contract for the request/response shape.
+The microservice owns pattern detection and accuracy scoring; AI is **not** added to that path. AI is used **only** for auto-documentation of the already-tagged classes. The earlier, simpler spec at `docs/Codebase/Backend/src/services/aiDocumentationService.ts.md` is now extended with the rules below; that file is the canonical contract for the request/response shape.
 
 **Trigger**: explicit user action only. A "Generate documentation" button on the studio fires `POST /api/runs/:runId/document`. No auto-fire on `/api/analyze` completion. While a job is running, all download buttons in the studio MUST be disabled and replaced with a "Waiting for AI to respond…" indicator.
 

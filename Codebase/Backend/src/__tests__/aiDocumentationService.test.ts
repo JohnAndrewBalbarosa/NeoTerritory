@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import {
   buildAiPayload,
   normalizeAiResult,
+  probeProviderReachability,
 } from '../services/aiDocumentationService';
 
 // Pure-function coverage for the AI documentation envelope. These two
@@ -10,6 +11,48 @@ import {
 // calls out as the AI-pipeline integration surface. We do NOT call out
 // to Anthropic here: the network path is exercised separately by the
 // post-deploy smoke job (Phase E).
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('aiDocumentationService — provider reachability probe', () => {
+  it('checks Gemini with the default model when the admin leaves model blank', async () => {
+    const fetchMock = vi.fn(async (_url: string | URL | Request) => ({
+      ok: true,
+      text: async () => '',
+    }));
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await probeProviderReachability({
+      provider: 'gemini',
+      apiKey: 'test-key',
+      model: '',
+    });
+
+    expect(result).toEqual({ ok: true, provider: 'gemini', model: 'gemini-2.5-flash' });
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain('/gemini-2.5-flash:generateContent?');
+  });
+
+  it('returns a failure reason when Anthropic rejects the probe', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => ({
+      ok: false,
+      status: 401,
+      text: async () => 'invalid api key',
+    })));
+
+    const result = await probeProviderReachability({
+      provider: 'anthropic',
+      apiKey: 'bad-key',
+      model: 'claude-sonnet-4-6',
+    });
+
+    expect(result.ok).toBe(false);
+    expect(result.provider).toBe('anthropic');
+    expect(result.model).toBe('claude-sonnet-4-6');
+    expect(result.error).toContain('anthropic_http_401');
+  });
+});
 
 describe('aiDocumentationService — pure envelope shape', () => {
   describe('buildAiPayload', () => {

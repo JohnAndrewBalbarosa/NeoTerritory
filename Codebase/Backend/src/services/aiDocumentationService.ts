@@ -381,6 +381,83 @@ async function callGemini(apiKey: string, model: string, payload: AiPayload): Pr
 // runtime AI config without redeploying.
 export type Provider = 'gemini' | 'anthropic';
 export interface ProviderChoice { provider: Provider; apiKey: string; model: string }
+export interface ProviderProbeResult {
+  ok: boolean;
+  provider: Provider;
+  model: string;
+  error?: string;
+}
+
+function defaultModelForProvider(provider: Provider): string {
+  return provider === 'gemini' ? DEFAULT_GEMINI_MODEL : DEFAULT_ANTHROPIC_MODEL;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function probeProviderReachability(choice: ProviderChoice): Promise<ProviderProbeResult> {
+  const model = choice.model || defaultModelForProvider(choice.provider);
+  try {
+    if (choice.provider === 'gemini') {
+      const url = `${GEMINI_API_BASE}/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(choice.apiKey)}`;
+      const response = await fetchWithTimeout(url, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: 'Reply with exactly OK.' }] }],
+          generationConfig: { maxOutputTokens: 8, temperature: 0 },
+        }),
+      }, 15000);
+      if (response.ok) return { ok: true, provider: choice.provider, model };
+      const text = await response.text().catch(() => '');
+      return {
+        ok: false,
+        provider: choice.provider,
+        model,
+        error: `gemini_http_${response.status}: ${text.slice(0, 300)}`,
+      };
+    }
+
+    const response = await fetchWithTimeout(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': choice.apiKey,
+        'anthropic-version': ANTHROPIC_VERSION,
+      },
+      body: JSON.stringify({
+        model,
+        max_tokens: 8,
+        messages: [{ role: 'user', content: 'Reply with exactly OK.' }],
+      }),
+    }, 15000);
+    if (response.ok) return { ok: true, provider: choice.provider, model };
+    const text = await response.text().catch(() => '');
+    return {
+      ok: false,
+      provider: choice.provider,
+      model,
+      error: `anthropic_http_${response.status}: ${text.slice(0, 300)}`,
+    };
+  } catch (err: unknown) {
+    const name = err && typeof err === 'object' ? (err as { name?: string }).name : '';
+    const message = err instanceof Error ? err.message : String(err);
+    return {
+      ok: false,
+      provider: choice.provider,
+      model,
+      error: name === 'AbortError' ? `${choice.provider}_timeout` : message.slice(0, 300),
+    };
+  }
+}
+
 export function pickProvider(): ProviderChoice | null {
   // 1. DB-backed admin config takes precedence. Only valid providers
   // with a non-empty decrypted key are honoured here.

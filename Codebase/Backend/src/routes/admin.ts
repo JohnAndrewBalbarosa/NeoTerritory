@@ -31,12 +31,14 @@ import {
 import { getAiSampleMonitor } from '../services/aiSample/aiSampleService';
 import {
   getAiConfigSnapshot,
+  getAiConfigSecret,
   saveAiConfig,
   clearAiConfig,
   type AiProvider,
 } from '../db/aiConfig';
 import { aggregateQuestionResults, type RawResultRow } from '../services/learningQuestionStats';
 import { generateCoursePlan } from '../services/coursePlannerService';
+import { probeProviderReachability, type Provider } from '../services/aiDocumentationService';
 
 // Pre-hashed bcrypt of the log-delete password. Override via LOG_DELETE_HASH env var.
 const LOG_DELETE_HASH = process.env.LOG_DELETE_HASH
@@ -184,7 +186,7 @@ interface AiConfigBody {
   apiKey?: string | null;
 }
 
-router.put('/ai-config', (req: Request<unknown, unknown, AiConfigBody>, res: Response, next: NextFunction) => {
+router.put('/ai-config', async (req: Request<unknown, unknown, AiConfigBody>, res: Response, next: NextFunction) => {
   try {
     const body = req.body || {};
     const providerRaw = (body.provider || '').toLowerCase();
@@ -209,17 +211,38 @@ router.put('/ai-config', (req: Request<unknown, unknown, AiConfigBody>, res: Res
       res.json(getAiConfigSnapshot());
       return;
     }
-    // apiKey is optional only if the existing row already has one; saving
-    // a brand-new row without a key is a validation error.
-    const existing = getAiConfigSnapshot();
-    if ((body.apiKey === undefined || body.apiKey === null) && !existing.hasKey) {
+    // apiKey is optional only if the existing row for the same provider
+    // already has one; saving a brand-new row without a key is a validation
+    // error. Avoid silently reusing a Gemini key for Anthropic or vice versa.
+    const existingSecret = getAiConfigSecret();
+    const typedApiKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
+    const effectiveApiKey = typedApiKey || (
+      existingSecret?.provider === provider ? existingSecret.apiKey : ''
+    );
+    if (!effectiveApiKey) {
       res.status(400).json({ error: 'apiKey is required when no key is currently configured' });
       return;
     }
+
+    const probe = await probeProviderReachability({
+      provider: provider as Provider,
+      apiKey: effectiveApiKey,
+      model,
+    });
+    if (!probe.ok) {
+      res.status(502).json({
+        error: 'AI provider did not respond to the configuration test',
+        provider,
+        model,
+        detail: probe.error ?? 'provider probe failed',
+      });
+      return;
+    }
+
     const snap = saveAiConfig({
       provider,
       model,
-      apiKey: body.apiKey === undefined ? null : body.apiKey,
+      apiKey: typedApiKey ? typedApiKey : null,
       updatedBy: req.user?.username ?? null,
     });
     logAudit({

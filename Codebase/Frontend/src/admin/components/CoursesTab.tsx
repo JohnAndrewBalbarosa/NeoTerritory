@@ -6,7 +6,11 @@ import {
   bulkUpdateLearningModules,
 } from '../../api/client';
 import type { AdminCoursePlan, AdminLearningModule } from '../../types/api';
-import type { LearningCategory } from '../../data/learningModules';
+import {
+  BLOOM_TAXONOMIES,
+  normalizeLearningModule,
+  type LearningCategory,
+} from '../../data/learningModules';
 import CoursePlanPanel from './CoursePlanPanel';
 import CourseEditor from './CourseEditor';
 import { buildModuleSwitchboard } from '../../logic/moduleSwitchboard';
@@ -26,6 +30,17 @@ function categoryRank(category: LearningCategory): number {
   return idx === -1 ? CATEGORY_ORDER.length : idx;
 }
 
+function normalizeAdminModule(module: AdminLearningModule): AdminLearningModule {
+  return { ...module, ...normalizeLearningModule(module) };
+}
+
+export function hasIncompleteTheoreticalBank(module: AdminLearningModule): boolean {
+  if (!module.theoreticalExam) return true;
+  const normalized = normalizeLearningModule(module);
+  const levels = new Set((normalized.theoreticalExam?.questions ?? []).map((q) => q.taxonomy));
+  return BLOOM_TAXONOMIES.some((taxonomy) => !levels.has(taxonomy));
+}
+
 export default function CoursesTab() {
   const [modules, setModules] = useState<ReadonlyArray<AdminLearningModule>>([]);
   const [localPublished, setLocalPublished] = useState<Record<string, boolean>>({});
@@ -38,7 +53,7 @@ export default function CoursesTab() {
 
   const reload = useCallback(async (): Promise<void> => {
     try {
-      const list = await fetchAdminLearningModules();
+      const list = (await fetchAdminLearningModules()).map(normalizeAdminModule);
       setModules(list);
       // Initialize local toggles from the source of truth
       const toggles: Record<string, boolean> = {};
@@ -221,8 +236,7 @@ export default function CoursesTab() {
                 );
                 const rowBusy = busyId === m.id;
 
-                const levels = new Set((m.theoreticalExam?.questions ?? []).map(q => q.taxonomy?.toLowerCase()));
-                const incompleteBank = levels.size < 6;
+                const incompleteBank = hasIncompleteTheoreticalBank(m);
 
                 return (
                   <tr key={m.id} data-testid={`courses-row-${m.id}`}>

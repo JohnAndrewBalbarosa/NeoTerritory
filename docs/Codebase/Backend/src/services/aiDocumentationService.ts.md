@@ -1,12 +1,12 @@
-# aiDocumentationService.js
+# aiDocumentationService.ts
 
-- Source: `Backend/src/services/aiDocumentationService.js`
-- Kind: JavaScript service
+- Source: `Backend/src/services/aiDocumentationService.ts`
+- Kind: TypeScript service
 
 ## Story
 ### What Happens Here
 
-This service owns the backend AI documentation handoff. It receives detected design-pattern evidence, documentation targets, unit-test targets, and the exact code excerpts to document. It then builds the AI request and normalizes the generated documentation result.
+This service owns the backend AI documentation handoff. It receives detected design-pattern evidence, documentation targets, unit-test targets, and the exact code excerpts to document. It then builds the AI request, probes provider reachability for admin configuration saves, and normalizes generated documentation results.
 
 The AI must be called from the backend, not from the frontend, so API keys, model settings, prompt templates, and retries remain server-side.
 
@@ -96,12 +96,20 @@ AI failure must not erase successful lexical, subtree, or cross-reference analys
 - `aiDocumentation.error`: short backend-safe reason.
 - documentation and unit-test targets unchanged.
 
+## Provider Probe
+
+`probeProviderReachability(...)` performs a short provider call with the selected provider, model, and key. Admin configuration saves use this helper before storing a key so `configured` means the provider responded, not only that a string was saved.
+
+The probe uses the same default model fallback as runtime AI calls when the admin leaves the model blank.
+
 ## Acceptance Checks
 
 - AI input includes the actual code excerpts to document.
 - AI input uses detected pattern evidence, not user-selected source/target patterns.
 - AI output is grouped by `targetId`.
 - AI failure still returns documentation and unit-test target metadata.
+- Admin AI configuration rejects unreachable provider credentials before persisting them.
+- Blank model probes use the runtime default for the selected provider.
 
 ---
 

@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This router owns the admin dashboard endpoints for analytics, saved runs, settings, exports, AI course-plan preview, and learning module administration. The complexity endpoint reads the saved-run corpus from `analysis_runs` and turns each persisted run into a regression point.
+This router owns the admin dashboard endpoints for analytics, saved runs, settings, exports, AI provider configuration, AI course-plan preview, and learning module administration. The complexity endpoint reads the saved-run corpus from `analysis_runs` and turns each persisted run into a regression point.
 
 The backend does not invent a second persistence path for complexity data. The saved run is the source of truth, and Supabase only mirrors that same row through the existing row-mirror path.
 
@@ -69,6 +69,30 @@ flowchart TD
     D0 -->|yes| N2 --> N3 --> End
 ```
 
+## AI Config Flow
+
+```mermaid
+flowchart TD
+    Start["Admin saves AI config"]
+    N0["Validate provider"]
+    N1["Resolve key"]
+    N2["Probe provider"]
+    D0{"Provider responds?"}
+    N3["Store encrypted key"]
+    N4["Reject save"]
+    End["Return snapshot"]
+    Start --> N0 --> N1 --> N2 --> D0
+    D0 -->|yes| N3 --> End
+    D0 -->|no| N4 --> End
+```
+
+## AI Config Route
+
+- `GET /api/admin/ai-config` returns provider, model, key presence, and update metadata, never the plaintext key.
+- `PUT /api/admin/ai-config` validates provider/model/key input, probes the selected provider, and only persists after the probe succeeds.
+- `provider: "none"` clears the DB row and re-enables environment-variable fallback.
+- A blank key keeps the existing encrypted key only when it belongs to the same selected provider.
+
 ## Learning CMS Routes
 
 - `GET /api/admin/learning/modules` returns all modules, including drafts, for the admin list.
@@ -102,6 +126,7 @@ The complexity payload includes:
 - The payload carries per-run metadata so the frontend can export row-level data.
 - The existing Supabase mirror remains best-effort and unchanged for this flow.
 - No filesystem persistence is added for complexity data.
+- AI provider config saves reject unreachable provider credentials before storing them.
 - Learning module create/update/patch/delete set `course_updated_at`.
 - Applied AI course plans reset learners through module patches.
 - AI course-plan preview alone does not set `course_updated_at`.

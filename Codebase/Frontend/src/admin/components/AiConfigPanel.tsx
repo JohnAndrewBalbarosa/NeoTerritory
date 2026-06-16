@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
+  fetchHealth,
   fetchAdminAiConfig,
   saveAdminAiConfig,
   type AdminAiConfig,
   type AdminAiProvider,
 } from '../../api/client';
+import { useAppStore } from '../../store/appState';
 
 // Admin form for the runtime AI provider configuration. Persists to the
 // `ai_config` SQLite row (API key encrypted at rest, see db/aiConfig.ts).
@@ -19,6 +21,7 @@ const PROVIDER_OPTIONS: Array<{ value: AdminAiProvider; label: string; defaultMo
 ];
 
 export default function AiConfigPanel() {
+  const setAiConfigured = useAppStore((s) => s.setAiConfigured);
   const [snap, setSnap] = useState<AdminAiConfig | null>(null);
   const [provider, setProvider] = useState<AdminAiProvider>('none');
   const [model, setModel] = useState<string>('');
@@ -59,10 +62,16 @@ export default function AiConfigPanel() {
         ...(apiKey.length > 0 ? { apiKey } : {}),
       });
       applySnapshot(next);
+      setAiConfigured(provider !== 'none' && next.hasKey);
+      void fetchHealth()
+        .then((health) => setAiConfigured(health.aiProviderConfigured))
+        .catch(() => {
+          // Save already performed a provider probe; keep the immediate state.
+        });
       setSuccess(
         provider === 'none'
           ? 'AI disabled. Environment-variable fallback re-engaged.'
-          : `Saved. ${next.hasKey ? 'Key stored (encrypted).' : 'No key set yet.'}`,
+          : `Provider test passed. ${next.hasKey ? 'Key stored (encrypted).' : 'No key set yet.'}`,
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'Save failed';

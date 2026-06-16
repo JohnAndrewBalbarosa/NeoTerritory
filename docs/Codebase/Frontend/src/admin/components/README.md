@@ -8,20 +8,21 @@ Admin-side panels that power the shell-level navigation, feature-release prompt 
 
 ## Subsystem Story
 Read the component docs in this order:
-1. `FeatureReleasePanel.tsx.md` - prompt textbox and explicit default-off toggle preview.
-2. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and apply flow.
-3. `CoursePlanPatternAudit.tsx.md` - the reusable pattern audit block embedded in the preview.
-4. `CoursesTab.tsx.md` - the course CMS table, planner embedding, and required badge copy.
-5. `CourseEditor.tsx.md` - the module editor and mixed theoretical question bank form.
-6. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
-7. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
-8. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
+1. `AiConfigPanel.tsx.md` - tested runtime AI provider configuration.
+2. `FeatureReleasePanel.tsx.md` - prompt textbox and explicit default-off toggle preview.
+3. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and apply flow.
+4. `CoursePlanPatternAudit.tsx.md` - the reusable pattern audit block embedded in the preview.
+5. `CoursesTab.tsx.md` - the course CMS table, planner embedding, required badge copy, and bank health.
+6. `CourseEditor.tsx.md` - the module editor and mixed theoretical question bank form.
+7. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
+8. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
+9. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
 
 ## Folder Flow
 ```mermaid
 flowchart TD
     Start["Open admin components"]
-    N0["Configure release prompt"]
+    N0["Configure AI"]
     N1["Switch instructor section"]
     N2["Edit course module"]
     N3["Inspect heatmap"]
@@ -33,6 +34,7 @@ flowchart TD
 ## Acceptance Checks
 
 - Prompt-driven toggle control stays separate from instructor analytics.
+- AI configuration saves are provider-tested before the panel reports success.
 - Course-plan preview keeps its audit block isolated in a dedicated component.
 - The planner verification strip appears before the audit and clearly separates verified, fallback, and failed states.
 - The top planner board only shows AI-enabled non-foundation modules; required modules stay in their own section below.
