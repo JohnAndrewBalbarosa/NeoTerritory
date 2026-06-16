@@ -1,4 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, beforeAll } from 'vitest';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+
+const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neoterritory-planner-'));
+const dbPath = path.join(tmpRoot, 'planner.sqlite');
 
 const aiMocks = vi.hoisted(() => ({
   pickProvider: vi.fn(),
@@ -6,6 +12,11 @@ const aiMocks = vi.hoisted(() => ({
 
 vi.mock('../services/aiDocumentationService', () => ({
   pickProvider: aiMocks.pickProvider,
+}));
+
+vi.mock('../db/_testSeed/devconUsers', () => ({
+  seedDevconUsers: () => {},
+  ensureTestFolders: () => {},
 }));
 
 import { generateCoursePlan } from '../services/coursePlannerService';
@@ -37,6 +48,12 @@ function useMockProvider(): void {
 }
 
 describe('Course planner validation', () => {
+  beforeAll(async () => {
+    process.env.DB_PATH = dbPath;
+    const { initDb } = await import('../db/initDb');
+    initDb();
+  });
+
   beforeEach(() => {
     aiMocks.pickProvider.mockReturnValue(null);
   });

@@ -1,4 +1,16 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+
+const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neoterritory-orch-'));
+const dbPath = path.join(tmpRoot, 'orch.sqlite');
+
+vi.mock('../db/_testSeed/devconUsers', () => ({
+  seedDevconUsers: () => {},
+  ensureTestFolders: () => {},
+}));
+
 import * as intakeService from '../services/projectSpecIntakeService';
 import * as policyService from '../services/featureTogglePolicyService';
 import * as assessmentService from '../services/assessmentOrchestrationService';
@@ -6,6 +18,12 @@ import { PATTERN_CATALOG } from '../services/coursePlannerService';
 import { ProjectBriefInput } from '../services/projectLearningContracts';
 
 describe('Project Learning Orchestration Flow', () => {
+  beforeAll(async () => {
+    process.env.DB_PATH = dbPath;
+    const { initDb } = await import('../db/initDb');
+    initDb();
+  });
+
   const devconDelegationBrief: ProjectBriefInput = {
     projectId: 'proj-devcon',
     projectTitle: 'Devcon student module delegation',
