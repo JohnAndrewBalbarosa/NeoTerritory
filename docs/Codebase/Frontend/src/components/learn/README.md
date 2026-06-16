@@ -4,7 +4,7 @@
 - Owner: Frontend
 
 ## Logic Summary
-Learner-facing progress and assessment surfaces that sit around the learning path. This folder owns the student dashboard, the pre-test / post-test pages, the adaptive pre-test provider, the unlock explanation, and the summary cards that help a learner see where they are doing well and where they still need work.
+Learner-facing progress and assessment surfaces that sit around the learning path. This folder owns the student dashboard, the pre-test / post-test pages, the adaptive pre-test provider, mixed Bloom question rendering, the unlock explanation, and the summary cards that help a learner see where they are doing well and where they still need work.
 
 ## Ownership Boundary
 This folder owns presentation, section ordering, route-level guidance, and pre-test page flow. Server freshness decisions and analytics aggregation stay behind the learning API contract, while learner pages may call the existing progress endpoint to persist completed and theory-passed module ids.
@@ -42,6 +42,7 @@ flowchart TD
 
 ### Assessment Gate
 - `LearningAssessmentPage.tsx.md` - renders pre-test, post-test, and practical assessment submission surfaces when mirrored.
+- `BloomQuestionRenderer.tsx.md` - renders MCQ, identification, and Studio theoretical questions from one mixed bank.
 - `AdaptiveAssessmentProvider.tsx.md` - tracks the adaptive Bloom level and active module set when mirrored.
 - `../marketing/patterns/PatternsLearnPage.tsx.md` - owns the learning-path gate that consumes server-backed pre-test evidence.
 - `../../logic/pretestModuleOutcomes.ts.md` - derives per-module mastered levels, failed modules, and pre-test exemptions.

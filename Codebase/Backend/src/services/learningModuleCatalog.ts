@@ -8,13 +8,45 @@ export interface LearningModuleSectionJson {
   note?: string;
 }
 
-export interface LearningModuleQuestionJson {
+export type BloomTaxonomy =
+  | 'remembering'
+  | 'understanding'
+  | 'applying'
+  | 'analyzing'
+  | 'evaluating'
+  | 'creating';
+
+export interface LearningModuleBaseQuestionJson {
+  taxonomy?: BloomTaxonomy;
+  explanation?: string;
+}
+
+export interface LearningModuleMcqQuestionJson extends LearningModuleBaseQuestionJson {
+  type: 'mcq';
   question: string;
   options: string[];
   correctIndex: number;
-  explanation?: string;
   code?: string;
 }
+
+export interface LearningModuleIdentificationQuestionJson extends LearningModuleBaseQuestionJson {
+  type: 'identification';
+  question: string;
+  scenario: string;
+  expectedTokens: string[];
+}
+
+export interface LearningModuleStudioQuestionJson extends LearningModuleBaseQuestionJson {
+  type: 'studio';
+  prompt: string;
+  targetPatternSlug: string;
+  starterCode?: string;
+}
+
+export type LearningModuleQuestionJson =
+  | LearningModuleMcqQuestionJson
+  | LearningModuleIdentificationQuestionJson
+  | LearningModuleStudioQuestionJson;
 
 export interface LearningModuleCatalogJson {
   moduleId: string;
@@ -72,17 +104,52 @@ function parseJsonObject(raw: string | null | undefined): Record<string, unknown
 function toQuestionJson(raw: unknown): LearningModuleQuestionJson | null {
   if (!raw || typeof raw !== 'object') return null;
   const q = raw as Record<string, unknown>;
+  const taxonomy = typeof q.taxonomy === 'string' ? q.taxonomy as BloomTaxonomy : undefined;
+  const explanation = typeof q.explanation === 'string' ? q.explanation : undefined;
+
+  if (q.type === 'identification') {
+    const question = typeof q.question === 'string' ? q.question : '';
+    const scenario = typeof q.scenario === 'string' ? q.scenario : '';
+    const expectedTokens = Array.isArray(q.expectedTokens)
+      ? q.expectedTokens.filter((v): v is string => typeof v === 'string' && v.trim().length > 0)
+      : [];
+    if (!question || !scenario || expectedTokens.length === 0) return null;
+    return { type: 'identification', question, scenario, expectedTokens, taxonomy, explanation };
+  }
+
+  if (q.type === 'studio') {
+    const prompt = typeof q.prompt === 'string' ? q.prompt : '';
+    const targetPatternSlug = typeof q.targetPatternSlug === 'string' ? q.targetPatternSlug : '';
+    if (!prompt || !targetPatternSlug) return null;
+    return {
+      type: 'studio',
+      prompt,
+      targetPatternSlug,
+      starterCode: typeof q.starterCode === 'string' ? q.starterCode : undefined,
+      taxonomy,
+      explanation,
+    };
+  }
+
   const question = typeof q.question === 'string' ? q.question : '';
   const options = Array.isArray(q.options) ? q.options.filter((v): v is string => typeof v === 'string') : [];
   const correctIndex = typeof q.correctIndex === 'number' ? q.correctIndex : -1;
   if (!question || options.length < 2 || correctIndex < 0 || correctIndex >= options.length) return null;
   return {
+    type: 'mcq',
     question,
     options,
     correctIndex,
-    explanation: typeof q.explanation === 'string' ? q.explanation : undefined,
+    explanation,
     code: typeof q.code === 'string' ? q.code : undefined,
+    taxonomy,
   };
+}
+
+function questionPromptText(question: LearningModuleQuestionJson): string {
+  if (question.type === 'studio') return question.prompt;
+  if (question.type === 'identification') return `${question.question} ${question.scenario}`;
+  return question.question;
 }
 
 function toCatalogEntry(row: LearningModuleRow): LearningModuleCatalogJson {
@@ -183,7 +250,9 @@ export function buildPlannerDigest(options: LearningModuleCatalogOptions = {}): 
         topics: extractTopics([section.heading, body].join(' ')).slice(0, 6),
       };
     });
-    const questionTopics = (module.theoreticalExam?.questions || []).flatMap((q) => extractTopics(q.question).slice(0, 4)).slice(0, 16);
+    const questionTopics = (module.theoreticalExam?.questions || [])
+      .flatMap((q) => extractTopics(questionPromptText(q)).slice(0, 4))
+      .slice(0, 16);
     return {
       moduleId: module.moduleId,
       category: module.category,

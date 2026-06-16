@@ -10,8 +10,14 @@
 import { useMemo, useState } from 'react';
 import { createLearningModule, updateLearningModule } from '../../api/client';
 import type { AdminLearningModule } from '../../types/api';
-import { isMcqQuestion } from '../../data/learningModules';
+import {
+  BLOOM_TAXONOMIES,
+  isIdentificationQuestion,
+  isMcqQuestion,
+  isStudioQuestion,
+} from '../../data/learningModules';
 import type {
+  BloomTaxonomy,
   LearningCategory,
   LearningModuleDTO,
   LearningSection,
@@ -50,13 +56,36 @@ interface SectionDraft {
   note: string;
 }
 
-interface QuestionDraft {
+interface BaseQuestionDraft {
   key: string;
-  question: string;
-  options: string[];
-  correctIndex: number;
+  type: 'mcq' | 'identification' | 'studio';
+  taxonomy: BloomTaxonomy;
   explanation: string;
 }
+
+interface McqQuestionDraft extends BaseQuestionDraft {
+  type: 'mcq';
+  question: string;
+  code: string;
+  options: string[];
+  correctIndex: number;
+}
+
+interface IdentificationQuestionDraft extends BaseQuestionDraft {
+  type: 'identification';
+  question: string;
+  scenario: string;
+  expectedTokensText: string;
+}
+
+interface StudioQuestionDraft extends BaseQuestionDraft {
+  type: 'studio';
+  prompt: string;
+  targetPatternSlug: string;
+  starterCode: string;
+}
+
+type QuestionDraft = McqQuestionDraft | IdentificationQuestionDraft | StudioQuestionDraft;
 
 interface TermDraft {
   key: string;
@@ -110,8 +139,74 @@ function textToBullets(text: string): string[] {
     .filter((line) => line.length > 0);
 }
 
+function tokensToText(tokens?: ReadonlyArray<string>): string {
+  return (tokens ?? []).join('\n');
+}
+
+function textToTokens(text: string): string[] {
+  return text
+    .split(/\r?\n|,/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
 function isPracticalFamily(value: string): value is PracticalFamily {
   return (PRACTICAL_FAMILIES as readonly string[]).includes(value);
+}
+
+function defaultTaxonomy(taxonomy?: BloomTaxonomy): BloomTaxonomy {
+  return taxonomy ?? 'remembering';
+}
+
+function defaultMcqQuestionDraft(): McqQuestionDraft {
+  return {
+    key: nextKey('q'),
+    type: 'mcq',
+    taxonomy: 'remembering',
+    question: '',
+    code: '',
+    options: ['', ''],
+    correctIndex: 0,
+    explanation: '',
+  };
+}
+
+function toQuestionDraft(question: ExamQuestion): QuestionDraft {
+  if (isIdentificationQuestion(question)) {
+    return {
+      key: nextKey('q'),
+      type: 'identification',
+      taxonomy: defaultTaxonomy(question.taxonomy),
+      question: question.question,
+      scenario: question.scenario,
+      expectedTokensText: tokensToText(question.expectedTokens),
+      explanation: question.explanation ?? '',
+    };
+  }
+
+  if (isStudioQuestion(question)) {
+    return {
+      key: nextKey('q'),
+      type: 'studio',
+      taxonomy: defaultTaxonomy(question.taxonomy),
+      prompt: question.prompt,
+      targetPatternSlug: question.targetPatternSlug,
+      starterCode: question.starterCode ?? '',
+      explanation: question.explanation ?? '',
+    };
+  }
+
+  const mcq = isMcqQuestion(question) ? question : null;
+  return {
+    key: nextKey('q'),
+    type: 'mcq',
+    taxonomy: defaultTaxonomy(question.taxonomy),
+    question: mcq?.question ?? '',
+    code: mcq?.code ?? '',
+    options: mcq ? [...mcq.options] : ['', ''],
+    correctIndex: mcq?.correctIndex ?? 0,
+    explanation: question.explanation ?? '',
+  };
 }
 
 // Seed a blank draft (create mode) or hydrate from an existing module (edit).
@@ -158,15 +253,7 @@ function toDraft(source: AdminLearningModule | null): CourseDraft {
       note: s.note ?? '',
     })),
     hasTheoretical: Boolean(theoretical),
-    questions: (theoretical?.questions ?? [])
-      .filter(isMcqQuestion)
-      .map((q) => ({
-        key: nextKey('q'),
-        question: q.question,
-        options: [...q.options],
-        correctIndex: q.correctIndex,
-        explanation: q.explanation ?? '',
-      })),
+    questions: (theoretical?.questions ?? []).map(toQuestionDraft),
     hasPractical: Boolean(practical),
     patternSlug: practical?.patternSlug ?? '',
     patternName: practical?.patternName ?? '',
@@ -212,15 +299,29 @@ function validate(draft: CourseDraft): string[] {
       errors.push('Theoretical exam is on but has no questions.');
     }
     draft.questions.forEach((q, i) => {
-      if (q.question.trim().length === 0) {
-        errors.push(`Question ${i + 1}: prompt is required.`);
+      if (!BLOOM_TAXONOMIES.includes(q.taxonomy)) {
+        errors.push(`Question ${i + 1}: Bloom taxonomy is out of range.`);
       }
-      const filled = q.options.filter((o) => o.trim().length > 0);
-      if (filled.length < 2) {
-        errors.push(`Question ${i + 1}: needs at least 2 non-empty options.`);
-      }
-      if (q.correctIndex < 0 || q.correctIndex >= q.options.length || q.options[q.correctIndex]?.trim().length === 0) {
-        errors.push(`Question ${i + 1}: pick a non-empty correct option.`);
+      if (q.type === 'mcq') {
+        if (q.question.trim().length === 0) {
+          errors.push(`Question ${i + 1}: prompt is required.`);
+        }
+        const filled = q.options.filter((o) => o.trim().length > 0);
+        if (filled.length < 2) {
+          errors.push(`Question ${i + 1}: needs at least 2 non-empty options.`);
+        }
+        if (q.correctIndex < 0 || q.correctIndex >= q.options.length || q.options[q.correctIndex]?.trim().length === 0) {
+          errors.push(`Question ${i + 1}: pick a non-empty correct option.`);
+        }
+      } else if (q.type === 'identification') {
+        if (q.question.trim().length === 0) errors.push(`Question ${i + 1}: prompt is required.`);
+        if (q.scenario.trim().length === 0) errors.push(`Question ${i + 1}: scenario is required.`);
+        if (textToTokens(q.expectedTokensText).length === 0) {
+          errors.push(`Question ${i + 1}: expected token is required.`);
+        }
+      } else if (q.type === 'studio') {
+        if (q.prompt.trim().length === 0) errors.push(`Question ${i + 1}: Studio prompt is required.`);
+        if (q.targetPatternSlug.trim().length === 0) errors.push(`Question ${i + 1}: target pattern slug is required.`);
       }
     });
   }
@@ -277,15 +378,41 @@ function toPayload(
 
   if (draft.hasTheoretical) {
     const questions: ExamQuestion[] = draft.questions.map((q) => {
+      if (q.type === 'identification') {
+        const item: ExamQuestion = {
+          type: 'identification',
+          taxonomy: q.taxonomy,
+          question: q.question.trim(),
+          scenario: q.scenario.trim(),
+          expectedTokens: textToTokens(q.expectedTokensText),
+        };
+        if (q.explanation.trim().length > 0) item.explanation = q.explanation.trim();
+        return item;
+      }
+
+      if (q.type === 'studio') {
+        const item: ExamQuestion = {
+          type: 'studio',
+          taxonomy: q.taxonomy,
+          prompt: q.prompt.trim(),
+          targetPatternSlug: q.targetPatternSlug.trim(),
+        };
+        if (q.starterCode.length > 0) item.starterCode = q.starterCode;
+        if (q.explanation.trim().length > 0) item.explanation = q.explanation.trim();
+        return item;
+      }
+
       const options = q.options.map((o) => o.trim()).filter((o) => o.length > 0);
       const correctText = q.options[q.correctIndex]?.trim() ?? '';
       const correctIndex = Math.max(0, options.indexOf(correctText));
       const item: ExamQuestion = {
         type: 'mcq',
+        taxonomy: q.taxonomy,
         question: q.question.trim(),
         options,
         correctIndex,
       };
+      if (q.code.length > 0) item.code = q.code;
       if (q.explanation.trim().length > 0) item.explanation = q.explanation.trim();
       return item;
     });
@@ -356,12 +483,51 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
     patch({
       questions: [
         ...draft.questions,
-        { key: nextKey('q'), question: '', options: ['', ''], correctIndex: 0, explanation: '' },
+        defaultMcqQuestionDraft(),
       ],
     });
   }
   function updateQuestion(key: string, next: Partial<QuestionDraft>): void {
-    patch({ questions: draft.questions.map((q) => (q.key === key ? { ...q, ...next } : q)) });
+    patch({ questions: draft.questions.map((q) => (q.key === key ? ({ ...q, ...next } as QuestionDraft) : q)) });
+  }
+  function changeQuestionType(key: string, type: QuestionDraft['type']): void {
+    patch({
+      questions: draft.questions.map((q) => {
+        if (q.key !== key || q.type === type) return q;
+        const base = {
+          key: q.key,
+          type,
+          taxonomy: q.taxonomy,
+          explanation: q.explanation,
+        };
+        if (type === 'identification') {
+          return {
+            ...base,
+            type,
+            question: 'question' in q ? q.question : q.type === 'studio' ? q.prompt : '',
+            scenario: '',
+            expectedTokensText: '',
+          } satisfies IdentificationQuestionDraft;
+        }
+        if (type === 'studio') {
+          return {
+            ...base,
+            type,
+            prompt: 'question' in q ? q.question : '',
+            targetPatternSlug: '',
+            starterCode: '',
+          } satisfies StudioQuestionDraft;
+        }
+        return {
+          ...base,
+          type,
+          question: q.type === 'studio' ? q.prompt : 'question' in q ? q.question : '',
+          code: '',
+          options: ['', ''],
+          correctIndex: 0,
+        } satisfies McqQuestionDraft;
+      }),
+    });
   }
   function removeQuestion(key: string): void {
     patch({ questions: draft.questions.filter((q) => q.key !== key) });
@@ -369,14 +535,14 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
   function addOption(qKey: string): void {
     patch({
       questions: draft.questions.map((q) =>
-        q.key === qKey ? { ...q, options: [...q.options, ''] } : q,
+        q.key === qKey && q.type === 'mcq' ? { ...q, options: [...q.options, ''] } : q,
       ),
     });
   }
   function updateOption(qKey: string, optIndex: number, value: string): void {
     patch({
       questions: draft.questions.map((q) =>
-        q.key === qKey
+        q.key === qKey && q.type === 'mcq'
           ? { ...q, options: q.options.map((o, i) => (i === optIndex ? value : o)) }
           : q,
       ),
@@ -385,7 +551,7 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
   function removeOption(qKey: string, optIndex: number): void {
     patch({
       questions: draft.questions.map((q) => {
-        if (q.key !== qKey || q.options.length <= 2) return q;
+        if (q.key !== qKey || q.type !== 'mcq' || q.options.length <= 2) return q;
         const options = q.options.filter((_, i) => i !== optIndex);
         let correctIndex = q.correctIndex;
         if (optIndex === correctIndex) correctIndex = 0;
@@ -570,7 +736,7 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
             <legend>Theoretical exam</legend>
             <label className="courses-toggle-row">
               <input type="checkbox" checked={draft.hasTheoretical} onChange={(e) => patch({ hasTheoretical: e.target.checked })} disabled={saving} data-testid="courses-toggle-theoretical" />
-              <span>Include a theoretical exam (MCQ bank)</span>
+              <span>Include a theoretical exam (mixed question bank)</span>
             </label>
             {draft.hasTheoretical && (
               <>
@@ -581,34 +747,95 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
                       <strong>Question {qi + 1}</strong>
                       <button type="button" className="ghost-btn" onClick={() => removeQuestion(q.key)} disabled={saving}>Remove</button>
                     </div>
-                    <label className="admin-catalog-field">
-                      <span>Question</span>
-                      <textarea rows={2} value={q.question} onChange={(e) => updateQuestion(q.key, { question: e.target.value })} disabled={saving} />
-                    </label>
-                    <div className="courses-options">
-                      <span className="courses-options__label">Options (radio = correct answer)</span>
-                      {q.options.map((opt, oi) => (
-                        <div key={oi} className="courses-option-row">
-                          <input
-                            type="radio"
-                            name={`correct-${q.key}`}
-                            checked={q.correctIndex === oi}
-                            onChange={() => updateQuestion(q.key, { correctIndex: oi })}
-                            disabled={saving}
-                            aria-label={`Mark option ${oi + 1} correct`}
-                          />
-                          <input
-                            type="text"
-                            value={opt}
-                            onChange={(e) => updateOption(q.key, oi, e.target.value)}
-                            placeholder={`Option ${oi + 1}`}
-                            disabled={saving}
-                          />
-                          <button type="button" className="ghost-btn" onClick={() => removeOption(q.key, oi)} disabled={saving || q.options.length <= 2}>×</button>
-                        </div>
-                      ))}
-                      <button type="button" className="ghost-btn" onClick={() => addOption(q.key)} disabled={saving}>+ Add option</button>
+                    <div className="courses-grid">
+                      <label className="admin-catalog-field">
+                        <span>Question type</span>
+                        <select value={q.type} onChange={(e) => changeQuestionType(q.key, e.target.value as QuestionDraft['type'])} disabled={saving}>
+                          <option value="mcq">MCQ</option>
+                          <option value="identification">Identification</option>
+                          <option value="studio">Studio code-check</option>
+                        </select>
+                      </label>
+                      <label className="admin-catalog-field">
+                        <span>Bloom taxonomy</span>
+                        <select value={q.taxonomy} onChange={(e) => updateQuestion(q.key, { taxonomy: e.target.value as BloomTaxonomy })} disabled={saving}>
+                          {BLOOM_TAXONOMIES.map((taxonomy) => (
+                            <option key={taxonomy} value={taxonomy}>{taxonomy}</option>
+                          ))}
+                        </select>
+                      </label>
                     </div>
+
+                    {q.type === 'mcq' ? (
+                      <>
+                        <label className="admin-catalog-field">
+                          <span>Question</span>
+                          <textarea rows={2} value={q.question} onChange={(e) => updateQuestion(q.key, { question: e.target.value })} disabled={saving} />
+                        </label>
+                        <label className="admin-catalog-field">
+                          <span>Code snippet (optional)</span>
+                          <textarea rows={3} className="courses-code" value={q.code} onChange={(e) => updateQuestion(q.key, { code: e.target.value })} disabled={saving} />
+                        </label>
+                        <div className="courses-options">
+                          <span className="courses-options__label">Options (radio = correct answer)</span>
+                          {q.options.map((opt, oi) => (
+                            <div key={oi} className="courses-option-row">
+                              <input
+                                type="radio"
+                                name={`correct-${q.key}`}
+                                checked={q.correctIndex === oi}
+                                onChange={() => updateQuestion(q.key, { correctIndex: oi })}
+                                disabled={saving}
+                                aria-label={`Mark option ${oi + 1} correct`}
+                              />
+                              <input
+                                type="text"
+                                value={opt}
+                                onChange={(e) => updateOption(q.key, oi, e.target.value)}
+                                placeholder={`Option ${oi + 1}`}
+                                disabled={saving}
+                              />
+                              <button type="button" className="ghost-btn" onClick={() => removeOption(q.key, oi)} disabled={saving || q.options.length <= 2}>×</button>
+                            </div>
+                          ))}
+                          <button type="button" className="ghost-btn" onClick={() => addOption(q.key)} disabled={saving}>+ Add option</button>
+                        </div>
+                      </>
+                    ) : null}
+
+                    {q.type === 'identification' ? (
+                      <>
+                        <label className="admin-catalog-field">
+                          <span>Question</span>
+                          <textarea rows={2} value={q.question} onChange={(e) => updateQuestion(q.key, { question: e.target.value })} disabled={saving} />
+                        </label>
+                        <label className="admin-catalog-field">
+                          <span>Scenario</span>
+                          <textarea rows={3} value={q.scenario} onChange={(e) => updateQuestion(q.key, { scenario: e.target.value })} disabled={saving} />
+                        </label>
+                        <label className="admin-catalog-field">
+                          <span>Expected tokens (one per line)</span>
+                          <textarea rows={3} value={q.expectedTokensText} onChange={(e) => updateQuestion(q.key, { expectedTokensText: e.target.value })} disabled={saving} />
+                        </label>
+                      </>
+                    ) : null}
+
+                    {q.type === 'studio' ? (
+                      <>
+                        <label className="admin-catalog-field">
+                          <span>Studio prompt</span>
+                          <textarea rows={3} value={q.prompt} onChange={(e) => updateQuestion(q.key, { prompt: e.target.value })} disabled={saving} />
+                        </label>
+                        <label className="admin-catalog-field">
+                          <span>Target pattern slug</span>
+                          <input type="text" value={q.targetPatternSlug} onChange={(e) => updateQuestion(q.key, { targetPatternSlug: e.target.value })} placeholder="e.g. singleton" disabled={saving} />
+                        </label>
+                        <label className="admin-catalog-field">
+                          <span>Starter code (optional)</span>
+                          <textarea rows={4} className="courses-code" value={q.starterCode} onChange={(e) => updateQuestion(q.key, { starterCode: e.target.value })} disabled={saving} />
+                        </label>
+                      </>
+                    ) : null}
                     <label className="admin-catalog-field">
                       <span>Explanation (optional)</span>
                       <textarea rows={2} value={q.explanation} onChange={(e) => updateQuestion(q.key, { explanation: e.target.value })} disabled={saving} />

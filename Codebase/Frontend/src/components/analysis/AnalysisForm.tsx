@@ -12,6 +12,7 @@ import { useFeatureReleases } from '../../hooks/useFeatureReleases';
 interface AnalysisFormProps {
   onAnalysisComplete: (run: AnalysisRun) => void;
   beforeSubmit?: (dispatch: () => void) => void;
+  initialFile?: { name: string; code: string };
 }
 
 interface FileSlot {
@@ -38,7 +39,7 @@ function newSlotId(): string {
   return `slot-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: AnalysisFormProps) {
+export default function AnalysisForm({ onAnalysisComplete, beforeSubmit, initialFile }: AnalysisFormProps) {
   const { sourceText, filename, setSourceText, setFilename, setStatus,
     setCurrentRun, setSessionRanAnalyze, maxFilesPerSubmission, maxTokensPerFile,
     submissionFiles, setSubmissionFiles,
@@ -52,6 +53,9 @@ export default function AnalysisForm({ onAnalysisComplete, beforeSubmit }: Analy
   // mount we hydrate from the store, falling back to a single seed slot
   // synthesized from the legacy single-file store fields.
   const [slots, setSlots] = useState<FileSlot[]>(() => {
+    if (initialFile?.code) {
+      return [{ id: newSlotId(), name: initialFile.name || 'starter.cpp', text: initialFile.code }];
+    }
     // Marketing /learn lessons can stash a sample in sessionStorage and
     // navigate here. Consume it before falling back to existing state so
     // the user lands with the lesson's sample already loaded.

@@ -100,12 +100,15 @@ interface StudioSurfaceProps {
   targetPatternName?: string;
   // Fired the first time the target pattern is detected in a run.
   onPatternDetected?: (run: AnalysisRun) => void;
+  // Optional starter file for embedded learning checks.
+  starterCode?: string;
 }
 
 export default function StudioSurface({
   targetPatternSlug,
   targetPatternName,
   onPatternDetected,
+  starterCode,
 }: StudioSurfaceProps) {
   useHealth();
   useAiCommentaryPoll();
@@ -280,6 +283,7 @@ export default function StudioSurface({
               onAnalysisComplete={onAnalysisComplete}
               refreshSignal={runRefreshSignal}
               beforeAnalyze={beforeAnalyze}
+              initialFile={starterCode ? { name: 'starter.cpp', code: starterCode } : undefined}
             />
           )}
           {activeTab === 'annotated' && (

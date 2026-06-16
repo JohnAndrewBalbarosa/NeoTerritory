@@ -1154,7 +1154,7 @@ anchors:
 Practical Exam, with two exams replacing the single `practical`.**
 The `LearningModule.practical` field (and the `LearningQuizPractical` /
 `LearningPatternPractical` / `LearningPractical` union) are replaced by:
-- `theoreticalExam?: TheoreticalExam` — a multi-question MCQ bank
+- `theoreticalExam?: TheoreticalExam` — a multi-question mixed bank
   (`{ kind:'theoretical'; questions: ExamQuestion[] }`); pass = every answer
   correct. **Every module has one.**
 - `practicalExam?: PracticalExam` — the Studio analyser code-check

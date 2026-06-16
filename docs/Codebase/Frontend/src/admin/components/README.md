@@ -4,7 +4,7 @@
 - Owner: Frontend
 
 ## Logic Summary
-Admin-side panels that power the shell-level navigation, feature-release prompt control, instructor analytics surfaces, and mobile-friendly operator layouts. Instructor learning content is model-backed and already tagged in JSON; the admin layer only turns modules on or off and reads the prepared question data.
+Admin-side panels that power the shell-level navigation, feature-release prompt control, instructor analytics surfaces, and mobile-friendly operator layouts. Instructor learning content is model-backed and already tagged in JSON; the admin layer turns modules on or off, edits mixed question-bank rows, and reads the prepared question data.
 
 ## Subsystem Story
 Read the component docs in this order:
@@ -12,9 +12,10 @@ Read the component docs in this order:
 2. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and apply flow.
 3. `CoursePlanPatternAudit.tsx.md` - the reusable pattern audit block embedded in the preview.
 4. `CoursesTab.tsx.md` - the course CMS table, planner embedding, and required badge copy.
-5. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
-6. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
-7. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
+5. `CourseEditor.tsx.md` - the module editor and mixed theoretical question bank form.
+6. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
+7. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
+8. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
 
 ## Folder Flow
 ```mermaid
@@ -22,10 +23,11 @@ flowchart TD
     Start["Open admin components"]
     N0["Configure release prompt"]
     N1["Switch instructor section"]
-    N2["Inspect heatmap"]
-    N3["Drill into answers"]
+    N2["Edit course module"]
+    N3["Inspect heatmap"]
+    N4["Drill into answers"]
     End["Leave component stack"]
-    Start --> N0 --> N1 --> N2 --> N3 --> End
+    Start --> N0 --> N1 --> N2 --> N3 --> N4 --> End
 ```
 
 ## Acceptance Checks
@@ -37,6 +39,7 @@ flowchart TD
 - Instructor navigation stays separate from heatmap detail rendering.
 - Heatmap drilldown remains readable after the sidebar redesign.
 - Question tagging comes from the module JSON, not from a runtime tagging step in the Instructor UI.
+- The course editor preserves MCQ, identification, and Studio question types.
 - Course planning stays preview-first, and the diagnostic audit explains why a pattern was picked or rejected.
 - Required module copy uses "required" rather than "baseline" anywhere the planner or course table shows locked foundations.
 - Complexity export controls stay inside the Complexity tab, below the charts, and export the saved-run dataset rather than a synthetic summary.

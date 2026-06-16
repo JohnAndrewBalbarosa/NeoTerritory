@@ -177,6 +177,7 @@ const StudioRenderer: React.FC<{
       <div className="nt-studio-frame">
         <StudioSurface
           targetPatternSlug={question.targetPatternSlug}
+          starterCode={question.starterCode}
           onPatternDetected={handlePatternDetected}
         />
       </div>

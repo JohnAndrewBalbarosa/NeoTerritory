@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, progress reads/writes through the learning API, the current lesson card, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
+Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, progress reads/writes through the learning API, the current lesson card, mixed theoretical question rendering, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
 
 ## Topbar Rule
 
@@ -87,6 +87,7 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 - Remove the same label from the main content tree.
 - Delete the body-level `nt-course-hero` section instead of trying to hide it with CSS.
 - Preserve the card and sidebar interaction; only move the heading placement.
+- Keep theoretical question rendering delegated to `BloomQuestionRenderer` so non-MCQ questions are not filtered out.
 
 ## Acceptance Checks
 
@@ -96,6 +97,8 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 - Bloom levels at or below the user's module mastery ceiling no longer show as quiz/practical pages for that module.
 - A module with Bloom mastery level 6 is hidden for that user.
 - The final visible theory page gates module completion after mastered levels are removed.
+- Visible theory pages render MCQ, identification, and Studio questions through `BloomQuestionRenderer`.
+- Studio creating questions can embed the analyzer surface in the lesson flow.
 - Admin module create/update/patch/delete and applied AI plan changes are reflected through `courseUpdatedAt`.
 - AI course plan preview alone does not reset the learner gate.
 - The topbar shows a centered `Learning Path` title.

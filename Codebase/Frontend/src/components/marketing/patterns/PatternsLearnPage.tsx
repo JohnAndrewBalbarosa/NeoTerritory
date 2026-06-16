@@ -5,13 +5,13 @@ import {
   CATEGORY_META,
   isFoundationModule,
   isAnswerCorrect,
-  isMcqQuestion,
   type LearningCategory,
   type LearningModule,
   type PracticalExam,
   type TheoreticalExam,
   type BloomTaxonomy,
 } from '../../../data/learningModules';
+import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
 import {
   evaluateFoundationPretestFromAssessments,
   type FoundationPretestEvidence,
@@ -345,19 +345,19 @@ function TheoreticalExamBlock({
   exam: TheoreticalExam;
   subIndex?: number;
   answers: TheoryAnswerMap;
-  onAnswerChange: (questionIndex: number, optionIndex: number) => void;
+  onAnswerChange: (questionIndex: number, answer: any) => void;
   isPassed: boolean;
   isSubmitGate: boolean;
 }): JSX.Element | null {
   const qi = subIndex ?? 0;
   const q = exam.questions[qi];
-  if (!q || !isMcqQuestion(q)) return null;
+  if (!q) return null;
 
   return (
     <section className="nt-exam__question" id={anchorId(moduleId, 'theoretical', subIndex)}>
       <p className="nt-exam__prompt">
         <span className="nt-exam__qnum">Q{qi + 1}</span>
-        {q.question}
+        {q.type === 'studio' ? q.prompt : q.question}
         {q.taxonomy ? (
           <span className="nt-assessment__taxonomy" data-taxonomy={q.taxonomy}>
             {q.taxonomy}
@@ -365,21 +365,12 @@ function TheoreticalExamBlock({
         ) : null}
       </p>
 
-      <ol className="nt-exam__questions">
-        {q.options.map((opt, i) => (
-          <li key={i}>
-            <label className="nt-practical__choice" data-picked={answers[qi] === i ? 'true' : undefined}>
-              <input
-                type="radio"
-                name={`q-${qi}`}
-                checked={answers[qi] === i}
-                onChange={() => onAnswerChange(qi, i)}
-              />
-              <span>{opt}</span>
-            </label>
-          </li>
-        ))}
-      </ol>
+      <BloomQuestionRenderer
+        question={q}
+        userAnswer={answers[qi]}
+        showResult={isPassed}
+        onAnswer={(answer) => onAnswerChange(qi, answer)}
+      />
       {isPassed ? (
         <p className="nt-exam__status nt-exam__status--pass">
           {isSubmitGate

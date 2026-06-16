@@ -6,9 +6,9 @@
 ## Story
 ### What Happens Here
 
-This module owns the canonical learning-module catalog for the project-learning system. It is the source of truth for module metadata, section structure, theoretical questions, practical exams, Bloom tags, and publish state.
+This module owns the canonical learning-module catalog for the project-learning system. It is the source of truth for module metadata, section structure, mixed theoretical questions, practical exams, Bloom tags, and publish state.
 
-The important detail is that questions are not tagged at runtime as a first pass. The instructor-authored module content already carries its question tags and exam split, and the runtime only parses, validates, and selects from that prebuilt structure.
+The important detail is that questions are not converted into one shape at runtime. The instructor-authored module content already carries its question type, tags, and exam split, and the runtime only parses, validates, and selects from that prebuilt structure.
 
 ### Why It Matters In The Flow
 
@@ -17,7 +17,7 @@ The course planner and assessment flow both depend on this catalog being stable 
 - the course planner now groups AI output by section first, then flattens the enabled modules for compatibility.
 - admin planning reads the full catalog, while learner delivery keeps reading the published-only catalog.
 - assessments pick from already-tagged questions.
-- practical work stays separated from theoretical MCQs.
+- practical work stays separated from the mixed theoretical question bank.
 - future content changes happen by updating the catalog, not by reinterpreting free text.
 
 ### What To Watch While Reading
@@ -34,7 +34,7 @@ Keep the catalog as content, not policy:
 flowchart TD
     Start["Author module"]
     N0["Add sections"]
-    N1["Tag questions"]
+    N1["Preserve question type"]
     N2["Split practical"]
     N3["Validate catalog"]
     N4["Expose model entry"]
@@ -67,11 +67,25 @@ flowchart TD
     "questions": [
       {
         "questionId": "adapter-q1",
+        "type": "mcq",
         "question": "Which sentence best describes Adapter?",
-        "choices": ["...", "..."],
+        "options": ["...", "..."],
         "correctIndex": 1,
-        "taxonomy": "remembering",
-        "topicTags": ["intent", "conversion"]
+        "taxonomy": "remembering"
+      },
+      {
+        "type": "identification",
+        "question": "Name the pattern shown by the scenario.",
+        "scenario": "A wrapper converts one interface into another.",
+        "expectedTokens": ["adapter"],
+        "taxonomy": "analyzing"
+      },
+      {
+        "type": "studio",
+        "prompt": "Implement a compact Adapter example.",
+        "targetPatternSlug": "adapter",
+        "starterCode": "// TODO",
+        "taxonomy": "creating"
       }
     ]
   },
@@ -87,6 +101,7 @@ flowchart TD
 
 - Every module entry carries its own publish state in the catalog.
 - Bloom tags exist on the authored question objects before runtime selection.
+- MCQ, identification, and Studio questions survive catalog parsing.
 - Theoretical and practical exams remain separate in the catalog.
 - The runtime can pick random or filtered questions without inventing new tags.
 - The course planner can toggle the model entry without needing a config-level override for GoF modules.

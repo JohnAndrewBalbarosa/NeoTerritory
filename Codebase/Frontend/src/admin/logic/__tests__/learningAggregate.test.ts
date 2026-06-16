@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { AdminLearningRaw } from '../../../types/api';
-import { findLearningModule, isMcqQuestion } from '../../../data/learningModules';
+import { findLearningModule, isIdentificationQuestion, isMcqQuestion } from '../../../data/learningModules';
 import {
   perStudentRows,
   moduleDifficulty,
@@ -132,6 +132,7 @@ describe('studentDrilldown', () => {
     const [row] = studentDrilldown(raw, 1);
 
     // Assert
+    expect(row.questionType).toBe('mcq');
     expect(row.questionText).toBe(q0.question);
     expect(row.selectedText).toBe(q0.options[wrongIndex]);
     expect(row.correctIndex).toBe(correctIndex);
@@ -139,6 +140,26 @@ describe('studentDrilldown', () => {
     expect(row.isCorrect).toBe(false);
     expect(row.firstAttemptCorrect).toBe(false);
     expect(row.attempts).toBe(2);
+  });
+
+  it('labels identification questions without fake option text', () => {
+    const q2 = findLearningModule(MOD_A)?.theoreticalExam?.questions[2];
+    if (!q2 || !isIdentificationQuestion(q2)) throw new Error('MOD_A Q2 should be identification');
+
+    const raw: AdminLearningRaw = {
+      ...emptyRaw(),
+      questionResults: [
+        { userId: 1, moduleId: MOD_A, questionIndex: 2, selectedIndex: -1, isCorrect: 1, firstAttemptCorrect: 1, attempts: 1, updatedAt: 't' },
+      ],
+    };
+
+    const [row] = studentDrilldown(raw, 1);
+
+    expect(row.questionType).toBe('identification');
+    expect(row.questionText).toBe(q2.question);
+    expect(row.selectedText).toBe('Identification response');
+    expect(row.correctIndex).toBe(-1);
+    expect(row.correctText).toBe(q2.expectedTokens.join(', '));
   });
 
   it('returns only the requested student rows', () => {

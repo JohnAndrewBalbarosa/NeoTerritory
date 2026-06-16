@@ -27,6 +27,14 @@ export type LearningCategoryValue = (typeof LEARNING_CATEGORIES)[number];
 export const PRACTICAL_FAMILIES = ['Creational', 'Structural', 'Behavioural', 'Idioms'] as const;
 
 export const PASS_MODES = ['detection', 'detection_and_tests'] as const;
+export const BLOOM_TAXONOMIES = [
+  'remembering',
+  'understanding',
+  'applying',
+  'analyzing',
+  'evaluating',
+  'creating',
+] as const;
 export type PassModeValue = (typeof PASS_MODES)[number];
 
 // Bounded-string helpers. Generous caps — long enough for real lesson prose,
@@ -70,8 +78,15 @@ const seeAlsoSchema = z
 // D92 (Track D): `code` is an optional C++ snippet for a differentiation
 // question — the CMS may author code-bearing items the learner reads and then
 // picks the pattern by semantic intent. Opaque to grading (still correctIndex).
-const examQuestionSchema = z
+const questionMetaSchema = {
+  taxonomy: z.enum(BLOOM_TAXONOMIES).optional(),
+  explanation: z.string().max(LONG_TEXT).optional(),
+};
+
+const mcqQuestionSchema = z
   .object({
+    type: z.literal('mcq').optional().default('mcq'),
+    ...questionMetaSchema,
     question: z.string().min(1, 'question text required').max(LONG_TEXT),
     code: z.string().max(LONG_TEXT).optional(),
     options: z
@@ -79,13 +94,41 @@ const examQuestionSchema = z
       .min(2, 'at least two options')
       .max(12, 'too many options'),
     correctIndex: z.number().int('correctIndex must be an integer').min(0),
-    explanation: z.string().max(LONG_TEXT).optional(),
   })
   .strip()
   .refine((q) => q.correctIndex < q.options.length, {
     message: 'correctIndex out of range for options',
     path: ['correctIndex'],
   });
+
+const identificationQuestionSchema = z
+  .object({
+    type: z.literal('identification'),
+    ...questionMetaSchema,
+    question: z.string().min(1, 'question text required').max(LONG_TEXT),
+    scenario: z.string().min(1, 'scenario required').max(LONG_TEXT),
+    expectedTokens: z
+      .array(z.string().trim().min(1, 'expected token required').max(SHORT_TEXT))
+      .min(1, 'at least one expected token')
+      .max(12, 'too many expected tokens'),
+  })
+  .strip();
+
+const studioQuestionSchema = z
+  .object({
+    type: z.literal('studio'),
+    ...questionMetaSchema,
+    prompt: z.string().min(1, 'studio prompt required').max(LONG_TEXT),
+    targetPatternSlug: z.string().min(1, 'targetPatternSlug required').max(SHORT_TEXT),
+    starterCode: z.string().max(LONG_TEXT).optional(),
+  })
+  .strip();
+
+const examQuestionSchema = z.union([
+  mcqQuestionSchema,
+  identificationQuestionSchema,
+  studioQuestionSchema,
+]);
 
 const theoreticalExamSchema = z
   .object({

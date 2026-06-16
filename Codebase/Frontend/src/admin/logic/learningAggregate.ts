@@ -154,6 +154,7 @@ export interface StudentDrilldownRow {
   moduleId: string;
   moduleTitle: string;
   questionIndex: number;
+  questionType: 'mcq' | 'identification' | 'studio' | 'unknown';
   questionText: string;
   selectedIndex: number;
   selectedText: string;
@@ -177,6 +178,8 @@ function optionTextFor(moduleId: string, qi: number, oi: number): string {
   if (q && isMcqQuestion(q)) {
     return q.options[oi] ?? `Option ${oi + 1}`;
   }
+  if (q && isIdentificationQuestion(q)) return 'Identification response';
+  if (q && isStudioQuestion(q)) return 'Studio detection response';
   return `Option ${oi + 1}`;
 }
 
@@ -186,6 +189,25 @@ function correctIndexFor(moduleId: string, qi: number): number {
     return q.correctIndex;
   }
   return -1;
+}
+
+function questionTypeFor(moduleId: string, qi: number): StudentDrilldownRow['questionType'] {
+  const q = findLearningModule(moduleId)?.theoreticalExam?.questions[qi];
+  if (!q) return 'unknown';
+  if (isMcqQuestion(q)) return 'mcq';
+  if (isIdentificationQuestion(q)) return 'identification';
+  if (isStudioQuestion(q)) return 'studio';
+  return 'unknown';
+}
+
+function correctTextFor(moduleId: string, qi: number, correctIndex: number): string {
+  const q = findLearningModule(moduleId)?.theoreticalExam?.questions[qi];
+  if (q && isMcqQuestion(q)) {
+    return correctIndex >= 0 ? optionTextFor(moduleId, qi, correctIndex) : '-';
+  }
+  if (q && isIdentificationQuestion(q)) return q.expectedTokens.join(', ');
+  if (q && isStudioQuestion(q)) return `Analyzer tags ${q.targetPatternSlug}`;
+  return '-';
 }
 
 // All of one student's per-(module,question) results, joined to the catalog so
@@ -200,11 +222,12 @@ export function studentDrilldown(raw: AdminLearningRaw, userId: number): Student
         moduleId: q.moduleId,
         moduleTitle: findLearningModule(q.moduleId)?.title ?? q.moduleId,
         questionIndex: q.questionIndex,
+        questionType: questionTypeFor(q.moduleId, q.questionIndex),
         questionText: questionTextFor(q.moduleId, q.questionIndex),
         selectedIndex: q.selectedIndex,
         selectedText: optionTextFor(q.moduleId, q.questionIndex, q.selectedIndex),
         correctIndex,
-        correctText: correctIndex >= 0 ? optionTextFor(q.moduleId, q.questionIndex, correctIndex) : '—',
+        correctText: correctTextFor(q.moduleId, q.questionIndex, correctIndex),
         isCorrect: Boolean(q.isCorrect),
         firstAttemptCorrect: Boolean(q.firstAttemptCorrect),
         attempts: q.attempts,

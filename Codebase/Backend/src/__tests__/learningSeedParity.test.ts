@@ -13,6 +13,9 @@ interface SeedRow {
   moduleId?: unknown;
   category?: unknown;
   sortOrder?: unknown;
+  theoreticalExam?: {
+    questions?: Array<{ type?: string; taxonomy?: string }>;
+  };
 }
 
 const SEED_PATH = path.resolve(__dirname, '..', 'db', 'seeds', 'learningModules.seed.json');
@@ -56,5 +59,20 @@ describe('learningModules.seed.json parity', () => {
     rows.forEach((r, i) => {
       expect(r.sortOrder).toBe(i);
     });
+  });
+
+  it('stores a canonical six-question Bloom bank with mixed question shapes', () => {
+    const rows = loadSeed();
+    const expectedTaxonomies = ['remembering', 'understanding', 'applying', 'analyzing', 'evaluating', 'creating'];
+    const allQuestions = rows.flatMap((row) => row.theoreticalExam?.questions ?? []);
+
+    rows.forEach((row) => {
+      const questions = row.theoreticalExam?.questions ?? [];
+      expect(questions).toHaveLength(6);
+      expect(questions.map((q) => q.taxonomy)).toEqual(expectedTaxonomies);
+    });
+    expect(allQuestions.some((q) => q.type === 'identification')).toBe(true);
+    expect(allQuestions.some((q) => q.type === 'studio')).toBe(true);
+    expect(allQuestions.every((q) => typeof q.type === 'string')).toBe(true);
   });
 });
