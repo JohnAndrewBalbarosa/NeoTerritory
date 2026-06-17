@@ -3,7 +3,7 @@ import { navigate } from '../../logic/router';
 import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress, refreshGuest } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
-import { isIdentificationQuestion, isMcqQuestion, isStudioQuestion, type ExamQuestion } from '../../data/learningModules';
+import { isStudioQuestion } from '../../data/learningModules';
 import {
   buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
@@ -36,27 +36,6 @@ function masteryMapFromLocalStore(masteredLevelsByModule: Record<string, number[
     if (level > 0) out[moduleId] = level;
   }
   return out;
-}
-
-function isLocalAssessmentQaEnabled(): boolean {
-  if (!import.meta.env.DEV || typeof window === 'undefined') return false;
-  return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
-}
-
-function devQaAnswerFor(question: ExamQuestion, shouldPass: boolean): any {
-  if (isMcqQuestion(question)) {
-    if (shouldPass) return question.correctIndex;
-    const wrongIndex = question.options.findIndex((_, index) => index !== question.correctIndex);
-    return wrongIndex >= 0 ? wrongIndex : question.correctIndex;
-  }
-  if (isIdentificationQuestion(question)) {
-    if (shouldPass) return [...question.expectedTokens];
-    return question.expectedTokens.map((_, index) => `qa-wrong-${index + 1}`);
-  }
-  if (isStudioQuestion(question)) {
-    return shouldPass;
-  }
-  return null;
 }
 
 function LearningAssessmentContent({
@@ -115,7 +94,6 @@ function LearningAssessmentContent({
   const [levelSubmitted, setLevelSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [qaFailModuleIds, setQaFailModuleIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setAnswers({});
@@ -124,7 +102,6 @@ function LearningAssessmentContent({
   useEffect(() => {
     setLevelSubmitted(false);
     setError(null);
-    setQaFailModuleIds(new Set());
   }, [assessmentType, currentLevel]);
 
   const graded = useMemo(
@@ -153,14 +130,6 @@ function LearningAssessmentContent({
   const activeModuleCount = assessmentType === 'pretest' ? activeModuleIds.size : 0;
 
   const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
-  const qaEnabled = isLocalAssessmentQaEnabled();
-  const qaModules = useMemo(() => {
-    const map = new Map<string, string>();
-    questions.forEach((question) => {
-      if (!map.has(question.moduleId)) map.set(question.moduleId, question.moduleTitle);
-    });
-    return [...map.entries()].map(([id, title]) => ({ id, title }));
-  }, [questions]);
   const levelProgress = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
     return allQuestions.reduce<Array<{
@@ -316,49 +285,6 @@ function LearningAssessmentContent({
     }
   };
 
-  const buildQaAnswers = (): Record<number, any> => {
-    const nextAnswers = { ...answers };
-    questions.forEach((question) => {
-      nextAnswers[question.assessmentIndex] = devQaAnswerFor(
-        question.question,
-        !qaFailModuleIds.has(question.moduleId),
-      );
-    });
-    setAnswers(nextAnswers);
-    setError(null);
-    return nextAnswers;
-  };
-
-  const handleQaToggleModule = (moduleId: string): void => {
-    setQaFailModuleIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(moduleId)) next.delete(moduleId);
-      else next.add(moduleId);
-      return next;
-    });
-  };
-
-  const handleQaSetAll = (shouldFail: boolean): void => {
-    setQaFailModuleIds(shouldFail ? new Set(qaModules.map((module) => module.id)) : new Set());
-  };
-
-  const handleQaApply = (): void => {
-    buildQaAnswers();
-  };
-
-  const handleQaApplyAndSubmit = async (): Promise<void> => {
-    const nextAnswers = buildQaAnswers();
-    await submitLevel(nextAnswers);
-  };
-
-  const handleQaNext = async (): Promise<void> => {
-    if (levelSubmitted) {
-      handleContinue();
-      return;
-    }
-    await handleQaApplyAndSubmit();
-  };
-
   if (!loaded) {
     return (
       <main className="nt-test-page" data-testid={`${assessmentType}-page`}>
@@ -437,50 +363,6 @@ function LearningAssessmentContent({
                   </div>
                 ))}
               </div>
-            ) : null}
-
-            {qaEnabled && qaModules.length > 0 ? (
-              <aside className="nt-assessment__qa-panel" data-testid="assessment-dev-qa-panel">
-                <div className="nt-assessment__qa-head">
-                  <span className="nt-assessment__qa-badge">DEV QA</span>
-                  <strong>Local assessment controls</strong>
-                  <span>{qaFailModuleIds.size} failing / {qaModules.length} module(s)</span>
-                </div>
-                <div className="nt-assessment__qa-modules">
-                  {qaModules.map((module) => {
-                    const willFail = qaFailModuleIds.has(module.id);
-                    return (
-                      <label key={module.id} className="nt-assessment__qa-module" data-fail={willFail}>
-                        <input
-                          type="checkbox"
-                          checked={willFail}
-                          onChange={() => handleQaToggleModule(module.id)}
-                          disabled={levelSubmitted || saving}
-                        />
-                        <span>{module.title}</span>
-                        <em>{willFail ? 'fail' : 'pass'}</em>
-                      </label>
-                    );
-                  })}
-                </div>
-                <div className="nt-assessment__qa-actions">
-                  <button type="button" className="nt-lesson-button" onClick={() => handleQaSetAll(false)} disabled={levelSubmitted || saving}>
-                    All pass
-                  </button>
-                  <button type="button" className="nt-lesson-button" onClick={() => handleQaSetAll(true)} disabled={levelSubmitted || saving}>
-                    All fail
-                  </button>
-                  <button type="button" className="nt-lesson-button" onClick={handleQaApply} disabled={levelSubmitted || saving}>
-                    Apply answers
-                  </button>
-                  <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={handleQaApplyAndSubmit} disabled={levelSubmitted || saving}>
-                    Apply and submit
-                  </button>
-                  <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={handleQaNext} disabled={saving}>
-                    QA next
-                  </button>
-                </div>
-              </aside>
             ) : null}
 
             <ol className="nt-assessment__items">

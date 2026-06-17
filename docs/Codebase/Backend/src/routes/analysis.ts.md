@@ -8,9 +8,10 @@ This router now dispatches tests as isolated wrapper instances instead of replay
 
 ## Read Order
 1. `handleRunTests()` for request validation, gating, and streaming setup.
-2. `dispatchPatternTests()` for per-wrapper execution.
-3. `generateWrapperId()` for wrapper identity creation.
-4. `run-events` SSE route for delivery.
+2. `buildWrapperExecutionPlans()` for the per-question wrapper split.
+3. `dispatchPatternTests()` for per-wrapper execution.
+4. `generateWrapperId()` for wrapper identity creation.
+5. `run-events` SSE route for delivery.
 
 ## Flow
 ```mermaid
@@ -26,6 +27,7 @@ flowchart TD
 - One request can fan out to many wrapper instances.
 - The router does not create Docker pods directly.
 - The legacy blocking path still returns the same flattened result list for older callers.
+- Wrapper plans keep the source pattern attached so each question is tested in isolation without losing its original class metadata.
 
 ## Acceptance Checks
 - Wrapper identity is attached before the result enters the SSE store.

@@ -1513,6 +1513,26 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
 // subscriber bug cannot break the rest of the run.
 type PhaseEmitter = (result: TestResult) => void;
 
+export interface WrapperExecutionPlan {
+  patternId: string;
+  patternName: string;
+  className: string;
+  wrapperId: string;
+  sourcePattern: DetectedPatternResult;
+}
+
+export function buildWrapperExecutionPlans(patterns: DetectedPatternResult[]): WrapperExecutionPlan[] {
+  return patterns
+    .filter((p) => p.className)
+    .map((p) => ({
+      patternId: p.patternId,
+      patternName: p.patternName,
+      className: p.className!,
+      wrapperId: generateWrapperId(p.patternId, p.className!),
+      sourcePattern: p,
+    }));
+}
+
 async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
@@ -1525,17 +1545,19 @@ async function dispatchPatternTests(
     ? (r) => { try { onPhase(r); } catch { /* ignore subscriber errors */ } }
     : () => { /* no-op */ };
 
-  const eligible = patterns.filter(p => p.className);
+  const eligible = buildWrapperExecutionPlans(patterns);
   if (eligible.length === 0) return [];
 
   const wrapperResults = await Promise.all(eligible.map(async (p) => {
-    const className = p.className!;
-    const wrapperId = generateWrapperId(p.patternId, className);
+    const className = p.className;
+    const wrapperId = p.wrapperId;
+    const sourcePattern = p.sourcePattern;
+    const classText = sourcePattern.classText || '';
     const wrapperInput = {
       patternId: p.patternId,
       patternName: p.patternName,
       className,
-      classText: p.classText!,
+      classText,
       fullSource,
       files,
       userId,
@@ -1568,13 +1590,13 @@ async function dispatchPatternTests(
       return [staticResult, compileResult, skipped];
     }
 
-    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
+    const fallbackTarget = (sourcePattern.unitTestTargets || [])[0]?.function_name;
     const unitResult = await runPatternUnitTest({
       ...wrapperInput,
-      forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
-      factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
-      terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
-      instanceAccessor: detectInstanceAccessor(p.classText!, p.className!),
+      forwardMethod: pickMethodName(sourcePattern, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
+      factoryFn: pickMethodName(sourcePattern, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
+      terminator: pickMethodName(sourcePattern, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
+      instanceAccessor: detectInstanceAccessor(classText, sourcePattern.className || className),
       componentBase: 'Component',
       realBase: 'Subject',
       targetBase: 'Target',
