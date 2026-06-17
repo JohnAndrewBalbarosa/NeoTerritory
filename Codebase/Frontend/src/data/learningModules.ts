@@ -240,19 +240,6 @@ function inferPracticalTaxonomy(family: PracticalExam['family']): BloomTaxonomy 
   return family === 'Structural' ? 'analyzing' : 'applying';
 }
 
-function moduleDisplayName(moduleId: string): string {
-  const slug = moduleId.replace(/^[a-z]+-/, '');
-  return slug
-    .split('-')
-    .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ') || moduleId;
-}
-
-function moduleSlug(moduleId: string): string {
-  return moduleId.replace(/^[a-z]+-/, '');
-}
-
 function canonicalQuestionShape(question: ExamQuestion, taxonomy: BloomTaxonomy): ExamQuestion {
   const tagged = { ...question, taxonomy };
   if (isMcqQuestion(tagged)) {
@@ -261,105 +248,10 @@ function canonicalQuestionShape(question: ExamQuestion, taxonomy: BloomTaxonomy)
   return tagged;
 }
 
-function canUseStudioQuestion(moduleId: string): boolean {
-  if (moduleId.startsWith('foundations-')) return false;
-  const slug = moduleSlug(moduleId);
-  const detectionSlug = PATTERN_SLUG_ALIAS[slug]?.slug ?? slug;
-  return DETECTED_PATTERN_SLUGS.has(detectionSlug);
-}
-
-function fallbackMcqQuestion(moduleId: string, taxonomy: BloomTaxonomy): McqQuestion {
-  const name = moduleDisplayName(moduleId);
-  const topic = name.toLowerCase();
-  if (taxonomy === 'evaluating') {
-    return {
-      type: 'mcq',
-      taxonomy,
-      question: `Which review comment best evaluates a ${name} implementation?`,
-      options: [
-        `It should show the ${topic} intent clearly, not only coincidental syntax.`,
-        'It passes automatically if the class name contains Pattern.',
-        'It is correct when every method is static.',
-        'It should remove all interfaces to reduce files.',
-      ],
-      correctIndex: 0,
-      explanation: `Evaluation should check whether the implementation expresses the ${name} design intent.`,
-    };
-  }
-  return {
-    type: 'mcq',
-    taxonomy,
-    question: taxonomy === 'remembering'
-      ? `Which answer best names the main idea in ${name}?`
-      : `Which statement best explains why ${name} matters?`,
-    options: [
-      `${name} gives a named, reusable way to solve the module's design problem.`,
-      `${name} is only a compiler optimization flag.`,
-      `${name} means every class must inherit from one base class.`,
-      `${name} replaces the need to read code structure.`,
-    ],
-    correctIndex: 0,
-    explanation: `${name} is treated as a design concept with a recognizable intent and structure.`,
-  };
-}
-
-function fallbackIdentificationQuestion(moduleId: string, taxonomy: BloomTaxonomy): IdentificationQuestion {
-  const name = moduleDisplayName(moduleId);
-  const token = moduleSlug(moduleId).replace(/-/g, ' ');
-  return {
-    type: 'identification',
-    taxonomy,
-    question: taxonomy === 'creating'
-      ? `Name the design idea a learner should create for this module.`
-      : `Identify the design idea suggested by the scenario.`,
-    scenario: taxonomy === 'analyzing'
-      ? `A reviewer sees code whose responsibilities match the ${name} module and asks for the pattern or concept name.`
-      : `A learner must apply the ${name} module to a small C++ design exercise.`,
-    expectedTokens: [token],
-    explanation: `The expected answer is the module's core concept: ${name}.`,
-  };
-}
-
-function fallbackStudioQuestion(moduleId: string): StudioQuestion {
-  const slug = moduleSlug(moduleId);
-  const alias = PATTERN_SLUG_ALIAS[slug];
-  const targetPatternSlug = alias?.slug ?? slug;
-  const name = alias?.name ?? moduleDisplayName(moduleId);
-  return {
-    type: 'studio',
-    taxonomy: 'creating',
-    prompt: `Implement a small C++ example that demonstrates the ${name} pattern clearly enough for the Studio analyzer to tag it.`,
-    targetPatternSlug,
-    starterCode: `// TODO: write a compact ${name} example.\n`,
-    explanation: `A creating-level check should produce code that the analyzer can recognize as ${name}.`,
-  };
-}
-
-function fallbackQuestion(moduleId: string, taxonomy: BloomTaxonomy): ExamQuestion {
-  if (taxonomy === 'applying' || taxonomy === 'analyzing') {
-    return fallbackIdentificationQuestion(moduleId, taxonomy);
-  }
-  if (taxonomy === 'creating') {
-    return canUseStudioQuestion(moduleId)
-      ? fallbackStudioQuestion(moduleId)
-      : fallbackIdentificationQuestion(moduleId, taxonomy);
-  }
-  return fallbackMcqQuestion(moduleId, taxonomy);
-}
-
 function normalizeTheoryQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>): ExamQuestion[] {
-  const tagged = questions.map((q, index) =>
+  return questions.map((q, index) =>
     canonicalQuestionShape(q, inferBloomTaxonomy(q, index, moduleId)),
   );
-
-  return BLOOM_TAXONOMIES.map((taxonomy) => {
-    if (taxonomy === 'creating' && canUseStudioQuestion(moduleId)) {
-      const studio = tagged.find((question) => question.taxonomy === taxonomy && isStudioQuestion(question));
-      return studio ? canonicalQuestionShape(studio, taxonomy) : fallbackStudioQuestion(moduleId);
-    }
-    const exact = tagged.find((question) => question.taxonomy === taxonomy);
-    return exact ? canonicalQuestionShape(exact, taxonomy) : fallbackQuestion(moduleId, taxonomy);
-  });
 }
 
 function tagQuestions(moduleId: string, questions: ReadonlyArray<ExamQuestion>): ExamQuestion[] {
