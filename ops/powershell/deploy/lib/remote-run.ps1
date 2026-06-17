@@ -23,6 +23,14 @@ function Build-RemoteEnvLines {
   } else {
     Write-Host 'i Supabase mirror disabled - container will use local SQLite only'
   }
+  # Keep the Google auth contract aligned with ops/bash/deploy/lib/ship.sh.
+  # The backend status + exchange route needs these vars on the live AWS
+  # container to expose and verify Google sign-in correctly.
+  if ($env:AUTH_PROVIDER)            { $lines += "AUTH_PROVIDER=$($env:AUTH_PROVIDER)" }
+  if ($env:AUTH_SUPABASE_ANON_KEY)   { $lines += "AUTH_SUPABASE_ANON_KEY=$($env:AUTH_SUPABASE_ANON_KEY)" }
+  if ($env:GOOGLE_OAUTH_CLIENT_ID)   { $lines += "GOOGLE_OAUTH_CLIENT_ID=$($env:GOOGLE_OAUTH_CLIENT_ID)" }
+  if ($env:GOOGLE_OAUTH_CLIENT_SECRET) { $lines += "GOOGLE_OAUTH_CLIENT_SECRET=$($env:GOOGLE_OAUTH_CLIENT_SECRET)" }
+  if ($env:GOOGLE_OAUTH_REDIRECT_URI)  { $lines += "GOOGLE_OAUTH_REDIRECT_URI=$($env:GOOGLE_OAUTH_REDIRECT_URI)" }
   return ,$lines
 }
 

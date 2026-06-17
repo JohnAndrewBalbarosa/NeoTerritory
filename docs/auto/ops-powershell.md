@@ -81,7 +81,7 @@ Build the remote env file content and (re)start the container on AWS.
 **Functions**
 
 - `Build-RemoteEnvLines` (line 3)
-- `Restart-RemoteContainer` (line 29)
+- `Restart-RemoteContainer` (line 37)
 
 ### `ops/powershell/deploy/lib/ship.ps1`
 
