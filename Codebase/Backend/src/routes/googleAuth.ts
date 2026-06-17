@@ -58,9 +58,90 @@ const SUPABASE_AUTH_URL = (
   || ''
 ).replace(/\/+$/, '');
 const SUPABASE_ANON_KEY = process.env.AUTH_SUPABASE_ANON_KEY || '';
+const DEFAULT_FRONTEND_ORIGIN = 'https://neoterritory.vercel.app';
+export const AUTH_CALLBACK_CONTENT_SECURITY_POLICY = [
+  "default-src 'none'",
+  "script-src 'unsafe-inline'",
+  "style-src 'unsafe-inline'",
+  "base-uri 'none'",
+  "form-action 'none'",
+  "frame-ancestors 'none'",
+].join('; ');
 
 function authConfigured(): boolean {
   return !!SUPABASE_AUTH_URL && !!SUPABASE_ANON_KEY;
+}
+
+function normalizeOrigin(raw: string | undefined): string | null {
+  if (!raw || raw === '*') return null;
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return null;
+  }
+}
+
+export function resolveFrontendCallbackOrigin(): string {
+  const candidates = [
+    process.env.PUBLIC_BASE_URL,
+    process.env.SITE_URL,
+    process.env.FRONTEND_ORIGIN,
+    process.env.CORS_ORIGIN,
+    DEFAULT_FRONTEND_ORIGIN,
+  ];
+  for (const candidate of candidates) {
+    const origin = normalizeOrigin(candidate);
+    if (origin) return origin;
+  }
+  return DEFAULT_FRONTEND_ORIGIN;
+}
+
+export function buildFrontendCallbackRedirectHtml(
+  frontendOrigin: string = resolveFrontendCallbackOrigin(),
+): string {
+  const safeOrigin = normalizeOrigin(frontendOrigin) || DEFAULT_FRONTEND_ORIGIN;
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NeoTerritory sign-in</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; font-family: system-ui, sans-serif; color: #111827; background: #f8fafc; }
+    main { max-width: 34rem; padding: 2rem; }
+    p { line-height: 1.5; }
+    a { color: #2563eb; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Finishing sign-in</h1>
+    <p id="message">Taking you back to NeoTerritory.</p>
+    <p><a id="fallback" href="${safeOrigin}/auth/callback">Continue</a></p>
+  </main>
+  <script>
+    (() => {
+      const frontendOrigin = ${JSON.stringify(safeOrigin)};
+      const target = new URL('/auth/callback', frontendOrigin);
+      target.search = window.location.search;
+      target.hash = window.location.hash;
+      const fallback = document.getElementById('fallback');
+      if (fallback) fallback.setAttribute('href', target.toString());
+      const alreadyOnFrontendCallback =
+        target.origin === window.location.origin &&
+        target.pathname.replace(/\\/+$/, '') === window.location.pathname.replace(/\\/+$/, '');
+      if (!alreadyOnFrontendCallback) {
+        window.location.replace(target.toString());
+        return;
+      }
+      const message = document.getElementById('message');
+      if (message) {
+        message.textContent = 'The auth callback reached the API backend. Deploy the frontend rewrite so /auth/callback serves the app.';
+      }
+    })();
+  </script>
+</body>
+</html>`;
 }
 
 // Verify a Supabase access_token by calling /auth/v1/user against the
@@ -84,6 +165,12 @@ async function verifySupabaseToken(token: string): Promise<SupabaseUser | null> 
     return null;
   }
 }
+
+router.get('/callback', (_req: Request, res: Response): void => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Content-Security-Policy', AUTH_CALLBACK_CONTENT_SECURITY_POLICY);
+  res.type('html').send(buildFrontendCallbackRedirectHtml());
+});
 
 // Find-or-create a local users row for a Supabase identity. We key on
 // email when present (Google always provides one); falls back to a

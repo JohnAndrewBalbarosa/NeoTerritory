@@ -42,6 +42,12 @@ flowchart TD
 ## Local Dev Warning
 If the browser says there are no guest seats, or the Google button disappears, the first thing to verify is the local backend proxy path. The UI can only see the seat data and Google status if `/auth/*` reaches the live backend process.
 
+## Deployment Warning
+`/auth/callback` is not a backend API route. Supabase returns the OAuth token in the browser
+hash, so Vercel must serve the SPA entry for that path before the broad `/auth/*` backend
+proxy. Only follow-up endpoints such as `/auth/google/status` and `/auth/google/exchange`
+should proxy to Express.
+
 ## Implementation Note
 - Guest seats are real rows in SQLite; the button should only read them through `/auth/test-accounts`.
 - Google sign-in should stay hidden when `/auth/google/status` is unavailable or unconfigured, but the route itself must not fail because the frontend cannot reach the backend.

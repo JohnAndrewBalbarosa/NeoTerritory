@@ -1,7 +1,7 @@
 # routes
 
 - Folder: docs/Codebase/Backend/src/routes
-- Descendant source docs: 7
+- Descendant source docs: 8
 - Generated on: 2026-04-23
 
 ## Logic Summary
@@ -29,6 +29,7 @@ These documents explain the local implementation by covering Maps HTTP routes to
 - auth.js.md : Maps HTTP routes to middleware and controllers.
 - admin.ts.md : Maps the admin analytics, configuration, and export endpoints to their route handlers.
 - learning.ts.md : Maps public learning modules, learner progress, exam answers, and server-backed assessment history to their route handlers.
+- googleAuth.ts.md : Maps Supabase Google OAuth callback handoff, token exchange, onboarding, invite, and join-request routes.
 - health.js.md : Maps HTTP routes to middleware and controllers.
 - transform.js.md : Maps the live class-analysis JSON endpoint and the legacy upload endpoint to their controller paths.
 - projectLearningOrchestration.js.md : Maps the project-manager intake, intern assessment, and readiness review endpoints to their controller paths.

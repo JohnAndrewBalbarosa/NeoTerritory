@@ -24,7 +24,7 @@ The main entry paths are:
 - `CLEAN_CODE_ARCHITECTURE_PLAN.md` for repo-wide slice rules, naming, docs architecture, root hygiene, and Git hygiene.
 - `Backend/README.md`, `Frontend/README.md`, `Microservice/README.md`, and `Infrastructure/README.md` for subsystem boundaries.
 - `Notes.md` for loose repository notes that do not belong in the formal blueprint.
-- `start.ps1.md` and `start.sh.md` for root dispatcher behavior.
+- `start.ps1.md`, `start.sh.md`, and `vercel.json.md` for root dispatcher and deploy behavior.
 - `.gitignore.md` for tracked-vs-local artifact policy.
 
 ## Boundary Rules

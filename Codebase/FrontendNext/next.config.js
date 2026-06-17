@@ -51,12 +51,17 @@ const nextConfig = {
   // Server-side proxy to AWS. An HTTPS Vercel page cannot fetch the plain-HTTP AWS box
   // (mixed content), so these are fetched server-side; the browser only sees HTTPS. This
   // also removes any CORS requirement and keeps client.ts relative paths unchanged.
+  // afterFiles lets real App Router pages, especially /auth/callback, win before the
+  // broad /auth proxy. The callback must run in the browser to keep the Supabase URL
+  // fragment intact.
   async rewrites() {
-    return [
-      { source: '/api/:path*', destination: `${AWS_BACKEND_ORIGIN}/api/:path*` },
-      { source: '/auth/:path*', destination: `${AWS_BACKEND_ORIGIN}/auth/:path*` },
-      { source: '/health', destination: `${AWS_BACKEND_ORIGIN}/health` },
-    ];
+    return {
+      afterFiles: [
+        { source: '/api/:path*', destination: `${AWS_BACKEND_ORIGIN}/api/:path*` },
+        { source: '/auth/:path*', destination: `${AWS_BACKEND_ORIGIN}/auth/:path*` },
+        { source: '/health', destination: `${AWS_BACKEND_ORIGIN}/health` },
+      ],
+    };
   },
 };
 

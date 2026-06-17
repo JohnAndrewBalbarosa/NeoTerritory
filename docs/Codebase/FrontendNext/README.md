@@ -45,14 +45,18 @@ rendering plays the reveals from a clean mount, exactly like the original Vite S
   `ssr:false` wrappers;
   meaningful content depends on the `localStorage` JWT, fetched through the proxy after mount.
 - **"Vercel is the backend" is the proxy, not SSR.** `next.config` rewrites forward
-  `/api`·`/auth`·`/health` to AWS server-side (`AWS_BACKEND_ORIGIN`), so the browser only sees
-  Vercel and the AWS origin + `.env` stay hidden. That is the entire server-side surface.
+  `/api`, backend-owned `/auth` routes, and `/health` to AWS server-side
+  (`AWS_BACKEND_ORIGIN`), so the browser only sees Vercel and the AWS origin + `.env` stay
+  hidden. `/auth/callback` stays on the frontend because it must read the Supabase URL
+  fragment in the browser.
 
 ## Proxy
-`next.config.js` rewrites mirror the retired `vercel.json`: `/api/:path*`, `/auth/:path*`,
-`/health` → `${AWS_BACKEND_ORIGIN}/...` (default `http://122.248.192.49`). Server-side proxy
-is mandatory (an HTTPS Vercel page cannot call the plain-HTTP AWS box — mixed content);
-it also removes any CORS need and keeps `client.ts` relative paths unchanged. See D88/D89.
+`next.config.js` rewrites mirror the Vercel deployment boundary: `/api/:path*`,
+backend-owned `/auth/:path*`, and `/health` go to `${AWS_BACKEND_ORIGIN}/...` (default
+`http://122.248.192.49`). The rewrites run after real route files so
+`app/auth/callback/page.tsx` wins over the broad auth proxy. Server-side proxy is mandatory
+(an HTTPS Vercel page cannot call the plain-HTTP AWS box, which would be mixed content); it
+also removes any CORS need and keeps `client.ts` relative paths unchanged. See D88/D89.
 
 ## Vite-ism handling (shared source under webpack)
 The shared `Frontend/src` uses a few Vite-only mechanisms; the Next build handles them

@@ -18,7 +18,8 @@ created/linked once by a human with the `vercel` CLI (see below). Design rationa
 
 | Request | Goes to |
 |---------|---------|
-| `/api/*`, `/auth/*`, `/health` | proxied **server-side** to `http://122.248.192.49/...` |
+| `/api/*`, backend-owned `/auth/*`, `/health` | proxied **server-side** to `http://122.248.192.49/...` |
+| `/auth/callback` | `/index.html` (SPA callback; keeps the Supabase URL fragment in the browser) |
 | `/admin`, `/admin/*` | `/admin.html` (separate admin bundle) |
 | `/scraper`, `/scraper/*` | `/scraper.html` |
 | everything else | `/index.html` (SPA fallback) |
