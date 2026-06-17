@@ -61,19 +61,16 @@ describe('learningModules.seed.json parity', () => {
     });
   });
 
-  it('stores theoretical exams with valid taxonomies and mixed question shapes', () => {
+  it('stores a canonical six-question Bloom bank with mixed question shapes', () => {
     const rows = loadSeed();
-    const validTaxonomies = ['remembering', 'understanding', 'applying', 'analyzing', 'evaluating', 'creating'];
+    const expectedTaxonomies = ['remembering', 'understanding', 'applying', 'analyzing', 'evaluating', 'creating'];
     const allQuestions = rows.flatMap((row) => row.theoreticalExam?.questions ?? []);
 
     rows.forEach((row) => {
       const questions = row.theoreticalExam?.questions ?? [];
-      questions.forEach(q => {
-        expect(validTaxonomies).toContain(q.taxonomy);
-      });
+      expect(questions).toHaveLength(6);
+      expect(questions.map((q) => q.taxonomy)).toEqual(expectedTaxonomies);
     });
-    
-    // We expect at least one identification and one studio question across the whole bank
     expect(allQuestions.some((q) => q.type === 'identification')).toBe(true);
     expect(allQuestions.some((q) => q.type === 'studio')).toBe(true);
     expect(allQuestions.every((q) => typeof q.type === 'string')).toBe(true);

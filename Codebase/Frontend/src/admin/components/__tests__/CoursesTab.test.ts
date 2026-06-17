@@ -31,8 +31,8 @@ function moduleFixture(overrides: Partial<AdminLearningModule> = {}): AdminLearn
 }
 
 describe('CoursesTab bank health', () => {
-  it('flags sparse legacy banks since learner-contract normalization no longer pads them', () => {
-    expect(hasIncompleteTheoreticalBank(moduleFixture())).toBe(true);
+  it('does not flag sparse legacy banks after learner-contract normalization', () => {
+    expect(hasIncompleteTheoreticalBank(moduleFixture())).toBe(false);
   });
 
   it('still flags modules with no theoretical exam', () => {
