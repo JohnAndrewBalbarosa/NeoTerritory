@@ -41,6 +41,7 @@ export interface TestResult {
   patternId: string;
   patternName: string;
   className: string;
+  wrapperId?: string;
   phase: TestPhase;
   passed: boolean;
   expected: string;
@@ -191,6 +192,10 @@ interface RunInputs {
   // into this user's per-tester Docker container (services/podManager.ts);
   // otherwise this is a hint-only field. `undefined` falls back to local.
   userId?: number;
+  // Wrapper identity for one isolated question/pattern instance. All
+  // phases for the same wrapper share this id so the UI and run stream
+  // can keep per-question instances separate even when they share one pod.
+  wrapperId?: string;
   // Optional stdin stream forwarded verbatim to the binary on the
   // run-binary phase (compile is unaffected). Newlines act as the user's
   // Enter key.
@@ -321,6 +326,7 @@ async function runPhase(
     patternId: input.patternId,
     patternName: input.patternName,
     className: input.className,
+    wrapperId: input.wrapperId,
     phase,
     expected: 'pass',
     actual: '',
@@ -553,6 +559,7 @@ export async function runPatternUnitTest(input: RunInputs): Promise<TestResult> 
       patternId:   input.patternId,
       patternName: input.patternName,
       className:   input.className,
+      wrapperId:   input.wrapperId,
       phase:       'unit_test',
       passed:      false,
       expected:    'pass',
@@ -644,6 +651,7 @@ export async function runStaticAnalysis(input: RunInputs): Promise<TestResult> {
     patternId: input.patternId,
     patternName: input.patternName,
     className: input.className,
+    wrapperId: input.wrapperId,
     phase: 'static_analysis',
     passed: false,
     expected: 'no error-level findings',
@@ -734,6 +742,7 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
     patternId: input.patternId,
     patternName: input.patternName,
     className: input.className,
+    wrapperId: input.wrapperId,
     phase,
     passed: false,
     expected: 'pass',

@@ -8,8 +8,8 @@
  *   of waiting for the whole batch to finish.
  *
  * Idempotency contract:
- *   pushPhaseEvent({ runId, phase, patternId }) is a no-op if the same
- *   (runId, phase, patternId) tuple has already been emitted. This is the
+ *   pushPhaseEvent({ runId, phase, patternId, className, wrapperId }) is a no-op if the same
+ *   (runId, phase, patternId, className, wrapperId) tuple has already been emitted. This is the
  *   guarantee that lets a future out-of-process pod retry its callback
  *   without duplicating UI rows.
  */
@@ -81,7 +81,7 @@ function evictExpired(): void {
 
 /**
  * Reserve a runId. Returns false if the runId already exists for any
- * owner — callers must generate fresh ids per click.
+ * owner - callers must generate fresh ids per click.
  */
 export function reserveRun(runId: string, userId: number): boolean {
   evictExpired();
@@ -102,7 +102,7 @@ export function reserveRun(runId: string, userId: number): boolean {
 /**
  * Returns the runId currently in flight for this user, if any. Used to
  * implement the "reject second run while one is already running" rule
- * — we hand the FE the existing runId so it can resubscribe to the SSE
+ * - we hand the FE the existing runId so it can resubscribe to the SSE
  * stream instead of spawning a duplicate run.
  */
 export function findActiveRunFor(userId: number): string | null {
@@ -120,21 +120,19 @@ export function getRun(runId: string): { userId: number; done: boolean } | null 
 
 /**
  * Append a phase result to the run's event log. De-duped by
- * (phase, patternId, className) — the className is part of the key
- * because the same patternId can legitimately apply to multiple
- * classes in a single submission (e.g. behavioural.strategy_concrete
- * matched on both Truck and Car). De-duping on patternId alone
- * silently dropped the second class's events, so the FE saw the
- * pattern row stuck at "idle" forever.
+ * (phase, wrapperId, patternId, className) so a wrapper instance can be
+ * retried safely without duplicating UI rows. The wrapper id is now the
+ * primary identity; patternId/className remain in the key as a stable
+ * fallback for older callers.
  *
- * Emitting the same (runId, phase, patternId, className) tuple twice
- * is still a no-op — that's the idempotency guarantee a retrying
+ * Emitting the same (runId, phase, wrapperId, patternId, className) tuple
+ * twice is still a no-op - that's the idempotency guarantee a retrying
  * out-of-process pod relies on.
  */
 export function pushPhaseEvent(runId: string, phase: TestPhase, result: TestResult): void {
   const rec = runs.get(runId);
   if (!rec || rec.done) return;
-  const key = `${phase}:${result.patternId}:${result.className}`;
+  const key = `${phase}:${result.wrapperId || ''}:${result.patternId}:${result.className}`;
   if (rec.seenKeys.has(key)) return;
   rec.seenKeys.add(key);
   const event: RunPhaseEvent = {

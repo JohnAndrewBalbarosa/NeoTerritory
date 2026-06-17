@@ -10,6 +10,7 @@ Tab components render the primary Studio workspace views. They receive Studio-le
 ## Documents By Logic
 
 - `SubmitTab.tsx.md` - Studio submit form host and run-list pairing.
+- `GdbRunnerTab.tsx.md` - Wrapper-aware GDB result tree and phase viewer.
 
 ## Acceptance Checks
 

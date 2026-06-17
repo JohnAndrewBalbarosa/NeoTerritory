@@ -31,6 +31,7 @@ These documents explain the local implementation by covering Maps HTTP routes to
 - learning.ts.md : Maps public learning modules, learner progress, exam answers, and server-backed assessment history to their route handlers.
 - googleAuth.ts.md : Maps Supabase Google OAuth callback handoff, token exchange, onboarding, invite, and join-request routes.
 - health.js.md : Maps HTTP routes to middleware and controllers.
+- analysis.ts.md : Maps the analysis and test-run routes, including wrapper-aware dispatch and SSE delivery.
 - transform.js.md : Maps the live class-analysis JSON endpoint and the legacy upload endpoint to their controller paths.
 - projectLearningOrchestration.js.md : Maps the project-manager intake, intern assessment, and readiness review endpoints to their controller paths.
 

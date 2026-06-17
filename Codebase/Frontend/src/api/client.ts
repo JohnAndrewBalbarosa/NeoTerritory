@@ -700,6 +700,7 @@ export interface GdbTestResult {
   patternId: string;
   patternName: string;
   className: string;
+  wrapperId?: string;
   phase: GdbTestPhase;
   passed: boolean;
   expected: string;

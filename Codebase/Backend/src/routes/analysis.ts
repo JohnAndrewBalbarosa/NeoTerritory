@@ -355,13 +355,13 @@ function buildAiAnnotations(detectedPatterns: DetectedPatternResult[], aiByPatte
 
 // Beginner-friendly fallback descriptions per structural-anchor label.
 // Used when AI documentation is unavailable for that anchor so the docs
-// page never says "AI documentation pending" — the reader sees a plain,
+// page never says "AI documentation pending" Ã¢â‚¬â€ the reader sees a plain,
 // useful one-liner instead. Keep these as one sentence, plain words,
 // no jargon. New anchor labels added to the catalog should get an entry
 // here; missing labels fall back to a pattern-name sentence.
 const ANCHOR_FALLBACKS: Record<string, string> = {
   // Singleton
-  singleton_class: 'This is the singleton class — the one and only shared object.',
+  singleton_class: 'This is the singleton class Ã¢â‚¬â€ the one and only shared object.',
   static_instance_accessor: 'Call this static accessor to get the shared instance. Every call returns the same object.',
   instance_accessor_method: 'This method hands out the single shared instance.',
   // Factory
@@ -371,29 +371,29 @@ const ANCHOR_FALLBACKS: Record<string, string> = {
   factory_return: 'The factory returns the new object here.',
   // Builder / Method Chaining
   builder_class: 'This is the builder. It assembles an object step by step.',
-  fluent_class: 'This class supports method chaining — each setter returns the object itself so calls can stack.',
+  fluent_class: 'This class supports method chaining Ã¢â‚¬â€ each setter returns the object itself so calls can stack.',
   fluent_setter_return: 'This setter returns `*this` so you can chain calls like `obj.setA(...).setB(...)`.',
   fluent_self_return: 'Returning `*this` is what makes method chaining work.',
   // Strategy
-  strategy_interface_class: 'This is the strategy interface — it lists the operation every concrete strategy must implement.',
+  strategy_interface_class: 'This is the strategy interface Ã¢â‚¬â€ it lists the operation every concrete strategy must implement.',
   strategy_virtual_marker: 'The `virtual` keyword marks the operation that subclasses will override.',
   strategy_method: 'This is the operation each strategy is required to implement.',
-  strategy_concrete_class: 'This is one concrete strategy — a specific implementation of the interface.',
+  strategy_concrete_class: 'This is one concrete strategy Ã¢â‚¬â€ a specific implementation of the interface.',
   strategy_inheritance: 'The `:` shows this class inherits from the strategy interface above.',
   strategy_base_class: 'This is the strategy interface being inherited from.',
   strategy_override_method: 'This method overrides the interface operation with concrete behaviour.',
   // Adapter
-  adapter_class: 'This is the adapter — it makes one type usable where a different type is expected.',
+  adapter_class: 'This is the adapter Ã¢â‚¬â€ it makes one type usable where a different type is expected.',
   adapter_wrapped_target: 'This holds the object being adapted. The adapter forwards work to it.',
   adapter_forwarding_op: 'This call forwards the request to the wrapped object.',
   adapter_forwarded_call: 'The wrapped object does the real work here.',
   // Decorator
-  decorator_class: 'This is the decorator — it adds behaviour around an existing object without changing it.',
+  decorator_class: 'This is the decorator Ã¢â‚¬â€ it adds behaviour around an existing object without changing it.',
   decorator_wrapped_component: 'This holds the wrapped object whose behaviour is being extended.',
   decorator_forwarding_op: 'This call delegates to the wrapped object, with extra behaviour added before or after.',
   decorator_forwarded_call: 'This is the wrapped object\'s call that the decorator wraps.',
   // Proxy
-  proxy_class: 'This is the proxy — a stand-in that controls access to the real object.',
+  proxy_class: 'This is the proxy Ã¢â‚¬â€ a stand-in that controls access to the real object.',
   proxy_real_subject: 'This holds the real object the proxy stands in for.',
   proxy_forwarding_op: 'This call passes the request through to the real object.',
   proxy_forwarded_call: 'This is the real object\'s call that the proxy guards.',
@@ -453,7 +453,7 @@ function buildAnnotations(detectedPatterns: DetectedPatternResult[], aiByPattern
 
     // Per project owner: when no AI test plan was produced for this target,
     // do NOT push a placeholder "AI test plan pending" annotation. The docs
-    // surface is for beginners — empty rows are confusing and out of place.
+    // surface is for beginners Ã¢â‚¬â€ empty rows are confusing and out of place.
     // Render unit-test annotations only when there is a real plan to show.
     (pattern.unitTestTargets || []).forEach((target) => {
       const planKey = String(target.function_hash || '');
@@ -608,7 +608,7 @@ router.get('/health', (req: Request, res: Response) => {
   // Health stays public so the boot screen / unauthenticated probes
   // work, but if the caller does present a valid Bearer JWT we decode
   // it to surface per-user pod status (`docker.mine`). Decoding failure
-  // is silent — the route still returns the public payload.
+  // is silent Ã¢â‚¬â€ the route still returns the public payload.
   let callerUserId: number | null = null;
   const auth = req.headers['authorization'];
   if (auth && auth.startsWith('Bearer ')) {
@@ -616,7 +616,7 @@ router.get('/health', (req: Request, res: Response) => {
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET as string) as { id?: number };
       if (typeof decoded?.id === 'number') callerUserId = decoded.id;
-    } catch { /* invalid / expired — leave callerUserId null */ }
+    } catch { /* invalid / expired Ã¢â‚¬â€ leave callerUserId null */ }
   }
 
   const totalRuns = (() => {
@@ -640,13 +640,13 @@ router.get('/health', (req: Request, res: Response) => {
     }
   })();
 
-  // Public masterlist values — checked synchronously at request time
+  // Public masterlist values Ã¢â‚¬â€ checked synchronously at request time
   // because they are cheap (filesystem existence + env-var presence)
   // and the caller needs an authoritative answer immediately.
   const microservice = getMicroserviceStatus();
   const ai           = getAiTranslatorStatus();
 
-  // Private masterlist — Docker / pods. Read-only snapshot of state
+  // Private masterlist Ã¢â‚¬â€ Docker / pods. Read-only snapshot of state
   // maintained by dockerWatcher (background prober) and podManager
   // (event-driven on ensurePod / disposePod). /api/health never spawns
   // a docker subprocess; if the watcher hasn't flipped Docker online
@@ -672,7 +672,7 @@ router.get('/health', (req: Request, res: Response) => {
     service: 'NeoTerritory analysis api',
     aiProviderConfigured: ai.configured,
     aiModel:              ai.model,
-    // Provenance of the active AI config — 'db' if set via the admin AI
+    // Provenance of the active AI config Ã¢â‚¬â€ 'db' if set via the admin AI
     // tab, 'env' if baked into the container, 'none' if unconfigured.
     // The admin dashboard surfaces this on the AI ops pill.
     aiProvider:           ai.provider,
@@ -883,9 +883,9 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
     const intMainMatch = fileList.find(f => /\bint\s+main\s*\(/.test(f.code));
     let primaryName = (mainCppMatch || intMainMatch || fileList[0]).name;
 
-    // Resolve the org once — its pattern-group config drives which patterns
+    // Resolve the org once Ã¢â‚¬â€ its pattern-group config drives which patterns
     // every file in this submission is checked against. Org-less callers
-    // (guests/devcon/solo) get null → pristine default catalog.
+    // (guests/devcon/solo) get null Ã¢â€ â€™ pristine default catalog.
     const analyzeOrgId = resolveAnalyzeOrgId(req.user);
 
     for (const f of fileList) {
@@ -1097,7 +1097,7 @@ router.post('/analyze', jwtAuth, upload.single('file'), maybeValidateAnalyzeBody
 // + the save handler so the studio can collapse its two-step flow into
 // one click without changing the underlying persistence path.
 router.post('/runs/submit-and-save', jwtAuth, validateBody(saveRunSchema), (req: Request, res: Response, next: NextFunction) => {
-  // Delegate to the same handler — validation already happened via the
+  // Delegate to the same handler Ã¢â‚¬â€ validation already happened via the
   // shared middleware. This route exists so the frontend can call a
   // semantically-named endpoint and so future server-side validation
   // can hang off it without touching /runs/save's contract.
@@ -1134,7 +1134,7 @@ function saveRunHandler(req: Request, res: Response, next: NextFunction): void {
     // payload so the admin's /api/admin/stats/complexity-data regression
     // can plot the true submission size on the x-axis. Without this, the
     // admin endpoint falls back to counting tokens from analysis_runs.
-    // source_text — which only holds ONE file for multi-file submissions,
+    // source_text Ã¢â‚¬â€ which only holds ONE file for multi-file submissions,
     // truncating the x-axis and flattening the regression scatter.
     const submissionFiles = Array.isArray((pending.analysis as { files?: Array<{ sourceText?: string }> }).files)
       ? ((pending.analysis as { files?: Array<{ sourceText?: string }> }).files || [])
@@ -1161,7 +1161,7 @@ function saveRunHandler(req: Request, res: Response, next: NextFunction): void {
 
     // If the user already finished a streaming run for this pendingId,
     // re-key the buffered persistence under the new analysis_runs.id so
-    // the eventual survey-submit handler can find it. No DB write yet —
+    // the eventual survey-submit handler can find it. No DB write yet Ã¢â‚¬â€
     // that's gated on /survey/run/:runId.
     bindRunIdToPending(pendingId, Number(run.id));
 
@@ -1391,7 +1391,7 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
       return;
     }
 
-    // Idempotency — re-submitting the SAME (run, user, line, kind,
+    // Idempotency Ã¢â‚¬â€ re-submitting the SAME (run, user, line, kind,
     // pattern, otherText) tuple within 60s is treated as a no-op
     // success rather than a duplicate INSERT. The validation flow
     // streams every row in a tight loop; if the user double-clicks
@@ -1443,7 +1443,7 @@ router.post('/analysis/:runId/manual-review', jwtAuth, (req: Request, res: Respo
 // Returns 503 with a clear message when the runner is disabled (default), so
 // the frontend can render a "configure ENABLE_TEST_RUNNER to enable" banner.
 //
-// Saving is NOT required — the runner works on either a saved runId (path
+// Saving is NOT required Ã¢â‚¬â€ the runner works on either a saved runId (path
 // param) or a still-pending pendingId (JSON body). Either form looks up the
 // detected patterns + classText and dispatches per-pattern tests.
 //
@@ -1470,7 +1470,7 @@ function gdbBudgetCheck(userId: number): { allowed: boolean; retryAfterMs: numbe
 }
 
 // Probe the class text for a method that *looks* like a Singleton instance
-// accessor — `static T& instance()`, `static T* getInstance()`, etc. Without
+// accessor Ã¢â‚¬â€ `static T& instance()`, `static T* getInstance()`, etc. Without
 // this, the templated test driver hard-codes "instance" and breaks on the
 // (very common) classes that name their accessor differently.
 function detectInstanceAccessor(classText: string, className: string): string {
@@ -1509,7 +1509,7 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
 // Optional per-phase callback. Fires the moment a single (phase, patternId)
 // pair resolves, so a streaming caller (the SSE endpoint) can forward the
 // verdict to the frontend before the rest of the batch is done. The
-// callback is best-effort — its exceptions are swallowed so an SSE
+// callback is best-effort Ã¢â‚¬â€ its exceptions are swallowed so an SSE
 // subscriber bug cannot break the rest of the run.
 type PhaseEmitter = (result: TestResult) => void;
 
@@ -1528,98 +1528,63 @@ async function dispatchPatternTests(
   const eligible = patterns.filter(p => p.className);
   if (eligible.length === 0) return [];
 
-  // Static analysis + compile_run both only depend on the submission's
-  // source, so we run each once and replay the same TestResult under every
-  // eligible pattern's (patternId, className) keys. Cuts a 5-pattern
-  // submission from 10 compile calls to 6 (and adds 1 static-analysis call,
-  // not 5). Each unit_test then runs in parallel below.
-  const probe = eligible[0];
-
-  // Phase 0 — static analysis (cppcheck). Cheap, always runs, never blocks.
-  const sharedStatic = await runStaticAnalysis({
-    patternId:   probe.patternId,
-    patternName: probe.patternName,
-    className:   probe.className!,
-    classText:   probe.classText!,
-    fullSource,
-    files,
-    userId,
-    stdin
-  });
-  const staticResults: TestResult[] = eligible.map(p => ({
-    ...sharedStatic,
-    patternId:   p.patternId,
-    patternName: p.patternName,
-    className:   p.className!,
-  }));
-  for (const sr of staticResults) safeEmit(sr);
-
-  const sharedCompile = await runSubmissionCompile({
-    patternId:   probe.patternId,
-    patternName: probe.patternName,
-    className:   probe.className!,
-    classText:   probe.classText!,
-    fullSource,
-    files,
-    userId,
-    stdin
-  });
-
-  const compileResults: TestResult[] = eligible.map(p => ({
-    ...sharedCompile,
-    patternId:   p.patternId,
-    patternName: p.patternName,
-    className:   p.className!
-  }));
-  for (const cr of compileResults) safeEmit(cr);
-
-  // If the shared compile failed there is no point running any unit_test —
-  // mark them all skipped at once with the same upstream message.
-  if (!sharedCompile.passed) {
-    const skips: TestResult[] = eligible.map(p => ({
-      patternId:   p.patternId,
+  const wrapperResults = await Promise.all(eligible.map(async (p) => {
+    const className = p.className!;
+    const wrapperId = generateWrapperId(p.patternId, className);
+    const wrapperInput = {
+      patternId: p.patternId,
       patternName: p.patternName,
-      className:   p.className!,
-      phase:       'unit_test',
-      passed:      false,
-      expected:    'pass',
-      actual:      '',
-      exitCode:    0,
-      durationMs:  0,
-      verdict:     'skipped',
-      message:     'Skipped — your class did not compile or did not exit cleanly on its own.'
-    }));
-    for (const sk of skips) safeEmit(sk);
-    return [...staticResults, ...compileResults, ...skips];
-  }
-
-  // Compile succeeded → run every unit_test driver in parallel. Each driver
-  // gets its own scratch dir so they cannot collide on disk. Emit each
-  // pattern's unit_test result as soon as its individual promise resolves —
-  // do not wait for the whole Promise.all to settle before forwarding.
-  const unitResults = await Promise.all(eligible.map(p => {
-    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
-    return runPatternUnitTest({
-      patternId:        p.patternId,
-      patternName:      p.patternName,
-      className:        p.className!,
-      classText:        p.classText!,
+      className,
+      classText: p.classText!,
       fullSource,
       files,
       userId,
-      stdin,
-      forwardMethod:    pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
-      factoryFn:        pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
-      terminator:       pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
+      wrapperId,
+      stdin
+    };
+
+    const staticResult = await runStaticAnalysis(wrapperInput);
+    safeEmit(staticResult);
+
+    const compileResult = await runSubmissionCompile(wrapperInput);
+    safeEmit(compileResult);
+
+    if (!compileResult.passed) {
+      const skipped: TestResult = {
+        patternId: p.patternId,
+        patternName: p.patternName,
+        className,
+        wrapperId,
+        phase: 'unit_test',
+        passed: false,
+        expected: 'pass',
+        actual: '',
+        exitCode: 0,
+        durationMs: 0,
+        verdict: 'skipped',
+        message: 'Skipped - your class did not compile or did not exit cleanly on its own.'
+      };
+      safeEmit(skipped);
+      return [staticResult, compileResult, skipped];
+    }
+
+    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
+    const unitResult = await runPatternUnitTest({
+      ...wrapperInput,
+      forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
+      factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
+      terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
       instanceAccessor: detectInstanceAccessor(p.classText!, p.className!),
-      componentBase:    'Component',
-      realBase:         'Subject',
-      targetBase:       'Target',
-      targetMethod:     fallbackTarget
-    }).then((r) => { safeEmit(r); return r; });
+      componentBase: 'Component',
+      realBase: 'Subject',
+      targetBase: 'Target',
+      targetMethod: fallbackTarget
+    });
+    safeEmit(unitResult);
+    return [staticResult, compileResult, unitResult];
   }));
 
-  return [...staticResults, ...compileResults, ...unitResults];
+  return wrapperResults.reduce((acc, row) => acc.concat(row), [] as TestResult[]);
 }
 
 // findAmbiguousClasses + filterToTaggedPatterns moved to
@@ -1630,6 +1595,14 @@ async function dispatchPatternTests(
 // pendingId so logs are uniform across the analysis pipeline.
 function generateRunId(): string {
   return `run_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function generateWrapperId(patternId: string, className: string): string {
+  const stamp = Date.now().toString(36);
+  const rand = Math.random().toString(36).slice(2, 8);
+  const pattern = patternId.replace(/[^a-z0-9]+/gi, '').slice(-8) || 'pattern';
+  const klass = className.replace(/[^a-z0-9]+/gi, '').slice(-8) || 'class';
+  return `wrap_${pattern}_${klass}_${stamp}_${rand}`;
 }
 
 // Validate runId comes only from the controlled set of generators above.
@@ -1655,7 +1628,7 @@ async function handleRunTests(
   files?: Array<{ name: string; sourceText: string }>,
   resolvedMap: Record<string, string> = {},
   stdin?: string,
-  // Survey-gate buffer key — either pendingId (unsaved run) or numeric
+  // Survey-gate buffer key Ã¢â‚¬â€ either pendingId (unsaved run) or numeric
   // runId (saved analysis_runs row). finalizeRunLogs uses this to buffer
   // the per-phase + summary log rows in memory until the user submits
   // the run-feedback survey, at which point survey.ts flushes them.
@@ -1701,7 +1674,7 @@ async function handleRunTests(
   }
   // Hard reject: any resolvedMap entry whose value is a placeholder (e.g.
   // '(none)', empty string, the literal 'none'). The frontend should never
-  // produce these — surface a 400 so a malformed payload from devtools or
+  // produce these Ã¢â‚¬â€ surface a 400 so a malformed payload from devtools or
   // a regressed client doesn't sneak through and result in synthetic
   // "(none) / no template" rows being rendered as if they were real
   // verdicts.
@@ -1735,7 +1708,7 @@ async function handleRunTests(
     return;
   }
 
-  // Streaming branch — when the client supplies a runId (or asks for one
+  // Streaming branch Ã¢â‚¬â€ when the client supplies a runId (or asks for one
   // via ?stream=1), the work runs in the background and each phase result
   // is emitted to the SSE channel keyed by that runId. The HTTP POST
   // returns 202 immediately so the FE can open the EventSource and start
@@ -1743,7 +1716,7 @@ async function handleRunTests(
   const body = (req.body || {}) as { runId?: unknown };
   const wantsStream = isValidRunId(body.runId) || req.query.stream === '1';
   if (wantsStream) {
-    // Reject second run while one is already in flight for this user —
+    // Reject second run while one is already in flight for this user Ã¢â‚¬â€
     // hand back the existing runId so the FE re-subscribes instead of
     // spawning a duplicate run.
     const active = findActiveRunFor(req.user.id);
@@ -1758,7 +1731,7 @@ async function handleRunTests(
     }
     res.status(202).json({ runId, accepted: true });
 
-    // Background dispatch. We deliberately do not await this — the
+    // Background dispatch. We deliberately do not await this Ã¢â‚¬â€ the
     // response has already been sent. Any thrown error is funnelled into
     // a synthetic done event so subscribers always see closure.
     //
@@ -1820,7 +1793,7 @@ async function handleRunTests(
     return;
   }
 
-  // Legacy blocking path — the CI smoke test and the playwright check
+  // Legacy blocking path Ã¢â‚¬â€ the CI smoke test and the playwright check
   // still rely on the single-response shape. Keeping this branch means
   // older clients continue to work unchanged.
   const results = await dispatchPatternTests(taggedPatterns, fullSource, files, req.user?.id, stdin);
@@ -1835,11 +1808,11 @@ async function handleRunTests(
   });
 }
 
-// Validate the result set BEFORE logging anything — we only persist
+// Validate the result set BEFORE logging anything Ã¢â‚¬â€ we only persist
 // outcomes when every test result has the fields downstream consumers
 // (admin accuracy, Logs tab) expect. Anything skipped (verdict=skipped /
 // no_template / sandbox_disabled) is a non-result, not a failure, and
-// must not pollute the gdb.<phase>.fail log stream — that's what was
+// must not pollute the gdb.<phase>.fail log stream Ã¢â‚¬â€ that's what was
 // showing up as phantom failures in the accuracy chip.
 // Buffer the run's per-phase rows + summary in memory. Per project
 // owner: NOTHING about a test-run's compile/unit verdicts may land in
@@ -1847,7 +1820,7 @@ async function handleRunTests(
 // flushForRunId() drains this buffer in the same transaction as the
 // survey insert. If the user abandons the run without submitting the
 // survey, the entry evicts after FLUSH_TTL_MS (24h) without ever
-// touching the database — that's the survey-gate.
+// touching the database Ã¢â‚¬â€ that's the survey-gate.
 //
 // finalizeRunLogs no longer writes to the DB at all.
 function finalizeRunLogs(
@@ -1869,7 +1842,7 @@ function finalizeRunLogs(
   // Without a buffer key we have no way for the survey-submit handler
   // to find this entry later; bail rather than silently dropping the
   // data into the void. The two route entry points always supply a
-  // key — this guards against future callers that forget.
+  // key Ã¢â‚¬â€ this guards against future callers that forget.
   if (!bufferKey || (!bufferKey.pendingId && bufferKey.runId == null)) {
     // eslint-disable-next-line no-console
     console.warn('[run-tests] finalizeRunLogs called without bufferKey; results NOT buffered');
@@ -1886,7 +1859,7 @@ function finalizeRunLogs(
     taggedPatterns.add(`${r.patternId}|${r.className}`);
     const eventType = r.passed ? `gdb.${r.phase}.pass` : `gdb.${r.phase}.fail`;
     const message = `${r.patternId} ${r.className} verdict=${r.verdict} ms=${r.durationMs}`
-                  + (r.passed ? '' : ` — ${(r.message || '').slice(0, 200)}`);
+                  + (r.passed ? '' : ` Ã¢â‚¬â€ ${(r.message || '').slice(0, 200)}`);
     rows.push({ eventType, message });
   }
 
@@ -2023,14 +1996,14 @@ router.post('/analysis/run-tests', jwtAuth, async (req: Request, res: Response, 
 });
 
 // Server-Sent Events stream for a streaming run. The frontend opens this
-// after kicking off /api/analysis/run-tests with a runId — each phase
+// after kicking off /api/analysis/run-tests with a runId Ã¢â‚¬â€ each phase
 // result lands as a discrete event, then a terminal `done` event closes
 // the stream. Reconnects replay the buffered events from seq=0 so no
 // verdict is lost across a flaky network drop.
 //
 // JWT is supplied via the `?token=` query parameter because the browser's
 // EventSource API cannot attach Authorization headers. The token is
-// validated with the same secret as jwtAuth — we do not accept it from
+// validated with the same secret as jwtAuth Ã¢â‚¬â€ we do not accept it from
 // the body and we do not log it.
 router.get('/analysis/run-events/:runId', (req: Request, res: Response): void => {
   const runId = String(req.params.runId || '');
@@ -2066,7 +2039,7 @@ router.get('/analysis/run-events/:runId', (req: Request, res: Response): void =>
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
   res.setHeader('Connection', 'keep-alive');
-  // Disable nginx response buffering on the AWS reverse proxy — without
+  // Disable nginx response buffering on the AWS reverse proxy Ã¢â‚¬â€ without
   // this the nginx default of buffering N bytes before flushing to the
   // client makes SSE feel like polling.
   res.setHeader('X-Accel-Buffering', 'no');

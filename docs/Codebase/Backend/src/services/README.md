@@ -30,6 +30,8 @@ These documents explain the local implementation by covering reusable analysis, 
 - classDeclarationAnalysisService.js.md : Runs lexical analysis, subtree construction, cross-reference detection, and target selection for one complete class declaration.
 - aiDocumentationService.ts.md : Builds backend AI documentation requests from detected code units, probes provider reachability, and normalizes generated documentation.
 - logService.js.md : Persists structured analysis logs without old refactor or transform-output fields.
+- runEventsStore.ts.md : Buffers per-run SSE events and dedupes wrapper instances before replay.
+- testRunnerService.ts.md : Runs per-wrapper static analysis, compile, and unit-test phases inside the caller's pod or fallback sandbox.
 - patternEvidenceService.ts.md : Shares the normalization, cue map, phrase-hit, and evidence scoring logic used by the planner and project intake flow.
 - projectLearningContracts.js.md : Defines the shared data shapes for project brief intake, scope resolution, toggle policy, assessment records, and readiness evidence.
 - coursePlannerService.ts.md : Builds the admin course plan and carries the shared business-pattern guide used by intake.

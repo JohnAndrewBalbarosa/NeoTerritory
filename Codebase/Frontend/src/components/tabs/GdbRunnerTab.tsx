@@ -42,6 +42,7 @@ interface PatternGroup {
   patternId: string;
   patternName: string;
   className: string;
+  wrapperId?: string;
   staticAnalysis?: GdbTestResult;
   compileRun?: GdbTestResult;
   unitTest?: GdbTestResult;
@@ -52,14 +53,24 @@ function familyOf(patternId: string): string {
   return FAMILY_LABEL[fam] || fam.charAt(0).toUpperCase() + fam.slice(1);
 }
 
+function groupKeyOf(group: Pick<PatternGroup, 'patternId' | 'className' | 'wrapperId'>): string {
+  return `${group.patternId}__${group.className}__${group.wrapperId || ''}`;
+}
+
+function shortWrapperId(wrapperId: string): string {
+  if (wrapperId.length <= 12) return wrapperId;
+  return `${wrapperId.slice(0, 5)}…${wrapperId.slice(-5)}`;
+}
+
 function groupResults(results: GdbTestResult[]): PatternGroup[] {
   const map = new Map<string, PatternGroup>();
   for (const r of results) {
-    const key = `${r.patternId}__${r.className}`;
+    const key = groupKeyOf(r);
     const g = map.get(key) || {
       patternId: r.patternId,
       patternName: r.patternName,
-      className: r.className
+      className: r.className,
+      wrapperId: r.wrapperId
     };
     if (r.phase === 'static_analysis') g.staticAnalysis = r;
     else if (r.phase === 'compile_run') g.compileRun = r;
@@ -234,7 +245,7 @@ export default function GdbRunnerTab() {
   }, [busy, gdbBusyForKey, gdbInflightSkeleton, cachedValid, lastGdbResults, sessionKey]);
   const [activeKey, setActiveKey] = useState<string>(
     cachedValid && lastGdbResults && lastGdbResults.length > 0
-      ? `${lastGdbResults[0].patternId}__${lastGdbResults[0].className}`
+      ? groupKeyOf(lastGdbResults[0])
       : ''
   );
   const [now, setNow] = useState(Date.now());
@@ -403,7 +414,7 @@ export default function GdbRunnerTab() {
                 if (ev.type !== 'phase') return;
                 accumulated.push(ev.result);
                 if (!firstActiveKeySet) {
-                  setActiveKey(`${ev.result.patternId}__${ev.result.className}`);
+                  setActiveKey(groupKeyOf(ev.result));
                   firstActiveKeySet = true;
                 }
                 setLastGdbResults([...accumulated], sessionKey);
@@ -415,7 +426,7 @@ export default function GdbRunnerTab() {
                 if (ev.type !== 'phase') return;
                 accumulated.push(ev.result);
                 if (!firstActiveKeySet) {
-                  setActiveKey(`${ev.result.patternId}__${ev.result.className}`);
+                  setActiveKey(groupKeyOf(ev.result));
                   firstActiveKeySet = true;
                 }
                 setLastGdbResults([...accumulated], sessionKey);
@@ -459,7 +470,7 @@ export default function GdbRunnerTab() {
     }
   }
 
-  const active = visibleGroups.find(g => `${g.patternId}__${g.className}` === activeKey)
+  const active = visibleGroups.find(g => groupKeyOf(g) === activeKey)
               || visibleGroups[0]
               || null;
 
@@ -608,7 +619,7 @@ export default function GdbRunnerTab() {
                               className={`gdb-tree-class${activeKey === k ? ' is-active' : ''}`}
                               data-overall={overall}
                               onClick={() => setActiveKey(k)}
-                              title={`${g.patternName} · ${g.className}`}
+                              title={`${g.patternName} · ${g.className}${g.wrapperId ? ` · ${g.wrapperId}` : ''}`}
                             >
                               <span className="gdb-tab-dot" aria-hidden="true" />
                               {g.className}
@@ -628,6 +639,11 @@ export default function GdbRunnerTab() {
               <header className="gdb-result-head">
                 <span className="gdb-result-class">{active.className}</span>
                 <span className="gdb-result-pattern">{active.patternName}</span>
+                {active.wrapperId && (
+                  <span className="gdb-result-wrapper" title={active.wrapperId}>
+                    Wrapper {shortWrapperId(active.wrapperId)}
+                  </span>
+                )}
               </header>
               <PhaseRow phase="static_analysis" result={active.staticAnalysis} loading={busy && !active.staticAnalysis} />
               <PhaseRow phase="compile_run"     result={active.compileRun}     loading={busy && !active.compileRun} />
