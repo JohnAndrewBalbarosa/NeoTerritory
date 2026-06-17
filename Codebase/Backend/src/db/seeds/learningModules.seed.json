@@ -46,39 +46,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in What Is Pattern?",
+          "question": "Which best describes a design pattern?",
           "options": [
-            "What Is Pattern gives a named, reusable way to solve the module's design problem.",
-            "What Is Pattern is only a compiler optimization flag.",
-            "What Is Pattern means every class must inherit from one base class.",
-            "What Is Pattern replaces the need to read code structure."
+            "A copy-pasteable code library you import.",
+            "A named structural arrangement that solves a recurring design problem.",
+            "A specific framework like Spring or React.",
+            "A unit test template applied to every class."
           ],
-          "correctIndex": 0,
-          "explanation": "What Is Pattern is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why What Is Pattern matters?",
-          "options": [
-            "What Is Pattern gives a named, reusable way to solve the module's design problem.",
-            "What Is Pattern is only a compiler optimization flag.",
-            "What Is Pattern means every class must inherit from one base class.",
-            "What Is Pattern replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "What Is Pattern is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the What Is Pattern module to a small C++ design exercise.",
-          "expectedTokens": [
-            "what is pattern"
-          ],
-          "explanation": "The expected answer is the module's core concept: What Is Pattern."
+          "correctIndex": 1,
+          "explanation": "A design pattern is a named, idiomatic shape — not code you import.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -95,28 +72,15 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a What Is Pattern implementation?",
+          "question": "Why does the same design problem keep reappearing across programs?",
           "options": [
-            "It should show the what is pattern intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the What Is Pattern design intent."
-        },
-        {
-          "type": "mcq",
-          "question": "Which best describes a design pattern?",
-          "options": [
-            "A copy-pasteable code library you import.",
-            "A named structural arrangement that solves a recurring design problem.",
-            "A specific framework like Spring or React.",
-            "A unit test template applied to every class."
+            "Because programmers copy each other’s files.",
+            "Because the underlying language facts (inheritance, ownership, dispatch) keep producing the same shapes.",
+            "Because the C++ standard mandates it.",
+            "Because IDEs auto-generate it."
           ],
           "correctIndex": 1,
-          "explanation": "A design pattern is a named, idiomatic shape — not code you import.",
+          "explanation": "The recurring shape is a consequence of the language, so it is worth naming.",
           "taxonomy": "creating"
         }
       ]
@@ -176,19 +140,6 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Why Matters matters?",
-          "options": [
-            "Why Matters gives a named, reusable way to solve the module's design problem.",
-            "Why Matters is only a compiler optimization flag.",
-            "Why Matters means every class must inherit from one base class.",
-            "Why Matters replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Why Matters is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "How do patterns affect a beginner joining a team?",
           "options": [
             "They slow onboarding because there is more to memorise.",
@@ -199,39 +150,6 @@
           "correctIndex": 1,
           "explanation": "Pattern literacy collapses the time spent inferring a codebase’s conventions.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Why Matters module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "why matters"
-          ],
-          "explanation": "The expected answer is the module's core concept: Why Matters."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Why Matters implementation?",
-          "options": [
-            "It should show the why matters intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Why Matters design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Why Matters module to a small C++ design exercise.",
-          "expectedTokens": [
-            "why matters"
-          ],
-          "explanation": "The expected answer is the module's core concept: Why Matters."
         }
       ]
     },
@@ -296,19 +214,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Categories?",
-          "options": [
-            "Categories gives a named, reusable way to solve the module's design problem.",
-            "Categories is only a compiler optimization flag.",
-            "Categories means every class must inherit from one base class.",
-            "Categories replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Categories is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "Which sentence correctly maps the three main families?",
           "options": [
             "Creational connects classes, Structural decides communication, Behavioural makes objects.",
@@ -319,16 +224,6 @@
           "correctIndex": 1,
           "explanation": "Creational → make. Structural → connect. Behavioural → talk.",
           "taxonomy": "understanding"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Categories module to a small C++ design exercise.",
-          "expectedTokens": [
-            "categories"
-          ],
-          "explanation": "The expected answer is the module's core concept: Categories."
         },
         {
           "type": "mcq",
@@ -342,29 +237,6 @@
           "correctIndex": 1,
           "explanation": "Idioms are common detectable shapes the catalog adds beyond the 23 GoF patterns.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Categories implementation?",
-          "options": [
-            "It should show the categories intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Categories design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Categories module to a small C++ design exercise.",
-          "expectedTokens": [
-            "categories"
-          ],
-          "explanation": "The expected answer is the module's core concept: Categories."
         }
       ]
     },
@@ -424,29 +296,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Oop?",
+          "question": "Why are design patterns described in terms of classes and objects?",
           "options": [
-            "Oop gives a named, reusable way to solve the module's design problem.",
-            "Oop is only a compiler optimization flag.",
-            "Oop means every class must inherit from one base class.",
-            "Oop replaces the need to read code structure."
+            "Because patterns predate procedural programming.",
+            "Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.",
+            "Because every language must use OOP.",
+            "Because the C++ compiler enforces patterns natively."
           ],
-          "correctIndex": 0,
-          "explanation": "Oop is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Oop matters?",
-          "options": [
-            "Oop gives a named, reusable way to solve the module's design problem.",
-            "Oop is only a compiler optimization flag.",
-            "Oop means every class must inherit from one base class.",
-            "Oop replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Oop is treated as a design concept with a recognizable intent and structure."
+          "correctIndex": 1,
+          "explanation": "Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -460,42 +319,6 @@
           "correctIndex": 1,
           "explanation": "Polymorphism = one action, many forms, resolved by the runtime type.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Oop module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "oop"
-          ],
-          "explanation": "The expected answer is the module's core concept: Oop."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Oop implementation?",
-          "options": [
-            "It should show the oop intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Oop design intent."
-        },
-        {
-          "type": "mcq",
-          "question": "Why are design patterns described in terms of classes and objects?",
-          "options": [
-            "Because patterns predate procedural programming.",
-            "Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.",
-            "Because every language must use OOP.",
-            "Because the C++ compiler enforces patterns natively."
-          ],
-          "correctIndex": 1,
-          "explanation": "Patterns are an OOP vocabulary built on encapsulation, inheritance, and polymorphism.",
-          "taxonomy": "creating"
         }
       ]
     },
@@ -531,39 +354,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Interface Principle?",
+          "question": "\"Program to an interface, not an implementation\" means…",
           "options": [
-            "Interface Principle gives a named, reusable way to solve the module's design problem.",
-            "Interface Principle is only a compiler optimization flag.",
-            "Interface Principle means every class must inherit from one base class.",
-            "Interface Principle replaces the need to read code structure."
+            "Always use C++ pure virtual classes.",
+            "Code should depend on what something does, not which concrete class is doing it.",
+            "Replace every class with a template.",
+            "Avoid writing concrete classes entirely."
           ],
-          "correctIndex": 0,
-          "explanation": "Interface Principle is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Interface Principle matters?",
-          "options": [
-            "Interface Principle gives a named, reusable way to solve the module's design problem.",
-            "Interface Principle is only a compiler optimization flag.",
-            "Interface Principle means every class must inherit from one base class.",
-            "Interface Principle replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Interface Principle is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Interface Principle module to a small C++ design exercise.",
-          "expectedTokens": [
-            "interface principle"
-          ],
-          "explanation": "The expected answer is the module's core concept: Interface Principle."
+          "correctIndex": 1,
+          "explanation": "Depend on contracts (what), not identities (who).",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -577,32 +377,6 @@
           "correctIndex": 0,
           "explanation": "They give the abstraction a name and a recognisable shape.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Interface Principle implementation?",
-          "options": [
-            "It should show the interface principle intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Interface Principle design intent."
-        },
-        {
-          "type": "mcq",
-          "question": "\"Program to an interface, not an implementation\" means…",
-          "options": [
-            "Always use C++ pure virtual classes.",
-            "Code should depend on what something does, not which concrete class is doing it.",
-            "Replace every class with a template.",
-            "Avoid writing concrete classes entirely."
-          ],
-          "correctIndex": 1,
-          "explanation": "Depend on contracts (what), not identities (who).",
-          "taxonomy": "creating"
         }
       ]
     },
@@ -647,42 +421,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Code Structure?",
-          "options": [
-            "Code Structure gives a named, reusable way to solve the module's design problem.",
-            "Code Structure is only a compiler optimization flag.",
-            "Code Structure means every class must inherit from one base class.",
-            "Code Structure replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Code Structure is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Code Structure matters?",
-          "options": [
-            "Code Structure gives a named, reusable way to solve the module's design problem.",
-            "Code Structure is only a compiler optimization flag.",
-            "Code Structure means every class must inherit from one base class.",
-            "Code Structure replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Code Structure is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Code Structure module to a small C++ design exercise.",
-          "expectedTokens": [
-            "code structure"
-          ],
-          "explanation": "The expected answer is the module's core concept: Code Structure."
-        },
-        {
-          "type": "mcq",
           "question": "Why do pattern detectors walk an AST instead of grep-searching source text?",
           "options": [
             "Because grep is too slow.",
@@ -696,26 +434,16 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Code Structure implementation?",
+          "question": "How does CodiNeo keep a detection result traceable to the user’s source?",
           "options": [
-            "It should show the code structure intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
+            "It rewrites the source in place.",
+            "It mirrors the parse tree into a virtual copy and runs checks there, never mutating the original.",
+            "It only reports line numbers, never structure.",
+            "It discards the parse tree after analysis."
           ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Code Structure design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Code Structure module to a small C++ design exercise.",
-          "expectedTokens": [
-            "code structure"
-          ],
-          "explanation": "The expected answer is the module's core concept: Code Structure."
+          "correctIndex": 1,
+          "explanation": "The original parse tree is never mutated, so every result maps back to specific lines.",
+          "taxonomy": "analyzing"
         }
       ]
     },
@@ -757,45 +485,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Real Software?",
-          "options": [
-            "Real Software gives a named, reusable way to solve the module's design problem.",
-            "Real Software is only a compiler optimization flag.",
-            "Real Software means every class must inherit from one base class.",
-            "Real Software replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Real Software is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Real Software matters?",
-          "options": [
-            "Real Software gives a named, reusable way to solve the module's design problem.",
-            "Real Software is only a compiler optimization flag.",
-            "Real Software means every class must inherit from one base class.",
-            "Real Software replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Real Software is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "question": "Which pairing of system and pattern is plausible?",
-          "options": [
-            "A compiler using Visitor to walk its syntax tree.",
-            "A compiler that cannot use any pattern.",
-            "An operating system that forbids Command.",
-            "A UI framework that never observes state."
-          ],
-          "correctIndex": 0,
-          "explanation": "Visitor is a classic fit for traversing compiler ASTs; patterns appear across real systems.",
-          "taxonomy": "applying"
-        },
-        {
-          "type": "mcq",
           "question": "Why does recognising patterns matter in real-world codebases?",
           "options": [
             "Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.",
@@ -809,26 +498,16 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Real Software implementation?",
+          "question": "Which pairing of system and pattern is plausible?",
           "options": [
-            "It should show the real software intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
+            "A compiler using Visitor to walk its syntax tree.",
+            "A compiler that cannot use any pattern.",
+            "An operating system that forbids Command.",
+            "A UI framework that never observes state."
           ],
           "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Real Software design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Real Software module to a small C++ design exercise.",
-          "expectedTokens": [
-            "real software"
-          ],
-          "explanation": "The expected answer is the module's core concept: Real Software."
+          "explanation": "Visitor is a classic fit for traversing compiler ASTs; patterns appear across real systems.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -865,39 +544,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Beginner Mistakes?",
+          "question": "What is the most common beginner mistake with design patterns?",
           "options": [
-            "Beginner Mistakes gives a named, reusable way to solve the module's design problem.",
-            "Beginner Mistakes is only a compiler optimization flag.",
-            "Beginner Mistakes means every class must inherit from one base class.",
-            "Beginner Mistakes replaces the need to read code structure."
+            "Refusing to use any patterns at all.",
+            "Forcing a pattern onto a problem that does not need it (\"pattern fever\").",
+            "Always preferring composition over inheritance.",
+            "Reading too many books."
           ],
-          "correctIndex": 0,
-          "explanation": "Beginner Mistakes is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Beginner Mistakes matters?",
-          "options": [
-            "Beginner Mistakes gives a named, reusable way to solve the module's design problem.",
-            "Beginner Mistakes is only a compiler optimization flag.",
-            "Beginner Mistakes means every class must inherit from one base class.",
-            "Beginner Mistakes replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Beginner Mistakes is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Beginner Mistakes module to a small C++ design exercise.",
-          "expectedTokens": [
-            "beginner mistakes"
-          ],
-          "explanation": "The expected answer is the module's core concept: Beginner Mistakes."
+          "correctIndex": 1,
+          "explanation": "Use patterns to solve problems you actually have — not for their own sake.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -911,32 +567,6 @@
           "correctIndex": 1,
           "explanation": "Loose coupling beats premature abstraction and rigid dependencies.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Beginner Mistakes implementation?",
-          "options": [
-            "It should show the beginner mistakes intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Beginner Mistakes design intent."
-        },
-        {
-          "type": "mcq",
-          "question": "What is the most common beginner mistake with design patterns?",
-          "options": [
-            "Refusing to use any patterns at all.",
-            "Forcing a pattern onto a problem that does not need it (\"pattern fever\").",
-            "Always preferring composition over inheritance.",
-            "Reading too many books."
-          ],
-          "correctIndex": 1,
-          "explanation": "Use patterns to solve problems you actually have — not for their own sake.",
-          "taxonomy": "creating"
         }
       ]
     },
@@ -984,29 +614,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Ambiguity?",
+          "question": "When two patterns fit the same class, the detector should…",
           "options": [
-            "Ambiguity gives a named, reusable way to solve the module's design problem.",
-            "Ambiguity is only a compiler optimization flag.",
-            "Ambiguity means every class must inherit from one base class.",
-            "Ambiguity replaces the need to read code structure."
+            "Silently pick one and hide the other.",
+            "Surface both and ask the human — ambiguity is information, not failure.",
+            "Reject the class entirely.",
+            "Rewrite the source to remove ambiguity."
           ],
-          "correctIndex": 0,
-          "explanation": "Ambiguity is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Ambiguity matters?",
-          "options": [
-            "Ambiguity gives a named, reusable way to solve the module's design problem.",
-            "Ambiguity is only a compiler optimization flag.",
-            "Ambiguity means every class must inherit from one base class.",
-            "Ambiguity replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Ambiguity is treated as a design concept with a recognizable intent and structure."
+          "correctIndex": 1,
+          "explanation": "Ambiguity tells you human judgement is required.",
+          "taxonomy": "evaluating"
         },
         {
           "type": "mcq",
@@ -1020,39 +637,6 @@
           "correctIndex": 0,
           "explanation": "Shared shapes (like `return *this`) are why some classes are structurally ambiguous.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Ambiguity module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "ambiguity"
-          ],
-          "explanation": "The expected answer is the module's core concept: Ambiguity."
-        },
-        {
-          "type": "mcq",
-          "question": "When two patterns fit the same class, the detector should…",
-          "options": [
-            "Silently pick one and hide the other.",
-            "Surface both and ask the human — ambiguity is information, not failure.",
-            "Reject the class entirely.",
-            "Rewrite the source to remove ambiguity."
-          ],
-          "correctIndex": 1,
-          "explanation": "Ambiguity tells you human judgement is required.",
-          "taxonomy": "evaluating"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Ambiguity module to a small C++ design exercise.",
-          "expectedTokens": [
-            "ambiguity"
-          ],
-          "explanation": "The expected answer is the module's core concept: Ambiguity."
         }
       ]
     },
@@ -1093,45 +677,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Connotative Definition?",
-          "options": [
-            "Connotative Definition gives a named, reusable way to solve the module's design problem.",
-            "Connotative Definition is only a compiler optimization flag.",
-            "Connotative Definition means every class must inherit from one base class.",
-            "Connotative Definition replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Connotative Definition is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Connotative Definition matters?",
-          "options": [
-            "Connotative Definition gives a named, reusable way to solve the module's design problem.",
-            "Connotative Definition is only a compiler optimization flag.",
-            "Connotative Definition means every class must inherit from one base class.",
-            "Connotative Definition replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Connotative Definition is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "question": "How does adding descriptions change a definition (connotation)?",
-          "options": [
-            "It widens what counts, so more things qualify.",
-            "It narrows what counts, so the meaning gets more specific.",
-            "It has no effect on specificity.",
-            "It only changes the name, not the meaning."
-          ],
-          "correctIndex": 1,
-          "explanation": "More descriptions = more specific meaning and fewer things that qualify.",
-          "taxonomy": "applying"
-        },
-        {
-          "type": "mcq",
           "question": "What kinds of tokens are most useful for distinguishing one pattern from another?",
           "options": [
             "Any single keyword that appears in the class.",
@@ -1145,26 +690,16 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Connotative Definition implementation?",
+          "question": "How does adding descriptions change a definition (connotation)?",
           "options": [
-            "It should show the connotative definition intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
+            "It widens what counts, so more things qualify.",
+            "It narrows what counts, so the meaning gets more specific.",
+            "It has no effect on specificity.",
+            "It only changes the name, not the meaning."
           ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Connotative Definition design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Connotative Definition module to a small C++ design exercise.",
-          "expectedTokens": [
-            "connotative definition"
-          ],
-          "explanation": "The expected answer is the module's core concept: Connotative Definition."
+          "correctIndex": 1,
+          "explanation": "More descriptions = more specific meaning and fewer things that qualify.",
+          "taxonomy": "applying"
         }
       ]
     },
@@ -1275,16 +810,45 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Same Structure matters?",
+          "question": "Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?",
+          "code": "class TrafficLight {\npublic:\n  void next() {\n    state_->handle(*this);   // delegate to the current state...\n  }\n  void changeState(std::unique_ptr<LightState> s) {\n    state_ = std::move(s);   // ...which transitions the held member itself\n  }\nprivate:\n  std::unique_ptr<LightState> state_;\n};",
           "options": [
-            "Same Structure gives a named, reusable way to solve the module's design problem.",
-            "Same Structure is only a compiler optimization flag.",
-            "Same Structure means every class must inherit from one base class.",
-            "Same Structure replaces the need to read code structure."
+            "Strategy — the algorithm is chosen once by the client.",
+            "State — the object transitions its own held member at runtime.",
+            "Adapter — it translates one interface to another.",
+            "Proxy — it controls access to a real subject."
           ],
-          "correctIndex": 0,
-          "explanation": "Same Structure is treated as a design concept with a recognizable intent and structure."
+          "correctIndex": 1,
+          "explanation": "The resolving cue is WHO drives the swap. A transition call (changeState / setState / this->state_ = ...) invoked as part of handling input means the object flips its own held member mid-flight — that is State. If the policy object were set once by the caller and never self-swapped, the same skeleton would read as Strategy.",
+          "taxonomy": "analyzing"
+        },
+        {
+          "type": "mcq",
+          "question": "Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern is THIS class?",
+          "code": "class Compressor {\npublic:\n  explicit Compressor(std::unique_ptr<CompressionPolicy> p)\n    : policy_(std::move(p)) {}\n  void setStrategy(std::unique_ptr<CompressionPolicy> p) {\n    policy_ = std::move(p);  // the CLIENT swaps the policy\n  }\n  Bytes run(const Bytes& in) { return policy_->compress(in); }\nprivate:\n  std::unique_ptr<CompressionPolicy> policy_;\n};",
+          "options": [
+            "State — the object drives its own transitions.",
+            "Strategy — the client injects/sets the policy; the object never self-swaps it.",
+            "Decorator — it wraps a component and adds behaviour.",
+            "Builder — it assembles a product step by step."
+          ],
+          "correctIndex": 1,
+          "explanation": "The swap is driven from OUTSIDE: a constructor injection plus a setStrategy() the caller controls, and run() never reassigns policy_ itself. Client-driven, externally-set policy with no self-transition is Strategy. (Compare the previous question, where the object called changeState on itself → State.)",
+          "taxonomy": "creating"
+        },
+        {
+          "type": "mcq",
+          "question": "Adapter, Decorator, and Proxy all hold a member of an interface type and forward calls to it — the same wrapping skeleton. Which pattern is the class below?",
+          "code": "class LoggingStream : public Stream {       // SAME interface as the wrappee\npublic:\n  explicit LoggingStream(std::unique_ptr<Stream> inner)\n    : inner_(std::move(inner)) {}\n  void write(const std::string& data) override {\n    log(\"writing \" + std::to_string(data.size()) + \" bytes\");  // ADDED responsibility\n    inner_->write(data);                    // ...then forward unchanged\n  }\nprivate:\n  std::unique_ptr<Stream> inner_;\n};\n// call site: new LoggingStream(new FileStream())  // nested wrap",
+          "options": [
+            "Adapter — it converts one interface into a different one.",
+            "Decorator — it shares the wrappee’s interface and layers behaviour on the forward.",
+            "Proxy — it controls or defers access to the real subject.",
+            "State — it swaps a held state object."
+          ],
+          "correctIndex": 1,
+          "explanation": "Two cues resolve it to Decorator: (1) it implements the SAME interface it wraps (`: public Stream`, so a decorator can wrap another decorator), and (2) it ADDS a responsibility — the log() call — around an otherwise-unchanged forward. The nested `new LoggingStream(new FileStream())` at the call site is the confident Decorator-composition signal (and the Adapter detector treats that exact nesting as a \"Decorator giveaway\" negative). A bare forward that just translated interfaces with no added behaviour would be Adapter.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -1302,43 +866,16 @@
         },
         {
           "type": "mcq",
-          "question": "Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?",
-          "code": "class TrafficLight {\npublic:\n  void next() {\n    state_->handle(*this);   // delegate to the current state...\n  }\n  void changeState(std::unique_ptr<LightState> s) {\n    state_ = std::move(s);   // ...which transitions the held member itself\n  }\nprivate:\n  std::unique_ptr<LightState> state_;\n};",
+          "question": "Both Builder and plain method-chaining use fluent setters that `return *this`. What makes the class below specifically a Builder?",
+          "code": "class PizzaBuilder {\npublic:\n  PizzaBuilder& setSize(int s)        { size_ = s; return *this; }\n  PizzaBuilder& addTopping(Topping t) { tops_.push_back(t); return *this; }\n  Pizza build() const;                // terminator hands back a PRODUCT\nprivate:\n  int size_;\n  std::vector<Topping> tops_;\n};",
           "options": [
-            "Strategy — the algorithm is chosen once by the client.",
-            "State — the object transitions its own held member at runtime.",
-            "Adapter — it translates one interface to another.",
-            "Proxy — it controls access to a real subject."
+            "Any class with `return *this` is automatically a Builder.",
+            "A terminator method (build()) that returns a constructed product — not just the chainable `*this`.",
+            "The class name ends in \"Builder\".",
+            "It stores its fields in a std::vector."
           ],
           "correctIndex": 1,
-          "explanation": "The resolving cue is WHO drives the swap. A transition call (changeState / setState / this->state_ = ...) invoked as part of handling input means the object flips its own held member mid-flight — that is State. If the policy object were set once by the caller and never self-swapped, the same skeleton would read as Strategy.",
-          "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Same Structure implementation?",
-          "options": [
-            "It should show the same structure intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Same Structure design intent."
-        },
-        {
-          "type": "mcq",
-          "question": "Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern is THIS class?",
-          "code": "class Compressor {\npublic:\n  explicit Compressor(std::unique_ptr<CompressionPolicy> p)\n    : policy_(std::move(p)) {}\n  void setStrategy(std::unique_ptr<CompressionPolicy> p) {\n    policy_ = std::move(p);  // the CLIENT swaps the policy\n  }\n  Bytes run(const Bytes& in) { return policy_->compress(in); }\nprivate:\n  std::unique_ptr<CompressionPolicy> policy_;\n};",
-          "options": [
-            "State — the object drives its own transitions.",
-            "Strategy — the client injects/sets the policy; the object never self-swaps it.",
-            "Decorator — it wraps a component and adds behaviour.",
-            "Builder — it assembles a product step by step."
-          ],
-          "correctIndex": 1,
-          "explanation": "The swap is driven from OUTSIDE: a constructor injection plus a setStrategy() the caller controls, and run() never reassigns policy_ itself. Client-driven, externally-set policy with no self-transition is Strategy. (Compare the previous question, where the object called changeState on itself → State.)",
+          "explanation": "The shared fluent shape is `return *this` on the setters — that alone is just method-chaining. Builder adds a terminator (build() / finalize()) that returns the constructed PRODUCT (here a Pizza). The terminator is the semantic cue; neither the class name nor the field types decide it.",
           "taxonomy": "creating"
         }
       ]
@@ -1392,59 +929,16 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Structural Rules matters?",
+          "question": "What does a \"must-not-have\" combo do when it fires?",
           "options": [
-            "Structural Rules gives a named, reusable way to solve the module's design problem.",
-            "Structural Rules is only a compiler optimization flag.",
-            "Structural Rules means every class must inherit from one base class.",
-            "Structural Rules replaces the need to read code structure."
+            "Nothing — it is only advisory.",
+            "It rejects the class for that pattern even if the rest matches.",
+            "It adds the pattern as a second candidate.",
+            "It renames the class."
           ],
-          "correctIndex": 0,
-          "explanation": "Structural Rules is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Structural Rules module to a small C++ design exercise.",
-          "expectedTokens": [
-            "structural rules"
-          ],
-          "explanation": "The expected answer is the module's core concept: Structural Rules."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Structural Rules module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "structural rules"
-          ],
-          "explanation": "The expected answer is the module's core concept: Structural Rules."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Structural Rules implementation?",
-          "options": [
-            "It should show the structural rules intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Structural Rules design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Structural Rules module to a small C++ design exercise.",
-          "expectedTokens": [
-            "structural rules"
-          ],
-          "explanation": "The expected answer is the module's core concept: Structural Rules."
+          "correctIndex": 1,
+          "explanation": "A single must-not-have match rejects the class for that pattern.",
+          "taxonomy": "remembering"
         }
       ]
     },
@@ -1484,19 +978,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Context Variation?",
-          "options": [
-            "Context Variation gives a named, reusable way to solve the module's design problem.",
-            "Context Variation is only a compiler optimization flag.",
-            "Context Variation means every class must inherit from one base class.",
-            "Context Variation replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Context Variation is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "How does the analyser handle team-specific naming conventions?",
           "options": [
             "It refuses to match anything that does not follow Gang-of-Four naming.",
@@ -1507,16 +988,6 @@
           "correctIndex": 1,
           "explanation": "Language structure is the universal ground; team style sits on top.",
           "taxonomy": "understanding"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Context Variation module to a small C++ design exercise.",
-          "expectedTokens": [
-            "context variation"
-          ],
-          "explanation": "The expected answer is the module's core concept: Context Variation."
         },
         {
           "type": "mcq",
@@ -1530,29 +1001,6 @@
           "correctIndex": 0,
           "explanation": "A stable structural rule is what makes downstream tooling (test generation) reliable.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Context Variation implementation?",
-          "options": [
-            "It should show the context variation intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Context Variation design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Context Variation module to a small C++ design exercise.",
-          "expectedTokens": [
-            "context variation"
-          ],
-          "explanation": "The expected answer is the module's core concept: Context Variation."
         }
       ]
     },
@@ -1593,19 +1041,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Postrequisite?",
-          "options": [
-            "Postrequisite gives a named, reusable way to solve the module's design problem.",
-            "Postrequisite is only a compiler optimization flag.",
-            "Postrequisite means every class must inherit from one base class.",
-            "Postrequisite replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Postrequisite is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "After Foundations, what kind of question is the catalog NOT trying to answer?",
           "options": [
             "Which structural shape this class matches.",
@@ -1629,39 +1064,6 @@
           "correctIndex": 1,
           "explanation": "They are discussion prompts for your next code review, not graded items.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Postrequisite module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "postrequisite"
-          ],
-          "explanation": "The expected answer is the module's core concept: Postrequisite."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Postrequisite implementation?",
-          "options": [
-            "It should show the postrequisite intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Postrequisite design intent."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "creating",
-          "question": "Name the design idea a learner should create for this module.",
-          "scenario": "A learner must apply the Postrequisite module to a small C++ design exercise.",
-          "expectedTokens": [
-            "postrequisite"
-          ],
-          "explanation": "The expected answer is the module's core concept: Postrequisite."
         }
       ]
     },
@@ -1856,19 +1258,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Factory Method?",
-          "options": [
-            "Factory Method gives a named, reusable way to solve the module's design problem.",
-            "Factory Method is only a compiler optimization flag.",
-            "Factory Method means every class must inherit from one base class.",
-            "Factory Method replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Factory Method is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Factory Method do?",
           "options": [
             "Defines an interface for creating an object but lets subclasses decide which class to instantiate.",
@@ -1895,34 +1284,22 @@
         },
         {
           "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Factory Method module and asks for the pattern or concept name.",
+          "taxonomy": "understanding",
+          "question": "By hiding the `new` keyword behind a method in a base class, what responsibility are you deferring to the subclasses?",
+          "scenario": "You are writing a cross-platform GUI. Instead of using `new WindowsButton()` directly in your business logic, you call `guiFactory->createButton()`. The exact class of the button is decided by whichever specific factory subclass (WindowsFactory or MacFactory) is currently in use.",
           "expectedTokens": [
-            "factory method"
+            "instantiation",
+            "creation"
           ],
-          "explanation": "The expected answer is the module's core concept: Factory Method."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Factory Method implementation?",
-          "options": [
-            "It should show the factory method intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Factory Method design intent."
+          "explanation": "Factory Method defers the *instantiation* (creation) of concrete objects to subclasses."
         },
         {
           "type": "studio",
           "taxonomy": "creating",
-          "prompt": "Implement a \"ShapeFactory\" that creates different \"Shape\" objects (Circle, Square) based on a string input. Use a static method if you prefer a Simple Factory, or an interface for a true Factory Method.",
+          "prompt": "Implement a \"Logistics\" base class with a pure virtual \"createTransport()\" method (the Factory Method). Then create a \"RoadLogistics\" subclass that overrides it to return a \"Truck\" object. This defers instantiation to the subclass.",
           "targetPatternSlug": "factory",
-          "starterCode": "class Shape {\npublic:\n  virtual ~Shape() = default;\n  virtual void draw() = 0;\n};\n\nclass ShapeFactory {\npublic:\n  // TODO: implement factory logic\n};",
-          "explanation": "The student must implement the creation logic that returns polymorphic Shape objects."
+          "starterCode": "class Transport { public: virtual ~Transport()=default; };\nclass Truck : public Transport {};\n\nclass Logistics {\npublic:\n  // TODO: declare pure virtual createTransport()\n};\n\nclass RoadLogistics : public Logistics {\npublic:\n  // TODO: override createTransport to return a Truck\n};",
+          "explanation": "The student must define a creator base class and defer object creation to a concrete subclass."
         }
       ]
     },
@@ -1989,70 +1366,48 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Builder?",
+          "question": "What problem does Builder solve?",
           "options": [
-            "Builder gives a named, reusable way to solve the module's design problem.",
-            "Builder is only a compiler optimization flag.",
-            "Builder means every class must inherit from one base class.",
-            "Builder replaces the need to read code structure."
+            "Constructing a complex object step by step, separating construction from representation.",
+            "Ensuring only one instance exists.",
+            "Letting objects notify observers of changes.",
+            "Adapting one interface to another."
           ],
           "correctIndex": 0,
-          "explanation": "Builder is treated as a design concept with a recognizable intent and structure."
+          "explanation": "Builder assembles a complex object incrementally.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Builder matters?",
+          "question": "Which token shape co-occurs with Builder’s fluent style?",
           "options": [
-            "Builder gives a named, reusable way to solve the module's design problem.",
-            "Builder is only a compiler optimization flag.",
-            "Builder means every class must inherit from one base class.",
-            "Builder replaces the need to read code structure."
+            "`return *this;` from setter-style methods so calls chain.",
+            "A static instance accessor.",
+            "A forward-declared inner Impl.",
+            "A visitor double-dispatch."
           ],
           "correctIndex": 0,
-          "explanation": "Builder is treated as a design concept with a recognizable intent and structure."
+          "explanation": "Fluent builders return `*this`, which is why Builder and Method Chaining share a shape.",
+          "taxonomy": "creating"
         },
         {
           "type": "identification",
           "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Builder module to a small C++ design exercise.",
+          "question": "What is the standard name for the final method that returns the constructed object?",
+          "scenario": "You are using a PizzaBuilder to configure a pizza with various toppings. You have finished adding toppings and now want to get the final Pizza object.",
           "expectedTokens": [
-            "builder"
+            "build",
+            "finalize"
           ],
-          "explanation": "The expected answer is the module's core concept: Builder."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Builder module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "builder"
-          ],
-          "explanation": "The expected answer is the module's core concept: Builder."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Builder implementation?",
-          "options": [
-            "It should show the builder intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Builder design intent."
+          "explanation": "Methods like build() or finalize() act as terminators that return the final product."
         },
         {
           "type": "studio",
           "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Builder pattern clearly enough for the Studio analyzer to tag it.",
+          "prompt": "Implement a \"UserProfileBuilder\" that allows setting a username and age using fluent methods, and provides a \"build()\" method that returns the final \"UserProfile\".",
           "targetPatternSlug": "builder",
-          "starterCode": "// TODO: write a compact Builder example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Builder."
+          "starterCode": "class UserProfile {\npublic:\n  std::string username;\n  int age;\n};\n\nclass UserProfileBuilder {\npublic:\n  // TODO: implement fluent setters and build()\n\nprivate:\n  UserProfile profile_;\n};",
+          "explanation": "The student must implement fluent setters returning *this and a build() method."
         }
       ]
     },
@@ -2132,57 +1487,16 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Method Chaining matters?",
+          "question": "Why is Method Chaining easy to confuse with Builder?",
           "options": [
-            "Method Chaining gives a named, reusable way to solve the module's design problem.",
-            "Method Chaining is only a compiler optimization flag.",
-            "Method Chaining means every class must inherit from one base class.",
-            "Method Chaining replaces the need to read code structure."
+            "Both rely on `return *this`, so they share a structural shape.",
+            "Both restrict instances to one.",
+            "Both traverse a tree.",
+            "Both notify observers."
           ],
           "correctIndex": 0,
-          "explanation": "Method Chaining is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Method Chaining module to a small C++ design exercise.",
-          "expectedTokens": [
-            "method chaining"
-          ],
-          "explanation": "The expected answer is the module's core concept: Method Chaining."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Method Chaining module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "method chaining"
-          ],
-          "explanation": "The expected answer is the module's core concept: Method Chaining."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Method Chaining implementation?",
-          "options": [
-            "It should show the method chaining intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Method Chaining design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Method Chaining pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "method-chaining",
-          "starterCode": "// TODO: write a compact Method Chaining example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Method Chaining."
+          "explanation": "The shared `return *this` shape is a built-in ambiguity.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -2381,19 +1695,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Proxy?",
-          "options": [
-            "Proxy gives a named, reusable way to solve the module's design problem.",
-            "Proxy is only a compiler optimization flag.",
-            "Proxy means every class must inherit from one base class.",
-            "Proxy replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Proxy is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Proxy do?",
           "options": [
             "Provides a surrogate or placeholder for another object to control access to it.",
@@ -2404,16 +1705,6 @@
           "correctIndex": 0,
           "explanation": "Proxy stands in for the real subject and controls access (lazy load, remote, protection).",
           "taxonomy": "understanding"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Proxy module to a small C++ design exercise.",
-          "expectedTokens": [
-            "proxy"
-          ],
-          "explanation": "The expected answer is the module's core concept: Proxy."
         },
         {
           "type": "mcq",
@@ -2427,27 +1718,6 @@
           "correctIndex": 0,
           "explanation": "Both wrap-and-forward; intent differs — access control vs added responsibility.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Proxy implementation?",
-          "options": [
-            "It should show the proxy intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Proxy design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Proxy pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "proxy",
-          "starterCode": "// TODO: write a compact Proxy example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Proxy."
         }
       ]
     },
@@ -2514,19 +1784,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Decorator?",
-          "options": [
-            "Decorator gives a named, reusable way to solve the module's design problem.",
-            "Decorator is only a compiler optimization flag.",
-            "Decorator means every class must inherit from one base class.",
-            "Decorator replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Decorator is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Decorator do?",
           "options": [
             "Attaches additional responsibilities to an object dynamically, as a flexible alternative to subclassing.",
@@ -2550,37 +1807,6 @@
           "correctIndex": 0,
           "explanation": "Same interface + added behaviour is Decorator; interface translation is Adapter.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Decorator module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "decorator"
-          ],
-          "explanation": "The expected answer is the module's core concept: Decorator."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Decorator implementation?",
-          "options": [
-            "It should show the decorator intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Decorator design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Decorator pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "decorator",
-          "starterCode": "// TODO: write a compact Decorator example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Decorator."
         }
       ]
     },
@@ -2786,16 +2012,16 @@
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Observer matters?",
+          "question": "What is the subject’s responsibility in Observer?",
           "options": [
-            "Observer gives a named, reusable way to solve the module's design problem.",
-            "Observer is only a compiler optimization flag.",
-            "Observer means every class must inherit from one base class.",
-            "Observer replaces the need to read code structure."
+            "Maintain a list of observers and notify them on state change.",
+            "Clone itself on demand.",
+            "Translate interfaces.",
+            "Guarantee a single instance."
           ],
           "correctIndex": 0,
-          "explanation": "Observer is treated as a design concept with a recognizable intent and structure."
+          "explanation": "The subject keeps the observer list and broadcasts updates.",
+          "taxonomy": "remembering"
         },
         {
           "type": "identification",
@@ -2806,38 +2032,15 @@
             "attach",
             "detach"
           ],
-          "explanation": "Commonly tawag na attach/detach o subscribe/unsubscribe."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Observer module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "observer"
-          ],
-          "explanation": "The expected answer is the module's core concept: Observer."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Observer implementation?",
-          "options": [
-            "It should show the observer intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Observer design intent."
+          "explanation": "Commonly called attach/detach or subscribe/unsubscribe."
         },
         {
           "type": "studio",
           "taxonomy": "creating",
-          "prompt": "Implement a \"WeatherStation\" (Subject) na may listahan ng \"IObserver\" objects at nag-noto-notify sa kanila kapag nagbago ang temperatura.",
+          "prompt": "Implement a \"WeatherStation\" (Subject) that maintains a list of \"IObserver\" objects and notifies them whenever the temperature changes.",
           "targetPatternSlug": "observer",
           "starterCode": "class IObserver {\npublic:\n  virtual void update(float temp) = 0;\n};\n\nclass WeatherStation {\npublic:\n  // TODO: implement attach, detach, and notify\n\nprivate:\n  std::vector<IObserver*> observers_;\n};",
-          "explanation": "Dapat ma-implement ng estudyante ang observer management at notification logic."
+          "explanation": "The student must implement the observer management and notification logic."
         }
       ]
     },
@@ -2897,19 +2100,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Iterator?",
-          "options": [
-            "Iterator gives a named, reusable way to solve the module's design problem.",
-            "Iterator is only a compiler optimization flag.",
-            "Iterator means every class must inherit from one base class.",
-            "Iterator replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Iterator is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Iterator do?",
           "options": [
             "Provides sequential access to a collection’s elements without exposing its underlying representation.",
@@ -2920,16 +2110,6 @@
           "correctIndex": 0,
           "explanation": "Iterator walks a collection without revealing its internal structure.",
           "taxonomy": "understanding"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Iterator module to a small C++ design exercise.",
-          "expectedTokens": [
-            "iterator"
-          ],
-          "explanation": "The expected answer is the module's core concept: Iterator."
         },
         {
           "type": "mcq",
@@ -2943,27 +2123,6 @@
           "correctIndex": 0,
           "explanation": "The iterator encapsulates position, so traversal is decoupled from storage.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Iterator implementation?",
-          "options": [
-            "It should show the iterator intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Iterator design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Iterator pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "iterator",
-          "starterCode": "// TODO: write a compact Iterator example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Iterator."
         }
       ]
     },
@@ -3023,19 +2182,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Command?",
-          "options": [
-            "Command gives a named, reusable way to solve the module's design problem.",
-            "Command is only a compiler optimization flag.",
-            "Command means every class must inherit from one base class.",
-            "Command replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Command is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Command do?",
           "options": [
             "Encapsulates a request as an object, letting you parameterise, queue, log, and undo operations.",
@@ -3059,37 +2205,6 @@
           "correctIndex": 0,
           "explanation": "A reified request can be stored, replayed, and reversed.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Command module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "command"
-          ],
-          "explanation": "The expected answer is the module's core concept: Command."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Command implementation?",
-          "options": [
-            "It should show the command intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Command design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Command pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "command",
-          "starterCode": "// TODO: write a compact Command example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Command."
         }
       ]
     },
@@ -3149,19 +2264,6 @@
       "questions": [
         {
           "type": "mcq",
-          "question": "What is the key structural feature of Composite?",
-          "options": [
-            "A component interface that both leaves and containers implement; containers hold a collection of components.",
-            "A private constructor and static accessor.",
-            "A `return *this` chain.",
-            "A forward-declared Impl."
-          ],
-          "correctIndex": 0,
-          "explanation": "Uniform component interface + child collection in the container is the shape.",
-          "taxonomy": "remembering"
-        },
-        {
-          "type": "mcq",
           "question": "What does Composite do?",
           "options": [
             "Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.",
@@ -3174,45 +2276,17 @@
           "taxonomy": "understanding"
         },
         {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Composite module to a small C++ design exercise.",
-          "expectedTokens": [
-            "composite"
-          ],
-          "explanation": "The expected answer is the module's core concept: Composite."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Composite module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "composite"
-          ],
-          "explanation": "The expected answer is the module's core concept: Composite."
-        },
-        {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Composite implementation?",
+          "question": "What is the key structural feature of Composite?",
           "options": [
-            "It should show the composite intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
+            "A component interface that both leaves and containers implement; containers hold a collection of components.",
+            "A private constructor and static accessor.",
+            "A `return *this` chain.",
+            "A forward-declared Impl."
           ],
           "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Composite design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Composite pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "composite",
-          "starterCode": "// TODO: write a compact Composite example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Composite."
+          "explanation": "Uniform component interface + child collection in the container is the shape.",
+          "taxonomy": "remembering"
         }
       ]
     },
@@ -3272,19 +2346,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Template Method?",
-          "options": [
-            "Template Method gives a named, reusable way to solve the module's design problem.",
-            "Template Method is only a compiler optimization flag.",
-            "Template Method means every class must inherit from one base class.",
-            "Template Method replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Template Method is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Template Method do?",
           "options": [
             "Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.",
@@ -3297,48 +2358,25 @@
           "taxonomy": "understanding"
         },
         {
-          "type": "mcq",
-          "question": "Which mechanism does Template Method rely on?",
-          "options": [
-            "A non-virtual base method calling overridable (often virtual) primitive steps.",
-            "A static accessor returning one instance.",
-            "`return *this` chaining.",
-            "A forward-declared Impl."
-          ],
-          "correctIndex": 0,
-          "explanation": "The fixed method calls virtual hook steps the subclass overrides.",
-          "taxonomy": "applying"
-        },
-        {
           "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Template Method module and asks for the pattern or concept name.",
+          "taxonomy": "understanding",
+          "question": "What do we call the blank or overridable steps (like `parseData()`) that the base class calls, which subclasses must fill in?",
+          "scenario": "You are writing a data processing pipeline. The overarching algorithm is always: `readData()` -> `parseData()` -> `save()`. You put this exact sequence in a non-virtual base class method. However, you leave `parseData()` as a pure virtual function so subclasses can provide their own specific logic.",
           "expectedTokens": [
-            "template method"
+            "hook",
+            "hooks",
+            "primitive",
+            "primitive steps"
           ],
-          "explanation": "The expected answer is the module's core concept: Template Method."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Template Method implementation?",
-          "options": [
-            "It should show the template method intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Template Method design intent."
+          "explanation": "These overridable steps are called primitive operations or \"hooks\". The base class provides the template, and subclasses provide the hooks."
         },
         {
           "type": "studio",
           "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Template Method pattern clearly enough for the Studio analyzer to tag it.",
+          "prompt": "Implement a \"DataParser\" base class. Write a non-virtual \"parse()\" method (the template method) that calls \"open()\", \"extract()\", and \"close()\". Make \"extract()\" a pure virtual method (`= 0`) so subclasses are forced to provide it.",
           "targetPatternSlug": "template-method",
-          "starterCode": "// TODO: write a compact Template Method example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Template Method."
+          "starterCode": "class DataParser {\npublic:\n  void parse() {\n    // TODO: call open, extract, close\n  }\n  virtual void open() {}\n  virtual void close() {}\n  // TODO: declare pure virtual extract()\n};",
+          "explanation": "The student must define the skeleton algorithm in a method that calls a pure virtual hook."
         }
       ]
     },
@@ -3398,19 +2436,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in State?",
-          "options": [
-            "State gives a named, reusable way to solve the module's design problem.",
-            "State is only a compiler optimization flag.",
-            "State means every class must inherit from one base class.",
-            "State replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "State is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does State do?",
           "options": [
             "Lets an object alter its behaviour when its internal state changes, appearing to change its class.",
@@ -3434,37 +2459,6 @@
           "correctIndex": 0,
           "explanation": "Same delegation shape; intent differs — internal transitions vs client-chosen algorithm.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the State module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "state"
-          ],
-          "explanation": "The expected answer is the module's core concept: State."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a State implementation?",
-          "options": [
-            "It should show the state intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the State design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the State pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "state",
-          "starterCode": "// TODO: write a compact State example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as State."
         }
       ]
     },
@@ -3524,39 +2518,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Repository?",
+          "question": "Repository is not a Gang of Four pattern. Which sentence captures its purpose best?",
           "options": [
-            "Repository gives a named, reusable way to solve the module's design problem.",
-            "Repository is only a compiler optimization flag.",
-            "Repository means every class must inherit from one base class.",
-            "Repository replaces the need to read code structure."
+            "Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.",
+            "Guarantee a class has only one instance.",
+            "Wrap an object so it conforms to a different interface.",
+            "Pick which subclass to instantiate at runtime."
           ],
           "correctIndex": 0,
-          "explanation": "Repository is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Repository matters?",
-          "options": [
-            "Repository gives a named, reusable way to solve the module's design problem.",
-            "Repository is only a compiler optimization flag.",
-            "Repository means every class must inherit from one base class.",
-            "Repository replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Repository is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Repository module to a small C++ design exercise.",
-          "expectedTokens": [
-            "repository"
-          ],
-          "explanation": "The expected answer is the module's core concept: Repository."
+          "explanation": "Repository (Evans 2003, \"Domain-Driven Design\"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -3570,32 +2541,6 @@
           "correctIndex": 1,
           "explanation": "Only catalog-detectable patterns get a Studio practical; Repository ends at the theoretical exam.",
           "taxonomy": "analyzing"
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Repository implementation?",
-          "options": [
-            "It should show the repository intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Repository design intent."
-        },
-        {
-          "type": "mcq",
-          "question": "Repository is not a Gang of Four pattern. Which sentence captures its purpose best?",
-          "options": [
-            "Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.",
-            "Guarantee a class has only one instance.",
-            "Wrap an object so it conforms to a different interface.",
-            "Pick which subclass to instantiate at runtime."
-          ],
-          "correctIndex": 0,
-          "explanation": "Repository (Evans 2003, \"Domain-Driven Design\"): mediates between the domain and data-mapping layers using a collection-like interface. Not in GoF (Gamma et al. 1994), but widely adopted.",
-          "taxonomy": "creating"
         }
       ]
     },
@@ -3635,29 +2580,16 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Pimpl?",
+          "question": "What does the PIMPL idiom (Pointer to Implementation) do?",
           "options": [
-            "Pimpl gives a named, reusable way to solve the module's design problem.",
-            "Pimpl is only a compiler optimization flag.",
-            "Pimpl means every class must inherit from one base class.",
-            "Pimpl replaces the need to read code structure."
+            "Moves a class’s private members into a hidden implementation type behind a pointer, cutting compile-time coupling.",
+            "Guarantees a single instance.",
+            "Defines a family of algorithms.",
+            "Notifies observers of changes."
           ],
           "correctIndex": 0,
-          "explanation": "Pimpl is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Pimpl matters?",
-          "options": [
-            "Pimpl gives a named, reusable way to solve the module's design problem.",
-            "Pimpl is only a compiler optimization flag.",
-            "Pimpl means every class must inherit from one base class.",
-            "Pimpl replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Pimpl is treated as a design concept with a recognizable intent and structure."
+          "explanation": "PIMPL hides implementation details behind an opaque pointer, reducing header dependencies.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
@@ -3671,37 +2603,6 @@
           "correctIndex": 0,
           "explanation": "Forward-declared Impl + unique_ptr<Impl> in order is the recognisable PIMPL shape.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Pimpl module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "pimpl"
-          ],
-          "explanation": "The expected answer is the module's core concept: Pimpl."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Pimpl implementation?",
-          "options": [
-            "It should show the pimpl intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Pimpl design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Pimpl pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "pimpl",
-          "starterCode": "// TODO: write a compact Pimpl example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Pimpl."
         }
       ]
     },
@@ -3750,19 +2651,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Prototype?",
-          "options": [
-            "Prototype gives a named, reusable way to solve the module's design problem.",
-            "Prototype is only a compiler optimization flag.",
-            "Prototype means every class must inherit from one base class.",
-            "Prototype replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Prototype is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Prototype do?",
           "options": [
             "Creates new objects by cloning an existing instance (the prototype).",
@@ -3775,45 +2663,17 @@
           "taxonomy": "understanding"
         },
         {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Prototype module to a small C++ design exercise.",
-          "expectedTokens": [
-            "prototype"
-          ],
-          "explanation": "The expected answer is the module's core concept: Prototype."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Prototype module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "prototype"
-          ],
-          "explanation": "The expected answer is the module's core concept: Prototype."
-        },
-        {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Prototype implementation?",
+          "question": "When is Prototype most useful?",
           "options": [
-            "It should show the prototype intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
+            "When object construction is expensive or its concrete class is unknown, but a copyable instance exists.",
+            "When you need exactly one instance.",
+            "When you must adapt two interfaces.",
+            "When you traverse a tree of nodes."
           ],
           "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Prototype design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Prototype pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "prototype",
-          "starterCode": "// TODO: write a compact Prototype example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Prototype."
+          "explanation": "Cloning sidesteps costly or class-specific construction.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -3861,19 +2721,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Abstract Factory?",
-          "options": [
-            "Abstract Factory gives a named, reusable way to solve the module's design problem.",
-            "Abstract Factory is only a compiler optimization flag.",
-            "Abstract Factory means every class must inherit from one base class.",
-            "Abstract Factory replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Abstract Factory is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Abstract Factory provide?",
           "options": [
             "An interface for creating families of related objects without specifying their concrete classes.",
@@ -3897,37 +2744,6 @@
           "correctIndex": 0,
           "explanation": "Abstract Factory groups several related factory methods into one family interface.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Abstract Factory module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "abstract factory"
-          ],
-          "explanation": "The expected answer is the module's core concept: Abstract Factory."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Abstract Factory implementation?",
-          "options": [
-            "It should show the abstract factory intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Abstract Factory design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Abstract Factory pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "abstract-factory",
-          "starterCode": "// TODO: write a compact Abstract Factory example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Abstract Factory."
         }
       ]
     },
@@ -3975,70 +2791,29 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Bridge?",
+          "question": "What does Bridge do?",
           "options": [
-            "Bridge gives a named, reusable way to solve the module's design problem.",
-            "Bridge is only a compiler optimization flag.",
-            "Bridge means every class must inherit from one base class.",
-            "Bridge replaces the need to read code structure."
+            "Decouples an abstraction from its implementation so the two can vary independently.",
+            "Guarantees one instance.",
+            "Wraps a request as an object.",
+            "Clones a prototype."
           ],
           "correctIndex": 0,
-          "explanation": "Bridge is treated as a design concept with a recognizable intent and structure."
+          "explanation": "Bridge splits abstraction and implementation into separate hierarchies joined by composition.",
+          "taxonomy": "creating"
         },
         {
           "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Bridge matters?",
+          "question": "Which principle underpins Bridge?",
           "options": [
-            "Bridge gives a named, reusable way to solve the module's design problem.",
-            "Bridge is only a compiler optimization flag.",
-            "Bridge means every class must inherit from one base class.",
-            "Bridge replaces the need to read code structure."
+            "Program to an interface — the abstraction holds a pointer to an implementor interface.",
+            "Always subclass for every variation.",
+            "Hide all constructors.",
+            "Mutate shared global state."
           ],
           "correctIndex": 0,
-          "explanation": "Bridge is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Bridge module to a small C++ design exercise.",
-          "expectedTokens": [
-            "bridge"
-          ],
-          "explanation": "The expected answer is the module's core concept: Bridge."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Bridge module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "bridge"
-          ],
-          "explanation": "The expected answer is the module's core concept: Bridge."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Bridge implementation?",
-          "options": [
-            "It should show the bridge intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Bridge design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Bridge pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "bridge",
-          "starterCode": "// TODO: write a compact Bridge example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Bridge."
+          "explanation": "The abstraction composes an implementor abstraction rather than inheriting concretes.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -4086,19 +2861,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Facade?",
-          "options": [
-            "Facade gives a named, reusable way to solve the module's design problem.",
-            "Facade is only a compiler optimization flag.",
-            "Facade means every class must inherit from one base class.",
-            "Facade replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Facade is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Facade do?",
           "options": [
             "Provides a unified, simpler interface to a set of interfaces in a subsystem.",
@@ -4122,37 +2884,6 @@
           "correctIndex": 0,
           "explanation": "Facade simplifies access without forbidding direct subsystem use.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Facade module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "facade"
-          ],
-          "explanation": "The expected answer is the module's core concept: Facade."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Facade implementation?",
-          "options": [
-            "It should show the facade intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Facade design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Facade pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "facade",
-          "starterCode": "// TODO: write a compact Facade example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Facade."
         }
       ]
     },
@@ -4200,19 +2931,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Flyweight?",
-          "options": [
-            "Flyweight gives a named, reusable way to solve the module's design problem.",
-            "Flyweight is only a compiler optimization flag.",
-            "Flyweight means every class must inherit from one base class.",
-            "Flyweight replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Flyweight is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Flyweight do?",
           "options": [
             "Uses sharing to support large numbers of fine-grained objects efficiently by separating intrinsic and extrinsic state.",
@@ -4236,37 +2954,6 @@
           "correctIndex": 0,
           "explanation": "Intrinsic = shareable/context-free; extrinsic = supplied per use.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Flyweight module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "flyweight"
-          ],
-          "explanation": "The expected answer is the module's core concept: Flyweight."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Flyweight implementation?",
-          "options": [
-            "It should show the flyweight intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Flyweight design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Flyweight pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "flyweight",
-          "starterCode": "// TODO: write a compact Flyweight example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Flyweight."
         }
       ]
     },
@@ -4314,19 +3001,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Chain Of Responsibility?",
-          "options": [
-            "Chain Of Responsibility gives a named, reusable way to solve the module's design problem.",
-            "Chain Of Responsibility is only a compiler optimization flag.",
-            "Chain Of Responsibility means every class must inherit from one base class.",
-            "Chain Of Responsibility replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Chain Of Responsibility is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Chain of Responsibility do?",
           "options": [
             "Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.",
@@ -4350,37 +3024,6 @@
           "correctIndex": 0,
           "explanation": "The \"next handler\" link is what forms the chain.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Chain Of Responsibility module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "chain of responsibility"
-          ],
-          "explanation": "The expected answer is the module's core concept: Chain Of Responsibility."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Chain Of Responsibility implementation?",
-          "options": [
-            "It should show the chain of responsibility intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Chain Of Responsibility design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Chain Of Responsibility pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "chain-of-responsibility",
-          "starterCode": "// TODO: write a compact Chain Of Responsibility example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Chain Of Responsibility."
         }
       ]
     },
@@ -4428,19 +3071,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Mediator?",
-          "options": [
-            "Mediator gives a named, reusable way to solve the module's design problem.",
-            "Mediator is only a compiler optimization flag.",
-            "Mediator means every class must inherit from one base class.",
-            "Mediator replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Mediator is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Mediator do?",
           "options": [
             "Encapsulates how a set of objects interact, so they refer to the mediator instead of each other.",
@@ -4464,37 +3094,6 @@
           "correctIndex": 0,
           "explanation": "Mediator turns a tangle of direct references into spokes around a hub.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Mediator module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "mediator"
-          ],
-          "explanation": "The expected answer is the module's core concept: Mediator."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Mediator implementation?",
-          "options": [
-            "It should show the mediator intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Mediator design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Mediator pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "mediator",
-          "starterCode": "// TODO: write a compact Mediator example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Mediator."
         }
       ]
     },
@@ -4542,19 +3141,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Visitor?",
-          "options": [
-            "Visitor gives a named, reusable way to solve the module's design problem.",
-            "Visitor is only a compiler optimization flag.",
-            "Visitor means every class must inherit from one base class.",
-            "Visitor replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Visitor is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Visitor do?",
           "options": [
             "Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.",
@@ -4578,37 +3164,6 @@
           "correctIndex": 0,
           "explanation": "accept/visit double dispatch routes to the right visit overload per element type.",
           "taxonomy": "applying"
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Visitor module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "visitor"
-          ],
-          "explanation": "The expected answer is the module's core concept: Visitor."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Visitor implementation?",
-          "options": [
-            "It should show the visitor intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
-          ],
-          "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Visitor design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Visitor pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "visitor",
-          "starterCode": "// TODO: write a compact Visitor example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Visitor."
         }
       ]
     },
@@ -4656,52 +3211,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Interpreter?",
-          "options": [
-            "Interpreter gives a named, reusable way to solve the module's design problem.",
-            "Interpreter is only a compiler optimization flag.",
-            "Interpreter means every class must inherit from one base class.",
-            "Interpreter replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Interpreter is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
-          "taxonomy": "understanding",
-          "question": "Which statement best explains why Interpreter matters?",
-          "options": [
-            "Interpreter gives a named, reusable way to solve the module's design problem.",
-            "Interpreter is only a compiler optimization flag.",
-            "Interpreter means every class must inherit from one base class.",
-            "Interpreter replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Interpreter is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Interpreter module to a small C++ design exercise.",
-          "expectedTokens": [
-            "interpreter"
-          ],
-          "explanation": "The expected answer is the module's core concept: Interpreter."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Interpreter module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "interpreter"
-          ],
-          "explanation": "The expected answer is the module's core concept: Interpreter."
-        },
-        {
-          "type": "mcq",
           "question": "What does Interpreter do?",
           "options": [
             "Defines a grammar representation and an interpreter that evaluates sentences in the language.",
@@ -4714,12 +3223,17 @@
           "taxonomy": "evaluating"
         },
         {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Interpreter pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "interpreter",
-          "starterCode": "// TODO: write a compact Interpreter example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Interpreter."
+          "type": "mcq",
+          "question": "How are grammar rules usually represented in Interpreter?",
+          "options": [
+            "As a class hierarchy of expression nodes with an `interpret()` operation.",
+            "As a single static instance.",
+            "As a fluent `return *this` chain.",
+            "As a forward-declared Impl."
+          ],
+          "correctIndex": 0,
+          "explanation": "Each rule is an expression class implementing interpret(); composites build the tree.",
+          "taxonomy": "creating"
         }
       ]
     },
@@ -4767,19 +3281,6 @@
       "questions": [
         {
           "type": "mcq",
-          "taxonomy": "remembering",
-          "question": "Which answer best names the main idea in Memento?",
-          "options": [
-            "Memento gives a named, reusable way to solve the module's design problem.",
-            "Memento is only a compiler optimization flag.",
-            "Memento means every class must inherit from one base class.",
-            "Memento replaces the need to read code structure."
-          ],
-          "correctIndex": 0,
-          "explanation": "Memento is treated as a design concept with a recognizable intent and structure."
-        },
-        {
-          "type": "mcq",
           "question": "What does Memento do?",
           "options": [
             "Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.",
@@ -4792,45 +3293,17 @@
           "taxonomy": "understanding"
         },
         {
-          "type": "identification",
-          "taxonomy": "applying",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A learner must apply the Memento module to a small C++ design exercise.",
-          "expectedTokens": [
-            "memento"
-          ],
-          "explanation": "The expected answer is the module's core concept: Memento."
-        },
-        {
-          "type": "identification",
-          "taxonomy": "analyzing",
-          "question": "Identify the design idea suggested by the scenario.",
-          "scenario": "A reviewer sees code whose responsibilities match the Memento module and asks for the pattern or concept name.",
-          "expectedTokens": [
-            "memento"
-          ],
-          "explanation": "The expected answer is the module's core concept: Memento."
-        },
-        {
           "type": "mcq",
-          "taxonomy": "evaluating",
-          "question": "Which review comment best evaluates a Memento implementation?",
+          "question": "Which roles does Memento define?",
           "options": [
-            "It should show the memento intent clearly, not only coincidental syntax.",
-            "It passes automatically if the class name contains Pattern.",
-            "It is correct when every method is static.",
-            "It should remove all interfaces to reduce files."
+            "Originator (owns state), Memento (snapshot), Caretaker (holds snapshots).",
+            "Subject and Observer.",
+            "Abstraction and Implementor.",
+            "Component and Leaf."
           ],
           "correctIndex": 0,
-          "explanation": "Evaluation should check whether the implementation expresses the Memento design intent."
-        },
-        {
-          "type": "studio",
-          "taxonomy": "creating",
-          "prompt": "Implement a small C++ example that demonstrates the Memento pattern clearly enough for the Studio analyzer to tag it.",
-          "targetPatternSlug": "memento",
-          "starterCode": "// TODO: write a compact Memento example.\n",
-          "explanation": "A creating-level check should produce code that the analyzer can recognize as Memento."
+          "explanation": "Originator creates/restores; Caretaker stores; Memento is the opaque snapshot.",
+          "taxonomy": "creating"
         }
       ]
     },
