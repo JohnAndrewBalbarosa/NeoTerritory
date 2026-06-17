@@ -218,7 +218,35 @@ export function ensureSeedLearningModules(database: Database): void {
     const missing = rows.filter(
       (r) => r && typeof r.moduleId === 'string' && r.moduleId && !present.has(r.moduleId),
     );
-    if (missing.length === 0) return; // every seed id already present — nothing to do
+
+    // Sync exams for EXISTING seed modules in case the source code updated them
+    // (e.g., removing vague fallbacks or improving hints). We don't overwrite
+    // title/content here to respect admin edits, but we force-sync the exams.
+    const existingSeedRows = rows.filter(
+      (r) => r && typeof r.moduleId === 'string' && r.moduleId && present.has(r.moduleId),
+    );
+
+    if (existingSeedRows.length > 0) {
+      const updateExams = database.prepare(`
+        UPDATE learning_modules
+        SET theoretical_json = @theoretical_json,
+            practical_json = @practical_json,
+            updated_at = datetime('now')
+        WHERE module_id = @module_id AND is_seed = 1
+      `);
+      
+      database.transaction((seedRows: LearningModuleSeedRow[]) => {
+        for (const r of seedRows) {
+          updateExams.run({
+            module_id: r.moduleId,
+            theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
+            practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
+          });
+        }
+      })(existingSeedRows);
+    }
+
+    if (missing.length === 0) return; // every seed id already present — nothing to insert
 
     // INSERT OR IGNORE is belt-and-suspenders: the pre-filter already excludes
     // present ids, and OR IGNORE guarantees we never clobber a row on a PK race.
