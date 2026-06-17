@@ -100,7 +100,7 @@ export function hasLearningAssessmentAnswer(question: ExamQuestion, answer: unkn
     return typeof answer === 'string' && answer.trim().length > 0;
   }
   if (isStudioQuestion(question)) {
-    return answer === true;
+    return typeof answer === 'boolean';
   }
   return false;
 }
