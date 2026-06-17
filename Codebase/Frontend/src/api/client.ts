@@ -1028,7 +1028,9 @@ export async function patchLearningModule(
 export async function bulkUpdateLearningModules(
   updates: Array<{ id: string; published: boolean }>,
 ): Promise<{ ok: boolean; updatedCount: number }> {
-  return apiFetch<{ ok: boolean; updatedCount: number }>('/api/admin/learning/bulk', {
+  // The bulk visibility toggle lives on the learner learning router, not the
+  // admin CRUD router. The admin tab only orchestrates the toggle UX.
+  return apiFetch<{ ok: boolean; updatedCount: number }>('/api/learning/bulk', {
     method: 'PATCH',
     body: JSON.stringify({ updates }),
   });

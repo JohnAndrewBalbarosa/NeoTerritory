@@ -38,6 +38,7 @@ flowchart TD
 - Loaded modules are normalized through the learner contract before table health is calculated or the editor opens.
 - Sparse legacy theory banks should not show `Incomplete Bank` when normalization can provide all six Bloom levels.
 - Seed rows remain protected from deletion; the table copy steers the operator toward unpublishing instead.
+- The bulk On/Off save path uses the learner bulk route (`/api/learning/bulk`), so the tab can persist visibility without going through the admin CRUD endpoint.
 
 ## Acceptance Checks
 
