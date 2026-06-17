@@ -94,7 +94,8 @@ export function hasLearningAssessmentAnswer(question: ExamQuestion, answer: unkn
   }
   if (isIdentificationQuestion(question)) {
     if (Array.isArray(answer)) {
-      return answer.length > 0 && answer.every((token) => typeof token === 'string' && token.trim().length > 0);
+      // Must have exactly as many non-empty answers as expected tokens.
+      return answer.length === question.expectedTokens.length && answer.every((token) => typeof token === 'string' && token.trim().length > 0);
     }
     return typeof answer === 'string' && answer.trim().length > 0;
   }

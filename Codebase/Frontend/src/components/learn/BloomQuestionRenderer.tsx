@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ExamQuestion, isMcqQuestion, isIdentificationQuestion, isStudioQuestion } from '../../data/learningModules';
 import StudioSurface from '../studio/StudioSurface';
 import { AnalysisRun } from '../../types/api';
+import { useAppStore } from '../../store/appState';
 
 interface BloomQuestionRendererProps {
   question: ExamQuestion;
@@ -160,27 +161,66 @@ const StudioRenderer: React.FC<{
   showResult?: boolean;
   userAnswer?: boolean;
 }> = ({ question, onAnswer, showResult, userAnswer }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const handlePatternDetected = (_run: AnalysisRun) => {
     if (!showResult) {
       onAnswer(true);
+      setTimeout(() => setIsModalOpen(false), 1500);
     }
+  };
+
+  const openStudio = () => {
+    // Reset global session to avoid sharing state with previous/other studio tasks
+    useAppStore.getState().resetSession();
+    setIsModalOpen(true);
   };
 
   return (
     <div className="nt-bloom-question nt-bloom-question--studio">
       <p className="nt-bloom-question__prompt">{question.prompt}</p>
-      {userAnswer && (
-        <div className="nt-bloom-question__success-banner">
-          Pattern "{question.targetPatternSlug}" successfully detected!
+      
+      <div className="nt-bloom-question__studio-actions" style={{ marginTop: '1rem' }}>
+        {userAnswer ? (
+          <div className="nt-bloom-question__success-banner" style={{ padding: '1rem', background: 'var(--c-teal-soft)', color: 'var(--c-teal)', borderRadius: '8px', fontWeight: 'bold' }}>
+            ✓ Pattern "{question.targetPatternSlug}" successfully detected!
+          </div>
+        ) : (
+          <button 
+            type="button" 
+            className="nt-lesson-button nt-lesson-button--primary" 
+            onClick={openStudio}
+            disabled={showResult}
+          >
+            Open Studio to Solve
+          </button>
+        )}
+      </div>
+
+      {isModalOpen && (
+        <div className="modal-overlay" role="dialog" aria-modal="true" style={{ zIndex: 9999 }}>
+          <div className="modal-card" style={{ maxWidth: '90vw', width: '1200px', height: '90vh', display: 'flex', flexDirection: 'column', padding: '0' }}>
+            <header className="nt-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.5rem', borderBottom: '1px solid var(--c-border)' }}>
+              <h2 style={{ margin: 0, fontSize: '1.25rem' }}>Studio: {question.targetPatternSlug}</h2>
+              <button 
+                type="button" 
+                className="ghost-btn" 
+                onClick={() => setIsModalOpen(false)}
+                style={{ fontSize: '1.5rem', lineHeight: 1, padding: '0.25rem 0.5rem' }}
+              >
+                ×
+              </button>
+            </header>
+            <div className="nt-modal-body" style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+              <StudioSurface
+                targetPatternSlug={question.targetPatternSlug}
+                starterCode={question.starterCode}
+                onPatternDetected={handlePatternDetected}
+              />
+            </div>
+          </div>
         </div>
       )}
-      <div className="nt-studio-frame">
-        <StudioSurface
-          targetPatternSlug={question.targetPatternSlug}
-          starterCode={question.starterCode}
-          onPatternDetected={handlePatternDetected}
-        />
-      </div>
     </div>
   );
 };

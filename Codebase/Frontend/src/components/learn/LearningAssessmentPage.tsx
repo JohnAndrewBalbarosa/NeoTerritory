@@ -3,6 +3,7 @@ import { navigate } from '../../logic/router';
 import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress, refreshGuest } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
+import { isStudioQuestion } from '../../data/learningModules';
 import {
   buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
@@ -130,6 +131,7 @@ function LearningAssessmentContent({
 
   const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
   const allAnswered = questions.length > 0 && answeredCount === questions.length;
+  const hasPendingStudio = questions.some(q => isStudioQuestion(q.question) && !hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex]));
   const levelProgress = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
     return allQuestions.reduce<Array<{
@@ -163,7 +165,11 @@ function LearningAssessmentContent({
 
   const handleSubmitLevel = async (): Promise<void> => {
     if (!allAnswered) {
-      setError('Answer every question in this level before submitting.');
+      if (hasPendingStudio) {
+        setError('You must complete all Studio tasks (open the Studio and successfully detect the pattern) before submitting.');
+      } else {
+        setError('Answer every question completely in this level before submitting. Ensure all fill-in-the-blanks are filled.');
+      }
       return;
     }
 
