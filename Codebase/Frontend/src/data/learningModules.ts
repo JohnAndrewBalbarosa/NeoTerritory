@@ -1648,6 +1648,22 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       correctIndex: 0,
       explanation: 'Fluent builders return `*this`, which is why Builder and Method Chaining share a shape.',
     },
+    {
+      type: 'identification',
+      taxonomy: 'applying',
+      question: 'What is the standard name for the final method that returns the constructed object?',
+      scenario: 'You are using a PizzaBuilder to configure a pizza with various toppings. You have finished adding toppings and now want to get the final Pizza object.',
+      expectedTokens: ['build', 'finalize'],
+      explanation: 'Methods like build() or finalize() act as terminators that return the final product.',
+    },
+    {
+      type: 'studio',
+      taxonomy: 'creating',
+      prompt: 'Implement a "UserProfileBuilder" that allows setting a username and age using fluent methods, and provides a "build()" method that returns the final "UserProfile".',
+      targetPatternSlug: 'builder',
+      starterCode: 'class UserProfile {\npublic:\n  std::string username;\n  int age;\n};\n\nclass UserProfileBuilder {\npublic:\n  // TODO: implement fluent setters and build()\n\nprivate:\n  UserProfile profile_;\n};',
+      explanation: 'The student must implement fluent setters returning *this and a build() method.',
+    },
   ],
   'method-chaining': [
     { type: 'mcq', question: 'What is Method Chaining (a fluent idiom)?',
@@ -2044,15 +2060,15 @@ const PATTERN_THEORY: Record<string, ReadonlyArray<ExamQuestion>> = {
       question: 'What are the two common names for the methods used to manage the list of dependents in a Subject?',
       scenario: 'You are implementing a NewsChannel (Subject) and several Subscribers (Observers). You need methods to add and remove subscribers.',
       expectedTokens: ['attach', 'detach'],
-      explanation: 'Commonly tawag na attach/detach o subscribe/unsubscribe.',
+      explanation: 'Commonly called attach/detach or subscribe/unsubscribe.',
     },
     {
       type: 'studio',
       taxonomy: 'creating',
-      prompt: 'Implement a "WeatherStation" (Subject) na may listahan ng "IObserver" objects at nag-noto-notify sa kanila kapag nagbago ang temperatura.',
+      prompt: 'Implement a "WeatherStation" (Subject) that maintains a list of "IObserver" objects and notifies them whenever the temperature changes.',
       targetPatternSlug: 'observer',
       starterCode: 'class IObserver {\npublic:\n  virtual void update(float temp) = 0;\n};\n\nclass WeatherStation {\npublic:\n  // TODO: implement attach, detach, and notify\n\nprivate:\n  std::vector<IObserver*> observers_;\n};',
-      explanation: 'Dapat ma-implement ng estudyante ang observer management at notification logic.',
+      explanation: 'The student must implement the observer management and notification logic.',
     },
   ],
   iterator: [
@@ -2400,3 +2416,4 @@ export function modulesInCategory(
 ): ReadonlyArray<LearningModule> {
   return LEARNING_MODULES.filter((m) => m.category === category);
 }
+
