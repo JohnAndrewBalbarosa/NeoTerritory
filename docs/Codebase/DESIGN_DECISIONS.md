@@ -1311,7 +1311,9 @@ become dead. B2.3 will (recommended) make AWS API-only and record the final call
 **Live-site safety.** The production Vercel project keeps building the Vite app
 (`vercel.json`) until a `next build` is proven green; only then is the Vercel project
 Root Directory flipped to `Codebase/FrontendNext`. Frontend rollback stays `vercel
-rollback`; backend rollback stays `scripts/deploy-aws.sh --rollback`.
+rollback`; backend rollback stays `scripts/deploy-aws.sh --rollback`. The backend
+rollback snapshot skips the generated `Codebase/Backend/dist/src/db/.ai-config-key`
+file so a root-owned local encryption key does not break artifact snapshotting.
 
 **STATUS — flip is LIVE (B2.1 + B2.2 done).** As of 2026-05-29, `neoterritory.vercel.app`
 serves the Next app. Vercel project: Root Directory = `Codebase/FrontendNext`, framework =

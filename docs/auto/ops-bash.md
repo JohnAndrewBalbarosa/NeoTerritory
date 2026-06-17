@@ -141,11 +141,11 @@ leave the DB ahead of it. Snapshot the DB separately before risky migrations.
 
 **Functions**
 
-- `snapshot_current_artifacts` (line 30)
+- `snapshot_current_artifacts` (line 32)
   Capture the currently-running built artifacts into .rollback/previous BEFORE
   the new build clobbers them. Called from deploy-aws.sh right before the build.
   Best-effort: a first-ever deploy (no current dist) simply skips.
-- `run_remote_rollback` (line 65)
+- `run_remote_rollback` (line 68)
   Restore the .rollback/previous artifacts over the current tree and bounce pm2.
   Mirrors the restart-only smoke so we only declare success after a real 200.
 

@@ -24,6 +24,8 @@
 # leave the DB ahead of it. Snapshot the DB separately before risky migrations.
 # -----------------------------------------------------------------------------
 
+BACKEND_DIST_EXCLUDES=(--exclude='Codebase/Backend/dist/src/db/.ai-config-key')
+
 # Capture the currently-running built artifacts into .rollback/previous BEFORE
 # the new build clobbers them. Called from deploy-aws.sh right before the build.
 # Best-effort: a first-ever deploy (no current dist) simply skips.
@@ -46,7 +48,8 @@ fi
 rm -rf "\$SNAP"
 mkdir -p "\$SNAP/Codebase/Backend" "\$SNAP/Codebase/Frontend" "\$SNAP/Codebase/Microservice/build"
 
-cp -a Codebase/Backend/dist "\$SNAP/Codebase/Backend/dist"
+tar "${BACKEND_DIST_EXCLUDES[@]}" -C "$remote_dir" -cpf - Codebase/Backend/dist \
+  | tar -C "\$SNAP/Codebase/Backend" -xpf -
 if [ -d Codebase/Frontend/dist ]; then
   cp -a Codebase/Frontend/dist "\$SNAP/Codebase/Frontend/dist"
 fi
@@ -84,7 +87,8 @@ echo "   [rollback] restoring artifacts from snapshot (sha=\$ROLLBACK_SHA)"
 
 # Backend server bundle
 rm -rf Codebase/Backend/dist
-cp -a "\$SNAP/Codebase/Backend/dist" Codebase/Backend/dist
+tar --exclude='dist/src/db/.ai-config-key' -C "\$SNAP/Codebase/Backend" -cpf - dist \
+  | tar -C Codebase/Backend -xpf -
 
 # Frontend SPA bundle
 if [ -d "\$SNAP/Codebase/Frontend/dist" ]; then
