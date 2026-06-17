@@ -138,9 +138,11 @@ describe('buildLearningAssessmentQuestions', () => {
   it.each([
     ['posttest', 'evaluating'],
     ['posttest2', 'creating'],
-  ] as const)('emits one question per eligible module for %s', (assessmentType, expectedTaxonomy) => {
+  ] as const)('emits one question per eligible module for %s if it has that taxonomy', (assessmentType, expectedTaxonomy) => {
     const modules = LEARNING_MODULES.map(stripModuleTaxonomy);
-    const eligible = normalizeLearningModules(modules).filter((module) => module.theoreticalExam?.questions.length);
+    const eligible = normalizeLearningModules(modules).filter((module) => 
+      module.theoreticalExam?.questions.some(q => q.taxonomy === expectedTaxonomy)
+    );
     const questions = buildLearningAssessmentQuestions(modules, assessmentType);
     expect(questions).toHaveLength(eligible.length);
     expect(new Set(questions.map((item) => item.moduleId))).toEqual(new Set(eligible.map((module) => module.id)));
@@ -148,14 +150,14 @@ describe('buildLearningAssessmentQuestions', () => {
     expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
   });
 
-  it('uses each Bloom taxonomy once when the eligible module pool is compact in pretest mode', () => {
+  it('uses each available Bloom taxonomy once when the eligible module pool is compact in pretest mode', () => {
     const questions = buildLearningAssessmentQuestions([buildCompactModuleBank()], 'pretest');
     expect(questions).toHaveLength(BLOOM_LEVELS.length);
     expect(questions.map((item) => item.taxonomy).sort()).toEqual(BLOOM_LEVELS.slice().sort());
     expect(questions.every((item) => item.question.taxonomy === item.taxonomy)).toBe(true);
   });
 
-  it('normalizes sparse module banks to six Bloom-level pretest questions', () => {
+  it('emits only available questions for sparse module banks without padding', () => {
     const sparseModule: LearningModule = {
       ...buildCompactModuleBank(),
       id: 'sparse-bank',
@@ -166,8 +168,7 @@ describe('buildLearningAssessmentQuestions', () => {
     };
 
     const questions = buildLearningAssessmentQuestions([sparseModule], 'pretest');
-    expect(questions).toHaveLength(6);
-    expect(questions.map((item) => item.taxonomy).sort()).toEqual(BLOOM_LEVELS.slice().sort());
+    expect(questions).toHaveLength(2); // No longer padded to 6
     expect(questions.every((item) => item.moduleId === 'sparse-bank')).toBe(true);
   });
 });

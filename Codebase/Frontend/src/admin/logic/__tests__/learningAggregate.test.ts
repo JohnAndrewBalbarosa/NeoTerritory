@@ -7,8 +7,8 @@ import {
   studentDrilldown,
 } from '../learningAggregate';
 
-// Real catalog module IDs (Foundations) so catalog resolution is exercised.
-const MOD_A = 'foundations-what-is-pattern'; // ≥3 theory questions
+// Real catalog module IDs so catalog resolution is exercised.
+const MOD_A = 'creational-builder'; // Contains MCQ at 0 and identification at 2
 const MOD_B = 'foundations-why-matters'; // ≥2 theory questions
 
 function emptyRaw(): AdminLearningRaw {
