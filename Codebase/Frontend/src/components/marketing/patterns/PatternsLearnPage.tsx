@@ -482,8 +482,13 @@ export default function PatternsLearnPage(): JSX.Element {
     return hidden;
   }, [completedIds, effectiveBloomMasteryByModule, pretestModuleOutcomes.exemptModuleIds]);
   const visibleModulesInCategory = useCallback(
-    (category: LearningCategory) => modulesInCat(category).filter((module) => !hiddenModuleIds.has(module.id)),
-    [hiddenModuleIds, modulesInCat],
+    (category: LearningCategory) => [...modulesInCat(category)]
+      .filter((module) => !hiddenModuleIds.has(module.id))
+      .sort((left, right) =>
+        (effectiveBloomMasteryByModule[left.id] ?? 0) -
+        (effectiveBloomMasteryByModule[right.id] ?? 0)
+      ),
+    [effectiveBloomMasteryByModule, hiddenModuleIds, modulesInCat],
   );
   const { groups, steps } = useMemo(() => buildCategoryGroups(visibleModulesInCategory), [visibleModulesInCategory]);
   const [foundationEvidence, setFoundationEvidence] = useState<FoundationPretestEvidence>({

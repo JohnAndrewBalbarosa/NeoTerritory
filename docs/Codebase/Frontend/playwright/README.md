@@ -21,15 +21,15 @@ flowchart TD
     N2["Render assessment pages"]
     N3["Verify Bloom chips"]
     N4["Verify validation"]
-    N5["Unlock learner hub"]
-    N6["Reach practical pane"]
+    N5["Seed fresh pre-test"]
+    N6["Open learner hub"]
     End["Keep contract local"]
     Start --> N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> End
 ```
 
 ## Documents By Logic
 ### Test Coverage
-- `tests/learner-assessment.spec.ts.md` - route smoke for the three assessment pages plus the unlocked learner-hub practical path.
+- `tests/learner-assessment.spec.ts.md` - route smoke for the three assessment pages plus the complete pre-test and personalized learner-hub path.
 
 ## Reading Hint
 - Use the manifest for route ownership and the spec doc for browser behavior. The tests are intentionally small and API-mocked so they can run against a Vite dev server without the backend.

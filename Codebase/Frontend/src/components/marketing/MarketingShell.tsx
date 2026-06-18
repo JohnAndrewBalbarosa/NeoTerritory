@@ -49,15 +49,14 @@ export default function MarketingShell({ surface }: MarketingShellProps) {
     fetchLearningAssessments()
       .then((data) => {
         if (cancelled) return;
-        const fresh = hasFreshSavedPretest(data);
-        setPreTestCompleted(fresh);
-
         // For registered users, automatically skip the pre-test if already fresh.
         // Guests (shared Devcon seats) are allowed to re-take it to ensure their
         // ephemeral session feels independent from previous occupants.
         const user = useAppStore.getState().user;
         const email = (user?.email || '').toLowerCase();
         const isGuest = !email || email.endsWith('@test.local') || email.endsWith('@guest.neoterritory.local');
+        const fresh = isGuest ? useAppStore.getState().preTestCompleted : hasFreshSavedPretest(data);
+        setPreTestCompleted(fresh);
 
         if (fresh && surface === 'preTest' && !isGuest) {
           const next = new URL(window.location.href).searchParams.get('next');

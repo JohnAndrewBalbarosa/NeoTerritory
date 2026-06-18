@@ -70,8 +70,8 @@ The backend stores selections, free-text responses, canonical taxonomy, per-answ
 - Post-test and post-test-2 question counts match the learner-visible module count.
 - Pre-test, post-test, and post-test-2 questions keep the intended Bloom taxonomy labels.
 - Sparse module banks still expose six Bloom-level pre-test questions after normalization.
-- Studio failures can be submitted as completed failed answers for adaptive pre-test pruning.
+- Studio failures can be submitted as completed failed answers and remain part of the final recommendation evidence.
 - Unanswered questions remain in the serialized payload with `selectedIndex = -1`.
 - Foundation personas remain distinguishable by mastered and missing taxonomies.
 - Saved pre-test evidence older than `courseUpdatedAt` fails the gate.
-- A saved fresh passing pre-test can unlock the path without relying on local-only state.
+- A saved fresh completed pre-test can unlock the path without relying on local-only state.

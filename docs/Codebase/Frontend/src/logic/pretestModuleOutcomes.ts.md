@@ -13,7 +13,7 @@ flowchart TD
     N1["Group answers"]
     N2["Score questions"]
     N3["Collect mastered levels"]
-    N4["Compute ceiling"]
+    N4["Compute consecutive mastery"]
     N5["Mark failures"]
     N6["Mark exemptions"]
     End["Return outcomes"]
@@ -25,7 +25,9 @@ flowchart TD
 - Only the latest fresh pre-test attempt is considered.
 - Attempts before `courseUpdatedAt` are ignored.
 - Backend-authoritative correct answers add that question's Bloom taxonomy to the module mastery set.
-- The numeric `bloomMasteryByModuleId` map stores the highest mastered Bloom level for each module.
+- The numeric `bloomMasteryByModuleId` map stores only consecutive mastery from Remembering upward.
+- A correct later-level answer cannot bridge an earlier failed or missing Bloom level.
+- `deriveContiguousBloomMastery()` creates the progress snapshot from the final server-grade response.
 - Any incorrect answered question marks that module as failed.
 - A module is exempt only when every authored Bloom taxonomy bucket available for that module is mastered and no answered question for the module is incorrect.
 - Exempt modules are treated as Bloom level 6 for that user.
@@ -35,7 +37,7 @@ flowchart TD
 
 - Stale attempts do not produce mastered, failed, or exempt modules.
 - Partial module coverage can master a level without exempting the module.
-- A mastered ceiling of 5 means levels 1 through 5 can be removed from that user's module bank.
+- A mastery value of 5 proves levels 1 through 5 consecutively and removes only those quiz pages.
 - Duplicate questions in one Bloom taxonomy still count as one mastered bucket.
 - Failed module ids stay separate from exempt module ids.
 - Persisted `isCorrect` wins over any client-side re-evaluation when recommendations are derived.

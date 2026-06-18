@@ -107,6 +107,7 @@ Preview-only AI course plans do not call this router, do not mutate modules, and
 - Assessment writes are append-only and preserve old attempts for analytics.
 - Saved attempts include `correctCount` and `scorePercent`; saved answers include backend-derived `isCorrect`.
 - Unanswered questions are persisted with `selectedIndex = -1` and count as incorrect.
+- The pre-test client saves all six 25-question Bloom buckets as one 150-answer final attempt after showing each level grade.
 - Progress reads and writes preserve the per-user, per-module Bloom mastery map.
 - Freshness is enforced by comparing attempt creation time to `courseUpdatedAt` and requiring recorded answer rows, not by deleting learner data.
 - Preview-only AI course plan generation cannot reset learners.

@@ -48,7 +48,7 @@ flowchart TD
 - It passes those attempts into `evaluateFoundationPretestFromAssessments(...)`.
 - It also passes the same attempts into `derivePretestModuleOutcomes(...)` to learn which modules are failed, partially mastered, or fully exempt.
 - That helper ignores pre-test attempts older than the backend `courseUpdatedAt` value.
-- A fresh passing pre-test can set the local `preTestCompleted` flag, but the server-backed attempt remains the durable gate.
+- A fresh completed pre-test can set the local `preTestCompleted` flag, but the server-backed attempt remains the durable gate.
 - When the server read fails, the page marks assessment loading as failed and falls back to local state only long enough to keep the UI recoverable; the learner can still open the pre-test manually.
 
 ## Personalized Module Path
@@ -56,7 +56,8 @@ flowchart TD
 - `fetchLearningProgress()` seeds completed and theory-passed module ids for the signed-in learner.
 - `fetchLearningProgress()` also seeds `bloomMasteryByModule`, the per-user Bloom ceiling for each module.
 - Completed modules, fully pre-test-exempt modules, and modules with Bloom mastery level 6 are removed from the learner-visible path.
-- Mastered Bloom levels are threshold-based: a module mastery level of 5 removes levels 1 through 5 from that user's visible theory/practical question pages.
+- Remaining modules are ordered from weakest Bloom mastery to strongest within their category.
+- Mastered Bloom levels are consecutive: a module mastery level of 5 proves and removes levels 1 through 5 from that user's visible theory/practical question pages.
 - Final theory-gate logic must use the filtered visible quiz pages, not the full authored question bank.
 - `saveLearningProgress()` persists new theory-passed ids, completed ids, and Bloom mastery level 6 after full module completion.
 
@@ -92,8 +93,9 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 ## Acceptance Checks
 
 - A stale saved pre-test redirects the learner to `/pre-test`.
-- A fresh saved passing pre-test opens the lesson surface.
+- A fresh saved completed pre-test opens the lesson surface.
 - Completed and pre-test-exempt modules are hidden for that user.
+- Lower-scoring modules appear before higher-mastery modules in the same category.
 - Bloom levels at or below the user's module mastery ceiling no longer show as quiz/practical pages for that module.
 - A module with Bloom mastery level 6 is hidden for that user.
 - The final visible theory page gates module completion after mastered levels are removed.

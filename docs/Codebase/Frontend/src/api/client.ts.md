@@ -6,6 +6,8 @@
 ## Story
 This client carries the wrapper id through the test-runner wire types so streaming SSE results and cached results preserve the same per-question identity as the backend.
 
+For learner APIs, a `401` received while the user is in `/pre-test` or `/patterns/learn` preserves the current path in a learner sign-in redirect. It must not silently send an expired learner session to the marketing landing page.
+
 ## Read Order
 1. `GdbTestResult` and `RunStreamPhaseEvent` for the shape changes.
 2. `runPatternTestsStreaming()` for the live test flow.
@@ -18,3 +20,4 @@ This client carries the wrapper id through the test-runner wire types so streami
 ## Acceptance Checks
 - The streamed phase event shape matches the backend result shape.
 - Cached results can still be grouped deterministically after a refresh.
+- Expired learner assessment/path requests route to `/student-learning/login?next=...`.

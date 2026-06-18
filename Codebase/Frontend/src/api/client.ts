@@ -70,10 +70,15 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}, timeou
   }
 
   if (response.status === 401) {
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('nt_user');
     useAppStore.getState().clearAuth();
-    navigate('/');
+    if (window.location.pathname === '/pre-test' || window.location.pathname.startsWith('/patterns/learn')) {
+      navigate(`/student-learning/login?next=${encodeURIComponent(currentPath)}`);
+    } else {
+      navigate('/');
+    }
     throw new Error((data as { error?: string }).error || 'Session expired — please sign in.');
   }
 

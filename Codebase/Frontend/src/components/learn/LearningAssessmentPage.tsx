@@ -5,10 +5,10 @@ import {
   gradeLearningAssessmentOnServer,
   saveLearningAssessment,
   saveLearningProgress,
-  refreshGuest,
 } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import type { LearningAssessmentGradeResponse } from '../../types/api';
+import { BLOOM_TAXONOMIES, type BloomTaxonomy } from '../../data/learningModules';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
   buildLearningAssessmentAnswerInputs,
@@ -17,8 +17,11 @@ import {
   LEARNING_ASSESSMENT_META,
   type LearningAssessmentType,
 } from '../../data/learningAssessments';
-import { bloomTaxonomiesThroughLevel } from '../../logic/pretestModuleOutcomes';
-import { AdaptiveAssessmentProvider, useAdaptiveAssessment } from './AdaptiveAssessmentProvider';
+import {
+  bloomTaxonomiesThroughLevel,
+  deriveContiguousBloomMastery,
+} from '../../logic/pretestModuleOutcomes';
+import { resolvePreTestNext } from '../../logic/learnerRouting';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
 
 interface LearningAssessmentPageProps {
@@ -26,144 +29,181 @@ interface LearningAssessmentPageProps {
   autoAdvance?: boolean;
 }
 
+interface PretestDraft {
+  currentLevel: number;
+  answers: Record<number, unknown>;
+  levelGrades: Record<number, LearningAssessmentGradeResponse>;
+}
+
+const PRETEST_DRAFT_PREFIX = 'nt_lms_pretest_draft';
+
 function clampBloomLevel(level: number): number {
   return Math.max(0, Math.min(6, Math.floor(level)));
 }
 
-function masteryLevelFromStoredLevels(levels: ReadonlyArray<number> | undefined): number {
-  return clampBloomLevel(Math.max(0, ...(levels ?? [])));
+function titleCaseTaxonomy(taxonomy: BloomTaxonomy): string {
+  return taxonomy.charAt(0).toUpperCase() + taxonomy.slice(1);
 }
 
-function masteryMapFromLocalStore(masteredLevelsByModule: Record<string, number[]>): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const [moduleId, levels] of Object.entries(masteredLevelsByModule)) {
-    const level = masteryLevelFromStoredLevels(levels);
-    if (level > 0) out[moduleId] = level;
+function draftKey(userId: number | undefined, sessionId: string | null): string | null {
+  return userId ? `${PRETEST_DRAFT_PREFIX}:${userId}:${sessionId ?? 'default'}` : null;
+}
+
+function readPretestDraft(key: string | null): PretestDraft | null {
+  if (!key || typeof window === 'undefined') return null;
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(key) ?? 'null') as Partial<PretestDraft> | null;
+    if (!parsed || typeof parsed !== 'object') return null;
+    return {
+      currentLevel: Math.max(1, clampBloomLevel(Number(parsed.currentLevel) || 1)),
+      answers: parsed.answers && typeof parsed.answers === 'object' ? parsed.answers : {},
+      levelGrades: parsed.levelGrades && typeof parsed.levelGrades === 'object' ? parsed.levelGrades : {},
+    };
+  } catch {
+    return null;
   }
-  return out;
 }
 
-function LearningAssessmentContent({
+function writePretestDraft(key: string | null, draft: PretestDraft): void {
+  if (!key || typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(draft));
+  } catch {
+    // The assessment remains usable in memory when storage is unavailable.
+  }
+}
+
+function clearPretestDraft(key: string | null): void {
+  if (!key || typeof window === 'undefined') return;
+  try {
+    window.localStorage.removeItem(key);
+  } catch {
+    // Ignore storage cleanup failures after the server has saved the attempt.
+  }
+}
+
+export default function LearningAssessmentPage({
   assessmentType,
   autoAdvance = false,
 }: LearningAssessmentPageProps): JSX.Element {
   const meta = LEARNING_ASSESSMENT_META[assessmentType];
   const { modules, loaded } = useLearningModules();
   const token = useAppStore((s) => s.token);
+  const userId = useAppStore((s) => s.user?.id);
   const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
-
-  const {
-    currentLevel,
-    status,
-    activeModuleIds,
-    eliminatedModuleIds,
-    nextLevel,
-    eliminateModules,
-    initializeActiveModules,
-    getTaxonomyForLevel,
-    getLevelForTaxonomy,
-  } = useAdaptiveAssessment();
+  const pretestDraftKey = useMemo(() => draftKey(userId, lmsSessionId), [lmsSessionId, userId]);
+  const initialDraft = useMemo(
+    () => (assessmentType === 'pretest' ? readPretestDraft(pretestDraftKey) : null),
+    [assessmentType, pretestDraftKey],
+  );
 
   const allQuestions = useMemo(
     () => (loaded ? buildLearningAssessmentQuestions(modules, assessmentType) : []),
     [assessmentType, loaded, modules],
   );
 
-  useEffect(() => {
-    if (
-      loaded &&
-      allQuestions.length > 0 &&
-      assessmentType === 'pretest' &&
-      activeModuleIds.size === 0 &&
-      eliminatedModuleIds.size === 0
-    ) {
-      initializeActiveModules([...new Set(allQuestions.map((q) => q.moduleId))]);
-    }
-  }, [
-    loaded,
-    allQuestions,
-    assessmentType,
-    activeModuleIds.size,
-    eliminatedModuleIds.size,
-    initializeActiveModules,
-  ]);
+  const [currentLevel, setCurrentLevel] = useState(initialDraft?.currentLevel ?? 1);
+  const currentTaxonomy = BLOOM_TAXONOMIES[currentLevel - 1] ?? BLOOM_TAXONOMIES[0];
+  const questions = useMemo(
+    () => assessmentType === 'pretest'
+      ? allQuestions.filter((question) => question.taxonomy === currentTaxonomy)
+      : allQuestions,
+    [allQuestions, assessmentType, currentTaxonomy],
+  );
 
-  const currentTaxonomy = getTaxonomyForLevel(currentLevel);
-  const questions = useMemo(() => {
-    if (assessmentType !== 'pretest') return allQuestions;
-    return allQuestions.filter((q) => q.taxonomy === currentTaxonomy && activeModuleIds.has(q.moduleId));
-  }, [allQuestions, assessmentType, currentTaxonomy, activeModuleIds]);
-
-  const [answers, setAnswers] = useState<Record<number, any>>({});
+  const [answers, setAnswers] = useState<Record<number, unknown>>(initialDraft?.answers ?? {});
+  const [levelGrades, setLevelGrades] = useState<Record<number, LearningAssessmentGradeResponse>>(
+    initialDraft?.levelGrades ?? {},
+  );
   const [levelSubmitted, setLevelSubmitted] = useState(false);
-  const [levelGrade, setLevelGrade] = useState<LearningAssessmentGradeResponse | null>(null);
+  const [assessmentComplete, setAssessmentComplete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const levelGrade = levelGrades[currentLevel] ?? null;
 
   useEffect(() => {
-    setAnswers({});
-  }, [assessmentType]);
+    if (assessmentType !== 'pretest' || assessmentComplete) return;
+    writePretestDraft(pretestDraftKey, { currentLevel, answers, levelGrades });
+  }, [answers, assessmentComplete, assessmentType, currentLevel, levelGrades, pretestDraftKey]);
 
   useEffect(() => {
-    setLevelSubmitted(false);
-    setLevelGrade(null);
+    setLevelSubmitted(Boolean(levelGrades[currentLevel]));
     setError(null);
-  }, [assessmentType, currentLevel]);
+  }, [currentLevel, levelGrades]);
 
-  const advancingModuleIds = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    return levelGrade?.results.filter((r) => r.isCorrect).map((r) => r.moduleId) ?? [];
-  }, [assessmentType, levelGrade]);
+  const answeredCount = questions.filter((question) =>
+    hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])
+  ).length;
 
-  const failedInThisLevelIds = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    return levelGrade?.results.filter((r) => !r.isCorrect).map((r) => r.moduleId) ?? [];
-  }, [assessmentType, levelGrade]);
-  const learningListModuleIds = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    const ids = new Set(eliminatedModuleIds);
-    if (levelSubmitted) {
-      failedInThisLevelIds.forEach((id) => ids.add(id));
-    }
-    return Array.from(ids);
-  }, [assessmentType, eliminatedModuleIds, failedInThisLevelIds, levelSubmitted]);
-  const currentLevelQuestionCount = questions.length;
-  const activeModuleCount = assessmentType === 'pretest' ? activeModuleIds.size : 0;
-
-  const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
   const levelProgress = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
-    return allQuestions.reduce<Array<{
-      level: number;
-      taxonomy: ReturnType<typeof getTaxonomyForLevel>;
-      total: number;
-      answered: number;
-      active: boolean;
-    }>>((acc, question) => {
-      const level = getLevelForTaxonomy(question.taxonomy);
-      let entry = acc.find((item) => item.level === level);
-      if (!entry) {
-        entry = {
-          level,
-          taxonomy: question.taxonomy,
-          total: 0,
-          answered: 0,
-          active: level === currentLevel,
-        };
-        acc.push(entry);
-      }
-      if (activeModuleIds.has(question.moduleId) || hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])) {
-        entry.total += 1;
-      }
-      if (hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])) {
-        entry.answered += 1;
-      }
-      return acc;
-    }, []).sort((a, b) => a.level - b.level);
-  }, [activeModuleIds, allQuestions, answers, assessmentType, currentLevel, getLevelForTaxonomy]);
+    return BLOOM_TAXONOMIES.map((taxonomy, index) => {
+      const level = index + 1;
+      const grade = levelGrades[level];
+      return {
+        level,
+        taxonomy,
+        total: allQuestions.filter((question) => question.taxonomy === taxonomy).length,
+        answered: grade?.totalCount ?? (level === currentLevel ? answeredCount : 0),
+        active: level === currentLevel,
+        complete: Boolean(grade),
+      };
+    });
+  }, [allQuestions, answeredCount, assessmentType, currentLevel, levelGrades]);
 
-  const submitLevel = async (answersToSubmit: Record<number, any> = answers): Promise<void> => {
+  const finalizeAssessment = async (
+    answersToSubmit: Record<number, unknown>,
+  ): Promise<LearningAssessmentGradeResponse> => {
+    const finalGrade = await saveLearningAssessment({
+      assessmentType,
+      sessionId: lmsSessionId,
+      answers: buildLearningAssessmentAnswerInputs(
+        assessmentType === 'pretest' ? allQuestions : questions,
+        answersToSubmit,
+      ),
+    });
+
+    if (assessmentType === 'pretest') {
+      const bloomMasteryByModule = deriveContiguousBloomMastery(finalGrade.results);
+      const moduleIds = [...new Set(allQuestions.map((question) => question.moduleId))];
+      const { setMasteredLevels } = useAppStore.getState();
+
+      moduleIds.forEach((moduleId) => {
+        const mastery = bloomMasteryByModule[moduleId] ?? 0;
+        setMasteredLevels(
+          moduleId,
+          bloomTaxonomiesThroughLevel(mastery).map((_, index) => index + 1),
+        );
+        bloomMasteryByModule[moduleId] = mastery;
+      });
+
+      setPreTestCompleted(true);
+      if (token) {
+        try {
+          const progress = await fetchLearningProgress();
+          await saveLearningProgress(
+            progress.completedModuleIds,
+            progress.lastUnlockedModuleId,
+            undefined,
+            progress.theoryPassedModuleIds ?? [],
+            lmsSessionId ?? undefined,
+            {
+              ...(progress.bloomMasteryByModule ?? {}),
+              ...bloomMasteryByModule,
+            },
+          );
+        } catch (progressError) {
+          console.error('Failed to persist Bloom mastery progress:', progressError);
+        }
+      }
+      clearPretestDraft(pretestDraftKey);
+    }
+
+    return finalGrade;
+  };
+
+  const handleSubmitLevel = async (): Promise<void> => {
     if (questions.length === 0) {
       setError('No questions are available for this Bloom level.');
       return;
@@ -172,112 +212,42 @@ function LearningAssessmentContent({
     setError(null);
     setSaving(true);
     try {
-      const gradedForSubmit = await gradeLearningAssessmentOnServer({
+      const grade = await gradeLearningAssessmentOnServer({
         assessmentType,
-        answers: buildLearningAssessmentAnswerInputs(questions, answersToSubmit),
+        answers: buildLearningAssessmentAnswerInputs(questions, answers),
       });
-      setLevelGrade(gradedForSubmit);
-      const failedIdsForSubmit = [...new Set(
-        assessmentType === 'pretest'
-          ? gradedForSubmit.results.filter((r) => !r.isCorrect).map((r) => r.moduleId)
-          : []
-      )];
+      const nextLevelGrades = { ...levelGrades, [currentLevel]: grade };
+      setLevelGrades(nextLevelGrades);
 
-      if (assessmentType === 'pretest') {
-        const { setMasteredLevels, masteredLevelsByModule } = useAppStore.getState();
-
-        gradedForSubmit.results.forEach((result) => {
-          if (result.isCorrect) {
-            const existing = masteredLevelsByModule[result.moduleId] || [];
-            const nextLevel = Math.max(masteryLevelFromStoredLevels(existing), currentLevel);
-            setMasteredLevels(result.moduleId, bloomTaxonomiesThroughLevel(nextLevel).map((_, index) => index + 1));
-          }
-        });
-
-        if (failedIdsForSubmit.length > 0) {
-          eliminateModules(failedIdsForSubmit);
-        }
-
-        const nextActiveSize = activeModuleIds.size - failedIdsForSubmit.length;
-        if (currentLevel === 6 || nextActiveSize === 0) {
-          await finalizeAssessment(answersToSubmit);
-        } else {
-          setLevelSubmitted(true);
-        }
-      } else {
-        await finalizeAssessment(answersToSubmit);
+      if (assessmentType === 'pretest' && currentLevel < BLOOM_TAXONOMIES.length) {
+        setLevelSubmitted(true);
+        return;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save the level results.');
+
+      await finalizeAssessment(answers);
+      setLevelSubmitted(true);
+      setAssessmentComplete(true);
+      if (autoAdvance) navigate(meta.nextPath);
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : 'Could not save the level results.');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleSubmitLevel = async (): Promise<void> => {
-    await submitLevel();
-  };
-
-  const finalizeAssessment = async (answersToSubmit: Record<number, any> = answers) => {
-    const finalAnswers = buildLearningAssessmentAnswerInputs(
-      assessmentType === 'pretest' ? allQuestions : questions,
-      answersToSubmit,
-    );
-
-    await saveLearningAssessment({
-      assessmentType,
-      sessionId: lmsSessionId,
-      answers: finalAnswers,
-    });
-
-    // D93: proactive session refresh for guests on major action completion.
-    const user = useAppStore.getState().user;
-    if (user?.role === 'guest') {
-      try {
-        const { token: freshToken, user: freshUser } = await refreshGuest();
-        useAppStore.getState().setAuth(freshToken, freshUser);
-      } catch (err) {
-        console.warn('[assessment] proactive guest refresh failed:', err);
-      }
-    }
-
-    if (assessmentType === 'pretest') {
-      setPreTestCompleted(true);
-      if (token) {
-        try {
-          const progress = await fetchLearningProgress();
-          const bloomMasteryByModule = {
-            ...(progress.bloomMasteryByModule ?? {}),
-            ...masteryMapFromLocalStore(useAppStore.getState().masteredLevelsByModule),
-          };
-          await saveLearningProgress(
-            progress.completedModuleIds,
-            progress.lastUnlockedModuleId,
-            undefined,
-            progress.theoryPassedModuleIds ?? [],
-            lmsSessionId ?? undefined,
-            bloomMasteryByModule,
-          );
-        } catch (err) {
-          console.error('Failed to persist Bloom mastery progress:', err);
-        }
-      }
-    }
-
-    if (autoAdvance) {
-      navigate(meta.nextPath);
+  const handleContinue = (): void => {
+    if (assessmentType === 'pretest' && currentLevel < BLOOM_TAXONOMIES.length) {
+      setCurrentLevel((level) => level + 1);
+      setLevelSubmitted(false);
       return;
     }
 
-    setLevelSubmitted(true);
-  };
-
-  const handleContinue = (): void => {
-    if (assessmentType === 'pretest' && status === 'in_progress' && currentLevel < 6 && activeModuleIds.size > 0) {
-      nextLevel();
-    } else {
-      navigate(meta.nextPath);
+    if (assessmentType === 'pretest' && typeof window !== 'undefined') {
+      const requestedNext = new URL(window.location.href).searchParams.get('next');
+      navigate(resolvePreTestNext(requestedNext));
+      return;
     }
+    navigate(meta.nextPath);
   };
 
   if (!loaded) {
@@ -315,7 +285,11 @@ function LearningAssessmentContent({
   }
 
   return (
-    <main className="nt-test-page" data-testid={`${assessmentType}-page`} data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
+    <main
+      className="nt-test-page"
+      data-testid={`${assessmentType}-page`}
+      data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}
+    >
       <div className="nt-test-page__shell">
         <header className="nt-test-page__hero">
           <p className="nt-test-page__eyebrow">{meta.eyebrow}</p>
@@ -328,20 +302,17 @@ function LearningAssessmentContent({
           <div className="nt-test-page__panel-head">
             <span className="nt-test-page__panel-kicker">
               {assessmentType === 'pretest'
-                ? `Level ${currentLevel}: ${currentTaxonomy} (${answeredCount}/${currentLevelQuestionCount} answered, ${activeModuleCount} still active, ${learningListModuleIds.length} to learn)`
+                ? `Level ${currentLevel}: ${titleCaseTaxonomy(currentTaxonomy)} (${answeredCount}/${questions.length} answered)`
                 : `${answeredCount}/${questions.length} answered`}
             </span>
-            <h2 className="nt-test-page__panel-title">Adaptive Bloom's Assessment</h2>
+            <h2 className="nt-test-page__panel-title">
+              {assessmentComplete
+                ? assessmentType === 'pretest' ? 'Pre-test Score Summary' : 'Assessment complete'
+                : "Bloom's Taxonomy Assessment"}
+            </h2>
           </div>
 
           <section className="nt-assessment" data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
-            {assessmentType === 'pretest' && activeModuleCount > 0 && currentLevelQuestionCount !== activeModuleCount ? (
-              <p className="nt-assessment__hint">
-                This Bloom level has {currentLevelQuestionCount} question{currentLevelQuestionCount === 1 ? '' : 's'} for {activeModuleCount} still-active module{activeModuleCount === 1 ? '' : 's'}.
-                Modules without a {currentTaxonomy} question stay in the pool for the next level.
-              </p>
-            ) : null}
-
             {assessmentType === 'pretest' ? (
               <div className="nt-assessment__stepper" aria-label="Bloom assessment progress">
                 {levelProgress.map((level) => (
@@ -349,92 +320,77 @@ function LearningAssessmentContent({
                     key={level.level}
                     className="nt-assessment__step"
                     data-active={level.active}
-                    data-complete={level.answered > 0 && level.answered === level.total}
+                    data-complete={level.complete}
                     data-empty={level.total === 0}
                   >
                     <span className="nt-assessment__step-num">{level.level}</span>
-                    <span className="nt-assessment__step-label">{level.taxonomy}</span>
+                    <span className="nt-assessment__step-label">{titleCaseTaxonomy(level.taxonomy)}</span>
                     <span className="nt-assessment__step-count">{level.answered}/{level.total}</span>
                   </div>
                 ))}
               </div>
             ) : null}
 
-            <ol className="nt-assessment__items">
-              {questions.map((item) => {
-                const selected = answers[item.assessmentIndex];
-                const showResult = levelSubmitted;
-                return (
+            {!assessmentComplete ? (
+              <ol className="nt-assessment__items">
+                {questions.map((item) => (
                   <li key={`${item.moduleId}#${item.questionIndex}`}>
                     <p className="nt-assessment__module">
                       <span className="nt-assessment__band">{item.moduleEyebrow}</span> {item.moduleTitle}
                       <span className="nt-assessment__taxonomy" data-taxonomy={item.taxonomy}>
-                        {item.taxonomy}
+                        {titleCaseTaxonomy(item.taxonomy)}
                       </span>
                     </p>
                     <BloomQuestionRenderer
                       question={item.question}
-                      userAnswer={selected}
-                      showResult={showResult}
-                      onAnswer={(val) => {
+                      userAnswer={answers[item.assessmentIndex]}
+                      showResult={levelSubmitted}
+                      onAnswer={(value) => {
+                        if (levelSubmitted) return;
                         setError(null);
-                        setAnswers((prev) => ({ ...prev, [item.assessmentIndex]: val }));
+                        setAnswers((previous) => ({ ...previous, [item.assessmentIndex]: value }));
                       }}
                     />
                   </li>
-                );
-              })}
-            </ol>
+                ))}
+              </ol>
+            ) : null}
 
-            {levelSubmitted ? (
+            {levelSubmitted && levelGrade ? (
               <div className="nt-assessment__result" role="status" aria-live="polite">
                 <p className="nt-assessment__score">
-                  {assessmentType === 'pretest' ? `Level ${currentLevel}` : 'Assessment'} score:{' '}
-                  <strong>{levelGrade?.correctCount ?? 0}/{levelGrade?.totalCount ?? questions.length}</strong>
+                  {assessmentType === 'pretest' ? titleCaseTaxonomy(currentTaxonomy) : 'Assessment'} score:{' '}
+                  <strong>{levelGrade.correctCount}/{levelGrade.totalCount}</strong>
                 </p>
-                {assessmentType === 'pretest' ? (
-                  <>
-                    {advancingModuleIds.length > 0 && (
-                      <p className="nt-assessment__gain">
-                        Modules advancing to Level {currentLevel + 1}:{' '}
-                        <strong>
-                          {advancingModuleIds
-                            .map((id) => modules.find((m) => m.id === id)?.title)
-                            .join(', ')}
-                        </strong>
-                      </p>
-                    )}
-                    {failedInThisLevelIds.length > 0 && (
-                      <p className="nt-assessment__gain nt-assessment__gain--fail">
-                        Modules added to learning list ({learningListModuleIds.length} total):{' '}
-                        <strong>
-                          {failedInThisLevelIds
-                            .map((id) => modules.find((m) => m.id === id)?.title)
-                            .join(', ')}
-                        </strong>
-                      </p>
-                    )}
-                    {(currentLevel === 6 || activeModuleIds.size === 0) && activeModuleIds.size > 0 ? (
-                      <p className="nt-assessment__gain">
-                        Modules exempted by pre-test mastery:{' '}
-                        <strong>
-                          {Array.from(activeModuleIds)
-                            .map((id) => modules.find((m) => m.id === id)?.title)
-                            .filter(Boolean)
-                            .join(', ')}
-                        </strong>
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    {levelGrade && levelGrade.correctCount === levelGrade.totalCount ? (
-                      <p className="nt-assessment__gain">Excellent! You have mastered this assessment.</p>
-                    ) : (
-                      <p className="nt-assessment__gain">You missed some questions in this level.</p>
-                    )}
-                  </>
-                )}
+                {assessmentType === 'pretest'
+                  && !assessmentComplete
+                  && currentLevel < BLOOM_TAXONOMIES.length ? (
+                  <p className="nt-assessment__gain">
+                    Your score is saved for this level. Continue when you are ready for{' '}
+                    {titleCaseTaxonomy(BLOOM_TAXONOMIES[currentLevel])}.
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+
+            {assessmentComplete && assessmentType === 'pretest' ? (
+              <div className="nt-assessment__result nt-assessment__summary" data-testid="pretest-score-summary">
+                <h3>Bloom&apos;s Taxonomy scores</h3>
+                <ul>
+                  {BLOOM_TAXONOMIES.map((taxonomy, index) => {
+                    const grade = levelGrades[index + 1];
+                    return (
+                      <li key={taxonomy}>
+                        <span>{titleCaseTaxonomy(taxonomy)}</span>
+                        <strong>{grade?.correctCount ?? 0}/{grade?.totalCount ?? 0}</strong>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="nt-assessment__gain">
+                  Your learning path is ready. Modules with weaker pre-test evidence are prioritized, while fully
+                  mastered modules are treated as already understood.
+                </p>
               </div>
             ) : null}
 
@@ -455,10 +411,9 @@ function LearningAssessmentContent({
                   type="button"
                   className="nt-lesson-button nt-lesson-button--primary"
                   onClick={handleContinue}
+                  disabled={saving}
                 >
-                  {status === 'completed' || currentLevel === 6 || (assessmentType === 'pretest' && activeModuleIds.size === 0)
-                    ? meta.continueLabel
-                    : 'Continue to Next Level'}
+                  {assessmentComplete ? meta.continueLabel : 'Proceed to Next Level'}
                 </button>
               )}
             </div>
@@ -466,13 +421,5 @@ function LearningAssessmentContent({
         </section>
       </div>
     </main>
-  );
-}
-
-export default function LearningAssessmentPage(props: LearningAssessmentPageProps): JSX.Element {
-  return (
-    <AdaptiveAssessmentProvider>
-      <LearningAssessmentContent {...props} />
-    </AdaptiveAssessmentProvider>
   );
 }

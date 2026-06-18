@@ -23,12 +23,13 @@ export interface PretestModuleOutcomes {
 }
 
 export function masteryLevelForBloomLevels(levels: ReadonlyArray<BloomTaxonomy>): number {
-  let highest = 0;
-  for (const level of levels) {
-    const numericLevel = BLOOM_TAXONOMIES.indexOf(level) + 1;
-    if (numericLevel > highest) highest = numericLevel;
+  const mastered = new Set(levels);
+  let contiguous = 0;
+  for (const taxonomy of BLOOM_TAXONOMIES) {
+    if (!mastered.has(taxonomy)) break;
+    contiguous += 1;
   }
-  return highest;
+  return contiguous;
 }
 
 function toTime(value: string | undefined): number | null {
@@ -48,11 +49,39 @@ export function bloomTaxonomiesThroughLevel(level: number): BloomTaxonomy[] {
 }
 
 export function bloomMasteryFromTaxonomies(taxonomies: Iterable<BloomTaxonomy>): number {
-  let maxLevel = 0;
-  for (const taxonomy of taxonomies) {
-    maxLevel = Math.max(maxLevel, bloomLevelForTaxonomy(taxonomy));
+  return masteryLevelForBloomLevels(Array.from(taxonomies));
+}
+
+export interface PretestGradedResult {
+  moduleId: string;
+  questionTaxonomy: BloomTaxonomy | '';
+  isCorrect: boolean;
+}
+
+export function deriveContiguousBloomMastery(
+  results: ReadonlyArray<PretestGradedResult>,
+): Record<string, number> {
+  const correctnessByModule = new Map<string, Map<BloomTaxonomy, boolean>>();
+
+  for (const result of results) {
+    if (!result.questionTaxonomy || !BLOOM_TAXONOMIES.includes(result.questionTaxonomy)) continue;
+    let moduleResults = correctnessByModule.get(result.moduleId);
+    if (!moduleResults) {
+      moduleResults = new Map();
+      correctnessByModule.set(result.moduleId, moduleResults);
+    }
+    const previous = moduleResults.get(result.questionTaxonomy);
+    moduleResults.set(result.questionTaxonomy, previous === undefined ? result.isCorrect : previous && result.isCorrect);
   }
-  return Math.max(0, Math.min(6, maxLevel));
+
+  return Object.fromEntries(Array.from(correctnessByModule.entries()).map(([moduleId, moduleResults]) => {
+    let mastery = 0;
+    for (const taxonomy of BLOOM_TAXONOMIES) {
+      if (moduleResults.get(taxonomy) !== true) break;
+      mastery += 1;
+    }
+    return [moduleId, mastery];
+  }));
 }
 
 function latestFreshPretestAttempt(assessments: LearningAssessmentsResponse): number | null {

@@ -31,10 +31,35 @@ const ASSESSMENT_ROUTES = [
   },
 ] as const;
 
-async function installAssessmentMocks(page: Page, includeLearnerSession = false): Promise<void> {
+async function installAssessmentMocks(
+  page: Page,
+  includeLearnerSession = false,
+  initialPretestComplete = false,
+): Promise<{
+  savedAssessmentAnswers: () => unknown[];
+}> {
+  let persistedAnswers: unknown[] = [];
+  if (includeLearnerSession) {
+    await page.route('**/auth/heartbeat', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true }),
+      });
+    });
+  }
   const publishedModules = LEARNING_MODULES.filter((module) =>
     DEFAULT_PUBLISHED_LEARNING_MODULE_IDS.has(module.id)
   );
+  if (initialPretestComplete && publishedModules[0]) {
+    persistedAnswers = [{
+      moduleId: publishedModules[0].id,
+      questionIndex: 0,
+      selectedIndex: -1,
+      responseText: null,
+      questionTaxonomy: 'remembering',
+    }];
+  }
   await page.route('**/api/learning/modules', async (route) => {
     await route.fulfill({
       status: 200,
@@ -72,11 +97,37 @@ async function installAssessmentMocks(page: Page, includeLearnerSession = false)
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ attempts: [], answers: [] }),
+        body: JSON.stringify(persistedAnswers.length > 0 ? {
+          attempts: [{
+            id: 1,
+            assessmentType: 'pretest',
+            sessionId: 'pw-session',
+            questionCount: persistedAnswers.length,
+            correctCount: 0,
+            scorePercent: 0,
+            createdAt: '2026-06-18T00:00:00.000Z',
+          }],
+          answers: persistedAnswers.map((answer: any, index) => ({
+            id: index + 1,
+            attemptId: 1,
+            assessmentType: 'pretest',
+            assessmentIndex: index,
+            moduleId: answer.moduleId,
+            questionIndex: answer.questionIndex,
+            selectedIndex: answer.selectedIndex,
+            responseText: answer.responseText ?? null,
+            questionTaxonomy: answer.questionTaxonomy,
+            questionKind: 'theoretical',
+            isCorrect: false,
+            sessionId: 'pw-session',
+            createdAt: '2026-06-18T00:00:00.000Z',
+          })),
+        } : { attempts: [], answers: [] }),
       });
       return;
     }
     const payload = route.request().postDataJSON() as { answers?: unknown[] };
+    persistedAnswers = payload.answers ?? [];
     const totalCount = payload.answers?.length ?? 0;
     await route.fulfill({
       status: 200,
@@ -92,6 +143,29 @@ async function installAssessmentMocks(page: Page, includeLearnerSession = false)
       }),
     });
   });
+
+  await page.route('**/api/learning/progress', async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          completedModuleIds: [],
+          lastUnlockedModuleId: null,
+          theoryPassedModuleIds: [],
+          bloomMasteryByModule: {},
+        }),
+      });
+      return;
+    }
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ ok: true }),
+    });
+  });
+
+  return { savedAssessmentAnswers: () => persistedAnswers };
 }
 
 async function seedLearnerSession(page: Page): Promise<void> {
@@ -107,7 +181,6 @@ async function seedLearnerSession(page: Page): Promise<void> {
           role: 'user',
         }),
       );
-      localStorage.setItem('nt_learning_unlock_all', '1');
     } catch {
       // Ignore private-mode or quota failures.
     }
@@ -141,32 +214,46 @@ test.describe('learner assessment routes', () => {
       await expect(page.locator('.nt-assessment__score strong')).toHaveText('0/25', { timeout: 10_000 });
     });
   }
+
+  test('pre-test completes all six Bloom levels, shows a summary, and opens the learner path', async ({ page }) => {
+    await seedLearnerSession(page);
+    const mocks = await installAssessmentMocks(page, true);
+    await page.goto('/pre-test?next=%2Fpatterns%2Flearn', { waitUntil: 'domcontentloaded' });
+
+    for (let level = 1; level <= 6; level += 1) {
+      await expect(page.locator('.nt-assessment__items > li')).toHaveCount(25);
+      await page.getByRole('button', { name: 'Submit Level' }).click();
+      if (level < 6) {
+        await expect(page.locator('.nt-assessment__score strong')).toHaveText('0/25');
+        await page.getByRole('button', { name: 'Proceed to Next Level' }).click();
+        await expect(page.locator('.nt-test-page__panel-kicker')).toContainText(`Level ${level + 1}:`);
+      } else {
+        await expect(page.getByTestId('pretest-score-summary')).toBeVisible();
+      }
+    }
+
+    await expect(page.getByTestId('pretest-score-summary')).toBeVisible();
+    await expect(page.getByTestId('pretest-score-summary').locator('li')).toHaveCount(6);
+    expect(mocks.savedAssessmentAnswers()).toHaveLength(150);
+
+    await page.getByRole('button', { name: 'Continue to Learning Path' }).click();
+    await expect(page).toHaveURL(/\/patterns\/learn$/);
+    await expect(page.getByTestId('student-learning-shell')).toBeVisible();
+  });
 });
 
 test.describe('learner hub smoke', () => {
-  test('unlocked learning path reaches a practical exam pane', async ({ page }) => {
+  test('fresh pre-test history opens the personalized learning path', async ({ page }) => {
     await seedLearnerSession(page);
-    await installAssessmentMocks(page, true);
+    await installAssessmentMocks(page, true, true);
 
     const response = await page.goto('/patterns/learn', { waitUntil: 'domcontentloaded' });
     expect(response, 'no response for /patterns/learn').not.toBeNull();
     expect(response!.status(), '/patterns/learn should render').toBe(200);
 
     await expect(page.getByTestId('student-learning-shell')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('Learning Path', { exact: false })).toBeVisible({ timeout: 10_000 });
-
-    const nextButton = page.getByRole('button', { name: /^(Next|Submit exam and continue)$/i });
-    const practicalButton = page.getByRole('button', { name: /Practical Exam/i });
-
-    for (let i = 0; i < 120; i += 1) {
-      if ((await practicalButton.count()) > 0) break;
-      await nextButton.click();
-    }
-
-    await expect(practicalButton).toBeVisible({ timeout: 10_000 });
-    await practicalButton.click();
-
-    await expect(page.locator('.nt-practical__target')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.nt-practical')).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole('heading', { name: 'Learning Path' })).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.nt-course-shell')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.nt-course-sidebar')).toContainText('What is a design pattern?');
   });
 });

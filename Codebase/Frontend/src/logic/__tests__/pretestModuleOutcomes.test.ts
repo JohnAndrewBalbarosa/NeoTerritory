@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import type { LearningAssessmentsResponse } from '../../types/api';
 import type { LearningModule } from '../../data/learningModules';
-import { derivePretestModuleOutcomes, masteryLevelForBloomLevels } from '../pretestModuleOutcomes';
+import {
+  deriveContiguousBloomMastery,
+  derivePretestModuleOutcomes,
+  masteryLevelForBloomLevels,
+} from '../pretestModuleOutcomes';
 
 function moduleFixture(
   id: string,
@@ -327,9 +331,27 @@ describe('derivePretestModuleOutcomes', () => {
 });
 
 describe('masteryLevelForBloomLevels', () => {
-  it('collapses mastered Bloom levels to the highest level number', () => {
+  it('only grants mastery through consecutive Bloom levels', () => {
     expect(masteryLevelForBloomLevels([])).toBe(0);
     expect(masteryLevelForBloomLevels(['remembering'])).toBe(1);
-    expect(masteryLevelForBloomLevels(['remembering', 'evaluating', 'applying'])).toBe(5);
+    expect(masteryLevelForBloomLevels(['remembering', 'evaluating', 'applying'])).toBe(1);
+    expect(masteryLevelForBloomLevels(['remembering', 'understanding', 'applying'])).toBe(3);
+  });
+
+  it('derives per-module mastery from server-graded consecutive results', () => {
+    expect(deriveContiguousBloomMastery([
+      { moduleId: 'weak', questionTaxonomy: 'remembering', isCorrect: false },
+      { moduleId: 'weak', questionTaxonomy: 'understanding', isCorrect: true },
+      { moduleId: 'partial', questionTaxonomy: 'remembering', isCorrect: true },
+      { moduleId: 'partial', questionTaxonomy: 'understanding', isCorrect: true },
+      { moduleId: 'partial', questionTaxonomy: 'applying', isCorrect: false },
+      { moduleId: 'strong', questionTaxonomy: 'remembering', isCorrect: true },
+      { moduleId: 'strong', questionTaxonomy: 'understanding', isCorrect: true },
+      { moduleId: 'strong', questionTaxonomy: 'applying', isCorrect: true },
+    ])).toEqual({
+      weak: 0,
+      partial: 2,
+      strong: 3,
+    });
   });
 });

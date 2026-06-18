@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Cover the assessment routes and the practical learner-hub smoke path with deterministic browser checks. The spec verifies three public assessment routes, checks the canonical 25-module baseline, confirms Bloom taxonomy chips and question controls render, and proves unanswered submissions receive a server-style `0/25` result.
+Cover the assessment routes and personalized learner-hub smoke path with deterministic browser checks. The spec verifies three assessment routes, checks the canonical 25-module baseline, and exercises the complete six-level pre-test through its final Learner Path redirect.
 
 ## Run Shape
 
@@ -17,10 +17,10 @@ flowchart TD
     N1["Render question bank"]
     N2["Read Bloom chips"]
     N3["Submit unanswered"]
-    N4["Show zero score"]
-    N5["Seed learner session"]
-    N6["Open learning hub"]
-    N7["Reach practical pane"]
+    N4["Show level score"]
+    N5["Repeat six levels"]
+    N6["Show final summary"]
+    N7["Open learning hub"]
     End["Keep smoke local"]
     Start --> N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> N7 --> End
 ```
@@ -38,8 +38,9 @@ Each route should render its own page shell, the question list, and the taxonomy
 ### Learner hub smoke
 
 - `/patterns/learn`
-- unlocked with `nt_token`, `nt_user`, and `nt_learning_unlock_all=1`
-- confirms the sidebar can reach a practical exam pane without a live backend
+- authenticated with `nt_token` and `nt_user`
+- seeded with fresh saved pre-test evidence
+- confirms the personalized module sidebar renders without a live backend
 
 ## Acceptance Checks
 
@@ -48,4 +49,7 @@ Each route should render its own page shell, the question list, and the taxonomy
 - Every rendered taxonomy chip carries a valid Bloom taxonomy value.
 - Every assessment category renders exactly 25 taxonomy-tagged questions.
 - Clicking submit with unanswered questions shows `0/25`.
-- The unlocked learner hub can open a practical exam section and show the practical target block.
+- The six Bloom levels cannot be skipped and each shows its own mocked score.
+- The complete pre-test persists 150 answers and renders six summary rows.
+- Continue after the summary opens `/patterns/learn`.
+- Fresh saved pre-test history opens the personalized Learner Path and its module sidebar.
