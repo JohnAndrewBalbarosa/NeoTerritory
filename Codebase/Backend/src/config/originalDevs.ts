@@ -14,7 +14,7 @@ export const ORIGINAL_DEV_EMAILS: ReadonlyArray<string> = [
   // TODO: replace with Miryl's confirmed Google account.
   'mirylzapanza@gmail.com',
   // TODO: replace with Josephine Santander's confirmed Google account.
-  'santanderjosephine@gmail.com',
+  'santanderjosephine24@gmail.com',
 ];
 
 export function isOriginalDevEmail(email: string | null | undefined): boolean {
