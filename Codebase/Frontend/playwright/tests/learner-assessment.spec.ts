@@ -105,18 +105,18 @@ test.describe('learner hub smoke', () => {
     await expect(page.getByTestId('student-learning-shell')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText('Learning Path', { exact: false })).toBeVisible({ timeout: 10_000 });
 
+    // The sidebar is now a category accordion (no page-level drill-down), so
+    // the practical pane is reached by stepping through pages with the Next
+    // arrow rather than clicking a "Practical Exam" sidebar button.
     const nextButton = page.getByRole('button', { name: /^(Next|Submit exam and continue)$/i });
-    const practicalButton = page.getByRole('button', { name: /Practical Exam/i });
+    const practicalPane = page.locator('.nt-practical');
 
     for (let i = 0; i < 120; i += 1) {
-      if ((await practicalButton.count()) > 0) break;
+      if ((await practicalPane.count()) > 0) break;
       await nextButton.click();
     }
 
-    await expect(practicalButton).toBeVisible({ timeout: 10_000 });
-    await practicalButton.click();
-
+    await expect(practicalPane).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('.nt-practical__target')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.nt-practical')).toBeVisible({ timeout: 10_000 });
   });
 });

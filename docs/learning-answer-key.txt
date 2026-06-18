@@ -1,0 +1,560 @@
+
+### [foundations] What is a design pattern?  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in What Is Pattern?
+     => [opt 0] What Is Pattern gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why What Is Pattern matters?
+     => [opt 0] What Is Pattern gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["what is pattern"]
+  Q4 [analyzing/mcq] Why does naming a recurring shape help a team?
+     => [opt 0] One word replaces a paragraph of structural explanation.
+  Q5 [evaluating/mcq] Which review comment best evaluates a What Is Pattern implementation?
+     => [opt 0] It should show the what is pattern intent clearly, not only coincidental syntax.
+  Q6 [creating/mcq] Which best describes a design pattern?
+     => [opt 1] A named structural arrangement that solves a recurring design problem.
+
+### [foundations] Why design patterns matter  (6 q)
+  Q1 [remembering/mcq] What is the practical value of knowing pattern names?
+     => [opt 0] They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.
+  Q2 [understanding/mcq] Which statement best explains why Why Matters matters?
+     => [opt 0] Why Matters gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] How do patterns affect a beginner joining a team?
+     => [opt 1] A recognised pattern name lets a reviewer read intent in seconds, so the beginner ships faster.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["why matters"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Why Matters implementation?
+     => [opt 0] It should show the why matters intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["why matters"]
+
+### [foundations] Three main pattern categories  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Categories?
+     => [opt 0] Categories gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which sentence correctly maps the three main families?
+     => [opt 1] Creational makes objects, Structural connects them, Behavioural decides how they communicate.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["categories"]
+  Q4 [analyzing/mcq] Why does this site treat Idioms as a fourth bucket alongside the three GoF families?
+     => [opt 1] Because modern C++ idioms (PIMPL, Method Chaining) are not GoF but appear often enough to detect.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Categories implementation?
+     => [opt 0] It should show the categories intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["categories"]
+
+### [foundations] OOP foundations  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Oop?
+     => [opt 0] Oop gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Oop matters?
+     => [opt 0] Oop gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] Which definition matches polymorphism?
+     => [opt 1] A single action that behaves differently depending on the actual object type.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["oop"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Oop implementation?
+     => [opt 0] It should show the oop intent clearly, not only coincidental syntax.
+  Q6 [creating/mcq] Why are design patterns described in terms of classes and objects?
+     => [opt 1] Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.
+
+### [foundations] Program to an interface  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Interface Principle?
+     => [opt 0] Interface Principle gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Interface Principle matters?
+     => [opt 0] Interface Principle gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["interface principle"]
+  Q4 [analyzing/mcq] Which patterns rest directly on this principle?
+     => [opt 0] Strategy, Factory, Adapter, and Bridge.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Interface Principle implementation?
+     => [opt 0] It should show the interface principle intent clearly, not only coincidental syntax.
+  Q6 [creating/mcq] "Program to an interface, not an implementation" means…
+     => [opt 1] Code should depend on what something does, not which concrete class is doing it.
+
+### [foundations] Understanding software structure  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Code Structure?
+     => [opt 0] Code Structure gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Code Structure matters?
+     => [opt 0] Code Structure gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["code structure"]
+  Q4 [analyzing/mcq] Why do pattern detectors walk an AST instead of grep-searching source text?
+     => [opt 1] Because code is a tree; patterns are shapes in that tree, and matching needs structural context.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Code Structure implementation?
+     => [opt 0] It should show the code structure intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["code structure"]
+
+### [foundations] Design patterns in real software  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Real Software?
+     => [opt 0] Real Software gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Real Software matters?
+     => [opt 0] Real Software gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] Which pairing of system and pattern is plausible?
+     => [opt 0] A compiler using Visitor to walk its syntax tree.
+  Q4 [analyzing/mcq] Why does recognising patterns matter in real-world codebases?
+     => [opt 0] Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Real Software implementation?
+     => [opt 0] It should show the real software intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["real software"]
+
+### [foundations] Common beginner mistakes  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Beginner Mistakes?
+     => [opt 0] Beginner Mistakes gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Beginner Mistakes matters?
+     => [opt 0] Beginner Mistakes gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["beginner mistakes"]
+  Q4 [analyzing/mcq] Why is making classes depend heavily on each other a trap?
+     => [opt 1] Loose connections are easier to change and maintain; tight coupling resists change.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Beginner Mistakes implementation?
+     => [opt 0] It should show the beginner mistakes intent clearly, not only coincidental syntax.
+  Q6 [creating/mcq] What is the most common beginner mistake with design patterns?
+     => [opt 1] Forcing a pattern onto a problem that does not need it ("pattern fever").
+
+### [foundations] Ambiguity is built in to design patterns  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Ambiguity?
+     => [opt 0] Ambiguity gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Ambiguity matters?
+     => [opt 0] Ambiguity gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] Which pair genuinely shares a structural shape?
+     => [opt 0] Builder and Method Chaining, which both rely on `return *this`.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["ambiguity"]
+  Q5 [evaluating/mcq] When two patterns fit the same class, the detector should…
+     => [opt 1] Surface both and ask the human — ambiguity is information, not failure.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["ambiguity"]
+
+### [foundations] The connotative-definition rule  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Connotative Definition?
+     => [opt 0] Connotative Definition gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Connotative Definition matters?
+     => [opt 0] Connotative Definition gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] How does adding descriptions change a definition (connotation)?
+     => [opt 1] It narrows what counts, so the meaning gets more specific.
+  Q4 [analyzing/mcq] What kinds of tokens are most useful for distinguishing one pattern from another?
+     => [opt 1] Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Connotative Definition implementation?
+     => [opt 0] It should show the connotative definition intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["connotative definition"]
+
+### [foundations] When two patterns look identical  (6 q)
+  Q1 [remembering/mcq] Two classes have the exact same class diagram. What is the ONLY thing that can tell them a
+     => [opt 1] The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.
+  Q2 [understanding/mcq] Which statement best explains why Same Structure matters?
+     => [opt 0] Same Structure gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] This class also holds a member of the same interface and forwards to it. Adapter or Proxy?
+     => [opt 1] Proxy — it controls access to the real subject (here, lazy creation).
+  Q4 [analyzing/mcq] Both Strategy and State are a context holding a pointer to a polymorphic interface and del
+     => [opt 1] State — the object transitions its own held member at runtime.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Same Structure implementation?
+     => [opt 0] It should show the same structure intent clearly, not only coincidental syntax.
+  Q6 [creating/mcq] Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern 
+     => [opt 1] Strategy — the client injects/sets the policy; the object never self-swaps it.
+
+### [foundations] Each pattern has a structural rule  (6 q)
+  Q1 [remembering/mcq] In the matcher’s vocabulary, what does "must-have" mean for a pattern?
+     => [opt 1] At least one combo from the must-have set must fire for the class to match.
+  Q2 [understanding/mcq] Which statement best explains why Structural Rules matters?
+     => [opt 0] Structural Rules gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["structural rules"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["structural rules"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Structural Rules implementation?
+     => [opt 0] It should show the structural rules intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["structural rules"]
+
+### [foundations] Patterns vary by team and codebase  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Context Variation?
+     => [opt 0] Context Variation gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] How does the analyser handle team-specific naming conventions?
+     => [opt 1] It standardises on language structure for matching; team conventions are layered on top for culture.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["context variation"]
+  Q4 [analyzing/mcq] Why does a stable, structure-based rule matter for CodiNeo specifically?
+     => [opt 0] Because detection feeds automatic unit-test generation, which needs a consistent rule.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Context Variation implementation?
+     => [opt 0] It should show the context variation intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["context variation"]
+
+### [foundations] Post-Foundations open questions  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Postrequisite?
+     => [opt 0] Postrequisite gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] After Foundations, what kind of question is the catalog NOT trying to answer?
+     => [opt 1] Whether the chosen pattern fits the team’s organisational conventions and goals.
+  Q3 [applying/mcq] The post-Foundations questions are intentionally…
+     => [opt 1] Open-ended — every working developer should have an opinion, but there is no single right answer.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["postrequisite"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Postrequisite implementation?
+     => [opt 0] It should show the postrequisite intent clearly, not only coincidental syntax.
+  Q6 [creating/identification] Name the design idea a learner should create for this module.
+     => tokens: ["postrequisite"]
+
+### [creational] Singleton  (6 q)
+  Q1 [remembering/mcq] What is the primary purpose of the Singleton pattern?
+     => [opt 1] To ensure a class has only one instance and provides a global point of access.
+  Q2 [understanding/mcq] Which C++ mechanism is most critical for enforcing the Singleton constraint?
+     => [opt 1] Making the constructor private or deleted.
+  Q3 [applying/identification] List the three structural elements required to implement this pattern in C++.
+     => tokens: ["private constructor","static instance","getInstance method"]
+  Q4 [analyzing/identification] What is the two-word term for this deferred creation?
+     => tokens: ["lazy","initialization"]
+  Q5 [evaluating/mcq] What is a major disadvantage of overusing Singletons in a large codebase?
+     => [opt 1] It introduces global state, making unit testing and dependency tracking difficult.
+  Q6 [creating/studio] Implement a class that ensures only one instance of "DatabaseStore" can exist and provides
+     => detect pattern: singleton
+
+### [creational] Factory Method  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Factory Method?
+     => [opt 0] Factory Method gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Factory Method do?
+     => [opt 0] Defines an interface for creating an object but lets subclasses decide which class to instantiate.
+  Q3 [applying/mcq] Which principle does Factory Method rest on?
+     => [opt 0] Program to an interface — callers depend on the product abstraction, not a concrete class.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["factory method"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Factory Method implementation?
+     => [opt 0] It should show the factory method intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a "Logistics" base class with a pure virtual "createTransport()" method (the Fac
+     => detect pattern: factory
+
+### [creational] Builder  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Builder?
+     => [opt 0] Builder gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Builder matters?
+     => [opt 0] Builder gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] What is the standard name for the final method that returns the constructed object?
+     => tokens: ["build","finalize"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["builder"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Builder implementation?
+     => [opt 0] It should show the builder intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a "UserProfileBuilder" that allows setting a username and age using fluent metho
+     => detect pattern: builder
+
+### [creational] Method Chaining  (6 q)
+  Q1 [remembering/mcq] What is Method Chaining (a fluent idiom)?
+     => [opt 0] Methods return the receiver (`*this`) so calls chain into one expression.
+  Q2 [understanding/mcq] Which statement best explains why Method Chaining matters?
+     => [opt 0] Method Chaining gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["method chaining"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["method chaining"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Method Chaining implementation?
+     => [opt 0] It should show the method chaining intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Method Chaining pattern clearly enough
+     => detect pattern: method-chaining
+
+### [structural] Adapter  (6 q)
+  Q1 [remembering/mcq] What is the primary purpose of the Adapter pattern?
+     => [opt 0] To convert the interface of a class into another interface clients expect.
+  Q2 [understanding/mcq] What is the difference between a Class Adapter and an Object Adapter?
+     => [opt 0] Class Adapter uses multiple inheritance; Object Adapter uses composition.
+  Q3 [applying/identification] What are the two primary techniques used to implement this bridge between interfaces?
+     => tokens: ["composition","forwarding"]
+  Q4 [analyzing/identification] Which pattern does this implementation now resemble?
+     => tokens: ["decorator"]
+  Q5 [evaluating/mcq] When should you prefer Adapter over Bridge?
+     => [opt 0] When you want to make existing, unrelated classes work together without changing their source.
+  Q6 [creating/studio] Implement a wrapper that makes a "LegacyJSONParser" (which has a parseLegacy() method) wor
+     => detect pattern: adapter
+
+### [structural] Proxy  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Proxy?
+     => [opt 0] Proxy gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Proxy do?
+     => [opt 0] Provides a surrogate or placeholder for another object to control access to it.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["proxy"]
+  Q4 [analyzing/mcq] What distinguishes Proxy from Decorator structurally in intent?
+     => [opt 0] Proxy controls access to the same interface; Decorator adds behaviour to it.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Proxy implementation?
+     => [opt 0] It should show the proxy intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Proxy pattern clearly enough for the S
+     => detect pattern: proxy
+
+### [structural] Decorator  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Decorator?
+     => [opt 0] Decorator gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Decorator do?
+     => [opt 0] Attaches additional responsibilities to an object dynamically, as a flexible alternative to subclassing.
+  Q3 [applying/mcq] How does Decorator differ from a plain Adapter?
+     => [opt 0] Decorator keeps the same interface and adds behaviour; Adapter changes the interface.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["decorator"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Decorator implementation?
+     => [opt 0] It should show the decorator intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Decorator pattern clearly enough for t
+     => detect pattern: decorator
+
+### [behavioural] Strategy  (6 q)
+  Q1 [remembering/mcq] What does the Strategy pattern define?
+     => [opt 0] A family of algorithms, encapsulated and made interchangeable.
+  Q2 [understanding/mcq] Why is Strategy often preferred over using a large switch-case or if-else block for algori
+     => [opt 1] It follows the Open/Closed Principle, allowing new algorithms to be added without modifying the context.
+  Q3 [applying/identification] List three OOP concepts used to make these algorithms interchangeable at runtime.
+     => tokens: ["interface","composition","polymorphism"]
+  Q4 [analyzing/identification] Which pattern does this transition logic resemble?
+     => tokens: ["state"]
+  Q5 [evaluating/mcq] What is a key difference between Strategy and Template Method?
+     => [opt 0] Strategy uses composition to vary the entire algorithm; Template Method uses inheritance to vary parts of it.
+  Q6 [creating/studio] Implement a "PaymentContext" that can use different "PaymentMethod" objects (e.g., CreditC
+     => detect pattern: strategyinterface
+
+### [behavioural] Observer  (6 q)
+  Q1 [remembering/mcq] What does Observer do?
+     => [opt 0] Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.
+  Q2 [understanding/mcq] Which statement best explains why Observer matters?
+     => [opt 0] Observer gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] What are the two common names for the methods used to manage the list of dependents in a S
+     => tokens: ["attach","detach"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["observer"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Observer implementation?
+     => [opt 0] It should show the observer intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a "WeatherStation" (Subject) that maintains a list of "IObserver" objects and no
+     => detect pattern: observer
+
+### [behavioural] Iterator  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Iterator?
+     => [opt 0] Iterator gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Iterator do?
+     => [opt 0] Provides sequential access to a collection’s elements without exposing its underlying representation.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["iterator"]
+  Q4 [analyzing/mcq] Why is exposing iteration via an iterator useful?
+     => [opt 0] Multiple traversals can run independently and the collection’s internals stay hidden.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Iterator implementation?
+     => [opt 0] It should show the iterator intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Iterator pattern clearly enough for th
+     => detect pattern: iterator
+
+### [behavioural] Command  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Command?
+     => [opt 0] Command gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Command do?
+     => [opt 0] Encapsulates a request as an object, letting you parameterise, queue, log, and undo operations.
+  Q3 [applying/mcq] What does turning a request into an object enable?
+     => [opt 0] Queuing, logging, and undo/redo of operations.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["command"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Command implementation?
+     => [opt 0] It should show the command intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Command pattern clearly enough for the
+     => detect pattern: command
+
+### [structural] Composite  (6 q)
+  Q1 [remembering/mcq] What is the key structural feature of Composite?
+     => [opt 0] A component interface that both leaves and containers implement; containers hold a collection of components.
+  Q2 [understanding/mcq] What does Composite do?
+     => [opt 0] Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["composite"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["composite"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Composite implementation?
+     => [opt 0] It should show the composite intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Composite pattern clearly enough for t
+     => detect pattern: composite
+
+### [behavioural] Template Method  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Template Method?
+     => [opt 0] Template Method gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Template Method do?
+     => [opt 0] Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["template method"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["template method"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Template Method implementation?
+     => [opt 0] It should show the template method intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a "DataParser" base class. Write a non-virtual "parse()" method (the template me
+     => detect pattern: template-method
+
+### [behavioural] State  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in State?
+     => [opt 0] State gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does State do?
+     => [opt 0] Lets an object alter its behaviour when its internal state changes, appearing to change its class.
+  Q3 [applying/mcq] How does State differ from Strategy structurally?
+     => [opt 0] They share a shape (delegate to an interface); State transitions between states internally, Strategy is chosen by the client.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["state"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a State implementation?
+     => [opt 0] It should show the state intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the State pattern clearly enough for the S
+     => detect pattern: state
+
+### [structural] Repository  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Repository?
+     => [opt 0] Repository gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Repository matters?
+     => [opt 0] Repository gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["repository"]
+  Q4 [analyzing/mcq] Why does Repository have no practical exam on this site?
+     => [opt 1] It ships no catalog detector (not a GoF pattern), so the analyser cannot tag it — the module ends at the theoretical exam.
+  Q5 [evaluating/mcq] Which review comment best evaluates a Repository implementation?
+     => [opt 0] It should show the repository intent clearly, not only coincidental syntax.
+  Q6 [creating/mcq] Repository is not a Gang of Four pattern. Which sentence captures its purpose best?
+     => [opt 0] Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.
+
+### [idioms] PIMPL (Pointer to Implementation)  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Pimpl?
+     => [opt 0] Pimpl gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Pimpl matters?
+     => [opt 0] Pimpl gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/mcq] Which structural shape does the analyser look for in PIMPL?
+     => [opt 0] A forward-declared inner Impl plus a std::unique_ptr<Impl> member that owns it.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["pimpl"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Pimpl implementation?
+     => [opt 0] It should show the pimpl intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Pimpl pattern clearly enough for the S
+     => detect pattern: pimpl
+
+### [creational] Prototype  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Prototype?
+     => [opt 0] Prototype gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Prototype do?
+     => [opt 0] Creates new objects by cloning an existing instance (the prototype).
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["prototype"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["prototype"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Prototype implementation?
+     => [opt 0] It should show the prototype intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Prototype pattern clearly enough for t
+     => detect pattern: prototype
+
+### [creational] Abstract Factory  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Abstract Factory?
+     => [opt 0] Abstract Factory gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Abstract Factory provide?
+     => [opt 0] An interface for creating families of related objects without specifying their concrete classes.
+  Q3 [applying/mcq] How does Abstract Factory differ from Factory Method?
+     => [opt 0] Abstract Factory creates families of products; Factory Method creates one product via subclassing.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["abstract factory"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Abstract Factory implementation?
+     => [opt 0] It should show the abstract factory intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Abstract Factory pattern clearly enoug
+     => detect pattern: abstract-factory
+
+### [structural] Bridge  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Bridge?
+     => [opt 0] Bridge gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Bridge matters?
+     => [opt 0] Bridge gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["bridge"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["bridge"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Bridge implementation?
+     => [opt 0] It should show the bridge intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Bridge pattern clearly enough for the 
+     => detect pattern: bridge
+
+### [structural] Facade  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Facade?
+     => [opt 0] Facade gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Facade do?
+     => [opt 0] Provides a unified, simpler interface to a set of interfaces in a subsystem.
+  Q3 [applying/mcq] Does using a Facade hide the subsystem entirely?
+     => [opt 0] No — it offers a simpler entry point but clients can still use the subsystem directly if needed.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["facade"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Facade implementation?
+     => [opt 0] It should show the facade intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Facade pattern clearly enough for the 
+     => detect pattern: facade
+
+### [structural] Flyweight  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Flyweight?
+     => [opt 0] Flyweight gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Flyweight do?
+     => [opt 0] Uses sharing to support large numbers of fine-grained objects efficiently by separating intrinsic and extrinsic state.
+  Q3 [applying/mcq] What is "intrinsic" state in Flyweight?
+     => [opt 0] State shared and stored in the flyweight, independent of context.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["flyweight"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Flyweight implementation?
+     => [opt 0] It should show the flyweight intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Flyweight pattern clearly enough for t
+     => detect pattern: flyweight
+
+### [behavioural] Chain of Responsibility  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Chain Of Responsibility?
+     => [opt 0] Chain Of Responsibility gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Chain of Responsibility do?
+     => [opt 0] Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.
+  Q3 [applying/mcq] What does each handler hold?
+     => [opt 0] A reference to the next handler in the chain.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["chain of responsibility"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Chain Of Responsibility implementation?
+     => [opt 0] It should show the chain of responsibility intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Chain Of Responsibility pattern clearl
+     => detect pattern: chain-of-responsibility
+
+### [behavioural] Mediator  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Mediator?
+     => [opt 0] Mediator gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Mediator do?
+     => [opt 0] Encapsulates how a set of objects interact, so they refer to the mediator instead of each other.
+  Q3 [applying/mcq] What coupling problem does Mediator reduce?
+     => [opt 0] Dense object-to-object references; colleagues talk through the mediator instead.
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["mediator"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Mediator implementation?
+     => [opt 0] It should show the mediator intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Mediator pattern clearly enough for th
+     => detect pattern: mediator
+
+### [behavioural] Visitor  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Visitor?
+     => [opt 0] Visitor gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Visitor do?
+     => [opt 0] Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.
+  Q3 [applying/mcq] Which mechanism makes Visitor work?
+     => [opt 0] Double dispatch — element.accept(visitor) calls visitor.visit(element).
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["visitor"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Visitor implementation?
+     => [opt 0] It should show the visitor intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Visitor pattern clearly enough for the
+     => detect pattern: visitor
+
+### [behavioural] Interpreter  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Interpreter?
+     => [opt 0] Interpreter gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] Which statement best explains why Interpreter matters?
+     => [opt 0] Interpreter gives a named, reusable way to solve the module's design problem.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["interpreter"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["interpreter"]
+  Q5 [evaluating/mcq] What does Interpreter do?
+     => [opt 0] Defines a grammar representation and an interpreter that evaluates sentences in the language.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Interpreter pattern clearly enough for
+     => detect pattern: interpreter
+
+### [behavioural] Memento  (6 q)
+  Q1 [remembering/mcq] Which answer best names the main idea in Memento?
+     => [opt 0] Memento gives a named, reusable way to solve the module's design problem.
+  Q2 [understanding/mcq] What does Memento do?
+     => [opt 0] Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.
+  Q3 [applying/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["memento"]
+  Q4 [analyzing/identification] Identify the design idea suggested by the scenario.
+     => tokens: ["memento"]
+  Q5 [evaluating/mcq] Which review comment best evaluates a Memento implementation?
+     => [opt 0] It should show the memento intent clearly, not only coincidental syntax.
+  Q6 [creating/studio] Implement a small C++ example that demonstrates the Memento pattern clearly enough for the
+     => detect pattern: memento

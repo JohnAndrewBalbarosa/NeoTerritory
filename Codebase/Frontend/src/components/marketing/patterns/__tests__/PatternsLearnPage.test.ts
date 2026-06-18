@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { lessonPagesFor } from '../PatternsLearnPage';
+import { lessonPagesFor, visibleTheoryQuestionIndexesFor } from '../PatternsLearnPage';
 import type { BloomTaxonomy, LearningModule } from '../../../../data/learningModules';
 
 const BLOOM_LEVELS: BloomTaxonomy[] = [
@@ -33,28 +33,26 @@ function buildModule(): LearningModule {
 }
 
 describe('lessonPagesFor', () => {
-  it('shows all six theoretical questions when the module has no mastery', () => {
+  it('collapses module content into a single lesson page plus one theoretical page', () => {
     const pages = lessonPagesFor(buildModule());
 
-    expect(pages.filter((page) => page.kind === 'theoretical')).toHaveLength(6);
-    expect(pages.filter((page) => page.kind === 'theoretical').map((page) => page.label)).toEqual([
-      'Quiz Q1',
-      'Quiz Q2',
-      'Quiz Q3',
-      'Quiz Q4',
-      'Quiz Q5',
-      'Quiz Q6',
-    ]);
+    expect(pages.map((page) => page.kind)).toEqual(['lesson', 'theoretical']);
+    expect(pages.filter((page) => page.kind === 'theoretical')).toHaveLength(1);
   });
 
-  it('hides Bloom levels at or below the mastery number', () => {
-    const pages = lessonPagesFor(buildModule(), 3);
+  it('drops the theoretical page once every Bloom level is mastered', () => {
+    const pages = lessonPagesFor(buildModule(), 6);
 
-    expect(pages.filter((page) => page.kind === 'theoretical')).toHaveLength(3);
-    expect(pages.filter((page) => page.kind === 'theoretical').map((page) => page.label)).toEqual([
-      'Quiz Q4',
-      'Quiz Q5',
-      'Quiz Q6',
-    ]);
+    expect(pages.map((page) => page.kind)).toEqual(['lesson']);
+  });
+});
+
+describe('visibleTheoryQuestionIndexesFor', () => {
+  it('shows all six questions when the module has no mastery', () => {
+    expect(visibleTheoryQuestionIndexesFor(buildModule())).toEqual([0, 1, 2, 3, 4, 5]);
+  });
+
+  it('hides questions at or below the mastery number', () => {
+    expect(visibleTheoryQuestionIndexesFor(buildModule(), 3)).toEqual([3, 4, 5]);
   });
 });

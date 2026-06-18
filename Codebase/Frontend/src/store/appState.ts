@@ -186,6 +186,11 @@ interface AppState {
   completedItems: string[]; // IDs of lessons/quizzes finished
   masteredLevelsByModule: Record<string, number[]>; // moduleId -> mastered level numbers (1-6)
   lmsSessionId: string | null; // Unique ID for research session
+  // Overall learner progress for the learning-path top bar. Published by
+  // PatternsLearnPage (which owns the module/completion state) and read by
+  // StudentLearningShell's header progress bar. Counts only modules the
+  // learner actually has to study (pre-test-exempt modules are excluded).
+  learningProgressSummary: { done: number; total: number } | null;
   // Persistent multi-file submission slots; survive AnalysisForm unmount so
   // tabbing away and back (or running an analysis) doesn't drop the user's
   // other files. Empty array = legacy single-file mode (AnalysisForm seeds
@@ -231,6 +236,7 @@ interface AppState {
   addCompletedItem: (id: string) => void;
   setMasteredLevels: (moduleId: string, levels: number[]) => void;
   setLmsSessionId: (id: string | null) => void;
+  setLearningProgressSummary: (summary: { done: number; total: number } | null) => void;
   bulkSetLinePatternOverrides: (overrides: Record<number, string>) => void;
   bulkClearLinePatternOverrides: (lines: number[]) => void;
   setSubmissionFiles: (files: Array<{ id: string; name: string; text: string }>) => void;
@@ -278,6 +284,7 @@ export const useAppStore = create<AppState>((set) => ({
   completedItems: readScopedStringArray(LMS_COMPLETED_KEY, storedScope),
   masteredLevelsByModule: readScopedJsonRecord<number[]>(LMS_MASTERED_LEVELS_KEY, storedScope),
   lmsSessionId: readScopedSessionId(storedScope),
+  learningProgressSummary: null,
   submissionFiles: [],
 
   setAuth: (token, user) => {
@@ -327,6 +334,7 @@ export const useAppStore = create<AppState>((set) => ({
       completedItems: [],
       masteredLevelsByModule: {},
       lmsSessionId: null,
+      learningProgressSummary: null,
       activeTab: 'submit',
       aiStatus: 'idle',
       aiJobId: null,
@@ -455,6 +463,7 @@ export const useAppStore = create<AppState>((set) => ({
     if (id) writeStored(scopedKey(LMS_SESSION_KEY, scope), id);
     return { lmsSessionId: id };
   }),
+  setLearningProgressSummary: (summary) => set({ learningProgressSummary: summary }),
   clearLinePatternOverride: (line) => set((s) => {
     const next = { ...s.linePatternOverrides };
     delete next[line];
