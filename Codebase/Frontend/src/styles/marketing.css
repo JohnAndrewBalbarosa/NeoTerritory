@@ -7992,6 +7992,21 @@ body[data-surface] {
   font-size: 0.72rem;
   color: var(--nt-mkt-text-mute);
 }
+.nt-assessment__step-score {
+  color: var(--devcon-lime);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.nt-assessment__summary li {
+  align-items: flex-start;
+  display: grid;
+  gap: 0.2rem;
+}
+.nt-assessment__summary-label {
+  color: var(--devcon-cyan);
+  font-weight: 800;
+}
 .nt-assessment__step-label {
   min-width: 0;
   overflow-wrap: anywhere;

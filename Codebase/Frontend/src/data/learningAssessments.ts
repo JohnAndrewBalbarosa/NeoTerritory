@@ -107,7 +107,10 @@ export function hasLearningAssessmentAnswer(question: ExamQuestion, answer: unkn
 
 function serializeAssessmentResponse(question: ExamQuestion, answer: unknown): string | null {
   if (isIdentificationQuestion(question)) {
-    return Array.isArray(answer) ? JSON.stringify(answer) : String(answer);
+    if (Array.isArray(answer)) {
+      return JSON.stringify(answer);
+    }
+    return typeof answer === 'string' && answer.trim().length > 0 ? answer : null;
   }
   if (isStudioQuestion(question)) {
     return answer === true ? 'true' : null;

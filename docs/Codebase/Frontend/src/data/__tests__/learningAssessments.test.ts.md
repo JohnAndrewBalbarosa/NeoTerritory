@@ -26,6 +26,7 @@ flowchart TD
 - Persisted foundation evidence is evaluated from assessment attempts and answers rather than the local-only pre-test flag.
 - Pre-test attempts created before `courseUpdatedAt` are stale and do not satisfy the learning-path gate.
 - A fresh attempt after `courseUpdatedAt` can satisfy the gate when it demonstrates remembering, understanding, and applying.
+- Assessment serialization preserves empty identification responses as `null` so unanswered items cannot be mistaken for submissions.
 
 ## Ownership Boundary
 

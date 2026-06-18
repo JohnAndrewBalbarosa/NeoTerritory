@@ -70,24 +70,47 @@ async function installAssessmentMocks(
 
   await page.route('**/api/learning/assessments/grade', async (route) => {
     const payload = route.request().postDataJSON() as {
-      answers?: Array<{ moduleId: string; questionIndex: number; selectedIndex: number }>;
+      answers?: Array<{
+        moduleId: string;
+        questionIndex: number;
+        selectedIndex: number;
+        responseText?: string | null;
+      }>;
     };
     const answers = payload.answers ?? [];
+    let answeredOrdinal = 0;
+    const results = answers.map((answer, assessmentIndex) => {
+      let hasAnswer = answer.selectedIndex >= 0 || answer.responseText === 'true';
+      if (!hasAnswer && answer.responseText) {
+        try {
+          const parsed = JSON.parse(answer.responseText);
+          hasAnswer = Array.isArray(parsed)
+            && parsed.length > 0
+            && parsed.every((value) => typeof value === 'string' && value.trim().length > 0);
+        } catch {
+          hasAnswer = false;
+        }
+      }
+      const isCorrect = hasAnswer && answeredOrdinal < 11;
+      if (hasAnswer) answeredOrdinal += 1;
+      return {
+        ...answer,
+        assessmentIndex,
+        responseText: answer.responseText ?? '',
+        questionTaxonomy: '',
+        questionKind: 'theoretical',
+        isCorrect,
+      };
+    });
+    const correctCount = results.filter((answer) => answer.isCorrect).length;
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({
-        correctCount: 0,
+        correctCount,
         totalCount: answers.length,
-        scorePercent: 0,
-        results: answers.map((answer, assessmentIndex) => ({
-          ...answer,
-          assessmentIndex,
-          responseText: '',
-          questionTaxonomy: '',
-          questionKind: 'theoretical',
-          isCorrect: false,
-        })),
+        scorePercent: answers.length > 0 ? Math.round((correctCount / answers.length) * 100) : 0,
+        results,
       }),
     });
   });
@@ -234,11 +257,35 @@ test.describe('learner assessment routes', () => {
 
     await expect(page.getByTestId('pretest-score-summary')).toBeVisible();
     await expect(page.getByTestId('pretest-score-summary').locator('li')).toHaveCount(6);
+    await expect(page.getByTestId('pretest-score-summary').locator('li').first()).toContainText('Answered: 0/25');
+    await expect(page.getByTestId('pretest-score-summary').locator('li').first()).toContainText('Score: 0/25');
     expect(mocks.savedAssessmentAnswers()).toHaveLength(150);
 
     await page.getByRole('button', { name: 'Continue to Learning Path' }).click();
     await expect(page).toHaveURL(/\/patterns\/learn$/);
     await expect(page.getByTestId('student-learning-shell')).toBeVisible();
+  });
+
+  test('Bloom cards separate partial answered progress from the server score', async ({ page }) => {
+    await installAssessmentMocks(page);
+    await page.goto('/pre-test', { waitUntil: 'domcontentloaded' });
+
+    const questionRows = page.locator('.nt-assessment__items > li');
+    await expect(questionRows).toHaveCount(25);
+    for (let index = 0; index < 12; index += 1) {
+      await questionRows.nth(index).locator('input[type="radio"]').first().click();
+    }
+
+    await expect(page.locator('.nt-test-page__panel-kicker')).toContainText('(12/25 answered)');
+    const activeStep = page.locator('.nt-assessment__step[data-active="true"]');
+    await expect(activeStep).toContainText('Answered: 12/25');
+    await expect(activeStep).not.toContainText('Score:');
+
+    await page.getByRole('button', { name: 'Submit Level' }).click();
+
+    await expect(activeStep).toContainText('Answered: 12/25');
+    await expect(activeStep).toContainText('Score: 11/25');
+    await expect(page.locator('.nt-assessment__score strong')).toHaveText('11/25');
   });
 });
 

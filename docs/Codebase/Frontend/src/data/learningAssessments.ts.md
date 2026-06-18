@@ -72,6 +72,7 @@ The backend stores selections, free-text responses, canonical taxonomy, per-answ
 - Sparse module banks still expose six Bloom-level pre-test questions after normalization.
 - Studio failures can be submitted as completed failed answers and remain part of the final recommendation evidence.
 - Unanswered questions remain in the serialized payload with `selectedIndex = -1`.
+- Empty identification responses serialize as `null`, never the literal string `"undefined"`, so grading and answered-progress checks agree.
 - Foundation personas remain distinguishable by mastered and missing taxonomies.
 - Saved pre-test evidence older than `courseUpdatedAt` fails the gate.
 - A saved fresh completed pre-test can unlock the path without relying on local-only state.

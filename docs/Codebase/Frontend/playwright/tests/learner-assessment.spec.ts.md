@@ -6,6 +6,8 @@ Cover the assessment routes and personalized learner-hub smoke path with determi
 
 It also verifies localhost learner access without Google or an available shared guest seat.
 
+The partial-answer case selects 12 of 25 questions and pins the distinction between `Answered: 12/25` and the mocked authoritative `Score: 11/25`.
+
 ## Run Shape
 
 The spec is designed to run against a local frontend server only. It mocks the learning-module and learning-assessment endpoints and serves the same 25 published modules encoded by the seed baseline.
@@ -52,6 +54,8 @@ Each route should render its own page shell, the question list, and the taxonomy
 - Every assessment category renders exactly 25 taxonomy-tagged questions.
 - Clicking submit with unanswered questions shows `0/25`.
 - The six Bloom levels cannot be skipped and each shows its own mocked score.
+- Partial submissions keep their real answered count after grading.
+- Bloom cards never substitute the 25-record grading denominator for answered progress.
 - The complete pre-test persists 150 answers and renders six summary rows.
 - Continue after the summary opens `/patterns/learn`.
 - `Continue as Test Intern` creates a local learner session, reaches `/pre-test`, and survives reload.

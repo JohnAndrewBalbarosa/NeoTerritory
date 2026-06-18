@@ -38,6 +38,8 @@ flowchart TD
 
 - The in-progress level, answer map, and completed level grades use a user-and-session-scoped local draft.
 - A refresh restores the current Bloom level and already submitted scores.
+- Answered progress is derived from actual non-empty learner responses, never from the number of submitted records.
+- Server `totalCount` remains the score denominator and is not reused as answered progress.
 - The draft is cleared only after the backend accepts the complete assessment.
 - Unanswered questions are serialized with an invalid answer and count as incorrect.
 - The server grade, not a client answer key, decides correctness and mastery.
@@ -51,9 +53,12 @@ flowchart TD
 ## Acceptance Checks
 
 - Every pre-test Bloom level renders 25 questions.
+- Every Bloom card labels `Answered` separately from `Score`.
+- Submitted levels preserve their actual answered count even though unanswered rows are graded as incorrect.
 - Submission stays on the pre-test page and shows only the current level score.
 - The next questionnaire opens only after `Proceed to Next Level`.
 - All six level scores appear in the final summary.
+- The final summary shows both answered progress and score for every level.
 - Final persistence contains 150 answers.
 - Refreshing before completion restores the draft.
 - Completion returns to `/patterns/learn` or a validated Learner Path `next` URL.

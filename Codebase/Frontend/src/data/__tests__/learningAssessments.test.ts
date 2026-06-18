@@ -270,6 +270,15 @@ describe('assessment answer serialization', () => {
         },
       },
       buildQuestion(3, 'analyzing'),
+      {
+        ...buildQuestion(4, 'evaluating'),
+        question: {
+          type: 'identification',
+          question: 'Identify the missing roles',
+          scenario: 'No response is supplied.',
+          expectedTokens: ['role'],
+        },
+      },
     ];
 
     const serialized = buildLearningAssessmentAnswerInputs(questions, {
@@ -283,7 +292,8 @@ describe('assessment answer serialization', () => {
       expect.objectContaining({ moduleId: 'foundations-1', selectedIndex: -1, responseText: '["subject","observer"]' }),
       expect.objectContaining({ moduleId: 'foundations-2', selectedIndex: -1, responseText: 'true' }),
       expect.objectContaining({ moduleId: 'foundations-3', selectedIndex: -1, responseText: null }),
+      expect.objectContaining({ moduleId: 'foundations-4', selectedIndex: -1, responseText: null }),
     ]);
-    expect(serialized).toHaveLength(4);
+    expect(serialized).toHaveLength(5);
   });
 });

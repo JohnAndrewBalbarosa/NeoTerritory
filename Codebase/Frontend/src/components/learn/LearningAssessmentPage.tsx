@@ -141,16 +141,20 @@ export default function LearningAssessmentPage({
     return BLOOM_TAXONOMIES.map((taxonomy, index) => {
       const level = index + 1;
       const grade = levelGrades[level];
+      const levelQuestions = allQuestions.filter((question) => question.taxonomy === taxonomy);
       return {
         level,
         taxonomy,
-        total: allQuestions.filter((question) => question.taxonomy === taxonomy).length,
-        answered: grade?.totalCount ?? (level === currentLevel ? answeredCount : 0),
+        total: levelQuestions.length,
+        answered: levelQuestions.filter((question) =>
+          hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])
+        ).length,
+        correct: grade?.correctCount ?? null,
         active: level === currentLevel,
         complete: Boolean(grade),
       };
     });
-  }, [allQuestions, answeredCount, assessmentType, currentLevel, levelGrades]);
+  }, [allQuestions, answers, assessmentType, currentLevel, levelGrades]);
 
   const finalizeAssessment = async (
     answersToSubmit: Record<number, unknown>,
@@ -325,7 +329,14 @@ export default function LearningAssessmentPage({
                   >
                     <span className="nt-assessment__step-num">{level.level}</span>
                     <span className="nt-assessment__step-label">{titleCaseTaxonomy(level.taxonomy)}</span>
-                    <span className="nt-assessment__step-count">{level.answered}/{level.total}</span>
+                    <span className="nt-assessment__step-count">
+                      Answered: {level.answered}/{level.total}
+                    </span>
+                    {level.complete ? (
+                      <span className="nt-assessment__step-score">
+                        Score: {level.correct ?? 0}/{level.total}
+                      </span>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -381,8 +392,13 @@ export default function LearningAssessmentPage({
                     const grade = levelGrades[index + 1];
                     return (
                       <li key={taxonomy}>
-                        <span>{titleCaseTaxonomy(taxonomy)}</span>
-                        <strong>{grade?.correctCount ?? 0}/{grade?.totalCount ?? 0}</strong>
+                        <span className="nt-assessment__summary-label">{titleCaseTaxonomy(taxonomy)}</span>
+                        <span>
+                          Answered: {levelProgress[index]?.answered ?? 0}/{levelProgress[index]?.total ?? 0}
+                        </span>
+                        <strong>
+                          Score: {grade?.correctCount ?? 0}/{grade?.totalCount ?? levelProgress[index]?.total ?? 0}
+                        </strong>
                       </li>
                     );
                   })}
