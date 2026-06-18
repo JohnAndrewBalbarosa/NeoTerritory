@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../logic/router';
-import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress, refreshGuest } from '../../api/client';
+import {
+  fetchLearningAssessments,
+  saveLearningAssessment,
+  refreshGuest,
+} from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
-import { isStudioQuestion } from '../../data/learningModules';
 import {
   buildLearningAssessmentAnswerInputs,
-  buildLearningAssessmentQuestions,
-  gradeLearningAssessment,
+  buildObjectiveAssessment,
+  computeLearningGain,
   hasLearningAssessmentAnswer,
   LEARNING_ASSESSMENT_META,
+  moduleProficiencyStatus,
+  PROFICIENCY_THRESHOLD,
+  scoreLearningAssessment,
+  scoreStoredObjectiveAssessment,
+  type AssessmentScore,
   type LearningAssessmentType,
+  type LearningGain,
+  type ModuleScore,
 } from '../../data/learningAssessments';
-import { bloomTaxonomiesThroughLevel } from '../../logic/pretestModuleOutcomes';
-import { AdaptiveAssessmentProvider, useAdaptiveAssessment } from './AdaptiveAssessmentProvider';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
 
 interface LearningAssessmentPageProps {
@@ -21,21 +29,137 @@ interface LearningAssessmentPageProps {
   autoAdvance?: boolean;
 }
 
-function clampBloomLevel(level: number): number {
-  return Math.max(0, Math.min(6, Math.floor(level)));
+const PAGE_SIZE = 5;
+
+function statusLabel(percent: number): 'Proficient' | 'Recommended for Study' {
+  return moduleProficiencyStatus(percent) === 'proficient' ? 'Proficient' : 'Recommended for Study';
 }
 
-function masteryLevelFromStoredLevels(levels: ReadonlyArray<number> | undefined): number {
-  return clampBloomLevel(Math.max(0, ...(levels ?? [])));
+function ModuleResultRow({ row }: { row: ModuleScore }): JSX.Element {
+  const proficient = moduleProficiencyStatus(row.percent) === 'proficient';
+  return (
+    <li className="nt-results__module" data-status={proficient ? 'proficient' : 'recommended'}>
+      <span className="nt-results__module-name">{row.moduleTitle}</span>
+      <span className="nt-results__module-score">
+        {row.correct} of {row.total} correct · {row.percent}%
+      </span>
+      <span className="nt-results__badge" data-status={proficient ? 'proficient' : 'recommended'}>
+        {statusLabel(row.percent)}
+      </span>
+      <span className="nt-results__module-rec">
+        {proficient ? 'Optional Review' : 'Required'}
+      </span>
+    </li>
+  );
 }
 
-function masteryMapFromLocalStore(masteredLevelsByModule: Record<string, number[]>): Record<string, number> {
-  const out: Record<string, number> = {};
-  for (const [moduleId, levels] of Object.entries(masteredLevelsByModule)) {
-    const level = masteryLevelFromStoredLevels(levels);
-    if (level > 0) out[moduleId] = level;
-  }
-  return out;
+function PreTestResults({ score }: { score: AssessmentScore }): JSX.Element {
+  const rows = Object.values(score.byModule).sort((a, b) => {
+    const aProf = a.percent >= PROFICIENCY_THRESHOLD ? 1 : 0;
+    const bProf = b.percent >= PROFICIENCY_THRESHOLD ? 1 : 0;
+    if (aProf !== bProf) return aProf - bProf; // recommended (required) first
+    return a.moduleTitle.localeCompare(b.moduleTitle);
+  });
+  const required = rows.filter((r) => r.percent < PROFICIENCY_THRESHOLD);
+  const optional = rows.filter((r) => r.percent >= PROFICIENCY_THRESHOLD);
+
+  return (
+    <>
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Pre-Test Summary</h3>
+        <p className="nt-results__overall">
+          Overall score: <strong>{score.correct} of {score.total} correct · {score.percent}%</strong>
+        </p>
+        <p className="nt-results__overall-status">
+          {score.percent >= PROFICIENCY_THRESHOLD ? 'Proficient overall' : 'Below proficiency overall'} — modules below {PROFICIENCY_THRESHOLD}% are recommended for study.
+        </p>
+      </section>
+
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Module Results</h3>
+        <ul className="nt-results__modules">
+          {rows.map((row) => (
+            <ModuleResultRow key={row.moduleId} row={row} />
+          ))}
+        </ul>
+      </section>
+
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Your Learning Path</h3>
+        <div className="nt-results__paths">
+          <div className="nt-results__path">
+            <h4 className="nt-results__path-title">Recommended for study ({required.length})</h4>
+            {required.length > 0 ? (
+              <ul className="nt-results__path-list">
+                {required.map((r) => <li key={r.moduleId}>{r.moduleTitle} — {r.percent}%</li>)}
+              </ul>
+            ) : (
+              <p className="nt-results__path-empty">None — you scored at or above {PROFICIENCY_THRESHOLD}% on every module.</p>
+            )}
+          </div>
+          <div className="nt-results__path">
+            <h4 className="nt-results__path-title">Optional review ({optional.length})</h4>
+            {optional.length > 0 ? (
+              <ul className="nt-results__path-list">
+                {optional.map((r) => <li key={r.moduleId}>{r.moduleTitle} — {r.percent}% (Already Proficient)</li>)}
+              </ul>
+            ) : (
+              <p className="nt-results__path-empty">None yet — these appear once you reach {PROFICIENCY_THRESHOLD}%+ on a module.</p>
+            )}
+          </div>
+        </div>
+        <p className="nt-results__note">Proficiency is not the same as completion — proficient modules stay open for optional review and do not block your required path.</p>
+      </section>
+    </>
+  );
+}
+
+function PostTestResults({ score, gain }: { score: AssessmentScore; gain: LearningGain | null }): JSX.Element {
+  return (
+    <>
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Post-Test Summary</h3>
+        <p className="nt-results__overall">
+          Overall score: <strong>{score.correct} of {score.total} correct · {score.percent}%</strong>
+        </p>
+        <p className="nt-results__overall-status">
+          Final proficiency: {score.percent >= PROFICIENCY_THRESHOLD ? 'Proficient' : 'Below proficiency'}
+        </p>
+      </section>
+
+      {gain ? (
+        <section className="nt-results__block">
+          <h3 className="nt-results__heading">Learning-Gain Summary</h3>
+          <p className="nt-results__overall">
+            Pre-test: <strong>{gain.prePercent}%</strong> → Post-test: <strong>{gain.postPercent}%</strong>
+          </p>
+          <p className="nt-results__gain" data-sign={gain.gainPoints > 0 ? 'pos' : gain.gainPoints < 0 ? 'neg' : 'zero'}>
+            Learning gain: <strong>{gain.gainPoints > 0 ? '+' : ''}{gain.gainPoints} percentage points</strong>
+            {gain.maintained ? <span className="nt-results__maintained"> · Maintained proficiency</span> : null}
+          </p>
+          <h4 className="nt-results__path-title">Per-module gain</h4>
+          <ul className="nt-results__modules">
+            {gain.byModule
+              .slice()
+              .sort((a, b) => a.moduleTitle.localeCompare(b.moduleTitle))
+              .map((m) => (
+                <li key={m.moduleId} className="nt-results__module">
+                  <span className="nt-results__module-name">{m.moduleTitle}</span>
+                  <span className="nt-results__module-score">{m.prePercent}% → {m.postPercent}%</span>
+                  <span className="nt-results__gain" data-sign={m.gainPoints > 0 ? 'pos' : m.gainPoints < 0 ? 'neg' : 'zero'}>
+                    {m.gainPoints > 0 ? '+' : ''}{m.gainPoints} pp{m.maintained ? ' · maintained' : ''}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ) : (
+        <section className="nt-results__block">
+          <p className="nt-results__note">No comparable pre-test on record, so a learning-gain comparison is not available.</p>
+        </section>
+      )}
+    </>
+  );
 }
 
 function LearningAssessmentContent({
@@ -44,194 +168,79 @@ function LearningAssessmentContent({
 }: LearningAssessmentPageProps): JSX.Element {
   const meta = LEARNING_ASSESSMENT_META[assessmentType];
   const { modules, loaded } = useLearningModules();
-  const token = useAppStore((s) => s.token);
   const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
 
-  const {
-    currentLevel,
-    status,
-    activeModuleIds,
-    eliminatedModuleIds,
-    nextLevel,
-    eliminateModules,
-    initializeActiveModules,
-    getTaxonomyForLevel,
-  } = useAdaptiveAssessment();
-
-  const allQuestions = useMemo(
-    () => (loaded ? buildLearningAssessmentQuestions(modules, assessmentType) : []),
+  const questions = useMemo(
+    () => (loaded ? buildObjectiveAssessment(modules, assessmentType) : []),
     [assessmentType, loaded, modules],
   );
 
-  useEffect(() => {
-    if (
-      loaded &&
-      allQuestions.length > 0 &&
-      assessmentType === 'pretest' &&
-      activeModuleIds.size === 0 &&
-      eliminatedModuleIds.size === 0
-    ) {
-      initializeActiveModules([...new Set(allQuestions.map((q) => q.moduleId))]);
-    }
-  }, [
-    loaded,
-    allQuestions,
-    assessmentType,
-    activeModuleIds.size,
-    eliminatedModuleIds.size,
-    initializeActiveModules,
-  ]);
-
-  const currentTaxonomy = getTaxonomyForLevel(currentLevel);
-  const questions = useMemo(() => {
-    if (assessmentType !== 'pretest') return allQuestions;
-    return allQuestions.filter((q) => q.taxonomy === currentTaxonomy && activeModuleIds.has(q.moduleId));
-  }, [allQuestions, assessmentType, currentTaxonomy, activeModuleIds]);
-
   const [answers, setAnswers] = useState<Record<number, any>>({});
-  const [levelSubmitted, setLevelSubmitted] = useState(false);
+  const [page, setPage] = useState(0);
+  const [phase, setPhase] = useState<'taking' | 'review' | 'done'>('taking');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [score, setScore] = useState<AssessmentScore | null>(null);
+  const [gain, setGain] = useState<LearningGain | null>(null);
 
   useEffect(() => {
     setAnswers({});
+    setPage(0);
+    setPhase('taking');
+    setError(null);
+    setScore(null);
+    setGain(null);
   }, [assessmentType]);
 
-  useEffect(() => {
-    setLevelSubmitted(false);
-    setError(null);
-  }, [assessmentType, currentLevel]);
-
-  const graded = useMemo(
-    () => gradeLearningAssessment(questions, answers),
-    [answers, questions],
-  );
-
-  const advancingModuleIds = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    return graded.results.filter((r) => r.isCorrect).map((r) => r.moduleId);
-  }, [assessmentType, graded.results]);
-
-  const failedInThisLevelIds = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    return graded.results.filter((r) => !r.isCorrect).map((r) => r.moduleId);
-  }, [assessmentType, graded.results]);
-  const learningListModuleIds = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    const ids = new Set(eliminatedModuleIds);
-    if (levelSubmitted) {
-      failedInThisLevelIds.forEach((id) => ids.add(id));
-    }
-    return Array.from(ids);
-  }, [assessmentType, eliminatedModuleIds, failedInThisLevelIds, levelSubmitted]);
+  const totalPages = Math.max(1, Math.ceil(questions.length / PAGE_SIZE));
+  const pageStart = page * PAGE_SIZE;
+  const pageQuestions = questions.slice(pageStart, pageStart + PAGE_SIZE);
   const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
-  const allAnswered = questions.length > 0 && answeredCount === questions.length;
-  const hasPendingStudio = questions.some(q => isStudioQuestion(q.question) && !hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex]));
+  const unansweredCount = questions.length - answeredCount;
+  const progressPct = questions.length ? Math.round((answeredCount / questions.length) * 100) : 0;
+  const isLastPage = page >= totalPages - 1;
 
-  const handleSubmitLevel = async (): Promise<void> => {
-    if (!allAnswered) {
-      if (hasPendingStudio) {
-        setError('You must complete all Studio tasks (open the Studio and successfully detect the pattern) before submitting.');
-      } else {
-        setError('Answer every question completely in this level before submitting. Ensure all fill-in-the-blanks are filled.');
-      }
-      return;
-    }
-
-    setError(null);
+  const submit = async (): Promise<void> => {
     setSaving(true);
+    setError(null);
     try {
-      if (assessmentType === 'pretest') {
-        const { setMasteredLevels, masteredLevelsByModule } = useAppStore.getState();
+      const finalScore = scoreLearningAssessment(questions, answers);
+      const inputs = buildLearningAssessmentAnswerInputs(questions, answers);
+      await saveLearningAssessment({ assessmentType, sessionId: lmsSessionId, answers: inputs });
 
-        graded.results.forEach((result) => {
-          if (result.isCorrect) {
-            const existing = masteredLevelsByModule[result.moduleId] || [];
-            const nextLevel = Math.max(masteryLevelFromStoredLevels(existing), currentLevel);
-            setMasteredLevels(result.moduleId, bloomTaxonomiesThroughLevel(nextLevel).map((_, index) => index + 1));
-          }
-        });
-
-        if (failedInThisLevelIds.length > 0) {
-          eliminateModules(failedInThisLevelIds);
+      // Proactive guest session refresh on a major action (parity with prior flow).
+      const user = useAppStore.getState().user;
+      if (user?.role === 'guest') {
+        try {
+          const { token: freshToken, user: freshUser } = await refreshGuest();
+          useAppStore.getState().setAuth(freshToken, freshUser);
+        } catch (err) {
+          console.warn('[assessment] proactive guest refresh failed:', err);
         }
-
-        const nextActiveSize = activeModuleIds.size - failedInThisLevelIds.length;
-        if (currentLevel === 6 || nextActiveSize === 0) {
-          await finalizeAssessment();
-        } else {
-          setLevelSubmitted(true);
-        }
-      } else {
-        await finalizeAssessment();
       }
+
+      if (assessmentType === 'pretest') {
+        setPreTestCompleted(true);
+      } else {
+        // Compare with the latest stored pre-test for a learning-gain summary.
+        try {
+          const assessments = await fetchLearningAssessments();
+          const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
+          if (preScore) setGain(computeLearningGain(preScore, finalScore));
+        } catch (err) {
+          console.warn('[assessment] could not load pre-test for gain comparison:', err);
+        }
+      }
+
+      setScore(finalScore);
+      setPhase('done');
+      if (autoAdvance) navigate(meta.nextPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save the level results.');
+      setError(err instanceof Error ? err.message : 'Could not save the assessment.');
+      setPhase('review');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const finalizeAssessment = async () => {
-    const finalAnswers = buildLearningAssessmentAnswerInputs(
-      assessmentType === 'pretest' ? allQuestions : questions,
-      answers,
-    );
-
-    await saveLearningAssessment({
-      assessmentType,
-      sessionId: lmsSessionId,
-      answers: finalAnswers,
-    });
-
-    // D93: proactive session refresh for guests on major action completion.
-    const user = useAppStore.getState().user;
-    if (user?.role === 'guest') {
-      try {
-        const { token: freshToken, user: freshUser } = await refreshGuest();
-        useAppStore.getState().setAuth(freshToken, freshUser);
-      } catch (err) {
-        console.warn('[assessment] proactive guest refresh failed:', err);
-      }
-    }
-
-    if (assessmentType === 'pretest') {
-      setPreTestCompleted(true);
-      if (token) {
-        try {
-          const progress = await fetchLearningProgress();
-          const bloomMasteryByModule = {
-            ...(progress.bloomMasteryByModule ?? {}),
-            ...masteryMapFromLocalStore(useAppStore.getState().masteredLevelsByModule),
-          };
-          await saveLearningProgress(
-            progress.completedModuleIds,
-            progress.lastUnlockedModuleId,
-            undefined,
-            progress.theoryPassedModuleIds ?? [],
-            lmsSessionId ?? undefined,
-            bloomMasteryByModule,
-          );
-        } catch (err) {
-          console.error('Failed to persist Bloom mastery progress:', err);
-        }
-      }
-    }
-
-    if (autoAdvance) {
-      navigate(meta.nextPath);
-      return;
-    }
-
-    setLevelSubmitted(true);
-  };
-
-  const handleContinue = (): void => {
-    if (assessmentType === 'pretest' && status === 'in_progress' && currentLevel < 6 && activeModuleIds.size > 0) {
-      nextLevel();
-    } else {
-      navigate(meta.nextPath);
     }
   };
 
@@ -251,17 +260,17 @@ function LearningAssessmentContent({
     );
   }
 
-  if (allQuestions.length === 0) {
+  if (questions.length === 0) {
     return (
       <main className="nt-test-page" data-testid={`${assessmentType}-page`}>
         <div className="nt-test-page__shell">
           <section className="nt-test-page__panel">
             <div className="nt-test-page__panel-head">
               <span className="nt-test-page__panel-kicker">Unavailable</span>
-              <h1 className="nt-test-page__panel-title">No theoretical questions are available</h1>
+              <h1 className="nt-test-page__panel-title">No objective questions are available</h1>
             </div>
             <p className="nt-test-page__panel-copy">
-              The module bank needs at least one theoretical question before this assessment can render.
+              The module bank needs at least one objective (multiple-choice or identification) question before this assessment can render.
             </p>
           </section>
         </div>
@@ -269,6 +278,85 @@ function LearningAssessmentContent({
     );
   }
 
+  // Results / confirmation screen.
+  if (phase === 'done' && score) {
+    return (
+      <main className="nt-test-page" data-testid={`${assessmentType}-page`} data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
+        <div className="nt-test-page__shell">
+          <header className="nt-test-page__hero">
+            <p className="nt-test-page__eyebrow">{meta.eyebrow}</p>
+            <div className="nt-test-page__badge nt-test-page__badge--alt">{meta.badge}</div>
+            <h1 className="nt-test-page__title">{meta.title} — Results</h1>
+            <p className="nt-test-page__lede" role="status">Your answers have been submitted and saved.</p>
+          </header>
+
+          <section className="nt-test-page__panel nt-results">
+            {assessmentType === 'pretest'
+              ? <PreTestResults score={score} />
+              : <PostTestResults score={score} gain={gain} />}
+            <div className="nt-assessment__footer">
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate(meta.nextPath)}>
+                {meta.continueLabel}
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  // Review-before-submit screen.
+  if (phase === 'review') {
+    return (
+      <main className="nt-test-page" data-testid={`${assessmentType}-page`} data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
+        <div className="nt-test-page__shell">
+          <header className="nt-test-page__hero">
+            <p className="nt-test-page__eyebrow">{meta.eyebrow}</p>
+            <div className="nt-test-page__badge nt-test-page__badge--alt">{meta.badge}</div>
+            <h1 className="nt-test-page__title">Review your answers</h1>
+            <p className="nt-test-page__lede">
+              {unansweredCount === 0
+                ? 'All questions answered. Submit when you are ready.'
+                : `${unansweredCount} question${unansweredCount === 1 ? '' : 's'} still unanswered — unanswered questions are marked incorrect.`}
+            </p>
+          </header>
+
+          <section className="nt-test-page__panel">
+            <div className="nt-assessment__reviewgrid" aria-label="Answer review">
+              {questions.map((q, i) => {
+                const answered = hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex]);
+                return (
+                  <button
+                    key={`${q.moduleId}#${q.questionIndex}`}
+                    type="button"
+                    className="nt-assessment__reviewcell"
+                    data-answered={answered ? 'true' : 'false'}
+                    onClick={() => { setPage(Math.floor(i / PAGE_SIZE)); setPhase('taking'); }}
+                    title={answered ? `Question ${i + 1}: answered` : `Question ${i + 1}: not answered`}
+                  >
+                    {i + 1}
+                  </button>
+                );
+              })}
+            </div>
+
+            {error ? <p className="nt-assessment__hint" role="alert">{error}</p> : null}
+
+            <div className="nt-assessment__footer">
+              <button type="button" className="nt-lesson-button" onClick={() => setPhase('taking')}>
+                Back to questions
+              </button>
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={submit} disabled={saving}>
+                {saving ? 'Saving…' : meta.submitLabel}
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  // Taking the assessment (paginated).
   return (
     <main className="nt-test-page" data-testid={`${assessmentType}-page`} data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
       <div className="nt-test-page__shell">
@@ -276,28 +364,39 @@ function LearningAssessmentContent({
           <p className="nt-test-page__eyebrow">{meta.eyebrow}</p>
           <div className="nt-test-page__badge nt-test-page__badge--alt">{meta.badge}</div>
           <h1 className="nt-test-page__title">{meta.title}</h1>
-          <p className="nt-test-page__lede">{meta.intro}</p>
+          <p className="nt-test-page__lede">
+            Answer the questions below. You can move between pages with Previous and Next, and review everything before submitting.
+          </p>
         </header>
 
         <section className="nt-test-page__panel">
-          <div className="nt-test-page__panel-head">
-            <span className="nt-test-page__panel-kicker">
-              {answeredCount} of {questions.length} answered
-            </span>
-            <h2 className="nt-test-page__panel-title">Assessment Questions</h2>
+          <div className="nt-assessment__progress" aria-label="Assessment progress">
+            <div className="nt-assessment__progressbar">
+              <i style={{ width: `${progressPct}%` }} />
+            </div>
+            <div className="nt-assessment__progressmeta">
+              <span>Page {page + 1} of {totalPages}</span>
+              <span>{answeredCount} of {questions.length} answered</span>
+              {unansweredCount > 0 ? <span className="nt-assessment__unanswered">{unansweredCount} unanswered</span> : null}
+            </div>
           </div>
 
           <section className="nt-assessment" data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
             <ol className="nt-assessment__items">
-              {questions.map((item) => {
+              {pageQuestions.map((item, localIdx) => {
+                const number = pageStart + localIdx + 1;
                 const selected = answers[item.assessmentIndex];
-                const showResult = levelSubmitted;
+                const answered = hasLearningAssessmentAnswer(item.question, selected);
                 return (
                   <li key={`${item.moduleId}#${item.questionIndex}`}>
+                    <p className="nt-assessment__qnum">
+                      Question {number} of {questions.length}
+                      {!answered ? <span className="nt-assessment__qflag" aria-hidden="true"> · unanswered</span> : null}
+                    </p>
                     <BloomQuestionRenderer
                       question={item.question}
                       userAnswer={selected}
-                      showResult={showResult}
+                      showResult={false}
                       onAnswer={(val) => {
                         setError(null);
                         setAnswers((prev) => ({ ...prev, [item.assessmentIndex]: val }));
@@ -308,79 +407,22 @@ function LearningAssessmentContent({
               })}
             </ol>
 
-            {levelSubmitted ? (
-              <div className="nt-assessment__result" role="status" aria-live="polite">
-                <p className="nt-assessment__score">
-                  Assessment score:{' '}
-                  <strong>{graded.correctCount}/{graded.totalCount}</strong>
-                </p>
-                {assessmentType === 'pretest' ? (
-                  <>
-                    {advancingModuleIds.length > 0 && (
-                      <p className="nt-assessment__gain">
-                        Modules you answered correctly:{' '}
-                        <strong>
-                          {advancingModuleIds
-                            .map((id) => modules.find((m) => m.id === id)?.title)
-                            .join(', ')}
-                        </strong>
-                      </p>
-                    )}
-                    {failedInThisLevelIds.length > 0 && (
-                      <p className="nt-assessment__gain nt-assessment__gain--fail">
-                        Modules added to learning list ({learningListModuleIds.length} total):{' '}
-                        <strong>
-                          {failedInThisLevelIds
-                            .map((id) => modules.find((m) => m.id === id)?.title)
-                            .join(', ')}
-                        </strong>
-                      </p>
-                    )}
-                    {(currentLevel === 6 || activeModuleIds.size === 0) && activeModuleIds.size > 0 ? (
-                      <p className="nt-assessment__gain">
-                        Modules exempted by pre-test mastery:{' '}
-                        <strong>
-                          {Array.from(activeModuleIds)
-                            .map((id) => modules.find((m) => m.id === id)?.title)
-                            .filter(Boolean)
-                            .join(', ')}
-                        </strong>
-                      </p>
-                    ) : null}
-                  </>
-                ) : (
-                  <>
-                    {graded.correctCount === graded.totalCount ? (
-                      <p className="nt-assessment__gain">Excellent! You have mastered this assessment.</p>
-                    ) : (
-                      <p className="nt-assessment__gain">You missed some questions in this level.</p>
-                    )}
-                  </>
-                )}
-              </div>
-            ) : null}
-
-            {error ? <p className="nt-assessment__hint" role="alert">{error}</p> : null}
-
             <div className="nt-assessment__footer">
-              {!levelSubmitted ? (
-                <button
-                  type="button"
-                  className="nt-lesson-button nt-lesson-button--primary"
-                  onClick={handleSubmitLevel}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : assessmentType === 'pretest' ? 'Submit Level' : meta.submitLabel}
+              <button
+                type="button"
+                className="nt-lesson-button"
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                Previous
+              </button>
+              {!isLastPage ? (
+                <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}>
+                  Next
                 </button>
               ) : (
-                <button
-                  type="button"
-                  className="nt-lesson-button nt-lesson-button--primary"
-                  onClick={handleContinue}
-                >
-                  {status === 'completed' || currentLevel === 6 || (assessmentType === 'pretest' && activeModuleIds.size === 0)
-                    ? meta.continueLabel
-                    : 'Continue'}
+                <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => setPhase('review')}>
+                  Review &amp; Submit
                 </button>
               )}
             </div>
@@ -392,9 +434,5 @@ function LearningAssessmentContent({
 }
 
 export default function LearningAssessmentPage(props: LearningAssessmentPageProps): JSX.Element {
-  return (
-    <AdaptiveAssessmentProvider>
-      <LearningAssessmentContent {...props} />
-    </AdaptiveAssessmentProvider>
-  );
+  return <LearningAssessmentContent {...props} />;
 }

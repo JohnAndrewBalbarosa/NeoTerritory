@@ -82,13 +82,17 @@ test.describe('learner assessment routes', () => {
       await expect(page.locator('.nt-assessment__choices input[type="radio"]').first()).toBeVisible({ timeout: 10_000 });
 
       // Bloom taxonomy is an internal pedagogy detail and is intentionally not
-      // surfaced to students, so no taxonomy chips should render on the page.
+      // surfaced to students, so no taxonomy chips and no Bloom-stage headings
+      // should render on the page.
       await expect(page.locator('.nt-assessment__taxonomy')).toHaveCount(0);
 
-      await page.locator('.nt-assessment__footer .nt-lesson-button--primary').click();
-      await expect(page.getByRole('alert')).toHaveText('Answer every question before submitting.', {
-        timeout: 10_000,
-      });
+      // The assessment is a normal paginated test (≈5 questions per page) with
+      // a progress indicator and a page-by-page Next control — not one Bloom
+      // level per page.
+      await expect(page.getByText(/Page 1 of/i)).toBeVisible({ timeout: 10_000 });
+      await expect(
+        page.locator('.nt-assessment__footer .nt-lesson-button--primary'),
+      ).toBeVisible({ timeout: 10_000 });
     });
   }
 });

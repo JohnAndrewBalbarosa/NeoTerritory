@@ -14,15 +14,12 @@ import {
 import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
 import {
   evaluateFoundationPretestFromAssessments,
+  PROFICIENCY_THRESHOLD,
+  scoreStoredObjectiveAssessment,
   type FoundationPretestEvidence,
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
-import {
-  derivePretestModuleOutcomes,
-  masteryLevelForBloomLevels,
-  type PretestModuleOutcomes,
-} from '../../../logic/pretestModuleOutcomes';
 
 interface CourseStep {
   module: LearningModule;
@@ -59,15 +56,6 @@ const BLOOM_LEVELS: BloomTaxonomy[] = [
   'evaluating',
   'creating',
 ];
-
-const EMPTY_PRETEST_OUTCOMES: PretestModuleOutcomes = {
-  latestAttemptId: null,
-  masteredBloomLevelsByModuleId: {},
-  bloomMasteryByModuleId: {},
-  failedModuleIds: [],
-  exemptModuleIds: [],
-  perfectModuleIds: [],
-};
 
 function clampBloomMastery(level: number | undefined): number {
   return Math.max(0, Math.min(6, Math.floor(level ?? 0)));
@@ -462,7 +450,10 @@ export default function PatternsLearnPage(): JSX.Element {
   const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
-  const [pretestModuleOutcomes, setPretestModuleOutcomes] = useState<PretestModuleOutcomes>(EMPTY_PRETEST_OUTCOMES);
+  // Pre-test PROFICIENCY (>= 80% per module). Proficiency is NOT completion:
+  // proficient modules are non-blocking and shown as "Optional Review", never
+  // auto-completed or hidden. The pre-test no longer marks any module complete.
+  const [proficientModuleIds, setProficientModuleIds] = useState<Set<string>>(new Set());
   const [bloomMasteryByModule, setBloomMasteryByModule] = useState<Record<string, number>>({});
   const effectiveBloomMasteryByModule = useMemo(() => {
     const next: Record<string, number> = {};
@@ -472,27 +463,17 @@ export default function PatternsLearnPage(): JSX.Element {
     for (const [moduleId, levels] of Object.entries(masteredLevelsByModule)) {
       next[moduleId] = Math.max(next[moduleId] ?? 0, masteryLevelFromStoredLevels(levels));
     }
-    for (const [moduleId, level] of Object.entries(pretestModuleOutcomes.bloomMasteryByModuleId)) {
-      next[moduleId] = Math.max(next[moduleId] ?? 0, clampBloomMastery(level));
-    }
-    for (const [moduleId, levels] of Object.entries(pretestModuleOutcomes.masteredBloomLevelsByModuleId)) {
-      next[moduleId] = Math.max(next[moduleId] ?? 0, masteryLevelForBloomLevels(levels));
-    }
     return next;
-  }, [
-    bloomMasteryByModule,
-    masteredLevelsByModule,
-    pretestModuleOutcomes.bloomMasteryByModuleId,
-    pretestModuleOutcomes.masteredBloomLevelsByModuleId,
-  ]);
+  }, [bloomMasteryByModule, masteredLevelsByModule]);
+  // Only genuinely-completed modules (and mastery from completion) are hidden;
+  // proficient pre-test modules stay visible for optional review.
   const hiddenModuleIds = useMemo(() => {
     const hidden = new Set(completedIds);
-    pretestModuleOutcomes.exemptModuleIds.forEach((moduleId) => hidden.add(moduleId));
     Object.entries(effectiveBloomMasteryByModule).forEach(([moduleId, level]) => {
       if (level >= 6) hidden.add(moduleId);
     });
     return hidden;
-  }, [completedIds, effectiveBloomMasteryByModule, pretestModuleOutcomes.exemptModuleIds]);
+  }, [completedIds, effectiveBloomMasteryByModule]);
   const visibleModulesInCategory = useCallback(
     (category: LearningCategory) => modulesInCat(category).filter((module) => !hiddenModuleIds.has(module.id)),
     [hiddenModuleIds, modulesInCat],
@@ -508,10 +489,6 @@ export default function PatternsLearnPage(): JSX.Element {
     matchedModuleIds: [],
   });
   const [assessmentStatus, setAssessmentStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
-  const foundationModuleIds = useMemo(
-    () => allSteps.filter((step) => isFoundationModule(step.module)).map((step) => step.module.id),
-    [allSteps],
-  );
   const effectivePreTestCompleted = preTestCompleted || unlockAll || foundationEvidence.passed;
 
   const activeStep = steps[activeIndex];
@@ -534,22 +511,28 @@ export default function PatternsLearnPage(): JSX.Element {
     [activeModule, activeModuleMasteryLevel],
   );
   const currentPage = pages[pageIndex] || pages[0];
+  // Completion = genuinely finished modules only (pre-test proficiency never
+  // counts as completion). unlockAll is the dev/test override.
   const effectiveCompletedIds = useMemo(
     () => {
       if (unlockAll) return new Set(allSteps.map((step) => step.module.id));
-      const next = new Set(completedIds);
-      pretestModuleOutcomes.exemptModuleIds.forEach((moduleId) => next.add(moduleId));
-      if (foundationEvidence.passed) {
-        foundationModuleIds.forEach((moduleId) => next.add(moduleId));
-      }
-      return next;
+      return new Set(completedIds);
     },
-    [unlockAll, allSteps, completedIds, foundationEvidence.passed, foundationModuleIds, pretestModuleOutcomes.exemptModuleIds],
+    [unlockAll, allSteps, completedIds],
   );
   const isActiveComplete = !!(activeStep && effectiveCompletedIds.has(activeStep.module.id));
+  // Unlock gating treats proficient modules as non-blocking: a later required
+  // module unlocks even if the learner only tested proficient (not completed)
+  // on the modules before it.
+  const gatingSatisfiedIds = useMemo(() => {
+    if (unlockAll) return effectiveCompletedIds;
+    const ids = new Set(effectiveCompletedIds);
+    proficientModuleIds.forEach((id) => ids.add(id));
+    return ids;
+  }, [unlockAll, effectiveCompletedIds, proficientModuleIds]);
   const unlockedCount = useMemo(
-    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, effectiveCompletedIds)),
-    [unlockAll, steps, effectiveCompletedIds],
+    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, gatingSatisfiedIds)),
+    [unlockAll, steps, gatingSatisfiedIds],
   );
   const currentGroup = useMemo(
     () => pageGroups.find((group) => group.key === currentPage?.kind) ?? pageGroups[0] ?? null,
@@ -599,9 +582,17 @@ export default function PatternsLearnPage(): JSX.Element {
         if (cancelled) return;
         const modules = allSteps.map((step) => step.module);
         const evidence = evaluateFoundationPretestFromAssessments(modules, assessments);
-        const outcomes = derivePretestModuleOutcomes(modules, assessments);
         setFoundationEvidence(evidence);
-        setPretestModuleOutcomes(outcomes);
+        // Per-module pre-test proficiency (>= 80%) — drives Optional Review
+        // labelling and non-blocking unlock, not completion.
+        const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
+        const proficient = new Set<string>();
+        if (preScore) {
+          for (const moduleScore of Object.values(preScore.byModule)) {
+            if (moduleScore.percent >= PROFICIENCY_THRESHOLD) proficient.add(moduleScore.moduleId);
+          }
+        }
+        setProficientModuleIds(proficient);
         if (evidence.passed && !preTestCompleted) {
           setPreTestCompleted(true);
         }
@@ -618,7 +609,7 @@ export default function PatternsLearnPage(): JSX.Element {
           latestAttemptId: null,
           matchedModuleIds: [],
         });
-        setPretestModuleOutcomes(EMPTY_PRETEST_OUTCOMES);
+        setProficientModuleIds(new Set());
         setAssessmentStatus('failed');
       });
 
@@ -764,7 +755,10 @@ export default function PatternsLearnPage(): JSX.Element {
     }
 
     const canAdvanceToNextModule =
-      unlockAll || isActiveComplete || (isSubmitGate && isTheoryPassed);
+      unlockAll ||
+      isActiveComplete ||
+      (isSubmitGate && isTheoryPassed) ||
+      (!!activeModule && proficientModuleIds.has(activeModule.id)); // proficient = optional, non-blocking
 
     if (activeIndex < steps.length - 1 && canAdvanceToNextModule) {
       goToStep(activeIndex + 1);
@@ -787,18 +781,12 @@ export default function PatternsLearnPage(): JSX.Element {
     }
   };
 
-  // Studied-only progress for the top-bar progress bar: exempt (pre-test
-  // mastered / foundation-bypassed) modules are excluded from both the
+  // Studied-only progress for the top-bar progress bar: modules the learner
+  // tested proficient on (Optional Review) are excluded from both the
   // numerator and the denominator, so the bar reflects work actually done.
-  const exemptModuleIdSet = useMemo(() => {
-    const set = new Set<string>(pretestModuleOutcomes.exemptModuleIds);
-    if (foundationEvidence.passed) foundationModuleIds.forEach((id) => set.add(id));
-    return set;
-  }, [pretestModuleOutcomes.exemptModuleIds, foundationEvidence.passed, foundationModuleIds]);
-
   const studiedModules = useMemo(
-    () => allSteps.filter((step) => !exemptModuleIdSet.has(step.module.id)),
-    [allSteps, exemptModuleIdSet],
+    () => allSteps.filter((step) => !proficientModuleIds.has(step.module.id)),
+    [allSteps, proficientModuleIds],
   );
   const studiedTotal = studiedModules.length;
   const studiedDone = useMemo(
@@ -929,8 +917,17 @@ export default function PatternsLearnPage(): JSX.Element {
                         const visIdx = steps.findIndex((v) => v.module.id === s.module.id);
                         const done = visIdx === -1;
                         const active = !done && visIdx === activeIndex;
-                        const locked = !done && visIdx >= unlockedCount;
-                        const status = done ? 'done' : active ? 'current' : locked ? 'locked' : 'available';
+                        const proficient = !done && !active && proficientModuleIds.has(s.module.id);
+                        const locked = !done && !proficient && visIdx >= unlockedCount;
+                        const status = done
+                          ? 'done'
+                          : active
+                            ? 'current'
+                            : proficient
+                              ? 'optional'
+                              : locked
+                                ? 'locked'
+                                : 'available';
                         return (
                           <li key={s.module.id}>
                             <button
@@ -944,15 +941,18 @@ export default function PatternsLearnPage(): JSX.Element {
                                   ? 'Finish the previous module to unlock this one.'
                                   : done
                                     ? 'Completed'
-                                    : undefined
+                                    : proficient
+                                      ? 'Optional Review — you tested proficient on the pre-test (not required).'
+                                      : undefined
                               }
                               onClick={() => { if (!done && !locked) goToStep(visIdx); }}
                             >
                               <span className="nt-course-accordion__status" aria-hidden="true">
-                                {done ? '✓' : locked ? '🔒' : active ? '●' : '○'}
+                                {done ? '✓' : locked ? '🔒' : active ? '●' : proficient ? '◇' : '○'}
                               </span>
                               <span className="nt-course-accordion__num" aria-hidden="true">{i + 1}</span>
                               <span className="nt-course-accordion__module-label">{s.module.title}</span>
+                              {proficient ? <span className="nt-course-accordion__opt">Optional</span> : null}
                             </button>
                           </li>
                         );

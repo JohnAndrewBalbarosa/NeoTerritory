@@ -1497,6 +1497,19 @@ body[data-surface] #root {
   cursor: default;
   color: var(--nt-mkt-text-soft);
 }
+.nt-course-accordion__module[data-status='optional'] .nt-course-accordion__status {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-accordion__opt {
+  margin-left: auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 209, 216, 0.45);
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
 .nt-course-accordion__status {
   flex: 0 0 auto;
   width: 1.1rem;
@@ -2754,6 +2767,171 @@ body[data-surface] #root {
   margin: 0;
   font-size: 0.82rem;
   color: var(--nt-mkt-text-soft);
+}
+
+/* Paginated assessment: progress bar, page meta, per-question numbering. */
+.nt-assessment__progress {
+  margin-bottom: 1rem;
+}
+.nt-assessment__progressbar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.nt-assessment__progressbar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--devcon-lime), var(--devcon-cyan), var(--devcon-purple));
+  transition: width 280ms var(--nt-mkt-ease, ease);
+}
+.nt-assessment__progressmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.45rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-assessment__unanswered {
+  color: var(--devcon-amber, #fbbf24);
+}
+.nt-assessment__qnum {
+  margin: 0 0 0.45rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-assessment__qflag {
+  color: var(--devcon-amber, #fbbf24);
+}
+
+/* Review-before-submit grid: one cell per question, answered vs not. */
+.nt-assessment__reviewgrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.25rem;
+}
+.nt-assessment__reviewcell {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--nt-mkt-line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--nt-mkt-text);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.nt-assessment__reviewcell[data-answered='true'] {
+  border-color: rgba(0, 209, 216, 0.5);
+  background: rgba(0, 209, 216, 0.14);
+}
+.nt-assessment__reviewcell[data-answered='false'] {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+/* Results / learning-gain layout. */
+.nt-results__block {
+  margin-top: 1.1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--nt-mkt-line);
+}
+.nt-results__block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.nt-results__heading {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+.nt-results__overall {
+  margin: 0 0 0.3rem;
+}
+.nt-results__overall-status,
+.nt-results__note {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__modules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.nt-results__module {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 10px;
+}
+.nt-results__module-name {
+  flex: 1 1 12rem;
+  font-weight: 600;
+}
+.nt-results__module-score,
+.nt-results__module-rec {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid var(--nt-mkt-line);
+}
+.nt-results__badge[data-status='proficient'] {
+  color: #86efac;
+  border-color: rgba(134, 239, 172, 0.5);
+}
+.nt-results__badge[data-status='recommended'] {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.5);
+}
+.nt-results__paths {
+  display: grid;
+  gap: 0.9rem;
+}
+@media (min-width: 720px) {
+  .nt-results__paths {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.nt-results__path-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.86rem;
+}
+.nt-results__path-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__path-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__gain[data-sign='pos'] { color: #86efac; }
+.nt-results__gain[data-sign='neg'] { color: #fca5a5; }
+.nt-results__gain[data-sign='zero'] { color: var(--nt-mkt-text-soft); }
+.nt-results__maintained {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
 }
 .nt-assessment__result {
   margin-top: 1rem;

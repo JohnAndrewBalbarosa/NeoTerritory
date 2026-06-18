@@ -51,12 +51,12 @@ const SUBVIEWS: ReadonlyArray<{ id: Exclude<SubView, 'overview'>; label: string;
   {
     id: 'students',
     label: 'Students',
-    description: 'Per-learner progress, improvement, and question-level drilldown.',
+    description: 'Per-learner progress, Practice Improvement (first-try to eventual mastery), and question-level drilldown.',
   },
   {
     id: 'modules',
     label: 'Modules',
-    description: 'Hardest-first module ranking with difficulty bars and CSV export.',
+    description: 'Hardest-first module ranking (based on first-attempt performance) with difficulty bars and CSV export.',
   },
   {
     id: 'questions',
