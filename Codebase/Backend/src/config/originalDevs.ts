@@ -12,7 +12,7 @@
 export const ORIGINAL_DEV_EMAILS: ReadonlyArray<string> = [
   'jbalbarosa15@gmail.com',
   // TODO: replace with Miryl's confirmed Google account.
-  'miryl-email-tbd@placeholder.invalid',
+  'mirylzapanza@gmail.com',
   // TODO: replace with Josephine Santander's confirmed Google account.
   'josephine-santander-email-tbd@placeholder.invalid',
 ];
