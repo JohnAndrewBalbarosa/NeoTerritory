@@ -249,7 +249,7 @@ describe('assessment answer serialization', () => {
     expect(hasLearningAssessmentAnswer(studio, false)).toBe(false);
   });
 
-  it('serializes only actually answered questions', () => {
+  it('serializes every question so unanswered items can be graded as incorrect', () => {
     const questions: LearningAssessmentQuestion[] = [
       buildQuestion(0, 'remembering'),
       {
@@ -282,8 +282,8 @@ describe('assessment answer serialization', () => {
       expect.objectContaining({ moduleId: 'foundations-0', selectedIndex: 1, responseText: null }),
       expect.objectContaining({ moduleId: 'foundations-1', selectedIndex: -1, responseText: '["subject","observer"]' }),
       expect.objectContaining({ moduleId: 'foundations-2', selectedIndex: -1, responseText: 'true' }),
+      expect.objectContaining({ moduleId: 'foundations-3', selectedIndex: -1, responseText: null }),
     ]);
-    expect(serialized).toHaveLength(3);
-    expect(serialized.some((answer) => answer.moduleId === 'foundations-3')).toBe(false);
+    expect(serialized).toHaveLength(4);
   });
 });

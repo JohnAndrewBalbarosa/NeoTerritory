@@ -11,10 +11,20 @@ import path from 'path';
 
 interface SeedRow {
   moduleId?: unknown;
+  published?: unknown;
   category?: unknown;
   sortOrder?: unknown;
   theoreticalExam?: {
-    questions?: Array<{ type?: string; taxonomy?: string }>;
+    questions?: Array<{
+      type?: string;
+      taxonomy?: string;
+      question?: string;
+      prompt?: string;
+      scenario?: string;
+      options?: string[];
+      code?: string;
+      explanation?: string;
+    }>;
   };
 }
 
@@ -74,5 +84,50 @@ describe('learningModules.seed.json parity', () => {
     expect(allQuestions.some((q) => q.type === 'identification')).toBe(true);
     expect(allQuestions.some((q) => q.type === 'studio')).toBe(true);
     expect(allQuestions.every((q) => typeof q.type === 'string')).toBe(true);
+  });
+
+  it('publishes the deployed 25-module baseline with 25 questions per Bloom category', () => {
+    const rows = loadSeed();
+    const published = rows.filter((row) => row.published === true);
+    const counts = new Map<string, number>();
+    for (const row of published) {
+      for (const question of row.theoreticalExam?.questions ?? []) {
+        const taxonomy = question.taxonomy ?? 'missing';
+        counts.set(taxonomy, (counts.get(taxonomy) ?? 0) + 1);
+      }
+    }
+
+    expect(published).toHaveLength(25);
+    expect(Object.fromEntries(counts)).toEqual({
+      remembering: 25,
+      understanding: 25,
+      applying: 25,
+      analyzing: 25,
+      evaluating: 25,
+      creating: 25,
+    });
+  });
+
+  it('keeps the supported GoF and Modern C++ pattern bank free of Rust and Java examples', () => {
+    const rows = loadSeed();
+    const ids = new Set(rows.map((row) => row.moduleId));
+    [
+      'creational-singleton',
+      'creational-factory-method',
+      'creational-builder',
+      'structural-adapter',
+      'structural-composite',
+      'behavioural-observer',
+      'behavioural-iterator',
+    ].forEach((id) => expect(ids.has(id)).toBe(true));
+
+    const questionText = rows
+      .flatMap((row) => row.theoreticalExam?.questions ?? [])
+      .map((question) => JSON.stringify(question))
+      .join('\n')
+      .toLowerCase();
+    expect(questionText).not.toMatch(/\brust\b/);
+    expect(questionText).not.toMatch(/\bjava\b/);
+    expect(questionText).toMatch(/c\+\+|std::|unique_ptr|shared_ptr/);
   });
 });

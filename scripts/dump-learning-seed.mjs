@@ -64,7 +64,10 @@ async function loadLearningModules() {
   await writeFile(tmpFile, code, 'utf8');
   try {
     const mod = await import(pathToFileURL(tmpFile).href);
-    return mod.LEARNING_MODULES;
+    return {
+      modules: mod.LEARNING_MODULES,
+      defaultPublishedIds: mod.DEFAULT_PUBLISHED_LEARNING_MODULE_IDS,
+    };
   } finally {
     await rm(tmpFile, { force: true });
   }
@@ -73,9 +76,10 @@ async function loadLearningModules() {
 // Map a LearningModule (frozen wire shape) → a seed row. moduleId = the module's
 // id UNCHANGED; sortOrder = its index in LEARNING_MODULES. Optional sub-objects
 // are passed through as-is (the seeder JSON-stringifies them).
-function toSeedRow(mod, index) {
+function toSeedRow(mod, index, defaultPublishedIds) {
   return {
     moduleId: mod.id,
+    published: defaultPublishedIds.has(mod.id),
     category: mod.category,
     title: mod.title,
     eyebrow: mod.eyebrow ?? '',
@@ -91,12 +95,17 @@ function toSeedRow(mod, index) {
 }
 
 async function main() {
-  const modules = await loadLearningModules();
+  const loaded = await loadLearningModules();
+  const modules = loaded?.modules;
+  const defaultPublishedIds = loaded?.defaultPublishedIds;
   if (!Array.isArray(modules) || modules.length === 0) {
     throw new Error('LEARNING_MODULES did not resolve to a non-empty array');
   }
+  if (!(defaultPublishedIds instanceof Set) || defaultPublishedIds.size === 0) {
+    throw new Error('DEFAULT_PUBLISHED_LEARNING_MODULE_IDS did not resolve to a non-empty Set');
+  }
 
-  const rows = modules.map(toSeedRow);
+  const rows = modules.map((mod, index) => toSeedRow(mod, index, defaultPublishedIds));
 
   // Guardrail: ids must be unique + non-empty. The Vitest parity test enforces
   // this again on the written file, but failing fast here is friendlier.

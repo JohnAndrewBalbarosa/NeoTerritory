@@ -279,6 +279,8 @@ export interface LearningAssessmentAttemptRaw {
   assessmentType: LearningAssessmentType;
   sessionId: string | null;
   questionCount: number;
+  correctCount?: number;
+  scorePercent?: number;
   createdAt: string;
 }
 
@@ -293,8 +295,30 @@ export interface LearningAssessmentAnswerRaw {
   responseText: string | null;
   questionTaxonomy: BloomTaxonomy | null;
   questionKind: 'theoretical' | 'practical';
+  isCorrect?: boolean;
   sessionId: string | null;
   createdAt: string;
+}
+
+export interface LearningAssessmentGradedResult {
+  assessmentIndex: number;
+  moduleId: string;
+  questionIndex: number;
+  selectedIndex: number;
+  responseText: string;
+  questionTaxonomy: BloomTaxonomy | '';
+  questionKind: 'theoretical' | 'practical';
+  isCorrect: boolean;
+}
+
+export interface LearningAssessmentGradeResponse {
+  correctCount: number;
+  totalCount: number;
+  scorePercent: number;
+  results: LearningAssessmentGradedResult[];
+  ok?: boolean;
+  recorded?: number;
+  attemptId?: number;
 }
 
 export interface LearningAssessmentsResponse {

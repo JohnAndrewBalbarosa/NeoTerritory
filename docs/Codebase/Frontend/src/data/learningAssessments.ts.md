@@ -2,7 +2,7 @@
 
 ## Sole job
 
-This module builds the pre-test, post-test, and post-test-2 question sets, grades those answers locally, and derives the foundation bypass evidence used by the learner gate. Per-module mastery/exemption is owned by `pretestModuleOutcomes.ts` so this file stays focused on assessment question shape and raw-answer interpretation.
+This module builds the pre-test, post-test, and post-test-2 question sets, serializes every rendered question for server grading, and derives foundation bypass evidence from saved results. Per-module mastery/exemption is owned by `pretestModuleOutcomes.ts`.
 
 ## Program Flow
 
@@ -13,7 +13,7 @@ flowchart TD
     Plan["Walk Bloom levels"]
     Match["Pick module question"]
     Emit["Return assessment set"]
-    Grade["Score answers"]
+    Grade["Serialize all answers"]
 
     Start --> Norm --> Plan --> Match --> Emit --> Grade
 ```
@@ -54,7 +54,7 @@ There are two evaluation paths:
 - `evaluateFoundationPretestFromAssessments(...)` reads persisted attempts and ignores any pre-test whose `createdAt` is older than `courseUpdatedAt`.
 - `derivePretestModuleOutcomes(...)` in the logic folder consumes the same saved attempts to derive per-module mastered Bloom levels, failed modules, and fully exempt modules.
 
-The backend stores raw selections, free-text responses, question metadata, and the global `course_updated_at` setting. This module performs the client-side interpretation of that saved evidence.
+The backend stores selections, free-text responses, canonical taxonomy, per-answer correctness, attempt scores, and the global `course_updated_at` setting. This module prefers backend correctness when interpreting saved evidence.
 
 ## Reset Semantics
 
@@ -71,6 +71,7 @@ The backend stores raw selections, free-text responses, question metadata, and t
 - Pre-test, post-test, and post-test-2 questions keep the intended Bloom taxonomy labels.
 - Sparse module banks still expose six Bloom-level pre-test questions after normalization.
 - Studio failures can be submitted as completed failed answers for adaptive pre-test pruning.
+- Unanswered questions remain in the serialized payload with `selectedIndex = -1`.
 - Foundation personas remain distinguishable by mastered and missing taxonomies.
 - Saved pre-test evidence older than `courseUpdatedAt` fails the gate.
 - A saved fresh passing pre-test can unlock the path without relying on local-only state.

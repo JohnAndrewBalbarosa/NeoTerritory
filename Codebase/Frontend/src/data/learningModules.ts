@@ -2408,6 +2408,37 @@ const PATTERN_MODULES: ReadonlyArray<LearningModule> = PATTERN_MODULES_RAW.map(a
 // Public API
 // -------------------------------------------------------------------------
 
+// Canonical learner-visible baseline, synchronized with the deployed course.
+// Fourteen foundation modules plus eleven supported pattern modules produce
+// exactly 25 questions in every Bloom taxonomy bucket.
+export const DEFAULT_PUBLISHED_LEARNING_MODULE_IDS: ReadonlySet<string> = new Set([
+  'foundations-what-is-pattern',
+  'foundations-why-matters',
+  'foundations-categories',
+  'foundations-oop',
+  'foundations-interface-principle',
+  'foundations-code-structure',
+  'foundations-real-software',
+  'foundations-beginner-mistakes',
+  'foundations-ambiguity',
+  'foundations-connotative-definition',
+  'foundations-same-structure',
+  'foundations-structural-rules',
+  'foundations-context-variation',
+  'foundations-postrequisite',
+  'creational-singleton',
+  'creational-factory-method',
+  'structural-adapter',
+  'structural-proxy',
+  'behavioural-strategy',
+  'behavioural-iterator',
+  'behavioural-command',
+  'structural-repository',
+  'creational-abstract-factory',
+  'structural-facade',
+  'structural-flyweight',
+]);
+
 export const LEARNING_MODULES: ReadonlyArray<LearningModule> = [
   ...FOUNDATIONS_MODULES_WITH_EXAMS,
   ...PATTERN_MODULES,

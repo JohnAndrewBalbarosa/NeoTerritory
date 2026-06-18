@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../logic/router';
-import { fetchLearningProgress, saveLearningAssessment, saveLearningProgress, refreshGuest } from '../../api/client';
+import {
+  fetchLearningProgress,
+  gradeLearningAssessmentOnServer,
+  saveLearningAssessment,
+  saveLearningProgress,
+  refreshGuest,
+} from '../../api/client';
 import { useAppStore } from '../../store/appState';
+import type { LearningAssessmentGradeResponse } from '../../types/api';
 import { useLearningModules } from '../../data/useLearningModules';
-import { isStudioQuestion } from '../../data/learningModules';
 import {
   buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
-  gradeLearningAssessment,
   hasLearningAssessmentAnswer,
   LEARNING_ASSESSMENT_META,
   type LearningAssessmentType,
@@ -92,6 +97,7 @@ function LearningAssessmentContent({
 
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [levelSubmitted, setLevelSubmitted] = useState(false);
+  const [levelGrade, setLevelGrade] = useState<LearningAssessmentGradeResponse | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,23 +107,19 @@ function LearningAssessmentContent({
 
   useEffect(() => {
     setLevelSubmitted(false);
+    setLevelGrade(null);
     setError(null);
   }, [assessmentType, currentLevel]);
 
-  const graded = useMemo(
-    () => gradeLearningAssessment(questions, answers),
-    [answers, questions],
-  );
-
   const advancingModuleIds = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
-    return graded.results.filter((r) => r.isCorrect).map((r) => r.moduleId);
-  }, [assessmentType, graded.results]);
+    return levelGrade?.results.filter((r) => r.isCorrect).map((r) => r.moduleId) ?? [];
+  }, [assessmentType, levelGrade]);
 
   const failedInThisLevelIds = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
-    return graded.results.filter((r) => !r.isCorrect).map((r) => r.moduleId);
-  }, [assessmentType, graded.results]);
+    return levelGrade?.results.filter((r) => !r.isCorrect).map((r) => r.moduleId) ?? [];
+  }, [assessmentType, levelGrade]);
   const learningListModuleIds = useMemo(() => {
     if (assessmentType !== 'pretest') return [];
     const ids = new Set(eliminatedModuleIds);
@@ -162,26 +164,19 @@ function LearningAssessmentContent({
   }, [activeModuleIds, allQuestions, answers, assessmentType, currentLevel, getLevelForTaxonomy]);
 
   const submitLevel = async (answersToSubmit: Record<number, any> = answers): Promise<void> => {
-    const allAnsweredForSubmit = questions.length > 0 && questions.every((q) =>
-      hasLearningAssessmentAnswer(q.question, answersToSubmit[q.assessmentIndex])
-    );
-    const hasPendingStudioForSubmit = questions.some((q) =>
-      isStudioQuestion(q.question) && !hasLearningAssessmentAnswer(q.question, answersToSubmit[q.assessmentIndex])
-    );
-
-    if (!allAnsweredForSubmit) {
-      if (hasPendingStudioForSubmit) {
-        setError('You must complete all Studio tasks (open the Studio and successfully detect the pattern) before submitting.');
-      } else {
-        setError('Answer every question completely in this level before submitting. Ensure all fill-in-the-blanks are filled.');
-      }
+    if (questions.length === 0) {
+      setError('No questions are available for this Bloom level.');
       return;
     }
 
     setError(null);
     setSaving(true);
     try {
-      const gradedForSubmit = gradeLearningAssessment(questions, answersToSubmit);
+      const gradedForSubmit = await gradeLearningAssessmentOnServer({
+        assessmentType,
+        answers: buildLearningAssessmentAnswerInputs(questions, answersToSubmit),
+      });
+      setLevelGrade(gradedForSubmit);
       const failedIdsForSubmit = [...new Set(
         assessmentType === 'pretest'
           ? gradedForSubmit.results.filter((r) => !r.isCorrect).map((r) => r.moduleId)
@@ -395,7 +390,7 @@ function LearningAssessmentContent({
               <div className="nt-assessment__result" role="status" aria-live="polite">
                 <p className="nt-assessment__score">
                   {assessmentType === 'pretest' ? `Level ${currentLevel}` : 'Assessment'} score:{' '}
-                  <strong>{graded.correctCount}/{graded.totalCount}</strong>
+                  <strong>{levelGrade?.correctCount ?? 0}/{levelGrade?.totalCount ?? questions.length}</strong>
                 </p>
                 {assessmentType === 'pretest' ? (
                   <>
@@ -433,7 +428,7 @@ function LearningAssessmentContent({
                   </>
                 ) : (
                   <>
-                    {graded.correctCount === graded.totalCount ? (
+                    {levelGrade && levelGrade.correctCount === levelGrade.totalCount ? (
                       <p className="nt-assessment__gain">Excellent! You have mastered this assessment.</p>
                     ) : (
                       <p className="nt-assessment__gain">You missed some questions in this level.</p>

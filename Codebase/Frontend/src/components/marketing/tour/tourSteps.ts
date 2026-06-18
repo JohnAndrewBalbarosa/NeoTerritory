@@ -3,7 +3,7 @@
 // Product direction (2026-06): CodiNeo is a LEARNING product. The guide now
 // mirrors the current learner UI: a pre-test gate, a centered "Learning Path"
 // topbar, a left rail that highlights the active leaf, leaf-level lesson pages,
-// a green submit state for the final theoretical step, and raw-only post-test
+// a green submit state for the final theoretical step, and server-scored post-test
 // storage that stays interpretive in the browser.
 
 export interface TourStep {
@@ -22,7 +22,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'pre-test-gate',
     title: 'Clear the pre-test gate',
     paragraph:
-      'Every learner now starts with a baseline check. The browser scores the answers locally, and only the raw selections are saved. Once the pre-test is done, the app routes straight into the learning path and keeps the gate closed on revisit until that check exists for the current session.',
+      'Every learner now starts with a baseline check. The server validates each answer against the canonical Modern C++ question bank and saves the resulting score. Once the pre-test is done, the app routes straight into the learning path and keeps the gate closed on revisit until that check exists for the current session.',
     takeaway: 'Finish the baseline once, then the learning path opens automatically.',
     imagePath: '/tour/learn-path.png',
   },
@@ -49,7 +49,7 @@ export const TOUR_STEPS: ReadonlyArray<TourStep> = [
     slug: 'theoretical-exam',
     title: 'Pass the theoretical exam',
     paragraph:
-      'The final theoretical page now uses the Next arrow as the submit action. It turns green when you are on the submit step, and the client checks the correctIndex locally before saving only the raw answer rows to the database. No derived score is stored server-side.',
+      'The final theoretical page now uses the Next arrow as the submit action. It turns green on the submit step, and the backend validates the selected answers before storing the scored attempt and per-question verdicts.',
     takeaway: 'The submit state lives in the arrow, not in a separate button.',
     imagePath: '/tour/learn-practical.png',
   },

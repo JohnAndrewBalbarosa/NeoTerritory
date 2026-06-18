@@ -8,6 +8,7 @@ This seed file provides the initial learning-module catalog rows for the backend
 
 - The seed carries explicit Bloom taxonomy fields on theoretical and practical questions.
 - Each theoretical bank is canonicalized to six questions in this order: remembering, understanding, applying, analyzing, evaluating, creating.
+- The seed marks the deployed 25-module learner baseline as published, yielding exactly 25 questions in every Bloom bucket.
 - Theoretical questions may be MCQ, identification, or Studio code-check items.
 - Creating-level Studio questions are reserved for analyzer-detectable pattern modules; foundations and non-detectable modules use non-Studio fallbacks.
 - The frontend still normalizes the public module list before assessment generation, so older API-shaped rows without taxonomy remain safe.
@@ -24,4 +25,6 @@ This file defines data only. It should not contain behavior, fallback logic, or 
 - Assessment generation still receives exact Bloom levels after normalization.
 - The persisted seed documents the intended Bloom level for each stored question.
 - Every stored module has exactly six theoretical questions.
+- Exactly 25 seed rows are published by default.
+- Published rows contain 25 questions for each of the six Bloom taxonomies.
 - At least one non-MCQ question shape remains present in the seed-backed bank.

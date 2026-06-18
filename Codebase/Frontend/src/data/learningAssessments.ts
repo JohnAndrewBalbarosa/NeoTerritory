@@ -120,7 +120,6 @@ export function buildLearningAssessmentAnswerInputs(
   answers: Record<number, unknown>,
 ): LearningAssessmentAnswerInput[] {
   return questions
-    .filter((question) => hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex]))
     .map((question) => {
       const answer = answers[question.assessmentIndex];
       return {
@@ -150,7 +149,7 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     badge: 'PRE',
     title: 'Baseline Assessment: Pre-Test',
     intro:
-      'This baseline uses raw module questions. The browser checks the answers locally; only the selected answers are persisted to the database.',
+      'This baseline uses the published Modern C++ pattern bank. The server validates every submitted answer, including unanswered items.',
     submitLabel: 'Finish Pre-test & Start Learning',
     continueLabel: 'Continue to Learning Path',
     nextPath: '/patterns/learn',
@@ -160,7 +159,7 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     badge: 'POST',
     title: 'Post-Test',
     intro:
-      'This checkpoint samples later module questions. The server stores raw selections only; scoring and interpretation stay in the browser.',
+      'This checkpoint samples later module questions and uses server-validated scoring.',
     submitLabel: 'Save Post-test',
     continueLabel: 'Continue to Post-Test 2',
     nextPath: '/post-test-2',
@@ -170,7 +169,7 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     badge: 'POST 2',
     title: 'Post-Test, Part 2',
     intro:
-      'This follow-up checkpoint reuses module questions with a different slice. The browser computes the result and the database keeps raw answers only.',
+      'This follow-up checkpoint reuses module questions with a different slice and uses server-validated scoring.',
     submitLabel: 'Finish Final Checkpoint',
     continueLabel: 'Return to Learning Path',
     nextPath: '/patterns/learn',
@@ -341,6 +340,7 @@ export function evaluateFoundationPretest(
 }
 
 function isAnsweredCorrectly(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {
+  if (typeof answer.isCorrect === 'boolean') return answer.isCorrect;
   const question = module.theoreticalExam?.questions[answer.questionIndex];
   if (!question) return false;
   // identification questions might store responseText instead of selectedIndex

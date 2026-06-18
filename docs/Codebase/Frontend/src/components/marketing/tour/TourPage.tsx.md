@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Show how the learner flow works, step by step, without requiring sign-in. This is the public walkthrough for the current learning-path UI: pre-test gate, centered learning-path header, leaf-level sidebar drill-down, green submit state on the final theory step, and raw-only post-test storage.
+Show how the learner flow works, step by step, without requiring sign-in. This is the public walkthrough for the current learning-path UI: pre-test gate, centered learning-path header, leaf-level sidebar drill-down, green submit state on the final theory step, and server-scored post-test storage.
 
 ## Layout
 

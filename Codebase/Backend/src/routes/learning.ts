@@ -18,6 +18,11 @@ import { jwtAuth } from '../middleware/jwtAuth';
 import { sanitizeAnswers } from '../services/learningQuestionStats';
 import { mirrorRow } from '../services/supabaseLogger';
 import { getSetting } from '../db/appSettings';
+import {
+  AssessmentGradingError,
+  assertCompleteAssessmentCoverage,
+  gradeAssessmentAnswers,
+} from '../services/learningAssessmentGrader';
 
 const router = express.Router();
 
@@ -35,6 +40,8 @@ interface AssessmentAttemptRow {
   assessmentType: AssessmentType;
   sessionId: string | null;
   questionCount: number;
+  correctCount: number;
+  scorePercent: number;
   createdAt: string;
 }
 
@@ -49,6 +56,7 @@ interface AssessmentAnswerRow {
   responseText: string | null;
   questionTaxonomy: string | null;
   questionKind: string;
+  isCorrect: number;
   sessionId: string | null;
   createdAt: string;
 }
@@ -121,12 +129,12 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
     if (!moduleId) continue;
     if (!Number.isInteger(questionIndex) || questionIndex < 0 || questionIndex > 10_000) continue;
 
-    const hasValidIndex = Number.isInteger(selectedIndex) && selectedIndex >= 0 && selectedIndex <= 10_000;
+    const hasValidIndex = Number.isInteger(selectedIndex) && selectedIndex >= -1 && selectedIndex <= 10_000;
 
     if (questionKind === 'theoretical') {
-      // D92 adaptive pre-test: MCQ uses selectedIndex; Identification and
-      // Studio questions use responseText. Allow either.
-      if (!hasValidIndex && !responseText) continue;
+      // Every rendered question is submitted. selectedIndex=-1 plus an empty
+      // response is an unanswered item and must grade as incorrect.
+      if (!hasValidIndex) continue;
     } else if (!responseText) {
       // Practical exam (Studio) ALWAYS uses responseText.
       continue;
@@ -140,7 +148,7 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
       questionTaxonomy,
       questionKind,
     });
-    if (out.length >= 50) break;
+    if (out.length >= 200) break;
   }
   return out;
 }
@@ -469,7 +477,8 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
 
     const attempts = db.prepare(`
       SELECT id, assessment_type AS assessmentType, session_id AS sessionId,
-             question_count AS questionCount, created_at AS createdAt
+             question_count AS questionCount, correct_count AS correctCount,
+             score_percent AS scorePercent, created_at AS createdAt
       FROM learning_assessment_attempts
       WHERE user_id = ?
       ORDER BY created_at ASC, id ASC
@@ -480,7 +489,7 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
              a.assessment_index AS assessmentIndex, a.module_id AS moduleId,
              a.question_index AS questionIndex, a.selected_index AS selectedIndex,
              a.response_text AS responseText, a.question_taxonomy AS questionTaxonomy,
-             a.question_kind AS questionKind,
+             a.question_kind AS questionKind, a.is_correct AS isCorrect,
              a.session_id AS sessionId, a.created_at AS createdAt
       FROM learning_assessment_answers a
       WHERE a.user_id = ?
@@ -489,8 +498,41 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
 
     const courseUpdatedAt = getSetting('course_updated_at');
 
-    res.json({ attempts, answers, courseUpdatedAt });
+    res.json({
+      attempts,
+      answers: answers.map((answer) => ({ ...answer, isCorrect: answer.isCorrect !== 0 })),
+      courseUpdatedAt,
+    });
   } catch (err) {
+    next(err);
+  }
+});
+
+router.post('/assessments/grade', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    const body = (req.body ?? {}) as { assessmentType?: unknown; answers?: unknown };
+    const assessmentType = sanitizeAssessmentType(body.assessmentType);
+    if (!assessmentType) {
+      res.status(400).json({ error: 'assessmentType required' });
+      return;
+    }
+    const answers = sanitizeAssessmentAnswers(body.answers);
+    if (answers.length === 0) {
+      res.status(400).json({ error: 'answers required' });
+      return;
+    }
+
+    res.json(gradeAssessmentAnswers(db, answers));
+  } catch (err) {
+    if (err instanceof AssessmentGradingError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
     next(err);
   }
 });
@@ -519,38 +561,48 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
       return;
     }
 
+    assertCompleteAssessmentCoverage(db, assessmentType, answers);
+    const grade = gradeAssessmentAnswers(db, answers);
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
     const insertAttempt = db.prepare(`
       INSERT INTO learning_assessment_attempts
-        (user_id, session_id, assessment_type, question_count, created_at)
-      VALUES (?, ?, ?, ?, datetime('now'))
+        (user_id, session_id, assessment_type, question_count, correct_count, score_percent, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
     `);
-    const attemptInfo = insertAttempt.run(req.user.id, sessionId, assessmentType, answers.length);
+    const attemptInfo = insertAttempt.run(
+      req.user.id,
+      sessionId,
+      assessmentType,
+      grade.totalCount,
+      grade.correctCount,
+      grade.scorePercent,
+    );
     const attemptId = Number(attemptInfo.lastInsertRowid);
 
     const insertAnswer = db.prepare(`
       INSERT INTO learning_assessment_answers
-        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, selected_index, response_text, question_taxonomy, question_kind, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, selected_index, response_text, question_taxonomy, question_kind, is_correct, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
-    const tx = db.transaction((rows: SanitizedAssessmentAnswer[]) => {
-      rows.forEach((answer, assessmentIndex) => {
+    const tx = db.transaction((rows: typeof grade.results) => {
+      rows.forEach((answer) => {
         insertAnswer.run(
           attemptId,
           req.user!.id,
           sessionId,
           assessmentType,
-          assessmentIndex,
+          answer.assessmentIndex,
           answer.moduleId,
           answer.questionIndex,
           answer.selectedIndex,
           answer.responseText || null,
           answer.questionTaxonomy || null,
           answer.questionKind,
+          answer.isCorrect ? 1 : 0,
         );
       });
     });
-    tx(answers);
+    tx(grade.results);
 
     if (req.user.email) {
       const email = req.user.email.toLowerCase();
@@ -559,28 +611,35 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
         user_email: email,
         session_id: sessionId,
         assessment_type: assessmentType,
-        question_count: answers.length,
+        question_count: grade.totalCount,
+        correct_count: grade.correctCount,
+        score_percent: grade.scorePercent,
         created_at: nowIso,
       });
-      answers.forEach((answer, assessmentIndex) => {
+      grade.results.forEach((answer) => {
         mirrorRow('learning_assessment_answers', {
           user_email: email,
           session_id: sessionId,
           assessment_type: assessmentType,
-          assessment_index: assessmentIndex,
+          assessment_index: answer.assessmentIndex,
           module_id: answer.moduleId,
           question_index: answer.questionIndex,
           selected_index: answer.selectedIndex,
           response_text: answer.responseText || null,
           question_taxonomy: answer.questionTaxonomy || null,
           question_kind: answer.questionKind,
+          is_correct: answer.isCorrect ? 1 : 0,
           created_at: nowIso,
         });
       });
     }
 
-    res.json({ ok: true, recorded: answers.length, attemptId });
+    res.json({ ok: true, recorded: grade.totalCount, attemptId, ...grade });
   } catch (err) {
+    if (err instanceof AssessmentGradingError) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
     next(err);
   }
 });

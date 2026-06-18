@@ -274,6 +274,56 @@ describe('derivePretestModuleOutcomes', () => {
     expect(result.exemptModuleIds).toEqual([]);
     expect(result.perfectModuleIds).toEqual([]);
   });
+
+  it('uses backend-authoritative correctness for learning recommendations', () => {
+    const result = derivePretestModuleOutcomes(modules, response({
+      attempts: [{
+        id: 20,
+        assessmentType: 'pretest',
+        sessionId: null,
+        questionCount: 2,
+        correctCount: 1,
+        scorePercent: 50,
+        createdAt: '2026-06-15T04:00:00.000Z',
+      }],
+      answers: [
+        {
+          id: 201,
+          attemptId: 20,
+          assessmentType: 'pretest',
+          assessmentIndex: 0,
+          moduleId: 'module-a',
+          questionIndex: 0,
+          selectedIndex: 0,
+          responseText: null,
+          questionTaxonomy: 'remembering',
+          questionKind: 'theoretical',
+          isCorrect: false,
+          sessionId: null,
+          createdAt: '2026-06-15T04:00:00.000Z',
+        },
+        {
+          id: 202,
+          attemptId: 20,
+          assessmentType: 'pretest',
+          assessmentIndex: 1,
+          moduleId: 'module-b',
+          questionIndex: 0,
+          selectedIndex: 1,
+          responseText: null,
+          questionTaxonomy: 'applying',
+          questionKind: 'theoretical',
+          isCorrect: true,
+          sessionId: null,
+          createdAt: '2026-06-15T04:00:00.000Z',
+        },
+      ],
+    }));
+
+    expect(result.failedModuleIds).toContain('module-a');
+    expect(result.masteredBloomLevelsByModuleId['module-a']).toBeUndefined();
+    expect(result.exemptModuleIds).toContain('module-b');
+  });
 });
 
 describe('masteryLevelForBloomLevels', () => {

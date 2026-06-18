@@ -6,7 +6,7 @@
 ## Story
 ### What Happens Here
 
-This file implements the database bootstrapping sequence. It creates the users, jobs, and logs tables if they do not already exist so the backend can start in a valid persistence state. In the target ETL implementation, this file should also call the ETL schema module after the baseline tables are ready.
+This file implements the database bootstrapping sequence. It creates the application tables, migrates assessment score columns, seeds the learning catalog, and applies a versioned one-time publication baseline before request handling begins.
 
 ### Why It Matters In The Flow
 
@@ -22,17 +22,13 @@ This diagram follows the action path in plain words. Decision diamonds show wher
 flowchart TD
     Start["Begin local flow"]
     N0["Main path"]
-    N1["Create users table"]
-    N2["Create jobs table"]
-    N3["Create logs table"]
-    N4["Call ETL schema"]
+    N1["Create baseline tables"]
+    N2["Migrate score columns"]
+    N3["Seed learning modules"]
+    N4["Sync publication baseline"]
+    N5["Call ETL schema"]
     End["Return from local flow"]
-    Start --> N0
-    N0 --> N1
-    N1 --> N2
-    N2 --> N3
-    N3 --> N4
-    N4 --> End
+    Start --> N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> End
 ```
 
 ## Reading Map
@@ -59,6 +55,8 @@ Inside the body, it should keep the startup sequence readable by creating baseli
 
 What it does:
 - create baseline tables
+- add `correct_count`, `score_percent`, and `is_correct` columns idempotently
+- apply the 25-module publication baseline once without overwriting later admin changes
 - call feature schema modules
 - keep schema initialization idempotent
 

@@ -42,7 +42,7 @@ export default function TourPage() {
         <p className="nt-tour__lede">
           No sign-in needed to look around. The guide now mirrors the current UI: the
           pre-test gate, the centered learning-path topbar, the leaf-level sidebar, the
-          green submit state on the final theory step, and the raw-only post-test flow.
+          green submit state on the final theory step, and the server-scored post-test flow.
         </p>
       </header>
 

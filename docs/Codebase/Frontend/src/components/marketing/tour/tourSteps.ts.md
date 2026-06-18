@@ -22,7 +22,7 @@ The current list mirrors the live learner UI:
 2. Centered learning-path header and leaf highlight
 3. Module drill-down from category to lesson leaf
 4. Final theoretical submit state on the green Next arrow
-5. Embedded practical checks and raw-only post-test storage
+5. Embedded practical checks and server-scored post-test storage
 
 ## Flow
 

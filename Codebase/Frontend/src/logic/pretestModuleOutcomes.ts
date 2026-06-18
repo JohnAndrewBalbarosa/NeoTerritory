@@ -129,7 +129,10 @@ export function derivePretestModuleOutcomes(
       if (!question) continue;
 
       const userAnswer = question.type === 'mcq' ? answer.selectedIndex : answer.responseText;
-      if (isAnswerCorrect(question, userAnswer)) {
+      const isCorrect = typeof answer.isCorrect === 'boolean'
+        ? answer.isCorrect
+        : isAnswerCorrect(question, userAnswer);
+      if (isCorrect) {
         const taxonomy = question.taxonomy ?? answer.questionTaxonomy;
         if (taxonomy) masteredLevels.add(taxonomy);
       } else {

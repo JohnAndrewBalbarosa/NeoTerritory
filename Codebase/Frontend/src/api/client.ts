@@ -6,7 +6,7 @@ import {
   RunsPerDayPoint, PatternFreqPoint, ScoreBucket, PerUserPoint, RunsResponse,
   SurveySummary, ComplexityData, F1Metrics,
   LearningModuleDTO, LearningModulesResponse, AdminLearningModule, AdminLearningModulesResponse,
-  LearningAssessmentAnswerInput, LearningAssessmentType, LearningAssessmentsResponse,
+  LearningAssessmentAnswerInput, LearningAssessmentGradeResponse, LearningAssessmentType, LearningAssessmentsResponse,
   AdminFeatureReleasePlan, AdminFeatureReleasePlannerFlag, AdminCoursePlan
 } from '../types/api';
 
@@ -327,9 +327,19 @@ export async function saveLearningAssessment(payload: {
   assessmentType: LearningAssessmentType;
   sessionId?: string | null;
   answers: LearningAssessmentAnswerInput[];
-}): Promise<void> {
-  await apiFetch('/api/learning/assessments', {
+}): Promise<LearningAssessmentGradeResponse> {
+  return apiFetch<LearningAssessmentGradeResponse>('/api/learning/assessments', {
     method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function gradeLearningAssessmentOnServer(payload: {
+  assessmentType: LearningAssessmentType;
+  answers: LearningAssessmentAnswerInput[];
+}): Promise<LearningAssessmentGradeResponse> {
+  return apiFetch<LearningAssessmentGradeResponse>('/api/learning/assessments/grade', {
+    method: 'POST',
     body: JSON.stringify(payload),
   });
 }

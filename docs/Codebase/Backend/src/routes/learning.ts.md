@@ -7,7 +7,7 @@
 
 ### What Happens Here
 
-This router owns the learner-facing learning API. It serves the public module bank, persists signed-in learner progress, records per-question exam answers, records assessment attempts, and returns saved assessment history with the current course freshness timestamp.
+This router owns the learner-facing learning API. It serves the public module bank, persists signed-in learner progress, records per-question exam answers, grades and records assessment attempts, and returns saved assessment history with the current course freshness timestamp.
 
 The route treats SQLite as the source of truth. Supabase mirrors are best-effort copies for durability and reporting; they do not decide whether a learner can enter the course.
 
@@ -50,11 +50,13 @@ flowchart TD
     Start["Submit assessment"]
     N0["Validate type"]
     N1["Sanitize answers"]
-    N2["Insert attempt"]
-    N3["Insert answers"]
-    N4["Mirror best effort"]
+    N2["Check full coverage"]
+    N3["Grade canonical keys"]
+    N4["Insert scored attempt"]
+    N5["Insert scored answers"]
+    N6["Mirror best effort"]
     End["Return attempt id"]
-    Start --> N0 --> N1 --> N2 --> N3 --> N4 --> End
+    Start --> N0 --> N1 --> N2 --> N3 --> N4 --> N5 --> N6 --> End
 ```
 
 ## Progress Write Flow
@@ -77,7 +79,8 @@ flowchart TD
 - `PUT /api/learning/progress` requires auth and upserts sanitized progress for the user and optional session; `bloomMasteryByModule` values are clamped to `0..6`.
 - `PUT /api/learning/answers` requires auth and records module theoretical exam answers plus an append-only exam attempt row.
 - `GET /api/learning/assessments` requires auth and returns `attempts`, `answers`, and `courseUpdatedAt`.
-- `PUT /api/learning/assessments` requires auth and records pre-test, post-test, post-test-2, or practical assessment answers as an append-only attempt.
+- `POST /api/learning/assessments/grade` requires auth and returns an authoritative grade for one adaptive level without persisting it.
+- `PUT /api/learning/assessments` requires auth, validates complete assessment coverage, grades canonical answers, and records the scored attempt.
 
 ## Fresh Pre-Test Semantics
 
@@ -102,6 +105,8 @@ Preview-only AI course plans do not call this router, do not mutate modules, and
 - Public module reads stay non-cacheable so learner content reflects admin changes promptly.
 - Assessment history includes `courseUpdatedAt` alongside attempts and answers.
 - Assessment writes are append-only and preserve old attempts for analytics.
+- Saved attempts include `correctCount` and `scorePercent`; saved answers include backend-derived `isCorrect`.
+- Unanswered questions are persisted with `selectedIndex = -1` and count as incorrect.
 - Progress reads and writes preserve the per-user, per-module Bloom mastery map.
 - Freshness is enforced by comparing attempt creation time to `courseUpdatedAt` and requiring recorded answer rows, not by deleting learner data.
 - Preview-only AI course plan generation cannot reset learners.

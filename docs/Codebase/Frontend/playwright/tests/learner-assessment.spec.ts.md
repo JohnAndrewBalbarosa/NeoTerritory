@@ -2,11 +2,11 @@
 
 ## Sole job
 
-Cover the assessment routes and the practical learner-hub smoke path with deterministic browser checks. The spec verifies three public assessment routes, checks that the rendered question cards include Bloom taxonomy chips, confirms incomplete submission shows the browser-side validation message, and proves the unlocked learning path can reach a practical exam pane.
+Cover the assessment routes and the practical learner-hub smoke path with deterministic browser checks. The spec verifies three public assessment routes, checks the canonical 25-module baseline, confirms Bloom taxonomy chips and question controls render, and proves unanswered submissions receive a server-style `0/25` result.
 
 ## Run Shape
 
-The spec is designed to run against a local frontend server only. It mocks the learning-module and learning-assessment endpoints that would otherwise depend on a backend, then relies on the bundled learning catalog fallback for the question data.
+The spec is designed to run against a local frontend server only. It mocks the learning-module and learning-assessment endpoints and serves the same 25 published modules encoded by the seed baseline.
 
 ## Program Flow
 
@@ -16,8 +16,8 @@ flowchart TD
     N0["Stub learning modules"]
     N1["Render question bank"]
     N2["Read Bloom chips"]
-    N3["Submit with gaps"]
-    N4["Show validation alert"]
+    N3["Submit unanswered"]
+    N4["Show zero score"]
     N5["Seed learner session"]
     N6["Open learning hub"]
     N7["Reach practical pane"]
@@ -46,5 +46,6 @@ Each route should render its own page shell, the question list, and the taxonomy
 - The assessment routes render `data-testid="pretest-page"`, `posttest-page`, and `posttest2-page`.
 - The question list is visible on each route.
 - Every rendered taxonomy chip carries a valid Bloom taxonomy value.
-- Clicking submit with unanswered questions shows `Answer every question before submitting.`
+- Every assessment category renders exactly 25 taxonomy-tagged questions.
+- Clicking submit with unanswered questions shows `0/25`.
 - The unlocked learner hub can open a practical exam section and show the practical target block.

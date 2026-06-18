@@ -50,6 +50,7 @@ function seedAdminAccount(): void {
 // re-serialized verbatim, so practicalExam.passMode rides along unchanged.
 interface LearningModuleSeedRow {
   moduleId: string;
+  published?: boolean;
   category: string;
   title: string;
   eyebrow?: string;
@@ -61,6 +62,12 @@ interface LearningModuleSeedRow {
   theoreticalExam?: unknown;
   practicalExam?: unknown;
   sortOrder?: number;
+}
+
+const LEARNING_PUBLICATION_BASELINE_KEY = 'learning_publication_baseline_v1';
+
+function seedPublishedValue(row: LearningModuleSeedRow): number {
+  return row.published === true || row.category === 'foundations' ? 1 : 0;
 }
 
 // Resolve the seed JSON across dev (tsx/ts-node from src/) and prod (compiled
@@ -146,7 +153,7 @@ export function seedLearningModulesIfEmpty(database: Database): void {
           see_also_json: JSON.stringify(r.seeAlso ?? []),
           theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
           practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
-          published: r.category === 'foundations' ? 1 : 0,
+          published: seedPublishedValue(r),
           sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         });
       }
@@ -170,7 +177,7 @@ export function seedLearningModulesIfEmpty(database: Database): void {
         see_also_json: r.seeAlso ?? [],
         theoretical_json: r.theoreticalExam ?? null,
         practical_json: r.practicalExam ?? null,
-        published: r.category === 'foundations' ? 1 : 0,
+        published: seedPublishedValue(r),
         auto_tag: 1,
         sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         is_seed: 1,
@@ -278,7 +285,7 @@ export function ensureSeedLearningModules(database: Database): void {
           see_also_json: JSON.stringify(r.seeAlso ?? []),
           theoretical_json: r.theoreticalExam ? JSON.stringify(r.theoreticalExam) : null,
           practical_json: r.practicalExam ? JSON.stringify(r.practicalExam) : null,
-          published: r.category === 'foundations' ? 1 : 0,
+          published: seedPublishedValue(r),
           sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         });
       }
@@ -301,7 +308,7 @@ export function ensureSeedLearningModules(database: Database): void {
         see_also_json: r.seeAlso ?? [],
         theoretical_json: r.theoreticalExam ?? null,
         practical_json: r.practicalExam ?? null,
-        published: r.category === 'foundations' ? 1 : 0,
+        published: seedPublishedValue(r),
         auto_tag: 1,
         sort_order: typeof r.sortOrder === 'number' ? r.sortOrder : 0,
         is_seed: 1,
@@ -319,6 +326,64 @@ export function ensureSeedLearningModules(database: Database): void {
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn('[initDb] ensureSeedLearningModules skipped:', err);
+  }
+}
+
+// One-time publication migration for databases created before the deployed
+// 25-module learner baseline was encoded in the seed. The version marker keeps
+// later admin publish/unpublish edits durable across restarts.
+export function ensureLearningPublicationBaseline(database: Database): void {
+  try {
+    database.prepare(`
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      )
+    `).run();
+
+    const applied = database
+      .prepare(`SELECT value FROM app_settings WHERE key = ?`)
+      .get(LEARNING_PUBLICATION_BASELINE_KEY) as { value: string } | undefined;
+    if (applied?.value === '1') return;
+
+    const rows = readLearningSeedRows();
+    if (!rows || rows.length === 0) return;
+
+    const update = database.prepare(`
+      UPDATE learning_modules
+      SET published = @published,
+          updated_at = datetime('now')
+      WHERE module_id = @module_id AND is_seed = 1
+    `);
+    const markApplied = database.prepare(`
+      INSERT INTO app_settings(key, value, updated_at)
+      VALUES (@key, '1', datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = '1', updated_at = datetime('now')
+    `);
+    const updateCourseVersion = database.prepare(`
+      INSERT INTO app_settings(key, value, updated_at)
+      VALUES ('course_updated_at', @value, datetime('now'))
+      ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')
+    `);
+
+    const nowIso = new Date().toISOString();
+    database.transaction((seedRows: LearningModuleSeedRow[]) => {
+      for (const row of seedRows) {
+        update.run({
+          module_id: row.moduleId,
+          published: seedPublishedValue(row),
+        });
+      }
+      markApplied.run({ key: LEARNING_PUBLICATION_BASELINE_KEY });
+      updateCourseVersion.run({ value: nowIso });
+    })(rows);
+
+    // eslint-disable-next-line no-console
+    console.log('[initDb] synchronized the 25-module learner publication baseline');
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn('[initDb] ensureLearningPublicationBaseline skipped:', err);
   }
 }
 
@@ -605,16 +670,16 @@ export function initDb(): void {
   // GET ordering + the publish gate. SQLite is the source of truth; rows are
   // mirrored to Supabase (jsonb cols) via mirrorRow() keyed by module_id.
   // â”€â”€ learning_assessment_attempts (raw pre/post-test submissions) â”€â”€
-  // Raw-only store: the backend keeps the assessment type, session, and
-  // question count, but never the derived score/pass state. Interpretation
-  // stays in the client so the same raw submission can be re-scored later if
-  // the module bank changes.
+  // Server-scored store: attempts keep the authoritative totals while answer
+  // rows preserve both the raw response and the canonical correctness verdict.
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_assessment_attempts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     session_id TEXT,
     assessment_type TEXT NOT NULL,
     question_count INTEGER NOT NULL,
+    correct_count INTEGER NOT NULL DEFAULT 0,
+    score_percent INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
@@ -635,6 +700,7 @@ export function initDb(): void {
     response_text TEXT,
     question_taxonomy TEXT,
     question_kind TEXT NOT NULL DEFAULT 'theoretical',
+    is_correct INTEGER NOT NULL DEFAULT 0,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY(attempt_id) REFERENCES learning_assessment_attempts(id) ON DELETE CASCADE,
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -653,6 +719,21 @@ export function initDb(): void {
   }
   try {
     db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN question_kind TEXT NOT NULL DEFAULT 'theoretical'`).run();
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN is_correct INTEGER NOT NULL DEFAULT 0`).run();
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_attempts ADD COLUMN correct_count INTEGER NOT NULL DEFAULT 0`).run();
+  } catch {
+    /* column already exists */
+  }
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_attempts ADD COLUMN score_percent INTEGER NOT NULL DEFAULT 0`).run();
   } catch {
     /* column already exists */
   }
@@ -687,6 +768,7 @@ export function initDb(): void {
   // Additively insert any NEW seed module missing from an already-seeded DB
   // (e.g. D92 Track E). Never overwrites existing rows — insert-missing only.
   ensureSeedLearningModules(db);
+  ensureLearningPublicationBaseline(db);
 
   // ── Original-devs email reconciliation ─────────────────────────────────
   // If Andrew (or any future original-dev) signed in BEFORE their email

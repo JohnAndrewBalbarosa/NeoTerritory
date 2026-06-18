@@ -1,6 +1,7 @@
 [
   {
     "moduleId": "foundations-what-is-pattern",
+    "published": true,
     "category": "foundations",
     "title": "What is a design pattern?",
     "eyebrow": "Foundations · Module 1",
@@ -126,6 +127,7 @@
   },
   {
     "moduleId": "foundations-why-matters",
+    "published": true,
     "category": "foundations",
     "title": "Why design patterns matter",
     "eyebrow": "Foundations · Module 2",
@@ -240,6 +242,7 @@
   },
   {
     "moduleId": "foundations-categories",
+    "published": true,
     "category": "foundations",
     "title": "Three main pattern categories",
     "eyebrow": "Foundations · Module 3",
@@ -373,6 +376,7 @@
   },
   {
     "moduleId": "foundations-oop",
+    "published": true,
     "category": "foundations",
     "title": "OOP foundations",
     "eyebrow": "Foundations · Module 4",
@@ -504,6 +508,7 @@
   },
   {
     "moduleId": "foundations-interface-principle",
+    "published": true,
     "category": "foundations",
     "title": "Program to an interface",
     "eyebrow": "Foundations · Module 5",
@@ -611,6 +616,7 @@
   },
   {
     "moduleId": "foundations-code-structure",
+    "published": true,
     "category": "foundations",
     "title": "Understanding software structure",
     "eyebrow": "Foundations · Module 6",
@@ -724,6 +730,7 @@
   },
   {
     "moduleId": "foundations-real-software",
+    "published": true,
     "category": "foundations",
     "title": "Design patterns in real software",
     "eyebrow": "Foundations · Module 7",
@@ -837,6 +844,7 @@
   },
   {
     "moduleId": "foundations-beginner-mistakes",
+    "published": true,
     "category": "foundations",
     "title": "Common beginner mistakes",
     "eyebrow": "Foundations · Module 8",
@@ -945,6 +953,7 @@
   },
   {
     "moduleId": "foundations-ambiguity",
+    "published": true,
     "category": "foundations",
     "title": "Ambiguity is built in to design patterns",
     "eyebrow": "Foundations · Module 9",
@@ -1061,6 +1070,7 @@
   },
   {
     "moduleId": "foundations-connotative-definition",
+    "published": true,
     "category": "foundations",
     "title": "The connotative-definition rule",
     "eyebrow": "Foundations · Module 10",
@@ -1173,6 +1183,7 @@
   },
   {
     "moduleId": "foundations-same-structure",
+    "published": true,
     "category": "foundations",
     "title": "When two patterns look identical",
     "eyebrow": "Foundations · Module 11",
@@ -1348,6 +1359,7 @@
   },
   {
     "moduleId": "foundations-structural-rules",
+    "published": true,
     "category": "foundations",
     "title": "Each pattern has a structural rule",
     "eyebrow": "Foundations · Module 12",
@@ -1453,6 +1465,7 @@
   },
   {
     "moduleId": "foundations-context-variation",
+    "published": true,
     "category": "foundations",
     "title": "Patterns vary by team and codebase",
     "eyebrow": "Foundations · Module 13",
@@ -1561,6 +1574,7 @@
   },
   {
     "moduleId": "foundations-postrequisite",
+    "published": true,
     "category": "foundations",
     "title": "Post-Foundations open questions",
     "eyebrow": "Foundations · Module 14",
@@ -1670,6 +1684,7 @@
   },
   {
     "moduleId": "creational-singleton",
+    "published": true,
     "category": "creational",
     "title": "Singleton",
     "eyebrow": "Creational · Singleton",
@@ -1804,6 +1819,7 @@
   },
   {
     "moduleId": "creational-factory-method",
+    "published": true,
     "category": "creational",
     "title": "Factory Method",
     "eyebrow": "Creational · Factory Method",
@@ -1938,6 +1954,7 @@
   },
   {
     "moduleId": "creational-builder",
+    "published": false,
     "category": "creational",
     "title": "Builder",
     "eyebrow": "Creational · Builder",
@@ -2069,6 +2086,7 @@
   },
   {
     "moduleId": "creational-method-chaining",
+    "published": false,
     "category": "creational",
     "title": "Method Chaining",
     "eyebrow": "Creational · Method Chaining",
@@ -2199,6 +2217,7 @@
   },
   {
     "moduleId": "structural-adapter",
+    "published": true,
     "category": "structural",
     "title": "Adapter",
     "eyebrow": "Structural · Adapter",
@@ -2330,6 +2349,7 @@
   },
   {
     "moduleId": "structural-proxy",
+    "published": true,
     "category": "structural",
     "title": "Proxy",
     "eyebrow": "Structural · Proxy",
@@ -2464,6 +2484,7 @@
   },
   {
     "moduleId": "structural-decorator",
+    "published": false,
     "category": "structural",
     "title": "Decorator",
     "eyebrow": "Structural · Decorator",
@@ -2597,6 +2618,7 @@
   },
   {
     "moduleId": "behavioural-strategy",
+    "published": true,
     "category": "behavioural",
     "title": "Strategy",
     "eyebrow": "Behavioural · Strategy",
@@ -2730,6 +2752,7 @@
   },
   {
     "moduleId": "behavioural-observer",
+    "published": false,
     "category": "behavioural",
     "title": "Observer",
     "eyebrow": "Behavioural · Observer",
@@ -2854,6 +2877,7 @@
   },
   {
     "moduleId": "behavioural-iterator",
+    "published": true,
     "category": "behavioural",
     "title": "Iterator",
     "eyebrow": "Behavioural · Iterator",
@@ -2980,6 +3004,7 @@
   },
   {
     "moduleId": "behavioural-command",
+    "published": true,
     "category": "behavioural",
     "title": "Command",
     "eyebrow": "Behavioural · Command",
@@ -3106,6 +3131,7 @@
   },
   {
     "moduleId": "structural-composite",
+    "published": false,
     "category": "structural",
     "title": "Composite",
     "eyebrow": "Structural · Composite",
@@ -3229,6 +3255,7 @@
   },
   {
     "moduleId": "behavioural-template-method",
+    "published": false,
     "category": "behavioural",
     "title": "Template Method",
     "eyebrow": "Behavioural · Template Method",
@@ -3352,6 +3379,7 @@
   },
   {
     "moduleId": "behavioural-state",
+    "published": false,
     "category": "behavioural",
     "title": "State",
     "eyebrow": "Behavioural · State",
@@ -3478,6 +3506,7 @@
   },
   {
     "moduleId": "structural-repository",
+    "published": true,
     "category": "structural",
     "title": "Repository",
     "eyebrow": "Structural · Repository",
@@ -3602,6 +3631,7 @@
   },
   {
     "moduleId": "idioms-pimpl",
+    "published": false,
     "category": "idioms",
     "title": "PIMPL (Pointer to Implementation)",
     "eyebrow": "Idioms · PIMPL (Pointer to Implementation)",
@@ -3716,6 +3746,7 @@
   },
   {
     "moduleId": "creational-prototype",
+    "published": false,
     "category": "creational",
     "title": "Prototype",
     "eyebrow": "Creational · Prototype",
@@ -3827,6 +3858,7 @@
   },
   {
     "moduleId": "creational-abstract-factory",
+    "published": true,
     "category": "creational",
     "title": "Abstract Factory",
     "eyebrow": "Creational · Abstract Factory",
@@ -3941,6 +3973,7 @@
   },
   {
     "moduleId": "structural-bridge",
+    "published": false,
     "category": "structural",
     "title": "Bridge",
     "eyebrow": "Structural · Bridge",
@@ -4052,6 +4085,7 @@
   },
   {
     "moduleId": "structural-facade",
+    "published": true,
     "category": "structural",
     "title": "Facade",
     "eyebrow": "Structural · Facade",
@@ -4166,6 +4200,7 @@
   },
   {
     "moduleId": "structural-flyweight",
+    "published": true,
     "category": "structural",
     "title": "Flyweight",
     "eyebrow": "Structural · Flyweight",
@@ -4280,6 +4315,7 @@
   },
   {
     "moduleId": "behavioural-chain-of-responsibility",
+    "published": false,
     "category": "behavioural",
     "title": "Chain of Responsibility",
     "eyebrow": "Behavioural · Chain of Responsibility",
@@ -4394,6 +4430,7 @@
   },
   {
     "moduleId": "behavioural-mediator",
+    "published": false,
     "category": "behavioural",
     "title": "Mediator",
     "eyebrow": "Behavioural · Mediator",
@@ -4508,6 +4545,7 @@
   },
   {
     "moduleId": "behavioural-visitor",
+    "published": false,
     "category": "behavioural",
     "title": "Visitor",
     "eyebrow": "Behavioural · Visitor",
@@ -4622,6 +4660,7 @@
   },
   {
     "moduleId": "behavioural-interpreter",
+    "published": false,
     "category": "behavioural",
     "title": "Interpreter",
     "eyebrow": "Behavioural · Interpreter",
@@ -4733,6 +4772,7 @@
   },
   {
     "moduleId": "behavioural-memento",
+    "published": false,
     "category": "behavioural",
     "title": "Memento",
     "eyebrow": "Behavioural · Memento",
