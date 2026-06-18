@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import {
   register, login, claimSeat, heartbeat, disconnect, startTesterSeatSweep,
-  registerGuest, refreshGuestToken
+  registerGuest, refreshGuestToken, provisionLocalTestIntern
 } from '../controllers/authController';
 import { validateBody } from '../middleware/validateBody';
 import { loginSchema, claimSeatSchema } from '../validation/schemas';
@@ -20,6 +20,7 @@ router.post('/register', register);
 router.post('/login', validateBody(loginSchema), login);
 router.post('/guest', registerGuest);
 router.post('/guest/refresh', jwtAuth, refreshGuestToken);
+router.post('/test-intern', provisionLocalTestIntern);
 // TEST SEED — REMOVE FOR PRODUCTION
 router.post('/claim', validateBody(claimSeatSchema), claimSeat);
 

@@ -41,6 +41,7 @@ These documents explain the local implementation by covering reusable analysis, 
 - readinessEvidenceService.js.md : Packages code runs, answers, scores, and raw results for project-manager review.
 - learningModuleCatalog.ts.md : Owns the canonical module catalog, authored Bloom tags, and separate theoretical/practical banks.
 - learningAssessmentGrader.ts.md : Grades learner assessments from canonical database questions and rejects incomplete saved attempts.
+- localDevelopmentAccess.ts.md : Keeps the local Test Intern endpoint enabled outside production and disabled in production.
 
 ## Reading Hint
 - Read `classDeclarationAnalysisService.js.md` before `aiDocumentationService.ts.md`; AI documentation depends on the target list produced by analysis.

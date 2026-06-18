@@ -2,8 +2,14 @@ import { useState } from 'react';
 import { navigate } from '../../logic/router';
 import GoogleSignInButton from './GoogleSignInButton';
 import { useAppStore } from '../../store/appState';
-import { resolveLearnerLanding } from '../../logic/learnerRouting';
-import { fetchTesterAccounts, claimSeat, fetchRuns, fetchSample } from '../../api/client';
+import { isLearnerPath, resolveLearnerLanding } from '../../logic/learnerRouting';
+import {
+  fetchTesterAccounts,
+  claimSeat,
+  fetchRuns,
+  fetchSample,
+  provisionLocalTestIntern,
+} from '../../api/client';
 import type { User } from '../../types/api';
 
 // Sign-in page. After the learner-merge, the former 'developer' and 'student'
@@ -27,9 +33,18 @@ function resolveRole(pathname: string): Role {
   return 'learner';
 }
 
-function resolveNext(role: Role): string {
+function resolveNext(role: Role, requestedNext: string | null): string {
   const preTestCompleted = useAppStore.getState().preTestCompleted;
-  if (role === 'learner') return resolveLearnerLanding(preTestCompleted);
+  if (role === 'learner') {
+    if (
+      requestedNext === '/pre-test' ||
+      requestedNext?.startsWith('/pre-test?') ||
+      (requestedNext && isLearnerPath(requestedNext))
+    ) {
+      return requestedNext;
+    }
+    return resolveLearnerLanding(preTestCompleted);
+  }
   if (role === 'admin' || role === 'pm') {
     const key = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_ADMIN_GATE_KEY;
     return key ? `/admin?key=${encodeURIComponent(key)}` : '/admin';
@@ -70,7 +85,12 @@ function resolveTestId(pathname: string): string {
 // session) so /api/analyze works inside the practicals, then drop the learner
 // into the learning path. Guest sessions are not persisted (the learning page
 // skips progress save/fetch for devcon usernames).
-function GuestOnlyButton(): JSX.Element {
+function isLocalDevelopmentHost(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+}
+
+function GuestOnlyButton({ next }: { next: string }): JSX.Element {
   const setAuth = useAppStore((s) => s.setAuth);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -80,6 +100,13 @@ function GuestOnlyButton(): JSX.Element {
     setBusy(true);
     setError('');
     try {
+      if (isLocalDevelopmentHost()) {
+        const { token, user } = await provisionLocalTestIntern();
+        setAuth(token, user);
+        navigate(next);
+        return;
+      }
+
       const data = await fetchTesterAccounts();
       const open = data.accounts.find((a) => !a.claimed);
       if (!open) {
@@ -106,7 +133,11 @@ function GuestOnlyButton(): JSX.Element {
         disabled={busy}
         data-testid="use-guest-only"
       >
-        {busy ? 'Starting guest session…' : 'Use guest only (no saved progress)'}
+        {busy
+          ? 'Starting learner session…'
+          : isLocalDevelopmentHost()
+            ? 'Continue as Test Intern'
+            : 'Use guest only (no saved progress)'}
       </button>
       {error && <p className="login-error">{error}</p>}
     </div>
@@ -117,7 +148,7 @@ export default function GoogleSignInPage() {
   const pathname = window.location.pathname;
   const role = resolveRole(pathname);
   const url = new URL(window.location.href);
-  const next = resolveNext(role);
+  const next = resolveNext(role, url.searchParams.get('next'));
   const eyebrow = resolveEyebrow(role);
   const lede = resolveLede(role);
   const testId = resolveTestId(pathname);
@@ -146,7 +177,7 @@ export default function GoogleSignInPage() {
 
           <div className="nt-signin-action">
             <GoogleSignInButton role={role} intent={intent} redirectAfter={next} />
-            {role === 'learner' && <GuestOnlyButton />}
+            {role === 'learner' && <GuestOnlyButton next={next} />}
           </div>
 
           <footer className="nt-signin-foot">

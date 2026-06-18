@@ -4,7 +4,7 @@
 - Descendant source docs: 0
 
 ## Logic Summary
-Browser auth surfaces for learner, admin, PM, and first-time onboarding flows. This folder owns the visible sign-in card, the guest-seat entry, the Google OAuth launch button, the callback landing, and the onboarding handoff after a successful exchange.
+Browser auth surfaces for learner, admin, PM, and first-time onboarding flows. This folder owns the visible sign-in card, the local Test Intern entry, the guest-seat entry, the Google OAuth launch button, the callback landing, and the onboarding handoff after a successful exchange.
 
 ## Ownership Boundary
 This folder owns presentation and routing decisions only. It must not own seat allocation, Google token verification, or database writes. Those belong to the backend auth routes and controllers.
@@ -20,10 +20,10 @@ Read the pages in this order when tracing a local sign-in problem:
 ```mermaid
 flowchart TD
     Start["Open auth surface"]
-    N0["Show guest seat or Google action"]
+    N0["Show local or Google action"]
     N1["Check /auth/google/status"]
     D1{"Google configured?"}
-    N2["Use guest seat path"]
+    N2["Use local Test Intern"]
     N3["Launch OAuth redirect"]
     N4["Exchange callback token"]
     N5["Route to learner or admin"]
@@ -40,7 +40,7 @@ flowchart TD
 ```
 
 ## Local Dev Warning
-If the browser says there are no guest seats, or the Google button disappears, the first thing to verify is the local backend proxy path. The UI can only see the seat data and Google status if `/auth/*` reaches the live backend process.
+On `localhost` and `127.0.0.1`, learner sign-in shows `Continue as Test Intern`. This path does not consume a shared Devcon seat and does not require Supabase. It provisions one stable local learner account so pre-test and learning progress survive refreshes.
 
 ## Deployment Warning
 `/auth/callback` is not a backend API route. Supabase returns the OAuth token in the browser
@@ -50,9 +50,13 @@ should proxy to Express.
 
 ## Implementation Note
 - Guest seats are real rows in SQLite; the button should only read them through `/auth/test-accounts`.
+- Local Test Intern access calls `/auth/test-intern` only on loopback frontend hosts.
 - Google sign-in should stay hidden when `/auth/google/status` is unavailable or unconfigured, but the route itself must not fail because the frontend cannot reach the backend.
 
 ## Acceptance Checks
 - Learner sign-in shows guest seats when the backend is reachable.
+- Local learner sign-in works when Google is unavailable and every shared seat is claimed.
+- The local Test Intern session routes into the Learner Path gate and then the pre-test.
+- Reloading preserves the local Test Intern JWT and learner identity.
 - The Google button appears only when the backend reports Google auth configured.
 - Callback navigation lands on the learner path after token exchange.

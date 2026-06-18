@@ -242,6 +242,48 @@ test.describe('learner assessment routes', () => {
   });
 });
 
+test.describe('local learner access', () => {
+  test('Continue as Test Intern enters the pre-test without Google or guest seats', async ({ page }) => {
+    await installAssessmentMocks(page, true);
+    await page.route('**/auth/google/status', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          configured: false,
+          supabaseUrl: null,
+          anonKeyConfigured: false,
+        }),
+      });
+    });
+    await page.route('**/auth/test-intern', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          token: 'local-test-intern-token',
+          user: {
+            id: 5101,
+            username: 'local_test_intern',
+            email: 'local-test-intern@codineo.local',
+            role: 'user',
+            accessType: 'tester',
+          },
+        }),
+      });
+    });
+
+    await page.goto('/student-learning/login', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByRole('button', { name: 'Continue as Test Intern' })).toBeVisible();
+    await page.getByRole('button', { name: 'Continue as Test Intern' }).click();
+
+    await expect(page).toHaveURL(/\/pre-test\?next=/);
+    await expect(page.getByTestId('pretest-page')).toBeVisible();
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('pretest-page')).toBeVisible();
+  });
+});
+
 test.describe('learner hub smoke', () => {
   test('fresh pre-test history opens the personalized learning path', async ({ page }) => {
     await seedLearnerSession(page);

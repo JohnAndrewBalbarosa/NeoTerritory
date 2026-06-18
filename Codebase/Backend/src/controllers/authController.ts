@@ -7,8 +7,19 @@ import { mirrorRow } from '../services/supabaseLogger';
 import { ensurePod, isPodModeEnabled, podWarmupDecision, shouldWarmupPods } from '../services/podManager';
 import { revokeToken } from '../middleware/tokenRevocation';
 import type { UserRow } from '../types/db';
+import { isLocalTestInternEnabled } from '../services/localDevelopmentAccess';
 
 const DEVCON_USERNAME_RE = /^devcon\d+$/i;
+const LOCAL_TEST_INTERN_USERNAME = 'local_test_intern';
+const LOCAL_TEST_INTERN_EMAIL = 'local-test-intern@codineo.local';
+
+function signUserToken(user: Pick<UserRow, 'id' | 'username' | 'email' | 'role'>): string {
+  return jwt.sign(
+    { id: user.id, username: user.username, email: user.email, role: user.role },
+    process.env.JWT_SECRET as string,
+    { expiresIn: '30d' },
+  );
+}
 
 // Idempotent migration: tester seats need a claimed_at column. Runs once at
 // module load. If db/initDb.ts already adds the column, this is a no-op.
@@ -122,6 +133,50 @@ export const registerGuest = async (req: Request, res: Response, next: NextFunct
       ok: true,
       token,
       user: { id: newUserId, username, email, role }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const provisionLocalTestIntern = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  if (!isLocalTestInternEnabled()) {
+    res.status(404).json({ error: 'Local test intern access is unavailable' });
+    return;
+  }
+
+  try {
+    let user = db
+      .prepare('SELECT * FROM users WHERE username = ?')
+      .get(LOCAL_TEST_INTERN_USERNAME) as UserRow | undefined;
+
+    if (!user) {
+      const passwordHash = await bcrypt.hash(Math.random().toString(36), 10);
+      const info = db.prepare(
+        `INSERT INTO users (username, email, password_hash, role, created_via, created_at)
+         VALUES (?, ?, ?, 'user', 'local_test', datetime('now'))`,
+      ).run(LOCAL_TEST_INTERN_USERNAME, LOCAL_TEST_INTERN_EMAIL, passwordHash);
+      user = db
+        .prepare('SELECT * FROM users WHERE id = ?')
+        .get(Number(info.lastInsertRowid)) as UserRow;
+    }
+
+    const token = signUserToken(user);
+    logEvent(user.id, 'login_local_test_intern', 'Local Test Intern session started');
+    res.json({
+      ok: true,
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        accessType: 'tester',
+      },
     });
   } catch (err) {
     next(err);

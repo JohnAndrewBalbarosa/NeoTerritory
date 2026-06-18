@@ -8,6 +8,8 @@
 
 This controller implements the authentication story of the backend. It receives registration or login payloads, validates the required fields, queries the database, hashes or compares credentials, records audit logs, and returns either a JWT or an error response.
 
+For local development it also provisions a stable `local_test_intern` learner. That account uses normal learner progress tables and a persisted 30-day JWT, but the endpoint is unavailable when `NODE_ENV=production`.
+
 ### Why It Matters In The Flow
 
 Runs after routing and middleware resolution to perform request-specific backend work.

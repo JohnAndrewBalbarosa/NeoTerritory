@@ -4,6 +4,8 @@
 
 Cover the assessment routes and personalized learner-hub smoke path with deterministic browser checks. The spec verifies three assessment routes, checks the canonical 25-module baseline, and exercises the complete six-level pre-test through its final Learner Path redirect.
 
+It also verifies localhost learner access without Google or an available shared guest seat.
+
 ## Run Shape
 
 The spec is designed to run against a local frontend server only. It mocks the learning-module and learning-assessment endpoints and serves the same 25 published modules encoded by the seed baseline.
@@ -52,4 +54,5 @@ Each route should render its own page shell, the question list, and the taxonomy
 - The six Bloom levels cannot be skipped and each shows its own mocked score.
 - The complete pre-test persists 150 answers and renders six summary rows.
 - Continue after the summary opens `/patterns/learn`.
+- `Continue as Test Intern` creates a local learner session, reaches `/pre-test`, and survives reload.
 - Fresh saved pre-test history opens the personalized Learner Path and its module sidebar.

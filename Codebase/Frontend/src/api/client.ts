@@ -1078,6 +1078,16 @@ export async function provisionGuest(): Promise<{ token: string; user: User }> {
   return { token: data.token!, user: data.user! };
 }
 
+export async function provisionLocalTestIntern(): Promise<{ token: string; user: User }> {
+  const response = await fetch('/auth/test-intern', {
+    method: 'POST',
+    headers: { Accept: 'application/json' },
+  });
+  const data = await response.json().catch(() => ({})) as { token?: string; user?: User; error?: string };
+  if (!response.ok) throw new Error(data.error || `Test intern access failed (${response.status})`);
+  return { token: data.token!, user: data.user! };
+}
+
 export async function refreshGuest(): Promise<{ token: string; user: User }> {
   return apiFetch<{ token: string; user: User }>('/auth/guest/refresh', {
     method: 'POST',

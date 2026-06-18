@@ -27,6 +27,7 @@ These documents explain the two service-level verification surfaces.
 - coursePlannerService.test.ts.md : Pins the admin planner API surface with a mocked provider and a diverse heuristic fallback plan.
 - projectLearningOrchestration.test.ts.md : Pins the project orchestration API surface across brief intake, implicit-deny toggles, and assessment gating.
 - learningAssessmentGrader.test.ts.md : Pins server-authoritative correct, wrong, mixed, unanswered, and incomplete assessment behavior.
+- localDevelopmentAccess.test.ts.md : Pins the development/test allow rule and production deny rule for Test Intern access.
 
 ## Reading Hint
 - Read `coursePlannerService.test.ts.md` first if you want the admin planner surface.
