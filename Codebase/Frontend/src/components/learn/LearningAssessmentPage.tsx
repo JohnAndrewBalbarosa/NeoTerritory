@@ -57,7 +57,6 @@ function LearningAssessmentContent({
     eliminateModules,
     initializeActiveModules,
     getTaxonomyForLevel,
-    getLevelForTaxonomy,
   } = useAdaptiveAssessment();
 
   const allQuestions = useMemo(
@@ -126,42 +125,9 @@ function LearningAssessmentContent({
     }
     return Array.from(ids);
   }, [assessmentType, eliminatedModuleIds, failedInThisLevelIds, levelSubmitted]);
-  const currentLevelQuestionCount = questions.length;
-  const activeModuleCount = assessmentType === 'pretest' ? activeModuleIds.size : 0;
-
   const answeredCount = questions.filter((q) => hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex])).length;
   const allAnswered = questions.length > 0 && answeredCount === questions.length;
   const hasPendingStudio = questions.some(q => isStudioQuestion(q.question) && !hasLearningAssessmentAnswer(q.question, answers[q.assessmentIndex]));
-  const levelProgress = useMemo(() => {
-    if (assessmentType !== 'pretest') return [];
-    return allQuestions.reduce<Array<{
-      level: number;
-      taxonomy: ReturnType<typeof getTaxonomyForLevel>;
-      total: number;
-      answered: number;
-      active: boolean;
-    }>>((acc, question) => {
-      const level = getLevelForTaxonomy(question.taxonomy);
-      let entry = acc.find((item) => item.level === level);
-      if (!entry) {
-        entry = {
-          level,
-          taxonomy: question.taxonomy,
-          total: 0,
-          answered: 0,
-          active: level === currentLevel,
-        };
-        acc.push(entry);
-      }
-      if (activeModuleIds.has(question.moduleId) || hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])) {
-        entry.total += 1;
-      }
-      if (hasLearningAssessmentAnswer(question.question, answers[question.assessmentIndex])) {
-        entry.answered += 1;
-      }
-      return acc;
-    }, []).sort((a, b) => a.level - b.level);
-  }, [activeModuleIds, allQuestions, answers, assessmentType, currentLevel, getLevelForTaxonomy]);
 
   const handleSubmitLevel = async (): Promise<void> => {
     if (!allAnswered) {
@@ -316,51 +282,18 @@ function LearningAssessmentContent({
         <section className="nt-test-page__panel">
           <div className="nt-test-page__panel-head">
             <span className="nt-test-page__panel-kicker">
-              {assessmentType === 'pretest'
-                ? `Level ${currentLevel}: ${currentTaxonomy} (${answeredCount}/${currentLevelQuestionCount} answered, ${activeModuleCount} still active, ${learningListModuleIds.length} to learn)`
-                : `${answeredCount}/${questions.length} answered`}
+              {answeredCount} of {questions.length} answered
             </span>
-            <h2 className="nt-test-page__panel-title">Adaptive Bloom's Assessment</h2>
+            <h2 className="nt-test-page__panel-title">Assessment Questions</h2>
           </div>
 
           <section className="nt-assessment" data-phase={assessmentType === 'pretest' ? 'pre' : 'post'}>
-            {assessmentType === 'pretest' && activeModuleCount > 0 && currentLevelQuestionCount !== activeModuleCount ? (
-              <p className="nt-assessment__hint">
-                This Bloom level has {currentLevelQuestionCount} question{currentLevelQuestionCount === 1 ? '' : 's'} for {activeModuleCount} still-active module{activeModuleCount === 1 ? '' : 's'}.
-                Modules without a {currentTaxonomy} question stay in the pool for the next level.
-              </p>
-            ) : null}
-
-            {assessmentType === 'pretest' ? (
-              <div className="nt-assessment__stepper" aria-label="Bloom assessment progress">
-                {levelProgress.map((level) => (
-                  <div
-                    key={level.level}
-                    className="nt-assessment__step"
-                    data-active={level.active}
-                    data-complete={level.answered > 0 && level.answered === level.total}
-                    data-empty={level.total === 0}
-                  >
-                    <span className="nt-assessment__step-num">{level.level}</span>
-                    <span className="nt-assessment__step-label">{level.taxonomy}</span>
-                    <span className="nt-assessment__step-count">{level.answered}/{level.total}</span>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-
             <ol className="nt-assessment__items">
               {questions.map((item) => {
                 const selected = answers[item.assessmentIndex];
                 const showResult = levelSubmitted;
                 return (
                   <li key={`${item.moduleId}#${item.questionIndex}`}>
-                    <p className="nt-assessment__module">
-                      <span className="nt-assessment__band">{item.moduleEyebrow}</span> {item.moduleTitle}
-                      <span className="nt-assessment__taxonomy" data-taxonomy={item.taxonomy}>
-                        {item.taxonomy}
-                      </span>
-                    </p>
                     <BloomQuestionRenderer
                       question={item.question}
                       userAnswer={selected}
@@ -378,14 +311,14 @@ function LearningAssessmentContent({
             {levelSubmitted ? (
               <div className="nt-assessment__result" role="status" aria-live="polite">
                 <p className="nt-assessment__score">
-                  {assessmentType === 'pretest' ? `Level ${currentLevel}` : 'Assessment'} score:{' '}
+                  Assessment score:{' '}
                   <strong>{graded.correctCount}/{graded.totalCount}</strong>
                 </p>
                 {assessmentType === 'pretest' ? (
                   <>
                     {advancingModuleIds.length > 0 && (
                       <p className="nt-assessment__gain">
-                        Modules advancing to Level {currentLevel + 1}:{' '}
+                        Modules you answered correctly:{' '}
                         <strong>
                           {advancingModuleIds
                             .map((id) => modules.find((m) => m.id === id)?.title)
@@ -447,7 +380,7 @@ function LearningAssessmentContent({
                 >
                   {status === 'completed' || currentLevel === 6 || (assessmentType === 'pretest' && activeModuleIds.size === 0)
                     ? meta.continueLabel
-                    : 'Continue to Next Level'}
+                    : 'Continue'}
                 </button>
               )}
             </div>

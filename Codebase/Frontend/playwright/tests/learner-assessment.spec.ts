@@ -1,14 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
 
-const BLOOM_TAXONOMIES = new Set([
-  'remembering',
-  'understanding',
-  'applying',
-  'analyzing',
-  'evaluating',
-  'creating',
-]);
-
 const ASSESSMENT_ROUTES = [
   {
     path: '/pre-test',
@@ -78,7 +69,7 @@ async function seedLearnerSession(page: Page): Promise<void> {
 
 test.describe('learner assessment routes', () => {
   for (const row of ASSESSMENT_ROUTES) {
-    test(`${row.path} renders Bloom-tagged MCQ content`, async ({ page }) => {
+    test(`${row.path} renders MCQ content`, async ({ page }) => {
       await installAssessmentMocks(page);
 
       const response = await page.goto(row.path, { waitUntil: 'domcontentloaded' });
@@ -90,14 +81,9 @@ test.describe('learner assessment routes', () => {
       await expect(page.locator('.nt-assessment__items > li').first()).toBeVisible({ timeout: 10_000 });
       await expect(page.locator('.nt-assessment__choices input[type="radio"]').first()).toBeVisible({ timeout: 10_000 });
 
-      const taxonomyValues = await page.locator('.nt-assessment__taxonomy[data-taxonomy]').evaluateAll((nodes) =>
-        nodes
-          .map((node) => node.getAttribute('data-taxonomy'))
-          .filter((value): value is string => !!value),
-      );
-
-      expect(taxonomyValues.length, `expected Bloom chips on ${row.path}`).toBeGreaterThan(0);
-      expect(taxonomyValues.every((value) => BLOOM_TAXONOMIES.has(value))).toBeTruthy();
+      // Bloom taxonomy is an internal pedagogy detail and is intentionally not
+      // surfaced to students, so no taxonomy chips should render on the page.
+      await expect(page.locator('.nt-assessment__taxonomy')).toHaveCount(0);
 
       await page.locator('.nt-assessment__footer .nt-lesson-button--primary').click();
       await expect(page.getByRole('alert')).toHaveText('Answer every question before submitting.', {
