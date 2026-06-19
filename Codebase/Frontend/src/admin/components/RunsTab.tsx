@@ -28,7 +28,7 @@ export default function RunsTab() {
   return (
     <div className="admin-runs-tab">
       <section className="admin-section" data-testid="runs-metrics-card">
-        <h2>Run-level metrics</h2>
+        <h2>C++ Analysis Runs — Run Summary</h2>
         <p className="empty-state-muted">
           Number of analysis runs in the corpus plus the compile / static / unit
           test pass rates aggregated across every run. Use the charts below to

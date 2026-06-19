@@ -76,8 +76,8 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
       <section className="instructor-card">
         <header className="instructor-card__head">
           <div className="instructor-card__title">
-            <h3>Students</h3>
-            <span className="instructor-card__count">{rows.length} with activity</span>
+            <h3>Intern Learning Progress</h3>
+            <span className="instructor-card__count">{rows.length} interns with activity</span>
           </div>
           <div className="instructor-card__tools">
             <div className="instructor-sortgroup" role="group" aria-label="Sort students">

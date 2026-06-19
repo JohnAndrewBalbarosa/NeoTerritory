@@ -1,4 +1,4 @@
-import { useEffect, useState, ComponentType, FormEvent } from 'react';
+import { useEffect, useState, FormEvent } from 'react';
 import { useAppStore } from '../store/appState';
 import { login as apiLogin } from '../api/client';
 import type { User } from '../types/api';
@@ -7,6 +7,7 @@ import { useHealth } from '../hooks/useHealth';
 import { useOverflowGuard } from '../hooks/useOverflowGuard';
 import AuroraBackground from '../components/marketing/effects/AuroraBackground';
 import GoogleSignInButton from '../components/auth/GoogleSignInButton';
+import OverviewTab from './components/OverviewTab';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -22,55 +23,11 @@ import FeatureReleasePanel from './components/FeatureReleasePanel';
 import InstructorDashboard from './components/InstructorDashboard';
 import CoursesTab from './components/CoursesTab';
 import { markAdminRefresh } from '../api/client';
-import {
-  IconLayers, IconBeaker, IconShield, IconCheckSquare, IconClipboard, IconCode, IconBook
-} from '../components/icons/Icons';
-import type { IconProps } from '../components/icons/Icons';
 import { useAdminUsers } from './hooks/useAdminUsers';
-
-type AdminTab = 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs' | 'invites' | 'joinRequests' | 'featureReleases' | 'instructor-students' | 'instructor-modules' | 'instructor-questions' | 'courses';
-
-type AdminSection = 'Operations' | 'People' | 'Instructor' | 'Research' | 'Config';
-
-interface TabDef {
-  id: AdminTab;
-  label: string;
-  icon: ComponentType<IconProps>;
-  section: AdminSection;
-  // When true, the tab is only shown for the original-devs org (thesis
-  // team). Other admins do not see Complexity / Reviews because those
-  // surfaces are anchored on the thesis study cohort, not arbitrary
-  // user orgs.
-  originalDevsOnly?: boolean;
-}
-
-const TABS: ReadonlyArray<TabDef> = [
-  { id: 'runs',            label: 'Runs',            icon: IconLayers,      section: 'Operations' },
-  { id: 'logs',            label: 'Logs',            icon: IconClipboard,   section: 'Operations' },
-  { id: 'users',           label: 'Users',           icon: IconShield,      section: 'People' },
-  { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'People' },
-  { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'People' },
-  { id: 'instructor-students',  label: 'Students',   icon: IconShield,      section: 'Instructor' },
-  { id: 'instructor-modules',   label: 'Modules',    icon: IconLayers,      section: 'Instructor' },
-  { id: 'instructor-questions', label: 'Questions',  icon: IconClipboard,   section: 'Instructor' },
-  { id: 'courses',              label: 'Courses',    icon: IconBook,        section: 'Instructor' },
-  { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Research', originalDevsOnly: true },
-  { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Research', originalDevsOnly: true },
-  { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Research', originalDevsOnly: true },
-  { id: 'ai',              label: 'AI',              icon: IconCode,        section: 'Config' },
-  { id: 'catalogs',        label: 'Pattern groups',  icon: IconBeaker,      section: 'Config' },
-];
-
-const SECTION_ORDER: AdminSection[] = ['Operations', 'People', 'Instructor', 'Research', 'Config'];
-const TAB_SECTION_MAP: Record<AdminTab, AdminSection> = TABS.reduce((acc, tab) => {
-  acc[tab.id] = tab.section;
-  return acc;
-}, {} as Record<AdminTab, AdminSection>);
-
-const SECTION_CHILDREN: Record<AdminSection, AdminTab[]> = SECTION_ORDER.reduce((acc, section) => {
-  acc[section] = TABS.filter((tab) => tab.section === section).map((tab) => tab.id);
-  return acc;
-}, {} as Record<AdminSection, AdminTab[]>);
+import {
+  TABS, SECTION_ORDER, TAB_SECTION_MAP, SECTION_CHILDREN, SHOW_RESEARCH_ADMIN_TOOLS,
+  type AdminTab, type AdminSection,
+} from './navConfig';
 
 // Original-devs detection: the JWT now carries an explicit
 // isOriginalDevs flag (set by /auth/google/exchange when the email is
@@ -123,10 +80,10 @@ export default function AdminApp() {
   // re-mounting children via `refreshKey` AND calling `refresh()` on the
   // shared hook, which resets its internal interval.
   const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
-  const [activeTab, setActiveTab] = useState<AdminTab>('runs');
-  const [mountedTabs, setMountedTabs] = useState<Set<AdminTab>>(new Set(['runs']));
+  const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  const [mountedTabs, setMountedTabs] = useState<Set<AdminTab>>(new Set(['overview']));
   const [refreshKey, setRefreshKey] = useState(0);
-  const [expandedSection, setExpandedSection] = useState<AdminSection>(TAB_SECTION_MAP.runs);
+  const [expandedSection, setExpandedSection] = useState<AdminSection>(TAB_SECTION_MAP.overview);
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
@@ -274,19 +231,18 @@ export default function AdminApp() {
       <AuroraBackground variant="warm" className="admin-aurora" />
       <header className="admin-topbar reveal">
         <div className="brand">
-          <p className="eyebrow">CodiNeo · Admin</p>
+          <p className="eyebrow">CodiNeo · Project Manager</p>
           {/* Solid-color title — same call as studio: a marketing
               shimmer on a working operations dashboard reads as
               decorative noise. Plain h1 = solid theme accent. */}
-          <h1 className="brand-title">Research dashboard</h1>
-          <p className="lede">Activity, scoring, and qualitative reviews across all tester accounts.</p>
+          <h1 className="brand-title">CodiNeo Project Manager Dashboard</h1>
+          <p className="lede">Monitor project-based learning plans, intern progress, assessments, practical tasks, and C++ analysis activity.</p>
         </div>
         <div className="admin-actions">
-          {/* Operations status row — backend health + microservice +
-              docker. Admin is the ops dashboard, so it should see the
-              same status the studio header shows. Compact pills, not
-              full status card. */}
-          <div className="admin-ops-pills" role="status" aria-live="polite">
+          {/* System Status — backend health + microservice + docker + AI.
+              Admin is the ops dashboard, so it should see the same status
+              the studio header shows. Compact pills, not full status card. */}
+          <div className="admin-ops-pills" role="status" aria-live="polite" aria-label="System status">
             <span className="admin-ops-pill" data-state={status.kind}>
               <span className="admin-ops-dot" aria-hidden="true" />
               <span className="admin-ops-label">API</span>
@@ -327,6 +283,7 @@ export default function AdminApp() {
               ? 'No users online'
               : `${onlineCount} of ${adminUsers.length} online`}
           </span>
+          <div className="admin-account-actions" role="group" aria-label="Account actions">
           <span id="admin-user-label">{user.username} · admin</span>
           <button
             className="ghost-btn theme-toggle-btn"
@@ -353,12 +310,13 @@ export default function AdminApp() {
           <button id="admin-logout-btn" className="ghost-btn" type="button" onClick={onLogout}>
             Sign out
           </button>
+          </div>
         </div>
       </header>
 
       <div className="admin-body">
         <nav className="admin-tab-bar admin-sidebar" aria-label="Admin sections" data-testid="admin-tab-bar">
-          {SECTION_ORDER.map((section) => {
+          {SECTION_ORDER.filter((section) => section !== 'Research & Admin Tools' || SHOW_RESEARCH_ADMIN_TOOLS).map((section) => {
             const tabs = SECTION_CHILDREN[section].map((id) => TABS.find((tab) => tab.id === id)!).filter((t) => {
               if (t.originalDevsOnly && isPmAdmin(user)) return false;
               if (t.originalDevsOnly && !isOriginalDevsAdmin(user)) return false;
@@ -411,6 +369,11 @@ export default function AdminApp() {
        * the initial mount network spam without lifting state into a context.
        */}
       <main className="admin-main" key={refreshKey}>
+        {mountedTabs.has('overview') && (
+          <div hidden={activeTab !== 'overview'}>
+            <OverviewTab />
+          </div>
+        )}
         {mountedTabs.has('runs') && (
           <div hidden={activeTab !== 'runs'}>
             <RunsTab />

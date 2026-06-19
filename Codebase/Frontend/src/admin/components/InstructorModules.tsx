@@ -90,7 +90,7 @@ export default function InstructorModules({ raw }: InstructorModulesProps): JSX.
       <section className="instructor-card">
         <header className="instructor-card__head">
           <div className="instructor-card__title">
-            <h3>Module difficulty (first-attempt)</h3>
+            <h3>Module Difficulty — First Attempt</h3>
             <span className="instructor-card__count">{difficulty.length} modules ranked · based on first-attempt performance</span>
           </div>
           <div className="instructor-card__tools">
