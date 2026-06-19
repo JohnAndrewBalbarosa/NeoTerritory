@@ -84,8 +84,8 @@ export default function LearningAnalytics(): JSX.Element {
       <section className="instructor-card">
         <header className="instructor-card__head">
           <div className="instructor-card__title">
-            <h3>Question heatmap</h3>
-            <span className="instructor-card__count">first-try pass rate by question</span>
+            <h3>In-Module Question Performance</h3>
+            <span className="instructor-card__count">in-module conceptual · first-try pass rate by question (not formal Form A/B)</span>
           </div>
           <nav className="admin-learn-families" aria-label="Pattern family">
             {CATEGORY_META.map((c) => (
