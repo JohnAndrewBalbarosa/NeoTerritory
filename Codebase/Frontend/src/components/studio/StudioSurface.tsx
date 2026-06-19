@@ -9,6 +9,7 @@ import AmbiguousTab from '../tabs/AmbiguousTab';
 import GdbRunnerTab from '../tabs/GdbRunnerTab';
 import ReviewModal from '../modals/ReviewModal';
 import { AnalysisRun } from '../../types/api';
+import { isLocalDevRuntime } from '../../utils/runtimeEnv';
 import {
   IconUpload,
   IconLayers,
@@ -100,15 +101,23 @@ interface StudioSurfaceProps {
   targetPatternName?: string;
   // Fired the first time the target pattern is detected in a run.
   onPatternDetected?: (run: AnalysisRun) => void;
+  // Local-dev only skip hook. When present, the surface can fast-forward the
+  // embedded learning check without opening a separate QA panel.
+  onSkip?: () => void;
   // Optional starter file for embedded learning checks.
   starterCode?: string;
+  // Standalone Studio shows saved runs; embedded assessments avoid it so a
+  // learner gate does not issue unrelated authenticated run-list requests.
+  showRunList?: boolean;
 }
 
 export default function StudioSurface({
   targetPatternSlug,
   targetPatternName,
   onPatternDetected,
+  onSkip,
   starterCode,
+  showRunList,
 }: StudioSurfaceProps) {
   useHealth();
   useAiCommentaryPoll();
@@ -238,6 +247,9 @@ export default function StudioSurface({
     setReview(null);
   }
 
+  const canSkipLocally = isLocalDevRuntime();
+  const shouldShowRunList = showRunList ?? !targetPatternSlug;
+
   return (
     <>
       <nav className="tab-bar" role="tablist" aria-label="Studio tabs">
@@ -269,6 +281,19 @@ export default function StudioSurface({
         })}
       </nav>
 
+      {canSkipLocally && onSkip ? (
+        <div className="studio-skip-row">
+          <button
+            type="button"
+            className="ghost-btn studio-skip-row__button"
+            onClick={onSkip}
+            title="Local development only"
+          >
+            Skip
+          </button>
+        </div>
+      ) : null}
+
       <AnimatePresence mode="wait" initial={false}>
         <motion.div
           key={activeTab}
@@ -284,6 +309,7 @@ export default function StudioSurface({
               refreshSignal={runRefreshSignal}
               beforeAnalyze={beforeAnalyze}
               initialFile={starterCode ? { name: 'starter.cpp', code: starterCode } : undefined}
+              showRunList={shouldShowRunList}
             />
           )}
           {activeTab === 'annotated' && (

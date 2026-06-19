@@ -60,6 +60,14 @@ flowchart TD
 - Final theory-gate logic must use the filtered visible quiz pages, not the full authored question bank.
 - `saveLearningProgress()` persists new theory-passed ids, completed ids, and Bloom mastery level 6 after full module completion.
 
+## Practical Studio Flow
+
+- Practical pages render the shared `StudioSurface` inline inside the lesson card; they do not use a textarea-only save bypass.
+- A target-pattern detection saves the practical assessment record and completes the module when `passMode` is absent or `detection`.
+- When `passMode` is `detection_and_tests`, detection only arms the gate; the embedded Studio Tests tab must pass before the practical save runs.
+- The Studio remains visible before and after completion so the learner never has to click an "Open Studio" button or enter a modal overlay.
+- When `isLocalDevRuntime()` is true, the embedded Studio can skip the practical through the same completion path when the `assessment-dev-tools` release is enabled.
+
 ## Admin Reset Verification
 
 The page must treat these admin changes as reset triggers because they bump the backend course timestamp:
@@ -99,6 +107,7 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 - The final visible theory page gates module completion after mastered levels are removed.
 - Visible theory pages render MCQ, identification, and Studio questions through `BloomQuestionRenderer`.
 - Studio creating questions can embed the analyzer surface in the lesson flow.
+- Practical exam pages embed the analyzer surface and use detection/tests, not pasted text, as the completion signal.
 - Admin module create/update/patch/delete and applied AI plan changes are reflected through `courseUpdatedAt`.
 - AI course plan preview alone does not reset the learner gate.
 - The topbar shows a centered `Learning Path` title.

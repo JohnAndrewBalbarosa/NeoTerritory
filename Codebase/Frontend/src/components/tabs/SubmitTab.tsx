@@ -7,9 +7,16 @@ interface SubmitTabProps {
   refreshSignal: number;
   beforeAnalyze?: (dispatch: () => void) => void;
   initialFile?: { name: string; code: string };
+  showRunList?: boolean;
 }
 
-export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAnalyze, initialFile }: SubmitTabProps) {
+export default function SubmitTab({
+  onAnalysisComplete,
+  refreshSignal,
+  beforeAnalyze,
+  initialFile,
+  showRunList = true,
+}: SubmitTabProps) {
   // The linear-flow "Next: Run tests →" button was removed (this turn).
   // Navigation between Submit and Tests now goes through the tab bar, so
   // this tab is just the analysis form plus the run list.
@@ -29,7 +36,7 @@ export default function SubmitTab({ onAnalysisComplete, refreshSignal, beforeAna
         beforeSubmit={handleBeforeAnalyze}
         initialFile={initialFile}
       />
-      <RunList refreshSignal={refreshSignal} />
+      {showRunList ? <RunList refreshSignal={refreshSignal} /> : null}
     </section>
   );
 }

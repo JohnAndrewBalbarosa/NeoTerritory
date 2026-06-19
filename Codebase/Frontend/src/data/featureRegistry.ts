@@ -57,6 +57,13 @@ export const FEATURE_FLAGS: ReadonlyArray<FeatureFlag> = [
       'Adds a "PM" card to the Try-It-Now popup, restores PM sign-in via /pm/login, and shows the PM-flavoured admin shell (no Complexity / Reviews / Feature Releases tabs) after sign-in. Off by default — flip when the cohort is ready to onboard project managers.',
     defaultReleased: false,
   },
+  {
+    key: 'assessment-dev-tools',
+    label: 'Assessment dev tools',
+    description:
+      'Shows the localhost-only assessment QA panel and the inline Studio skip affordance for local pre/post/practical testing. Off by default so production deploys stay clean.',
+    defaultReleased: false,
+  },
 ];
 
 export function defaultReleaseMap(): Record<string, boolean> {

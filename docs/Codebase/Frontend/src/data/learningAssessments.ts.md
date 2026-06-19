@@ -40,6 +40,7 @@ flowchart TD
 - Post-test and post-test-2 each contain one question per learner-visible module, using later Bloom stages for checkpoint coverage.
 - The builder normalizes API-shaped modules before selection, so every module with a theoretical bank exposes one question per Bloom level.
 - Sparse authored banks reuse available questions as fallback during normalization while keeping the emitted taxonomy at the intended Bloom level.
+- Studio questions use a boolean pass/fail answer. `true` is correct, `false` is a completed failed answer, and missing data remains unanswered.
 
 ## Foundation Gate
 
@@ -69,6 +70,7 @@ The backend stores raw selections, free-text responses, question metadata, and t
 - Post-test and post-test-2 question counts match the learner-visible module count.
 - Pre-test, post-test, and post-test-2 questions keep the intended Bloom taxonomy labels.
 - Sparse module banks still expose six Bloom-level pre-test questions after normalization.
+- Studio failures can be submitted as completed failed answers for adaptive pre-test pruning.
 - Foundation personas remain distinguishable by mastered and missing taxonomies.
 - Saved pre-test evidence older than `courseUpdatedAt` fails the gate.
 - A saved fresh passing pre-test can unlock the path without relying on local-only state.
