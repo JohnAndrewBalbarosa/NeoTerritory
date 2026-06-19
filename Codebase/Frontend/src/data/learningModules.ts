@@ -12,6 +12,9 @@ import {
   PATTERN_BOOK_CITATION,
   WHY_GOF_EXPLAINER,
 } from '../components/marketing/patterns/patternData';
+// Value import; assessmentForms.ts imports only TYPES from here, so there is no
+// runtime circular dependency.
+import { ASSESSMENT_FORMS } from './assessmentForms';
 
 export type LearningCategory =
   | 'foundations'
@@ -64,6 +67,14 @@ export function isFoundationModule(module: Pick<LearningModule, 'category'>): bo
 export interface BaseExamQuestion {
   taxonomy?: BloomTaxonomy;
   explanation?: string;
+  // Stable question identity, prepared for a later migration off positional
+  // questionIndex. Assigned during normalization; not yet the analytics key.
+  id?: string;
+  // True for questions invented by the normalizer's fallback generators (used
+  // to pad missing Bloom levels). These are authoritatively excluded from all
+  // formal assessments and in-module quizzes. The flag is the source of truth —
+  // do NOT infer fallback status from displayed text.
+  generatedFallback?: boolean;
 }
 
 export interface McqQuestion extends BaseExamQuestion {
@@ -103,6 +114,23 @@ export function isIdentificationQuestion(q: ExamQuestion): q is IdentificationQu
 
 export function isStudioQuestion(q: ExamQuestion): q is StudioQuestion {
   return q.type === 'studio';
+}
+
+// Formal-assessment objective question. Lives in `assessmentForms` (separate
+// from the in-module `theoreticalExam` array) and is keyed by a stable `id`,
+// NOT by the in-module positional questionIndex. Only mcq/identification —
+// Creating is the separate practical/Studio task.
+export type ObjectiveAssessmentQuestion = (McqQuestion | IdentificationQuestion) & {
+  id: string;
+  competency?: string;
+};
+
+// Two distinct, equivalent objective forms per module: A = formal pre-test,
+// B = formal post-test. A module without a complete Form B has no valid formal
+// post-test (no silent fallback to Form A).
+export interface AssessmentForms {
+  A: ReadonlyArray<ObjectiveAssessmentQuestion>;
+  B: ReadonlyArray<ObjectiveAssessmentQuestion>;
 }
 
 /**
@@ -194,6 +222,10 @@ export interface LearningModule {
   // practical passes if one exists (patterns). The linear cross-module gate
   // then unlocks module N+1.
   theoreticalExam?: TheoreticalExam;
+  // Formal pre-test (Form A) / post-test (Form B) objective sets, separate from
+  // theoreticalExam. Attached at normalization from ASSESSMENT_FORMS. Absent for
+  // modules not yet authored — those are simply not formally assessable yet.
+  assessmentForms?: AssessmentForms;
   practicalExam?: PracticalExam;
   // D92 auto-tagging. When true (default), the practical auto-resolves the
   // module's target pattern from the analyser's tags — no manual tag step
@@ -353,12 +385,21 @@ function normalizeTheoryQuestions(moduleId: string, questions: ReadonlyArray<Exa
   );
 
   return BLOOM_TAXONOMIES.map((taxonomy) => {
+    let result: ExamQuestion;
     if (taxonomy === 'creating' && canUseStudioQuestion(moduleId)) {
       const studio = tagged.find((question) => question.taxonomy === taxonomy && isStudioQuestion(question));
-      return studio ? canonicalQuestionShape(studio, taxonomy) : fallbackStudioQuestion(moduleId);
+      result = studio
+        ? canonicalQuestionShape(studio, taxonomy)
+        : { ...fallbackStudioQuestion(moduleId), generatedFallback: true };
+    } else {
+      const exact = tagged.find((question) => question.taxonomy === taxonomy);
+      result = exact
+        ? canonicalQuestionShape(exact, taxonomy)
+        : { ...fallbackQuestion(moduleId, taxonomy), generatedFallback: true };
     }
-    const exact = tagged.find((question) => question.taxonomy === taxonomy);
-    return exact ? canonicalQuestionShape(exact, taxonomy) : fallbackQuestion(moduleId, taxonomy);
+    // Stable id (prepared for a later migration off positional questionIndex);
+    // the array position remains the analytics questionIndex and is unchanged.
+    return { ...result, id: result.id ?? `${moduleId}:${taxonomy}` };
   });
 }
 
@@ -379,11 +420,13 @@ export function normalizeLearningModule(module: LearningModule): LearningModule 
         taxonomy: module.practicalExam.taxonomy ?? inferPracticalTaxonomy(module.practicalExam.family),
       }
     : undefined;
-  if (!theoreticalExam && !practicalExam) return module;
+  const assessmentForms = ASSESSMENT_FORMS[module.id];
+  if (!theoreticalExam && !practicalExam && !assessmentForms) return module;
   return {
     ...module,
     ...(theoreticalExam ? { theoreticalExam } : {}),
     ...(practicalExam ? { practicalExam } : {}),
+    ...(assessmentForms ? { assessmentForms } : {}),
   };
 }
 

@@ -279,6 +279,9 @@ export interface LearningAssessmentAttemptRaw {
   assessmentType: LearningAssessmentType;
   sessionId: string | null;
   questionCount: number;
+  // Formal pre/post pairing; null for legacy attempts.
+  cycleId?: string | null;
+  planId?: string | null;
   createdAt: string;
 }
 
@@ -289,6 +292,9 @@ export interface LearningAssessmentAnswerRaw {
   assessmentIndex: number;
   moduleId: string;
   questionIndex: number;
+  // Stable formal-assessment question id; null for legacy rows (fall back to
+  // questionIndex when matching).
+  questionId?: string | null;
   selectedIndex: number;
   responseText: string | null;
   questionTaxonomy: BloomTaxonomy | null;

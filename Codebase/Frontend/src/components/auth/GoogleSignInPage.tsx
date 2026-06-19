@@ -3,7 +3,7 @@ import { navigate } from '../../logic/router';
 import GoogleSignInButton from './GoogleSignInButton';
 import { useAppStore } from '../../store/appState';
 import { resolveLearnerLanding } from '../../logic/learnerRouting';
-import { fetchTesterAccounts, claimSeat, fetchRuns, fetchSample } from '../../api/client';
+import { fetchTesterAccounts, claimSeat, fetchRuns, fetchSample, pilotLogin } from '../../api/client';
 import type { User } from '../../types/api';
 
 // Sign-in page. After the learner-merge, the former 'developer' and 'student'
@@ -113,6 +113,64 @@ function GuestOnlyButton(): JSX.Element {
   );
 }
 
+// DEV/TEST-ONLY pilot learner sign-in. Shown when ANY of these is true:
+//   - build env  VITE_ENABLE_PILOT_LOGIN === 'true'  (Vite dev/build gate)
+//   - URL query  ?pilot=1                            (no restart needed)
+//   - localStorage 'nt_pilot_login' === '1'          (runtime toggle)
+// This only controls button VISIBILITY. The real protection is server-side:
+// the /auth/pilot-login endpoint 404s unless ENABLE_PILOT_LOGIN=true and not
+// production, so showing the button can never grant access in prod. It does NOT
+// touch Guest behavior or any role-based access.
+function pilotLoginEnabled(): boolean {
+  if ((import.meta as { env?: Record<string, string | undefined> }).env?.VITE_ENABLE_PILOT_LOGIN === 'true') {
+    return true;
+  }
+  if (typeof window === 'undefined') return false;
+  try {
+    if (new URLSearchParams(window.location.search).get('pilot') === '1') return true;
+    if (window.localStorage.getItem('nt_pilot_login') === '1') return true;
+  } catch {
+    // ignore storage/URL access failures
+  }
+  return false;
+}
+
+function PilotLoginButton(): JSX.Element {
+  const setAuth = useAppStore((s) => s.setAuth);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function signInAsPilot(): Promise<void> {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const { token, user } = await pilotLogin();
+      setAuth(token, user);
+      navigate('/pre-test');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Pilot login is unavailable (enable ENABLE_PILOT_LOGIN on the server).');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="nt-signin-guest">
+      <button
+        type="button"
+        className="ghost-btn nt-signin-guest__btn"
+        onClick={() => void signInAsPilot()}
+        disabled={busy}
+        data-testid="pilot-login"
+      >
+        {busy ? 'Signing in…' : 'Pilot learner sign-in (dev only)'}
+      </button>
+      {error && <p className="login-error">{error}</p>}
+    </div>
+  );
+}
+
 export default function GoogleSignInPage() {
   const pathname = window.location.pathname;
   const role = resolveRole(pathname);
@@ -147,6 +205,7 @@ export default function GoogleSignInPage() {
           <div className="nt-signin-action">
             <GoogleSignInButton role={role} intent={intent} redirectAfter={next} />
             {role === 'learner' && <GuestOnlyButton />}
+            {role === 'learner' && pilotLoginEnabled() && <PilotLoginButton />}
           </div>
 
           <footer className="nt-signin-foot">

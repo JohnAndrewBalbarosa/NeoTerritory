@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
+  buildFormalAssessment,
   buildObjectiveAssessment,
   computeLearningGain,
   evaluateFoundationPretest,
@@ -277,6 +278,60 @@ describe('isAnswerRevealingQuestion', () => {
     const built = buildObjectiveAssessment(LEARNING_MODULES, 'pretest');
     expect(built.length).toBeGreaterThan(0);
     expect(built.every((q) => !isAnswerRevealingQuestion(q.question))).toBe(true);
+  });
+});
+
+describe('buildFormalAssessment (Form A / Form B pilot)', () => {
+  const PILOT = ['foundations-what-is-pattern', 'creational-builder'];
+
+  it('pre-test draws Form A only from modules that have authored forms (scoped, not all published)', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    expect(pre).toHaveLength(10); // 2 pilot modules × 5
+    expect(new Set(pre.map((q) => q.moduleId))).toEqual(new Set(PILOT));
+    expect(pre.every((q) => typeof q.questionId === 'string' && q.questionId.includes(':A'))).toBe(true);
+  });
+
+  it('post-test draws Form B with zero exact-question overlap vs Form A', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const post = buildFormalAssessment(LEARNING_MODULES, 'posttest');
+    expect(post).toHaveLength(10);
+    const aIds = new Set(pre.map((q) => q.questionId));
+    const overlap = post.filter((q) => aIds.has(q.questionId));
+    expect(overlap).toHaveLength(0);
+  });
+
+  it('an optional learner-plan scope further limits the modules assessed', () => {
+    const scoped = buildFormalAssessment(LEARNING_MODULES, 'pretest', ['creational-builder']);
+    expect(new Set(scoped.map((q) => q.moduleId))).toEqual(new Set(['creational-builder']));
+    expect(scoped).toHaveLength(5);
+  });
+
+  it('correct-answer positions are not all the first option', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const positions = new Set(
+      pre.map((q) => (q.question.type === 'mcq' ? q.question.correctIndex : -1)),
+    );
+    expect(positions.size).toBeGreaterThan(1);
+  });
+});
+
+describe('generatedFallback exclusion', () => {
+  it('excludes flag-marked fallbacks regardless of how clean the text looks', () => {
+    const flagged: ExamQuestion = {
+      type: 'mcq',
+      taxonomy: 'remembering',
+      question: 'A perfectly reasonable looking question?',
+      options: ['A', 'B'],
+      correctIndex: 0,
+      generatedFallback: true,
+    };
+    expect(isEligibleObjectiveQuestion(flagged)).toBe(false);
+  });
+
+  it('the real objective pool contains no generated fallbacks and carries stable ids', () => {
+    const built = buildObjectiveAssessment(LEARNING_MODULES, 'pretest');
+    expect(built.every((q) => !q.question.generatedFallback)).toBe(true);
+    expect(built.every((q) => typeof q.questionId === 'string' && q.questionId.length > 0)).toBe(true);
   });
 });
 

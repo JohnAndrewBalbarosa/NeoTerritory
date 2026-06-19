@@ -20,6 +20,32 @@ router.post('/register', register);
 router.post('/login', validateBody(loginSchema), login);
 router.post('/guest', registerGuest);
 router.post('/guest/refresh', jwtAuth, refreshGuestToken);
+
+// DEV/TEST-ONLY pilot login. Mints a REAL learner JWT for the dedicated seeded
+// pilot learner so local manual testing + Playwright can exercise the formal
+// pre/post cycle. Gated by ENABLE_PILOT_LOGIN and refused in production. It only
+// ever issues a token for the fixed 'user'-role pilot learner — it does NOT
+// bypass downstream authorization, weaken role checks, or grant Guest any
+// formal-assessment access.
+router.post('/pilot-login', (req: Request, res: Response) => {
+  if (process.env.ENABLE_PILOT_LOGIN !== 'true' || process.env.NODE_ENV === 'production') {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  const user = db
+    .prepare('SELECT id, username, email, role FROM users WHERE username = ?')
+    .get('pilot-learner') as { id: number; username: string; email: string; role: string } | undefined;
+  if (!user || user.role !== 'user') {
+    res.status(500).json({ error: 'Pilot learner not seeded' });
+    return;
+  }
+  const token = jwt.sign(
+    { id: user.id, username: user.username, email: user.email, role: user.role },
+    process.env.JWT_SECRET as string,
+    { expiresIn: '7d' },
+  );
+  res.json({ token, user: { id: user.id, username: user.username, email: user.email, role: user.role } });
+});
 // TEST SEED — REMOVE FOR PRODUCTION
 router.post('/claim', validateBody(claimSeatSchema), claimSeat);
 

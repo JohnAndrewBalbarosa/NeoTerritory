@@ -44,6 +44,55 @@ function seedAdminAccount(): void {
     .run(hash, existing.id);
 }
 
+// PILOT FIXTURE ONLY — explicitly not a production fallback. Seeds a DEDICATED
+// pilot LEARNER (role 'user', NOT the admin) that owns one active plan with the
+// two form-authored pilot modules approved. Production plans must be created
+// through the plan API; the formal-assessment scope never falls back here.
+const PILOT_PLAN_ID = 'pilot-plan-001';
+const PILOT_LEARNER_USERNAME = 'pilot-learner';
+const PILOT_LEARNER_EMAIL = 'pilot-learner@neoterritory.local';
+const PILOT_PLAN_MODULES: ReadonlyArray<string> = ['foundations-what-is-pattern', 'creational-builder'];
+
+function seedPilotLearnerAndPlan(): void {
+  // Dedicated learner account. Its password is a random DISABLED hash so it can
+  // never be used via normal /auth/login; the only entry point is the dev-gated
+  // /auth/pilot-login endpoint. Idempotent → stable user id across boots.
+  let learner = db
+    .prepare('SELECT id, role FROM users WHERE username = ?')
+    .get(PILOT_LEARNER_USERNAME) as UserAdminRow | undefined;
+  if (!learner) {
+    const disabledHash = bcrypt.hashSync(`disabled_${Math.random().toString(36).slice(2)}`, 10);
+    db.prepare(
+      `INSERT INTO users (username, email, password_hash, role, created_via, created_at)
+       VALUES (?, ?, ?, 'user', 'pilot', datetime('now'))`,
+    ).run(PILOT_LEARNER_USERNAME, PILOT_LEARNER_EMAIL, disabledHash);
+    learner = db
+      .prepare('SELECT id, role FROM users WHERE username = ?')
+      .get(PILOT_LEARNER_USERNAME) as UserAdminRow;
+  }
+  if (!learner) return;
+
+  // Plan owned by the pilot LEARNER (reassign from any prior owner, e.g. admin).
+  const existing = db
+    .prepare('SELECT id, learner_id FROM learning_plans WHERE id = ?')
+    .get(PILOT_PLAN_ID) as { id: string; learner_id: number } | undefined;
+  if (!existing) {
+    db.prepare(
+      `INSERT INTO learning_plans (id, learner_id, status, created_at, updated_at, activated_at)
+       VALUES (?, ?, 'active', datetime('now'), datetime('now'), datetime('now'))`,
+    ).run(PILOT_PLAN_ID, learner.id);
+  } else if (existing.learner_id !== learner.id) {
+    db.prepare(
+      `UPDATE learning_plans SET learner_id = ?, status = 'active', updated_at = datetime('now') WHERE id = ?`,
+    ).run(learner.id, PILOT_PLAN_ID);
+  }
+  const insMod = db.prepare(
+    `INSERT OR IGNORE INTO learning_plan_modules (plan_id, module_id, selection_status, recommendation_source, display_order, created_at)
+     VALUES (?, ?, 'approved', 'system', ?, datetime('now'))`,
+  );
+  PILOT_PLAN_MODULES.forEach((moduleId, i) => insMod.run(PILOT_PLAN_ID, moduleId, i));
+}
+
 // One module row in the checked-in seed JSON (produced by
 // scripts/dump-learning-seed.mjs from the frontend LEARNING_MODULES). moduleId
 // + sortOrder are load-bearing (see D92). Sub-objects are passed through and
@@ -615,11 +664,51 @@ export function initDb(): void {
     session_id TEXT,
     assessment_type TEXT NOT NULL,
     question_count INTEGER NOT NULL,
+    -- Formal pre/post pairing (additive, nullable for legacy attempts):
+    -- a pre-test and its paired post-test share one cycle_id; plan_id records
+    -- the active learning plan the cycle was scoped from.
+    cycle_id TEXT,
+    plan_id TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`).run();
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_attempts_user
     ON learning_assessment_attempts(user_id, assessment_type, created_at DESC)`).run();
+  // Additive nullable columns for existing DBs created before pairing landed.
+  try { db.prepare(`ALTER TABLE learning_assessment_attempts ADD COLUMN cycle_id TEXT`).run(); } catch { /* exists */ }
+  try { db.prepare(`ALTER TABLE learning_assessment_attempts ADD COLUMN plan_id TEXT`).run(); } catch { /* exists */ }
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_attempts_cycle
+    ON learning_assessment_attempts(user_id, cycle_id, assessment_type)`).run();
+
+  // ---- Active learning plans (authoritative formal-assessment scope) ----
+  // The formal pre/post scope comes ONLY from a learner's active plan modules
+  // whose selection_status is 'approved' or 'added'. Not derived from progress,
+  // proficiency, all-published, or all-with-forms.
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_plans (
+    id TEXT PRIMARY KEY,
+    learner_id INTEGER NOT NULL,
+    project_manager_id INTEGER,
+    project_specification TEXT,
+    status TEXT NOT NULL DEFAULT 'draft',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    activated_at TEXT,
+    FOREIGN KEY(learner_id) REFERENCES users(id)
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_plans_learner
+    ON learning_plans(learner_id, status)`).run();
+  db.prepare(`CREATE TABLE IF NOT EXISTS learning_plan_modules (
+    plan_id TEXT NOT NULL,
+    module_id TEXT NOT NULL,
+    selection_status TEXT NOT NULL,
+    recommendation_source TEXT NOT NULL,
+    display_order INTEGER,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (plan_id, module_id),
+    FOREIGN KEY(plan_id) REFERENCES learning_plans(id) ON DELETE CASCADE
+  )`).run();
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_plan_modules_plan
+    ON learning_plan_modules(plan_id, selection_status)`).run();
 
   // One raw answer row per question in an assessment attempt.
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_assessment_answers (
@@ -635,6 +724,9 @@ export function initDb(): void {
     response_text TEXT,
     question_taxonomy TEXT,
     question_kind TEXT NOT NULL DEFAULT 'theoretical',
+    -- Stable formal-assessment question id (additive; nullable for legacy rows).
+    -- question_index is retained for backward compatibility / legacy fallback.
+    question_id TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY(attempt_id) REFERENCES learning_assessment_attempts(id) ON DELETE CASCADE,
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -656,6 +748,17 @@ export function initDb(): void {
   } catch {
     /* column already exists */
   }
+  // Additive, nullable stable question id for formal pre/post-test answers.
+  // Existing rows stay NULL (legacy fallback to question_index); never backfilled
+  // from an ambiguous index. Affects ONLY this formal-assessment table —
+  // learning_question_results (in-module analytics) is untouched.
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN question_id TEXT`).run();
+  } catch {
+    /* column already exists */
+  }
+  db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_answers_attempt_qid
+    ON learning_assessment_answers(attempt_id, question_id)`).run();
 
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_modules (
     module_id TEXT PRIMARY KEY,
@@ -791,4 +894,5 @@ export function initDb(): void {
   ensureTestFolders();
 
   seedAdminAccount();
+  seedPilotLearnerAndPlan();
 }

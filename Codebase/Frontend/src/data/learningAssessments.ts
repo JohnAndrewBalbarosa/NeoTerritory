@@ -11,6 +11,7 @@ import {
   isMcqQuestion,
   isIdentificationQuestion,
   isStudioQuestion,
+  type ObjectiveAssessmentQuestion,
 } from './learningModules';
 
 export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
@@ -22,6 +23,9 @@ export interface LearningAssessmentQuestion {
   moduleTitle: string;
   moduleEyebrow: string;
   questionIndex: number;
+  // Stable question id, carried alongside the positional questionIndex for a
+  // later analytics migration. questionIndex remains the persisted key for now.
+  questionId?: string;
   question: ExamQuestion;
   taxonomy: BloomTaxonomy;
 }
@@ -82,6 +86,9 @@ function collectQuestionCandidates(
 export interface LearningAssessmentAnswerInput {
   moduleId: string;
   questionIndex: number;
+  // Stable id sent alongside questionIndex for new submissions. questionIndex
+  // remains the persisted analytics key until a backend migration lands.
+  questionId?: string | null;
   selectedIndex: number;
   responseText?: string | null;
   questionTaxonomy?: BloomTaxonomy | null;
@@ -126,6 +133,7 @@ export function buildLearningAssessmentAnswerInputs(
       return {
         moduleId: question.moduleId,
         questionIndex: question.questionIndex,
+        questionId: question.questionId ?? question.question.id ?? null,
         selectedIndex: typeof answer === 'number' ? answer : -1,
         responseText: serializeAssessmentResponse(question.question, answer),
         questionTaxonomy: question.taxonomy,
@@ -287,9 +295,10 @@ export function isAnswerRevealingQuestion(question: ExamQuestion): boolean {
 
 // True when a question may appear on the formal objective pre/post-test.
 export function isEligibleObjectiveQuestion(question: ExamQuestion): boolean {
+  if (question.generatedFallback) return false; // normalizer-invented padding (source of truth)
   if (!isObjectiveExamQuestion(question)) return false; // excludes studio
   if ((question.taxonomy || '').toLowerCase() === 'creating') return false; // mis-tagged objective
-  if (isAnswerRevealingQuestion(question)) return false; // answer-revealing / templated fallback
+  if (isAnswerRevealingQuestion(question)) return false; // defensive text backup
   return true;
 }
 
@@ -342,6 +351,59 @@ export function buildObjectiveAssessment(
         moduleTitle: queue.module.title,
         moduleEyebrow: queue.module.eyebrow,
         questionIndex: next[1],
+        questionId: next[0].id,
+        question: next[0],
+        taxonomy: (next[0].taxonomy || 'remembering') as BloomTaxonomy,
+      });
+    }
+  }
+  return ordered.map((q, index) => ({ ...q, assessmentIndex: index }));
+}
+
+// Formal assessment built from the per-module assessmentForms (NOT the in-module
+// theoreticalExam). Pre-test draws Form A, post-test draws Form B. A module is
+// included only if it has the requested form authored — there is NO silent
+// fallback from B to A, and modules without forms are simply not assessed
+// (this also scopes the test away from "every published module"). An optional
+// scopeModuleIds further restricts to the learner's active plan.
+export function buildFormalAssessment(
+  modules: ReadonlyArray<LearningModule>,
+  assessmentType: LearningAssessmentType,
+  scopeModuleIds?: ReadonlyArray<string>,
+): LearningAssessmentQuestion[] {
+  if (assessmentType === 'practical') return [];
+  const form: 'A' | 'B' = assessmentType === 'pretest' ? 'A' : 'B';
+  const normalizedModules = normalizeLearningModules(modules);
+  const scope = scopeModuleIds ? new Set(scopeModuleIds) : null;
+
+  const perModule = normalizedModules
+    .filter((module) => !scope || scope.has(module.id))
+    .map((module) => {
+      const items = module.assessmentForms?.[form] ?? [];
+      if (items.length === 0) return null;
+      return {
+        module,
+        items: items.map((q, i) => [q, i] as [ObjectiveAssessmentQuestion, number]),
+      };
+    })
+    .filter((entry): entry is { module: LearningModule; items: Array<[ObjectiveAssessmentQuestion, number]> } => entry !== null);
+
+  const moduleOrder = seededShuffle(perModule, `${assessmentType}:formal-order`);
+  const queues = moduleOrder.map((entry) => ({ module: entry.module, items: [...entry.items] }));
+  const ordered: Omit<LearningAssessmentQuestion, 'assessmentIndex'>[] = [];
+  let remaining = queues.reduce((sum, q) => sum + q.items.length, 0);
+  while (remaining > 0) {
+    for (const queue of queues) {
+      const next = queue.items.shift();
+      if (!next) continue;
+      remaining -= 1;
+      ordered.push({
+        assessmentType,
+        moduleId: queue.module.id,
+        moduleTitle: queue.module.title,
+        moduleEyebrow: queue.module.eyebrow,
+        questionIndex: next[1], // position WITHIN the form, not the in-module index
+        questionId: next[0].id,
         question: next[0],
         taxonomy: (next[0].taxonomy || 'remembering') as BloomTaxonomy,
       });
@@ -583,6 +645,33 @@ function latestAttemptOfType(
 // type. The assigned question set is rebuilt deterministically (so the
 // denominator includes questions the learner skipped), and stored raw answers
 // are graded against it. Returns null when there is no usable attempt.
+// Grade a rebuilt assigned form against ONE attempt's stored raw answers.
+// Prefers the stable question_id for matching (formal-assessment migration) and
+// falls back to positional moduleId:questionIndex for legacy rows (NULL id).
+function gradeStoredAttempt(
+  assigned: ReadonlyArray<LearningAssessmentQuestion>,
+  attemptId: number,
+  storedAnswers: ReadonlyArray<LearningAssessmentAnswerRaw>,
+): AssessmentScore {
+  const storedById = new Map<string, LearningAssessmentAnswerRaw>();
+  const storedByIndex = new Map<string, LearningAssessmentAnswerRaw>();
+  for (const answer of storedAnswers) {
+    if (answer.attemptId !== attemptId) continue;
+    if (answer.questionId) storedById.set(answer.questionId, answer);
+    storedByIndex.set(`${answer.moduleId}:${answer.questionIndex}`, answer);
+  }
+  const answersByIndex: Record<number, any> = {};
+  for (const item of assigned) {
+    const stored =
+      (item.questionId && storedById.get(item.questionId)) ||
+      storedByIndex.get(`${item.moduleId}:${item.questionIndex}`);
+    if (!stored) continue; // skipped/unanswered -> graded as incorrect
+    answersByIndex[item.assessmentIndex] =
+      item.question.type === 'mcq' ? stored.selectedIndex : stored.responseText;
+  }
+  return scoreLearningAssessment(assigned, answersByIndex);
+}
+
 export function scoreStoredObjectiveAssessment(
   modules: ReadonlyArray<LearningModule>,
   assessments: LearningAssessmentsResponse,
@@ -590,25 +679,32 @@ export function scoreStoredObjectiveAssessment(
 ): AssessmentScore | null {
   const attempt = latestAttemptOfType(assessments.attempts, assessmentType, assessments.courseUpdatedAt);
   if (!attempt) return null;
-
-  const assigned = buildObjectiveAssessment(modules, assessmentType);
+  const assigned = buildFormalAssessment(modules, assessmentType);
   if (assigned.length === 0) return null;
+  return gradeStoredAttempt(assigned, attempt.id, assessments.answers);
+}
 
-  const storedByKey = new Map<string, LearningAssessmentAnswerRaw>();
-  for (const answer of assessments.answers) {
-    if (answer.attemptId !== attempt.id) continue;
-    storedByKey.set(`${answer.moduleId}:${answer.questionIndex}`, answer);
-  }
-
-  const answersByIndex: Record<number, any> = {};
-  for (const item of assigned) {
-    const stored = storedByKey.get(`${item.moduleId}:${item.questionIndex}`);
-    if (!stored) continue; // skipped/unanswered -> graded as incorrect by scoreLearningAssessment
-    answersByIndex[item.assessmentIndex] =
-      item.question.type === 'mcq' ? stored.selectedIndex : stored.responseText;
-  }
-
-  return scoreLearningAssessment(assigned, answersByIndex);
+// Cycle-scoped re-grade: scores the attempt belonging to a SPECIFIC cycle (not
+// "latest"), over exactly that attempt's frozen module set. Used for paired
+// learning-gain so the pre-test compared against a post-test is the one from the
+// same cycle, even when the learner has multiple cycles.
+export function scoreStoredObjectiveAssessmentForCycle(
+  modules: ReadonlyArray<LearningModule>,
+  assessments: LearningAssessmentsResponse,
+  assessmentType: LearningAssessmentType,
+  cycleId: string,
+): AssessmentScore | null {
+  const attempt = assessments.attempts.find(
+    (a) => a.assessmentType === assessmentType && a.cycleId === cycleId,
+  );
+  if (!attempt) return null;
+  const moduleSet = Array.from(
+    new Set(assessments.answers.filter((a) => a.attemptId === attempt.id).map((a) => a.moduleId)),
+  );
+  if (moduleSet.length === 0) return null;
+  const assigned = buildFormalAssessment(modules, assessmentType, moduleSet);
+  if (assigned.length === 0) return null;
+  return gradeStoredAttempt(assigned, attempt.id, assessments.answers);
 }
 
 function isAnsweredCorrectly(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {

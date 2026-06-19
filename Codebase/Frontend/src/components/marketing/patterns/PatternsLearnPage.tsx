@@ -136,6 +136,10 @@ export function visibleTheoryQuestionIndexesFor(
   if (!module?.theoreticalExam) return [];
   const indexes: number[] = [];
   module.theoreticalExam.questions.forEach((q, i) => {
+    // Generated fallbacks are excluded from the in-module quiz too, but we keep
+    // the ORIGINAL source index (i) — never reindexed — so saved analytics stay
+    // aligned with existing learning_question_results rows.
+    if (q.generatedFallback) return;
     const level = bloomLevelForTaxonomy(q.taxonomy || 'remembering');
     if (level > masteryLevel) indexes.push(i);
   });

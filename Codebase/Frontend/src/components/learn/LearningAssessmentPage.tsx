@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import {
+  fetchActivePlan,
   fetchLearningAssessments,
   saveLearningAssessment,
   refreshGuest,
@@ -9,20 +10,88 @@ import { useAppStore } from '../../store/appState';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
   buildLearningAssessmentAnswerInputs,
-  buildObjectiveAssessment,
   computeLearningGain,
   hasLearningAssessmentAnswer,
   LEARNING_ASSESSMENT_META,
   moduleProficiencyStatus,
   PROFICIENCY_THRESHOLD,
   scoreLearningAssessment,
-  scoreStoredObjectiveAssessment,
+  scoreStoredObjectiveAssessmentForCycle,
   type AssessmentScore,
+  type LearningAssessmentQuestion,
   type LearningAssessmentType,
   type LearningGain,
   type ModuleScore,
 } from '../../data/learningAssessments';
+import {
+  startPosttestForCycle,
+  startPretestCycle,
+  type CycleErrorCode,
+  type LearningPlan,
+} from '../../data/assessmentCycle';
+import type { LearningAssessmentAttemptRaw } from '../../types/api';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
+
+// Cycle state: null = still resolving; ok = ready with questions/cycleId; error
+// = an explicit reject (no silent fallback).
+type CycleState =
+  | { status: 'loading' }
+  | { status: 'ready'; cycleId: string; planId: string | null; questions: LearningAssessmentQuestion[] }
+  | { status: 'error'; error: CycleErrorCode };
+
+const CYCLE_ERROR_COPY: Record<CycleErrorCode, { kicker: string; title: string; copy: string }> = {
+  NO_ACTIVE_PLAN: {
+    kicker: 'No active plan',
+    title: 'No active learning plan',
+    copy: 'A formal assessment requires an active learning plan with approved modules. Ask your project manager to activate a plan, then return here.',
+  },
+  NO_APPROVED_MODULES: {
+    kicker: 'No approved modules',
+    title: 'Your plan has no approved modules',
+    copy: 'Your active plan exists but none of its modules are approved or added. The formal pre-test only covers approved/added modules.',
+  },
+  INCOMPLETE_FORM_A: {
+    kicker: 'Configuration',
+    title: 'Pre-test content incomplete',
+    copy: 'One or more approved modules do not yet have a complete pre-test form (Form A). The formal pre-test cannot start until every approved module is fully authored.',
+  },
+  INCOMPLETE_FORM_B: {
+    kicker: 'Development only',
+    title: 'Post-test not yet available',
+    copy: 'One or more modules from your pre-test do not have a complete post-test form (Form B). Form A is never reused as the post-test, so the post-test stays closed until Form B is authored.',
+  },
+  FORM_OVERLAP: {
+    kicker: 'Configuration',
+    title: 'Assessment content conflict',
+    copy: 'A module has overlapping pre-test and post-test questions. The forms must be distinct before the assessment can run.',
+  },
+  NO_PAIRED_PRETEST: {
+    kicker: 'No paired pre-test',
+    title: 'Complete the pre-test first',
+    copy: 'There is no completed pre-test for an open assessment cycle, so a post-test cannot start. Finish the pre-test for your active plan first.',
+  },
+  MODULE_SET_MISMATCH: {
+    kicker: 'Pairing error',
+    title: 'Post-test module set mismatch',
+    copy: 'The post-test could not be built for the exact module set used in your pre-test. Please contact an administrator.',
+  },
+};
+
+// Pick the most recent pre-test cycle that has no paired post-test of this type
+// yet — i.e. the open cycle to complete. Scope still comes from that pre-test's
+// frozen module set (not "latest"); this only selects WHICH cycle to finish.
+function openCycleIdForPosttest(
+  assessmentType: LearningAssessmentType,
+  attempts: ReadonlyArray<LearningAssessmentAttemptRaw>,
+): string | null {
+  const paired = new Set(
+    attempts.filter((a) => a.assessmentType === assessmentType && a.cycleId).map((a) => a.cycleId),
+  );
+  const candidates = attempts.filter((a) => a.assessmentType === 'pretest' && a.cycleId && !paired.has(a.cycleId));
+  if (candidates.length === 0) return null;
+  candidates.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)) || a.id - b.id);
+  return candidates[candidates.length - 1].cycleId ?? null;
+}
 
 interface LearningAssessmentPageProps {
   assessmentType: LearningAssessmentType;
@@ -171,10 +240,57 @@ function LearningAssessmentContent({
   const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
 
-  const questions = useMemo(
-    () => (loaded ? buildObjectiveAssessment(modules, assessmentType) : []),
-    [assessmentType, loaded, modules],
-  );
+  // Cycle-aware sourcing: a pre-test starts a NEW cycle from the learner's
+  // active plan (Form A); a post-test pairs to its cycle's pre-test module set
+  // (Form B). Resolved asynchronously (needs the active plan / prior attempts).
+  const [cycle, setCycle] = useState<CycleState>({ status: 'loading' });
+
+  useEffect(() => {
+    if (!loaded) return;
+    let cancelled = false;
+    setCycle({ status: 'loading' });
+
+    (async () => {
+      try {
+        if (assessmentType === 'pretest') {
+          const { plan } = await fetchActivePlan();
+          const planForCycle: LearningPlan | null = plan
+            ? { id: plan.id, status: plan.status, modules: plan.modules }
+            : null;
+          const cycleId =
+            typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cyc_${Date.now()}`;
+          const result = startPretestCycle({ plan: planForCycle, modules, cycleId });
+          if (cancelled) return;
+          setCycle(result.ok
+            ? { status: 'ready', cycleId: result.cycleId, planId: result.planId, questions: result.questions }
+            : { status: 'error', error: result.error });
+        } else {
+          const assessments = await fetchLearningAssessments();
+          const openCycleId = openCycleIdForPosttest(assessmentType, assessments.attempts);
+          if (!openCycleId) {
+            if (!cancelled) setCycle({ status: 'error', error: 'NO_PAIRED_PRETEST' });
+            return;
+          }
+          const result = startPosttestForCycle({
+            cycleId: openCycleId,
+            modules,
+            attempts: assessments.attempts,
+            answers: assessments.answers,
+          });
+          if (cancelled) return;
+          setCycle(result.ok
+            ? { status: 'ready', cycleId: result.cycleId, planId: null, questions: result.questions }
+            : { status: 'error', error: result.error });
+        }
+      } catch (err) {
+        if (!cancelled) setCycle({ status: 'error', error: 'NO_ACTIVE_PLAN' });
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [assessmentType, loaded, modules]);
+
+  const questions = cycle.status === 'ready' ? cycle.questions : [];
 
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [page, setPage] = useState(0);
@@ -207,7 +323,13 @@ function LearningAssessmentContent({
     try {
       const finalScore = scoreLearningAssessment(questions, answers);
       const inputs = buildLearningAssessmentAnswerInputs(questions, answers);
-      await saveLearningAssessment({ assessmentType, sessionId: lmsSessionId, answers: inputs });
+      await saveLearningAssessment({
+        assessmentType,
+        sessionId: lmsSessionId,
+        answers: inputs,
+        cycleId: cycle.status === 'ready' ? cycle.cycleId : null,
+        planId: cycle.status === 'ready' ? cycle.planId : null,
+      });
 
       // Proactive guest session refresh on a major action (parity with prior flow).
       const user = useAppStore.getState().user;
@@ -223,13 +345,18 @@ function LearningAssessmentContent({
       if (assessmentType === 'pretest') {
         setPreTestCompleted(true);
       } else {
-        // Compare with the latest stored pre-test for a learning-gain summary.
+        // Learning gain is paired by CYCLE: compare against the pre-test from
+        // this post-test's own cycle (not the latest pre-test). Only when a
+        // cycle is known.
         try {
-          const assessments = await fetchLearningAssessments();
-          const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
-          if (preScore) setGain(computeLearningGain(preScore, finalScore));
+          const cycleId = cycle.status === 'ready' ? cycle.cycleId : null;
+          if (cycleId) {
+            const assessments = await fetchLearningAssessments();
+            const preScore = scoreStoredObjectiveAssessmentForCycle(modules, assessments, 'pretest', cycleId);
+            if (preScore) setGain(computeLearningGain(preScore, finalScore));
+          }
         } catch (err) {
-          console.warn('[assessment] could not load pre-test for gain comparison:', err);
+          console.warn('[assessment] could not load paired pre-test for gain comparison:', err);
         }
       }
 
@@ -244,7 +371,7 @@ function LearningAssessmentContent({
     }
   };
 
-  if (!loaded) {
+  if (!loaded || cycle.status === 'loading') {
     return (
       <main className="nt-test-page" data-testid={`${assessmentType}-page`}>
         <div className="nt-test-page__shell">
@@ -253,25 +380,29 @@ function LearningAssessmentContent({
               <span className="nt-test-page__panel-kicker">Loading</span>
               <h1 className="nt-test-page__panel-title">Preparing the assessment</h1>
             </div>
-            <p className="nt-test-page__panel-copy">Loading the live module bank.</p>
+            <p className="nt-test-page__panel-copy">Resolving your active learning plan and assessment forms.</p>
           </section>
         </div>
       </main>
     );
   }
 
-  if (questions.length === 0) {
+  if (cycle.status === 'error') {
+    const copy = CYCLE_ERROR_COPY[cycle.error];
     return (
-      <main className="nt-test-page" data-testid={`${assessmentType}-page`}>
+      <main className="nt-test-page" data-testid={`${assessmentType}-page`} data-cycle-error={cycle.error}>
         <div className="nt-test-page__shell">
           <section className="nt-test-page__panel">
             <div className="nt-test-page__panel-head">
-              <span className="nt-test-page__panel-kicker">Unavailable</span>
-              <h1 className="nt-test-page__panel-title">No objective questions are available</h1>
+              <span className="nt-test-page__panel-kicker">{copy.kicker}</span>
+              <h1 className="nt-test-page__panel-title">{copy.title}</h1>
             </div>
-            <p className="nt-test-page__panel-copy">
-              The module bank needs at least one objective (multiple-choice or identification) question before this assessment can render.
-            </p>
+            <p className="nt-test-page__panel-copy">{copy.copy}</p>
+            <div className="nt-assessment__footer">
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
+                Back to Learning Path
+              </button>
+            </div>
           </section>
         </div>
       </main>

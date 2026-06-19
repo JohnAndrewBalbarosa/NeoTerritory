@@ -35,6 +35,8 @@ interface AssessmentAttemptRow {
   assessmentType: AssessmentType;
   sessionId: string | null;
   questionCount: number;
+  cycleId: string | null;
+  planId: string | null;
   createdAt: string;
 }
 
@@ -45,6 +47,7 @@ interface AssessmentAnswerRow {
   assessmentIndex: number;
   moduleId: string;
   questionIndex: number;
+  questionId: string | null;
   selectedIndex: number;
   responseText: string | null;
   questionTaxonomy: string | null;
@@ -94,6 +97,9 @@ function parseJsonObjectColumn(raw: string | null | undefined): unknown {
 interface SanitizedAssessmentAnswer {
   moduleId: string;
   questionIndex: number;
+  // Stable formal-assessment question id (additive). Nullable: legacy/in-module
+  // submissions omit it and fall back to questionIndex.
+  questionId: string | null;
   selectedIndex: number;
   responseText: string;
   questionTaxonomy: string;
@@ -114,6 +120,9 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
       ? r.moduleId
       : '';
     const questionIndex = Number(r.questionIndex);
+    const questionId = typeof r.questionId === 'string' && r.questionId.length > 0 && r.questionId.length <= MAX_ID_LEN
+      ? r.questionId
+      : null;
     const selectedIndex = Number(r.selectedIndex);
     const responseText = typeof r.responseText === 'string' ? r.responseText.trim().slice(0, 8000) : '';
     const questionTaxonomy = typeof r.questionTaxonomy === 'string' ? r.questionTaxonomy.trim().slice(0, 32) : '';
@@ -135,6 +144,7 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
     out.push({
       moduleId,
       questionIndex,
+      questionId,
       selectedIndex: hasValidIndex ? selectedIndex : -1,
       responseText,
       questionTaxonomy,
@@ -460,6 +470,41 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
   }
 });
 
+// Authoritative formal-assessment scope source: the learner's ACTIVE plan and
+// its 'approved'/'added' modules. Returns { plan: null } when the learner has
+// no active plan (the caller must NOT fall back to any other module source).
+router.get('/active-plan', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const plan = db.prepare(`
+      SELECT id, learner_id AS learnerId, project_manager_id AS projectManagerId,
+             project_specification AS projectSpecification, status,
+             created_at AS createdAt, updated_at AS updatedAt, activated_at AS activatedAt
+      FROM learning_plans
+      WHERE learner_id = ? AND status = 'active'
+      ORDER BY activated_at DESC, updated_at DESC, id DESC
+      LIMIT 1
+    `).get(req.user.id) as { id: string } | undefined;
+    if (!plan) {
+      res.json({ plan: null });
+      return;
+    }
+    const modules = db.prepare(`
+      SELECT module_id AS moduleId, selection_status AS selectionStatus,
+             recommendation_source AS recommendationSource, display_order AS displayOrder
+      FROM learning_plan_modules
+      WHERE plan_id = ?
+      ORDER BY display_order ASC, module_id ASC
+    `).all(plan.id);
+    res.json({ plan: { ...plan, modules } });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
   try {
     if (!req.user?.id) {
@@ -469,7 +514,8 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
 
     const attempts = db.prepare(`
       SELECT id, assessment_type AS assessmentType, session_id AS sessionId,
-             question_count AS questionCount, created_at AS createdAt
+             question_count AS questionCount, cycle_id AS cycleId, plan_id AS planId,
+             created_at AS createdAt
       FROM learning_assessment_attempts
       WHERE user_id = ?
       ORDER BY created_at ASC, id ASC
@@ -478,7 +524,8 @@ router.get('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
     const answers = db.prepare(`
       SELECT a.id, a.attempt_id AS attemptId, a.assessment_type AS assessmentType,
              a.assessment_index AS assessmentIndex, a.module_id AS moduleId,
-             a.question_index AS questionIndex, a.selected_index AS selectedIndex,
+             a.question_index AS questionIndex, a.question_id AS questionId,
+             a.selected_index AS selectedIndex,
              a.response_text AS responseText, a.question_taxonomy AS questionTaxonomy,
              a.question_kind AS questionKind,
              a.session_id AS sessionId, a.created_at AS createdAt
@@ -506,6 +553,8 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
       assessmentType?: unknown;
       sessionId?: unknown;
       answers?: unknown;
+      cycleId?: unknown;
+      planId?: unknown;
     };
     const assessmentType = sanitizeAssessmentType(body.assessmentType);
     if (!assessmentType) {
@@ -519,19 +568,48 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
       return;
     }
 
+    const cycleId = typeof body.cycleId === 'string' && body.cycleId.length > 0 && body.cycleId.length <= MAX_ID_LEN
+      ? body.cycleId : null;
+    const planId = typeof body.planId === 'string' && body.planId.length > 0 && body.planId.length <= MAX_ID_LEN
+      ? body.planId : null;
+
+    // Formal cycle integrity (only enforced when a cycle_id is supplied; legacy
+    // / in-module practical saves without a cycle are unaffected).
+    const isFormal = assessmentType === 'pretest' || assessmentType === 'posttest' || assessmentType === 'posttest2';
+    if (isFormal && cycleId) {
+      const sameCycleType = db.prepare(
+        `SELECT COUNT(*) AS n FROM learning_assessment_attempts WHERE user_id = ? AND cycle_id = ? AND assessment_type = ?`,
+      ).get(req.user.id, cycleId, assessmentType) as { n: number };
+      if (sameCycleType.n > 0) {
+        // One formal pre-test and one formal post-test per cycle; a retake must
+        // use a NEW cycle_id.
+        res.status(409).json({ error: `A ${assessmentType} already exists for this cycle; a retake requires a new cycle.` });
+        return;
+      }
+      if (assessmentType === 'posttest' || assessmentType === 'posttest2') {
+        const pairedPre = db.prepare(
+          `SELECT COUNT(*) AS n FROM learning_assessment_attempts WHERE user_id = ? AND cycle_id = ? AND assessment_type = 'pretest'`,
+        ).get(req.user.id, cycleId) as { n: number };
+        if (pairedPre.n === 0) {
+          res.status(409).json({ error: 'No completed pre-test in this cycle; cannot start a post-test.' });
+          return;
+        }
+      }
+    }
+
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
     const insertAttempt = db.prepare(`
       INSERT INTO learning_assessment_attempts
-        (user_id, session_id, assessment_type, question_count, created_at)
-      VALUES (?, ?, ?, ?, datetime('now'))
+        (user_id, session_id, assessment_type, question_count, cycle_id, plan_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
     `);
-    const attemptInfo = insertAttempt.run(req.user.id, sessionId, assessmentType, answers.length);
+    const attemptInfo = insertAttempt.run(req.user.id, sessionId, assessmentType, answers.length, cycleId, planId);
     const attemptId = Number(attemptInfo.lastInsertRowid);
 
     const insertAnswer = db.prepare(`
       INSERT INTO learning_assessment_answers
-        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, selected_index, response_text, question_taxonomy, question_kind, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, question_id, selected_index, response_text, question_taxonomy, question_kind, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
     const tx = db.transaction((rows: SanitizedAssessmentAnswer[]) => {
       rows.forEach((answer, assessmentIndex) => {
@@ -543,6 +621,7 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
           assessmentIndex,
           answer.moduleId,
           answer.questionIndex,
+          answer.questionId,
           answer.selectedIndex,
           answer.responseText || null,
           answer.questionTaxonomy || null,
@@ -560,6 +639,8 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
         session_id: sessionId,
         assessment_type: assessmentType,
         question_count: answers.length,
+        cycle_id: cycleId,
+        plan_id: planId,
         created_at: nowIso,
       });
       answers.forEach((answer, assessmentIndex) => {
@@ -570,6 +651,7 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
           assessment_index: assessmentIndex,
           module_id: answer.moduleId,
           question_index: answer.questionIndex,
+          question_id: answer.questionId,
           selected_index: answer.selectedIndex,
           response_text: answer.responseText || null,
           question_taxonomy: answer.questionTaxonomy || null,

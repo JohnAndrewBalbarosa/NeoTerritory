@@ -327,10 +327,38 @@ export async function saveLearningAssessment(payload: {
   assessmentType: LearningAssessmentType;
   sessionId?: string | null;
   answers: LearningAssessmentAnswerInput[];
+  cycleId?: string | null;
+  planId?: string | null;
 }): Promise<void> {
   await apiFetch('/api/learning/assessments', {
     method: 'PUT',
     body: JSON.stringify(payload),
+  });
+}
+
+export interface ActivePlanResponse {
+  plan: {
+    id: string;
+    status: 'draft' | 'active' | 'completed' | 'archived';
+    modules: Array<{
+      moduleId: string;
+      selectionStatus: 'recommended' | 'approved' | 'added' | 'rejected';
+      recommendationSource?: 'ai' | 'project_manager' | 'system';
+      displayOrder?: number | null;
+    }>;
+  } | null;
+}
+
+export async function fetchActivePlan(): Promise<ActivePlanResponse> {
+  return apiFetch<ActivePlanResponse>('/api/learning/active-plan');
+}
+
+// DEV/TEST-ONLY: authenticate as the dedicated seeded pilot learner. Backed by
+// the gated /auth/pilot-login endpoint (404 in production / when disabled).
+export async function pilotLogin(): Promise<{ token: string; user: User }> {
+  return apiFetch<{ token: string; user: User }>('/auth/pilot-login', {
+    method: 'POST',
+    body: '{}',
   });
 }
 
