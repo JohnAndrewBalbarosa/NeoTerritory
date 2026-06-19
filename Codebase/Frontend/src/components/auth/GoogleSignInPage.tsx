@@ -38,7 +38,7 @@ function resolveNext(role: Role): string {
 }
 
 function resolveEyebrow(role: Role): string {
-  if (role === 'learner') return 'Learner access';
+  if (role === 'learner') return 'Intern Access';
   if (role === 'admin') return 'Super admin access';
   if (role === 'pm') return 'Project manager access';
   return 'First-time setup';
@@ -46,7 +46,7 @@ function resolveEyebrow(role: Role): string {
 
 function resolveLede(role: Role): string {
   if (role === 'learner') {
-    return 'Sign in with Google to save your progress through the learning path, or continue as a guest for a one-time look.';
+    return 'Sign in to save your learning progress and continue your assigned CodiNeo learning path.';
   }
   if (role === 'admin') {
     return 'For NeoTerritory original developers (Andrew / Miryl / Josephine) only. Other emails are redirected to PM sign-in.';
@@ -106,7 +106,7 @@ function GuestOnlyButton(): JSX.Element {
         disabled={busy}
         data-testid="use-guest-only"
       >
-        {busy ? 'Starting guest session…' : 'Use guest only (no saved progress)'}
+        {busy ? 'Starting guest session…' : 'Use guest only'}
       </button>
       {error && <p className="login-error">{error}</p>}
     </div>
