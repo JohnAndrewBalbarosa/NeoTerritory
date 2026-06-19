@@ -37,7 +37,9 @@ export type CycleErrorCode =
   | 'INCOMPLETE_FORM_B'
   | 'FORM_OVERLAP'
   | 'NO_PAIRED_PRETEST'
-  | 'MODULE_SET_MISMATCH';
+  | 'MODULE_SET_MISMATCH'
+  // No enabled (toggled-ON) course module has authored pre-test questions.
+  | 'NO_ASSESSMENT_QUESTIONS';
 
 export interface CycleFailure {
   ok: false;
@@ -50,6 +52,9 @@ export interface PretestCycle {
   planId: string | null;
   scope: string[];
   questions: LearningAssessmentQuestion[];
+  // Enabled (ON) modules dropped from scope because they have no active Form A/B
+  // in the question bank — surfaced as an admin-facing warning.
+  missingQuestionModuleIds?: string[];
 }
 export interface PosttestCycle {
   ok: true;
@@ -127,6 +132,40 @@ export function startPretestCycle(opts: {
 
   const questions = buildFormalAssessment(modules, 'pretest', scope);
   return { ok: true, cycleId, planId, scope, questions };
+}
+
+// AUTHORITATIVE pre-test scope source (production project-guided flow): the
+// enabled (toggled-ON / published) course modules, resolved server-side and
+// passed in as `enabledModuleIds`. Scope = those enabled modules that also have
+// active pre-test questions in the bank — a non-empty Form A paired 1:1 with
+// Form B, linked by stable module id (form sizes vary by module, so this does
+// NOT hard-require exactly FORM_SIZE). Enabled modules without questions are NOT
+// a crash: they are dropped from scope and reported in `missingQuestionModuleIds`
+// for an admin-facing warning. If NO enabled module has questions, returns
+// NO_ASSESSMENT_QUESTIONS (never a zero-question assessment). No category / seed
+// / required / plan / prior-result filtering is applied — the persisted toggles
+// are the only scope authority.
+export function startPretestCycleForModules(opts: {
+  enabledModuleIds: ReadonlyArray<string>;
+  modules: ReadonlyArray<LearningModule>;
+  cycleId: string;
+}): PretestCycle | CycleFailure {
+  const { enabledModuleIds, modules, cycleId } = opts;
+  const byId = new Map(normalizeLearningModules(modules).map((m) => [m.id, m]));
+  const scope: string[] = [];
+  const missingQuestionModuleIds: string[] = [];
+  for (const id of enabledModuleIds) {
+    const module = byId.get(id);
+    const aLen = module?.assessmentForms?.A?.length ?? 0;
+    const bLen = module?.assessmentForms?.B?.length ?? 0;
+    if (aLen > 0 && aLen === bLen) scope.push(id);
+    else missingQuestionModuleIds.push(id);
+  }
+  if (scope.length === 0) {
+    return { ok: false, error: 'NO_ASSESSMENT_QUESTIONS', modules: missingQuestionModuleIds };
+  }
+  const questions = buildFormalAssessment(modules, 'pretest', scope);
+  return { ok: true, cycleId, planId: null, scope, questions, missingQuestionModuleIds };
 }
 
 // Recover the EXACT module set frozen by a cycle's pre-test, from that

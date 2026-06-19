@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { navigate } from '../../logic/router';
 import {
-  fetchActivePlan,
+  fetchAssessmentScope,
   fetchLearningAssessments,
   saveLearningAssessment,
   refreshGuest,
@@ -25,9 +25,8 @@ import {
 } from '../../data/learningAssessments';
 import {
   startPosttestForCycle,
-  startPretestCycle,
+  startPretestCycleForModules,
   type CycleErrorCode,
-  type LearningPlan,
 } from '../../data/assessmentCycle';
 import type { LearningAssessmentAttemptRaw } from '../../types/api';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
@@ -74,6 +73,11 @@ const CYCLE_ERROR_COPY: Record<CycleErrorCode, { kicker: string; title: string; 
     kicker: 'Pairing error',
     title: 'Post-test module set mismatch',
     copy: 'The post-test could not be built for the exact module set used in your pre-test. Please contact an administrator.',
+  },
+  NO_ASSESSMENT_QUESTIONS: {
+    kicker: 'No questions',
+    title: 'No active pre-test questions are available for the selected course modules.',
+    copy: 'The enabled course modules do not yet have authored pre-test questions in the question bank. Ask your project manager to enable modules that have a complete question set.',
   },
 };
 
@@ -253,14 +257,22 @@ function LearningAssessmentContent({
     (async () => {
       try {
         if (assessmentType === 'pretest') {
-          const { plan } = await fetchActivePlan();
-          const planForCycle: LearningPlan | null = plan
-            ? { id: plan.id, status: plan.status, modules: plan.modules }
-            : null;
+          // Authoritative scope = the persisted ON (published) course modules
+          // from the Courses configuration, resolved server-side. The pre-test
+          // never parses the PM prompt or calls AI directly — the saved toggle
+          // states (set via the AI course plan + manual PM adjustments) are the
+          // only scope authority.
+          const { moduleIds } = await fetchAssessmentScope();
           const cycleId =
             typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `cyc_${Date.now()}`;
-          const result = startPretestCycle({ plan: planForCycle, modules, cycleId });
+          const result = startPretestCycleForModules({ enabledModuleIds: moduleIds, modules, cycleId });
           if (cancelled) return;
+          if (result.ok && result.missingQuestionModuleIds && result.missingQuestionModuleIds.length) {
+            // Admin-facing warning: enabled modules with no authored pre-test
+            // questions were dropped from scope (the pre-test still runs on the
+            // enabled modules that DO have questions).
+            console.warn('[pre-test] enabled modules with no active question-bank coverage (excluded from scope):', result.missingQuestionModuleIds);
+          }
           setCycle(result.ok
             ? { status: 'ready', cycleId: result.cycleId, planId: result.planId, questions: result.questions }
             : { status: 'error', error: result.error });

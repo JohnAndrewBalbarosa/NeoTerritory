@@ -4,6 +4,7 @@ import {
   pretestModuleSetForCycle,
   startPosttestForCycle,
   startPretestCycle,
+  startPretestCycleForModules,
   type LearningPlan,
 } from '../assessmentCycle';
 import { scoreStoredObjectiveAssessmentForCycle } from '../learningAssessments';
@@ -200,5 +201,74 @@ describe('assessment cycle — legacy compatibility', () => {
       { moduleId: 'foundations-what-is-pattern', selectionStatus: 'rejected' },
     ]);
     expect(startPretestCycle({ plan, modules: LEARNING_MODULES, cycleId: 'c' })).toMatchObject({ ok: false, error: 'NO_APPROVED_MODULES' });
+  });
+});
+
+// Project-guided pre-test: scope comes from the persisted enabled (ON / published)
+// course modules, resolved server-side and passed in as enabledModuleIds. The
+// active plan / pilot fixture no longer governs scope.
+describe('pre-test scope from enabled course-module toggles', () => {
+  const moduleIdsOf = (r: ReturnType<typeof startPretestCycleForModules>) =>
+    r.ok ? new Set(r.questions.map((q) => q.moduleId)) : new Set<string>();
+
+  it('an ON module IS included in a newly generated pre-test', () => {
+    const result = startPretestCycleForModules({ enabledModuleIds: ['creational-singleton', 'creational-builder'], modules: LEARNING_MODULES, cycleId: 'cyc-on' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(new Set(result.scope)).toEqual(new Set(['creational-singleton', 'creational-builder']));
+    expect(moduleIdsOf(result)).toEqual(new Set(['creational-singleton', 'creational-builder']));
+    expect(result.questions.length).toBe(10);
+  });
+
+  it('an OFF module is EXCLUDED (only enabled ids are scoped)', () => {
+    const result = startPretestCycleForModules({ enabledModuleIds: ['creational-singleton'], modules: LEARNING_MODULES, cycleId: 'cyc-off' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(moduleIdsOf(result).has('creational-builder')).toBe(false);
+    expect(new Set(result.scope)).toEqual(new Set(['creational-singleton']));
+  });
+
+  it('questions are loaded from the question bank through stable module ids', () => {
+    const result = startPretestCycleForModules({ enabledModuleIds: ['behavioural-strategy'], modules: LEARNING_MODULES, cycleId: 'cyc-qb' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.questions.length).toBeGreaterThan(0);
+    for (const q of result.questions) expect(q.moduleId).toBe('behavioural-strategy');
+  });
+
+  it('an ON module is included regardless of category, honoring variable form sizes', () => {
+    // foundations-why-matters has fewer than FORM_SIZE items (3) and must still
+    // be included alongside a full-size pattern module.
+    const result = startPretestCycleForModules({ enabledModuleIds: ['foundations-why-matters', 'structural-adapter'], modules: LEARNING_MODULES, cycleId: 'cyc-mixed' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(new Set(result.scope)).toEqual(new Set(['foundations-why-matters', 'structural-adapter']));
+    expect(result.questions.length).toBe(8); // 3 + 5
+  });
+
+  it('an ON module with no active questions is dropped + reported (no crash)', () => {
+    const result = startPretestCycleForModules({ enabledModuleIds: ['creational-singleton', 'foundations-postrequisite'], modules: LEARNING_MODULES, cycleId: 'cyc-missing' });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(new Set(result.scope)).toEqual(new Set(['creational-singleton']));
+    expect(result.missingQuestionModuleIds).toContain('foundations-postrequisite');
+  });
+
+  it('no zero-question assessment is created when no enabled module has questions', () => {
+    const result = startPretestCycleForModules({ enabledModuleIds: ['foundations-postrequisite', 'no-such-module'], modules: LEARNING_MODULES, cycleId: 'cyc-empty' });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBe('NO_ASSESSMENT_QUESTIONS');
+  });
+
+  it('two cycles may use different enabled scopes without contamination', () => {
+    const a = startPretestCycleForModules({ enabledModuleIds: ['behavioural-observer', 'behavioural-strategy'], modules: LEARNING_MODULES, cycleId: 'cyc-A' });
+    const b = startPretestCycleForModules({ enabledModuleIds: ['creational-builder'], modules: LEARNING_MODULES, cycleId: 'cyc-B' });
+    expect(a.ok && b.ok).toBe(true);
+    if (!a.ok || !b.ok) return;
+    expect(new Set(a.scope)).toEqual(new Set(['behavioural-observer', 'behavioural-strategy']));
+    expect(new Set(b.scope)).toEqual(new Set(['creational-builder']));
+    expect(moduleIdsOf(a).has('creational-builder')).toBe(false);
+    expect(moduleIdsOf(b).has('behavioural-observer')).toBe(false);
   });
 });

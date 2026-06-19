@@ -282,6 +282,30 @@ router.get('/modules', (_req: Request, res: Response, next: NextFunction): void 
   }
 });
 
+// AUTHORITATIVE enabled-assessment-module scope (server-side source of truth for
+// the project-guided pre-test). Returns the stable ids of modules whose Courses
+// toggle is ON (published = 1), in sort order. Unlike GET /modules (content
+// path), this does NOT force-include foundations — the persisted ON/OFF toggle
+// alone decides assessment scope, so an OFF module is excluded and an ON module
+// is included regardless of category/seed/required status. Read-only; exposes no
+// questions or answer keys. The client intersects these ids with the question
+// bank (modules that have authored Form A/B) to build the pre-test.
+router.get('/assessment-scope', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    const rows = db
+      .prepare(`SELECT module_id FROM learning_modules WHERE published = 1 ORDER BY sort_order ASC`)
+      .all() as Array<{ module_id: string }>;
+    res.set('Cache-Control', 'no-store, max-age=0, must-revalidate');
+    res.json({ moduleIds: rows.map((r) => r.module_id) });
+  } catch (err) {
+    next(err);
+  }
+});
+
 router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
   try {
     if (!req.user?.id) {

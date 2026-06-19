@@ -361,6 +361,12 @@ export async function fetchActivePlan(): Promise<ActivePlanResponse> {
   return apiFetch<ActivePlanResponse>('/api/learning/active-plan');
 }
 
+// Authoritative enabled-assessment-module scope: the stable ids of modules whose
+// Courses toggle is ON (published). Drives the project-guided pre-test scope.
+export async function fetchAssessmentScope(): Promise<{ moduleIds: string[] }> {
+  return apiFetch<{ moduleIds: string[] }>('/api/learning/assessment-scope');
+}
+
 // DEV/TEST-ONLY: authenticate as the dedicated seeded pilot learner. Backed by
 // the gated /auth/pilot-login endpoint (404 in production / when disabled).
 export async function pilotLogin(): Promise<{ token: string; user: User }> {
