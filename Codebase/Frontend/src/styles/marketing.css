@@ -4838,20 +4838,45 @@ body[data-surface] {
   flex-direction: column;
   align-items: center;
   gap: 0.7rem;
-  margin-top: 0.1rem;
+  margin: 0.1rem auto 0;
   width: 100%;
+  max-width: 300px;
 }
 .nt-signin-action .google-signin {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
   width: 100%;
 }
-.nt-signin-action .google-signin__btn {
-  min-width: 240px;
-  padding: 10px 22px;
+/* Primary Google + secondary Guest share width, height, and radius so the
+   stacked buttons line up cleanly. */
+.nt-signin-action .google-signin__btn,
+.nt-signin-action .nt-signin-guest__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  padding: 11px 18px;
+  border-radius: 12px;
   font-size: 14px;
+  letter-spacing: 0.01em;
+}
+/* White chip so the multicolor Google "G" reads on the neon button. */
+.google-signin__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background: #fff;
+  flex-shrink: 0;
+}
+.google-signin__glyph svg {
+  display: block;
 }
 .nt-signin-action .auth-helper {
   max-width: 300px;
@@ -4867,20 +4892,21 @@ body[data-surface] {
   gap: 0.35rem;
   width: 100%;
 }
-.nt-signin-guest__btn {
-  font-size: 0.82rem;
-  padding: 6px 14px;
-  opacity: 0.8;
+.nt-signin-guest__icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
 }
 .nt-signin-foot {
   display: flex;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: clamp(0.75rem, 0.5rem + 1vw, 1.25rem);
-  margin-top: 0.4rem;
+  margin-top: 0.5rem;
 }
-.nt-signin-foot .ghost-btn + .ghost-btn {
-  margin-left: 0;
+.nt-signin-foot .ghost-btn {
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  border-radius: 10px;
+  opacity: 0.85;
 }
 /* Token-driven spinner for the OAuth verify phase. Keeps the user
  * oriented during the 1â€“3s round-trip without leaning on a third-party

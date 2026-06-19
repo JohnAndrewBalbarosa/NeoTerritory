@@ -106,7 +106,15 @@ function GuestOnlyButton(): JSX.Element {
         disabled={busy}
         data-testid="use-guest-only"
       >
-        {busy ? 'Starting guest session…' : 'Use guest only'}
+        {!busy && (
+          <span className="nt-signin-guest__icon" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" focusable="false">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </span>
+        )}
+        <span>{busy ? 'Starting guest session…' : 'Log in as Guest'}</span>
       </button>
       {error && <p className="login-error">{error}</p>}
     </div>
@@ -197,7 +205,7 @@ export default function GoogleSignInPage() {
           <header className="nt-entry__hero">
             <p className="nt-section-eyebrow">{eyebrow}</p>
             <h1 id="signin-heading" className="nt-entry__title nt-signin__title">
-              Sign in to continue
+              Welcome
             </h1>
             <p className="nt-entry__lede">{lede}</p>
           </header>
