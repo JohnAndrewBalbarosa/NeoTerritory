@@ -2,26 +2,31 @@ import { describe, it, expect, beforeAll, vi } from 'vitest';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import type { ProjectBriefInput } from '../services/projectLearningContracts';
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neoterritory-orch-'));
-const dbPath = path.join(tmpRoot, 'orch.sqlite');
+const dbPath = path.join(tmpRoot, 'projectLearningOrchestration.sqlite');
 
 vi.mock('../db/_testSeed/devconUsers', () => ({
   seedDevconUsers: () => {},
   ensureTestFolders: () => {},
 }));
 
-import * as intakeService from '../services/projectSpecIntakeService';
-import * as policyService from '../services/featureTogglePolicyService';
-import * as assessmentService from '../services/assessmentOrchestrationService';
-import { PATTERN_CATALOG } from '../services/coursePlannerService';
-import { ProjectBriefInput } from '../services/projectLearningContracts';
+let intakeService: typeof import('../services/projectSpecIntakeService');
+let policyService: typeof import('../services/featureTogglePolicyService');
+let assessmentService: typeof import('../services/assessmentOrchestrationService');
+let PATTERN_CATALOG: (typeof import('../services/coursePlannerService'))['PATTERN_CATALOG'];
 
 describe('Project Learning Orchestration Flow', () => {
   beforeAll(async () => {
     process.env.DB_PATH = dbPath;
     const { initDb } = await import('../db/initDb');
     initDb();
+
+    intakeService = await import('../services/projectSpecIntakeService');
+    policyService = await import('../services/featureTogglePolicyService');
+    assessmentService = await import('../services/assessmentOrchestrationService');
+    ({ PATTERN_CATALOG } = await import('../services/coursePlannerService'));
   });
 
   const devconDelegationBrief: ProjectBriefInput = {
@@ -131,7 +136,7 @@ describe('Project Learning Orchestration Flow', () => {
   it('should resolve toggles based on scope', () => {
     const scope = intakeService.intakeProjectBrief(devconDelegationBrief);
     const manifest = policyService.resolveTogglePolicy(scope);
-    
+
     const adapterToggle = manifest.toggles.find(t => t.key === 'pattern.adapter');
     expect(adapterToggle?.enabled).toBe(false);
 
