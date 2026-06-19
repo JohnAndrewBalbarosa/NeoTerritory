@@ -27,21 +27,25 @@ function seedAdminAccount(): void {
   const email = `${username.toLowerCase()}@neoterritory.local`;
   const hash = bcrypt.hashSync(password, 10);
 
-  const existing = db
+  let existing = db
     .prepare('SELECT id, role FROM users WHERE username = ?')
     .get(username) as UserAdminRow | undefined;
 
   if (!existing) {
     db.prepare(
-      `INSERT INTO users (username, email, password_hash, role, created_at)
+      `INSERT OR IGNORE INTO users (username, email, password_hash, role, created_at)
        VALUES (?, ?, ?, 'admin', datetime('now'))`
     ).run(username, email, hash);
-    return;
+    existing = db
+      .prepare('SELECT id, role FROM users WHERE username = ?')
+      .get(username) as UserAdminRow | undefined;
   }
 
-  // Idempotent upsert: ensure role is admin and password matches env.
-  db.prepare(`UPDATE users SET role = 'admin', password_hash = ? WHERE id = ?`)
-    .run(hash, existing.id);
+  if (existing) {
+    // Idempotent upsert: ensure role is admin and password matches env.
+    db.prepare(`UPDATE users SET role = 'admin', password_hash = ? WHERE id = ?`)
+      .run(hash, existing.id);
+  }
 }
 
 // PILOT FIXTURE ONLY — explicitly not a production fallback. Seeds a DEDICATED
@@ -63,7 +67,7 @@ function seedPilotLearnerAndPlan(): void {
   if (!learner) {
     const disabledHash = bcrypt.hashSync(`disabled_${Math.random().toString(36).slice(2)}`, 10);
     db.prepare(
-      `INSERT INTO users (username, email, password_hash, role, created_via, created_at)
+      `INSERT OR IGNORE INTO users (username, email, password_hash, role, created_via, created_at)
        VALUES (?, ?, ?, 'user', 'pilot', datetime('now'))`,
     ).run(PILOT_LEARNER_USERNAME, PILOT_LEARNER_EMAIL, disabledHash);
     learner = db
@@ -73,15 +77,19 @@ function seedPilotLearnerAndPlan(): void {
   if (!learner) return;
 
   // Plan owned by the pilot LEARNER (reassign from any prior owner, e.g. admin).
-  const existing = db
+  let existing = db
     .prepare('SELECT id, learner_id FROM learning_plans WHERE id = ?')
     .get(PILOT_PLAN_ID) as { id: string; learner_id: number } | undefined;
   if (!existing) {
     db.prepare(
-      `INSERT INTO learning_plans (id, learner_id, status, created_at, updated_at, activated_at)
+      `INSERT OR IGNORE INTO learning_plans (id, learner_id, status, created_at, updated_at, activated_at)
        VALUES (?, ?, 'active', datetime('now'), datetime('now'), datetime('now'))`,
     ).run(PILOT_PLAN_ID, learner.id);
-  } else if (existing.learner_id !== learner.id) {
+    existing = db
+      .prepare('SELECT id, learner_id FROM learning_plans WHERE id = ?')
+      .get(PILOT_PLAN_ID) as { id: string; learner_id: number } | undefined;
+  }
+  if (existing && existing.learner_id !== learner.id) {
     db.prepare(
       `UPDATE learning_plans SET learner_id = ?, status = 'active', updated_at = datetime('now') WHERE id = ?`,
     ).run(learner.id, PILOT_PLAN_ID);
@@ -167,7 +175,7 @@ export function seedLearningModulesIfEmpty(database: Database): void {
     if (!rows || rows.length === 0) return;
 
     const insert = database.prepare(`
-      INSERT INTO learning_modules (
+      INSERT OR IGNORE INTO learning_modules (
         module_id, category, title, eyebrow, intro,
         sections_json, key_terms_json, summary, see_also_json,
         theoretical_json, practical_json,

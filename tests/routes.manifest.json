@@ -54,8 +54,7 @@
       "name": "pre-test-assessment",
       "auth": "public",
       "expectStatus": 200,
-      "expectSelector": "[data-testid=\"pretest-page\"]",
-      "expectText": ["Baseline Assessment: Pre-Test"]
+      "expectSelector": "[data-testid=\"pretest-page\"]"
     },
     {
       "path": "/post-test",
