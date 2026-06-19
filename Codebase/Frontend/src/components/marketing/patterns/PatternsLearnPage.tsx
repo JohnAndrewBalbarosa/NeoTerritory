@@ -12,17 +12,21 @@ import {
   type BloomTaxonomy,
 } from '../../../data/learningModules';
 import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
+import StudioSurface from '../../studio/StudioSurface';
 import {
   evaluateFoundationPretestFromAssessments,
   type FoundationPretestEvidence,
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
+import { useFeatureReleases } from '../../../hooks/useFeatureReleases';
 import {
   derivePretestModuleOutcomes,
   masteryLevelForBloomLevels,
   type PretestModuleOutcomes,
 } from '../../../logic/pretestModuleOutcomes';
+import { isLocalDevRuntime } from '../../../utils/runtimeEnv';
+import type { AnalysisRun } from '../../../types/api';
 
 interface CourseStep {
   module: LearningModule;
@@ -340,6 +344,7 @@ function TheoreticalExamBlock({
   onAnswerChange,
   isPassed,
   isSubmitGate,
+  showDevSkip,
 }: {
   moduleId: string;
   exam: TheoreticalExam;
@@ -348,6 +353,7 @@ function TheoreticalExamBlock({
   onAnswerChange: (questionIndex: number, answer: any) => void;
   isPassed: boolean;
   isSubmitGate: boolean;
+  showDevSkip: boolean;
 }): JSX.Element | null {
   const qi = subIndex ?? 0;
   const q = exam.questions[qi];
@@ -370,6 +376,7 @@ function TheoreticalExamBlock({
         userAnswer={answers[qi]}
         showResult={isPassed}
         onAnswer={(answer) => onAnswerChange(qi, answer)}
+        onSkip={showDevSkip ? () => onAnswerChange(qi, true) : undefined}
       />
       {isPassed ? (
         <p className="nt-exam__status nt-exam__status--pass">
@@ -388,19 +395,56 @@ function PracticalExamBlock({
   moduleId,
   exam,
   isPassed,
-  answer,
   saving,
-  onAnswerChange,
-  onSave,
+  showDevSkip,
+  onDetected,
 }: {
   moduleId: string;
   exam: PracticalExam;
   isPassed: boolean;
-  answer: string;
   saving: boolean;
-  onAnswerChange: (next: string) => void;
-  onSave: () => void;
+  showDevSkip: boolean;
+  onDetected: (run: AnalysisRun) => void;
 }): JSX.Element {
+  const [detectedRun, setDetectedRun] = useState<AnalysisRun | null>(null);
+  const gdbAllPassedForRun = useAppStore((s) => s.gdbAllPassedForRun);
+  const requiresTests = exam.passMode === 'detection_and_tests';
+
+  useEffect(() => {
+    useAppStore.getState().resetSession();
+    setDetectedRun(null);
+  }, [exam.patternSlug, exam.starterCode, moduleId]);
+
+  useEffect(() => {
+    if (!requiresTests || !detectedRun || !gdbAllPassedForRun || isPassed || saving) return;
+    onDetected(detectedRun);
+  }, [detectedRun, gdbAllPassedForRun, isPassed, onDetected, requiresTests, saving]);
+
+  const handlePatternDetected = (run: AnalysisRun): void => {
+    if (requiresTests) {
+      setDetectedRun(run);
+      return;
+    }
+    onDetected(run);
+  };
+
+  const handleSkip = (): void => {
+    const skippedRun: AnalysisRun = {
+      runId: null,
+      sourceName: 'local-skip',
+      sourceText: '',
+      detectedPatterns: [],
+      annotations: [],
+      ranking: null,
+      classUsageBindings: {},
+      classUsageBindingSource: 'heuristic',
+      summary: `Skipped locally for ${exam.patternName}`,
+      pendingId: 'local-skip',
+      files: [],
+    };
+    onDetected(skippedRun);
+  };
+
   return (
     <section className="nt-practical nt-practical--studio" id={anchorId(moduleId, 'practical')} aria-label="Practical exam">
       <header className="nt-practical__head">
@@ -410,28 +454,34 @@ function PracticalExamBlock({
         </h3>
         <p className="nt-practical__prompt">{exam.prompt}</p>
       </header>
-      {!isPassed ? (
-        <div className="nt-practical__composer">
-          <textarea
-            className="nt-practical__editor"
-            value={answer}
-            onChange={(e) => onAnswerChange(e.target.value)}
-            placeholder="Paste the practical answer or Studio code output here..."
-            rows={10}
-          />
-          <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Practical Answer'}
-          </button>
-        </div>
-      ) : (
-        <p className="nt-practical__verdict nt-practical__verdict--pass">Verified.</p>
-      )}
+      {isPassed ? (
+        <p className="nt-practical__verdict nt-practical__verdict--pass">Verified by Studio detection.</p>
+      ) : null}
+      {saving ? (
+        <p className="nt-practical__verdict" role="status">Saving Studio result...</p>
+      ) : null}
+      {requiresTests && detectedRun && !isPassed ? (
+        <p className="nt-practical__verdict" role="status">
+          Pattern detected. Run and pass the Studio Tests tab to verify this practical.
+        </p>
+      ) : null}
+      <div className="nt-practical__studio">
+        <StudioSurface
+          key={`${moduleId}:${exam.patternSlug}:${exam.starterCode || ''}`}
+          targetPatternSlug={exam.patternSlug}
+          targetPatternName={exam.patternName}
+          starterCode={exam.starterCode}
+          onPatternDetected={handlePatternDetected}
+          onSkip={showDevSkip ? handleSkip : undefined}
+        />
+      </div>
     </section>
   );
 }
 
 export default function PatternsLearnPage(): JSX.Element {
   const token = useAppStore((s) => s.token);
+  const { isReleased } = useFeatureReleases();
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
   const masteredLevelsByModule = useAppStore((s) => s.masteredLevelsByModule);
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
@@ -447,11 +497,11 @@ export default function PatternsLearnPage(): JSX.Element {
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
   const [seededLeafView, setSeededLeafView] = useState(false);
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
-  const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
   const [pretestModuleOutcomes, setPretestModuleOutcomes] = useState<PretestModuleOutcomes>(EMPTY_PRETEST_OUTCOMES);
   const [bloomMasteryByModule, setBloomMasteryByModule] = useState<Record<string, number>>({});
+  const showDevAssessmentTools = isLocalDevRuntime() && isReleased('assessment-dev-tools');
   const effectiveBloomMasteryByModule = useMemo(() => {
     const next: Record<string, number> = {};
     for (const [moduleId, level] of Object.entries(bloomMasteryByModule)) {
@@ -1127,6 +1177,7 @@ export default function PatternsLearnPage(): JSX.Element {
                       }}
                       isPassed={isTheoryPassed}
                       isSubmitGate={isSubmitGate}
+                      showDevSkip={showDevAssessmentTools}
                     />
                   ) : null}
                   {currentPage.kind === 'practical' && activeModule.practicalExam ? (
@@ -1134,19 +1185,20 @@ export default function PatternsLearnPage(): JSX.Element {
                       moduleId={activeModule.id}
                       exam={activeModule.practicalExam}
                       isPassed={isActiveComplete || isPracticalDone}
-                      answer={practicalAnswers[activeModule.id] || ''}
                       saving={!!practicalSaving[activeModule.id]}
-                      onAnswerChange={(next) => setPracticalAnswers((prev) => ({ ...prev, [activeModule.id]: next }))}
-                      onSave={async () => {
-                        const answerText = (practicalAnswers[activeModule.id] || '').trim();
+                      showDevSkip={showDevAssessmentTools}
+                      onDetected={async (run) => {
                         const practicalExam = activeModule.practicalExam;
                         if (!practicalExam) return;
-                        if (!answerText) {
-                          alert('Paste the practical answer or code output before saving.');
-                          return;
-                        }
+                        if (practicalDone.has(activeModule.id) || completedIds.has(activeModule.id)) return;
                         setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: true }));
                         try {
+                          const responseText = [
+                            `Studio detected ${practicalExam.patternName} (${practicalExam.patternSlug}).`,
+                            `source=${run.sourceName || 'submission'}`,
+                            run.pendingId ? `pendingId=${run.pendingId}` : null,
+                            run.runId != null ? `runId=${run.runId}` : null,
+                          ].filter(Boolean).join(' ');
                           await saveLearningAssessment({
                             assessmentType: 'practical',
                             sessionId: lmsSessionId,
@@ -1154,7 +1206,7 @@ export default function PatternsLearnPage(): JSX.Element {
                               moduleId: activeModule.id,
                               questionIndex: 0,
                               selectedIndex: -1,
-                              responseText: answerText,
+                              responseText,
                               questionTaxonomy: practicalExam.taxonomy || 'applying',
                               questionKind: 'practical',
                             }],

@@ -68,9 +68,12 @@ without forking the source:
   generated explicit-`?raw` manifest `Frontend/src/components/analysis/
   sampleSources.generated.ts` (built by `scripts/gen-sample-sources.mjs`). Bundler-agnostic;
   behaviour-identical for the Vite app.
-- **`import.meta.env.VITE_*` / `.PROD`** (GoogleSignInPage, useOverflowGuard): optional-
-  chained, so they degrade to `undefined` under webpack without crashing. Functional env
-  parity (e.g. an admin gate key) is wired via Vercel env vars if needed.
+- **`import.meta.env` checks**: shared code must not read `import.meta.env.DEV`
+  directly. Localhost-only dev helpers go through `Frontend/src/utils/runtimeEnv.ts`,
+  which uses the browser hostname and avoids bundler-specific env globals. Existing
+  optional-cast reads such as GoogleSignInPage and useOverflowGuard still degrade to
+  `undefined` under webpack without crashing. Functional env parity is wired via Vercel
+  env vars if needed.
 
 ## Doc-mirror granularity
 Per D89, this tree documents at folder-README granularity plus a `.md` for each non-trivial

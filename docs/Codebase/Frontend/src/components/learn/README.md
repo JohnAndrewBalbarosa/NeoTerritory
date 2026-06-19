@@ -41,8 +41,8 @@ flowchart TD
 - `StudentDashboard.tsx.md` - post-unlock learner dashboard surface with a locked-first-entry state.
 
 ### Assessment Gate
-- `LearningAssessmentPage.tsx.md` - renders pre-test, post-test, and practical assessment submission surfaces when mirrored.
-- `BloomQuestionRenderer.tsx.md` - renders MCQ, identification, and Studio theoretical questions from one mixed bank.
+- `LearningAssessmentPage.tsx.md` - renders pre-test/post-test submission surfaces and the adaptive answer flow for learner-facing assessment.
+- `BloomQuestionRenderer.tsx.md` - renders MCQ, identification, and always-open inline Studio theoretical questions from one mixed bank.
 - `AdaptiveAssessmentProvider.tsx.md` - tracks the adaptive Bloom level and active module set when mirrored.
 - `../marketing/patterns/PatternsLearnPage.tsx.md` - owns the learning-path gate that consumes server-backed pre-test evidence.
 - `../../logic/pretestModuleOutcomes.ts.md` - derives per-module mastered levels, failed modules, and pre-test exemptions.

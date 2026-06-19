@@ -43,6 +43,8 @@ interface PatternGroup {
   patternName: string;
   className: string;
   wrapperId?: string;
+  wrapperOwnerKey?: string | null;
+  wrapperSharesDocker?: boolean;
   staticAnalysis?: GdbTestResult;
   compileRun?: GdbTestResult;
   unitTest?: GdbTestResult;
@@ -70,7 +72,9 @@ function groupResults(results: GdbTestResult[]): PatternGroup[] {
       patternId: r.patternId,
       patternName: r.patternName,
       className: r.className,
-      wrapperId: r.wrapperId
+      wrapperId: r.wrapperId,
+      wrapperOwnerKey: r.wrapperOwnerKey ?? null,
+      wrapperSharesDocker: r.wrapperSharesDocker === true,
     };
     if (r.phase === 'static_analysis') g.staticAnalysis = r;
     else if (r.phase === 'compile_run') g.compileRun = r;
@@ -605,7 +609,7 @@ export default function GdbRunnerTab() {
                     </summary>
                     <ul className="gdb-tree-classes">
                       {p.classes.map(g => {
-                        const k = `${g.patternId}__${g.className}`;
+                        const k = groupKeyOf(g);
                         const overall =
                           !g.compileRun && !g.unitTest ? 'idle' :
                           g.compileRun && !g.compileRun.passed ? 'fail' :
@@ -644,6 +648,11 @@ export default function GdbRunnerTab() {
                     Wrapper {shortWrapperId(active.wrapperId)}
                   </span>
                 )}
+                {active.wrapperSharesDocker && active.wrapperOwnerKey ? (
+                  <span className="gdb-result-wrapper" title={active.wrapperOwnerKey}>
+                    Shared Docker
+                  </span>
+                ) : null}
               </header>
               <PhaseRow phase="static_analysis" result={active.staticAnalysis} loading={busy && !active.staticAnalysis} />
               <PhaseRow phase="compile_run"     result={active.compileRun}     loading={busy && !active.compileRun} />
