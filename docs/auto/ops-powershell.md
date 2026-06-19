@@ -61,9 +61,9 @@ validates the keys required for the chosen ship mode.
 **Functions**
 
 - `Import-DeployEnv` (line 4)
-- `Require-EnvVar` (line 28)
-- `Assert-PushPrereqs` (line 34)
-- `Get-RemoteAppDir` (line 42)
+- `Require-EnvVar` (line 34)
+- `Assert-PushPrereqs` (line 40)
+- `Get-RemoteAppDir` (line 48)
 
 ### `ops/powershell/deploy/lib/probe.ps1`
 

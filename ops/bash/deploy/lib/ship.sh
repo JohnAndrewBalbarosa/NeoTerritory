@@ -59,12 +59,12 @@ ship_source() {
 import json, sys
 with open(sys.argv[1]) as f: m = json.load(f)
 for p in m.get('includes', []): print(p)
-" "$manifest")
+" "$manifest" | tr -d '\r')
   mapfile -t excludes_raw < <(python3 -c "
 import json, sys
 with open(sys.argv[1]) as f: m = json.load(f)
 for p in m.get('excludes', []): print(p)
-" "$manifest")
+" "$manifest" | tr -d '\r')
   excludes=()
   for pat in "${excludes_raw[@]}"; do
     excludes+=( "--exclude=$pat" )
