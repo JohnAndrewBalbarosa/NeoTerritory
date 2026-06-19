@@ -50,8 +50,11 @@ describe('PM dashboard navConfig (SOP-1)', () => {
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-students');
 
     // Learning Content holds the real content/question MANAGEMENT tabs — NOT the
-    // analytics ids, which must not appear as content tabs.
-    expect(SECTION_CHILDREN['Learning Content']).toEqual(['modules', 'question-bank']);
+    // analytics ids, which must not appear as content tabs. The 'modules' tab was
+    // removed (its inspection columns were folded into CoursesTab); only
+    // 'question-bank' remains under Learning Content.
+    expect(SECTION_CHILDREN['Learning Content']).toEqual(['question-bank']);
+    expect(SECTION_CHILDREN['Learning Content']).not.toContain('modules');
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-modules');
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-questions');
 

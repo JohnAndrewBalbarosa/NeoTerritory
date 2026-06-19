@@ -12,7 +12,6 @@ import InternRecordsTab from './components/InternRecordsTab';
 import InternDetailTab from './components/InternDetailTab';
 import AssessmentsTab from './components/AssessmentsTab';
 import AssessmentCycleDetailTab from './components/AssessmentCycleDetailTab';
-import ModulesTab from './components/ModulesTab';
 import QuestionBankTab from './components/QuestionBankTab';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
@@ -429,11 +428,6 @@ export default function AdminApp() {
             {selectedCycle
               ? <AssessmentCycleDetailTab internId={selectedCycle.internId} cycleId={selectedCycle.cycleId} onBack={() => setTab('assessments')} />
               : <p className="admin-section__hint">Select a cycle from Assessments.</p>}
-          </div>
-        )}
-        {mountedTabs.has('modules') && (
-          <div hidden={activeTab !== 'modules'}>
-            <ModulesTab onManageCoursePlan={() => setTab('courses')} />
           </div>
         )}
         {mountedTabs.has('question-bank') && (
