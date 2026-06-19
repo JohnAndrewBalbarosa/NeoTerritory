@@ -777,6 +777,13 @@ export function initDb(): void {
   }
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_answers_attempt_qid
     ON learning_assessment_answers(attempt_id, question_id)`).run();
+  // Bloom-level progression (additive, nullable). NULL = correctness unknown
+  // (legacy rows never had server-side grading). 1 = correct, 0 = incorrect.
+  try {
+    db.prepare(`ALTER TABLE learning_assessment_answers ADD COLUMN is_correct INTEGER`).run();
+  } catch {
+    /* column already exists */
+  }
 
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_modules (
     module_id TEXT PRIMARY KEY,
