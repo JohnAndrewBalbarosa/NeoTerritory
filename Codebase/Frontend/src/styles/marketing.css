@@ -4908,6 +4908,36 @@ body[data-surface] {
   border-radius: 10px;
   opacity: 0.85;
 }
+/* Two-button action row for the OAuth-callback failure screen. Primary and
+   secondary share equal width, height, and radius so they read as a balanced
+   pair; they stack cleanly on narrow screens. Kept separate from
+   .nt-signin-foot so the sign-in page's single Back button is unaffected. */
+.nt-callback-actions {
+  display: flex;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 360px;
+  margin: 0.7rem auto 0;
+}
+.nt-callback-actions .primary-btn,
+.nt-callback-actions .ghost-btn {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 44px;
+  padding: 11px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  opacity: 1;
+}
+@media (max-width: 480px) {
+  .nt-callback-actions {
+    flex-direction: column;
+  }
+}
 /* Token-driven spinner for the OAuth verify phase. Keeps the user
  * oriented during the 1â€“3s round-trip without leaning on a third-party
  * loader library. */

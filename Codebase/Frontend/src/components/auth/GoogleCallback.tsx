@@ -208,13 +208,15 @@ export default function GoogleCallback() {
               <>
                 <h1 className="nt-entry__title nt-signin__title">Sign-in failed</h1>
                 <p className="nt-entry__lede" role="alert">
-                  {errorMsg}
+                  {errorCanSignUp?.role === 'pm'
+                    ? 'This access level is restricted. Please use Project Manager sign-in instead.'
+                    : errorMsg}
                 </p>
               </>
             )}
           </header>
           {phase === 'error' && (
-            <footer className="nt-signin-foot">
+            <footer className="nt-callback-actions">
               {errorCanSignUp && (
                 <button
                   type="button"
@@ -222,14 +224,12 @@ export default function GoogleCallback() {
                   onClick={signUpInstead}
                 >
                   {errorCanSignUp.role === 'pm'
-                    ? 'Switch to PM sign-in instead →'
-                    : errorCanSignUp.role === 'learner'
-                      ? 'Create your learner account →'
-                      : `Sign up as ${errorCanSignUp.role} instead →`}
+                    ? 'Switch to Project Manager Sign-In'
+                    : 'Create your intern account'}
                 </button>
               )}
               <button type="button" className="ghost-btn" onClick={() => navigate('/')}>
-                Back to homepage
+                Back to Homepage
               </button>
             </footer>
           )}
