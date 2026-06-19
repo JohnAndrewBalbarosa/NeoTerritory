@@ -62,11 +62,22 @@ describe('assessment cycle — scope from active plan', () => {
     expect(new Set(result.questions.map((q) => q.moduleId))).toEqual(new Set(['creational-builder']));
   });
 
-  it('3. a missing or non-active plan falls back to required foundation modules', () => {
+  it('3. a missing or non-active plan falls back to every required / switched-on module with complete forms (not foundations-only)', () => {
+    // The required set the learner is served is the modules arg; the assessable
+    // fallback scope is that set intersected with modules that have complete
+    // authored forms — here both PILOT modules, including the non-foundations
+    // creational-builder, so the pre-test is not narrowed to the foundations category.
     const resultNull = startPretestCycle({ plan: null, modules: LEARNING_MODULES, cycleId: 'c1' });
     expect(resultNull.ok).toBe(true);
     if (resultNull.ok) {
+      // Foundations remain in scope...
       expect(resultNull.scope).toContain('foundations-what-is-pattern');
+      // ...but the fallback is NOT narrowed to the foundations category: a
+      // non-foundations module with complete forms is included too.
+      expect(resultNull.scope).toContain('creational-builder');
+      expect(resultNull.scope.some((id) => id.startsWith('structural-'))).toBe(true);
+      // Broader than the 2-module pilot, every module sourced has forms.
+      expect(resultNull.scope.length).toBeGreaterThan(PILOT.length);
       expect(resultNull.planId).toBeNull();
     }
 
@@ -75,6 +86,8 @@ describe('assessment cycle — scope from active plan', () => {
     expect(resultDraft.ok).toBe(true);
     if (resultDraft.ok) {
       expect(resultDraft.scope).toContain('foundations-what-is-pattern');
+      expect(resultDraft.scope).toContain('creational-builder');
+      expect(resultDraft.scope.length).toBeGreaterThan(PILOT.length);
       expect(resultDraft.planId).toBeNull();
     }
   });

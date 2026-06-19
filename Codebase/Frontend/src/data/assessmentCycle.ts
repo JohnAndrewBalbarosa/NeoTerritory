@@ -10,7 +10,7 @@
 // never paired by "latest". All functions are pure (cycle ids are injected) so
 // they are deterministic and unit-testable.
 
-import { normalizeLearningModules, type LearningModule, isFoundationModule } from './learningModules';
+import { normalizeLearningModules, type LearningModule } from './learningModules';
 import { buildFormalAssessment, type LearningAssessmentQuestion } from './learningAssessments';
 import type { LearningAssessmentAttemptRaw, LearningAssessmentAnswerRaw } from '../types/api';
 
@@ -78,8 +78,13 @@ function formComplete(module: LearningModule | undefined, form: 'A' | 'B'): bool
 // Start a formal pre-test cycle. cycleId is injected by the caller (e.g.
 // crypto.randomUUID()) so this stays pure. Validates an active plan, approved
 // modules, complete Form A AND Form B, and zero A/B id overlap, then builds
-// Form A for the approved set. If no active plan exists, it falls back to using
-// the required baseline foundation modules.
+// Form A for the approved set. If no active plan exists, it falls back to the
+// full REQUIRED / "switched-on" module set the learner is served — every module
+// passed in (the API returns published modules + baseline foundations; the
+// static catalog is the offline fallback), not only the foundations category.
+// The assessable scope is that required set intersected with the modules that
+// have complete authored forms, so the pre-test grows automatically as more
+// required modules get their parallel forms authored.
 export function startPretestCycle(opts: {
   plan: LearningPlan | null | undefined;
   modules: ReadonlyArray<LearningModule>;
@@ -94,10 +99,12 @@ export function startPretestCycle(opts: {
     scope = approvedPlanModuleIds(plan);
     planId = plan.id;
   } else {
-    // Required modules fallback when there is no active course plan:
-    // load all modules in the foundations category that have complete forms.
+    // Required modules fallback when there is no active course plan: scope to
+    // EVERY required / switched-on module the learner is served (the modules
+    // arg already is that set), intersected with those that have complete
+    // authored forms. Not restricted to the foundations category.
     scope = normalizeLearningModules(modules)
-      .filter((m) => isFoundationModule(m) && formComplete(m, 'A') && formComplete(m, 'B'))
+      .filter((m) => formComplete(m, 'A') && formComplete(m, 'B'))
       .map((m) => m.id);
   }
 
