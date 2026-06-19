@@ -158,7 +158,7 @@ export function lessonPagesFor(
   const pages: LessonPage[] = [{ kind: 'lesson', label: 'Lesson' }];
 
   if (module.theoreticalExam && visibleTheoryQuestionIndexesFor(module, masteryLevel).length > 0) {
-    pages.push({ kind: 'theoretical', label: 'Theoretical Exam' });
+    pages.push({ kind: 'theoretical', label: 'Conceptual Assessment' });
   }
 
   if (module.practicalExam) {
@@ -181,7 +181,7 @@ function lessonPageGroupsFor(
   const pages = lessonPagesFor(module, masteryLevel);
   const groups: LessonPageGroup[] = [
     { key: 'lesson', label: 'Lesson', pages: pages.filter((p) => p.kind === 'lesson') },
-    { key: 'theoretical', label: 'Theoretical Exam', pages: pages.filter((p) => p.kind === 'theoretical') },
+    { key: 'theoretical', label: 'Conceptual Assessment', pages: pages.filter((p) => p.kind === 'theoretical') },
     { key: 'practical', label: 'Practical Exam', pages: pages.filter((p) => p.kind === 'practical') },
   ];
 
@@ -355,17 +355,17 @@ function TheoreticalExamBlock({
   if (questionIndexes.length === 0) return null;
 
   return (
-    <section className="nt-learn__module-group" id={anchorId(moduleId, 'theoretical')} aria-label="Theoretical exam">
-      <p className="nt-learn__group-eyebrow">Theoretical Exam</p>
-      {questionIndexes.map((qi) => {
+    <section className="nt-learn__module-group" id={anchorId(moduleId, 'theoretical')} aria-label="Conceptual assessment">
+      {questionIndexes.map((qi, pos) => {
         const q = exam.questions[qi];
         if (!q) return null;
+        // The prompt is rendered ONCE, by BloomQuestionRenderer below. The outer
+        // heading carries only the (sequential) question number. The positional
+        // sourceQuestionIndex (qi) still keys answers/scoring/analytics — only the
+        // displayed label is sequential.
         return (
-          <section className="nt-exam__question" key={`${moduleId}-q-${qi}`}>
-            <p className="nt-exam__prompt">
-              <span className="nt-exam__qnum">Q{qi + 1}</span>
-              {q.type === 'studio' ? q.prompt : q.question}
-            </p>
+          <section className="nt-exam__question" key={`${moduleId}-q-${qi}`} aria-label={`Question ${pos + 1}`}>
+            <p className="nt-exam__qnum">Question {pos + 1}</p>
             <BloomQuestionRenderer
               question={q}
               userAnswer={answers[qi]}
