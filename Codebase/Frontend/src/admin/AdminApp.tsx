@@ -161,15 +161,19 @@ export default function AdminApp() {
           <section className="admin-section admin-section--card admin-login-card" data-testid="admin-login-shell">
             <header className="admin-section__head">
               <p className="eyebrow">CodiNeo · Admin</p>
-              <h1 className="brand-title">Sign in as PM / admin</h1>
+              <h1 className="brand-title">Project Manager / Admin Sign In</h1>
               <p className="admin-section__hint">
-                Admins sign in with Google. Original-devs emails land sa NeoTerritory
-                admin; ibang emails ay automatic self-serve org creation.
+                Sign in with Google to access the CodiNeo management dashboard. Authorized users can
+                manage intern progress, review learning records, and monitor system activity.
               </p>
             </header>
 
             <div className="admin-login-google">
-              <GoogleSignInButton role="admin" redirectAfter="/admin" />
+              <GoogleSignInButton
+                role="admin"
+                redirectAfter="/admin"
+                helperText="CodiNeo only receives your name and email for account verification."
+              />
             </div>
 
             <details
@@ -178,12 +182,11 @@ export default function AdminApp() {
               onToggle={(e) => setLegacyOpen((e.target as HTMLDetailsElement).open)}
             >
               <summary>
-                Legacy sign-in (seeded thesis admin only)
+                Legacy Admin Sign-In
               </summary>
               <p className="admin-section__hint">
-                Hidden because OAuth is now the primary path. Use this only when
-                the server has no Supabase config, or when you need the seeded
-                <code>Neoterritory</code> admin account.
+                For the seeded <code>Neoterritory</code> admin account only — use when the
+                server has no Google sign-in configured.
               </p>
               <form className="admin-login-form" onSubmit={onAdminLogin}>
                 <label className="admin-login-field">

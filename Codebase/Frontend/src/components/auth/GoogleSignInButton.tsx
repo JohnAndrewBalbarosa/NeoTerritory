@@ -28,6 +28,8 @@ interface Props {
   intent?: 'existing' | 'new';
   // Where to send the user once Google sign-in succeeds.
   redirectAfter?: string;
+  // Optional override for the small privacy note under the button.
+  helperText?: string;
 }
 
 /**
@@ -39,7 +41,7 @@ interface Props {
  * configured (locally or on the deployed backend). Avoids a dead
  * button in environments where Supabase auth hasn't been provisioned.
  */
-export default function GoogleSignInButton({ role, intent, redirectAfter }: Props) {
+export default function GoogleSignInButton({ role, intent, redirectAfter, helperText }: Props) {
   const preTestCompleted = useAppStore((s) => s.preTestCompleted);
   const [status, setStatus] = useState<GoogleStatus | null>(null);
   const [busy, setBusy] = useState(false);
@@ -120,7 +122,7 @@ export default function GoogleSignInButton({ role, intent, redirectAfter }: Prop
       </button>
       {error && <p className="auth-error" role="alert">{error}</p>}
       <p className="auth-helper">
-        CodiNeo only receives your name and email for progress tracking.
+        {helperText ?? 'CodiNeo only receives your name and email for progress tracking.'}
       </p>
     </div>
   );

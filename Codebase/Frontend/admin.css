@@ -451,7 +451,7 @@ body{position:relative;}
 .admin-success-banner{color:var(--green);background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.28);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;}
 @media (max-width:720px){.admin-ai-config__grid{grid-template-columns:1fr;}}
 .admin-shell--login{min-height:100vh;display:flex;align-items:center;justify-content:center;}
-.admin-login-wrap{width:100%;max-width:440px;padding:32px 20px;position:relative;z-index:1;}
+.admin-login-wrap{width:100%;max-width:480px;padding:32px 20px;position:relative;z-index:1;}
 .admin-login-card{display:flex;flex-direction:column;gap:18px;}
 .admin-login-form{display:flex;flex-direction:column;gap:14px;}
 .admin-login-field{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ink-soft);}
@@ -459,9 +459,11 @@ body{position:relative;}
 .admin-login-field input:focus{outline:2px solid var(--accent);outline-offset:1px;}
 .admin-login-error{color:var(--red,#f87171);background:rgba(248,113,113,0.08);border:1px solid rgba(248,113,113,0.28);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin:0;}
 .admin-login-google{display:flex;flex-direction:column;align-items:stretch;gap:8px;margin:8px 0 4px;}
-.admin-login-google .google-signin{margin:0;}
-.admin-login-legacy{margin-top:18px;padding:12px 14px;border:1px dashed var(--border);border-radius:var(--radius-sm);background:rgba(255,255,255,0.02);}
-.admin-login-legacy summary{cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-mute);padding:2px 0;}
+.admin-login-google .google-signin{margin:0;display:flex;flex-direction:column;align-items:stretch;gap:8px;width:100%;}
+.admin-login-google .google-signin__btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:46px;padding:11px 18px;border-radius:12px;font-size:14px;letter-spacing:0.01em;}
+.admin-login-google .auth-helper{max-width:340px;margin:2px auto 0;font-size:12px;line-height:1.45;color:var(--ink-soft);text-align:center;}
+.admin-login-legacy{margin-top:12px;padding:10px 12px;border:1px dashed var(--border);border-radius:var(--radius-sm);background:rgba(255,255,255,0.015);}
+.admin-login-legacy summary{cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-mute);padding:2px 0;}
 .admin-login-legacy summary:hover,.admin-login-legacy summary:focus-visible{color:var(--ink-soft);}
 .admin-login-legacy[open]{background:rgba(255,255,255,0.04);}
 .admin-login-legacy[open] summary{margin-bottom:10px;color:var(--ink-soft);}
