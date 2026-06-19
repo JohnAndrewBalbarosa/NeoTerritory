@@ -1185,3 +1185,9 @@ body{position:relative;}
 .admin-breadcrumb{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 12px;}
 .nt-linkbtn{appearance:none;background:none;border:none;color:var(--devcon-cyan,#39d3e0);cursor:pointer;padding:0;font:inherit;text-decoration:underline;}
 .nt-cap{caption-side:top;text-align:left;font-weight:700;font-size:12px;color:var(--ink-mute);padding:0 0 6px;}
+
+/* In-Module Analytics: keep the first column (learner/module/question) readable
+   on wide tables — sticky, never clipped, names wrap to two lines. */
+.nt-records-table.nt-sticky-1 th:first-child,
+.nt-records-table.nt-sticky-1 td:first-child{position:sticky;left:0;background:var(--surface);z-index:1;min-width:180px;max-width:260px;white-space:normal;}
+.nt-records-table td{vertical-align:top;}

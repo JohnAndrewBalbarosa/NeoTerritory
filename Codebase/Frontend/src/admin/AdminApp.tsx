@@ -26,7 +26,7 @@ import CatalogsTab from './components/CatalogsTab';
 import InviteCodesTab from './components/InviteCodesTab';
 import JoinRequestsTab from './components/JoinRequestsTab';
 import FeatureReleasePanel from './components/FeatureReleasePanel';
-import InstructorDashboard from './components/InstructorDashboard';
+import InModuleAnalyticsTab from './components/InModuleAnalyticsTab';
 import CoursesTab from './components/CoursesTab';
 import { markAdminRefresh } from '../api/client';
 import { useAdminUsers } from './hooks/useAdminUsers';
@@ -536,13 +536,7 @@ export default function AdminApp() {
         )}
         {mountedTabs.has('instructor-students') && (
           <div hidden={activeTab !== 'instructor-students'}>
-            <section className="admin-section admin-section--card">
-              <header className="admin-section__head">
-                <h2>In-Module Learning Analytics</h2>
-                <p className="admin-section__hint">This page shows how interns work through recommended learning modules, including conceptual attempts, practical submissions, retries, completion, and question-level performance. Formal pre-test and post-test records remain under Assessments.</p>
-              </header>
-              <InstructorDashboard initialView="students" />
-            </section>
+            <InModuleAnalyticsTab />
           </div>
         )}
         {mountedTabs.has('courses') && (
