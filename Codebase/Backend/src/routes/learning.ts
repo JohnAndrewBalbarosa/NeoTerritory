@@ -105,6 +105,9 @@ interface SanitizedAssessmentAnswer {
   responseText: string;
   questionTaxonomy: string;
   questionKind: 'theoretical' | 'practical';
+  // Bloom-level progression: server-persisted correctness flag. Null = unknown
+  // (legacy / client did not supply). 1 = correct, 0 = incorrect.
+  isCorrect: 1 | 0 | null;
 }
 
 function sanitizeAssessmentType(raw: unknown): AssessmentType | null {
@@ -142,6 +145,13 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
       continue;
     }
 
+    // isCorrect: true/1 → 1, false/0 → 0, absent/null/undefined → null (unknown).
+    const rawIsCorrect = r.isCorrect;
+    const isCorrect: 1 | 0 | null =
+      rawIsCorrect === true || rawIsCorrect === 1 ? 1
+      : rawIsCorrect === false || rawIsCorrect === 0 ? 0
+      : null;
+
     out.push({
       moduleId,
       questionIndex,
@@ -150,6 +160,7 @@ function sanitizeAssessmentAnswers(input: unknown): SanitizedAssessmentAnswer[] 
       responseText,
       questionTaxonomy,
       questionKind,
+      isCorrect,
     });
     if (out.length >= 50) break;
   }
@@ -736,8 +747,8 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
 
     const insertAnswer = db.prepare(`
       INSERT INTO learning_assessment_answers
-        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, question_id, selected_index, response_text, question_taxonomy, question_kind, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, question_id, selected_index, response_text, question_taxonomy, question_kind, is_correct, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
     `);
     const tx = db.transaction((rows: SanitizedAssessmentAnswer[]) => {
       rows.forEach((answer, assessmentIndex) => {
@@ -754,6 +765,7 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
           answer.responseText || null,
           answer.questionTaxonomy || null,
           answer.questionKind,
+          answer.isCorrect ?? null,
         );
       });
     });
@@ -862,6 +874,195 @@ router.patch('/bulk', jwtAuth, (req: Request, res: Response, next: NextFunction)
       res.status(400).json({ error: err.message });
       return;
     }
+    next(err);
+  }
+});
+
+// ── Bloom-level progression ─────────────────────────────────────────────────
+// GET /api/learning/bloom-progression (jwtAuth)
+//
+// Per module: highest Bloom rank among CORRECT answers (is_correct = 1) for
+// the most recent cycle that has BOTH a pretest AND a posttest attempt.
+// Rank map: remembering=1, understanding=2, applying=3, analyzing=4,
+//           evaluating=5, creating=6. Unknown/missing taxonomy → excluded.
+// leveledUp = postHighest.rank > preHighest.rank (nulls treated as rank 0).
+// Modules with no correct answers on either side are omitted.
+
+export const BLOOM_RANK: Readonly<Record<string, number>> = {
+  remembering: 1,
+  understanding: 2,
+  applying: 3,
+  analyzing: 4,
+  evaluating: 5,
+  creating: 6,
+};
+
+export interface BloomLevel {
+  name: string;
+  rank: number;
+}
+
+export interface BloomProgressionEntry {
+  moduleId: string;
+  cycleId: string;
+  preHighest: BloomLevel | null;
+  postHighest: BloomLevel | null;
+  leveledUp: boolean;
+}
+
+interface ProgressionAnswerRow {
+  cycle_id: string;
+  module_id: string;
+  assessment_type: string;
+  question_taxonomy: string | null;
+  is_correct: number | null;
+}
+
+interface ProgressionAttemptRow {
+  id: number;
+  cycle_id: string;
+  assessment_type: string;
+}
+
+/**
+ * Pure computation: given attempt rows and answer rows (already filtered to
+ * is_correct = 1), return the Bloom progression per module.
+ * Exported for unit testing without HTTP.
+ */
+export function computeBloomProgression(
+  attempts: ReadonlyArray<ProgressionAttemptRow>,
+  answers: ReadonlyArray<ProgressionAnswerRow>,
+): BloomProgressionEntry[] {
+  // Build a set of cycle_ids that have BOTH a pretest AND a posttest attempt.
+  const cyclePreIds = new Set<string>();
+  const cyclePostIds = new Set<string>();
+  for (const a of attempts) {
+    if (!a.cycle_id) continue;
+    if (a.assessment_type === 'pretest') cyclePreIds.add(a.cycle_id);
+    if (a.assessment_type === 'posttest' || a.assessment_type === 'posttest2') cyclePostIds.add(a.cycle_id);
+  }
+  const validCycleIds = new Set<string>();
+  for (const cid of cyclePreIds) {
+    if (cyclePostIds.has(cid)) validCycleIds.add(cid);
+  }
+
+  if (validCycleIds.size === 0) return [];
+
+  // Map attempt id → { cycle_id, assessment_type } for fast lookup.
+  const attemptMap = new Map<number, { cycleId: string; assessmentType: string }>();
+  for (const a of attempts) {
+    if (a.cycle_id && validCycleIds.has(a.cycle_id)) {
+      attemptMap.set(a.id, { cycleId: a.cycle_id, assessmentType: a.assessment_type });
+    }
+  }
+
+  // For each (cycleId, moduleId, pre/post), track the highest Bloom rank seen.
+  // key = `${cycleId}::${moduleId}::pre` or `...::post`
+  const highestRank = new Map<string, number>();
+
+  for (const ans of answers) {
+    if (ans.is_correct !== 1) continue;
+    if (!ans.cycle_id || !validCycleIds.has(ans.cycle_id)) continue;
+    const taxonomy = (ans.question_taxonomy ?? '').toLowerCase().trim();
+    const rank = BLOOM_RANK[taxonomy];
+    if (!rank) continue; // unknown taxonomy → skip
+
+    const side =
+      ans.assessment_type === 'pretest' ? 'pre'
+      : ans.assessment_type === 'posttest' || ans.assessment_type === 'posttest2' ? 'post'
+      : null;
+    if (!side) continue;
+
+    const key = `${ans.cycle_id}::${ans.module_id}::${side}`;
+    const current = highestRank.get(key) ?? 0;
+    if (rank > current) highestRank.set(key, rank);
+  }
+
+  // For each (cycleId, moduleId) pair, pick the most recent cycle that has a
+  // valid entry, then build the output. We group all module ids touched.
+  // Strategy: collect all (cycleId, moduleId) combos, then for each moduleId
+  // keep the cycle where the combined pre+post data is most recent.
+  // "most recent" = highest cycle_id lexicographically among valid cycles
+  // (cycle ids are UUID-ish or timestamp-ish strings; for determinism we sort
+  // valid cycle ids and pick the last one per module).
+
+  // Collect all (cycleId, moduleId) that have at least one side with a rank.
+  const moduleToLatestCycle = new Map<string, string>();
+
+  // Sort valid cycle ids so "most recent" = last in sorted order.
+  const sortedCycles = Array.from(validCycleIds).sort();
+
+  for (const cycleId of sortedCycles) {
+    // Find all module ids that have any rank entry for this cycle.
+    const modulesInCycle = new Set<string>();
+    for (const [key] of highestRank) {
+      if (key.startsWith(`${cycleId}::`)) {
+        const parts = key.split('::');
+        if (parts.length === 3) modulesInCycle.add(parts[1]);
+      }
+    }
+    for (const moduleId of modulesInCycle) {
+      // Overwrite so later (more recent) cycle wins.
+      moduleToLatestCycle.set(moduleId, cycleId);
+    }
+  }
+
+  const results: BloomProgressionEntry[] = [];
+  for (const [moduleId, cycleId] of moduleToLatestCycle) {
+    const preRank = highestRank.get(`${cycleId}::${moduleId}::pre`) ?? 0;
+    const postRank = highestRank.get(`${cycleId}::${moduleId}::post`) ?? 0;
+
+    // Omit if neither side had any correct answer with a known taxonomy.
+    if (preRank === 0 && postRank === 0) continue;
+
+    const preHighest: BloomLevel | null = preRank > 0
+      ? { name: Object.keys(BLOOM_RANK).find((k) => BLOOM_RANK[k] === preRank)!, rank: preRank }
+      : null;
+    const postHighest: BloomLevel | null = postRank > 0
+      ? { name: Object.keys(BLOOM_RANK).find((k) => BLOOM_RANK[k] === postRank)!, rank: postRank }
+      : null;
+
+    results.push({
+      moduleId,
+      cycleId,
+      preHighest,
+      postHighest,
+      leveledUp: (postRank) > (preRank),
+    });
+  }
+
+  return results;
+}
+
+router.get('/bloom-progression', jwtAuth, (req: Request, res: Response, next: NextFunction): void => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+
+    // Fetch all attempts for this user that have a cycle_id (formal assessments).
+    const attempts = db.prepare(`
+      SELECT id, cycle_id, assessment_type
+      FROM learning_assessment_attempts
+      WHERE user_id = ? AND cycle_id IS NOT NULL
+      ORDER BY created_at ASC, id ASC
+    `).all(req.user.id) as ProgressionAttemptRow[];
+
+    // Fetch all answers for this user that are marked correct and have a
+    // cycle_id (joined via attempt). NULL is_correct = unknown = excluded.
+    const answers = db.prepare(`
+      SELECT a.cycle_id, ans.module_id, ans.assessment_type,
+             ans.question_taxonomy, ans.is_correct
+      FROM learning_assessment_answers ans
+      JOIN learning_assessment_attempts a ON ans.attempt_id = a.id
+      WHERE ans.user_id = ? AND a.cycle_id IS NOT NULL AND ans.is_correct = 1
+      ORDER BY ans.created_at ASC, ans.id ASC
+    `).all(req.user.id) as ProgressionAnswerRow[];
+
+    const progression = computeBloomProgression(attempts, answers);
+    res.json({ progression });
+  } catch (err) {
     next(err);
   }
 });
