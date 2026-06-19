@@ -68,18 +68,47 @@ function formatFormal(q, n, typeLabel) {
 }
 
 function formatInModule(q, n) {
+  // Non-applicable legacy position (generated fallback): preserve the index and
+  // do NOT print a fake learner question.
+  if (!q.applicable) {
+    return [
+      `Question ${n}`,
+      `Question ID: ${q.questionId}`,
+      `Assessment Type: In-Module Conceptual Assessment`,
+      `Source Question Index: ${q.sourceQuestionIndex}`,
+      `Bloom Level: ${titleCaseBloom(q.bloomLevel)}`,
+      `Applicable: NO`,
+      `STATUS: NOT APPLICABLE — LEGACY INDEX PRESERVED`,
+      `REASON: ${q.bloomLevel === 'create' || q.bloomLevel === 'creating'
+        ? 'Create is assessed by the practical C++ task, never an MCQ.'
+        : 'Bloom level not applicable to this module; hidden from learners, index preserved for analytics compatibility.'}`,
+      '',
+      '------------------------------------------------',
+      '',
+    ].join('\n');
+  }
   return [
     `Question ${n}`,
     `Question ID: ${q.questionId}`,
     `Assessment Type: In-Module Conceptual Assessment`,
     `Source Question Index: ${q.sourceQuestionIndex}`,
+    `Competency ID: ${q.competencyId ?? '(none)'}`,
     `Bloom Level: ${titleCaseBloom(q.bloomLevel)}`,
-    `Item Type: ${q.type}${q.generatedFallback ? ' (GENERATED FALLBACK — excluded from formal assessment)' : ''}`,
+    `Applicable: YES`,
+    `Difficulty: ${titleCase(q.difficulty ?? '')}`,
+    `Validation Status: ${q.validationStatus ?? '(unset)'}`,
+    `Item Type: ${q.type}`,
     '',
     'QUESTION:',
     q.prompt,
     ...(q.options.length ? ['', 'OPTIONS:', ...q.options.map((o, i) => `${LETTERS[i]}. ${o}`)] : []),
     ...(q.correctIndex >= 0 ? ['', `CORRECT ANSWER: ${LETTERS[q.correctIndex]}. ${q.options[q.correctIndex] ?? ''}`] : []),
+    '',
+    'RATIONALE:',
+    q.rationale || '(rationale pending)',
+    '',
+    'SOURCE REFERENCES:',
+    ...((q.sourceReferences && q.sourceReferences.length) ? q.sourceReferences.map((s) => `* ${s}`) : ['* (source pending)']),
     '',
     '------------------------------------------------',
     '',
@@ -172,6 +201,9 @@ async function main() {
     if (m.inModule.length) {
       const block = moduleHeader(m, 'In-Module Conceptual Assessment') + m.inModule.map((q, i) => formatInModule(q, i + 1)).join('');
       master.push(block); inMod.push(block);
+      // CSV: applicable (learner-facing) in-module items only — fallbacks are hidden.
+      m.inModule.filter((q) => q.applicable && q.options.length === 4).forEach((q) => csv.push(
+        [m.category, m.moduleId, m.moduleTitle, 'in-module', '', q.questionId, '', q.competencyId ?? '', q.bloomLevel, q.difficulty ?? '', q.prompt, q.options[0], q.options[1], q.options[2], q.options[3], LETTERS[q.correctIndex], q.options[q.correctIndex], q.rationale ?? '', (q.sourceReferences ?? []).join('; '), q.validationStatus ?? ''].map(csvEsc).join(',')));
     }
     if (m.practical) {
       const block = moduleHeader(m, 'Practical C++ Assessment') + formatPractical(m.practical);
@@ -206,6 +238,42 @@ async function main() {
   await writeFile(resolve(OUT_DIR, 'PRACTICAL_TASKS_AND_EXPECTED_EVIDENCE.txt'), practical.join('\n'), 'utf8');
   await writeFile(resolve(OUT_DIR, 'QUESTION_BANK_AUDIT_AND_COUNTS.txt'), audit, 'utf8');
   await writeFile(resolve(OUT_DIR, 'QUESTION_BANK_REVIEW.csv'), csv.join('\n'), 'utf8');
+
+  // In-module index migration report. The index<->Bloom mapping is fixed by the
+  // normalizer (sourceQuestionIndex 0=Remember … 5=Create), so NO index moves and
+  // no index's Bloom meaning changes; only CONTENT at applicable indexes is
+  // authored/replaced. Non-applicable + Create positions stay hidden fallbacks.
+  const BLOOM_BY_INDEX = ['remember', 'understand', 'apply', 'analyze', 'evaluate', 'create'];
+  const mig = [
+    'IN-MODULE INDEX MIGRATION REPORT',
+    `Generated: ${now}`,
+    '',
+    'INVARIANT: No sourceQuestionIndex values were changed. Each index keeps its',
+    'fixed Bloom meaning (0=Remember, 1=Understand, 2=Apply, 3=Analyze, 4=Evaluate,',
+    '5=Create). Authoring only replaces the CONTENT at applicable indexes; non-',
+    'applicable Bloom levels and Create remain hidden generated fallbacks at the',
+    'same index. Question ids keep the stable `${moduleId}:${taxonomy}` scheme.',
+    'The analytics key is the positional index, which is unchanged — existing',
+    'learning_question_results / first-attempt / eventual-mastery rows stay aligned.',
+    '',
+    '========================================================================',
+    '',
+  ];
+  for (const m of data.modules) {
+    if (!m.inModule.length) continue;
+    mig.push(`MODULE: ${m.moduleTitle}  [${m.moduleId}]  (${m.category})`);
+    mig.push('  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK');
+    m.inModule.forEach((q) => {
+      const bloom = BLOOM_BY_INDEX[q.sourceQuestionIndex] ?? q.bloomLevel;
+      const action = q.applicable
+        ? 'authored conceptual item (replaces prior fallback/weak content)'
+        : (bloom === 'create' ? 'preserved fallback (Create = practical task)' : 'preserved fallback (non-applicable Bloom level)');
+      const vis = q.applicable ? 'visible to learners' : 'hidden';
+      mig.push(`  ${q.sourceQuestionIndex}   | ${bloom}/${bloom} | ${q.applicable ? 'YES' : 'NO '} | ${action} | ${vis} | none (index & Bloom unchanged)`);
+    });
+    mig.push('');
+  }
+  await writeFile(resolve(OUT_DIR, 'IN_MODULE_INDEX_MIGRATION_REPORT.txt'), mig.join('\n'), 'utf8');
 
   console.log(`Wrote review files to ${OUT_DIR}`);
   console.log(`Form A: ${data.counts.formA} | Form B: ${data.counts.formB} | In-module: ${data.counts.inModule} | Practical: ${data.counts.practical} | Total: ${data.counts.grandTotal}`);

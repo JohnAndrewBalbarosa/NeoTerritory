@@ -143,13 +143,17 @@ describe('studentDrilldown', () => {
   });
 
   it('labels identification questions without fake option text', () => {
-    const q2 = findLearningModule(MOD_A)?.theoreticalExam?.questions[2];
-    if (!q2 || !isIdentificationQuestion(q2)) throw new Error('MOD_A Q2 should be identification');
+    // Use a module whose Apply level is NON-applicable, so index 2 is a generated
+    // identification fallback. (Modules where Apply IS applicable now carry an
+    // authored MCQ at index 2 — see the in-module conceptual bank.)
+    const ID_MOD = 'foundations-why-matters';
+    const q2 = findLearningModule(ID_MOD)?.theoreticalExam?.questions[2];
+    if (!q2 || !isIdentificationQuestion(q2)) throw new Error('ID_MOD Q2 should be identification');
 
     const raw: AdminLearningRaw = {
       ...emptyRaw(),
       questionResults: [
-        { userId: 1, moduleId: MOD_A, questionIndex: 2, selectedIndex: -1, isCorrect: 1, firstAttemptCorrect: 1, attempts: 1, updatedAt: 't' },
+        { userId: 1, moduleId: ID_MOD, questionIndex: 2, selectedIndex: -1, isCorrect: 1, firstAttemptCorrect: 1, attempts: 1, updatedAt: 't' },
       ],
     };
 

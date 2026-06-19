@@ -1,5 +1,5 @@
 CODINEO QUESTION BANK REVIEW
-Generated: 2026-06-19T10:31:33.077Z
+Generated: 2026-06-19T11:30:26.295Z
 Total Learning Modules: 40
 Total Formal-Eligible Modules: 39
 Modules with Authored Form A+B: 39
@@ -9,7 +9,7 @@ Total In-Module Conceptual Questions: 240
 Total Practical Tasks: 25
 Total Questions and Tasks: 599
 Validation Errors: 0
-Validation Warnings: 0
+Validation Warnings: 6
 
 ================================================================
 
@@ -64,8 +64,15 @@ PER-MODULE INVENTORY (formA / formB / inModule / practical / status):
 
 VALIDATION ERRORS (0):
 
-VALIDATION WARNINGS (0):
+VALIDATION WARNINGS (6):
+  [IM_MISSING_COMPETENCY] foundations-postrequisite:understanding has no competencyId
+  [IM_MISSING_RATIONALE] foundations-postrequisite:understanding has no rationale
+  [IM_MISSING_SOURCE] foundations-postrequisite:understanding has no source reference
+  [IM_MISSING_COMPETENCY] foundations-postrequisite:applying has no competencyId
+  [IM_MISSING_RATIONALE] foundations-postrequisite:applying has no rationale
+  [IM_MISSING_SOURCE] foundations-postrequisite:applying has no source reference
 
-VALIDATION INFO (2):
+VALIDATION INFO (3):
   [FORMAL_INELIGIBLE] foundations-postrequisite (Post-Foundations open questions) is learning-only (open-ended) — no formal forms expected
   [ANSWER_POSITIONS] Formal correctIndex distribution A/B/C/D = 82/85/87/80 (of 334)
+  [IM_ANSWER_POSITIONS] In-module correctIndex distribution A/B/C/D = 38/67/40/20 (of 165)

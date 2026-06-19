@@ -1,0 +1,372 @@
+IN-MODULE INDEX MIGRATION REPORT
+Generated: 2026-06-19T11:30:26.295Z
+
+INVARIANT: No sourceQuestionIndex values were changed. Each index keeps its
+fixed Bloom meaning (0=Remember, 1=Understand, 2=Apply, 3=Analyze, 4=Evaluate,
+5=Create). Authoring only replaces the CONTENT at applicable indexes; non-
+applicable Bloom levels and Create remain hidden generated fallbacks at the
+same index. Question ids keep the stable `${moduleId}:${taxonomy}` scheme.
+The analytics key is the positional index, which is unchanged — existing
+learning_question_results / first-attempt / eventual-mastery rows stay aligned.
+
+========================================================================
+
+MODULE: Ambiguity is built in to design patterns  [foundations-ambiguity]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Common beginner mistakes  [foundations-beginner-mistakes]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Three main pattern categories  [foundations-categories]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Understanding software structure  [foundations-code-structure]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: The connotative-definition rule  [foundations-connotative-definition]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Patterns vary by team and codebase  [foundations-context-variation]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Program to an interface  [foundations-interface-principle]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: OOP foundations  [foundations-oop]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Post-Foundations open questions  [foundations-postrequisite]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Design patterns in real software  [foundations-real-software]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: When two patterns look identical  [foundations-same-structure]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Each pattern has a structural rule  [foundations-structural-rules]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: What is a design pattern?  [foundations-what-is-pattern]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Why design patterns matter  [foundations-why-matters]  (foundations)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  3   | analyze/analyze | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | NO  | preserved fallback (non-applicable Bloom level) | hidden | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Abstract Factory  [creational-abstract-factory]  (creational)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Builder  [creational-builder]  (creational)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Factory Method  [creational-factory-method]  (creational)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Method Chaining  [creational-method-chaining]  (creational)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Prototype  [creational-prototype]  (creational)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Singleton  [creational-singleton]  (creational)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Adapter  [structural-adapter]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Bridge  [structural-bridge]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Composite  [structural-composite]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Decorator  [structural-decorator]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Facade  [structural-facade]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Flyweight  [structural-flyweight]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Proxy  [structural-proxy]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Repository  [structural-repository]  (structural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Chain of Responsibility  [behavioural-chain-of-responsibility]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Command  [behavioural-command]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Interpreter  [behavioural-interpreter]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Iterator  [behavioural-iterator]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Mediator  [behavioural-mediator]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Memento  [behavioural-memento]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Observer  [behavioural-observer]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: State  [behavioural-state]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Strategy  [behavioural-strategy]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Template Method  [behavioural-template-method]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: Visitor  [behavioural-visitor]  (behavioural)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)
+
+MODULE: PIMPL (Pointer to Implementation)  [idioms-pimpl]  (idioms)
+  IDX | BLOOM (old=new) | APPLICABLE | CONTENT ACTION | VISIBILITY | RISK
+  0   | remember/remember | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  1   | understand/understand | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  2   | apply/apply | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  3   | analyze/analyze | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  4   | evaluate/evaluate | YES | authored conceptual item (replaces prior fallback/weak content) | visible to learners | none (index & Bloom unchanged)
+  5   | create/create | NO  | preserved fallback (Create = practical task) | hidden | none (index & Bloom unchanged)

@@ -15,6 +15,10 @@ import {
 // Value import; assessmentForms.ts imports only TYPES from here, so there is no
 // runtime circular dependency.
 import { ASSESSMENT_FORMS } from './assessmentForms';
+// Authored in-module conceptual bank (keyed by moduleId). Preferred over the
+// legacy FOUNDATIONS_THEORY/PATTERN_THEORY/NON_DETECTED_THEORY maps when present.
+// Value import; the bank files import only TYPES from here, so there is no cycle.
+import { IN_MODULE_THEORY } from './assessmentBanks/inModule';
 
 export type LearningCategory =
   | 'foundations'
@@ -75,6 +79,15 @@ export interface BaseExamQuestion {
   // formal assessments and in-module quizzes. The flag is the source of truth —
   // do NOT infer fallback status from displayed text.
   generatedFallback?: boolean;
+  // --- in-module conceptual review/validation metadata (additive, optional so
+  // legacy items still type). Mirrors ObjectiveAssessmentQuestion's metadata but
+  // for the in-module theoreticalExam bank. Authored items set these; generated
+  // fallbacks leave them undefined. Never alters the positional analytics index.
+  competencyId?: string;
+  difficulty?: AssessmentDifficulty;
+  rationale?: string;
+  sourceReferences?: ReadonlyArray<string>;
+  validationStatus?: AssessmentValidationStatus;
 }
 
 export interface McqQuestion extends BaseExamQuestion {
@@ -103,6 +116,21 @@ export interface StudioQuestion extends BaseExamQuestion {
 
 // One item in a theoretical exam bank.
 export type ExamQuestion = McqQuestion | IdentificationQuestion | StudioQuestion;
+
+// Canonical authored in-module conceptual question shape: an MCQ ExamQuestion
+// carrying the full review metadata. It is NOT a competing type — it is exactly
+// an McqQuestion with the (optional-on-the-base) metadata filled in, so it flows
+// through the same normalize/scoring pipeline. `applicable` is derived at read
+// time as `!generatedFallback` (non-applicable Bloom levels are hidden fallbacks
+// at a preserved index), so it is not stored on the item.
+export type InModuleConceptualQuestion = McqQuestion & {
+  competencyId: string;
+  bloomLevel?: ObjectiveBloomLevel;
+  difficulty: AssessmentDifficulty;
+  rationale: string;
+  sourceReferences: ReadonlyArray<string>;
+  validationStatus: AssessmentValidationStatus;
+};
 
 export function isMcqQuestion(q: ExamQuestion): q is McqQuestion {
   return q.type === 'mcq' || (!q.type && Array.isArray((q as any).options));
@@ -2397,7 +2425,7 @@ function buildPatternTheoryFallback(patternName: string, intent: string): Readon
 // end at the theoretical exam (D86).
 function attachExams(module: LearningModule): LearningModule {
   if (module.category === 'foundations') {
-    const questions = FOUNDATIONS_THEORY[module.id];
+    const questions = IN_MODULE_THEORY[module.id] ?? FOUNDATIONS_THEORY[module.id];
     if (questions) {
       return { ...module, theoreticalExam: { kind: 'theoretical', questions: tagQuestions(module.id, questions) } };
     }
@@ -2411,9 +2439,12 @@ function attachExams(module: LearningModule): LearningModule {
   if (!pattern) return module;
 
   // Non-detectable pattern (Repository): theoretical exam only, no practical.
+  // The branch decision stays keyed on NON_DETECTED_THEORY so only genuinely
+  // non-detectable patterns skip the practical; the authored IN_MODULE_THEORY
+  // bank only supplies the question CONTENT (never toggles practical attachment).
   const nonDetectedTheory = NON_DETECTED_THEORY[pattern.slug];
   if (nonDetectedTheory) {
-    return { ...module, theoreticalExam: { kind: 'theoretical', questions: tagQuestions(module.id, nonDetectedTheory) } };
+    return { ...module, theoreticalExam: { kind: 'theoretical', questions: tagQuestions(module.id, IN_MODULE_THEORY[module.id] ?? nonDetectedTheory) } };
   }
 
   // Honor catalog aliases (e.g. factory-method route → catalog `factory`).
@@ -2422,6 +2453,7 @@ function attachExams(module: LearningModule): LearningModule {
   const detectionName = alias?.name ?? pattern.name;
 
   const theoryQuestions =
+    IN_MODULE_THEORY[module.id] ??
     PATTERN_THEORY[detectionSlug] ??
     buildPatternTheoryFallback(pattern.name, pattern.intent);
   const theoreticalExam: TheoreticalExam = { kind: 'theoretical', questions: tagQuestions(module.id, theoryQuestions) };

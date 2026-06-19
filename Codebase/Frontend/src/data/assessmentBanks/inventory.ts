@@ -106,6 +106,16 @@ export interface ResolvedInModuleQuestion {
   options: ReadonlyArray<string>;
   correctIndex: number;
   generatedFallback: boolean;
+  // applicable = a real authored learner question at this Bloom index. Generated
+  // fallbacks (non-applicable Bloom levels + Create) are NOT applicable: hidden
+  // from learners, index preserved. The flag is `!generatedFallback`.
+  applicable: boolean;
+  // Authored review metadata (undefined for generated fallbacks).
+  competencyId?: string;
+  difficulty?: AssessmentDifficulty;
+  rationale?: string;
+  sourceReferences?: ReadonlyArray<string>;
+  validationStatus?: AssessmentValidationStatus;
 }
 
 // In-module conceptual bank = the module's theoreticalExam, by ORIGINAL index
@@ -123,6 +133,12 @@ export function getInModuleQuestionsForModule(moduleId: string): ResolvedInModul
     options: q.type === 'mcq' ? q.options : [],
     correctIndex: q.type === 'mcq' ? q.correctIndex : -1,
     generatedFallback: !!q.generatedFallback,
+    applicable: !q.generatedFallback,
+    competencyId: q.competencyId,
+    difficulty: q.difficulty,
+    rationale: q.rationale,
+    sourceReferences: q.sourceReferences,
+    validationStatus: q.validationStatus,
   }));
 }
 
