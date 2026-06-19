@@ -910,7 +910,7 @@ export interface BloomProgressionEntry {
   leveledUp: boolean;
 }
 
-interface ProgressionAnswerRow {
+export interface ProgressionAnswerRow {
   cycle_id: string;
   module_id: string;
   assessment_type: string;
@@ -918,7 +918,7 @@ interface ProgressionAnswerRow {
   is_correct: number | null;
 }
 
-interface ProgressionAttemptRow {
+export interface ProgressionAttemptRow {
   id: number;
   cycle_id: string;
   assessment_type: string;

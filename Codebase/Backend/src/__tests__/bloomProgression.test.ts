@@ -13,9 +13,25 @@ vi.mock('../db/_testSeed/devconUsers', () => ({
   ensureTestFolders: () => {},
 }));
 
-// ─── Unit tests: pure computeBloomProgression ────────────────────────────────
+// ─── Shared isolated DB + dynamic SUT load (mirrors the PR #18 pattern) ───────
+// A static import of '../routes/learning' binds the better-sqlite3 singleton to
+// the DEFAULT database.sqlite at module-load (before any DB_PATH is set), leaking
+// writes into the shared DB and racing other forks. Set a UNIQUE DB_PATH first,
+// then import the route module dynamically so db binds to this file's own temp DB.
+const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neoterritory-bloom-'));
+const dbPath = path.join(tmpRoot, 'bloom.sqlite');
+process.env.DB_PATH = dbPath;
+process.env.JWT_SECRET = process.env.JWT_SECRET || 'test-bloom-secret';
 
-import { computeBloomProgression, BLOOM_RANK } from '../routes/learning';
+let computeBloomProgression: typeof import('../routes/learning')['computeBloomProgression'];
+let BLOOM_RANK: typeof import('../routes/learning')['BLOOM_RANK'];
+beforeAll(async () => {
+  const mod = await import('../routes/learning');
+  computeBloomProgression = mod.computeBloomProgression;
+  BLOOM_RANK = mod.BLOOM_RANK;
+});
+
+// ─── Unit tests: pure computeBloomProgression ────────────────────────────────
 
 describe('BLOOM_RANK map', () => {
   it('has correct ranks for all 6 levels', () => {
@@ -171,8 +187,7 @@ describe('computeBloomProgression (pure unit)', () => {
 // ─── Integration test: GET /api/learning/bloom-progression via HTTP ──────────
 
 describe('GET /api/learning/bloom-progression (HTTP, isolated DB)', () => {
-  const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neoterritory-bloom-'));
-  const dbPath = path.join(tmpRoot, 'bloom.sqlite');
+  // Reuses the module-level isolated dbPath/tmpRoot (set above, before any db load).
   let server: http.Server | undefined;
   let baseUrl = '';
   let db: Database;
