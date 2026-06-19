@@ -21,6 +21,11 @@ export function validateAllQuestionBanks(): ValidationReport {
 
   const seenIds = new Map<string, string>(); // id -> origin
   const positionCounts = [0, 0, 0, 0];
+  // In-module accumulators (separate distribution + dedup vs formal).
+  const inModulePositionCounts = [0, 0, 0, 0];
+  const formalPromptSet = new Set<string>(); // normalized formal prompts (dup guard)
+  const inModulePromptSeen = new Map<string, string>(); // normalized prompt -> questionId
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, ' ');
 
   const registerId = (id: string, origin: string, moduleId: string) => {
     if (seenIds.has(id)) {
@@ -80,8 +85,8 @@ export function validateAllQuestionBanks(): ValidationReport {
 
     const formA = getFormalQuestionsForModule(moduleId, 'A');
     const formB = getFormalQuestionsForModule(moduleId, 'B');
-    formA.forEach((q) => { registerId(q.questionId, 'formal:A', moduleId); checkFormalItem(q); });
-    formB.forEach((q) => { registerId(q.questionId, 'formal:B', moduleId); checkFormalItem(q); });
+    formA.forEach((q) => { registerId(q.questionId, 'formal:A', moduleId); checkFormalItem(q); if (q.prompt.trim()) formalPromptSet.add(norm(q.prompt)); });
+    formB.forEach((q) => { registerId(q.questionId, 'formal:B', moduleId); checkFormalItem(q); if (q.prompt.trim()) formalPromptSet.add(norm(q.prompt)); });
 
     if (status === 'pending') {
       if (isFormalEligible(moduleId)) {
@@ -126,8 +131,53 @@ export function validateAllQuestionBanks(): ValidationReport {
       void aPrompts;
     }
 
-    // In-module ids registered (collision check across banks).
-    getInModuleQuestionsForModule(moduleId).forEach((q) => registerId(q.questionId, 'in-module', moduleId));
+    // ---- In-module conceptual bank validation ----
+    const inModule = getInModuleQuestionsForModule(moduleId);
+    const seenSrcIdx = new Set<number>();
+    const repoIsGof = moduleId === 'structural-repository';
+    inModule.forEach((q) => {
+      registerId(q.questionId, 'in-module', moduleId); // collision check across banks
+      // sourceQuestionIndex must be unique within a module (analytics key).
+      if (seenSrcIdx.has(q.sourceQuestionIndex)) {
+        errors.push({ severity: 'ERROR', code: 'IM_DUPLICATE_SOURCE_INDEX', message: `${moduleId}: duplicate sourceQuestionIndex ${q.sourceQuestionIndex}`, questionId: q.questionId, moduleId });
+      } else seenSrcIdx.add(q.sourceQuestionIndex);
+      // Only APPLICABLE (authored, non-fallback) items face content checks.
+      if (!q.applicable) return;
+      // Create must never be an applicable MCQ.
+      if ((q.bloomLevel as string) === 'create' || (q.bloomLevel as string) === 'creating') {
+        errors.push({ severity: 'ERROR', code: 'IM_CREATE_AS_MCQ', message: `${q.questionId} is an applicable Create-level MCQ (Create must be the practical task)`, questionId: q.questionId, moduleId });
+      }
+      if (q.type !== 'mcq') {
+        // An applicable in-module item should be an MCQ.
+        warnings.push({ severity: 'WARNING', code: 'IM_NOT_MCQ', message: `${q.questionId} is applicable but not an MCQ`, questionId: q.questionId, moduleId });
+        return;
+      }
+      if (q.options.length !== 4) errors.push({ severity: 'ERROR', code: 'IM_OPTION_COUNT', message: `${q.questionId} has ${q.options.length} options (need 4)`, questionId: q.questionId, moduleId });
+      if (new Set(q.options.map((o) => o.trim().toLowerCase())).size !== q.options.length) errors.push({ severity: 'ERROR', code: 'IM_DUPLICATE_OPTION', message: `${q.questionId} has duplicate options`, questionId: q.questionId, moduleId });
+      if (q.options.some((o) => !o.trim())) errors.push({ severity: 'ERROR', code: 'IM_EMPTY_OPTION', message: `${q.questionId} has an empty option`, questionId: q.questionId, moduleId });
+      if (!q.prompt.trim()) errors.push({ severity: 'ERROR', code: 'IM_EMPTY_PROMPT', message: `${q.questionId} has an empty prompt`, questionId: q.questionId, moduleId });
+      if (!Number.isInteger(q.correctIndex) || q.correctIndex < 0 || q.correctIndex > 3) {
+        errors.push({ severity: 'ERROR', code: 'IM_BAD_CORRECT_INDEX', message: `${q.questionId} correctIndex ${q.correctIndex} out of range`, questionId: q.questionId, moduleId });
+      } else {
+        inModulePositionCounts[q.correctIndex] += 1;
+      }
+      if (!q.competencyId) warnings.push({ severity: 'WARNING', code: 'IM_MISSING_COMPETENCY', message: `${q.questionId} has no competencyId`, questionId: q.questionId, moduleId });
+      if (!q.rationale || !q.rationale.trim()) warnings.push({ severity: 'WARNING', code: 'IM_MISSING_RATIONALE', message: `${q.questionId} has no rationale`, questionId: q.questionId, moduleId });
+      if (!q.sourceReferences || q.sourceReferences.length === 0) warnings.push({ severity: 'WARNING', code: 'IM_MISSING_SOURCE', message: `${q.questionId} has no source reference`, questionId: q.questionId, moduleId });
+      // Non-GoF classification guards.
+      if (repoIsGof && (q.sourceReferences ?? []).some((s) => /gamma|gang of four|gof/i.test(s))) {
+        errors.push({ severity: 'ERROR', code: 'IM_REPOSITORY_GOF', message: `${q.questionId} cites a GoF source for Repository (Repository is NOT a GoF pattern)`, questionId: q.questionId, moduleId });
+      }
+      // Duplicate vs formal Form A/B prompt (exact = ERROR: must use different wording).
+      const np = norm(q.prompt);
+      if (formalPromptSet.has(np)) {
+        errors.push({ severity: 'ERROR', code: 'IM_DUP_OF_FORMAL', message: `${q.questionId} prompt is identical to a formal Form A/B item`, questionId: q.questionId, moduleId });
+      }
+      // Duplicate prompt across the in-module bank.
+      if (inModulePromptSeen.has(np)) {
+        errors.push({ severity: 'ERROR', code: 'IM_DUPLICATE_PROMPT', message: `${q.questionId} duplicates in-module prompt of ${inModulePromptSeen.get(np)}`, questionId: q.questionId, moduleId });
+      } else inModulePromptSeen.set(np, q.questionId);
+    });
 
     // Practical create coverage for full design-pattern modules.
     const practical = getPracticalTaskForModule(moduleId);
@@ -143,6 +193,14 @@ export function validateAllQuestionBanks(): ValidationReport {
   if (total >= 8) {
     const maxShare = Math.max(...positionCounts) / total;
     if (maxShare > 0.6) warnings.push({ severity: 'WARNING', code: 'ANSWER_IMBALANCE', message: `One answer position holds ${(maxShare * 100).toFixed(0)}% of correct answers` });
+  }
+
+  // In-module answer-position distribution (INFO) + imbalance (WARNING).
+  const imTotal = inModulePositionCounts.reduce((a, b) => a + b, 0);
+  info.push({ severity: 'INFO', code: 'IM_ANSWER_POSITIONS', message: `In-module correctIndex distribution A/B/C/D = ${inModulePositionCounts.join('/')} (of ${imTotal})` });
+  if (imTotal >= 8) {
+    const maxShare = Math.max(...inModulePositionCounts) / imTotal;
+    if (maxShare > 0.6) warnings.push({ severity: 'WARNING', code: 'IM_ANSWER_IMBALANCE', message: `One in-module answer position holds ${(maxShare * 100).toFixed(0)}% of correct answers` });
   }
 
   return { errors, warnings, info, ok: errors.length === 0 };
