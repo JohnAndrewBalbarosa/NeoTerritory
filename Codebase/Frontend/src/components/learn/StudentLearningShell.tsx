@@ -14,7 +14,11 @@ import PatternsLearnPage from '../marketing/patterns/PatternsLearnPage';
 export default function StudentLearningShell() {
   const { token, user, clearAuth } = useAppStore();
   const setPreTestCompleted = useAppStore((s) => s.setPreTestCompleted);
+  const progress = useAppStore((s) => s.learningProgressSummary);
   const [pretestGate, setPretestGate] = useState<'checking' | 'fresh' | 'needs-pretest'>('checking');
+
+  const progressPct =
+    progress && progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0;
 
   useEffect(() => {
     if (!token) {
@@ -140,6 +144,23 @@ export default function StudentLearningShell() {
           </button>
         </div>
       </header>
+      {progress && progress.total > 0 ? (
+        <div
+          className="nt-learn-shell__progress"
+          role="progressbar"
+          aria-valuemin={0}
+          aria-valuemax={progress.total}
+          aria-valuenow={progress.done}
+          aria-label={`${progress.done} of ${progress.total} modules complete`}
+        >
+          <div className="nt-learn-shell__progress-track">
+            <i style={{ width: `${progressPct}%` }} />
+          </div>
+          <span className="nt-learn-shell__progress-label">
+            {progress.done} of {progress.total} modules complete · {progressPct}%
+          </span>
+        </div>
+      ) : null}
       <PatternsLearnPage />
     </div>
   );

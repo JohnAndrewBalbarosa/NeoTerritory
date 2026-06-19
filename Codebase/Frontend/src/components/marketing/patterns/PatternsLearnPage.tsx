@@ -14,15 +14,12 @@ import {
 import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
 import {
   evaluateFoundationPretestFromAssessments,
+  PROFICIENCY_THRESHOLD,
+  scoreStoredObjectiveAssessment,
   type FoundationPretestEvidence,
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
-import {
-  derivePretestModuleOutcomes,
-  masteryLevelForBloomLevels,
-  type PretestModuleOutcomes,
-} from '../../../logic/pretestModuleOutcomes';
 
 interface CourseStep {
   module: LearningModule;
@@ -35,7 +32,7 @@ interface CategoryGroup {
   steps: ReadonlyArray<CourseStep>;
 }
 
-type LessonPageKind = 'intro' | 'concepts' | 'examples' | 'theoretical' | 'practical';
+type LessonPageKind = 'lesson' | 'theoretical' | 'practical';
 
 interface LessonPage {
   kind: LessonPageKind;
@@ -51,12 +48,6 @@ interface LessonPageGroup {
 
 type TheoryAnswerMap = Record<number, any>;
 
-type LearnNavView =
-  | { level: 'sections' }
-  | { level: 'modules'; sectionId: LearningCategory }
-  | { level: 'subsections'; sectionId: LearningCategory; moduleId: string }
-  | { level: 'pages'; sectionId: LearningCategory; moduleId: string; groupKey: LessonPageKind };
-
 const BLOOM_LEVELS: BloomTaxonomy[] = [
   'remembering',
   'understanding',
@@ -65,15 +56,6 @@ const BLOOM_LEVELS: BloomTaxonomy[] = [
   'evaluating',
   'creating',
 ];
-
-const EMPTY_PRETEST_OUTCOMES: PretestModuleOutcomes = {
-  latestAttemptId: null,
-  masteredBloomLevelsByModuleId: {},
-  bloomMasteryByModuleId: {},
-  failedModuleIds: [],
-  exemptModuleIds: [],
-  perfectModuleIds: [],
-};
 
 function clampBloomMastery(level: number | undefined): number {
   return Math.max(0, Math.min(6, Math.floor(level ?? 0)));
@@ -144,32 +126,35 @@ function readUnlockAllOverride(): boolean {
   }
 }
 
+// Indexes of theoretical-exam questions still worth showing the learner: a
+// question is hidden once the learner's Bloom mastery for the module reaches
+// (or passes) that question's taxonomy level.
+export function visibleTheoryQuestionIndexesFor(
+  module: LearningModule | undefined,
+  masteryLevel = 0,
+): number[] {
+  if (!module?.theoreticalExam) return [];
+  const indexes: number[] = [];
+  module.theoreticalExam.questions.forEach((q, i) => {
+    const level = bloomLevelForTaxonomy(q.taxonomy || 'remembering');
+    if (level > masteryLevel) indexes.push(i);
+  });
+  return indexes;
+}
+
 export function lessonPagesFor(
   module: LearningModule | undefined,
   masteryLevel = 0,
 ): ReadonlyArray<LessonPage> {
   if (!module) return [];
 
-  const pages: LessonPage[] = [{ kind: 'intro', label: 'Introduction' }];
+  // The whole module reads as a single scrollable lesson page (intro +
+  // concepts + examples); exams remain distinct pages so they can gate
+  // progress.
+  const pages: LessonPage[] = [{ kind: 'lesson', label: 'Lesson' }];
 
-  const conceptSections = module.sections.filter((s) => !s.code);
-  conceptSections.forEach((s, i) => {
-    pages.push({ kind: 'concepts', label: s.heading || `Concept ${i + 1}`, subIndex: i });
-  });
-
-  const exampleSections = module.sections.filter((s) => Boolean(s.code));
-  exampleSections.forEach((s, i) => {
-    pages.push({ kind: 'examples', label: s.heading || `Example ${i + 1}`, subIndex: i });
-  });
-
-  if (module.theoreticalExam) {
-    module.theoreticalExam.questions.forEach((q, i) => {
-      const taxonomy = q.taxonomy || 'remembering';
-      const level = bloomLevelForTaxonomy(taxonomy);
-      if (level > masteryLevel) {
-        pages.push({ kind: 'theoretical', label: `Quiz Q${i + 1}`, subIndex: i });
-      }
-    });
+  if (module.theoreticalExam && visibleTheoryQuestionIndexesFor(module, masteryLevel).length > 0) {
+    pages.push({ kind: 'theoretical', label: 'Theoretical Exam' });
   }
 
   if (module.practicalExam) {
@@ -191,9 +176,7 @@ function lessonPageGroupsFor(
 
   const pages = lessonPagesFor(module, masteryLevel);
   const groups: LessonPageGroup[] = [
-    { key: 'intro', label: 'Intro', pages: pages.filter((p) => p.kind === 'intro') },
-    { key: 'concepts', label: 'Concepts', pages: pages.filter((p) => p.kind === 'concepts') },
-    { key: 'examples', label: 'Examples', pages: pages.filter((p) => p.kind === 'examples') },
+    { key: 'lesson', label: 'Lesson', pages: pages.filter((p) => p.kind === 'lesson') },
     { key: 'theoretical', label: 'Theoretical Exam', pages: pages.filter((p) => p.kind === 'theoretical') },
     { key: 'practical', label: 'Practical Exam', pages: pages.filter((p) => p.kind === 'practical') },
   ];
@@ -280,62 +263,78 @@ function PrerequisiteBanner({
   );
 }
 
-function IntroBody({ module }: { module: LearningModule }): JSX.Element {
-  return (
-    <p className="nt-learn__module-intro nt-learn__module-intro--lead" id={anchorId(module.id, 'intro')}>
-      {module.intro}
-    </p>
-  );
-}
-
-function ConceptsBody({ module, subIndex }: { module: LearningModule; subIndex?: number }): JSX.Element | null {
-  const sections = module.sections.filter((s) => !s.code);
-  const s = subIndex != null ? sections[subIndex] : null;
-  if (!s) return null;
-
-  return (
-    <section className="nt-learn__module-group" id={anchorId(module.id, 'concepts', subIndex)} aria-label="Concepts">
-      <p className="nt-learn__group-eyebrow">Concepts</p>
-      <section className="nt-learn__module-section">
-        <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-        {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-        {s.bullets && s.bullets.length > 0 ? (
-          <ul className="nt-learn__module-bullets">
-            {s.bullets.map((b, i) => (
-              <li key={`${module.id}-c-${subIndex}-b-${i}`}>{b}</li>
-            ))}
-          </ul>
-        ) : null}
-      </section>
-    </section>
-  );
-}
-
-function ExamplesBody({ module, subIndex }: { module: LearningModule; subIndex?: number }): JSX.Element | null {
-  const sections = module.sections.filter((s) => Boolean(s.code));
-  const s = subIndex != null ? sections[subIndex] : null;
-  if (!s) return null;
+function LessonBody({
+  module,
+  steps,
+  activeIndex,
+  isActiveComplete,
+  foundationBypassed,
+}: {
+  module: LearningModule;
+  steps: ReadonlyArray<CourseStep>;
+  activeIndex: number;
+  isActiveComplete: boolean;
+  foundationBypassed: boolean;
+}): JSX.Element {
+  const conceptSections = module.sections.filter((s) => !s.code);
+  const exampleSections = module.sections.filter((s) => Boolean(s.code));
 
   return (
-    <section className="nt-learn__module-group" id={anchorId(module.id, 'examples', subIndex)} aria-label="Examples">
-      <p className="nt-learn__group-eyebrow">Examples</p>
-      <section className="nt-learn__module-section">
-        <h3 className="nt-learn__module-section-head">{s.heading}</h3>
-        {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
-        {s.code ? (
-          <pre className="nt-learn__module-code" aria-label="Code example">
-            {s.code}
-          </pre>
-        ) : null}
-      </section>
-    </section>
+    <>
+      <p className="nt-learn__module-intro nt-learn__module-intro--lead" id={anchorId(module.id, 'intro')}>
+        {module.intro}
+      </p>
+
+      {conceptSections.length > 0 ? (
+        <section className="nt-learn__module-group" id={anchorId(module.id, 'concepts')} aria-label="Concepts">
+          <p className="nt-learn__group-eyebrow">Concepts</p>
+          {conceptSections.map((s, i) => (
+            <section className="nt-learn__module-section" key={`${module.id}-c-${i}`}>
+              <h3 className="nt-learn__module-section-head">{s.heading}</h3>
+              {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
+              {s.bullets && s.bullets.length > 0 ? (
+                <ul className="nt-learn__module-bullets">
+                  {s.bullets.map((b, bi) => (
+                    <li key={`${module.id}-c-${i}-b-${bi}`}>{b}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </section>
+          ))}
+        </section>
+      ) : null}
+
+      {exampleSections.length > 0 ? (
+        <section className="nt-learn__module-group" id={anchorId(module.id, 'examples')} aria-label="Examples">
+          <p className="nt-learn__group-eyebrow">Examples</p>
+          {exampleSections.map((s, i) => (
+            <section className="nt-learn__module-section" key={`${module.id}-e-${i}`}>
+              <h3 className="nt-learn__module-section-head">{s.heading}</h3>
+              {s.body ? <p className="nt-learn__module-section-body">{s.body}</p> : null}
+              {s.code ? (
+                <pre className="nt-learn__module-code" aria-label="Code example">
+                  {s.code}
+                </pre>
+              ) : null}
+            </section>
+          ))}
+        </section>
+      ) : null}
+
+      <PrerequisiteBanner
+        steps={steps}
+        activeIndex={activeIndex}
+        isActiveComplete={isActiveComplete}
+        foundationBypassed={foundationBypassed}
+      />
+    </>
   );
 }
 
 function TheoreticalExamBlock({
   moduleId,
   exam,
-  subIndex,
+  questionIndexes,
   answers,
   onAnswerChange,
   isPassed,
@@ -343,34 +342,35 @@ function TheoreticalExamBlock({
 }: {
   moduleId: string;
   exam: TheoreticalExam;
-  subIndex?: number;
+  questionIndexes: ReadonlyArray<number>;
   answers: TheoryAnswerMap;
   onAnswerChange: (questionIndex: number, answer: any) => void;
   isPassed: boolean;
   isSubmitGate: boolean;
 }): JSX.Element | null {
-  const qi = subIndex ?? 0;
-  const q = exam.questions[qi];
-  if (!q) return null;
+  if (questionIndexes.length === 0) return null;
 
   return (
-    <section className="nt-exam__question" id={anchorId(moduleId, 'theoretical', subIndex)}>
-      <p className="nt-exam__prompt">
-        <span className="nt-exam__qnum">Q{qi + 1}</span>
-        {q.type === 'studio' ? q.prompt : q.question}
-        {q.taxonomy ? (
-          <span className="nt-assessment__taxonomy" data-taxonomy={q.taxonomy}>
-            {q.taxonomy}
-          </span>
-        ) : null}
-      </p>
-
-      <BloomQuestionRenderer
-        question={q}
-        userAnswer={answers[qi]}
-        showResult={isPassed}
-        onAnswer={(answer) => onAnswerChange(qi, answer)}
-      />
+    <section className="nt-learn__module-group" id={anchorId(moduleId, 'theoretical')} aria-label="Theoretical exam">
+      <p className="nt-learn__group-eyebrow">Theoretical Exam</p>
+      {questionIndexes.map((qi) => {
+        const q = exam.questions[qi];
+        if (!q) return null;
+        return (
+          <section className="nt-exam__question" key={`${moduleId}-q-${qi}`}>
+            <p className="nt-exam__prompt">
+              <span className="nt-exam__qnum">Q{qi + 1}</span>
+              {q.type === 'studio' ? q.prompt : q.question}
+            </p>
+            <BloomQuestionRenderer
+              question={q}
+              userAnswer={answers[qi]}
+              showResult={isPassed}
+              onAnswer={(answer) => onAnswerChange(qi, answer)}
+            />
+          </section>
+        );
+      })}
       {isPassed ? (
         <p className="nt-exam__status nt-exam__status--pass">
           {isSubmitGate
@@ -438,19 +438,22 @@ export default function PatternsLearnPage(): JSX.Element {
   const lmsSessionId = useAppStore((s) => s.lmsSessionId);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { findModule, modulesInCategory: modulesInCat, loaded: contentLoaded } = useLearningModules();
-  const { steps: allSteps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
+  const setLearningProgressSummary = useAppStore((s) => s.setLearningProgressSummary);
+  const { groups: allGroups, steps: allSteps } = useMemo(() => buildCategoryGroups(modulesInCat), [contentLoaded, modulesInCat]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [pageIndex, setPageIndex] = useState(0);
-  const [nav, setNav] = useState<LearnNavView>({ level: 'sections' });
+  const [openCategory, setOpenCategory] = useState<LearningCategory | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
-  const [seededLeafView, setSeededLeafView] = useState(false);
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
   const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
-  const [pretestModuleOutcomes, setPretestModuleOutcomes] = useState<PretestModuleOutcomes>(EMPTY_PRETEST_OUTCOMES);
+  // Pre-test PROFICIENCY (>= 80% per module). Proficiency is NOT completion:
+  // proficient modules are non-blocking and shown as "Optional Review", never
+  // auto-completed or hidden. The pre-test no longer marks any module complete.
+  const [proficientModuleIds, setProficientModuleIds] = useState<Set<string>>(new Set());
   const [bloomMasteryByModule, setBloomMasteryByModule] = useState<Record<string, number>>({});
   const effectiveBloomMasteryByModule = useMemo(() => {
     const next: Record<string, number> = {};
@@ -460,27 +463,17 @@ export default function PatternsLearnPage(): JSX.Element {
     for (const [moduleId, levels] of Object.entries(masteredLevelsByModule)) {
       next[moduleId] = Math.max(next[moduleId] ?? 0, masteryLevelFromStoredLevels(levels));
     }
-    for (const [moduleId, level] of Object.entries(pretestModuleOutcomes.bloomMasteryByModuleId)) {
-      next[moduleId] = Math.max(next[moduleId] ?? 0, clampBloomMastery(level));
-    }
-    for (const [moduleId, levels] of Object.entries(pretestModuleOutcomes.masteredBloomLevelsByModuleId)) {
-      next[moduleId] = Math.max(next[moduleId] ?? 0, masteryLevelForBloomLevels(levels));
-    }
     return next;
-  }, [
-    bloomMasteryByModule,
-    masteredLevelsByModule,
-    pretestModuleOutcomes.bloomMasteryByModuleId,
-    pretestModuleOutcomes.masteredBloomLevelsByModuleId,
-  ]);
+  }, [bloomMasteryByModule, masteredLevelsByModule]);
+  // Only genuinely-completed modules (and mastery from completion) are hidden;
+  // proficient pre-test modules stay visible for optional review.
   const hiddenModuleIds = useMemo(() => {
     const hidden = new Set(completedIds);
-    pretestModuleOutcomes.exemptModuleIds.forEach((moduleId) => hidden.add(moduleId));
     Object.entries(effectiveBloomMasteryByModule).forEach(([moduleId, level]) => {
       if (level >= 6) hidden.add(moduleId);
     });
     return hidden;
-  }, [completedIds, effectiveBloomMasteryByModule, pretestModuleOutcomes.exemptModuleIds]);
+  }, [completedIds, effectiveBloomMasteryByModule]);
   const visibleModulesInCategory = useCallback(
     (category: LearningCategory) => [...modulesInCat(category)]
       .filter((module) => !hiddenModuleIds.has(module.id))
@@ -490,7 +483,7 @@ export default function PatternsLearnPage(): JSX.Element {
       ),
     [effectiveBloomMasteryByModule, hiddenModuleIds, modulesInCat],
   );
-  const { groups, steps } = useMemo(() => buildCategoryGroups(visibleModulesInCategory), [visibleModulesInCategory]);
+  const { steps } = useMemo(() => buildCategoryGroups(visibleModulesInCategory), [visibleModulesInCategory]);
   const [foundationEvidence, setFoundationEvidence] = useState<FoundationPretestEvidence>({
     passed: false,
     masteredTaxonomies: [],
@@ -501,10 +494,6 @@ export default function PatternsLearnPage(): JSX.Element {
     matchedModuleIds: [],
   });
   const [assessmentStatus, setAssessmentStatus] = useState<'loading' | 'ready' | 'failed'>('loading');
-  const foundationModuleIds = useMemo(
-    () => allSteps.filter((step) => isFoundationModule(step.module)).map((step) => step.module.id),
-    [allSteps],
-  );
   const effectivePreTestCompleted = preTestCompleted || unlockAll || foundationEvidence.passed;
 
   const activeStep = steps[activeIndex];
@@ -527,43 +516,36 @@ export default function PatternsLearnPage(): JSX.Element {
     [activeModule, activeModuleMasteryLevel],
   );
   const currentPage = pages[pageIndex] || pages[0];
+  // Completion = genuinely finished modules only (pre-test proficiency never
+  // counts as completion). unlockAll is the dev/test override.
   const effectiveCompletedIds = useMemo(
     () => {
       if (unlockAll) return new Set(allSteps.map((step) => step.module.id));
-      const next = new Set(completedIds);
-      pretestModuleOutcomes.exemptModuleIds.forEach((moduleId) => next.add(moduleId));
-      if (foundationEvidence.passed) {
-        foundationModuleIds.forEach((moduleId) => next.add(moduleId));
-      }
-      return next;
+      return new Set(completedIds);
     },
-    [unlockAll, allSteps, completedIds, foundationEvidence.passed, foundationModuleIds, pretestModuleOutcomes.exemptModuleIds],
+    [unlockAll, allSteps, completedIds],
   );
   const isActiveComplete = !!(activeStep && effectiveCompletedIds.has(activeStep.module.id));
+  // Unlock gating treats proficient modules as non-blocking: a later required
+  // module unlocks even if the learner only tested proficient (not completed)
+  // on the modules before it.
+  const gatingSatisfiedIds = useMemo(() => {
+    if (unlockAll) return effectiveCompletedIds;
+    const ids = new Set(effectiveCompletedIds);
+    proficientModuleIds.forEach((id) => ids.add(id));
+    return ids;
+  }, [unlockAll, effectiveCompletedIds, proficientModuleIds]);
   const unlockedCount = useMemo(
-    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, effectiveCompletedIds)),
-    [unlockAll, steps, effectiveCompletedIds],
+    () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, gatingSatisfiedIds)),
+    [unlockAll, steps, gatingSatisfiedIds],
   );
-  const defaultLeafGroup = useMemo(() => {
-    if (pageGroups.length === 0) return null;
-    return pageGroups.find((group) => group.key !== 'intro') ?? pageGroups[0];
-  }, [pageGroups]);
   const currentGroup = useMemo(
     () => pageGroups.find((group) => group.key === currentPage?.kind) ?? pageGroups[0] ?? null,
     [currentPage, pageGroups],
   );
-  const currentGroupPageIndex = useMemo(() => {
-    if (!currentGroup || !currentPage) return 0;
-    const idx = currentGroup.pages.findIndex(
-      (p) => p.kind === currentPage.kind && p.subIndex === currentPage.subIndex,
-    );
-    return idx >= 0 ? idx : 0;
-  }, [currentGroup, currentPage]);
   const visibleTheoryQuestionIndexes = useMemo(
-    () => pages
-      .filter((page) => page.kind === 'theoretical' && typeof page.subIndex === 'number')
-      .map((page) => page.subIndex as number),
-    [pages],
+    () => visibleTheoryQuestionIndexesFor(activeModule, activeModuleMasteryLevel),
+    [activeModule, activeModuleMasteryLevel],
   );
   const visibleTheoryQuestionCount = visibleTheoryQuestionIndexes.length;
   const hasVisiblePracticalPage = pages.some((page) => page.kind === 'practical');
@@ -583,9 +565,7 @@ export default function PatternsLearnPage(): JSX.Element {
     )
   );
   const isFinalTheoryPage =
-    currentPage?.kind === 'theoretical' &&
-    visibleTheoryQuestionCount > 0 &&
-    currentPage.subIndex === visibleTheoryQuestionIndexes[visibleTheoryQuestionIndexes.length - 1];
+    currentPage?.kind === 'theoretical' && visibleTheoryQuestionCount > 0;
   const isTheoryGatePage = isFinalTheoryPage;
   const isSubmitGate = isFinalTheoryPage && !hasVisiblePracticalPage;
   const isPracticalDone = !!(activeModule && practicalDone.has(activeModule.id));
@@ -607,9 +587,17 @@ export default function PatternsLearnPage(): JSX.Element {
         if (cancelled) return;
         const modules = allSteps.map((step) => step.module);
         const evidence = evaluateFoundationPretestFromAssessments(modules, assessments);
-        const outcomes = derivePretestModuleOutcomes(modules, assessments);
         setFoundationEvidence(evidence);
-        setPretestModuleOutcomes(outcomes);
+        // Per-module pre-test proficiency (>= 80%) — drives Optional Review
+        // labelling and non-blocking unlock, not completion.
+        const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
+        const proficient = new Set<string>();
+        if (preScore) {
+          for (const moduleScore of Object.values(preScore.byModule)) {
+            if (moduleScore.percent >= PROFICIENCY_THRESHOLD) proficient.add(moduleScore.moduleId);
+          }
+        }
+        setProficientModuleIds(proficient);
         if (evidence.passed && !preTestCompleted) {
           setPreTestCompleted(true);
         }
@@ -626,7 +614,7 @@ export default function PatternsLearnPage(): JSX.Element {
           latestAttemptId: null,
           matchedModuleIds: [],
         });
-        setPretestModuleOutcomes(EMPTY_PRETEST_OUTCOMES);
+        setProficientModuleIds(new Set());
         setAssessmentStatus('failed');
       });
 
@@ -695,41 +683,12 @@ export default function PatternsLearnPage(): JSX.Element {
     }
   }, [activeIndex, steps.length]);
 
+  // Keep the sidebar accordion opened on whichever category the learner is
+  // currently working in. Manual toggles within that category still stick;
+  // this only re-opens when they move to a module in a different category.
   useEffect(() => {
-    if (seededLeafView || !contentLoaded || !activeStep || !activeModule || !defaultLeafGroup || pages.length === 0) return;
-    const targetPage = defaultLeafGroup.pages[0] || pages[0];
-    const targetIndex = pages.findIndex((p) => p.kind === targetPage.kind && p.subIndex === targetPage.subIndex);
-    setNav({
-      level: 'pages',
-      sectionId: activeStep.category,
-      moduleId: activeModule.id,
-      groupKey: defaultLeafGroup.key,
-    });
-    setPageIndex(targetIndex >= 0 ? targetIndex : 0);
-    setSeededLeafView(true);
-  }, [activeStep, activeModule, contentLoaded, defaultLeafGroup, pages, seededLeafView]);
-
-  useEffect(() => {
-    if (!contentLoaded || !activeStep || !activeModule || !currentPage || pageGroups.length === 0) return;
-    const syncedGroup = pageGroups.find((group) => group.key === currentPage.kind) ?? pageGroups[0];
-    if (!syncedGroup) return;
-    setNav((prev) => {
-      if (
-        prev.level === 'pages' &&
-        prev.sectionId === activeStep.category &&
-        prev.moduleId === activeModule.id &&
-        prev.groupKey === syncedGroup.key
-      ) {
-        return prev;
-      }
-      return {
-        level: 'pages',
-        sectionId: activeStep.category,
-        moduleId: activeModule.id,
-        groupKey: syncedGroup.key,
-      };
-    });
-  }, [activeStep, activeModule, contentLoaded, currentPage, pageGroups]);
+    if (activeStep) setOpenCategory(activeStep.category);
+  }, [activeStep?.category]);
 
   useEffect(() => {
     if (!effectivePreTestCompleted && assessmentStatus !== 'loading') navigate('/pre-test');
@@ -740,8 +699,6 @@ export default function PatternsLearnPage(): JSX.Element {
       if (index >= 0 && index < steps.length) {
         setActiveIndex(index);
         setPageIndex(nextPageIndex);
-        const s = steps[index];
-        setNav({ level: 'subsections', sectionId: s.category, moduleId: s.module.id });
       }
     },
     [steps],
@@ -803,7 +760,10 @@ export default function PatternsLearnPage(): JSX.Element {
     }
 
     const canAdvanceToNextModule =
-      unlockAll || isActiveComplete || (isSubmitGate && isTheoryPassed);
+      unlockAll ||
+      isActiveComplete ||
+      (isSubmitGate && isTheoryPassed) ||
+      (!!activeModule && proficientModuleIds.has(activeModule.id)); // proficient = optional, non-blocking
 
     if (activeIndex < steps.length - 1 && canAdvanceToNextModule) {
       goToStep(activeIndex + 1);
@@ -823,25 +783,26 @@ export default function PatternsLearnPage(): JSX.Element {
       const prevModule = steps[prevIdx].module;
       const prevMasteryLevel = effectiveBloomMasteryByModule[prevModule.id] ?? 0;
       setPageIndex(lessonPagesFor(prevModule, prevMasteryLevel).length - 1);
-      const prevStep = steps[prevIdx];
-      setNav({ level: 'subsections', sectionId: prevStep.category, moduleId: prevStep.module.id });
     }
   };
 
-  const jumpToPage = useCallback(
-    (step: CourseStep, target: LessonPage) => {
-      const targetModule = findModule(step.module.id);
-      const targetMasteryLevel = effectiveBloomMasteryByModule[step.module.id] ?? 0;
-      const targetPages = lessonPagesFor(targetModule, targetMasteryLevel);
-      const pi = Math.max(
-        0,
-        targetPages.findIndex((p) => p.kind === target.kind && p.subIndex === target.subIndex),
-      );
-      if (step.globalIndex === activeIndex) setPageIndex(pi);
-      else goToStep(step.globalIndex, pi);
-    },
-    [activeIndex, effectiveBloomMasteryByModule, findModule, goToStep],
+  // Studied-only progress for the top-bar progress bar: modules the learner
+  // tested proficient on (Optional Review) are excluded from both the
+  // numerator and the denominator, so the bar reflects work actually done.
+  const studiedModules = useMemo(
+    () => allSteps.filter((step) => !proficientModuleIds.has(step.module.id)),
+    [allSteps, proficientModuleIds],
   );
+  const studiedTotal = studiedModules.length;
+  const studiedDone = useMemo(
+    () => studiedModules.filter((step) => completedIds.has(step.module.id)).length,
+    [studiedModules, completedIds],
+  );
+
+  useEffect(() => {
+    setLearningProgressSummary({ done: studiedDone, total: studiedTotal });
+  }, [studiedDone, studiedTotal, setLearningProgressSummary]);
+  useEffect(() => () => setLearningProgressSummary(null), [setLearningProgressSummary]);
 
   if (!effectivePreTestCompleted && assessmentStatus === 'loading') {
     return (
@@ -925,159 +886,88 @@ export default function PatternsLearnPage(): JSX.Element {
 
   if (!contentLoaded || !activeModule) return <div>Loading...</div>;
 
-  const navGroup = nav.level !== 'sections' ? groups.find((g) => g.meta.id === nav.sectionId) : null;
-  const navStep = nav.level === 'subsections' || nav.level === 'pages' ? steps.find((s) => s.module.id === nav.moduleId) : null;
-  const navPageGroup = nav.level === 'pages' ? pageGroups.find((g) => g.key === nav.groupKey) : null;
-  const navStepModuleId = navStep?.module.id ?? '';
-
   return (
     <main className="nt-student nt-student-course">
       <section className="nt-course-shell" aria-label="Learning path">
         <aside className="nt-course-sidebar" aria-label="Learning module outline" data-lenis-prevent>
-          {nav.level === 'sections' ? (
-            <>
-              <div className="nt-course-sidebar__head">
-                <p>Modules</p>
-                <span>
-                  {steps.length} to learn
-                </span>
-              </div>
-              <ul className="nt-course-folder">
-                {groups.map((g, i) => (
-                  <li key={g.meta.id}>
-                    <button
-                      type="button"
-                      className="nt-course-folder__row"
-                      onClick={() => setNav({ level: 'modules', sectionId: g.meta.id })}
-                    >
-                      <span className="nt-course-folder__icon" aria-hidden="true">
-                        +
-                      </span>
-                      <span className="nt-course-folder__label">
-                        <small>Section {i + 1}</small>
-                        {g.meta.name}
-                      </span>
-                      <span className="nt-course-folder__chev" aria-hidden="true">
-                        &gt;
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
-
-          {nav.level === 'modules' && navGroup ? (
-            <>
-              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
-                <button type="button" className="nt-course-back" onClick={() => setNav({ level: 'sections' })}>
-                  &lt; Categories
-                </button>
-              </div>
-              <p className="nt-course-folder__crumb">{navGroup.meta.name}</p>
-              <ul className="nt-course-folder">
-                {navGroup.steps.map((s) => {
-                  const locked = s.globalIndex >= unlockedCount;
-                  const done = effectiveCompletedIds.has(s.module.id);
-                  const active = s.globalIndex === activeIndex;
-                  const bypassed = foundationEvidence.passed && isFoundationModule(s.module);
-                  return (
-                    <li key={s.module.id}>
-                      <button
-                        type="button"
-                        className="nt-course-folder__row"
-                        data-active={active ? 'true' : undefined}
-                        data-locked={locked ? 'true' : undefined}
-                        data-done={done ? 'true' : undefined}
-                        data-bypassed={bypassed ? 'true' : undefined}
-                        disabled={locked}
-                        title={locked ? 'Finish the previous module to unlock this one.' : undefined}
-                        onClick={() => setNav({ level: 'subsections', sectionId: navGroup.meta.id, moduleId: s.module.id })}
-                      >
-                        <span className="nt-course-folder__icon" aria-hidden="true">
-                          {locked ? 'L' : done ? 'V' : s.globalIndex + 1}
-                        </span>
-                        <span className="nt-course-folder__label">
-                          <small>{s.module.eyebrow}</small>
-                          {s.module.title}
-                          {bypassed ? ' - Bypassed by pretest' : ''}
-                        </span>
-                        {!locked ? (
-                          <span className="nt-course-folder__chev" aria-hidden="true">
-                            &gt;
-                          </span>
-                        ) : null}
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
-          ) : null}
-
-          {nav.level === 'subsections' && navGroup && navStep ? (
-            <>
-              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
-                <button type="button" className="nt-course-back" onClick={() => setNav({ level: 'modules', sectionId: navGroup.meta.id })}>
-                  &lt; {navGroup.meta.name}
-                </button>
-              </div>
-              <p className="nt-course-folder__crumb">{navStep.module.title}</p>
-
-              {pageGroups.map((group) => {
-                return (
+          <div className="nt-course-sidebar__head">
+            <p>Modules</p>
+            <span>{studiedDone} / {studiedTotal} done</span>
+          </div>
+          <ul className="nt-course-accordion">
+            {allGroups.map((g) => {
+              const open = openCategory === g.meta.id;
+              const clearedInCat = g.steps.filter(
+                (s) => steps.findIndex((v) => v.module.id === s.module.id) === -1,
+              ).length;
+              return (
+                <li
+                  key={g.meta.id}
+                  className="nt-course-accordion__group"
+                  data-open={open ? 'true' : undefined}
+                >
                   <button
-                    key={group.key}
                     type="button"
-                    className="nt-course-folder__row nt-course-folder__row--anchor nt-course-folder__row--branch"
-                    onClick={() => setNav({ level: 'pages', sectionId: navGroup.meta.id, moduleId: navStepModuleId, groupKey: group.key })}
+                    className="nt-course-accordion__cat"
+                    aria-expanded={open}
+                    onClick={() => setOpenCategory(open ? null : g.meta.id)}
                   >
-                    <span className="nt-course-folder__icon" aria-hidden="true">
-                      {group.pages.length}
-                    </span>
-                    <span className="nt-course-folder__label">
-                      <small>{group.label}</small>
-                      {group.pages[0]?.label}
-                    </span>
-                    <span className="nt-course-folder__chev" aria-hidden="true">
-                      &gt;
-                    </span>
+                    <span className="nt-course-accordion__chev" aria-hidden="true">{open ? '▾' : '▸'}</span>
+                    <span className="nt-course-accordion__cat-name">{g.meta.name}</span>
+                    <span className="nt-course-accordion__cat-count">{clearedInCat}/{g.steps.length}</span>
                   </button>
-                );
-              })}
-            </>
-          ) : null}
-
-          {nav.level === 'pages' && navGroup && navStep && navPageGroup ? (
-            <>
-              <div className="nt-course-sidebar__head nt-course-sidebar__head--nav">
-                <button type="button" className="nt-course-back" onClick={() => setNav({ level: 'subsections', sectionId: navGroup.meta.id, moduleId: navStepModuleId })}>
-                  &lt; {navStep.module.title}
-                </button>
-              </div>
-              <p className="nt-course-folder__crumb">{navPageGroup.label}</p>
-              <ul className="nt-course-folder">
-                {navPageGroup.pages.map((p, i) => (
-                  <li key={`${p.kind}-${p.subIndex ?? 'x'}`}>
-                    <button
-                      type="button"
-                      className="nt-course-folder__row nt-course-folder__row--anchor nt-course-folder__row--leaf"
-                      data-active={currentPage.kind === p.kind && currentPage.subIndex === p.subIndex ? 'true' : undefined}
-                      onClick={() => jumpToPage(navStep, p)}
-                    >
-                      <span className="nt-course-folder__icon" aria-hidden="true">
-                        {i + 1}
-                      </span>
-                      <span className="nt-course-folder__label">
-                        <small>{navPageGroup.label}</small>
-                        {p.label}
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : null}
+                  {open ? (
+                    <ul className="nt-course-accordion__modules">
+                      {g.steps.map((s, i) => {
+                        const visIdx = steps.findIndex((v) => v.module.id === s.module.id);
+                        const done = visIdx === -1;
+                        const active = !done && visIdx === activeIndex;
+                        const proficient = !done && !active && proficientModuleIds.has(s.module.id);
+                        const locked = !done && !proficient && visIdx >= unlockedCount;
+                        const status = done
+                          ? 'done'
+                          : active
+                            ? 'current'
+                            : proficient
+                              ? 'optional'
+                              : locked
+                                ? 'locked'
+                                : 'available';
+                        return (
+                          <li key={s.module.id}>
+                            <button
+                              type="button"
+                              className="nt-course-accordion__module"
+                              data-status={status}
+                              aria-current={active ? 'step' : undefined}
+                              disabled={done || locked}
+                              title={
+                                locked
+                                  ? 'Finish the previous module to unlock this one.'
+                                  : done
+                                    ? 'Completed'
+                                    : proficient
+                                      ? 'Optional Review — you tested proficient on the pre-test (not required).'
+                                      : undefined
+                              }
+                              onClick={() => { if (!done && !locked) goToStep(visIdx); }}
+                            >
+                              <span className="nt-course-accordion__status" aria-hidden="true">
+                                {done ? '✓' : locked ? '🔒' : active ? '●' : proficient ? '◇' : '○'}
+                              </span>
+                              <span className="nt-course-accordion__num" aria-hidden="true">{i + 1}</span>
+                              <span className="nt-course-accordion__module-label">{s.module.title}</span>
+                              {proficient ? <span className="nt-course-accordion__opt">Optional</span> : null}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ul>
         </aside>
 
         <article className="nt-lesson-panel nt-lesson-pager">
@@ -1093,9 +983,6 @@ export default function PatternsLearnPage(): JSX.Element {
                 {currentGroup ? (
                   <p className="nt-pager__section-meta">
                     <span>{currentGroup.label}</span>
-                    <strong>
-                      Step {currentGroupPageIndex + 1} of {currentGroup.pages.length}
-                    </strong>
                   </p>
                 ) : null}
               </header>
@@ -1112,14 +999,20 @@ export default function PatternsLearnPage(): JSX.Element {
                 </button>
 
                 <section className="nt-pager__page" data-kind={currentPage.kind} data-lenis-prevent aria-label={currentPage.label}>
-                  {currentPage.kind === 'intro' ? <IntroBody module={activeModule} /> : null}
-                  {currentPage.kind === 'concepts' ? <ConceptsBody module={activeModule} subIndex={currentPage.subIndex} /> : null}
-                  {currentPage.kind === 'examples' ? <ExamplesBody module={activeModule} subIndex={currentPage.subIndex} /> : null}
+                  {currentPage.kind === 'lesson' ? (
+                    <LessonBody
+                      module={activeModule}
+                      steps={steps}
+                      activeIndex={activeIndex}
+                      isActiveComplete={isActiveComplete}
+                      foundationBypassed={foundationEvidence.passed}
+                    />
+                  ) : null}
                   {currentPage.kind === 'theoretical' && activeModule.theoreticalExam ? (
                     <TheoreticalExamBlock
                       moduleId={activeModule.id}
                       exam={activeModule.theoreticalExam}
-                      subIndex={currentPage.subIndex}
+                      questionIndexes={visibleTheoryQuestionIndexes}
                       answers={currentTheoryAnswers}
                       onAnswerChange={(questionIndex, optionIndex) => {
                         setTheoryAnswers((prev) => ({
@@ -1179,15 +1072,6 @@ export default function PatternsLearnPage(): JSX.Element {
                           setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: false }));
                         }
                       }}
-                    />
-                  ) : null}
-
-                  {currentPage.kind === 'intro' ? (
-                    <PrerequisiteBanner
-                      steps={steps}
-                      activeIndex={activeIndex}
-                      isActiveComplete={isActiveComplete}
-                      foundationBypassed={foundationEvidence.passed}
                     />
                   ) : null}
                 </section>

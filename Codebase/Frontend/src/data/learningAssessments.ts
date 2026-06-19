@@ -236,6 +236,226 @@ export function buildLearningAssessmentQuestions(
   return [];
 }
 
+// ---------------------------------------------------------------------------
+// Revised objective assessment model (assessment-presentation revision).
+//
+// Pre-test and post-test share ONE objective question pool per module so the
+// two are directly comparable for learning-gain measurement. Bloom taxonomy is
+// internal metadata only and never controls ordering or weighting here.
+//
+// Exclusions from the objective test:
+//   - studio (produce-code) questions: Creating ability is measured by the
+//     separate practical activity, NOT the objective MCQ percentage.
+//   - any objective (MCQ/identification) item mis-tagged as 'creating': naming
+//     or recognising a pattern is not a Creating task, so it is dropped from
+//     the formal objective test to keep the instrument clean.
+// ---------------------------------------------------------------------------
+
+export const PROFICIENCY_THRESHOLD = 80;
+export const OBJECTIVE_QUESTIONS_PER_MODULE = 5;
+
+export function isObjectiveExamQuestion(question: ExamQuestion): boolean {
+  return isMcqQuestion(question) || isIdentificationQuestion(question);
+}
+
+// Generated-fallback templates that reveal their own answer (the scenario names
+// the module and the expected token is the module name). They assess recall at
+// best, never genuine Applying/Analyzing/Evaluating, so they must not enter the
+// formal objective assessment.
+const ANSWER_REVEALING_TEMPLATES: ReadonlyArray<RegExp> = [
+  /identify the design idea suggested by the scenario/i,
+  /must apply the .* module to a small c\+\+ design exercise/i,
+  /name the design idea a learner should create/i,
+];
+
+// True when an item gives its own answer away — either it matches a known
+// answer-revealing template, or it is an identification question whose expected
+// token already appears verbatim in the prompt/scenario.
+export function isAnswerRevealingQuestion(question: ExamQuestion): boolean {
+  const text = [
+    (question as { question?: string }).question ?? '',
+    (question as { scenario?: string }).scenario ?? '',
+    (question as { prompt?: string }).prompt ?? '',
+  ].join(' ');
+  if (ANSWER_REVEALING_TEMPLATES.some((re) => re.test(text))) return true;
+  if (isIdentificationQuestion(question)) {
+    const hay = text.toLowerCase();
+    if (question.expectedTokens.some((token) => token && hay.includes(String(token).toLowerCase()))) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// True when a question may appear on the formal objective pre/post-test.
+export function isEligibleObjectiveQuestion(question: ExamQuestion): boolean {
+  if (!isObjectiveExamQuestion(question)) return false; // excludes studio
+  if ((question.taxonomy || '').toLowerCase() === 'creating') return false; // mis-tagged objective
+  if (isAnswerRevealingQuestion(question)) return false; // answer-revealing / templated fallback
+  return true;
+}
+
+export function eligibleObjectiveQuestions(module: LearningModule): Array<[ExamQuestion, number]> {
+  const qs = module.theoreticalExam?.questions || [];
+  return qs
+    .map((q, i) => [q, i] as [ExamQuestion, number])
+    .filter(([q]) => isEligibleObjectiveQuestion(q));
+}
+
+// Build a flat, mixed, paginated-friendly objective assessment. The same module
+// set and per-module question count are used for every objective assessment
+// type (pretest/posttest/posttest2) so pre vs post are comparable. The bank has
+// no parallel alternates, so pre/post reuse the same questions in a different
+// mixed order.
+export function buildObjectiveAssessment(
+  modules: ReadonlyArray<LearningModule>,
+  assessmentType: LearningAssessmentType,
+): LearningAssessmentQuestion[] {
+  const normalizedModules = normalizeLearningModules(modules);
+
+  const perModule = normalizedModules
+    .map((module) => {
+      const eligible = eligibleObjectiveQuestions(module);
+      if (eligible.length === 0) return null;
+      // Stable, deterministic per-module selection (identical for pre & post),
+      // capped so every module contributes the same number of questions.
+      const picked = seededShuffle(eligible, `objective:${module.id}`)
+        .slice(0, OBJECTIVE_QUESTIONS_PER_MODULE)
+        .sort((a, b) => a[1] - b[1]);
+      return { module, picked };
+    })
+    .filter((entry): entry is { module: LearningModule; picked: Array<[ExamQuestion, number]> } => entry !== null);
+
+  // Round-robin across modules so consecutive questions come from different
+  // modules (and therefore generally different Bloom levels) — a mixed but
+  // controlled order rather than module-by-module or level-by-level blocks.
+  const moduleOrder = seededShuffle(perModule, `${assessmentType}:module-order`);
+  const queues = moduleOrder.map((entry) => ({ module: entry.module, items: [...entry.picked] }));
+  const ordered: Omit<LearningAssessmentQuestion, 'assessmentIndex'>[] = [];
+  let remaining = queues.reduce((sum, q) => sum + q.items.length, 0);
+  while (remaining > 0) {
+    for (const queue of queues) {
+      const next = queue.items.shift();
+      if (!next) continue;
+      remaining -= 1;
+      ordered.push({
+        assessmentType,
+        moduleId: queue.module.id,
+        moduleTitle: queue.module.title,
+        moduleEyebrow: queue.module.eyebrow,
+        questionIndex: next[1],
+        question: next[0],
+        taxonomy: (next[0].taxonomy || 'remembering') as BloomTaxonomy,
+      });
+    }
+  }
+  return ordered.map((q, index) => ({ ...q, assessmentIndex: index }));
+}
+
+// Per-module and overall score. Every objective question is worth one point;
+// unanswered questions count as incorrect and remain in the denominator.
+export interface ModuleScore {
+  moduleId: string;
+  moduleTitle: string;
+  correct: number;
+  total: number;
+  percent: number;
+}
+export interface AssessmentScore {
+  correct: number;
+  total: number;
+  percent: number;
+  byModule: Record<string, ModuleScore>;
+}
+
+export function scoreLearningAssessment(
+  questions: ReadonlyArray<LearningAssessmentQuestion>,
+  answers: Record<number, any>,
+): AssessmentScore {
+  const byModule: Record<string, ModuleScore> = {};
+  let correct = 0;
+  for (const item of questions) {
+    const selected = answers[item.assessmentIndex];
+    const answered = hasLearningAssessmentAnswer(item.question, selected);
+    const ok = answered && isAnswerCorrect(item.question, selected);
+    if (ok) correct += 1;
+    const moduleScore =
+      byModule[item.moduleId] ||
+      (byModule[item.moduleId] = {
+        moduleId: item.moduleId,
+        moduleTitle: item.moduleTitle,
+        correct: 0,
+        total: 0,
+        percent: 0,
+      });
+    moduleScore.total += 1;
+    if (ok) moduleScore.correct += 1;
+  }
+  const total = questions.length;
+  for (const moduleScore of Object.values(byModule)) {
+    moduleScore.percent = moduleScore.total > 0 ? Math.round((moduleScore.correct / moduleScore.total) * 100) : 0;
+  }
+  return {
+    correct,
+    total,
+    percent: total > 0 ? Math.round((correct / total) * 100) : 0,
+    byModule,
+  };
+}
+
+// Pre-test module status. 'proficient' (>= 80%) does NOT mean 'completed' — a
+// learner can be proficient on the baseline without doing the lesson/quiz.
+export type ModuleProficiencyStatus = 'proficient' | 'recommended';
+export function moduleProficiencyStatus(percent: number): ModuleProficiencyStatus {
+  return percent >= PROFICIENCY_THRESHOLD ? 'proficient' : 'recommended';
+}
+
+// Learning gain is reported in PERCENTAGE POINTS (post - pre), never as a
+// percent increase. A zero gain on an already-proficient module is "maintained
+// proficiency", not a negative result.
+export interface ModuleGain {
+  moduleId: string;
+  moduleTitle: string;
+  prePercent: number;
+  postPercent: number;
+  gainPoints: number;
+  maintained: boolean;
+}
+export interface LearningGain {
+  prePercent: number;
+  postPercent: number;
+  gainPoints: number;
+  maintained: boolean;
+  byModule: ModuleGain[];
+}
+
+export function computeLearningGain(pre: AssessmentScore, post: AssessmentScore): LearningGain {
+  const moduleIds = new Set<string>([...Object.keys(pre.byModule), ...Object.keys(post.byModule)]);
+  const byModule: ModuleGain[] = Array.from(moduleIds).map((id) => {
+    const preModule = pre.byModule[id];
+    const postModule = post.byModule[id];
+    const prePercent = preModule?.percent ?? 0;
+    const postPercent = postModule?.percent ?? 0;
+    const gainPoints = postPercent - prePercent;
+    return {
+      moduleId: id,
+      moduleTitle: postModule?.moduleTitle ?? preModule?.moduleTitle ?? id,
+      prePercent,
+      postPercent,
+      gainPoints,
+      maintained: gainPoints === 0 && prePercent >= PROFICIENCY_THRESHOLD,
+    };
+  });
+  const gainPoints = post.percent - pre.percent;
+  return {
+    prePercent: pre.percent,
+    postPercent: post.percent,
+    gainPoints,
+    maintained: gainPoints === 0 && pre.percent >= PROFICIENCY_THRESHOLD,
+    byModule,
+  };
+}
+
 export interface LearningAssessmentResult {
   assessmentIndex: number;
   moduleId: string;
@@ -340,6 +560,57 @@ export function evaluateFoundationPretest(
     latestAttemptId: null,
     matchedModuleIds: Array.from(matchedModuleIds),
   };
+}
+
+function latestAttemptOfType(
+  attempts: ReadonlyArray<LearningAssessmentAttemptRaw>,
+  assessmentType: LearningAssessmentType,
+  courseUpdatedAt?: string,
+): LearningAssessmentAttemptRaw | null {
+  const matching = attempts.filter((attempt) => {
+    if (attempt.assessmentType !== assessmentType) return false;
+    if (courseUpdatedAt && new Date(attempt.createdAt) < new Date(courseUpdatedAt)) return false;
+    return true;
+  });
+  if (matching.length === 0) return null;
+  const sorted = [...matching].sort((a, b) => {
+    const timeCompare = String(a.createdAt).localeCompare(String(b.createdAt));
+    if (timeCompare !== 0) return timeCompare;
+    return a.id - b.id;
+  });
+  return sorted[sorted.length - 1] ?? null;
+}
+
+// Re-grade the learner's latest stored attempt of a given objective assessment
+// type. The assigned question set is rebuilt deterministically (so the
+// denominator includes questions the learner skipped), and stored raw answers
+// are graded against it. Returns null when there is no usable attempt.
+export function scoreStoredObjectiveAssessment(
+  modules: ReadonlyArray<LearningModule>,
+  assessments: LearningAssessmentsResponse,
+  assessmentType: LearningAssessmentType,
+): AssessmentScore | null {
+  const attempt = latestAttemptOfType(assessments.attempts, assessmentType, assessments.courseUpdatedAt);
+  if (!attempt) return null;
+
+  const assigned = buildObjectiveAssessment(modules, assessmentType);
+  if (assigned.length === 0) return null;
+
+  const storedByKey = new Map<string, LearningAssessmentAnswerRaw>();
+  for (const answer of assessments.answers) {
+    if (answer.attemptId !== attempt.id) continue;
+    storedByKey.set(`${answer.moduleId}:${answer.questionIndex}`, answer);
+  }
+
+  const answersByIndex: Record<number, any> = {};
+  for (const item of assigned) {
+    const stored = storedByKey.get(`${item.moduleId}:${item.questionIndex}`);
+    if (!stored) continue; // skipped/unanswered -> graded as incorrect by scoreLearningAssessment
+    answersByIndex[item.assessmentIndex] =
+      item.question.type === 'mcq' ? stored.selectedIndex : stored.responseText;
+  }
+
+  return scoreLearningAssessment(assigned, answersByIndex);
 }
 
 function isAnsweredCorrectly(answer: LearningAssessmentAnswerRaw, module: LearningModule): boolean {

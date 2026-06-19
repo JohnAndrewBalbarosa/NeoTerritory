@@ -16,7 +16,7 @@ import { downloadCsv, downloadJson } from '../logic/toCsv';
 type SortKey = 'improvement' | 'wrong' | 'passfail';
 
 const SORTS: ReadonlyArray<{ key: SortKey; label: string }> = [
-  { key: 'improvement', label: 'Improvement' },
+  { key: 'improvement', label: 'Practice Improvement' },
   { key: 'wrong', label: 'Most wrong' },
   { key: 'passfail', label: 'Pass / fail' },
 ];
@@ -51,7 +51,7 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
     const headers = [
       'User ID', 'Username', 'Email', 'Modules completed', 'Theory passed',
       'Seen', 'First-try correct', 'Eventual correct', 'Wrong', 'Question attempts',
-      'Exam attempts', 'Passes', 'Fails', 'First-try rate', 'Eventual rate', 'Improvement',
+      'Exam attempts', 'Passes', 'Fails', 'First-try rate', 'Eventual rate', 'Practice Improvement (first-try to eventual mastery)',
     ];
     const body = rows.map((r) => [
       r.userId, r.username, r.email ?? '', r.modulesCompleted, r.theoryPassed,
@@ -118,7 +118,7 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
             <th className="num">Wrong</th>
             <th className="num">First-try</th>
             <th className="num">Eventual</th>
-            <th className="num">Improvement</th>
+            <th className="num" title="Practice Improvement: first-try vs eventual in-module mastery. This is a learning-process metric, NOT pre-test/post-test learning gain.">Practice Improvement</th>
             <th>Pass / fail</th>
             <th className="num">Attempts</th>
           </tr>

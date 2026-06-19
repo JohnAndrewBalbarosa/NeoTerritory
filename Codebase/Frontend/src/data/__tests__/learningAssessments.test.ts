@@ -2,8 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
+  buildObjectiveAssessment,
+  computeLearningGain,
   evaluateFoundationPretest,
   hasLearningAssessmentAnswer,
+  isAnswerRevealingQuestion,
+  isEligibleObjectiveQuestion,
+  moduleProficiencyStatus,
+  scoreLearningAssessment,
   type LearningAssessmentQuestion,
 } from '../learningAssessments';
 import {
@@ -223,6 +229,132 @@ describe('evaluateFoundationPretest', () => {
       expect(result.correctCount).toBe(persona.correctCount);
       expect(result.totalCount).toBe(3);
     }
+  });
+});
+
+// Note: normalizeLearningModules() forces every module to exactly six
+// questions (one per Bloom level). The compact bank therefore yields 5
+// objective questions after the creating level is excluded, all MCQ with
+// correctIndex 0 — a predictable fixture for scoring/gain assertions.
+
+describe('isAnswerRevealingQuestion', () => {
+  it('flags the generated fallback identification templates', () => {
+    const fallbackApply: ExamQuestion = {
+      type: 'identification',
+      taxonomy: 'applying',
+      question: 'Identify the design idea suggested by the scenario.',
+      scenario: 'A learner must apply the Builder module to a small C++ design exercise.',
+      expectedTokens: ['builder'],
+    };
+    expect(isAnswerRevealingQuestion(fallbackApply)).toBe(true);
+    expect(isEligibleObjectiveQuestion(fallbackApply)).toBe(false);
+  });
+
+  it('flags identification whose expected token is visible in the prompt', () => {
+    const visible: ExamQuestion = {
+      type: 'identification',
+      taxonomy: 'analyzing',
+      question: 'Which pattern does this Adapter-style wrapper show?',
+      scenario: 'A class wraps an incompatible interface.',
+      expectedTokens: ['adapter'],
+    };
+    expect(isAnswerRevealingQuestion(visible)).toBe(true);
+  });
+
+  it('does not flag a genuine scenario-based MCQ that never names the answer', () => {
+    const genuine: ExamQuestion = {
+      type: 'mcq',
+      taxonomy: 'applying',
+      question: 'A system must build complex objects step by step with different final representations. Which pattern fits?',
+      options: ['Builder', 'Singleton', 'Adapter', 'Observer'],
+      correctIndex: 0,
+    };
+    expect(isAnswerRevealingQuestion(genuine)).toBe(false);
+    expect(isEligibleObjectiveQuestion(genuine)).toBe(true);
+  });
+
+  it('keeps the real module bank free of answer-revealing items in the objective pool', () => {
+    const built = buildObjectiveAssessment(LEARNING_MODULES, 'pretest');
+    expect(built.length).toBeGreaterThan(0);
+    expect(built.every((q) => !isAnswerRevealingQuestion(q.question))).toBe(true);
+  });
+});
+
+describe('buildObjectiveAssessment', () => {
+  it('excludes the creating level and any studio questions', () => {
+    const built = buildObjectiveAssessment([buildCompactModuleBank()], 'pretest');
+    expect(built).toHaveLength(5); // 6 Bloom levels minus creating
+    expect(built.every((q) => (q.question.taxonomy || '') !== 'creating')).toBe(true);
+    expect(built.every((q) => q.question.type !== 'studio')).toBe(true);
+    expect(new Set(built.map((q) => q.assessmentIndex)).size).toBe(built.length);
+  });
+
+  it('never surfaces studio or creating-tagged items from the real module bank', () => {
+    const built = buildObjectiveAssessment(LEARNING_MODULES, 'pretest');
+    expect(built.length).toBeGreaterThan(0);
+    expect(built.every((q) => q.question.type !== 'studio')).toBe(true);
+    expect(built.every((q) => (q.question.taxonomy || '') !== 'creating')).toBe(true);
+  });
+
+  it('covers the same modules and per-module counts for pre-test and post-test', () => {
+    const pre = buildObjectiveAssessment(LEARNING_MODULES, 'pretest');
+    const post = buildObjectiveAssessment(LEARNING_MODULES, 'posttest');
+    const byModule = (qs: LearningAssessmentQuestion[]) => {
+      const map: Record<string, number> = {};
+      qs.forEach((q) => { map[q.moduleId] = (map[q.moduleId] ?? 0) + 1; });
+      return map;
+    };
+    expect(byModule(pre)).toEqual(byModule(post));
+  });
+});
+
+describe('scoreLearningAssessment', () => {
+  const questions = buildObjectiveAssessment([buildCompactModuleBank()], 'pretest'); // 5 MCQ, correctIndex 0
+
+  it('scores overall and per-module with all answered correctly', () => {
+    const score = scoreLearningAssessment(questions, { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 });
+    expect(score.correct).toBe(5);
+    expect(score.total).toBe(5);
+    expect(score.percent).toBe(100);
+    expect(score.byModule['compact-bank']).toMatchObject({ correct: 5, total: 5, percent: 100 });
+  });
+
+  it('counts unanswered questions as incorrect but keeps them in the denominator', () => {
+    const score = scoreLearningAssessment(questions, { 0: 0, 1: 0, 2: 0, 3: 0 }); // index 4 unanswered
+    expect(score.total).toBe(5);
+    expect(score.correct).toBe(4);
+    expect(score.percent).toBe(80);
+    expect(score.byModule['compact-bank'].total).toBe(5);
+  });
+});
+
+describe('moduleProficiencyStatus', () => {
+  it('uses an 80% threshold (>=80 proficient, <80 recommended)', () => {
+    expect(moduleProficiencyStatus(100)).toBe('proficient');
+    expect(moduleProficiencyStatus(80)).toBe('proficient');
+    expect(moduleProficiencyStatus(79)).toBe('recommended');
+    expect(moduleProficiencyStatus(60)).toBe('recommended');
+  });
+});
+
+describe('computeLearningGain', () => {
+  const questions = buildObjectiveAssessment([buildCompactModuleBank()], 'pretest');
+
+  it('reports gain in percentage points (post - pre)', () => {
+    const pre = scoreLearningAssessment(questions, { 0: 0 }); // 1/5 = 20%
+    const post = scoreLearningAssessment(questions, { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 }); // 100%
+    const gain = computeLearningGain(pre, post);
+    expect(gain.prePercent).toBe(20);
+    expect(gain.postPercent).toBe(100);
+    expect(gain.gainPoints).toBe(80);
+    expect(gain.byModule[0]).toMatchObject({ moduleId: 'compact-bank', gainPoints: 80 });
+  });
+
+  it('treats an unchanged already-proficient score as maintained proficiency, not a negative', () => {
+    const perfect = scoreLearningAssessment(questions, { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 });
+    const gain = computeLearningGain(perfect, perfect);
+    expect(gain.gainPoints).toBe(0);
+    expect(gain.maintained).toBe(true);
   });
 });
 

@@ -4,15 +4,6 @@ import {
   LEARNING_MODULES,
 } from '../../src/data/learningModules';
 
-const BLOOM_TAXONOMIES = new Set([
-  'remembering',
-  'understanding',
-  'applying',
-  'analyzing',
-  'evaluating',
-  'creating',
-]);
-
 const ASSESSMENT_ROUTES = [
   {
     path: '/pre-test',
@@ -212,7 +203,7 @@ async function seedLearnerSession(page: Page): Promise<void> {
 
 test.describe('learner assessment routes', () => {
   for (const row of ASSESSMENT_ROUTES) {
-    test(`${row.path} renders Bloom-tagged MCQ content`, async ({ page }) => {
+    test(`${row.path} renders MCQ content`, async ({ page }) => {
       await installAssessmentMocks(page);
 
       const response = await page.goto(row.path, { waitUntil: 'domcontentloaded' });
@@ -224,17 +215,14 @@ test.describe('learner assessment routes', () => {
       await expect(page.locator('.nt-assessment__items > li').first()).toBeVisible({ timeout: 10_000 });
       await expect(page.locator('.nt-bloom-question input, .nt-bloom-question button').first()).toBeVisible({ timeout: 10_000 });
 
-      const taxonomyValues = await page.locator('.nt-assessment__taxonomy[data-taxonomy]').evaluateAll((nodes) =>
-        nodes
-          .map((node) => node.getAttribute('data-taxonomy'))
-          .filter((value): value is string => !!value),
-      );
-
-      expect(taxonomyValues, `expected 25 Bloom chips on ${row.path}`).toHaveLength(25);
-      expect(taxonomyValues.every((value) => BLOOM_TAXONOMIES.has(value))).toBeTruthy();
-
-      await page.locator('.nt-assessment__footer .nt-lesson-button--primary').click();
-      await expect(page.locator('.nt-assessment__score strong')).toHaveText('0/25', { timeout: 10_000 });
+      // Pre-test shows Bloom taxonomy chips; non-pretest routes should not show them.
+      if (row.path === '/pre-test') {
+        await expect(page.locator('.nt-assessment__taxonomy').first()).toBeVisible({ timeout: 10_000 });
+        // Should show the Submit Level button for the current Bloom level.
+        await expect(page.getByRole('button', { name: 'Submit Level' })).toBeVisible({ timeout: 10_000 });
+      } else {
+        await expect(page.locator('.nt-assessment__taxonomy')).toHaveCount(0);
+      }
     });
   }
 

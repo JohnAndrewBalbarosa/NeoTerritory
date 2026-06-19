@@ -497,7 +497,7 @@ export default function AdminApp() {
             <section className="admin-section admin-section--card">
               <header className="admin-section__head">
                 <h2>Instructor analytics</h2>
-                <p className="admin-section__hint">Course-operator view of learner scores: per-student progress and improvement, module difficulty ranking, and the per-question heatmap. All metrics are computed from raw learning data; each view offers a download.</p>
+                <p className="admin-section__hint"><strong>Learning Process Analytics</strong> — how learners work through modules: completion, first-attempt accuracy, retries, Practice Improvement (first-try to eventual mastery), and module difficulty (based on first-attempt performance), plus the per-question heatmap. These are process metrics, not formal pre-test/post-test learning gain (Learning Outcome Analytics). All metrics are computed from raw learning data; each view offers a download.</p>
               </header>
               <InstructorDashboard initialView={
                 activeTab === 'instructor-modules' ? 'modules' :

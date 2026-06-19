@@ -1405,6 +1405,140 @@ body[data-surface] #root {
   word-break: break-word;
 }
 
+/* ===== Category accordion: collapsible category -> module rows w/ status ===== */
+.nt-course-accordion {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.nt-course-accordion__group {
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.015);
+}
+.nt-course-accordion__group[data-open='true'] {
+  border-color: rgba(0, 209, 216, 0.28);
+}
+.nt-course-accordion__cat {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  background: transparent;
+  border: 0;
+  color: var(--nt-mkt-text);
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.nt-course-accordion__cat:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+.nt-course-accordion__chev {
+  flex: 0 0 auto;
+  width: 1rem;
+  color: var(--nt-mkt-text-soft);
+  font-size: 0.8rem;
+}
+.nt-course-accordion__cat-name {
+  flex: 1 1 auto;
+  font-weight: 650;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.nt-course-accordion__cat-count {
+  flex: 0 0 auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-accordion__modules {
+  list-style: none;
+  margin: 0;
+  padding: 0.2rem 0.4rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.nt-course-accordion__module {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--nt-mkt-text);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background 140ms var(--nt-mkt-ease, ease);
+}
+.nt-course-accordion__module:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+.nt-course-accordion__module[data-status='current'] {
+  background: rgba(0, 209, 216, 0.12);
+  box-shadow: inset 2px 0 0 var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-accordion__module[data-status='locked'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.nt-course-accordion__module[data-status='done'] {
+  cursor: default;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-course-accordion__module[data-status='optional'] .nt-course-accordion__status {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-accordion__opt {
+  margin-left: auto;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 209, 216, 0.45);
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.nt-course-accordion__status {
+  flex: 0 0 auto;
+  width: 1.1rem;
+  text-align: center;
+  font-size: 0.82rem;
+}
+.nt-course-accordion__module[data-status='done'] .nt-course-accordion__status {
+  color: var(--devcon-lime, #86efac);
+}
+.nt-course-accordion__module[data-status='current'] .nt-course-accordion__status {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-course-accordion__num {
+  flex: 0 0 auto;
+  min-width: 1.1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-course-accordion__module-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.nt-course-accordion__module[data-status='done'] .nt-course-accordion__module-label {
+  text-decoration: line-through;
+  text-decoration-color: rgba(134, 239, 172, 0.4);
+}
+
 /* ===== Drill-down folder navigator: Sections -> Modules -> Subsections ===== */
 .nt-course-sidebar__head--nav {
   justify-content: flex-start;
@@ -2633,6 +2767,171 @@ body[data-surface] #root {
   margin: 0;
   font-size: 0.82rem;
   color: var(--nt-mkt-text-soft);
+}
+
+/* Paginated assessment: progress bar, page meta, per-question numbering. */
+.nt-assessment__progress {
+  margin-bottom: 1rem;
+}
+.nt-assessment__progressbar {
+  height: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.nt-assessment__progressbar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--devcon-lime), var(--devcon-cyan), var(--devcon-purple));
+  transition: width 280ms var(--nt-mkt-ease, ease);
+}
+.nt-assessment__progressmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  margin-top: 0.45rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-assessment__unanswered {
+  color: var(--devcon-amber, #fbbf24);
+}
+.nt-assessment__qnum {
+  margin: 0 0 0.45rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+}
+.nt-assessment__qflag {
+  color: var(--devcon-amber, #fbbf24);
+}
+
+/* Review-before-submit grid: one cell per question, answered vs not. */
+.nt-assessment__reviewgrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.25rem;
+}
+.nt-assessment__reviewcell {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 8px;
+  border: 1px solid var(--nt-mkt-line);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--nt-mkt-text);
+  font: inherit;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+.nt-assessment__reviewcell[data-answered='true'] {
+  border-color: rgba(0, 209, 216, 0.5);
+  background: rgba(0, 209, 216, 0.14);
+}
+.nt-assessment__reviewcell[data-answered='false'] {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+/* Results / learning-gain layout. */
+.nt-results__block {
+  margin-top: 1.1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--nt-mkt-line);
+}
+.nt-results__block:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.nt-results__heading {
+  margin: 0 0 0.6rem;
+  font-size: 1rem;
+}
+.nt-results__overall {
+  margin: 0 0 0.3rem;
+}
+.nt-results__overall-status,
+.nt-results__note {
+  margin: 0.2rem 0 0;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__modules {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.nt-results__module {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.9rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--nt-mkt-line);
+  border-radius: 10px;
+}
+.nt-results__module-name {
+  flex: 1 1 12rem;
+  font-weight: 600;
+}
+.nt-results__module-score,
+.nt-results__module-rec {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.76rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__badge {
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  border: 1px solid var(--nt-mkt-line);
+}
+.nt-results__badge[data-status='proficient'] {
+  color: #86efac;
+  border-color: rgba(134, 239, 172, 0.5);
+}
+.nt-results__badge[data-status='recommended'] {
+  color: #fbbf24;
+  border-color: rgba(251, 191, 36, 0.5);
+}
+.nt-results__paths {
+  display: grid;
+  gap: 0.9rem;
+}
+@media (min-width: 720px) {
+  .nt-results__paths {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.nt-results__path-title {
+  margin: 0 0 0.4rem;
+  font-size: 0.86rem;
+}
+.nt-results__path-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.84rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__path-empty {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-results__gain[data-sign='pos'] { color: #86efac; }
+.nt-results__gain[data-sign='neg'] { color: #fca5a5; }
+.nt-results__gain[data-sign='zero'] { color: var(--nt-mkt-text-soft); }
+.nt-results__maintained {
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
 }
 .nt-assessment__result {
   margin-top: 1rem;
@@ -7812,6 +8111,48 @@ body[data-surface] {
 }
 .nt-learn-shell__signout:hover {
   background: rgba(255, 255, 255, 0.06);
+}
+
+/* Overall learning-path progress bar, pinned under the top header. */
+.nt-learn-shell__progress {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.55rem 1.5rem;
+  border-bottom: 1px solid var(--nt-mkt-line);
+  background: rgba(6, 9, 15, 0.55);
+}
+.nt-learn-shell__progress-track {
+  flex: 1 1 auto;
+  height: 8px;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+}
+.nt-learn-shell__progress-track i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--devcon-lime), var(--devcon-cyan), var(--devcon-purple));
+  transition: width 320ms var(--nt-mkt-ease, ease);
+}
+.nt-learn-shell__progress-label {
+  flex: 0 0 auto;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--nt-mkt-text-soft);
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .nt-learn-shell__progress {
+    padding: 0.5rem 0.9rem;
+    gap: 0.6rem;
+  }
+  .nt-learn-shell__progress-label {
+    font-size: 0.68rem;
+  }
 }
 @media (max-width: 560px) {
   /* Tight phones: shrink the learner topbar and drop the email (it has an

@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../logic/router';
 import {
+  fetchLearningAssessments,
   fetchLearningProgress,
   gradeLearningAssessmentOnServer,
+  refreshGuest,
   saveLearningAssessment,
   saveLearningProgress,
 } from '../../api/client';
@@ -13,9 +15,17 @@ import { useLearningModules } from '../../data/useLearningModules';
 import {
   buildLearningAssessmentAnswerInputs,
   buildLearningAssessmentQuestions,
+  computeLearningGain,
   hasLearningAssessmentAnswer,
   LEARNING_ASSESSMENT_META,
+  moduleProficiencyStatus,
+  PROFICIENCY_THRESHOLD,
+  scoreLearningAssessment,
+  scoreStoredObjectiveAssessment,
+  type AssessmentScore,
   type LearningAssessmentType,
+  type LearningGain,
+  type ModuleScore,
 } from '../../data/learningAssessments';
 import {
   bloomTaxonomiesThroughLevel,
@@ -28,6 +38,10 @@ interface LearningAssessmentPageProps {
   assessmentType: LearningAssessmentType;
   autoAdvance?: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Pre-test draft persistence (survives page reloads mid-assessment)
+// ---------------------------------------------------------------------------
 
 interface PretestDraft {
   currentLevel: number;
@@ -82,6 +96,145 @@ function clearPretestDraft(key: string | null): void {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Result display components (from main — Post-test learning-gain summary)
+// ---------------------------------------------------------------------------
+
+function statusLabel(percent: number): 'Proficient' | 'Recommended for Study' {
+  return moduleProficiencyStatus(percent) === 'proficient' ? 'Proficient' : 'Recommended for Study';
+}
+
+function ModuleResultRow({ row }: { row: ModuleScore }): JSX.Element {
+  const proficient = moduleProficiencyStatus(row.percent) === 'proficient';
+  return (
+    <li className="nt-results__module" data-status={proficient ? 'proficient' : 'recommended'}>
+      <span className="nt-results__module-name">{row.moduleTitle}</span>
+      <span className="nt-results__module-score">
+        {row.correct} of {row.total} correct · {row.percent}%
+      </span>
+      <span className="nt-results__badge" data-status={proficient ? 'proficient' : 'recommended'}>
+        {statusLabel(row.percent)}
+      </span>
+      <span className="nt-results__module-rec">
+        {proficient ? 'Optional Review' : 'Required'}
+      </span>
+    </li>
+  );
+}
+
+function PreTestResults({ score }: { score: AssessmentScore }): JSX.Element {
+  const rows = Object.values(score.byModule).sort((a, b) => {
+    const aProf = a.percent >= PROFICIENCY_THRESHOLD ? 1 : 0;
+    const bProf = b.percent >= PROFICIENCY_THRESHOLD ? 1 : 0;
+    if (aProf !== bProf) return aProf - bProf; // recommended (required) first
+    return a.moduleTitle.localeCompare(b.moduleTitle);
+  });
+  const required = rows.filter((r) => r.percent < PROFICIENCY_THRESHOLD);
+  const optional = rows.filter((r) => r.percent >= PROFICIENCY_THRESHOLD);
+
+  return (
+    <>
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Pre-Test Summary</h3>
+        <p className="nt-results__overall">
+          Overall score: <strong>{score.correct} of {score.total} correct · {score.percent}%</strong>
+        </p>
+        <p className="nt-results__overall-status">
+          {score.percent >= PROFICIENCY_THRESHOLD ? 'Proficient overall' : 'Below proficiency overall'} — modules below {PROFICIENCY_THRESHOLD}% are recommended for study.
+        </p>
+      </section>
+
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Module Results</h3>
+        <ul className="nt-results__modules">
+          {rows.map((row) => (
+            <ModuleResultRow key={row.moduleId} row={row} />
+          ))}
+        </ul>
+      </section>
+
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Your Learning Path</h3>
+        <div className="nt-results__paths">
+          <div className="nt-results__path">
+            <h4 className="nt-results__path-title">Recommended for study ({required.length})</h4>
+            {required.length > 0 ? (
+              <ul className="nt-results__path-list">
+                {required.map((r) => <li key={r.moduleId}>{r.moduleTitle} — {r.percent}%</li>)}
+              </ul>
+            ) : (
+              <p className="nt-results__path-empty">None — you scored at or above {PROFICIENCY_THRESHOLD}% on every module.</p>
+            )}
+          </div>
+          <div className="nt-results__path">
+            <h4 className="nt-results__path-title">Optional review ({optional.length})</h4>
+            {optional.length > 0 ? (
+              <ul className="nt-results__path-list">
+                {optional.map((r) => <li key={r.moduleId}>{r.moduleTitle} — {r.percent}% (Already Proficient)</li>)}
+              </ul>
+            ) : (
+              <p className="nt-results__path-empty">None yet — these appear once you reach {PROFICIENCY_THRESHOLD}%+ on a module.</p>
+            )}
+          </div>
+        </div>
+        <p className="nt-results__note">Proficiency is not the same as completion — proficient modules stay open for optional review and do not block your required path.</p>
+      </section>
+    </>
+  );
+}
+
+function PostTestResults({ score, gain }: { score: AssessmentScore; gain: LearningGain | null }): JSX.Element {
+  return (
+    <>
+      <section className="nt-results__block">
+        <h3 className="nt-results__heading">Post-Test Summary</h3>
+        <p className="nt-results__overall">
+          Overall score: <strong>{score.correct} of {score.total} correct · {score.percent}%</strong>
+        </p>
+        <p className="nt-results__overall-status">
+          Final proficiency: {score.percent >= PROFICIENCY_THRESHOLD ? 'Proficient' : 'Below proficiency'}
+        </p>
+      </section>
+
+      {gain ? (
+        <section className="nt-results__block">
+          <h3 className="nt-results__heading">Learning-Gain Summary</h3>
+          <p className="nt-results__overall">
+            Pre-test: <strong>{gain.prePercent}%</strong> → Post-test: <strong>{gain.postPercent}%</strong>
+          </p>
+          <p className="nt-results__gain" data-sign={gain.gainPoints > 0 ? 'pos' : gain.gainPoints < 0 ? 'neg' : 'zero'}>
+            Learning gain: <strong>{gain.gainPoints > 0 ? '+' : ''}{gain.gainPoints} percentage points</strong>
+            {gain.maintained ? <span className="nt-results__maintained"> · Maintained proficiency</span> : null}
+          </p>
+          <h4 className="nt-results__path-title">Per-module gain</h4>
+          <ul className="nt-results__modules">
+            {gain.byModule
+              .slice()
+              .sort((a, b) => a.moduleTitle.localeCompare(b.moduleTitle))
+              .map((m) => (
+                <li key={m.moduleId} className="nt-results__module">
+                  <span className="nt-results__module-name">{m.moduleTitle}</span>
+                  <span className="nt-results__module-score">{m.prePercent}% → {m.postPercent}%</span>
+                  <span className="nt-results__gain" data-sign={m.gainPoints > 0 ? 'pos' : m.gainPoints < 0 ? 'neg' : 'zero'}>
+                    {m.gainPoints > 0 ? '+' : ''}{m.gainPoints} pp{m.maintained ? ' · maintained' : ''}
+                  </span>
+                </li>
+              ))}
+          </ul>
+        </section>
+      ) : (
+        <section className="nt-results__block">
+          <p className="nt-results__note">No comparable pre-test on record, so a learning-gain comparison is not available.</p>
+        </section>
+      )}
+    </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main component
+// ---------------------------------------------------------------------------
+
 export default function LearningAssessmentPage({
   assessmentType,
   autoAdvance = false,
@@ -120,6 +273,7 @@ export default function LearningAssessmentPage({
   const [assessmentComplete, setAssessmentComplete] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gain, setGain] = useState<LearningGain | null>(null);
   const levelGrade = levelGrades[currentLevel] ?? null;
 
   useEffect(() => {
@@ -168,6 +322,17 @@ export default function LearningAssessmentPage({
       ),
     });
 
+    // Proactive guest session refresh on a major action.
+    const user = useAppStore.getState().user;
+    if (user?.role === 'guest') {
+      try {
+        const { token: freshToken, user: freshUser } = await refreshGuest();
+        useAppStore.getState().setAuth(freshToken, freshUser);
+      } catch (err) {
+        console.warn('[assessment] proactive guest refresh failed:', err);
+      }
+    }
+
     if (assessmentType === 'pretest') {
       const bloomMasteryByModule = deriveContiguousBloomMastery(finalGrade.results);
       const moduleIds = [...new Set(allQuestions.map((question) => question.moduleId))];
@@ -202,6 +367,16 @@ export default function LearningAssessmentPage({
         }
       }
       clearPretestDraft(pretestDraftKey);
+    } else {
+      // Compare with the latest stored pre-test for a learning-gain summary.
+      try {
+        const assessments = await fetchLearningAssessments();
+        const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
+        const finalScore = scoreLearningAssessment(questions, answersToSubmit);
+        if (preScore) setGain(computeLearningGain(preScore, finalScore));
+      } catch (err) {
+        console.warn('[assessment] could not load pre-test for gain comparison:', err);
+      }
     }
 
     return finalGrade;
@@ -270,17 +445,17 @@ export default function LearningAssessmentPage({
     );
   }
 
-  if (allQuestions.length === 0) {
+  if (questions.length === 0) {
     return (
       <main className="nt-test-page" data-testid={`${assessmentType}-page`}>
         <div className="nt-test-page__shell">
           <section className="nt-test-page__panel">
             <div className="nt-test-page__panel-head">
               <span className="nt-test-page__panel-kicker">Unavailable</span>
-              <h1 className="nt-test-page__panel-title">No theoretical questions are available</h1>
+              <h1 className="nt-test-page__panel-title">No objective questions are available</h1>
             </div>
             <p className="nt-test-page__panel-copy">
-              The module bank needs at least one theoretical question before this assessment can render.
+              The module bank needs at least one objective (multiple-choice or identification) question before this assessment can render.
             </p>
           </section>
         </div>
@@ -288,6 +463,33 @@ export default function LearningAssessmentPage({
     );
   }
 
+  // Results / confirmation screen (post-assessment, non-pretest or after finalizing pretest).
+  if (assessmentComplete && assessmentType !== 'pretest') {
+    const finalScore = scoreLearningAssessment(questions, answers);
+    return (
+      <main className="nt-test-page" data-testid={`${assessmentType}-page`} data-phase="post">
+        <div className="nt-test-page__shell">
+          <header className="nt-test-page__hero">
+            <p className="nt-test-page__eyebrow">{meta.eyebrow}</p>
+            <div className="nt-test-page__badge nt-test-page__badge--alt">{meta.badge}</div>
+            <h1 className="nt-test-page__title">{meta.title} — Results</h1>
+            <p className="nt-test-page__lede" role="status">Your answers have been submitted and saved.</p>
+          </header>
+
+          <section className="nt-test-page__panel nt-results">
+            <PostTestResults score={finalScore} gain={gain} />
+            <div className="nt-assessment__footer">
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate(meta.nextPath)}>
+                {meta.continueLabel}
+              </button>
+            </div>
+          </section>
+        </div>
+      </main>
+    );
+  }
+
+  // Taking the assessment.
   return (
     <main
       className="nt-test-page"
@@ -299,7 +501,9 @@ export default function LearningAssessmentPage({
           <p className="nt-test-page__eyebrow">{meta.eyebrow}</p>
           <div className="nt-test-page__badge nt-test-page__badge--alt">{meta.badge}</div>
           <h1 className="nt-test-page__title">{meta.title}</h1>
-          <p className="nt-test-page__lede">{meta.intro}</p>
+          <p className="nt-test-page__lede">
+            Answer the questions below. You can move between pages with Previous and Next, and review everything before submitting.
+          </p>
         </header>
 
         <section className="nt-test-page__panel">
@@ -413,14 +617,14 @@ export default function LearningAssessmentPage({
             {error ? <p className="nt-assessment__hint" role="alert">{error}</p> : null}
 
             <div className="nt-assessment__footer">
-              {!levelSubmitted ? (
+              {!assessmentComplete && !levelSubmitted ? (
                 <button
                   type="button"
                   className="nt-lesson-button nt-lesson-button--primary"
                   onClick={handleSubmitLevel}
                   disabled={saving}
                 >
-                  {saving ? 'Saving...' : assessmentType === 'pretest' ? 'Submit Level' : meta.submitLabel}
+                  {saving ? 'Saving…' : 'Submit Level'}
                 </button>
               ) : (
                 <button
@@ -429,7 +633,9 @@ export default function LearningAssessmentPage({
                   onClick={handleContinue}
                   disabled={saving}
                 >
-                  {assessmentComplete ? meta.continueLabel : 'Proceed to Next Level'}
+                  {assessmentComplete
+                    ? meta.continueLabel
+                    : `Proceed to Next Level`}
                 </button>
               )}
             </div>
