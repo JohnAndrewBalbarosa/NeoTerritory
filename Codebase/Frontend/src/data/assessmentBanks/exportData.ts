@@ -10,6 +10,7 @@ import {
   getInModuleQuestionsForModule,
   getPracticalTaskForModule,
   formalAuthoringStatus,
+  isFormalEligible,
 } from './inventory';
 import { validateAllQuestionBanks } from './validators';
 import type { ValidationReport, ModuleAssessmentBlueprint } from './types';
@@ -70,7 +71,7 @@ export function collectReviewData(): ReviewData {
 
   const counts = {
     totalModules: modules.length,
-    formalEligibleModules: modules.length, // every module has a theoreticalExam → formal-eligible
+    formalEligibleModules: modules.filter((m) => isFormalEligible(m.moduleId)).length,
     authoredModules: modules.filter((m) => m.status === 'authored').length,
     formA: modules.reduce((n, m) => n + m.formA.length, 0),
     formB: modules.reduce((n, m) => n + m.formB.length, 0),

@@ -1,17 +1,223 @@
 CODINEO QUESTION BANK REVIEW
-Generated: 2026-06-19T09:25:57.402Z
+Generated: 2026-06-19T10:31:33.077Z
 Total Learning Modules: 40
-Total Formal-Eligible Modules: 40
-Modules with Authored Form A+B: 5
-Total Form A Questions: 18
-Total Form B Questions: 18
+Total Formal-Eligible Modules: 39
+Modules with Authored Form A+B: 39
+Total Form A Questions: 167
+Total Form B Questions: 167
 Total In-Module Conceptual Questions: 240
 Total Practical Tasks: 25
-Total Questions and Tasks: 301
+Total Questions and Tasks: 599
 Validation Errors: 0
-Validation Warnings: 76
+Validation Warnings: 0
 
 ================================================================
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Ambiguity is built in to design patterns
+MODULE ID: foundations-ambiguity
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: Create
+================================================================Question 1
+Question ID: foundations-ambiguity:A1
+Paired Question ID: foundations-ambiguity:B1
+Competency ID: pattern-ambiguity
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What does this module say about some patterns at the code level?
+
+OPTIONS:
+A. All patterns look unique in code
+B. Some patterns look almost identical in structure
+C. Patterns never share code shapes
+D. Ambiguity is always a defect
+
+CORRECT ANSWER:
+B. Some patterns look almost identical in structure
+
+RATIONALE:
+Some patterns share nearly identical structure (e.g., Builder vs Method Chaining), so ambiguity is inherent — not a defect.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-ambiguity:A2
+Paired Question ID: foundations-ambiguity:B2
+Competency ID: pattern-ambiguity
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why do Builder and Method Chaining look similar in code?
+
+OPTIONS:
+A. Both are creational only
+B. Both rely on inheritance
+C. Both use fluent method chaining (return *this)
+D. Both are singletons
+
+CORRECT ANSWER:
+C. Both use fluent method chaining (return *this)
+
+RATIONALE:
+Both express a fluent interface returning *this, so their surface code looks alike though their intent differs.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 3
+Question ID: foundations-ambiguity:A3
+Paired Question ID: foundations-ambiguity:B3
+Competency ID: pattern-ambiguity
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Two classes each hold a member of the same interface and forward calls to it. To tell which pattern, you should examine ___.
+
+OPTIONS:
+A. the file size
+B. the intent — e.g. controlling access vs adding behaviour vs adapting an interface
+C. only the variable names
+D. the compiler output
+
+CORRECT ANSWER:
+B. the intent — e.g. controlling access vs adding behaviour vs adapting an interface
+
+RATIONALE:
+Wrappers that forward to a same-interface member are distinguished by intent (control access vs add behaviour vs adapt), not by size, names, or compiler output.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 4
+Question ID: foundations-ambiguity:A4
+Paired Question ID: foundations-ambiguity:B4
+Competency ID: pattern-ambiguity
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Adapter, Decorator, and Proxy all wrap a held member. Which cue best separates Proxy from Decorator?
+
+OPTIONS:
+A. Proxy adds new responsibilities while Decorator restricts access
+B. They cannot be distinguished
+C. Proxy controls access to a same-interface subject; Decorator augments behaviour through the same interface
+D. A Proxy must be abstract
+
+CORRECT ANSWER:
+C. Proxy controls access to a same-interface subject; Decorator augments behaviour through the same interface
+
+RATIONALE:
+Proxy’s intent is controlling access to the subject (same interface); Decorator’s intent is augmenting behaviour. That intent difference is the cue.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 5
+Question ID: foundations-ambiguity:A5
+Paired Question ID: foundations-ambiguity:B5
+Competency ID: pattern-ambiguity
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Given two near-identical implementations, which is the most defensible way to resolve the pattern?
+
+OPTIONS:
+A. Pick whichever name sounds best
+B. Always choose Decorator
+C. Flip a coin
+D. Resolve by the intent shown in naming, collaborators, and call-site shape
+
+CORRECT ANSWER:
+D. Resolve by the intent shown in naming, collaborators, and call-site shape
+
+RATIONALE:
+The defensible method weighs intent evidence (lexemes, collaborators, call-site shape) rather than guessing or defaulting.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Common beginner mistakes
+MODULE ID: foundations-beginner-mistakes
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-beginner-mistakes:A1
+Paired Question ID: foundations-beginner-mistakes:B1
+Competency ID: pattern-misuse-awareness
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+Which is a common beginner mistake with design patterns?
+
+OPTIONS:
+A. Reading the catalog carefully
+B. Forcing a pattern where the underlying problem does not exist
+C. Writing unit tests
+D. Using version control
+
+CORRECT ANSWER:
+B. Forcing a pattern where the underlying problem does not exist
+
+RATIONALE:
+Over-applying a pattern where its problem is absent is a classic trap; the other options are good practices.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-beginner-mistakes:A2
+Paired Question ID: foundations-beginner-mistakes:B2
+Competency ID: pattern-misuse-awareness
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why is naming a class after a pattern not evidence the pattern is implemented?
+
+OPTIONS:
+A. Because names are case-sensitive
+B. Because the pattern must be in a separate file
+C. Because a name is only a label; structure and intent determine the pattern
+D. Because compilers reject pattern names
+
+CORRECT ANSWER:
+C. Because a name is only a label; structure and intent determine the pattern
+
+RATIONALE:
+A name is just a label; the pattern exists only if the structure/intent are present. The other options are incorrect.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
 
 ================================================================
 CATEGORY: FOUNDATIONS
@@ -104,6 +310,282 @@ SOURCE REFERENCES:
 
 ================================================================
 CATEGORY: FOUNDATIONS
+MODULE: Understanding software structure
+MODULE ID: foundations-code-structure
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-code-structure:A1
+Paired Question ID: foundations-code-structure:B1
+Competency ID: code-structure-analysis
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What does CodiNeo’s analyser inspect to detect patterns?
+
+OPTIONS:
+A. Only the code comments
+B. The program’s runtime speed
+C. Class relationships and structure via a parse tree (AST)
+D. The source file names
+
+CORRECT ANSWER:
+C. Class relationships and structure via a parse tree (AST)
+
+RATIONALE:
+Detection works over class relationships/structure captured in a parse tree (AST), not comments, runtime speed, or file names.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-code-structure:A2
+Paired Question ID: foundations-code-structure:B2
+Competency ID: code-structure-analysis
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why can patterns be detected from code structure rather than from names?
+
+OPTIONS:
+A. Because every pattern class is named after its pattern
+B. Because patterns are defined by relationships and responsibilities, not identifiers
+C. Because the compiler emits pattern tags
+D. Because comments declare the pattern
+
+CORRECT ANSWER:
+B. Because patterns are defined by relationships and responsibilities, not identifiers
+
+RATIONALE:
+Patterns are defined by relationships/responsibilities, so structure is the real evidence; names, compilers, and comments are not reliable signals.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: The connotative-definition rule
+MODULE ID: foundations-connotative-definition
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-connotative-definition:A1
+Paired Question ID: foundations-connotative-definition:B1
+Competency ID: connotative-definition
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+According to this module, the way to reduce pattern ambiguity is to ___.
+
+OPTIONS:
+A. guess the most likely pattern
+B. add context to the definition itself (as connotation adds to denotation)
+C. rename the class
+D. remove the abstraction
+
+CORRECT ANSWER:
+B. add context to the definition itself (as connotation adds to denotation)
+
+RATIONALE:
+The rule reduces ambiguity by adding contextual intent to the definition, mirroring connotation in language — not guessing, renaming, or removing abstraction.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-connotative-definition:A2
+Paired Question ID: foundations-connotative-definition:B2
+Competency ID: connotative-definition
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What does the denotation-vs-connotation analogy imply for pattern definitions?
+
+OPTIONS:
+A. Definitions should simply be shorter
+B. Patterns need no definition
+C. A pattern’s meaning sharpens when intent/context is added to its bare structure
+D. Structure alone is always sufficient
+
+CORRECT ANSWER:
+C. A pattern’s meaning sharpens when intent/context is added to its bare structure
+
+RATIONALE:
+Just as connotation adds meaning beyond denotation, adding intent/context to bare structure sharpens a pattern’s definition.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Patterns vary by team and codebase
+MODULE ID: foundations-context-variation
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-context-variation:A1
+Paired Question ID: foundations-context-variation:B1
+Competency ID: convention-variation
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+Two teams that both use Builder may ___.
+
+OPTIONS:
+A. produce byte-identical code
+B. write code that looks different while following the same intent
+C. never compile
+D. always disagree on the result
+
+CORRECT ANSWER:
+B. write code that looks different while following the same intent
+
+RATIONALE:
+Teams can implement the same pattern with different surface conventions while keeping the same intent.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-context-variation:A2
+Paired Question ID: foundations-context-variation:B2
+Competency ID: convention-variation
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does CodiNeo handle convention variation between teams?
+
+OPTIONS:
+A. It picks one team’s style as universal truth
+B. It rejects all variation
+C. It standardises on detectable structural evidence rather than one team’s convention
+D. It ignores structure
+
+CORRECT ANSWER:
+C. It standardises on detectable structural evidence rather than one team’s convention
+
+RATIONALE:
+CodiNeo standardises on detectable structural evidence rather than crowning one team’s convention, so reasonable variation is tolerated.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Program to an interface
+MODULE ID: foundations-interface-principle
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply
+NON-APPLICABLE LEVELS: Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-interface-principle:A1
+Paired Question ID: foundations-interface-principle:B1
+Competency ID: interface-principle
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What does “program to an interface, not an implementation” mean?
+
+OPTIONS:
+A. Always use abstract classes for everything
+B. Write all code in header files
+C. Depend on a shared abstraction instead of one specific concrete class
+D. Avoid interfaces to reduce the file count
+
+CORRECT ANSWER:
+C. Depend on a shared abstraction instead of one specific concrete class
+
+RATIONALE:
+The principle says to depend on a shared abstraction (capability) rather than a specific concrete class. It is not about abstract classes everywhere, header files, or avoiding interfaces.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 2
+Question ID: foundations-interface-principle:A2
+Paired Question ID: foundations-interface-principle:B2
+Competency ID: interface-principle
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why does depending on an abstraction make a system easier to change?
+
+OPTIONS:
+A. It always reduces the number of classes
+B. Callers are decoupled from concrete types, so implementations can be swapped without editing callers
+C. It makes the program run faster
+D. It removes the need for tests
+
+CORRECT ANSWER:
+B. Callers are decoupled from concrete types, so implementations can be swapped without editing callers
+
+RATIONALE:
+Decoupling callers from concrete types lets implementations be substituted without changing the callers. It does not inherently reduce classes, improve speed, or remove tests.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 3
+Question ID: foundations-interface-principle:A3
+Paired Question ID: foundations-interface-principle:B3
+Competency ID: interface-principle
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A team must support several payment providers and switch between them without changing checkout code. Which approach applies the principle?
+
+OPTIONS:
+A. Inline every provider into the checkout code
+B. Store the active provider in a global variable
+C. Hard-code one default provider
+D. Have checkout depend on a payment abstraction that each provider implements
+
+CORRECT ANSWER:
+D. Have checkout depend on a payment abstraction that each provider implements
+
+RATIONALE:
+Depending on a payment abstraction implemented by each provider lets checkout stay unchanged while providers vary — the principle in action. The other options couple checkout to concretes.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
 MODULE: OOP foundations
 MODULE ID: foundations-oop
 ASSESSMENT TYPE: Formal Pre-Test — Form A
@@ -167,15 +649,255 @@ SOURCE REFERENCES:
 
 ================================================================
 CATEGORY: FOUNDATIONS
-MODULE: What is a design pattern?
-MODULE ID: foundations-what-is-pattern
+MODULE: Design patterns in real software
+MODULE ID: foundations-real-software
 ASSESSMENT TYPE: Formal Pre-Test — Form A
 APPLICABLE BLOOM LEVELS: Remember, Understand
 NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
 ================================================================Question 1
+Question ID: foundations-real-software:A1
+Paired Question ID: foundations-real-software:B1
+Competency ID: patterns-in-practice
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+Where do design patterns appear?
+
+OPTIONS:
+A. Only in textbooks
+B. Only in academic exercises
+C. In production systems across many industries
+D. Only inside compilers
+
+CORRECT ANSWER:
+C. In production systems across many industries
+
+RATIONALE:
+Patterns appear in real production systems across industries, not only in textbooks or exercises.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-real-software:A2
+Paired Question ID: foundations-real-software:B2
+Competency ID: patterns-in-practice
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why does it matter to a beginner that patterns appear in real software?
+
+OPTIONS:
+A. It means they can skip learning patterns
+B. Recognising patterns helps them read and contribute to real codebases sooner
+C. It guarantees employment
+D. It makes their code run faster
+
+CORRECT ANSWER:
+B. Recognising patterns helps them read and contribute to real codebases sooner
+
+RATIONALE:
+Recognising patterns speeds reading and contributing to real codebases — the practical payoff. The other options are false.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: When two patterns look identical
+MODULE ID: foundations-same-structure
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Analyze
+NON-APPLICABLE LEVELS: Apply, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-same-structure:A1
+Paired Question ID: foundations-same-structure:B1
+Competency ID: intent-over-structure
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+When two patterns share the same class diagram, what do you use to tell them apart?
+
+OPTIONS:
+A. File size
+B. Intent
+C. Line count
+D. Author name
+
+CORRECT ANSWER:
+B. Intent
+
+RATIONALE:
+Identical structure is disambiguated by intent; size, line count, and author are irrelevant.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-same-structure:A2
+Paired Question ID: foundations-same-structure:B2
+Competency ID: intent-over-structure
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why is intent, rather than structure, the deciding factor when diagrams match?
+
+OPTIONS:
+A. Structure is hard to read
+B. Intent descriptions are shorter
+C. Identical structures can serve different purposes, so intent disambiguates
+D. Intent is required by the compiler
+
+CORRECT ANSWER:
+C. Identical structures can serve different purposes, so intent disambiguates
+
+RATIONALE:
+Because the same structure can serve different purposes, the differentiator must be intent — not readability, length, or the compiler.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 3
+Question ID: foundations-same-structure:A3
+Paired Question ID: foundations-same-structure:B3
+Competency ID: intent-over-structure
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Where does intent become analysable evidence the system can read?
+
+OPTIONS:
+A. In naming/lexemes, collaborators, and call-site shape
+B. Only in code comments
+C. Only in the file path
+D. Only at runtime
+
+CORRECT ANSWER:
+A. In naming/lexemes, collaborators, and call-site shape
+
+RATIONALE:
+Intent surfaces in lexemes (naming), collaborators, and call-site shape — signals an analyser can read statically.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Each pattern has a structural rule
+MODULE ID: foundations-structural-rules
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Analyze
+NON-APPLICABLE LEVELS: Apply, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-structural-rules:A1
+Paired Question ID: foundations-structural-rules:B1
+Competency ID: structural-rules
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+In this catalog, what does each pattern come with?
+
+OPTIONS:
+A. A runtime benchmark
+B. A UML video
+C. A “correct structure” section listing the required token combinations
+D. A software license
+
+CORRECT ANSWER:
+C. A “correct structure” section listing the required token combinations
+
+RATIONALE:
+Each pattern ships a “correct structure” section listing the token combinations the analyser requires.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-structural-rules:A2
+Paired Question ID: foundations-structural-rules:B2
+Competency ID: structural-rules
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why does the catalog list exact token combinations for each pattern?
+
+OPTIONS:
+A. To make files larger
+B. So the analyser has objective structural evidence to require before tagging
+C. To slow detection down
+D. To hide the pattern
+
+CORRECT ANSWER:
+B. So the analyser has objective structural evidence to require before tagging
+
+RATIONALE:
+Explicit token combinations give the analyser objective, checkable evidence to require — the basis of a defensible tag.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 3
+Question ID: foundations-structural-rules:A3
+Paired Question ID: foundations-structural-rules:B3
+Competency ID: structural-rules
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A class is missing a token combination a pattern’s structural rule requires. What should the analyser do?
+
+OPTIONS:
+A. Not tag that pattern, because the structural rule is not satisfied
+B. Tag it anyway based on its name
+C. Guess the closest pattern
+D. Ignore structure entirely
+
+CORRECT ANSWER:
+A. Not tag that pattern, because the structural rule is not satisfied
+
+RATIONALE:
+If the required structural evidence is absent, the rule is unsatisfied and the pattern should not be tagged.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: What is a design pattern?
+MODULE ID: foundations-what-is-pattern
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply
+NON-APPLICABLE LEVELS: Analyze, Evaluate, Create
+================================================================Question 1
 Question ID: foundations-what-is-pattern:A1
 Paired Question ID: foundations-what-is-pattern:B1
-Competency ID: Recall the definition of a design pattern
+Competency ID: pattern-definition
 Bloom Level: Remember
 Difficulty: Easy
 Validation Status: pilot-reviewed
@@ -193,16 +915,17 @@ CORRECT ANSWER:
 A. A named, reusable solution to a recurring object-oriented design problem
 
 RATIONALE:
-(rationale pending — WARNING)
+A design pattern is a named, reusable solution to a recurring OO design problem. It is not a language keyword, a mandatory base class, or a formatting tool.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
 
 ------------------------------------------------
 Question 2
 Question ID: foundations-what-is-pattern:A2
 Paired Question ID: foundations-what-is-pattern:B2
-Competency ID: Recall what a pattern captures
+Competency ID: pattern-captures
 Bloom Level: Remember
 Difficulty: Easy
 Validation Status: pilot-reviewed
@@ -220,16 +943,17 @@ CORRECT ANSWER:
 C. A proven structure-and-intent for a recurring design problem
 
 RATIONALE:
-(rationale pending — WARNING)
+A pattern captures a proven structure and intent for a recurring problem — not a compiler flag, a naming convention, or a testing framework.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
 
 ------------------------------------------------
 Question 3
 Question ID: foundations-what-is-pattern:A3
 Paired Question ID: foundations-what-is-pattern:B3
-Competency ID: Explain why shared pattern names help a team
+Competency ID: pattern-value-communication
 Bloom Level: Understand
 Difficulty: Moderate
 Validation Status: pilot-reviewed
@@ -247,16 +971,17 @@ CORRECT ANSWER:
 B. One word can convey a whole structure and intent, reducing explanation
 
 RATIONALE:
-(rationale pending — WARNING)
+A shared name lets one term convey a whole structure/intent, shortening communication. It has no effect on runtime speed, comments, or compilation.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
 
 ------------------------------------------------
 Question 4
 Question ID: foundations-what-is-pattern:A4
 Paired Question ID: foundations-what-is-pattern:B4
-Competency ID: Distinguish a pattern from an algorithm
+Competency ID: pattern-vs-other-concepts
 Bloom Level: Understand
 Difficulty: Moderate
 Validation Status: pilot-reviewed
@@ -274,16 +999,17 @@ CORRECT ANSWER:
 D. A pattern arranges classes/objects for a design problem; an algorithm specifies computational steps
 
 RATIONALE:
-(rationale pending — WARNING)
+A pattern arranges classes/objects to solve a design problem; an algorithm specifies computational steps. They are not identical, and neither is OO-exclusive.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
 
 ------------------------------------------------
 Question 5
 Question ID: foundations-what-is-pattern:A5
 Paired Question ID: foundations-what-is-pattern:B5
-Competency ID: Apply: recognize the value of adopting a pattern
+Competency ID: pattern-adoption-value
 Bloom Level: Apply
 Difficulty: Moderate
 Validation Status: pilot-reviewed
@@ -301,10 +1027,11 @@ CORRECT ANSWER:
 A. A shared, named solution shape they can reuse and recognize
 
 RATIONALE:
-(rationale pending — WARNING)
+Adopting a pattern gives a shared, reusable, recognizable solution shape. It does not auto-fix bugs, shrink the binary, or guarantee thread safety.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
 
 ------------------------------------------------
 
@@ -401,6 +1128,151 @@ SOURCE REFERENCES:
 
 ================================================================
 CATEGORY: CREATIONAL
+MODULE: Abstract Factory
+MODULE ID: creational-abstract-factory
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-abstract-factory:A1
+Paired Question ID: creational-abstract-factory:B1
+Competency ID: af-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Abstract Factory pattern?
+
+OPTIONS:
+A. Provide an interface for creating families of related objects without naming their concrete classes
+B. Ensure a single instance
+C. Copy an existing object
+D. Add behaviour to an object dynamically
+
+CORRECT ANSWER:
+A. Provide an interface for creating families of related objects without naming their concrete classes
+
+RATIONALE:
+Abstract Factory creates families of related products behind one interface, hiding concrete classes. The distractors are Singleton, Prototype, and Decorator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Creational module content
+
+------------------------------------------------
+Question 2
+Question ID: creational-abstract-factory:A2
+Paired Question ID: creational-abstract-factory:B2
+Competency ID: af-understand
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does Abstract Factory differ from Factory Method?
+
+OPTIONS:
+A. It is identical to Factory Method
+B. It creates a single product, while Factory Method creates families
+C. It creates whole families of related products, while Factory Method creates one product via subclass override
+D. It only applies to Singletons
+
+CORRECT ANSWER:
+C. It creates whole families of related products, while Factory Method creates one product via subclass override
+
+RATIONALE:
+Abstract Factory builds families of related products together; Factory Method defers one product’s creation to a subclass. They are not identical.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: creational-abstract-factory:A3
+Paired Question ID: creational-abstract-factory:B3
+Competency ID: af-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A UI toolkit must produce matching widgets (button, checkbox, menu) per theme, guaranteed to belong to the same look-and-feel. Which pattern fits?
+
+OPTIONS:
+A. Prototype
+B. Singleton
+C. Method Chaining
+D. Abstract Factory
+
+CORRECT ANSWER:
+D. Abstract Factory
+
+RATIONALE:
+Producing a coherent family of related widgets per theme is Abstract Factory; the distractors do not enforce matching families.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: creational-abstract-factory:A4
+Paired Question ID: creational-abstract-factory:B4
+Competency ID: af-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  struct GuiFactory { virtual Button* makeButton() = 0; virtual Checkbox* makeCheckbox() = 0; };  Which pattern is this interface part of?
+
+OPTIONS:
+A. Factory Method
+B. Builder
+C. Abstract Factory
+D. Prototype
+
+CORRECT ANSWER:
+C. Abstract Factory
+
+RATIONALE:
+One factory interface with multiple create methods for related products (Button + Checkbox) is Abstract Factory; a single create method would be Factory Method.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 5
+Question ID: creational-abstract-factory:A5
+Paired Question ID: creational-abstract-factory:B5
+Competency ID: af-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A concrete WinFactory implements makeButton() returning a WinButton but makeCheckbox() returns a MacCheckbox. Does this honor Abstract Factory’s intent?
+
+OPTIONS:
+A. Yes — any concrete returns are fine
+B. Yes — provided both compile
+C. No — Abstract Factory forbids more than one product
+D. No — a concrete factory must return products from one consistent family; mixing Win and Mac breaks the family guarantee
+
+CORRECT ANSWER:
+D. No — a concrete factory must return products from one consistent family; mixing Win and Mac breaks the family guarantee
+
+RATIONALE:
+Abstract Factory’s value is that one concrete factory yields a matching family; returning a Mac checkbox from a Windows factory violates that guarantee.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
 MODULE: Builder
 MODULE ID: creational-builder
 ASSESSMENT TYPE: Formal Pre-Test — Form A
@@ -409,7 +1281,7 @@ NON-APPLICABLE LEVELS: (none)
 ================================================================Question 1
 Question ID: creational-builder:A1
 Paired Question ID: creational-builder:B1
-Competency ID: Recall the intent of Builder
+Competency ID: builder-intent
 Bloom Level: Remember
 Difficulty: Easy
 Validation Status: pilot-reviewed
@@ -427,16 +1299,17 @@ CORRECT ANSWER:
 A. Separate the construction of a complex object from its representation, so the same process can create different representations
 
 RATIONALE:
-(rationale pending — WARNING)
+Builder separates constructing a complex object from its representation so one process can yield different representations. The distractors describe Singleton, Adapter, and Observer.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* Gamma et al. (1994), Design Patterns — Builder
+* Nesteruk (2022), Design Patterns in Modern C++ — Builder
 
 ------------------------------------------------
 Question 2
 Question ID: creational-builder:A2
 Paired Question ID: creational-builder:B2
-Competency ID: Explain how Builder organizes construction
+Competency ID: builder-construction-organization
 Bloom Level: Understand
 Difficulty: Moderate
 Validation Status: pilot-reviewed
@@ -454,16 +1327,17 @@ CORRECT ANSWER:
 C. Through a sequence of step methods that assemble parts, then a final build step
 
 RATIONALE:
-(rationale pending — WARNING)
+Builder assembles parts via step methods then a final build step, avoiding public mutable fields, telescoping constructors, and cloning.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* Gamma et al. (1994), Design Patterns — Builder
+* Nesteruk (2022), Design Patterns in Modern C++ — Builder
 
 ------------------------------------------------
 Question 3
 Question ID: creational-builder:A3
 Paired Question ID: creational-builder:B3
-Competency ID: Apply: select the pattern for a construction requirement
+Competency ID: builder-select-for-requirement
 Bloom Level: Apply
 Difficulty: Moderate
 Validation Status: pilot-reviewed
@@ -481,16 +1355,17 @@ CORRECT ANSWER:
 B. Builder
 
 RATIONALE:
-(rationale pending — WARNING)
+Optional, ordered steps producing different final representations is Builder’s core use case; Singleton, Adapter, and Observer solve unrelated problems.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* Gamma et al. (1994), Design Patterns — Builder
+* Nesteruk (2022), Design Patterns in Modern C++ — Builder
 
 ------------------------------------------------
 Question 4
 Question ID: creational-builder:A4
 Paired Question ID: creational-builder:B4
-Competency ID: Analyze: identify the pattern from code structure
+Competency ID: builder-identify-from-structure
 Bloom Level: Analyze
 Difficulty: Difficult
 Validation Status: pilot-reviewed
@@ -508,16 +1383,17 @@ CORRECT ANSWER:
 D. Builder
 
 RATIONALE:
-(rationale pending — WARNING)
+Chained part-adding methods returning the same object plus a terminal build() that first exposes the product is Builder’s structural signature.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* Gamma et al. (1994), Design Patterns — Builder
+* Nesteruk (2022), Design Patterns in Modern C++ — Builder
 
 ------------------------------------------------
 Question 5
 Question ID: creational-builder:A5
 Paired Question ID: creational-builder:B5
-Competency ID: Evaluate: choose between approaches under constraints
+Competency ID: builder-evaluate-tradeoff
 Bloom Level: Evaluate
 Difficulty: Difficult
 Validation Status: pilot-reviewed
@@ -535,9 +1411,3501 @@ CORRECT ANSWER:
 A. The step-based assembler — it handles optional parameters cleanly and yields an immutable result
 
 RATIONALE:
-(rationale pending — WARNING)
+For many optional parameters plus immutability, a step assembler returning a finished product is clearest and preserves immutability; telescoping constructors and setters do not.
 
 SOURCE REFERENCES:
-* (source pending — WARNING)
+* Gamma et al. (1994), Design Patterns — Builder
+* Nesteruk (2022), Design Patterns in Modern C++ — Builder
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Factory Method
+MODULE ID: creational-factory-method
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-factory-method:A1
+Paired Question ID: creational-factory-method:B1
+Competency ID: fm-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Factory Method pattern?
+
+OPTIONS:
+A. Define an interface for creating an object but let subclasses decide which concrete class to instantiate
+B. Ensure a class has a single instance
+C. Copy an existing object
+D. Wrap an incompatible interface
+
+CORRECT ANSWER:
+A. Define an interface for creating an object but let subclasses decide which concrete class to instantiate
+
+RATIONALE:
+Factory Method defers the choice of concrete product to subclasses via an overridable creation method. The distractors describe Singleton, Prototype, and Adapter.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Creational module content
+
+------------------------------------------------
+Question 2
+Question ID: creational-factory-method:A2
+Paired Question ID: creational-factory-method:B2
+Competency ID: fm-understand
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+In Factory Method, who decides which concrete product is created?
+
+OPTIONS:
+A. The client’s calling code directly
+B. The compiler
+C. A subclass that overrides the creation method
+D. A global registry only
+
+CORRECT ANSWER:
+C. A subclass that overrides the creation method
+
+RATIONALE:
+The creator declares a creation method; a subclass overrides it to choose the concrete product, decoupling clients from concretes.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: creational-factory-method:A3
+Paired Question ID: creational-factory-method:B3
+Competency ID: fm-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A framework defines a workflow but must let each plug-in decide which concrete document object the workflow creates. Which pattern fits?
+
+OPTIONS:
+A. Singleton
+B. Prototype
+C. Method Chaining
+D. Factory Method
+
+CORRECT ANSWER:
+D. Factory Method
+
+RATIONALE:
+Letting subclasses/plug-ins choose the concrete product while the base defines the workflow is Factory Method; the distractors solve other problems.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: creational-factory-method:A4
+Paired Question ID: creational-factory-method:B4
+Competency ID: fm-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  struct Creator { virtual Product* create() = 0; void run(){ auto* p = create(); /* use p */ } };  struct PdfCreator : Creator { Product* create() override { return new Pdf(); } };  Which pattern is this?
+
+OPTIONS:
+A. Factory Method
+B. Abstract Factory
+C. Builder
+D. Singleton
+
+CORRECT ANSWER:
+A. Factory Method
+
+RATIONALE:
+A base class with an overridable create() that subclasses implement to pick the concrete product is Factory Method (one product per call), not a family factory or step builder.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 5
+Question ID: creational-factory-method:A5
+Paired Question ID: creational-factory-method:B5
+Competency ID: fm-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A class named ShapeFactory contains one giant switch on a string to new each shape, with no polymorphic creator. Is this Factory Method?
+
+OPTIONS:
+A. Yes — the name ShapeFactory makes it Factory Method
+B. Yes — any creation code is Factory Method
+C. No — Factory Method requires templates
+D. No — the name does not matter; without a polymorphic creation method overridden by subclasses it is a simple/switch factory, not Factory Method
+
+CORRECT ANSWER:
+D. No — the name does not matter; without a polymorphic creation method overridden by subclasses it is a simple/switch factory, not Factory Method
+
+RATIONALE:
+Factory Method’s defining structure is a creation method overridden by subclasses; a string switch is a simple factory. The class name is not evidence of the pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Method Chaining
+MODULE ID: creational-method-chaining
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-method-chaining:A1
+Paired Question ID: creational-method-chaining:B1
+Competency ID: mc-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What does the Method Chaining idiom let you do?
+
+OPTIONS:
+A. Set several options on the same object in one fluent expression
+B. Guarantee one instance
+C. Create matching product families
+D. Convert an incompatible interface
+
+CORRECT ANSWER:
+A. Set several options on the same object in one fluent expression
+
+RATIONALE:
+Method Chaining returns the same object from each setter so calls can be chained fluently. The distractors are Singleton, Abstract Factory, and Adapter.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+* CodiNeo Creational module content
+
+------------------------------------------------
+Question 2
+Question ID: creational-method-chaining:A2
+Paired Question ID: creational-method-chaining:B2
+Competency ID: mc-understand
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What must a setter return to enable method chaining in C++?
+
+OPTIONS:
+A. void
+B. a new copy of the object
+C. a reference (or pointer) to the same object, e.g. return *this
+D. a boolean success flag
+
+CORRECT ANSWER:
+C. a reference (or pointer) to the same object, e.g. return *this
+
+RATIONALE:
+Returning *this (a reference to the same object) lets the next call chain on it. Returning void, a copy, or a flag breaks the chain.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 3
+Question ID: creational-method-chaining:A3
+Paired Question ID: creational-method-chaining:B3
+Competency ID: mc-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A configuration object should be set up in one readable expression like cfg.host("x").port(80).tls(true);. Which technique enables this?
+
+OPTIONS:
+A. Returning void from each setter
+B. Making the class a Singleton
+C. Cloning the object per setter
+D. Having each setter return a reference to the object so calls chain
+
+CORRECT ANSWER:
+D. Having each setter return a reference to the object so calls chain
+
+RATIONALE:
+Each setter returning a self-reference makes the fluent chain possible. The other options prevent chaining or solve unrelated problems.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 4
+Question ID: creational-method-chaining:A4
+Paired Question ID: creational-method-chaining:B4
+Competency ID: mc-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  struct Pizza { Pizza& size(int s){ s_=s; return *this; } Pizza& cheese(bool c){ c_=c; return *this; } };  What idiom does this show?
+
+OPTIONS:
+A. Method Chaining (fluent interface)
+B. Prototype
+C. Singleton
+D. Abstract Factory
+
+CORRECT ANSWER:
+A. Method Chaining (fluent interface)
+
+RATIONALE:
+Setters that mutate and return *this form a fluent interface (Method Chaining). No copying, single-instance, or family creation is present.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 5
+Question ID: creational-method-chaining:A5
+Paired Question ID: creational-method-chaining:B5
+Competency ID: mc-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A “fluent” API returns a brand-new copy of the object from every setter instead of *this. Does this correctly implement method chaining, and what is the effect?
+
+OPTIONS:
+A. Yes — it is identical to returning *this
+B. Yes — copies are required for chaining
+C. No — chaining is impossible in C++
+D. No — returning copies means earlier settings may be lost and each call mutates a different object, defeating the fluent intent
+
+CORRECT ANSWER:
+D. No — returning copies means earlier settings may be lost and each call mutates a different object, defeating the fluent intent
+
+RATIONALE:
+Returning fresh copies means each call operates on a different object, so accumulated configuration can be lost; chaining requires returning the same object (*this).
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Prototype
+MODULE ID: creational-prototype
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-prototype:A1
+Paired Question ID: creational-prototype:B1
+Competency ID: pr-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Prototype pattern?
+
+OPTIONS:
+A. Create new objects by copying an existing instance (a prototype)
+B. Guarantee a single instance
+C. Let subclasses choose the concrete product
+D. Assemble an object through ordered steps
+
+CORRECT ANSWER:
+A. Create new objects by copying an existing instance (a prototype)
+
+RATIONALE:
+Prototype creates new objects by cloning an existing prototypical instance. The distractors are Singleton, Factory Method, and Builder.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Creational module content
+
+------------------------------------------------
+Question 2
+Question ID: creational-prototype:A2
+Paired Question ID: creational-prototype:B2
+Competency ID: pr-understand
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why is Prototype useful when object creation is expensive or configuration-heavy?
+
+OPTIONS:
+A. It avoids creating objects at all
+B. It copies a ready, pre-configured instance instead of rebuilding from scratch
+C. It guarantees thread safety
+D. It removes the need for constructors
+
+CORRECT ANSWER:
+B. It copies a ready, pre-configured instance instead of rebuilding from scratch
+
+RATIONALE:
+Cloning a pre-configured prototype reuses its setup, avoiding costly re-construction. The other options misstate Prototype’s benefit.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: creational-prototype:A3
+Paired Question ID: creational-prototype:B3
+Competency ID: pr-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+An editor must duplicate a fully-configured shape (with styling) at runtime without knowing its concrete type. Which pattern fits?
+
+OPTIONS:
+A. Singleton
+B. Abstract Factory
+C. Method Chaining
+D. Prototype
+
+CORRECT ANSWER:
+D. Prototype
+
+RATIONALE:
+Duplicating a configured object polymorphically (without its concrete type) is Prototype via clone(); the distractors solve other problems.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: creational-prototype:A4
+Paired Question ID: creational-prototype:B4
+Competency ID: pr-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  struct Shape { virtual Shape* clone() const = 0; };  struct Circle : Shape { Shape* clone() const override { return new Circle(*this); } };  Which pattern is this?
+
+OPTIONS:
+A. Prototype
+B. Factory Method
+C. Builder
+D. Singleton
+
+CORRECT ANSWER:
+A. Prototype
+
+RATIONALE:
+A virtual clone() that copy-constructs the same concrete type is the Prototype structure; it copies rather than choosing or assembling a product.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 5
+Question ID: creational-prototype:A5
+Paired Question ID: creational-prototype:B5
+Competency ID: pr-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A clone() returns new Base(*this) for every subclass (no override), so cloning a Derived yields a Base. Is this a correct Prototype, and why?
+
+OPTIONS:
+A. Yes — base copying is sufficient
+B. Yes — provided Base is abstract
+C. No — Prototype forbids inheritance
+D. No — without a polymorphic override clone() slices the object, losing the derived type
+
+CORRECT ANSWER:
+D. No — without a polymorphic override clone() slices the object, losing the derived type
+
+RATIONALE:
+Cloning must be polymorphic so each subclass copies its own type; a fixed new Base(*this) slices derived objects, breaking Prototype.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Singleton
+MODULE ID: creational-singleton
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-singleton:A1
+Paired Question ID: creational-singleton:B1
+Competency ID: singleton-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What does the Singleton pattern guarantee?
+
+OPTIONS:
+A. A class has exactly one instance with a single global access point
+B. A class can be freely subclassed and copied
+C. Objects are produced in matching families
+D. Objects are built through ordered steps
+
+CORRECT ANSWER:
+A. A class has exactly one instance with a single global access point
+
+RATIONALE:
+Singleton ensures a class has exactly one instance and provides one global access point to it. The other options describe subclassing, Abstract Factory, and Builder.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Creational module content
+
+------------------------------------------------
+Question 2
+Question ID: creational-singleton:A2
+Paired Question ID: creational-singleton:B2
+Competency ID: singleton-enforce
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How is the single-instance guarantee typically enforced in C++?
+
+OPTIONS:
+A. By marking every method const
+B. By making the class abstract
+C. By a non-public constructor plus a static accessor that returns the sole instance
+D. By deleting the destructor
+
+CORRECT ANSWER:
+C. By a non-public constructor plus a static accessor that returns the sole instance
+
+RATIONALE:
+A hidden (non-public) constructor prevents outside construction, and a static accessor returns the one instance. The other options do not constrain instance count.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+* CodiNeo Creational module content
+
+------------------------------------------------
+Question 3
+Question ID: creational-singleton:A3
+Paired Question ID: creational-singleton:B3
+Competency ID: singleton-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A system needs exactly one shared configuration object, created once and reachable everywhere. Which pattern fits?
+
+OPTIONS:
+A. Prototype
+B. Factory Method
+C. Abstract Factory
+D. Singleton
+
+CORRECT ANSWER:
+D. Singleton
+
+RATIONALE:
+One shared instance with a global access point is the Singleton use case; the distractors address copying, deferred subclass choice, and product families.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: creational-singleton:A4
+Paired Question ID: creational-singleton:B4
+Competency ID: singleton-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Cfg { Cfg() = default; public: static Cfg& instance() { static Cfg c; return c; } };  Which pattern does this indicate?
+
+OPTIONS:
+A. Singleton
+B. Factory Method
+C. Builder
+D. Prototype
+
+CORRECT ANSWER:
+A. Singleton
+
+RATIONALE:
+A non-public constructor plus a static accessor returning one function-local static is the (Meyers) Singleton idiom; nothing here creates families, products, or copies.
+
+SOURCE REFERENCES:
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 5
+Question ID: creational-singleton:A5
+Paired Question ID: creational-singleton:B5
+Competency ID: singleton-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A class exposes a public static getInstance() but also leaves its constructor public. Does this correctly implement Singleton, and why?
+
+OPTIONS:
+A. Yes — the static getter is sufficient
+B. Yes — provided the class is marked final
+C. No — Singletons must allocate on the heap
+D. No — a public constructor lets callers create extra instances, breaking the single-instance guarantee
+
+CORRECT ANSWER:
+D. No — a public constructor lets callers create extra instances, breaking the single-instance guarantee
+
+RATIONALE:
+The single-instance invariant requires preventing outside construction; a public constructor allows additional instances, so the implementation is incorrect regardless of the getter.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Adapter
+MODULE ID: structural-adapter
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-adapter:A1
+Paired Question ID: structural-adapter:B1
+Competency ID: ad-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Adapter pattern?
+
+OPTIONS:
+A. Convert a class’s interface into another interface clients expect, so incompatible types can work together
+B. Add new behaviour to an object by wrapping it
+C. Control or restrict access to an object
+D. Ensure a class has only one instance
+
+CORRECT ANSWER:
+A. Convert a class’s interface into another interface clients expect, so incompatible types can work together
+
+RATIONALE:
+Adapter converts one existing interface into the interface a client expects. The distractors describe Decorator, Proxy, and Singleton.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-adapter:A2
+Paired Question ID: structural-adapter:B2
+Competency ID: ad-mechanism
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does an Adapter make two incompatible interfaces work together?
+
+OPTIONS:
+A. It edits the adaptee’s source code to match the client
+B. It implements the target interface and translates each call to the adaptee’s existing methods
+C. It duplicates the adaptee for each client
+D. It deletes the target interface entirely
+
+CORRECT ANSWER:
+B. It implements the target interface and translates each call to the adaptee’s existing methods
+
+RATIONALE:
+The adapter conforms to the target interface and forwards/translates calls to the unchanged adaptee. It does not modify or copy the adaptee.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-adapter:A3
+Paired Question ID: structural-adapter:B3
+Competency ID: ad-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A new reporting client expects a JSON-exporter interface, but the only library available exposes a completely different XML API you cannot change. Which pattern lets them work together?
+
+OPTIONS:
+A. Decorator
+B. Proxy
+C. Adapter
+D. Composite
+
+CORRECT ANSWER:
+C. Adapter
+
+RATIONALE:
+Bridging a required interface to an unchangeable, differently-shaped existing one is Adapter. The distractors add behaviour, control access, or build trees.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-adapter:A4
+Paired Question ID: structural-adapter:B4
+Competency ID: ad-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class JsonTarget { public: virtual std::string toJson() = 0; };  class XmlLib { public: std::string toXml(); };  class XmlToJson : public JsonTarget { XmlLib lib; public: std::string toJson() override { return convert(lib.toXml()); } };  Which pattern is this?
+
+OPTIONS:
+A. Bridge
+B. Facade
+C. Proxy
+D. Adapter
+
+CORRECT ANSWER:
+D. Adapter
+
+RATIONALE:
+A class implementing the expected interface (JsonTarget) by translating to an existing, differently-shaped API (XmlLib) is Adapter.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-adapter:A5
+Paired Question ID: structural-adapter:B5
+Competency ID: ad-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A class claims to be an Adapter but simply adds caching around the very same interface the client already used, converting nothing. Is this correctly an Adapter?
+
+OPTIONS:
+A. No — Adapter must convert one interface into another; adding behaviour over the same interface is Decorator/Proxy, not Adapter
+B. Yes — any wrapper is an Adapter
+C. Yes — caching counts as adapting
+D. No — Adapters cannot use composition
+
+CORRECT ANSWER:
+A. No — Adapter must convert one interface into another; adding behaviour over the same interface is Decorator/Proxy, not Adapter
+
+RATIONALE:
+Adapter’s defining purpose is interface conversion. Adding behaviour while keeping the same interface is Decorator/Proxy intent, not Adapter.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Bridge
+MODULE ID: structural-bridge
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-bridge:A1
+Paired Question ID: structural-bridge:B1
+Competency ID: br-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Bridge pattern?
+
+OPTIONS:
+A. Add behaviour by wrapping
+B. Provide a surrogate for access
+C. Decouple an abstraction from its implementation so the two can vary independently
+D. Compose objects into trees
+
+CORRECT ANSWER:
+C. Decouple an abstraction from its implementation so the two can vary independently
+
+RATIONALE:
+Bridge separates an abstraction from its implementation so both vary independently. The distractors are Decorator, Proxy, and Composite.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-bridge:A2
+Paired Question ID: structural-bridge:B2
+Competency ID: br-vs-inherit
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does Bridge differ from plain inheritance for handling two dimensions of variation?
+
+OPTIONS:
+A. It uses one giant subclass per combination
+B. It forbids polymorphism
+C. It merges both dimensions into one class
+D. It composes the abstraction with a separate implementor hierarchy, avoiding a combinatorial explosion of subclasses
+
+CORRECT ANSWER:
+D. It composes the abstraction with a separate implementor hierarchy, avoiding a combinatorial explosion of subclasses
+
+RATIONALE:
+Bridge composes (not inherits) abstraction with an independent implementor hierarchy, avoiding the N×M subclass explosion.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-bridge:A3
+Paired Question ID: structural-bridge:B3
+Competency ID: br-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Shapes (circle, square) must render via multiple drawing backends (OpenGL, SVG), and both sets will keep growing independently. Which pattern avoids one subclass per shape×backend pair?
+
+OPTIONS:
+A. Bridge
+B. Decorator
+C. Adapter
+D. Composite
+
+CORRECT ANSWER:
+A. Bridge
+
+RATIONALE:
+Two independently-varying dimensions handled by composition is Bridge. The distractors add behaviour, convert, or build trees.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-bridge:A4
+Paired Question ID: structural-bridge:B4
+Competency ID: br-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Renderer { public: virtual void drawCircle(float) = 0; };  class Shape { protected: Renderer* r; public: Shape(Renderer* rr) : r(rr) {} virtual void draw() = 0; };  class Circle : public Shape { float rad; public: void draw() override { r->drawCircle(rad); } };  Which pattern is this?
+
+OPTIONS:
+A. Strategy
+B. Bridge
+C. Proxy
+D. Template Method
+
+CORRECT ANSWER:
+B. Bridge
+
+RATIONALE:
+An abstraction hierarchy (Shape) holding and delegating to a separate implementor hierarchy (Renderer) that both vary independently is Bridge.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-bridge:A5
+Paired Question ID: structural-bridge:B5
+Competency ID: br-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A developer claims a class uses Bridge because it holds a pointer to an implementation object. But there is only one implementation, used solely to hide private members from the header. Is this Bridge?
+
+OPTIONS:
+A. Yes — any pointer-to-impl is Bridge
+B. Yes — Bridge and PIMPL are the same
+C. No — that is the PIMPL idiom; Bridge requires independently varying abstraction and implementation hierarchies
+D. No — Bridge cannot use pointers
+
+CORRECT ANSWER:
+C. No — that is the PIMPL idiom; Bridge requires independently varying abstraction and implementation hierarchies
+
+RATIONALE:
+A single fixed implementation pointer used only to hide members is the PIMPL idiom; Bridge needs genuine, independently varying abstraction and implementor hierarchies.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Composite
+MODULE ID: structural-composite
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-composite:A1
+Paired Question ID: structural-composite:B1
+Competency ID: cp-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Composite pattern?
+
+OPTIONS:
+A. Convert interfaces between layers
+B. Add behaviour by wrapping
+C. Compose objects into part-whole trees and let clients treat individual objects and compositions uniformly
+D. Provide a surrogate for access control
+
+CORRECT ANSWER:
+C. Compose objects into part-whole trees and let clients treat individual objects and compositions uniformly
+
+RATIONALE:
+Composite builds part-whole trees treated uniformly. The distractors are Adapter, Decorator, and Proxy.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-composite:A2
+Paired Question ID: structural-composite:B2
+Competency ID: cp-uniform
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What makes uniform treatment of leaves and composites possible?
+
+OPTIONS:
+A. Leaves inherit from composites
+B. Composites store no children
+C. A global registry maps node types
+D. Both leaf and composite implement the same component interface
+
+CORRECT ANSWER:
+D. Both leaf and composite implement the same component interface
+
+RATIONALE:
+A shared component interface lets clients call the same operations on a leaf or a whole subtree without distinguishing them.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-composite:A3
+Paired Question ID: structural-composite:B3
+Competency ID: cp-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A drawing app must treat a single shape and a group of shapes identically for operations like move() and draw(), with groups nesting arbitrarily. Which pattern?
+
+OPTIONS:
+A. Composite
+B. Decorator
+C. Proxy
+D. Strategy
+
+CORRECT ANSWER:
+A. Composite
+
+RATIONALE:
+Uniform treatment of single items and nested groups is Composite. The distractors add behaviour, control access, or swap algorithms.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-composite:A4
+Paired Question ID: structural-composite:B4
+Competency ID: cp-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Node { public: virtual int size() = 0; };  class File : public Node { int size() override { return sz; } };  class Folder : public Node { std::vector<Node*> kids; public: int size() override { int t = 0; for (auto* k : kids) t += k->size(); return t; } };  Which pattern is this?
+
+OPTIONS:
+A. Visitor
+B. Composite
+C. Decorator
+D. Iterator
+
+CORRECT ANSWER:
+B. Composite
+
+RATIONALE:
+A shared Node interface where a container recursively aggregates its children is the Composite part-whole structure.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-composite:A5
+Paired Question ID: structural-composite:B5
+Competency ID: cp-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A “Composite” design gives Folder a children list but File a totally different interface with unrelated method names, forcing clients to type-check each node. Does this satisfy Composite’s intent?
+
+OPTIONS:
+A. Yes — as long as there is a tree
+B. Yes — composites and leaves should differ
+C. No — Composite requires a shared component interface so leaf and composite are treated uniformly; type-checking defeats it
+D. No — Composite forbids storing children
+
+CORRECT ANSWER:
+C. No — Composite requires a shared component interface so leaf and composite are treated uniformly; type-checking defeats it
+
+RATIONALE:
+Uniform treatment via a common interface is the whole point; if clients must branch on node type, the pattern’s benefit is lost.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Decorator
+MODULE ID: structural-decorator
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-decorator:A1
+Paired Question ID: structural-decorator:B1
+Competency ID: dc-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Decorator pattern?
+
+OPTIONS:
+A. Attach additional responsibilities to an object dynamically by wrapping it
+B. Convert one interface into another
+C. Ensure a class has one instance
+D. Centralise communication between objects
+
+CORRECT ANSWER:
+A. Attach additional responsibilities to an object dynamically by wrapping it
+
+RATIONALE:
+Decorator adds responsibilities to an object dynamically through wrapping. The distractors are Adapter, Singleton, and Mediator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-decorator:A2
+Paired Question ID: structural-decorator:B2
+Competency ID: dc-stack
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why can decorators be stacked on top of one another?
+
+OPTIONS:
+A. Because they edit the base class
+B. Each decorator implements the same component interface and holds a component, so they nest
+C. Because they share one global instance
+D. Because they convert interfaces between layers
+
+CORRECT ANSWER:
+B. Each decorator implements the same component interface and holds a component, so they nest
+
+RATIONALE:
+Each decorator is itself a component and wraps a component, so wrappers nest indefinitely while staying interchangeable with the base.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-decorator:A3
+Paired Question ID: structural-decorator:B3
+Competency ID: dc-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+You must add optional, combinable features (encryption, compression, buffering) to a data stream at runtime without a subclass explosion, keeping the same stream interface. Which pattern?
+
+OPTIONS:
+A. Proxy
+B. Adapter
+C. Decorator
+D. Facade
+
+CORRECT ANSWER:
+C. Decorator
+
+RATIONALE:
+Dynamically composable responsibilities over a shared interface is Decorator. The distractors control access, convert, or simplify subsystems.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-decorator:A4
+Paired Question ID: structural-decorator:B4
+Competency ID: dc-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Coffee { public: virtual int cost() = 0; };  class Basic : public Coffee { int cost() override { return 2; } };  class MilkDecorator : public Coffee { Coffee* inner; public: MilkDecorator(Coffee* c) : inner(c) {} int cost() override { return inner->cost() + 1; } };  Which pattern is this?
+
+OPTIONS:
+A. Composite
+B. Adapter
+C. Proxy
+D. Decorator
+
+CORRECT ANSWER:
+D. Decorator
+
+RATIONALE:
+A same-interface wrapper that augments the wrapped object’s result (adds cost) is Decorator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-decorator:A5
+Paired Question ID: structural-decorator:B5
+Competency ID: dc-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A wrapper implements the same interface and adds a visible new feature (drawing a border) to what the client sees, delegating the rest. Best classified as?
+
+OPTIONS:
+A. Decorator — it adds new client-facing behaviour while preserving the interface
+B. Proxy — any wrapper controls access
+C. Adapter — it converts the interface
+D. Bridge — it splits abstraction from implementation
+
+CORRECT ANSWER:
+A. Decorator — it adds new client-facing behaviour while preserving the interface
+
+RATIONALE:
+Adding new client-facing responsibility while keeping the component interface is Decorator, distinct from Proxy’s access-control intent.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Facade
+MODULE ID: structural-facade
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-facade:A1
+Paired Question ID: structural-facade:B1
+Competency ID: fc-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Facade pattern?
+
+OPTIONS:
+A. Provide a single, simplified interface to a larger body of code or a complex subsystem
+B. Convert one interface to another
+C. Ensure a single instance
+D. Add responsibilities by wrapping
+
+CORRECT ANSWER:
+A. Provide a single, simplified interface to a larger body of code or a complex subsystem
+
+RATIONALE:
+Facade offers a simplified entry point to a subsystem. The distractors are Adapter, Singleton, and Decorator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-facade:A2
+Paired Question ID: structural-facade:B2
+Competency ID: fc-access
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Does a Facade hide or remove the subsystem’s classes?
+
+OPTIONS:
+A. It permanently removes the subsystem classes
+B. It provides a simpler entry point while the subsystem classes remain accessible for advanced use
+C. It converts each subsystem class’s interface
+D. It guarantees only one subsystem object exists
+
+CORRECT ANSWER:
+B. It provides a simpler entry point while the subsystem classes remain accessible for advanced use
+
+RATIONALE:
+A Facade adds a convenient interface but does not forbid direct use of the subsystem when needed.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-facade:A3
+Paired Question ID: structural-facade:B3
+Competency ID: fc-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Clients must start a video conversion with one easy call, while behind it many components (codec, audio mixer, muxer) cooperate. Which pattern offers the simple front door?
+
+OPTIONS:
+A. Adapter
+B. Proxy
+C. Facade
+D. Bridge
+
+CORRECT ANSWER:
+C. Facade
+
+RATIONALE:
+A single simplified entry point over a multi-part subsystem is Facade. The distractors convert, control access, or split abstraction.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-facade:A4
+Paired Question ID: structural-facade:B4
+Competency ID: fc-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class ComputerStarter { CPU cpu; Memory mem; Disk disk; public: void boot() { cpu.freeze(); mem.load(0, disk.read(0)); cpu.jump(0); cpu.execute(); } };  A single class offering one method that orchestrates several subsystem objects illustrates which pattern?
+
+OPTIONS:
+A. Mediator
+B. Composite
+C. Adapter
+D. Facade
+
+CORRECT ANSWER:
+D. Facade
+
+RATIONALE:
+One class wrapping a multi-step subsystem interaction behind a simple method (boot) is a Facade.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-facade:A5
+Paired Question ID: structural-facade:B5
+Competency ID: fc-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A class exposes one boot() method that calls several subsystem objects in sequence so callers don’t deal with them directly, but the subsystems don’t communicate back through it. Best classified as?
+
+OPTIONS:
+A. Facade — it simplifies one-way access to a subsystem without mediating peer-to-peer communication
+B. Mediator — any coordinator is a Mediator
+C. Adapter — it converts interfaces
+D. Proxy — it controls access
+
+CORRECT ANSWER:
+A. Facade — it simplifies one-way access to a subsystem without mediating peer-to-peer communication
+
+RATIONALE:
+One-way simplification of subsystem access is Facade; Mediator would coordinate two-way communication among peers.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Flyweight
+MODULE ID: structural-flyweight
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-flyweight:A1
+Paired Question ID: structural-flyweight:B1
+Competency ID: fw-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Flyweight pattern?
+
+OPTIONS:
+A. Convert interfaces
+B. Add behaviour by wrapping
+C. Share common state to support large numbers of fine-grained objects efficiently
+D. Provide a surrogate for access
+
+CORRECT ANSWER:
+C. Share common state to support large numbers of fine-grained objects efficiently
+
+RATIONALE:
+Flyweight minimises memory by sharing state across many similar objects. The distractors are Adapter, Decorator, and Proxy.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-flyweight:A2
+Paired Question ID: structural-flyweight:B2
+Competency ID: fw-state
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What is the difference between intrinsic and extrinsic state in Flyweight?
+
+OPTIONS:
+A. Intrinsic is per-client; extrinsic is shared
+B. Both are stored in the flyweight
+C. Both are supplied by the client each call
+D. Intrinsic state is shared and stored in the flyweight; extrinsic state is context-dependent and supplied by the client
+
+CORRECT ANSWER:
+D. Intrinsic state is shared and stored in the flyweight; extrinsic state is context-dependent and supplied by the client
+
+RATIONALE:
+Intrinsic (shared) state lives in the flyweight; extrinsic (context) state is passed in by the client per operation.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-flyweight:A3
+Paired Question ID: structural-flyweight:B3
+Competency ID: fw-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A text editor renders millions of character glyphs; each glyph’s font and shape repeat, but its position differs. How do you cut memory by sharing the repeating data?
+
+OPTIONS:
+A. Flyweight
+B. Composite
+C. Proxy
+D. Decorator
+
+CORRECT ANSWER:
+A. Flyweight
+
+RATIONALE:
+Sharing repeated intrinsic data while supplying per-use position is Flyweight. The distractors build trees, control access, or add behaviour.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-flyweight:A4
+Paired Question ID: structural-flyweight:B4
+Competency ID: fw-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Glyph { char c; Font* font; public: void draw(int x, int y); };  Glyph* GlyphFactory::get(char c) { if (!pool.count(c)) pool[c] = new Glyph(c); return pool[c]; }  Position (x, y) is passed to draw(). Which pattern is this?
+
+OPTIONS:
+A. Prototype
+B. Flyweight
+C. Singleton
+D. Adapter
+
+CORRECT ANSWER:
+B. Flyweight
+
+RATIONALE:
+A factory pooling shared instances by intrinsic key (char/font) while position is passed in (extrinsic) is Flyweight.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-flyweight:A5
+Paired Question ID: structural-flyweight:B5
+Competency ID: fw-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A “Flyweight” stores each object’s unique screen position as a member and never shares instances, creating one object per character. Does this achieve Flyweight’s goal?
+
+OPTIONS:
+A. Yes — Flyweight stores all state internally
+B. Yes — one object per character is the goal
+C. No — keeping per-instance extrinsic state and not sharing defeats Flyweight; position should be extrinsic and instances shared
+D. No — Flyweight forbids a factory
+
+CORRECT ANSWER:
+C. No — keeping per-instance extrinsic state and not sharing defeats Flyweight; position should be extrinsic and instances shared
+
+RATIONALE:
+Flyweight’s memory savings come from sharing instances and externalising context state; storing position per instance and not sharing negates the benefit.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Proxy
+MODULE ID: structural-proxy
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-proxy:A1
+Paired Question ID: structural-proxy:B1
+Competency ID: px-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Proxy pattern?
+
+OPTIONS:
+A. Convert one interface into another
+B. Add behaviour by stacking wrappers
+C. Provide a surrogate or placeholder that controls access to another object
+D. Compose objects into part-whole trees
+
+CORRECT ANSWER:
+C. Provide a surrogate or placeholder that controls access to another object
+
+RATIONALE:
+Proxy supplies a stand-in that controls access to a real subject. The distractors are Adapter, Decorator, and Composite.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+Question 2
+Question ID: structural-proxy:A2
+Paired Question ID: structural-proxy:B2
+Competency ID: px-relate
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does a proxy typically relate to its real subject?
+
+OPTIONS:
+A. It exposes a different interface than the subject
+B. It inherits the subject’s private data directly
+C. It replaces the subject permanently
+D. It implements the same interface as the subject and forwards requests, optionally adding access control
+
+CORRECT ANSWER:
+D. It implements the same interface as the subject and forwards requests, optionally adding access control
+
+RATIONALE:
+A proxy shares the subject’s interface so it is interchangeable, forwarding calls while controlling access (lazy load, protection, remoting).
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: structural-proxy:A3
+Paired Question ID: structural-proxy:B3
+Competency ID: px-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A large image is expensive to load; you want a stand-in that exposes the same interface but defers loading until the image is actually drawn. Which pattern?
+
+OPTIONS:
+A. Proxy
+B. Decorator
+C. Adapter
+D. Composite
+
+CORRECT ANSWER:
+A. Proxy
+
+RATIONALE:
+A same-interface placeholder that delays creation of the real object is a (virtual) Proxy. The distractors add behaviour, convert, or build trees.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: structural-proxy:A4
+Paired Question ID: structural-proxy:B4
+Competency ID: px-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Image { public: virtual void draw() = 0; };  class ProxyImage : public Image { RealImage* real = nullptr; std::string file; public: void draw() override { if (!real) real = new RealImage(file); real->draw(); } };  Which pattern is this?
+
+OPTIONS:
+A. Adapter
+B. Proxy
+C. Flyweight
+D. Bridge
+
+CORRECT ANSWER:
+B. Proxy
+
+RATIONALE:
+Same-interface wrapper that lazily creates and delegates to the real subject is a virtual Proxy.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: structural-proxy:A5
+Paired Question ID: structural-proxy:B5
+Competency ID: px-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A wrapper implements the subject’s interface and adds logging plus access checks before delegating, without changing the operation’s result or adding new client-facing features. Best classified as?
+
+OPTIONS:
+A. Decorator — any wrapper that does extra work is a Decorator
+B. Adapter — it converts the interface
+C. Proxy — it controls access to the same operation without adding new client-facing behaviour
+D. Composite — it manages children
+
+CORRECT ANSWER:
+C. Proxy — it controls access to the same operation without adding new client-facing behaviour
+
+RATIONALE:
+Controlling access (auth/logging) to the same operation, without new client-facing responsibilities, is Proxy intent, distinguishing it from Decorator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Structural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Repository
+MODULE ID: structural-repository
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: Create
+================================================================Question 1
+Question ID: structural-repository:A1
+Paired Question ID: structural-repository:B1
+Competency ID: rp-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the purpose of the Repository pattern?
+
+OPTIONS:
+A. Provide a collection-like interface that mediates between domain logic and data storage, hiding persistence details
+B. Convert one interface into another
+C. Ensure a class has one instance
+D. Share intrinsic state across objects
+
+CORRECT ANSWER:
+A. Provide a collection-like interface that mediates between domain logic and data storage, hiding persistence details
+
+RATIONALE:
+Repository gives domain code a clean, collection-like interface over storage, hiding persistence. The distractors are Adapter, Singleton, and Flyweight.
+
+SOURCE REFERENCES:
+* CodiNeo Structural module content
+* Fowler (2002), Patterns of Enterprise Application Architecture — Repository
+* Evans (2003), Domain-Driven Design
+
+------------------------------------------------
+Question 2
+Question ID: structural-repository:A2
+Paired Question ID: structural-repository:B2
+Competency ID: rp-classify
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Repository is NOT one of the original Gang-of-Four design patterns. How is it best classified?
+
+OPTIONS:
+A. As a GoF structural pattern like Adapter
+B. As an enterprise/application architecture pattern for data access, outside the GoF catalog
+C. As a GoF creational pattern
+D. As a C++ language idiom
+
+CORRECT ANSWER:
+B. As an enterprise/application architecture pattern for data access, outside the GoF catalog
+
+RATIONALE:
+Repository comes from enterprise/application architecture (Fowler, Evans), not the GoF catalog; it is an application-architecture data-access pattern.
+
+SOURCE REFERENCES:
+* CodiNeo Structural module content
+* Fowler (2002), Patterns of Enterprise Application Architecture — Repository
+* Evans (2003), Domain-Driven Design
+
+------------------------------------------------
+Question 3
+Question ID: structural-repository:A3
+Paired Question ID: structural-repository:B3
+Competency ID: rp-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Domain code should query and save User objects without knowing whether they live in SQL, a file, or an in-memory store, so the data source can be swapped freely. Which approach fits?
+
+OPTIONS:
+A. Singleton access
+B. Decorator wrapping
+C. A Repository abstraction over storage
+D. A Facade over the UI
+
+CORRECT ANSWER:
+C. A Repository abstraction over storage
+
+RATIONALE:
+A domain-facing interface that hides and allows swapping the storage mechanism is the Repository approach.
+
+SOURCE REFERENCES:
+* CodiNeo Structural module content
+* Fowler (2002), Patterns of Enterprise Application Architecture — Repository
+* Evans (2003), Domain-Driven Design
+
+------------------------------------------------
+Question 4
+Question ID: structural-repository:A4
+Paired Question ID: structural-repository:B4
+Competency ID: rp-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class UserRepository { public: virtual User find(int id) = 0; virtual void save(User) = 0; };  class SqlUserRepository : public UserRepository { /* SQL */ };  class InMemoryUserRepository : public UserRepository { /* map */ };  What does this structure most directly demonstrate?
+
+OPTIONS:
+A. Interface conversion (Adapter)
+B. Access control (Proxy)
+C. Algorithm selection (Strategy)
+D. A Repository abstracting persistence behind a domain-facing interface
+
+CORRECT ANSWER:
+D. A Repository abstracting persistence behind a domain-facing interface
+
+RATIONALE:
+A domain-facing data-access interface with interchangeable backing stores is the Repository pattern (not GoF).
+
+SOURCE REFERENCES:
+* CodiNeo Structural module content
+* Fowler (2002), Patterns of Enterprise Application Architecture — Repository
+* Evans (2003), Domain-Driven Design
+
+------------------------------------------------
+Question 5
+Question ID: structural-repository:A5
+Paired Question ID: structural-repository:B5
+Competency ID: rp-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A class named UserRepository builds SQL strings throughout the domain layer and exposes raw connection objects to callers. Does this honor the Repository idea?
+
+OPTIONS:
+A. No — Repository’s purpose is to hide persistence behind a clean interface; leaking SQL and connections to the domain defeats the separation
+B. Yes — the name makes it a Repository
+C. Yes — exposing connections is required
+D. No — Repository must be a GoF pattern
+
+CORRECT ANSWER:
+A. No — Repository’s purpose is to hide persistence behind a clean interface; leaking SQL and connections to the domain defeats the separation
+
+RATIONALE:
+Repository exists to separate domain logic from data-access concerns; leaking SQL/connections breaks that separation regardless of the class name.
+
+SOURCE REFERENCES:
+* CodiNeo Structural module content
+* Fowler (2002), Patterns of Enterprise Application Architecture — Repository
+* Evans (2003), Domain-Driven Design
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Chain of Responsibility
+MODULE ID: behavioural-chain-of-responsibility
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-chain-of-responsibility:A1
+Paired Question ID: behavioural-chain-of-responsibility:B1
+Competency ID: cor-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Chain of Responsibility pattern?
+
+OPTIONS:
+A. Pass a request along a chain of handlers until one handles it, decoupling sender from receiver
+B. Convert interfaces
+C. Ensure one instance
+D. Share intrinsic state
+
+CORRECT ANSWER:
+A. Pass a request along a chain of handlers until one handles it, decoupling sender from receiver
+
+RATIONALE:
+Chain of Responsibility forwards a request through handlers until one handles it. The distractors are Adapter, Singleton, and Flyweight.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-chain-of-responsibility:A2
+Paired Question ID: behavioural-chain-of-responsibility:B2
+Competency ID: cor-decision
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What does each handler in the chain decide?
+
+OPTIONS:
+A. Which observers to notify
+B. Whether to handle the request itself or pass it to the next handler
+C. How to convert the request’s interface
+D. Which single instance to return
+
+CORRECT ANSWER:
+B. Whether to handle the request itself or pass it to the next handler
+
+RATIONALE:
+Each handler either handles the request or forwards it down the chain.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-chain-of-responsibility:A3
+Paired Question ID: behavioural-chain-of-responsibility:B3
+Competency ID: cor-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A support ticket should be tried by level-1, then level-2, then a manager, each handling it or passing it on, with the sender unaware who resolves it. Which pattern?
+
+OPTIONS:
+A. Mediator
+B. Command
+C. Chain of Responsibility
+D. Observer
+
+CORRECT ANSWER:
+C. Chain of Responsibility
+
+RATIONALE:
+Sequential handle-or-forward with sender/receiver decoupling is Chain of Responsibility.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-chain-of-responsibility:A4
+Paired Question ID: behavioural-chain-of-responsibility:B4
+Competency ID: cor-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Handler { protected: Handler* next = nullptr; public: void setNext(Handler* n) { next = n; } virtual void handle(int lvl) { if (next) next->handle(lvl); } };  class Warn : public Handler { void handle(int lvl) override { if (lvl < 2) log("warn"); else Handler::handle(lvl); } };  Which pattern is this?
+
+OPTIONS:
+A. Decorator
+B. Composite
+C. Observer
+D. Chain of Responsibility
+
+CORRECT ANSWER:
+D. Chain of Responsibility
+
+RATIONALE:
+Handlers each holding a next link and choosing to handle or forward a request is Chain of Responsibility.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-chain-of-responsibility:A5
+Paired Question ID: behavioural-chain-of-responsibility:B5
+Competency ID: cor-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Wrappers each hold a “next” and either consume a request or forward it; unlike a wrapper that always augments and delegates, a link may stop the request. Best classified as?
+
+OPTIONS:
+A. Chain of Responsibility — handlers conditionally handle or forward, possibly stopping the request
+B. Decorator — any chain of wrappers is Decorator
+C. Adapter — it converts requests
+D. Strategy — it swaps algorithms
+
+CORRECT ANSWER:
+A. Chain of Responsibility — handlers conditionally handle or forward, possibly stopping the request
+
+RATIONALE:
+Conditional handle-or-forward (with the option to stop) is Chain of Responsibility; a Decorator always delegates while adding behaviour.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Command
+MODULE ID: behavioural-command
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-command:A1
+Paired Question ID: behavioural-command:B1
+Competency ID: cm-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Command pattern?
+
+OPTIONS:
+A. Convert interfaces
+B. Share intrinsic state
+C. Encapsulate a request as an object, so you can parameterise, queue, log, and undo operations
+D. Traverse a collection
+
+CORRECT ANSWER:
+C. Encapsulate a request as an object, so you can parameterise, queue, log, and undo operations
+
+RATIONALE:
+Command reifies a request as an object enabling queuing, logging, and undo. The distractors are Adapter, Flyweight, and Iterator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-command:A2
+Paired Question ID: behavioural-command:B2
+Competency ID: cm-enable
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What does turning a request into a Command object enable?
+
+OPTIONS:
+A. Faster compilation
+B. Automatic multithreading
+C. Removing the receiver
+D. Storing, queuing, and undoing operations uniformly, and decoupling the invoker from the receiver
+
+CORRECT ANSWER:
+D. Storing, queuing, and undoing operations uniformly, and decoupling the invoker from the receiver
+
+RATIONALE:
+A reified request can be stored, queued, replayed, and undone, and it decouples the invoker from the concrete receiver.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-command:A3
+Paired Question ID: behavioural-command:B3
+Competency ID: cm-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A text editor needs undo/redo and a macro recorder; each user action must be storable, replayable, and reversible. Which pattern?
+
+OPTIONS:
+A. Command
+B. Observer
+C. Strategy
+D. Iterator
+
+CORRECT ANSWER:
+A. Command
+
+RATIONALE:
+Reifying actions so they can be stored, replayed, and undone is Command. The distractors notify, swap algorithms, or traverse.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-command:A4
+Paired Question ID: behavioural-command:B4
+Competency ID: cm-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Command { public: virtual void execute() = 0; virtual void undo() = 0; };  class InsertText : public Command { Doc& d; std::string t; public: void execute() override { d.insert(t); } void undo() override { d.erase(t); } };  class Invoker { std::vector<Command*> history; public: void run(Command* c) { c->execute(); history.push_back(c); } };  Which pattern is this?
+
+OPTIONS:
+A. Strategy
+B. Command
+C. State
+D. Memento
+
+CORRECT ANSWER:
+B. Command
+
+RATIONALE:
+Reified requests with execute/undo, run and recorded by an invoker, is the Command pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-command:A5
+Paired Question ID: behavioural-command:B5
+Competency ID: cm-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A design calls receiver methods directly from the UI handler with no request object, yet claims to support undo by re-reading the UI. Is this the Command pattern?
+
+OPTIONS:
+A. Yes — any action with undo is Command
+B. Yes — direct calls are Command
+C. No — Command requires reifying each request as an object (with execute/undo); calling the receiver directly is not Command
+D. No — Command forbids an invoker
+
+CORRECT ANSWER:
+C. No — Command requires reifying each request as an object (with execute/undo); calling the receiver directly is not Command
+
+RATIONALE:
+Command’s essence is making each request a first-class object; direct receiver calls without command objects are not Command.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Interpreter
+MODULE ID: behavioural-interpreter
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-interpreter:A1
+Paired Question ID: behavioural-interpreter:B1
+Competency ID: in-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Interpreter pattern?
+
+OPTIONS:
+A. Convert interfaces
+B. Share intrinsic state
+C. Given a language, define a representation for its grammar and an interpreter that uses the representation to evaluate sentences
+D. Provide a surrogate for access
+
+CORRECT ANSWER:
+C. Given a language, define a representation for its grammar and an interpreter that uses the representation to evaluate sentences
+
+RATIONALE:
+Interpreter represents a grammar and evaluates sentences in that language. The distractors are Adapter, Flyweight, and Proxy.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-interpreter:A2
+Paired Question ID: behavioural-interpreter:B2
+Competency ID: in-represent
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How are grammar rules typically represented in the Interpreter pattern?
+
+OPTIONS:
+A. As a single regex
+B. As a global lookup table only
+C. As one giant switch statement
+D. Each grammar rule becomes a class with an interpret() method; expressions form a tree of these objects
+
+CORRECT ANSWER:
+D. Each grammar rule becomes a class with an interpret() method; expressions form a tree of these objects
+
+RATIONALE:
+Each rule maps to a class with interpret(); a sentence is an abstract syntax tree of those rule objects.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-interpreter:A3
+Paired Question ID: behavioural-interpreter:B3
+Competency ID: in-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+You must evaluate simple boolean expressions like (A AND B) OR C entered by users, composing rules recursively. Which pattern represents and evaluates such a grammar?
+
+OPTIONS:
+A. Interpreter
+B. Visitor
+C. Strategy
+D. Composite
+
+CORRECT ANSWER:
+A. Interpreter
+
+RATIONALE:
+Representing grammar rules as composable evaluable objects is Interpreter. The distractors add operations, swap algorithms, or only model part-whole trees.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-interpreter:A4
+Paired Question ID: behavioural-interpreter:B4
+Competency ID: in-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Expr { public: virtual int eval() = 0; };  class Num : public Expr { int v; public: int eval() override { return v; } };  class Add : public Expr { Expr* l; Expr* r; public: int eval() override { return l->eval() + r->eval(); } };  Which pattern is this?
+
+OPTIONS:
+A. Composite
+B. Interpreter
+C. Iterator
+D. Command
+
+CORRECT ANSWER:
+B. Interpreter
+
+RATIONALE:
+Grammar-rule classes with eval() composed into an expression tree is the Interpreter pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-interpreter:A5
+Paired Question ID: behavioural-interpreter:B5
+Competency ID: in-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A team uses the Interpreter pattern for a complex, performance-critical, full programming language with deeply nested grammar. Is this an appropriate use, and why?
+
+OPTIONS:
+A. Yes — Interpreter scales best to large languages
+B. Yes — performance is Interpreter’s strength
+C. No — Interpreter fits small, simple, stable grammars; large complex ones are better served by parser/compiler tools
+D. No — Interpreter cannot evaluate expressions
+
+CORRECT ANSWER:
+C. No — Interpreter fits small, simple, stable grammars; large complex ones are better served by parser/compiler tools
+
+RATIONALE:
+Interpreter suits small, stable grammars; for large/complex performance-critical languages it becomes unwieldy and a parser/compiler is preferable.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Iterator
+MODULE ID: behavioural-iterator
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-iterator:A1
+Paired Question ID: behavioural-iterator:B1
+Competency ID: it-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Iterator pattern?
+
+OPTIONS:
+A. Provide a way to access elements of a collection sequentially without exposing its underlying representation
+B. Convert interfaces
+C. Ensure one instance
+D. Add behaviour by wrapping
+
+CORRECT ANSWER:
+A. Provide a way to access elements of a collection sequentially without exposing its underlying representation
+
+RATIONALE:
+Iterator gives sequential access while hiding the collection’s internals. The distractors are Adapter, Singleton, and Decorator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-iterator:A2
+Paired Question ID: behavioural-iterator:B2
+Competency ID: it-rationale
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why use an Iterator instead of exposing the collection’s internal structure?
+
+OPTIONS:
+A. It makes the collection a Singleton
+B. It lets clients traverse uniformly while the collection keeps its representation private and can change it
+C. It converts the element type
+D. It deletes the collection after traversal
+
+CORRECT ANSWER:
+B. It lets clients traverse uniformly while the collection keeps its representation private and can change it
+
+RATIONALE:
+Iterator decouples traversal from representation, so the collection can hide and later change its internals.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-iterator:A3
+Paired Question ID: behavioural-iterator:B3
+Competency ID: it-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+You want client code to walk over a custom tree and a custom hash set the same way (begin/next/done) without knowing how each stores data. Which pattern?
+
+OPTIONS:
+A. Visitor
+B. Composite
+C. Iterator
+D. Observer
+
+CORRECT ANSWER:
+C. Iterator
+
+RATIONALE:
+Uniform sequential traversal that hides each collection’s internal storage is Iterator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-iterator:A4
+Paired Question ID: behavioural-iterator:B4
+Competency ID: it-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Iterator { public: virtual bool hasNext() = 0; virtual int next() = 0; };  class ListIterator : public Iterator { std::vector<int>& v; size_t i = 0; public: bool hasNext() override { return i < v.size(); } int next() override { return v[i++]; } };  Which pattern is this?
+
+OPTIONS:
+A. Strategy
+B. Command
+C. State
+D. Iterator
+
+CORRECT ANSWER:
+D. Iterator
+
+RATIONALE:
+An object exposing hasNext/next while tracking position and hiding the container is the Iterator pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-iterator:A5
+Paired Question ID: behavioural-iterator:B5
+Competency ID: it-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A “traversal” design forces clients to read the collection’s internal array index and bounds directly to loop. Does this satisfy Iterator’s intent?
+
+OPTIONS:
+A. No — exposing internal representation to clients defeats Iterator’s purpose
+B. Yes — direct index access is the Iterator pattern
+C. Yes — as long as there is a loop
+D. No — Iterator forbids sequential access
+
+CORRECT ANSWER:
+A. No — exposing internal representation to clients defeats Iterator’s purpose
+
+RATIONALE:
+Iterator exists to hide the representation; making clients use internal indices breaks the encapsulation it provides.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Mediator
+MODULE ID: behavioural-mediator
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-mediator:A1
+Paired Question ID: behavioural-mediator:B1
+Competency ID: md-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Mediator pattern?
+
+OPTIONS:
+A. Convert interfaces
+B. Traverse a collection
+C. Define an object that centralises and coordinates communication between a set of objects so they don’t refer to each other directly
+D. Share intrinsic state
+
+CORRECT ANSWER:
+C. Define an object that centralises and coordinates communication between a set of objects so they don’t refer to each other directly
+
+RATIONALE:
+Mediator centralises inter-object communication. The distractors are Adapter, Iterator, and Flyweight.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-mediator:A2
+Paired Question ID: behavioural-mediator:B2
+Competency ID: md-coupling
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does a Mediator reduce coupling among colleague objects?
+
+OPTIONS:
+A. By merging all colleagues into one class
+B. By making each colleague a Singleton
+C. By converting their interfaces
+D. Colleagues talk only to the mediator, which routes interactions, instead of holding references to each other
+
+CORRECT ANSWER:
+D. Colleagues talk only to the mediator, which routes interactions, instead of holding references to each other
+
+RATIONALE:
+Colleagues communicate through the mediator rather than referencing each other, cutting many-to-many coupling.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-mediator:A3
+Paired Question ID: behavioural-mediator:B3
+Competency ID: md-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A dialog’s many widgets (list, text box, button) must enable/disable each other in complex ways; you want to avoid each widget referencing all the others. Which pattern?
+
+OPTIONS:
+A. Mediator
+B. Observer
+C. Composite
+D. Command
+
+CORRECT ANSWER:
+A. Mediator
+
+RATIONALE:
+Centralising the widgets’ mutual interactions in one coordinator is Mediator. Observer would be one-way notification.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-mediator:A4
+Paired Question ID: behavioural-mediator:B4
+Competency ID: md-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Mediator { public: virtual void notify(Widget* sender, std::string ev) = 0; };  class Dialog : public Mediator { Button* ok; ListBox* list; public: void notify(Widget* s, std::string ev) override { if (s == list && ev == "select") ok->enable(); } };  Which pattern is this?
+
+OPTIONS:
+A. Observer
+B. Mediator
+C. Facade
+D. Visitor
+
+CORRECT ANSWER:
+B. Mediator
+
+RATIONALE:
+A hub that receives events from colleagues and coordinates how others respond is Mediator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-mediator:A5
+Paired Question ID: behavioural-mediator:B5
+Competency ID: md-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A hub receives events from peer objects and tells other peers how to react, governing their mutual interaction (not one-way notification, not just simplifying a subsystem). Best classified as?
+
+OPTIONS:
+A. Observer — it is one-to-many notification
+B. Facade — it just simplifies a subsystem
+C. Mediator — it centralises and coordinates mutual communication among peers
+D. Adapter — it converts interfaces
+
+CORRECT ANSWER:
+C. Mediator — it centralises and coordinates mutual communication among peers
+
+RATIONALE:
+Two-way coordination of peers’ mutual interactions is Mediator; Observer is one-way, Facade is one-way subsystem simplification.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Memento
+MODULE ID: behavioural-memento
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-memento:A1
+Paired Question ID: behavioural-memento:B1
+Competency ID: mm-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Memento pattern?
+
+OPTIONS:
+A. Capture and externalise an object’s internal state so it can be restored later, without violating encapsulation
+B. Convert interfaces
+C. Ensure one instance
+D. Share intrinsic state across objects
+
+CORRECT ANSWER:
+A. Capture and externalise an object’s internal state so it can be restored later, without violating encapsulation
+
+RATIONALE:
+Memento captures and restores state without breaking encapsulation. The distractors are Adapter, Singleton, and Flyweight.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-memento:A2
+Paired Question ID: behavioural-memento:B2
+Competency ID: mm-encaps
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does Memento preserve encapsulation while saving state?
+
+OPTIONS:
+A. It makes all fields public
+B. The originator creates an opaque memento that the caretaker stores without inspecting its internals
+C. It copies the originator’s class definition
+D. It exposes the state through getters to everyone
+
+CORRECT ANSWER:
+B. The originator creates an opaque memento that the caretaker stores without inspecting its internals
+
+RATIONALE:
+The originator builds the memento; the caretaker stores it opaquely, never reading the internals, so encapsulation holds.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-memento:A3
+Paired Question ID: behavioural-memento:B3
+Competency ID: mm-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A drawing app needs unlimited undo by snapshotting the canvas state and restoring it later, without exposing the canvas’s private fields. Which pattern?
+
+OPTIONS:
+A. Command
+B. State
+C. Memento
+D. Observer
+
+CORRECT ANSWER:
+C. Memento
+
+RATIONALE:
+Snapshotting and restoring state without exposing internals is Memento. Command reifies requests; State models modes.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-memento:A4
+Paired Question ID: behavioural-memento:B4
+Competency ID: mm-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Memento { friend class Editor; std::string state; Memento(std::string s) : state(s) {} };  class Editor { std::string text; public: Memento save() { return Memento(text); } void restore(const Memento& m) { text = m.state; } };  Which pattern is this?
+
+OPTIONS:
+A. Command
+B. State
+C. Prototype
+D. Memento
+
+CORRECT ANSWER:
+D. Memento
+
+RATIONALE:
+An originator producing an opaque snapshot object it can later restore from is the Memento pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-memento:A5
+Paired Question ID: behavioural-memento:B5
+Competency ID: mm-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A “snapshot” design exposes all of an object’s internal fields publicly so external code can copy and later write them back. Does this satisfy Memento’s intent?
+
+OPTIONS:
+A. No — Memento must capture state without breaking encapsulation; exposing internals publicly violates that
+B. Yes — public fields are required for Memento
+C. Yes — any save/restore is Memento
+D. No — Memento cannot restore state
+
+CORRECT ANSWER:
+A. No — Memento must capture state without breaking encapsulation; exposing internals publicly violates that
+
+RATIONALE:
+Memento’s point is capturing state without breaking encapsulation; publicly exposing internals defeats it.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Observer
+MODULE ID: behavioural-observer
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-observer:A1
+Paired Question ID: behavioural-observer:B1
+Competency ID: ob-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Observer pattern?
+
+OPTIONS:
+A. Convert interfaces
+B. Share intrinsic state
+C. Define a one-to-many dependency so that when one object changes state, its dependents are notified automatically
+D. Encapsulate a request as an object
+
+CORRECT ANSWER:
+C. Define a one-to-many dependency so that when one object changes state, its dependents are notified automatically
+
+RATIONALE:
+Observer establishes one-to-many automatic notification. The distractors are Adapter, Flyweight, and Command.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-observer:A2
+Paired Question ID: behavioural-observer:B2
+Competency ID: ob-mechanism
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How do observers learn about changes in the subject?
+
+OPTIONS:
+A. Observers poll a global variable
+B. Observers inherit the subject’s data
+C. Each observer edits the subject directly
+D. The subject holds a list of observers and calls their update method when its state changes
+
+CORRECT ANSWER:
+D. The subject holds a list of observers and calls their update method when its state changes
+
+RATIONALE:
+The subject keeps registered observers and notifies them (calls update) on change; observers do not poll or inherit.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-observer:A3
+Paired Question ID: behavioural-observer:B3
+Competency ID: ob-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A spreadsheet cell’s value changes and several charts plus a status bar must refresh automatically, without the cell knowing their concrete types. Which pattern?
+
+OPTIONS:
+A. Observer
+B. Mediator
+C. Command
+D. Strategy
+
+CORRECT ANSWER:
+A. Observer
+
+RATIONALE:
+Automatic one-to-many notification with loose coupling to dependents is Observer. The distractors coordinate peers, encapsulate requests, or swap algorithms.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-observer:A4
+Paired Question ID: behavioural-observer:B4
+Competency ID: ob-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Observer { public: virtual void update(int) = 0; };  class Subject { std::vector<Observer*> obs; int v; public: void attach(Observer* o) { obs.push_back(o); } void set(int x) { v = x; for (auto* o : obs) o->update(v); } };  Which pattern is this?
+
+OPTIONS:
+A. Mediator
+B. Observer
+C. Visitor
+D. Iterator
+
+CORRECT ANSWER:
+B. Observer
+
+RATIONALE:
+A subject maintaining observers and broadcasting state changes to them is the Observer pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-observer:A5
+Paired Question ID: behavioural-observer:B5
+Competency ID: ob-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Each dependent registers with one source and is notified when that source changes; the dependents do not coordinate each other’s mutual interactions. Best classified as?
+
+OPTIONS:
+A. Mediator — any notification is Mediator
+B. Command — it encapsulates requests
+C. Observer — it is one-to-many change notification, not centralised peer coordination
+D. State — behaviour changes with state
+
+CORRECT ANSWER:
+C. Observer — it is one-to-many change notification, not centralised peer coordination
+
+RATIONALE:
+One-to-many change notification is Observer; Mediator would centralise two-way coordination among peers.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: State
+MODULE ID: behavioural-state
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-state:A1
+Paired Question ID: behavioural-state:B1
+Competency ID: stt-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the State pattern?
+
+OPTIONS:
+A. Convert interfaces
+B. Share intrinsic state
+C. Allow an object to alter its behaviour when its internal state changes, appearing to change its class
+D. Traverse a collection
+
+CORRECT ANSWER:
+C. Allow an object to alter its behaviour when its internal state changes, appearing to change its class
+
+RATIONALE:
+State lets an object change behaviour as its internal state changes. The distractors are Adapter, Flyweight, and Iterator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-state:A2
+Paired Question ID: behavioural-state:B2
+Competency ID: stt-mechanism
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does the State pattern avoid large conditional blocks on a status field?
+
+OPTIONS:
+A. By using one giant switch statement
+B. By making the object a Singleton
+C. By copying the object per state
+D. By representing each state as an object and delegating behaviour to the current state, which can switch to another
+
+CORRECT ANSWER:
+D. By representing each state as an object and delegating behaviour to the current state, which can switch to another
+
+RATIONALE:
+Each state becomes an object encapsulating its behaviour and transitions; the context delegates to the current one.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-state:A3
+Paired Question ID: behavioural-state:B3
+Competency ID: stt-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A TCP connection behaves differently when Closed, Listening, or Established, and each event may move it to another mode with its own rules. Which pattern?
+
+OPTIONS:
+A. State
+B. Strategy
+C. Observer
+D. Command
+
+CORRECT ANSWER:
+A. State
+
+RATIONALE:
+Behaviour and transitions driven by the object’s changing mode is State. Strategy is client-chosen and not transition-driven.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-state:A4
+Paired Question ID: behavioural-state:B4
+Competency ID: stt-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class State { public: virtual void insertCoin(Machine&) = 0; };  class NoCoin : public State { void insertCoin(Machine& m) override { m.setState(new HasCoin()); } };  class Machine { State* s; public: void setState(State* x) { s = x; } void insertCoin() { s->insertCoin(*this); } };  Which pattern is this?
+
+OPTIONS:
+A. Strategy
+B. State
+C. Command
+D. Mediator
+
+CORRECT ANSWER:
+B. State
+
+RATIONALE:
+Behaviour delegated to a current-state object that itself triggers the transition to another state is the State pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-state:A5
+Paired Question ID: behavioural-state:B5
+Competency ID: stt-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Behaviour is delegated to an interchangeable object, and that object itself decides to replace the current one based on events, driving transitions. Is this State or Strategy?
+
+OPTIONS:
+A. Strategy — any delegation is Strategy
+B. Observer — it notifies dependents
+C. State — the behaviour objects drive transitions based on the object’s changing state
+D. Template Method — it fixes a skeleton
+
+CORRECT ANSWER:
+C. State — the behaviour objects drive transitions based on the object’s changing state
+
+RATIONALE:
+When the delegated objects themselves drive transitions based on the object’s evolving state, it is State, not a client-chosen Strategy.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Strategy
+MODULE ID: behavioural-strategy
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-strategy:A1
+Paired Question ID: behavioural-strategy:B1
+Competency ID: st-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Strategy pattern?
+
+OPTIONS:
+A. Define a family of interchangeable algorithms and make them swappable at runtime
+B. Convert one interface into another
+C. Ensure a single instance
+D. Capture and restore object state
+
+CORRECT ANSWER:
+A. Define a family of interchangeable algorithms and make them swappable at runtime
+
+RATIONALE:
+Strategy encapsulates interchangeable algorithms behind a common interface. The distractors are Adapter, Singleton, and Memento.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-strategy:A2
+Paired Question ID: behavioural-strategy:B2
+Competency ID: st-mechanism
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does Strategy let the algorithm change without changing the client?
+
+OPTIONS:
+A. The client edits the algorithm’s code each time
+B. The client depends on a strategy interface and delegates, so concrete algorithms swap freely
+C. The client inherits each algorithm
+D. The algorithms share one global instance
+
+CORRECT ANSWER:
+B. The client depends on a strategy interface and delegates, so concrete algorithms swap freely
+
+RATIONALE:
+The client holds a strategy interface and delegates; concrete strategies are interchangeable behind it.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-strategy:A3
+Paired Question ID: behavioural-strategy:B3
+Competency ID: st-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A checkout must compute shipping cost by several methods (flat, weight-based, distance-based), chosen per order at runtime, without if/else sprawl. Which pattern?
+
+OPTIONS:
+A. Observer
+B. Template Method
+C. Strategy
+D. State
+
+CORRECT ANSWER:
+C. Strategy
+
+RATIONALE:
+Selecting among interchangeable algorithms at runtime is Strategy. Template Method fixes a skeleton; State is driven by internal state; Observer notifies.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-strategy:A4
+Paired Question ID: behavioural-strategy:B4
+Competency ID: st-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class SortStrategy { public: virtual void sort(std::vector<int>&) = 0; };  class Quick : public SortStrategy { void sort(std::vector<int>&) override; };  class Sorter { SortStrategy* s; public: Sorter(SortStrategy* x) : s(x) {} void run(std::vector<int>& v) { s->sort(v); } };  Which pattern is this?
+
+OPTIONS:
+A. State
+B. Command
+C. Template Method
+D. Strategy
+
+CORRECT ANSWER:
+D. Strategy
+
+RATIONALE:
+A context delegating to an injected, interchangeable algorithm object is Strategy.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-strategy:A5
+Paired Question ID: behavioural-strategy:B5
+Competency ID: st-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A design swaps an object’s algorithm via an interface, but the object never changes which one it uses based on its own internal state — the client picks it. Is Strategy or State the better fit?
+
+OPTIONS:
+A. Strategy — it is a client-selected interchangeable algorithm, not state-driven behaviour
+B. State — any swappable behaviour is State
+C. Observer — it notifies dependents
+D. Command — it encapsulates a request
+
+CORRECT ANSWER:
+A. Strategy — it is a client-selected interchangeable algorithm, not state-driven behaviour
+
+RATIONALE:
+Strategy is a client-chosen algorithm; State changes behaviour as the object’s own state transitions. Here the client selects it, so Strategy fits.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Template Method
+MODULE ID: behavioural-template-method
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-template-method:A1
+Paired Question ID: behavioural-template-method:B1
+Competency ID: tm-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Template Method pattern?
+
+OPTIONS:
+A. Define the skeleton of an algorithm in a base method, deferring some steps to subclasses
+B. Convert interfaces
+C. Ensure one instance
+D. Share intrinsic state
+
+CORRECT ANSWER:
+A. Define the skeleton of an algorithm in a base method, deferring some steps to subclasses
+
+RATIONALE:
+Template Method fixes an algorithm’s skeleton and lets subclasses supply steps. The distractors are Adapter, Singleton, and Flyweight.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-template-method:A2
+Paired Question ID: behavioural-template-method:B2
+Competency ID: tm-fixedvary
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+In Template Method, what stays fixed and what varies?
+
+OPTIONS:
+A. Everything is overridden
+B. The overall step sequence is fixed in the base class while specific steps are overridden by subclasses
+C. Nothing can be overridden
+D. The client supplies the whole algorithm at runtime
+
+CORRECT ANSWER:
+B. The overall step sequence is fixed in the base class while specific steps are overridden by subclasses
+
+RATIONALE:
+The invariant sequence lives in the base method; subclasses override only the designated variable steps.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-template-method:A3
+Paired Question ID: behavioural-template-method:B3
+Competency ID: tm-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Several report generators share the same overall flow (open → fetch → format → save) but differ only in how they format. You want the flow defined once. Which pattern?
+
+OPTIONS:
+A. Strategy
+B. Command
+C. Template Method
+D. Observer
+
+CORRECT ANSWER:
+C. Template Method
+
+RATIONALE:
+A fixed algorithm skeleton with a varying step implemented per subclass is Template Method. Strategy would inject the whole algorithm as an object.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-template-method:A4
+Paired Question ID: behavioural-template-method:B4
+Competency ID: tm-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Game { public: void play() { start(); while (!over()) turn(); end(); } protected: virtual void start() = 0; virtual void turn() = 0; virtual bool over() = 0; virtual void end() = 0; };  class Chess : public Game { /* overrides */ };  Which pattern is this?
+
+OPTIONS:
+A. Strategy
+B. State
+C. Command
+D. Template Method
+
+CORRECT ANSWER:
+D. Template Method
+
+RATIONALE:
+A non-virtual base method fixing the flow and calling overridable steps is Template Method.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-template-method:A5
+Paired Question ID: behavioural-template-method:B5
+Competency ID: tm-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+An algorithm’s invariant steps live in a base method that calls overridable hooks; subclasses customise only those hooks. Is this Template Method or Strategy?
+
+OPTIONS:
+A. Template Method — variation happens via subclass overrides of fixed hook steps (inheritance), not a swapped strategy object
+B. Strategy — any variation is Strategy
+C. Observer — it notifies dependents
+D. Composite — it forms a tree
+
+CORRECT ANSWER:
+A. Template Method — variation happens via subclass overrides of fixed hook steps (inheritance), not a swapped strategy object
+
+RATIONALE:
+Template Method varies behaviour through subclass overrides of fixed hooks (inheritance); Strategy varies it by composing a swappable object.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Visitor
+MODULE ID: behavioural-visitor
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-visitor:A1
+Paired Question ID: behavioural-visitor:B1
+Competency ID: vs-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the intent of the Visitor pattern?
+
+OPTIONS:
+A. Represent an operation to perform on the elements of an object structure, letting you add new operations without changing the element classes
+B. Convert interfaces
+C. Ensure one instance
+D. Traverse a collection sequentially
+
+CORRECT ANSWER:
+A. Represent an operation to perform on the elements of an object structure, letting you add new operations without changing the element classes
+
+RATIONALE:
+Visitor adds operations over a structure without modifying its element classes. The distractors are Adapter, Singleton, and Iterator.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-visitor:A2
+Paired Question ID: behavioural-visitor:B2
+Competency ID: vs-mechanism
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How does Visitor add a new operation across a class hierarchy without editing those classes?
+
+OPTIONS:
+A. By rewriting every element class
+B. Each element accepts a visitor and dispatches to the visitor’s method for its type; new operations are new visitor classes
+C. By making each element a Singleton
+D. By converting each element’s interface
+
+CORRECT ANSWER:
+B. Each element accepts a visitor and dispatches to the visitor’s method for its type; new operations are new visitor classes
+
+RATIONALE:
+Elements accept() a visitor and call back the type-specific visit() (double dispatch); a new operation is simply a new visitor.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-visitor:A3
+Paired Question ID: behavioural-visitor:B3
+Competency ID: vs-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+An AST has many node types; you must add operations like type-check, pretty-print, and optimise without modifying each node class every time. Which pattern?
+
+OPTIONS:
+A. Composite
+B. Iterator
+C. Visitor
+D. Strategy
+
+CORRECT ANSWER:
+C. Visitor
+
+RATIONALE:
+Adding many operations over a stable element hierarchy without editing elements is Visitor.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-visitor:A4
+Paired Question ID: behavioural-visitor:B4
+Competency ID: vs-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine:  class Visitor; class Node { public: virtual void accept(Visitor&) = 0; };  class Number : public Node { public: int v; void accept(Visitor& vi) override; /* vi.visit(*this) */ };  class Visitor { public: virtual void visit(Number&) = 0; virtual void visit(Add&) = 0; };  Which pattern is this?
+
+OPTIONS:
+A. Composite
+B. Mediator
+C. Observer
+D. Visitor
+
+CORRECT ANSWER:
+D. Visitor
+
+RATIONALE:
+accept()/visit() double dispatch over an element hierarchy is the Visitor pattern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-visitor:A5
+Paired Question ID: behavioural-visitor:B5
+Competency ID: vs-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A team needs to add many unrelated operations over a stable set of node types and rarely adds new node types. Is Visitor an appropriate choice, and why?
+
+OPTIONS:
+A. Yes — Visitor fits stable element types with frequently-added operations, localising each operation in a visitor (though adding new element types is costly)
+B. No — Visitor is for adding new element types easily
+C. No — Visitor cannot support multiple operations
+D. Yes — because Visitor makes adding new node types trivial
+
+CORRECT ANSWER:
+A. Yes — Visitor fits stable element types with frequently-added operations, localising each operation in a visitor (though adding new element types is costly)
+
+RATIONALE:
+Visitor suits stable element hierarchies with many added operations; its known cost is that new element types require touching every visitor.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns
+* CodiNeo Behavioural module content
+
+------------------------------------------------
+
+================================================================
+CATEGORY: IDIOMS
+MODULE: PIMPL (Pointer to Implementation)
+MODULE ID: idioms-pimpl
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: idioms-pimpl:A1
+Paired Question ID: idioms-pimpl:B1
+Competency ID: pimpl-intent
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What does the PIMPL (pointer to implementation) idiom do?
+
+OPTIONS:
+A. Converts one interface into another
+B. Shares intrinsic state across many objects
+C. Hides a class’s private members behind a pointer to an implementation struct, keeping the header stable
+D. Provides one-to-many notification
+
+CORRECT ANSWER:
+C. Hides a class’s private members behind a pointer to an implementation struct, keeping the header stable
+
+RATIONALE:
+PIMPL moves private members into a hidden implementation accessed through a pointer, so the header stays stable. The distractors are Adapter, Flyweight, and Observer.
+
+SOURCE REFERENCES:
+* Sutter (1999), Exceptional C++ — Compilation Firewalls (PIMPL)
+* CodiNeo Idioms module content
+
+------------------------------------------------
+Question 2
+Question ID: idioms-pimpl:A2
+Paired Question ID: idioms-pimpl:B2
+Competency ID: pimpl-classify
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+How should PIMPL be classified relative to the GoF design patterns?
+
+OPTIONS:
+A. As the GoF Bridge pattern
+B. As a GoF structural pattern
+C. As a GoF creational pattern
+D. As a C++ implementation idiom (a compilation firewall), distinct from Bridge
+
+CORRECT ANSWER:
+D. As a C++ implementation idiom (a compilation firewall), distinct from Bridge
+
+RATIONALE:
+PIMPL is a C++ implementation idiom for header insulation, not a GoF pattern, and is distinct from Bridge (which varies an abstraction/implementation hierarchy).
+
+SOURCE REFERENCES:
+* Sutter (1999), Exceptional C++ — Compilation Firewalls (PIMPL)
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 3
+Question ID: idioms-pimpl:A3
+Paired Question ID: idioms-pimpl:B3
+Competency ID: pimpl-select
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A widely-included library header keeps changing its private members, forcing slow recompiles of every client. You want the header to stop exposing those members so clients rarely recompile. Which technique fits?
+
+OPTIONS:
+A. The PIMPL idiom (pointer to a hidden implementation)
+B. The Composite pattern
+C. The Observer pattern
+D. The Strategy pattern
+
+CORRECT ANSWER:
+A. The PIMPL idiom (pointer to a hidden implementation)
+
+RATIONALE:
+Insulating clients from private-member changes via a hidden implementation pointer is PIMPL. The distractors solve unrelated problems.
+
+SOURCE REFERENCES:
+* Sutter (1999), Exceptional C++ — Compilation Firewalls (PIMPL)
+
+------------------------------------------------
+Question 4
+Question ID: idioms-pimpl:A4
+Paired Question ID: idioms-pimpl:B4
+Competency ID: pimpl-identify
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+Examine (widget.h):  class Widget { public: Widget(); ~Widget(); void draw(); private: struct Impl; std::unique_ptr<Impl> p; };  with all members defined in widget.cpp. Which C++ idiom does this header demonstrate?
+
+OPTIONS:
+A. Bridge pattern
+B. PIMPL idiom
+C. Flyweight pattern
+D. Proxy pattern
+
+CORRECT ANSWER:
+B. PIMPL idiom
+
+RATIONALE:
+An opaque nested Impl held by a smart pointer, with definitions in the .cpp, is the PIMPL idiom (a compilation firewall).
+
+SOURCE REFERENCES:
+* Sutter (1999), Exceptional C++ — Compilation Firewalls (PIMPL)
+* Nesteruk (2022), Design Patterns in Modern C++
+
+------------------------------------------------
+Question 5
+Question ID: idioms-pimpl:A5
+Paired Question ID: idioms-pimpl:B5
+Competency ID: pimpl-evaluate
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: draft
+
+QUESTION:
+A developer says a class “uses Bridge” because it holds a unique_ptr<Impl>. But there is exactly one Impl type whose only purpose is to hide private members and reduce header dependencies — no abstraction/implementation hierarchy varies. Is “Bridge” accurate?
+
+OPTIONS:
+A. Yes — any pointer-to-impl is Bridge
+B. Yes — Bridge and PIMPL are interchangeable terms
+C. No — a single fixed implementation used only to hide members and stabilise the header is the PIMPL idiom, not Bridge
+D. No — this is actually the Adapter pattern
+
+CORRECT ANSWER:
+C. No — a single fixed implementation used only to hide members and stabilise the header is the PIMPL idiom, not Bridge
+
+RATIONALE:
+With one fixed implementation used solely for header insulation, this is PIMPL, not Bridge — Bridge requires independently varying abstraction and implementation hierarchies.
+
+SOURCE REFERENCES:
+* Sutter (1999), Exceptional C++ — Compilation Firewalls (PIMPL)
+* Nesteruk (2022), Design Patterns in Modern C++
 
 ------------------------------------------------

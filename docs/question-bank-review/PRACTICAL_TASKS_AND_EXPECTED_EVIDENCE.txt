@@ -1,15 +1,15 @@
 CODINEO QUESTION BANK REVIEW
-Generated: 2026-06-19T09:25:57.402Z
+Generated: 2026-06-19T10:31:33.077Z
 Total Learning Modules: 40
-Total Formal-Eligible Modules: 40
-Modules with Authored Form A+B: 5
-Total Form A Questions: 18
-Total Form B Questions: 18
+Total Formal-Eligible Modules: 39
+Modules with Authored Form A+B: 39
+Total Form A Questions: 167
+Total Form B Questions: 167
 Total In-Module Conceptual Questions: 240
 Total Practical Tasks: 25
-Total Questions and Tasks: 301
+Total Questions and Tasks: 599
 Validation Errors: 0
-Validation Warnings: 76
+Validation Warnings: 0
 
 ================================================================
 

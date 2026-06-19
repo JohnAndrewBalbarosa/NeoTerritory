@@ -42,6 +42,9 @@ export type FormalAssessmentQuestion = ObjectiveAssessmentQuestion & {
 export interface ModuleAssessmentBlueprint {
   moduleId: string;
   category: string;
+  // False for intentionally learning-only modules (e.g. open-ended reflection)
+  // that have no single defensible correct answer — excluded from formal forms.
+  formalEligible: boolean;
   // Bloom levels the module's objective items SHOULD cover.
   applicableObjectiveLevels: ReadonlyArray<ObjectiveBloomLevel>;
   // Levels deliberately not assessed for this module (documented, not forced).

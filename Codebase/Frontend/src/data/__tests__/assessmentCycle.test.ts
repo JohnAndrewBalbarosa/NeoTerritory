@@ -69,15 +69,20 @@ describe('assessment cycle — scope from active plan', () => {
   });
 
   it('4. incomplete Form A returns an explicit configuration error', () => {
+    // Isolated synthetic fixture: a module id that is NOT in ASSESSMENT_FORMS, so
+    // normalization attaches no forms → INCOMPLETE_FORM_A. Uses a fabricated module
+    // rather than a production one, since every formal-eligible production module
+    // now has complete Form A/B.
+    const incompleteModule = { ...LEARNING_MODULES[0], id: 'test-incomplete-form-fixture' };
     const plan = activePlan([
       { moduleId: 'creational-builder', selectionStatus: 'approved', displayOrder: 0 },
-      { moduleId: 'creational-singleton', selectionStatus: 'approved', displayOrder: 1 }, // no authored forms yet
+      { moduleId: 'test-incomplete-form-fixture', selectionStatus: 'approved', displayOrder: 1 },
     ]);
-    const result = startPretestCycle({ plan, modules: LEARNING_MODULES, cycleId: 'cyc-4' });
+    const result = startPretestCycle({ plan, modules: [...LEARNING_MODULES, incompleteModule], cycleId: 'cyc-4' });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.error).toBe('INCOMPLETE_FORM_A');
-    expect(result.modules).toContain('creational-singleton');
+    expect(result.modules).toContain('test-incomplete-form-fixture');
   });
 });
 

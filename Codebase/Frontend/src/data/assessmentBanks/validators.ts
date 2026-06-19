@@ -8,6 +8,7 @@ import {
   getInModuleQuestionsForModule,
   getPracticalTaskForModule,
   formalAuthoringStatus,
+  isFormalEligible,
   moduleMeta,
   type ResolvedFormalQuestion,
 } from './inventory';
@@ -83,7 +84,11 @@ export function validateAllQuestionBanks(): ValidationReport {
     formB.forEach((q) => { registerId(q.questionId, 'formal:B', moduleId); checkFormalItem(q); });
 
     if (status === 'pending') {
-      warnings.push({ severity: 'WARNING', code: 'FORMAL_PENDING', message: `${moduleId} (${meta?.title}) has no authored Form A/B yet — pending authoring`, moduleId });
+      if (isFormalEligible(moduleId)) {
+        warnings.push({ severity: 'WARNING', code: 'FORMAL_PENDING', message: `${moduleId} (${meta?.title}) has no authored Form A/B yet — pending authoring`, moduleId });
+      } else {
+        info.push({ severity: 'INFO', code: 'FORMAL_INELIGIBLE', message: `${moduleId} (${meta?.title}) is learning-only (open-ended) — no formal forms expected`, moduleId });
+      }
     } else {
       if (formA.length !== formB.length) {
         errors.push({ severity: 'ERROR', code: 'AB_COUNT_MISMATCH', message: `${moduleId}: Form A has ${formA.length} items, Form B has ${formB.length}`, moduleId });

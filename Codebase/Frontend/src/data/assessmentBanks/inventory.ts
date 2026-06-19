@@ -148,7 +148,15 @@ export function getPracticalTaskForModule(moduleId: string): PracticalAssessment
   };
 }
 
+// Intentionally learning-only modules: open-ended/reflective content with no
+// single defensible correct answer — never formally assessed (no Form A/B).
+const FORMAL_INELIGIBLE_MODULES = new Set<string>(['foundations-postrequisite']);
+export function isFormalEligible(moduleId: string): boolean {
+  return !FORMAL_INELIGIBLE_MODULES.has(moduleId);
+}
+
 const FOUNDATION_LEVEL_OVERRIDES: Record<string, ReadonlyArray<ObjectiveBloomLevel>> = {
+  'foundations-what-is-pattern': ['remember', 'understand', 'apply'],
   'foundations-ambiguity': ['remember', 'understand', 'apply', 'analyze', 'evaluate'],
   'foundations-same-structure': ['remember', 'understand', 'analyze'],
   'foundations-structural-rules': ['remember', 'understand', 'analyze'],
@@ -168,6 +176,7 @@ export function getAssessmentCompetencyBlueprint(moduleId: string): ModuleAssess
   return {
     moduleId,
     category: m.category,
+    formalEligible: isFormalEligible(moduleId),
     applicableObjectiveLevels,
     nonApplicableLevels: ALL_BLOOM_LEVELS.filter((l) => !applicableAny.has(l)),
     requiresPracticalCreate,

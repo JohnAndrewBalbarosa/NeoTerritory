@@ -1,15 +1,15 @@
 CODINEO QUESTION BANK REVIEW
-Generated: 2026-06-19T09:25:57.402Z
+Generated: 2026-06-19T10:31:33.077Z
 Total Learning Modules: 40
-Total Formal-Eligible Modules: 40
-Modules with Authored Form A+B: 5
-Total Form A Questions: 18
-Total Form B Questions: 18
+Total Formal-Eligible Modules: 39
+Modules with Authored Form A+B: 39
+Total Form A Questions: 167
+Total Form B Questions: 167
 Total In-Module Conceptual Questions: 240
 Total Practical Tasks: 25
-Total Questions and Tasks: 301
+Total Questions and Tasks: 599
 Validation Errors: 0
-Validation Warnings: 76
+Validation Warnings: 0
 
 ================================================================
 
@@ -1338,8 +1338,8 @@ CATEGORY: FOUNDATIONS
 MODULE: What is a design pattern?
 MODULE ID: foundations-what-is-pattern
 ASSESSMENT TYPE: In-Module Conceptual Assessment
-APPLICABLE BLOOM LEVELS: Remember, Understand
-NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply
+NON-APPLICABLE LEVELS: Analyze, Evaluate, Create
 ================================================================Question 1
 Question ID: foundations-what-is-pattern:remembering
 Assessment Type: In-Module Conceptual Assessment
