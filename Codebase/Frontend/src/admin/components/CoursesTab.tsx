@@ -222,6 +222,9 @@ export default function CoursesTab() {
                 <th>Category</th>
                 <th>On / Off</th>
                 <th>Seed</th>
+                <th>Content</th>
+                <th>In-Module Questions</th>
+                <th>Practical</th>
                 <th aria-label="Actions" />
               </tr>
             </thead>
@@ -287,6 +290,9 @@ export default function CoursesTab() {
                         <span className="courses-cell-dim">-</span>
                       )}
                     </td>
+                    <td className="nt-muted">{m.theoreticalExam || m.practicalExam ? 'Authored' : '—'}</td>
+                    <td>{m.theoreticalExam?.questions?.length ?? 0}</td>
+                    <td className="nt-muted">{m.practicalExam?.patternName ?? '—'}</td>
                     <td className="courses-row-actions">
                       <button
                         type="button"

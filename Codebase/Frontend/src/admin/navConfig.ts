@@ -18,7 +18,7 @@ export type AdminTab =
   // (not in TABS): opened from their list via AdminApp state, no URL routing.
   | 'intern-records' | 'intern-detail' | 'assessments' | 'assessment-cycle-detail'
   // Learning Content management tabs (real content/question views, NOT analytics).
-  | 'modules' | 'question-bank';
+  | 'question-bank';
 
 // Navigation reorganized around the SOP-1 project-based learning-support
 // workflow. The first three groups are the normal PM flow; Secondary Tools holds
@@ -57,7 +57,8 @@ export const TABS: ReadonlyArray<TabDef> = [
   { id: 'assessments',          label: 'Assessments', icon: IconClipboard,  section: 'Project Learning' },
   { id: 'instructor-students', label: 'In-Module Analytics', icon: IconLayers, section: 'Project Learning' },
   // Learning Content: real content/question MANAGEMENT (not the analytics views).
-  { id: 'modules',              label: 'Modules',    icon: IconLayers,      section: 'Learning Content' },
+  // 'modules' tab removed — its unique inspection columns (Content authored flag,
+  // In-Module Questions count, Practical pattern name) were folded into CoursesTab.
   { id: 'question-bank',        label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
   // Secondary Tools (de-emphasized, collapsible): code analysis + research/admin.
   { id: 'runs',            label: 'Code Analysis',   icon: IconLayers,      section: 'Secondary Tools' },
