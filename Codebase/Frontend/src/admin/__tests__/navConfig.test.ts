@@ -40,11 +40,14 @@ describe('PM dashboard navConfig (SOP-1)', () => {
     expect(coursePlan?.label).toBe('Course Plan');
     expect(coursePlan?.section).toBe('Project Learning');
 
-    // The existing instructor-analytics cluster is relocated to Secondary Tools
-    // as "In-Module Analytics" (process metrics, not formal results).
+    // In-Module Analytics now lives under Project Learning (moved out of
+    // Secondary Tools) so the PM's learning-process view sits in the primary flow.
     const analytics = TABS.find((t) => t.id === 'instructor-students');
     expect(analytics?.label).toBe('In-Module Analytics');
-    expect(analytics?.section).toBe('Secondary Tools');
+    expect(analytics?.section).toBe('Project Learning');
+    expect(SECTION_CHILDREN['Project Learning']).toContain('instructor-students');
+    // …and it must not appear as a content tab under Learning Content.
+    expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-students');
 
     // Learning Content holds the real content/question MANAGEMENT tabs — NOT the
     // analytics ids, which must not appear as content tabs.

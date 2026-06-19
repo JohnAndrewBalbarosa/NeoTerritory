@@ -49,18 +49,17 @@ export interface TabDef {
 export const TABS: ReadonlyArray<TabDef> = [
   // Dashboard
   { id: 'overview',        label: 'Overview',        icon: IconLayers,      section: 'Dashboard' },
-  // Project Learning (normal PM workflow): course plan + formal intern records.
+  // Project Learning (normal PM workflow): course plan, intern records, formal
+  // assessments, and the in-module learning-process analytics (process metrics
+  // that support the learning workflow — distinct from formal results).
   { id: 'courses',              label: 'Course Plan', icon: IconBook,       section: 'Project Learning' },
   { id: 'intern-records',       label: 'Interns',    icon: IconShield,      section: 'Project Learning' },
   { id: 'assessments',          label: 'Assessments', icon: IconClipboard,  section: 'Project Learning' },
-  // Learning Content: real content/question MANAGEMENT (not the analytics views,
-  // which moved to Secondary Tools → In-Module Analytics).
+  { id: 'instructor-students', label: 'In-Module Analytics', icon: IconLayers, section: 'Project Learning' },
+  // Learning Content: real content/question MANAGEMENT (not the analytics views).
   { id: 'modules',              label: 'Modules',    icon: IconLayers,      section: 'Learning Content' },
   { id: 'question-bank',        label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
-  // Secondary Tools (de-emphasized, collapsible): in-module analytics + code
-  // analysis + research/admin. The existing instructor-analytics cluster lives
-  // here as "In-Module Analytics" (process metrics, not formal results).
-  { id: 'instructor-students', label: 'In-Module Analytics', icon: IconLayers, section: 'Secondary Tools' },
+  // Secondary Tools (de-emphasized, collapsible): code analysis + research/admin.
   { id: 'runs',            label: 'Code Analysis',   icon: IconLayers,      section: 'Secondary Tools' },
   { id: 'logs',            label: 'Logs',            icon: IconClipboard,   section: 'Secondary Tools' },
   { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Secondary Tools', originalDevsOnly: true },

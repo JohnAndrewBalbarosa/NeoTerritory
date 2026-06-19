@@ -416,7 +416,7 @@ export default function AdminApp() {
         <p className="admin-breadcrumb" aria-label="Breadcrumb">{breadcrumbFor(activeTab)}</p>
         {mountedTabs.has('overview') && (
           <div hidden={activeTab !== 'overview'}>
-            <OverviewTab />
+            <OverviewTab onOpenIntern={openInternDetail} onManageCoursePlan={() => setTab('courses')} />
           </div>
         )}
         {mountedTabs.has('assessments') && (
@@ -538,8 +538,8 @@ export default function AdminApp() {
           <div hidden={activeTab !== 'instructor-students'}>
             <section className="admin-section admin-section--card">
               <header className="admin-section__head">
-                <h2>In-Module Process Analytics</h2>
-                <p className="admin-section__hint">These views show first-attempt, retry, completion, and question-level process metrics (Learner Process Performance, Module Difficulty, Question Performance). They are separate from formal pre-test and post-test results, which live under Project Learning → Assessments.</p>
+                <h2>In-Module Learning Analytics</h2>
+                <p className="admin-section__hint">This page shows how interns work through recommended learning modules, including conceptual attempts, practical submissions, retries, completion, and question-level performance. Formal pre-test and post-test records remain under Assessments.</p>
               </header>
               <InstructorDashboard initialView="students" />
             </section>
