@@ -158,6 +158,114 @@ test.describe('learner assessment routes', () => {
 });
 
 test.describe('learner hub smoke', () => {
+  test('Intern Dashboard shows Pre-Test standing and keeps Studio locked until the Post-Test', async ({ page }) => {
+    await seedPersistentLearnerSession(page);
+
+    const form = (moduleId: string, formId: 'A' | 'B') => Array.from({ length: 5 }, (_, index) => ({
+      id: `${moduleId}:${formId}${index + 1}`,
+      type: 'mcq',
+      question: `${moduleId} ${formId} question ${index + 1}`,
+      options: ['Correct', 'Wrong'],
+      correctIndex: 0,
+      taxonomy: ['remembering', 'understanding', 'applying', 'analyzing', 'evaluating'][index],
+    }));
+    const modules = ['module-a', 'module-b'].map((id, index) => ({
+      id,
+      category: index === 0 ? 'foundations' : 'creational',
+      title: index === 0 ? 'Module A' : 'Module B',
+      eyebrow: index === 0 ? 'Foundations' : 'Creational',
+      intro: `${id} content`,
+      sections: [],
+      assessmentForms: { A: form(id, 'A'), B: form(id, 'B') },
+      theoreticalExam: { kind: 'theoretical', questions: form(id, 'A') },
+    }));
+    let includePosttest = false;
+    const createdAt = new Date().toISOString();
+    const attempt = (id: number, assessmentType: 'pretest' | 'posttest') => ({
+      id,
+      assessmentType,
+      sessionId: null,
+      questionCount: 10,
+      cycleId: 'cycle-dashboard',
+      createdAt,
+    });
+    const answersFor = (attemptId: number, assessmentType: 'pretest' | 'posttest', formId: 'A' | 'B') =>
+      modules.flatMap((module, moduleIndex) =>
+        form(module.id, formId).map((question, questionIndex) => ({
+          id: attemptId * 100 + moduleIndex * 10 + questionIndex,
+          attemptId,
+          assessmentType,
+          assessmentIndex: moduleIndex * 5 + questionIndex,
+          moduleId: module.id,
+          questionIndex,
+          questionId: question.id,
+          selectedIndex:
+            assessmentType === 'pretest' && module.id === 'module-b' && questionIndex < 2 ? 1 : 0,
+          responseText: null,
+          questionTaxonomy: question.taxonomy,
+          questionKind: 'theoretical',
+          sessionId: null,
+          createdAt,
+        })),
+      );
+
+    await page.route('**/api/learning/modules', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ modules }),
+    }));
+    await page.route('**/api/learning/progress', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        completedModuleIds: ['module-a', 'module-b'],
+        lastUnlockedModuleId: 'module-b',
+        theoryPassedModuleIds: ['module-a', 'module-b'],
+        bloomMasteryByModule: { 'module-a': 6, 'module-b': 6 },
+      }),
+    }));
+    await page.route('**/api/learning/assessments', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        attempts: [attempt(1, 'pretest'), ...(includePosttest ? [attempt(2, 'posttest')] : [])],
+        answers: [
+          ...answersFor(1, 'pretest', 'A'),
+          ...(includePosttest ? answersFor(2, 'posttest', 'B') : []),
+        ],
+        courseUpdatedAt: new Date(Date.now() - 1_000).toISOString(),
+      }),
+    }));
+    await page.route('**/api/health', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        service: 'qa',
+        totalRuns: 0,
+        aiProviderConfigured: false,
+        microservice: { connected: true, binaryFound: true, catalogFound: true },
+      }),
+    }));
+    await page.route('**/api/runs', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+    await page.route('**/api/sample', (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+
+    await page.goto('/intern-dashboard', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByText('Intern Dashboard', { exact: true })).toBeVisible();
+    await expect(page.getByText('Pre-Test standing', { exact: true })).toBeVisible();
+    await expect(page.getByText('5 of 7 correct. 1 module(s) required for study.', { exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Take Post-Test', exact: true })).toBeVisible();
+
+    await page.goto('/studio', { waitUntil: 'domcontentloaded' });
+    await expect(page.getByTestId('studio-learning-gate')).toBeVisible();
+
+    includePosttest = true;
+    await page.goto('/intern-dashboard', { waitUntil: 'domcontentloaded' });
+    const openStudio = page.getByRole('button', { name: 'Open Studio', exact: true });
+    await expect(openStudio).toBeVisible();
+    await openStudio.click();
+    await expect(page.getByText('CodiNeo Studio', { exact: true })).toBeVisible();
+  });
+
   test('conceptual assessment records score, blocks duplicate answers, and unlocks only on perfect', async ({ page }) => {
     await seedPersistentLearnerSession(page);
 

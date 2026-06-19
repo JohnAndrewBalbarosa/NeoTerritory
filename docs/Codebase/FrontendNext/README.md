@@ -40,7 +40,7 @@ rendering plays the reveals from a clean mount, exactly like the original Vite S
 - **Public/marketing surfaces** (`/`, `/learn`, `/about`, `/mechanics`, `/patterns`,
   `/patterns/<slug>`, `/tour`, `/docs`, `/docs/full`, plus the retired-path 404s) →
   `MarketingSurface` (`ssr:false`) → `MarketingShell`.
-- **Auth-gated surfaces** (`/patterns/learn[/*]`, `/studio` + aliases, `/student-dashboard`,
+- **Auth-gated surfaces** (`/patterns/learn[/*]`, `/studio` + aliases, `/intern-dashboard`,
   `/admin[/*]`, `/scraper`, `/auth/callback`, `*/login`, `/onboarding/*`) → their own
   `ssr:false` wrappers;
   meaningful content depends on the `localStorage` JWT, fetched through the proxy after mount.

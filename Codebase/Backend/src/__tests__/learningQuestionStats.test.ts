@@ -20,6 +20,14 @@ describe('sanitizeAnswers', () => {
     expect(out.every((a) => a.questionIndex >= 0)).toBe(true);
   });
 
+  it('keeps the -1 selected-index sentinel for non-MCQ conceptual answers', () => {
+    expect(sanitizeAnswers([
+      { questionIndex: 2, selectedIndex: -1, isCorrect: true },
+    ])).toEqual([
+      { questionIndex: 2, selectedIndex: -1, isCorrect: 1 },
+    ]);
+  });
+
   it('returns [] for non-array input', () => {
     expect(sanitizeAnswers(undefined)).toEqual([]);
     expect(sanitizeAnswers({} as unknown)).toEqual([]);

@@ -2,8 +2,14 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { navigate } from '../../logic/router';
 import { CATEGORY_META } from '../../data/learningModules';
 import { useLearningModules } from '../../data/useLearningModules';
-import { fetchLearningProgress, type LearningProgress } from '../../api/client';
+import {
+  fetchLearningAssessments,
+  fetchLearningProgress,
+  type LearningProgress,
+} from '../../api/client';
 import { useAppStore } from '../../store/appState';
+import { deriveInternLearningStatus } from '../../logic/internLearningStatus';
+import type { LearningAssessmentsResponse } from '../../types/api';
 
 function readUnlockAllOverride(): boolean {
   if (typeof window === 'undefined') return false;
@@ -18,11 +24,12 @@ function completionRatio(done: number, total: number): number {
   return total > 0 ? done / total : 0;
 }
 
-export default function StudentDashboard(): JSX.Element {
+export default function InternDashboard(): JSX.Element {
   const token = useAppStore((s) => s.token);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
   const { modules, switchboard, loaded } = useLearningModules();
   const [progress, setProgress] = useState<LearningProgress | null>(null);
+  const [assessments, setAssessments] = useState<LearningAssessmentsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -42,15 +49,19 @@ export default function StudentDashboard(): JSX.Element {
         lastUnlockedModuleId: moduleIds[moduleIds.length - 1] ?? null,
         theoryPassedModuleIds: moduleIds,
       });
+      setAssessments({ attempts: [], answers: [] });
       setError(null);
       return () => {
         cancelled = true;
       };
     }
 
-    fetchLearningProgress()
-      .then((data) => {
-        if (!cancelled) setProgress(data);
+    Promise.all([fetchLearningProgress(), fetchLearningAssessments()])
+      .then(([progressData, assessmentData]) => {
+        if (!cancelled) {
+          setProgress(progressData);
+          setAssessments(assessmentData);
+        }
       })
       .catch((e: unknown) => {
         if (cancelled) return;
@@ -66,7 +77,7 @@ export default function StudentDashboard(): JSX.Element {
     return (
       <main style={styles.shell}>
         <section style={styles.hero}>
-          <p style={styles.kicker}>Student dashboard</p>
+          <p style={styles.kicker}>Intern Dashboard</p>
           <h1 style={styles.title}>Redirecting to sign-in</h1>
           <p style={styles.copy}>This dashboard needs a signed-in learner session.</p>
         </section>
@@ -74,11 +85,11 @@ export default function StudentDashboard(): JSX.Element {
     );
   }
 
-  if (!loaded || (!unlockAll && progress === null && error === null)) {
+  if (!loaded || (!unlockAll && (progress === null || assessments === null) && error === null)) {
     return (
       <main style={styles.shell}>
         <section style={styles.hero}>
-          <p style={styles.kicker}>Student dashboard</p>
+          <p style={styles.kicker}>Intern Dashboard</p>
           <h1 style={styles.title}>Loading progress</h1>
           <p style={styles.copy}>Reading the learner progress snapshot…</p>
         </section>
@@ -90,7 +101,7 @@ export default function StudentDashboard(): JSX.Element {
     return (
       <main style={styles.shell}>
         <section style={styles.hero}>
-          <p style={styles.kicker}>Student dashboard</p>
+          <p style={styles.kicker}>Intern Dashboard</p>
           <h1 style={styles.title}>Progress unavailable</h1>
           <p style={styles.copy}>{error}</p>
           <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
@@ -106,6 +117,9 @@ export default function StudentDashboard(): JSX.Element {
     lastUnlockedModuleId: null,
     theoryPassedModuleIds: [],
   };
+  const internStatus = assessments
+    ? deriveInternLearningStatus(modules, assessments, progressSnapshot)
+    : null;
   const completedSet = new Set(progressSnapshot.completedModuleIds);
   const theoryPassedSet = new Set(progressSnapshot.theoryPassedModuleIds ?? []);
   const totalModules = modules.length;
@@ -136,7 +150,7 @@ export default function StudentDashboard(): JSX.Element {
       <section style={styles.hero}>
         <div style={styles.heroTop}>
           <div>
-            <p style={styles.kicker}>Student dashboard</p>
+            <p style={styles.kicker}>Intern Dashboard</p>
             <h1 style={styles.title}>Your learning progress</h1>
           </div>
           <div style={styles.badgeRow}>
@@ -149,9 +163,19 @@ export default function StudentDashboard(): JSX.Element {
         </p>
 
         <div style={styles.actions}>
-          <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
-            Continue learning
-          </button>
+          {!internStatus?.requiredModulesCompleted ? (
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
+              Continue Learning
+            </button>
+          ) : !internStatus.posttestCompleted ? (
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/post-test')}>
+              Take Post-Test
+            </button>
+          ) : (
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/studio')}>
+              Open Studio
+            </button>
+          )}
           {unlockAll ? (
             <button
               type="button"
@@ -185,6 +209,15 @@ export default function StudentDashboard(): JSX.Element {
       </section>
 
       <section style={styles.grid}>
+        <article style={{ ...styles.card, ...styles.pretestCard }}>
+          <p style={styles.cardLabel}>Pre-Test standing</p>
+          <div style={styles.metric}>{internStatus?.pretestScore?.percent ?? 0}%</div>
+          <p style={styles.cardCopy}>
+            {internStatus?.pretestScore
+              ? `${internStatus.pretestScore.correct} of ${internStatus.pretestScore.total} correct. ${internStatus.requiredModuleIds.length} module(s) required for study.`
+              : 'No saved Pre-Test result is available yet.'}
+          </p>
+        </article>
         <article style={styles.card}>
           <p style={styles.cardLabel}>Completed modules</p>
           <div style={styles.metric}>{completedCount}</div>
@@ -203,9 +236,13 @@ export default function StudentDashboard(): JSX.Element {
           <p style={styles.cardCopy}>Modules with theory already cleared.</p>
         </article>
         <article style={styles.card}>
-          <p style={styles.cardLabel}>Remaining</p>
-          <div style={styles.metric}>{remainingCount}</div>
-          <p style={styles.cardCopy}>Modules still left before the path is done.</p>
+          <p style={styles.cardLabel}>Required modules remaining</p>
+          <div style={styles.metric}>
+            {internStatus
+              ? Math.max(internStatus.requiredModuleIds.length - internStatus.completedRequiredModuleIds.length, 0)
+              : remainingCount}
+          </div>
+          <p style={styles.cardCopy}>Required modules left before the Post-Test unlocks.</p>
         </article>
         <article style={styles.card}>
           <p style={styles.cardLabel}>Completion</p>
@@ -251,7 +288,9 @@ export default function StudentDashboard(): JSX.Element {
             <p style={styles.nextCopy}>
               {nextModule
                 ? `Continue with ${nextModule.eyebrow}.`
-                : 'All modules are complete. You can return to the learning flow or keep the override on for review.'}
+                : internStatus?.posttestCompleted
+                  ? 'Your required learning flow and Post-Test are complete. Studio is now available.'
+                  : 'All required modules are complete. Take the Post-Test to finish the learning flow.'}
             </p>
             {lastUnlocked ? <p style={styles.nextMeta}>Last unlocked: {lastUnlocked.title}</p> : null}
             {weakest ? <p style={styles.nextMeta}>Most work left: {weakest.meta.name}</p> : null}
@@ -349,6 +388,10 @@ const styles: Record<string, CSSProperties> = {
     background: 'rgba(166,255,0,0.12)',
     borderColor: 'rgba(166,255,0,0.28)',
     color: '#d7ff85',
+  },
+  pretestCard: {
+    borderColor: 'rgba(0,209,216,0.3)',
+    background: 'linear-gradient(145deg, rgba(0,209,216,0.09), rgba(12,18,30,0.9))',
   },
   actions: {
     display: 'flex',

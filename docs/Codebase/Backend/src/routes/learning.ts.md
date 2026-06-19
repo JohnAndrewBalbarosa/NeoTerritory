@@ -105,3 +105,4 @@ Preview-only AI course plans do not call this router, do not mutate modules, and
 - Progress reads and writes preserve the per-user, per-module Bloom mastery map.
 - Freshness is enforced by comparing attempt creation time to `courseUpdatedAt` and requiring recorded answer rows, not by deleting learner data.
 - Preview-only AI course plan generation cannot reset learners.
+- Conceptual answer persistence uses update-then-insert rather than a fixed `ON CONFLICT` target so both legacy three-column and current session-aware keys are supported.

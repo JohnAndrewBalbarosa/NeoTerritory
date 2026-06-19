@@ -138,7 +138,7 @@ describe('learning progress bloom mastery persistence', () => {
     expect(columns.some((column) => column.name === 'bloom_mastery_by_module')).toBe(true);
   });
 
-  it('never persists optional-module skip decisions (skip flow removed)', async () => {
+  it('persists optional-module skip decisions (idempotent round-trip)', async () => {
     const info = db
       .prepare(`INSERT INTO users (username, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, datetime('now'))`)
       .run('skiplearner', 'skip@example.com', 'hash', 'user');
@@ -155,17 +155,17 @@ describe('learning progress bloom mastery persistence', () => {
         body: JSON.stringify({ completedModuleIds: [], lastUnlockedModuleId: null, sessionId: 'sess-1', skippedModuleIds }),
       });
 
-    // Even when a client sends skip ids, the server ignores them entirely.
     const first = await put(['module-x', 'module-y']);
     expect(first.status).toBe(200);
-    await expect(first.json()).resolves.toMatchObject({ ok: true, skippedModuleIds: [] });
+    await expect(first.json()).resolves.toMatchObject({ ok: true, skippedModuleIds: ['module-x', 'module-y'] });
 
+    // Re-sending the same skip set is idempotent — same row, no duplication.
+    await put(['module-x', 'module-y']);
     const getRes = await fetch(`${baseUrl}/api/learning/progress`, { headers: { Authorization: `Bearer ${token}` } });
-    await expect(getRes.json()).resolves.toMatchObject({ skippedModuleIds: [] });
+    await expect(getRes.json()).resolves.toMatchObject({ skippedModuleIds: ['module-x', 'module-y'] });
 
-    // The column is forced empty — no module is ever marked skipped in the DB.
     const rows = db.prepare('SELECT skipped_module_ids FROM learning_progress WHERE user_id = ?').all(skipUserId) as Array<{ skipped_module_ids: string }>;
     expect(rows.length).toBe(1);
-    expect(JSON.parse(rows[0].skipped_module_ids)).toEqual([]);
+    expect(JSON.parse(rows[0].skipped_module_ids)).toEqual(['module-x', 'module-y']);
   });
 });

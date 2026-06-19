@@ -1,6 +1,6 @@
-// /student-dashboard → learner progress dashboard.
-import StudentDashboardSurface from '@/components/StudentDashboardSurface';
+// Legacy alias retained for old bookmarks.
+import { redirect } from 'next/navigation';
 
-export default function StudentDashboardPage() {
-  return <StudentDashboardSurface />;
+export default function LegacyDashboardRedirectPage() {
+  redirect('/intern-dashboard');
 }

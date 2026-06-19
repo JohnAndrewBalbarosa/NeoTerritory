@@ -54,9 +54,10 @@ flowchart TD
 - The page calculates `correct / total` only when the learner submits and records the attempt through `saveLearningAnswers()`.
 - An in-flight guard and submitted-answer signature prevent double-clicks and repeat submission of the same answer set.
 - A perfect score persists the theory-passed state. When no practical assessment remains, it also persists module completion and Bloom mastery level 6.
-- The just-completed module remains visible long enough to show `Perfect Score – Proceed to Next Module`; persisted Bloom mastery is not applied to the local page filter until leaving the result, then the completed module is released from the personalized path.
+- The just-completed module remains visible long enough to show the perfect-score next action. Intermediate modules show `Proceed to Next Module`; the last required module shows `Proceed to Post-Test`.
 - A non-perfect score shows `Review Required – Continue Studying This Module`, keeps the next module locked, and offers direct actions to review the lesson or revise the answers.
 - Result rendering is the boundary that reveals answer feedback. Answers are not scored live while the learner is still composing the attempt.
+- Persistence failures render below the assessment instead of opening a browser alert.
 
 ## Module Navigation Status Icons
 
@@ -134,6 +135,7 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 - A submitted score displays as `correct / total`.
 - Repeated clicks and unchanged duplicate submissions do not create another attempt.
 - A perfect conceptual score records progress and exposes the next module or practical assessment without requiring a retake.
+- Completing the final required module routes to the Post-Test.
 - A non-perfect score leaves the learner in the current module and recommends reviewing its content.
 - Completed and locked module rows use themed SVG icons aligned with the module title.
 - Visible theory pages render MCQ, identification, and Studio questions through `BloomQuestionRenderer`.

@@ -3,6 +3,7 @@ import { navigate } from '../../logic/router';
 import {
   fetchAssessmentScope,
   fetchLearningAssessments,
+  fetchLearningProgress,
   saveLearningAssessment,
   refreshGuest,
 } from '../../api/client';
@@ -30,6 +31,7 @@ import {
 } from '../../data/assessmentCycle';
 import type { LearningAssessmentAttemptRaw } from '../../types/api';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
+import { deriveInternLearningStatus } from '../../logic/internLearningStatus';
 
 // Cycle state: null = still resolving; ok = ready with questions/cycleId; error
 // = an explicit reject (no silent fallback).
@@ -73,6 +75,11 @@ const CYCLE_ERROR_COPY: Record<CycleErrorCode, { kicker: string; title: string; 
     kicker: 'Pairing error',
     title: 'Post-test module set mismatch',
     copy: 'The post-test could not be built for the exact module set used in your pre-test. Please contact an administrator.',
+  },
+  MODULES_INCOMPLETE: {
+    kicker: 'Learning Path incomplete',
+    title: 'Complete your required modules first',
+    copy: 'Your Post-Test unlocks after every module recommended by your Pre-Test is complete. Return to the Intern Dashboard and continue learning.',
   },
   NO_ASSESSMENT_QUESTIONS: {
     kicker: 'No questions',
@@ -283,6 +290,12 @@ function LearningAssessmentContent({
             if (!cancelled) setCycle({ status: 'error', error: 'NO_PAIRED_PRETEST' });
             return;
           }
+          const progress = await fetchLearningProgress();
+          const learningStatus = deriveInternLearningStatus(modules, assessments, progress);
+          if (!learningStatus.requiredModulesCompleted) {
+            if (!cancelled) setCycle({ status: 'error', error: 'MODULES_INCOMPLETE' });
+            return;
+          }
           const result = startPosttestForCycle({
             cycleId: openCycleId,
             modules,
@@ -356,6 +369,8 @@ function LearningAssessmentContent({
 
       if (assessmentType === 'pretest') {
         setPreTestCompleted(true);
+        navigate('/intern-dashboard');
+        return;
       } else {
         // Learning gain is paired by CYCLE: compare against the pre-test from
         // this post-test's own cycle (not the latest pre-test). Only when a
@@ -411,8 +426,8 @@ function LearningAssessmentContent({
             </div>
             <p className="nt-test-page__panel-copy">{copy.copy}</p>
             <div className="nt-assessment__footer">
-              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
-                Back to Learning Path
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/intern-dashboard')}>
+                Back to Intern Dashboard
               </button>
             </div>
           </section>

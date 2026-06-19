@@ -28,6 +28,10 @@ flowchart TD
     N5 --> N6 --> End
 ```
 
+## Intern gate regression
+
+The browser flow also verifies that the Intern Dashboard displays the saved Pre-Test standing, offers the Post-Test after required modules are complete, blocks direct Studio access before the Post-Test, and exposes Studio after the paired Post-Test exists.
+
 ## Sole job
 
 Cover the assessment routes and the practical learner-hub smoke path with deterministic browser checks. The spec verifies three public assessment routes, checks that the rendered question cards include Bloom taxonomy chips, confirms incomplete submission shows the browser-side validation message, and proves the unlocked learning path can reach a practical exam pane.

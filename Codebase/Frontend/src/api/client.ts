@@ -326,10 +326,11 @@ export async function saveLearningAnswers(
   moduleId: string,
   attempt: number,
   answers: LearningAnswerInput[],
+  sessionId?: string | null,
 ): Promise<void> {
   await apiFetch('/api/learning/answers', {
     method: 'PUT',
-    body: JSON.stringify({ moduleId, attempt, answers }),
+    body: JSON.stringify({ moduleId, attempt, answers, sessionId }),
   });
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { navigate, replaceUrl } from '../../logic/router';
-import { normalizeLearnerCallbackNext } from '../../logic/learnerRouting';
+import { normalizeLearnerCallbackNext, resolveLearnerLanding } from '../../logic/learnerRouting';
 import { useAppStore } from '../../store/appState';
 import type { User } from '../../types/api';
 
@@ -114,7 +114,7 @@ export default function GoogleCallback() {
         ? '/admin'
         : role === 'new'
           ? '/onboarding/choose'
-          : normalizeLearnerCallbackNext('/patterns/learn', useAppStore.getState().preTestCompleted);
+          : resolveLearnerLanding(useAppStore.getState().preTestCompleted);
     const fallbackNext = url.searchParams.get('next') || defaultNext;
 
     if (!accessToken) {

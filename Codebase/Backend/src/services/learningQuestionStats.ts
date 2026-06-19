@@ -15,7 +15,7 @@ export interface CleanAnswer {
 }
 
 // Normalise the PUT /api/learning/answers body.answers array: objects only,
-// non-negative bounded ints, correctness coerced to 0/1, deduped by
+// bounded ints (`selectedIndex === -1` is the non-MCQ sentinel), correctness coerced to 0/1, deduped by
 // questionIndex (last answer wins — matches "latest submit counts"), capped at
 // MAX_ANSWERS distinct questions.
 export function sanitizeAnswers(input: unknown): CleanAnswer[] {
@@ -30,7 +30,7 @@ export function sanitizeAnswers(input: unknown): CleanAnswer[] {
     const qi = Number(r.questionIndex);
     const si = Number(r.selectedIndex);
     if (!Number.isInteger(qi) || qi < 0 || qi > MAX_INDEX) continue;
-    if (!Number.isInteger(si) || si < 0 || si > MAX_INDEX) continue;
+    if (!Number.isInteger(si) || si < -1 || si > MAX_INDEX) continue;
     if (!byQuestion.has(qi)) {
       if (byQuestion.size >= MAX_ANSWERS) continue;
       order.push(qi);

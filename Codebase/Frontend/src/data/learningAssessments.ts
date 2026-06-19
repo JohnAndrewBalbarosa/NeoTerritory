@@ -162,9 +162,9 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     title: 'Baseline Assessment: Pre-Test',
     intro:
       'This baseline uses raw module questions. The browser checks the answers locally; only the selected answers are persisted to the database.',
-    submitLabel: 'Finish Pre-test & Start Learning',
-    continueLabel: 'Continue to Learning Path',
-    nextPath: '/patterns/learn',
+    submitLabel: 'Finish Pre-Test',
+    continueLabel: 'Go to Intern Dashboard',
+    nextPath: '/intern-dashboard',
   },
   posttest: {
     eyebrow: 'Learning outcome',
@@ -173,8 +173,8 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     intro:
       'This checkpoint samples later module questions. The server stores raw selections only; scoring and interpretation stay in the browser.',
     submitLabel: 'Save Post-test',
-    continueLabel: 'Continue to Post-Test 2',
-    nextPath: '/post-test-2',
+    continueLabel: 'Back to Intern Dashboard',
+    nextPath: '/intern-dashboard',
   },
   posttest2: {
     eyebrow: 'Learning outcome',
@@ -183,8 +183,8 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     intro:
       'This follow-up checkpoint reuses module questions with a different slice. The browser computes the result and the database keeps raw answers only.',
     submitLabel: 'Finish Final Checkpoint',
-    continueLabel: 'Return to Learning Path',
-    nextPath: '/patterns/learn',
+    continueLabel: 'Back to Intern Dashboard',
+    nextPath: '/intern-dashboard',
   },
   practical: {
     eyebrow: 'Studio checkpoint',

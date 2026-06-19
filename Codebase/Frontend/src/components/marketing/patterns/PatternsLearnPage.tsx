@@ -20,6 +20,7 @@ import {
 import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
 import {
   evaluateFoundationPretestFromAssessments,
+  scoreStoredObjectiveAssessment,
   type FoundationPretestEvidence,
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
@@ -406,6 +407,7 @@ function TheoreticalExamBlock({
   onRevise,
   onReviewContent,
   onProceed,
+  proceedLabel,
   error,
 }: {
   moduleId: string;
@@ -422,6 +424,7 @@ function TheoreticalExamBlock({
   onRevise: () => void;
   onReviewContent: () => void;
   onProceed: () => void;
+  proceedLabel: string;
   error: string | null;
 }): JSX.Element | null {
   if (questionIndexes.length === 0) return null;
@@ -478,7 +481,7 @@ function TheoreticalExamBlock({
             <div className="nt-exam-result__actions">
               {result.perfect ? (
                 <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onProceed}>
-                  {hasPracticalExam ? 'Proceed to Practical Assessment' : 'Proceed to Next Module'}
+                  {hasPracticalExam ? 'Proceed to Practical Assessment' : proceedLabel}
                 </button>
               ) : (
                 <>
@@ -521,6 +524,7 @@ function PracticalExamBlock({
   isPassed,
   answer,
   saving,
+  error,
   onAnswerChange,
   onSave,
 }: {
@@ -529,6 +533,7 @@ function PracticalExamBlock({
   isPassed: boolean;
   answer: string;
   saving: boolean;
+  error: string | null;
   onAnswerChange: (next: string) => void;
   onSave: () => void;
 }): JSX.Element {
@@ -553,6 +558,7 @@ function PracticalExamBlock({
           <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onSave} disabled={saving}>
             {saving ? 'Saving...' : 'Save Practical Answer'}
           </button>
+          {error ? <p className="nt-assessment__hint" role="alert">{error}</p> : null}
         </div>
       ) : (
         <p className="nt-practical__verdict nt-practical__verdict--pass">Verified.</p>
@@ -577,17 +583,24 @@ export default function PatternsLearnPage(): JSX.Element {
   const [openCategory, setOpenCategory] = useState<LearningCategory | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
+  // Optional (perfect-on-pre-test) modules the learner explicitly skipped. Only
+  // optional modules can ever enter this set; required review modules never can.
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
   const [theorySubmissions, setTheorySubmissions] = useState<Record<string, TheorySubmissionResult>>({});
   const [theoryLastSubmittedSignatures, setTheoryLastSubmittedSignatures] = useState<Record<string, string>>({});
   const [theorySubmitting, setTheorySubmitting] = useState<Record<string, boolean>>({});
-  const [theoryAttempts, setTheoryAttempts] = useState<Record<string, number>>({});
-  // Inline (non-popup) error surfaced under the conceptual assessment / gate.
   const [theoryErrors, setTheoryErrors] = useState<Record<string, string | null>>({});
+  const [theoryAttempts, setTheoryAttempts] = useState<Record<string, number>>({});
   const [completedModulePendingExitId, setCompletedModulePendingExitId] = useState<string | null>(null);
   const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
+  const [practicalErrors, setPracticalErrors] = useState<Record<string, string | null>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
+  // Pre-test PROFICIENCY (>= 80% per module). Proficiency is NOT completion:
+  // proficient modules are non-blocking and shown as "Optional Review", never
+  // auto-completed or hidden. The pre-test no longer marks any module complete.
+  const [proficientModuleIds, setProficientModuleIds] = useState<Set<string>>(new Set());
   const [bloomMasteryByModule, setBloomMasteryByModule] = useState<Record<string, number>>({});
   const effectiveBloomMasteryByModule = useMemo(() => {
     const next: Record<string, number> = {};
@@ -599,16 +612,18 @@ export default function PatternsLearnPage(): JSX.Element {
     }
     return next;
   }, [bloomMasteryByModule, masteredLevelsByModule]);
-  // Only genuinely-completed modules (and mastery from completion) are hidden.
-  // Every other module in the path stays visible and must be completed in order.
+  // Completed modules (and mastery from completion) are hidden, and so are
+  // skipped OPTIONAL modules — skipping removes the module from the path without
+  // counting it as completed. Required review modules can never be skipped.
   const hiddenModuleIds = useMemo(() => {
     const hidden = new Set(completedIds);
     if (completedModulePendingExitId) hidden.delete(completedModulePendingExitId);
     Object.entries(effectiveBloomMasteryByModule).forEach(([moduleId, level]) => {
       if (level >= 6 && moduleId !== completedModulePendingExitId) hidden.add(moduleId);
     });
+    skippedIds.forEach((moduleId) => hidden.add(moduleId));
     return hidden;
-  }, [completedIds, completedModulePendingExitId, effectiveBloomMasteryByModule]);
+  }, [completedIds, completedModulePendingExitId, effectiveBloomMasteryByModule, skippedIds]);
   const visibleModulesInCategory = useCallback(
     (category: LearningCategory) => modulesInCat(category).filter((module) => !hiddenModuleIds.has(module.id)),
     [hiddenModuleIds, modulesInCat],
@@ -656,10 +671,15 @@ export default function PatternsLearnPage(): JSX.Element {
     [unlockAll, allSteps, completedIds],
   );
   const isActiveComplete = !!(activeStep && effectiveCompletedIds.has(activeStep.module.id));
-  // Every module in the path gates the same way: the next module unlocks only
-  // after the current one is completed with a perfect conceptual assessment.
-  // Pre-test proficiency no longer makes a module optional or non-blocking.
-  const gatingSatisfiedIds = effectiveCompletedIds;
+  // Unlock gating treats proficient modules as non-blocking: a later required
+  // module unlocks even if the learner only tested proficient (not completed)
+  // on the modules before it.
+  const gatingSatisfiedIds = useMemo(() => {
+    if (unlockAll) return effectiveCompletedIds;
+    const ids = new Set(effectiveCompletedIds);
+    proficientModuleIds.forEach((id) => ids.add(id));
+    return ids;
+  }, [unlockAll, effectiveCompletedIds, proficientModuleIds]);
   const unlockedCount = useMemo(
     () => (unlockAll ? Math.max(steps.length, 1) : computeUnlockedCount(steps, gatingSatisfiedIds)),
     [unlockAll, steps, gatingSatisfiedIds],
@@ -691,6 +711,17 @@ export default function PatternsLearnPage(): JSX.Element {
     currentPage?.kind === 'theoretical' && visibleTheoryQuestionCount > 0;
   const isTheoryGatePage = isFinalTheoryPage;
   const isPracticalDone = !!(activeModule && practicalDone.has(activeModule.id));
+  const requiredModuleIds = useMemo(
+    () => allSteps
+      .map((step) => step.module.id)
+      .filter((moduleId) => !proficientModuleIds.has(moduleId)),
+    [allSteps, proficientModuleIds],
+  );
+  const requiredPathCompleteAfterCurrentTheory = !!(
+    activeModule &&
+    !hasVisiblePracticalPage &&
+    requiredModuleIds.every((moduleId) => moduleId === activeModule.id || completedIds.has(moduleId))
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -710,6 +741,19 @@ export default function PatternsLearnPage(): JSX.Element {
         const modules = allSteps.map((step) => step.module);
         const evidence = evaluateFoundationPretestFromAssessments(modules, assessments);
         setFoundationEvidence(evidence);
+        // A module is OPTIONAL only when the learner got a PERFECT pre-test score
+        // on it (100%). Any missed question makes the module a required review
+        // module — so an 81% overall result still recommends the modules behind
+        // the missed 19%. Optional modules drive the skip button + non-blocking
+        // unlock; they are never auto-completed.
+        const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
+        const optional = new Set<string>();
+        if (preScore) {
+          for (const moduleScore of Object.values(preScore.byModule)) {
+            if (moduleScore.percent >= 100) optional.add(moduleScore.moduleId);
+          }
+        }
+        setProficientModuleIds(optional);
         if (evidence.passed && !preTestCompleted) {
           setPreTestCompleted(true);
         }
@@ -726,6 +770,7 @@ export default function PatternsLearnPage(): JSX.Element {
           latestAttemptId: null,
           matchedModuleIds: [],
         });
+        setProficientModuleIds(new Set());
         setAssessmentStatus('failed');
       });
 
@@ -743,6 +788,7 @@ export default function PatternsLearnPage(): JSX.Element {
         if (cancelled) return;
         setCompletedIds(new Set(progress.completedModuleIds));
         setTheoryPassedIds(new Set(progress.theoryPassedModuleIds ?? []));
+        setSkippedIds(new Set(progress.skippedModuleIds ?? []));
         setBloomMasteryByModule(progress.bloomMasteryByModule ?? {});
       })
       .catch((err) => {
@@ -770,6 +816,7 @@ export default function PatternsLearnPage(): JSX.Element {
       nextCompletedIds: Set<string>,
       nextTheoryPassedIds: Set<string>,
       nextBloomMasteryByModule: Record<string, number> = effectiveBloomMasteryByModule,
+      nextSkippedIds: Set<string> = skippedIds,
     ): Promise<void> => {
       if (!token || unlockAll) return;
       const lastUnlockedModuleId = lastUnlockedModuleIdFor(allSteps, nextCompletedIds);
@@ -780,9 +827,27 @@ export default function PatternsLearnPage(): JSX.Element {
         Array.from(nextTheoryPassedIds),
         lmsSessionId ?? undefined,
         nextBloomMasteryByModule,
+        Array.from(nextSkippedIds),
       );
     },
-    [allSteps, effectiveBloomMasteryByModule, lmsSessionId, token, unlockAll],
+    [allSteps, effectiveBloomMasteryByModule, lmsSessionId, skippedIds, token, unlockAll],
+  );
+
+  // Skip an OPTIONAL module (perfect pre-test score). Required review modules can
+  // never be skipped. Marking skipped hides the module from the path (it is NOT
+  // counted as completed) and lets the learner move to the next available module.
+  const setOptionalModuleSkipped = useCallback(
+    (moduleId: string): void => {
+      if (!proficientModuleIds.has(moduleId)) return; // guard: optional modules only
+      setSkippedIds((prev) => {
+        if (prev.has(moduleId)) return prev; // idempotent
+        const next = new Set(prev).add(moduleId);
+        void persistLearningProgress(completedIds, theoryPassedIds, effectiveBloomMasteryByModule, next);
+        return next;
+      });
+      setPageIndex(0);
+    },
+    [proficientModuleIds, persistLearningProgress, completedIds, theoryPassedIds, effectiveBloomMasteryByModule],
   );
 
   useEffect(() => {
@@ -823,7 +888,7 @@ export default function PatternsLearnPage(): JSX.Element {
     }
 
     if (activeIndex >= steps.length - 1) {
-      navigate('/student-dashboard');
+      navigate(requiredPathCompleteAfterCurrentTheory ? '/post-test' : '/intern-dashboard');
       return;
     }
 
@@ -831,7 +896,14 @@ export default function PatternsLearnPage(): JSX.Element {
     // same index, so retain the index while releasing the completed row.
     setCompletedModulePendingExitId(null);
     setPageIndex(0);
-  }, [activeIndex, activeModule, hasVisiblePracticalPage, pages, steps.length]);
+  }, [
+    activeIndex,
+    activeModule,
+    hasVisiblePracticalPage,
+    pages,
+    requiredPathCompleteAfterCurrentTheory,
+    steps.length,
+  ]);
 
   const submitTheoryAssessment = useCallback(async () => {
     if (!activeModule?.theoreticalExam || !currentTheoryScore?.complete) return;
@@ -857,6 +929,7 @@ export default function PatternsLearnPage(): JSX.Element {
               isCorrect: !!question && isAnswerCorrect(question, answer),
             };
           }),
+          lmsSessionId,
         );
       }
 
@@ -899,6 +972,7 @@ export default function PatternsLearnPage(): JSX.Element {
     currentTheorySignature,
     effectiveBloomMasteryByModule,
     hasVisiblePracticalPage,
+    lmsSessionId,
     persistLearningProgress,
     theoryAttempts,
     theoryPassedIds,
@@ -944,7 +1018,7 @@ export default function PatternsLearnPage(): JSX.Element {
     }
 
     if (unlockAll && activeIndex === steps.length - 1 && isLastPage) {
-      navigate('/student-dashboard');
+      navigate('/post-test');
       return;
     }
 
@@ -953,9 +1027,10 @@ export default function PatternsLearnPage(): JSX.Element {
       return;
     }
 
-    // Every module must be completed (perfect conceptual assessment) before the
-    // next one unlocks — there is no proficiency/optional bypass.
-    const canAdvanceToNextModule = unlockAll || isActiveComplete;
+    const canAdvanceToNextModule =
+      unlockAll ||
+      isActiveComplete ||
+      (!!activeModule && proficientModuleIds.has(activeModule.id)); // proficient = optional, non-blocking
 
     if (activeIndex < steps.length - 1 && canAdvanceToNextModule) {
       goToStep(activeIndex + 1);
@@ -965,7 +1040,7 @@ export default function PatternsLearnPage(): JSX.Element {
     if (activeIndex < steps.length - 1 && activeModule) {
       setTheoryErrors((prev) => ({
         ...prev,
-        [activeModule.id]: 'Complete this module with a perfect conceptual assessment to unlock the next one.',
+        [activeModule.id]: 'Complete the exams in this module to unlock the next one.',
       }));
     }
   };
@@ -981,9 +1056,13 @@ export default function PatternsLearnPage(): JSX.Element {
     }
   };
 
-  // Progress for the top-bar progress bar: every module in the path counts, so
-  // the bar reflects the full required path (no optional/proficiency exclusion).
-  const studiedModules = allSteps;
+  // Studied-only progress for the top-bar progress bar: modules the learner
+  // tested proficient on (Optional Review) are excluded from both the
+  // numerator and the denominator, so the bar reflects work actually done.
+  const studiedModules = useMemo(
+    () => allSteps.filter((step) => !proficientModuleIds.has(step.module.id)),
+    [allSteps, proficientModuleIds],
+  );
   const studiedTotal = studiedModules.length;
   const studiedDone = useMemo(
     () => studiedModules.filter((step) => completedIds.has(step.module.id)).length,
@@ -1066,8 +1145,8 @@ export default function PatternsLearnPage(): JSX.Element {
               <span className="nt-test-page__panel-kicker">Personalized path</span>
               <h2 className="nt-test-page__panel-title">Everything visible is already complete</h2>
             </div>
-            <button type="button" className="nt-lesson-button nt-lesson-button--primary nt-test-page__cta" onClick={() => navigate('/student-dashboard')}>
-              Open dashboard
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary nt-test-page__cta" onClick={() => navigate('/post-test')}>
+              Take Post-Test
             </button>
           </section>
         </div>
@@ -1115,14 +1194,17 @@ export default function PatternsLearnPage(): JSX.Element {
                         const visIdx = steps.findIndex((v) => v.module.id === s.module.id);
                         const done = visIdx === -1;
                         const active = !done && visIdx === activeIndex;
-                        const locked = !done && !active && visIdx >= unlockedCount;
+                        const proficient = !done && !active && proficientModuleIds.has(s.module.id);
+                        const locked = !done && !proficient && visIdx >= unlockedCount;
                         const status = done
                           ? 'done'
                           : active
                             ? 'current'
-                            : locked
-                              ? 'locked'
-                              : 'available';
+                            : proficient
+                              ? 'optional'
+                              : locked
+                                ? 'locked'
+                                : 'available';
                         return (
                           <li key={s.module.id}>
                             <button
@@ -1136,7 +1218,9 @@ export default function PatternsLearnPage(): JSX.Element {
                                   ? 'Finish the previous module to unlock this one.'
                                   : done
                                     ? 'Completed'
-                                    : undefined
+                                    : proficient
+                                      ? 'Optional Review — you tested proficient on the pre-test (not required).'
+                                      : undefined
                               }
                               onClick={() => { if (!done && !locked) goToStep(visIdx); }}
                             >
@@ -1148,12 +1232,13 @@ export default function PatternsLearnPage(): JSX.Element {
                                 ) : (
                                   <span
                                     className="nt-course-accordion__status-dot"
-                                    data-kind={active ? 'current' : 'available'}
+                                    data-kind={active ? 'current' : proficient ? 'optional' : 'available'}
                                   />
                                 )}
                               </span>
                               <span className="nt-course-accordion__num" aria-hidden="true">{i + 1}</span>
                               <span className="nt-course-accordion__module-label">{s.module.title}</span>
+                              {proficient ? <span className="nt-course-accordion__opt">Optional</span> : null}
                             </button>
                           </li>
                         );
@@ -1182,6 +1267,23 @@ export default function PatternsLearnPage(): JSX.Element {
                   </p>
                 ) : null}
               </header>
+
+              {proficientModuleIds.has(activeModule.id) ? (
+                <div className="nt-optional-banner" role="note">
+                  <div className="nt-optional-banner__text">
+                    <strong>Optional module</strong> — you scored 100% on this module in the pre-test, so it
+                    isn’t required. You can review it, or skip it and move on. Skipping never blocks your
+                    required review modules.
+                  </div>
+                  <button
+                    type="button"
+                    className="nt-optional-banner__btn"
+                    onClick={() => setOptionalModuleSkipped(activeModule.id)}
+                  >
+                    Skip Optional Module
+                  </button>
+                </div>
+              ) : null}
 
               <div className={`nt-pager__stage${currentPage.kind === 'practical' ? ' nt-pager__stage--practical' : ''}`}>
                 <button
@@ -1243,6 +1345,7 @@ export default function PatternsLearnPage(): JSX.Element {
                         setPageIndex(0);
                       }}
                       onProceed={proceedAfterTheory}
+                      proceedLabel={requiredPathCompleteAfterCurrentTheory ? 'Proceed to Post-Test' : 'Proceed to Next Module'}
                       error={theoryErrors[activeModule.id] ?? null}
                     />
                   ) : null}
@@ -1253,15 +1356,23 @@ export default function PatternsLearnPage(): JSX.Element {
                       isPassed={isActiveComplete || isPracticalDone}
                       answer={practicalAnswers[activeModule.id] || ''}
                       saving={!!practicalSaving[activeModule.id]}
-                      onAnswerChange={(next) => setPracticalAnswers((prev) => ({ ...prev, [activeModule.id]: next }))}
+                      error={practicalErrors[activeModule.id] ?? null}
+                      onAnswerChange={(next) => {
+                        setPracticalErrors((prev) => ({ ...prev, [activeModule.id]: null }));
+                        setPracticalAnswers((prev) => ({ ...prev, [activeModule.id]: next }));
+                      }}
                       onSave={async () => {
                         const answerText = (practicalAnswers[activeModule.id] || '').trim();
                         const practicalExam = activeModule.practicalExam;
                         if (!practicalExam) return;
                         if (!answerText) {
-                          alert('Paste the practical answer or code output before saving.');
+                          setPracticalErrors((prev) => ({
+                            ...prev,
+                            [activeModule.id]: 'Paste the practical answer or code output before saving.',
+                          }));
                           return;
                         }
+                        setPracticalErrors((prev) => ({ ...prev, [activeModule.id]: null }));
                         setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: true }));
                         try {
                           await saveLearningAssessment({
@@ -1283,10 +1394,18 @@ export default function PatternsLearnPage(): JSX.Element {
                           setPracticalDone((prev) => new Set(prev).add(activeModule.id));
                           setCompletedIds(nextCompletedIds);
                           setBloomMasteryByModule(nextBloomMasteryByModule);
-                          setPageIndex(0);
                           await persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
+                          const requiredComplete = requiredModuleIds.every((moduleId) => nextCompletedIds.has(moduleId));
+                          if (requiredComplete) {
+                            navigate('/post-test');
+                          } else {
+                            setPageIndex(0);
+                          }
                         } catch (err) {
-                          alert(err instanceof Error ? err.message : 'Could not save practical answer.');
+                          setPracticalErrors((prev) => ({
+                            ...prev,
+                            [activeModule.id]: err instanceof Error ? err.message : 'Could not save practical answer.',
+                          }));
                         } finally {
                           setPracticalSaving((prev) => ({ ...prev, [activeModule.id]: false }));
                         }

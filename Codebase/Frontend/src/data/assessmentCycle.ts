@@ -38,6 +38,7 @@ export type CycleErrorCode =
   | 'FORM_OVERLAP'
   | 'NO_PAIRED_PRETEST'
   | 'MODULE_SET_MISMATCH'
+  | 'MODULES_INCOMPLETE'
   // No enabled (toggled-ON) course module has authored pre-test questions.
   | 'NO_ASSESSMENT_QUESTIONS';
 

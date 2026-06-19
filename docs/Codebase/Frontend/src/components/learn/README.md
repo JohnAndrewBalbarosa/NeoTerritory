@@ -4,7 +4,7 @@
 - Owner: Frontend
 
 ## Logic Summary
-Learner-facing progress and assessment surfaces that sit around the learning path. This folder owns the student dashboard, the pre-test / post-test pages, the adaptive pre-test provider, mixed Bloom question rendering, the unlock explanation, and the summary cards that help a learner see where they are doing well and where they still need work.
+Intern-facing progress and assessment surfaces that sit around the learning path. This folder owns the Intern Dashboard, the Pre-Test / Post-Test pages, the adaptive Pre-Test provider, mixed Bloom question rendering, the unlock explanation, and the summary cards that help an intern see where they are doing well and where they still need work.
 
 ## Ownership Boundary
 This folder owns presentation, section ordering, route-level guidance, and pre-test page flow. Server freshness decisions and analytics aggregation stay behind the learning API contract, while learner pages may call the existing progress endpoint to persist completed and theory-passed module ids.
@@ -17,7 +17,7 @@ Fresh pre-test gating is server-backed:
 - If the server reports no fresh passing pre-test, the learner is redirected to `/pre-test`.
 
 ## Subsystem Story
-Read `StudentDashboard.tsx.md` first. That file explains the post-completion dashboard surface, the lock state for first-time learners, and the score-summary layout.
+Read `InternDashboard.tsx.md` first. That file explains the post-Pre-Test home surface, score standing, and the shared next-gate layout.
 
 ## Folder Flow
 ```mermaid
@@ -38,10 +38,10 @@ flowchart TD
 
 ## Documents By Logic
 ### Dashboard Surface
-- `StudentDashboard.tsx.md` - post-unlock learner dashboard surface with a locked-first-entry state.
+- `InternDashboard.tsx.md` - post-Pre-Test intern dashboard with required-module, Post-Test, and Studio gates.
 
 ### Assessment Gate
-- `LearningAssessmentPage.tsx.md` - renders pre-test/post-test submission surfaces and the adaptive answer flow for learner-facing assessment.
+- `LearningAssessmentPage.tsx.md` - renders Pre-Test/Post-Test submission surfaces and routes each completed checkpoint to the correct intern gate.
 - `BloomQuestionRenderer.tsx.md` - renders MCQ, identification, and always-open inline Studio theoretical questions from one mixed bank.
 - `AdaptiveAssessmentProvider.tsx.md` - tracks the adaptive Bloom level and active module set when mirrored.
 - `../marketing/patterns/PatternsLearnPage.tsx.md` - owns the learning-path gate that consumes server-backed pre-test evidence.

@@ -325,9 +325,7 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       lastUnlockedModuleId: row?.last_unlocked_module_id ?? null,
       theoryPassedModuleIds: parseStringArrayColumn(row?.theory_passed_module_ids),
       bloomMasteryByModule: parseBloomMasteryByModule(row?.bloom_mastery_by_module),
-      // Skip flow removed: skipping no longer exists, so any stored skip state is
-      // ignored and always reported as empty (legacy rows are cleared on write).
-      skippedModuleIds: [],
+      skippedModuleIds: parseStringArrayColumn(row?.skipped_module_ids),
     });
   } catch (err) {
     next(err);
@@ -351,9 +349,9 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     };
     const completedModuleIds = sanitizeModuleIdArray(body.completedModuleIds);
     const theoryPassedModuleIds = sanitizeModuleIdArray(body.theoryPassedModuleIds);
-    // Skip flow removed: never persist skips. Any incoming skippedModuleIds is
-    // ignored and the column is forced empty, clearing legacy skipped state.
-    const skippedModuleIds: string[] = [];
+    // Optional-module skips persist (only optional/proficient modules can be
+    // skipped; the frontend never skips required review modules).
+    const skippedModuleIds = sanitizeModuleIdArray(body.skippedModuleIds);
     const bloomMasteryByModule = sanitizeBloomMasteryByModule(body.bloomMasteryByModule);
     const lastUnlockedModuleId =
       typeof body.lastUnlockedModuleId === 'string' && body.lastUnlockedModuleId.length <= MAX_ID_LEN
@@ -378,18 +376,65 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     const triesSerialized = JSON.stringify(triesByModule);
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
 
-    db.prepare(
-      `INSERT INTO learning_progress (user_id, session_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, bloom_mastery_by_module, skipped_module_ids, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
-       ON CONFLICT(user_id, session_id) DO UPDATE SET
-         completed_module_ids      = excluded.completed_module_ids,
-         last_unlocked_module_id   = excluded.last_unlocked_module_id,
-         tries_by_module           = excluded.tries_by_module,
-         theory_passed_module_ids  = excluded.theory_passed_module_ids,
-         bloom_mastery_by_module   = excluded.bloom_mastery_by_module,
-         skipped_module_ids        = excluded.skipped_module_ids,
-         updated_at                = datetime('now')`,
-    ).run(req.user.id, sessionId, serialized, lastUnlockedModuleId, triesSerialized, theorySerialized, bloomSerialized, skippedSerialized);
+    // Legacy installations may carry the original PRIMARY KEY (user_id) from
+    // before session_id joined the key, so an ON CONFLICT(user_id, session_id)
+    // target fails with "ON CONFLICT clause does not match any PRIMARY KEY or
+    // UNIQUE constraint". Use an update-then-insert flow that never names a
+    // conflict target, so it works on both the current and legacy schemas.
+    // skipped_module_ids is persisted alongside (optional-module skips only).
+    const updateProgressExact = db.prepare(
+      `UPDATE learning_progress
+       SET completed_module_ids = ?, last_unlocked_module_id = ?, tries_by_module = ?,
+           theory_passed_module_ids = ?, bloom_mastery_by_module = ?, skipped_module_ids = ?, updated_at = datetime('now')
+       WHERE user_id = ? AND session_id IS ?`,
+    );
+    const insertProgress = db.prepare(
+      `INSERT OR IGNORE INTO learning_progress
+         (user_id, session_id, completed_module_ids, last_unlocked_module_id, tries_by_module, theory_passed_module_ids, bloom_mastery_by_module, skipped_module_ids, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`,
+    );
+    const updateProgressLegacy = db.prepare(
+      `UPDATE learning_progress
+       SET completed_module_ids = ?, last_unlocked_module_id = ?, tries_by_module = ?,
+           theory_passed_module_ids = ?, bloom_mastery_by_module = ?, skipped_module_ids = ?, updated_at = datetime('now')
+       WHERE user_id = ?`,
+    );
+
+    const exact = updateProgressExact.run(
+      serialized,
+      lastUnlockedModuleId,
+      triesSerialized,
+      theorySerialized,
+      bloomSerialized,
+      skippedSerialized,
+      req.user.id,
+      sessionId,
+    );
+    if (exact.changes === 0) {
+      const inserted = insertProgress.run(
+        req.user.id,
+        sessionId,
+        serialized,
+        lastUnlockedModuleId,
+        triesSerialized,
+        theorySerialized,
+        bloomSerialized,
+        skippedSerialized,
+      );
+      if (inserted.changes === 0) {
+        // INSERT OR IGNORE only no-ops here when a legacy unique/primary key
+        // omits session_id; update that row without a conflict target.
+        updateProgressLegacy.run(
+          serialized,
+          lastUnlockedModuleId,
+          triesSerialized,
+          theorySerialized,
+          bloomSerialized,
+          skippedSerialized,
+          req.user.id,
+        );
+      }
+    }
 
 
     // Mirror to Supabase (best-effort, keyed by email — D91). SQLite above is
@@ -443,21 +488,55 @@ router.put('/answers', jwtAuth, (req: Request, res: Response, next: NextFunction
     const answers = sanitizeAnswers(body.answers);
     const sessionId = typeof body.sessionId === 'string' ? body.sessionId : null;
 
-    // attempts is DB-authoritative: 1 on first insert, +1 each subsequent
-    // submit of this question.
-    const upsert = db.prepare(
-      `INSERT INTO learning_question_results
+    // Existing installations may have the legacy primary key
+    // (user_id,module_id,question_index) because session_id was added later.
+    // A four-column ON CONFLICT target fails on those databases. Use an
+    // update-then-insert flow that supports both schemas and preserves the
+    // first-attempt correctness flag.
+    const updateExact = db.prepare(
+      `UPDATE learning_question_results
+       SET selected_index = ?, is_correct = ?, attempts = attempts + 1,
+           updated_at = datetime('now')
+       WHERE user_id = ? AND session_id IS ? AND module_id = ? AND question_index = ?`,
+    );
+    const insertResult = db.prepare(
+      `INSERT OR IGNORE INTO learning_question_results
          (user_id, session_id, module_id, question_index, selected_index, is_correct, first_attempt_correct, attempts, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))
-       ON CONFLICT(user_id, session_id, module_id, question_index) DO UPDATE SET
-         selected_index = excluded.selected_index,
-         is_correct     = excluded.is_correct,
-         attempts       = learning_question_results.attempts + 1,
-         updated_at     = datetime('now')`,
+       VALUES (?, ?, ?, ?, ?, ?, ?, 1, datetime('now'))`,
+    );
+    const updateLegacy = db.prepare(
+      `UPDATE learning_question_results
+       SET selected_index = ?, is_correct = ?, attempts = attempts + 1,
+           updated_at = datetime('now')
+       WHERE user_id = ? AND module_id = ? AND question_index = ?`,
     );
     const tx = db.transaction((rows: typeof answers) => {
       for (const a of rows) {
-        upsert.run(req.user!.id, sessionId, moduleId, a.questionIndex, a.selectedIndex, a.isCorrect, a.isCorrect);
+        const exact = updateExact.run(
+          a.selectedIndex,
+          a.isCorrect,
+          req.user!.id,
+          sessionId,
+          moduleId,
+          a.questionIndex,
+        );
+        if (exact.changes > 0) continue;
+
+        const inserted = insertResult.run(
+          req.user!.id,
+          sessionId,
+          moduleId,
+          a.questionIndex,
+          a.selectedIndex,
+          a.isCorrect,
+          a.isCorrect,
+        );
+        if (inserted.changes > 0) continue;
+
+        // INSERT OR IGNORE can only reach here when a legacy unique/primary
+        // key omits session_id. Update that row without relying on a conflict
+        // target that the installed schema does not have.
+        updateLegacy.run(a.selectedIndex, a.isCorrect, req.user!.id, moduleId, a.questionIndex);
       }
     });
     tx(answers);

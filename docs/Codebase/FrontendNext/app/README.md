@@ -18,7 +18,7 @@ custom-router `useSurface()` switch.
 - Each surface is a thin route file that renders the existing component **client-side**
   (`ssr:false`); there is no SSR page rendering (CSR everywhere for smooth animations):
   `learn/`, `about/`, `mechanics/`, `patterns/` (+ `[slug]/`, `learn/`), `tour/`,
-  `docs/` (+ `full/`), `studio/` (+ aliases), `student-dashboard/`, `admin/`,
+  `docs/` (+ `full/`), `studio/` (+ aliases), `intern-dashboard/`, `admin/`,
   `scraper/`, `auth/callback/`, the `*/login` group, `onboarding/`, and
   `not-found.tsx` for retired/unknown paths.
 
