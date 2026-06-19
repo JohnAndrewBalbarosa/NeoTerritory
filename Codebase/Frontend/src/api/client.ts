@@ -73,7 +73,15 @@ export async function apiFetch<T>(url: string, options: RequestInit = {}, timeou
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem('nt_user');
     useAppStore.getState().clearAuth();
-    navigate('/');
+
+    // If the path starts with /admin, stay on /admin instead of kicking the user
+    // back to the public landing homepage (/).
+    const isAdminPath = typeof window !== 'undefined' &&
+      (window.location.pathname === '/admin' || window.location.pathname.startsWith('/admin/'));
+
+    if (!isAdminPath) {
+      navigate('/');
+    }
     throw new Error((data as { error?: string }).error || 'Session expired — please sign in.');
   }
 
