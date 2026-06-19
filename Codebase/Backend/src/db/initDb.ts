@@ -613,16 +613,19 @@ export function initDb(): void {
     /* column already exists — nothing to do */
   }
 
-  // Per-module learner "skip" decisions for optional (already-understood) modules
-  // (JSON array of module ids). This is the ONE piece of optional-review state that
-  // cannot be reconstructed from pre-test scores or completion: a learner who has
-  // explicitly dismissed an optional module. Optional/skipped modules never block
-  // required progression. Added after bloom_mastery_by_module; idempotent via the
-  // duplicate-column catch.
+  // Legacy "skip optional module" state. The skip flow has been removed — every
+  // module in the path must be completed — so the column is kept only for schema
+  // compatibility and is force-cleared to '[]' here. The write path also never
+  // sets it again. Idempotent: after the first run the UPDATE matches no rows.
   try {
     db.prepare(`ALTER TABLE learning_progress ADD COLUMN skipped_module_ids TEXT NOT NULL DEFAULT '[]'`).run();
   } catch {
     /* column already exists — nothing to do */
+  }
+  try {
+    db.prepare(`UPDATE learning_progress SET skipped_module_ids = '[]' WHERE skipped_module_ids IS NOT NULL AND skipped_module_ids != '[]'`).run();
+  } catch (err) {
+    console.warn('[initDb] clearing legacy skipped_module_ids skipped:', err);
   }
 
   // ── learning_question_results (per-question theoretical-exam results) ────

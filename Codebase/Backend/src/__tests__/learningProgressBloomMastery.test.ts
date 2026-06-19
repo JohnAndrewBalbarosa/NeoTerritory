@@ -138,9 +138,7 @@ describe('learning progress bloom mastery persistence', () => {
     expect(columns.some((column) => column.name === 'bloom_mastery_by_module')).toBe(true);
   });
 
-  it('persists explicit optional-module skip decisions (idempotent round-trip)', async () => {
-    // Dedicated user so the round-trip GET is unambiguous (the PK's NULL
-    // session_id means repeated null-session PUTs for one user are distinct rows).
+  it('never persists optional-module skip decisions (skip flow removed)', async () => {
     const info = db
       .prepare(`INSERT INTO users (username, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, datetime('now'))`)
       .run('skiplearner', 'skip@example.com', 'hash', 'user');
@@ -157,20 +155,17 @@ describe('learning progress bloom mastery persistence', () => {
         body: JSON.stringify({ completedModuleIds: [], lastUnlockedModuleId: null, sessionId: 'sess-1', skippedModuleIds }),
       });
 
+    // Even when a client sends skip ids, the server ignores them entirely.
     const first = await put(['module-x', 'module-y']);
     expect(first.status).toBe(200);
-    await expect(first.json()).resolves.toMatchObject({ ok: true, skippedModuleIds: ['module-x', 'module-y'] });
+    await expect(first.json()).resolves.toMatchObject({ ok: true, skippedModuleIds: [] });
 
-    // Re-sending the same skip set is idempotent — same upsert key, no duplication.
-    await put(['module-x', 'module-y']);
     const getRes = await fetch(`${baseUrl}/api/learning/progress`, { headers: { Authorization: `Bearer ${token}` } });
-    await expect(getRes.json()).resolves.toMatchObject({ skippedModuleIds: ['module-x', 'module-y'] });
+    await expect(getRes.json()).resolves.toMatchObject({ skippedModuleIds: [] });
 
+    // The column is forced empty — no module is ever marked skipped in the DB.
     const rows = db.prepare('SELECT skipped_module_ids FROM learning_progress WHERE user_id = ?').all(skipUserId) as Array<{ skipped_module_ids: string }>;
-    expect(rows.length).toBe(1); // idempotent — exactly one row
-    expect(JSON.parse(rows[0].skipped_module_ids)).toEqual(['module-x', 'module-y']);
-
-    const columns = db.prepare('PRAGMA table_info(learning_progress)').all() as Array<{ name: string }>;
-    expect(columns.some((column) => column.name === 'skipped_module_ids')).toBe(true);
+    expect(rows.length).toBe(1);
+    expect(JSON.parse(rows[0].skipped_module_ids)).toEqual([]);
   });
 });

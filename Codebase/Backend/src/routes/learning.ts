@@ -325,7 +325,9 @@ router.get('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
       lastUnlockedModuleId: row?.last_unlocked_module_id ?? null,
       theoryPassedModuleIds: parseStringArrayColumn(row?.theory_passed_module_ids),
       bloomMasteryByModule: parseBloomMasteryByModule(row?.bloom_mastery_by_module),
-      skippedModuleIds: parseStringArrayColumn(row?.skipped_module_ids),
+      // Skip flow removed: skipping no longer exists, so any stored skip state is
+      // ignored and always reported as empty (legacy rows are cleared on write).
+      skippedModuleIds: [],
     });
   } catch (err) {
     next(err);
@@ -349,7 +351,9 @@ router.put('/progress', jwtAuth, (req: Request, res: Response, next: NextFunctio
     };
     const completedModuleIds = sanitizeModuleIdArray(body.completedModuleIds);
     const theoryPassedModuleIds = sanitizeModuleIdArray(body.theoryPassedModuleIds);
-    const skippedModuleIds = sanitizeModuleIdArray(body.skippedModuleIds);
+    // Skip flow removed: never persist skips. Any incoming skippedModuleIds is
+    // ignored and the column is forced empty, clearing legacy skipped state.
+    const skippedModuleIds: string[] = [];
     const bloomMasteryByModule = sanitizeBloomMasteryByModule(body.bloomMasteryByModule);
     const lastUnlockedModuleId =
       typeof body.lastUnlockedModuleId === 'string' && body.lastUnlockedModuleId.length <= MAX_ID_LEN
