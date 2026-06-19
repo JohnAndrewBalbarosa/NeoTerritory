@@ -4,7 +4,7 @@ import os from 'os';
 import path from 'path';
 
 const tmpRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'neoterritory-planner-'));
-const dbPath = path.join(tmpRoot, 'planner.sqlite');
+const dbPath = path.join(tmpRoot, 'coursePlannerService.sqlite');
 
 const aiMocks = vi.hoisted(() => ({
   pickProvider: vi.fn(),
@@ -19,7 +19,7 @@ vi.mock('../db/_testSeed/devconUsers', () => ({
   ensureTestFolders: () => {},
 }));
 
-import { generateCoursePlan } from '../services/coursePlannerService';
+let generateCoursePlan: (typeof import('../services/coursePlannerService'))['generateCoursePlan'];
 
 const devconStudentPrompt = [
   'Devcon student module delegation needs one stable enrollment flow, but onboarding, practice, check-ins, and certification can vary by cohort.',
@@ -52,6 +52,8 @@ describe('Course planner validation', () => {
     process.env.DB_PATH = dbPath;
     const { initDb } = await import('../db/initDb');
     initDb();
+
+    ({ generateCoursePlan } = await import('../services/coursePlannerService'));
   });
 
   beforeEach(() => {
