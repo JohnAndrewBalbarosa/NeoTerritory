@@ -49,16 +49,16 @@ export interface TabDef {
 export const TABS: ReadonlyArray<TabDef> = [
   // Dashboard
   { id: 'overview',        label: 'Overview',        icon: IconLayers,      section: 'Dashboard' },
-  // Project Learning (normal PM workflow): course plan, intern records, formal
-  // assessments, and the in-module learning-process analytics (process metrics
-  // that support the learning workflow — distinct from formal results).
-  { id: 'courses',              label: 'Course Plan', icon: IconBook,       section: 'Project Learning' },
+  // Project Learning (normal PM workflow): intern records, formal assessments,
+  // and the in-module learning-process analytics (process metrics that support
+  // the learning workflow — distinct from formal results).
   { id: 'intern-records',       label: 'Interns',    icon: IconShield,      section: 'Project Learning' },
   { id: 'assessments',          label: 'Assessments', icon: IconClipboard,  section: 'Project Learning' },
   { id: 'instructor-students', label: 'In-Module Analytics', icon: IconLayers, section: 'Project Learning' },
   // Learning Content: real content/question MANAGEMENT (not the analytics views).
-  // 'modules' tab removed — its unique inspection columns (Content authored flag,
-  // In-Module Questions count, Practical pattern name) were folded into CoursesTab.
+  // Course Plan (the consolidated module roster + AI planner) lives here; the old
+  // 'modules' tab was removed (its inspection columns were folded into CoursesTab).
+  { id: 'courses',              label: 'Course Plan', icon: IconBook,       section: 'Learning Content' },
   { id: 'question-bank',        label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
   // Secondary Tools (de-emphasized, collapsible): code analysis + research/admin.
   { id: 'runs',            label: 'Code Analysis',   icon: IconLayers,      section: 'Secondary Tools' },

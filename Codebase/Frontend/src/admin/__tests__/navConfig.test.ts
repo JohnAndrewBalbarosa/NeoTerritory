@@ -38,7 +38,8 @@ describe('PM dashboard navConfig (SOP-1)', () => {
 
     const coursePlan = TABS.find((t) => t.id === 'courses');
     expect(coursePlan?.label).toBe('Course Plan');
-    expect(coursePlan?.section).toBe('Project Learning');
+    // Course Plan now lives under Learning Content (moved out of Project Learning).
+    expect(coursePlan?.section).toBe('Learning Content');
 
     // In-Module Analytics now lives under Project Learning (moved out of
     // Secondary Tools) so the PM's learning-process view sits in the primary flow.
@@ -50,16 +51,18 @@ describe('PM dashboard navConfig (SOP-1)', () => {
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-students');
 
     // Learning Content holds the real content/question MANAGEMENT tabs — NOT the
-    // analytics ids, which must not appear as content tabs. The 'modules' tab was
-    // removed (its inspection columns were folded into CoursesTab); only
-    // 'question-bank' remains under Learning Content.
-    expect(SECTION_CHILDREN['Learning Content']).toEqual(['question-bank']);
+    // analytics ids, which must not appear as content tabs. Course Plan now lives
+    // here (moved from Project Learning); the 'modules' tab was removed (its
+    // inspection columns were folded into CoursesTab), leaving Course Plan +
+    // Question Bank under Learning Content.
+    expect(SECTION_CHILDREN['Learning Content']).toEqual(['courses', 'question-bank']);
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('modules');
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-modules');
     expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-questions');
 
-    // Assessments sits under Project Learning.
-    expect(SECTION_CHILDREN['Project Learning']).toEqual(expect.arrayContaining(['courses', 'intern-records', 'assessments']));
+    // Assessments + intern records sit under Project Learning (Course Plan moved out).
+    expect(SECTION_CHILDREN['Project Learning']).toEqual(expect.arrayContaining(['intern-records', 'assessments']));
+    expect(SECTION_CHILDREN['Project Learning']).not.toContain('courses');
   });
 
   it('keeps detail tabs out of the sidebar (opened via state, not URL)', () => {
