@@ -11,6 +11,7 @@
 
 export const ORIGINAL_DEV_EMAILS: ReadonlyArray<string> = [
   'jbalbarosa15@gmail.com',
+  'balbarosa31@gmail.com',
   // TODO: replace with Miryl's confirmed Google account.
   'mirylzapanza@gmail.com',
   // TODO: replace with Josephine Santander's confirmed Google account.

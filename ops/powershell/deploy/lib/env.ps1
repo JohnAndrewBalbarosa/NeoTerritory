@@ -9,7 +9,13 @@ function Import-DeployEnv {
   Get-Content $EnvFile | ForEach-Object {
     if ($_ -match '^\s*#' -or $_ -notmatch '=') { return }
     $k,$v = $_ -split '=',2
-    Set-Item -Path "Env:$($k.Trim())" -Value $v.Trim()
+    $val = $v.Trim()
+    if ($val.StartsWith('$HOME')) {
+      $val = $val.Replace('$HOME', $env:USERPROFILE)
+    } elseif ($val.StartsWith('~/')) {
+      $val = $val.Replace('~', $env:USERPROFILE)
+    }
+    Set-Item -Path "Env:$($k.Trim())" -Value $val
   }
 
   # Reject publishable / anon Supabase keys - RLS will silently drop every INSERT.

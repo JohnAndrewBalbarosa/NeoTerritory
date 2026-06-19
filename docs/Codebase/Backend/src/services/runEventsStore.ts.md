@@ -27,5 +27,6 @@ flowchart TD
 
 ## Acceptance Checks
 - Duplicate wrapper events do not emit twice.
+- Distinct wrapper ids with the same phase, pattern id, and class name still emit as separate events.
 - A second active run for the same user is still blocked.
 - Replays stay bounded by the existing TTL.

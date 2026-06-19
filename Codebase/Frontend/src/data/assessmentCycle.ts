@@ -10,7 +10,7 @@
 // never paired by "latest". All functions are pure (cycle ids are injected) so
 // they are deterministic and unit-testable.
 
-import { normalizeLearningModules, type LearningModule } from './learningModules';
+import { normalizeLearningModules, type LearningModule, isFoundationModule } from './learningModules';
 import { buildFormalAssessment, type LearningAssessmentQuestion } from './learningAssessments';
 import type { LearningAssessmentAttemptRaw, LearningAssessmentAnswerRaw } from '../types/api';
 
@@ -47,7 +47,7 @@ export interface CycleFailure {
 export interface PretestCycle {
   ok: true;
   cycleId: string;
-  planId: string;
+  planId: string | null;
   scope: string[];
   questions: LearningAssessmentQuestion[];
 }
@@ -78,15 +78,29 @@ function formComplete(module: LearningModule | undefined, form: 'A' | 'B'): bool
 // Start a formal pre-test cycle. cycleId is injected by the caller (e.g.
 // crypto.randomUUID()) so this stays pure. Validates an active plan, approved
 // modules, complete Form A AND Form B, and zero A/B id overlap, then builds
-// Form A for the approved set.
+// Form A for the approved set. If no active plan exists, it falls back to using
+// the required baseline foundation modules.
 export function startPretestCycle(opts: {
   plan: LearningPlan | null | undefined;
   modules: ReadonlyArray<LearningModule>;
   cycleId: string;
 }): PretestCycle | CycleFailure {
   const { plan, modules, cycleId } = opts;
-  if (!plan || plan.status !== 'active') return { ok: false, error: 'NO_ACTIVE_PLAN' };
-  const scope = approvedPlanModuleIds(plan);
+  
+  let scope: string[];
+  let planId: string | null = null;
+
+  if (plan && plan.status === 'active') {
+    scope = approvedPlanModuleIds(plan);
+    planId = plan.id;
+  } else {
+    // Required modules fallback when there is no active course plan:
+    // load all modules in the foundations category that have complete forms.
+    scope = normalizeLearningModules(modules)
+      .filter((m) => isFoundationModule(m) && formComplete(m, 'A') && formComplete(m, 'B'))
+      .map((m) => m.id);
+  }
+
   if (scope.length === 0) return { ok: false, error: 'NO_APPROVED_MODULES' };
 
   const byId = new Map(normalizeLearningModules(modules).map((m) => [m.id, m]));
@@ -105,7 +119,7 @@ export function startPretestCycle(opts: {
   if (overlap.length) return { ok: false, error: 'FORM_OVERLAP', modules: overlap };
 
   const questions = buildFormalAssessment(modules, 'pretest', scope);
-  return { ok: true, cycleId, planId: plan.id, scope, questions };
+  return { ok: true, cycleId, planId, scope, questions };
 }
 
 // Recover the EXACT module set frozen by a cycle's pre-test, from that

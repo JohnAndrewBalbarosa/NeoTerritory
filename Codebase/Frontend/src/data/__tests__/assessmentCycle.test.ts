@@ -62,10 +62,21 @@ describe('assessment cycle — scope from active plan', () => {
     expect(new Set(result.questions.map((q) => q.moduleId))).toEqual(new Set(['creational-builder']));
   });
 
-  it('3. a missing active plan returns an explicit error and does NOT fall back', () => {
-    expect(startPretestCycle({ plan: null, modules: LEARNING_MODULES, cycleId: 'c' })).toMatchObject({ ok: false, error: 'NO_ACTIVE_PLAN' });
+  it('3. a missing or non-active plan falls back to required foundation modules', () => {
+    const resultNull = startPretestCycle({ plan: null, modules: LEARNING_MODULES, cycleId: 'c1' });
+    expect(resultNull.ok).toBe(true);
+    if (resultNull.ok) {
+      expect(resultNull.scope).toContain('foundations-what-is-pattern');
+      expect(resultNull.planId).toBeNull();
+    }
+
     const draft = { id: 'p', status: 'draft', modules: PILOT.map((moduleId) => ({ moduleId, selectionStatus: 'approved' as const })) } as LearningPlan;
-    expect(startPretestCycle({ plan: draft, modules: LEARNING_MODULES, cycleId: 'c' })).toMatchObject({ ok: false, error: 'NO_ACTIVE_PLAN' });
+    const resultDraft = startPretestCycle({ plan: draft, modules: LEARNING_MODULES, cycleId: 'c2' });
+    expect(resultDraft.ok).toBe(true);
+    if (resultDraft.ok) {
+      expect(resultDraft.scope).toContain('foundations-what-is-pattern');
+      expect(resultDraft.planId).toBeNull();
+    }
   });
 
   it('4. incomplete Form A returns an explicit configuration error', () => {

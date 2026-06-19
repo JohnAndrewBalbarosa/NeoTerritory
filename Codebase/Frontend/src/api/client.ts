@@ -729,6 +729,8 @@ export interface GdbTestResult {
   patternName: string;
   className: string;
   wrapperId?: string;
+  wrapperOwnerKey?: string | null;
+  wrapperSharesDocker?: boolean;
   phase: GdbTestPhase;
   passed: boolean;
   expected: string;

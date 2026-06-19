@@ -23,8 +23,9 @@ import { logEvent } from '../services/logService';
 import { mirrorRow } from '../services/supabaseLogger';
 import {
   runSubmissionCompile, runPatternUnitTest, runStaticAnalysis,
-  isTestRunnerEnabled, getDisableReason, TestResult
+  isTestRunnerEnabled, getDisableReason
 } from '../services/testRunnerService';
+import type { TestPhase, TestResult } from '../services/testRunnerService';
 import {
   reserveRun, findActiveRunFor, getRun,
   pushPhaseEvent, markRunDone, subscribeRun, RunEvent
@@ -1513,7 +1514,82 @@ function pickMethodName(p: DetectedPatternResult, candidates: string[]): string 
 // subscriber bug cannot break the rest of the run.
 type PhaseEmitter = (result: TestResult) => void;
 
-async function dispatchPatternTests(
+export interface WrapperExecutionPlan {
+  patternId: string;
+  patternName: string;
+  className: string;
+  wrapperId: string;
+  wrapperOwnerKey: string | null;
+  wrapperSharesDocker: boolean;
+  sourcePattern: DetectedPatternResult;
+}
+
+interface WrapperExecutionOptions {
+  userId?: number;
+}
+
+function resolveWrapperOwnership(options: WrapperExecutionOptions = {}): {
+  wrapperOwnerKey: string | null;
+  wrapperSharesDocker: boolean;
+} {
+  if (options.userId === undefined) {
+    return { wrapperOwnerKey: null, wrapperSharesDocker: false };
+  }
+  return {
+    wrapperOwnerKey: `user:${options.userId}`,
+    wrapperSharesDocker: true,
+  };
+}
+
+export function buildWrapperExecutionPlans(
+  patterns: DetectedPatternResult[],
+  options: WrapperExecutionOptions = {}
+): WrapperExecutionPlan[] {
+  const ownership = resolveWrapperOwnership(options);
+  return patterns
+    .filter((p) => p.className)
+    .map((p) => ({
+      patternId: p.patternId,
+      patternName: p.patternName,
+      className: p.className!,
+      wrapperId: generateWrapperId(p.patternId, p.className!),
+      ...ownership,
+      sourcePattern: p,
+    }));
+}
+
+function runnerErrorMessage(phase: TestPhase, err: unknown): string {
+  const detail = err instanceof Error && err.message
+    ? err.message
+    : 'unknown runner error';
+  return `Test runner failed during ${phase}: ${detail}`;
+}
+
+function buildWrapperFailureResult(
+  plan: WrapperExecutionPlan,
+  phase: TestPhase,
+  message: string,
+  verdict: TestResult['verdict'] = 'sandbox_disabled'
+): TestResult {
+  return {
+    patternId: plan.patternId,
+    patternName: plan.patternName,
+    className: plan.className,
+    wrapperId: plan.wrapperId,
+    wrapperOwnerKey: plan.wrapperOwnerKey,
+    wrapperSharesDocker: plan.wrapperSharesDocker,
+    phase,
+    passed: false,
+    expected: phase === 'static_analysis' ? 'no error-level findings' : 'pass',
+    actual: '',
+    exitCode: 0,
+    durationMs: 0,
+    verdict,
+    message
+  };
+}
+
+export async function dispatchPatternTests(
   patterns: DetectedPatternResult[],
   fullSource: string,
   files?: Array<{ name: string; sourceText: string }>,
@@ -1525,29 +1601,54 @@ async function dispatchPatternTests(
     ? (r) => { try { onPhase(r); } catch { /* ignore subscriber errors */ } }
     : () => { /* no-op */ };
 
-  const eligible = patterns.filter(p => p.className);
+  const eligible = buildWrapperExecutionPlans(patterns, { userId });
   if (eligible.length === 0) return [];
 
   const wrapperResults = await Promise.all(eligible.map(async (p) => {
-    const className = p.className!;
-    const wrapperId = generateWrapperId(p.patternId, className);
+    const className = p.className;
+    const wrapperId = p.wrapperId;
+    const sourcePattern = p.sourcePattern;
+    const classText = sourcePattern.classText || '';
     const wrapperInput = {
       patternId: p.patternId,
       patternName: p.patternName,
       className,
-      classText: p.classText!,
+      classText,
       fullSource,
       files,
       userId,
       wrapperId,
+      wrapperOwnerKey: p.wrapperOwnerKey,
+      wrapperSharesDocker: p.wrapperSharesDocker,
       stdin
     };
 
-    const staticResult = await runStaticAnalysis(wrapperInput);
-    safeEmit(staticResult);
+    const rows: TestResult[] = [];
+    const emit = (result: TestResult): TestResult => {
+      rows.push(result);
+      safeEmit(result);
+      return result;
+    };
 
-    const compileResult = await runSubmissionCompile(wrapperInput);
-    safeEmit(compileResult);
+    try {
+      emit(await runStaticAnalysis(wrapperInput));
+    } catch (err) {
+      const message = runnerErrorMessage('static_analysis', err);
+      emit(buildWrapperFailureResult(p, 'static_analysis', message));
+      emit(buildWrapperFailureResult(p, 'compile_run', `Skipped - static analysis did not complete. ${message}`, 'skipped'));
+      emit(buildWrapperFailureResult(p, 'unit_test', `Skipped - static analysis did not complete. ${message}`, 'skipped'));
+      return rows;
+    }
+
+    let compileResult: TestResult;
+    try {
+      compileResult = emit(await runSubmissionCompile(wrapperInput));
+    } catch (err) {
+      const message = runnerErrorMessage('compile_run', err);
+      emit(buildWrapperFailureResult(p, 'compile_run', message));
+      emit(buildWrapperFailureResult(p, 'unit_test', `Skipped - compile phase did not complete. ${message}`, 'skipped'));
+      return rows;
+    }
 
     if (!compileResult.passed) {
       const skipped: TestResult = {
@@ -1555,6 +1656,8 @@ async function dispatchPatternTests(
         patternName: p.patternName,
         className,
         wrapperId,
+        wrapperOwnerKey: p.wrapperOwnerKey,
+        wrapperSharesDocker: p.wrapperSharesDocker,
         phase: 'unit_test',
         passed: false,
         expected: 'pass',
@@ -1564,24 +1667,27 @@ async function dispatchPatternTests(
         verdict: 'skipped',
         message: 'Skipped - your class did not compile or did not exit cleanly on its own.'
       };
-      safeEmit(skipped);
-      return [staticResult, compileResult, skipped];
+      emit(skipped);
+      return rows;
     }
 
-    const fallbackTarget = (p.unitTestTargets || [])[0]?.function_name;
-    const unitResult = await runPatternUnitTest({
-      ...wrapperInput,
-      forwardMethod: pickMethodName(p, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
-      factoryFn: pickMethodName(p, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
-      terminator: pickMethodName(p, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
-      instanceAccessor: detectInstanceAccessor(p.classText!, p.className!),
-      componentBase: 'Component',
-      realBase: 'Subject',
-      targetBase: 'Target',
-      targetMethod: fallbackTarget
-    });
-    safeEmit(unitResult);
-    return [staticResult, compileResult, unitResult];
+    const fallbackTarget = (sourcePattern.unitTestTargets || [])[0]?.function_name;
+    try {
+      emit(await runPatternUnitTest({
+        ...wrapperInput,
+        forwardMethod: pickMethodName(sourcePattern, ['read', 'execute', 'request', 'render', 'process', 'handle']) || fallbackTarget,
+        factoryFn: pickMethodName(sourcePattern, ['create', 'make', 'build', 'produce', 'newInstance']) || fallbackTarget,
+        terminator: pickMethodName(sourcePattern, ['build', 'finalize', 'done', 'complete', 'produce']) || 'build',
+        instanceAccessor: detectInstanceAccessor(classText, sourcePattern.className || className),
+        componentBase: 'Component',
+        realBase: 'Subject',
+        targetBase: 'Target',
+        targetMethod: fallbackTarget
+      }));
+    } catch (err) {
+      emit(buildWrapperFailureResult(p, 'unit_test', runnerErrorMessage('unit_test', err)));
+    }
+    return rows;
   }));
 
   return wrapperResults.reduce((acc, row) => acc.concat(row), [] as TestResult[]);
@@ -1767,13 +1873,16 @@ async function handleRunTests(
         // eslint-disable-next-line no-console
         console.error('[run-tests] background dispatch failed', err);
         const synth: TestResult[] = [];
-        for (const p of taggedPatterns) {
-          if (!p.className) continue;
+        const syntheticPlans = buildWrapperExecutionPlans(taggedPatterns, { userId: req.user?.id });
+        for (const p of syntheticPlans) {
           for (const phase of ['compile_run', 'unit_test'] as const) {
             const r: TestResult = {
               patternId: p.patternId,
               patternName: p.patternName,
               className: p.className,
+              wrapperId: p.wrapperId,
+              wrapperOwnerKey: p.wrapperOwnerKey,
+              wrapperSharesDocker: p.wrapperSharesDocker,
               phase,
               passed: false,
               expected: 'pass',

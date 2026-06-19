@@ -42,6 +42,8 @@ export interface TestResult {
   patternName: string;
   className: string;
   wrapperId?: string;
+  wrapperOwnerKey?: string | null;
+  wrapperSharesDocker?: boolean;
   phase: TestPhase;
   passed: boolean;
   expected: string;
@@ -196,6 +198,10 @@ interface RunInputs {
   // phases for the same wrapper share this id so the UI and run stream
   // can keep per-question instances separate even when they share one pod.
   wrapperId?: string;
+  // Ownership policy for Docker reuse. Wrappers owned by the same user share
+  // that user's pod; ownerless wrappers stay on the local sandbox path.
+  wrapperOwnerKey?: string | null;
+  wrapperSharesDocker?: boolean;
   // Optional stdin stream forwarded verbatim to the binary on the
   // run-binary phase (compile is unaffected). Newlines act as the user's
   // Enter key.
@@ -316,6 +322,12 @@ interface PhaseInputs {
   binaryName: string;
 }
 
+export function binaryNameForWrapper(baseName: string, wrapperId?: string): string {
+  if (!wrapperId) return baseName;
+  const suffix = wrapperId.replace(/[^a-z0-9_-]+/gi, '_').slice(-64);
+  return suffix ? `${baseName}_${suffix}` : baseName;
+}
+
 async function runPhase(
   phase: TestPhase,
   input: RunInputs,
@@ -327,6 +339,8 @@ async function runPhase(
     patternName: input.patternName,
     className: input.className,
     wrapperId: input.wrapperId,
+    wrapperOwnerKey: input.wrapperOwnerKey ?? null,
+    wrapperSharesDocker: input.wrapperSharesDocker === true,
     phase,
     expected: 'pass',
     actual: '',
@@ -372,7 +386,7 @@ async function runPhase(
     // local sandbox immediately and kick off ensurePod in the background
     // so the *next* request gets the pod.
     let pod: import('./podManager').PodHandle | null = null;
-    if (input.userId !== undefined) {
+    if (input.wrapperSharesDocker === true && input.userId !== undefined) {
       try {
         const pm = await import('./podManager');
         if (pm.isPodModeEnabled()) {
@@ -560,6 +574,8 @@ export async function runPatternUnitTest(input: RunInputs): Promise<TestResult> 
       patternName: input.patternName,
       className:   input.className,
       wrapperId:   input.wrapperId,
+      wrapperOwnerKey: input.wrapperOwnerKey ?? null,
+      wrapperSharesDocker: input.wrapperSharesDocker === true,
       phase:       'unit_test',
       passed:      false,
       expected:    'pass',
@@ -572,7 +588,7 @@ export async function runPatternUnitTest(input: RunInputs): Promise<TestResult> 
   }
   return runPhase('unit_test', input, {
     driverSource: fillTemplate(fs.readFileSync(tplPath, 'utf8'), input),
-    binaryName:   'unit_driver'
+    binaryName:   binaryNameForWrapper('unit_driver', input.wrapperId)
   });
 }
 
@@ -582,7 +598,7 @@ export async function runPatternUnitTest(input: RunInputs): Promise<TestResult> 
 export async function runSubmissionCompile(input: RunInputs): Promise<TestResult> {
   return runPhase('compile_run', input, {
     driverSource: COMPILE_RUN_DRIVER,
-    binaryName:   'user_main'
+    binaryName:   binaryNameForWrapper('user_main', input.wrapperId)
   });
 }
 
@@ -652,6 +668,8 @@ export async function runStaticAnalysis(input: RunInputs): Promise<TestResult> {
     patternName: input.patternName,
     className: input.className,
     wrapperId: input.wrapperId,
+    wrapperOwnerKey: input.wrapperOwnerKey ?? null,
+    wrapperSharesDocker: input.wrapperSharesDocker === true,
     phase: 'static_analysis',
     passed: false,
     expected: 'no error-level findings',
@@ -743,6 +761,8 @@ export async function runPatternTest(input: RunInputs): Promise<TestResult[]> {
     patternName: input.patternName,
     className: input.className,
     wrapperId: input.wrapperId,
+    wrapperOwnerKey: input.wrapperOwnerKey ?? null,
+    wrapperSharesDocker: input.wrapperSharesDocker === true,
     phase,
     passed: false,
     expected: 'pass',
