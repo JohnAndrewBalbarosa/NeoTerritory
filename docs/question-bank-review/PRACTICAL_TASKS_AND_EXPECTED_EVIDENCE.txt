@@ -1,0 +1,739 @@
+CODINEO QUESTION BANK REVIEW
+Generated: 2026-06-19T09:25:57.402Z
+Total Learning Modules: 40
+Total Formal-Eligible Modules: 40
+Modules with Authored Form A+B: 5
+Total Form A Questions: 18
+Total Form B Questions: 18
+Total In-Module Conceptual Questions: 240
+Total Practical Tasks: 25
+Total Questions and Tasks: 301
+Validation Errors: 0
+Validation Warnings: 76
+
+================================================================
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Abstract Factory
+MODULE ID: creational-abstract-factory
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: creational-abstract-factory:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Abstract Factory pattern. The analyser passes you when the response tags include Abstract Factory, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Abstract Factory pattern
+* Structural evidence consistent with Abstract Factory
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Abstract Factory
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Abstract Factory
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Builder
+MODULE ID: creational-builder
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: creational-builder:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Builder pattern. The analyser passes you when the response tags include Builder, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Builder pattern
+* Structural evidence consistent with Builder
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Builder
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Builder
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Factory Method
+MODULE ID: creational-factory-method
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: creational-factory-method:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Factory Method pattern. The analyser passes you when the response tags include Factory, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Factory pattern
+* Structural evidence consistent with Factory
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Factory
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Factory
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Method Chaining
+MODULE ID: creational-method-chaining
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: creational-method-chaining:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Method Chaining pattern. The analyser passes you when the response tags include Method Chaining, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Method Chaining pattern
+* Structural evidence consistent with Method Chaining
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Method Chaining
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Method Chaining
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Prototype
+MODULE ID: creational-prototype
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: creational-prototype:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Prototype pattern. The analyser passes you when the response tags include Prototype, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Prototype pattern
+* Structural evidence consistent with Prototype
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Prototype
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Prototype
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Singleton
+MODULE ID: creational-singleton
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: creational-singleton:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Singleton pattern. The analyser passes you when the response tags include Singleton, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Singleton pattern
+* Structural evidence consistent with Singleton
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Singleton
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Singleton
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Adapter
+MODULE ID: structural-adapter
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-adapter:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Adapter pattern. The analyser passes you when the response tags include Adapter, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Adapter pattern
+* Structural evidence consistent with Adapter
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Adapter
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Adapter
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Bridge
+MODULE ID: structural-bridge
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-bridge:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Bridge pattern. The analyser passes you when the response tags include Bridge, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Bridge pattern
+* Structural evidence consistent with Bridge
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Bridge
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Bridge
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Composite
+MODULE ID: structural-composite
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-composite:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Composite pattern. The analyser passes you when the response tags include Composite, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Composite pattern
+* Structural evidence consistent with Composite
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Composite
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Composite
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Decorator
+MODULE ID: structural-decorator
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-decorator:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Decorator pattern. The analyser passes you when the response tags include Decorator, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Decorator pattern
+* Structural evidence consistent with Decorator
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Decorator
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Decorator
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Facade
+MODULE ID: structural-facade
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-facade:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Facade pattern. The analyser passes you when the response tags include Facade, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Facade pattern
+* Structural evidence consistent with Facade
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Facade
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Facade
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Flyweight
+MODULE ID: structural-flyweight
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-flyweight:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Flyweight pattern. The analyser passes you when the response tags include Flyweight, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Flyweight pattern
+* Structural evidence consistent with Flyweight
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Flyweight
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Flyweight
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Proxy
+MODULE ID: structural-proxy
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: structural-proxy:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Proxy pattern. The analyser passes you when the response tags include Proxy, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Proxy pattern
+* Structural evidence consistent with Proxy
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Proxy
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Proxy
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Chain of Responsibility
+MODULE ID: behavioural-chain-of-responsibility
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-chain-of-responsibility:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Chain of Responsibility pattern. The analyser passes you when the response tags include Chain of Responsibility, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Chain of Responsibility pattern
+* Structural evidence consistent with Chain of Responsibility
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Chain of Responsibility
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Chain of Responsibility
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Command
+MODULE ID: behavioural-command
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-command:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Command pattern. The analyser passes you when the response tags include Command, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Command pattern
+* Structural evidence consistent with Command
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Command
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Command
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Interpreter
+MODULE ID: behavioural-interpreter
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-interpreter:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Interpreter pattern. The analyser passes you when the response tags include Interpreter, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Interpreter pattern
+* Structural evidence consistent with Interpreter
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Interpreter
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Interpreter
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Iterator
+MODULE ID: behavioural-iterator
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-iterator:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Iterator pattern. The analyser passes you when the response tags include Iterator, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Iterator pattern
+* Structural evidence consistent with Iterator
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Iterator
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Iterator
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Mediator
+MODULE ID: behavioural-mediator
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-mediator:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Mediator pattern. The analyser passes you when the response tags include Mediator, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Mediator pattern
+* Structural evidence consistent with Mediator
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Mediator
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Mediator
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Memento
+MODULE ID: behavioural-memento
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-memento:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Memento pattern. The analyser passes you when the response tags include Memento, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Memento pattern
+* Structural evidence consistent with Memento
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Memento
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Memento
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Observer
+MODULE ID: behavioural-observer
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-observer:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Observer pattern. The analyser passes you when the response tags include Observer, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Observer pattern
+* Structural evidence consistent with Observer
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Observer
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Observer
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: State
+MODULE ID: behavioural-state
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-state:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the State pattern. The analyser passes you when the response tags include State, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the State pattern
+* Structural evidence consistent with State
+
+VALIDATION CRITERIA:
+* Studio analyzer detects State
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — State
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Strategy
+MODULE ID: behavioural-strategy
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-strategy:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Strategy pattern. The analyser passes you when the response tags include Strategy Interface, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Strategy Interface pattern
+* Structural evidence consistent with Strategy Interface
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Strategy Interface
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Strategy Interface
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Template Method
+MODULE ID: behavioural-template-method
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-template-method:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Template Method pattern. The analyser passes you when the response tags include Template Method, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Template Method pattern
+* Structural evidence consistent with Template Method
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Template Method
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Template Method
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Visitor
+MODULE ID: behavioural-visitor
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: behavioural-visitor:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the Visitor pattern. The analyser passes you when the response tags include Visitor, even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the Visitor pattern
+* Structural evidence consistent with Visitor
+
+VALIDATION CRITERIA:
+* Studio analyzer detects Visitor
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — Visitor
+
+------------------------------------------------
+
+================================================================
+CATEGORY: IDIOMS
+MODULE: PIMPL (Pointer to Implementation)
+MODULE ID: idioms-pimpl
+ASSESSMENT TYPE: Practical C++ Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Task ID: idioms-pimpl:CREATE
+Assessment Type: Practical C++ Assessment
+Bloom Level: Create
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+TASK:
+Write a small C++ class (or two) that demonstrates the PIMPL (Pointer to Implementation) pattern. The analyser passes you when the response tags include PIMPL (Pointer to Implementation), even if other patterns also fire on the same class.
+
+EXPECTED PATTERN EVIDENCE:
+* Analyzer tags the PIMPL (Pointer to Implementation) pattern
+* Structural evidence consistent with PIMPL (Pointer to Implementation)
+
+VALIDATION CRITERIA:
+* Studio analyzer detects PIMPL (Pointer to Implementation)
+
+SOURCE REFERENCES:
+* CodiNeo Microservice pattern catalog
+* Gamma et al. (1994) — PIMPL (Pointer to Implementation)
+
+------------------------------------------------

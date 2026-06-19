@@ -1,0 +1,4222 @@
+CODINEO QUESTION BANK REVIEW
+Generated: 2026-06-19T09:25:57.402Z
+Total Learning Modules: 40
+Total Formal-Eligible Modules: 40
+Modules with Authored Form A+B: 5
+Total Form A Questions: 18
+Total Form B Questions: 18
+Total In-Module Conceptual Questions: 240
+Total Practical Tasks: 25
+Total Questions and Tasks: 301
+Validation Errors: 0
+Validation Warnings: 76
+
+================================================================
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Ambiguity is built in to design patterns
+MODULE ID: foundations-ambiguity
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: Create
+================================================================Question 1
+Question ID: foundations-ambiguity:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Ambiguity?
+
+OPTIONS:
+A. Ambiguity gives a named, reusable way to solve the module's design problem.
+B. Ambiguity is only a compiler optimization flag.
+C. Ambiguity means every class must inherit from one base class.
+D. Ambiguity replaces the need to read code structure.
+
+CORRECT ANSWER: A. Ambiguity gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-ambiguity:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Ambiguity matters?
+
+OPTIONS:
+A. Ambiguity gives a named, reusable way to solve the module's design problem.
+B. Ambiguity is only a compiler optimization flag.
+C. Ambiguity means every class must inherit from one base class.
+D. Ambiguity replaces the need to read code structure.
+
+CORRECT ANSWER: A. Ambiguity gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-ambiguity:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Which pair genuinely shares a structural shape?
+
+OPTIONS:
+A. Builder and Method Chaining, which both rely on `return *this`.
+B. Singleton and Observer, which share no structure.
+C. Factory and Iterator, which are identical.
+D. Adapter and Singleton, which both restrict instances.
+
+CORRECT ANSWER: A. Builder and Method Chaining, which both rely on `return *this`.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-ambiguity:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-ambiguity:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq
+
+QUESTION:
+When two patterns fit the same class, the detector should…
+
+OPTIONS:
+A. Silently pick one and hide the other.
+B. Surface both and ask the human — ambiguity is information, not failure.
+C. Reject the class entirely.
+D. Rewrite the source to remove ambiguity.
+
+CORRECT ANSWER: B. Surface both and ask the human — ambiguity is information, not failure.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-ambiguity:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Common beginner mistakes
+MODULE ID: foundations-beginner-mistakes
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-beginner-mistakes:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Beginner Mistakes?
+
+OPTIONS:
+A. Beginner Mistakes gives a named, reusable way to solve the module's design problem.
+B. Beginner Mistakes is only a compiler optimization flag.
+C. Beginner Mistakes means every class must inherit from one base class.
+D. Beginner Mistakes replaces the need to read code structure.
+
+CORRECT ANSWER: A. Beginner Mistakes gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-beginner-mistakes:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Beginner Mistakes matters?
+
+OPTIONS:
+A. Beginner Mistakes gives a named, reusable way to solve the module's design problem.
+B. Beginner Mistakes is only a compiler optimization flag.
+C. Beginner Mistakes means every class must inherit from one base class.
+D. Beginner Mistakes replaces the need to read code structure.
+
+CORRECT ANSWER: A. Beginner Mistakes gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-beginner-mistakes:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-beginner-mistakes:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why is making classes depend heavily on each other a trap?
+
+OPTIONS:
+A. Tight coupling is always faster at runtime.
+B. Loose connections are easier to change and maintain; tight coupling resists change.
+C. The compiler rejects loosely coupled code.
+D. Coupling has no effect on maintenance.
+
+CORRECT ANSWER: B. Loose connections are easier to change and maintain; tight coupling resists change.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-beginner-mistakes:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Beginner Mistakes implementation?
+
+OPTIONS:
+A. It should show the beginner mistakes intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the beginner mistakes intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-beginner-mistakes:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: mcq
+
+QUESTION:
+What is the most common beginner mistake with design patterns?
+
+OPTIONS:
+A. Refusing to use any patterns at all.
+B. Forcing a pattern onto a problem that does not need it ("pattern fever").
+C. Always preferring composition over inheritance.
+D. Reading too many books.
+
+CORRECT ANSWER: B. Forcing a pattern onto a problem that does not need it ("pattern fever").
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Three main pattern categories
+MODULE ID: foundations-categories
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-categories:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Categories?
+
+OPTIONS:
+A. Categories gives a named, reusable way to solve the module's design problem.
+B. Categories is only a compiler optimization flag.
+C. Categories means every class must inherit from one base class.
+D. Categories replaces the need to read code structure.
+
+CORRECT ANSWER: A. Categories gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-categories:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+Which sentence correctly maps the three main families?
+
+OPTIONS:
+A. Creational connects classes, Structural decides communication, Behavioural makes objects.
+B. Creational makes objects, Structural connects them, Behavioural decides how they communicate.
+C. All three families do the same thing under different names.
+D. Structural is a subset of Behavioural in modern C++.
+
+CORRECT ANSWER: B. Creational makes objects, Structural connects them, Behavioural decides how they communicate.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-categories:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-categories:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why does this site treat Idioms as a fourth bucket alongside the three GoF families?
+
+OPTIONS:
+A. Because the Gang of Four defined four families.
+B. Because modern C++ idioms (PIMPL, Method Chaining) are not GoF but appear often enough to detect.
+C. Because every idiom is also a Creational pattern.
+D. Because idioms replace Structural patterns.
+
+CORRECT ANSWER: B. Because modern C++ idioms (PIMPL, Method Chaining) are not GoF but appear often enough to detect.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-categories:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Categories implementation?
+
+OPTIONS:
+A. It should show the categories intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the categories intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-categories:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Understanding software structure
+MODULE ID: foundations-code-structure
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-code-structure:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Code Structure?
+
+OPTIONS:
+A. Code Structure gives a named, reusable way to solve the module's design problem.
+B. Code Structure is only a compiler optimization flag.
+C. Code Structure means every class must inherit from one base class.
+D. Code Structure replaces the need to read code structure.
+
+CORRECT ANSWER: A. Code Structure gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-code-structure:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Code Structure matters?
+
+OPTIONS:
+A. Code Structure gives a named, reusable way to solve the module's design problem.
+B. Code Structure is only a compiler optimization flag.
+C. Code Structure means every class must inherit from one base class.
+D. Code Structure replaces the need to read code structure.
+
+CORRECT ANSWER: A. Code Structure gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-code-structure:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-code-structure:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why do pattern detectors walk an AST instead of grep-searching source text?
+
+OPTIONS:
+A. Because grep is too slow.
+B. Because code is a tree; patterns are shapes in that tree, and matching needs structural context.
+C. Because AST parsers are required by ISO C++.
+D. Because text search is forbidden on Linux.
+
+CORRECT ANSWER: B. Because code is a tree; patterns are shapes in that tree, and matching needs structural context.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-code-structure:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Code Structure implementation?
+
+OPTIONS:
+A. It should show the code structure intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the code structure intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-code-structure:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: The connotative-definition rule
+MODULE ID: foundations-connotative-definition
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-connotative-definition:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Connotative Definition?
+
+OPTIONS:
+A. Connotative Definition gives a named, reusable way to solve the module's design problem.
+B. Connotative Definition is only a compiler optimization flag.
+C. Connotative Definition means every class must inherit from one base class.
+D. Connotative Definition replaces the need to read code structure.
+
+CORRECT ANSWER: A. Connotative Definition gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-connotative-definition:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Connotative Definition matters?
+
+OPTIONS:
+A. Connotative Definition gives a named, reusable way to solve the module's design problem.
+B. Connotative Definition is only a compiler optimization flag.
+C. Connotative Definition means every class must inherit from one base class.
+D. Connotative Definition replaces the need to read code structure.
+
+CORRECT ANSWER: A. Connotative Definition gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-connotative-definition:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+How does adding descriptions change a definition (connotation)?
+
+OPTIONS:
+A. It widens what counts, so more things qualify.
+B. It narrows what counts, so the meaning gets more specific.
+C. It has no effect on specificity.
+D. It only changes the name, not the meaning.
+
+CORRECT ANSWER: B. It narrows what counts, so the meaning gets more specific.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-connotative-definition:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+What kinds of tokens are most useful for distinguishing one pattern from another?
+
+OPTIONS:
+A. Any single keyword that appears in the class.
+B. Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.
+C. Comments only.
+D. Function lengths.
+
+CORRECT ANSWER: B. Multi-token combos and stdlib symbols — single keywords are noise, combos are signal.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-connotative-definition:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Connotative Definition implementation?
+
+OPTIONS:
+A. It should show the connotative definition intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the connotative definition intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-connotative-definition:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Patterns vary by team and codebase
+MODULE ID: foundations-context-variation
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-context-variation:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Context Variation?
+
+OPTIONS:
+A. Context Variation gives a named, reusable way to solve the module's design problem.
+B. Context Variation is only a compiler optimization flag.
+C. Context Variation means every class must inherit from one base class.
+D. Context Variation replaces the need to read code structure.
+
+CORRECT ANSWER: A. Context Variation gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-context-variation:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+How does the analyser handle team-specific naming conventions?
+
+OPTIONS:
+A. It refuses to match anything that does not follow Gang-of-Four naming.
+B. It standardises on language structure for matching; team conventions are layered on top for culture.
+C. It auto-renames the source.
+D. It only matches identifiers spelled in PascalCase.
+
+CORRECT ANSWER: B. It standardises on language structure for matching; team conventions are layered on top for culture.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-context-variation:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-context-variation:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why does a stable, structure-based rule matter for CodiNeo specifically?
+
+OPTIONS:
+A. Because detection feeds automatic unit-test generation, which needs a consistent rule.
+B. Because it makes the UI prettier.
+C. Because the C++ standard requires it.
+D. Because team naming is always identical.
+
+CORRECT ANSWER: A. Because detection feeds automatic unit-test generation, which needs a consistent rule.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-context-variation:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Context Variation implementation?
+
+OPTIONS:
+A. It should show the context variation intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the context variation intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-context-variation:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Program to an interface
+MODULE ID: foundations-interface-principle
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply
+NON-APPLICABLE LEVELS: Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-interface-principle:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Interface Principle?
+
+OPTIONS:
+A. Interface Principle gives a named, reusable way to solve the module's design problem.
+B. Interface Principle is only a compiler optimization flag.
+C. Interface Principle means every class must inherit from one base class.
+D. Interface Principle replaces the need to read code structure.
+
+CORRECT ANSWER: A. Interface Principle gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-interface-principle:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Interface Principle matters?
+
+OPTIONS:
+A. Interface Principle gives a named, reusable way to solve the module's design problem.
+B. Interface Principle is only a compiler optimization flag.
+C. Interface Principle means every class must inherit from one base class.
+D. Interface Principle replaces the need to read code structure.
+
+CORRECT ANSWER: A. Interface Principle gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-interface-principle:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-interface-principle:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Which patterns rest directly on this principle?
+
+OPTIONS:
+A. Strategy, Factory, Adapter, and Bridge.
+B. Only Singleton.
+C. No patterns — it is unrelated to patterns.
+D. Only Creational patterns.
+
+CORRECT ANSWER: A. Strategy, Factory, Adapter, and Bridge.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-interface-principle:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Interface Principle implementation?
+
+OPTIONS:
+A. It should show the interface principle intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the interface principle intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-interface-principle:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: mcq
+
+QUESTION:
+"Program to an interface, not an implementation" means…
+
+OPTIONS:
+A. Always use C++ pure virtual classes.
+B. Code should depend on what something does, not which concrete class is doing it.
+C. Replace every class with a template.
+D. Avoid writing concrete classes entirely.
+
+CORRECT ANSWER: B. Code should depend on what something does, not which concrete class is doing it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: OOP foundations
+MODULE ID: foundations-oop
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-oop:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Oop?
+
+OPTIONS:
+A. Oop gives a named, reusable way to solve the module's design problem.
+B. Oop is only a compiler optimization flag.
+C. Oop means every class must inherit from one base class.
+D. Oop replaces the need to read code structure.
+
+CORRECT ANSWER: A. Oop gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-oop:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Oop matters?
+
+OPTIONS:
+A. Oop gives a named, reusable way to solve the module's design problem.
+B. Oop is only a compiler optimization flag.
+C. Oop means every class must inherit from one base class.
+D. Oop replaces the need to read code structure.
+
+CORRECT ANSWER: A. Oop gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-oop:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Which definition matches polymorphism?
+
+OPTIONS:
+A. Hiding the internal details of a class.
+B. A single action that behaves differently depending on the actual object type.
+C. The blueprint that describes how objects are built.
+D. Reusing behaviour from a base class.
+
+CORRECT ANSWER: B. A single action that behaves differently depending on the actual object type.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-oop:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-oop:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Oop implementation?
+
+OPTIONS:
+A. It should show the oop intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the oop intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-oop:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: mcq
+
+QUESTION:
+Why are design patterns described in terms of classes and objects?
+
+OPTIONS:
+A. Because patterns predate procedural programming.
+B. Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.
+C. Because every language must use OOP.
+D. Because the C++ compiler enforces patterns natively.
+
+CORRECT ANSWER: B. Because patterns formalise object-oriented design choices — encapsulation, inheritance, polymorphism — into reusable shapes.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Post-Foundations open questions
+MODULE ID: foundations-postrequisite
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-postrequisite:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Postrequisite?
+
+OPTIONS:
+A. Postrequisite gives a named, reusable way to solve the module's design problem.
+B. Postrequisite is only a compiler optimization flag.
+C. Postrequisite means every class must inherit from one base class.
+D. Postrequisite replaces the need to read code structure.
+
+CORRECT ANSWER: A. Postrequisite gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-postrequisite:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+After Foundations, what kind of question is the catalog NOT trying to answer?
+
+OPTIONS:
+A. Which structural shape this class matches.
+B. Whether the chosen pattern fits the team’s organisational conventions and goals.
+C. Which stdlib symbols are present.
+D. Whether the class declares a constructor.
+
+CORRECT ANSWER: B. Whether the chosen pattern fits the team’s organisational conventions and goals.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-postrequisite:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+The post-Foundations questions are intentionally…
+
+OPTIONS:
+A. Closed, with one correct answer the analyser grades.
+B. Open-ended — every working developer should have an opinion, but there is no single right answer.
+C. About C++ syntax only.
+D. Graded by this module before you continue.
+
+CORRECT ANSWER: B. Open-ended — every working developer should have an opinion, but there is no single right answer.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-postrequisite:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-postrequisite:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Postrequisite implementation?
+
+OPTIONS:
+A. It should show the postrequisite intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the postrequisite intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-postrequisite:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Design patterns in real software
+MODULE ID: foundations-real-software
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-real-software:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Real Software?
+
+OPTIONS:
+A. Real Software gives a named, reusable way to solve the module's design problem.
+B. Real Software is only a compiler optimization flag.
+C. Real Software means every class must inherit from one base class.
+D. Real Software replaces the need to read code structure.
+
+CORRECT ANSWER: A. Real Software gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-real-software:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Real Software matters?
+
+OPTIONS:
+A. Real Software gives a named, reusable way to solve the module's design problem.
+B. Real Software is only a compiler optimization flag.
+C. Real Software means every class must inherit from one base class.
+D. Real Software replaces the need to read code structure.
+
+CORRECT ANSWER: A. Real Software gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-real-software:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Which pairing of system and pattern is plausible?
+
+OPTIONS:
+A. A compiler using Visitor to walk its syntax tree.
+B. A compiler that cannot use any pattern.
+C. An operating system that forbids Command.
+D. A UI framework that never observes state.
+
+CORRECT ANSWER: A. A compiler using Visitor to walk its syntax tree.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-real-software:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why does recognising patterns matter in real-world codebases?
+
+OPTIONS:
+A. Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.
+B. Patterns are mandated by every linter.
+C. They make compilation faster.
+D. They eliminate the need for code review.
+
+CORRECT ANSWER: A. Documentation drifts; the recognisable shape survives and lets you read unfamiliar code fast.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-real-software:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Real Software implementation?
+
+OPTIONS:
+A. It should show the real software intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the real software intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-real-software:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: When two patterns look identical
+MODULE ID: foundations-same-structure
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Analyze
+NON-APPLICABLE LEVELS: Apply, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-same-structure:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+Two classes have the exact same class diagram. What is the ONLY thing that can tell them apart?
+
+OPTIONS:
+A. Nothing — identical structure means they are the same pattern.
+B. The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.
+C. Whichever class name sorts first alphabetically.
+D. The number of lines in each class.
+
+CORRECT ANSWER: B. The intent, which shows up in the lexemes, collaborators, and call-site shape, not in the diagram.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-same-structure:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Same Structure matters?
+
+OPTIONS:
+A. Same Structure gives a named, reusable way to solve the module's design problem.
+B. Same Structure is only a compiler optimization flag.
+C. Same Structure means every class must inherit from one base class.
+D. Same Structure replaces the need to read code structure.
+
+CORRECT ANSWER: A. Same Structure gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-same-structure:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+This class also holds a member of the same interface and forwards to it. Adapter or Proxy?
+
+OPTIONS:
+A. Adapter — it adapts HiResImage to the Image interface.
+B. Proxy — it controls access to the real subject (here, lazy creation).
+C. Decorator — it adds a visible responsibility to draw().
+D. Strategy — the caller injects the algorithm.
+
+CORRECT ANSWER: B. Proxy — it controls access to the real subject (here, lazy creation).
+
+------------------------------------------------
+Question 4
+Question ID: foundations-same-structure:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Both Strategy and State are a context holding a pointer to a polymorphic interface and delegating to it — identical UML. Which pattern is the class below?
+
+OPTIONS:
+A. Strategy — the algorithm is chosen once by the client.
+B. State — the object transitions its own held member at runtime.
+C. Adapter — it translates one interface to another.
+D. Proxy — it controls access to a real subject.
+
+CORRECT ANSWER: B. State — the object transitions its own held member at runtime.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-same-structure:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Same Structure implementation?
+
+OPTIONS:
+A. It should show the same structure intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the same structure intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-same-structure:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: mcq
+
+QUESTION:
+Same context-holds-a-polymorphic-pointer skeleton as the previous question. Which pattern is THIS class?
+
+OPTIONS:
+A. State — the object drives its own transitions.
+B. Strategy — the client injects/sets the policy; the object never self-swaps it.
+C. Decorator — it wraps a component and adds behaviour.
+D. Builder — it assembles a product step by step.
+
+CORRECT ANSWER: B. Strategy — the client injects/sets the policy; the object never self-swaps it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Each pattern has a structural rule
+MODULE ID: foundations-structural-rules
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Analyze
+NON-APPLICABLE LEVELS: Apply, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-structural-rules:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+In the matcher’s vocabulary, what does "must-have" mean for a pattern?
+
+OPTIONS:
+A. Every listed token must appear at least once.
+B. At least one combo from the must-have set must fire for the class to match.
+C. The class must contain the pattern name as a comment.
+D. The class must inherit from a sealed base.
+
+CORRECT ANSWER: B. At least one combo from the must-have set must fire for the class to match.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-structural-rules:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Structural Rules matters?
+
+OPTIONS:
+A. Structural Rules gives a named, reusable way to solve the module's design problem.
+B. Structural Rules is only a compiler optimization flag.
+C. Structural Rules means every class must inherit from one base class.
+D. Structural Rules replaces the need to read code structure.
+
+CORRECT ANSWER: A. Structural Rules gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-structural-rules:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-structural-rules:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-structural-rules:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Structural Rules implementation?
+
+OPTIONS:
+A. It should show the structural rules intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the structural rules intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-structural-rules:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: What is a design pattern?
+MODULE ID: foundations-what-is-pattern
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-what-is-pattern:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in What Is Pattern?
+
+OPTIONS:
+A. What Is Pattern gives a named, reusable way to solve the module's design problem.
+B. What Is Pattern is only a compiler optimization flag.
+C. What Is Pattern means every class must inherit from one base class.
+D. What Is Pattern replaces the need to read code structure.
+
+CORRECT ANSWER: A. What Is Pattern gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-what-is-pattern:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why What Is Pattern matters?
+
+OPTIONS:
+A. What Is Pattern gives a named, reusable way to solve the module's design problem.
+B. What Is Pattern is only a compiler optimization flag.
+C. What Is Pattern means every class must inherit from one base class.
+D. What Is Pattern replaces the need to read code structure.
+
+CORRECT ANSWER: A. What Is Pattern gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-what-is-pattern:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-what-is-pattern:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why does naming a recurring shape help a team?
+
+OPTIONS:
+A. One word replaces a paragraph of structural explanation.
+B. It makes the compiler emit faster code.
+C. It forces every class to inherit from a base.
+D. It guarantees the design is correct.
+
+CORRECT ANSWER: A. One word replaces a paragraph of structural explanation.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-what-is-pattern:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a What Is Pattern implementation?
+
+OPTIONS:
+A. It should show the what is pattern intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the what is pattern intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-what-is-pattern:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: mcq
+
+QUESTION:
+Which best describes a design pattern?
+
+OPTIONS:
+A. A copy-pasteable code library you import.
+B. A named structural arrangement that solves a recurring design problem.
+C. A specific framework like Spring or React.
+D. A unit test template applied to every class.
+
+CORRECT ANSWER: B. A named structural arrangement that solves a recurring design problem.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Why design patterns matter
+MODULE ID: foundations-why-matters
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-why-matters:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What is the practical value of knowing pattern names?
+
+OPTIONS:
+A. They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.
+B. They guarantee the code will be bug-free.
+C. They replace the need for testing.
+D. They are required by the C++ standard.
+
+CORRECT ANSWER: A. They make reviewers and tools share one vocabulary so a recognised shape replaces a paragraph of explanation.
+
+------------------------------------------------
+Question 2
+Question ID: foundations-why-matters:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Why Matters matters?
+
+OPTIONS:
+A. Why Matters gives a named, reusable way to solve the module's design problem.
+B. Why Matters is only a compiler optimization flag.
+C. Why Matters means every class must inherit from one base class.
+D. Why Matters replaces the need to read code structure.
+
+CORRECT ANSWER: A. Why Matters gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: foundations-why-matters:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+How do patterns affect a beginner joining a team?
+
+OPTIONS:
+A. They slow onboarding because there is more to memorise.
+B. A recognised pattern name lets a reviewer read intent in seconds, so the beginner ships faster.
+C. They make code reviews unnecessary.
+D. They only matter to architects, not new hires.
+
+CORRECT ANSWER: B. A recognised pattern name lets a reviewer read intent in seconds, so the beginner ships faster.
+
+------------------------------------------------
+Question 4
+Question ID: foundations-why-matters:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: foundations-why-matters:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Why Matters implementation?
+
+OPTIONS:
+A. It should show the why matters intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the why matters intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: foundations-why-matters:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Name the design idea a learner should create for this module.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Abstract Factory
+MODULE ID: creational-abstract-factory
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-abstract-factory:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Abstract Factory?
+
+OPTIONS:
+A. Abstract Factory gives a named, reusable way to solve the module's design problem.
+B. Abstract Factory is only a compiler optimization flag.
+C. Abstract Factory means every class must inherit from one base class.
+D. Abstract Factory replaces the need to read code structure.
+
+CORRECT ANSWER: A. Abstract Factory gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: creational-abstract-factory:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Abstract Factory provide?
+
+OPTIONS:
+A. An interface for creating families of related objects without specifying their concrete classes.
+B. A single global instance.
+C. A way to traverse a collection.
+D. A wrapper that changes an interface.
+
+CORRECT ANSWER: A. An interface for creating families of related objects without specifying their concrete classes.
+
+------------------------------------------------
+Question 3
+Question ID: creational-abstract-factory:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+How does Abstract Factory differ from Factory Method?
+
+OPTIONS:
+A. Abstract Factory creates families of products; Factory Method creates one product via subclassing.
+B. They are identical.
+C. Abstract Factory guarantees one instance.
+D. Factory Method composes trees.
+
+CORRECT ANSWER: A. Abstract Factory creates families of products; Factory Method creates one product via subclassing.
+
+------------------------------------------------
+Question 4
+Question ID: creational-abstract-factory:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: creational-abstract-factory:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Abstract Factory implementation?
+
+OPTIONS:
+A. It should show the abstract factory intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the abstract factory intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: creational-abstract-factory:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Abstract Factory pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Builder
+MODULE ID: creational-builder
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-builder:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Builder?
+
+OPTIONS:
+A. Builder gives a named, reusable way to solve the module's design problem.
+B. Builder is only a compiler optimization flag.
+C. Builder means every class must inherit from one base class.
+D. Builder replaces the need to read code structure.
+
+CORRECT ANSWER: A. Builder gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: creational-builder:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Builder matters?
+
+OPTIONS:
+A. Builder gives a named, reusable way to solve the module's design problem.
+B. Builder is only a compiler optimization flag.
+C. Builder means every class must inherit from one base class.
+D. Builder replaces the need to read code structure.
+
+CORRECT ANSWER: A. Builder gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: creational-builder:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification
+
+QUESTION:
+What is the standard name for the final method that returns the constructed object?
+
+------------------------------------------------
+Question 4
+Question ID: creational-builder:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: creational-builder:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Builder implementation?
+
+OPTIONS:
+A. It should show the builder intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the builder intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: creational-builder:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a "UserProfileBuilder" that allows setting a username and age using fluent methods, and provides a "build()" method that returns the final "UserProfile".
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Factory Method
+MODULE ID: creational-factory-method
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-factory-method:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Factory Method?
+
+OPTIONS:
+A. Factory Method gives a named, reusable way to solve the module's design problem.
+B. Factory Method is only a compiler optimization flag.
+C. Factory Method means every class must inherit from one base class.
+D. Factory Method replaces the need to read code structure.
+
+CORRECT ANSWER: A. Factory Method gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: creational-factory-method:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Factory Method do?
+
+OPTIONS:
+A. Defines an interface for creating an object but lets subclasses decide which class to instantiate.
+B. Guarantees one instance of a class.
+C. Composes objects into tree structures.
+D. Adds behaviour to an object dynamically.
+
+CORRECT ANSWER: A. Defines an interface for creating an object but lets subclasses decide which class to instantiate.
+
+------------------------------------------------
+Question 3
+Question ID: creational-factory-method:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Which principle does Factory Method rest on?
+
+OPTIONS:
+A. Program to an interface — callers depend on the product abstraction, not a concrete class.
+B. Always inherit, never compose.
+C. Hide every constructor.
+D. Mutate global state.
+
+CORRECT ANSWER: A. Program to an interface — callers depend on the product abstraction, not a concrete class.
+
+------------------------------------------------
+Question 4
+Question ID: creational-factory-method:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: creational-factory-method:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Factory Method implementation?
+
+OPTIONS:
+A. It should show the factory method intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the factory method intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: creational-factory-method:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a "Logistics" base class with a pure virtual "createTransport()" method (the Factory Method). Then create a "RoadLogistics" subclass that overrides it to return a "Truck" object. This defers instantiation to the subclass.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Method Chaining
+MODULE ID: creational-method-chaining
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-method-chaining:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What is Method Chaining (a fluent idiom)?
+
+OPTIONS:
+A. Methods return the receiver (`*this`) so calls chain into one expression.
+B. A class guarantees a single instance.
+C. An algorithm is selected at runtime via an interface.
+D. A request is wrapped as an object.
+
+CORRECT ANSWER: A. Methods return the receiver (`*this`) so calls chain into one expression.
+
+------------------------------------------------
+Question 2
+Question ID: creational-method-chaining:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Method Chaining matters?
+
+OPTIONS:
+A. Method Chaining gives a named, reusable way to solve the module's design problem.
+B. Method Chaining is only a compiler optimization flag.
+C. Method Chaining means every class must inherit from one base class.
+D. Method Chaining replaces the need to read code structure.
+
+CORRECT ANSWER: A. Method Chaining gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: creational-method-chaining:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: creational-method-chaining:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: creational-method-chaining:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Method Chaining implementation?
+
+OPTIONS:
+A. It should show the method chaining intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the method chaining intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: creational-method-chaining:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Method Chaining pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Prototype
+MODULE ID: creational-prototype
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-prototype:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Prototype?
+
+OPTIONS:
+A. Prototype gives a named, reusable way to solve the module's design problem.
+B. Prototype is only a compiler optimization flag.
+C. Prototype means every class must inherit from one base class.
+D. Prototype replaces the need to read code structure.
+
+CORRECT ANSWER: A. Prototype gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: creational-prototype:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Prototype do?
+
+OPTIONS:
+A. Creates new objects by cloning an existing instance (the prototype).
+B. Restricts a class to one instance.
+C. Selects an algorithm at runtime.
+D. Wraps a request as an object.
+
+CORRECT ANSWER: A. Creates new objects by cloning an existing instance (the prototype).
+
+------------------------------------------------
+Question 3
+Question ID: creational-prototype:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: creational-prototype:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: creational-prototype:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Prototype implementation?
+
+OPTIONS:
+A. It should show the prototype intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the prototype intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: creational-prototype:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Prototype pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Singleton
+MODULE ID: creational-singleton
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-singleton:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What is the primary purpose of the Singleton pattern?
+
+OPTIONS:
+A. To allow multiple instances of a class.
+B. To ensure a class has only one instance and provides a global point of access.
+C. To clone existing objects.
+D. To separate construction from representation.
+
+CORRECT ANSWER: B. To ensure a class has only one instance and provides a global point of access.
+
+------------------------------------------------
+Question 2
+Question ID: creational-singleton:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+Which C++ mechanism is most critical for enforcing the Singleton constraint?
+
+OPTIONS:
+A. Using "virtual" keywords.
+B. Making the constructor private or deleted.
+C. Inheriting from a base class.
+D. Using "friend" classes.
+
+CORRECT ANSWER: B. Making the constructor private or deleted.
+
+------------------------------------------------
+Question 3
+Question ID: creational-singleton:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification
+
+QUESTION:
+List the three structural elements required to implement this pattern in C++.
+
+------------------------------------------------
+Question 4
+Question ID: creational-singleton:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification
+
+QUESTION:
+What is the two-word term for this deferred creation?
+
+------------------------------------------------
+Question 5
+Question ID: creational-singleton:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq
+
+QUESTION:
+What is a major disadvantage of overusing Singletons in a large codebase?
+
+OPTIONS:
+A. It makes the code too fast.
+B. It introduces global state, making unit testing and dependency tracking difficult.
+C. It requires too much memory.
+D. It forces all classes to be static.
+
+CORRECT ANSWER: B. It introduces global state, making unit testing and dependency tracking difficult.
+
+------------------------------------------------
+Question 6
+Question ID: creational-singleton:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a class that ensures only one instance of "DatabaseStore" can exist and provides a static method to access it. Ensure the constructor is not accessible from outside.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Adapter
+MODULE ID: structural-adapter
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-adapter:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What is the primary purpose of the Adapter pattern?
+
+OPTIONS:
+A. To convert the interface of a class into another interface clients expect.
+B. To ensure a class has only one instance.
+C. To add responsibilities to an object dynamically.
+D. To define a family of algorithms.
+
+CORRECT ANSWER: A. To convert the interface of a class into another interface clients expect.
+
+------------------------------------------------
+Question 2
+Question ID: structural-adapter:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What is the difference between a Class Adapter and an Object Adapter?
+
+OPTIONS:
+A. Class Adapter uses multiple inheritance; Object Adapter uses composition.
+B. Object Adapter uses multiple inheritance; Class Adapter uses composition.
+C. There is no difference in C++.
+D. Class Adapter is only for creational patterns.
+
+CORRECT ANSWER: A. Class Adapter uses multiple inheritance; Object Adapter uses composition.
+
+------------------------------------------------
+Question 3
+Question ID: structural-adapter:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification
+
+QUESTION:
+What are the two primary techniques used to implement this bridge between interfaces?
+
+------------------------------------------------
+Question 4
+Question ID: structural-adapter:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification
+
+QUESTION:
+Which pattern does this implementation now resemble?
+
+------------------------------------------------
+Question 5
+Question ID: structural-adapter:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq
+
+QUESTION:
+When should you prefer Adapter over Bridge?
+
+OPTIONS:
+A. When you want to make existing, unrelated classes work together without changing their source.
+B. When you are designing a new system from scratch and want to decouple abstraction from implementation.
+C. When you need to restrict a class to one instance.
+D. When you need to clone objects.
+
+CORRECT ANSWER: A. When you want to make existing, unrelated classes work together without changing their source.
+
+------------------------------------------------
+Question 6
+Question ID: structural-adapter:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a wrapper that makes a "LegacyJSONParser" (which has a parseLegacy() method) work with a modern "IDataService" interface (which expects a process() method).
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Bridge
+MODULE ID: structural-bridge
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-bridge:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Bridge?
+
+OPTIONS:
+A. Bridge gives a named, reusable way to solve the module's design problem.
+B. Bridge is only a compiler optimization flag.
+C. Bridge means every class must inherit from one base class.
+D. Bridge replaces the need to read code structure.
+
+CORRECT ANSWER: A. Bridge gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: structural-bridge:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Bridge matters?
+
+OPTIONS:
+A. Bridge gives a named, reusable way to solve the module's design problem.
+B. Bridge is only a compiler optimization flag.
+C. Bridge means every class must inherit from one base class.
+D. Bridge replaces the need to read code structure.
+
+CORRECT ANSWER: A. Bridge gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: structural-bridge:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: structural-bridge:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: structural-bridge:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Bridge implementation?
+
+OPTIONS:
+A. It should show the bridge intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the bridge intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-bridge:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Bridge pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Composite
+MODULE ID: structural-composite
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-composite:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What is the key structural feature of Composite?
+
+OPTIONS:
+A. A component interface that both leaves and containers implement; containers hold a collection of components.
+B. A private constructor and static accessor.
+C. A `return *this` chain.
+D. A forward-declared Impl.
+
+CORRECT ANSWER: A. A component interface that both leaves and containers implement; containers hold a collection of components.
+
+------------------------------------------------
+Question 2
+Question ID: structural-composite:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Composite do?
+
+OPTIONS:
+A. Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.
+B. Restricts a class to one instance.
+C. Converts one interface to another.
+D. Selects an algorithm at runtime.
+
+CORRECT ANSWER: A. Composes objects into tree structures and lets clients treat individual objects and compositions uniformly.
+
+------------------------------------------------
+Question 3
+Question ID: structural-composite:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: structural-composite:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: structural-composite:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Composite implementation?
+
+OPTIONS:
+A. It should show the composite intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the composite intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-composite:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Composite pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Decorator
+MODULE ID: structural-decorator
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-decorator:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Decorator?
+
+OPTIONS:
+A. Decorator gives a named, reusable way to solve the module's design problem.
+B. Decorator is only a compiler optimization flag.
+C. Decorator means every class must inherit from one base class.
+D. Decorator replaces the need to read code structure.
+
+CORRECT ANSWER: A. Decorator gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: structural-decorator:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Decorator do?
+
+OPTIONS:
+A. Attaches additional responsibilities to an object dynamically, as a flexible alternative to subclassing.
+B. Restricts a class to one instance.
+C. Picks a subclass to instantiate.
+D. Separates an abstraction from its implementation.
+
+CORRECT ANSWER: A. Attaches additional responsibilities to an object dynamically, as a flexible alternative to subclassing.
+
+------------------------------------------------
+Question 3
+Question ID: structural-decorator:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+How does Decorator differ from a plain Adapter?
+
+OPTIONS:
+A. Decorator keeps the same interface and adds behaviour; Adapter changes the interface.
+B. Decorator guarantees a single instance.
+C. Decorator clones objects.
+D. They are identical.
+
+CORRECT ANSWER: A. Decorator keeps the same interface and adds behaviour; Adapter changes the interface.
+
+------------------------------------------------
+Question 4
+Question ID: structural-decorator:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: structural-decorator:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Decorator implementation?
+
+OPTIONS:
+A. It should show the decorator intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the decorator intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-decorator:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Decorator pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Facade
+MODULE ID: structural-facade
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-facade:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Facade?
+
+OPTIONS:
+A. Facade gives a named, reusable way to solve the module's design problem.
+B. Facade is only a compiler optimization flag.
+C. Facade means every class must inherit from one base class.
+D. Facade replaces the need to read code structure.
+
+CORRECT ANSWER: A. Facade gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: structural-facade:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Facade do?
+
+OPTIONS:
+A. Provides a unified, simpler interface to a set of interfaces in a subsystem.
+B. Guarantees one instance.
+C. Adds behaviour dynamically.
+D. Clones objects.
+
+CORRECT ANSWER: A. Provides a unified, simpler interface to a set of interfaces in a subsystem.
+
+------------------------------------------------
+Question 3
+Question ID: structural-facade:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Does using a Facade hide the subsystem entirely?
+
+OPTIONS:
+A. No — it offers a simpler entry point but clients can still use the subsystem directly if needed.
+B. Yes — the subsystem becomes inaccessible.
+C. It deletes the subsystem.
+D. It restricts the subsystem to one instance.
+
+CORRECT ANSWER: A. No — it offers a simpler entry point but clients can still use the subsystem directly if needed.
+
+------------------------------------------------
+Question 4
+Question ID: structural-facade:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: structural-facade:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Facade implementation?
+
+OPTIONS:
+A. It should show the facade intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the facade intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-facade:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Facade pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Flyweight
+MODULE ID: structural-flyweight
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-flyweight:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Flyweight?
+
+OPTIONS:
+A. Flyweight gives a named, reusable way to solve the module's design problem.
+B. Flyweight is only a compiler optimization flag.
+C. Flyweight means every class must inherit from one base class.
+D. Flyweight replaces the need to read code structure.
+
+CORRECT ANSWER: A. Flyweight gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: structural-flyweight:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Flyweight do?
+
+OPTIONS:
+A. Uses sharing to support large numbers of fine-grained objects efficiently by separating intrinsic and extrinsic state.
+B. Guarantees one instance of a class.
+C. Converts one interface to another.
+D. Builds an object step by step.
+
+CORRECT ANSWER: A. Uses sharing to support large numbers of fine-grained objects efficiently by separating intrinsic and extrinsic state.
+
+------------------------------------------------
+Question 3
+Question ID: structural-flyweight:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+What is "intrinsic" state in Flyweight?
+
+OPTIONS:
+A. State shared and stored in the flyweight, independent of context.
+B. State unique to each use, passed in by the client.
+C. The single global instance.
+D. The wrapped subject.
+
+CORRECT ANSWER: A. State shared and stored in the flyweight, independent of context.
+
+------------------------------------------------
+Question 4
+Question ID: structural-flyweight:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: structural-flyweight:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Flyweight implementation?
+
+OPTIONS:
+A. It should show the flyweight intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the flyweight intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-flyweight:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Flyweight pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Proxy
+MODULE ID: structural-proxy
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: structural-proxy:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Proxy?
+
+OPTIONS:
+A. Proxy gives a named, reusable way to solve the module's design problem.
+B. Proxy is only a compiler optimization flag.
+C. Proxy means every class must inherit from one base class.
+D. Proxy replaces the need to read code structure.
+
+CORRECT ANSWER: A. Proxy gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: structural-proxy:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Proxy do?
+
+OPTIONS:
+A. Provides a surrogate or placeholder for another object to control access to it.
+B. Defines a family of related products.
+C. Notifies observers of state changes.
+D. Builds an object step by step.
+
+CORRECT ANSWER: A. Provides a surrogate or placeholder for another object to control access to it.
+
+------------------------------------------------
+Question 3
+Question ID: structural-proxy:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: structural-proxy:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+What distinguishes Proxy from Decorator structurally in intent?
+
+OPTIONS:
+A. Proxy controls access to the same interface; Decorator adds behaviour to it.
+B. Proxy changes the interface; Decorator restricts instances.
+C. Proxy clones; Decorator traverses.
+D. There is no difference at all.
+
+CORRECT ANSWER: A. Proxy controls access to the same interface; Decorator adds behaviour to it.
+
+------------------------------------------------
+Question 5
+Question ID: structural-proxy:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Proxy implementation?
+
+OPTIONS:
+A. It should show the proxy intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the proxy intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-proxy:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Proxy pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: STRUCTURAL
+MODULE: Repository
+MODULE ID: structural-repository
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: Create
+================================================================Question 1
+Question ID: structural-repository:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Repository?
+
+OPTIONS:
+A. Repository gives a named, reusable way to solve the module's design problem.
+B. Repository is only a compiler optimization flag.
+C. Repository means every class must inherit from one base class.
+D. Repository replaces the need to read code structure.
+
+CORRECT ANSWER: A. Repository gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: structural-repository:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Repository matters?
+
+OPTIONS:
+A. Repository gives a named, reusable way to solve the module's design problem.
+B. Repository is only a compiler optimization flag.
+C. Repository means every class must inherit from one base class.
+D. Repository replaces the need to read code structure.
+
+CORRECT ANSWER: A. Repository gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: structural-repository:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: structural-repository:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why does Repository have no practical exam on this site?
+
+OPTIONS:
+A. It is too simple to test.
+B. It ships no catalog detector (not a GoF pattern), so the analyser cannot tag it — the module ends at the theoretical exam.
+C. Practical exams only exist for Creational patterns.
+D. Repository is the same as Singleton.
+
+CORRECT ANSWER: B. It ships no catalog detector (not a GoF pattern), so the analyser cannot tag it — the module ends at the theoretical exam.
+
+------------------------------------------------
+Question 5
+Question ID: structural-repository:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Repository implementation?
+
+OPTIONS:
+A. It should show the repository intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the repository intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: structural-repository:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: mcq
+
+QUESTION:
+Repository is not a Gang of Four pattern. Which sentence captures its purpose best?
+
+OPTIONS:
+A. Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.
+B. Guarantee a class has only one instance.
+C. Wrap an object so it conforms to a different interface.
+D. Pick which subclass to instantiate at runtime.
+
+CORRECT ANSWER: A. Hide data-source details (DB, file, API) behind a collection-like interface so business code talks to one shape.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Chain of Responsibility
+MODULE ID: behavioural-chain-of-responsibility
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-chain-of-responsibility:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Chain Of Responsibility?
+
+OPTIONS:
+A. Chain Of Responsibility gives a named, reusable way to solve the module's design problem.
+B. Chain Of Responsibility is only a compiler optimization flag.
+C. Chain Of Responsibility means every class must inherit from one base class.
+D. Chain Of Responsibility replaces the need to read code structure.
+
+CORRECT ANSWER: A. Chain Of Responsibility gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-chain-of-responsibility:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Chain of Responsibility do?
+
+OPTIONS:
+A. Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.
+B. Guarantees one instance.
+C. Adapts one interface to another.
+D. Clones a prototype.
+
+CORRECT ANSWER: A. Passes a request along a chain of handlers until one handles it, decoupling sender from receiver.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-chain-of-responsibility:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+What does each handler hold?
+
+OPTIONS:
+A. A reference to the next handler in the chain.
+B. A static single instance.
+C. A wrapped subject for access control.
+D. A child collection of components.
+
+CORRECT ANSWER: A. A reference to the next handler in the chain.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-chain-of-responsibility:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-chain-of-responsibility:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Chain Of Responsibility implementation?
+
+OPTIONS:
+A. It should show the chain of responsibility intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the chain of responsibility intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-chain-of-responsibility:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Chain Of Responsibility pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Command
+MODULE ID: behavioural-command
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-command:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Command?
+
+OPTIONS:
+A. Command gives a named, reusable way to solve the module's design problem.
+B. Command is only a compiler optimization flag.
+C. Command means every class must inherit from one base class.
+D. Command replaces the need to read code structure.
+
+CORRECT ANSWER: A. Command gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-command:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Command do?
+
+OPTIONS:
+A. Encapsulates a request as an object, letting you parameterise, queue, log, and undo operations.
+B. Guarantees a single instance.
+C. Composes objects into trees.
+D. Shares fine-grained objects.
+
+CORRECT ANSWER: A. Encapsulates a request as an object, letting you parameterise, queue, log, and undo operations.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-command:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+What does turning a request into an object enable?
+
+OPTIONS:
+A. Queuing, logging, and undo/redo of operations.
+B. Guaranteeing one instance.
+C. Interface translation.
+D. Cloning prototypes.
+
+CORRECT ANSWER: A. Queuing, logging, and undo/redo of operations.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-command:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-command:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Command implementation?
+
+OPTIONS:
+A. It should show the command intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the command intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-command:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Command pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Interpreter
+MODULE ID: behavioural-interpreter
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-interpreter:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Interpreter?
+
+OPTIONS:
+A. Interpreter gives a named, reusable way to solve the module's design problem.
+B. Interpreter is only a compiler optimization flag.
+C. Interpreter means every class must inherit from one base class.
+D. Interpreter replaces the need to read code structure.
+
+CORRECT ANSWER: A. Interpreter gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-interpreter:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Interpreter matters?
+
+OPTIONS:
+A. Interpreter gives a named, reusable way to solve the module's design problem.
+B. Interpreter is only a compiler optimization flag.
+C. Interpreter means every class must inherit from one base class.
+D. Interpreter replaces the need to read code structure.
+
+CORRECT ANSWER: A. Interpreter gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-interpreter:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-interpreter:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-interpreter:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq
+
+QUESTION:
+What does Interpreter do?
+
+OPTIONS:
+A. Defines a grammar representation and an interpreter that evaluates sentences in the language.
+B. Guarantees a single instance.
+C. Converts one interface to another.
+D. Shares fine-grained objects.
+
+CORRECT ANSWER: A. Defines a grammar representation and an interpreter that evaluates sentences in the language.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-interpreter:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Interpreter pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Iterator
+MODULE ID: behavioural-iterator
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-iterator:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Iterator?
+
+OPTIONS:
+A. Iterator gives a named, reusable way to solve the module's design problem.
+B. Iterator is only a compiler optimization flag.
+C. Iterator means every class must inherit from one base class.
+D. Iterator replaces the need to read code structure.
+
+CORRECT ANSWER: A. Iterator gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-iterator:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Iterator do?
+
+OPTIONS:
+A. Provides sequential access to a collection’s elements without exposing its underlying representation.
+B. Guarantees one instance.
+C. Adds behaviour dynamically.
+D. Decouples abstraction from implementation.
+
+CORRECT ANSWER: A. Provides sequential access to a collection’s elements without exposing its underlying representation.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-iterator:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-iterator:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: mcq
+
+QUESTION:
+Why is exposing iteration via an iterator useful?
+
+OPTIONS:
+A. Multiple traversals can run independently and the collection’s internals stay hidden.
+B. It forces the collection to be a singleton.
+C. It clones every element.
+D. It changes the collection’s interface to match a client.
+
+CORRECT ANSWER: A. Multiple traversals can run independently and the collection’s internals stay hidden.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-iterator:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Iterator implementation?
+
+OPTIONS:
+A. It should show the iterator intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the iterator intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-iterator:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Iterator pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Mediator
+MODULE ID: behavioural-mediator
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-mediator:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Mediator?
+
+OPTIONS:
+A. Mediator gives a named, reusable way to solve the module's design problem.
+B. Mediator is only a compiler optimization flag.
+C. Mediator means every class must inherit from one base class.
+D. Mediator replaces the need to read code structure.
+
+CORRECT ANSWER: A. Mediator gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-mediator:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Mediator do?
+
+OPTIONS:
+A. Encapsulates how a set of objects interact, so they refer to the mediator instead of each other.
+B. Guarantees a single instance.
+C. Converts one interface to another.
+D. Builds an object step by step.
+
+CORRECT ANSWER: A. Encapsulates how a set of objects interact, so they refer to the mediator instead of each other.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-mediator:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+What coupling problem does Mediator reduce?
+
+OPTIONS:
+A. Dense object-to-object references; colleagues talk through the mediator instead.
+B. Too few instances of a class.
+C. Interface mismatch between two libraries.
+D. Expensive object construction.
+
+CORRECT ANSWER: A. Dense object-to-object references; colleagues talk through the mediator instead.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-mediator:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-mediator:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Mediator implementation?
+
+OPTIONS:
+A. It should show the mediator intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the mediator intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-mediator:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Mediator pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Memento
+MODULE ID: behavioural-memento
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-memento:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Memento?
+
+OPTIONS:
+A. Memento gives a named, reusable way to solve the module's design problem.
+B. Memento is only a compiler optimization flag.
+C. Memento means every class must inherit from one base class.
+D. Memento replaces the need to read code structure.
+
+CORRECT ANSWER: A. Memento gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-memento:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Memento do?
+
+OPTIONS:
+A. Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.
+B. Guarantees one instance.
+C. Adapts one interface to another.
+D. Composes objects into trees.
+
+CORRECT ANSWER: A. Captures and externalises an object’s internal state so it can be restored later, without violating encapsulation.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-memento:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-memento:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-memento:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Memento implementation?
+
+OPTIONS:
+A. It should show the memento intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the memento intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-memento:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Memento pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Observer
+MODULE ID: behavioural-observer
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-observer:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What does Observer do?
+
+OPTIONS:
+A. Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.
+B. Restricts a class to one instance.
+C. Converts one interface to another.
+D. Builds an object step by step.
+
+CORRECT ANSWER: A. Defines a one-to-many dependency so when one object changes state, its dependents are notified automatically.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-observer:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Observer matters?
+
+OPTIONS:
+A. Observer gives a named, reusable way to solve the module's design problem.
+B. Observer is only a compiler optimization flag.
+C. Observer means every class must inherit from one base class.
+D. Observer replaces the need to read code structure.
+
+CORRECT ANSWER: A. Observer gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-observer:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification
+
+QUESTION:
+What are the two common names for the methods used to manage the list of dependents in a Subject?
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-observer:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-observer:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Observer implementation?
+
+OPTIONS:
+A. It should show the observer intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the observer intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-observer:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a "WeatherStation" (Subject) that maintains a list of "IObserver" objects and notifies them whenever the temperature changes.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: State
+MODULE ID: behavioural-state
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-state:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in State?
+
+OPTIONS:
+A. State gives a named, reusable way to solve the module's design problem.
+B. State is only a compiler optimization flag.
+C. State means every class must inherit from one base class.
+D. State replaces the need to read code structure.
+
+CORRECT ANSWER: A. State gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-state:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does State do?
+
+OPTIONS:
+A. Lets an object alter its behaviour when its internal state changes, appearing to change its class.
+B. Guarantees a single instance.
+C. Converts one interface to another.
+D. Builds an object step by step.
+
+CORRECT ANSWER: A. Lets an object alter its behaviour when its internal state changes, appearing to change its class.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-state:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+How does State differ from Strategy structurally?
+
+OPTIONS:
+A. They share a shape (delegate to an interface); State transitions between states internally, Strategy is chosen by the client.
+B. State guarantees one instance.
+C. State clones prototypes.
+D. They are unrelated.
+
+CORRECT ANSWER: A. They share a shape (delegate to an interface); State transitions between states internally, Strategy is chosen by the client.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-state:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-state:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a State implementation?
+
+OPTIONS:
+A. It should show the state intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the state intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-state:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the State pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Strategy
+MODULE ID: behavioural-strategy
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-strategy:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq
+
+QUESTION:
+What does the Strategy pattern define?
+
+OPTIONS:
+A. A family of algorithms, encapsulated and made interchangeable.
+B. A single global instance of an algorithm.
+C. A way to compose objects into tree structures.
+D. A method for cloning objects.
+
+CORRECT ANSWER: A. A family of algorithms, encapsulated and made interchangeable.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-strategy:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+Why is Strategy often preferred over using a large switch-case or if-else block for algorithm selection?
+
+OPTIONS:
+A. It is faster to compile.
+B. It follows the Open/Closed Principle, allowing new algorithms to be added without modifying the context.
+C. It uses less memory.
+D. It makes the code shorter.
+
+CORRECT ANSWER: B. It follows the Open/Closed Principle, allowing new algorithms to be added without modifying the context.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-strategy:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification
+
+QUESTION:
+List three OOP concepts used to make these algorithms interchangeable at runtime.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-strategy:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification
+
+QUESTION:
+Which pattern does this transition logic resemble?
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-strategy:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq
+
+QUESTION:
+What is a key difference between Strategy and Template Method?
+
+OPTIONS:
+A. Strategy uses composition to vary the entire algorithm; Template Method uses inheritance to vary parts of it.
+B. Strategy uses inheritance; Template Method uses composition.
+C. There is no difference.
+D. Strategy is only for creational patterns.
+
+CORRECT ANSWER: A. Strategy uses composition to vary the entire algorithm; Template Method uses inheritance to vary parts of it.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-strategy:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a "PaymentContext" that can use different "PaymentMethod" objects (e.g., CreditCard, PayPal) to process a transaction. Define the interface and the context.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Template Method
+MODULE ID: behavioural-template-method
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-template-method:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Template Method?
+
+OPTIONS:
+A. Template Method gives a named, reusable way to solve the module's design problem.
+B. Template Method is only a compiler optimization flag.
+C. Template Method means every class must inherit from one base class.
+D. Template Method replaces the need to read code structure.
+
+CORRECT ANSWER: A. Template Method gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-template-method:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Template Method do?
+
+OPTIONS:
+A. Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.
+B. Guarantees a single instance.
+C. Composes objects into trees.
+D. Encapsulates a request as an object.
+
+CORRECT ANSWER: A. Defines the skeleton of an algorithm in a base method, deferring some steps to subclasses.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-template-method:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-template-method:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-template-method:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Template Method implementation?
+
+OPTIONS:
+A. It should show the template method intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the template method intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-template-method:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio
+
+QUESTION:
+Implement a "DataParser" base class. Write a non-virtual "parse()" method (the template method) that calls "open()", "extract()", and "close()". Make "extract()" a pure virtual method (`= 0`) so subclasses are forced to provide it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: BEHAVIOURAL
+MODULE: Visitor
+MODULE ID: behavioural-visitor
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: behavioural-visitor:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Visitor?
+
+OPTIONS:
+A. Visitor gives a named, reusable way to solve the module's design problem.
+B. Visitor is only a compiler optimization flag.
+C. Visitor means every class must inherit from one base class.
+D. Visitor replaces the need to read code structure.
+
+CORRECT ANSWER: A. Visitor gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: behavioural-visitor:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq
+
+QUESTION:
+What does Visitor do?
+
+OPTIONS:
+A. Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.
+B. Guarantees one instance.
+C. Adapts one interface to another.
+D. Builds an object step by step.
+
+CORRECT ANSWER: A. Represents an operation to be performed on elements of an object structure, letting you add operations without changing the elements.
+
+------------------------------------------------
+Question 3
+Question ID: behavioural-visitor:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Which mechanism makes Visitor work?
+
+OPTIONS:
+A. Double dispatch — element.accept(visitor) calls visitor.visit(element).
+B. A static single-instance accessor.
+C. `return *this` chaining.
+D. A wrapped subject for access control.
+
+CORRECT ANSWER: A. Double dispatch — element.accept(visitor) calls visitor.visit(element).
+
+------------------------------------------------
+Question 4
+Question ID: behavioural-visitor:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: behavioural-visitor:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Visitor implementation?
+
+OPTIONS:
+A. It should show the visitor intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the visitor intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: behavioural-visitor:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Visitor pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------
+
+================================================================
+CATEGORY: IDIOMS
+MODULE: PIMPL (Pointer to Implementation)
+MODULE ID: idioms-pimpl
+ASSESSMENT TYPE: In-Module Conceptual Assessment
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: idioms-pimpl:remembering
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 0
+Bloom Level: Remembering
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which answer best names the main idea in Pimpl?
+
+OPTIONS:
+A. Pimpl gives a named, reusable way to solve the module's design problem.
+B. Pimpl is only a compiler optimization flag.
+C. Pimpl means every class must inherit from one base class.
+D. Pimpl replaces the need to read code structure.
+
+CORRECT ANSWER: A. Pimpl gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 2
+Question ID: idioms-pimpl:understanding
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 1
+Bloom Level: Understanding
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which statement best explains why Pimpl matters?
+
+OPTIONS:
+A. Pimpl gives a named, reusable way to solve the module's design problem.
+B. Pimpl is only a compiler optimization flag.
+C. Pimpl means every class must inherit from one base class.
+D. Pimpl replaces the need to read code structure.
+
+CORRECT ANSWER: A. Pimpl gives a named, reusable way to solve the module's design problem.
+
+------------------------------------------------
+Question 3
+Question ID: idioms-pimpl:applying
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 2
+Bloom Level: Applying
+Item Type: mcq
+
+QUESTION:
+Which structural shape does the analyser look for in PIMPL?
+
+OPTIONS:
+A. A forward-declared inner Impl plus a std::unique_ptr<Impl> member that owns it.
+B. A private constructor and static accessor.
+C. A component interface with a child collection.
+D. An accept/visit double dispatch.
+
+CORRECT ANSWER: A. A forward-declared inner Impl plus a std::unique_ptr<Impl> member that owns it.
+
+------------------------------------------------
+Question 4
+Question ID: idioms-pimpl:analyzing
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 3
+Bloom Level: Analyzing
+Item Type: identification (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Identify the design idea suggested by the scenario.
+
+------------------------------------------------
+Question 5
+Question ID: idioms-pimpl:evaluating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 4
+Bloom Level: Evaluating
+Item Type: mcq (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Which review comment best evaluates a Pimpl implementation?
+
+OPTIONS:
+A. It should show the pimpl intent clearly, not only coincidental syntax.
+B. It passes automatically if the class name contains Pattern.
+C. It is correct when every method is static.
+D. It should remove all interfaces to reduce files.
+
+CORRECT ANSWER: A. It should show the pimpl intent clearly, not only coincidental syntax.
+
+------------------------------------------------
+Question 6
+Question ID: idioms-pimpl:creating
+Assessment Type: In-Module Conceptual Assessment
+Source Question Index: 5
+Bloom Level: Creating
+Item Type: studio (GENERATED FALLBACK — excluded from formal assessment)
+
+QUESTION:
+Implement a small C++ example that demonstrates the Pimpl pattern clearly enough for the Studio analyzer to tag it.
+
+------------------------------------------------

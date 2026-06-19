@@ -1,0 +1,543 @@
+CODINEO QUESTION BANK REVIEW
+Generated: 2026-06-19T09:25:57.402Z
+Total Learning Modules: 40
+Total Formal-Eligible Modules: 40
+Modules with Authored Form A+B: 5
+Total Form A Questions: 18
+Total Form B Questions: 18
+Total In-Module Conceptual Questions: 240
+Total Practical Tasks: 25
+Total Questions and Tasks: 301
+Validation Errors: 0
+Validation Warnings: 76
+
+================================================================
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Three main pattern categories
+MODULE ID: foundations-categories
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-categories:A1
+Paired Question ID: foundations-categories:B1
+Competency ID: pattern-families
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+Which trio names the three classic Gang-of-Four pattern families?
+
+OPTIONS:
+A. Compiling, Linking, Running
+B. Frontend, Backend, Database
+C. Creational, Structural, Behavioural
+D. Static, Dynamic, Virtual
+
+CORRECT ANSWER:
+C. Creational, Structural, Behavioural
+
+RATIONALE:
+The GoF families are Creational, Structural, and Behavioural. The other groupings are build phases, app tiers, and binding kinds — not pattern families.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 2
+Question ID: foundations-categories:A2
+Paired Question ID: foundations-categories:B2
+Competency ID: pattern-families
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A pattern’s main job is deciding HOW objects are created. Which family is it in?
+
+OPTIONS:
+A. Creational
+B. Structural
+C. Behavioural
+D. None — creation is never a pattern concern
+
+CORRECT ANSWER:
+A. Creational
+
+RATIONALE:
+Creational patterns address object creation/instantiation concerns. Structural deals with composition; Behavioural with communication; creation is squarely a Creational concern.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 3
+Question ID: foundations-categories:A3
+Paired Question ID: foundations-categories:B3
+Competency ID: pattern-families
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Which sentence correctly maps the three families by intent?
+
+OPTIONS:
+A. Creational connects objects; Structural decides communication; Behavioural makes objects
+B. Creational makes objects; Structural composes/connects them; Behavioural decides how they communicate
+C. All three families do the same thing under different names
+D. Structural is a special case of Creational
+
+CORRECT ANSWER:
+B. Creational makes objects; Structural composes/connects them; Behavioural decides how they communicate
+
+RATIONALE:
+Creational = how objects are made; Structural = how they are composed/related; Behavioural = how responsibilities/communication are organised. The other options swap or conflate these intents.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: OOP foundations
+MODULE ID: foundations-oop
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-oop:A1
+Paired Question ID: foundations-oop:B1
+Competency ID: oop-foundations
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+Which OOP mechanism lets one interface call be served by different concrete implementations at runtime?
+
+OPTIONS:
+A. Encapsulation
+B. Polymorphism
+C. Macro expansion
+D. Static linking
+
+CORRECT ANSWER:
+B. Polymorphism
+
+RATIONALE:
+Polymorphism (via virtual dispatch) lets a call through a base interface run different concrete behaviour. Encapsulation hides state; macros and linking are unrelated build-time mechanisms.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-oop:A2
+Paired Question ID: foundations-oop:B2
+Competency ID: oop-foundations
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why do many design patterns depend on programming to an interface (abstraction) rather than a concrete class?
+
+OPTIONS:
+A. It lets implementations vary independently of the code that uses them
+B. It always reduces the number of classes
+C. It makes the program use less memory
+D. It removes the need for constructors
+
+CORRECT ANSWER:
+A. It lets implementations vary independently of the code that uses them
+
+RATIONALE:
+Depending on an abstraction decouples clients from concrete types, so implementations can change/substitute without touching callers — the basis of many patterns. It does not inherently reduce classes/memory or remove constructors.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: What is a design pattern?
+MODULE ID: foundations-what-is-pattern
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-what-is-pattern:A1
+Paired Question ID: foundations-what-is-pattern:B1
+Competency ID: Recall the definition of a design pattern
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: pilot-reviewed
+
+QUESTION:
+What is a design pattern, most precisely?
+
+OPTIONS:
+A. A named, reusable solution to a recurring object-oriented design problem
+B. A language keyword that enables polymorphism
+C. A base class that every program must extend
+D. A tool that automatically formats source code
+
+CORRECT ANSWER:
+A. A named, reusable solution to a recurring object-oriented design problem
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 2
+Question ID: foundations-what-is-pattern:A2
+Paired Question ID: foundations-what-is-pattern:B2
+Competency ID: Recall what a pattern captures
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: pilot-reviewed
+
+QUESTION:
+A design pattern primarily captures which of the following?
+
+OPTIONS:
+A. A compiler optimization flag
+B. A file-naming convention
+C. A proven structure-and-intent for a recurring design problem
+D. A unit-test framework
+
+CORRECT ANSWER:
+C. A proven structure-and-intent for a recurring design problem
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 3
+Question ID: foundations-what-is-pattern:A3
+Paired Question ID: foundations-what-is-pattern:B3
+Competency ID: Explain why shared pattern names help a team
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+Why does giving a recurring design a shared name help a team?
+
+OPTIONS:
+A. It makes the program run faster
+B. One word can convey a whole structure and intent, reducing explanation
+C. It removes the need for any comments
+D. It guarantees the code compiles
+
+CORRECT ANSWER:
+B. One word can convey a whole structure and intent, reducing explanation
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 4
+Question ID: foundations-what-is-pattern:A4
+Paired Question ID: foundations-what-is-pattern:B4
+Competency ID: Distinguish a pattern from an algorithm
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+How does a design pattern differ from an algorithm?
+
+OPTIONS:
+A. They are identical
+B. An algorithm is always object-oriented; a pattern never is
+C. A pattern is just a faster algorithm
+D. A pattern arranges classes/objects for a design problem; an algorithm specifies computational steps
+
+CORRECT ANSWER:
+D. A pattern arranges classes/objects for a design problem; an algorithm specifies computational steps
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 5
+Question ID: foundations-what-is-pattern:A5
+Paired Question ID: foundations-what-is-pattern:B5
+Competency ID: Apply: recognize the value of adopting a pattern
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+A team keeps re-solving the same object-arrangement problem slightly differently across modules. What would adopting a design pattern give them?
+
+OPTIONS:
+A. A shared, named solution shape they can reuse and recognize
+B. Automatically fixed bugs
+C. A smaller compiled binary
+D. Guaranteed thread safety
+
+CORRECT ANSWER:
+A. A shared, named solution shape they can reuse and recognize
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Why design patterns matter
+MODULE ID: foundations-why-matters
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-why-matters:A1
+Paired Question ID: foundations-why-matters:B1
+Competency ID: why-patterns-matter
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+What is the main practical benefit of a shared design-pattern vocabulary on a team?
+
+OPTIONS:
+A. It lets a recognised name stand in for a paragraph of structural explanation
+B. It makes the compiled program run faster
+C. It removes the need for any code comments
+D. It guarantees the code has no bugs
+
+CORRECT ANSWER:
+A. It lets a recognised name stand in for a paragraph of structural explanation
+
+RATIONALE:
+Pattern names are a communication tool: one agreed term conveys a known structure and intent, shortening design discussion and review. They do not affect runtime speed or correctness.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 2
+Question ID: foundations-why-matters:A2
+Paired Question ID: foundations-why-matters:B2
+Competency ID: why-patterns-matter
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Why does recognising a pattern in existing code help a reviewer?
+
+OPTIONS:
+A. It proves the code is the fastest possible implementation
+B. It lets the reviewer infer intent and expected structure quickly, focusing review on real risks
+C. It means the code needs no tests
+D. It shows the author used the newest language features
+
+CORRECT ANSWER:
+B. It lets the reviewer infer intent and expected structure quickly, focusing review on real risks
+
+RATIONALE:
+Recognising intent lets the reviewer reason about responsibilities and collaborations instead of re-deriving them, so attention goes to genuine risks. It says nothing about speed, tests, or language features.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 3
+Question ID: foundations-why-matters:A3
+Paired Question ID: foundations-why-matters:B3
+Competency ID: why-patterns-matter
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Which statement best explains a limitation of patterns?
+
+OPTIONS:
+A. A pattern guarantees the design is correct for every problem
+B. Patterns can only be used in object-oriented languages
+C. Applying a pattern where it is not needed can add complexity without benefit
+D. Patterns make code impossible to refactor later
+
+CORRECT ANSWER:
+C. Applying a pattern where it is not needed can add complexity without benefit
+
+RATIONALE:
+Patterns are solutions to specific recurring problems; forcing one where the problem is absent adds indirection and complexity for no gain. They are not universally correct, are not OO-exclusive, and do not block refactoring.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Builder
+MODULE ID: creational-builder
+ASSESSMENT TYPE: Formal Pre-Test — Form A
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-builder:A1
+Paired Question ID: creational-builder:B1
+Competency ID: Recall the intent of Builder
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: pilot-reviewed
+
+QUESTION:
+What is the primary intent of the Builder pattern?
+
+OPTIONS:
+A. Separate the construction of a complex object from its representation, so the same process can create different representations
+B. Ensure a class has only one instance
+C. Convert one interface into another
+D. Notify dependents when state changes
+
+CORRECT ANSWER:
+A. Separate the construction of a complex object from its representation, so the same process can create different representations
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 2
+Question ID: creational-builder:A2
+Paired Question ID: creational-builder:B2
+Competency ID: Explain how Builder organizes construction
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+How does the Builder pattern typically organize object construction?
+
+OPTIONS:
+A. By making all fields public and setting them directly
+B. By using a single giant constructor with many parameters
+C. Through a sequence of step methods that assemble parts, then a final build step
+D. By cloning an existing instance
+
+CORRECT ANSWER:
+C. Through a sequence of step methods that assemble parts, then a final build step
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 3
+Question ID: creational-builder:A3
+Paired Question ID: creational-builder:B3
+Competency ID: Apply: select the pattern for a construction requirement
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+A system must assemble configuration objects through a series of optional, ordered steps and produce several different final representations from the same steps. Which pattern best fits?
+
+OPTIONS:
+A. Singleton
+B. Builder
+C. Adapter
+D. Observer
+
+CORRECT ANSWER:
+B. Builder
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 4
+Question ID: creational-builder:A4
+Paired Question ID: creational-builder:B4
+Competency ID: Analyze: identify the pattern from code structure
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+QUESTION:
+A class exposes addPart()/setX() methods that each return the same object, plus a final build() that returns the assembled product; no part is exposed until build(). Which pattern does this structure indicate?
+
+OPTIONS:
+A. Prototype
+B. Facade
+C. Composite
+D. Builder
+
+CORRECT ANSWER:
+D. Builder
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 5
+Question ID: creational-builder:A5
+Paired Question ID: creational-builder:B5
+Competency ID: Evaluate: choose between approaches under constraints
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+QUESTION:
+An object has many optional parameters and must remain immutable after creation. Which is more appropriate, and why — a step-based assembler that returns a finished product, or a telescoping set of constructors?
+
+OPTIONS:
+A. The step-based assembler — it handles optional parameters cleanly and yields an immutable result
+B. Telescoping constructors — they are always clearer
+C. Neither; expose public setters instead
+D. A single global instance
+
+CORRECT ANSWER:
+A. The step-based assembler — it handles optional parameters cleanly and yields an immutable result
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------

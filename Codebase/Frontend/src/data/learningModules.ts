@@ -120,10 +120,41 @@ export function isStudioQuestion(q: ExamQuestion): q is StudioQuestion {
 // from the in-module `theoreticalExam` array) and is keyed by a stable `id`,
 // NOT by the in-module positional questionIndex. Only mcq/identification —
 // Creating is the separate practical/Studio task.
+// Revised-Bloom levels usable by OBJECTIVE items (Create is practical-only).
+export type ObjectiveBloomLevel = 'remember' | 'understand' | 'apply' | 'analyze' | 'evaluate';
+export type AssessmentDifficulty = 'easy' | 'moderate' | 'difficult';
+export type AssessmentValidationStatus = 'draft' | 'internal-reviewed' | 'expert-validated' | 'pilot-reviewed';
+
+// Objective assessment item. Base fields (id/type/question/options/correctIndex/
+// taxonomy) drive the existing buildFormalAssessment + scoring pipeline; the rest
+// are additive review/validation metadata (optional so legacy entries still type).
 export type ObjectiveAssessmentQuestion = (McqQuestion | IdentificationQuestion) & {
   id: string;
   competency?: string;
+  // --- review/validation metadata (assessment-bank refactor) ---
+  competencyId?: string;
+  bloomLevel?: ObjectiveBloomLevel;
+  difficulty?: AssessmentDifficulty;
+  rationale?: string;
+  sourceReferences?: ReadonlyArray<string>;
+  validationStatus?: AssessmentValidationStatus;
+  pairedQuestionId?: string; // Form A <-> Form B link
+  form?: 'A' | 'B';
 };
+
+// Practical (Create-level) coding task metadata — never an MCQ.
+export interface PracticalAssessmentTask {
+  taskId: string;
+  moduleId: string;
+  competencyId: string;
+  bloomLevel: 'create';
+  difficulty: AssessmentDifficulty;
+  taskPrompt: string;
+  expectedPatternEvidence: ReadonlyArray<string>;
+  validationCriteria: ReadonlyArray<string>;
+  sourceReferences: ReadonlyArray<string>;
+  validationStatus: AssessmentValidationStatus;
+}
 
 // Two distinct, equivalent objective forms per module: A = formal pre-test,
 // B = formal post-test. A module without a complete Form B has no valid formal

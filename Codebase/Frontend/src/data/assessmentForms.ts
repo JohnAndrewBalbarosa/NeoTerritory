@@ -21,7 +21,11 @@ export type AssessmentFormsData = {
   B: ReadonlyArray<ObjectiveAssessmentQuestion>;
 };
 
+import { FOUNDATION_ASSESSMENT_FORMS } from './assessmentBanks/foundations';
+
 export const ASSESSMENT_FORMS: Record<string, AssessmentFormsData> = {
+  // Authored Foundation category banks (Form A/B) are merged in below the pilots.
+  ...FOUNDATION_ASSESSMENT_FORMS,
   // ---- Foundation pilot: distribution 2 Remembering / 2 Understanding / 1 Applying ----
   'foundations-what-is-pattern': {
     A: [

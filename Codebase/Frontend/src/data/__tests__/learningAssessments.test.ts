@@ -286,18 +286,21 @@ describe('buildFormalAssessment (Form A / Form B pilot)', () => {
 
   it('pre-test draws Form A only from modules that have authored forms (scoped, not all published)', () => {
     const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
-    expect(pre).toHaveLength(10); // 2 pilot modules × 5
-    expect(new Set(pre.map((q) => q.moduleId))).toEqual(new Set(PILOT));
+    // Only modules with an authored Form A appear (a growing subset, NOT all 40).
+    expect(pre.length).toBeGreaterThan(0);
+    expect(pre.length).toBeLessThan(40 * 5); // never "all published"
+    const modules = new Set(pre.map((q) => q.moduleId));
+    PILOT.forEach((id) => expect(modules.has(id)).toBe(true)); // pilots always included
     expect(pre.every((q) => typeof q.questionId === 'string' && q.questionId.includes(':A'))).toBe(true);
   });
 
-  it('post-test draws Form B with zero exact-question overlap vs Form A', () => {
+  it('post-test draws Form B with same module set and zero exact-question overlap vs Form A', () => {
     const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
     const post = buildFormalAssessment(LEARNING_MODULES, 'posttest');
-    expect(post).toHaveLength(10);
+    expect(post.length).toBe(pre.length);
+    expect(new Set(post.map((q) => q.moduleId))).toEqual(new Set(pre.map((q) => q.moduleId)));
     const aIds = new Set(pre.map((q) => q.questionId));
-    const overlap = post.filter((q) => aIds.has(q.questionId));
-    expect(overlap).toHaveLength(0);
+    expect(post.filter((q) => aIds.has(q.questionId))).toHaveLength(0);
   });
 
   it('an optional learner-plan scope further limits the modules assessed', () => {

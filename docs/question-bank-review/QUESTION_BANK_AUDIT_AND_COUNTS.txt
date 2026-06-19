@@ -1,0 +1,146 @@
+CODINEO QUESTION BANK REVIEW
+Generated: 2026-06-19T09:25:57.402Z
+Total Learning Modules: 40
+Total Formal-Eligible Modules: 40
+Modules with Authored Form A+B: 5
+Total Form A Questions: 18
+Total Form B Questions: 18
+Total In-Module Conceptual Questions: 240
+Total Practical Tasks: 25
+Total Questions and Tasks: 301
+Validation Errors: 0
+Validation Warnings: 76
+
+================================================================
+
+PER-CATEGORY MODULE COUNTS:
+  foundations: 14
+  creational: 6
+  structural: 8
+  behavioural: 11
+  idioms: 1
+
+PER-MODULE INVENTORY (formA / formB / inModule / practical / status):
+  [foundations] foundations-ambiguity: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-beginner-mistakes: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-categories: 3 / 3 / 6 / 0 / authored
+  [foundations] foundations-code-structure: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-connotative-definition: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-context-variation: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-interface-principle: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-oop: 2 / 2 / 6 / 0 / authored
+  [foundations] foundations-postrequisite: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-real-software: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-same-structure: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-structural-rules: 0 / 0 / 6 / 0 / pending
+  [foundations] foundations-what-is-pattern: 5 / 5 / 6 / 0 / authored
+  [foundations] foundations-why-matters: 3 / 3 / 6 / 0 / authored
+  [creational] creational-abstract-factory: 0 / 0 / 6 / 1 / pending
+  [creational] creational-builder: 5 / 5 / 6 / 1 / authored
+  [creational] creational-factory-method: 0 / 0 / 6 / 1 / pending
+  [creational] creational-method-chaining: 0 / 0 / 6 / 1 / pending
+  [creational] creational-prototype: 0 / 0 / 6 / 1 / pending
+  [creational] creational-singleton: 0 / 0 / 6 / 1 / pending
+  [structural] structural-adapter: 0 / 0 / 6 / 1 / pending
+  [structural] structural-bridge: 0 / 0 / 6 / 1 / pending
+  [structural] structural-composite: 0 / 0 / 6 / 1 / pending
+  [structural] structural-decorator: 0 / 0 / 6 / 1 / pending
+  [structural] structural-facade: 0 / 0 / 6 / 1 / pending
+  [structural] structural-flyweight: 0 / 0 / 6 / 1 / pending
+  [structural] structural-proxy: 0 / 0 / 6 / 1 / pending
+  [structural] structural-repository: 0 / 0 / 6 / 0 / pending
+  [behavioural] behavioural-chain-of-responsibility: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-command: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-interpreter: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-iterator: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-mediator: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-memento: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-observer: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-state: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-strategy: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-template-method: 0 / 0 / 6 / 1 / pending
+  [behavioural] behavioural-visitor: 0 / 0 / 6 / 1 / pending
+  [idioms] idioms-pimpl: 0 / 0 / 6 / 1 / pending
+
+VALIDATION ERRORS (0):
+
+VALIDATION WARNINGS (76):
+  [MISSING_RATIONALE] foundations-what-is-pattern:A1 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:A1 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:A2 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:A2 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:A3 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:A3 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:A4 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:A4 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:A5 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:A5 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:B1 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:B1 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:B2 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:B2 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:B3 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:B3 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:B4 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:B4 has no source reference
+  [MISSING_RATIONALE] foundations-what-is-pattern:B5 has no rationale
+  [MISSING_SOURCE] foundations-what-is-pattern:B5 has no source reference
+  [PAIR_COMPETENCY_MISMATCH] foundations-what-is-pattern:A4/foundations-what-is-pattern:B4 differ in competency
+  [FORMAL_PENDING] foundations-interface-principle (Program to an interface) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-code-structure (Understanding software structure) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-real-software (Design patterns in real software) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-beginner-mistakes (Common beginner mistakes) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-ambiguity (Ambiguity is built in to design patterns) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-connotative-definition (The connotative-definition rule) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-same-structure (When two patterns look identical) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-structural-rules (Each pattern has a structural rule) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-context-variation (Patterns vary by team and codebase) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] foundations-postrequisite (Post-Foundations open questions) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] creational-singleton (Singleton) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] creational-factory-method (Factory Method) has no authored Form A/B yet — pending authoring
+  [MISSING_RATIONALE] creational-builder:A1 has no rationale
+  [MISSING_SOURCE] creational-builder:A1 has no source reference
+  [MISSING_RATIONALE] creational-builder:A2 has no rationale
+  [MISSING_SOURCE] creational-builder:A2 has no source reference
+  [MISSING_RATIONALE] creational-builder:A3 has no rationale
+  [MISSING_SOURCE] creational-builder:A3 has no source reference
+  [MISSING_RATIONALE] creational-builder:A4 has no rationale
+  [MISSING_SOURCE] creational-builder:A4 has no source reference
+  [MISSING_RATIONALE] creational-builder:A5 has no rationale
+  [MISSING_SOURCE] creational-builder:A5 has no source reference
+  [MISSING_RATIONALE] creational-builder:B1 has no rationale
+  [MISSING_SOURCE] creational-builder:B1 has no source reference
+  [MISSING_RATIONALE] creational-builder:B2 has no rationale
+  [MISSING_SOURCE] creational-builder:B2 has no source reference
+  [MISSING_RATIONALE] creational-builder:B3 has no rationale
+  [MISSING_SOURCE] creational-builder:B3 has no source reference
+  [MISSING_RATIONALE] creational-builder:B4 has no rationale
+  [MISSING_SOURCE] creational-builder:B4 has no source reference
+  [MISSING_RATIONALE] creational-builder:B5 has no rationale
+  [MISSING_SOURCE] creational-builder:B5 has no source reference
+  [FORMAL_PENDING] creational-method-chaining (Method Chaining) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-adapter (Adapter) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-proxy (Proxy) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-decorator (Decorator) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-strategy (Strategy) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-observer (Observer) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-iterator (Iterator) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-command (Command) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-composite (Composite) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-template-method (Template Method) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-state (State) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-repository (Repository) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] idioms-pimpl (PIMPL (Pointer to Implementation)) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] creational-prototype (Prototype) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] creational-abstract-factory (Abstract Factory) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-bridge (Bridge) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-facade (Facade) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] structural-flyweight (Flyweight) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-chain-of-responsibility (Chain of Responsibility) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-mediator (Mediator) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-visitor (Visitor) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-interpreter (Interpreter) has no authored Form A/B yet — pending authoring
+  [FORMAL_PENDING] behavioural-memento (Memento) has no authored Form A/B yet — pending authoring
+
+VALIDATION INFO (1):
+  [ANSWER_POSITIONS] Formal correctIndex distribution A/B/C/D = 11/11/8/6 (of 36)

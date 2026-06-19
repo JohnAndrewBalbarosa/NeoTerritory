@@ -1,0 +1,543 @@
+CODINEO QUESTION BANK REVIEW
+Generated: 2026-06-19T09:25:57.402Z
+Total Learning Modules: 40
+Total Formal-Eligible Modules: 40
+Modules with Authored Form A+B: 5
+Total Form A Questions: 18
+Total Form B Questions: 18
+Total In-Module Conceptual Questions: 240
+Total Practical Tasks: 25
+Total Questions and Tasks: 301
+Validation Errors: 0
+Validation Warnings: 76
+
+================================================================
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Three main pattern categories
+MODULE ID: foundations-categories
+ASSESSMENT TYPE: Formal Post-Test — Form B
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-categories:B1
+Paired Question ID: foundations-categories:A1
+Competency ID: pattern-families
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+The Gang-of-Four catalogue groups patterns into three families. Which option lists them?
+
+OPTIONS:
+A. Behavioural, Structural, Creational
+B. Public, Private, Protected
+C. Stack, Heap, Register
+D. Model, View, Controller
+
+CORRECT ANSWER:
+A. Behavioural, Structural, Creational
+
+RATIONALE:
+The three GoF families are Creational, Structural, and Behavioural (order aside). Access specifiers, memory regions, and MVC are unrelated groupings.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 2
+Question ID: foundations-categories:B2
+Paired Question ID: foundations-categories:A2
+Competency ID: pattern-families
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A pattern primarily organises how responsibilities are assigned and how objects talk at runtime. Which family?
+
+OPTIONS:
+A. Creational
+B. Structural
+C. Behavioural
+D. None — communication is not a pattern concern
+
+CORRECT ANSWER:
+C. Behavioural
+
+RATIONALE:
+Behavioural patterns concern responsibility assignment and runtime communication between objects. Creational is about making objects; Structural about composing them.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 3
+Question ID: foundations-categories:B3
+Paired Question ID: foundations-categories:A3
+Competency ID: pattern-families
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+Which mapping of family-to-intent is correct?
+
+OPTIONS:
+A. Structural makes objects; Behavioural composes them; Creational handles communication
+B. All families address object creation only
+C. Behavioural is a subset of Structural
+D. Creational = object creation; Structural = composition/relationships; Behavioural = communication/responsibility
+
+CORRECT ANSWER:
+D. Creational = object creation; Structural = composition/relationships; Behavioural = communication/responsibility
+
+RATIONALE:
+Only the last option maps each family to its real intent. The others swap intents, over-narrow to creation, or invent a subset relationship.
+
+SOURCE REFERENCES:
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: OOP foundations
+MODULE ID: foundations-oop
+ASSESSMENT TYPE: Formal Post-Test — Form B
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-oop:B1
+Paired Question ID: foundations-oop:A1
+Competency ID: oop-foundations
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+A base-class pointer invokes a method and the derived class’s version runs. Which OOP concept is this?
+
+OPTIONS:
+A. Static binding
+B. Encapsulation
+C. Polymorphism
+D. Preprocessing
+
+CORRECT ANSWER:
+C. Polymorphism
+
+RATIONALE:
+Dispatching to the derived override through a base pointer is runtime polymorphism. Static binding resolves at compile time; encapsulation and preprocessing are different concepts.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 2
+Question ID: foundations-oop:B2
+Paired Question ID: foundations-oop:A2
+Competency ID: oop-foundations
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+What does depending on an abstraction (interface) buy a design that depending on a concrete class does not?
+
+OPTIONS:
+A. Guaranteed lower memory use
+B. Substitutable implementations without changing client code
+C. Fewer total source files in every case
+D. Automatic thread safety
+
+CORRECT ANSWER:
+B. Substitutable implementations without changing client code
+
+RATIONALE:
+An interface dependency lets concrete implementations be swapped without editing clients — enabling extension and testing. It gives no memory, file-count, or thread-safety guarantee.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: What is a design pattern?
+MODULE ID: foundations-what-is-pattern
+ASSESSMENT TYPE: Formal Post-Test — Form B
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-what-is-pattern:B1
+Paired Question ID: foundations-what-is-pattern:A1
+Competency ID: Recall the definition of a design pattern
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: pilot-reviewed
+
+QUESTION:
+Which best identifies what the term 'design pattern' refers to?
+
+OPTIONS:
+A. A debugger feature
+B. A reusable, named template for solving a common design problem
+C. A class that stores global state
+D. A kind of loop
+
+CORRECT ANSWER:
+B. A reusable, named template for solving a common design problem
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 2
+Question ID: foundations-what-is-pattern:B2
+Paired Question ID: foundations-what-is-pattern:A2
+Competency ID: Recall what a pattern captures
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: pilot-reviewed
+
+QUESTION:
+A design pattern is best described as ___.
+
+OPTIONS:
+A. a syntax rule
+B. a memory-allocation strategy
+C. a build script
+D. a recurring solution structure with a known intent
+
+CORRECT ANSWER:
+D. a recurring solution structure with a known intent
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 3
+Question ID: foundations-what-is-pattern:B3
+Paired Question ID: foundations-what-is-pattern:A3
+Competency ID: Explain why shared pattern names help a team
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+What is the main communication benefit of pattern names on a team?
+
+OPTIONS:
+A. A recognized shape can replace a paragraph of explanation
+B. They eliminate the need for testing
+C. They force everyone to use inheritance
+D. They hide the code from reviewers
+
+CORRECT ANSWER:
+A. A recognized shape can replace a paragraph of explanation
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 4
+Question ID: foundations-what-is-pattern:B4
+Paired Question ID: foundations-what-is-pattern:A4
+Competency ID: Distinguish a pattern from a data structure
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+Which statement correctly contrasts a pattern with a data structure?
+
+OPTIONS:
+A. They are the same thing
+B. A data structure is always a pattern
+C. A pattern arranges classes/responsibilities for a design problem; a data structure organizes data for access
+D. A pattern can be used only once
+
+CORRECT ANSWER:
+C. A pattern arranges classes/responsibilities for a design problem; a data structure organizes data for access
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 5
+Question ID: foundations-what-is-pattern:B5
+Paired Question ID: foundations-what-is-pattern:A5
+Competency ID: Apply: recognize the value of adopting a pattern
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+Two teams independently arrive at the same class arrangement for the same problem. Recognizing this as a known pattern most directly helps them ___.
+
+OPTIONS:
+A. reduce CPU usage
+B. share vocabulary and reuse a proven solution
+C. avoid writing any classes
+D. skip code review
+
+CORRECT ANSWER:
+B. share vocabulary and reuse a proven solution
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+
+================================================================
+CATEGORY: FOUNDATIONS
+MODULE: Why design patterns matter
+MODULE ID: foundations-why-matters
+ASSESSMENT TYPE: Formal Post-Test — Form B
+APPLICABLE BLOOM LEVELS: Remember, Understand
+NON-APPLICABLE LEVELS: Apply, Analyze, Evaluate, Create
+================================================================Question 1
+Question ID: foundations-why-matters:B1
+Paired Question ID: foundations-why-matters:A1
+Competency ID: why-patterns-matter
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: draft
+
+QUESTION:
+Two engineers say “let’s use the Observer here.” What has the pattern name primarily given them?
+
+OPTIONS:
+A. A faster program at runtime
+B. A guarantee the feature is bug-free
+C. A way to skip writing the class entirely
+D. A shared, compact way to communicate a known structure and intent
+
+CORRECT ANSWER:
+D. A shared, compact way to communicate a known structure and intent
+
+RATIONALE:
+The value is communication: the name conveys an agreed structure/intent so the team need not spell it out. It does not change runtime behaviour, remove bugs, or avoid implementation.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+Question 2
+Question ID: foundations-why-matters:B2
+Paired Question ID: foundations-why-matters:A2
+Competency ID: why-patterns-matter
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+A new hire reads a module and recognises a familiar pattern. How does that most help them?
+
+OPTIONS:
+A. They can predict the responsibilities and collaborations without re-reading every line
+B. They no longer need to run the test suite
+C. They can be sure it is the most efficient code possible
+D. They know it uses the latest standard-library features
+
+CORRECT ANSWER:
+A. They can predict the responsibilities and collaborations without re-reading every line
+
+RATIONALE:
+Recognition transfers prior knowledge of the pattern’s roles and interactions, speeding comprehension. It does not imply optimal performance, remove the need for tests, or indicate language features.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+
+------------------------------------------------
+Question 3
+Question ID: foundations-why-matters:B3
+Paired Question ID: foundations-why-matters:A3
+Competency ID: why-patterns-matter
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: draft
+
+QUESTION:
+When can adopting a design pattern be the wrong choice?
+
+OPTIONS:
+A. When the team already understands the pattern
+B. When the underlying recurring problem the pattern solves is not actually present
+C. Whenever the language supports inheritance
+D. When the code must be unit tested
+
+CORRECT ANSWER:
+B. When the underlying recurring problem the pattern solves is not actually present
+
+RATIONALE:
+A pattern earns its complexity only when its target problem exists; applying it speculatively adds indirection without benefit. Team familiarity, inheritance support, and testing are not reasons to avoid it.
+
+SOURCE REFERENCES:
+* CodiNeo Foundations module content
+* Gamma, Helm, Johnson, Vlissides (1994), Design Patterns, ch. 1
+
+------------------------------------------------
+
+================================================================
+CATEGORY: CREATIONAL
+MODULE: Builder
+MODULE ID: creational-builder
+ASSESSMENT TYPE: Formal Post-Test — Form B
+APPLICABLE BLOOM LEVELS: Remember, Understand, Apply, Analyze, Evaluate
+NON-APPLICABLE LEVELS: (none)
+================================================================Question 1
+Question ID: creational-builder:B1
+Paired Question ID: creational-builder:A1
+Competency ID: Recall the intent of Builder
+Bloom Level: Remember
+Difficulty: Easy
+Validation Status: pilot-reviewed
+
+QUESTION:
+The Builder pattern is mainly used to ___.
+
+OPTIONS:
+A. guarantee a single instance
+B. construct a complex object step by step, allowing different final representations
+C. wrap an incompatible interface
+D. define a family of related products
+
+CORRECT ANSWER:
+B. construct a complex object step by step, allowing different final representations
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 2
+Question ID: creational-builder:B2
+Paired Question ID: creational-builder:A2
+Competency ID: Explain how Builder organizes construction
+Bloom Level: Understand
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+Why does Builder separate a step sequence from the part-assembly?
+
+OPTIONS:
+A. To make the object a singleton
+B. To avoid writing any classes
+C. To convert interfaces
+D. So the same construction sequence can yield different representations while construction details stay encapsulated
+
+CORRECT ANSWER:
+D. So the same construction sequence can yield different representations while construction details stay encapsulated
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 3
+Question ID: creational-builder:B3
+Paired Question ID: creational-builder:A3
+Competency ID: Apply: select the pattern for a construction requirement
+Bloom Level: Apply
+Difficulty: Moderate
+Validation Status: pilot-reviewed
+
+QUESTION:
+A report generator must build documents through configurable, ordered steps and emit them as PDF or HTML from the same steps. Which pattern is most appropriate?
+
+OPTIONS:
+A. Strategy
+B. Proxy
+C. Builder
+D. Flyweight
+
+CORRECT ANSWER:
+C. Builder
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 4
+Question ID: creational-builder:B4
+Paired Question ID: creational-builder:A4
+Competency ID: Analyze: identify the pattern from code structure
+Bloom Level: Analyze
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+QUESTION:
+You see a fluent class whose methods return *this to chain calls and a terminal build() that produces the final object only at the end. Which pattern is this structural evidence of?
+
+OPTIONS:
+A. Builder
+B. Decorator
+C. State
+D. Mediator
+
+CORRECT ANSWER:
+A. Builder
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
+Question 5
+Question ID: creational-builder:B5
+Paired Question ID: creational-builder:A5
+Competency ID: Evaluate: choose between approaches under constraints
+Bloom Level: Evaluate
+Difficulty: Difficult
+Validation Status: pilot-reviewed
+
+QUESTION:
+A complex object needs many optional fields and must be validated once, fully assembled. Which approach better meets "assemble incrementally, validate on completion" — a step assembler with a final build, or setting fields directly after construction?
+
+OPTIONS:
+A. Direct field setting after construction
+B. A step assembler with a final build/validate step
+C. A global mutable instance
+D. Cloning a prototype each time
+
+CORRECT ANSWER:
+B. A step assembler with a final build/validate step
+
+RATIONALE:
+(rationale pending — WARNING)
+
+SOURCE REFERENCES:
+* (source pending — WARNING)
+
+------------------------------------------------
