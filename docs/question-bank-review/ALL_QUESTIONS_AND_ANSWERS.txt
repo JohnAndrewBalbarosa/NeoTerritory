@@ -1,5 +1,5 @@
 CODINEO QUESTION BANK REVIEW
-Generated: 2026-06-19T11:30:26.295Z
+Generated: 2026-06-19T11:49:26.764Z
 Total Learning Modules: 40
 Total Formal-Eligible Modules: 39
 Modules with Authored Form A+B: 39
@@ -316,7 +316,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What does this module say about some patterns sharing the same code shape?
@@ -345,18 +345,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why can no automated tool always pick a single pattern from structure alone?
 
 OPTIONS:
 A. Because tools cannot read C++
-B. Because several patterns can share an identical structural shape, so structure alone is insufficient to decide intent
-C. Because the patterns are secret
+B. Because the patterns are secret
+C. Because several patterns can share an identical structural shape, so structure alone is insufficient to decide intent
 D. Because compilers delete the structure
 
-CORRECT ANSWER: B. Because several patterns can share an identical structural shape, so structure alone is insufficient to decide intent
+CORRECT ANSWER: C. Because several patterns can share an identical structural shape, so structure alone is insufficient to decide intent
 
 RATIONALE:
 When patterns share a shape, structure underdetermines intent, so a tool cannot always pick one winner from code alone.
@@ -374,18 +374,18 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Your analyser finds code matching both Adapter and Decorator equally. Following the module, what is the right response?
 
 OPTIONS:
 A. Randomly pick one and report it confidently
-B. Report the genuine ambiguity rather than bluffing a single confident answer
+B. Always choose the alphabetically first pattern
 C. Delete the code
-D. Always choose the alphabetically first pattern
+D. Report the genuine ambiguity rather than bluffing a single confident answer
 
-CORRECT ANSWER: B. Report the genuine ambiguity rather than bluffing a single confident answer
+CORRECT ANSWER: D. Report the genuine ambiguity rather than bluffing a single confident answer
 
 RATIONALE:
 The honest response to a true structural tie is to surface the ambiguity, not to fake a confident single pick.
@@ -403,18 +403,18 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Two classes each wrap a held member and forward calls to it. Why is this evidence insufficient to label one Adapter and the other Decorator?
 
 OPTIONS:
 A. Because forwarding is illegal in C++
-B. Because Adapter, Decorator, and Proxy all share that wrap-and-forward shape; intent (convert vs add vs control) must distinguish them
-C. Because wrapping always means Adapter
+B. Because wrapping always means Adapter
+C. Because Adapter, Decorator, and Proxy all share that wrap-and-forward shape; intent (convert vs add vs control) must distinguish them
 D. Because the classes must be merged
 
-CORRECT ANSWER: B. Because Adapter, Decorator, and Proxy all share that wrap-and-forward shape; intent (convert vs add vs control) must distinguish them
+CORRECT ANSWER: C. Because Adapter, Decorator, and Proxy all share that wrap-and-forward shape; intent (convert vs add vs control) must distinguish them
 
 RATIONALE:
 Wrap-and-forward is common to Adapter, Decorator, and Proxy; only their differing intent separates them, so structure alone cannot decide.
@@ -433,18 +433,18 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A tool reports “100% Decorator” for code that is structurally identical to Adapter and Proxy, with no extra evidence. How should you judge this report?
 
 OPTIONS:
 A. Trustworthy — high confidence means it is correct
-B. Unjustified — with a shared shape and no disambiguating evidence, a single high-confidence claim is not defensible
+B. Correct because the number is high
 C. Correct because Decorator is most common
-D. Correct because the number is high
+D. Unjustified — with a shared shape and no disambiguating evidence, a single high-confidence claim is not defensible
 
-CORRECT ANSWER: B. Unjustified — with a shared shape and no disambiguating evidence, a single high-confidence claim is not defensible
+CORRECT ANSWER: D. Unjustified — with a shared shape and no disambiguating evidence, a single high-confidence claim is not defensible
 
 RATIONALE:
 A confident single label on a genuinely ambiguous shape, lacking disambiguating evidence, is not defensible — the module’s core lesson.
@@ -604,18 +604,18 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Which is a common beginner mistake this module warns against?
 
 OPTIONS:
 A. Reading the existing code before changing it
-B. Forcing a pattern where a simple solution would do (over-engineering)
-C. Naming variables clearly
+B. Naming variables clearly
+C. Forcing a pattern where a simple solution would do (over-engineering)
 D. Writing unit tests
 
-CORRECT ANSWER: B. Forcing a pattern where a simple solution would do (over-engineering)
+CORRECT ANSWER: C. Forcing a pattern where a simple solution would do (over-engineering)
 
 RATIONALE:
 Over-applying patterns where a simple solution suffices is a classic beginner trap the module warns against.
@@ -633,18 +633,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why is naming a class “FactoryManager” NOT enough to claim it uses a pattern?
 
 OPTIONS:
 A. Because class names must be lowercase
-B. Because a pattern is defined by its structure and intent, not by a label in the name
+B. Because patterns cannot be used in named classes
 C. Because the compiler ignores names
-D. Because patterns cannot be used in named classes
+D. Because a pattern is defined by its structure and intent, not by a label in the name
 
-CORRECT ANSWER: B. Because a pattern is defined by its structure and intent, not by a label in the name
+CORRECT ANSWER: D. Because a pattern is defined by its structure and intent, not by a label in the name
 
 RATIONALE:
 A pattern is identified by structure and intent; a suggestive class name alone is not evidence the pattern is present.
@@ -888,18 +888,18 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What are the three main GoF pattern categories described in this module?
 
 OPTIONS:
 A. Public, private, protected
-B. Creational, Structural, Behavioural
+B. Easy, moderate, hard
 C. Compile, link, run
-D. Easy, moderate, hard
+D. Creational, Structural, Behavioural
 
-CORRECT ANSWER: B. Creational, Structural, Behavioural
+CORRECT ANSWER: D. Creational, Structural, Behavioural
 
 RATIONALE:
 The three GoF categories are Creational, Structural, and Behavioural; the module adds a fourth bucket of C++ idioms.
@@ -918,18 +918,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 On what basis are patterns grouped into those categories?
 
 OPTIONS:
 A. By how many lines of code they need
-B. By what the pattern is responsible for — creating objects, organising them, or coordinating behaviour
-C. By the year they were invented
+B. By the year they were invented
+C. By what the pattern is responsible for — creating objects, organising them, or coordinating behaviour
 D. By the author’s last name
 
-CORRECT ANSWER: B. By what the pattern is responsible for — creating objects, organising them, or coordinating behaviour
+CORRECT ANSWER: C. By what the pattern is responsible for — creating objects, organising them, or coordinating behaviour
 
 RATIONALE:
 Categories reflect responsibility: object creation (Creational), structure/composition (Structural), and communication/behaviour (Behavioural).
@@ -1120,7 +1120,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What does AST stand for in this module?
@@ -1149,18 +1149,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why can patterns be detected as “shapes” in code structure rather than by reading comments?
 
 OPTIONS:
 A. Because comments are always wrong
-B. Because class relationships, inheritance, and call flow form recognisable structural arrangements a tool can analyse
-C. Because the compiler renames every class
+B. Because the compiler renames every class
+C. Because class relationships, inheritance, and call flow form recognisable structural arrangements a tool can analyse
 D. Because patterns only exist in documentation
 
-CORRECT ANSWER: B. Because class relationships, inheritance, and call flow form recognisable structural arrangements a tool can analyse
+CORRECT ANSWER: C. Because class relationships, inheritance, and call flow form recognisable structural arrangements a tool can analyse
 
 RATIONALE:
 Patterns manifest as structural arrangements (relationships, inheritance, call flow) that a tool can analyse from a parse tree, independent of comments.
@@ -1350,7 +1350,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The connotative-definition rule reduces ambiguity by ___.
@@ -1379,18 +1379,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does CodiNeo define each pattern by a SET of structural descriptions rather than a single keyword?
 
 OPTIONS:
 A. Because one keyword is faster to type
-B. Because a combination of descriptions narrows which pattern is meant, reducing ambiguity
-C. Because keywords are banned in C++
+B. Because keywords are banned in C++
+C. Because a combination of descriptions narrows which pattern is meant, reducing ambiguity
 D. Because patterns have no structure
 
-CORRECT ANSWER: B. Because a combination of descriptions narrows which pattern is meant, reducing ambiguity
+CORRECT ANSWER: C. Because a combination of descriptions narrows which pattern is meant, reducing ambiguity
 
 RATIONALE:
 A set of token/structure descriptions, taken together, narrows the meaning far more than a single keyword could.
@@ -1580,18 +1580,18 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 According to the module, two teams that both use Builder may ___.
 
 OPTIONS:
-A. write code that always looks byte-for-byte identical
-B. write code that looks different while still being Builder
+A. write code that looks different while still being Builder
+B. write code that always looks byte-for-byte identical
 C. never use Builder correctly
 D. be forced to use the same variable names
 
-CORRECT ANSWER: B. write code that looks different while still being Builder
+CORRECT ANSWER: A. write code that looks different while still being Builder
 
 RATIONALE:
 Conventions vary by team, so two correct Builder implementations can look different — the module’s central point.
@@ -1609,7 +1609,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How does CodiNeo keep detection consistent despite team-by-team variation?
@@ -1866,7 +1866,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The principle taught in this module is “program to an ___.”
@@ -1895,18 +1895,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does depending on an abstraction instead of a concrete class make a system easier to change?
 
 OPTIONS:
 A. It deletes all the concrete classes
-B. New or swapped implementations can be used without modifying the callers that depend only on the abstraction
+B. It forces every class to be final
 C. It makes the program compile without linking
-D. It forces every class to be final
+D. New or swapped implementations can be used without modifying the callers that depend only on the abstraction
 
-CORRECT ANSWER: B. New or swapped implementations can be used without modifying the callers that depend only on the abstraction
+CORRECT ANSWER: D. New or swapped implementations can be used without modifying the callers that depend only on the abstraction
 
 RATIONALE:
 Callers that depend on an abstraction are insulated from concrete changes, so implementations can be added or swapped without editing them.
@@ -1924,7 +1924,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Several callers each hard-code PayPalProcessor. To follow this module’s principle, what should they depend on instead?
@@ -2117,7 +2117,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Which OOP concept means bundling data with the operations that act on it and restricting direct outside access?
@@ -2146,18 +2146,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why is polymorphism foundational to most design patterns?
 
 OPTIONS:
 A. It makes programs single-threaded
-B. It lets code call a shared interface while different concrete types supply the behaviour
+B. It forces every method to be static
 C. It removes the need for classes
-D. It forces every method to be static
+D. It lets code call a shared interface while different concrete types supply the behaviour
 
-CORRECT ANSWER: B. It lets code call a shared interface while different concrete types supply the behaviour
+CORRECT ANSWER: D. It lets code call a shared interface while different concrete types supply the behaviour
 
 RATIONALE:
 Polymorphism lets callers depend on an abstraction while concrete types vary the behaviour — the basis of Strategy, Factory, Bridge, and more.
@@ -2233,7 +2233,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: 
 Validation Status: (unset)
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 After Foundations, what kind of question is the catalog NOT trying to answer?
@@ -2262,7 +2262,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: 
 Validation Status: (unset)
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The post-Foundations questions are intentionally…
@@ -2453,18 +2453,18 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 According to the module, where do design patterns appear?
 
 OPTIONS:
-A. Only in textbooks and university exams
-B. In production systems written by working engineers across many industries
+A. In production systems written by working engineers across many industries
+B. Only in textbooks and university exams
 C. Only in code older than 1994
 D. Only in single-file programs
 
-CORRECT ANSWER: B. In production systems written by working engineers across many industries
+CORRECT ANSWER: A. In production systems written by working engineers across many industries
 
 RATIONALE:
 Patterns appear in real production systems across industries, not only in academic material.
@@ -2482,18 +2482,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does recognising patterns help a new contributor read an unfamiliar codebase?
 
 OPTIONS:
 A. It lets them skip compiling the project
-B. A recognised pattern conveys a chunk of design intent at once, speeding up comprehension
+B. It guarantees the codebase has no bugs
 C. It removes the need to talk to teammates ever
-D. It guarantees the codebase has no bugs
+D. A recognised pattern conveys a chunk of design intent at once, speeding up comprehension
 
-CORRECT ANSWER: B. A recognised pattern conveys a chunk of design intent at once, speeding up comprehension
+CORRECT ANSWER: D. A recognised pattern conveys a chunk of design intent at once, speeding up comprehension
 
 RATIONALE:
 Spotting a pattern communicates its intent and structure at once, so a newcomer understands a region of code faster.
@@ -2737,7 +2737,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 When two patterns share the same class diagram, this module says you tell them apart by ___.
@@ -2766,7 +2766,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Where does the module say intent leaves “fingerprints” that help break a near-tie?
@@ -2805,18 +2805,18 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Two candidates share one shape. Per the module, how should a careful analyser resolve the near-tie?
 
 OPTIONS:
 A. Pick the first candidate alphabetically
-B. Score each candidate per line on intent evidence (lexemes/collaborators) and compare, rather than bluffing
+B. Ignore both candidates
 C. Always report both as 100%
-D. Ignore both candidates
+D. Score each candidate per line on intent evidence (lexemes/collaborators) and compare, rather than bluffing
 
-CORRECT ANSWER: B. Score each candidate per line on intent evidence (lexemes/collaborators) and compare, rather than bluffing
+CORRECT ANSWER: D. Score each candidate per line on intent evidence (lexemes/collaborators) and compare, rather than bluffing
 
 RATIONALE:
 The module describes per-line scoring of intent evidence and comparison to resolve a tie honestly, not a bluffed pick.
@@ -3040,7 +3040,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In this catalog, each pattern ships with a “correct structure” section that lists ___.
@@ -3069,7 +3069,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does giving each pattern an explicit structural rule help detection stay consistent?
@@ -3108,7 +3108,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Code is missing one of the required token combos in a pattern’s structural rule. What can the analyser correctly conclude?
@@ -3461,7 +3461,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In this module, a design pattern is described as ___.
@@ -3491,7 +3491,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why is a design pattern NOT the same as a framework or a code snippet?
@@ -3520,7 +3520,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A teammate says “let’s reuse the proven house-design idea for our recurring object-creation problem.” What are they proposing to apply?
@@ -3769,18 +3769,18 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 According to the module, which is a benefit of using design patterns?
 
 OPTIONS:
-A. Code becomes harder to reuse
-B. Teams gain a shared vocabulary and code is easier to maintain
+A. Teams gain a shared vocabulary and code is easier to maintain
+B. Code becomes harder to reuse
 C. Every class must inherit from one base
 D. Builds always run faster
 
-CORRECT ANSWER: B. Teams gain a shared vocabulary and code is easier to maintain
+CORRECT ANSWER: A. Teams gain a shared vocabulary and code is easier to maintain
 
 RATIONALE:
 Patterns make code easier to reuse/maintain and give teams a shared vocabulary; they are not about build speed or forced inheritance.
@@ -3798,18 +3798,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does naming a recognisable pattern help during code review?
 
 OPTIONS:
 A. It removes the need to compile the code
-B. It lets the reviewer grasp the design intent quickly without re-deriving it from scratch
-C. It guarantees the code has no bugs
+B. It guarantees the code has no bugs
+C. It lets the reviewer grasp the design intent quickly without re-deriving it from scratch
 D. It hides the code from other developers
 
-CORRECT ANSWER: B. It lets the reviewer grasp the design intent quickly without re-deriving it from scratch
+CORRECT ANSWER: C. It lets the reviewer grasp the design intent quickly without re-deriving it from scratch
 
 RATIONALE:
 A recognised pattern name communicates intent quickly so reviewers understand the design without re-deriving it; it does not prove correctness.
@@ -4166,7 +4166,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What does an Abstract Factory provide through its interface?
@@ -4196,7 +4196,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How does Abstract Factory differ from a pattern where a subclass overrides one method to choose a single concrete product?
@@ -4226,7 +4226,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A document editor must render either a "Light" or "Dark" theme, and within a chosen theme the toolbar, scrollbar, and tooltip must all match — never a light scrollbar with a dark toolbar. Which approach fits?
@@ -4256,7 +4256,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:  struct DbFactory { virtual Connection* connect() = 0; virtual Command* command() = 0; virtual Reader* reader() = 0; };  Which pattern is this interface part of?
@@ -4286,7 +4286,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A concrete MySqlFactory implements connect() returning a MySqlConnection but command() returns a PostgresCommand. Does this honor Abstract Factory’s intent?
@@ -4658,7 +4658,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In the custom-pizza analogy, what does the Builder ultimately do at the end of the steps?
@@ -4688,7 +4688,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why is Builder preferred over a constructor that takes a long list of arguments for a complex object?
@@ -4718,7 +4718,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 An HTTP request object has a required URL plus many optional pieces (headers, timeout, retries, body). The team wants required parts enforced and optionals set clearly, ending with one finished request. Which approach fits best?
@@ -4748,7 +4748,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:  struct HouseBuilder { HouseBuilder& walls(int n); HouseBuilder& roof(std::string t); House build(); };  used as  House h = HouseBuilder{}.walls(4).roof("tile").build();  Which pattern does the presence of the terminal build() most strongly indicate?
@@ -4778,7 +4778,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A "builder" exposes setters that return *this but has no terminal step and no separate product — callers just use the builder object itself as the final result. Does this honor Builder’s intent?
@@ -5146,7 +5146,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In Factory Method, which participant decides which concrete product is actually created?
@@ -5176,7 +5176,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How does Factory Method differ from a factory that produces a whole matching set of related objects?
@@ -5206,7 +5206,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A report engine runs an identical generate-and-export sequence, but each report kind must construct its own exporter object. The base class wants to stay unaware of which concrete exporter is used. Which approach fits?
@@ -5235,7 +5235,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:  struct Parser { virtual Token* lex() = 0; void run(){ Token* t = lex(); /* ... */ } };  struct JsonParser : Parser { Token* lex() override { return new JsonToken(); } };  Which pattern does this structure indicate?
@@ -5265,7 +5265,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A reviewer finds a base Importer class with a virtual openSource() that two subclasses override to return different concrete sources, used by a shared import() routine. Is labeling this Factory Method defensible?
@@ -5629,7 +5629,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What does the Method Chaining idiom let you do in a single expression?
@@ -5659,7 +5659,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Method Chaining and Builder both rely on returning *this. What distinguishes Method Chaining from Builder?
@@ -5689,7 +5689,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A developer wants to write log.level(Warn).tag("net").color(true); on one line, mutating the same logger and reading like a sentence, with no separate finished object produced. Which technique enables this?
@@ -5718,7 +5718,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:  struct Style { Style& bold(bool b){ b_=b; return *this; } Style& size(int s){ s_=s; return *this; } };  with no terminal method returning a different type. Which idiom does this structure indicate?
@@ -5747,7 +5747,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A "fluent" class declares its setters to return a brand-new copy of the object instead of *this. Does this implement method chaining correctly, and what is the effect?
@@ -6113,7 +6113,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What is the core idea of the Prototype pattern?
@@ -6143,7 +6143,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does cloning rely on a virtual clone() rather than letting the caller write new ConcreteType(original)?
@@ -6173,7 +6173,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A diagramming tool lets users press Ctrl+D to duplicate any selected element — a styled node, a connector, a group — at runtime, without the tool knowing each element’s concrete class. Which approach fits?
@@ -6202,7 +6202,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:  struct Node { virtual std::unique_ptr<Node> clone() const = 0; };  struct TextNode : Node { std::unique_ptr<Node> clone() const override { return std::make_unique<TextNode>(*this); } };  Which pattern does this structure indicate?
@@ -6232,7 +6232,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A Prototype subclass owns a pointer to a heap buffer, and its clone() performs only a member-wise (shallow) copy. Is this a sound clone, and why?
@@ -6600,7 +6600,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In the kitchen-phone analogy from the module, what does Singleton ultimately provide?
@@ -6630,7 +6630,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does hiding the constructor matter for a Singleton, and how is it different from simply storing an object in a global variable?
@@ -6660,7 +6660,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A game engine needs one audio mixer: created the first time sound plays, then reused by every system that emits a sound, with no second mixer ever existing. Which approach matches?
@@ -6690,7 +6690,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:  class Clock { Clock(){} public: static Clock& get(){ static Clock c; return c; } long now(); };  Which pattern does this structure indicate?
@@ -6719,7 +6719,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class offers a static current() accessor but its copy constructor is still public, so callers can write Settings s2 = Settings::current();. Does this faithfully implement Singleton?
@@ -7085,7 +7085,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 An Adapter primarily exists to ___.
@@ -7115,7 +7115,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 When an adapter receives a call, what does it actually do with the wrapped (adaptee) object?
@@ -7145,7 +7145,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Your analytics layer is written against a Geocoder type with lookup(Address), but the only mapping vendor you can use ships a frozen SDK whose method is resolve(const char*, double&, double&). You may not edit the SDK. What design lets your layer call it unchanged?
@@ -7153,10 +7153,10 @@ Your analytics layer is written against a Geocoder type with lookup(Address), bu
 OPTIONS:
 A. A subsystem front that hides the SDK behind one easy method
 B. A wrapper that adds caching to the SDK while keeping its interface
-C. A class implementing Geocoder that translates each lookup into the SDK’s resolve call
-D. A tree of vendor objects treated uniformly
+C. A tree of vendor objects treated uniformly
+D. A class implementing Geocoder that translates each lookup into the SDK’s resolve call
 
-CORRECT ANSWER: C. A class implementing Geocoder that translates each lookup into the SDK’s resolve call
+CORRECT ANSWER: D. A class implementing Geocoder that translates each lookup into the SDK’s resolve call
 
 RATIONALE:
 A class that presents the expected Geocoder interface while converting calls to the differently-shaped, unmodifiable SDK is an Adapter. The distractors are Facade, Decorator, and Composite.
@@ -7175,7 +7175,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -7191,11 +7191,11 @@ Which structural pattern does ProbeBridge implement?
 
 OPTIONS:
 A. Bridge, because the name says so and it holds another object
-B. Adapter, because it implements the expected interface by converting calls to a differently-shaped existing API
-C. Decorator, because it changes the returned value
+B. Decorator, because it changes the returned value
+C. Adapter, because it implements the expected interface by converting calls to a differently-shaped existing API
 D. Proxy, because it stands in for the probe
 
-CORRECT ANSWER: B. Adapter, because it implements the expected interface by converting calls to a differently-shaped existing API
+CORRECT ANSWER: C. Adapter, because it implements the expected interface by converting calls to a differently-shaped existing API
 
 RATIONALE:
 Despite its name, ProbeBridge implements the expected TempSensor interface and converts a Kelvin reading into the expected Celsius call — interface conversion, i.e. Adapter. It does not vary two hierarchies (Bridge), add client-facing features (Decorator), or control access (Proxy).
@@ -7214,7 +7214,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class advertised as an Adapter implements the very same interface its caller already used and only records timing metrics before forwarding each call unchanged — no signatures are converted. Is the Adapter label correct?
@@ -7222,10 +7222,10 @@ A class advertised as an Adapter implements the very same interface its caller a
 OPTIONS:
 A. Yes — any class that wraps another is an Adapter
 B. Yes — forwarding calls is the essence of Adapter
-C. No — with no interface conversion this adds behaviour over the same interface, which is Decorator/Proxy intent, not Adapter
-D. No — because Adapters are forbidden from holding the wrapped object
+C. No — because Adapters are forbidden from holding the wrapped object
+D. No — with no interface conversion this adds behaviour over the same interface, which is Decorator/Proxy intent, not Adapter
 
-CORRECT ANSWER: C. No — with no interface conversion this adds behaviour over the same interface, which is Decorator/Proxy intent, not Adapter
+CORRECT ANSWER: D. No — with no interface conversion this adds behaviour over the same interface, which is Decorator/Proxy intent, not Adapter
 
 RATIONALE:
 Adapter is defined by converting one interface into another. Keeping the same interface while adding work (metrics) is Decorator or Proxy intent; calling it Adapter misstates the intent.
@@ -7582,7 +7582,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The intent of Bridge is to ___.
@@ -7612,18 +7612,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does Bridge use composition between an abstraction and an implementor hierarchy instead of one big inheritance tree?
 
 OPTIONS:
-A. Because composition makes the abstraction a Singleton
-B. Because inheritance cannot use virtual functions
-C. Because composing the two hierarchies lets each grow separately and avoids an N×M explosion of combined subclasses
+A. Because composing the two hierarchies lets each grow separately and avoids an N×M explosion of combined subclasses
+B. Because composition makes the abstraction a Singleton
+C. Because inheritance cannot use virtual functions
 D. Because it merges both dimensions into a single class
 
-CORRECT ANSWER: C. Because composing the two hierarchies lets each grow separately and avoids an N×M explosion of combined subclasses
+CORRECT ANSWER: A. Because composing the two hierarchies lets each grow separately and avoids an N×M explosion of combined subclasses
 
 RATIONALE:
 Bridge composes an abstraction with an independent implementor hierarchy, so adding a new abstraction or a new implementation does not require a subclass for every pairing — avoiding the combinatorial explosion inheritance would cause.
@@ -7642,7 +7642,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A reporting product has report kinds (summary, audit, forecast) that must each be emitted through several output engines (PDF, HTML, spreadsheet), and both the set of report kinds and the set of engines are expected to keep growing on their own schedules. Which design avoids one class per report-kind×engine pair?
@@ -7672,7 +7672,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -7692,10 +7692,10 @@ Which structural pattern is this?
 OPTIONS:
 A. PIMPL, because Alert holds a pointer to another type
 B. Decorator, because Alert wraps a Channel
-C. Bridge, because an abstraction hierarchy (Alert) is composed with a separate, independently varying implementor hierarchy (Channel)
-D. Composite, because alerts can be nested
+C. Composite, because alerts can be nested
+D. Bridge, because an abstraction hierarchy (Alert) is composed with a separate, independently varying implementor hierarchy (Channel)
 
-CORRECT ANSWER: C. Bridge, because an abstraction hierarchy (Alert) is composed with a separate, independently varying implementor hierarchy (Channel)
+CORRECT ANSWER: D. Bridge, because an abstraction hierarchy (Alert) is composed with a separate, independently varying implementor hierarchy (Channel)
 
 RATIONALE:
 Alert/CriticalAlert form an abstraction hierarchy that holds and delegates to an independent Channel implementor hierarchy; both vary independently — Bridge. It is not PIMPL (which hides one fixed implementation to stabilise a header, with no varying abstraction), not Decorator, and not Composite.
@@ -7714,7 +7714,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class holds a single std::unique_ptr<Impl> whose only role is to keep its private members out of the public header; there is exactly one Impl and no abstraction varies. A teammate labels this “Bridge.” Is that accurate?
@@ -8081,7 +8081,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Composite pattern is used to ___.
@@ -8089,10 +8089,10 @@ The Composite pattern is used to ___.
 OPTIONS:
 A. control access to an expensive object through a surrogate
 B. share fine-grained objects to save memory
-C. compose objects into part-whole trees so individual objects and whole groups are treated uniformly
-D. convert an existing interface into another
+C. convert an existing interface into another
+D. compose objects into part-whole trees so individual objects and whole groups are treated uniformly
 
-CORRECT ANSWER: C. compose objects into part-whole trees so individual objects and whole groups are treated uniformly
+CORRECT ANSWER: D. compose objects into part-whole trees so individual objects and whole groups are treated uniformly
 
 RATIONALE:
 Composite builds part-whole trees in which leaves and containers are used the same way. The distractors are Proxy, Flyweight, and Adapter.
@@ -8111,7 +8111,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What makes it possible for a client to call the same operation on a single element and on a whole nested group without checking which it has?
@@ -8141,7 +8141,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A budgeting tool must answer total() for either a single line item or an envelope that contains line items and other envelopes nested to any depth, using one identical call regardless of which it is handed. Which design fits?
@@ -8171,7 +8171,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -8189,11 +8189,11 @@ Which structural pattern is this?
 
 OPTIONS:
 A. Decorator, because Project wraps Tasks
-B. Composite, because leaf and container share one interface and the container recursively aggregates its children
-C. Bridge, because two hierarchies are involved
+B. Bridge, because two hierarchies are involved
+C. Composite, because leaf and container share one interface and the container recursively aggregates its children
 D. Flyweight, because Tasks are reused
 
-CORRECT ANSWER: B. Composite, because leaf and container share one interface and the container recursively aggregates its children
+CORRECT ANSWER: C. Composite, because leaf and container share one interface and the container recursively aggregates its children
 
 RATIONALE:
 Chore (leaf) and Project (container) both implement Task, and Project recursively sums its children — the part-whole structure of Composite. There is no added responsibility (Decorator), no second varying hierarchy (Bridge), and no shared-state pooling (Flyweight).
@@ -8212,7 +8212,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A so-called Composite gives the container a children list and a render() method, but the leaf type exposes a wholly different method named paint() with no shared interface, so clients must test each node’s type before calling. Does this honour Composite’s intent?
@@ -8579,7 +8579,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 According to this module, the Decorator pattern primarily lets a program ___.
@@ -8609,7 +8609,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What property of a decorator allows several of them to be layered on the same object?
@@ -8617,10 +8617,10 @@ What property of a decorator allows several of them to be layered on the same ob
 OPTIONS:
 A. Each decorator stores a single global instance the others reuse
 B. Each decorator changes the wrapped object’s interface as it nests
-C. Each decorator both implements the component interface and holds a component, so the wrapper is itself decoratable
-D. Each decorator edits the base class so later layers can attach
+C. Each decorator edits the base class so later layers can attach
+D. Each decorator both implements the component interface and holds a component, so the wrapper is itself decoratable
 
-CORRECT ANSWER: C. Each decorator both implements the component interface and holds a component, so the wrapper is itself decoratable
+CORRECT ANSWER: D. Each decorator both implements the component interface and holds a component, so the wrapper is itself decoratable
 
 RATIONALE:
 Because a decorator is itself a component that holds a component, decorators nest indefinitely while staying interchangeable with the undecorated object. They neither edit the base class nor change the interface.
@@ -8639,18 +8639,18 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A message-sending service must let operators turn on any mix of retry, rate-limiting, and audit-logging per outgoing message at runtime, with each combination still usable wherever a plain sender is expected — and you want to avoid one subclass per combination. Which design fits?
 
 OPTIONS:
 A. A surrogate that defers creating the sender until first use
-B. A set of same-interface wrappers, each adding one behaviour around the forwarded send and stackable in any order
-C. A class converting the sender into a third-party transport interface
+B. A class converting the sender into a third-party transport interface
+C. A set of same-interface wrappers, each adding one behaviour around the forwarded send and stackable in any order
 D. A simplified front that hides the sending subsystem behind one call
 
-CORRECT ANSWER: B. A set of same-interface wrappers, each adding one behaviour around the forwarded send and stackable in any order
+CORRECT ANSWER: C. A set of same-interface wrappers, each adding one behaviour around the forwarded send and stackable in any order
 
 RATIONALE:
 Composable, interchangeable add-ons over a shared interface, combined at runtime, is Decorator. The distractors are Proxy, Adapter, and Facade.
@@ -8669,7 +8669,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -8709,7 +8709,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A same-interface wrapper around a Connection only adds lazy opening of the socket and a permission check before delegating; it exposes no new operation or output to the caller. Is “Decorator” the most precise label?
@@ -9076,7 +9076,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A Facade is introduced in order to ___.
@@ -9106,18 +9106,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 After a Facade is added, what happens to the underlying subsystem classes?
 
 OPTIONS:
-A. They are deleted, since the Facade replaces them
-B. They remain reachable for advanced needs; the Facade only adds a convenient high-level entry point
+A. They remain reachable for advanced needs; the Facade only adds a convenient high-level entry point
+B. They are deleted, since the Facade replaces them
 C. Each of their interfaces is converted into the Facade’s interface
 D. They are reduced to a single shared instance
 
-CORRECT ANSWER: B. They remain reachable for advanced needs; the Facade only adds a convenient high-level entry point
+CORRECT ANSWER: A. They remain reachable for advanced needs; the Facade only adds a convenient high-level entry point
 
 RATIONALE:
 A Facade is additive: it simplifies common usage while leaving the subsystem classes accessible when finer control is required. It neither removes them nor converts their interfaces.
@@ -9136,7 +9136,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A checkout button should trigger one call that internally reserves stock, charges the card, books a courier, and emails a receipt, so callers never touch those four components directly and the components do not call back through it. Which design fits?
@@ -9144,10 +9144,10 @@ A checkout button should trigger one call that internally reserves stock, charge
 OPTIONS:
 A. A surrogate that controls access to each of the four components
 B. A wrapper that adds new behaviour to each component in a stack
-C. One class that owns the four components and exposes a single high-level method choreographing them one-way
-D. A hub through which the four components route all their mutual messages
+C. A hub through which the four components route all their mutual messages
+D. One class that owns the four components and exposes a single high-level method choreographing them one-way
 
-CORRECT ANSWER: C. One class that owns the four components and exposes a single high-level method choreographing them one-way
+CORRECT ANSWER: D. One class that owns the four components and exposes a single high-level method choreographing them one-way
 
 RATIONALE:
 A single class exposing one high-level method that orchestrates several subsystem objects one-way is a Facade. The distractors are Proxy, Decorator, and Mediator (which would coordinate two-way peer communication).
@@ -9166,7 +9166,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -9208,7 +9208,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class billed as a Facade not only offers simple entry methods but also forces every subsystem object to route all of its mutual messages through it, coordinating their back-and-forth interactions. Is “Facade” still the most precise label?
@@ -9575,7 +9575,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In this module, the main goal of the Flyweight pattern is to ___.
@@ -9583,10 +9583,10 @@ In this module, the main goal of the Flyweight pattern is to ___.
 OPTIONS:
 A. compose objects into part-whole trees
 B. decouple an abstraction from its implementation
-C. support very large numbers of similar objects efficiently by sharing their common state
-D. provide a controlled surrogate for a costly object
+C. provide a controlled surrogate for a costly object
+D. support very large numbers of similar objects efficiently by sharing their common state
 
-CORRECT ANSWER: C. support very large numbers of similar objects efficiently by sharing their common state
+CORRECT ANSWER: D. support very large numbers of similar objects efficiently by sharing their common state
 
 RATIONALE:
 Flyweight reduces memory by sharing common (intrinsic) state across many fine-grained objects. The distractors are Composite, Bridge, and Proxy.
@@ -9605,7 +9605,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In a Flyweight design, where do intrinsic and extrinsic state respectively live?
@@ -9635,7 +9635,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A tile-based game draws millions of map cells drawn from a handful of terrain kinds; each kind’s sprite and movement-cost repeat across cells, while each cell’s grid coordinates differ. How do you avoid storing the sprite data once per cell?
@@ -9665,7 +9665,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -9707,7 +9707,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A design described as Flyweight stores each glyph’s on-screen x/y as a member field and creates a brand-new object for every character on the page, sharing nothing. Does this achieve Flyweight’s goal?
@@ -10074,7 +10074,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The defining purpose of a Proxy is to ___.
@@ -10104,7 +10104,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why must a proxy expose the same interface as the real subject it guards?
@@ -10134,7 +10134,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A reporting screen references thousands of high-resolution attachments, but most are never opened. You want each attachment reference to behave exactly like the real document object yet defer the costly disk read until something actually calls render(). What design fits?
@@ -10164,7 +10164,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -10183,10 +10183,10 @@ Which structural pattern is GuardedVault?
 OPTIONS:
 A. Decorator, because it does extra work before forwarding
 B. Adapter, because it wraps another object
-C. Proxy, because it shares the subject’s interface and gates access without adding new client-facing operations
-D. Composite, because it manages stored slots
+C. Composite, because it manages stored slots
+D. Proxy, because it shares the subject’s interface and gates access without adding new client-facing operations
 
-CORRECT ANSWER: C. Proxy, because it shares the subject’s interface and gates access without adding new client-facing operations
+CORRECT ANSWER: D. Proxy, because it shares the subject’s interface and gates access without adding new client-facing operations
 
 RATIONALE:
 GuardedVault keeps the same Vault interface and performs an access check before delegating, adding no new client-facing feature — a protection Proxy. Decorator would add a visible new responsibility; Adapter would convert the interface.
@@ -10205,7 +10205,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class wraps a RemoteLedger with an identical interface but does nothing except call through to it on every method — no lazy loading, no caching, no access checks, no remoting setup. Is “Proxy” a meaningful classification here?
@@ -10588,7 +10588,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A Repository’s main job is to ___.
@@ -10619,7 +10619,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How should Repository be classified relative to the original Gang-of-Four catalog?
@@ -10627,10 +10627,10 @@ How should Repository be classified relative to the original Gang-of-Four catalo
 OPTIONS:
 A. As a GoF structural pattern, alongside Adapter and Proxy
 B. As a GoF creational pattern for building entities
-C. As a supplemental enterprise / application-architecture pattern for data access, outside the GoF set
-D. As a C++ language idiom like PIMPL
+C. As a C++ language idiom like PIMPL
+D. As a supplemental enterprise / application-architecture pattern for data access, outside the GoF set
 
-CORRECT ANSWER: C. As a supplemental enterprise / application-architecture pattern for data access, outside the GoF set
+CORRECT ANSWER: D. As a supplemental enterprise / application-architecture pattern for data access, outside the GoF set
 
 RATIONALE:
 Repository originates in enterprise/application architecture (Fowler; Evans) and is not part of the GoF catalog; it is an application-architecture data-access pattern, not a GoF structural pattern or a language idiom.
@@ -10650,18 +10650,18 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Your service code must create, fetch, and delete Invoice entities identically whether they live in PostgreSQL in production or an in-memory map during tests, with the service code never mentioning SQL or connections. Which approach achieves this cleanly?
 
 OPTIONS:
 A. Make the database a single global instance the service reads directly
-B. Wrap each Invoice in a behaviour-adding layer
-C. Define an Invoice-storage interface (findById, save, delete) with interchangeable backing implementations behind it
+B. Define an Invoice-storage interface (findById, save, delete) with interchangeable backing implementations behind it
+C. Wrap each Invoice in a behaviour-adding layer
 D. Put a simplified front over the application’s user interface
 
-CORRECT ANSWER: C. Define an Invoice-storage interface (findById, save, delete) with interchangeable backing implementations behind it
+CORRECT ANSWER: B. Define an Invoice-storage interface (findById, save, delete) with interchangeable backing implementations behind it
 
 RATIONALE:
 A domain-facing storage interface with swappable implementations (real DB vs in-memory) that keeps persistence details out of the domain is the Repository approach. The distractors are Singleton, Decorator, and Facade-over-UI.
@@ -10681,7 +10681,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Examine:
@@ -10722,7 +10722,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class named OrderRepository exposes methods that return raw result-set cursors and require each caller to open transactions and assemble SQL fragments. Does this faithfully realise the Repository idea?
@@ -11060,7 +11060,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In the Chain of Responsibility pattern, a request ___.
@@ -11090,7 +11090,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What decision does each handler in the chain make when it receives a request?
@@ -11119,7 +11119,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 An expense claim should be tried by a team lead, then a department head, then finance, each either approving within its limit or passing it on, with the submitter unaware of who ultimately approves. Which approach fits?
@@ -11148,7 +11148,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -11193,7 +11193,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Each link holds a reference to the next and either stops the request on a condition or calls the next, and the caller never learns which link acted. A teammate calls this Decorator. Is that defensible?
@@ -11559,7 +11559,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Command pattern turns ___.
@@ -11589,7 +11589,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What does packaging an action as a Command object let the invoker do that calling the receiver directly does not?
@@ -11618,7 +11618,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A graphics editor must record each user action so the program can replay a recorded macro, queue scheduled actions, and reverse the most recent one. Which approach fits?
@@ -11647,7 +11647,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -11691,7 +11691,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A UI handler calls receiver methods directly inline and claims to support undo by re-reading the current widget values afterwards; there are no request objects. Does this implement Command?
@@ -12057,7 +12057,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Interpreter pattern represents a small language by ___.
@@ -12087,7 +12087,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How is a sentence typically represented and evaluated in an Interpreter design?
@@ -12116,7 +12116,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Users type small filter expressions such as price > 10 AND inStock that nest arbitrarily, and you must evaluate them by composing rules recursively. Which approach fits?
@@ -12145,7 +12145,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -12183,7 +12183,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A team adopts the Interpreter pattern to implement a large, performance-critical general-purpose programming language with deeply nested grammar. Is this an appropriate use, and why?
@@ -12549,7 +12549,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Iterator pattern lets a client ___.
@@ -12579,18 +12579,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What is the benefit of moving the traversal cursor into a separate iterator object instead of exposing the collection’s internal array?
 
 OPTIONS:
 A. It forces the collection to become a single shared instance
-B. The collection can keep its storage private and even change it, while clients still traverse uniformly
-C. It converts each element to a new type during the walk
-D. It lets the collection notify dependents on every step
+B. It converts each element to a new type during the walk
+C. It lets the collection notify dependents on every step
+D. The collection can keep its storage private and even change it, while clients still traverse uniformly
 
-CORRECT ANSWER: B. The collection can keep its storage private and even change it, while clients still traverse uniformly
+CORRECT ANSWER: D. The collection can keep its storage private and even change it, while clients still traverse uniformly
 
 RATIONALE:
 A separate cursor decouples traversal from representation, so the collection hides and can later change its internals while clients traverse uniformly.
@@ -12608,7 +12608,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A library exposes a ring buffer and a skip list; users should loop over either with identical code and even run two independent passes over the same container at once, without knowing the storage. Which approach fits?
@@ -12637,7 +12637,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -12678,7 +12678,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A so-called traversal API requires callers to read the collection’s public head pointer and node links directly, chasing them manually to loop. Does this honour the Iterator pattern’s intent?
@@ -13044,18 +13044,18 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
-According to this module, the role of a Mediator object is to ___.
+According to this module, a Mediator object ___.
 
 OPTIONS:
 A. evaluates sentences of a small grammar
-B. centralises and coordinates communication among a set of objects so they need not reference each other directly
-C. gives sequential access to a collection
-D. captures an object’s state for restore
+B. gives sequential access to a collection
+C. captures an object’s state for restore
+D. centralises and coordinates communication among a set of objects so they need not reference each other directly
 
-CORRECT ANSWER: B. centralises and coordinates communication among a set of objects so they need not reference each other directly
+CORRECT ANSWER: D. centralises and coordinates communication among a set of objects so they need not reference each other directly
 
 RATIONALE:
 Mediator centralises inter-object communication so colleagues stay decoupled. The distractors describe Interpreter, Iterator, and Memento.
@@ -13074,7 +13074,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How does a Mediator reduce coupling among its colleague objects?
@@ -13103,7 +13103,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In a booking form, selecting a country must refilter the city list, toggle a postcode field, and enable the submit button; you want to avoid each control holding references to all the others. Which approach fits?
@@ -13132,7 +13132,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -13177,7 +13177,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A hub receives events from peer objects and instructs other peers how to respond, governing their two-way interaction — not merely forwarding one-way change notifications and not just exposing a simpler entry point to a subsystem. Best classified as?
@@ -13543,7 +13543,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Memento pattern is used to ___.
@@ -13573,7 +13573,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How does the Memento pattern preserve encapsulation while saving an object’s state?
@@ -13602,7 +13602,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A text editor must support unlimited undo by saving the buffer’s state at each step and restoring an earlier one on demand, without exposing the buffer’s private fields. Which approach fits?
@@ -13631,7 +13631,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -13674,7 +13674,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A so-called snapshot design makes every internal field of an object public so external code can read them all, copy them, and later write them back directly. Does this honour Memento’s intent?
@@ -14040,7 +14040,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Observer pattern sets up a relationship in which ___.
@@ -14070,7 +14070,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How do dependents in an Observer design find out that the subject changed?
@@ -14099,7 +14099,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 When a sensor reading updates, a live graph, an audit log, and a threshold alarm must all react immediately, the sensor must not know their concrete types, and new reactors may be added later. Which approach fits?
@@ -14128,7 +14128,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -14168,7 +14168,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Each dependent registers with a single source and is notified when that source changes; the dependents never coordinate one another’s mutual behaviour through a hub. Should this be classified as Observer or Mediator?
@@ -14534,7 +14534,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The State pattern lets an object ___.
@@ -14564,7 +14564,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 How does the State pattern replace a sprawling switch on a status field?
@@ -14593,7 +14593,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A vending machine behaves differently when idle, coin-inserted, or dispensing, and each event can move it into another mode with its own allowed actions. Which approach fits?
@@ -14622,7 +14622,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -14664,7 +14664,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Behaviour is delegated to a polymorphic object, and that object itself decides, based on incoming events, to replace the host’s current behaviour object — driving transitions. Is this State or Strategy?
@@ -15030,7 +15030,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A Strategy design groups several ___ behind one shared interface so the host can use any of them.
@@ -15060,7 +15060,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In a Strategy design, why does the host class keep a reference to the strategy interface rather than a concrete algorithm?
@@ -15089,7 +15089,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A media exporter must encode video with H.264, VP9, or AV1, with the choice picked from a settings menu at runtime and the rest of the export pipeline untouched. Which approach fits?
@@ -15118,7 +15118,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -15158,7 +15158,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class accepts a compression algorithm object through its constructor and delegates compression to it; the object never swaps itself out, and the caller decides which one to pass. Is labelling this Strategy defensible?
@@ -15524,7 +15524,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Template Method pattern keeps an algorithm’s ___ fixed in a base method while letting subclasses supply certain steps.
@@ -15554,7 +15554,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 In a Template Method design, what is fixed and what varies?
@@ -15583,7 +15583,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Three exporters share the flow open → gather → render → close and differ only in how they render, and you want that flow written exactly once. Which approach fits?
@@ -15612,7 +15612,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -15655,7 +15655,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 An algorithm’s invariant steps live in a base method that invokes overridable hooks, and subclasses customise behaviour only by overriding those hooks via inheritance. Is this better called Template Method or Strategy?
@@ -16022,7 +16022,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 The Visitor pattern lets you ___.
@@ -16052,7 +16052,7 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What technique lets the correct operation run for each concrete element type in a Visitor design?
@@ -16081,7 +16081,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A document model has paragraph, image, and table nodes; you must keep adding operations like word-count, export-to-HTML, and spell-check without editing each node class for every new operation. Which approach fits?
@@ -16110,7 +16110,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Study this code:
@@ -16149,7 +16149,7 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A team must add many unrelated operations over a node hierarchy whose set of node types almost never changes. Is Visitor an appropriate choice, and why?
@@ -16520,7 +16520,7 @@ Bloom Level: Remembering
 Applicable: YES
 Difficulty: Easy
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 What does the PIMPL idiom move out of a class’s public header?
@@ -16550,18 +16550,18 @@ Bloom Level: Understanding
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 Why does PIMPL reduce client recompilation when private members change?
 
 OPTIONS:
 A. Because clients stop including any headers
-B. Because the private members live in the .cpp, so changing them does not change the header clients include
+B. Because PIMPL disables the preprocessor
 C. Because the compiler caches everything forever
-D. Because PIMPL disables the preprocessor
+D. Because the private members live in the .cpp, so changing them does not change the header clients include
 
-CORRECT ANSWER: B. Because the private members live in the .cpp, so changing them does not change the header clients include
+CORRECT ANSWER: D. Because the private members live in the .cpp, so changing them does not change the header clients include
 
 RATIONALE:
 With private state hidden in the implementation file, header-included clients are insulated from those changes and need not recompile.
@@ -16580,7 +16580,7 @@ Bloom Level: Applying
 Applicable: YES
 Difficulty: Moderate
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A heavily-included header keeps changing its private fields, forcing slow full rebuilds. Which technique stabilises the header so clients rarely recompile?
@@ -16610,7 +16610,7 @@ Bloom Level: Analyzing
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A header declares: class Widget { public: Widget(); ~Widget(); void draw(); private: struct Impl; std::unique_ptr<Impl> p; };  with Impl defined only in widget.cpp. Which technique is shown?
@@ -16640,18 +16640,18 @@ Bloom Level: Evaluating
 Applicable: YES
 Difficulty: Difficult
 Validation Status: draft
-Item Type: mcq
+QUESTION FORMAT: FOUR-OPTION MCQ
 
 QUESTION:
 A class holds one unique_ptr<Impl> whose sole job is hiding private members and stabilising the header — no abstraction varies. Is calling it “Bridge” accurate?
 
 OPTIONS:
 A. Yes — any pointer-to-implementation is Bridge
-B. No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies
+B. No — this is actually Adapter
 C. Yes — Bridge and PIMPL are the same thing
-D. No — this is actually Adapter
+D. No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies
 
-CORRECT ANSWER: B. No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies
+CORRECT ANSWER: D. No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies
 
 RATIONALE:
 One fixed Impl for header insulation is PIMPL, not Bridge; Bridge requires an abstraction and an independently varying implementation hierarchy.

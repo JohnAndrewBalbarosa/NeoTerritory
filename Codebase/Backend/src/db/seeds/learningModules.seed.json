@@ -196,12 +196,12 @@
           "difficulty": "easy",
           "question": "According to the module, which is a benefit of using design patterns?",
           "options": [
-            "Code becomes harder to reuse",
             "Teams gain a shared vocabulary and code is easier to maintain",
+            "Code becomes harder to reuse",
             "Every class must inherit from one base",
             "Builds always run faster"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "rationale": "Patterns make code easier to reuse/maintain and give teams a shared vocabulary; they are not about build speed or forced inheritance.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -218,11 +218,11 @@
           "question": "Why does naming a recognisable pattern help during code review?",
           "options": [
             "It removes the need to compile the code",
-            "It lets the reviewer grasp the design intent quickly without re-deriving it from scratch",
             "It guarantees the code has no bugs",
+            "It lets the reviewer grasp the design intent quickly without re-deriving it from scratch",
             "It hides the code from other developers"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "A recognised pattern name communicates intent quickly so reviewers understand the design without re-deriving it; it does not prove correctness.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -351,11 +351,11 @@
           "question": "What are the three main GoF pattern categories described in this module?",
           "options": [
             "Public, private, protected",
-            "Creational, Structural, Behavioural",
+            "Easy, moderate, hard",
             "Compile, link, run",
-            "Easy, moderate, hard"
+            "Creational, Structural, Behavioural"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "The three GoF categories are Creational, Structural, and Behavioural; the module adds a fourth bucket of C++ idioms.",
           "sourceReferences": [
             "CodiNeo Foundations module content",
@@ -373,11 +373,11 @@
           "question": "On what basis are patterns grouped into those categories?",
           "options": [
             "By how many lines of code they need",
-            "By what the pattern is responsible for — creating objects, organising them, or coordinating behaviour",
             "By the year they were invented",
+            "By what the pattern is responsible for — creating objects, organising them, or coordinating behaviour",
             "By the author’s last name"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Categories reflect responsibility: object creation (Creational), structure/composition (Structural), and communication/behaviour (Behavioural).",
           "sourceReferences": [
             "CodiNeo Foundations module content",
@@ -523,11 +523,11 @@
           "question": "Why is polymorphism foundational to most design patterns?",
           "options": [
             "It makes programs single-threaded",
-            "It lets code call a shared interface while different concrete types supply the behaviour",
+            "It forces every method to be static",
             "It removes the need for classes",
-            "It forces every method to be static"
+            "It lets code call a shared interface while different concrete types supply the behaviour"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "Polymorphism lets callers depend on an abstraction while concrete types vary the behaviour — the basis of Strategy, Factory, Bridge, and more.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -648,11 +648,11 @@
           "question": "Why does depending on an abstraction instead of a concrete class make a system easier to change?",
           "options": [
             "It deletes all the concrete classes",
-            "New or swapped implementations can be used without modifying the callers that depend only on the abstraction",
+            "It forces every class to be final",
             "It makes the program compile without linking",
-            "It forces every class to be final"
+            "New or swapped implementations can be used without modifying the callers that depend only on the abstraction"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "Callers that depend on an abstraction are insulated from concrete changes, so implementations can be added or swapped without editing them.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -791,11 +791,11 @@
           "question": "Why can patterns be detected as “shapes” in code structure rather than by reading comments?",
           "options": [
             "Because comments are always wrong",
-            "Because class relationships, inheritance, and call flow form recognisable structural arrangements a tool can analyse",
             "Because the compiler renames every class",
+            "Because class relationships, inheritance, and call flow form recognisable structural arrangements a tool can analyse",
             "Because patterns only exist in documentation"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Patterns manifest as structural arrangements (relationships, inheritance, call flow) that a tool can analyse from a parse tree, independent of comments.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -900,12 +900,12 @@
           "difficulty": "easy",
           "question": "According to the module, where do design patterns appear?",
           "options": [
-            "Only in textbooks and university exams",
             "In production systems written by working engineers across many industries",
+            "Only in textbooks and university exams",
             "Only in code older than 1994",
             "Only in single-file programs"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "rationale": "Patterns appear in real production systems across industries, not only in academic material.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -922,11 +922,11 @@
           "question": "Why does recognising patterns help a new contributor read an unfamiliar codebase?",
           "options": [
             "It lets them skip compiling the project",
-            "A recognised pattern conveys a chunk of design intent at once, speeding up comprehension",
+            "It guarantees the codebase has no bugs",
             "It removes the need to talk to teammates ever",
-            "It guarantees the codebase has no bugs"
+            "A recognised pattern conveys a chunk of design intent at once, speeding up comprehension"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "Spotting a pattern communicates its intent and structure at once, so a newcomer understands a region of code faster.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1027,11 +1027,11 @@
           "question": "Which is a common beginner mistake this module warns against?",
           "options": [
             "Reading the existing code before changing it",
-            "Forcing a pattern where a simple solution would do (over-engineering)",
             "Naming variables clearly",
+            "Forcing a pattern where a simple solution would do (over-engineering)",
             "Writing unit tests"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Over-applying patterns where a simple solution suffices is a classic beginner trap the module warns against.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1048,11 +1048,11 @@
           "question": "Why is naming a class “FactoryManager” NOT enough to claim it uses a pattern?",
           "options": [
             "Because class names must be lowercase",
-            "Because a pattern is defined by its structure and intent, not by a label in the name",
+            "Because patterns cannot be used in named classes",
             "Because the compiler ignores names",
-            "Because patterns cannot be used in named classes"
+            "Because a pattern is defined by its structure and intent, not by a label in the name"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "A pattern is identified by structure and intent; a suggestive class name alone is not evidence the pattern is present.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1185,11 +1185,11 @@
           "question": "Why can no automated tool always pick a single pattern from structure alone?",
           "options": [
             "Because tools cannot read C++",
-            "Because several patterns can share an identical structural shape, so structure alone is insufficient to decide intent",
             "Because the patterns are secret",
+            "Because several patterns can share an identical structural shape, so structure alone is insufficient to decide intent",
             "Because compilers delete the structure"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "When patterns share a shape, structure underdetermines intent, so a tool cannot always pick one winner from code alone.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1206,11 +1206,11 @@
           "question": "Your analyser finds code matching both Adapter and Decorator equally. Following the module, what is the right response?",
           "options": [
             "Randomly pick one and report it confidently",
-            "Report the genuine ambiguity rather than bluffing a single confident answer",
+            "Always choose the alphabetically first pattern",
             "Delete the code",
-            "Always choose the alphabetically first pattern"
+            "Report the genuine ambiguity rather than bluffing a single confident answer"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "The honest response to a true structural tie is to surface the ambiguity, not to fake a confident single pick.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1227,11 +1227,11 @@
           "question": "Two classes each wrap a held member and forward calls to it. Why is this evidence insufficient to label one Adapter and the other Decorator?",
           "options": [
             "Because forwarding is illegal in C++",
-            "Because Adapter, Decorator, and Proxy all share that wrap-and-forward shape; intent (convert vs add vs control) must distinguish them",
             "Because wrapping always means Adapter",
+            "Because Adapter, Decorator, and Proxy all share that wrap-and-forward shape; intent (convert vs add vs control) must distinguish them",
             "Because the classes must be merged"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Wrap-and-forward is common to Adapter, Decorator, and Proxy; only their differing intent separates them, so structure alone cannot decide.",
           "sourceReferences": [
             "CodiNeo Foundations module content",
@@ -1249,11 +1249,11 @@
           "question": "A tool reports “100% Decorator” for code that is structurally identical to Adapter and Proxy, with no extra evidence. How should you judge this report?",
           "options": [
             "Trustworthy — high confidence means it is correct",
-            "Unjustified — with a shared shape and no disambiguating evidence, a single high-confidence claim is not defensible",
+            "Correct because the number is high",
             "Correct because Decorator is most common",
-            "Correct because the number is high"
+            "Unjustified — with a shared shape and no disambiguating evidence, a single high-confidence claim is not defensible"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "A confident single label on a genuinely ambiguous shape, lacking disambiguating evidence, is not defensible — the module’s core lesson.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1340,11 +1340,11 @@
           "question": "Why does CodiNeo define each pattern by a SET of structural descriptions rather than a single keyword?",
           "options": [
             "Because one keyword is faster to type",
-            "Because a combination of descriptions narrows which pattern is meant, reducing ambiguity",
             "Because keywords are banned in C++",
+            "Because a combination of descriptions narrows which pattern is meant, reducing ambiguity",
             "Because patterns have no structure"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "A set of token/structure descriptions, taken together, narrows the meaning far more than a single keyword could.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1560,11 +1560,11 @@
           "question": "Two candidates share one shape. Per the module, how should a careful analyser resolve the near-tie?",
           "options": [
             "Pick the first candidate alphabetically",
-            "Score each candidate per line on intent evidence (lexemes/collaborators) and compare, rather than bluffing",
+            "Ignore both candidates",
             "Always report both as 100%",
-            "Ignore both candidates"
+            "Score each candidate per line on intent evidence (lexemes/collaborators) and compare, rather than bluffing"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "The module describes per-line scoring of intent evidence and comparison to resolve a tie honestly, not a bluffed pick.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -1781,12 +1781,12 @@
           "difficulty": "easy",
           "question": "According to the module, two teams that both use Builder may ___.",
           "options": [
-            "write code that always looks byte-for-byte identical",
             "write code that looks different while still being Builder",
+            "write code that always looks byte-for-byte identical",
             "never use Builder correctly",
             "be forced to use the same variable names"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "rationale": "Conventions vary by team, so two correct Builder implementations can look different — the module’s central point.",
           "sourceReferences": [
             "CodiNeo Foundations module content"
@@ -2823,10 +2823,10 @@
           "options": [
             "A subsystem front that hides the SDK behind one easy method",
             "A wrapper that adds caching to the SDK while keeping its interface",
-            "A class implementing Geocoder that translates each lookup into the SDK’s resolve call",
-            "A tree of vendor objects treated uniformly"
+            "A tree of vendor objects treated uniformly",
+            "A class implementing Geocoder that translates each lookup into the SDK’s resolve call"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "A class that presents the expected Geocoder interface while converting calls to the differently-shaped, unmodifiable SDK is an Adapter. The distractors are Facade, Decorator, and Composite.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -2844,11 +2844,11 @@
           "question": "Examine:\n\nstruct TempSensor { virtual double celsius() = 0; };\nstruct VendorProbe { double readKelvin(); };\nstruct ProbeBridge : TempSensor {\n  VendorProbe p;\n  double celsius() override { return p.readKelvin() - 273.15; }\n};\n\nWhich structural pattern does ProbeBridge implement?",
           "options": [
             "Bridge, because the name says so and it holds another object",
-            "Adapter, because it implements the expected interface by converting calls to a differently-shaped existing API",
             "Decorator, because it changes the returned value",
+            "Adapter, because it implements the expected interface by converting calls to a differently-shaped existing API",
             "Proxy, because it stands in for the probe"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Despite its name, ProbeBridge implements the expected TempSensor interface and converts a Kelvin reading into the expected Celsius call — interface conversion, i.e. Adapter. It does not vary two hierarchies (Bridge), add client-facing features (Decorator), or control access (Proxy).",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -2867,10 +2867,10 @@
           "options": [
             "Yes — any class that wraps another is an Adapter",
             "Yes — forwarding calls is the essence of Adapter",
-            "No — with no interface conversion this adds behaviour over the same interface, which is Decorator/Proxy intent, not Adapter",
-            "No — because Adapters are forbidden from holding the wrapped object"
+            "No — because Adapters are forbidden from holding the wrapped object",
+            "No — with no interface conversion this adds behaviour over the same interface, which is Decorator/Proxy intent, not Adapter"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "Adapter is defined by converting one interface into another. Keeping the same interface while adding work (metrics) is Decorator or Proxy intent; calling it Adapter misstates the intent.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -3029,10 +3029,10 @@
           "options": [
             "Decorator, because it does extra work before forwarding",
             "Adapter, because it wraps another object",
-            "Proxy, because it shares the subject’s interface and gates access without adding new client-facing operations",
-            "Composite, because it manages stored slots"
+            "Composite, because it manages stored slots",
+            "Proxy, because it shares the subject’s interface and gates access without adding new client-facing operations"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "GuardedVault keeps the same Vault interface and performs an access check before delegating, adding no new client-facing feature — a protection Proxy. Decorator would add a visible new responsibility; Adapter would convert the interface.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -3168,10 +3168,10 @@
           "options": [
             "Each decorator stores a single global instance the others reuse",
             "Each decorator changes the wrapped object’s interface as it nests",
-            "Each decorator both implements the component interface and holds a component, so the wrapper is itself decoratable",
-            "Each decorator edits the base class so later layers can attach"
+            "Each decorator edits the base class so later layers can attach",
+            "Each decorator both implements the component interface and holds a component, so the wrapper is itself decoratable"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "Because a decorator is itself a component that holds a component, decorators nest indefinitely while staying interchangeable with the undecorated object. They neither edit the base class nor change the interface.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -3189,11 +3189,11 @@
           "question": "A message-sending service must let operators turn on any mix of retry, rate-limiting, and audit-logging per outgoing message at runtime, with each combination still usable wherever a plain sender is expected — and you want to avoid one subclass per combination. Which design fits?",
           "options": [
             "A surrogate that defers creating the sender until first use",
-            "A set of same-interface wrappers, each adding one behaviour around the forwarded send and stackable in any order",
             "A class converting the sender into a third-party transport interface",
+            "A set of same-interface wrappers, each adding one behaviour around the forwarded send and stackable in any order",
             "A simplified front that hides the sending subsystem behind one call"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Composable, interchangeable add-ons over a shared interface, combined at runtime, is Decorator. The distractors are Proxy, Adapter, and Facade.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -3697,11 +3697,11 @@
           "question": "What is the benefit of moving the traversal cursor into a separate iterator object instead of exposing the collection’s internal array?",
           "options": [
             "It forces the collection to become a single shared instance",
-            "The collection can keep its storage private and even change it, while clients still traverse uniformly",
             "It converts each element to a new type during the walk",
-            "It lets the collection notify dependents on every step"
+            "It lets the collection notify dependents on every step",
+            "The collection can keep its storage private and even change it, while clients still traverse uniformly"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "A separate cursor decouples traversal from representation, so the collection hides and can later change its internals while clients traverse uniformly.",
           "sourceReferences": [
             "Gamma, Helm, Johnson, Vlissides (1994), Design Patterns"
@@ -4022,10 +4022,10 @@
           "options": [
             "control access to an expensive object through a surrogate",
             "share fine-grained objects to save memory",
-            "compose objects into part-whole trees so individual objects and whole groups are treated uniformly",
-            "convert an existing interface into another"
+            "convert an existing interface into another",
+            "compose objects into part-whole trees so individual objects and whole groups are treated uniformly"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "Composite builds part-whole trees in which leaves and containers are used the same way. The distractors are Proxy, Flyweight, and Adapter.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -4087,11 +4087,11 @@
           "question": "Examine:\n\nstruct Task { virtual int hours() = 0; };\nstruct Chore : Task { int hours() override { return h; } };\nstruct Project : Task {\n  std::vector<Task*> sub;\n  int hours() override {\n    int t = 0; for (auto* x : sub) t += x->hours(); return t;\n  }\n};\n\nWhich structural pattern is this?",
           "options": [
             "Decorator, because Project wraps Tasks",
-            "Composite, because leaf and container share one interface and the container recursively aggregates its children",
             "Bridge, because two hierarchies are involved",
+            "Composite, because leaf and container share one interface and the container recursively aggregates its children",
             "Flyweight, because Tasks are reused"
           ],
-          "correctIndex": 1,
+          "correctIndex": 2,
           "rationale": "Chore (leaf) and Project (container) both implement Task, and Project recursively sums its children — the part-whole structure of Composite. There is no added responsibility (Decorator), no second varying hierarchy (Bridge), and no shared-state pooling (Flyweight).",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -4567,10 +4567,10 @@
           "options": [
             "As a GoF structural pattern, alongside Adapter and Proxy",
             "As a GoF creational pattern for building entities",
-            "As a supplemental enterprise / application-architecture pattern for data access, outside the GoF set",
-            "As a C++ language idiom like PIMPL"
+            "As a C++ language idiom like PIMPL",
+            "As a supplemental enterprise / application-architecture pattern for data access, outside the GoF set"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "Repository originates in enterprise/application architecture (Fowler; Evans) and is not part of the GoF catalog; it is an application-architecture data-access pattern, not a GoF structural pattern or a language idiom.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -4589,11 +4589,11 @@
           "question": "Your service code must create, fetch, and delete Invoice entities identically whether they live in PostgreSQL in production or an in-memory map during tests, with the service code never mentioning SQL or connections. Which approach achieves this cleanly?",
           "options": [
             "Make the database a single global instance the service reads directly",
-            "Wrap each Invoice in a behaviour-adding layer",
             "Define an Invoice-storage interface (findById, save, delete) with interchangeable backing implementations behind it",
+            "Wrap each Invoice in a behaviour-adding layer",
             "Put a simplified front over the application’s user interface"
           ],
-          "correctIndex": 2,
+          "correctIndex": 1,
           "rationale": "A domain-facing storage interface with swappable implementations (real DB vs in-memory) that keeps persistence details out of the domain is the Repository approach. The distractors are Singleton, Decorator, and Facade-over-UI.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -4728,11 +4728,11 @@
           "question": "Why does PIMPL reduce client recompilation when private members change?",
           "options": [
             "Because clients stop including any headers",
-            "Because the private members live in the .cpp, so changing them does not change the header clients include",
+            "Because PIMPL disables the preprocessor",
             "Because the compiler caches everything forever",
-            "Because PIMPL disables the preprocessor"
+            "Because the private members live in the .cpp, so changing them does not change the header clients include"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "With private state hidden in the implementation file, header-included clients are insulated from those changes and need not recompile.",
           "sourceReferences": [
             "CodiNeo Idioms module content",
@@ -4794,11 +4794,11 @@
           "question": "A class holds one unique_ptr<Impl> whose sole job is hiding private members and stabilising the header — no abstraction varies. Is calling it “Bridge” accurate?",
           "options": [
             "Yes — any pointer-to-implementation is Bridge",
-            "No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies",
+            "No — this is actually Adapter",
             "Yes — Bridge and PIMPL are the same thing",
-            "No — this is actually Adapter"
+            "No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "One fixed Impl for header insulation is PIMPL, not Bridge; Bridge requires an abstraction and an independently varying implementation hierarchy.",
           "sourceReferences": [
             "CodiNeo Idioms module content",
@@ -5217,12 +5217,12 @@
           "difficulty": "moderate",
           "question": "Why does Bridge use composition between an abstraction and an implementor hierarchy instead of one big inheritance tree?",
           "options": [
+            "Because composing the two hierarchies lets each grow separately and avoids an N×M explosion of combined subclasses",
             "Because composition makes the abstraction a Singleton",
             "Because inheritance cannot use virtual functions",
-            "Because composing the two hierarchies lets each grow separately and avoids an N×M explosion of combined subclasses",
             "Because it merges both dimensions into a single class"
           ],
-          "correctIndex": 2,
+          "correctIndex": 0,
           "rationale": "Bridge composes an abstraction with an independent implementor hierarchy, so adding a new abstraction or a new implementation does not require a subclass for every pairing — avoiding the combinatorial explosion inheritance would cause.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -5263,10 +5263,10 @@
           "options": [
             "PIMPL, because Alert holds a pointer to another type",
             "Decorator, because Alert wraps a Channel",
-            "Bridge, because an abstraction hierarchy (Alert) is composed with a separate, independently varying implementor hierarchy (Channel)",
-            "Composite, because alerts can be nested"
+            "Composite, because alerts can be nested",
+            "Bridge, because an abstraction hierarchy (Alert) is composed with a separate, independently varying implementor hierarchy (Channel)"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "Alert/CriticalAlert form an abstraction hierarchy that holds and delegates to an independent Channel implementor hierarchy; both vary independently — Bridge. It is not PIMPL (which hides one fixed implementation to stabilise a header, with no varying abstraction), not Decorator, and not Composite.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -5381,12 +5381,12 @@
           "difficulty": "moderate",
           "question": "After a Facade is added, what happens to the underlying subsystem classes?",
           "options": [
-            "They are deleted, since the Facade replaces them",
             "They remain reachable for advanced needs; the Facade only adds a convenient high-level entry point",
+            "They are deleted, since the Facade replaces them",
             "Each of their interfaces is converted into the Facade’s interface",
             "They are reduced to a single shared instance"
           ],
-          "correctIndex": 1,
+          "correctIndex": 0,
           "rationale": "A Facade is additive: it simplifies common usage while leaving the subsystem classes accessible when finer control is required. It neither removes them nor converts their interfaces.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -5405,10 +5405,10 @@
           "options": [
             "A surrogate that controls access to each of the four components",
             "A wrapper that adds new behaviour to each component in a stack",
-            "One class that owns the four components and exposes a single high-level method choreographing them one-way",
-            "A hub through which the four components route all their mutual messages"
+            "A hub through which the four components route all their mutual messages",
+            "One class that owns the four components and exposes a single high-level method choreographing them one-way"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "A single class exposing one high-level method that orchestrates several subsystem objects one-way is a Facade. The distractors are Proxy, Decorator, and Mediator (which would coordinate two-way peer communication).",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -5525,10 +5525,10 @@
           "options": [
             "compose objects into part-whole trees",
             "decouple an abstraction from its implementation",
-            "support very large numbers of similar objects efficiently by sharing their common state",
-            "provide a controlled surrogate for a costly object"
+            "provide a controlled surrogate for a costly object",
+            "support very large numbers of similar objects efficiently by sharing their common state"
           ],
-          "correctIndex": 2,
+          "correctIndex": 3,
           "rationale": "Flyweight reduces memory by sharing common (intrinsic) state across many fine-grained objects. The distractors are Composite, Bridge, and Proxy.",
           "sourceReferences": [
             "CodiNeo Structural module content",
@@ -5846,14 +5846,14 @@
           "taxonomy": "remembering",
           "competencyId": "mediator-intent",
           "difficulty": "easy",
-          "question": "According to this module, the role of a Mediator object is to ___.",
+          "question": "According to this module, a Mediator object ___.",
           "options": [
             "evaluates sentences of a small grammar",
-            "centralises and coordinates communication among a set of objects so they need not reference each other directly",
             "gives sequential access to a collection",
-            "captures an object’s state for restore"
+            "captures an object’s state for restore",
+            "centralises and coordinates communication among a set of objects so they need not reference each other directly"
           ],
-          "correctIndex": 1,
+          "correctIndex": 3,
           "rationale": "Mediator centralises inter-object communication so colleagues stay decoupled. The distractors describe Interpreter, Iterator, and Memento.",
           "sourceReferences": [
             "CodiNeo Behavioural module content",

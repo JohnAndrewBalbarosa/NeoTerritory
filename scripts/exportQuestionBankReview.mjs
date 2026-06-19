@@ -97,7 +97,7 @@ function formatInModule(q, n) {
     `Applicable: YES`,
     `Difficulty: ${titleCase(q.difficulty ?? '')}`,
     `Validation Status: ${q.validationStatus ?? '(unset)'}`,
-    `Item Type: ${q.type}`,
+    `QUESTION FORMAT: FOUR-OPTION MCQ`,
     '',
     'QUESTION:',
     q.prompt,

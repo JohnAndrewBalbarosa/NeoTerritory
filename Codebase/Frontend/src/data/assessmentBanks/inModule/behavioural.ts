@@ -69,7 +69,7 @@ export const IN_MODULE_BEHAVIOURAL: InModuleBank = {
       'Iterator provides sequential access while hiding the collection’s representation. The distractors describe Mediator, Memento, and Command.', SRC),
     imq('understanding', 'iterator-rationale', 'moderate',
       'What is the benefit of moving the traversal cursor into a separate iterator object instead of exposing the collection’s internal array?',
-      ['It forces the collection to become a single shared instance', 'The collection can keep its storage private and even change it, while clients still traverse uniformly', 'It converts each element to a new type during the walk', 'It lets the collection notify dependents on every step'], 1,
+      ['It forces the collection to become a single shared instance', 'It converts each element to a new type during the walk', 'It lets the collection notify dependents on every step', 'The collection can keep its storage private and even change it, while clients still traverse uniformly'], 3,
       'A separate cursor decouples traversal from representation, so the collection hides and can later change its internals while clients traverse uniformly.', GOF),
     imq('applying', 'iterator-select', 'moderate',
       'A library exposes a ring buffer and a skip list; users should loop over either with identical code and even run two independent passes over the same container at once, without knowing the storage. Which approach fits?',
@@ -184,8 +184,8 @@ export const IN_MODULE_BEHAVIOURAL: InModuleBank = {
   // ================================ Mediator ================================
   'behavioural-mediator': [
     imq('remembering', 'mediator-intent', 'easy',
-      'According to this module, the role of a Mediator object is to ___.',
-      ['evaluates sentences of a small grammar', 'centralises and coordinates communication among a set of objects so they need not reference each other directly', 'gives sequential access to a collection', 'captures an object’s state for restore'], 1,
+      'According to this module, a Mediator object ___.',
+      ['evaluates sentences of a small grammar', 'gives sequential access to a collection', 'captures an object’s state for restore', 'centralises and coordinates communication among a set of objects so they need not reference each other directly'], 3,
       'Mediator centralises inter-object communication so colleagues stay decoupled. The distractors describe Interpreter, Iterator, and Memento.', SRC),
     imq('understanding', 'mediator-coupling', 'moderate',
       'How does a Mediator reduce coupling among its colleague objects?',

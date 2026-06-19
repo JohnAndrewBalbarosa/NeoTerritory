@@ -17,7 +17,7 @@ export const IN_MODULE_IDIOMS: InModuleBank = {
       'PIMPL relocates private members into a hidden Impl type accessed via a pointer, keeping the header stable.', [...MOD, ...SUTTER]),
     imq('understanding', 'pimpl-why-recompile', 'moderate',
       'Why does PIMPL reduce client recompilation when private members change?',
-      ['Because clients stop including any headers', 'Because the private members live in the .cpp, so changing them does not change the header clients include', 'Because the compiler caches everything forever', 'Because PIMPL disables the preprocessor'], 1,
+      ['Because clients stop including any headers', 'Because PIMPL disables the preprocessor', 'Because the compiler caches everything forever', 'Because the private members live in the .cpp, so changing them does not change the header clients include'], 3,
       'With private state hidden in the implementation file, header-included clients are insulated from those changes and need not recompile.', [...MOD, ...SUTTER]),
     imq('applying', 'pimpl-select', 'moderate',
       'A heavily-included header keeps changing its private fields, forcing slow full rebuilds. Which technique stabilises the header so clients rarely recompile?',
@@ -29,7 +29,7 @@ export const IN_MODULE_IDIOMS: InModuleBank = {
       'A forward-declared Impl owned through a smart pointer, defined in the .cpp, is the PIMPL idiom.', [...MOD, ...NEST]),
     imq('evaluating', 'pimpl-vs-bridge', 'difficult',
       'A class holds one unique_ptr<Impl> whose sole job is hiding private members and stabilising the header — no abstraction varies. Is calling it “Bridge” accurate?',
-      ['Yes — any pointer-to-implementation is Bridge', 'No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies', 'Yes — Bridge and PIMPL are the same thing', 'No — this is actually Adapter'], 1,
+      ['Yes — any pointer-to-implementation is Bridge', 'No — this is actually Adapter', 'Yes — Bridge and PIMPL are the same thing', 'No — a single fixed implementation used only to insulate the header is PIMPL; Bridge needs independently varying abstraction and implementation hierarchies'], 3,
       'One fixed Impl for header insulation is PIMPL, not Bridge; Bridge requires an abstraction and an independently varying implementation hierarchy.', [...MOD, ...NEST]),
   ],
 };

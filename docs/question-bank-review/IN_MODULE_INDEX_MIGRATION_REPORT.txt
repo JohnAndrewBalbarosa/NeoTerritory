@@ -1,5 +1,5 @@
 IN-MODULE INDEX MIGRATION REPORT
-Generated: 2026-06-19T11:30:26.295Z
+Generated: 2026-06-19T11:49:26.764Z
 
 INVARIANT: No sourceQuestionIndex values were changed. Each index keeps its
 fixed Bloom meaning (0=Remember, 1=Understand, 2=Apply, 3=Analyze, 4=Evaluate,

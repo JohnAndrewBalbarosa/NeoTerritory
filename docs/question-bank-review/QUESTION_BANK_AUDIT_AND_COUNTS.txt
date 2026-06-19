@@ -1,5 +1,5 @@
 CODINEO QUESTION BANK REVIEW
-Generated: 2026-06-19T11:30:26.295Z
+Generated: 2026-06-19T11:49:26.764Z
 Total Learning Modules: 40
 Total Formal-Eligible Modules: 39
 Modules with Authored Form A+B: 39
@@ -75,4 +75,4 @@ VALIDATION WARNINGS (6):
 VALIDATION INFO (3):
   [FORMAL_INELIGIBLE] foundations-postrequisite (Post-Foundations open questions) is learning-only (open-ended) — no formal forms expected
   [ANSWER_POSITIONS] Formal correctIndex distribution A/B/C/D = 82/85/87/80 (of 334)
-  [IM_ANSWER_POSITIONS] In-module correctIndex distribution A/B/C/D = 38/67/40/20 (of 165)
+  [IM_ANSWER_POSITIONS] In-module correctIndex distribution A/B/C/D = 43/42/39/41 (of 165)
