@@ -298,7 +298,7 @@ test.describe('learner hub smoke', () => {
     await submit.click();
     await expect(page.getByText('Score: 5 / 6', { exact: true })).toBeVisible();
     await expect(
-      page.getByText('Review Required – Continue Studying This Module', { exact: true }),
+      page.getByText('Review this module and try again before proceeding.', { exact: true }),
     ).toBeVisible();
     expect(submittedAttempts).toHaveLength(1);
     expect(progressUpdates).toHaveLength(0);
@@ -310,7 +310,7 @@ test.describe('learner hub smoke', () => {
     await submit.click();
 
     await expect(page.getByText('Score: 6 / 6', { exact: true })).toBeVisible();
-    await expect(page.getByText('Perfect Score – Proceed to Next Module', { exact: true })).toBeVisible();
+    await expect(page.getByText('Perfect score. You may proceed to the next module.', { exact: true })).toBeVisible();
     expect(submittedAttempts).toHaveLength(2);
     expect(progressUpdates).toHaveLength(1);
   });
