@@ -18,7 +18,7 @@ export default function AuditPanel() {
 
   if (error) return <div className="empty-state admin-error" role="alert">{error}</div>;
   if (entries === null) return <div className="empty-state">Loading audit entries…</div>;
-  if (entries.length === 0) return <div className="empty-state">No destructive admin actions recorded.</div>;
+  if (entries.length === 0) return <div className="empty-state">No destructive actions recorded.</div>;
 
   return (
     <div className="logs-table-wrap">
@@ -26,7 +26,7 @@ export default function AuditPanel() {
         <thead>
           <tr>
             <th>When</th>
-            <th>Admin</th>
+            <th>User</th>
             <th>Action</th>
             <th>Target</th>
             <th>Detail</th>

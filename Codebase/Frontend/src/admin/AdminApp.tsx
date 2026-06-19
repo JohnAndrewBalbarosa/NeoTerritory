@@ -330,7 +330,7 @@ export default function AdminApp() {
               : `${onlineCount} of ${adminUsers.length} online`}
           </span>
           <div className="admin-account-actions" role="group" aria-label="Account actions">
-          <span id="admin-user-label">{user.username} · admin</span>
+          <span id="admin-user-label">{user.username} · Project Manager</span>
           <button
             className="ghost-btn theme-toggle-btn"
             type="button"
@@ -361,7 +361,7 @@ export default function AdminApp() {
       </header>
 
       <div className="admin-body">
-        <nav className="admin-tab-bar admin-sidebar" aria-label="Admin sections" data-testid="admin-tab-bar">
+        <nav className="admin-tab-bar admin-sidebar" aria-label="Project Manager sections" data-testid="admin-tab-bar">
           {SECTION_ORDER.filter((section) => section !== SECONDARY_TOOLS_SECTION || SHOW_RESEARCH_ADMIN_TOOLS).map((section) => {
             const tabs = SECTION_CHILDREN[section].map((id) => TABS.find((tab) => tab.id === id)!).filter((t) => {
               if (t.originalDevsOnly && isPmAdmin(user)) return false;
