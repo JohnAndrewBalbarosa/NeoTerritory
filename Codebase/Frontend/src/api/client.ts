@@ -356,6 +356,12 @@ export async function fetchBloomProgression(): Promise<BloomProgressionResponse>
   return apiFetch<BloomProgressionResponse>('/api/learning/bloom-progression');
 }
 
+export async function fetchAdminBloomProgression(userId: number): Promise<BloomProgressionResponse> {
+  return apiFetch<BloomProgressionResponse>(
+    `/api/admin/learning/bloom-progression?userId=${encodeURIComponent(userId)}`,
+  );
+}
+
 export interface ActivePlanResponse {
   plan: {
     id: string;

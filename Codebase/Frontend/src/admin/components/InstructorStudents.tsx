@@ -1,11 +1,14 @@
-import { useMemo, useState } from 'react';
-import type { AdminLearningRaw } from '../../types/api';
+import { useEffect, useMemo, useState } from 'react';
+import type { AdminLearningRaw, BloomProgressionEntry } from '../../types/api';
 import {
   perStudentRows,
   studentDrilldown,
   type InstructorStudentRow,
 } from '../logic/learningAggregate';
 import { downloadCsv, downloadJson } from '../logic/toCsv';
+import { fetchAdminBloomProgression } from '../../api/client';
+import { isAuthError } from '../lib/silenceAuthErrors';
+import { useLearningModules } from '../../data/useLearningModules';
 
 // Students sub-view of the Instructor tab (D91). Per-student rollup table
 // (scores, attempts, pass/fail, improvement) computed client-side from the raw
@@ -40,12 +43,47 @@ interface InstructorStudentsProps {
 export default function InstructorStudents({ raw }: InstructorStudentsProps): JSX.Element {
   const [sort, setSort] = useState<SortKey>('improvement');
   const [openUserId, setOpenUserId] = useState<number | null>(null);
+  const [bloomProgression, setBloomProgression] = useState<BloomProgressionEntry[] | null>(null);
+  const [bloomLoading, setBloomLoading] = useState(false);
+  const { modules } = useLearningModules();
 
   const rows = useMemo(() => sortRows(perStudentRows(raw), sort), [raw, sort]);
   const drill = useMemo(
     () => (openUserId === null ? [] : studentDrilldown(raw, openUserId)),
     [raw, openUserId],
   );
+
+  // Fetch Bloom progression whenever a student row is opened.
+  useEffect(() => {
+    if (openUserId === null) {
+      setBloomProgression(null);
+      return;
+    }
+    let cancelled = false;
+    setBloomLoading(true);
+    setBloomProgression(null);
+    fetchAdminBloomProgression(openUserId)
+      .then((data) => {
+        if (!cancelled) {
+          setBloomProgression(data.progression);
+          setBloomLoading(false);
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        if (!isAuthError(e)) {
+          // Non-fatal: the rest of the drilldown still renders.
+          setBloomProgression([]);
+        }
+        setBloomLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [openUserId]);
+
+  // Build a map from moduleId to module title for display.
+  const moduleById = useMemo(() => new Map(modules.map((m) => [m.id, m])), [modules]);
 
   function onDownloadCsv(): void {
     const headers = [
@@ -181,6 +219,58 @@ export default function InstructorStudents({ raw }: InstructorStudentsProps): JS
               Close
             </button>
           </header>
+
+          {/* Bloom-level progression per module (pre vs. post cycle) */}
+          <div style={{ marginBottom: 20 }}>
+            <h4 style={{ margin: '0 0 8px', fontSize: 14, color: 'var(--color-text-muted, rgba(255,255,255,0.6))', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+              Bloom Progression (Pre → Post)
+            </h4>
+            {bloomLoading ? (
+              <div className="empty-state" style={{ padding: '10px 0' }}>Loading Bloom progression…</div>
+            ) : bloomProgression === null || bloomProgression.length === 0 ? (
+              <div className="empty-state" style={{ padding: '10px 0' }}>
+                No paired pre/post assessments found for this learner.
+              </div>
+            ) : (
+              <div className="instructor-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Module</th>
+                      <th>Pre-test highest level</th>
+                      <th>Post-test highest level</th>
+                      <th>Outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bloomProgression.map((entry) => (
+                      <tr key={`${entry.cycleId}:${entry.moduleId}`}>
+                        <td>
+                          <small>{moduleById.get(entry.moduleId)?.title ?? entry.moduleId}</small>
+                        </td>
+                        <td>
+                          {entry.preHighest
+                            ? `${entry.preHighest.name} (L${entry.preHighest.rank})`
+                            : <span style={{ color: 'var(--color-text-muted, rgba(255,255,255,0.45))' }}>—</span>}
+                        </td>
+                        <td>
+                          {entry.postHighest
+                            ? `${entry.postHighest.name} (L${entry.postHighest.rank})`
+                            : <span style={{ color: 'var(--color-text-muted, rgba(255,255,255,0.45))' }}>—</span>}
+                        </td>
+                        <td>
+                          {entry.leveledUp
+                            ? <span className="pill pill-green">Leveled up</span>
+                            : <span className="pill">No change</span>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           {drill.length === 0 ? (
             <div className="empty-state">No answered questions for this student yet.</div>
           ) : (

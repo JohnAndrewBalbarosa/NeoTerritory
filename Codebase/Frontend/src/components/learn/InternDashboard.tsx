@@ -5,6 +5,7 @@ import { useLearningModules } from '../../data/useLearningModules';
 import {
   fetchLearningAssessments,
   fetchLearningProgress,
+  fetchBloomProgression,
   type LearningProgress,
 } from '../../api/client';
 import { useAppStore } from '../../store/appState';
@@ -14,7 +15,7 @@ import {
   resolvePostTestCycleId,
   pairedLearningGain,
 } from '../../logic/postTestEligibility';
-import type { LearningAssessmentsResponse } from '../../types/api';
+import type { LearningAssessmentsResponse, BloomProgressionEntry } from '../../types/api';
 
 function readUnlockAllOverride(): boolean {
   if (typeof window === 'undefined') return false;
@@ -35,6 +36,7 @@ export default function InternDashboard(): JSX.Element {
   const { modules, loaded } = useLearningModules();
   const [progress, setProgress] = useState<LearningProgress | null>(null);
   const [assessments, setAssessments] = useState<LearningAssessmentsResponse | null>(null);
+  const [bloomProgression, setBloomProgression] = useState<BloomProgressionEntry[] | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -61,11 +63,16 @@ export default function InternDashboard(): JSX.Element {
       };
     }
 
-    Promise.all([fetchLearningProgress(), fetchLearningAssessments()])
-      .then(([progressData, assessmentData]) => {
+    Promise.all([
+      fetchLearningProgress(),
+      fetchLearningAssessments(),
+      fetchBloomProgression().catch(() => null),
+    ])
+      .then(([progressData, assessmentData, bloomData]) => {
         if (!cancelled) {
           setProgress(progressData);
           setAssessments(assessmentData);
+          setBloomProgression(bloomData?.progression ?? null);
         }
       })
       .catch((e: unknown) => {
@@ -191,6 +198,21 @@ export default function InternDashboard(): JSX.Element {
   }).filter((row) => row.total > 0);
 
   const recentModules = modules.slice(Math.max(0, modules.length - 6));
+
+  // Learner growth data: modules where the post-test showed improvement over
+  // the pre-test. Only shown when at least one module has leveledUp === true.
+  // NOTE: No Bloom terminology is exposed to the learner — this section uses
+  // plain language about "deepening understanding" only.
+  const leveledUpModules = useMemo(() => {
+    if (!bloomProgression) return [];
+    const leveledUp = bloomProgression.filter((entry) => entry.leveledUp);
+    // Resolve module titles from the loaded modules list.
+    const moduleById = new Map(modules.map((m) => [m.id, m]));
+    return leveledUp.map((entry) => ({
+      moduleId: entry.moduleId,
+      title: moduleById.get(entry.moduleId)?.title ?? entry.moduleId,
+    }));
+  }, [bloomProgression, modules]);
 
   return (
     <main style={styles.shell}>
@@ -334,6 +356,26 @@ export default function InternDashboard(): JSX.Element {
           </p>
         </article>
       </section>
+
+      {leveledUpModules.length > 0 && (
+        <section style={styles.growthSection}>
+          <article style={styles.growthCard}>
+            <p style={styles.growthLabel}>Your Progress This Cycle</p>
+            <p style={styles.growthHeading}>
+              You deepened your understanding in {leveledUpModules.length}{' '}
+              module{leveledUpModules.length === 1 ? '' : 's'} after the post-test.
+            </p>
+            <ul style={styles.growthList}>
+              {leveledUpModules.map((m) => (
+                <li key={m.moduleId} style={styles.growthItem}>
+                  <span style={styles.growthDot} aria-hidden="true" />
+                  {m.title}
+                </li>
+              ))}
+            </ul>
+          </article>
+        </section>
+      )}
 
       <section style={styles.stack}>
         <article style={styles.panel}>
@@ -650,6 +692,50 @@ const styles: Record<string, CSSProperties> = {
   moduleTitle: {
     margin: '4px 0 0',
     fontWeight: 600,
+  },
+  growthSection: {
+    maxWidth: 1180,
+    margin: '16px auto 0',
+  },
+  growthCard: {
+    padding: 20,
+    borderRadius: 20,
+    border: '1px solid rgba(166,255,0,0.22)',
+    background: 'linear-gradient(145deg, rgba(166,255,0,0.07), rgba(12,18,30,0.9))',
+  },
+  growthLabel: {
+    margin: 0,
+    color: '#a6ff00',
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.1em',
+    fontSize: 12,
+  },
+  growthHeading: {
+    margin: '8px 0 12px',
+    fontSize: 18,
+    fontWeight: 600,
+    color: '#f4f7fb',
+  },
+  growthList: {
+    listStyle: 'none',
+    margin: 0,
+    padding: 0,
+    display: 'grid',
+    gap: 8,
+  },
+  growthItem: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    color: 'rgba(244,247,251,0.88)',
+    fontSize: 14,
+  },
+  growthDot: {
+    width: 7,
+    height: 7,
+    borderRadius: '50%',
+    background: '#a6ff00',
+    flexShrink: 0,
   },
   moduleFlags: {
     display: 'grid',
