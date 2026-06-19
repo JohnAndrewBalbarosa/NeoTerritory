@@ -540,6 +540,28 @@ export async function fetchAdminLearningRaw(): Promise<import('../types/api').Ad
   return apiFetch('/api/admin/stats/learning-raw');
 }
 
+// SOP-1 PM learning records (read-only; admin-guarded server-side). Raw rows —
+// the PM frontend re-grades via the shared deriveLearnerLearningRecord helper.
+import type {
+  RawLearnerRecord, RawAttempt, RawAnswer, RawProgress, RawPlanModule,
+} from '../admin/learning/deriveLearnerLearningRecord';
+
+export async function fetchAdminLearningInterns(): Promise<{ interns: RawLearnerRecord[] }> {
+  return apiFetch('/api/admin/learning/interns');
+}
+
+export interface AdminInternDetailResponse {
+  profile: { internId: number; username: string; email: string | null; role: string; createdVia: string | null; lastActive: string | null };
+  plans: Array<{ id: string; projectManagerId: number | null; projectSpecification: string | null; status: string; createdAt: string; updatedAt: string; activatedAt: string | null; modules: RawPlanModule[] }>;
+  attempts: RawAttempt[];
+  answers: RawAnswer[];
+  progress: RawProgress | null;
+  questionResults: Array<{ moduleId: string; questionIndex: number; selectedIndex: number; isCorrect: number; firstAttemptCorrect: number; attempts: number; updatedAt: string }>;
+}
+export async function fetchAdminLearningInternDetail(internId: number): Promise<AdminInternDetailResponse> {
+  return apiFetch(`/api/admin/learning/interns/${internId}`);
+}
+
 // Runtime admin-controlled toggles.  Currently a single key —
 // testers_visible_to_users — that hides the devcon* picker on the
 // public login surface when flipped off. Adding new keys is a backend

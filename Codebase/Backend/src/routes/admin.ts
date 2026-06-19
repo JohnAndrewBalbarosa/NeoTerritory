@@ -450,12 +450,30 @@ router.get('/learning/interns', (_req: Request, res: Response, next: NextFunctio
       SELECT module_id AS moduleId, selection_status AS selectionStatus, recommendation_source AS recommendationSource, display_order AS displayOrder
       FROM learning_plan_modules WHERE plan_id = ? ORDER BY display_order ASC
     `);
+    // Raw answers + progress are required so the PM frontend can derive each
+    // learner's per-module pre/post grading + recommendation classification with
+    // the same authoritative helpers (no scores are stored server-side). Bounded
+    // by the intern cohort size; the heavy per-question detail still lives in the
+    // single-intern endpoint below.
+    const answersStmt = db.prepare(`
+      SELECT attempt_id AS attemptId, assessment_type AS assessmentType, assessment_index AS assessmentIndex,
+             module_id AS moduleId, question_index AS questionIndex, question_id AS questionId,
+             selected_index AS selectedIndex, response_text AS responseText, question_kind AS questionKind
+      FROM learning_assessment_answers WHERE user_id = ? ORDER BY attempt_id ASC, assessment_index ASC
+    `);
+    const progressStmt = db.prepare(`
+      SELECT completed_module_ids AS completedModuleIds, theory_passed_module_ids AS theoryPassedModuleIds,
+             bloom_mastery_by_module AS bloomMasteryByModule, updated_at AS updatedAt
+      FROM learning_progress WHERE user_id = ?
+    `);
 
     const rows = interns.map((it) => {
       const attempts = attemptStmt.all(it.internId);
+      const answers = answersStmt.all(it.internId);
+      const progress = progressStmt.get(it.internId) ?? null;
       const activePlan = activePlanStmt.get(it.internId) as { id: string; projectSpecification: string | null; status: string; activatedAt: string | null } | undefined;
       const planModules = activePlan ? planModulesStmt.all(activePlan.id) : [];
-      return { ...it, attempts, activePlan: activePlan ?? null, planModules };
+      return { ...it, attempts, answers, progress, activePlan: activePlan ?? null, planModules };
     });
     res.json({ interns: rows });
   } catch (err) { next(err); }

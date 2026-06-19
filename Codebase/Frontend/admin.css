@@ -1156,3 +1156,27 @@ body{position:relative;}
     padding-right: 16px;
   }
 }
+
+/* ---- SOP-1 PM record tables (Intern Records / Intern Detail) ---- */
+.nt-records-toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.nt-records-search{flex:1 1 220px;min-width:200px;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--ink);}
+.nt-records-filters{display:flex;flex-wrap:wrap;gap:6px;}
+.nt-chip{appearance:none;border:1px solid var(--border);background:transparent;color:var(--ink-mute);font-size:12px;padding:6px 10px;border-radius:999px;cursor:pointer;}
+.nt-chip.is-active{background:var(--devcon-cyan,var(--nt-mkt-accent,#39d3e0));color:#04181b;border-color:transparent;font-weight:700;}
+.nt-chip-sm{display:inline-block;font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid var(--border);color:var(--ink-mute);}
+.nt-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;}
+.nt-table-scroll{overflow-x:auto;}
+.nt-records-table{width:100%;border-collapse:collapse;font-size:13px;}
+.nt-records-table th{position:sticky;top:0;text-align:left;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);padding:8px 10px;border-bottom:1px solid var(--border);background:var(--surface);}
+.nt-records-table td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;color:var(--ink);}
+.nt-records-table tbody tr:hover{background:rgba(255,255,255,.02);}
+.nt-muted{color:var(--ink-mute);font-size:12px;}
+.nt-mono{font-family:var(--code-font,'JetBrains Mono',monospace);}
+.nt-badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid var(--border);color:var(--ink);}
+.nt-badge--action{background:rgba(57,211,224,.1);border-color:rgba(57,211,224,.4);color:var(--devcon-cyan,#39d3e0);}
+.nt-badge[data-stage='Awaiting Pre-Test']{background:rgba(148,163,184,.12);}
+.nt-badge[data-stage='Pre-Test Completed']{background:rgba(125,211,252,.12);}
+.nt-badge[data-stage='Learning in Progress']{background:rgba(250,204,21,.12);}
+.nt-badge[data-stage='Ready for Post-Test']{background:rgba(110,231,168,.12);}
+.nt-badge[data-stage='Post-Test Completed']{background:rgba(110,231,168,.18);}
+.nt-badge[data-stage='Needs Review']{background:rgba(248,113,113,.14);}

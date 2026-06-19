@@ -26,7 +26,9 @@ describe('PM dashboard navConfig (SOP-1)', () => {
   });
 
   it('groups the normal PM workflow into Project Learning + Learning Content', () => {
-    const interns = TABS.find((t) => t.id === 'instructor-students');
+    // "Interns" now points to the real records tab (intern-records), not the
+    // instructor analytics cluster.
+    const interns = TABS.find((t) => t.id === 'intern-records');
     expect(interns?.label).toBe('Interns');
     expect(interns?.section).toBe('Project Learning');
     expect(TABS.some((t) => t.label === 'Students')).toBe(false);
@@ -35,9 +37,19 @@ describe('PM dashboard navConfig (SOP-1)', () => {
     expect(coursePlan?.label).toBe('Course Plan');
     expect(coursePlan?.section).toBe('Project Learning');
 
+    // The existing instructor-analytics cluster is relocated to Secondary Tools
+    // as "In-Module Analytics" (process metrics, not formal results).
+    const analytics = TABS.find((t) => t.id === 'instructor-students');
+    expect(analytics?.label).toBe('In-Module Analytics');
+    expect(analytics?.section).toBe('Secondary Tools');
+
     expect(SECTION_CHILDREN['Learning Content']).toEqual(
       expect.arrayContaining(['instructor-modules', 'instructor-questions']),
     );
+  });
+
+  it('keeps intern-detail out of the sidebar (opened via state, not URL)', () => {
+    expect(TABS.some((t) => t.id === 'intern-detail')).toBe(false);
   });
 
   it('orders the four SOP-1 groups with Secondary Tools last', () => {

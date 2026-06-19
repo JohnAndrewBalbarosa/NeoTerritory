@@ -8,6 +8,8 @@ import { useOverflowGuard } from '../hooks/useOverflowGuard';
 import AuroraBackground from '../components/marketing/effects/AuroraBackground';
 import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import OverviewTab from './components/OverviewTab';
+import InternRecordsTab from './components/InternRecordsTab';
+import InternDetailTab from './components/InternDetailTab';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -82,6 +84,9 @@ export default function AdminApp() {
   // shared hook, which resets its internal interval.
   const { onlineCount, users: adminUsers, refresh: refreshAdminUsers } = useAdminUsers(5 * 60_000);
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
+  // SOP-1: the intern selected from Intern Records, opened in the hidden
+  // intern-detail tab (no URL routing — pure AdminApp state).
+  const [selectedInternId, setSelectedInternId] = useState<number | null>(null);
   const [mountedTabs, setMountedTabs] = useState<Set<AdminTab>>(new Set(['overview']));
   const [refreshKey, setRefreshKey] = useState(0);
   // SOP-1 default: the PM workflow groups (Dashboard + Project Learning) are
@@ -227,7 +232,13 @@ export default function AdminApp() {
     setActiveTab(tab);
     const section = TAB_SECTION_MAP[tab];
     // Ensure the selected tab's section is open (never force-collapse the others).
-    setExpandedSections((prev) => (prev.has(section) ? prev : new Set(prev).add(section)));
+    // Hidden tabs (e.g. intern-detail) have no sidebar section — skip.
+    if (section) setExpandedSections((prev) => (prev.has(section) ? prev : new Set(prev).add(section)));
+  }
+
+  function openInternDetail(internId: number) {
+    setSelectedInternId(internId);
+    setTab('intern-detail');
   }
 
   function toggleSection(section: AdminSection) {
@@ -385,6 +396,18 @@ export default function AdminApp() {
         {mountedTabs.has('overview') && (
           <div hidden={activeTab !== 'overview'}>
             <OverviewTab />
+          </div>
+        )}
+        {mountedTabs.has('intern-records') && (
+          <div hidden={activeTab !== 'intern-records'}>
+            <InternRecordsTab onSelectIntern={openInternDetail} />
+          </div>
+        )}
+        {mountedTabs.has('intern-detail') && (
+          <div hidden={activeTab !== 'intern-detail'}>
+            {selectedInternId !== null
+              ? <InternDetailTab internId={selectedInternId} onBack={() => setTab('intern-records')} />
+              : <p className="admin-section__hint">Select an intern from Intern Records.</p>}
           </div>
         )}
         {mountedTabs.has('runs') && (

@@ -13,7 +13,10 @@ import type { IconProps } from '../components/icons/Icons';
 export type AdminTab =
   | 'overview' | 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs'
   | 'invites' | 'joinRequests' | 'featureReleases'
-  | 'instructor-students' | 'instructor-modules' | 'instructor-questions' | 'courses';
+  | 'instructor-students' | 'instructor-modules' | 'instructor-questions' | 'courses'
+  // SOP-1 PM record tabs. `intern-detail` is hidden (not in TABS): it is opened
+  // from Intern Records via AdminApp state (selectedInternId), no URL routing.
+  | 'intern-records' | 'intern-detail';
 
 // Navigation reorganized around the SOP-1 project-based learning-support
 // workflow. The first three groups are the normal PM flow; Secondary Tools holds
@@ -44,13 +47,16 @@ export interface TabDef {
 export const TABS: ReadonlyArray<TabDef> = [
   // Dashboard
   { id: 'overview',        label: 'Overview',        icon: IconLayers,      section: 'Dashboard' },
-  // Project Learning (normal PM workflow): course plan + intern monitoring.
+  // Project Learning (normal PM workflow): course plan + formal intern records.
   { id: 'courses',              label: 'Course Plan', icon: IconBook,       section: 'Project Learning' },
-  { id: 'instructor-students',  label: 'Interns',    icon: IconShield,      section: 'Project Learning' },
+  { id: 'intern-records',       label: 'Interns',    icon: IconShield,      section: 'Project Learning' },
   // Learning Content: module + question views.
   { id: 'instructor-modules',   label: 'Modules',    icon: IconLayers,      section: 'Learning Content' },
   { id: 'instructor-questions', label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
-  // Secondary Tools (de-emphasized, collapsible): code analysis + research/admin.
+  // Secondary Tools (de-emphasized, collapsible): in-module analytics + code
+  // analysis + research/admin. The existing instructor-analytics cluster lives
+  // here as "In-Module Analytics" (process metrics, not formal results).
+  { id: 'instructor-students', label: 'In-Module Analytics', icon: IconLayers, section: 'Secondary Tools' },
   { id: 'runs',            label: 'Code Analysis',   icon: IconLayers,      section: 'Secondary Tools' },
   { id: 'logs',            label: 'Logs',            icon: IconClipboard,   section: 'Secondary Tools' },
   { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Secondary Tools', originalDevsOnly: true },
