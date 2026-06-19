@@ -14,6 +14,48 @@ import {
 import CoursePlanPanel from './CoursePlanPanel';
 import CourseEditor from './CourseEditor';
 import { buildModuleSwitchboard } from '../../logic/moduleSwitchboard';
+import { applicableObjectiveLevelsForModule } from '../../data/assessmentBanks/inventory';
+import type { ObjectiveBloomLevel } from '../../data/learningModules';
+
+// ── Bloom ceiling helpers (admin-only; learners never see this) ───────────────
+
+const OBJECTIVE_BLOOM_NUMERIC: Record<ObjectiveBloomLevel, number> = {
+  remember: 1,
+  understand: 2,
+  apply: 3,
+  analyze: 4,
+  evaluate: 5,
+};
+
+/**
+ * Compute the Max Bloom level (1–6) for a module.
+ * - If module.practicalExam exists → 6 (Create/Studio).
+ * - Otherwise → the numeric rank of the highest applicable objective level (1–5).
+ */
+function maxBloomLevel(module: AdminLearningModule): number {
+  if (module.practicalExam) return 6;
+  const levels = applicableObjectiveLevelsForModule(module);
+  if (levels.length === 0) return 1;
+  const highest = levels[levels.length - 1];
+  return OBJECTIVE_BLOOM_NUMERIC[highest] ?? 1;
+}
+
+/**
+ * Returns a tooltip reason string for limited modules (max < 6), or null when
+ * the module reaches Creating (L6) and no tooltip is needed.
+ * Admin/PM-only — never exposed to learners.
+ */
+function bloomCeilingReason(module: AdminLearningModule): string | null {
+  const max = maxBloomLevel(module);
+  if (max === 6) return null;
+  if (module.category === 'foundations') {
+    return 'Conceptual module — no detectable code artifact for a Studio task, so it caps below Creating (L6).';
+  }
+  if (module.id === 'structural-repository') {
+    return 'Repository has no pattern detector in the analyzer catalog yet, so no auto-gradable Studio (L6) task.';
+  }
+  return 'Caps below Creating (L6).';
+}
 
 const CATEGORY_ORDER: ReadonlyArray<{ id: LearningCategory; label: string }> = [
   { id: 'foundations', label: 'Foundations' },
@@ -225,6 +267,7 @@ export default function CoursesTab() {
                 <th>Content</th>
                 <th>In-Module Questions</th>
                 <th>Practical</th>
+                <th>Max Bloom</th>
                 <th aria-label="Actions" />
               </tr>
             </thead>
@@ -293,6 +336,14 @@ export default function CoursesTab() {
                     <td className="nt-muted">{m.theoreticalExam || m.practicalExam ? 'Authored' : '—'}</td>
                     <td>{m.theoreticalExam?.questions?.length ?? 0}</td>
                     <td className="nt-muted">{m.practicalExam?.patternName ?? '—'}</td>
+                    <td
+                      className="nt-muted"
+                      title={bloomCeilingReason(m) ?? undefined}
+                    >
+                      <span className="pill pill-amber">
+                        {maxBloomLevel(m) === 6 ? 'L6 · Studio' : `L${maxBloomLevel(m)}`}
+                      </span>
+                    </td>
                     <td className="courses-row-actions">
                       <button
                         type="button"
