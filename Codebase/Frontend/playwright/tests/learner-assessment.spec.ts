@@ -251,8 +251,8 @@ test.describe('learner hub smoke', () => {
 
     await page.goto('/intern-dashboard', { waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Intern Dashboard', { exact: true })).toBeVisible();
-    await expect(page.getByText('Pre-Test standing', { exact: true })).toBeVisible();
-    await expect(page.getByText('5 of 7 correct. 1 module(s) required for study.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Pre-Test Standing', { exact: true })).toBeVisible();
+    await expect(page.getByText('5 of 7 correct · 1 module(s) recommended for review.', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Take Post-Test', exact: true })).toBeVisible();
 
     await page.goto('/studio', { waitUntil: 'domcontentloaded' });

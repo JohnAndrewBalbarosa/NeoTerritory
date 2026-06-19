@@ -27,7 +27,7 @@ function completionRatio(done: number, total: number): number {
 export default function InternDashboard(): JSX.Element {
   const token = useAppStore((s) => s.token);
   const unlockAll = useMemo(() => readUnlockAllOverride(), []);
-  const { modules, switchboard, loaded } = useLearningModules();
+  const { modules, loaded } = useLearningModules();
   const [progress, setProgress] = useState<LearningProgress | null>(null);
   const [assessments, setAssessments] = useState<LearningAssessmentsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -120,29 +120,57 @@ export default function InternDashboard(): JSX.Element {
   const internStatus = assessments
     ? deriveInternLearningStatus(modules, assessments, progressSnapshot)
     : null;
-  const completedSet = new Set(progressSnapshot.completedModuleIds);
-  const theoryPassedSet = new Set(progressSnapshot.theoryPassedModuleIds ?? []);
+  const moduleIdSet = new Set(modules.map((module) => module.id));
+  // Count only ids that are real modules in the current path, so stale/duplicate
+  // saved ids can never push a count above the total (no more "39/14").
+  const completedSet = new Set(progressSnapshot.completedModuleIds.filter((id) => moduleIdSet.has(id)));
+  const skippedSet = new Set((progressSnapshot.skippedModuleIds ?? []).filter((id) => moduleIdSet.has(id)));
   const totalModules = modules.length;
-  const visibilityOn = switchboard.filter((row) => row.effectivePublished).length;
-  const visibilityOff = Math.max(switchboard.length - visibilityOn, 0);
-  const completedCount = unlockAll ? totalModules : completedSet.size;
-  const theoryCount = unlockAll ? totalModules : theoryPassedSet.size;
-  const remainingCount = Math.max(totalModules - completedCount, 0);
-  const completionPct = completionRatio(completedCount, totalModules);
-  const nextModule = modules.find((module) => !completedSet.has(module.id)) ?? null;
-  const lastUnlocked =
-    modules.find((module) => module.id === progressSnapshot.lastUnlockedModuleId) ??
-    (completedCount > 0 ? modules[Math.min(completedCount, modules.length) - 1] : null);
+  // Optional modules = a perfect (100%) per-module pre-test score.
+  const optionalSet = new Set(
+    Object.values(internStatus?.pretestScore?.byModule ?? {})
+      .filter((row) => row.percent >= 100)
+      .map((row) => row.moduleId),
+  );
+  const completedCount = unlockAll
+    ? totalModules
+    : Math.min(modules.filter((module) => completedSet.has(module.id)).length, totalModules);
+  const completionPct = Math.min(Math.max(completionRatio(completedCount, totalModules), 0), 1);
+  const requiredRemaining = internStatus
+    ? Math.max(internStatus.requiredModuleIds.length - internStatus.completedRequiredModuleIds.length, 0)
+    : Math.max(totalModules - completedCount, 0);
+
+  // Single, unambiguous status per module (never both Complete and Locked).
+  type ModuleStatus = 'Completed' | 'Skipped' | 'In Progress' | 'Optional' | 'Locked';
+  let reachedOpenModule = false;
+  const moduleStatusById = new Map<string, ModuleStatus>();
+  for (const module of modules) {
+    let status: ModuleStatus;
+    if (unlockAll || completedSet.has(module.id)) {
+      status = 'Completed';
+    } else if (skippedSet.has(module.id)) {
+      status = 'Skipped';
+    } else if (!reachedOpenModule) {
+      // First not-yet-finished module in path order is the active one.
+      status = optionalSet.has(module.id) ? 'Optional' : 'In Progress';
+      reachedOpenModule = true;
+    } else {
+      status = optionalSet.has(module.id) ? 'Optional' : 'Locked';
+    }
+    moduleStatusById.set(module.id, status);
+  }
+  const nextModule = modules.find(
+    (module) => !completedSet.has(module.id) && !skippedSet.has(module.id) && !optionalSet.has(module.id),
+  ) ?? null;
+  const nextModuleNumber = nextModule ? modules.findIndex((module) => module.id === nextModule.id) + 1 : 0;
 
   const categoryRows = CATEGORY_META.map((meta) => {
     const inCategory = modules.filter((module) => module.category === meta.id);
     const done = inCategory.filter((module) => completedSet.has(module.id)).length;
-    const ratio = completionRatio(done, inCategory.length);
+    const ratio = Math.min(Math.max(completionRatio(done, inCategory.length), 0), 1);
     return { meta, done, total: inCategory.length, ratio };
-  });
+  }).filter((row) => row.total > 0);
 
-  const strongest = categoryRows.reduce((best, row) => (row.ratio > best.ratio ? row : best), categoryRows[0] ?? null);
-  const weakest = categoryRows.reduce((worst, row) => (row.ratio < worst.ratio ? row : worst), categoryRows[0] ?? null);
   const recentModules = modules.slice(Math.max(0, modules.length - 6));
 
   return (
@@ -154,12 +182,11 @@ export default function InternDashboard(): JSX.Element {
             <h1 style={styles.title}>Your learning progress</h1>
           </div>
           <div style={styles.badgeRow}>
-            {unlockAll ? <span style={{ ...styles.badge, ...styles.badgeWarn }}>unlock override</span> : null}
             <span style={styles.badge}>{completedCount}/{totalModules} complete</span>
           </div>
         </div>
         <p style={styles.copy}>
-          Canvas-style progress with TOPCIT-like score grouping: clear completion, strong areas, weak areas, and the next thing to finish.
+          Track your pre-test standing, required review modules, completed lessons, and next learning activity.
         </p>
 
         <div style={styles.actions}>
@@ -176,80 +203,57 @@ export default function InternDashboard(): JSX.Element {
               Open Studio
             </button>
           )}
-          {unlockAll ? (
-            <button
-              type="button"
-              className="nt-lesson-button"
-              onClick={() => {
-                try {
-                  window.localStorage.removeItem('nt_learning_unlock_all');
-                } finally {
-                  window.location.reload();
-                }
-              }}
-            >
-              Disable unlock override
-            </button>
-          ) : (
-            <button
-              type="button"
-              className="nt-lesson-button"
-              onClick={() => {
-                try {
-                  window.localStorage.setItem('nt_learning_unlock_all', '1');
-                } finally {
-                  window.location.reload();
-                }
-              }}
-            >
-              Enable unlock override
-            </button>
-          )}
         </div>
       </section>
 
       <section style={styles.grid}>
         <article style={{ ...styles.card, ...styles.pretestCard }}>
-          <p style={styles.cardLabel}>Pre-Test standing</p>
+          <p style={styles.cardLabel}>Pre-Test Standing</p>
           <div style={styles.metric}>{internStatus?.pretestScore?.percent ?? 0}%</div>
           <p style={styles.cardCopy}>
             {internStatus?.pretestScore
-              ? `${internStatus.pretestScore.correct} of ${internStatus.pretestScore.total} correct. ${internStatus.requiredModuleIds.length} module(s) required for study.`
-              : 'No saved Pre-Test result is available yet.'}
+              ? `${internStatus.pretestScore.correct} of ${internStatus.pretestScore.total} correct · ${internStatus.requiredModuleIds.length} module(s) recommended for review.`
+              : 'No saved Pre-Test result yet.'}
           </p>
         </article>
         <article style={styles.card}>
-          <p style={styles.cardLabel}>Completed modules</p>
-          <div style={styles.metric}>{completedCount}</div>
-          <p style={styles.cardCopy}>Finished modules in the current learner path.</p>
-        </article>
-        <article style={styles.card}>
-          <p style={styles.cardLabel}>Module visibility</p>
-          <div style={styles.metric}>{visibilityOn}/{switchboard.length}</div>
-          <p style={styles.cardCopy}>
-            {visibilityOff} modules are off in the switchboard and hidden from the learner path.
-          </p>
-        </article>
-        <article style={styles.card}>
-          <p style={styles.cardLabel}>Theory passed</p>
-          <div style={styles.metric}>{theoryCount}</div>
-          <p style={styles.cardCopy}>Modules with theory already cleared.</p>
-        </article>
-        <article style={styles.card}>
-          <p style={styles.cardLabel}>Required modules remaining</p>
-          <div style={styles.metric}>
-            {internStatus
-              ? Math.max(internStatus.requiredModuleIds.length - internStatus.completedRequiredModuleIds.length, 0)
-              : remainingCount}
-          </div>
-          <p style={styles.cardCopy}>Required modules left before the Post-Test unlocks.</p>
-        </article>
-        <article style={styles.card}>
-          <p style={styles.cardLabel}>Completion</p>
-          <div style={styles.metric}>{Math.round(completionPct * 100)}%</div>
+          <p style={styles.cardLabel}>Completed Modules</p>
+          <div style={styles.metric}>{completedCount}<span style={styles.metricTotal}> / {totalModules}</span></div>
           <div style={styles.progressShell} aria-hidden="true">
             <div style={{ ...styles.progressFill, width: `${Math.round(completionPct * 100)}%` }} />
           </div>
+          <p style={styles.cardCopy}>{Math.round(completionPct * 100)}% of the learning path complete.</p>
+        </article>
+        <article style={styles.card}>
+          <p style={styles.cardLabel}>Required Modules Remaining</p>
+          <div style={styles.metric}>{requiredRemaining}</div>
+          <p style={styles.cardCopy}>Required review modules left before the Post-Test unlocks.</p>
+        </article>
+        <article style={styles.card}>
+          <p style={styles.cardLabel}>Post-Test Status</p>
+          <div style={styles.metricSmall}>
+            {internStatus?.posttestCompleted
+              ? 'Completed'
+              : internStatus?.requiredModulesCompleted
+                ? 'Unlocked'
+                : 'Locked'}
+          </div>
+          <p style={styles.cardCopy}>
+            {internStatus?.posttestCompleted
+              ? `Final score ${internStatus.posttestScore?.percent ?? 0}%.`
+              : internStatus?.requiredModulesCompleted
+                ? 'Ready to take — all required modules are done.'
+                : 'Finish your required review modules to unlock it.'}
+          </p>
+        </article>
+        <article style={styles.card}>
+          <p style={styles.cardLabel}>Studio Access</p>
+          <div style={styles.metricSmall}>{internStatus?.studioUnlocked ? 'Unlocked' : 'Locked'}</div>
+          <p style={styles.cardCopy}>
+            {internStatus?.studioUnlocked
+              ? 'Studio is available from your completed learning flow.'
+              : 'Unlocks after the Pre-Test, required modules, and Post-Test.'}
+          </p>
         </article>
       </section>
 
@@ -257,43 +261,45 @@ export default function InternDashboard(): JSX.Element {
         <article style={styles.panel}>
           <div style={styles.panelHead}>
             <h2 style={styles.panelTitle}>Strengths and gaps</h2>
-            <span style={styles.panelMeta}>
-              Strongest: {strongest ? strongest.meta.name : 'n/a'}
-            </span>
           </div>
-          <div style={styles.categoryGrid}>
-            {categoryRows.map((row) => (
-              <div key={row.meta.id} style={styles.categoryRow}>
-                <div style={styles.categoryTop}>
-                  <strong>{row.meta.name}</strong>
-                  <span>{row.done}/{row.total}</span>
+          {categoryRows.length > 0 ? (
+            <div style={styles.categoryGrid}>
+              {categoryRows.map((row) => (
+                <div key={row.meta.id} style={styles.categoryRow}>
+                  <div style={styles.categoryTop}>
+                    <strong>{row.meta.name}</strong>
+                    <span style={styles.categoryCount}>{row.done}/{row.total}</span>
+                  </div>
+                  <div style={styles.progressShell}>
+                    <div style={{ ...styles.progressFill, width: `${Math.round(row.ratio * 100)}%` }} />
+                  </div>
                 </div>
-                <div style={styles.progressShell}>
-                  <div style={{ ...styles.progressFill, width: `${Math.round(row.ratio * 100)}%` }} />
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <p style={styles.emptyCopy}>No data yet.</p>
+          )}
         </article>
 
         <article style={styles.panel}>
           <div style={styles.panelHead}>
             <h2 style={styles.panelTitle}>Next action</h2>
-            <span style={styles.panelMeta}>{unlockAll ? 'override enabled' : 'normal progress'}</span>
           </div>
           <div style={styles.nextBox}>
             <p style={styles.nextTitle}>
-              {nextModule ? nextModule.title : 'Path complete'}
+              {nextModule
+                ? `Continue with ${nextModule.eyebrow} · Module ${nextModuleNumber}`
+                : 'Required path complete'}
             </p>
             <p style={styles.nextCopy}>
               {nextModule
-                ? `Continue with ${nextModule.eyebrow}.`
+                ? `Next: ${nextModule.title}. Complete its conceptual assessment with a perfect score to continue.`
                 : internStatus?.posttestCompleted
-                  ? 'Your required learning flow and Post-Test are complete. Studio is now available.'
-                  : 'All required modules are complete. Take the Post-Test to finish the learning flow.'}
+                  ? 'Your required modules and Post-Test are complete — Studio is now available.'
+                  : internStatus?.requiredModulesCompleted
+                    ? 'All required review modules are done. Take the Post-Test next.'
+                    : 'Complete the required review modules before taking the Post-Test.'}
             </p>
-            {lastUnlocked ? <p style={styles.nextMeta}>Last unlocked: {lastUnlocked.title}</p> : null}
-            {weakest ? <p style={styles.nextMeta}>Most work left: {weakest.meta.name}</p> : null}
           </div>
         </article>
 
@@ -304,18 +310,14 @@ export default function InternDashboard(): JSX.Element {
           </div>
           <div style={styles.moduleList}>
             {recentModules.map((module) => {
-              const done = completedSet.has(module.id);
-              const passed = theoryPassedSet.has(module.id);
+              const status = moduleStatusById.get(module.id) ?? 'Locked';
               return (
                 <div key={module.id} style={styles.moduleRow}>
-                  <div>
+                  <div style={styles.moduleRowMain}>
                     <p style={styles.moduleEyebrow}>{module.eyebrow}</p>
                     <p style={styles.moduleTitle}>{module.title}</p>
                   </div>
-                  <div style={styles.moduleFlags}>
-                    <span style={done ? styles.flagDone : styles.flagPending}>{done ? 'complete' : 'locked'}</span>
-                    <span style={passed ? styles.flagDone : styles.flagPending}>{passed ? 'theory passed' : 'theory pending'}</span>
-                  </div>
+                  <span style={{ ...styles.statusPill, ...(STATUS_PILL_STYLE[status] ?? {}) }}>{status}</span>
                 </div>
               );
             })}
@@ -325,6 +327,14 @@ export default function InternDashboard(): JSX.Element {
     </main>
   );
 }
+
+const STATUS_PILL_STYLE: Record<string, CSSProperties> = {
+  Completed: { background: 'rgba(166,255,0,0.12)', color: '#d7ff85' },
+  'In Progress': { background: 'rgba(140,184,255,0.16)', color: '#bcd4ff' },
+  Optional: { background: 'rgba(255,255,255,0.08)', color: 'rgba(244,247,251,0.82)' },
+  Skipped: { background: 'rgba(255,196,84,0.14)', color: '#ffd79a' },
+  Locked: { background: 'rgba(255,255,255,0.05)', color: 'rgba(244,247,251,0.55)' },
+};
 
 const styles: Record<string, CSSProperties> = {
   shell: {
@@ -357,9 +367,9 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
   },
   title: {
-    margin: '8px 0 0',
-    fontSize: 'clamp(2rem, 4vw, 3.2rem)',
-    lineHeight: 1.02,
+    margin: '6px 0 0',
+    fontSize: 'clamp(1.6rem, 3vw, 2.2rem)',
+    lineHeight: 1.1,
   },
   copy: {
     margin: '14px 0 0',
@@ -420,10 +430,45 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
   },
   metric: {
-    marginTop: 10,
-    fontSize: 42,
+    marginTop: 8,
+    fontSize: 30,
     fontWeight: 700,
-    lineHeight: 1,
+    lineHeight: 1.1,
+  },
+  metricTotal: {
+    fontSize: 18,
+    fontWeight: 600,
+    color: 'rgba(244,247,251,0.6)',
+  },
+  metricSmall: {
+    marginTop: 8,
+    fontSize: 22,
+    fontWeight: 700,
+    lineHeight: 1.1,
+  },
+  categoryCount: {
+    color: 'rgba(244,247,251,0.7)',
+    fontSize: 13,
+  },
+  emptyCopy: {
+    margin: 0,
+    color: 'rgba(244,247,251,0.6)',
+  },
+  moduleRowMain: {
+    minWidth: 0,
+  },
+  statusPill: {
+    flexShrink: 0,
+    display: 'inline-flex',
+    alignItems: 'center',
+    padding: '4px 10px',
+    borderRadius: 999,
+    fontSize: 11,
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    letterSpacing: '0.06em',
+    background: 'rgba(255,255,255,0.07)',
+    color: 'rgba(244,247,251,0.78)',
   },
   cardCopy: {
     margin: '12px 0 0',
