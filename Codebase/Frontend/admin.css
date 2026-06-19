@@ -505,9 +505,9 @@ body{position:relative;}
 .admin-overview-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:8px;}
 .admin-overview-card{display:flex;flex-direction:column;gap:6px;padding:16px 18px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);min-width:0;}
 .admin-overview-card--empty{opacity:.85;border-style:dashed;}
-.admin-overview-card__title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);margin:0;}
-.admin-overview-card__value{font-size:24px;font-weight:700;color:var(--ink);margin:0;}
-.admin-overview-card__sub{font-size:12px;color:var(--ink-mute);margin:0;}
+.admin-overview-card__title{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-mute);margin:0;overflow-wrap:anywhere;}
+.admin-overview-card__value{font-size:24px;font-weight:700;color:var(--ink);margin:0;line-height:1.15;overflow-wrap:anywhere;}
+.admin-overview-card__sub{font-size:12px;color:var(--ink-mute);margin:0;line-height:1.4;overflow-wrap:anywhere;}
 .admin-overview-card__empty{font-size:12.5px;line-height:1.45;color:var(--ink-mute);margin:0;}
 /* Semantic grouping of the topbar account controls; keep the existing flex row
    layout intact (the wrapper contributes no box of its own). */

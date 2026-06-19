@@ -282,7 +282,7 @@ export default function AdminApp() {
               shimmer on a working operations dashboard reads as
               decorative noise. Plain h1 = solid theme accent. */}
           <h1 className="brand-title">CodiNeo Project Manager Dashboard</h1>
-          <p className="lede">Monitor project-based learning plans, intern progress, assessments, practical tasks, and C++ analysis activity.</p>
+          <p className="lede">Monitor intern progress, review learning activity, and manage project-based module recommendations.</p>
         </div>
         <div className="admin-actions">
           {/* System Status — backend health + microservice + docker + AI.
