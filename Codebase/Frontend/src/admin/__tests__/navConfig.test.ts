@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { TABS, SECTION_ORDER, SECTION_CHILDREN, SHOW_RESEARCH_ADMIN_TOOLS } from '../navConfig';
+import { TABS, SECTION_ORDER, SECTION_CHILDREN, SHOW_RESEARCH_ADMIN_TOOLS, SECONDARY_TOOLS_SECTION } from '../navConfig';
 
-// These tests pin the PM dashboard navigation reorganization: the workflow
-// section grouping, the Students→Interns rename, and — critically — that every
-// pre-existing route/tab id is still present (no page was removed) and that the
-// research/admin visibility flag is a plain UI constant, not authorization.
+// These tests pin the SOP-1 PM navigation: the four workflow groups
+// (Dashboard / Project Learning / Learning Content / Secondary Tools), the
+// Students→Interns and Courses→Course Plan renames, and — critically — that
+// every pre-existing route/tab id is still present (no page removed) and that
+// the secondary-tools visibility flag is a plain UI constant, not authorization.
 
 const ORIGINAL_TAB_IDS = [
   'runs', 'complexity', 'users', 'reviews', 'ai', 'logs', 'catalogs', 'invites',
@@ -12,48 +13,48 @@ const ORIGINAL_TAB_IDS = [
   'instructor-questions', 'courses',
 ];
 
-describe('PM dashboard navConfig', () => {
+describe('PM dashboard navConfig (SOP-1)', () => {
   it('preserves every original route/tab id (no dashboard page removed)', () => {
     const ids = new Set(TABS.map((t) => t.id));
     for (const id of ORIGINAL_TAB_IDS) expect(ids.has(id as never)).toBe(true);
   });
 
-  it('adds an Overview tab as the Dashboard section', () => {
+  it('adds an Overview tab in the Dashboard group', () => {
     const overview = TABS.find((t) => t.id === 'overview');
     expect(overview).toBeTruthy();
     expect(overview?.section).toBe('Dashboard');
   });
 
-  it('renames the Students tab label to "Interns" (route id unchanged)', () => {
+  it('groups the normal PM workflow into Project Learning + Learning Content', () => {
     const interns = TABS.find((t) => t.id === 'instructor-students');
     expect(interns?.label).toBe('Interns');
-    expect(interns?.section).toBe('Learner Monitoring');
+    expect(interns?.section).toBe('Project Learning');
     expect(TABS.some((t) => t.label === 'Students')).toBe(false);
-  });
 
-  it('organizes navigation around the learning workflow sections', () => {
-    expect(SECTION_ORDER).toEqual([
-      'Dashboard', 'Learner Monitoring', 'Learning Content', 'Code Analysis', 'Research & Admin Tools',
-    ]);
-  });
+    const coursePlan = TABS.find((t) => t.id === 'courses');
+    expect(coursePlan?.label).toBe('Course Plan');
+    expect(coursePlan?.section).toBe('Project Learning');
 
-  it('places content + analysis tabs in their workflow sections', () => {
     expect(SECTION_CHILDREN['Learning Content']).toEqual(
-      expect.arrayContaining(['instructor-modules', 'instructor-questions', 'courses']),
+      expect.arrayContaining(['instructor-modules', 'instructor-questions']),
     );
-    expect(SECTION_CHILDREN['Code Analysis']).toContain('runs');
   });
 
-  it('centralizes research/admin utilities under one section', () => {
-    const research = SECTION_CHILDREN['Research & Admin Tools'];
-    for (const id of ['logs', 'reviews', 'users', 'invites', 'joinRequests', 'ai', 'catalogs', 'complexity', 'featureReleases']) {
-      expect(research).toContain(id);
+  it('orders the four SOP-1 groups with Secondary Tools last', () => {
+    expect(SECTION_ORDER).toEqual([
+      'Dashboard', 'Project Learning', 'Learning Content', 'Secondary Tools',
+    ]);
+    expect(SECTION_ORDER[SECTION_ORDER.length - 1]).toBe(SECONDARY_TOOLS_SECTION);
+  });
+
+  it('places code-analysis + research/admin utilities under Secondary Tools', () => {
+    const secondary = SECTION_CHILDREN['Secondary Tools'];
+    for (const id of ['runs', 'logs', 'reviews', 'users', 'invites', 'joinRequests', 'ai', 'catalogs', 'complexity', 'featureReleases']) {
+      expect(secondary).toContain(id);
     }
   });
 
   it('exposes a plain UI visibility flag (not an authorization mechanism)', () => {
-    // It is a boolean constant only; it gates display, never access. Route guards
-    // and role checks remain the authoritative access control.
     expect(typeof SHOW_RESEARCH_ADMIN_TOOLS).toBe('boolean');
   });
 

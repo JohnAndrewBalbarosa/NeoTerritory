@@ -26,6 +26,7 @@ import { markAdminRefresh } from '../api/client';
 import { useAdminUsers } from './hooks/useAdminUsers';
 import {
   TABS, SECTION_ORDER, TAB_SECTION_MAP, SECTION_CHILDREN, SHOW_RESEARCH_ADMIN_TOOLS,
+  SECONDARY_TOOLS_SECTION,
   type AdminTab, type AdminSection,
 } from './navConfig';
 
@@ -83,7 +84,13 @@ export default function AdminApp() {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [mountedTabs, setMountedTabs] = useState<Set<AdminTab>>(new Set(['overview']));
   const [refreshKey, setRefreshKey] = useState(0);
-  const [expandedSection, setExpandedSection] = useState<AdminSection>(TAB_SECTION_MAP.overview);
+  // SOP-1 default: the PM workflow groups (Dashboard + Project Learning) are
+  // expanded so learner records/assessments are reachable without opening nested
+  // folders; Learning Content + Secondary Tools start collapsed. Multiple
+  // sections may be open at once (not a single-accordion).
+  const [expandedSections, setExpandedSections] = useState<Set<AdminSection>>(
+    () => new Set<AdminSection>(['Dashboard', 'Project Learning']),
+  );
   // Dev-only viewport overflow detector for the admin shell.
   useOverflowGuard({ rootSelector: '.admin-shell', tolerancePx: 2 });
 
@@ -219,11 +226,17 @@ export default function AdminApp() {
   function setTab(tab: AdminTab) {
     setActiveTab(tab);
     const section = TAB_SECTION_MAP[tab];
-    setExpandedSection(section);
+    // Ensure the selected tab's section is open (never force-collapse the others).
+    setExpandedSections((prev) => (prev.has(section) ? prev : new Set(prev).add(section)));
   }
 
   function toggleSection(section: AdminSection) {
-    setExpandedSection(section);
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(section)) next.delete(section);
+      else next.add(section);
+      return next;
+    });
   }
 
   return (
@@ -316,16 +329,16 @@ export default function AdminApp() {
 
       <div className="admin-body">
         <nav className="admin-tab-bar admin-sidebar" aria-label="Admin sections" data-testid="admin-tab-bar">
-          {SECTION_ORDER.filter((section) => section !== 'Research & Admin Tools' || SHOW_RESEARCH_ADMIN_TOOLS).map((section) => {
+          {SECTION_ORDER.filter((section) => section !== SECONDARY_TOOLS_SECTION || SHOW_RESEARCH_ADMIN_TOOLS).map((section) => {
             const tabs = SECTION_CHILDREN[section].map((id) => TABS.find((tab) => tab.id === id)!).filter((t) => {
               if (t.originalDevsOnly && isPmAdmin(user)) return false;
               if (t.originalDevsOnly && !isOriginalDevsAdmin(user)) return false;
               return true;
             });
             if (tabs.length === 0) return null;
-            const isOpen = expandedSection === section;
+            const isOpen = expandedSections.has(section);
             return (
-              <div className="admin-sidebar__group" key={section}>
+              <div className="admin-sidebar__group" key={section} data-secondary={section === SECONDARY_TOOLS_SECTION ? 'true' : undefined}>
                 <button
                   type="button"
                   className="admin-sidebar__section"

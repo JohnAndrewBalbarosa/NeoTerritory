@@ -301,6 +301,10 @@ body{position:relative;}
 .admin-body{display:flex;gap:20px;align-items:flex-start;}
 .admin-sidebar{display:flex;flex-direction:column;gap:10px;flex:0 0 248px;border-bottom:none;padding:8px 4px 8px 0;position:sticky;top:12px;}
 .admin-sidebar__group{display:flex;flex-direction:column;gap:6px;}
+/* Secondary Tools group: de-emphasized (collapsed by default + dimmed label) so
+   the PM learning workflow groups read as primary. */
+.admin-sidebar__group[data-secondary='true']{margin-top:10px;border-top:1px solid var(--border);padding-top:10px;opacity:.82;}
+.admin-sidebar__group[data-secondary='true'] .admin-sidebar__section-label{opacity:.85;}
 .admin-sidebar__section{display:flex;align-items:center;gap:8px;appearance:none;border:none;background:transparent;color:var(--ink);font:700 10px/1 var(--code-font);letter-spacing:.12em;text-transform:uppercase;padding:8px 10px;border-radius:var(--radius-md);cursor:pointer;text-align:left;}
 .admin-sidebar__section:hover{background:var(--surface);color:var(--accent);}
 .admin-sidebar__section[aria-expanded="true"]{color:var(--accent);}

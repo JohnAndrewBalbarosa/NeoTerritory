@@ -403,6 +403,122 @@ router.get('/stats/learning-raw', (_req: Request, res: Response, next: NextFunct
   } catch (err) { next(err); }
 });
 
+// ---------------------------------------------------------------------------
+// SOP-1 Project Manager learning records (read-only, admin-guarded by the
+// router-level jwtAuth + requireAdmin). These expose the per-learner FORMAL
+// assessment data that was previously only self-scoped (GET /api/learning/*).
+//
+// IMPORTANT: formal scores, the question bank, and the recommended/already-
+// understood classification all live in the FRONTEND (learningAssessments.ts +
+// assessmentBanks). The backend stores only RAW answers and never a score, so
+// these endpoints return raw rows by stable id (intern/plan/cycle/module/
+// question/attempt). The PM frontend re-grades with the same authoritative
+// helpers learners use, and recommendation labels are derived deterministically
+// from each cycle's FROZEN pre-test answers + the existing mastery threshold —
+// so historical cycles stay stable regardless of later course-plan toggles
+// (no separate recommendation persistence is required).
+// ---------------------------------------------------------------------------
+
+// Roster of interns (role 'user') that have any learning footprint OR a plan.
+router.get('/learning/interns', (_req: Request, res: Response, next: NextFunction) => {
+  try {
+    const interns = db.prepare(`
+      SELECT u.id AS internId, u.username, u.email, u.created_via AS createdVia, u.last_active AS lastActive
+      FROM users u
+      WHERE u.role = 'user' AND u.id IN (
+        SELECT user_id FROM learning_assessment_attempts
+        UNION SELECT user_id FROM learning_progress
+        UNION SELECT user_id FROM learning_question_results
+        UNION SELECT learner_id FROM learning_plans
+      )
+      ORDER BY u.username ASC
+    `).all() as Array<{ internId: number; username: string; email: string | null; createdVia: string | null; lastActive: string | null }>;
+
+    // Lightweight per-intern attempt list (no answers) so the roster can derive
+    // the learning STAGE (awaiting/learning/completed) without a heavy payload.
+    const attemptStmt = db.prepare(`
+      SELECT id AS attemptId, assessment_type AS assessmentType, cycle_id AS cycleId,
+             plan_id AS planId, question_count AS questionCount, created_at AS createdAt
+      FROM learning_assessment_attempts WHERE user_id = ?
+      ORDER BY created_at ASC
+    `);
+    const activePlanStmt = db.prepare(`
+      SELECT id, project_specification AS projectSpecification, status, activated_at AS activatedAt
+      FROM learning_plans WHERE learner_id = ? AND status = 'active' ORDER BY activated_at DESC LIMIT 1
+    `);
+    const planModulesStmt = db.prepare(`
+      SELECT module_id AS moduleId, selection_status AS selectionStatus, recommendation_source AS recommendationSource, display_order AS displayOrder
+      FROM learning_plan_modules WHERE plan_id = ? ORDER BY display_order ASC
+    `);
+
+    const rows = interns.map((it) => {
+      const attempts = attemptStmt.all(it.internId);
+      const activePlan = activePlanStmt.get(it.internId) as { id: string; projectSpecification: string | null; status: string; activatedAt: string | null } | undefined;
+      const planModules = activePlan ? planModulesStmt.all(activePlan.id) : [];
+      return { ...it, attempts, activePlan: activePlan ?? null, planModules };
+    });
+    res.json({ interns: rows });
+  } catch (err) { next(err); }
+});
+
+// Full raw record for one intern: profile, active plan + its modules
+// (project-relevant scope), every assessment attempt + its raw answers (by
+// stable question id), progress, and in-module question results. The frontend
+// computes pre/post scores, percentage-point difference, and the
+// recommended/already-understood classification from this raw data.
+router.get('/learning/interns/:internId', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const internId = Number(req.params.internId);
+    if (!Number.isInteger(internId) || internId <= 0) {
+      res.status(400).json({ error: 'invalid internId' });
+      return;
+    }
+    const profile = db.prepare(`
+      SELECT id AS internId, username, email, role, created_via AS createdVia, last_active AS lastActive
+      FROM users WHERE id = ?
+    `).get(internId) as { internId: number; username: string; role: string } | undefined;
+    if (!profile) { res.status(404).json({ error: 'intern not found' }); return; }
+
+    const plans = db.prepare(`
+      SELECT id, project_manager_id AS projectManagerId, project_specification AS projectSpecification,
+             status, created_at AS createdAt, updated_at AS updatedAt, activated_at AS activatedAt
+      FROM learning_plans WHERE learner_id = ? ORDER BY (status = 'active') DESC, updated_at DESC
+    `).all(internId) as Array<{ id: string; status: string }>;
+    const planModulesStmt = db.prepare(`
+      SELECT module_id AS moduleId, selection_status AS selectionStatus,
+             recommendation_source AS recommendationSource, display_order AS displayOrder
+      FROM learning_plan_modules WHERE plan_id = ? ORDER BY display_order ASC
+    `);
+    const plansWithModules = plans.map((p) => ({ ...p, modules: planModulesStmt.all(p.id) }));
+
+    const attempts = db.prepare(`
+      SELECT id AS attemptId, assessment_type AS assessmentType, session_id AS sessionId,
+             question_count AS questionCount, cycle_id AS cycleId, plan_id AS planId, created_at AS createdAt
+      FROM learning_assessment_attempts WHERE user_id = ? ORDER BY created_at ASC
+    `).all(internId);
+    const answers = db.prepare(`
+      SELECT id AS answerId, attempt_id AS attemptId, assessment_type AS assessmentType,
+             assessment_index AS assessmentIndex, module_id AS moduleId, question_index AS questionIndex,
+             question_id AS questionId, selected_index AS selectedIndex, response_text AS responseText,
+             question_taxonomy AS questionTaxonomy, question_kind AS questionKind, created_at AS createdAt
+      FROM learning_assessment_answers WHERE user_id = ? ORDER BY attempt_id ASC, assessment_index ASC
+    `).all(internId);
+    const progress = db.prepare(`
+      SELECT completed_module_ids AS completedModuleIds, last_unlocked_module_id AS lastUnlockedModuleId,
+             theory_passed_module_ids AS theoryPassedModuleIds, bloom_mastery_by_module AS bloomMasteryByModule,
+             updated_at AS updatedAt
+      FROM learning_progress WHERE user_id = ?
+    `).get(internId) ?? null;
+    const questionResults = db.prepare(`
+      SELECT module_id AS moduleId, question_index AS questionIndex, selected_index AS selectedIndex,
+             is_correct AS isCorrect, first_attempt_correct AS firstAttemptCorrect, attempts, updated_at AS updatedAt
+      FROM learning_question_results WHERE user_id = ?
+    `).all(internId);
+
+    res.json({ profile, plans: plansWithModules, attempts, answers, progress, questionResults });
+  } catch (err) { next(err); }
+});
+
 // Five-minute window matches the admin UI's "online" indicator. A user with no
 // last_active row, or last_active older than this, is considered offline and
 // safe to reset without dropping their session.

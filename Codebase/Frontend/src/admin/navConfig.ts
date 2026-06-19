@@ -15,13 +15,20 @@ export type AdminTab =
   | 'invites' | 'joinRequests' | 'featureReleases'
   | 'instructor-students' | 'instructor-modules' | 'instructor-questions' | 'courses';
 
-// Navigation reorganized around the project-based learning workflow. Section
-// labels and the Students→Interns rename are DISPLAY changes only — route/tab
-// ids are unchanged so every existing page stays reachable.
-export type AdminSection = 'Dashboard' | 'Learner Monitoring' | 'Learning Content' | 'Code Analysis' | 'Research & Admin Tools';
+// Navigation reorganized around the SOP-1 project-based learning-support
+// workflow. The first three groups are the normal PM flow; Secondary Tools holds
+// the less-prominent technical/research utilities (collapsed by default). Section
+// labels + the Students→Interns / Courses→Course Plan renames are DISPLAY changes
+// only — tab ids equal the original route ids, so every existing page stays
+// reachable and no route guard or permission is touched.
+export type AdminSection = 'Dashboard' | 'Project Learning' | 'Learning Content' | 'Secondary Tools';
 
-// UI-only visibility flag for the secondary research/admin utilities. NOT
-// authorization — the existing route guards + role checks stay authoritative.
+// Name of the de-emphasized, collapsible group holding the technical/research
+// utilities (code analysis, logs, users, AI config, research pages).
+export const SECONDARY_TOOLS_SECTION: AdminSection = 'Secondary Tools';
+
+// UI-only visibility flag for the secondary tools group. NOT authorization — the
+// existing route guards + role checks stay authoritative.
 export const SHOW_RESEARCH_ADMIN_TOOLS = true;
 
 export interface TabDef {
@@ -35,24 +42,28 @@ export interface TabDef {
 }
 
 export const TABS: ReadonlyArray<TabDef> = [
+  // Dashboard
   { id: 'overview',        label: 'Overview',        icon: IconLayers,      section: 'Dashboard' },
-  { id: 'instructor-students',  label: 'Interns',    icon: IconShield,      section: 'Learner Monitoring' },
+  // Project Learning (normal PM workflow): course plan + intern monitoring.
+  { id: 'courses',              label: 'Course Plan', icon: IconBook,       section: 'Project Learning' },
+  { id: 'instructor-students',  label: 'Interns',    icon: IconShield,      section: 'Project Learning' },
+  // Learning Content: module + question views.
   { id: 'instructor-modules',   label: 'Modules',    icon: IconLayers,      section: 'Learning Content' },
-  { id: 'instructor-questions', label: 'Questions',  icon: IconClipboard,   section: 'Learning Content' },
-  { id: 'courses',              label: 'Courses',    icon: IconBook,        section: 'Learning Content' },
-  { id: 'runs',            label: 'Analysis Runs',   icon: IconLayers,      section: 'Code Analysis' },
-  { id: 'logs',            label: 'Logs',            icon: IconClipboard,   section: 'Research & Admin Tools' },
-  { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Research & Admin Tools', originalDevsOnly: true },
-  { id: 'users',           label: 'Users',           icon: IconShield,      section: 'Research & Admin Tools' },
-  { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'Research & Admin Tools' },
-  { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'Research & Admin Tools' },
-  { id: 'ai',              label: 'AI configuration', icon: IconCode,       section: 'Research & Admin Tools' },
-  { id: 'catalogs',        label: 'Pattern groups',  icon: IconBeaker,      section: 'Research & Admin Tools' },
-  { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Research & Admin Tools', originalDevsOnly: true },
-  { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Research & Admin Tools', originalDevsOnly: true },
+  { id: 'instructor-questions', label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
+  // Secondary Tools (de-emphasized, collapsible): code analysis + research/admin.
+  { id: 'runs',            label: 'Code Analysis',   icon: IconLayers,      section: 'Secondary Tools' },
+  { id: 'logs',            label: 'Logs',            icon: IconClipboard,   section: 'Secondary Tools' },
+  { id: 'reviews',         label: 'Reviews',         icon: IconCheckSquare, section: 'Secondary Tools', originalDevsOnly: true },
+  { id: 'users',           label: 'Users',           icon: IconShield,      section: 'Secondary Tools' },
+  { id: 'invites',         label: 'Invites',         icon: IconCheckSquare, section: 'Secondary Tools' },
+  { id: 'joinRequests',    label: 'Join requests',   icon: IconShield,      section: 'Secondary Tools' },
+  { id: 'ai',              label: 'AI configuration', icon: IconCode,       section: 'Secondary Tools' },
+  { id: 'catalogs',        label: 'Pattern groups',  icon: IconBeaker,      section: 'Secondary Tools' },
+  { id: 'complexity',      label: 'Complexity',      icon: IconBeaker,      section: 'Secondary Tools', originalDevsOnly: true },
+  { id: 'featureReleases', label: 'Feature releases',icon: IconCode,        section: 'Secondary Tools', originalDevsOnly: true },
 ];
 
-export const SECTION_ORDER: AdminSection[] = ['Dashboard', 'Learner Monitoring', 'Learning Content', 'Code Analysis', 'Research & Admin Tools'];
+export const SECTION_ORDER: AdminSection[] = ['Dashboard', 'Project Learning', 'Learning Content', 'Secondary Tools'];
 
 export const TAB_SECTION_MAP: Record<AdminTab, AdminSection> = TABS.reduce((acc, tab) => {
   acc[tab.id] = tab.section;
