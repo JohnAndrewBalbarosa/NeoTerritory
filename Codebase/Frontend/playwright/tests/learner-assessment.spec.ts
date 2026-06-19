@@ -90,6 +90,21 @@ async function seedLearnerSession(page: Page): Promise<void> {
   });
 }
 
+async function seedPersistentLearnerSession(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem('nt_token', 'pw-learning-token');
+    localStorage.setItem(
+      'nt_user',
+      JSON.stringify({
+        id: 4201,
+        username: 'pw-learning-user',
+        email: 'pw-learning@example.com',
+        role: 'user',
+      }),
+    );
+  });
+}
+
 test.describe('learner assessment routes', () => {
   test('Guest (no active plan) cannot access the formal pre-test', async ({ page }) => {
     // No learner session seeded → Guest. Active plan absent → the pre-test is
@@ -143,6 +158,163 @@ test.describe('learner assessment routes', () => {
 });
 
 test.describe('learner hub smoke', () => {
+  test('conceptual assessment records score, blocks duplicate answers, and unlocks only on perfect', async ({ page }) => {
+    await seedPersistentLearnerSession(page);
+
+    const taxonomies = [
+      'remembering',
+      'understanding',
+      'applying',
+      'analyzing',
+      'evaluating',
+      'creating',
+    ] as const;
+    const buildQuestions = (prefix: string) => taxonomies.map((taxonomy, index) => ({
+      type: 'mcq',
+      question: `${prefix} question ${index + 1}`,
+      options: [`${prefix} correct ${index + 1}`, `${prefix} wrong ${index + 1}`],
+      correctIndex: 0,
+      taxonomy,
+    }));
+    const modules = [
+      {
+        id: 'foundation-gate',
+        category: 'foundations',
+        title: 'Foundation Gate',
+        eyebrow: 'Foundations',
+        intro: 'Foundation content.',
+        sections: [{ heading: 'Foundation', body: 'Foundation review.' }],
+        theoreticalExam: { kind: 'theoretical', questions: buildQuestions('Foundation') },
+      },
+      {
+        id: 'concept-target',
+        category: 'creational',
+        title: 'Concept Target',
+        eyebrow: 'Creational',
+        intro: 'Concept content.',
+        sections: [{ heading: 'Concept', body: 'Review before submitting.' }],
+        theoreticalExam: { kind: 'theoretical', questions: buildQuestions('Target') },
+      },
+      {
+        id: 'locked-next',
+        category: 'structural',
+        title: 'Locked Next',
+        eyebrow: 'Structural',
+        intro: 'Next content.',
+        sections: [{ heading: 'Next', body: 'Unlocked after a perfect score.' }],
+        theoreticalExam: { kind: 'theoretical', questions: buildQuestions('Next') },
+      },
+    ];
+    const submittedAttempts: Array<unknown> = [];
+    const progressUpdates: Array<unknown> = [];
+    const createdAt = new Date().toISOString();
+    const courseUpdatedAt = new Date(Date.now() - 1_000).toISOString();
+
+    await page.route('**/api/learning/modules', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ modules }),
+      });
+    });
+    await page.route('**/api/learning/assessments', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          attempts: [{
+            id: 1,
+            assessmentType: 'pretest',
+            sessionId: null,
+            questionCount: 6,
+            createdAt,
+          }],
+          answers: taxonomies.map((taxonomy, index) => ({
+            id: index + 1,
+            attemptId: 1,
+            assessmentType: 'pretest',
+            assessmentIndex: index,
+            moduleId: 'foundation-gate',
+            questionIndex: index,
+            selectedIndex: 0,
+            responseText: '',
+            questionTaxonomy: taxonomy,
+            questionKind: 'theoretical',
+            sessionId: null,
+            createdAt,
+          })),
+          courseUpdatedAt,
+        }),
+      });
+    });
+    await page.route('**/api/learning/progress', async (route) => {
+      if (route.request().method() === 'PUT') {
+        progressUpdates.push(route.request().postDataJSON());
+        await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+        return;
+      }
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          completedModuleIds: ['foundation-gate'],
+          lastUnlockedModuleId: 'concept-target',
+          triesByModule: {},
+          theoryPassedModuleIds: ['foundation-gate'],
+          bloomMasteryByModule: { 'foundation-gate': 6 },
+        }),
+      });
+    });
+    await page.route('**/api/learning/answers', async (route) => {
+      submittedAttempts.push(route.request().postDataJSON());
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ ok: true, recorded: 6 }),
+      });
+    });
+
+    await page.goto('/patterns/learn', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('.nt-course-shell')).toBeVisible();
+    await page.locator('.nt-course-accordion__cat').filter({ hasText: 'FOUNDATIONS' }).click();
+    await expect(page.locator('.nt-course-accordion__module[data-status="done"] svg')).toHaveCount(1);
+    await page.locator('.nt-course-accordion__cat').filter({ hasText: 'STRUCTURAL' }).click();
+    await expect(page.locator('.nt-course-accordion__module[data-status="locked"] svg')).toHaveCount(1);
+    await page.locator('.nt-course-accordion__cat').filter({ hasText: 'CREATIONAL' }).click();
+
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    const submit = page.getByRole('button', { name: 'Submit', exact: true });
+    await expect(submit).toBeDisabled();
+
+    const questions = page.locator('.nt-exam__question');
+    await expect(questions).toHaveCount(6);
+    for (let index = 0; index < 6; index += 1) {
+      const choices = questions.nth(index).locator('input[type="radio"]');
+      await expect(choices).toHaveCount(2);
+      await choices.nth(index === 0 ? 1 : 0).check();
+    }
+
+    await expect(submit).toBeEnabled();
+    await submit.click();
+    await expect(page.getByText('Score: 5 / 6', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Review Required – Continue Studying This Module', { exact: true }),
+    ).toBeVisible();
+    expect(submittedAttempts).toHaveLength(1);
+    expect(progressUpdates).toHaveLength(0);
+
+    await page.getByRole('button', { name: 'Revise Answers', exact: true }).click();
+    await expect(submit).toBeDisabled();
+    await questions.nth(0).locator('input[type="radio"]').nth(0).check();
+    await expect(submit).toBeEnabled();
+    await submit.click();
+
+    await expect(page.getByText('Score: 6 / 6', { exact: true })).toBeVisible();
+    await expect(page.getByText('Perfect Score – Proceed to Next Module', { exact: true })).toBeVisible();
+    expect(submittedAttempts).toHaveLength(2);
+    expect(progressUpdates).toHaveLength(1);
+  });
+
   test('unlocked learning path reaches a practical exam pane', async ({ page }) => {
     await seedLearnerSession(page);
     await installAssessmentMocks(page);

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { lessonPagesFor, visibleTheoryQuestionIndexesFor } from '../PatternsLearnPage';
+import {
+  lessonPagesFor,
+  scoreTheoryAssessment,
+  visibleTheoryQuestionIndexesFor,
+} from '../PatternsLearnPage';
 import type { BloomTaxonomy, LearningModule } from '../../../../data/learningModules';
 
 const BLOOM_LEVELS: BloomTaxonomy[] = [
@@ -54,5 +58,33 @@ describe('visibleTheoryQuestionIndexesFor', () => {
 
   it('hides questions at or below the mastery number', () => {
     expect(visibleTheoryQuestionIndexesFor(buildModule(), 3)).toEqual([3, 4, 5]);
+  });
+});
+
+describe('scoreTheoryAssessment', () => {
+  it('requires every visible answer before a perfect result can unlock progress', () => {
+    const exam = buildModule().theoreticalExam!;
+
+    expect(scoreTheoryAssessment(exam, [0, 1], { 0: 0 })).toEqual({
+      answeredCount: 1,
+      correctCount: 1,
+      totalCount: 2,
+      complete: false,
+      perfect: false,
+    });
+  });
+
+  it('reports the recorded score and only marks an all-correct submission perfect', () => {
+    const exam = buildModule().theoreticalExam!;
+
+    expect(scoreTheoryAssessment(exam, [0, 1, 2], { 0: 0, 1: 1, 2: 0 })).toEqual({
+      answeredCount: 3,
+      correctCount: 2,
+      totalCount: 3,
+      complete: true,
+      perfect: false,
+    });
+
+    expect(scoreTheoryAssessment(exam, [0, 1, 2], { 0: 0, 1: 0, 2: 0 }).perfect).toBe(true);
   });
 });

@@ -2,7 +2,7 @@
 
 ## Sole job
 
-Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, progress reads/writes through the learning API, the current lesson card, mixed theoretical question rendering, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
+Learning-path surface for the patterns curriculum. This page owns the section-level learning flow, the sidebar selection state, progress reads/writes through the learning API, the current lesson card, conceptual-assessment submission and scoring, mixed theoretical question rendering, and the pre-test gate before the learner enters module content. It is not the patterns reference catalog and should not duplicate the catalog-style directory layout.
 
 ## Topbar Rule
 
@@ -33,14 +33,38 @@ flowchart TD
     D0{"Fresh pre-test?"}
     N3["Hide exempt modules"]
     N4["Show lesson card"]
-    N5["Save progress"]
+    N5["Submit assessment"]
     N6["Redirect pre-test"]
+    D1{"Perfect score?"}
+    N7["Unlock next step"]
+    N8["Keep module active"]
     End["Stay in learning flow"]
     Start --> N0
     N0 --> N1 --> N2 --> D0
-    D0 -->|yes| N3 --> N4 --> N5 --> End
+    D0 -->|yes| N3 --> N4 --> N5 --> D1
+    D1 -->|yes| N7 --> End
+    D1 -->|no| N8 --> End
     D0 -->|no| N6 --> End
 ```
+
+## Conceptual Assessment Submission
+
+- The conceptual assessment has its own `Submit` button; the pager arrow never doubles as an implicit submit action.
+- Submit stays disabled until every visible question has an answer.
+- The page calculates `correct / total` only when the learner submits and records the attempt through `saveLearningAnswers()`.
+- An in-flight guard and submitted-answer signature prevent double-clicks and repeat submission of the same answer set.
+- A perfect score persists the theory-passed state. When no practical assessment remains, it also persists module completion and Bloom mastery level 6.
+- The just-completed module remains visible long enough to show `Perfect Score – Proceed to Next Module`; persisted Bloom mastery is not applied to the local page filter until leaving the result, then the completed module is released from the personalized path.
+- A non-perfect score shows `Review Required – Continue Studying This Module`, keeps the next module locked, and offers direct actions to review the lesson or revise the answers.
+- Result rendering is the boundary that reveals answer feedback. Answers are not scored live while the learner is still composing the attempt.
+
+## Module Navigation Status Icons
+
+- Completed rows use the shared themed `IconCheck` SVG.
+- Locked rows use the shared themed `IconLock` SVG.
+- Current, optional, and available rows use small CSS status marks so no emoji glyphs or platform-dependent alignment enter the navigation.
+- Category disclosure uses `IconChevronRight` with rotation for the expanded state.
+- Every status marker occupies the same fixed box, keeping icons, numbers, and module titles aligned.
 
 ## Fresh Pre-Test Gate
 
@@ -105,6 +129,13 @@ It leans on nearby contracts or tools such as the page shell layout and the exis
 - Bloom levels at or below the user's module mastery ceiling no longer show as quiz/practical pages for that module.
 - A module with Bloom mastery level 6 is hidden for that user.
 - The final visible theory page gates module completion after mastered levels are removed.
+- The conceptual assessment exposes a dedicated Submit button.
+- Incomplete attempts cannot be submitted.
+- A submitted score displays as `correct / total`.
+- Repeated clicks and unchanged duplicate submissions do not create another attempt.
+- A perfect conceptual score records progress and exposes the next module or practical assessment without requiring a retake.
+- A non-perfect score leaves the learner in the current module and recommends reviewing its content.
+- Completed and locked module rows use themed SVG icons aligned with the module title.
 - Visible theory pages render MCQ, identification, and Studio questions through `BloomQuestionRenderer`.
 - Studio creating questions can embed the analyzer surface in the lesson flow.
 - Practical exam pages embed the analyzer surface and use detection/tests, not pasted text, as the completion signal.

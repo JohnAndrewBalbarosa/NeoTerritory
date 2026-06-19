@@ -1,5 +1,33 @@
 # `learner-assessment.spec.ts`
 
+## Conceptual assessment regression
+
+The Learning Path browser regression uses a three-module mocked curriculum to verify the complete conceptual submission boundary:
+
+- an already-completed module renders the themed check SVG
+- a future module renders the themed lock SVG
+- Submit is disabled until every conceptual question is answered
+- a non-perfect attempt records `5 / 6`, leaves progress unchanged, and shows the review-required status
+- revising without changing the submitted answers keeps Submit disabled
+- changing the incorrect answer enables one new attempt
+- a perfect `6 / 6` attempt writes learning progress and shows the proceed-to-next-module status
+
+```mermaid
+flowchart TD
+    Start["Open target module"]
+    N1["Answer all questions"]
+    N2["Submit first attempt"]
+    D1{"Perfect score?"}
+    N3["Show review state"]
+    N4["Change one answer"]
+    N5["Submit retry"]
+    N6["Persist progress"]
+    End["Show proceed state"]
+    Start --> N1 --> N2 --> D1
+    D1 -->|no| N3 --> N4 --> N5
+    N5 --> N6 --> End
+```
+
 ## Sole job
 
 Cover the assessment routes and the practical learner-hub smoke path with deterministic browser checks. The spec verifies three public assessment routes, checks that the rendered question cards include Bloom taxonomy chips, confirms incomplete submission shows the browser-side validation message, and proves the unlocked learning path can reach a practical exam pane.

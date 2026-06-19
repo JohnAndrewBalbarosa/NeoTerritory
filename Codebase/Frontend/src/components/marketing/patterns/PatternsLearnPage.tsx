@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { navigate } from '../../../logic/router';
-import { fetchLearningAssessments, fetchLearningProgress, saveLearningAssessment, saveLearningProgress } from '../../../api/client';
+import {
+  fetchLearningAssessments,
+  fetchLearningProgress,
+  saveLearningAnswers,
+  saveLearningAssessment,
+  saveLearningProgress,
+} from '../../../api/client';
 import {
   CATEGORY_META,
   isFoundationModule,
@@ -20,6 +26,7 @@ import {
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
+import { IconCheck, IconChevronRight, IconLock } from '../../icons/Icons';
 
 interface CourseStep {
   module: LearningModule;
@@ -48,6 +55,16 @@ interface LessonPageGroup {
 
 type TheoryAnswerMap = Record<number, any>;
 
+export interface TheoryAssessmentScore {
+  answeredCount: number;
+  correctCount: number;
+  totalCount: number;
+  complete: boolean;
+  perfect: boolean;
+}
+
+type TheorySubmissionResult = TheoryAssessmentScore;
+
 const BLOOM_LEVELS: BloomTaxonomy[] = [
   'remembering',
   'understanding',
@@ -67,6 +84,47 @@ function masteryLevelFromStoredLevels(levels: ReadonlyArray<number> | undefined)
 
 function bloomLevelForTaxonomy(taxonomy: BloomTaxonomy | undefined): number {
   return taxonomy ? BLOOM_LEVELS.indexOf(taxonomy) + 1 : 0;
+}
+
+function isTheoryAnswerComplete(question: TheoreticalExam['questions'][number], answer: any): boolean {
+  if (question.type === 'identification') {
+    return Array.isArray(answer)
+      && answer.length === question.expectedTokens.length
+      && answer.every((token) => typeof token === 'string' && token.trim().length > 0);
+  }
+  if (question.type === 'studio') return answer === true;
+  return typeof answer === 'number';
+}
+
+export function scoreTheoryAssessment(
+  exam: TheoreticalExam,
+  questionIndexes: ReadonlyArray<number>,
+  answers: TheoryAnswerMap,
+): TheoryAssessmentScore {
+  let answeredCount = 0;
+  let correctCount = 0;
+
+  questionIndexes.forEach((questionIndex) => {
+    const question = exam.questions[questionIndex];
+    if (!question) return;
+    const answer = answers[questionIndex];
+    if (isTheoryAnswerComplete(question, answer)) answeredCount += 1;
+    if (isAnswerCorrect(question, answer)) correctCount += 1;
+  });
+
+  const totalCount = questionIndexes.length;
+  const complete = totalCount > 0 && answeredCount === totalCount;
+  return {
+    answeredCount,
+    correctCount,
+    totalCount,
+    complete,
+    perfect: complete && correctCount === totalCount,
+  };
+}
+
+function theoryAnswerSignature(questionIndexes: ReadonlyArray<number>, answers: TheoryAnswerMap): string {
+  return JSON.stringify(questionIndexes.map((questionIndex) => answers[questionIndex] ?? null));
 }
 
 function anchorId(moduleId: string, section: string, sub?: number): string {
@@ -193,7 +251,7 @@ function describeExams(module: LearningModule | undefined): string {
 
   const parts: string[] = [];
   if (module.theoreticalExam) {
-    parts.push(`a ${module.theoreticalExam.questions.length}-question theoretical exam`);
+    parts.push(`a ${module.theoreticalExam.questions.length}-question conceptual assessment`);
   }
   if (module.practicalExam) {
     parts.push(`a Studio practical exam (analyser must tag ${module.practicalExam.patternName})`);
@@ -342,7 +400,14 @@ function TheoreticalExamBlock({
   answers,
   onAnswerChange,
   isPassed,
-  isSubmitGate,
+  hasPracticalExam,
+  result,
+  submitting,
+  canSubmit,
+  onSubmit,
+  onRevise,
+  onReviewContent,
+  onProceed,
 }: {
   moduleId: string;
   exam: TheoreticalExam;
@@ -350,12 +415,21 @@ function TheoreticalExamBlock({
   answers: TheoryAnswerMap;
   onAnswerChange: (questionIndex: number, answer: any) => void;
   isPassed: boolean;
-  isSubmitGate: boolean;
+  hasPracticalExam: boolean;
+  result: TheorySubmissionResult | null;
+  submitting: boolean;
+  canSubmit: boolean;
+  onSubmit: () => void;
+  onRevise: () => void;
+  onReviewContent: () => void;
+  onProceed: () => void;
 }): JSX.Element | null {
   if (questionIndexes.length === 0) return null;
+  const showResult = result !== null || isPassed;
 
   return (
     <section className="nt-learn__module-group" id={anchorId(moduleId, 'theoretical')} aria-label="Conceptual assessment">
+      <p className="nt-learn__group-eyebrow">Conceptual Assessment</p>
       {questionIndexes.map((qi, pos) => {
         const q = exam.questions[qi];
         if (!q) return null;
@@ -369,20 +443,72 @@ function TheoreticalExamBlock({
             <BloomQuestionRenderer
               question={q}
               userAnswer={answers[qi]}
-              showResult={isPassed}
+              showResult={showResult}
               onAnswer={(answer) => onAnswerChange(qi, answer)}
             />
           </section>
         );
       })}
-      {isPassed ? (
+      {result ? (
+        <section
+          className="nt-exam-result"
+          data-state={result.perfect ? 'perfect' : 'review'}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="nt-exam-result__icon" aria-hidden="true">
+            {result.perfect ? <IconCheck size={22} /> : '!'}
+          </div>
+          <div className="nt-exam-result__body">
+            <p className="nt-exam-result__score">Score: {result.correctCount} / {result.totalCount}</p>
+            <h3 className="nt-exam-result__title">
+              {result.perfect
+                ? (hasPracticalExam
+                    ? 'Perfect Score – Proceed to Practical Assessment'
+                    : 'Perfect Score – Proceed to Next Module')
+                : 'Review Required – Continue Studying This Module'}
+            </h3>
+            <p className="nt-exam-result__copy">
+              {result.perfect
+                ? (hasPracticalExam
+                    ? 'Your conceptual score is recorded. Continue to the practical assessment to complete this module.'
+                    : 'Your score and module progress are recorded. You do not need to repeat this module.')
+                : 'Review the learning content, then revise your answers before submitting another attempt.'}
+            </p>
+            <div className="nt-exam-result__actions">
+              {result.perfect ? (
+                <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onProceed}>
+                  {hasPracticalExam ? 'Proceed to Practical Assessment' : 'Proceed to Next Module'}
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="nt-lesson-button" onClick={onReviewContent}>
+                    Review Learning Content
+                  </button>
+                  <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={onRevise}>
+                    Revise Answers
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+      ) : isPassed ? (
         <p className="nt-exam__status nt-exam__status--pass">
-          {isSubmitGate
-            ? 'All answers are correct. The Next arrow can submit this module.'
-            : 'Theory passed. The Next arrow opens the practical exam.'}
+          Perfect score already recorded for this conceptual assessment.
         </p>
       ) : (
-        <p className="nt-exam__status">Answer every question correctly before the module unlocks.</p>
+        <div className="nt-exam-submit">
+          <p className="nt-exam__status">Answer every question, then submit the assessment to record your score.</p>
+          <button
+            type="button"
+            className="nt-lesson-button nt-lesson-button--primary nt-exam-submit__button"
+            onClick={onSubmit}
+            disabled={!canSubmit || submitting}
+          >
+            {submitting ? 'Submitting…' : 'Submit'}
+          </button>
+        </div>
       )}
     </section>
   );
@@ -451,6 +577,11 @@ export default function PatternsLearnPage(): JSX.Element {
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
+  const [theorySubmissions, setTheorySubmissions] = useState<Record<string, TheorySubmissionResult>>({});
+  const [theoryLastSubmittedSignatures, setTheoryLastSubmittedSignatures] = useState<Record<string, string>>({});
+  const [theorySubmitting, setTheorySubmitting] = useState<Record<string, boolean>>({});
+  const [theoryAttempts, setTheoryAttempts] = useState<Record<string, number>>({});
+  const [completedModulePendingExitId, setCompletedModulePendingExitId] = useState<string | null>(null);
   const [practicalAnswers, setPracticalAnswers] = useState<Record<string, string>>({});
   const [practicalSaving, setPracticalSaving] = useState<Record<string, boolean>>({});
   const [practicalDone, setPracticalDone] = useState<Set<string>>(new Set());
@@ -473,11 +604,12 @@ export default function PatternsLearnPage(): JSX.Element {
   // proficient pre-test modules stay visible for optional review.
   const hiddenModuleIds = useMemo(() => {
     const hidden = new Set(completedIds);
+    if (completedModulePendingExitId) hidden.delete(completedModulePendingExitId);
     Object.entries(effectiveBloomMasteryByModule).forEach(([moduleId, level]) => {
-      if (level >= 6) hidden.add(moduleId);
+      if (level >= 6 && moduleId !== completedModulePendingExitId) hidden.add(moduleId);
     });
     return hidden;
-  }, [completedIds, effectiveBloomMasteryByModule]);
+  }, [completedIds, completedModulePendingExitId, effectiveBloomMasteryByModule]);
   const visibleModulesInCategory = useCallback(
     (category: LearningCategory) => modulesInCat(category).filter((module) => !hiddenModuleIds.has(module.id)),
     [hiddenModuleIds, modulesInCat],
@@ -549,24 +681,21 @@ export default function PatternsLearnPage(): JSX.Element {
   const visibleTheoryQuestionCount = visibleTheoryQuestionIndexes.length;
   const hasVisiblePracticalPage = pages.some((page) => page.kind === 'practical');
   const currentTheoryAnswers = activeModule ? theoryAnswers[activeModule.id] ?? {} : {};
+  const currentTheoryScore = activeModule?.theoreticalExam
+    ? scoreTheoryAssessment(activeModule.theoreticalExam, visibleTheoryQuestionIndexes, currentTheoryAnswers)
+    : null;
+  const currentTheorySignature = theoryAnswerSignature(visibleTheoryQuestionIndexes, currentTheoryAnswers);
+  const currentTheorySubmission = activeModule ? theorySubmissions[activeModule.id] ?? null : null;
+  const currentTheoryAlreadySubmitted =
+    !!activeModule && theoryLastSubmittedSignatures[activeModule.id] === currentTheorySignature;
   const isTheoryPassed = !!(
     unlockAll ||
     (activeModule && theoryPassedIds.has(activeModule.id)) ||
-    (
-      activeModule?.theoreticalExam &&
-      (
-        visibleTheoryQuestionIndexes.length === 0 ||
-        visibleTheoryQuestionIndexes.every((questionIndex) => {
-          const question = activeModule.theoreticalExam?.questions[questionIndex];
-          return !!question && isAnswerCorrect(question, currentTheoryAnswers[questionIndex]);
-        })
-      )
-    )
+    currentTheorySubmission?.perfect
   );
   const isFinalTheoryPage =
     currentPage?.kind === 'theoretical' && visibleTheoryQuestionCount > 0;
   const isTheoryGatePage = isFinalTheoryPage;
-  const isSubmitGate = isFinalTheoryPage && !hasVisiblePracticalPage;
   const isPracticalDone = !!(activeModule && practicalDone.has(activeModule.id));
 
   useEffect(() => {
@@ -654,23 +783,21 @@ export default function PatternsLearnPage(): JSX.Element {
   }, [allSteps, unlockAll]);
 
   const persistLearningProgress = useCallback(
-    (
+    async (
       nextCompletedIds: Set<string>,
       nextTheoryPassedIds: Set<string>,
       nextBloomMasteryByModule: Record<string, number> = effectiveBloomMasteryByModule,
-    ) => {
+    ): Promise<void> => {
       if (!token || unlockAll) return;
       const lastUnlockedModuleId = lastUnlockedModuleIdFor(allSteps, nextCompletedIds);
-      saveLearningProgress(
+      await saveLearningProgress(
         Array.from(nextCompletedIds),
         lastUnlockedModuleId,
         undefined,
         Array.from(nextTheoryPassedIds),
         lmsSessionId ?? undefined,
         nextBloomMasteryByModule,
-      ).catch((err) => {
-        console.error('Failed to save learning progress:', err);
-      });
+      );
     },
     [allSteps, effectiveBloomMasteryByModule, lmsSessionId, token, unlockAll],
   );
@@ -696,12 +823,103 @@ export default function PatternsLearnPage(): JSX.Element {
   const goToStep = useCallback(
     (index: number, nextPageIndex = 0) => {
       if (index >= 0 && index < steps.length) {
+        setCompletedModulePendingExitId(null);
         setActiveIndex(index);
         setPageIndex(nextPageIndex);
       }
     },
     [steps],
   );
+
+  const proceedAfterTheory = useCallback(() => {
+    if (!activeModule) return;
+    if (hasVisiblePracticalPage) {
+      const practicalPageIndex = pages.findIndex((page) => page.kind === 'practical');
+      if (practicalPageIndex >= 0) setPageIndex(practicalPageIndex);
+      return;
+    }
+
+    if (activeIndex >= steps.length - 1) {
+      navigate('/student-dashboard');
+      return;
+    }
+
+    // Removing the just-completed module shifts the next module into this
+    // same index, so retain the index while releasing the completed row.
+    setCompletedModulePendingExitId(null);
+    setPageIndex(0);
+  }, [activeIndex, activeModule, hasVisiblePracticalPage, pages, steps.length]);
+
+  const submitTheoryAssessment = useCallback(async () => {
+    if (!activeModule?.theoreticalExam || !currentTheoryScore?.complete) return;
+    if (theorySubmitting[activeModule.id] || currentTheoryAlreadySubmitted) return;
+
+    const moduleId = activeModule.id;
+    const attempt = (theoryAttempts[moduleId] ?? 0) + 1;
+    const result: TheorySubmissionResult = currentTheoryScore;
+
+    setTheorySubmitting((prev) => ({ ...prev, [moduleId]: true }));
+    try {
+      if (token && !unlockAll) {
+        await saveLearningAnswers(
+          moduleId,
+          attempt,
+          visibleTheoryQuestionIndexes.map((questionIndex) => {
+            const answer = currentTheoryAnswers[questionIndex];
+            const question = activeModule.theoreticalExam!.questions[questionIndex];
+            return {
+              questionIndex,
+              selectedIndex: typeof answer === 'number' ? answer : -1,
+              isCorrect: !!question && isAnswerCorrect(question, answer),
+            };
+          }),
+        );
+      }
+
+      if (result.perfect) {
+        const nextTheoryPassedIds = new Set(theoryPassedIds).add(moduleId);
+        let nextCompletedIds = completedIds;
+        let nextBloomMasteryByModule = effectiveBloomMasteryByModule;
+
+        if (!hasVisiblePracticalPage) {
+          nextCompletedIds = new Set(completedIds).add(moduleId);
+          nextBloomMasteryByModule = { ...effectiveBloomMasteryByModule, [moduleId]: 6 };
+        }
+
+        await persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
+        setTheoryPassedIds(nextTheoryPassedIds);
+
+        if (!hasVisiblePracticalPage) {
+          setCompletedModulePendingExitId(moduleId);
+          setCompletedIds(nextCompletedIds);
+        }
+      }
+
+      setTheoryAttempts((prev) => ({ ...prev, [moduleId]: attempt }));
+      setTheoryLastSubmittedSignatures((prev) => ({ ...prev, [moduleId]: currentTheorySignature }));
+      setTheorySubmissions((prev) => ({ ...prev, [moduleId]: result }));
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not record the conceptual assessment.');
+    } finally {
+      setTheorySubmitting((prev) => ({ ...prev, [moduleId]: false }));
+    }
+  }, [
+    activeModule,
+    completedIds,
+    currentTheoryAlreadySubmitted,
+    currentTheoryAnswers,
+    currentTheoryScore,
+    currentTheorySignature,
+    effectiveBloomMasteryByModule,
+    hasVisiblePracticalPage,
+    persistLearningProgress,
+    theoryAttempts,
+    theoryPassedIds,
+    theorySubmitting,
+    token,
+    unlockAll,
+    visibleTheoryQuestionIndexes,
+  ]);
 
   const goNextPage = () => {
     const isLastPage = pageIndex >= pages.length - 1;
@@ -720,32 +938,19 @@ export default function PatternsLearnPage(): JSX.Element {
       setCompletedIds(nextCompletedIds);
       setBloomMasteryByModule(nextBloomMasteryByModule);
       setPageIndex(0);
-      persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
+      void persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule)
+        .catch((err) => console.error('Failed to save learning progress:', err));
       return;
     }
 
     if (isTheoryGatePage && activeModule) {
       if (!isTheoryPassed) {
-        alert('Answer every question correctly before continuing this module.');
+        alert('Submit the conceptual assessment and earn a perfect score before continuing.');
         return;
       }
 
-      const nextTheoryPassedIds = new Set(theoryPassedIds).add(activeModule.id);
-      if (!theoryPassedIds.has(activeModule.id)) {
-        setTheoryPassedIds(nextTheoryPassedIds);
-      }
-
-      if (!hasVisiblePracticalPage) {
-        const nextCompletedIds = new Set(completedIds).add(activeModule.id);
-        const nextBloomMasteryByModule = { ...effectiveBloomMasteryByModule, [activeModule.id]: 6 };
-        setCompletedIds(nextCompletedIds);
-        setBloomMasteryByModule(nextBloomMasteryByModule);
-        setPageIndex(0);
-        persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
-        return;
-      }
-
-      persistLearningProgress(completedIds, nextTheoryPassedIds);
+      proceedAfterTheory();
+      return;
     }
 
     if (unlockAll && activeIndex === steps.length - 1 && isLastPage) {
@@ -761,7 +966,6 @@ export default function PatternsLearnPage(): JSX.Element {
     const canAdvanceToNextModule =
       unlockAll ||
       isActiveComplete ||
-      (isSubmitGate && isTheoryPassed) ||
       (!!activeModule && proficientModuleIds.has(activeModule.id)); // proficient = optional, non-blocking
 
     if (activeIndex < steps.length - 1 && canAdvanceToNextModule) {
@@ -911,7 +1115,9 @@ export default function PatternsLearnPage(): JSX.Element {
                     aria-expanded={open}
                     onClick={() => setOpenCategory(open ? null : g.meta.id)}
                   >
-                    <span className="nt-course-accordion__chev" aria-hidden="true">{open ? '▾' : '▸'}</span>
+                    <span className="nt-course-accordion__chev" data-open={open ? 'true' : undefined} aria-hidden="true">
+                      <IconChevronRight size={15} />
+                    </span>
                     <span className="nt-course-accordion__cat-name">{g.meta.name}</span>
                     <span className="nt-course-accordion__cat-count">{clearedInCat}/{g.steps.length}</span>
                   </button>
@@ -952,7 +1158,16 @@ export default function PatternsLearnPage(): JSX.Element {
                               onClick={() => { if (!done && !locked) goToStep(visIdx); }}
                             >
                               <span className="nt-course-accordion__status" aria-hidden="true">
-                                {done ? '✓' : locked ? '🔒' : active ? '●' : proficient ? '◇' : '○'}
+                                {done ? (
+                                  <IconCheck size={15} />
+                                ) : locked ? (
+                                  <IconLock size={14} />
+                                ) : (
+                                  <span
+                                    className="nt-course-accordion__status-dot"
+                                    data-kind={active ? 'current' : proficient ? 'optional' : 'available'}
+                                  />
+                                )}
                               </span>
                               <span className="nt-course-accordion__num" aria-hidden="true">{i + 1}</span>
                               <span className="nt-course-accordion__module-label">{s.module.title}</span>
@@ -1014,6 +1229,7 @@ export default function PatternsLearnPage(): JSX.Element {
                       questionIndexes={visibleTheoryQuestionIndexes}
                       answers={currentTheoryAnswers}
                       onAnswerChange={(questionIndex, optionIndex) => {
+                        if (currentTheorySubmission) return;
                         setTheoryAnswers((prev) => ({
                           ...prev,
                           [activeModule.id]: {
@@ -1023,7 +1239,27 @@ export default function PatternsLearnPage(): JSX.Element {
                         }));
                       }}
                       isPassed={isTheoryPassed}
-                      isSubmitGate={isSubmitGate}
+                      hasPracticalExam={hasVisiblePracticalPage}
+                      result={currentTheorySubmission}
+                      submitting={!!theorySubmitting[activeModule.id]}
+                      canSubmit={!!currentTheoryScore?.complete && !currentTheoryAlreadySubmitted}
+                      onSubmit={() => { void submitTheoryAssessment(); }}
+                      onRevise={() => {
+                        setTheorySubmissions((prev) => {
+                          const next = { ...prev };
+                          delete next[activeModule.id];
+                          return next;
+                        });
+                      }}
+                      onReviewContent={() => {
+                        setTheorySubmissions((prev) => {
+                          const next = { ...prev };
+                          delete next[activeModule.id];
+                          return next;
+                        });
+                        setPageIndex(0);
+                      }}
+                      onProceed={proceedAfterTheory}
                     />
                   ) : null}
                   {currentPage.kind === 'practical' && activeModule.practicalExam ? (
@@ -1064,7 +1300,7 @@ export default function PatternsLearnPage(): JSX.Element {
                           setCompletedIds(nextCompletedIds);
                           setBloomMasteryByModule(nextBloomMasteryByModule);
                           setPageIndex(0);
-                          persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
+                          await persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
                         } catch (err) {
                           alert(err instanceof Error ? err.message : 'Could not save practical answer.');
                         } finally {
@@ -1080,8 +1316,7 @@ export default function PatternsLearnPage(): JSX.Element {
                   className="nt-pager__arrow nt-pager__arrow--next"
                   onClick={goNextPage}
                   disabled={pageIndex === pages.length - 1 && activeIndex === steps.length - 1}
-                  data-submit={isSubmitGate ? 'true' : undefined}
-                  aria-label={isSubmitGate ? 'Submit exam and continue' : 'Next'}
+                  aria-label="Next"
                 >
                   &gt;
                 </button>
