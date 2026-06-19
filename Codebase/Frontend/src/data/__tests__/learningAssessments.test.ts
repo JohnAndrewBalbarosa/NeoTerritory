@@ -19,7 +19,13 @@ import {
   type BloomTaxonomy,
   type ExamQuestion,
   type LearningModule,
+  type ObjectiveAssessmentQuestion,
+  type AssessmentForms,
 } from '../learningModules';
+import {
+  applicableObjectiveLevelsForModule,
+  applicableBloomTaxonomiesForModule,
+} from '../assessmentBanks/inventory';
 
 const BLOOM_LEVELS: BloomTaxonomy[] = [
   'remembering',
@@ -475,5 +481,299 @@ describe('assessment answer serialization', () => {
     ]);
     expect(serialized).toHaveLength(3);
     expect(serialized.some((answer) => answer.moduleId === 'foundations-3')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bloom ceiling helpers
+// ---------------------------------------------------------------------------
+
+describe('applicableObjectiveLevelsForModule / applicableBloomTaxonomiesForModule', () => {
+  it('non-foundation module returns all five objective levels', () => {
+    const nonFoundation: Pick<LearningModule, 'id' | 'category'> = {
+      id: 'creational-builder',
+      category: 'creational',
+    };
+    const levels = applicableObjectiveLevelsForModule(nonFoundation);
+    expect(levels).toEqual(['remember', 'understand', 'apply', 'analyze', 'evaluate']);
+    const taxonomies = applicableBloomTaxonomiesForModule(nonFoundation);
+    expect(taxonomies).toEqual(['remembering', 'understanding', 'applying', 'analyzing', 'evaluating']);
+  });
+
+  it('foundations-categories returns only remember/understand (narrowest ceiling)', () => {
+    const m: Pick<LearningModule, 'id' | 'category'> = { id: 'foundations-categories', category: 'foundations' };
+    expect(applicableObjectiveLevelsForModule(m)).toEqual(['remember', 'understand']);
+    expect(applicableBloomTaxonomiesForModule(m)).toEqual(['remembering', 'understanding']);
+  });
+
+  it('foundations-what-is-pattern returns remember/understand/apply', () => {
+    const m: Pick<LearningModule, 'id' | 'category'> = { id: 'foundations-what-is-pattern', category: 'foundations' };
+    expect(applicableObjectiveLevelsForModule(m)).toEqual(['remember', 'understand', 'apply']);
+    expect(applicableBloomTaxonomiesForModule(m)).toEqual(['remembering', 'understanding', 'applying']);
+  });
+
+  it('unknown foundation module defaults to remember/understand', () => {
+    const m: Pick<LearningModule, 'id' | 'category'> = { id: 'foundations-unknown-new', category: 'foundations' };
+    expect(applicableObjectiveLevelsForModule(m)).toEqual(['remember', 'understand']);
+  });
+
+  it('never includes creating in any result', () => {
+    for (const module of LEARNING_MODULES) {
+      const levels = applicableObjectiveLevelsForModule(module);
+      const taxonomies = applicableBloomTaxonomiesForModule(module);
+      expect(levels).not.toContain('create');
+      expect(taxonomies).not.toContain('creating');
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildFormalAssessment — Bloom ceiling enforcement
+// ---------------------------------------------------------------------------
+
+describe('buildFormalAssessment — Bloom ceiling enforcement', () => {
+  // Build a synthetic foundation module fixture with items that intentionally
+  // include high-Bloom levels above the ceiling, to verify they are dropped.
+  // IMPORTANT: uses a fabricated module id NOT in ASSESSMENT_FORMS so that
+  // normalizeLearningModule does not replace assessmentForms with real bank data.
+  function makeFoundationModuleWithHighItems(): LearningModule {
+    const validItems: ReadonlyArray<ObjectiveAssessmentQuestion> = [
+      {
+        id: 'syn-ceiling-test:A1', form: 'A', pairedQuestionId: 'syn-ceiling-test:B1',
+        type: 'mcq', taxonomy: 'remembering', bloomLevel: 'remember',
+        question: 'Recall question', options: ['a', 'b', 'c', 'd'], correctIndex: 0,
+      },
+      {
+        id: 'syn-ceiling-test:A2', form: 'A', pairedQuestionId: 'syn-ceiling-test:B2',
+        type: 'mcq', taxonomy: 'understanding', bloomLevel: 'understand',
+        question: 'Understand question', options: ['a', 'b', 'c', 'd'], correctIndex: 1,
+      },
+      // The three items below exceed the ceiling ['remember','understand'] for
+      // any foundation module without an override entry — they must be dropped.
+      {
+        id: 'syn-ceiling-test:A3', form: 'A', pairedQuestionId: 'syn-ceiling-test:B3',
+        type: 'mcq', taxonomy: 'applying', bloomLevel: 'apply',
+        question: 'Apply question (above ceiling)', options: ['a', 'b', 'c', 'd'], correctIndex: 2,
+      },
+      {
+        id: 'syn-ceiling-test:A4', form: 'A', pairedQuestionId: 'syn-ceiling-test:B4',
+        type: 'mcq', taxonomy: 'analyzing', bloomLevel: 'analyze',
+        question: 'Analyze question (above ceiling)', options: ['a', 'b', 'c', 'd'], correctIndex: 0,
+      },
+      {
+        id: 'syn-ceiling-test:A5', form: 'A', pairedQuestionId: 'syn-ceiling-test:B5',
+        type: 'mcq', taxonomy: 'evaluating', bloomLevel: 'evaluate',
+        question: 'Evaluate question (above ceiling)', options: ['a', 'b', 'c', 'd'], correctIndex: 1,
+      },
+    ];
+    const pairedItems: ReadonlyArray<ObjectiveAssessmentQuestion> = validItems.map((q) => ({
+      ...q,
+      id: q.id.replace(':A', ':B'),
+      form: 'B' as const,
+      pairedQuestionId: q.id,
+      question: q.question + ' (paired)',
+    }));
+    const assessmentForms: AssessmentForms = { A: validItems, B: pairedItems };
+    return {
+      // 'foundations-ceiling-test-fixture' does NOT appear in ASSESSMENT_FORMS,
+      // so normalizeLearningModule leaves assessmentForms intact (the fixture's own items).
+      // The category is 'foundations' and the id is not in FOUNDATION_LEVEL_OVERRIDES,
+      // so ceiling defaults to ['remember','understand'] — 3 items must be dropped.
+      id: 'foundations-ceiling-test-fixture',
+      category: 'foundations',
+      title: 'Synthetic Foundation Ceiling Fixture',
+      eyebrow: 'Foundations',
+      intro: 'Synthetic test fixture for ceiling enforcement',
+      sections: [],
+      assessmentForms,
+    };
+  }
+
+  it('drops items above the module Bloom ceiling (apply/analyze/evaluate excluded for a default-ceiling foundation module)', () => {
+    const synModule = makeFoundationModuleWithHighItems();
+    const pre = buildFormalAssessment([synModule], 'pretest');
+    const taxonomies = pre.map((q) => q.taxonomy);
+    expect(taxonomies).not.toContain('analyzing');
+    expect(taxonomies).not.toContain('evaluating');
+    expect(taxonomies).not.toContain('applying');
+    // Only remember and understand survive the ceiling
+    expect(taxonomies.every((t) => t === 'remembering' || t === 'understanding')).toBe(true);
+    expect(pre.length).toBe(2); // only the 2 items within ceiling
+  });
+
+  it('applies the same ceiling to Form B so A/B counts stay equal', () => {
+    const synModule = makeFoundationModuleWithHighItems();
+    const pre = buildFormalAssessment([synModule], 'pretest');
+    const post = buildFormalAssessment([synModule], 'posttest');
+    expect(pre.length).toBe(post.length);
+  });
+
+  it('no delivered question for any real foundation module exceeds its declared ceiling', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const normalized = normalizeLearningModules(LEARNING_MODULES);
+    const moduleById = new Map(normalized.map((m) => [m.id, m]));
+
+    for (const item of pre) {
+      const module = moduleById.get(item.moduleId);
+      if (!module) continue;
+      const applicable = applicableBloomTaxonomiesForModule(module);
+      expect(applicable).toContain(item.taxonomy);
+    }
+  });
+
+  it('no delivered question for any real foundation module exceeds its declared ceiling (post-test)', () => {
+    const post = buildFormalAssessment(LEARNING_MODULES, 'posttest');
+    const normalized = normalizeLearningModules(LEARNING_MODULES);
+    const moduleById = new Map(normalized.map((m) => [m.id, m]));
+
+    for (const item of post) {
+      const module = moduleById.get(item.moduleId);
+      if (!module) continue;
+      const applicable = applicableBloomTaxonomiesForModule(module);
+      expect(applicable).toContain(item.taxonomy);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// buildFormalAssessment — Bloom separation (distinct levels first)
+// ---------------------------------------------------------------------------
+
+describe('buildFormalAssessment — Bloom separation within a module', () => {
+  // Build a synthetic non-foundation module with multiple items at the SAME
+  // Bloom level (two remembering) and one at a different level (understanding).
+  // After separation, the distinct level (understanding) should appear before
+  // the second remembering item.
+  function makeSeparationFixtureModule(): LearningModule {
+    const itemsA: ReadonlyArray<ObjectiveAssessmentQuestion> = [
+      {
+        id: 'sep-module:A1', form: 'A', pairedQuestionId: 'sep-module:B1',
+        type: 'mcq', taxonomy: 'remembering', bloomLevel: 'remember',
+        question: 'Remember Q1', options: ['a', 'b', 'c', 'd'], correctIndex: 0,
+      },
+      {
+        id: 'sep-module:A2', form: 'A', pairedQuestionId: 'sep-module:B2',
+        type: 'mcq', taxonomy: 'remembering', bloomLevel: 'remember',
+        question: 'Remember Q2', options: ['a', 'b', 'c', 'd'], correctIndex: 1,
+      },
+      {
+        id: 'sep-module:A3', form: 'A', pairedQuestionId: 'sep-module:B3',
+        type: 'mcq', taxonomy: 'understanding', bloomLevel: 'understand',
+        question: 'Understand Q1', options: ['a', 'b', 'c', 'd'], correctIndex: 2,
+      },
+    ];
+    const itemsB: ReadonlyArray<ObjectiveAssessmentQuestion> = itemsA.map((q) => ({
+      ...q,
+      id: q.id.replace(':A', ':B'),
+      form: 'B' as const,
+      pairedQuestionId: q.id,
+      question: q.question + ' (B)',
+    }));
+    const assessmentForms: AssessmentForms = { A: itemsA, B: itemsB };
+    return {
+      id: 'sep-module',
+      category: 'creational', // non-foundation, all five levels applicable
+      title: 'Separation Fixture',
+      eyebrow: 'Creational',
+      intro: 'Synthetic test fixture',
+      sections: [],
+      assessmentForms,
+    };
+  }
+
+  it('distinct applicable Bloom levels appear before repeated levels within a module', () => {
+    const synModule = makeSeparationFixtureModule();
+    const pre = buildFormalAssessment([synModule], 'pretest');
+
+    // We have: 2× remembering, 1× understanding.
+    // Separation: first slot = remembering (pos 0), second slot = understanding (pos 1),
+    // third slot = second remembering (pos 2). So no two consecutive remembering items
+    // appear before the understanding item has been served.
+    expect(pre).toHaveLength(3);
+    const taxonomies = pre.map((q) => q.taxonomy);
+    // The understanding item must appear before the second remembering item.
+    const understandingIdx = taxonomies.indexOf('understanding');
+    const firstRememberingIdx = taxonomies.indexOf('remembering');
+    const lastRememberingIdx = taxonomies.lastIndexOf('remembering');
+    // There must be exactly 2 remembering items and 1 understanding item.
+    expect(taxonomies.filter((t) => t === 'remembering')).toHaveLength(2);
+    expect(taxonomies.filter((t) => t === 'understanding')).toHaveLength(1);
+    // The understanding item must appear after the FIRST remembering but
+    // before the SECOND remembering (because separation puts one per level first).
+    expect(firstRememberingIdx).toBeLessThan(understandingIdx);
+    expect(understandingIdx).toBeLessThan(lastRememberingIdx);
+  });
+
+  it('real module formal assessment: within each module, no Bloom level repeats while another applicable+available level is unused', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const normalized = normalizeLearningModules(LEARNING_MODULES);
+    const moduleById = new Map(normalized.map((m) => [m.id, m]));
+
+    // Group by moduleId and check within each module's question sequence
+    const byModule = new Map<string, Array<{ taxonomy: BloomTaxonomy }>>();
+    for (const item of pre) {
+      const bucket = byModule.get(item.moduleId) ?? [];
+      bucket.push({ taxonomy: item.taxonomy });
+      byModule.set(item.moduleId, bucket);
+    }
+
+    for (const [moduleId, items] of byModule) {
+      if (items.length <= 1) continue;
+      const module = moduleById.get(moduleId);
+      if (!module) continue;
+      const applicable = new Set(applicableBloomTaxonomiesForModule(module));
+      // Collect all taxonomies present in the delivered items for this module.
+      const present = new Set(items.map((i) => i.taxonomy));
+
+      // For each delivered item, before it appears a second time, all other
+      // APPLICABLE+PRESENT levels must have appeared at least once first.
+      // Verify: within items, the first occurrence of each level precedes
+      // any second occurrence of another level.
+      const firstOccurrence = new Map<BloomTaxonomy, number>();
+      const secondOccurrence = new Map<BloomTaxonomy, number>();
+      items.forEach(({ taxonomy }, idx) => {
+        if (!firstOccurrence.has(taxonomy)) {
+          firstOccurrence.set(taxonomy, idx);
+        } else if (!secondOccurrence.has(taxonomy)) {
+          secondOccurrence.set(taxonomy, idx);
+        }
+      });
+
+      // For every taxonomy that has a second occurrence, check that all
+      // applicable+present taxonomies had their FIRST occurrence before the second.
+      for (const [, secondIdx] of secondOccurrence) {
+        for (const otherTax of present) {
+          if (!applicable.has(otherTax)) continue;
+          const otherFirst = firstOccurrence.get(otherTax);
+          if (otherFirst !== undefined) {
+            expect(otherFirst).toBeLessThanOrEqual(secondIdx);
+          }
+        }
+      }
+    }
+  });
+
+  it('A/B parallelism: zero questionId overlap between pretest (A) and posttest (B) under new ordering', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const post = buildFormalAssessment(LEARNING_MODULES, 'posttest');
+    const aIds = new Set(pre.map((q) => q.questionId));
+    expect(post.filter((q) => aIds.has(q.questionId))).toHaveLength(0);
+  });
+
+  it('A/B parallelism: pre and post cover the same module set after ceiling + separation', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const post = buildFormalAssessment(LEARNING_MODULES, 'posttest');
+    expect(new Set(pre.map((q) => q.moduleId))).toEqual(new Set(post.map((q) => q.moduleId)));
+  });
+
+  it('A/B parallelism: question counts per module are equal in pre and post', () => {
+    const pre = buildFormalAssessment(LEARNING_MODULES, 'pretest');
+    const post = buildFormalAssessment(LEARNING_MODULES, 'posttest');
+    const countByModule = (qs: LearningAssessmentQuestion[]) => {
+      const map: Record<string, number> = {};
+      qs.forEach((q) => { map[q.moduleId] = (map[q.moduleId] ?? 0) + 1; });
+      return map;
+    };
+    expect(countByModule(pre)).toEqual(countByModule(post));
   });
 });
