@@ -2307,6 +2307,40 @@ body[data-surface] #root {
   line-height: 1.15;
   letter-spacing: -0.02em;
 }
+.nt-optional-banner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--devcon-cyan, var(--nt-mkt-accent)) 8%, transparent);
+}
+.nt-optional-banner__text {
+  flex: 1 1 240px;
+  font-size: 0.86rem;
+  line-height: 1.5;
+  color: var(--nt-mkt-text-soft);
+}
+.nt-optional-banner__btn {
+  flex: 0 0 auto;
+  cursor: pointer;
+  padding: 0.5rem 0.95rem;
+  border-radius: 8px;
+  border: 1px solid var(--devcon-cyan, var(--nt-mkt-accent));
+  background: transparent;
+  color: var(--devcon-cyan, var(--nt-mkt-accent));
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.nt-optional-banner__btn:hover {
+  background: color-mix(in srgb, var(--devcon-cyan, var(--nt-mkt-accent)) 16%, transparent);
+}
+
 .nt-pager__section-meta {
   margin: 0;
   display: flex;

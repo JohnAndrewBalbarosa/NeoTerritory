@@ -47,8 +47,9 @@ function RecRow({ m }: { m: LearnerModuleRecommendation }): JSX.Element {
       <td className="nt-muted">{m.category}</td>
       <td>{pct(m.preTestPercentage)}</td>
       <td><span className="nt-badge" data-stage={m.recommendation === 'recommended_to_study' ? 'Learning in Progress' : 'Post-Test Completed'}>{m.recommendation === 'recommended_to_study' ? 'Recommended to Study' : 'Already Understood'}</span></td>
+      <td>{m.requirement === 'required' ? 'Required' : 'Optional Review'}</td>
       <td className="nt-muted">{m.recommendationReason}</td>
-      <td>{m.assigned ? 'Assigned' : 'Skipped'}</td>
+      <td>{m.learnerAction}</td>
       <td>{m.progressPercent}%</td>
       <td>{m.conceptualStatus}</td>
       <td>{m.practicalStatus}</td>
@@ -151,10 +152,13 @@ export default function InternDetailTab({ internId, onBack }: { internId: number
           )}
 
           {sub === 'path' && (
+            <>
+            <p className="nt-muted" style={{ margin: '0 0 10px' }}>Required modules completed: {rec.completedRequiredCount} of {rec.requiredModuleCount} ({rec.requiredProgressPercent}%). Optional review modules are not counted toward required progress.</p>
             <div className="nt-table-scroll"><table className="nt-records-table">
-              <thead><tr><th>Module</th><th>Category</th><th>Pre-Test</th><th>Recommendation</th><th>Reason</th><th>Assigned/Skipped</th><th>Progress</th><th>Conceptual</th><th>Practical</th><th>Post-Test</th><th>Final Status</th></tr></thead>
+              <thead><tr><th>Module</th><th>Category</th><th>Pre-Test</th><th>Recommendation</th><th>Requirement</th><th>Reason</th><th>Learner Action</th><th>Progress</th><th>Conceptual</th><th>Practical</th><th>Post-Test</th><th>Final Status</th></tr></thead>
               <tbody>{rec.recommendations.map((m) => <RecRow key={m.moduleId} m={m} />)}</tbody>
             </table></div>
+            </>
           )}
 
           {sub === 'assessments' && (

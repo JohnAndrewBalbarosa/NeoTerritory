@@ -576,6 +576,9 @@ export default function PatternsLearnPage(): JSX.Element {
   const [openCategory, setOpenCategory] = useState<LearningCategory | null>(null);
   const [completedIds, setCompletedIds] = useState<Set<string>>(new Set());
   const [theoryPassedIds, setTheoryPassedIds] = useState<Set<string>>(new Set());
+  // Optional (already-understood) modules the learner explicitly dismissed.
+  // Persisted, idempotent, and never blocks required progression.
+  const [skippedIds, setSkippedIds] = useState<Set<string>>(new Set());
   const [theoryAnswers, setTheoryAnswers] = useState<Record<string, TheoryAnswerMap>>({});
   const [theorySubmissions, setTheorySubmissions] = useState<Record<string, TheorySubmissionResult>>({});
   const [theoryLastSubmittedSignatures, setTheoryLastSubmittedSignatures] = useState<Record<string, string>>({});
@@ -760,6 +763,7 @@ export default function PatternsLearnPage(): JSX.Element {
         if (cancelled) return;
         setCompletedIds(new Set(progress.completedModuleIds));
         setTheoryPassedIds(new Set(progress.theoryPassedModuleIds ?? []));
+        setSkippedIds(new Set(progress.skippedModuleIds ?? []));
         setBloomMasteryByModule(progress.bloomMasteryByModule ?? {});
       })
       .catch((err) => {
@@ -787,6 +791,7 @@ export default function PatternsLearnPage(): JSX.Element {
       nextCompletedIds: Set<string>,
       nextTheoryPassedIds: Set<string>,
       nextBloomMasteryByModule: Record<string, number> = effectiveBloomMasteryByModule,
+      nextSkippedIds: Set<string> = skippedIds,
     ): Promise<void> => {
       if (!token || unlockAll) return;
       const lastUnlockedModuleId = lastUnlockedModuleIdFor(allSteps, nextCompletedIds);
@@ -797,9 +802,29 @@ export default function PatternsLearnPage(): JSX.Element {
         Array.from(nextTheoryPassedIds),
         lmsSessionId ?? undefined,
         nextBloomMasteryByModule,
+        Array.from(nextSkippedIds),
       );
     },
-    [allSteps, effectiveBloomMasteryByModule, lmsSessionId, token, unlockAll],
+    [allSteps, effectiveBloomMasteryByModule, lmsSessionId, token, unlockAll, skippedIds],
+  );
+
+  // Learner explicitly skips an OPTIONAL (already-understood) module. Idempotent:
+  // re-skipping is a no-op. Optional modules never block required progression, so
+  // this records intent only — it never alters completion or unlock state. A
+  // skipped optional module can still be reopened/reviewed later (un-skip).
+  const setOptionalModuleSkipped = useCallback(
+    (moduleId: string, skipped: boolean): void => {
+      if (!proficientModuleIds.has(moduleId)) return; // only optional modules can be skipped
+      setSkippedIds((prev) => {
+        if (skipped === prev.has(moduleId)) return prev; // idempotent
+        const next = new Set(prev);
+        if (skipped) next.add(moduleId);
+        else next.delete(moduleId);
+        void persistLearningProgress(completedIds, theoryPassedIds, effectiveBloomMasteryByModule, next);
+        return next;
+      });
+    },
+    [proficientModuleIds, persistLearningProgress, completedIds, theoryPassedIds, effectiveBloomMasteryByModule],
   );
 
   useEffect(() => {
@@ -1196,10 +1221,41 @@ export default function PatternsLearnPage(): JSX.Element {
                 </div>
                 {currentGroup ? (
                   <p className="nt-pager__section-meta">
-                    <span>{currentGroup.label}</span>
+                    <span>
+                      {currentGroup.key === 'theoretical' && activeModule && proficientModuleIds.has(activeModule.id)
+                        ? 'Optional Conceptual Assessment'
+                        : currentGroup.label}
+                    </span>
                   </p>
                 ) : null}
               </header>
+
+              {activeModule && proficientModuleIds.has(activeModule.id) ? (
+                <div className="nt-optional-banner" role="note">
+                  <div className="nt-optional-banner__text">
+                    <strong>Optional Review</strong> — you met the proficiency threshold for this module on the
+                    pre-test, so it isn’t required. You can skip it, review the lesson, or take the optional
+                    conceptual assessment voluntarily. Skipping never blocks your required progress.
+                  </div>
+                  {skippedIds.has(activeModule.id) ? (
+                    <button
+                      type="button"
+                      className="nt-optional-banner__btn"
+                      onClick={() => setOptionalModuleSkipped(activeModule.id, false)}
+                    >
+                      Undo skip
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      className="nt-optional-banner__btn"
+                      onClick={() => setOptionalModuleSkipped(activeModule.id, true)}
+                    >
+                      Skip this optional module
+                    </button>
+                  )}
+                </div>
+              ) : null}
 
               <div className={`nt-pager__stage${currentPage.kind === 'practical' ? ' nt-pager__stage--practical' : ''}`}>
                 <button

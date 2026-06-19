@@ -269,6 +269,10 @@ export interface LearningProgress {
   // Highest Bloom level mastered per module for this learner. 0/undefined means
   // no mastery; 6 means the module can be exempted from learner-side work.
   bloomMasteryByModule?: Record<string, number>;
+  // Optional (already-understood) modules the learner explicitly skipped. The
+  // only optional-review state not reconstructable from scores or completion.
+  // Optional so a backend predating the column degrades gracefully.
+  skippedModuleIds?: string[];
 }
 
 // D92: public learning content (no auth). Returns the published modules in the
@@ -294,6 +298,7 @@ export async function saveLearningProgress(
   theoryPassedModuleIds?: string[],
   sessionId?: string,
   bloomMasteryByModule?: Record<string, number>,
+  skippedModuleIds?: string[],
 ): Promise<void> {
   await apiFetch('/api/learning/progress', {
     method: 'PUT',
@@ -304,6 +309,7 @@ export async function saveLearningProgress(
       theoryPassedModuleIds,
       sessionId,
       bloomMasteryByModule,
+      skippedModuleIds,
     }),
   });
 }

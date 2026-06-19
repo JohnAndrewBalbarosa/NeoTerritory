@@ -463,7 +463,7 @@ router.get('/learning/interns', (_req: Request, res: Response, next: NextFunctio
     `);
     const progressStmt = db.prepare(`
       SELECT completed_module_ids AS completedModuleIds, theory_passed_module_ids AS theoryPassedModuleIds,
-             bloom_mastery_by_module AS bloomMasteryByModule, updated_at AS updatedAt
+             bloom_mastery_by_module AS bloomMasteryByModule, skipped_module_ids AS skippedModuleIds, updated_at AS updatedAt
       FROM learning_progress WHERE user_id = ?
     `);
 

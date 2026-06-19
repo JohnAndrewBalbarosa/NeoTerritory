@@ -46,6 +46,10 @@ export interface RawAnswer {
 export interface RawProgress {
   completedModuleIds?: string | string[] | null;
   theoryPassedModuleIds?: string | string[] | null;
+  // Explicit learner "skip" decisions for optional (already-understood) modules.
+  // This is the only optional-review state that is not reconstructable from
+  // pre-test scores or completion.
+  skippedModuleIds?: string | string[] | null;
   updatedAt?: string | null;
 }
 export interface RawActivePlan {
@@ -92,8 +96,19 @@ export interface LearnerModuleRecommendation {
   preTestPercentage: number | null;
   recommendation: RecommendationLabel;
   recommendationReason: string;
+  // Required vs Optional Review (after the pre-test). Below the proficiency
+  // threshold → 'required'; at/above → 'optional' (Already Understood). Optional
+  // modules never block required progression and are excluded from required
+  // progress. Derived from the same threshold/recommendation logic — no 2nd rule.
+  requirement: 'required' | 'optional';
   assigned: boolean;
   skipped: boolean;
+  // True only when the learner explicitly dismissed this optional module
+  // (persisted skip). Distinct from `skipped` (= classified already-understood).
+  learnerSkipped: boolean;
+  // Human-readable learner action, using accurate non-judgemental labels. Never
+  // "Failed"/"Incomplete"/"Missing" for optional modules.
+  learnerAction: string;
   progressPercent: number;
   conceptualStatus: string;
   practicalStatus: string;
@@ -121,6 +136,12 @@ export interface LearnerLearningRecord {
   recommendedToStudy: LearnerModuleRecommendation[];
   alreadyUnderstood: LearnerModuleRecommendation[];
   completedRecommendedCount: number;
+  // Required-only progress (optional/already-understood modules are excluded
+  // from the denominator). 100 when there are no required modules so a fully
+  // already-understood learner is eligible to proceed (not "0 of N").
+  requiredModuleCount: number;
+  completedRequiredCount: number;
+  requiredProgressPercent: number;
   conceptualStatusOverall: string;
   practicalStatusOverall: string;
   interpretation: string;
@@ -226,6 +247,7 @@ export function deriveLearnerLearningRecord(
   const cycleId = targetCycleId ?? latestPretestCycleId(rec);
   const completed = new Set(parseIdList(rec.progress?.completedModuleIds));
   const theoryPassed = new Set(parseIdList(rec.progress?.theoryPassedModuleIds));
+  const skippedByLearner = new Set(parseIdList(rec.progress?.skippedModuleIds));
 
   const preScore = cycleId ? scoreStoredObjectiveAssessmentForCycle(modules, assessments, 'pretest', cycleId) : null;
   const postScore = cycleId ? scoreStoredObjectiveAssessmentForCycle(modules, assessments, 'posttest', cycleId) : null;
@@ -263,6 +285,23 @@ export function deriveLearnerLearningRecord(
     const hasPractical = !!module?.practicalExam;
     const practicalStatus = !hasPractical ? 'Not applicable' : isCompleted ? 'Completed' : 'Not submitted';
     const progressPercent = isCompleted ? 100 : theoryPassed.has(moduleId) ? 50 : 0;
+    const learnerSkipped = skippedByLearner.has(moduleId);
+    const hasActivity = isCompleted || theoryPassed.has(moduleId);
+    // Learner Action — accurate labels per requirement. Optional modules never
+    // use "Failed"/"Incomplete"/"Missing"; an unanswered optional module is
+    // simply "Optional — Not Reviewed", never a deficiency.
+    let learnerAction: string;
+    if (recommendation === 'recommended_to_study') {
+      learnerAction = isCompleted ? 'Required Module Completed' : hasActivity ? 'In Progress' : 'Not Started';
+    } else if (learnerSkipped) {
+      learnerAction = 'Skipped — Already Understood';
+    } else if (isCompleted) {
+      learnerAction = 'Optional Assessment Completed';
+    } else if (theoryPassed.has(moduleId)) {
+      learnerAction = 'Optional Review Started';
+    } else {
+      learnerAction = 'Optional — Not Reviewed';
+    }
     return {
       cycleId: cycleId ?? '',
       internId: rec.internId,
@@ -274,8 +313,11 @@ export function deriveLearnerLearningRecord(
       preTestPercentage: prePercentage,
       recommendation,
       recommendationReason,
+      requirement: recommendation === 'recommended_to_study' ? 'required' : 'optional',
       assigned: recommendation === 'recommended_to_study',
       skipped: recommendation === 'already_understood',
+      learnerSkipped,
+      learnerAction,
       progressPercent,
       conceptualStatus,
       practicalStatus,
@@ -288,6 +330,11 @@ export function deriveLearnerLearningRecord(
   const recommendedToStudy = recommendations.filter((r) => r.recommendation === 'recommended_to_study');
   const alreadyUnderstood = recommendations.filter((r) => r.recommendation === 'already_understood');
   const completedRecommendedCount = recommendedToStudy.filter((r) => r.progressPercent >= 100).length;
+  // Required-only progress: optional (already-understood) modules are NOT in the
+  // denominator. No required modules → 100% (eligible to proceed, not "0 of N").
+  const requiredModuleCount = recommendedToStudy.length;
+  const completedRequiredCount = completedRecommendedCount;
+  const requiredProgressPercent = requiredModuleCount === 0 ? 100 : Math.round((completedRequiredCount / requiredModuleCount) * 100);
 
   const stage = deriveStage({
     hasPreTest,
@@ -337,6 +384,9 @@ export function deriveLearnerLearningRecord(
     recommendedToStudy,
     alreadyUnderstood,
     completedRecommendedCount,
+    requiredModuleCount,
+    completedRequiredCount,
+    requiredProgressPercent,
     conceptualStatusOverall,
     practicalStatusOverall,
     interpretation,

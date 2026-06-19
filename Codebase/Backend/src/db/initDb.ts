@@ -613,6 +613,18 @@ export function initDb(): void {
     /* column already exists — nothing to do */
   }
 
+  // Per-module learner "skip" decisions for optional (already-understood) modules
+  // (JSON array of module ids). This is the ONE piece of optional-review state that
+  // cannot be reconstructed from pre-test scores or completion: a learner who has
+  // explicitly dismissed an optional module. Optional/skipped modules never block
+  // required progression. Added after bloom_mastery_by_module; idempotent via the
+  // duplicate-column catch.
+  try {
+    db.prepare(`ALTER TABLE learning_progress ADD COLUMN skipped_module_ids TEXT NOT NULL DEFAULT '[]'`).run();
+  } catch {
+    /* column already exists — nothing to do */
+  }
+
   // ── learning_question_results (per-question theoretical-exam results) ────
   // One row per (user, session, module, question).
   db.prepare(`CREATE TABLE IF NOT EXISTS learning_question_results (

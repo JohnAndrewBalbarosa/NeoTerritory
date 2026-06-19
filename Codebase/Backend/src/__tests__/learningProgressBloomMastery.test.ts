@@ -137,4 +137,40 @@ describe('learning progress bloom mastery persistence', () => {
     const columns = db.prepare('PRAGMA table_info(learning_progress)').all() as Array<{ name: string }>;
     expect(columns.some((column) => column.name === 'bloom_mastery_by_module')).toBe(true);
   });
+
+  it('persists explicit optional-module skip decisions (idempotent round-trip)', async () => {
+    // Dedicated user so the round-trip GET is unambiguous (the PK's NULL
+    // session_id means repeated null-session PUTs for one user are distinct rows).
+    const info = db
+      .prepare(`INSERT INTO users (username, email, password_hash, role, created_at) VALUES (?, ?, ?, ?, datetime('now'))`)
+      .run('skiplearner', 'skip@example.com', 'hash', 'user');
+    const skipUserId = Number(info.lastInsertRowid);
+    const token = jwt.sign(
+      { id: skipUserId, username: 'skiplearner', email: 'skip@example.com', role: 'user' },
+      process.env.JWT_SECRET as string,
+    );
+
+    const put = (skippedModuleIds: string[]) =>
+      fetch(`${baseUrl}/api/learning/progress`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ completedModuleIds: [], lastUnlockedModuleId: null, sessionId: 'sess-1', skippedModuleIds }),
+      });
+
+    const first = await put(['module-x', 'module-y']);
+    expect(first.status).toBe(200);
+    await expect(first.json()).resolves.toMatchObject({ ok: true, skippedModuleIds: ['module-x', 'module-y'] });
+
+    // Re-sending the same skip set is idempotent — same upsert key, no duplication.
+    await put(['module-x', 'module-y']);
+    const getRes = await fetch(`${baseUrl}/api/learning/progress`, { headers: { Authorization: `Bearer ${token}` } });
+    await expect(getRes.json()).resolves.toMatchObject({ skippedModuleIds: ['module-x', 'module-y'] });
+
+    const rows = db.prepare('SELECT skipped_module_ids FROM learning_progress WHERE user_id = ?').all(skipUserId) as Array<{ skipped_module_ids: string }>;
+    expect(rows.length).toBe(1); // idempotent — exactly one row
+    expect(JSON.parse(rows[0].skipped_module_ids)).toEqual(['module-x', 'module-y']);
+
+    const columns = db.prepare('PRAGMA table_info(learning_progress)').all() as Array<{ name: string }>;
+    expect(columns.some((column) => column.name === 'skipped_module_ids')).toBe(true);
+  });
 });

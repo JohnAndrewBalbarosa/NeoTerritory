@@ -179,6 +179,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
         <div>
           <h2>In-Module Learning Analytics</h2>
           <p className="admin-section__hint">Monitor how interns work through recommended learning modules, including conceptual attempts, retries, practical submissions, completion, and question-level performance. Formal pre-test and post-test records remain under Assessments.</p>
+          <p className="admin-section__hint">These are descriptive process metrics. Whether a module is Required or Optional Review is per-learner (it depends on each learner’s pre-test result), so it is shown in Intern Detail, not here. Voluntary attempts on optional modules appear as activity and never count as an incomplete requirement.</p>
         </div>
         <div className="admin-account-actions">
           <button type="button" className="ghost-btn" onClick={() => setReloadKey((k) => k + 1)}>Refresh</button>
