@@ -203,13 +203,27 @@ function deriveStage(opts: {
   return 'Learning in Progress';
 }
 
+// Distinct pre-test cycle ids for a learner, newest first (each is a learning
+// cycle that can be derived + monitored independently).
+export function listLearnerCycles(rec: RawLearnerRecord): string[] {
+  const seen = new Set<string>();
+  return rec.attempts
+    .filter((a) => a.assessmentType === 'pretest' && a.cycleId)
+    .sort((x, y) => (x.createdAt < y.createdAt ? 1 : -1))
+    .map((a) => a.cycleId as string)
+    .filter((id) => (seen.has(id) ? false : (seen.add(id), true)));
+}
+
 export function deriveLearnerLearningRecord(
   rec: RawLearnerRecord,
   modules: ReadonlyArray<LearningModule>,
+  targetCycleId?: string, // when omitted, the most recent pre-test cycle is used
 ): LearnerLearningRecord {
   const moduleById = new Map(modules.map((m) => [m.id, m]));
   const assessments = toAssessmentsResponse(rec);
-  const cycleId = latestPretestCycleId(rec);
+  // Cycle isolation: scoring/recommendations come from THIS cycle's frozen
+  // pre-test answers only — never a different cycle and never current toggles.
+  const cycleId = targetCycleId ?? latestPretestCycleId(rec);
   const completed = new Set(parseIdList(rec.progress?.completedModuleIds));
   const theoryPassed = new Set(parseIdList(rec.progress?.theoryPassedModuleIds));
 
@@ -244,8 +258,10 @@ export function deriveLearnerLearningRecord(
         : `Pre-test result did not meet the ${PROFICIENCY_THRESHOLD}% proficiency threshold.`;
     const isCompleted = completed.has(moduleId);
     const conceptualStatus = theoryPassed.has(moduleId) ? 'Passed' : isCompleted ? 'Passed' : 'Not started';
+    // No formal practical GRADE is stored — module completion is only a proxy.
+    // Use accurate, non-grade wording ('Completed'), never 'Passed'.
     const hasPractical = !!module?.practicalExam;
-    const practicalStatus = !hasPractical ? 'Not applicable' : isCompleted ? 'Passed' : 'Not submitted';
+    const practicalStatus = !hasPractical ? 'Not applicable' : isCompleted ? 'Completed' : 'Not submitted';
     const progressPercent = isCompleted ? 100 : theoryPassed.has(moduleId) ? 50 : 0;
     return {
       cycleId: cycleId ?? '',
@@ -291,9 +307,9 @@ export function deriveLearnerLearningRecord(
   const practicalNeeded = recommendedToStudy.filter((r) => r.practicalStatus !== 'Not applicable');
   const practicalStatusOverall = practicalNeeded.length === 0
     ? 'Not applicable'
-    : practicalNeeded.every((r) => r.practicalStatus === 'Passed')
+    : practicalNeeded.every((r) => r.practicalStatus === 'Completed')
       ? 'Complete'
-      : practicalNeeded.some((r) => r.practicalStatus === 'Passed')
+      : practicalNeeded.some((r) => r.practicalStatus === 'Completed')
         ? 'In progress'
         : 'Pending';
 

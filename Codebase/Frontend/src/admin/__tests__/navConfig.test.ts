@@ -7,10 +7,13 @@ import { TABS, SECTION_ORDER, SECTION_CHILDREN, SHOW_RESEARCH_ADMIN_TOOLS, SECON
 // every pre-existing route/tab id is still present (no page removed) and that
 // the secondary-tools visibility flag is a plain UI constant, not authorization.
 
+// Standalone sidebar tabs that must remain reachable. instructor-modules /
+// instructor-questions are intentionally NOT here: they are now internal
+// drilldowns of the In-Module Analytics tab (instructor-students), not separate
+// content tabs (the misleading analytics-as-content mapping was removed).
 const ORIGINAL_TAB_IDS = [
   'runs', 'complexity', 'users', 'reviews', 'ai', 'logs', 'catalogs', 'invites',
-  'joinRequests', 'featureReleases', 'instructor-students', 'instructor-modules',
-  'instructor-questions', 'courses',
+  'joinRequests', 'featureReleases', 'instructor-students', 'courses',
 ];
 
 describe('PM dashboard navConfig (SOP-1)', () => {
@@ -43,13 +46,19 @@ describe('PM dashboard navConfig (SOP-1)', () => {
     expect(analytics?.label).toBe('In-Module Analytics');
     expect(analytics?.section).toBe('Secondary Tools');
 
-    expect(SECTION_CHILDREN['Learning Content']).toEqual(
-      expect.arrayContaining(['instructor-modules', 'instructor-questions']),
-    );
+    // Learning Content holds the real content/question MANAGEMENT tabs — NOT the
+    // analytics ids, which must not appear as content tabs.
+    expect(SECTION_CHILDREN['Learning Content']).toEqual(['modules', 'question-bank']);
+    expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-modules');
+    expect(SECTION_CHILDREN['Learning Content']).not.toContain('instructor-questions');
+
+    // Assessments sits under Project Learning.
+    expect(SECTION_CHILDREN['Project Learning']).toEqual(expect.arrayContaining(['courses', 'intern-records', 'assessments']));
   });
 
-  it('keeps intern-detail out of the sidebar (opened via state, not URL)', () => {
+  it('keeps detail tabs out of the sidebar (opened via state, not URL)', () => {
     expect(TABS.some((t) => t.id === 'intern-detail')).toBe(false);
+    expect(TABS.some((t) => t.id === 'assessment-cycle-detail')).toBe(false);
   });
 
   it('orders the four SOP-1 groups with Secondary Tools last', () => {

@@ -14,9 +14,11 @@ export type AdminTab =
   | 'overview' | 'runs' | 'complexity' | 'users' | 'reviews' | 'ai' | 'logs' | 'catalogs'
   | 'invites' | 'joinRequests' | 'featureReleases'
   | 'instructor-students' | 'instructor-modules' | 'instructor-questions' | 'courses'
-  // SOP-1 PM record tabs. `intern-detail` is hidden (not in TABS): it is opened
-  // from Intern Records via AdminApp state (selectedInternId), no URL routing.
-  | 'intern-records' | 'intern-detail';
+  // SOP-1 PM record tabs. `intern-detail` + `assessment-cycle-detail` are hidden
+  // (not in TABS): opened from their list via AdminApp state, no URL routing.
+  | 'intern-records' | 'intern-detail' | 'assessments' | 'assessment-cycle-detail'
+  // Learning Content management tabs (real content/question views, NOT analytics).
+  | 'modules' | 'question-bank';
 
 // Navigation reorganized around the SOP-1 project-based learning-support
 // workflow. The first three groups are the normal PM flow; Secondary Tools holds
@@ -50,9 +52,11 @@ export const TABS: ReadonlyArray<TabDef> = [
   // Project Learning (normal PM workflow): course plan + formal intern records.
   { id: 'courses',              label: 'Course Plan', icon: IconBook,       section: 'Project Learning' },
   { id: 'intern-records',       label: 'Interns',    icon: IconShield,      section: 'Project Learning' },
-  // Learning Content: module + question views.
-  { id: 'instructor-modules',   label: 'Modules',    icon: IconLayers,      section: 'Learning Content' },
-  { id: 'instructor-questions', label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
+  { id: 'assessments',          label: 'Assessments', icon: IconClipboard,  section: 'Project Learning' },
+  // Learning Content: real content/question MANAGEMENT (not the analytics views,
+  // which moved to Secondary Tools → In-Module Analytics).
+  { id: 'modules',              label: 'Modules',    icon: IconLayers,      section: 'Learning Content' },
+  { id: 'question-bank',        label: 'Question Bank', icon: IconClipboard, section: 'Learning Content' },
   // Secondary Tools (de-emphasized, collapsible): in-module analytics + code
   // analysis + research/admin. The existing instructor-analytics cluster lives
   // here as "In-Module Analytics" (process metrics, not formal results).

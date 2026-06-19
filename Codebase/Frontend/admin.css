@@ -1180,3 +1180,8 @@ body{position:relative;}
 .nt-badge[data-stage='Ready for Post-Test']{background:rgba(110,231,168,.12);}
 .nt-badge[data-stage='Post-Test Completed']{background:rgba(110,231,168,.18);}
 .nt-badge[data-stage='Needs Review']{background:rgba(248,113,113,.14);}
+
+/* SOP-1 breadcrumb + helpers */
+.admin-breadcrumb{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-mute);margin:0 0 12px;}
+.nt-linkbtn{appearance:none;background:none;border:none;color:var(--devcon-cyan,#39d3e0);cursor:pointer;padding:0;font:inherit;text-decoration:underline;}
+.nt-cap{caption-side:top;text-align:left;font-weight:700;font-size:12px;color:var(--ink-mute);padding:0 0 6px;}

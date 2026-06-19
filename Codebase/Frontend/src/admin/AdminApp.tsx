@@ -10,6 +10,10 @@ import GoogleSignInButton from '../components/auth/GoogleSignInButton';
 import OverviewTab from './components/OverviewTab';
 import InternRecordsTab from './components/InternRecordsTab';
 import InternDetailTab from './components/InternDetailTab';
+import AssessmentsTab from './components/AssessmentsTab';
+import AssessmentCycleDetailTab from './components/AssessmentCycleDetailTab';
+import ModulesTab from './components/ModulesTab';
+import QuestionBankTab from './components/QuestionBankTab';
 import RunsTab from './components/RunsTab';
 import ComplexityTab from './components/ComplexityTab';
 import UserTable from './components/UserTable';
@@ -87,6 +91,8 @@ export default function AdminApp() {
   // SOP-1: the intern selected from Intern Records, opened in the hidden
   // intern-detail tab (no URL routing — pure AdminApp state).
   const [selectedInternId, setSelectedInternId] = useState<number | null>(null);
+  // SOP-1: the learning cycle opened from Assessments (no URL routing).
+  const [selectedCycle, setSelectedCycle] = useState<{ internId: number; cycleId: string } | null>(null);
   const [mountedTabs, setMountedTabs] = useState<Set<AdminTab>>(new Set(['overview']));
   const [refreshKey, setRefreshKey] = useState(0);
   // SOP-1 default: the PM workflow groups (Dashboard + Project Learning) are
@@ -241,6 +247,20 @@ export default function AdminApp() {
     setTab('intern-detail');
   }
 
+  function openAssessmentCycle(internId: number, cycleId: string) {
+    setSelectedCycle({ internId, cycleId });
+    setTab('assessment-cycle-detail');
+  }
+
+  // Breadcrumb that always matches the rendered global view + active sidebar item.
+  function breadcrumbFor(tab: AdminTab): string {
+    const def = TABS.find((t) => t.id === tab);
+    if (def) return `${def.section} / ${def.label}`;
+    if (tab === 'intern-detail') return 'Project Learning / Interns / Detail';
+    if (tab === 'assessment-cycle-detail') return 'Project Learning / Assessments / Cycle';
+    return '';
+  }
+
   function toggleSection(section: AdminSection) {
     setExpandedSections((prev) => {
       const next = new Set(prev);
@@ -393,9 +413,32 @@ export default function AdminApp() {
        * the initial mount network spam without lifting state into a context.
        */}
       <main className="admin-main" key={refreshKey}>
+        <p className="admin-breadcrumb" aria-label="Breadcrumb">{breadcrumbFor(activeTab)}</p>
         {mountedTabs.has('overview') && (
           <div hidden={activeTab !== 'overview'}>
             <OverviewTab />
+          </div>
+        )}
+        {mountedTabs.has('assessments') && (
+          <div hidden={activeTab !== 'assessments'}>
+            <AssessmentsTab onOpenCycle={openAssessmentCycle} />
+          </div>
+        )}
+        {mountedTabs.has('assessment-cycle-detail') && (
+          <div hidden={activeTab !== 'assessment-cycle-detail'}>
+            {selectedCycle
+              ? <AssessmentCycleDetailTab internId={selectedCycle.internId} cycleId={selectedCycle.cycleId} onBack={() => setTab('assessments')} />
+              : <p className="admin-section__hint">Select a cycle from Assessments.</p>}
+          </div>
+        )}
+        {mountedTabs.has('modules') && (
+          <div hidden={activeTab !== 'modules'}>
+            <ModulesTab onManageCoursePlan={() => setTab('courses')} />
+          </div>
+        )}
+        {mountedTabs.has('question-bank') && (
+          <div hidden={activeTab !== 'question-bank'}>
+            <QuestionBankTab />
           </div>
         )}
         {mountedTabs.has('intern-records') && (
@@ -491,18 +534,14 @@ export default function AdminApp() {
             <JoinRequestsTab />
           </div>
         )}
-        {(mountedTabs.has('instructor-students') || mountedTabs.has('instructor-modules') || mountedTabs.has('instructor-questions')) && (
-          <div hidden={activeTab !== 'instructor-students' && activeTab !== 'instructor-modules' && activeTab !== 'instructor-questions'}>
+        {mountedTabs.has('instructor-students') && (
+          <div hidden={activeTab !== 'instructor-students'}>
             <section className="admin-section admin-section--card">
               <header className="admin-section__head">
-                <h2>Instructor analytics</h2>
-                <p className="admin-section__hint"><strong>Learning Process Analytics</strong> — how learners work through modules: completion, first-attempt accuracy, retries, Practice Improvement (first-try to eventual mastery), and module difficulty (based on first-attempt performance), plus the per-question heatmap. These are process metrics, not formal pre-test/post-test learning gain (Learning Outcome Analytics). All metrics are computed from raw learning data; each view offers a download.</p>
+                <h2>In-Module Process Analytics</h2>
+                <p className="admin-section__hint">These views show first-attempt, retry, completion, and question-level process metrics (Learner Process Performance, Module Difficulty, Question Performance). They are separate from formal pre-test and post-test results, which live under Project Learning → Assessments.</p>
               </header>
-              <InstructorDashboard initialView={
-                activeTab === 'instructor-modules' ? 'modules' :
-                activeTab === 'instructor-questions' ? 'questions' :
-                'students'
-              } />
+              <InstructorDashboard initialView="students" />
             </section>
           </div>
         )}

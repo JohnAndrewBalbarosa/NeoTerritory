@@ -108,7 +108,8 @@ describe('deriveLearnerLearningRecord', () => {
     }), MODULES);
     const m = rec.recommendations.find((r) => r.moduleId === 'behavioural-strategy')!;
     expect(m.conceptualStatus).toBe('Passed');
-    // strategy has a practical exam → practical tracked separately.
-    expect(m.practicalStatus).toBe('Passed');
+    // strategy has a practical exam → tracked separately, and completion is NOT
+    // labeled as a formal practical grade ('Completed', never 'Passed').
+    expect(m.practicalStatus).toBe('Completed');
   });
 });
