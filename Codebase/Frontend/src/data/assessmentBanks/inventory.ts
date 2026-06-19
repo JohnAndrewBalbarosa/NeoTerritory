@@ -20,12 +20,24 @@ import { ALL_BLOOM_LEVELS, type AnyBloomLevel, type ModuleAssessmentBlueprint } 
 const MODULES: ReadonlyArray<LearningModule> = normalizeLearningModules(LEARNING_MODULES);
 const MODULE_BY_ID = new Map(MODULES.map((m) => [m.id, m]));
 
-const TAXONOMY_TO_BLOOM: Record<string, ObjectiveBloomLevel> = {
+// Vocabulary bridge: BloomTaxonomy (question-level, 'remembering'…) ↔ ObjectiveBloomLevel ('remember'…).
+// Canonical low→high ordering used for Bloom-separation ordering in delivery.
+export const TAXONOMY_TO_BLOOM: Record<string, ObjectiveBloomLevel> = {
   remembering: 'remember',
   understanding: 'understand',
   applying: 'apply',
   analyzing: 'analyze',
   evaluating: 'evaluate',
+};
+
+// Reverse mapping: ObjectiveBloomLevel → BloomTaxonomy.
+// 'create' is intentionally absent — it is practical-only, never objective.
+export const BLOOM_TO_TAXONOMY: Record<ObjectiveBloomLevel, BloomTaxonomy> = {
+  remember: 'remembering',
+  understand: 'understanding',
+  apply: 'applying',
+  analyze: 'analyzing',
+  evaluate: 'evaluating',
 };
 
 export function deriveBloomLevel(q: ObjectiveAssessmentQuestion): ObjectiveBloomLevel {
@@ -171,6 +183,9 @@ export function isFormalEligible(moduleId: string): boolean {
   return !FORMAL_INELIGIBLE_MODULES.has(moduleId);
 }
 
+// Per-module overrides for foundation modules whose content does not reach all
+// five objective levels. Non-foundation modules default to the full five levels.
+// Foundation modules without an override default to ['remember', 'understand'].
 const FOUNDATION_LEVEL_OVERRIDES: Record<string, ReadonlyArray<ObjectiveBloomLevel>> = {
   'foundations-what-is-pattern': ['remember', 'understand', 'apply'],
   'foundations-ambiguity': ['remember', 'understand', 'apply', 'analyze', 'evaluate'],
@@ -180,14 +195,43 @@ const FOUNDATION_LEVEL_OVERRIDES: Record<string, ReadonlyArray<ObjectiveBloomLev
   'foundations-categories': ['remember', 'understand'],
 };
 
+// Canonical low→high ordering for the five objective Bloom levels.
+const OBJECTIVE_BLOOM_ORDER: ReadonlyArray<ObjectiveBloomLevel> = [
+  'remember', 'understand', 'apply', 'analyze', 'evaluate',
+];
+
+/**
+ * Returns the applicable ObjectiveBloomLevel list for a module, ordered low→high.
+ * Foundation modules are capped at their authored ceiling (see FOUNDATION_LEVEL_OVERRIDES).
+ * Non-foundation modules span all five objective levels.
+ * 'create' (practical) is never included here.
+ */
+export function applicableObjectiveLevelsForModule(
+  module: Pick<LearningModule, 'id' | 'category'>,
+): ReadonlyArray<ObjectiveBloomLevel> {
+  if (module.category !== 'foundations') {
+    return OBJECTIVE_BLOOM_ORDER;
+  }
+  return FOUNDATION_LEVEL_OVERRIDES[module.id] ?? ['remember', 'understand'];
+}
+
+/**
+ * Returns the applicable BloomTaxonomy list for a module, ordered low→high.
+ * Derived from applicableObjectiveLevelsForModule via the vocab mapping.
+ * 'creating' is never included here — it belongs to the separate practical.
+ */
+export function applicableBloomTaxonomiesForModule(
+  module: Pick<LearningModule, 'id' | 'category'>,
+): ReadonlyArray<BloomTaxonomy> {
+  return applicableObjectiveLevelsForModule(module).map((level) => BLOOM_TO_TAXONOMY[level]);
+}
+
 export function getAssessmentCompetencyBlueprint(moduleId: string): ModuleAssessmentBlueprint | null {
   const m = MODULE_BY_ID.get(moduleId);
   if (!m) return null;
-  const isFoundation = m.category === 'foundations';
-  const applicableObjectiveLevels: ReadonlyArray<ObjectiveBloomLevel> = isFoundation
-    ? FOUNDATION_LEVEL_OVERRIDES[moduleId] ?? ['remember', 'understand']
-    : ['remember', 'understand', 'apply', 'analyze', 'evaluate'];
-  const requiresPracticalCreate = !isFoundation && !!m.practicalExam;
+  // Delegate to the exported helper so there is one source of truth.
+  const applicableObjectiveLevels = applicableObjectiveLevelsForModule(m);
+  const requiresPracticalCreate = m.category !== 'foundations' && !!m.practicalExam;
   const applicableAny = new Set<AnyBloomLevel>([...applicableObjectiveLevels, ...(requiresPracticalCreate ? ['create' as const] : [])]);
   return {
     moduleId,

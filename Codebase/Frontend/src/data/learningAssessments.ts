@@ -13,6 +13,9 @@ import {
   isStudioQuestion,
   type ObjectiveAssessmentQuestion,
 } from './learningModules';
+import {
+  applicableBloomTaxonomiesForModule,
+} from './assessmentBanks/inventory';
 
 export type LearningAssessmentType = 'pretest' | 'posttest' | 'posttest2' | 'practical';
 
@@ -360,12 +363,87 @@ export function buildObjectiveAssessment(
   return ordered.map((q, index) => ({ ...q, assessmentIndex: index }));
 }
 
+// Canonical low→high Bloom ordering for delivery-level separation.
+// Used to order items within a module's queue so distinct levels are served first.
+const FORMAL_BLOOM_ORDER: ReadonlyArray<BloomTaxonomy> = [
+  'remembering',
+  'understanding',
+  'applying',
+  'analyzing',
+  'evaluating',
+];
+
+/**
+ * Apply per-module Bloom ceiling and Bloom-level separation to a form's items.
+ *
+ * CEILING: drop any item whose taxonomy is not in the module's applicable set.
+ *   - Foundation modules are capped at their authored ceiling
+ *     (e.g. 'foundations-categories' → only 'remembering'|'understanding').
+ *   - Non-foundation modules pass all five objective taxonomies.
+ *   - 'creating' is always excluded (objective forms never contain it).
+ *
+ * SEPARATION: order surviving items so distinct applicable levels appear first
+ *   (one per level, low→high), before any second item at an already-used level.
+ *   This is deterministic (no Math.random). Ties within a level preserve the
+ *   authored form order (stable sort by original index).
+ *
+ * A/B parallelism is preserved: pairs share the same taxonomy field, so filtering
+ * and ordering BY taxonomy applies identically to Form A and Form B.
+ */
+function applyBloomCeilingAndSeparation(
+  module: LearningModule,
+  items: ReadonlyArray<[ObjectiveAssessmentQuestion, number]>,
+): Array<[ObjectiveAssessmentQuestion, number]> {
+  const applicable = new Set(applicableBloomTaxonomiesForModule(module));
+
+  // CEILING: drop items outside the module's applicable set.
+  const allowed = items.filter(([q]) => {
+    const tax = (q.taxonomy || 'remembering') as BloomTaxonomy;
+    return applicable.has(tax);
+  });
+
+  // SEPARATION: group by taxonomy in canonical low→high order, then interleave
+  // so one item per level comes first before a second item at any level.
+  const byLevel = new Map<BloomTaxonomy, Array<[ObjectiveAssessmentQuestion, number]>>();
+  for (const tax of FORMAL_BLOOM_ORDER) {
+    byLevel.set(tax, []);
+  }
+  for (const item of allowed) {
+    const tax = (item[0].taxonomy || 'remembering') as BloomTaxonomy;
+    const bucket = byLevel.get(tax);
+    if (bucket) bucket.push(item);
+    // items at levels not in FORMAL_BLOOM_ORDER (e.g. 'creating') already filtered above
+  }
+
+  // One pass per "slot" across applicable levels, round-robin style.
+  const levelOrder = FORMAL_BLOOM_ORDER.filter((t) => applicable.has(t));
+  const result: Array<[ObjectiveAssessmentQuestion, number]> = [];
+  let hasMore = true;
+  while (hasMore) {
+    hasMore = false;
+    for (const tax of levelOrder) {
+      const bucket = byLevel.get(tax);
+      if (bucket && bucket.length > 0) {
+        result.push(bucket.shift()!);
+        hasMore = true;
+      }
+    }
+  }
+  return result;
+}
+
 // Formal assessment built from the per-module assessmentForms (NOT the in-module
 // theoreticalExam). Pre-test draws Form A, post-test draws Form B. A module is
 // included only if it has the requested form authored — there is NO silent
 // fallback from B to A, and modules without forms are simply not assessed
 // (this also scopes the test away from "every published module"). An optional
 // scopeModuleIds further restricts to the learner's active plan.
+//
+// Bloom ceiling + separation (see applyBloomCeilingAndSeparation):
+//   - Items outside the module's applicable Bloom ceiling are excluded.
+//   - Surviving items are ordered so distinct levels appear first (one per level,
+//     low→high), before any second item at an already-used level.
+//   - Applied identically for both Form A and Form B so A/B pairs stay aligned.
 export function buildFormalAssessment(
   modules: ReadonlyArray<LearningModule>,
   assessmentType: LearningAssessmentType,
@@ -379,12 +457,13 @@ export function buildFormalAssessment(
   const perModule = normalizedModules
     .filter((module) => !scope || scope.has(module.id))
     .map((module) => {
-      const items = module.assessmentForms?.[form] ?? [];
+      const rawItems = module.assessmentForms?.[form] ?? [];
+      if (rawItems.length === 0) return null;
+      const indexed = rawItems.map((q, i) => [q, i] as [ObjectiveAssessmentQuestion, number]);
+      // Apply ceiling filter + Bloom-separation ordering per module.
+      const items = applyBloomCeilingAndSeparation(module, indexed);
       if (items.length === 0) return null;
-      return {
-        module,
-        items: items.map((q, i) => [q, i] as [ObjectiveAssessmentQuestion, number]),
-      };
+      return { module, items };
     })
     .filter((entry): entry is { module: LearningModule; items: Array<[ObjectiveAssessmentQuestion, number]> } => entry !== null);
 
