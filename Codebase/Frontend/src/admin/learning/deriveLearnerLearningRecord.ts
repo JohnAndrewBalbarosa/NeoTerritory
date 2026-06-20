@@ -379,7 +379,7 @@ export function deriveLearnerLearningRecord(
   const interpretation = buildInterpretation({
     stage, recommendedToStudy, alreadyUnderstood, projectRelevantCount: projectRelevantModuleIds.length, ppDiff, practicalStatusOverall,
   });
-  const suggestedAction = buildSuggestedAction({ stage, ppDiff, practicalStatusOverall });
+  const suggestedAction = buildSuggestedAction({ stage, ppDiff, postPercent: postScore?.percent ?? null, practicalStatusOverall });
 
   return {
     internId: rec.internId,
@@ -440,15 +440,43 @@ function buildInterpretation(opts: {
   return parts.join(' ');
 }
 
-function buildSuggestedAction(opts: { stage: LearnerStage; ppDiff: number | null; practicalStatusOverall: string }): string {
-  const { stage, ppDiff, practicalStatusOverall } = opts;
+// Post-Test decision thresholds (hybrid: absolute mastery + learning gain).
+// A bare "positive gain" is too weak — a +1pp blip (e.g. 68%→69%) is within
+// noise yet used to read as "Allow to Proceed". A bare absolute cutoff is too
+// harsh — it ignores the growth a pre/post design exists to measure. So we
+// combine: proficiency clears them; otherwise a *meaningful* gain earns
+// guidance; regression or a very low score escalates to the PM.
+export const POST_TEST_PROFICIENT_PERCENT = 80;   // absolute mastery floor → Allow to Proceed
+export const POST_TEST_FLOOR_PERCENT = 50;        // below this → always escalate to PM
+export const MIN_MEANINGFUL_GAIN_PP = 10;         // pp gain that counts as real improvement (not noise)
+
+// Decision for a learner who has completed the paired Post-Test. postPercent and
+// ppDiff (post − pre, same cycle) may be null if the score can't be recovered.
+function postTestSuggestedAction(postPercent: number | null, ppDiff: number | null): string {
+  if (postPercent === null || ppDiff === null) return 'Proceed with Guidance'; // can't grade → neutral
+  if (ppDiff < 0) return 'Require PM Review';                                   // regressed vs pre-test
+  if (postPercent < POST_TEST_FLOOR_PERCENT) return 'Require PM Review';        // far below proficiency
+  if (postPercent >= POST_TEST_PROFICIENT_PERCENT) return 'Allow to Proceed';   // proficient + no regression
+  if (ppDiff >= MIN_MEANINGFUL_GAIN_PP) return 'Proceed with Guidance';         // improving toward proficiency
+  return 'Require PM Review';                                                   // mid-low score, only marginal gain
+}
+
+function buildSuggestedAction(opts: {
+  stage: LearnerStage;
+  ppDiff: number | null;
+  postPercent: number | null;
+  practicalStatusOverall: string;
+}): string {
+  const { stage, ppDiff, postPercent, practicalStatusOverall } = opts;
   switch (stage) {
     case 'Awaiting Pre-Test': return 'Require PM Review';
     case 'Pre-Test Completed': return 'Proceed with Guidance';
     case 'Learning in Progress': return practicalStatusOverall === 'Pending' ? 'Assign Additional Review' : 'Proceed with Guidance';
     case 'Ready for Post-Test': return 'Allow to Proceed';
-    case 'Post-Test Completed': return ppDiff !== null && ppDiff > 0 ? 'Allow to Proceed' : 'Proceed with Guidance';
-    case 'Needs Review': return 'Require PM Review';
+    // Both post-test stages key off the same hybrid score/gain rule.
+    case 'Post-Test Completed':
+    case 'Needs Review':
+      return postTestSuggestedAction(postPercent, ppDiff);
     default: return 'Proceed with Guidance';
   }
 }
