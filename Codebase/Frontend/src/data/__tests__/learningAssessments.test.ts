@@ -11,8 +11,14 @@ import {
   isEligibleObjectiveQuestion,
   moduleProficiencyStatus,
   scoreLearningAssessment,
+  scoreStoredObjectiveAssessment,
+  scoreStoredObjectiveAssessmentForCycle,
   type LearningAssessmentQuestion,
 } from '../learningAssessments';
+import type {
+  LearningAssessmentsResponse,
+  LearningAssessmentAnswerRaw,
+} from '../../types/api';
 import {
   LEARNING_MODULES,
   normalizeLearningModules,
@@ -775,5 +781,53 @@ describe('buildFormalAssessment — Bloom separation within a module', () => {
       return map;
     };
     expect(countByModule(pre)).toEqual(countByModule(post));
+  });
+});
+
+describe('optional-module detection: cycle-scoped vs freshness-gated pre-test scoring', () => {
+  const MODULES = normalizeLearningModules(LEARNING_MODULES);
+  const byId = new Map(MODULES.map((m) => [m.id, m]));
+  const MOD = 'creational-builder'; // real module with a complete Form A
+
+  function perfectPretestAnswers(attemptId: number): LearningAssessmentAnswerRaw[] {
+    const items = byId.get(MOD)!.assessmentForms!.A;
+    return items.map((q, i) => ({
+      id: attemptId * 100 + i,
+      attemptId,
+      assessmentType: 'pretest',
+      assessmentIndex: i,
+      moduleId: MOD,
+      questionIndex: i,
+      questionId: q.id,
+      selectedIndex: q.type === 'mcq' ? q.correctIndex : 0, // all correct -> 100%
+      responseText: null,
+      questionTaxonomy: null,
+      questionKind: 'theoretical',
+      sessionId: null,
+      createdAt: '2026-01-01T00:00:00Z',
+    }));
+  }
+
+  // Pre-test taken 2026-01-01; the course was edited 2026-02-01 (AFTER it), so
+  // the attempt is "stale" relative to courseUpdatedAt — the exact situation an
+  // authenticated intern hits after the course/question bank is changed.
+  const assessments: LearningAssessmentsResponse = {
+    attempts: [{ id: 1, assessmentType: 'pretest', sessionId: null, questionCount: 5, cycleId: 'cyc-1', planId: 'p', createdAt: '2026-01-01T00:00:00Z' }],
+    answers: perfectPretestAnswers(1),
+    courseUpdatedAt: '2026-02-01T00:00:00Z',
+  };
+
+  it('freshness-gated scorer drops a pre-test older than courseUpdatedAt (root cause: optionals vanish)', () => {
+    // This is what the learning path used to call — a stale attempt scores null,
+    // so NO module is flagged optional and every module is forced as required.
+    expect(scoreStoredObjectiveAssessment(MODULES, assessments, 'pretest')).toBeNull();
+  });
+
+  it('cycle-scoped scorer still surfaces the aced module as optional (the fix)', () => {
+    // The learning path now pairs by cycleId like the Intern Dashboard, so a
+    // 100% module is correctly recognized as Optional Review regardless of edits.
+    const score = scoreStoredObjectiveAssessmentForCycle(MODULES, assessments, 'pretest', 'cyc-1');
+    expect(score).not.toBeNull();
+    expect(score!.byModule[MOD].percent).toBe(100);
   });
 });

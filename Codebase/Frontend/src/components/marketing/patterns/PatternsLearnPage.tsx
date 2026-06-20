@@ -21,6 +21,7 @@ import { BloomQuestionRenderer } from '../../learn/BloomQuestionRenderer';
 import {
   evaluateFoundationPretestFromAssessments,
   scoreStoredObjectiveAssessment,
+  scoreStoredObjectiveAssessmentForCycle,
   type FoundationPretestEvidence,
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
@@ -752,7 +753,20 @@ export default function PatternsLearnPage(): JSX.Element {
         // module — so an 81% overall result still recommends the modules behind
         // the missed 19%. Optional modules drive the skip button + non-blocking
         // unlock; they are never auto-completed.
-        const preScore = scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
+        // Optional ("Already Understood") modules = a perfect per-module pre-test
+        // score. Score the learner's ACTIVE CYCLE's pre-test (same as the Intern
+        // Dashboard via deriveInternLearningStatus), NOT the freshness-gated
+        // latest attempt: scoreStoredObjectiveAssessment drops any attempt older
+        // than courseUpdatedAt, so after a course edit an authenticated intern's
+        // earlier pre-test went "stale" and EVERY module was forced as required —
+        // while a guest's just-taken pre-test still showed optionals. Cycle-scoped
+        // scoring pairs to the actual pre-test by cycleId and keeps the two
+        // surfaces consistent. (Guests have a cycleId too; the non-cycle fallback
+        // only applies to legacy attempts with no cycle.)
+        const cycleId = resolvePostTestCycleId(assessments);
+        const preScore = cycleId
+          ? scoreStoredObjectiveAssessmentForCycle(modules, assessments, 'pretest', cycleId)
+          : scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
         const optional = new Set<string>();
         if (preScore) {
           for (const moduleScore of Object.values(preScore.byModule)) {
