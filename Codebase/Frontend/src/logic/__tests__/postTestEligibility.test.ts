@@ -5,7 +5,12 @@ import type {
   LearningAssessmentAttemptRaw,
   LearningAssessmentAnswerRaw,
 } from '../../types/api';
-import { getPostTestEligibility, pairedLearningGain, resolvePostTestCycleId } from '../postTestEligibility';
+import {
+  getPostTestEligibility,
+  pairedLearningGain,
+  postTestDestinationForEligibility,
+  resolvePostTestCycleId,
+} from '../postTestEligibility';
 
 const MODULES = normalizeLearningModules(LEARNING_MODULES);
 const byId = new Map(MODULES.map((m) => [m.id, m]));
@@ -246,5 +251,57 @@ describe('getPostTestEligibility — release gate', () => {
       { cycleId: 'cyc-B', attemptBase: 20, createdAt: '2026-03-01T00:00:00Z', pre: [{ moduleId: REQ2, correct: false }] },
     ]);
     expect(resolvePostTestCycleId(a)).toBe('cyc-B');
+  });
+});
+
+// The learning-path completion flow maps the authoritative, cycle-scoped
+// eligibility verdict to a redirect. These cover the bug: a learner who finishes
+// the final required module must be routed to the paired Post-Test, never left
+// on the last module, and never re-attempting a completed Post-Test.
+describe('postTestDestinationForEligibility — completion redirect mapping', () => {
+  it('routes a fully-completed required path (available) to the Post-Test', () => {
+    expect(postTestDestinationForEligibility({ status: 'available', reasonCode: 'AVAILABLE' })).toBe('post-test');
+  });
+
+  it('routes an in-progress Post-Test back to the Post-Test (resume, idempotent)', () => {
+    expect(postTestDestinationForEligibility({ status: 'in_progress', reasonCode: 'IN_PROGRESS' })).toBe('post-test');
+  });
+
+  it('routes a configuration issue to the Post-Test page (which shows the error gate, never silent)', () => {
+    expect(postTestDestinationForEligibility({ status: 'config_issue', reasonCode: 'INCOMPLETE_FORM_B' })).toBe('post-test');
+  });
+
+  it('routes an already-completed Post-Test to the dashboard (no duplicate attempt)', () => {
+    expect(postTestDestinationForEligibility({ status: 'completed', reasonCode: 'COMPLETED' })).toBe('dashboard');
+  });
+
+  it('keeps the learner in the path while required modules remain incomplete', () => {
+    expect(postTestDestinationForEligibility({ status: 'locked', reasonCode: 'MODULES_INCOMPLETE' })).toBe('stay');
+  });
+
+  it('routes other locked states (no paired pre-test) to the Post-Test gate rather than stranding', () => {
+    expect(postTestDestinationForEligibility({ status: 'locked', reasonCode: 'NO_PAIRED_PRETEST' })).toBe('post-test');
+  });
+
+  it('end-to-end: completing the final required module (N/N) yields a Post-Test redirect', () => {
+    // Three required modules; completing all three flips the verdict to available
+    // and the destination to the paired Post-Test — the reported 14/14 scenario.
+    const a = buildAssessments([{ cycleId: 'cyc-A', attemptBase: 10, pre: [
+      { moduleId: REQ1, correct: false }, { moduleId: REQ2, correct: false }, { moduleId: OPT2, correct: false },
+    ] }]);
+    const beforeFinal = eligibility(a, 'cyc-A', [REQ1, REQ2]); // last one still open
+    expect(postTestDestinationForEligibility(beforeFinal)).toBe('stay');
+    const afterFinal = eligibility(a, 'cyc-A', [REQ1, REQ2, OPT2]); // final module done
+    expect(afterFinal.requiredModuleCount).toBe(3);
+    expect(afterFinal.completedRequiredModuleCount).toBe(3);
+    expect(postTestDestinationForEligibility(afterFinal)).toBe('post-test');
+  });
+
+  it('end-to-end: an incomplete OPTIONAL module never blocks the Post-Test redirect', () => {
+    const a = buildAssessments([{ cycleId: 'cyc-A', attemptBase: 10, pre: [
+      { moduleId: REQ1, correct: false }, { moduleId: OPT1, correct: true }, // OPT1 optional
+    ] }]);
+    const r = eligibility(a, 'cyc-A', [REQ1]); // OPT1 left incomplete
+    expect(postTestDestinationForEligibility(r)).toBe('post-test');
   });
 });

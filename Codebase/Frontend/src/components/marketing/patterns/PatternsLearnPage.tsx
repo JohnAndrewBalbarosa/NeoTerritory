@@ -25,6 +25,12 @@ import {
 } from '../../../data/learningAssessments';
 import { useLearningModules } from '../../../data/useLearningModules';
 import { useAppStore } from '../../../store/appState';
+import {
+  getPostTestEligibility,
+  postTestDestinationForEligibility,
+  resolvePostTestCycleId,
+  type PostTestDestination,
+} from '../../../logic/postTestEligibility';
 import { IconCheck, IconChevronRight, IconLock } from '../../icons/Icons';
 
 interface CourseStep {
@@ -879,7 +885,47 @@ export default function PatternsLearnPage(): JSX.Element {
     [steps],
   );
 
-  const proceedAfterTheory = useCallback(() => {
+  // Server-authoritative Post-Test release decision, made AFTER the final
+  // module-completion write has committed. The local "required path complete"
+  // flag only labels the button — it must never be the gate, because the
+  // /post-test page itself re-derives eligibility from the persisted, cycle-
+  // scoped Pre-Test (frozen scope) + saved progress. Deciding here from the
+  // same authoritative source removes the stale-read race that left a learner
+  // who finished 14/14 stranded on the last module (local said "go", the gate
+  // re-read incomplete progress and rejected them).
+  //
+  // Returns the route to take:
+  //  - 'post-test'  → required modules complete (available / in_progress) OR a
+  //                   configuration issue the /post-test page renders as a clear,
+  //                   actionable error gate (e.g. missing Form B). Never silently
+  //                   stranded.
+  //  - 'dashboard'  → the Post-Test for this cycle is already completed (its
+  //                   result/learning-gain lives on the dashboard) — no new
+  //                   attempt is created.
+  //  - 'stay'       → required modules genuinely remain; keep the learning flow.
+  const resolvePostTestDestination = useCallback(async (): Promise<PostTestDestination> => {
+    if (unlockAll) return 'post-test'; // dev bypass keeps its existing behavior
+    try {
+      // Re-fetch AFTER the completion write so eligibility reads committed data.
+      const [assessments, progress] = await Promise.all([
+        fetchLearningAssessments(),
+        fetchLearningProgress(),
+      ]);
+      const cycleId = resolvePostTestCycleId(assessments);
+      const eligibility = getPostTestEligibility({
+        modules: allSteps.map((step) => step.module),
+        assessments,
+        progress,
+        cycleId,
+      });
+      return postTestDestinationForEligibility(eligibility);
+    } catch {
+      // Network hiccup: defer to the /post-test page, which re-gates server-side.
+      return 'post-test';
+    }
+  }, [allSteps, unlockAll]);
+
+  const proceedAfterTheory = useCallback(async () => {
     if (!activeModule) return;
     if (hasVisiblePracticalPage) {
       const practicalPageIndex = pages.findIndex((page) => page.kind === 'practical');
@@ -888,7 +934,11 @@ export default function PatternsLearnPage(): JSX.Element {
     }
 
     if (activeIndex >= steps.length - 1) {
-      navigate(requiredPathCompleteAfterCurrentTheory ? '/post-test' : '/intern-dashboard');
+      const dest = await resolvePostTestDestination();
+      // 'stay' on the terminal visible module has nowhere to advance to, so it
+      // falls back to the dashboard (the prior non-complete behavior) rather
+      // than leaving the learner stuck on the page.
+      navigate(dest === 'post-test' ? '/post-test' : '/intern-dashboard');
       return;
     }
 
@@ -901,7 +951,7 @@ export default function PatternsLearnPage(): JSX.Element {
     activeModule,
     hasVisiblePracticalPage,
     pages,
-    requiredPathCompleteAfterCurrentTheory,
+    resolvePostTestDestination,
     steps.length,
   ]);
 
@@ -1013,7 +1063,7 @@ export default function PatternsLearnPage(): JSX.Element {
         return;
       }
 
-      proceedAfterTheory();
+      void proceedAfterTheory();
       return;
     }
 
@@ -1395,9 +1445,15 @@ export default function PatternsLearnPage(): JSX.Element {
                           setCompletedIds(nextCompletedIds);
                           setBloomMasteryByModule(nextBloomMasteryByModule);
                           await persistLearningProgress(nextCompletedIds, nextTheoryPassedIds, nextBloomMasteryByModule);
-                          const requiredComplete = requiredModuleIds.every((moduleId) => nextCompletedIds.has(moduleId));
-                          if (requiredComplete) {
+                          // Server-authoritative release: decide from committed,
+                          // cycle-scoped eligibility (not the local required-set),
+                          // so completing the final required practical reliably
+                          // opens the paired Post-Test and never strands the learner.
+                          const dest = await resolvePostTestDestination();
+                          if (dest === 'post-test') {
                             navigate('/post-test');
+                          } else if (dest === 'dashboard') {
+                            navigate('/intern-dashboard');
                           } else {
                             setPageIndex(0);
                           }

@@ -226,6 +226,26 @@ export function getPostTestEligibility(input: PostTestEligibilityInput): PostTes
   return base({ ...partial, eligible: true, status: 'available', reasonCode: 'AVAILABLE' });
 }
 
+// Where the learning-path completion flow should send the learner once the
+// final required activity is saved, derived from the authoritative, cycle-scoped
+// eligibility verdict (never local UI state):
+//  - 'post-test' : required modules are complete (available / in_progress), OR a
+//                  configuration issue exists that the /post-test page surfaces
+//                  as an actionable error gate (e.g. missing Form B) — the learner
+//                  is never silently stranded.
+//  - 'dashboard' : the Post-Test for this cycle is already completed (its result /
+//                  learning-gain lives on the dashboard); no new attempt is made.
+//  - 'stay'      : required modules genuinely remain — keep the learning flow.
+export type PostTestDestination = 'post-test' | 'dashboard' | 'stay';
+
+export function postTestDestinationForEligibility(
+  eligibility: Pick<PostTestEligibility, 'status' | 'reasonCode'>,
+): PostTestDestination {
+  if (eligibility.status === 'completed') return 'dashboard';
+  if (eligibility.status === 'locked' && eligibility.reasonCode === 'MODULES_INCOMPLETE') return 'stay';
+  return 'post-test';
+}
+
 /**
  * Paired learning gain for a completed Post-Test: ALWAYS compares the Post-Test
  * against the Pre-Test of the SAME cycle (never latestAttemptOfType). Returns
