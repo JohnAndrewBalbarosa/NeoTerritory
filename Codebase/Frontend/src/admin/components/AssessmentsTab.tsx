@@ -9,6 +9,7 @@ import {
   type LearnerLearningRecord,
   type LearnerStage,
 } from '../learning/deriveLearnerLearningRecord';
+import { POST_TEST_STATUS_LABEL } from './AssessmentCycleDetailTab';
 
 type SubTab = 'pretest' | 'conceptual' | 'practical' | 'posttest' | 'cycles';
 const SUB_TABS: Array<{ id: SubTab; label: string }> = [
@@ -129,9 +130,9 @@ export default function AssessmentsTab({ onOpenCycle, initialSubTab }: { onOpenC
             {sub === 'posttest' && (
               <table className="nt-records-table">
                 <caption className="nt-cap">Formal Post-Test</caption>
-                <thead><tr><th>Intern</th><th>Cycle</th><th>Pre-Test</th><th>Post-Test</th><th>Score Diff</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
+                <thead><tr><th>Intern</th><th>Cycle</th><th>Pre-Test</th><th>Post-Test</th><th>Score Diff</th><th>Post-Test Status</th><th>Submitted</th><th>Status</th><th></th></tr></thead>
                 <tbody>{filtered.filter((c) => c.d.hasPostTest).map((c) => (
-                  <tr key={`${c.rec.internId}-${c.cycleId}`}><td>{c.d.displayName}</td><td className="nt-mono">{shortCycle(c.cycleId)}</td><td>{pct(c.d.prePercent)}</td><td>{pct(c.d.postPercent)}</td><td>{diff(c.d.ppDiff)}</td><td className="nt-muted">{attemptDate(c.rec, 'posttest', c.cycleId)}</td><td><span className="nt-badge" data-stage={c.d.stage}>{c.d.stage}</span></td><td><button type="button" className="ghost-btn" onClick={() => onOpenCycle(c.rec.internId, c.cycleId)}>View Cycle</button></td></tr>
+                  <tr key={`${c.rec.internId}-${c.cycleId}`}><td>{c.d.displayName}</td><td className="nt-mono">{shortCycle(c.cycleId)}</td><td>{pct(c.d.prePercent)}</td><td>{pct(c.d.postPercent)}</td><td>{diff(c.d.ppDiff)}</td><td title={c.d.postTestReasonMessage}>{POST_TEST_STATUS_LABEL[c.d.postTestStatus]}</td><td className="nt-muted">{attemptDate(c.rec, 'posttest', c.cycleId)}</td><td><span className="nt-badge" data-stage={c.d.stage}>{c.d.stage}</span></td><td><button type="button" className="ghost-btn" onClick={() => onOpenCycle(c.rec.internId, c.cycleId)}>View Cycle</button></td></tr>
                 ))}</tbody>
               </table>
             )}

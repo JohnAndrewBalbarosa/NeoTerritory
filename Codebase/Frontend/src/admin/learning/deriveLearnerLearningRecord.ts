@@ -16,6 +16,7 @@ import {
   type AssessmentScore,
 } from '../../data/learningAssessments';
 import type { LearningModule } from '../../data/learningModules';
+import { getPostTestEligibility, type PostTestStatus, type PostTestReasonCode } from '../../logic/postTestEligibility';
 import type {
   LearningAssessmentsResponse,
   LearningAssessmentAttemptRaw,
@@ -142,6 +143,11 @@ export interface LearnerLearningRecord {
   requiredModuleCount: number;
   completedRequiredCount: number;
   requiredProgressPercent: number;
+  // Cycle-scoped Post-Test release state (same gate the learner sees). Locked /
+  // Available / In Progress / Completed / Configuration Issue.
+  postTestStatus: PostTestStatus;
+  postTestReasonCode: PostTestReasonCode;
+  postTestReasonMessage: string;
   conceptualStatusOverall: string;
   practicalStatusOverall: string;
   interpretation: string;
@@ -336,6 +342,16 @@ export function deriveLearnerLearningRecord(
   const completedRequiredCount = completedRecommendedCount;
   const requiredProgressPercent = requiredModuleCount === 0 ? 100 : Math.round((completedRequiredCount / requiredModuleCount) * 100);
 
+  // Cycle-scoped Post-Test release state — the SAME centralized gate the learner
+  // sees (paired strictly to this cycle's Pre-Test), so PM and learner never
+  // disagree about whether the Post-Test is released.
+  const postTestEligibility = getPostTestEligibility({
+    modules,
+    assessments,
+    progress: { completedModuleIds: Array.from(completed) },
+    cycleId,
+  });
+
   const stage = deriveStage({
     hasPreTest,
     hasPostTest,
@@ -387,6 +403,9 @@ export function deriveLearnerLearningRecord(
     requiredModuleCount,
     completedRequiredCount,
     requiredProgressPercent,
+    postTestStatus: postTestEligibility.status,
+    postTestReasonCode: postTestEligibility.reasonCode,
+    postTestReasonMessage: postTestEligibility.reasonMessage,
     conceptualStatusOverall,
     practicalStatusOverall,
     interpretation,

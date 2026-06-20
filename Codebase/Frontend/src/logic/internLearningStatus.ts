@@ -8,7 +8,7 @@ import {
 // score on it. Any missed question makes the module required (so e.g. an 81%
 // overall result still recommends the modules behind the missed 19%). Only a
 // 100% module is treated as optional.
-const REVIEW_REQUIRED_BELOW_PERCENT = 100;
+export const REVIEW_REQUIRED_BELOW_PERCENT = 100;
 import type { LearningModule } from '../data/learningModules';
 import type { LearningAssessmentsResponse } from '../types/api';
 import type { LearningProgress } from '../api/client';
@@ -24,6 +24,17 @@ export interface InternLearningStatus {
   posttestCompleted: boolean;
   posttestScore: AssessmentScore | null;
   studioUnlocked: boolean;
+}
+
+// Required (review-recommended) modules for a graded pre-test: the frozen
+// modules the learner did NOT ace. Single source of truth shared by the intern
+// status snapshot and the cycle-scoped Post-Test eligibility gate, so the gate
+// never drifts from a second definition of "required".
+export function requiredModuleIdsFromPretestScore(preScore: AssessmentScore | null): string[] {
+  if (!preScore) return [];
+  return Object.values(preScore.byModule)
+    .filter((row) => row.percent < REVIEW_REQUIRED_BELOW_PERCENT)
+    .map((row) => row.moduleId);
 }
 
 function latestPretestCycleId(assessments: LearningAssessmentsResponse): string | null {
@@ -44,11 +55,7 @@ export function deriveInternLearningStatus(
   const pretestScore = activeCycleId
     ? scoreStoredObjectiveAssessmentForCycle(modules, assessments, 'pretest', activeCycleId)
     : scoreStoredObjectiveAssessment(modules, assessments, 'pretest');
-  const requiredModuleIds = pretestScore
-    ? Object.values(pretestScore.byModule)
-      .filter((row) => row.percent < REVIEW_REQUIRED_BELOW_PERCENT)
-      .map((row) => row.moduleId)
-    : [];
+  const requiredModuleIds = requiredModuleIdsFromPretestScore(pretestScore);
   const completedSet = new Set(progress.completedModuleIds);
   const completedRequiredModuleIds = requiredModuleIds.filter((moduleId) => completedSet.has(moduleId));
   const requiredModulesCompleted =

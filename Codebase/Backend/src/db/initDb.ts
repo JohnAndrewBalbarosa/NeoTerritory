@@ -697,6 +697,20 @@ export function initDb(): void {
   try { db.prepare(`ALTER TABLE learning_assessment_attempts ADD COLUMN plan_id TEXT`).run(); } catch { /* exists */ }
   db.prepare(`CREATE INDEX IF NOT EXISTS idx_learning_assessment_attempts_cycle
     ON learning_assessment_attempts(user_id, cycle_id, assessment_type)`).run();
+  // Idempotent formal release: at most ONE formal attempt of a given type per
+  // (learner, cycle). This is the DB-level guard behind the app-level check in
+  // PUT /assessments, so refreshes, double-clicks, and concurrent requests can
+  // never create a duplicate pre/post attempt for the same cycle. PARTIAL index
+  // (cycle_id NOT NULL) leaves legacy/in-module practical saves untouched.
+  // Wrapped: a pre-existing duplicate in older dev data must not crash boot —
+  // the app-level check still guards if the unique index can't be created.
+  try {
+    db.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS uniq_learning_assessment_attempt_cycle_type
+      ON learning_assessment_attempts(user_id, cycle_id, assessment_type)
+      WHERE cycle_id IS NOT NULL`).run();
+  } catch (err) {
+    console.warn('[initDb] could not create unique formal-attempt index (pre-existing duplicates?):', err);
+  }
 
   // ---- Active learning plans (authoritative formal-assessment scope) ----
   // The formal pre/post scope comes ONLY from a learner's active plan modules

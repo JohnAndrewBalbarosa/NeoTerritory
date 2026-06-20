@@ -719,8 +719,20 @@ router.put('/assessments', jwtAuth, (req: Request, res: Response, next: NextFunc
         (user_id, session_id, assessment_type, question_count, cycle_id, plan_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
     `);
-    const attemptInfo = insertAttempt.run(req.user.id, sessionId, assessmentType, answers.length, cycleId, planId);
-    const attemptId = Number(attemptInfo.lastInsertRowid);
+    let attemptId: number;
+    try {
+      const attemptInfo = insertAttempt.run(req.user.id, sessionId, assessmentType, answers.length, cycleId, planId);
+      attemptId = Number(attemptInfo.lastInsertRowid);
+    } catch (insertErr) {
+      // DB-level idempotency backstop: a concurrent/duplicate formal submission
+      // races past the app-level check and trips the unique (user, cycle, type)
+      // index. Treat as the same 409 — never create a duplicate attempt.
+      if (insertErr instanceof Error && /UNIQUE constraint failed/i.test(insertErr.message)) {
+        res.status(409).json({ error: `A ${assessmentType} already exists for this cycle; a retake requires a new cycle.` });
+        return;
+      }
+      throw insertErr;
+    }
 
     const insertAnswer = db.prepare(`
       INSERT INTO learning_assessment_answers

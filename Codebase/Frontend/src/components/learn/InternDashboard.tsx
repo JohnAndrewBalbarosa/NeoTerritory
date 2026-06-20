@@ -9,6 +9,11 @@ import {
 } from '../../api/client';
 import { useAppStore } from '../../store/appState';
 import { deriveInternLearningStatus } from '../../logic/internLearningStatus';
+import {
+  getPostTestEligibility,
+  resolvePostTestCycleId,
+  pairedLearningGain,
+} from '../../logic/postTestEligibility';
 import type { LearningAssessmentsResponse } from '../../types/api';
 
 function readUnlockAllOverride(): boolean {
@@ -120,6 +125,20 @@ export default function InternDashboard(): JSX.Element {
   const internStatus = assessments
     ? deriveInternLearningStatus(modules, assessments, progressSnapshot)
     : null;
+  // Cycle-scoped Post-Test release state (single source of truth). Re-derived on
+  // every render from the freshly-fetched assessments + progress, so completing
+  // a required module and returning here flips the card to Available with no
+  // manual PM release.
+  const postTestCycleId = assessments ? resolvePostTestCycleId(assessments) : null;
+  const postTest = assessments
+    ? getPostTestEligibility({ modules, assessments, progress: progressSnapshot, cycleId: postTestCycleId })
+    : null;
+  const postTestGain = assessments && postTest?.status === 'completed' && postTestCycleId
+    ? pairedLearningGain(modules, assessments, postTestCycleId)
+    : null;
+  const postTestDate = assessments && postTest?.postTestAttemptId
+    ? assessments.attempts.find((a) => a.id === postTest.postTestAttemptId)?.createdAt ?? null
+    : null;
   const moduleIdSet = new Set(modules.map((module) => module.id));
   // Count only ids that are real modules in the current path, so stale/duplicate
   // saved ids can never push a count above the total (no more "39/14").
@@ -190,17 +209,21 @@ export default function InternDashboard(): JSX.Element {
         </p>
 
         <div style={styles.actions}>
-          {!internStatus?.requiredModulesCompleted ? (
-            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
-              Continue Learning
+          {postTest?.status === 'completed' ? (
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/studio')}>
+              Open Studio
             </button>
-          ) : !internStatus.posttestCompleted ? (
+          ) : postTest?.status === 'available' ? (
             <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/post-test')}>
               Take Post-Test
             </button>
+          ) : postTest?.status === 'in_progress' ? (
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/post-test')}>
+              Resume Post-Test
+            </button>
           ) : (
-            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/studio')}>
-              Open Studio
+            <button type="button" className="nt-lesson-button nt-lesson-button--primary" onClick={() => navigate('/patterns/learn')}>
+              Continue Learning
             </button>
           )}
         </div>
@@ -231,20 +254,70 @@ export default function InternDashboard(): JSX.Element {
         </article>
         <article style={styles.card}>
           <p style={styles.cardLabel}>Post-Test Status</p>
-          <div style={styles.metricSmall}>
-            {internStatus?.posttestCompleted
-              ? 'Completed'
-              : internStatus?.requiredModulesCompleted
-                ? 'Unlocked'
-                : 'Locked'}
-          </div>
-          <p style={styles.cardCopy}>
-            {internStatus?.posttestCompleted
-              ? `Final score ${internStatus.posttestScore?.percent ?? 0}%.`
-              : internStatus?.requiredModulesCompleted
-                ? 'Ready to take — all required modules are done.'
-                : 'Finish your required review modules to unlock it.'}
-          </p>
+          {postTest?.status === 'completed' ? (
+            <>
+              <div style={styles.metricSmall}>Post-Test Completed</div>
+              <p style={styles.cardCopy}>
+                Score {postTest.frozenModuleIds.length > 0 ? `${postTestGain?.post.percent ?? internStatus?.posttestScore?.percent ?? 0}%` : '—'}
+                {postTestGain ? ` · Pre-Test ${postTestGain.pre.percent}% · ` : ' · '}
+                {postTestGain ? (
+                  <span data-sign={postTestGain.gain.gainPoints >= 0 ? 'pos' : 'neg'}>
+                    Learning gain {postTestGain.gain.gainPoints > 0 ? '+' : ''}{postTestGain.gain.gainPoints} pp
+                  </span>
+                ) : 'learning gain unavailable'}
+                {postTestDate ? ` · ${new Date(postTestDate).toLocaleDateString()}` : ''}
+              </p>
+              <p style={styles.cardCopy}>
+                Score difference within this project-relevant assessment cycle (not a measure of complete professional mastery).
+              </p>
+              <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/post-test')}>
+                View Results
+              </button>
+            </>
+          ) : postTest?.status === 'config_issue' ? (
+            <>
+              <div style={styles.metricSmall}>Configuration Issue</div>
+              <p style={styles.cardCopy}>
+                {postTest.reasonMessage}
+                {postTest.missingFormBModuleIds.length > 0
+                  ? ` Missing Post-Test questions: ${postTest.missingFormBModuleIds.join(', ')}.`
+                  : ''}
+              </p>
+            </>
+          ) : postTest?.status === 'available' ? (
+            <>
+              <div style={styles.metricSmall}>Post-Test Available</div>
+              <p style={styles.cardCopy}>
+                You completed all required learning activities. Covers {postTest.coveredModuleCount} module{postTest.coveredModuleCount === 1 ? '' : 's'} from your Pre-Test.
+              </p>
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" style={{ marginTop: 10 }} onClick={() => navigate('/post-test')}>
+                Start Post-Test
+              </button>
+            </>
+          ) : postTest?.status === 'in_progress' ? (
+            <>
+              <div style={styles.metricSmall}>Post-Test In Progress</div>
+              <button type="button" className="nt-lesson-button nt-lesson-button--primary" style={{ marginTop: 10 }} onClick={() => navigate('/post-test')}>
+                Resume Post-Test
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={styles.metricSmall}>Post-Test Locked</div>
+              <p style={styles.cardCopy}>
+                {postTest && postTest.requiredModuleCount > 0
+                  ? `${postTest.completedRequiredModuleCount} of ${postTest.requiredModuleCount} required modules complete. Complete all required modules to unlock the Post-Test.`
+                  : 'Complete the Pre-Test and your required modules to unlock the Post-Test.'}
+              </p>
+              {postTest && postTest.remainingModuleIds.length > 0 ? (
+                <p style={styles.cardCopy}>
+                  Remaining: {postTest.remainingModuleIds
+                    .map((id) => modules.find((m) => m.id === id)?.title ?? id)
+                    .join(', ')}
+                </p>
+              ) : null}
+            </>
+          )}
         </article>
         <article style={styles.card}>
           <p style={styles.cardLabel}>Studio Access</p>

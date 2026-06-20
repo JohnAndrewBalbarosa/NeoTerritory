@@ -11,6 +11,14 @@ import {
 const pct = (n: number | null) => (n === null ? '—' : `${n}%`);
 const diff = (n: number | null) => (n === null ? '—' : `${n > 0 ? '+' : ''}${n} pp`);
 
+export const POST_TEST_STATUS_LABEL: Record<LearnerLearningRecord['postTestStatus'], string> = {
+  locked: 'Locked',
+  available: 'Available',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+  config_issue: 'Configuration Issue',
+};
+
 function adapt(d: AdminInternDetailResponse): RawLearnerRecord {
   const active = d.plans.find((p) => p.status === 'active') ?? null;
   return {
@@ -73,6 +81,7 @@ export default function AssessmentCycleDetailTab({ internId, cycleId, onBack }: 
               <div className="admin-overview-card"><p className="admin-overview-card__title">Cycle status</p><p className="admin-overview-card__value">{rec.stage}</p></div>
               <div className="admin-overview-card"><p className="admin-overview-card__title">Started</p><p className="admin-overview-card__value">{preDate}</p></div>
               <div className="admin-overview-card"><p className="admin-overview-card__title">Completed</p><p className="admin-overview-card__value">{rec.hasPostTest ? postDate : '—'}</p></div>
+              <div className="admin-overview-card"><p className="admin-overview-card__title">Post-Test</p><p className="admin-overview-card__value">{POST_TEST_STATUS_LABEL[rec.postTestStatus]}</p>{rec.postTestStatus === 'locked' || rec.postTestStatus === 'config_issue' ? <p className="admin-section__hint" style={{ margin: '4px 0 0' }}>{rec.postTestReasonMessage}</p> : null}</div>
             </div>
 
             <h3 style={{ marginTop: 16 }}>Project-Relevant Modules ({rec.projectRelevantModuleIds.length})</h3>

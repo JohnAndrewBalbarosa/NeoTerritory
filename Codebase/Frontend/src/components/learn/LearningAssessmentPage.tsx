@@ -31,7 +31,27 @@ import {
 } from '../../data/assessmentCycle';
 import type { LearningAssessmentAttemptRaw } from '../../types/api';
 import { BloomQuestionRenderer } from './BloomQuestionRenderer';
-import { deriveInternLearningStatus } from '../../logic/internLearningStatus';
+import { getPostTestEligibility, type PostTestReasonCode } from '../../logic/postTestEligibility';
+
+// Map a centralized eligibility reasonCode onto the page's cycle-error copy.
+// Codes that are already CycleErrorCodes pass straight through; the gate-only
+// codes fall back to the closest existing copy.
+function eligibilityReasonToCycleError(code: PostTestReasonCode): CycleErrorCode {
+  switch (code) {
+    case 'MODULES_INCOMPLETE':
+    case 'INCOMPLETE_FORM_B':
+    case 'MODULE_SET_MISMATCH':
+    case 'FORM_OVERLAP':
+    case 'NO_PAIRED_PRETEST':
+    case 'NO_ACTIVE_PLAN':
+    case 'NO_APPROVED_MODULES':
+    case 'INCOMPLETE_FORM_A':
+    case 'NO_ASSESSMENT_QUESTIONS':
+      return code;
+    default:
+      return 'NO_PAIRED_PRETEST';
+  }
+}
 
 // Cycle state: null = still resolving; ok = ready with questions/cycleId; error
 // = an explicit reject (no silent fallback).
@@ -290,10 +310,19 @@ function LearningAssessmentContent({
             if (!cancelled) setCycle({ status: 'error', error: 'NO_PAIRED_PRETEST' });
             return;
           }
+          // Centralized, cycle-scoped release gate — the single source of truth
+          // shared with the dashboard card and PM dashboard. It enforces the
+          // required-module completion gate, the frozen scope, and Form B
+          // readiness, all paired strictly to THIS cycle's Pre-Test.
           const progress = await fetchLearningProgress();
-          const learningStatus = deriveInternLearningStatus(modules, assessments, progress);
-          if (!learningStatus.requiredModulesCompleted) {
-            if (!cancelled) setCycle({ status: 'error', error: 'MODULES_INCOMPLETE' });
+          const eligibility = getPostTestEligibility({
+            modules,
+            assessments,
+            progress,
+            cycleId: openCycleId,
+          });
+          if (!eligibility.eligible) {
+            if (!cancelled) setCycle({ status: 'error', error: eligibilityReasonToCycleError(eligibility.reasonCode) });
             return;
           }
           const result = startPosttestForCycle({
