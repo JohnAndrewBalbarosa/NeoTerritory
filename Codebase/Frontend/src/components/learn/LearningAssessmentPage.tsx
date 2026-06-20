@@ -397,9 +397,11 @@ function LearningAssessmentContent({
       }
 
       if (assessmentType === 'pretest') {
+        // Pre-test does NOT redirect straight to the dashboard. The attempt is
+        // saved above; here we just flag completion and fall through to the
+        // summary (phase='done'), which shows the cycle-specific result and a
+        // "Continue to Dashboard" button that performs the navigation.
         setPreTestCompleted(true);
-        navigate('/intern-dashboard');
-        return;
       } else {
         // Learning gain is paired by CYCLE: compare against the pre-test from
         // this post-test's own cycle (not the latest pre-test). Only when a

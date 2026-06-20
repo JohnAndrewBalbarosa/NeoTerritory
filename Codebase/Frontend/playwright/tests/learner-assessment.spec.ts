@@ -139,6 +139,81 @@ test.describe('learner assessment routes', () => {
     await expect(page.locator('.nt-assessment__footer .nt-lesson-button--primary')).toBeVisible({ timeout: 10_000 });
   });
 
+  test('submitting the pre-test opens the Pre-Test Summary, then Continue to Dashboard navigates to the Intern Dashboard (single attempt)', async ({ page }) => {
+    await seedLearnerSession(page);
+    await installAssessmentMocks(page);
+
+    // Authoritative pre-test scope = the two approved pilot modules. Mocked so
+    // the flow is self-contained and never falls through to the live backend.
+    await page.route('**/api/learning/assessment-scope', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ moduleIds: ['foundations-what-is-pattern', 'creational-builder'] }),
+      });
+    });
+
+    // Count attempt submissions (PUT /api/learning/assessments) to prove the
+    // Continue button only navigates — it never re-submits the attempt.
+    const putBodies: Array<unknown> = [];
+    await page.route('**/api/learning/assessments', async (route) => {
+      const req = route.request();
+      if (req.method() === 'GET') {
+        await route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ attempts: [], answers: [] }),
+        });
+        return;
+      }
+      if (req.method() === 'PUT') putBodies.push(req.postDataJSON());
+      await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    });
+    // Minimal progress mock so the Intern Dashboard renders after navigation.
+    await page.route('**/api/learning/progress', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ completedModuleIds: [], theoryPassedModuleIds: [], bloomMasteryByModule: {} }),
+      });
+    });
+
+    await page.goto('/pre-test', { waitUntil: 'domcontentloaded' });
+    await expect(page.locator('[data-testid="pretest-page"]')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.nt-assessment__items > li').first()).toBeVisible({ timeout: 10_000 });
+
+    // Answer every question on each page, then advance. 2 pilot modules × 5 = 2 pages.
+    const answerCurrentPage = async (): Promise<void> => {
+      const items = page.locator('.nt-assessment__items > li');
+      const count = await items.count();
+      for (let i = 0; i < count; i += 1) {
+        await items.nth(i).locator('input[type="radio"]').first().check();
+      }
+    };
+    await answerCurrentPage();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await answerCurrentPage();
+    await page.getByRole('button', { name: /Review/i }).click();
+
+    // Review → submit the pre-test.
+    await page.getByRole('button', { name: 'Finish Pre-Test', exact: true }).click();
+
+    // The summary (phase='done') must show — NOT a direct redirect to the dashboard.
+    await expect(page.getByRole('heading', { name: 'Pre-Test Summary', exact: true })).toBeVisible({ timeout: 10_000 });
+    await expect(page).not.toHaveURL(/\/intern-dashboard/);
+    expect(putBodies, 'exactly one pre-test attempt is submitted').toHaveLength(1);
+
+    // The one primary action is "Continue to Dashboard" (no Learning-Path / module CTA).
+    const continueBtn = page.getByRole('button', { name: 'Continue to Dashboard', exact: true });
+    await expect(continueBtn).toBeVisible();
+
+    await continueBtn.click();
+
+    // Clicking navigates to the existing Intern Dashboard and does NOT submit again.
+    await expect(page).toHaveURL(/\/intern-dashboard/, { timeout: 10_000 });
+    expect(putBodies, 'Continue to Dashboard only navigates — no extra attempt').toHaveLength(1);
+  });
+
   for (const row of ASSESSMENT_ROUTES.filter((r) => r.path !== '/pre-test')) {
     test(`${row.path} is cycle-gated without a completed pre-test`, async ({ page }) => {
       await seedLearnerSession(page);

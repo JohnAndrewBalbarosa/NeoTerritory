@@ -163,7 +163,7 @@ export const LEARNING_ASSESSMENT_META: Record<LearningAssessmentType, LearningAs
     intro:
       'This baseline uses raw module questions. The browser checks the answers locally; only the selected answers are persisted to the database.',
     submitLabel: 'Finish Pre-Test',
-    continueLabel: 'Go to Intern Dashboard',
+    continueLabel: 'Continue to Dashboard',
     nextPath: '/intern-dashboard',
   },
   posttest: {
