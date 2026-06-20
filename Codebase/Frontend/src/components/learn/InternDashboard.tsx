@@ -239,7 +239,7 @@ export default function InternDashboard(): JSX.Element {
               : 'No saved Pre-Test result yet.'}
           </p>
           {internStatus?.pretestScore ? (
-            <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/assessment-results')}>
+            <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/assessment-results?view=pre')}>
               View Results
             </button>
           ) : null}
@@ -275,7 +275,7 @@ export default function InternDashboard(): JSX.Element {
               <p style={styles.cardCopy}>
                 Score difference within this project-relevant assessment cycle (not a measure of complete professional mastery).
               </p>
-              <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/assessment-results')}>
+              <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/assessment-results?view=post')}>
                 View Results
               </button>
             </>

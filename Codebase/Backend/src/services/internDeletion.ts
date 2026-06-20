@@ -55,11 +55,23 @@ export function deleteInternAndData(db: Database, internId: number): DeleteInter
     if (info.changes) rowsByTable[label] = info.changes;
   };
 
+  const tableNames = new Set(tables.map((t) => t.name));
+
   const tx = db.transaction(() => {
-    // Non-FK column first: clears runs (and cascades their reviews/feedback).
+    // Non-FK column first: clears runs owned by this intern.
     const arCols = db.prepare(`PRAGMA table_info(analysis_runs)`).all() as Array<{ name: string }>;
     if (arCols.some((c) => c.name === 'user_id')) {
       exec('analysis_runs', `DELETE FROM analysis_runs WHERE user_id = ?`);
+    }
+    // Plan-scoped children cascade off learning_plans(id), not users(id), so
+    // they are not in the users-FK sweep. With FK enforcement disabled (below)
+    // the cascade won't fire either, so delete them explicitly BEFORE the plans
+    // are removed — otherwise plan-module rows would be orphaned.
+    if (tableNames.has('learning_plan_modules')) {
+      exec(
+        'learning_plan_modules',
+        `DELETE FROM learning_plan_modules WHERE plan_id IN (SELECT id FROM learning_plans WHERE learner_id = ?)`,
+      );
     }
     for (const ref of refs) {
       if (ref.notnull) {
@@ -71,7 +83,22 @@ export function deleteInternAndData(db: Database, internId: number): DeleteInter
     }
     exec('users', `DELETE FROM users WHERE id = ? AND role = 'user'`);
   });
-  tx();
+
+  // FK enforcement is ON for this connection (initDb enables it). A hard
+  // multi-table delete can trip SQLITE_MISMATCH ("datatype mismatch") when an
+  // ON DELETE cascade walks a child whose key affinity differs on an
+  // older/migrated database. We already delete every child explicitly by
+  // user_id above, so FK cascades are not needed: disable enforcement for the
+  // duration (pragmas cannot change mid-transaction, so toggle around it — safe
+  // because better-sqlite3 runs synchronously) and restore it afterward. No
+  // cascades, no per-row type checks, no orphans left behind.
+  const fkOn = db.pragma('foreign_keys', { simple: true }) === 1;
+  if (fkOn) db.pragma('foreign_keys = OFF');
+  try {
+    tx();
+  } finally {
+    if (fkOn) db.pragma('foreign_keys = ON');
+  }
 
   return { ok: true, username: user.username, email: user.email, rowsByTable };
 }
