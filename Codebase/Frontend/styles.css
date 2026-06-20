@@ -2172,6 +2172,14 @@ body::before {
    Scope: only color/background/border. No layout, spacing, or typography.
    ========================================================================= */
 :root[data-theme="light"] .panel,
+:root[data-theme="light"] .status-card,
+:root[data-theme="light"] .modal-card,
+:root[data-theme="light"] .pattern-card,
+:root[data-theme="light"] .comments-pane .comment-card,
+:root[data-theme="light"] .class-bindings-wrap,
+:root[data-theme="light"] .suspected-structures,
+:root[data-theme="light"] .review-action-bar,
+:root[data-theme="light"] .gdb-tree,
 :root[data-theme="light"] .gdb-result,
 :root[data-theme="light"] .gdb-phase-row,
 :root[data-theme="light"] .docs-pattern,
@@ -2181,6 +2189,12 @@ body::before {
   background: var(--surface);
   border-color: var(--border);
   box-shadow: var(--shadow-md);
+}
+/* The dark cards above carry neon lime/cyan headline text (e.g. the topbar
+   status-card user label) that vanishes on a light surface. Restore theme ink
+   so card text stays readable in light mode. */
+:root[data-theme="light"] .status-card strong {
+  color: var(--ink);
 }
 :root[data-theme="light"] .tab-bar {
   background: var(--surface);
@@ -2253,6 +2267,28 @@ body::before {
   border-color: var(--border);
 }
 
+/* Ghost buttons (topbar Light / Tour / Sign out, file-add, user controls):
+   the DevCon dark style paints a dark translucent fill with cyan text, which is
+   unreadable and out of place on the light topbar. Restore the neutral light
+   ghost-button tokens so the controls read as buttons on a white surface. */
+:root[data-theme="light"] .ghost-btn,
+:root[data-theme="light"] .file-tab-add,
+:root[data-theme="light"] .multi-file-add,
+:root[data-theme="light"] .user-ctrl-btn {
+  background: transparent;
+  border-color: var(--border-bright);
+  color: var(--ink-soft);
+}
+:root[data-theme="light"] .ghost-btn:hover,
+:root[data-theme="light"] .file-tab-add:hover:not(:disabled),
+:root[data-theme="light"] .multi-file-add:hover,
+:root[data-theme="light"] .user-ctrl-btn:hover {
+  background: var(--surface2);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: none;
+}
+
 /* =========================================================================
    Light-mode: invert hardcoded dark code/pill surfaces.
    The DevCon block hardcodes `#07101d` (near-black) backgrounds and `#e8f2ff`
@@ -2317,6 +2353,7 @@ body::before {
    gradient (correct on the dark shell) which would render as dark fields on a
    white page in light mode. Flip to the light surface token so light mode is
    fully light. Text already uses var(--ink) (theme-aware). */
+:root[data-theme="light"] #code-input,
 :root[data-theme="light"] .field input[type="text"],
 :root[data-theme="light"] .field input[type="file"],
 :root[data-theme="light"] .file-slot-name,
@@ -2332,6 +2369,14 @@ body::before {
 :root[data-theme="light"] .checklist-chip .other-input {
   background: var(--surface);
   border-color: var(--border);
+  /* Force near-black ink so the monospace code stays high-contrast and legible
+     on the light editor surface (dark-mode text was tuned for a navy field). */
+  color: var(--ink);
+}
+:root[data-theme="light"] #code-input::placeholder,
+:root[data-theme="light"] .file-slot-textarea::placeholder,
+:root[data-theme="light"] .program-stdin-textarea::placeholder {
+  color: var(--ink-dim);
 }
 
 /* === Consent gate redesign === */
