@@ -278,3 +278,50 @@ describe('deriveLearnerLearningRecord', () => {
     expect(m.practicalStatus).toBe('Completed');
   });
 });
+
+describe('Suggested PM Action — post-test hybrid (score floor + learning gain)', () => {
+  // 4 modules with 5-question A/B forms each → clean 25%-step overall percentages.
+  const M = ['behavioural-observer', 'behavioural-strategy', 'creational-builder', 'creational-singleton'];
+  const pre = (n: number) => M.map((moduleId, i) => ({ moduleId, correct: i < n }));
+  const post = (n: number) => M.map((moduleId, i) => ({ moduleId, correct: i < n }));
+
+  it('proficient post (≥80%) with no regression → Allow to Proceed', () => {
+    const r = deriveLearnerLearningRecord(record({ pre: pre(0), post: post(4) }), MODULES); // 0% → 100%
+    expect(r.postPercent).toBe(100);
+    expect(r.suggestedAction).toBe('Allow to Proceed');
+  });
+
+  it('regressed (gain < 0) → Require PM Review', () => {
+    const r = deriveLearnerLearningRecord(record({ pre: pre(4), post: post(0) }), MODULES); // 100% → 0%
+    expect(r.ppDiff).toBeLessThan(0);
+    expect(r.suggestedAction).toBe('Require PM Review');
+  });
+
+  it('very low post (<50%) even with a positive gain → Require PM Review', () => {
+    const r = deriveLearnerLearningRecord(record({ pre: pre(0), post: post(1) }), MODULES); // 0% → 25%
+    expect(r.postPercent).toBe(25);
+    expect(r.ppDiff).toBe(25);
+    expect(r.suggestedAction).toBe('Require PM Review');
+  });
+
+  it('mid post (50–79%) with a meaningful gain (≥10pp) → Proceed with Guidance', () => {
+    const r = deriveLearnerLearningRecord(record({ pre: pre(2), post: post(3) }), MODULES); // 50% → 75%
+    expect(r.postPercent).toBe(75);
+    expect(r.ppDiff).toBe(25);
+    expect(r.suggestedAction).toBe('Proceed with Guidance');
+  });
+
+  it('mid post (50–79%) with only a marginal gain (<10pp) → Require PM Review', () => {
+    const r = deriveLearnerLearningRecord(record({ pre: pre(3), post: post(3) }), MODULES); // 75% → 75%, gain 0
+    expect(r.postPercent).toBe(75);
+    expect(r.ppDiff).toBe(0);
+    expect(r.suggestedAction).toBe('Require PM Review');
+  });
+
+  it('a +1pp blip below proficiency no longer reads as "Allow to Proceed"', () => {
+    // Regression guard for the original bug: tiny positive gain at a non-proficient
+    // score used to suggest Allow to Proceed; now it does not.
+    const r = deriveLearnerLearningRecord(record({ pre: pre(2), post: post(3) }), MODULES);
+    expect(r.suggestedAction).not.toBe('Allow to Proceed');
+  });
+});
