@@ -8,7 +8,7 @@ import {
   type LearningPlan,
 } from '../assessmentCycle';
 import { scoreStoredObjectiveAssessmentForCycle } from '../learningAssessments';
-import { LEARNING_MODULES } from '../learningModules';
+import { LEARNING_MODULES, normalizeLearningModules } from '../learningModules';
 import type { LearningAssessmentAnswerRaw, LearningAssessmentAttemptRaw, LearningAssessmentsResponse } from '../../types/api';
 
 const PILOT = ['foundations-what-is-pattern', 'creational-builder'];
@@ -141,6 +141,35 @@ describe('assessment cycle — pre/post pairing', () => {
     expect(startPosttestForCycle({ cycleId: 'cyc-OTHER', modules: LEARNING_MODULES, attempts, answers }))
       .toMatchObject({ ok: false, error: 'NO_PAIRED_PRETEST' });
     expect(pretestModuleSetForCycle('cyc-OTHER', attempts, answers)).toBeNull();
+  });
+
+  it('8b. post-test builds for a cycle whose pre-test included a variable-size (<5) foundations form', () => {
+    // Regression: foundations forms are intentionally shorter than FORM_SIZE
+    // (foundations-why-matters has 3 parallel A/B items). The production pre-test
+    // admits them by A/B parity, so the paired post-test MUST build too — a rigid
+    // === FORM_SIZE Form-B check previously rejected them as INCOMPLETE_FORM_B and
+    // stranded the learner with a false "configuration issue".
+    const varAttempts = [pretestAttempt('cyc-var', 7)];
+    const varAnswers = answersForModules(7, ['foundations-why-matters', 'creational-builder']);
+    const result = startPosttestForCycle({ cycleId: 'cyc-var', modules: LEARNING_MODULES, attempts: varAttempts, answers: varAnswers });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(new Set(result.scope)).toEqual(new Set(['foundations-why-matters', 'creational-builder']));
+    expect(result.questions.length).toBe(8); // 3 (why-matters Form B) + 5 (builder Form B)
+  });
+
+  it('8c. a genuinely missing Form B is still a configuration issue', () => {
+    // A module with Form A but NO Form B (length 0) must still fail — the fix
+    // relaxes the size rule to parity, it does not hide truly-missing Form B.
+    const real = normalizeLearningModules(LEARNING_MODULES).find((m) => m.id === 'creational-builder')!;
+    const noFormB = { ...real, id: 'synthetic-no-b', assessmentForms: { A: real.assessmentForms!.A, B: [] } } as typeof real;
+    const attemptsNoB = [pretestAttempt('cyc-no-b', 8)];
+    const answersNoB = answersForModules(8, ['synthetic-no-b']);
+    const result = startPosttestForCycle({ cycleId: 'cyc-no-b', modules: [...LEARNING_MODULES, noFormB], attempts: attemptsNoB, answers: answersNoB });
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    expect(result.error).toBe('INCOMPLETE_FORM_B');
+    expect(result.modules).toContain('synthetic-no-b');
   });
 
   it('9. Form A and Form B question IDs have zero overlap', () => {

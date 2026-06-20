@@ -81,6 +81,20 @@ function formComplete(module: LearningModule | undefined, form: 'A' | 'B'): bool
   return (module?.assessmentForms?.[form]?.length ?? 0) === FORM_SIZE;
 }
 
+// Form B is "ready" for the paired post-test on the SAME terms the production
+// pre-test admitted the module: a non-empty Form B that is parallel to Form A
+// (equal item count). Foundations forms are intentionally shorter than FORM_SIZE
+// (variable sizes — see startPretestCycleForModules), so a rigid === FORM_SIZE
+// check here wrongly flagged every short-form module the pre-test had already
+// accepted as a Post-Test configuration issue. Parity keeps the pre-test and
+// post-test gates consistent: any module that could enter the pre-test can build
+// its paired post-test.
+function formBPairedWithA(module: LearningModule | undefined): boolean {
+  const aLen = module?.assessmentForms?.A?.length ?? 0;
+  const bLen = module?.assessmentForms?.B?.length ?? 0;
+  return bLen > 0 && bLen === aLen;
+}
+
 // Start a formal pre-test cycle. cycleId is injected by the caller (e.g.
 // crypto.randomUUID()) so this stays pure. Validates an active plan, approved
 // modules, complete Form A AND Form B, and zero A/B id overlap, then builds
@@ -200,7 +214,8 @@ export function startPosttestForCycle(opts: {
   if (!preSet || preSet.length === 0) return { ok: false, error: 'NO_PAIRED_PRETEST' };
 
   const byId = new Map(normalizeLearningModules(modules).map((m) => [m.id, m]));
-  const missingB = preSet.filter((id) => !formComplete(byId.get(id), 'B'));
+  // Honor variable form sizes (parity with the pre-test), not a fixed FORM_SIZE.
+  const missingB = preSet.filter((id) => !formBPairedWithA(byId.get(id)));
   if (missingB.length) return { ok: false, error: 'INCOMPLETE_FORM_B', modules: missingB };
 
   const questions = buildFormalAssessment(modules, 'posttest', preSet);
