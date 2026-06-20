@@ -6,6 +6,7 @@ import GoogleSignInPage from './components/auth/GoogleSignInPage';
 import OnboardingFlow from './components/auth/OnboardingFlow';
 import StudentLearningShell from './components/learn/StudentLearningShell';
 import InternDashboard from './components/learn/InternDashboard';
+import AssessmentResultsPage from './components/learn/AssessmentResultsPage';
 import { useHeartbeat } from './hooks/useHeartbeat';
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
   if (surface === 'onboarding')     return <OnboardingFlow />;
   if (surface === 'studio')          return <StudioApp />;
   if (surface === 'internDashboard') return <InternDashboard />;
+  if (surface === 'assessmentResults') return <AssessmentResultsPage />;
   if (surface === 'patternsLearn' || surface === 'patternsLearnModule') {
     return <StudentLearningShell />;
   }

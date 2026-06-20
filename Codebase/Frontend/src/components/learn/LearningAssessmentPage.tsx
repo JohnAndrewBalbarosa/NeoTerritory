@@ -153,7 +153,7 @@ function ModuleResultRow({ row }: { row: ModuleScore }): JSX.Element {
   );
 }
 
-function PreTestResults({ score }: { score: AssessmentScore }): JSX.Element {
+export function PreTestResults({ score }: { score: AssessmentScore }): JSX.Element {
   const rows = Object.values(score.byModule).sort((a, b) => {
     const aProf = a.percent >= PROFICIENCY_THRESHOLD ? 1 : 0;
     const bProf = b.percent >= PROFICIENCY_THRESHOLD ? 1 : 0;
@@ -214,7 +214,7 @@ function PreTestResults({ score }: { score: AssessmentScore }): JSX.Element {
   );
 }
 
-function PostTestResults({ score, gain }: { score: AssessmentScore; gain: LearningGain | null }): JSX.Element {
+export function PostTestResults({ score, gain }: { score: AssessmentScore; gain: LearningGain | null }): JSX.Element {
   return (
     <>
       <section className="nt-results__block">

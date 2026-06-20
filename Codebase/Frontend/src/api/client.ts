@@ -569,6 +569,15 @@ export async function fetchAdminLearningInternDetail(internId: number): Promise<
   return apiFetch(`/api/admin/learning/interns/${internId}`);
 }
 
+// Permanently delete an intern account (role='user') and all of their owned
+// learning + activity data. Admin/PM-dashboard gated server-side; refuses to
+// remove non-intern accounts. Returns the per-table rows removed.
+export async function deleteAdminLearningIntern(
+  internId: number,
+): Promise<{ ok: boolean; deleted: { internId: number; username: string }; rowsByTable: Record<string, number> }> {
+  return apiFetch(`/api/admin/learning/interns/${internId}`, { method: 'DELETE' });
+}
+
 // Runtime admin-controlled toggles.  Currently a single key —
 // testers_visible_to_users — that hides the devcon* picker on the
 // public login surface when flipped off. Adding new keys is a backend

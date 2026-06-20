@@ -119,4 +119,50 @@ describe('admin PM learning record endpoints', () => {
     expect((await fetch(`${baseUrl}/api/admin/learning/interns/99999`, { headers: { Authorization: `Bearer ${adminToken}` } })).status).toBe(404);
     expect((await fetch(`${baseUrl}/api/admin/learning/interns/abc`, { headers: { Authorization: `Bearer ${adminToken}` } })).status).toBe(400);
   });
+
+  it('DELETE intern is admin-gated (403 for a learner token, 401 without auth)', async () => {
+    const forbidden = await fetch(`${baseUrl}/api/admin/learning/interns/${internId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${userToken}` } });
+    expect(forbidden.status).toBe(403);
+    const noAuth = await fetch(`${baseUrl}/api/admin/learning/interns/${internId}`, { method: 'DELETE' });
+    expect(noAuth.status).toBe(401);
+    // The shared intern must still exist (neither call deleted anything).
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM users WHERE id = ?`).get(internId)).toMatchObject({ n: 1 });
+  });
+
+  it('DELETE refuses to remove a non-intern (admin) account', async () => {
+    const adminRow = db.prepare(`SELECT id FROM users WHERE role = 'admin' LIMIT 1`).get() as { id: number };
+    const res = await fetch(`${baseUrl}/api/admin/learning/interns/${adminRow.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${adminToken}` } });
+    expect(res.status).toBe(409);
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM users WHERE id = ?`).get(adminRow.id)).toMatchObject({ n: 1 });
+  });
+
+  it('DELETE removes the intern + all owned data, audits it, and is 404 on re-delete', async () => {
+    // Throwaway intern with a plan, plan modules, an attempt, and an answer.
+    const u = db.prepare(`INSERT INTO users (username, email, password_hash, role, created_at) VALUES (?,?,?,?,datetime('now'))`).run('intern-del', 'del@x.io', 'h', 'user');
+    const id = Number(u.lastInsertRowid);
+    db.prepare(`INSERT INTO learning_plans (id, learner_id, status, activated_at) VALUES (?,?,?,datetime('now'))`).run('plan-del', id, 'active');
+    db.prepare(`INSERT INTO learning_plan_modules (plan_id, module_id, selection_status, recommendation_source, display_order) VALUES (?,?,?,?,?)`).run('plan-del', 'behavioural-observer', 'approved', 'ai', 0);
+    const at = db.prepare(`INSERT INTO learning_assessment_attempts (user_id, session_id, assessment_type, question_count, cycle_id, plan_id) VALUES (?,?,?,?,?,?)`).run(id, 's', 'pretest', 1, 'cyc-del', 'plan-del');
+    db.prepare(`INSERT INTO learning_assessment_answers (attempt_id, user_id, session_id, assessment_type, assessment_index, module_id, question_index, question_id, selected_index, question_kind) VALUES (?,?,?,?,?,?,?,?,?,?)`).run(Number(at.lastInsertRowid), id, 's', 'pretest', 0, 'behavioural-observer', 0, 'behavioural-observer:A1', 0, 'theoretical');
+
+    const res = await fetch(`${baseUrl}/api/admin/learning/interns/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${adminToken}` } });
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as { ok: boolean; deleted: { internId: number; username: string }; rowsByTable: Record<string, number> };
+    expect(body.ok).toBe(true);
+    expect(body.deleted).toMatchObject({ internId: id, username: 'intern-del' });
+
+    // The account and every owned row are gone.
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM users WHERE id = ?`).get(id)).toMatchObject({ n: 0 });
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM learning_assessment_attempts WHERE user_id = ?`).get(id)).toMatchObject({ n: 0 });
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM learning_assessment_answers WHERE user_id = ?`).get(id)).toMatchObject({ n: 0 });
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM learning_plans WHERE learner_id = ?`).get(id)).toMatchObject({ n: 0 });
+    expect(db.prepare(`SELECT COUNT(*) AS n FROM learning_plan_modules WHERE plan_id = 'plan-del'`).get()).toMatchObject({ n: 0 });
+
+    // Destructive action is recorded in the immutable audit log.
+    const audit = db.prepare(`SELECT action FROM audit_log WHERE target_kind = 'user' AND target_id = ? ORDER BY id DESC LIMIT 1`).get(String(id)) as { action: string } | undefined;
+    expect(audit?.action).toBe('delete');
+
+    // Re-deleting the now-removed intern is a 404 (idempotent at the row level).
+    expect((await fetch(`${baseUrl}/api/admin/learning/interns/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${adminToken}` } })).status).toBe(404);
+  });
 });

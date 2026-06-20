@@ -31,6 +31,7 @@ export type Surface =
   | 'preTest'
   | 'postTest'
   | 'postTest2'
+  | 'assessmentResults'
   | 'notFound';
 
 // Paths retired by the auth-surface consolidation. They render the 404
@@ -50,6 +51,7 @@ export function pathToSurface(path: string): Surface {
   if (path === '/pre-test') return 'preTest';
   if (path === '/post-test') return 'postTest';
   if (path === '/post-test-2') return 'postTest2';
+  if (path === '/assessment-results') return 'assessmentResults';
   if (path === '/intern-dashboard' || path === '/student-dashboard') return 'internDashboard';
   if (path === '/learn' || path.startsWith('/learn/')) return 'learn';
   if (path === '/about' || path.startsWith('/about/')) return 'about';

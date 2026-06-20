@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { fetchAdminLearningInterns } from '../../api/client';
+import { fetchAdminLearningInterns, deleteAdminLearningIntern } from '../../api/client';
 import { isAuthError } from '../lib/silenceAuthErrors';
 import { useLearningModules } from '../../data/useLearningModules';
 import {
@@ -34,6 +34,24 @@ export default function InternRecordsTab({ onSelectIntern }: { onSelectIntern: (
   const [reloadKey, setReloadKey] = useState(0);
   const [stage, setStage] = useState<'All' | LearnerStage>('All');
   const [query, setQuery] = useState('');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  const handleDelete = async (internId: number, name: string): Promise<void> => {
+    // Destructive + irreversible: removes the account and all owned learning
+    // data. Require an explicit confirmation before calling the server.
+    if (!window.confirm(`Permanently delete intern "${name}" and ALL of their learning data (pre/post tests, progress, plans)?\n\nThis cannot be undone.`)) return;
+    setDeletingId(internId);
+    setActionError(null);
+    try {
+      await deleteAdminLearningIntern(internId);
+      setReloadKey((k) => k + 1); // refresh the roster
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Failed to delete intern.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -87,6 +105,8 @@ export default function InternRecordsTab({ onSelectIntern }: { onSelectIntern: (
         </div>
       </div>
 
+      {actionError ? <p className="admin-error" role="alert">{actionError}</p> : null}
+
       {loading ? (
         <p className="admin-section__hint" role="status">Loading intern records…</p>
       ) : error ? (
@@ -130,7 +150,19 @@ export default function InternRecordsTab({ onSelectIntern }: { onSelectIntern: (
                   <td>{pct(r.postPercent)}</td>
                   <td>{diff(r.ppDiff)}</td>
                   <td><span className="nt-badge nt-badge--action">{r.suggestedAction}</span></td>
-                  <td><button type="button" className="ghost-btn" onClick={() => onSelectIntern(r.internId)}>View Details</button></td>
+                  <td>
+                    <div className="nt-records-actions">
+                      <button type="button" className="ghost-btn" onClick={() => onSelectIntern(r.internId)}>View Details</button>
+                      <button
+                        type="button"
+                        className="ghost-btn ghost-btn--danger"
+                        onClick={() => handleDelete(r.internId, r.displayName)}
+                        disabled={deletingId === r.internId}
+                      >
+                        {deletingId === r.internId ? 'Deleting…' : 'Delete'}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>

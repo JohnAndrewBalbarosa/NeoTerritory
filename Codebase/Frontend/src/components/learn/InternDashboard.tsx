@@ -238,6 +238,11 @@ export default function InternDashboard(): JSX.Element {
               ? `${internStatus.pretestScore.correct} of ${internStatus.pretestScore.total} correct · ${internStatus.requiredModuleIds.length} module(s) recommended for review.`
               : 'No saved Pre-Test result yet.'}
           </p>
+          {internStatus?.pretestScore ? (
+            <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/assessment-results')}>
+              View Results
+            </button>
+          ) : null}
         </article>
         <article style={styles.card}>
           <p style={styles.cardLabel}>Completed Modules</p>
@@ -270,7 +275,7 @@ export default function InternDashboard(): JSX.Element {
               <p style={styles.cardCopy}>
                 Score difference within this project-relevant assessment cycle (not a measure of complete professional mastery).
               </p>
-              <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/post-test')}>
+              <button type="button" className="nt-lesson-button" style={{ marginTop: 10 }} onClick={() => navigate('/assessment-results')}>
                 View Results
               </button>
             </>

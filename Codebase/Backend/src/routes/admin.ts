@@ -5,6 +5,7 @@ import db from '../db/database';
 import { jwtAuth } from '../middleware/jwtAuth';
 import { requireAdmin } from '../middleware/requireAdmin';
 import { logAudit } from '../services/logService';
+import { deleteInternAndData } from '../services/internDeletion';
 import { LEGACY_ORIGINAL_DEVS_ORG_ID } from '../services/orgScope';
 import {
   createPatternGroupSchema,
@@ -535,6 +536,43 @@ router.get('/learning/interns/:internId', (req: Request, res: Response, next: Ne
 
     res.json({ profile, plans: plansWithModules, attempts, answers, progress, questionResults });
   } catch (err) { next(err); }
+});
+
+// Delete an intern account and ALL of their owned learning + activity data.
+// Reachable by whoever already manages the intern roster (the same jwtAuth +
+// requireAdmin gate as the rest of this router — i.e. the project-manager /
+// admin dashboard). Refuses to touch non-intern (admin/guest) accounts, and is
+// recorded in the immutable audit_log. Idempotent at the row level: a re-issued
+// delete for an already-removed intern returns 404.
+router.delete('/learning/interns/:internId', (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const internId = Number(req.params.internId);
+    if (!Number.isInteger(internId) || internId <= 0) {
+      res.status(400).json({ error: 'invalid internId' });
+      return;
+    }
+    const result = deleteInternAndData(db, internId);
+    if (!result.ok) {
+      if (result.reason === 'not_found') {
+        res.status(404).json({ error: 'intern not found' });
+        return;
+      }
+      // not_intern: never delete an admin or guest through the intern route.
+      res.status(409).json({ error: 'account is not an intern (role must be user)' });
+      return;
+    }
+    logAudit({
+      actorUserId: req.user?.id ?? null,
+      actorUsername: req.user?.username ?? null,
+      action: 'delete',
+      targetKind: 'user',
+      targetId: String(internId),
+      detail: `intern=${result.username} email=${result.email ?? 'null'} rows=${JSON.stringify(result.rowsByTable ?? {})}`,
+    });
+    res.json({ ok: true, deleted: { internId, username: result.username }, rowsByTable: result.rowsByTable ?? {} });
+  } catch (err) {
+    next(err);
+  }
 });
 
 // Five-minute window matches the admin UI's "online" indicator. A user with no
