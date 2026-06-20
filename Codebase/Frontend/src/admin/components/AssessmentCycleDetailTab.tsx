@@ -96,7 +96,7 @@ export default function AssessmentCycleDetailTab({ internId, cycleId, onBack }: 
 
             <h3 style={{ marginTop: 16 }}>Learning Progress</h3>
             <p className="nt-muted" style={{ margin: '0 0 10px' }}>Required modules completed: {rec.completedRequiredCount} of {rec.requiredModuleCount} ({rec.requiredProgressPercent}%). Optional review modules are not counted toward required progress.</p>
-            <div className="nt-table-scroll"><table className="nt-records-table"><thead><tr><th>Module</th><th>Pre-Test</th><th>Recommendation</th><th>Requirement</th><th>Learner Action</th><th>Progress</th><th>Conceptual</th><th>Practical</th><th>Post-Test</th><th>Final Status</th></tr></thead>
+            <div className="nt-table-scroll"><table className="nt-records-table"><thead><tr><th>Module</th><th>Pre-Test</th><th>Recommendation</th><th>Requirement</th><th>Intern Action</th><th>Progress</th><th>Conceptual</th><th>Practical</th><th>Post-Test</th><th>Final Status</th></tr></thead>
               <tbody>{rec.recommendations.map((m) => <tr key={m.moduleId}><td>{m.moduleTitle}</td><td>{pct(m.preTestPercentage)}</td><td>{m.recommendation === 'recommended_to_study' ? 'Recommended to Study' : 'Already Understood'}</td><td>{m.requirement === 'required' ? 'Required' : 'Optional Review'}</td><td>{m.learnerAction}</td><td>{m.progressPercent}%</td><td>{m.conceptualStatus}</td><td>{m.practicalStatus}</td><td>{pct(m.postTestPercentage)}</td><td>{m.finalStatus}</td></tr>)}</tbody></table></div>
 
             <h3 style={{ marginTop: 16 }}>Practical Assessment Results</h3>

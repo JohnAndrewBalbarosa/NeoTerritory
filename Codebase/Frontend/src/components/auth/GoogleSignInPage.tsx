@@ -39,8 +39,7 @@ function resolveNext(role: Role): string {
 
 function resolveEyebrow(role: Role): string {
   if (role === 'learner') return 'Intern Access';
-  if (role === 'admin') return 'Super admin access';
-  if (role === 'pm') return 'Project manager access';
+  if (role === 'admin' || role === 'pm') return 'Project Manager Access';
   return 'First-time setup';
 }
 
@@ -49,10 +48,10 @@ function resolveLede(role: Role): string {
     return 'Sign in to save your learning progress and continue your assigned CodiNeo learning path.';
   }
   if (role === 'admin') {
-    return 'For NeoTerritory original developers (Andrew / Miryl / Josephine) only. Other emails are redirected to PM sign-in.';
+    return 'Authorized Project Managers can monitor intern progress, learning activity, and project-based recommendations.';
   }
   if (role === 'pm') {
-    return 'Manage your own organization and pattern catalogs. New PMs get a fresh org on first sign-in.';
+    return 'Manage your organization, intern learning activity, and project-based recommendations.';
   }
   return 'Sign in with Google. Afterwards, the onboarding wizard will ask whether you are an admin or a developer.';
 }
@@ -187,6 +186,7 @@ export default function GoogleSignInPage() {
   const eyebrow = resolveEyebrow(role);
   const lede = resolveLede(role);
   const testId = resolveTestId(pathname);
+  const heading = role === 'admin' || role === 'pm' ? 'Project Manager Sign-In' : 'Welcome';
 
   // Intent resolved under the hood for the backend create-or-sign-in:
   //   - learner / new → 'new' (never 404 on a first-time Gmail).
@@ -205,7 +205,7 @@ export default function GoogleSignInPage() {
           <header className="nt-entry__hero">
             <p className="nt-section-eyebrow">{eyebrow}</p>
             <h1 id="signin-heading" className="nt-entry__title nt-signin__title">
-              Welcome
+              {heading}
             </h1>
             <p className="nt-entry__lede">{lede}</p>
           </header>

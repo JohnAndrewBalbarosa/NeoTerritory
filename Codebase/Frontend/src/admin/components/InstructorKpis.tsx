@@ -34,7 +34,7 @@ export default function InstructorKpis({ raw }: InstructorKpisProps): JSX.Elemen
   return (
     <div className="instructor-kpis admin-stats" aria-label="Instructor key metrics">
       <div className="stat-card cyan">
-        <span className="stat-label">Learners</span>
+        <span className="stat-label">Interns</span>
         <strong className="stat-value">{k.learners}</strong>
         <span className="stat-sub">with recorded activity</span>
       </div>
@@ -51,7 +51,7 @@ export default function InstructorKpis({ raw }: InstructorKpisProps): JSX.Elemen
       <div className="stat-card">
         <span className="stat-label">Avg modules done</span>
         <strong className="stat-value">{k.avgCompleted.toFixed(1)}</strong>
-        <span className="stat-sub">completed per learner</span>
+        <span className="stat-sub">completed per intern</span>
       </div>
       <div className="stat-card amber">
         <span className="stat-label">Hardest module</span>

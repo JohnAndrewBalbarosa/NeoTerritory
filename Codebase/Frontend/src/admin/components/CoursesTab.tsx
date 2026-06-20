@@ -190,8 +190,8 @@ export default function CoursesTab() {
   async function onDelete(module: AdminLearningModule): Promise<void> {
     if (busyId) return;
     const warn = module.isSeed
-      ? `Delete seed course "${module.id}"? This discards all learner progress for it. Unpublishing is usually safer.`
-      : `Delete course "${module.id}"? This discards all learner progress for it.`;
+      ? `Delete seed course "${module.id}"? This discards all intern progress for it. Unpublishing is usually safer.`
+      : `Delete course "${module.id}"? This discards all intern progress for it.`;
     if (!window.confirm(warn)) return;
     setBusyId(module.id);
     setError(null);
@@ -229,7 +229,7 @@ export default function CoursesTab() {
             Author and manage learning modules using a simple On/Off switch.
             Questions are already stored in the module JSON, so visibility is
             controlled only by the module state. Seed courses are protected from
-            deletion; turn them Off to hide them while keeping learner progress.
+            deletion; turn them Off to hide them while keeping intern progress.
           </p>
         </div>
         <button

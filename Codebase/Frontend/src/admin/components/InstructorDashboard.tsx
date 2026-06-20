@@ -51,7 +51,7 @@ const SUBVIEWS: ReadonlyArray<{ id: Exclude<SubView, 'overview'>; label: string;
   {
     id: 'students',
     label: 'Students',
-    description: 'Per-learner progress, Practice Improvement (first-try to eventual mastery), and question-level drilldown.',
+    description: 'Per-intern progress, Practice Improvement (first-try to eventual mastery), and question-level drilldown.',
   },
   {
     id: 'modules',
@@ -61,7 +61,7 @@ const SUBVIEWS: ReadonlyArray<{ id: Exclude<SubView, 'overview'>; label: string;
   {
     id: 'questions',
     label: 'Questions',
-    description: 'Module-by-question heatmap and raw learner answer drilldown.',
+    description: 'Module-by-question heatmap and raw intern answer drilldown.',
   },
 ];
 
@@ -121,7 +121,7 @@ export default function InstructorDashboard({ initialView = 'students' }: { init
             Back to overview
           </button>
         ) : (
-          <span className="instructor-dashboard__hint">Choose a folder below to drill into the learner data.</span>
+          <span className="instructor-dashboard__hint">Choose a folder below to drill into intern learning data.</span>
         )}
       </header>
 

@@ -2,21 +2,23 @@
 
 ## Sole job
 
-Render the admin shell, enforce the admin sign-in gate, and host the grouped admin navigation. This is the persistent entry frame for the research dashboard, the Instructor tab, and the feature-release/prompt policy tools.
+Render the Project Manager shell, preserve the existing authorization gate, and host grouped navigation. This is the persistent entry frame for intern learning oversight, course planning, analytics, and secondary tools. Internal admin route and API names remain unchanged.
 
 ## Layout Goal
 
-The shell should feel like a control room, not a generic settings page:
+The shell should feel like a focused CodiNeo control room:
 
 - one persistent grouped sidebar for sections and subsections
-- a top status row for API / microservice / AI / online presence
-- the Instructor area should keep its own drilldown path
+- a compact header with the exact title `Project Manager Dashboard`
+- a dedicated status row for API, microservice, Docker, AI, and online presence
+- a separate identity/action row for Studio, theme, refresh, and sign-out controls
+- the analytics area keeps its own drilldown path
 - feature-release controls should be visually separate from instructor analytics
 - the Complexity tab keeps its download actions inside the panel, below the charts
 
 ## Sidebar Rule
 
-- Keep the sidebar grouped as a nested file-tree, with top-level branches for `Operations`, `People`, `Instructor`, `Research`, and `Config`.
+- Keep the sidebar grouped as `Dashboard`, `Project Learning`, `Learning Content`, and `Secondary Tools`.
 - Use expand/collapse branches, active-item highlighting, and nested drilldown cues.
 - The structure should mirror the learning-path sidebar's nesting model, but the visual styling should remain admin-specific.
 - Do not flatten the tree into a single row of tabs.
@@ -32,11 +34,11 @@ The shell should feel like a control room, not a generic settings page:
 
 ```mermaid
 flowchart TD
-    Start["Open /admin"]
+    Start["Open manager page"]
     N0["Check auth"]
     D0{"Authorized?"}
-    N1["Show sign-in"]
-    N2["Render shell"]
+    N1["Show PM sign-in"]
+    N2["Render PM shell"]
     N3["Render file-tree sidebar"]
     N4["Open feature prompt panel"]
     N5["Open Instructor analytics"]
@@ -78,8 +80,11 @@ Keep AI, catalogs, and release controls together. These items answer "what can t
 
 ## Acceptance Checks
 
-- The admin shell renders one persistent file-tree navigation rail.
+- No visible sign-in or dashboard text uses the Admin role name.
+- The heading reads `Project Manager Dashboard` without duplicate branding.
+- The shell renders one persistent grouped navigation rail.
 - The current branch remains highlighted during tab switches.
 - Prompt-driven release policy starts from the off state.
 - Instructor analytics keep a nested drilldown path for questions and modules.
 - The shell does not collapse into a single flat settings page.
+- Status, identity, and action controls remain aligned at laptop and mobile widths.

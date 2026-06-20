@@ -128,7 +128,7 @@ export default function AdminApp() {
 
   useEffect(() => {
     if (token && user && !isAdminAuthorized(user)) {
-      setLoginError('That account is not an admin. Sign in with an admin account.');
+      setLoginError('That account is not authorized for the Project Manager Dashboard.');
       clearAuth();
     }
   }, [token, user, clearAuth]);
@@ -141,7 +141,7 @@ export default function AdminApp() {
     try {
       const { token: nextToken, user: nextUser } = await apiLogin(loginUsername.trim(), loginPassword);
       if (!nextUser || nextUser.role !== 'admin') {
-        setLoginError('That account is not an admin.');
+        setLoginError('That account is not authorized for the Project Manager Dashboard.');
         return;
       }
       setAuth(nextToken, nextUser as User);
@@ -160,10 +160,10 @@ export default function AdminApp() {
         <main className="admin-login-wrap">
           <section className="admin-section admin-section--card admin-login-card" data-testid="admin-login-shell">
             <header className="admin-section__head">
-              <p className="eyebrow">CodiNeo · Admin</p>
-              <h1 className="brand-title">Project Manager / Admin Sign In</h1>
+              <p className="eyebrow">CodiNeo · Project Management</p>
+              <h1 className="brand-title">Project Manager Sign-In</h1>
               <p className="admin-section__hint">
-                Sign in with Google to access the CodiNeo management dashboard. Authorized users can
+                Sign in with Google to access the Project Manager Dashboard. Authorized users can
                 manage intern progress, review learning records, and monitor system activity.
               </p>
             </header>
@@ -182,10 +182,10 @@ export default function AdminApp() {
               onToggle={(e) => setLegacyOpen((e.target as HTMLDetailsElement).open)}
             >
               <summary>
-                Legacy Admin Sign-In
+                Username/password fallback
               </summary>
               <p className="admin-section__hint">
-                For the seeded <code>Neoterritory</code> admin account only — use when the
+                For the seeded <code>Neoterritory</code> Project Manager account only — use when the
                 server has no Google sign-in configured.
               </p>
               <form className="admin-login-form" onSubmit={onAdminLogin}>
@@ -277,60 +277,59 @@ export default function AdminApp() {
       <AuroraBackground variant="warm" className="admin-aurora" />
       <header className="admin-topbar reveal">
         <div className="brand">
-          <p className="eyebrow">CodiNeo · Project Manager</p>
+          <p className="eyebrow">CodiNeo · Project Management</p>
           {/* Solid-color title — same call as studio: a marketing
               shimmer on a working operations dashboard reads as
               decorative noise. Plain h1 = solid theme accent. */}
-          <h1 className="brand-title">CodiNeo Project Manager Dashboard</h1>
-          <p className="lede">Monitor intern progress, review learning activity, and manage project-based module recommendations.</p>
+          <h1 className="brand-title">Project Manager Dashboard</h1>
+          <p className="lede">Monitor intern progress, review learning activity, and manage project-based learning recommendations.</p>
         </div>
         <div className="admin-actions">
           {/* System Status — backend health + microservice + docker + AI.
               Admin is the ops dashboard, so it should see the same status
               the studio header shows. Compact pills, not full status card. */}
-          <div className="admin-ops-pills" role="status" aria-live="polite" aria-label="System status">
-            <span className="admin-ops-pill" data-state={status.kind}>
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">API</span>
-              <strong>{status.title}</strong>
-            </span>
-            <span className="admin-ops-pill" data-state={msState}>
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">Microservice</span>
-              <strong>{msLabel}</strong>
-            </span>
-            <span className="admin-ops-pill" data-state={dockerState}>
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">Docker</span>
-              <strong>{dockerLabel}</strong>
-            </span>
-            {/* AI pill — reads from /api/health.aiProviderConfigured.
-                Click navigates to the AI tab where the operator can flip
-                the provider, model, and API key without redeploying. */}
-            <button
-              type="button"
-              className="admin-ops-pill admin-ops-pill--btn"
-              data-state={aiConfigured ? 'online' : 'offline'}
-              onClick={() => setActiveTab('ai')}
-              title={aiConfigured ? 'AI configured — click to manage' : 'AI not configured — click to set provider + key'}
+          <div className="admin-status-row">
+            <div className="admin-ops-pills" role="status" aria-live="polite" aria-label="System status">
+              <span className="admin-ops-pill" data-state={status.kind}>
+                <span className="admin-ops-dot" aria-hidden="true" />
+                <span className="admin-ops-label">API</span>
+                <strong>{status.title}</strong>
+              </span>
+              <span className="admin-ops-pill" data-state={msState}>
+                <span className="admin-ops-dot" aria-hidden="true" />
+                <span className="admin-ops-label">Microservice</span>
+                <strong>{msLabel}</strong>
+              </span>
+              <span className="admin-ops-pill" data-state={dockerState}>
+                <span className="admin-ops-dot" aria-hidden="true" />
+                <span className="admin-ops-label">Docker</span>
+                <strong>{dockerLabel}</strong>
+              </span>
+              <button
+                type="button"
+                className="admin-ops-pill admin-ops-pill--btn"
+                data-state={aiConfigured ? 'online' : 'offline'}
+                onClick={() => setActiveTab('ai')}
+                title={aiConfigured ? 'AI configured — click to manage' : 'AI not configured — click to set provider + key'}
+              >
+                <span className="admin-ops-dot" aria-hidden="true" />
+                <span className="admin-ops-label">AI</span>
+                <strong>{aiConfigured ? 'configured' : 'not configured'}</strong>
+              </button>
+            </div>
+            <span
+              className="admin-online-pill"
+              data-empty={onlineCount === 0 ? 'true' : undefined}
+              title="Active in last 2 min (heartbeat)"
             >
-              <span className="admin-ops-dot" aria-hidden="true" />
-              <span className="admin-ops-label">AI</span>
-              <strong>{aiConfigured ? 'configured' : 'not configured'}</strong>
-            </button>
+              <span className="admin-online-dot" aria-hidden="true" />
+              {onlineCount === 0
+                ? 'No users online'
+                : `${onlineCount} of ${adminUsers.length} online`}
+            </span>
           </div>
-          <span
-            className="admin-online-pill"
-            data-empty={onlineCount === 0 ? 'true' : undefined}
-            title="Active in last 2 min (heartbeat)"
-          >
-            <span className="admin-online-dot" aria-hidden="true" />
-            {onlineCount === 0
-              ? 'No users online'
-              : `${onlineCount} of ${adminUsers.length} online`}
-          </span>
           <div className="admin-account-actions" role="group" aria-label="Account actions">
-          <span id="admin-user-label">{user.username} · Project Manager</span>
+          <span id="admin-user-label"><strong>{user.username}</strong><span>Project Manager</span></span>
           <button
             className="ghost-btn theme-toggle-btn"
             type="button"
@@ -348,7 +347,7 @@ export default function AdminApp() {
             onClick={() => { window.location.assign('/studio'); }}
             title="Switch to my studio (full-page nav to the main SPA)"
           >
-            Go to my studio →
+            Go to my studio
           </button>
           <button id="admin-refresh-btn" className="ghost-btn" type="button" onClick={onRefresh}>
             Refresh

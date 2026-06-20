@@ -4,19 +4,20 @@
 - Owner: Frontend
 
 ## Logic Summary
-Admin-side panels that power the shell-level navigation, feature-release prompt control, instructor analytics surfaces, and mobile-friendly operator layouts. Instructor learning content is model-backed and already tagged in JSON; the admin layer turns modules on or off, edits mixed question-bank rows, and reads the prepared question data.
+Project Manager panels that power the shell navigation, intern overview, feature-release prompt control, learning analytics, and responsive operator layouts. Learning content is model-backed and already tagged in JSON; this presentation layer turns modules on or off, edits mixed question-bank rows, and reads prepared question data.
 
 ## Subsystem Story
 Read the component docs in this order:
-1. `AiConfigPanel.tsx.md` - tested runtime AI provider configuration.
-2. `FeatureReleasePanel.tsx.md` - prompt textbox and explicit default-off toggle preview.
-3. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and apply flow.
-4. `CoursePlanPatternAudit.tsx.md` - the reusable pattern audit block embedded in the preview.
-5. `CoursesTab.tsx.md` - the course CMS table, planner embedding, required badge copy, and bank health.
-6. `CourseEditor.tsx.md` - the module editor and mixed theoretical question bank form.
-7. `InstructorDashboard.tsx.md` - the Instructor section shell and its nested navigation.
-8. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
-9. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
+1. `OverviewTab.tsx.md` - summary metrics, intern progress, recommendations, and attention items.
+2. `AiConfigPanel.tsx.md` - tested runtime AI provider configuration.
+3. `FeatureReleasePanel.tsx.md` - prompt textbox and explicit default-off toggle preview.
+4. `CoursePlanPanel.tsx.md` - the prompt-driven course scope preview and apply flow.
+5. `CoursePlanPatternAudit.tsx.md` - the reusable pattern audit block embedded in the preview.
+6. `CoursesTab.tsx.md` - the course CMS table, planner embedding, required badge copy, and bank health.
+7. `CourseEditor.tsx.md` - the module editor and mixed theoretical question bank form.
+8. `InstructorDashboard.tsx.md` - the analytics section shell and nested navigation.
+9. `LearningAnalytics.tsx.md` - the question heatmap and drilldown table.
+10. `ComplexityTab.tsx.md` - the saved-run complexity graphs and export controls.
 
 ## Folder Flow
 ```mermaid
@@ -46,3 +47,4 @@ flowchart TD
 - Required module copy uses "required" rather than "baseline" anywhere the planner or course table shows locked foundations.
 - Complexity export controls stay inside the Complexity tab, below the charts, and export the saved-run dataset rather than a synthetic summary.
 - Narrow viewports keep action rows, downloads, and tables legible instead of forcing sideways page scrolling.
+- All visible role and participant labels use Project Manager and Intern terminology.

@@ -94,7 +94,7 @@ export default function OverviewTab({ onOpenIntern, onManageCoursePlan }: { onOp
     <>
       <section className="admin-section admin-section--card" aria-label="Project manager learning overview">
         <header className="admin-section__head">
-          <h2>Project Manager Dashboard</h2>
+          <h2>Learning Overview</h2>
           <p className="admin-section__hint">Intern learning progress and assessment activity across the project-based learning workflow.</p>
         </header>
         <div className="admin-overview-grid">
@@ -104,8 +104,6 @@ export default function OverviewTab({ onOpenIntern, onManageCoursePlan }: { onOp
           <Card label="Ready for Post-Test" value={String(summary.readyForPostTest)} />
           <Card label="Needs Review" value={String(summary.needsReview)} />
           <Card label="Completed Learning Cycles" value={String(summary.completedLearningCycles)} sub="cycles with a paired post-test" />
-        </div>
-        <div className="admin-overview-grid" style={{ marginTop: 10 }}>
           <Card label="Avg Recommended Modules / Intern" value={summary.activeInterns ? summary.avgRecommendedPerIntern.toFixed(1) : '—'} />
           <Card label="Avg Recommended-Module Completion" value={summary.avgRecommendedCompletionPct === null ? '—' : `${summary.avgRecommendedCompletionPct}%`} sub="recommended modules only" />
           <Card label="Total Conceptual Attempts" value={conceptual.available ? String(conceptual.total) : '—'} sub={conceptual.available ? 'in-module question attempts' : 'unavailable'} />
@@ -115,11 +113,11 @@ export default function OverviewTab({ onOpenIntern, onManageCoursePlan }: { onOp
 
       {/* Active course plans — learner-level (no single global plan). */}
       <section className="admin-section admin-section--card" aria-label="Active course plans">
-        <header className="admin-section__head" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><h2>Active Course Plans</h2><p className="admin-section__hint">Learner-level active plans (each intern has their own); not a single global plan.</p></div>
+        <header className="admin-section__head admin-section__head--action">
+          <div><h2>Active Course Plans</h2><p className="admin-section__hint">Intern-level active plans, with one plan per intern.</p></div>
           <button type="button" className="ghost-btn" onClick={onManageCoursePlan}>Manage Course Plan</button>
         </header>
-        {activePlans.length === 0 ? <p className="admin-section__hint">No active learner plans yet.</p> : (
+        {activePlans.length === 0 ? <p className="admin-section__hint">No active intern plans yet.</p> : (
           <div className="nt-table-scroll"><table className="nt-records-table">
             <thead><tr><th>Intern</th><th>Plan</th><th>Project Spec</th><th>Project-Relevant Modules</th><th>Status</th><th>Activated</th></tr></thead>
             <tbody>{activePlans.slice(0, 12).map(({ r, plan }) => (
@@ -163,9 +161,9 @@ export default function OverviewTab({ onOpenIntern, onManageCoursePlan }: { onOp
         )}
       </section>
 
-      {/* Learner module recommendation summary */}
-      <section className="admin-section admin-section--card" aria-label="Learner module recommendations">
-        <header className="admin-section__head"><h2>Learner Module Recommendations</h2></header>
+      {/* Intern module recommendation summary */}
+      <section className="admin-section admin-section--card" aria-label="Intern module recommendations">
+        <header className="admin-section__head"><h2>Intern Module Recommendations</h2></header>
         {records.length === 0 ? <p className="admin-section__hint">No records.</p> : (
           <div className="nt-table-scroll"><table className="nt-records-table">
             <thead><tr><th>Intern</th><th>Project-Relevant</th><th>Recommended to Study</th><th>Already Understood</th><th>Completed Rec.</th><th>Progress</th><th>Stage</th><th></th></tr></thead>

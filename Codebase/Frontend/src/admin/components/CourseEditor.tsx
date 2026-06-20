@@ -930,11 +930,11 @@ export default function CourseEditor({ source, onClose, onSaved }: CourseEditorP
                 onChange={(e) => patch({ published: e.target.checked })}
                 disabled={saving || draft.category === 'foundations'}
               />
-              <span>On (visible to learners)</span>
+              <span>On (visible to interns)</span>
             </label>
             <p className="admin-section__hint">
               Questions are already tagged in the module JSON. Use On/Off to control
-              whether the module is visible to learners. Foundations stay on as the baseline block.
+              whether the module is visible to interns. Foundations stay on as the baseline block.
             </p>
             <label className="admin-catalog-field courses-sortorder">
               <span>Sort order</span>

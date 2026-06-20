@@ -491,7 +491,7 @@ export default function LogsView() {
       <section className="admin-section">
         <h2>Audit log</h2>
         <p className="admin-section-lede">
-          Append-only record of destructive admin actions (run deletions, log
+          Append-only record of destructive Project Manager actions (run deletions, log
           purges). Cannot be cleared.
         </p>
         <AuditPanel />

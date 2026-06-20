@@ -166,13 +166,13 @@ export default function LearningAnalytics(): JSX.Element {
           {learners === null ? (
             <div className="empty-state">Loading learners…</div>
           ) : learners.length === 0 ? (
-            <div className="empty-state">No learners have answered this question yet.</div>
+            <div className="empty-state">No interns have answered this question yet.</div>
           ) : (
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>Learner</th>
+                    <th>Intern</th>
                     <th>Selected Answer</th>
                     <th className="u-text-center">First Try</th>
                     <th className="u-text-center">Total Attempts</th>

@@ -72,7 +72,7 @@ export default function InviteCodesTab() {
         <h2>Fast-path developer join codes</h2>
         <p className="admin-section__hint">
           Share a code with a developer; they paste it during onboarding and
-          auto-join your org with no admin approval. Defaults: 10 uses, 14-day
+          auto-join your organization with no Project Manager approval. Defaults: 10 uses, 14-day
           expiry.
         </p>
       </header>

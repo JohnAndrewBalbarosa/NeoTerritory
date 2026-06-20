@@ -488,8 +488,8 @@ test.describe('admin courses planner', () => {
 
     await signInWithLegacyAdmin(page);
 
-    await page.getByRole('button', { name: /Instructor/ }).click();
-    await page.getByRole('button', { name: 'Courses' }).click();
+    await page.getByRole('button', { name: 'Learning Content' }).click();
+    await page.getByTestId('admin-tab-bar').getByRole('button', { name: 'Course Plan', exact: true }).click();
 
     await expect(page.getByTestId('admin-courses')).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId('course-plan-panel')).toBeVisible({ timeout: 10_000 });

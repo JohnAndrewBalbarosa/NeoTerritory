@@ -320,7 +320,9 @@ export default function UserTable() {
                       {u.email && <><br /><small>{u.email}</small></>}
                     </td>
                     <td>
-                      <span className="role-pill" data-role={u.role ?? 'user'}>{u.role ?? 'user'}</span>
+                      <span className="role-pill" data-role={u.role ?? 'user'}>
+                        {u.role === 'admin' || u.role === 'pm' ? 'Project Manager' : (u.role ?? 'user')}
+                      </span>
                     </td>
                     <td>
                       <span className="provider-pill" data-provider={u.created_via ?? 'legacy'}>

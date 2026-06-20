@@ -68,7 +68,7 @@ export default function InternRecordsTab({ onSelectIntern }: { onSelectIntern: (
     <section className="admin-section admin-section--card" aria-label="Intern learning records">
       <header className="admin-section__head">
         <h2>Intern Learning Records</h2>
-        <p className="admin-section__hint">Per-learner project-relevant modules, formal pre/post results, and recommended study — graded read-only from stored records.</p>
+        <p className="admin-section__hint">Per-intern project-relevant modules, formal pre/post results, and recommended study — graded read-only from stored records.</p>
       </header>
 
       <div className="nt-records-toolbar">

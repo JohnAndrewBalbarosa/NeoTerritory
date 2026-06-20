@@ -83,7 +83,7 @@ test.describe('mobile layout smoke', () => {
     expect(response!.status(), '/admin should render').toBe(200);
 
     await expect(page.locator('[data-testid="admin-login-shell"]')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText('Project Manager / Admin Sign In', { exact: false })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText('Project Manager Sign-In', { exact: false })).toBeVisible({ timeout: 10_000 });
 
     await expectNoHorizontalOverflow(page, '/admin');
   });

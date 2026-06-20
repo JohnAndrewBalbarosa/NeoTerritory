@@ -15,7 +15,7 @@ import {
 type View = 'overview' | 'learner-attempts' | 'learner-detail' | 'module-attempts' | 'module-detail' | 'question-performance';
 const VIEW_TABS: Array<{ id: View; label: string }> = [
   { id: 'overview', label: 'Overview' },
-  { id: 'learner-attempts', label: 'Learner Attempts' },
+  { id: 'learner-attempts', label: 'Intern Attempts' },
   { id: 'module-attempts', label: 'Module Attempts' },
   { id: 'question-performance', label: 'Question Performance' },
 ];
@@ -96,7 +96,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
     const practicalMods = new Set((recRec?.answers ?? []).filter((a) => a.questionKind === 'practical').map((a) => a.moduleId));
     return (
       <section className="admin-section admin-section--card">
-        <header className="admin-section__head"><button type="button" className="ghost-btn" onClick={() => setView('learner-attempts')}>← Back to Learner Attempts</button><h3 style={{ marginTop: 8 }}>{l?.displayName ?? `Intern #${internId}`}{l?.email ? <span className="nt-muted"> · {l.email}</span> : null}</h3><p className="nt-muted">Stage: {l?.stage ?? '—'} · Cycle: {l?.cycleId?.slice(0, 8) ?? '—'}</p></header>
+        <header className="admin-section__head"><button type="button" className="ghost-btn" onClick={() => setView('learner-attempts')}>← Back to Intern Attempts</button><h3 style={{ marginTop: 8 }}>{l?.displayName ?? `Intern #${internId}`}{l?.email ? <span className="nt-muted"> · {l.email}</span> : null}</h3><p className="nt-muted">Stage: {l?.stage ?? '—'} · Cycle: {l?.cycleId?.slice(0, 8) ?? '—'}</p></header>
         <div className="admin-overview-grid">
           <div className="admin-overview-card"><p className="admin-overview-card__title">Recommended Modules</p><p className="admin-overview-card__value">{l?.recommendedModuleIds.length ?? 0}</p></div>
           <div className="admin-overview-card"><p className="admin-overview-card__title">Modules Started</p><p className="admin-overview-card__value">{l?.modulesStarted ?? 0}</p></div>
@@ -106,7 +106,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
           <div className="admin-overview-card"><p className="admin-overview-card__title">Practical Submissions</p><p className="admin-overview-card__value">{l?.practicalSubmissions ?? 0}</p></div>
         </div>
         <h4 style={{ marginTop: 14 }}>Module Attempts</h4>
-        {(l?.recommendedModuleIds.length ?? 0) === 0 ? <p className="admin-section__hint">No recommended modules were found for this learner.</p> : (
+        {(l?.recommendedModuleIds.length ?? 0) === 0 ? <p className="admin-section__hint">No recommended modules were found for this intern.</p> : (
           <div className="nt-table-scroll"><table className="nt-records-table nt-sticky-1"><thead><tr><th>Module</th><th>Questions Attempted</th><th>Conceptual Attempts</th><th>Retried Questions</th><th>First-Try Rate</th><th>Eventual Rate</th><th>Practical</th><th>Status</th></tr></thead>
             <tbody>{l!.recommendedModuleIds.map((mid) => {
               const rows = byModule.get(mid) ?? [];
@@ -145,16 +145,16 @@ export default function InModuleAnalyticsTab(): JSX.Element {
       <section className="admin-section admin-section--card">
         <header className="admin-section__head"><button type="button" className="ghost-btn" onClick={() => setView('module-attempts')}>← Back to Module Attempts</button><h3 style={{ marginTop: 8 }}>{m?.title ?? moduleId}<span className="nt-muted"> · {m?.category}</span></h3></header>
         <div className="admin-overview-grid">
-          <div className="admin-overview-card"><p className="admin-overview-card__title">Learners Recommended</p><p className="admin-overview-card__value">{m?.learnersRecommended ?? 0}</p></div>
-          <div className="admin-overview-card"><p className="admin-overview-card__title">Learners Started</p><p className="admin-overview-card__value">{m?.learnersStarted ?? 0}</p></div>
-          <div className="admin-overview-card"><p className="admin-overview-card__title">Learners Completed</p><p className="admin-overview-card__value">{m?.learnersCompleted ?? 0}</p></div>
+          <div className="admin-overview-card"><p className="admin-overview-card__title">Interns Recommended</p><p className="admin-overview-card__value">{m?.learnersRecommended ?? 0}</p></div>
+          <div className="admin-overview-card"><p className="admin-overview-card__title">Interns Started</p><p className="admin-overview-card__value">{m?.learnersStarted ?? 0}</p></div>
+          <div className="admin-overview-card"><p className="admin-overview-card__title">Interns Completed</p><p className="admin-overview-card__value">{m?.learnersCompleted ?? 0}</p></div>
           <div className="admin-overview-card"><p className="admin-overview-card__title">Conceptual Attempts</p><p className="admin-overview-card__value">{m?.conceptualAttempts ?? 0}</p></div>
           <div className="admin-overview-card"><p className="admin-overview-card__title">Practical Submissions</p><p className="admin-overview-card__value">{m?.practicalSubmissions ?? 0}</p></div>
           <div className="admin-overview-card"><p className="admin-overview-card__title">Questions With Retries</p><p className="admin-overview-card__value">{m?.questionsWithRetries ?? 0}</p></div>
         </div>
-        {m && m.learnersStarted > 0 && m.learnersStarted < MIN_SAMPLE_LEARNERS ? <p className="admin-section__hint">Limited data — only {m.learnersStarted} learner attempted this module.</p> : null}
-        <h4 style={{ marginTop: 14 }}>Learner performance in this module</h4>
-        {learnersInMod.length === 0 ? <p className="admin-section__hint">No learners have attempted this module.</p> : (
+        {m && m.learnersStarted > 0 && m.learnersStarted < MIN_SAMPLE_LEARNERS ? <p className="admin-section__hint">Limited data — only {m.learnersStarted} intern attempted this module.</p> : null}
+        <h4 style={{ marginTop: 14 }}>Intern performance in this module</h4>
+        {learnersInMod.length === 0 ? <p className="admin-section__hint">No interns have attempted this module.</p> : (
           <div className="nt-table-scroll"><table className="nt-records-table nt-sticky-1"><thead><tr><th>Intern</th><th>Conceptual Attempts</th><th>Retried Questions</th><th>First-Try Rate</th><th>Eventual Rate</th><th></th></tr></thead>
             <tbody>{learnersInMod.map((uid) => {
               const rows = modQr.filter((q) => q.userId === uid);
@@ -165,7 +165,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
         )}
         <h4 style={{ marginTop: 14 }}>Questions in this module</h4>
         {qRows.length === 0 ? <p className="admin-section__hint">No conceptual attempts recorded yet.</p> : (
-          <div className="nt-table-scroll"><table className="nt-records-table"><thead><tr><th>Question</th><th>Learners</th><th>First-Try Rate</th><th>Eventual Rate</th><th>Retried Learners</th><th>Status</th></tr></thead>
+          <div className="nt-table-scroll"><table className="nt-records-table"><thead><tr><th>Question</th><th>Interns</th><th>First-Try Rate</th><th>Eventual Rate</th><th>Interns Retried</th><th>Status</th></tr></thead>
             <tbody>{qRows.map((q) => <tr key={q.questionId}><td>{q.prompt.slice(0, 80)}</td><td>{q.learnersAttempted}</td><td>{rate(q.firstAttemptRate)}</td><td>{rate(q.eventualRate)}</td><td>{q.retriedLearners}</td><td><span className="nt-badge">{q.status}</span></td></tr>)}</tbody></table></div>
         )}
       </section>
@@ -179,7 +179,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
         <div>
           <h2>In-Module Learning Analytics</h2>
           <p className="admin-section__hint">Monitor how interns work through recommended learning modules, including conceptual attempts, retries, practical submissions, completion, and question-level performance. Formal pre-test and post-test records remain under Assessments.</p>
-          <p className="admin-section__hint">These are descriptive process metrics. Whether a module is Required or Optional Review is per-learner (it depends on each learner’s pre-test result), so it is shown in Intern Detail, not here. Voluntary attempts on optional modules appear as activity and never count as an incomplete requirement.</p>
+          <p className="admin-section__hint">These are descriptive process metrics. Whether a module is Required or Optional Review is per-intern (it depends on each intern’s pre-test result), so it is shown in Intern Detail, not here. Voluntary attempts on optional modules appear as activity and never count as an incomplete requirement.</p>
         </div>
         <div className="admin-account-actions">
           <button type="button" className="ghost-btn" onClick={() => setReloadKey((k) => k + 1)}>Refresh</button>
@@ -199,7 +199,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
             <div className="admin-overview-card"><p className="admin-overview-card__title">Recommended Modules Completed</p><p className="admin-overview-card__value">{summary.recommendedModulesCompleted}</p></div>
             <div className="admin-overview-card"><p className="admin-overview-card__title">Total Conceptual Attempts</p><p className="admin-overview-card__value">{learningRaw ? summary.totalConceptualAttempts : '—'}</p><p className="admin-overview-card__sub">{learningRaw ? 'in-module question attempts' : 'Unavailable'}</p></div>
             <div className="admin-overview-card"><p className="admin-overview-card__title">Total Practical Submissions</p><p className="admin-overview-card__value">{summary.totalPracticalSubmissions}</p></div>
-            <div className="admin-overview-card"><p className="admin-overview-card__title">Learners With Retries</p><p className="admin-overview-card__value">{summary.learnersWithRetries}</p></div>
+            <div className="admin-overview-card"><p className="admin-overview-card__title">Interns With Retries</p><p className="admin-overview-card__value">{summary.learnersWithRetries}</p></div>
           </div>
           <h3 style={{ marginTop: 16 }}>Module Activity Summary</h3>
           {moduleRows.length === 0 ? <p className="admin-section__hint">No module activity recorded yet.</p> : (
@@ -213,9 +213,9 @@ export default function InModuleAnalyticsTab(): JSX.Element {
         <>
           <div className="nt-records-toolbar">
             <input type="search" className="nt-records-search" placeholder="Search by name or email…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Search interns" />
-            <div className="nt-records-filters" role="group" aria-label="Learner filter">{LEARNER_FILTERS.map((f) => <button key={f} type="button" className={`nt-chip${filter === f ? ' is-active' : ''}`} onClick={() => setFilter(f)}>{f}</button>)}</div>
+            <div className="nt-records-filters" role="group" aria-label="Intern filter">{LEARNER_FILTERS.map((f) => <button key={f} type="button" className={`nt-chip${filter === f ? ' is-active' : ''}`} onClick={() => setFilter(f)}>{f}</button>)}</div>
           </div>
-          {filteredLearners.length === 0 ? <p className="admin-section__hint">No learners match the current filter.</p> : (
+          {filteredLearners.length === 0 ? <p className="admin-section__hint">No interns match the current filter.</p> : (
             <div className="nt-table-scroll"><table className="nt-records-table nt-sticky-1"><thead><tr><th>Intern</th><th>Recommended</th><th>Started</th><th>Completed</th><th>Conceptual Attempts</th><th>Practical Submissions</th><th>Retried Questions</th><th>Avg Attempts/Started</th><th>Latest Activity</th><th>Stage</th><th></th></tr></thead>
               <tbody>{filteredLearners.map((l) => (
                 <tr key={l.internId}>
@@ -246,7 +246,7 @@ export default function InModuleAnalyticsTab(): JSX.Element {
         <>
           <h3>In-Module Question Performance</h3>
           {questionRows.length === 0 ? <p className="admin-section__hint">No conceptual attempts recorded yet.</p> : (
-            <div className="nt-table-scroll"><table className="nt-records-table nt-sticky-1"><thead><tr><th>Module</th><th>Question</th><th>Bloom</th><th>Learners</th><th>Total Attempts</th><th>First-Try Correct</th><th>First-Try Rate</th><th>Eventual Correct</th><th>Eventual Rate</th><th>Retried Learners</th><th>Status</th></tr></thead>
+            <div className="nt-table-scroll"><table className="nt-records-table nt-sticky-1"><thead><tr><th>Module</th><th>Question</th><th>Bloom</th><th>Interns</th><th>Total Attempts</th><th>First-Try Correct</th><th>First-Try Rate</th><th>Eventual Correct</th><th>Eventual Rate</th><th>Interns Retried</th><th>Status</th></tr></thead>
               <tbody>{questionRows.map((q) => <tr key={q.questionId}><td className="nt-muted">{q.moduleTitle}</td><td>{q.prompt.slice(0, 70)}</td><td className="nt-muted">{q.bloom ?? '—'}</td><td>{q.learnersAttempted}</td><td>{q.totalAttempts}</td><td>{q.firstAttemptCorrectCount}</td><td>{rate(q.firstAttemptRate)}</td><td>{q.eventualCorrectCount}</td><td>{rate(q.eventualRate)}</td><td>{q.retriedLearners}</td><td><span className="nt-badge">{q.status}</span></td></tr>)}</tbody></table></div>
           )}
         </>
