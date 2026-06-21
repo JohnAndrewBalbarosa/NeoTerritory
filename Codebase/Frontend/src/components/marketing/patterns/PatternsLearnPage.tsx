@@ -435,7 +435,11 @@ function TheoreticalExamBlock({
   error: string | null;
 }): JSX.Element | null {
   if (questionIndexes.length === 0) return null;
+  // showResult grades the learner's OWN selection (their pick may turn red/green).
+  // revealAnswers exposes the answer key + explanations — ONLY once they pass, so
+  // a failed attempt never shows the correct answer for a question they got wrong.
   const showResult = result !== null || isPassed;
+  const revealAnswers = isPassed || !!result?.perfect;
 
   return (
     <section className="nt-learn__module-group" id={anchorId(moduleId, 'theoretical')} aria-label="Conceptual assessment">
@@ -454,6 +458,7 @@ function TheoreticalExamBlock({
               question={q}
               userAnswer={answers[qi]}
               showResult={showResult}
+              revealAnswers={revealAnswers}
               onAnswer={(answer) => onAnswerChange(qi, answer)}
             />
           </section>

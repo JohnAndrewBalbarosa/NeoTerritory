@@ -3,11 +3,16 @@ import { ExamQuestion, isIdentificationQuestion, isMcqQuestion, isStudioQuestion
 import StudioSurface from '../studio/StudioSurface';
 import { AnalysisRun } from '../../types/api';
 import { useAppStore } from '../../store/appState';
+import { mcqOptionState, shouldRevealExplanation } from './conceptualResultState';
 
 interface BloomQuestionRendererProps {
   question: ExamQuestion;
   onAnswer: (answer: any) => void;
   showResult?: boolean;
+  // Expose the answer key (green the correct option even when unselected, show
+  // explanations). Only set true once the attempt PASSES — a failed attempt
+  // grades the learner's own pick but must NOT reveal the answer.
+  revealAnswers?: boolean;
   userAnswer?: any;
   onSkip?: () => void;
 }
@@ -16,6 +21,7 @@ export const BloomQuestionRenderer: React.FC<BloomQuestionRendererProps> = ({
   question,
   onAnswer,
   showResult,
+  revealAnswers,
   userAnswer,
   onSkip,
 }) => {
@@ -25,6 +31,7 @@ export const BloomQuestionRenderer: React.FC<BloomQuestionRendererProps> = ({
         question={question}
         onAnswer={onAnswer}
         showResult={showResult}
+        revealAnswers={revealAnswers}
         userAnswer={userAnswer}
       />
     );
@@ -36,6 +43,7 @@ export const BloomQuestionRenderer: React.FC<BloomQuestionRendererProps> = ({
         question={question}
         onAnswer={onAnswer}
         showResult={showResult}
+        revealAnswers={revealAnswers}
         userAnswer={userAnswer}
       />
     );
@@ -60,8 +68,9 @@ const McqRenderer: React.FC<{
   question: any;
   onAnswer: (answer: number) => void;
   showResult?: boolean;
+  revealAnswers?: boolean;
   userAnswer?: number;
-}> = ({ question, onAnswer, showResult, userAnswer }) => {
+}> = ({ question, onAnswer, showResult, revealAnswers, userAnswer }) => {
   return (
     <div className="nt-bloom-question nt-bloom-question--mcq">
       <p className="nt-bloom-question__prompt">{question.question}</p>
@@ -72,9 +81,13 @@ const McqRenderer: React.FC<{
       )}
       <div className="nt-bloom-question__options">
         {question.options.map((option: string, index: number) => {
-          const isSelected = userAnswer === index;
-          const isCorrect = showResult && index === question.correctIndex;
-          const isWrong = showResult && isSelected && index !== question.correctIndex;
+          const { isSelected, isCorrect, isWrong } = mcqOptionState({
+            index,
+            userAnswer,
+            correctIndex: question.correctIndex,
+            showResult: !!showResult,
+            revealAnswers: !!revealAnswers,
+          });
 
           return (
             <label
@@ -96,7 +109,7 @@ const McqRenderer: React.FC<{
           );
         })}
       </div>
-      {showResult && question.explanation && (
+      {shouldRevealExplanation(!!showResult, !!revealAnswers) && question.explanation && (
         <p className="nt-bloom-question__explanation">{question.explanation}</p>
       )}
     </div>
@@ -107,8 +120,9 @@ const IdentificationRenderer: React.FC<{
   question: any;
   onAnswer: (answer: string[]) => void;
   showResult?: boolean;
+  revealAnswers?: boolean;
   userAnswer?: string[];
-}> = ({ question, onAnswer, showResult, userAnswer = [] }) => {
+}> = ({ question, onAnswer, showResult, revealAnswers, userAnswer = [] }) => {
   const [tokens, setTokens] = useState<string[]>(userAnswer);
 
   useEffect(() => {
@@ -144,14 +158,14 @@ const IdentificationRenderer: React.FC<{
                 disabled={showResult}
                 className={showResult ? (isCorrect ? 'nt-input--correct' : 'nt-input--wrong') : ''}
               />
-              {showResult && !isCorrect && (
+              {shouldRevealExplanation(!!showResult, !!revealAnswers) && !isCorrect && (
                 <span className="nt-bloom-question__expected"> (Expected: {expected})</span>
               )}
             </div>
           );
         })}
       </div>
-      {showResult && question.explanation && (
+      {shouldRevealExplanation(!!showResult, !!revealAnswers) && question.explanation && (
         <p className="nt-bloom-question__explanation">{question.explanation}</p>
       )}
     </div>

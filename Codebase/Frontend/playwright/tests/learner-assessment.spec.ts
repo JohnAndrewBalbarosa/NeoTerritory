@@ -486,6 +486,14 @@ test.describe('learner hub smoke', () => {
     expect(submittedAttempts).toHaveLength(1);
     expect(progressUpdates).toHaveLength(0);
 
+    // A FAILED attempt must not leak the answer key: no explanation is shown, and
+    // no UNSELECTED option is marked correct (the wrong question's answer stays
+    // hidden; only the learner's own correct picks may show as correct).
+    await expect(page.locator('.nt-bloom-question__explanation')).toHaveCount(0);
+    await expect(
+      page.locator('.nt-bloom-question__option[data-correct="true"][data-selected="false"]'),
+    ).toHaveCount(0);
+
     await page.getByRole('button', { name: 'Revise Answers', exact: true }).click();
     await expect(submit).toBeDisabled();
     await questions.nth(0).locator('input[type="radio"]').nth(0).check();
