@@ -15,13 +15,32 @@ const nextConfig = {
     externalDir: true,
   },
 
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = config.resolve.alias || {};
     // Shared component/CSS/store/api source.
     config.resolve.alias['@frontend'] = FRONTEND_SRC;
     // This app's own root (route files import `@/components/...`).
     config.resolve.alias['@'] = __dirname;
+
+    // Hard-dedupe React on the CLIENT to Next's OWN compiled React. Importing
+    // ../Frontend/src verbatim can pull a SECOND react/react-dom from a plain
+    // node_modules copy into a code-split chunk (e.g. the heavy StudioSurface tree
+    // now used by the /patterns/learn practical) → two React instances → a
+    // prod-only "invalid hook call" → minified React error #300. The fix is to make
+    // the shared client components resolve the EXACT React that Next's client runtime
+    // uses (`next/dist/compiled/react*`), which also provides `use`/`cache` — a plain
+    // react@18.3 copy does NOT, so aliasing to node_modules/react instead breaks Next
+    // with "(0,s.use) is not a function". Client-only (`!isServer`) so Next's RSC
+    // server resolution is untouched.
+    if (!isServer) {
+      const nextReact = (p) => require.resolve('next/dist/compiled/' + p);
+      config.resolve.alias['react$'] = nextReact('react');
+      config.resolve.alias['react-dom$'] = nextReact('react-dom');
+      config.resolve.alias['react/jsx-runtime'] = nextReact('react/jsx-runtime');
+      config.resolve.alias['react/jsx-dev-runtime'] = nextReact('react/jsx-dev-runtime');
+      config.resolve.alias['react-dom/client'] = nextReact('react-dom/client');
+    }
 
     // Support Vite-style `?raw` imports (e.g. learningContent.ts and PatternAtlas
     // import C++ samples as source strings: `import src from '....cpp?raw'`). Vite
