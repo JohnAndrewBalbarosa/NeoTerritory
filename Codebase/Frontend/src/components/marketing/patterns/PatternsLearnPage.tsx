@@ -1548,10 +1548,27 @@ export default function PatternsLearnPage(): JSX.Element {
                         // for the completion screen; flipping mastery on detect
                         // removed the page mid-render and crashed (React #300).
                         const moduleId = activeModule.id;
+                        // Clear the GLOBAL studio session BEFORE the path changes.
+                        // The completion screen is showing, so StudioSurface (and its
+                        // Annotated tab) is already unmounted here — nulling
+                        // currentRun now is safe. If we don't, the next module's
+                        // practical briefly re-renders the Studio's Annotated tab
+                        // against THIS module's stale run, then resetSession (in
+                        // PracticalExamBlock's effect) yanks currentRun to null while
+                        // that tab is mid-exit-animation inside AnimatePresence —
+                        // AnnotatedTab then renders fewer hooks than its mounted
+                        // render (it early-returns when !currentRun) → React #300.
+                        useAppStore.getState().resetSession();
+                        // Reset the pager to page 0 in the SAME synchronous batch as
+                        // the completion state, so the re-render lands directly on the
+                        // next module's LESSON. Leaving pageIndex on the practical
+                        // index lets the next module's practical (Studio) transiently
+                        // mount during the shift — the exact remount that crashed.
+                        setPageIndex(0);
+                        setCompletedModulePendingExitId(null);
                         setTheoryPassedIds((prev) => new Set(prev).add(moduleId));
                         setBloomMasteryByModule((prev) => ({ ...prev, [moduleId]: 6 }));
                         setCompletedIds((prev) => new Set(prev).add(moduleId));
-                        setCompletedModulePendingExitId(null);
                         // Route from committed, cycle-scoped eligibility (the
                         // completion was already persisted on detection).
                         const dest = await resolvePostTestDestination();
@@ -1559,9 +1576,8 @@ export default function PatternsLearnPage(): JSX.Element {
                           navigate('/post-test');
                         } else if (dest === 'dashboard') {
                           navigate('/intern-dashboard');
-                        } else {
-                          setPageIndex(0); // next module has shifted into place
                         }
+                        // else 'stay': the next module is already at its lesson (page 0).
                       }}
                       onDetected={async () => {
                         const practicalExam = activeModule.practicalExam;
